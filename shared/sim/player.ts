@@ -2,8 +2,10 @@ import { MOVE, SIM_DT } from "./constants";
 import { Btn, has, type InputFrame } from "./input";
 import type { Box, SpawnPoint } from "./level";
 import { capsuleFree, groundContact, resolveCapsule } from "./collision";
-import { createWeaponState, currentWeapon, resetWeaponState, stepWeapon, weaponMoveMult, type FireRequest, type WeaponEvent, type WeaponState } from "./weapons";
-import { baseSheet, type StatSheet } from "../manifest/stats";
+import { createWeaponState, currentWeapon, resetWeaponState, stepWeapon, stockDefOf, weaponMoveMult, type FireRequest, type WeaponEvent, type WeaponState } from "./weapons";
+import { ADDITIVE, baseSheet, STAT_KEYS, type StatSheet } from "../manifest/stats";
+import type { WeaponDef } from "../weapons/manifest";
+import type { ChipMechanic } from "../manifest/chips";
 import { GRENADE_LIST } from "../weapons/manifest";
 import { type Vec3, v3, clone, copy, set, lenXZ, yawDir, yawRight, clamp, dot, wrapAngle, hyp2 } from "../math/vec3";
 
@@ -16,6 +18,30 @@ export const SHIELD_REGEN_RATE = 15;
 export const SHIELD_REGEN_DELAY = 4;
 
 /** Apply a build to a player: derived caps, flip rate, grenades. Called at spawn and on loadout change. */
+/** A player's per-weapon kit (firmware definitions, chip mods, mechanics), keyed by weapon slot. */
+export interface PlayerKit {
+  defs: Partial<Record<number, WeaponDef>>;
+  mods: Partial<Record<number, StatSheet>>;
+  mechanics: Partial<Record<number, ChipMechanic[]>>;
+}
+
+export const emptyKit = (): PlayerKit => ({ defs: {}, mods: {}, mechanics: {} });
+
+/** The definition the sim runs for a slot: the kit's firmware-patched one, else stock. */
+export const weaponDefOf = (p: PlayerState, slot = p.weapon.slot): WeaponDef => p.kit.defs[slot] ?? stockDefOf(slot);
+
+/** Effective sheet while holding `slot`: the file's sheet times the weapon's chip mods. */
+export function modsFor(p: PlayerState, slot = p.weapon.slot): StatSheet {
+  const chip = p.kit.mods[slot];
+  if (!chip) return p.mods;
+  const out = { ...p.mods };
+  for (const k of STAT_KEYS) {
+    if (ADDITIVE.has(k)) out[k] += chip[k];
+    else out[k] *= chip[k];
+  }
+  return out;
+}
+
 export function applySheet(p: PlayerState, sheet: StatSheet): void {
   p.mods = sheet;
   p.maxHealth = Math.max(10, Math.round(BASE_HEALTH + sheet.maxHealth));
@@ -81,6 +107,7 @@ export interface PlayerState {
   weapon: WeaponState;
   prevButtons: number;
   stats: PlayerStats;
+  kit: PlayerKit;
   /** Tick at which this player last took damage from full health (TTK bookkeeping). */
   firstDamageTick: number;
   lastAttacker: number;
@@ -118,6 +145,7 @@ export function createPlayer(id: number, name: string, spawn: SpawnPoint): Playe
     weapon: createWeaponState(),
     prevButtons: 0,
     stats: { jumps: 0, slides: 0, slideJumps: 0, mantles: 0, shots: 0, hits: 0, kills: 0, deaths: 0, topSpeed: 0, flips: 0, nodeSeconds: 0, assists: 0, support: 0 },
+    kit: emptyKit(),
     firstDamageTick: -1,
     lastAttacker: -1,
   };
@@ -225,11 +253,13 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
   p.prevButtons = input.buttons;
   // weapon first: its requests use this tick's view; movement follows
   const wevents: WeaponEvent[] = [];
-  const reqs = stepWeapon(p.weapon, input, prevButtons, p.yaw, p.pitch, p.alive, roomSeed, p.id, wevents, p.mods);
+  const defOf = (slot: number) => weaponDefOf(p, slot);
+  const modsHeld = modsFor(p);
+  const reqs = stepWeapon(p.weapon, input, prevButtons, p.yaw, p.pitch, p.alive, roomSeed, p.id, wevents, modsHeld, defOf);
   for (const e of wevents) events.push(e);
   if (!p.alive) return reqs;
-  const mods = p.mods;
-  const moveMult = weaponMoveMult(p.weapon, mods.adsMove) * mods.moveSpeed;
+  const mods = modsFor(p); // the slot may have changed this tick
+  const moveMult = weaponMoveMult(p.weapon, mods.adsMove, defOf) * mods.moveSpeed;
   // shield regen
   p.sinceDamage += dt;
   if (p.shield < p.maxShield && p.sinceDamage >= SHIELD_REGEN_DELAY * mods.shieldDelay) p.shield = Math.min(p.maxShield, p.shield + SHIELD_REGEN_RATE * mods.shieldRegen * dt);
@@ -243,7 +273,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
 
   // ---- Mantle: scripted pull-up, no physics ----
   if (p.stance === "mantle") {
-    p.mantleT = Math.min(1, p.mantleT + dt / (MOVE.mantleTime * p.mods.mantleTime));
+    p.mantleT = Math.min(1, p.mantleT + dt / (MOVE.mantleTime * mods.mantleTime));
     const t = p.mantleT;
     // vertical first (ease-out), then forward (ease-in)
     const ty = Math.min(1, t / 0.6);
@@ -333,7 +363,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
           p.height = MOVE.standHeight;
         }
       }
-      const maxSpeed = (p.stance === "crouch" ? MOVE.crouchSpeed : sprintHeld && forwardHeld && weaponMoveMult(p.weapon, mods.adsMove) >= 1 ? MOVE.sprintSpeed : MOVE.walkSpeed) * moveMult;
+      const maxSpeed = (p.stance === "crouch" ? MOVE.crouchSpeed : sprintHeld && forwardHeld && weaponMoveMult(p.weapon, mods.adsMove, defOf) >= 1 ? MOVE.sprintSpeed : MOVE.walkSpeed) * moveMult;
       if (p.weapon.lungeT > 0) {
         // baton lunge: a fixed-speed dash along the view
         const f = yawDir(p.yaw);

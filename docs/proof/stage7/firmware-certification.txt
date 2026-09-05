@@ -1,0 +1,16 @@
+
+> meltdown@0.1.0 certify:firmware
+> tsx -e "import(\"./shared/sim/ttk\").then(m=>{for(const r of m.certifyFirmwares()) console.log((r.ok?\"OK \":\"BAD\")+\" \"+r.firmware.padEnd(28)+r.seconds.toFixed(3)+\" s \"+r.shots+\" shots\")})"
+
+OK  lease_breaker:three_count   0.650 s 6 shots
+OK  lease_breaker:long_lease    0.717 s 6 shots
+OK  repo_hammer:double_barrel   0.717 s 2 shots
+OK  repo_hammer:slam_fire       0.700 s 2 shots
+OK  stack_smg:dump_stage        0.667 s 13 shots
+OK  stack_smg:measured          0.767 s 10 shots
+OK  longwave:capacitor          0.767 s 1 shots
+OK  longwave:overcharge         0.983 s 1 shots
+OK  phage:cluster               0.867 s 2 shots
+OK  phage:long_fuse             0.833 s 2 shots
+OK  shock_baton:arc_relay       0.917 s 3 shots
+OK  shock_baton:heavy_haft      0.983 s 3 shots

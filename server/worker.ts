@@ -21,10 +21,16 @@ export default {
       const id = env.MATCH_ROOM.idFromName(m[1]!);
       return env.MATCH_ROOM.get(id).fetch(request);
     }
-    const f = url.pathname.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})$/);
+    const f = url.pathname.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund))?$/);
     if (f) {
       const id = env.PLAYER_FILE.idFromName(f[1]!);
-      return env.PLAYER_FILE.get(id).fetch(new Request("https://file/file"));
+      const stub = env.PLAYER_FILE.get(id);
+      const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" };
+      if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+      const res = f[3] && request.method === "POST"
+        ? await stub.fetch(new Request(`https://file/${f[3]}`, { method: "POST", body: JSON.stringify({ id: f[1], ...((await request.json().catch(() => ({}))) as object) }) }))
+        : await stub.fetch(new Request("https://file/file", { method: "POST", body: JSON.stringify({ id: f[1], name: "BLANK" }) }));
+      return new Response(res.body, { status: res.status, headers: { ...cors, "content-type": "application/json" } });
     }
     if (url.pathname === "/health") return new Response("ok");
     return new Response("meltdown worker", { status: 404 });

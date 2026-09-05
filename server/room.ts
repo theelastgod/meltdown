@@ -37,7 +37,8 @@ import {
   type Snapshot,
 } from "../shared/net/protocol";
 import { DEFAULT_LOADOUT, validateLoadout, type Loadout } from "../shared/manifest/loadout";
-import { applyMatch, type Account } from "../shared/progression/account";
+import { applyMatch, ranksOf, type Account } from "../shared/progression/account";
+import { ProgressionTracker, type ProgressNote } from "./progression";
 import type { AccountStore } from "./accounts";
 import type { PlayerStats } from "../shared/sim/player";
 
@@ -77,6 +78,7 @@ interface ClientRec {
   roundBase: PlayerStats;
   roundStartTick: number;
   settlements: number;
+  progress: ProgressionTracker;
 }
 
 export interface RoomOptions {
@@ -107,7 +109,7 @@ export interface RoomStats {
   kicks: number;
   inputsRejected: number;
   bytesOut: number;
-  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; inputsApplied: number; inputsRejected: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number } | null; loadout: Loadout }[];
+  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; inputsApplied: number; inputsRejected: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number; stamps: number; ranks: Record<string, number> } | null; loadout: Loadout }[];
   settlements: number;
   loadoutRejections: string[];
   shotDiag: Record<string, number>;
@@ -302,7 +304,9 @@ export class Room {
           rec.strikes = 0;
           this.byConn.set(conn, rec);
           conn.send(encodeWelcome(rec.playerId, this.tick, rec.token, this.world.level.name, this.world.seed));
-          conn.send(encodeFile(this.fileMsg(rec, [], "join")));
+          const note: ProgressNote = { stamps: [], ranks: [], challenges: [] };
+          rec.progress.onRejoin(note);
+          conn.send(encodeFile(this.fileMsg(rec, [], "join", note)));
           this.opts.onLog(`player ${rec.playerId} rejoined`);
           return;
         }
@@ -341,7 +345,7 @@ export class Room {
     }
     const owned = account?.owned ?? [];
     const depth = account?.depth ?? 1;
-    const v = validateLoadout(raw, owned, depth);
+    const v = validateLoadout(raw, owned, depth, account ? ranksOf(account) : {});
     if (!v.ok) return this.rejectLoadout(conn, v.errors.map((e) => `${e.rule}: ${e.detail}`).join("; "));
     if (this.clients.size >= this.opts.maxPlayers) return this.kickConn(conn, "room full");
     const playerId = this.nextId++;
@@ -379,12 +383,14 @@ export class Room {
       roundBase: { ...player.stats },
       roundStartTick: this.tick,
       settlements: 0,
+      progress: new ProgressionTracker(account),
     };
     if (account) account.loadout = v.loadout;
+    const joinNote = rec.progress.fileMilestones({ stamps: [], ranks: [], challenges: [] });
     this.clients.set(playerId, rec);
     this.byConn.set(conn, rec);
     conn.send(encodeWelcome(playerId, this.tick, newToken, this.world.level.name, this.world.seed));
-    conn.send(encodeFile(this.fileMsg(rec, [], "join")));
+    conn.send(encodeFile(this.fileMsg(rec, [], "join", joinNote)));
     for (const other of this.clients.values()) if (other !== rec) other.pendingEvents.push({ type: "join", playerId, name: safeName });
     this.opts.onLog(`player ${playerId} (${safeName}) joined as ${account?.id ?? "guest"} depth ${depth} · ${v.loadout.primary}/${v.loadout.secondary} · attested [${v.loadout.attested.join(",")}]${v.loadout.keystone ? " · keystone " + v.loadout.keystone : ""}`);
   }
@@ -394,10 +400,16 @@ export class Room {
     this.kickConn(conn, `LOADOUT REJECTED: ${why}`);
   }
 
-  private fileMsg(rec: ClientRec, ledger: string[], reason: "join" | "settle"): FileMsg {
+  private fileMsg(rec: ClientRec, ledger: string[], reason: "join" | "settle" | "stamp", note?: ProgressNote): FileMsg {
     const a = rec.account;
+    const mastery = a ? Object.fromEntries(Object.entries(a.mastery).map(([w, m]) => [w, { xp: m.xp, rank: m.rank, done: m.done.slice(), counters: { ...m.counters } }])) : undefined;
     return {
       reason,
+      mastery,
+      stamps: a?.stamps.slice() ?? [],
+      newStamps: note?.stamps ?? [],
+      ranks: note?.ranks ?? [],
+      challenges: note?.challenges ?? [],
       account: a?.id ?? "guest",
       depth: a?.depth ?? 1,
       xp: a?.xp ?? 0,
@@ -422,6 +434,8 @@ export class Room {
 
   /** Results: settle every file through the store and hand each client its ledger entry. */
   private settle(winner: number): void {
+    let top = -1;
+    for (const rec of this.clients.values()) top = Math.max(top, this.world.players.get(rec.playerId)?.stats.kills ?? 0);
     for (const rec of this.clients.values()) {
       const p = this.world.players.get(rec.playerId);
       if (!p) continue;
@@ -441,10 +455,12 @@ export class Room {
       this.settlements++;
       if (!rec.account) continue;
       const entry = applyMatch(rec.account, contribution);
+      const note = rec.progress.onRoundEnd(p, contribution.won, contribution.seconds, p.stats.kills === top, this.world.level.name);
+      for (const id of note.stamps) entry.lines.push(`STAMP · ${id.toUpperCase().replace(/[:_]/g, " ")}`);
       const saved = this.opts.accounts?.save(rec.account);
       if (saved instanceof Promise) saved.catch((err) => this.opts.onLog(`file save failed for ${rec.account?.id}: ${String(err)}`));
       this.opts.onLog(`settled ${rec.account.id}: xp +${entry.xp.total} (obj ${entry.xp.objective} / combat ${entry.xp.combat} / support ${entry.xp.support}) scrip +${entry.scrip} depth ${entry.depthBefore}→${entry.depthAfter}`);
-      rec.conn?.send(encodeFile(this.fileMsg(rec, entry.lines, "settle")));
+      rec.conn?.send(encodeFile(this.fileMsg(rec, entry.lines, "settle", note)));
     }
   }
 
@@ -491,7 +507,18 @@ export class Room {
     this.history.set(this.tick, this.world.poses());
     this.history.delete(this.tick - 64);
     // fan out events
-    for (const ev of this.world.drainEvents()) {
+    const tickEvents = this.world.drainEvents();
+    for (const rec of this.clients.values()) {
+      const p = this.world.players.get(rec.playerId);
+      if (!p || !rec.account) continue;
+      const note = rec.progress.onEvents(tickEvents, p, rec.playerId, this.tick, this.world.wasps);
+      if (note) {
+        const saved = this.opts.accounts?.save(rec.account);
+        if (saved instanceof Promise) saved.catch(() => {});
+        rec.conn?.send(encodeFile(this.fileMsg(rec, note.stamps.map((id) => `STAMP · ${id}`), "stamp", note)));
+      }
+    }
+    for (const ev of tickEvents) {
       if (ev.type === "death" || ev.type === "respawn" || ev.type === "kill") {
         const p = this.world.players.get(ev.playerId);
         this.opts.onLog(`t${this.tick} ${ev.type} player ${ev.playerId} at (${p?.pos.x.toFixed(1)},${p?.pos.y.toFixed(1)},${p?.pos.z.toFixed(1)}) lastSeq ${this.clients.get(ev.playerId)?.lastSeq}`);
@@ -692,7 +719,7 @@ export class Room {
         flips: p.stats.flips,
         nodeSeconds: p.stats.nodeSeconds,
         support: p.stats.support,
-        file: c.account ? { account: c.account.id, depth: c.account.depth, xp: c.account.xp, scrip: c.account.wallet.scrip, settlements: c.settlements } : null,
+        file: c.account ? { account: c.account.id, depth: c.account.depth, xp: c.account.xp, scrip: c.account.wallet.scrip, settlements: c.settlements, stamps: c.account.stamps.length, ranks: Object.fromEntries(Object.entries(c.account.mastery).map(([w, m]) => [w, m.rank])) } : null,
         loadout: c.loadout,
       };
     });

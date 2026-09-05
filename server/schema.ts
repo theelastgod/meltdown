@@ -18,7 +18,8 @@ export const SCHEMA = [
   wears      TEXT NOT NULL DEFAULT '[]',
   crafts     INTEGER NOT NULL DEFAULT 0,
   matches    INTEGER NOT NULL DEFAULT 0,
-  updated_at INTEGER NOT NULL DEFAULT 0
+  updated_at INTEGER NOT NULL DEFAULT 0,
+  extras     TEXT NOT NULL DEFAULT '{}'
 )`,
   `CREATE TABLE IF NOT EXISTS ledger (
   seq     INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,3 +29,6 @@ export const SCHEMA = [
 )`,
   `CREATE INDEX IF NOT EXISTS ledger_account ON ledger (account, seq)`,
 ];
+
+/** Column additions for databases created before a column existed (each is ignored when the column is already there). */
+export const MIGRATIONS = [`ALTER TABLE ghostfile ADD COLUMN extras TEXT NOT NULL DEFAULT '{}'`];

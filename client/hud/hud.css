@@ -135,3 +135,34 @@ html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; f
 #hud .travel .row.amber .cast { color: var(--am); }
 #hud .travel .f { margin-top: 6px; font-size: 9px; color: rgba(53,242,255,0.5); }
 #hud .tabs { pointer-events: auto; cursor: pointer; }
+
+/* Ledger Graph (G / GRAPH tab): three rings of hexes, violet leased → green owned */
+#hud .graph { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 760px; max-width: 96vw; max-height: 92vh; overflow: auto; pointer-events: auto; padding: 8px 14px 10px; background: rgba(3,5,9,0.94); border: 1px solid var(--gr); color: var(--gr); text-shadow: 0 0 4px rgba(55,255,139,0.4); box-shadow: 0 0 0 1px rgba(0,0,0,0.7), 0 0 16px rgba(55,255,139,0.2); font-size: 10.5px; }
+#hud .graph .hd { font-size: 12px; letter-spacing: 0.12em; margin-bottom: 4px; }
+#hud .graph .hd b { color: var(--ye); }
+#hud .graph .hd .x { float: right; color: var(--mg); cursor: pointer; }
+#hud .graph svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+#hud .graph .ring { fill: none; stroke: rgba(143,77,255,0.25); stroke-dasharray: 3 4; }
+#hud .graph .lbl { fill: rgba(143,77,255,0.7); font-size: 9px; text-anchor: middle; letter-spacing: 0.15em; font-family: var(--mono); }
+#hud .graph line { stroke: rgba(143,77,255,0.35); stroke-width: 1; }
+#hud .graph line.own { stroke: rgba(55,255,139,0.45); }
+#hud .graph line.lit { stroke: var(--gr); stroke-width: 2; filter: drop-shadow(0 0 3px var(--gr)); }
+#hud .graph g { cursor: pointer; }
+#hud .graph g polygon { fill: rgba(143,77,255,0.18); stroke: var(--violet, #8f4dff); stroke-width: 1.2; }
+#hud .graph g.gated polygon { fill: rgba(143,77,255,0.06); stroke: rgba(143,77,255,0.4); stroke-dasharray: 2 2; }
+#hud .graph g.own polygon { fill: rgba(55,255,139,0.14); stroke: var(--gr); }
+#hud .graph g.on polygon { fill: rgba(55,255,139,0.45); stroke: #fff; filter: drop-shadow(0 0 5px var(--gr)); }
+#hud .graph g.keystone polygon { stroke-width: 2; }
+#hud .graph g.keystone.own polygon { stroke: var(--cy); fill: rgba(53,242,255,0.15); }
+#hud .graph g.keystone.on polygon { fill: rgba(53,242,255,0.5); }
+#hud .graph g.busy polygon { stroke: var(--am); }
+#hud .graph g text { fill: #e8ffe8; font-size: 8px; text-anchor: middle; font-family: var(--mono); font-weight: bold; pointer-events: none; }
+#hud .graph g.lease text, #hud .graph g.gated text { fill: #c9a6ff; font-size: 7px; }
+#hud .graph .ft { margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(55,255,139,0.35); letter-spacing: 0.06em; }
+#hud .graph .ft.bad { color: var(--mg); }
+#hud .file .kit .wk { padding: 3px 4px; margin: 2px 0; border: 1px solid rgba(53,242,255,0.18); }
+#hud .file .kit .wk .nm { color: var(--gr); }
+#hud .file .kit .socks { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; margin-top: 2px; font-size: 9px; }
+#hud .file .kit .sock select { width: 100%; background: #060a10; color: var(--cy); border: 1px solid rgba(53,242,255,0.35); font-family: var(--mono); font-size: 9px; }
+#hud .file .stamps { max-height: 150px; overflow: auto; font-size: 9.5px; color: rgba(255,176,46,0.55); }
+#hud .file .stamps .st.on { color: var(--am); }

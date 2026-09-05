@@ -2,13 +2,13 @@ import { DUMMY_MAX_HEALTH, DUMMY_RESPAWN_SECONDS, MOVE, SIM_DT, SIM_HZ } from ".
 import { emptyInput, type InputFrame } from "./input";
 import type { DummyDef, LevelDef } from "./level";
 import { rayBox, rayCapsule } from "./collision";
-import { applySheet, createPlayer, eyePos, respawnPlayer, stepPlayer, type PlayerEvent, type PlayerState } from "./player";
-import { sheetFor, DEFAULT_LOADOUT, type Loadout } from "../manifest/loadout";
+import { applySheet, createPlayer, eyePos, modsFor, respawnPlayer, stepPlayer, weaponDefOf, type PlayerEvent, type PlayerState } from "./player";
+import { DEFAULT_LOADOUT, kitFor, sheetFor, type Loadout } from "../manifest/loadout";
 import { type FireRequest } from "./weapons";
 import { createProjectile, stepProjectiles, type CapsuleTarget, type Cloud, type Projectile, type ProjKind } from "./projectiles";
 import { canSee, createMech, createWasp, stepMech, stepWasp, type AiRequest, type Mech, type SightTarget, type Wasp, WASP, MECH } from "./ai";
 import { falloff, GRENADES, WEAPONS, type RangeProfile, type WeaponId } from "../weapons/manifest";
-import { addKillPoints, boostNodes, createWake, stepWake, type WakeEvent, type WakeState } from "./wake";
+import { addKillPoints, boostNearest, boostNodes, createWake, stepWake, type WakeEvent, type WakeState } from "./wake";
 import { type Vec3, v3, clone, copy, set, addScaled, viewDir, dist, lenXZ, sub, normalize, yawDir, dot, len } from "../math/vec3";
 import type { LocalAuth } from "../net/protocol";
 
@@ -54,11 +54,28 @@ export interface ShotHit {
   damage: number;
 }
 
+/** How a kill happened (mastery challenges and stamps read this; the sim never does). */
+export interface KillCtx {
+  how: "shot" | "explosion" | "melee" | "beam";
+  zone: HitZone | null;
+  distance: number;
+  /** alt-fire (slug, quickshot, sticky, lunge) */
+  alt: boolean;
+  /** rail: the shot passed through cover before the victim */
+  through: boolean;
+  projKind: string | null;
+  shooterStance: string;
+  shooterAir: boolean;
+  shooterSlideJump: boolean;
+  victimTeam: number;
+  victimEmp: boolean;
+}
+
 export type SimEvent =
   | ({ tick: number; playerId: number } & PlayerEvent)
   | { tick: number; playerId: number; type: "shot"; weapon: WeaponId | "wasp"; from: Vec3; to: Vec3; hit: ShotHit; hits: ShotHit[]; nearMiss: number; rewindTicks: number; pierce: boolean }
   | { tick: number; playerId: number; type: "melee"; weapon: WeaponId; hits: ShotHit[]; lunge: boolean }
-  | { tick: number; playerId: number; type: "kill"; victimKind: "dummy" | "player" | "wasp" | "mech"; victimId: number; ttkTicks: number; ttkSeconds: number; weapon: string }
+  | { tick: number; playerId: number; type: "kill"; victimKind: "dummy" | "player" | "wasp" | "mech"; victimId: number; ttkTicks: number; ttkSeconds: number; weapon: string; ctx: KillCtx }
   | { tick: number; playerId: number; type: "death"; killerId: number }
   | { tick: number; playerId: number; type: "respawn" }
   | { tick: number; playerId: number; type: "dummyRespawn"; dummyId: number }
@@ -146,9 +163,19 @@ export class World {
     return p;
   }
 
-  /** Apply a validated loadout: the build sheet and the starting weapon. */
+  /** Apply a validated loadout: the build sheet, the per-weapon kit (firmware, chips), and the starting weapon. */
   setLoadout(p: PlayerState, loadout: Loadout): void {
     applySheet(p, sheetFor(loadout));
+    const kit = kitFor(loadout);
+    p.kit = { defs: {}, mods: {}, mechanics: {} };
+    for (const w of Object.values(WEAPONS)) {
+      const k = kit[w.id];
+      if (k.def !== w) p.kit.defs[w.slot] = k.def;
+      if (Object.values(loadout.chips?.[w.id] ?? {}).some(Boolean)) p.kit.mods[w.slot] = k.mods;
+      if (k.mechanics.length) p.kit.mechanics[w.slot] = k.mechanics;
+      // a firmware that changes the magazine starts with that magazine
+      if (k.def.magSize !== w.magSize) p.weapon.ammo[w.slot] = k.def.magSize;
+    }
     const slot = WEAPONS[loadout.primary]?.slot ?? 1;
     p.weapon.slot = slot;
   }
@@ -223,7 +250,7 @@ export class World {
       const rewound = opts.predictOnly ? null : opts.rewind?.(p.id, viewTick) ?? null;
       for (const d of r.dirs) {
         const dir = viewDir(d.yaw, d.pitch);
-        this.castRay(p.id, r.weapon, origin, dir, r.damage, r.headMult, r.legMult, r.range, r.pierce, rewound, viewTick, opts);
+        this.castRay(p.id, r.weapon, origin, dir, r.damage, r.headMult, r.legMult, r.range, r.pierce, rewound, viewTick, opts, r.slug);
       }
       return;
     }
@@ -251,9 +278,9 @@ export class World {
       if (!first) for (const w of this.wasps) if (w.alive && inArc(v3(w.pos.x, w.pos.y - WASP_HEIGHT / 2, w.pos.z), WASP_RADIUS)) { first = { kind: "wasp", id: w.id, pos: w.pos }; break; }
       if (!first) for (const m of this.mechs) if (m.alive && inArc(m.pos, MECH_RADIUS)) { first = { kind: "mech", id: m.id, pos: m.pos }; break; }
       if (first) {
-        const md = Math.round(r.damage * p.mods.damage);
+        const md = Math.round(r.damage * modsFor(p).damage);
         hits.push({ kind: first.kind, id: first.id, damage: md, zone: "body" });
-        this.applyDamage(first.kind, first.id, md, p.id, r.weapon, "melee", opts);
+        this.applyDamage(first.kind, first.id, md, p.id, r.weapon, "melee", opts, { alt: r.lunge, distance: 1 });
         if (first.kind === "player") this.stunPlayer(first.id, r.stun, p.id, opts);
         if (r.lunge) {
           p.weapon.lungeHit = true;
@@ -294,7 +321,7 @@ export class World {
   }
 
   /** Cast one ray from a player (or a wasp with negative shooter id) and apply damage. */
-  private castRay(shooterId: number, weapon: WeaponId | "wasp", origin: Vec3, dir: Vec3, damage: number, headMult: number, legMult: number, range: RangeProfile, pierce: boolean, rewound: ReadonlyMap<number, RewindPose> | null, viewTick: number, opts: StepOpts): void {
+  private castRay(shooterId: number, weapon: WeaponId | "wasp", origin: Vec3, dir: Vec3, damage: number, headMult: number, legMult: number, range: RangeProfile, pierce: boolean, rewound: ReadonlyMap<number, RewindPose> | null, viewTick: number, opts: StepOpts, slug = false): void {
     const maxT: number = range.max;
     let worldT: number = maxT;
     for (const b of this.level.boxes) {
@@ -303,7 +330,8 @@ export class World {
     }
     const cands: { t: number; hit: ShotHit }[] = [];
     let nearMiss = Infinity;
-    const shooterMods = shooterId > 0 ? this.players.get(shooterId)?.mods : undefined;
+    const shooterP = shooterId > 0 ? this.players.get(shooterId) : undefined;
+    const shooterMods = shooterP ? modsFor(shooterP) : undefined;
     const dmgMult = shooterMods?.damage ?? 1;
     const rangeP: RangeProfile = shooterMods && shooterMods.range !== 1 ? { ...range, fullTo: range.fullTo * shooterMods.range, falloffTo: range.falloffTo * shooterMods.range } : range;
     const zoneDmg = (t: number, feetY: number, height: number, hm: number, lm: number): { zone: HitZone; damage: number } => {
@@ -358,7 +386,11 @@ export class World {
       const shooter = this.players.get(shooterId);
       if (shooter && hits.length) shooter.stats.hits++;
     }
-    for (const h of hits) this.applyDamage(h.kind, h.id, h.damage, shooterId, weapon, "shot", opts);
+    for (let i = 0; i < hits.length; i++) {
+      const h = hits[i]!;
+      const hc = cands.find((c) => c.hit === h);
+      this.applyDamage(h.kind, h.id, h.damage, shooterId, weapon, "shot", opts, { zone: h.zone, distance: hc?.t ?? 0, alt: slug, through: pierce && i > 0 });
+    }
   }
 
   private stunPlayer(id: number, seconds: number, by: number, opts: StepOpts): void {
@@ -371,9 +403,29 @@ export class World {
   }
 
   /** Damage any entity; handles deaths, kill events and TTK bookkeeping. */
-  applyDamage(kind: TargetKind, id: number, damage: number, attacker: number, weapon: string, how: "shot" | "explosion" | "melee" | "beam", opts: StepOpts = {}): void {
+  applyDamage(kind: TargetKind, id: number, damage: number, attacker: number, weapon: string, how: "shot" | "explosion" | "melee" | "beam", opts: StepOpts = {}, hit: { zone?: HitZone; distance?: number; alt?: boolean; through?: boolean; projKind?: string } = {}): void {
     if (damage <= 0) return;
     const shooter = attacker > 0 ? this.players.get(attacker) : undefined;
+    const mech = shooter ? (shooter.kit.mechanics[shooter.weapon.slot] ?? []) : [];
+    if (shooter && (kind === "wasp" || kind === "mech") && mech.includes("vantage_bane")) damage = Math.round(damage * 1.25);
+    const ctx = (victimTeam: number, victimEmp: boolean): KillCtx => ({
+      how,
+      zone: hit.zone ?? null,
+      distance: hit.distance ?? 0,
+      alt: hit.alt ?? false,
+      through: hit.through ?? false,
+      projKind: hit.projKind ?? null,
+      shooterStance: shooter?.stance ?? "stand",
+      shooterAir: shooter ? !shooter.grounded : false,
+      shooterSlideJump: shooter ? !shooter.grounded && shooter.slideTime > 0 : false,
+      victimTeam,
+      victimEmp,
+    });
+    const onKill = () => {
+      if (!shooter) return;
+      if (mech.includes("escrow_kill")) shooter.shield = Math.min(shooter.maxShield, shooter.shield + 10);
+      if (mech.includes("contagion_kill") && this.wake) boostNearest(this.wake, shooter.pos, 4, 1.06);
+    };
     if (kind === "dummy") {
       const d = this.dummies.find((x) => x.id === id);
       if (!d || !d.alive) return;
@@ -384,8 +436,9 @@ export class World {
         d.alive = false;
         d.respawnTimer = DUMMY_RESPAWN_SECONDS;
         if (shooter) shooter.stats.kills++;
+        onKill();
         const ttk = this.tick - d.firstDamageTick;
-        this.emit({ tick: this.tick, playerId: attacker, type: "kill", victimKind: "dummy", victimId: d.id, ttkTicks: ttk, ttkSeconds: ttk / SIM_HZ, weapon }, opts);
+        this.emit({ tick: this.tick, playerId: attacker, type: "kill", victimKind: "dummy", victimId: d.id, ttkTicks: ttk, ttkSeconds: ttk / SIM_HZ, weapon, ctx: ctx(0, false) }, opts);
       }
       return;
     }
@@ -402,12 +455,14 @@ export class World {
       this.emit({ tick: this.tick, playerId: id, type: "hurt", damage, by: attacker, kind: how }, opts);
       if (v.health <= 0) {
         const ttk = this.tick - v.firstDamageTick;
+        const kctx = ctx(v.team, v.weapon.empTimer > 0);
         this.killPlayer(v, attacker, weapon, opts);
         if (shooter) {
           shooter.stats.kills++;
           if (this.wake && shooter.team !== v.team) addKillPoints(this.wake, shooter.team);
         }
-        this.emit({ tick: this.tick, playerId: attacker, type: "kill", victimKind: "player", victimId: v.id, ttkTicks: ttk, ttkSeconds: ttk / SIM_HZ, weapon }, opts);
+        onKill();
+        this.emit({ tick: this.tick, playerId: attacker, type: "kill", victimKind: "player", victimId: v.id, ttkTicks: ttk, ttkSeconds: ttk / SIM_HZ, weapon, ctx: kctx }, opts);
       }
       return;
     }
@@ -421,7 +476,7 @@ export class World {
         const sh = this.players.get(attacker);
         if (sh) sh.stats.support += 2;
         this.emit({ tick: this.tick, playerId: attacker, type: "waspDeath", waspId: w.id }, opts);
-        this.emit({ tick: this.tick, playerId: attacker, type: "kill", victimKind: "wasp", victimId: w.id, ttkTicks: 0, ttkSeconds: 0, weapon }, opts);
+        this.emit({ tick: this.tick, playerId: attacker, type: "kill", victimKind: "wasp", victimId: w.id, ttkTicks: 0, ttkSeconds: 0, weapon, ctx: ctx(0, false) }, opts);
       }
       return;
     }
@@ -435,7 +490,7 @@ export class World {
         const sh = this.players.get(attacker);
         if (sh) sh.stats.support += 6;
         this.emit({ tick: this.tick, playerId: attacker, type: "mechDeath", mechId: m.id }, opts);
-        this.emit({ tick: this.tick, playerId: attacker, type: "kill", victimKind: "mech", victimId: m.id, ttkTicks: 0, ttkSeconds: 0, weapon }, opts);
+        this.emit({ tick: this.tick, playerId: attacker, type: "kill", victimKind: "mech", victimId: m.id, ttkTicks: 0, ttkSeconds: 0, weapon, ctx: ctx(0, false) }, opts);
       }
     }
   }
@@ -493,7 +548,7 @@ export class World {
     if (direct) {
       const kind: TargetKind = direct.id >= 3000 ? "mech" : direct.id >= 2000 ? "wasp" : direct.id >= 1000 ? "dummy" : "player";
       const id = direct.id >= 3000 ? direct.id - 3000 : direct.id >= 2000 ? direct.id - 2000 : direct.id >= 1000 ? direct.id - 1000 : direct.id;
-      this.applyDamage(kind, id, p.direct, p.owner, weapon, "explosion", opts);
+      this.applyDamage(kind, id, p.direct, p.owner, weapon, "explosion", opts, { projKind: p.kind, alt: p.kind === "sticky", distance: 0 });
     }
     this.applyExplosion(pos, p.radius, p.damage, p.edgeDamage, p.owner, weapon, direct ? direct.id : -1, opts);
   }
@@ -509,13 +564,13 @@ export class World {
       if (!canSee(center, chest, this.level.boxes, [])) continue;
       const kind: TargetKind = t.id >= 3000 ? "mech" : t.id >= 2000 ? "wasp" : t.id >= 1000 ? "dummy" : "player";
       const id = t.id >= 3000 ? t.id - 3000 : t.id >= 2000 ? t.id - 2000 : t.id >= 1000 ? t.id - 1000 : t.id;
-      this.applyDamage(kind, id, dmg(Math.max(0, d)), owner, weapon, "explosion", opts);
+      this.applyDamage(kind, id, dmg(Math.max(0, d)), owner, weapon, "explosion", opts, { projKind: weapon, distance: d });
     }
   }
 
   private stepAI(opts: StepOpts): void {
     const targets: SightTarget[] = [];
-    for (const p of this.players.values()) targets.push({ id: p.id, eye: eyePos(p), chest: v3(p.pos.x, p.pos.y + p.height * 0.55, p.pos.z), alive: p.alive, detectMult: p.mods.droneDetect * (0.85 + 0.15 * p.mods.footstep) });
+    for (const p of this.players.values()) targets.push({ id: p.id, eye: eyePos(p), chest: v3(p.pos.x, p.pos.y + p.height * 0.55, p.pos.z), alive: p.alive, detectMult: modsFor(p).droneDetect * (0.85 + 0.15 * modsFor(p).footstep) });
     const reqs: AiRequest[] = [];
     for (const w of this.wasps) stepWasp(w, targets, this.level.boxes, this.clouds, this.tick, reqs);
     for (const m of this.mechs) stepMech(m, targets, this.level.boxes, this.clouds, reqs);
@@ -587,6 +642,7 @@ export class World {
       charge: w.charge, charging: w.charging ? 1 : 0, shotIndex: w.shotIndex, magSeed: w.magSeed, magCount: w.magCount, altActive: w.altActive ? 1 : 0, altCooldown: w.altCooldown,
       lungeT: w.lungeT, lungeHit: w.lungeHit ? 1 : 0, grenades: w.grenades.slice(), grenadeSel: w.grenadeSel, grenadeCooldown: w.grenadeCooldown, swapTimer: w.swapTimer,
       kickPitch: w.kickPitch, kickYaw: w.kickYaw, patX: w.patX, patY: w.patY, stunTimer: w.stunTimer, empTimer: w.empTimer, sinceShot: w.sinceShot,
+      burstLeft: w.burstLeft, burstTimer: w.burstTimer,
     };
   }
 
@@ -644,6 +700,8 @@ export class World {
     w.stunTimer = l.stunTimer;
     w.empTimer = l.empTimer;
     w.sinceShot = l.sinceShot;
+    w.burstLeft = l.burstLeft;
+    w.burstTimer = l.burstTimer;
   }
 
   poses(): Map<number, RewindPose> {

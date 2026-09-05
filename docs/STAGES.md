@@ -12,7 +12,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 4 | Arsenal: weapons 1–6 + alt-fires + grenades, recoil seeds, reload cancels, VANTAGE AI | **done** | `docs/proof/stage4/` |
 | 5 | The wake: hex nodes, flip/contest/spread, KERNEL timer | **done** | `docs/proof/stage5/` |
 | 6 | Ghostfile foundation: manifest, Fairness Lint, spawn validation, Depth/XP, currencies, crafting | **done** | `docs/proof/stage6/` |
-| 7 | Ledger Graph + weapon mastery | | |
+| 7 | Ledger Graph (48 nodes / 3 rings), chips + sockets + firmwares, challenge-gated mastery, attestation stamps, ledger shop | **done** | `docs/proof/stage7/` |
 | 8 | Identity & rituals | | |
 | 9 | Lethe proper: three districts, THE KERNEL horizon, district select, render budget | **done** (pulled ahead at the owner's request: "the game needs to feel and be like it's in a city") | `docs/proof/stage9/` |
 | 10 | Campaign | | |
@@ -434,3 +434,111 @@ holds; the sim holds 60 Hz; the MAP tab lists the range and three
 districts; online, a room built with `?level=deadletter_docks` plays the
 docks and a client that arrives for Lease Row travels to the docks and
 rejoins as the same file.
+
+## Stage 7 — Ledger Graph + weapon mastery
+
+**Goal.** Progression at launch size, still flat on power: the whole Ledger
+Graph (48 nodes in three rings, three keystones), weapon mastery 1–30 per
+weapon with challenge curricula at the gates, ~120 chips in three sockets,
+two firmwares per weapon certified as sidegrades, ~120 attestation stamps
+the server un-redacts, and a ledger shop that buys nodes with Scrip. The
+brief's probe: budget and connectivity enforced server-side.
+
+**Files.**
+- `shared/manifest/items.ts` — 48 nodes: ring 1 (12, Depth 1–4), ring 2
+  (18, Depth 6–14), ring 3 (18, Depth 16–30). Every node is authored as a
+  benefit and a cost list; `reconciled()` scales the costs to the benefit
+  weight and settles the rounding on the last one (the `RECONCILE_LOG`
+  records what the Auditor changed). Links are generated as a hex
+  constellation (ring neighbours + nearest nodes in the adjacent rings,
+  always mutual). `NODE_FORBIDDEN_STATS` now includes `damage`.
+- `shared/manifest/chips.ts` — 120 chips from twenty templates × six
+  weapons: Muzzle (range / recoil / audio), Kinetic (handling / mobility
+  while held), Protocol (fiction mechanics: CONTAGION ROUND boosts the
+  nearest node on a kill, ESCROW LOCK restores 10 shield on a kill, VANTAGE
+  BANE +25% against drones and mechs, plus footstep / flip / detection
+  trades). A mechanic is priced at 3 ledger points; `lintChipSchema`.
+- `shared/manifest/firmwares.ts` — 12 firmwares (rank 20 / 28) as patches
+  on the weapon definition: THREE-COUNT (3-round bursts — a new `burst`
+  fire mode in the state machine), LONG LEASE, DOUBLE BARREL (two-shell
+  bursts), SLAM FIRE, DUMP STAGE, MEASURED, CAPACITOR, OVERCHARGE (pierce),
+  CLUSTER, LONG FUSE, ARC RELAY, HEAVY HAFT.
+- `shared/manifest/loadout.ts` — `chips` and `firmware` on the loadout;
+  validation: one chip per socket, the weapon's own chip, the right socket,
+  unlocked by that weapon's mastery rank; firmware by rank; `kitFor`.
+- `shared/sim/player.ts` / `weapons.ts` / `world.ts` — a per-player kit
+  (firmware-patched definitions, chip sheets, mechanics by slot);
+  `modsFor(p, slot)` = the file's sheet × the held weapon's chips;
+  `weaponDefOf`; burst state on the wire (protocol v6); kill events carry
+  a `KillCtx` (zone, distance, alt, through cover, projectile, shooter
+  stance / airborne / slide-jump, victim EMP'd) for challenges and stamps.
+- `shared/progression/mastery.ts` — XP curve (≈67k to rank 30), gates at
+  5/10/15/20/25 with a curriculum per weapon (headshots, mid-slide kills,
+  kills beyond 25 m, doubles, optic kills; slugs and point-blank for the
+  hammer; braced kills; full-charge, quickshot and through-cover kills for
+  the rail; boosted flips and sticky kills for the phage; chain stuns and
+  lunges for the baton). `rankFor` holds at a gate until its challenge is
+  done; chips and firmwares unlock by rank.
+- `shared/progression/stamps.ts` — 115 stamps generated from a matrix
+  (per weapon: first kill, first headshot, five in a round, kill beyond
+  1.5× ideal range, mid-slide, mid-air, mastery X/XX/XXX, a hundred files;
+  movement, the wake, support, grenades, the file, matches, the city);
+  `redact()` turns letters into blocks.
+- `server/progression.ts` — the match-time tracker: reads the player's
+  events each tick, feeds use-XP (kill 120, hit 6, headshot +60, VANTAGE
+  +30) and challenge counters, keeps lifetime counters on the file, and
+  un-redacts stamps the moment the server has seen the thing; a `File`
+  message with reason `stamp` carries new stamps, ranks and challenges to
+  the client mid-round (and saves the file). Settlement books match-level
+  firsts (wins, full wakes, no-death rounds, top score, districts walked).
+- `server/room.ts` — validates chips/firmwares against the file's ranks at
+  spawn; `server/accounts.ts` seeds `rich*` files with Scrip for the shop;
+  `server/node-host.ts` and `server/worker.ts` + `player-do.ts` — the
+  ledger shop (`GET /file/:id`, `POST /file/:id/buy|refund`), persisted
+  with mastery/stamps/counters in a D1 `extras` column (self-migrating).
+- `client/file.ts` — the GRAPH panel (**G** / GRAPH tab): the constellation
+  as a forged district map — three dashed rings, violet leased hexes with
+  their Scrip price, dashed hexes for Depth-gated ones, green owned hexes,
+  keystones at the centre; click a leased hex to buy (violet → green),
+  an owned one to attest; the FILE panel gains WEAPON MASTERY (rank, gate
+  text with progress, three socket selects and a firmware select per
+  weapon, the trade lines) and ATTESTATION STAMPS (▣ in clear, ▢ redacted);
+  stamps, ranks and cleared challenges print to the log with a CRT kick.
+- `shared/fairness/lint.ts` — candidates now include every chip on its
+  weapon, the best-offence three-chip stack per weapon, and every firmware
+  as a sidegrade (±20% per bracket, never faster in all five, certified in
+  band by `certifyFirmwares()` in the harness).
+- `tests/mastery.test.ts` (11), `probe/stage7.ts`.
+
+**Design decisions surfaced by the lint and the harness.**
+- Damage joins health as a stat no node may touch: three linked head-shot
+  nodes paying in damage stacked to −17% and crossed every weapon's
+  breakpoint (+16% TTK, +263% for the hammer at range). Headshot
+  multipliers are paid in handling, shield and mobility now.
+- Range benefits stack across a chain into a breakpoint at 40 m (+18%
+  range made the rifle a 7-hit kill: −14% TTK); they are 2–3% per node.
+- Mobility costs must alternate sign around a ring, or a chain of seven
+  neighbours blows the ±5% course; big regen benefits cost reload, spread
+  and noise, not move speed (the first COUNTERPARTY draft, settled to the
+  ledger, came out at −13.5% move).
+- The SMG's spread chips became recoil chips: on a sprayer one fewer
+  missed round at 25–40 m is a whole cycle (−8% TTK from a −6% cone).
+- Firmwares are certified in the band and duelled as sidegrades: the first
+  THREE-COUNT was strictly slower (+25%); the shipped one is +15% damage,
+  a third-second reset and a wider hip cone — faster at its ideal range,
+  slower at 40 m. CAPACITOR's −25% charge beat baseline in every bracket
+  until its damage dropped under the two-shot line past 25 m.
+
+**Acceptance (`npm run probe:mastery`, 20/20; `npm test`, 107 tests):** the
+quick lint passes 324 builds; all 12 firmwares certify in band; at spawn a
+chip in the wrong socket, a chip above the file's rank, a firmware without
+its rank and another weapon's chip are refused with the rule; a mastered
+file's three chips and THREE-COUNT are admitted, the server's admitted kit
+matches, and the sim runs the burst definition and the +3% range / +1.5%
+move only while the rifle is held; the FILE panel shows ranks, sockets and
+firmware; a fresh Blank cannot afford a node, a Depth-10 file buys SLIPFILE
+(4600 Scrip left, the hex turns green), cannot buy BLACK SWAN (Depth 30),
+cannot buy twice, gets 200 back on refund, and the ledger records it; a
+kill online feeds the killer's rifle XP, un-redacts FIRST FILE CLOSED
+mid-round, the client logs the stamp, and the file reads it in clear among
+redacted lines while XP alone holds rank ≤ 5 with no challenge done.

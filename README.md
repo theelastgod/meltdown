@@ -29,6 +29,8 @@ npm run probe:wake # the wake: flips, spread, phage boost, KERNEL pulse; online 
 npm run lint:fairness -- --quick # Fairness Lint: every candidate build duelled + run through the mobility course
 npm run probe:file # Ghostfile: lint injections fail, illegal loadouts refused at spawn, a round settles XP/Scrip
 npm run probe:city # Lethe proper: three districts load, bots route the streets and climb the walkway, frames read like the clip, budgets hold
+npm run certify:firmware # every firmware measured in the TTK harness at its ideal range (must sit in the band)
+npm run probe:mastery # Ledger Graph + mastery: lint over nodes/chips/firmwares, chips and firmwares enforced at spawn, ledger shop, stamps un-redact online
 npm run verify     # all of the above
 ```
 
@@ -56,8 +58,8 @@ shared/     pure TS simulation shared by client and (Stage 2) server
   math/     vec3
   sim/      constants, input, box, level (+registry), city (district generator), nav (walkability + paths), collision, player, weapons, projectiles, ai, wake, ttk, world
   weapons/  weapon + grenade manifest
-  manifest/ stat sheet, Ledger Graph items + keystones, loadout validation (one manifest for client, server, CI)
-  progression/ Depth/XP curve, currencies, deterministic crafting, the Ghostfile account
+  manifest/ stat sheet, Ledger Graph (48 nodes + keystones), chips, firmwares, loadout validation (one manifest for client, server, CI)
+  progression/ Depth/XP curve, currencies, deterministic crafting, weapon mastery + curricula, attestation stamps, the Ghostfile account
   fairness/ the Fairness Lint (simulated duels + mobility course) and its CLI
   campaign/ Kernel Protocols stub — quarantined from PvP by an import-graph test
   economy/  WAKE token constants, Robinhood Chain config, no-paid-power lint

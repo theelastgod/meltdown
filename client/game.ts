@@ -15,7 +15,7 @@ import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
 import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot } from "@shared/net/protocol";
 import type { NodeView } from "./render/wake";
 import { WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
-import { currentWeapon } from "@shared/sim/weapons";
+import { weaponDefOf } from "@shared/sim/player";
 
 export interface NetConfig {
   url: string;
@@ -106,6 +106,16 @@ export class Game {
       // offline the loadout applies at once; online the server decides at the next link
       if (!this.online) this.world.setLoadout(this.player, f.localLoadout());
       this.hud.setFile(f.view());
+    };
+    this.file.onStamp = (lines, ranks, challenges) => {
+      // a first, verified by the server: the CRT stutters and the line commits
+      for (const l of lines) {
+        this.hud.push(`STAMP · ${l}`, "am");
+        this.hud.alert(`◆ ATTESTED — ${l}`, true, 3.5);
+      }
+      for (const r of ranks) this.hud.push(`MASTERY · ${r.replace(":r", " → RANK ").replace(/_/g, " ").toUpperCase()}`, "cy");
+      for (const c of challenges) this.hud.push(`CHALLENGE CLEARED · ${c.replace(/_/g, " ").toUpperCase()}`, "cy");
+      if (lines.length || ranks.length) this.renderer.post.kick(0.6);
     };
     this.prev = snap(this.player);
     this.cur = snap(this.player);
@@ -696,7 +706,7 @@ export class Game {
       stance: p.stance,
       reloading: p.weapon.reloadTimer > 0 && p.weapon.reloadTotal > 0 ? 1 - p.weapon.reloadTimer / p.weapon.reloadTotal : 0,
       slot: p.weapon.slot,
-      zoom: p.weapon.altActive && currentWeapon(p.weapon).alt.kind === "ads" ? currentWeapon(p.weapon).alt.zoom ?? 1 : 1,
+      zoom: p.weapon.altActive && weaponDefOf(p).alt.kind === "ads" ? weaponDefOf(p).alt.zoom ?? 1 : 1,
       charge: p.weapon.charging ? p.weapon.charge : 0,
       stunned: p.weapon.stunTimer > 0,
     };

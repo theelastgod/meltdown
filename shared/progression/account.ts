@@ -4,6 +4,8 @@ import { emptyWallet, scripForMatch, NODE_REFUND, type Wallet } from "./currency
 import { craft, RECIPES, type CraftResult } from "./crafting";
 import { DEFAULT_LOADOUT, type Loadout } from "../manifest/loadout";
 import { ALL_ITEMS, itemById } from "../manifest/items";
+import { emptyMasteries, type Mastery } from "./mastery";
+import type { WeaponId } from "../weapons/manifest";
 
 export interface Account {
   id: string;
@@ -18,10 +20,35 @@ export interface Account {
   matches: number;
   /** Ghostfile ledger lines (rituals read these). */
   ledger: string[];
+  /** weapon mastery per weapon (use-XP, rank, challenge counters) */
+  mastery: Record<WeaponId, Mastery>;
+  /** un-redacted attestation stamps (ids) and lifetime counters behind them */
+  stamps: string[];
+  counters: Record<string, number>;
 }
 
 export function createAccount(id: string, name = "BLANK"): Account {
-  return { id, name, xp: 0, depth: 1, wallet: emptyWallet(), owned: [], loadout: { ...DEFAULT_LOADOUT, attested: [] }, wears: [], crafts: 0, matches: 0, ledger: [] };
+  return { id, name, xp: 0, depth: 1, wallet: emptyWallet(), owned: [], loadout: { ...DEFAULT_LOADOUT, attested: [], chips: {}, firmware: {} }, wears: [], crafts: 0, matches: 0, ledger: [], mastery: emptyMasteries(), stamps: [], counters: {} };
+}
+
+/** Rows written before mastery/stamps existed come back without them. */
+export function upgradeAccount(a: Partial<Account> & { id: string }): Account {
+  const base = createAccount(a.id, a.name ?? "BLANK");
+  const out = { ...base, ...a } as Account;
+  if (!out.mastery) out.mastery = emptyMasteries();
+  for (const w of Object.keys(base.mastery) as WeaponId[]) if (!out.mastery[w]) out.mastery[w] = base.mastery[w];
+  if (!out.stamps) out.stamps = [];
+  if (!out.counters) out.counters = {};
+  if (!out.loadout.chips) out.loadout.chips = {};
+  if (!out.loadout.firmware) out.loadout.firmware = {};
+  return out;
+}
+
+/** Mastery ranks as the loadout validator wants them. */
+export function ranksOf(a: Account): Partial<Record<WeaponId, number>> {
+  const out: Partial<Record<WeaponId, number>> = {};
+  for (const [w, m] of Object.entries(a.mastery)) out[w as WeaponId] = m.rank;
+  return out;
 }
 
 /** Sandbox account used offline and by probes: Depth 50, every node in the file. */
@@ -31,6 +58,10 @@ export function sandboxAccount(id = "sandbox"): Account {
   a.xp = 2_000_000;
   a.wallet.scrip = 20000;
   a.owned = ALL_ITEMS.map((i) => i.id);
+  for (const m of Object.values(a.mastery)) {
+    m.rank = 30;
+    m.xp = 70000;
+  }
   return a;
 }
 

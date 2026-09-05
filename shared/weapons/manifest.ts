@@ -52,6 +52,8 @@ export interface WeaponDef {
   recoil: RecoilProfile;
   tracer: number;
   charge?: { time: number; damage: number; pierce: boolean };
+  /** Burst fire (firmware): `count` rounds at `rpm`, then the weapon's own cycle. */
+  burst?: { count: number; rpm: number };
   projectile?: { speed: number; gravity: number; fuse: number; radius: number; damage: number; edgeDamage: number; direct: number };
   melee?: { reach: number; arc: number; chainRange: number; chainDamage: number; stun: number };
   alt: {

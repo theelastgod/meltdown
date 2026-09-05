@@ -40,7 +40,7 @@ function join(room: Room, name: string, account: string, loadout: unknown) {
   return c;
 }
 
-const legal = { primary: "lease_breaker", secondary: "shock_baton", attested: ["slipfile", "static_skin", "quiet_ledger"], keystone: "debtless" };
+const legal = { primary: "lease_breaker", secondary: "shock_baton", attested: ["slipfile", "static_skin", "curb_weight"], keystone: "debtless" };
 
 describe("room — loadout validation at spawn", () => {
   const mk = () => new Room({ ai: false, seed: 3, level: "drainage_yard", accounts: new MemoryAccountStore(devSeed), warmupSeconds: 1, roundSeconds: 5 });
@@ -52,7 +52,7 @@ describe("room — loadout validation at spawn", () => {
     const f = c.file()[0]!.file;
     expect(f.reason).toBe("join");
     expect(f.depth).toBe(50);
-    expect(f.loadout.attested).toEqual(["slipfile", "static_skin", "quiet_ledger"]);
+    expect(f.loadout.attested).toEqual(["slipfile", "static_skin", "curb_weight"]);
     expect(f.loadout.keystone).toBe("debtless");
     expect(room.stats().players).toBe(1);
     const p = room.world.players.get(1)!;
@@ -76,7 +76,7 @@ describe("room — loadout validation at spawn", () => {
   });
   it("refuses a disconnected attestation", () => {
     const room = mk();
-    const c = join(room, "X", "sandbox-c", { ...legal, keystone: null, attested: ["slipfile", "wake_lung"] });
+    const c = join(room, "X", "sandbox-c", { ...legal, keystone: null, attested: ["slipfile", "black_swan"] });
     expect(c.kick()?.reason).toMatch(/connected/);
   });
   it("refuses nodes the file does not own (a fresh Blank owns nothing)", () => {
@@ -136,7 +136,7 @@ describe("room — settlement", () => {
     expect(alpha.xp).toBeGreaterThan(250 + 500); // participation + win + objective
     expect(alpha.wallet.scrip).toBeGreaterThan(0);
     expect(alpha.matches).toBe(1);
-    expect(store.saves).toBe(2);
+    expect(store.saves).toBeGreaterThanOrEqual(2); // settlements, plus any stamp un-redacted mid-round
     const settle = a.file().find((f) => f.file.reason === "settle")!.file;
     expect(settle.ledger.some((l) => l.startsWith("MATCH 0001 · WOKE"))).toBe(true);
     expect(settle.xp).toBe(alpha.xp);

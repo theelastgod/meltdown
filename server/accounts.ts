@@ -5,14 +5,17 @@
  * memory-backed room joins players in the same tick (tests rely on that).
  */
 import { ALL_ITEMS } from "../shared/manifest/items";
-import { createAccount, sandboxAccount, type Account } from "../shared/progression/account";
+import { createAccount, sandboxAccount, upgradeAccount, type Account } from "../shared/progression/account";
 
 export interface AccountStore {
   load(id: string, name: string): Account | Promise<Account>;
   save(account: Account): void | Promise<void>;
 }
 
-/** Dev seeding: ids starting with "sandbox" get a Depth-50 file that owns every node; anything else starts Blank. */
+/**
+ * Dev seeding: ids starting with "sandbox" get a Depth-50 file that owns every node and has mastered
+ * every weapon; "rich" ids get a Depth-10 file with Scrip to spend in the ledger shop; anything else starts Blank.
+ */
 export function devSeed(id: string, name: string): Account {
   if (id.startsWith("sandbox")) {
     const a = sandboxAccount(id);
@@ -20,7 +23,13 @@ export function devSeed(id: string, name: string): Account {
     a.owned = ALL_ITEMS.map((i) => i.id);
     return a;
   }
-  return createAccount(id, name);
+  const a = createAccount(id, name);
+  if (id.startsWith("rich")) {
+    a.depth = 10;
+    a.xp = 60000;
+    a.wallet.scrip = 5000;
+  }
+  return a;
 }
 
 export class MemoryAccountStore implements AccountStore {
@@ -31,7 +40,7 @@ export class MemoryAccountStore implements AccountStore {
   load(id: string, name: string): Account {
     let a = this.accounts.get(id);
     if (!a) {
-      a = this.seed(id, name);
+      a = upgradeAccount(this.seed(id, name));
       this.accounts.set(id, a);
     }
     return a;

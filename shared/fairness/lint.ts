@@ -13,7 +13,9 @@ import { drainageYard } from "../sim/level";
 import { World } from "../sim/world";
 import { WEAPONS, WEAPON_LIST, type WeaponId } from "../weapons/manifest";
 import { ALL_ITEMS, LEDGER_ITEMS, KEYSTONES, lintItemSchema, type LedgerItem } from "../manifest/items";
-import { validateLoadout, type Loadout } from "../manifest/loadout";
+import { SANDBOX_RANKS, validateLoadout, type Loadout } from "../manifest/loadout";
+import { CHIPS, lintChipSchema } from "../manifest/chips";
+import { FIRMWARES } from "../manifest/firmwares";
 import { v3 } from "../math/vec3";
 import { Bot } from "../sim/bot";
 
@@ -24,6 +26,8 @@ export const IN_ROLE_TTK = 3.0;
 export const MOBILITY_DEVIATION_LIMIT = 0.05;
 /** Keystones are the rule-benders: they may lose more, never gain more, and get one violent mobility axis. */
 export const KEYSTONE_MOBILITY_LIMIT = 0.12;
+/** A firmware is a sidegrade: it may shift the TTK curve by bracket (±20%), never beat baseline in every bracket, and must sit in the band at its ideal range. */
+export const SIDEGRADE_DEVIATION_LIMIT = 0.2;
 
 export interface DuelResult {
   weapon: WeaponId;
@@ -74,7 +78,7 @@ export function duel(weapon: WeaponId, range: number, attack: Loadout, defend: L
   return Infinity;
 }
 
-const BASELINE: Loadout = { primary: "lease_breaker", secondary: "shock_baton", attested: [], keystone: null };
+const BASELINE: Loadout = { primary: "lease_breaker", secondary: "shock_baton", attested: [], keystone: null, chips: {}, firmware: {} };
 
 export function duelTable(build: Loadout, weapons: readonly WeaponId[] = WEAPON_LIST.map((w) => w.id)): DuelResult[] {
   const out: DuelResult[] = [];
@@ -121,8 +125,17 @@ function growAttestation(seedId: string, size: number, prefer: readonly string[]
 }
 
 /** Pairwise coverage: every pair of linked nodes appears together in some build; plus singles and keystone builds. */
-export function candidateBuilds(): { name: string; loadout: Loadout }[] {
-  const builds: { name: string; loadout: Loadout }[] = [];
+export interface Candidate {
+  name: string;
+  loadout: Loadout;
+  /** duel only these weapons (chips and firmwares are weapon-scoped) */
+  weapons?: WeaponId[];
+  /** a firmware build: a sidegrade may be slower or faster at one bracket but never beat baseline everywhere */
+  sidegrade?: boolean;
+}
+
+export function candidateBuilds(): Candidate[] {
+  const builds: Candidate[] = [];
   const nodes = LEDGER_ITEMS;
   for (const n of nodes) builds.push({ name: `solo:${n.id}`, loadout: { ...BASELINE, attested: [n.id] } });
   const seenPairs = new Set<string>();
@@ -150,6 +163,14 @@ export function candidateBuilds(): { name: string; loadout: Loadout }[] {
   adversarial("adversarial:offense", ["damage", "headMult", "fireRate", "range"]);
   adversarial("adversarial:defense", ["maxHealth", "maxShield", "shieldRegen"]);
   adversarial("adversarial:mobility", ["moveSpeed", "slideBoost", "mantleTime"]);
+  // chips: each solo on its weapon, then the three-socket stack that scores highest on offence per weapon
+  for (const c of CHIPS) builds.push({ name: `chip:${c.id}`, loadout: { ...BASELINE, chips: { [c.weapon]: { [c.socket]: c.id } } }, weapons: [c.weapon] });
+  for (const w of WEAPON_LIST) {
+    const best = (socket: string) => [...CHIPS.filter((c) => c.weapon === w.id && c.socket === socket)].sort((a, b) => score(b as unknown as LedgerItem, ["fireRate", "range", "headMult", "spread", "recoil"]) - score(a as unknown as LedgerItem, ["fireRate", "range", "headMult", "spread", "recoil"]))[0]!;
+    builds.push({ name: `chips:${w.id}:stack`, loadout: { ...BASELINE, chips: { [w.id]: { muzzle: best("muzzle").id, kinetic: best("kinetic").id, protocol: best("protocol").id } } }, weapons: [w.id] });
+  }
+  // firmwares: sidegrades, duelled on their weapon
+  for (const f of FIRMWARES) builds.push({ name: `firmware:${f.id}`, loadout: { ...BASELINE, firmware: { [f.weapon]: f.id } }, weapons: [f.weapon], sidegrade: true });
   return builds;
 }
 
@@ -192,21 +213,24 @@ export interface FairnessReport {
   violations: LintViolation[];
 }
 
-export function runFairnessLint(opts: { weapons?: readonly WeaponId[]; builds?: { name: string; loadout: Loadout }[]; quick?: boolean } = {}): FairnessReport {
+export function runFairnessLint(opts: { weapons?: readonly WeaponId[]; builds?: Candidate[]; quick?: boolean } = {}): FairnessReport {
   const violations: LintViolation[] = [];
-  const schema = lintItemSchema();
+  const schema = [...lintItemSchema(), ...lintChipSchema()];
   for (const v of schema) violations.push({ build: v.itemId, rule: "schema:" + v.rule, detail: v.detail });
-  const weapons = opts.weapons ?? (opts.quick ? (["lease_breaker", "repo_hammer", "longwave"] as WeaponId[]) : WEAPON_LIST.map((w) => w.id));
-  const baseline = duelTable(BASELINE, weapons);
+  const quickWeapons = ["lease_breaker", "repo_hammer", "longwave"] as WeaponId[];
+  const weapons = opts.weapons ?? (opts.quick ? quickWeapons : WEAPON_LIST.map((w) => w.id));
+  // weapon-scoped builds (chips, firmwares) duel their own weapon, which may be outside the quick set
+  const allWeapons = WEAPON_LIST.map((w) => w.id);
+  const baseline = duelTable(BASELINE, allWeapons);
   const baselineMobility = mobilityCourse(BASELINE);
   const builds: BuildReport[] = [];
   const list = opts.builds ?? candidateBuilds();
   for (const b of list) {
     const owned = [...b.loadout.attested, ...(b.loadout.keystone ? [b.loadout.keystone] : [])];
-    const legal = validateLoadout(b.loadout, owned, 50);
+    const legal = validateLoadout(b.loadout, owned, 50, SANDBOX_RANKS);
     const bv: LintViolation[] = [];
     if (!legal.ok) bv.push({ build: b.name, rule: "illegal-build", detail: legal.errors.map((e) => e.detail).join("; ") });
-    const table = duelTable(legal.loadout, weapons);
+    const table = duelTable(legal.loadout, b.weapons ?? weapons);
     let worstOffense = 0;
     let worstDefense = 0;
     // "beats baseline in every bracket": for each bracket, the build's best offensive TTK is better than baseline's best
@@ -217,6 +241,7 @@ export function runFairnessLint(opts: { weapons?: readonly WeaponId[]; builds?: 
       if (!(mine < base - 1e-6)) beatsEvery = false;
     }
     const keystone = !!legal.loadout.keystone;
+    const lim = b.sidegrade ? SIDEGRADE_DEVIATION_LIMIT : TTK_DEVIATION_LIMIT;
     for (const r of table) {
       const ref = baseline.find((x) => x.weapon === r.weapon && x.range === r.range)!;
       if (ref.offense > IN_ROLE_TTK || ref.defense > IN_ROLE_TTK) continue; // out of role: spread geometry noise, not balance
@@ -225,13 +250,13 @@ export function runFairnessLint(opts: { weapons?: readonly WeaponId[]; builds?: 
       worstOffense = Math.max(worstOffense, Math.abs(dOff));
       worstDefense = Math.max(worstDefense, Math.abs(dDef));
       // nodes: symmetric ±4%. keystones: no gain beyond 4%; losses are the trade.
-      const offBad = keystone ? dOff < -TTK_DEVIATION_LIMIT : Math.abs(dOff) > TTK_DEVIATION_LIMIT;
-      const defBad = keystone ? dDef > TTK_DEVIATION_LIMIT : Math.abs(dDef) > TTK_DEVIATION_LIMIT;
+      const offBad = keystone ? dOff < -lim : Math.abs(dOff) > lim;
+      const defBad = keystone ? dDef > lim : Math.abs(dDef) > lim;
       if (offBad) bv.push({ build: b.name, rule: "ttk-deviation", detail: `${r.weapon} @${r.range} m offense ${(dOff * 100).toFixed(1)}% (${r.offense.toFixed(3)} vs ${ref.offense.toFixed(3)} s)` });
       if (defBad) bv.push({ build: b.name, rule: "ttk-deviation", detail: `${r.weapon} @${r.range} m defense ${(dDef * 100).toFixed(1)}% (${r.defense.toFixed(3)} vs ${ref.defense.toFixed(3)} s)` });
     }
     if (beatsEvery) bv.push({ build: b.name, rule: "beats-every-bracket", detail: "faster than baseline in all five range brackets" });
-    const mobility = mobilityCourse(legal.loadout);
+    const mobility = b.weapons ? baselineMobility : mobilityCourse(legal.loadout); // chips apply while held; the course holds the rifle
     const dm = mobility / baselineMobility - 1;
     const mlim = keystone ? KEYSTONE_MOBILITY_LIMIT : MOBILITY_DEVIATION_LIMIT;
     if (Math.abs(dm) > mlim) bv.push({ build: b.name, rule: "mobility-deviation", detail: `course ${mobility.toFixed(2)} s vs ${baselineMobility.toFixed(2)} s (${(dm * 100).toFixed(1)}%, limit ±${mlim * 100}%)` });

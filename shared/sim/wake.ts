@@ -48,8 +48,9 @@ export interface WakeNode {
   /** team currently pulling (0 none), for presentation */
   puller: number;
   contested: boolean;
-  /** remaining phage boost seconds */
+  /** remaining boost seconds and the pull multiplier while it lasts (phage ×2; a contagion round 1.06) */
   boost: number;
+  boostMult: number;
   flips: number;
 }
 
@@ -80,7 +81,7 @@ export interface WakeOccupant {
 }
 
 export type WakeEvent =
-  | { type: "nodeFlip"; node: number; team: number; from: number }
+  | { type: "nodeFlip"; node: number; team: number; from: number; boosted: boolean }
   | { type: "nodeContest"; node: number }
   | { type: "kernelPulse"; node: number; released: boolean }
   | { type: "phase"; phase: Phase; winner: number }
@@ -95,7 +96,7 @@ export function createWake(defs: readonly NodeDef[], startPhase: Phase = "wake",
     warmupSeconds,
     roundSeconds,
     score: [0, 0, 0],
-    nodes: defs.map((d) => ({ id: d.id, label: d.label, pos: clone(d.pos), links: d.links.slice(), owner: 0, hold: 1, puller: 0, contested: false, boost: 0, flips: 0 })),
+    nodes: defs.map((d) => ({ id: d.id, label: d.label, pos: clone(d.pos), links: d.links.slice(), owner: 0, hold: 1, puller: 0, contested: false, boost: 0, boostMult: 1, flips: 0 })),
     kernelTimer: WAKE.kernelPulseSeconds,
     fullWakeTimer: 0,
     fullWakeTeam: 0,
@@ -132,10 +133,31 @@ export function boostNodes(w: WakeState, center: Vec3, radius: number): number {
     const dz = node.pos.z - center.z;
     if (dx * dx + dz * dz <= (radius + WAKE.nodeRadius) ** 2) {
       node.boost = WAKE.phageBoostSeconds;
+      node.boostMult = WAKE.phageBoostMult;
       n++;
     }
   }
   return n;
+}
+
+/** A small, timed pull boost on the node nearest `pos` (Protocol chips; never stronger than a phage burst already there). */
+export function boostNearest(w: WakeState, pos: Vec3, seconds: number, mult: number, maxDist = 14): number {
+  let best: WakeNode | null = null;
+  let bd = maxDist * maxDist;
+  for (const n of w.nodes) {
+    const dx = n.pos.x - pos.x;
+    const dz = n.pos.z - pos.z;
+    const d2 = dx * dx + dz * dz;
+    if (d2 < bd) {
+      bd = d2;
+      best = n;
+    }
+  }
+  if (!best) return 0;
+  if (best.boost > 0 && best.boostMult >= mult) return best.id;
+  best.boost = Math.max(best.boost, seconds);
+  best.boostMult = mult;
+  return best.id;
 }
 
 export function addKillPoints(w: WakeState, team: number): void {
@@ -215,7 +237,7 @@ export function stepWake(w: WakeState, occupants: readonly WakeOccupant[], playe
       const other = w.nodes.find((x) => x.id === l);
       if (other && other.owner === team) adjacent++;
     }
-    const rate = ((2 / WAKE.baseFlipSeconds) * (1 + WAKE.extraPlayerBonus * (count - 1)) * (1 + WAKE.spreadBonus * adjacent) * mult * (n.boost > 0 ? WAKE.phageBoostMult : 1)) * dt;
+    const rate = ((2 / WAKE.baseFlipSeconds) * (1 + WAKE.extraPlayerBonus * (count - 1)) * (1 + WAKE.spreadBonus * adjacent) * mult * (n.boost > 0 ? n.boostMult : 1)) * dt;
     if (n.owner === team) {
       n.hold = Math.min(1, n.hold + rate);
     } else {
@@ -226,7 +248,7 @@ export function stepWake(w: WakeState, occupants: readonly WakeOccupant[], playe
         n.hold = Math.min(1, -n.hold);
         n.flips++;
         for (const o of on) if (o.credit) o.credit.flips++;
-        events.push({ type: "nodeFlip", node: n.id, team, from });
+        events.push({ type: "nodeFlip", node: n.id, team, from, boosted: n.boost > 0 });
       }
     }
   }

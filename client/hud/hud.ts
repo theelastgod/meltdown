@@ -1,5 +1,5 @@
 import type { PlayerState } from "@shared/sim/player";
-import { currentWeapon } from "@shared/sim/weapons";
+import { weaponDefOf } from "@shared/sim/player";
 import { GRENADE_LIST, WEAPON_LIST } from "@shared/weapons/manifest";
 import type { Dummy } from "@shared/sim/world";
 import type { FileView } from "../file";
@@ -86,7 +86,10 @@ export class Hud {
     const tabs = this.q(".tabs");
     tabs.onclick = (e) => {
       const t = (e.target as HTMLElement).closest(".tab") as HTMLElement | null;
-      if (t && /MAP/.test(t.textContent ?? "")) panel.hidden = !panel.hidden;
+      if (!t) return;
+      if (/MAP/.test(t.textContent ?? "")) panel.hidden = !panel.hidden;
+      else if (/FILE/.test(t.textContent ?? "")) document.dispatchEvent(new KeyboardEvent("keydown", { code: "Tab" }));
+      else if (/GRAPH/.test(t.textContent ?? "")) document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyG" }));
     };
     document.addEventListener("keydown", (e) => {
       if (e.code === "KeyM") {
@@ -105,6 +108,8 @@ export class Hud {
     this.q(".handle").textContent = f.account.slice(0, 18).toUpperCase();
     const tab = this.q(".tabs .tab .n");
     if (tab) tab.textContent = f.legal ? "·" : "!";
+    const graphTab = this.q(".tabs .tab:nth-child(2) .n");
+    if (graphTab) graphTab.textContent = String(f.owned.filter((id) => !id.includes(":")).length);
   }
 
   setLocked(locked: boolean): void {
@@ -115,7 +120,7 @@ export class Hud {
   update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[]): void {
     this.q(".hpbar").style.width = `${(100 * Math.max(0, p.health)) / Math.max(1, p.maxHealth)}%`;
     this.q(".shbar").style.width = p.maxShield > 0 ? `${(100 * Math.max(0, p.shield)) / p.maxShield}%` : "0%";
-    const def = currentWeapon(p.weapon);
+    const def = weaponDefOf(p);
     const ammo = p.weapon.ammo[p.weapon.slot] ?? 0;
     this.q(".ammobar").style.width = def.magSize ? `${(100 * ammo) / def.magSize}%` : "100%";
     this.q(".ammon").textContent = def.magSize === 0 ? "∞" : p.weapon.reloadTimer > 0 ? (p.weapon.reloadSeated ? String(ammo) : "--") : String(ammo);

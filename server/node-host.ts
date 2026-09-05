@@ -4,12 +4,15 @@
  *
  *   npx tsx server/node-host.ts [port]
  *   GET  /stats              → JSON stats for every room
+ *   GET  /file/<id>          → the Ghostfile (JSON)
+ *   POST /file/<id>/buy      → { node } buys a Ledger Graph node with Scrip; /refund gives half back
  *   WS   /room/<name>[?lagcomp=0&ai=0&warmup=<s>&round=<s>&level=<id>]
  */
 import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
 import { devSeed, MemoryAccountStore } from "./accounts";
+import { buyNode, refundNode } from "../shared/progression/account";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 8787);
 const rooms = new Map<string, Room>();
@@ -47,6 +50,42 @@ function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: nu
 }
 
 const http = createServer((req, res) => {
+  res.setHeader("access-control-allow-origin", "*");
+  res.setHeader("access-control-allow-headers", "content-type");
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
+  const file = req.url?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund))?$/);
+  if (file) {
+    const id = file[1]!;
+    const name = "BLANK";
+    if (req.method === "GET") {
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify(accounts.load(id, name)));
+      return;
+    }
+    if (req.method === "POST" && file[3]) {
+      let body = "";
+      req.on("data", (c) => (body += c));
+      req.on("end", () => {
+        let node = "";
+        try {
+          node = String((JSON.parse(body || "{}") as { node?: string }).node ?? "");
+        } catch {
+          node = "";
+        }
+        const a = accounts.load(id, name);
+        const r = file[3] === "buy" ? buyNode(a, node) : refundNode(a, node);
+        if (r.ok) accounts.save(a);
+        log(`[file] ${id} ${file[3]} ${node}: ${r.ok ? "ok" : r.reason}`);
+        res.setHeader("content-type", "application/json");
+        res.end(JSON.stringify({ ok: r.ok, reason: r.reason, account: a }));
+      });
+      return;
+    }
+  }
   if (req.url?.startsWith("/stats")) {
     const out: Record<string, unknown> = {};
     for (const [k, r] of rooms) out[k] = r.stats();

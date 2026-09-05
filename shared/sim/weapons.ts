@@ -49,6 +49,9 @@ export interface WeaponState {
   empTimer: number;
   /** seconds since the last shot (pattern resets after a pause) */
   sinceShot: number;
+  /** burst firmware: rounds left in the current burst and the timer to the next */
+  burstLeft: number;
+  burstTimer: number;
 }
 
 export function createWeaponState(): WeaponState {
@@ -79,6 +82,8 @@ export function createWeaponState(): WeaponState {
     stunTimer: 0,
     empTimer: 0,
     sinceShot: 9,
+    burstLeft: 0,
+    burstTimer: 0,
   };
 }
 
@@ -88,10 +93,13 @@ export function resetWeaponState(w: WeaponState): void {
 }
 
 export const currentWeapon = (w: WeaponState): WeaponDef => weaponBySlot(w.slot) ?? WEAPONS.lease_breaker;
+/** Definition lookup by slot; a player's kit overrides it with firmware-patched definitions. */
+export type DefOf = (slot: number) => WeaponDef;
+export const stockDefOf: DefOf = (slot) => weaponBySlot(slot) ?? WEAPONS.lease_breaker;
 
 /** Movement multiplier from weapon state (ADS, brace, stun). */
-export function weaponMoveMult(w: WeaponState, adsMove = 1): number {
-  const def = currentWeapon(w);
+export function weaponMoveMult(w: WeaponState, adsMove = 1, defOf: DefOf = stockDefOf): number {
+  const def = defOf(w.slot);
   let m = 1;
   if (w.stunTimer > 0) m *= 0.4;
   if (w.altActive && (def.alt.kind === "ads" || def.alt.kind === "brace")) m *= (def.alt.moveMult ?? 1) * adsMove;
@@ -174,7 +182,7 @@ function shotDirs(w: WeaponState, def: WeaponDef, yaw: number, pitch: number, sp
  * Advance the weapon one tick with this input. Returns fire requests for the
  * world to resolve. `roomSeed`/`playerId` derive magazine seeds.
  */
-export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: number, yaw: number, pitch: number, alive: boolean, roomSeed: number, playerId: number, events: WeaponEvent[], mods: StatSheet = baseSheet()): FireRequest[] {
+export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: number, yaw: number, pitch: number, alive: boolean, roomSeed: number, playerId: number, events: WeaponEvent[], mods: StatSheet = baseSheet(), defOf: DefOf = stockDefOf): FireRequest[] {
   const dt = SIM_DT;
   const reqs: FireRequest[] = [];
   // accumulator cooldown: the remainder carries so the average rate is exact at any tick rate
@@ -197,7 +205,7 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
     w.magCount = 1;
     w.magSeed = magSeedFor(roomSeed, playerId, 1);
   }
-  const def = currentWeapon(w);
+  const def = defOf(w.slot);
   const rec = Math.max(0, 1 - def.recoil.recover * dt);
   w.kickPitch *= rec;
   w.kickYaw *= rec;
@@ -229,10 +237,12 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
     w.altActive = false;
     w.patX = 0;
     w.patY = 0;
+    w.burstLeft = 0;
+    w.burstTimer = 0;
     events.push({ type: "swap", slot: sel });
     return reqs;
   }
-  const d = currentWeapon(w);
+  const d = defOf(w.slot);
 
   // grenades
   if (has(pressed, Btn.GrenadeNext)) w.grenadeSel = (w.grenadeSel + 1) % GRENADE_LIST.length;
@@ -300,18 +310,41 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
   switch (d.cls) {
     case "hitscan":
     case "pellet": {
+      const shoot = () => {
+        w.ammo[w.slot] = (w.ammo[w.slot] ?? 0) - 1;
+        const slug = d.alt.kind === "slug" && w.altActive;
+        const spread = d.spread * altMult.spread * (slug ? d.alt.spreadMult ?? 1 : 1);
+        const dirs = shotDirs(w, d, yaw, pitch, spread, slug ? 1 : d.pellets);
+        applyRecoil(w, d, altMult.recoil);
+        w.shotIndex++;
+        w.sinceShot = 0;
+        reqs.push({ kind: "ray", weapon: d.id, dirs, damage: slug ? d.alt.damage ?? d.damage : d.damage, headMult: d.headMult, legMult: d.legMult, range: d.range, pierce: false, slug });
+        events.push({ type: "fire", weapon: d.id, alt: slug });
+      };
+      if (d.burst) {
+        // burst firmware: the trigger starts a burst; rounds follow at the burst rate; the cycle resumes after
+        if (w.burstLeft > 0) {
+          w.burstTimer -= dt;
+          if (w.burstTimer <= 0) {
+            if ((w.ammo[w.slot] ?? 0) > 0) shoot();
+            w.burstLeft--;
+            w.burstTimer += 60 / (d.burst.rpm * mods.fireRate);
+            if (w.burstLeft === 0) w.fireCooldown = cycle(d.rpm); // the weapon's own cycle resumes after the burst
+          }
+        } else if (fireHeld && w.fireCooldown <= 0) {
+          if (ammo > 0) {
+            shoot();
+            w.burstLeft = d.burst.count - 1;
+            w.burstTimer = 60 / (d.burst.rpm * mods.fireRate);
+            w.fireCooldown = 10; // held until the burst finishes
+          } else if (firePressed) events.push({ type: "dryFire" });
+        }
+        break;
+      }
       if (fireHeld && w.fireCooldown <= 0) {
         if (ammo > 0) {
-          w.ammo[w.slot] = ammo - 1;
           fired(d.rpm);
-          const slug = d.alt.kind === "slug" && w.altActive;
-          const spread = d.spread * altMult.spread * (slug ? d.alt.spreadMult ?? 1 : 1);
-          const dirs = shotDirs(w, d, yaw, pitch, spread, slug ? 1 : d.pellets);
-          applyRecoil(w, d, altMult.recoil);
-          w.shotIndex++;
-          w.sinceShot = 0;
-          reqs.push({ kind: "ray", weapon: d.id, dirs, damage: slug ? d.alt.damage ?? d.damage : d.damage, headMult: d.headMult, legMult: d.legMult, range: d.range, pierce: false, slug });
-          events.push({ type: "fire", weapon: d.id, alt: slug });
+          shoot();
         } else if (firePressed) events.push({ type: "dryFire" });
       }
       break;

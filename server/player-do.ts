@@ -3,9 +3,9 @@
  * id; the match room settles through it so two rooms can never race a write.
  * Durable rows go to D1 (schema.sql) on every save; DO storage is the cache.
  */
-import { createAccount, type Account } from "../shared/progression/account";
+import { buyNode, createAccount, refundNode, upgradeAccount, type Account } from "../shared/progression/account";
 import type { AccountStore } from "./accounts";
-import { SCHEMA } from "./schema";
+import { MIGRATIONS, SCHEMA } from "./schema";
 
 export interface PlayerEnv {
   DB?: D1Database;
@@ -15,6 +15,13 @@ const KEY = "file";
 
 async function ensureSchema(db: D1Database): Promise<void> {
   await db.batch(SCHEMA.map((q) => db.prepare(q)));
+  for (const q of MIGRATIONS) {
+    try {
+      await db.prepare(q).run();
+    } catch (err) {
+      if (!/duplicate column/i.test(String(err))) throw err;
+    }
+  }
 }
 
 /** Run a D1 operation; on a missing table, create the schema once and retry. */
@@ -22,7 +29,7 @@ async function withSchema<T>(db: D1Database, op: () => Promise<T>): Promise<T> {
   try {
     return await op();
   } catch (err) {
-    if (!/no such table/i.test(String(err))) throw err;
+    if (!/no such table|no such column|has no column/i.test(String(err))) throw err;
     await ensureSchema(db);
     return await op();
   }
@@ -44,7 +51,7 @@ export class PlayerFile implements DurableObject {
         a = createAccount(id, name);
         await this.state.storage.put(KEY, a);
       }
-      return Response.json(a);
+      return Response.json(upgradeAccount(a));
     }
     if (request.method === "POST" && url.pathname === "/save") {
       const a = (await request.json()) as Account;
@@ -57,9 +64,40 @@ export class PlayerFile implements DurableObject {
       }
       return Response.json({ ok: true });
     }
+    if (request.method === "POST" && (url.pathname === "/buy" || url.pathname === "/refund")) {
+      const { id, node } = (await request.json()) as { id: string; node?: string };
+      let a = await this.state.storage.get<Account>(KEY);
+      if (!a && this.env.DB) {
+        const db = this.env.DB;
+        a = (await withSchema(db, () => loadRow(db, id))) ?? undefined;
+      }
+      if (!a) a = createAccount(id, "BLANK");
+      a = upgradeAccount(a);
+      const r = url.pathname === "/buy" ? buyNode(a, String(node ?? "")) : refundNode(a, String(node ?? ""));
+      if (r.ok) {
+        const prev = await this.state.storage.get<Account>(KEY);
+        await this.state.storage.put(KEY, a);
+        if (this.env.DB) {
+          const db = this.env.DB;
+          const acc = a;
+          const fresh = acc.ledger.slice(prev?.ledger.length ?? 0);
+          await withSchema(db, () => saveRow(db, acc, fresh));
+        }
+      }
+      return Response.json({ ok: r.ok, reason: r.reason, account: a });
+    }
     if (url.pathname === "/file") {
       const a = (await this.state.storage.get<Account>(KEY)) ?? null;
-      return Response.json(a);
+      return Response.json(a ? upgradeAccount(a) : null);
+    }
+    if (request.method === "POST" && url.pathname === "/file") {
+      const { id, name } = (await request.json()) as { id: string; name: string };
+      let a = await this.state.storage.get<Account>(KEY);
+      if (!a && this.env.DB) {
+        const db = this.env.DB;
+        a = (await withSchema(db, () => loadRow(db, id))) ?? undefined;
+      }
+      return Response.json(a ? upgradeAccount(a) : createAccount(id, name));
     }
     return new Response("player file", { status: 404 });
   }
@@ -96,13 +134,21 @@ interface Row {
   wears: string;
   crafts: number;
   matches: number;
+  extras?: string;
 }
 
 async function loadRow(db: D1Database, id: string): Promise<Account | null> {
   const row = await db.prepare("SELECT * FROM ghostfile WHERE id = ?").bind(id).first<Row>();
   if (!row) return null;
   const ledger = await db.prepare("SELECT line FROM ledger WHERE account = ? ORDER BY seq ASC").bind(id).all<{ line: string }>();
-  return {
+  let extras: Partial<Account> = {};
+  try {
+    extras = JSON.parse(row.extras ?? "{}");
+  } catch {
+    extras = {};
+  }
+  return upgradeAccount({
+    ...extras,
     id: row.id,
     name: row.name,
     xp: row.xp,
@@ -114,7 +160,7 @@ async function loadRow(db: D1Database, id: string): Promise<Account | null> {
     crafts: row.crafts,
     matches: row.matches,
     ledger: (ledger.results ?? []).map((r) => r.line),
-  };
+  });
 }
 
 /** Upsert the file row and append the ledger lines written since the last save. */
@@ -122,13 +168,13 @@ async function saveRow(db: D1Database, a: Account, freshLines: readonly string[]
   const stmts = [
     db
       .prepare(
-        `INSERT INTO ghostfile (id, name, xp, depth, scrip, wakelight, salvage, owned, loadout, wears, crafts, matches, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO ghostfile (id, name, xp, depth, scrip, wakelight, salvage, owned, loadout, wears, crafts, matches, updated_at, extras)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET name = excluded.name, xp = excluded.xp, depth = excluded.depth, scrip = excluded.scrip,
            wakelight = excluded.wakelight, salvage = excluded.salvage, owned = excluded.owned, loadout = excluded.loadout,
-           wears = excluded.wears, crafts = excluded.crafts, matches = excluded.matches, updated_at = excluded.updated_at`,
+           wears = excluded.wears, crafts = excluded.crafts, matches = excluded.matches, updated_at = excluded.updated_at, extras = excluded.extras`,
       )
-      .bind(a.id, a.name, a.xp, a.depth, a.wallet.scrip, a.wallet.wakelight, a.wallet.salvage, JSON.stringify(a.owned), JSON.stringify(a.loadout), JSON.stringify(a.wears), a.crafts, a.matches, Date.now()),
+      .bind(a.id, a.name, a.xp, a.depth, a.wallet.scrip, a.wallet.wakelight, a.wallet.salvage, JSON.stringify(a.owned), JSON.stringify(a.loadout), JSON.stringify(a.wears), a.crafts, a.matches, Date.now(), JSON.stringify({ mastery: a.mastery, stamps: a.stamps, counters: a.counters })),
   ];
   for (const line of freshLines) stmts.push(db.prepare("INSERT INTO ledger (account, line, at) VALUES (?, ?, ?)").bind(a.id, line, Date.now()));
   await db.batch(stmts);

@@ -5,6 +5,8 @@
  */
 import { Btn, withSlot, type InputFrame } from "./input";
 import { drainageYard } from "./level";
+import { DEFAULT_LOADOUT } from "../manifest/loadout";
+import { FIRMWARES, weaponWithFirmware } from "../manifest/firmwares";
 import { World } from "./world";
 import { WEAPONS, type WeaponId } from "../weapons/manifest";
 import { v3 } from "../math/vec3";
@@ -19,17 +21,17 @@ export interface TTKResult {
   killed: boolean;
 }
 
-export function measureTTK(weapon: WeaponId, mode: "primary" | "alt", range: number, maxSeconds = 6): TTKResult {
+export function measureTTK(weapon: WeaponId, mode: "primary" | "alt", range: number, maxSeconds = 6, firmware: string | null = null): TTKResult {
   const level = drainageYard();
   // the clear lane along z=0 from the west wall: shooter at x=-29, target down +x
   level.dummies = [{ id: 1, pos: v3(-29 + range, 0, 0) }];
   const world = new World(level, { ai: false, seed: 42 });
-  const p = world.addPlayer(1, "HARNESS");
+  const p = world.addPlayer(1, "HARNESS", 1, firmware ? { ...DEFAULT_LOADOUT, firmware: { [weapon]: firmware } } : DEFAULT_LOADOUT);
   p.pos.x = -29;
   p.pos.y = 0;
   p.pos.z = 0;
   p.yaw = -Math.PI / 2;
-  const def = WEAPONS[weapon];
+  const def = weaponWithFirmware(weapon, firmware);
   const chest = { x: -29 + range, y: 0.95, z: 0 };
   const stepWith = (buttons: number) => {
     // perfect accuracy: a mastered player compensates both the visible view kick and the learned pattern
@@ -88,4 +90,13 @@ export function ttkTable(): TTKResult[] {
     out.push(measureTTK(def.id, "alt", def.range.ideal));
   }
   return out;
+}
+
+/** Every firmware, measured at its weapon's ideal range: a sidegrade must stay inside the TTK band. */
+export function certifyFirmwares(): (TTKResult & { firmware: string; band: [number, number]; ok: boolean })[] {
+  return FIRMWARES.map((f) => {
+    const def = WEAPONS[f.weapon];
+    const r = measureTTK(f.weapon, "primary", def.range.ideal, 6, f.id);
+    return { ...r, firmware: f.id, band: def.ttkBand, ok: r.killed && r.seconds >= def.ttkBand[0] && r.seconds <= def.ttkBand[1] };
+  });
 }

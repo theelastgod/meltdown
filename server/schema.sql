@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS ghostfile (
   wears      TEXT NOT NULL DEFAULT '[]',   -- JSON list of crafted wear ids (id#seed)
   crafts     INTEGER NOT NULL DEFAULT 0,
   matches    INTEGER NOT NULL DEFAULT 0,
-  updated_at INTEGER NOT NULL DEFAULT 0
+  updated_at INTEGER NOT NULL DEFAULT 0,
+  extras     TEXT NOT NULL DEFAULT '{}'   -- JSON: mastery, stamps, counters (Stage 7)
 );
 
 -- Append-only ledger: every settlement, purchase, refund and craft leaves a line.

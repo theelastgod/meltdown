@@ -87,7 +87,7 @@ async function main(): Promise<void> {
     const base = { primary: "lease_breaker", secondary: "shock_baton" };
     const illegal: { name: string; account: string; loadout: unknown; rule: RegExp }[] = [
       { name: "EIGHT", account: "sandbox-eight", loadout: { ...base, attested: ["slipfile", "static_skin", "contagion_rider", "long_lease", "quiet_ledger", "spite_clause", "collateral", "hair_trigger"] }, rule: /attest-limit/ },
-      { name: "SPLIT", account: "sandbox-split", loadout: { ...base, attested: ["slipfile", "wake_lung"] }, rule: /connected/ },
+      { name: "SPLIT", account: "sandbox-split", loadout: { ...base, attested: ["slipfile", "black_swan"] }, rule: /connected/ },
       { name: "POOR", account: "fresh-poor", loadout: { ...base, attested: ["slipfile"] }, rule: /not-owned/ },
       { name: "SMUGGLE", account: "sandbox-smuggle", loadout: { ...base, attested: ["slipfile"], protocols: ["kp_redline"] }, rule: /unknown-field/ },
     ];
@@ -103,12 +103,12 @@ async function main(): Promise<void> {
     check("spawn: refused players never entered the world", (st.rooms["ghost"]?.clients.length ?? 0) === 0 && st.rooms["ghost"]!.loadoutRejections.length === 4, `${st.rooms["ghost"]!.clients.length} in room, ${st.rooms["ghost"]!.loadoutRejections.length} rejections logged`);
 
     // ---------------- legal attestation ----------------
-    const legal = { ...base, attested: ["slipfile", "static_skin", "quiet_ledger"], keystone: "debtless" };
+    const legal = { ...base, attested: ["slipfile", "static_skin", "curb_weight"], keystone: "debtless" };
     const a = await open("ALPHA", "sandbox-alpha", legal, true);
     const na = await net(a);
     const fa = await a.evaluate(() => ({ file: window.__game.file(), state: window.__game.state() }));
     check("spawn: a legal attestation with a linked keystone is admitted", na.status === "joined", `status ${na.status} · depth ${fa.file.depth} · owned ${fa.file.owned.length} items`);
-    check("spawn: the admitted sheet runs client-side (DEBTLESS +12% move × QUIET LEDGER −2.5%, no shield)", fa.state.mods.moveSpeed! > 1.05 && fa.state.maxShield === 0 && fa.state.mods.slideBoost! > 1.3, `moveSpeed ×${fa.state.mods.moveSpeed!.toFixed(3)} slideBoost ×${fa.state.mods.slideBoost!.toFixed(3)} maxShield ${fa.state.maxShield}`);
+    check("spawn: the admitted sheet runs client-side (DEBTLESS +12% move, +25% slide × CURB WEIGHT −8% slide, no shield)", fa.state.mods.moveSpeed! > 1.08 && fa.state.maxShield === 0 && fa.state.mods.slideBoost! > 1.1, `moveSpeed ×${fa.state.mods.moveSpeed!.toFixed(3)} slideBoost ×${fa.state.mods.slideBoost!.toFixed(3)} maxShield ${fa.state.maxShield}`);
     check("file: NET DELTA never overdraws the Auditor's ledger (keystones may over-pay)", fa.file.netDelta <= 1.5 && fa.file.legal, `net delta ${fa.file.netDelta.toFixed(3)} · ${fa.file.legal ? "legal" : fa.file.errors.join("; ")}`);
     st = await stats();
     const srvA = st.rooms["ghost"]!.clients.find((c) => c.name === "ALPHA")!;

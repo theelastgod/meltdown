@@ -1,0 +1,293 @@
+{
+  "lint": "FAIRNESS LINT PASS — 324 builds, 26 baseline duels, 13.3s",
+  "certs": [
+    {
+      "weapon": "lease_breaker",
+      "mode": "primary",
+      "range": 20,
+      "seconds": 0.65,
+      "ticks": 39,
+      "shots": 6,
+      "killed": true,
+      "firmware": "lease_breaker:three_count",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    },
+    {
+      "weapon": "lease_breaker",
+      "mode": "primary",
+      "range": 20,
+      "seconds": 0.7166666666666667,
+      "ticks": 43,
+      "shots": 6,
+      "killed": true,
+      "firmware": "lease_breaker:long_lease",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    },
+    {
+      "weapon": "repo_hammer",
+      "mode": "primary",
+      "range": 7,
+      "seconds": 0.7166666666666667,
+      "ticks": 43,
+      "shots": 2,
+      "killed": true,
+      "firmware": "repo_hammer:double_barrel",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    },
+    {
+      "weapon": "repo_hammer",
+      "mode": "primary",
+      "range": 7,
+      "seconds": 0.7,
+      "ticks": 42,
+      "shots": 2,
+      "killed": true,
+      "firmware": "repo_hammer:slam_fire",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    },
+    {
+      "weapon": "stack_smg",
+      "mode": "primary",
+      "range": 10,
+      "seconds": 0.6666666666666666,
+      "ticks": 40,
+      "shots": 13,
+      "killed": true,
+      "firmware": "stack_smg:dump_stage",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    },
+    {
+      "weapon": "stack_smg",
+      "mode": "primary",
+      "range": 10,
+      "seconds": 0.7666666666666667,
+      "ticks": 46,
+      "shots": 10,
+      "killed": true,
+      "firmware": "stack_smg:measured",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    },
+    {
+      "weapon": "longwave",
+      "mode": "primary",
+      "range": 40,
+      "seconds": 0.7666666666666667,
+      "ticks": 46,
+      "shots": 1,
+      "killed": true,
+      "firmware": "longwave:capacitor",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    },
+    {
+      "weapon": "longwave",
+      "mode": "primary",
+      "range": 40,
+      "seconds": 0.9833333333333333,
+      "ticks": 59,
+      "shots": 1,
+      "killed": true,
+      "firmware": "longwave:overcharge",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    },
+    {
+      "weapon": "phage",
+      "mode": "primary",
+      "range": 10,
+      "seconds": 0.8666666666666667,
+      "ticks": 52,
+      "shots": 2,
+      "killed": true,
+      "firmware": "phage:cluster",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    },
+    {
+      "weapon": "phage",
+      "mode": "primary",
+      "range": 10,
+      "seconds": 0.8333333333333334,
+      "ticks": 50,
+      "shots": 2,
+      "killed": true,
+      "firmware": "phage:long_fuse",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    },
+    {
+      "weapon": "shock_baton",
+      "mode": "primary",
+      "range": 1.5,
+      "seconds": 0.9166666666666666,
+      "ticks": 55,
+      "shots": 3,
+      "killed": true,
+      "firmware": "shock_baton:arc_relay",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    },
+    {
+      "weapon": "shock_baton",
+      "mode": "primary",
+      "range": 1.5,
+      "seconds": 0.9833333333333333,
+      "ticks": 59,
+      "shots": 3,
+      "killed": true,
+      "firmware": "shock_baton:heavy_haft",
+      "band": [
+        0.6,
+        1
+      ],
+      "ok": true
+    }
+  ],
+  "rejections": [
+    "chip-socket: lease_breaker:long_barrel is a muzzle chip, not kinetic",
+    "chip-rank: lease_breaker:long_barrel needs lease_breaker mastery 2 (you are 1)",
+    "firmware-rank: lease_breaker:three_count needs lease_breaker mastery 20 (you are 1)",
+    "chip-weapon: stack_smg:long_barrel is a stack_smg chip"
+  ],
+  "checks": [
+    {
+      "name": "lint: 48 nodes, 120 chips, 12 firmwares pass the Fairness Lint",
+      "pass": true,
+      "detail": "FAIRNESS LINT PASS — 324 builds, 26 baseline duels, 13.3s"
+    },
+    {
+      "name": "harness: every firmware is certified inside the TTK band at its ideal range",
+      "pass": true,
+      "detail": "three_count 0.65s, long_lease 0.72s, double_barrel 0.72s, slam_fire 0.70s, dump_stage 0.67s, measured 0.77s, capacitor 0.77s, overcharge 0.98s, cluster 0.87s, long_fuse 0.83s, arc_relay 0.92s, heavy_haft 0.98s"
+    },
+    {
+      "name": "spawn: SOCKET refused (chip-socket)",
+      "pass": true,
+      "detail": "kicked: LOADOUT REJECTED: chip-socket: lease_breaker:long_barrel is a muzzle chip, not kinetic"
+    },
+    {
+      "name": "spawn: RANK refused (chip-rank)",
+      "pass": true,
+      "detail": "kicked: LOADOUT REJECTED: chip-rank: lease_breaker:long_barrel needs lease_breaker mastery 2 (you are 1)"
+    },
+    {
+      "name": "spawn: FLASH refused (firmware-rank)",
+      "pass": true,
+      "detail": "kicked: LOADOUT REJECTED: firmware-rank: lease_breaker:three_count needs lease_breaker mastery 20 (you are 1)"
+    },
+    {
+      "name": "spawn: CROSS refused (chip-weapon)",
+      "pass": true,
+      "detail": "kicked: LOADOUT REJECTED: chip-weapon: stack_smg:long_barrel is a stack_smg chip"
+    },
+    {
+      "name": "spawn: a mastered file's three chips and firmware are admitted",
+      "pass": true,
+      "detail": "status joined"
+    },
+    {
+      "name": "sim: the firmware patches the held weapon (THREE-COUNT bursts) and chip mods apply only while it is held",
+      "pass": true,
+      "detail": "LB burst {\"count\":3,\"rpm\":900} range ×1.030 move ×1.015 · SMG burst null range ×1 move ×1"
+    },
+    {
+      "name": "spawn: the server's admitted kit matches",
+      "pass": true,
+      "detail": "server chips {\"muzzle\":\"lease_breaker:long_barrel\",\"kinetic\":\"lease_breaker:sling\",\"protocol\":\"lease_breaker:contagion_round\"} firmware {\"lease_breaker\":\"lease_breaker:three_count\"}"
+    },
+    {
+      "name": "file: the FILE panel shows mastery ranks, sockets and firmware",
+      "pass": true,
+      "detail": "LEASE-BREAKER MASTERY 30/30MASTEREDMUZZLE — none —LONG BARREL · r2SUPPRESSOR · r4COMPENSATOR · r6CHO"
+    },
+    {
+      "name": "shop: a fresh Blank cannot afford a node",
+      "pass": true,
+      "detail": "needs 400 Scrip"
+    },
+    {
+      "name": "shop: a Depth-10 file with Scrip buys SLIPFILE and the hex turns green on the graph",
+      "pass": true,
+      "detail": "owned 0→1 · scrip 5000→4600 · green hexes 0→1"
+    },
+    {
+      "name": "shop: ring III is gated on Depth (BLACK SWAN needs 30)",
+      "pass": true,
+      "detail": "needs Depth 30"
+    },
+    {
+      "name": "shop: ownership is permanent — buying a node twice is refused",
+      "pass": true,
+      "detail": "already in your file"
+    },
+    {
+      "name": "shop: a refund returns half the Scrip and drops the node from the attestation",
+      "pass": true,
+      "detail": "scrip 4600→4800 · owned 0"
+    },
+    {
+      "name": "shop: the ledger records the purchase and the refund on the file",
+      "pass": true,
+      "detail": "STAMP · DEPTH X — CHAPTER ONE | BOUGHT SLIPFILE · −400 SCRIP"
+    },
+    {
+      "name": "mastery: a kill online feeds the killer's weapon XP and rank on the server",
+      "pass": true,
+      "detail": "CHARLIE kills 1 · LB rank 1 · stamps 2"
+    },
+    {
+      "name": "stamps: FIRST FILE CLOSED un-redacts on the killer's file mid-round and reaches the client",
+      "pass": true,
+      "detail": "stamps [first_kill:lease_breaker, sprint_kill] · LB xp 162 rank 1 · » STAMP · FIRST FILE CLOSED · LEASE-BREAKER | » STAMP · KILL AT A SPRINT"
+    },
+    {
+      "name": "mastery: XP alone holds at the first gate — rank 1 file, no challenge done",
+      "pass": true,
+      "detail": "rank 1, done []"
+    },
+    {
+      "name": "file: the stamp reads in clear while the rest stay REDACTED",
+      "pass": true,
+      "detail": "▣ FIRST FILE CLOSED · LEASE-BREAKER▢ █████ ████████ · █████-███████▢ ████ ██ ███ █████ · █"
+    }
+  ]
+}

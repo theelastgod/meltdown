@@ -27,12 +27,12 @@ describe("manifest schema — a trade-less buff cannot ship", () => {
 describe("loadout legality (validated server-side at spawn)", () => {
   const owned = LEDGER_ITEMS.map((i) => i.id).concat(["debtless"]);
   it("accepts a connected attestation of 7 with a linked keystone", () => {
-    const r = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "contagion_rider", "long_lease", "quiet_ledger", "spite_clause", "collateral"], keystone: "debtless" }, owned, 10);
+    const r = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "curb_weight", "contagion_rider", "long_lease", "quiet_ledger", "night_fare"], keystone: "debtless" }, owned, 10);
     expect(r.errors).toEqual([]);
     expect(r.ok).toBe(true);
   });
   it("rejects more than 7, unowned, disconnected, unknown fields, and depth-gated weapons", () => {
-    const eight = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "contagion_rider", "long_lease", "quiet_ledger", "spite_clause", "collateral", "hair_trigger"], keystone: null }, owned, 10);
+    const eight = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "curb_weight", "contagion_rider", "long_lease", "quiet_ledger", "night_fare", "spite_clause"], keystone: null }, owned, 10);
     expect(eight.errors.map((e) => e.rule)).toContain("attest-limit");
     const unowned = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile"], keystone: null }, [], 10);
     expect(unowned.errors.map((e) => e.rule)).toContain("not-owned");
@@ -83,7 +83,7 @@ describe("fairness lint — simulation, not arithmetic", () => {
     const report = runFairnessLint({ quick: true, builds: [
       { name: "slipfile", loadout: { primary: "lease_breaker", secondary: "shock_baton", attested: ["slipfile"], keystone: null } },
       { name: "spite", loadout: { primary: "lease_breaker", secondary: "shock_baton", attested: ["spite_clause"], keystone: null } },
-      { name: "collateral+contagion", loadout: { primary: "lease_breaker", secondary: "shock_baton", attested: ["collateral", "contagion_rider"], keystone: null } },
+      { name: "spite+collateral", loadout: { primary: "lease_breaker", secondary: "shock_baton", attested: ["spite_clause", "collateral"], keystone: null } },
     ] });
     for (const v of report.violations) console.log("violation", v);
     expect(report.ok).toBe(true);

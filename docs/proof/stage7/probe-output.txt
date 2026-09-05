@@ -1,0 +1,22 @@
+PASS  lint: 48 nodes, 120 chips, 12 firmwares pass the Fairness Lint  — FAIRNESS LINT PASS — 324 builds, 26 baseline duels, 13.3s
+PASS  harness: every firmware is certified inside the TTK band at its ideal range  — three_count 0.65s, long_lease 0.72s, double_barrel 0.72s, slam_fire 0.70s, dump_stage 0.67s, measured 0.77s, capacitor 0.77s, overcharge 0.98s, cluster 0.87s, long_fuse 0.83s, arc_relay 0.92s, heavy_haft 0.98s
+PASS  spawn: SOCKET refused (chip-socket)  — kicked: LOADOUT REJECTED: chip-socket: lease_breaker:long_barrel is a muzzle chip, not kinetic
+PASS  spawn: RANK refused (chip-rank)  — kicked: LOADOUT REJECTED: chip-rank: lease_breaker:long_barrel needs lease_breaker mastery 2 (you are 1)
+PASS  spawn: FLASH refused (firmware-rank)  — kicked: LOADOUT REJECTED: firmware-rank: lease_breaker:three_count needs lease_breaker mastery 20 (you are 1)
+PASS  spawn: CROSS refused (chip-weapon)  — kicked: LOADOUT REJECTED: chip-weapon: stack_smg:long_barrel is a stack_smg chip
+PASS  spawn: a mastered file's three chips and firmware are admitted  — status joined
+PASS  sim: the firmware patches the held weapon (THREE-COUNT bursts) and chip mods apply only while it is held  — LB burst {"count":3,"rpm":900} range ×1.030 move ×1.015 · SMG burst null range ×1 move ×1
+PASS  spawn: the server's admitted kit matches  — server chips {"muzzle":"lease_breaker:long_barrel","kinetic":"lease_breaker:sling","protocol":"lease_breaker:contagion_round"} firmware {"lease_breaker":"lease_breaker:three_count"}
+PASS  file: the FILE panel shows mastery ranks, sockets and firmware  — LEASE-BREAKER MASTERY 30/30MASTEREDMUZZLE — none —LONG BARREL · r2SUPPRESSOR · r4COMPENSATOR · r6CHO
+PASS  shop: a fresh Blank cannot afford a node  — needs 400 Scrip
+PASS  shop: a Depth-10 file with Scrip buys SLIPFILE and the hex turns green on the graph  — owned 0→1 · scrip 5000→4600 · green hexes 0→1
+PASS  shop: ring III is gated on Depth (BLACK SWAN needs 30)  — needs Depth 30
+PASS  shop: ownership is permanent — buying a node twice is refused  — already in your file
+PASS  shop: a refund returns half the Scrip and drops the node from the attestation  — scrip 4600→4800 · owned 0
+PASS  shop: the ledger records the purchase and the refund on the file  — STAMP · DEPTH X — CHAPTER ONE | BOUGHT SLIPFILE · −400 SCRIP
+PASS  mastery: a kill online feeds the killer's weapon XP and rank on the server  — CHARLIE kills 1 · LB rank 1 · stamps 2
+PASS  stamps: FIRST FILE CLOSED un-redacts on the killer's file mid-round and reaches the client  — stamps [first_kill:lease_breaker, sprint_kill] · LB xp 162 rank 1 · » STAMP · FIRST FILE CLOSED · LEASE-BREAKER | » STAMP · KILL AT A SPRINT
+PASS  mastery: XP alone holds at the first gate — rank 1 file, no challenge done  — rank 1, done []
+PASS  file: the stamp reads in clear while the rest stay REDACTED  — ▣ FIRST FILE CLOSED · LEASE-BREAKER▢ █████ ████████ · █████-███████▢ ████ ██ ███ █████ · █
+
+20/20 checks passed.

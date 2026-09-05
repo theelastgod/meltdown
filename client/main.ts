@@ -4,6 +4,7 @@ import type { BotStep } from "./bot";
 import { SIM_HZ } from "@shared/sim/constants";
 import type { SimEvent } from "@shared/sim/world";
 import type { FileView } from "./file";
+import { modsFor, weaponDefOf } from "@shared/sim/player";
 
 /** Headless/state hook used by probes and CI. Everything here is read-only or deterministic. */
 export interface GameHook {
@@ -38,12 +39,17 @@ export interface GameHook {
     mods: Record<string, number>;
     maxShield: number;
     maxHealth: number;
+    /** the weapon definition the sim runs for the held slot (firmware applied) */
+    weaponDef: { id: string; rpm: number; magSize: number; damage: number; burst: { count: number; rpm: number } | null };
   };
   /** Ghostfile view: account, Depth/XP/Scrip, loadout legality, ledger. */
   file: () => FileView;
   /** Replace the raw loadout the client will send at the next link (offline: applies now). */
   setLoadout: (raw: Record<string, unknown>) => void;
   toggleFile: (on?: boolean) => void;
+  toggleGraph: (on?: boolean) => void;
+  /** Buy (or refund) a Ledger Graph node through the ledger shop of the linked host. */
+  buy: (nodeId: string, refund?: boolean) => Promise<{ ok: boolean; reason?: string }>;
   events: () => SimEvent[];
   clearEvents: () => void;
   resumeAudio: () => void;
@@ -108,13 +114,16 @@ window.__game = {
     wake: game.world.wake ? { phase: game.world.wake.phase, timeLeft: game.world.wake.timeLeft, score: [...game.world.wake.score], pulses: game.world.wake.pulses, nodes: game.world.wake.nodes.map((n) => ({ id: n.id, label: n.label, owner: n.owner, hold: n.hold, contested: n.contested, puller: n.puller, boost: n.boost, flips: n.flips })) } : null,
     team: game.player.team,
     hash: game.hash(),
-    mods: { ...game.player.mods },
+    mods: { ...modsFor(game.player) },
+    weaponDef: (() => { const d = weaponDefOf(game.player); return { id: d.id, rpm: d.rpm, magSize: d.magSize, damage: d.damage, burst: d.burst ?? null }; })(),
     maxShield: game.player.maxShield,
     maxHealth: game.player.maxHealth,
   }),
   file: () => game.file.view(),
   setLoadout: (raw) => game.file.setRaw(raw),
   toggleFile: (on) => game.file.toggle(on),
+  toggleGraph: (on) => game.file.toggleGraph(on),
+  buy: (id, refund) => game.file.buy(id, refund),
   events: () => game.recentEvents.slice(),
   clearEvents: () => {
     game.recentEvents.length = 0;

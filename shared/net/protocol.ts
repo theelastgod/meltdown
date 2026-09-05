@@ -5,7 +5,7 @@
 import type { InputFrame } from "../sim/input";
 import type { HitZone } from "../sim/world";
 
-export const PROTOCOL_VERSION = 5;
+export const PROTOCOL_VERSION = 6;
 /** Server snapshot cadence in sim ticks (60 Hz sim → 30 Hz snapshots). */
 export const SNAPSHOT_EVERY = 2;
 /** Lag compensation rewind cap in ticks (200 ms at 60 Hz). */
@@ -29,8 +29,8 @@ export const Msg = {
 
 /** What the server tells a client about its own Ghostfile. */
 export interface FileMsg {
-  /** "join": your file as admitted (apply the loadout); "settle": a ledger entry after results. */
-  reason: "join" | "settle";
+  /** "join": your file as admitted (apply the loadout); "settle": a ledger entry after results; "stamp": a first, a rank, a challenge — mid-round. */
+  reason: "join" | "settle" | "stamp";
   account: string;
   depth: number;
   xp: number;
@@ -41,7 +41,15 @@ export interface FileMsg {
   /** Ledger lines from the latest match settlement (empty on join). */
   ledger: string[];
   /** Validated loadout the server applied (what you actually spawned with). */
-  loadout: { primary: string; secondary: string; attested: string[]; keystone: string | null };
+  loadout: { primary: string; secondary: string; attested: string[]; keystone: string | null; chips?: Record<string, Record<string, string>>; firmware?: Record<string, string> };
+  /** weapon mastery: xp, rank, challenges done, counters (Stage 7) */
+  mastery?: Record<string, { xp: number; rank: number; done: string[]; counters: Record<string, number> }>;
+  /** un-redacted stamp ids, and the ones this message un-redacts */
+  stamps?: string[];
+  newStamps?: string[];
+  /** ranks gained and challenges completed since the last message: `weapon:r12`, `lease_breaker:r5` */
+  ranks?: string[];
+  challenges?: string[];
 }
 
 export interface NetInput extends InputFrame {
@@ -94,6 +102,7 @@ export interface LocalAuth {
   charge: number; charging: number; shotIndex: number; magSeed: number; magCount: number; altActive: number; altCooldown: number;
   lungeT: number; lungeHit: number; grenades: number[]; grenadeSel: number; grenadeCooldown: number; swapTimer: number;
   kickPitch: number; kickYaw: number; patX: number; patY: number; stunTimer: number; empTimer: number; sinceShot: number;
+  burstLeft: number; burstTimer: number;
 }
 
 /** Generic server-driven entity record: projectiles, clouds, wasps, mechs. */
@@ -198,7 +207,7 @@ class R {
   str(): string { const n = this.u16(); const b = new Uint8Array(this.dv.buffer, this.dv.byteOffset + this.o, n); this.o += n; return new TextDecoder().decode(b); }
 }
 
-const LOCAL_FLOAT_KEYS = ["x", "y", "z", "vx", "vy", "vz", "yaw", "pitch", "height", "airTime", "jumpBuffer", "slideTime", "slideCooldown", "sdx", "sdz", "mfx", "mfy", "mfz", "mtx", "mty", "mtz", "mantleT", "respawnTimer", "reloadTimer", "reloadTotal", "fireCooldown", "charge", "altCooldown", "lungeT", "grenadeCooldown", "swapTimer", "kickPitch", "kickYaw", "patX", "patY", "stunTimer", "empTimer", "sinceShot", "shield", "sinceDamage"] as const;
+const LOCAL_FLOAT_KEYS = ["x", "y", "z", "vx", "vy", "vz", "yaw", "pitch", "height", "airTime", "jumpBuffer", "slideTime", "slideCooldown", "sdx", "sdz", "mfx", "mfy", "mfz", "mtx", "mty", "mtz", "mantleT", "respawnTimer", "reloadTimer", "reloadTotal", "fireCooldown", "charge", "altCooldown", "lungeT", "grenadeCooldown", "swapTimer", "kickPitch", "kickYaw", "patX", "patY", "stunTimer", "empTimer", "sinceShot", "shield", "sinceDamage", "burstLeft", "burstTimer"] as const;
 const localFloats = (l: LocalAuth): number[] => LOCAL_FLOAT_KEYS.map((k) => l[k]);
 
 const wrapRad = (a: number): number => {
