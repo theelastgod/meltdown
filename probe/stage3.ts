@@ -78,7 +78,7 @@ async function main(): Promise<void> {
     page.on("pageerror", (e) => errors.push(String(e)));
     page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     await page.goto(URL, { waitUntil: "load" });
-    await page.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000 });
+    await page.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 });
     const helper = await browser.newPage({ viewport: { width: 320, height: 180 } });
 
     const shots: Record<string, LookStats> = {};

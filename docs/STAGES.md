@@ -10,7 +10,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 2 | Netcode early: DO rooms, prediction/reconciliation/interp/lag-comp, 8 players, latency/loss bars | **done** | `docs/proof/stage2/` |
 | 3 | The look: lighting rig, neon, GPU rain, wet reflections, fog, post chain, district casts | **done** (pulled ahead of 2 at the owner's request) | `docs/proof/stage3/` |
 | 4 | Arsenal: weapons 1–6 + alt-fires + grenades, recoil seeds, reload cancels, VANTAGE AI | **done** | `docs/proof/stage4/` |
-| 5 | The wake: hex nodes, flip/contest/spread, KERNEL timer | | |
+| 5 | The wake: hex nodes, flip/contest/spread, KERNEL timer | **done** | `docs/proof/stage5/` |
 | 6 | Ghostfile foundation: manifest, Fairness Lint, spawn validation, Depth/XP, currencies | | |
 | 7 | Ledger Graph + weapon mastery | | |
 | 8 | Identity & rituals | | |
@@ -207,3 +207,44 @@ player. Determinism hash covers projectiles and AI.
 **Design decisions surfaced by the probes.** A weapon swap resets the fire
 cooldown (the 0.35 s swap delay is the cost; a quick-switch tech exists).
 The lunge ends on contact. A corpse cannot be hit twice through the rewind.
+
+## Stage 5 — The wake
+
+**Goal.** The signature PvP mode. Hex city nodes sit on VANTAGE's model
+(violet); Blanks standing on one pull it off (green). Two cells compete,
+the wake spreads along the district graph, phage bursts speed it, the
+KERNEL brakes it, and deathmatch becomes the warm-up.
+
+**Rules (`shared/sim/wake.ts`).**
+- Five nodes over the yard (A deck, B east pillars, C west block, D spawn
+  lane, E east gantry), linked as a graph. Radius 4 m.
+- A node has an owner (VANTAGE, cell one, cell two) and a hold in [0,1].
+  One Blank flips a leased node in 4 s and reinforces it to full in another
+  4 s. Extra Blanks add 50% each; every adjacent node the cell already
+  holds adds 35% (the spread); a phage or sticky burst doubles the pull for
+  4 s; the faction perk multiplies it (hook in place for Stage 8).
+- Both cells on a node: contested, frozen, amber. Dead players do not count.
+- Score: one point per held node per second, ten per kill on the other
+  cell. Holding every node for 15 s is a FULL WAKE and ends the round.
+- The KERNEL pulses every 75 s and drains the weakest held node by half;
+  a hold that breaks returns to VANTAGE. Unoccupied nodes settle slowly.
+- Match flow: warm-up (deathmatch, 20 s once both cells have a Blank),
+  wake round (6 min), results (15 s), repeat. The offline sandbox starts in
+  the round immediately.
+- Rooms balance joiners into the smaller cell. Nodes, match header, and
+  wake events travel as entities and fx over protocol v4.
+
+**Presentation.** Hex pads on the floor with a neon ring, a fill that
+lerps toward the puller's colour as the hold drains, a light column, dashed
+graph links, the liberation ring on a flip (the same VFX the campaign uses
+for a district), a strip of hexes under the mission title with the timer
+and scores, and alerts for contests, KERNEL pulses, phases, and the FULL
+WAKE.
+
+**Acceptance (`npm run probe:wake`, 12/12; `npm test`, 63 tests):** a Blank
+flips D and then A; the spread makes A faster (2.97 s next to held D vs
+4.02 s alone); score accrues; a phage burst boosts B; the KERNEL pulses on
+schedule; online, the room puts ALPHA and BRAVO in opposite cells, the
+round starts once both are present, a node with both on it stays contested
+and leased, and when BRAVO leaves ALPHA's cell takes it and scores. Node
+entities and the match header reach the clients.

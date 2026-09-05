@@ -29,6 +29,8 @@ export interface GameHook {
     loop: typeof Game.prototype.stats;
     audio: Record<string, number>;
     render: { post: boolean; district: string; frames: number; internalScale: number };
+    wake: { phase: string; timeLeft: number; score: number[]; pulses: number; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number; boost: number; flips: number }[] } | null;
+    team: number;
     hash: string;
   };
   events: () => SimEvent[];
@@ -41,6 +43,8 @@ export interface GameHook {
   net: () => {
     online: boolean;
     status: string;
+    /** true once the first exact local state arrived (team, spawn, weapon state are authoritative). */
+    synced: boolean;
     playerId: number;
     token: string;
     rttMs: number;
@@ -89,6 +93,8 @@ window.__game = {
     loop: { ...game.stats },
     audio: { ...game.audio.fired },
     render: { post: !!game.renderer.post, district: game.renderer.district, frames: game.renderer.frames, internalScale: game.renderer.post.scale },
+    wake: game.world.wake ? { phase: game.world.wake.phase, timeLeft: game.world.wake.timeLeft, score: [...game.world.wake.score], pulses: game.world.wake.pulses, nodes: game.world.wake.nodes.map((n) => ({ id: n.id, label: n.label, owner: n.owner, hold: n.hold, contested: n.contested, puller: n.puller, boost: n.boost, flips: n.flips })) } : null,
+    team: game.player.team,
     hash: game.hash(),
   }),
   events: () => game.recentEvents.slice(),
@@ -107,6 +113,7 @@ window.__game = {
       ? {
           online: true,
           status: game.net.status,
+          synced: game.synced,
           playerId: game.net.playerId,
           token: game.net.token,
           rttMs: game.net.rttMs,

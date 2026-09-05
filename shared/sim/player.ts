@@ -23,6 +23,10 @@ export interface PlayerStats {
 export interface PlayerState {
   id: number;
   name: string;
+  /** 1 | 2 in the wake; 0 unassigned. */
+  team: number;
+  /** Node flip multiplier (faction perk / Ledger node; 1 = none). */
+  flipMult: number;
   /** Feet position. */
   pos: Vec3;
   vel: Vec3;
@@ -55,6 +59,8 @@ export function createPlayer(id: number, name: string, spawn: SpawnPoint): Playe
   return {
     id,
     name,
+    team: 0,
+    flipMult: 1,
     pos: clone(spawn.pos),
     vel: v3(),
     yaw: spawn.yaw,

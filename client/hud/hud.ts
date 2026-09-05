@@ -34,7 +34,7 @@ export class Hud {
         </div>
       </div>
 
-      <div class="p mg mission">◈ THE WAKE — CLEAR THE YARD<div class="sub">⌖ CONTRACT — DUMMIES <span class="kills">0</span>/5</div></div>
+      <div class="p mg mission"><span class="mtitle">◈ THE WAKE — DRAINAGE YARD</span><div class="sub"><span class="mline">⌖ CONTRACT — DUMMIES <span class="kills">0</span>/5</span></div><div class="sub mscore"></div><div class="nodes"></div></div>
       <div class="alert"></div>
 
       <div class="p cy map"><div class="t">AREA MAP</div><canvas width="54" height="42"></canvas><div class="f">click to walk</div></div>
@@ -97,6 +97,29 @@ export class Hud {
     if (this.flagTimer > 0) {
       this.flagTimer -= 1 / 60;
       if (this.flagTimer <= 0) this.q(".flag").classList.remove("on");
+    }
+  }
+
+  private nodeKey = "";
+
+  /** Wake strip under the mission title: phase, timer, scores, and a hex per node. */
+  wake(w: { phase: string; timeLeft: number; score: [number, number, number]; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number }[] }, myTeam: number): void {
+    const mm = Math.floor(Math.max(0, w.timeLeft) / 60);
+    const ss = Math.floor(Math.max(0, w.timeLeft) % 60);
+    const t = `${mm}:${String(ss).padStart(2, "0")}`;
+    const title = w.phase === "warmup" ? `◈ WARM-UP — WAKE IN ${t}` : w.phase === "results" ? `◈ ROUND OVER — ${w.score[1] > w.score[2] ? "CELL ONE" : w.score[2] > w.score[1] ? "CELL TWO" : "NO ONE"} WOKE THE YARD` : `◈ THE WAKE — ${t}`;
+    this.q(".mtitle").textContent = title;
+    this.q(".mscore").innerHTML = `<span style="color:var(--gr)">CELL ONE ${Math.floor(w.score[1])}</span> · <span style="color:var(--cy)">CELL TWO ${Math.floor(w.score[2])}</span>${myTeam ? ` · YOU: ${myTeam === 1 ? "ONE" : "TWO"}` : ""}`;
+    const key = w.nodes.map((n) => `${n.owner}${n.contested ? "c" : ""}${n.puller}${Math.round(n.hold * 10)}`).join("");
+    if (key !== this.nodeKey) {
+      this.nodeKey = key;
+      this.q(".nodes").innerHTML = w.nodes
+        .map((n) => {
+          const cls = n.contested ? "am" : n.owner === 1 ? "gr" : n.owner === 2 ? "cy" : "vi";
+          const pull = n.puller && n.puller !== n.owner ? `<i style="width:${Math.round((1 - n.hold) * 100)}%"></i>` : n.owner ? `<i style="width:${Math.round(n.hold * 100)}%"></i>` : "";
+          return `<span class="hex ${cls}">${n.label}${pull}</span>`;
+        })
+        .join("");
     }
   }
 

@@ -26,6 +26,7 @@ import {
   ENT_MECH,
   ENT_PROJECTILE,
   ENT_WASP,
+  ENT_NODE,
   FX,
   WEAPON_WIRE,
   type NetEntity,
@@ -89,6 +90,7 @@ export interface RoomStats {
   clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; inputsApplied: number; inputsRejected: number; kills: number; deaths: number; shots: number; hits: number; queue: number }[];
   shotDiag: Record<string, number>;
   traceLog: unknown[];
+  match: unknown;
 }
 
 const MAX_INPUTS_PER_TICK = 6;
@@ -123,7 +125,7 @@ export class Room {
       now: opts.now ?? (() => Date.now()),
       onLog: opts.onLog ?? (() => {}),
     };
-    this.world = new World(drainageYard(), { ai: this.opts.ai, seed: this.opts.seed });
+    this.world = new World(drainageYard(), { ai: this.opts.ai, seed: this.opts.seed, wakePhase: "warmup" });
     this.startedAt = this.opts.now();
     this.lastRateAt = this.startedAt;
   }
@@ -303,7 +305,11 @@ export class Room {
     };
     this.clients.set(playerId, rec);
     this.byConn.set(conn, rec);
-    this.world.addPlayer(playerId, safeName);
+    // balance cells: join the smaller one, ties to cell 1
+    let c1 = 0;
+    let c2 = 0;
+    for (const p of this.world.players.values()) p.team === 1 ? c1++ : p.team === 2 ? c2++ : 0;
+    this.world.addPlayer(playerId, safeName, c1 <= c2 ? 1 : 2);
     conn.send(encodeWelcome(playerId, this.tick, newToken, this.world.level.name, this.world.seed));
     for (const other of this.clients.values()) if (other !== rec) other.pendingEvents.push({ type: "join", playerId, name: safeName });
     this.opts.onLog(`player ${playerId} (${safeName}) joined`);
@@ -442,6 +448,16 @@ export class Room {
         return { type: "fx", kind: FX.chargeFull, playerId: ev.playerId, x: 0, y: 0, z: 0, a: 0, b: 0 };
       case "lunge":
         return { type: "fx", kind: FX.lunge, playerId: ev.playerId, x: 0, y: 0, z: 0, a: 0, b: 0 };
+      case "nodeFlip":
+        return { type: "fx", kind: FX.nodeFlip, playerId: 0, x: 0, y: 0, z: 0, a: ev.node, b: ev.team };
+      case "nodeContest":
+        return { type: "fx", kind: FX.nodeContest, playerId: 0, x: 0, y: 0, z: 0, a: ev.node, b: 0 };
+      case "kernelPulse":
+        return { type: "fx", kind: FX.kernelPulse, playerId: 0, x: 0, y: 0, z: 0, a: ev.node, b: ev.released ? 1 : 0 };
+      case "phase":
+        return { type: "fx", kind: FX.phase, playerId: 0, x: 0, y: 0, z: 0, a: ev.phase === "warmup" ? 0 : ev.phase === "wake" ? 1 : 2, b: ev.winner };
+      case "fullWake":
+        return { type: "fx", kind: FX.fullWake, playerId: 0, x: 0, y: 0, z: 0, a: ev.team, b: 0 };
       default:
         return null;
     }
@@ -453,6 +469,7 @@ export class Room {
     for (const p of w.projectiles) out.push({ kind: ENT_PROJECTILE, id: p.id, x: p.pos.x, y: p.pos.y, z: p.pos.z, a: p.kind === "phage" ? 1 : p.kind === "sticky" ? 2 : p.kind === "frag" ? 3 : p.kind === "smoke" ? 4 : 5, b: p.stuck ? 1 : 0, c: Math.round(p.fuse * 100), d: 0 });
     for (const c of w.clouds) out.push({ kind: ENT_CLOUD, id: c.id, x: c.pos.x, y: c.pos.y, z: c.pos.z, a: 0, b: 0, c: Math.round(c.radius * 100), d: Math.round(c.ttl * 100) });
     for (const ws of w.wasps) out.push({ kind: ENT_WASP, id: ws.id, x: ws.pos.x, y: ws.pos.y, z: ws.pos.z, a: ws.alive ? 1 : 0, b: Math.max(0, ws.health), c: Math.round(ws.yaw * 1000), d: ws.disabledTimer > 0 ? 2 : ws.state === "chase" ? 1 : 0 });
+    if (w.wake) for (const n of w.wake.nodes) out.push({ kind: ENT_NODE, id: n.id, x: n.pos.x, y: n.pos.y, z: n.pos.z, a: n.owner, b: Math.round(n.hold * 100), c: (n.contested ? 1 : 0) | (n.puller << 1) | (n.boost > 0 ? 8 : 0), d: n.links.reduce((m, l) => m | (1 << l), 0) });
     for (const m of w.mechs) out.push({ kind: ENT_MECH, id: m.id, x: m.pos.x, y: m.pos.y, z: m.pos.z, a: m.alive ? 1 : 0, b: Math.round(Math.max(0, m.health) / 2), c: Math.round(m.yaw * 1000), d: Math.round((m.face + m.lightYaw) * 1000) });
     return out;
   }
@@ -475,6 +492,7 @@ export class Room {
         players,
         dummies,
         entities: this.entities(),
+        match: this.world.wake ? { phase: this.world.wake.phase === "warmup" ? 0 : this.world.wake.phase === "wake" ? 1 : 2, timeLeft: this.world.wake.timeLeft, score1: this.world.wake.score[1], score2: this.world.wake.score[2], winner: this.world.wake.winner, round: this.world.wake.round } : null,
         events: rec.pendingEvents.splice(0),
       };
       const baseline = rec.ackTick ? rec.sent.get(rec.ackTick) ?? null : null;
@@ -496,6 +514,7 @@ export class Room {
     return quantizeRemote({
       id: p.id,
       slot: p.weapon.slot,
+      team: p.team,
       x: p.pos.x, y: p.pos.y, z: p.pos.z,
       vx: p.vel.x, vy: p.vel.y, vz: p.vel.z,
       yaw: p.yaw, pitch: p.pitch,
@@ -546,6 +565,7 @@ export class Room {
       bytesOut,
       clients,
       traceLog: this.traceLog,
+      match: this.world.wake ? { phase: this.world.wake.phase, timeLeft: this.world.wake.timeLeft, score: this.world.wake.score, nodes: this.world.wake.nodes.map((n) => ({ id: n.id, owner: n.owner, hold: n.hold, contested: n.contested })) } : null,
       shotDiag: { ...this.shotDiag, avgRewind: this.shotDiag.shots ? this.shotDiag.rewindSum / this.shotDiag.shots : 0, avgNearMiss: this.shotDiag.nearMissN ? this.shotDiag.nearMissSum / this.shotDiag.nearMissN : 0 },
     };
   }

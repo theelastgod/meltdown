@@ -5,7 +5,7 @@ import { eyePos } from "@shared/sim/player";
 import { wrapAngle, yawTo, pitchTo, type Vec3 } from "@shared/math/vec3";
 
 export type BotStep =
-  | { kind: "goto"; x: number; z: number; sprint?: boolean; radius?: number; timeoutTicks?: number }
+  | { kind: "goto"; x: number; z: number; sprint?: boolean; radius?: number; timeoutTicks?: number; /** ease off the sprint for the last metres so the stop lands on the target */ stop?: boolean }
   | { kind: "hold"; ticks: number; buttons?: number }
   | { kind: "look"; yaw: number; pitch?: number; ticks?: number }
   | { kind: "slide"; ticks: number; jumpAt?: number }
@@ -79,7 +79,8 @@ export class Bot {
         const d = Math.hypot(dx, dz);
         this.turnToward(yawTo(p.pos, target), 0, 0.35);
         buttons |= Btn.Forward;
-        if (step.sprint !== false) buttons |= Btn.Sprint;
+        // with `stop`, ease off the sprint for the last metres so the stop lands near the target instead of sliding past it
+        if (step.sprint !== false && (!step.stop || d > 3.5)) buttons |= Btn.Sprint;
         if (d < (step.radius ?? 0.6)) this.advance(`reached (${p.pos.x.toFixed(1)},${p.pos.z.toFixed(1)})`);
         else if (this.stepTicks > (step.timeoutTicks ?? 600)) this.advance("TIMEOUT");
         break;
@@ -137,12 +138,16 @@ export class Bot {
           const d = world.dummies.find((x) => x.id === step.dummyId);
           if (d) target = { x: d.pos.x, y: d.pos.y + 1.0, z: d.pos.z };
         }
+        let aimed = true;
         if (target) {
           const e = eyePos(p);
-          this.turnToward(yawTo(e, target), pitchTo(e, target), 0.6);
+          const wy = yawTo(e, target);
+          const wp = pitchTo(e, target);
+          this.turnToward(wy, wp, 0.6);
+          aimed = Math.abs(wrapAngle(wy - this.yaw)) + Math.abs(wp - this.pitch) < 0.02;
         }
         const releasing = step.ticks - this.stepTicks < 12; // let charged shots release before the step ends
-        const on = !releasing && (step.pulse ? this.stepTicks % step.pulse === 1 : true);
+        const on = aimed && !releasing && (step.pulse ? this.stepTicks % step.pulse === 1 : this.stepTicks > 1);
         if (on) buttons |= step.alt ? Btn.Alt : Btn.Fire;
         if (this.stepTicks >= step.ticks) this.advance("fired");
         break;

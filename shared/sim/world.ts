@@ -7,6 +7,7 @@ import { type FireRequest } from "./weapons";
 import { createProjectile, stepProjectiles, type CapsuleTarget, type Cloud, type Projectile, type ProjKind } from "./projectiles";
 import { canSee, createMech, createWasp, stepMech, stepWasp, type AiRequest, type Mech, type SightTarget, type Wasp, WASP, MECH } from "./ai";
 import { falloff, GRENADES, WEAPONS, type RangeProfile, type WeaponId } from "../weapons/manifest";
+import { addKillPoints, boostNodes, createWake, stepWake, type WakeEvent, type WakeState } from "./wake";
 import { type Vec3, v3, clone, copy, set, addScaled, viewDir, dist, lenXZ, sub, normalize, yawDir, dot, len } from "../math/vec3";
 import type { LocalAuth } from "../net/protocol";
 
@@ -68,7 +69,8 @@ export type SimEvent =
   | { tick: number; playerId: number; type: "mechBeam"; mechId: number; from: Vec3; to: Vec3; damage: number }
   | { tick: number; playerId: number; type: "hurt"; damage: number; by: number; kind: "shot" | "explosion" | "melee" | "beam" }
   | { tick: number; playerId: number; type: "waspDeath"; waspId: number }
-  | { tick: number; playerId: number; type: "mechDeath"; mechId: number };
+  | { tick: number; playerId: number; type: "mechDeath"; mechId: number }
+  | ({ tick: number; playerId: number } & WakeEvent);
 
 export const DUMMY_RADIUS = MOVE.capsuleRadius;
 export const DUMMY_HEIGHT = MOVE.standHeight;
@@ -87,6 +89,8 @@ export function zoneOf(hitY: number, feetY: number, height: number): HitZone {
 export interface WorldOptions {
   seed?: number;
   ai?: boolean;
+  /** Start the wake immediately (offline sandbox) or in warm-up (rooms). */
+  wakePhase?: "warmup" | "wake" | "off";
 }
 
 /**
@@ -104,6 +108,7 @@ export class World {
   readonly clouds: Cloud[] = [];
   readonly wasps: Wasp[] = [];
   readonly mechs: Mech[] = [];
+  readonly wake: WakeState | null;
   private pending: SimEvent[] = [];
   private nextSpawn = 0;
   private nextProjId = 1;
@@ -113,6 +118,8 @@ export class World {
     this.level = level;
     this.seed = opts.seed ?? 1;
     this.ai = opts.ai ?? true;
+    const wp = opts.wakePhase ?? "wake";
+    this.wake = wp === "off" || level.nodes.length === 0 ? null : createWake(level.nodes, wp);
     for (const d of level.dummies) {
       this.dummies.push({ id: d.id, def: d, pos: clone(d.pos), health: DUMMY_MAX_HEALTH, alive: true, respawnTimer: 0, phase: 0, dir: 1, firstDamageTick: -1, hitsTaken: 0 });
     }
@@ -126,10 +133,11 @@ export class World {
     return this.tick / SIM_HZ;
   }
 
-  addPlayer(id: number, name = "BLANK"): PlayerState {
+  addPlayer(id: number, name = "BLANK", team = 1): PlayerState {
     const spawn = this.level.spawns[this.nextSpawn % this.level.spawns.length]!;
     this.nextSpawn++;
     const p = createPlayer(id, name, spawn);
+    p.team = team;
     this.players.set(id, p);
     return p;
   }
@@ -172,9 +180,21 @@ export class World {
     if (!opts.predictOnly) {
       this.stepProjectilesAndClouds(opts);
       if (this.ai) this.stepAI(opts);
+      if (this.wake) this.stepWakeMode(opts);
     }
     this.stepDummies();
     this.tick++;
+  }
+
+  private stepWakeMode(opts: StepOpts): void {
+    const w = this.wake!;
+    const occupants = [...this.players.values()].map((p) => ({ team: p.team, pos: p.pos, flipMult: p.flipMult, alive: p.alive }));
+    const per: [number, number, number] = [0, 0, 0];
+    for (const p of this.players.values()) if (p.team === 1 || p.team === 2) per[p.team]++;
+    const events: WakeEvent[] = [];
+    const solo = per[1] + per[2] <= 1;
+    stepWake(w, occupants, per, events, solo);
+    for (const e of events) this.emit({ tick: this.tick, playerId: -1, ...e }, opts);
   }
 
   /** Apply one input to one player: movement + weapon; resolve its fire requests. */
@@ -364,7 +384,10 @@ export class World {
       if (v.health <= 0) {
         const ttk = this.tick - v.firstDamageTick;
         this.killPlayer(v, attacker, weapon, opts);
-        if (shooter) shooter.stats.kills++;
+        if (shooter) {
+          shooter.stats.kills++;
+          if (this.wake && shooter.team !== v.team) addKillPoints(this.wake, shooter.team);
+        }
         this.emit({ tick: this.tick, playerId: attacker, type: "kill", victimKind: "player", victimId: v.id, ttkTicks: ttk, ttkSeconds: ttk / SIM_HZ, weapon }, opts);
       }
       return;
@@ -439,6 +462,7 @@ export class World {
       return;
     }
     this.emit({ tick: this.tick, playerId: p.owner, type: "explode", projKind: p.kind, pos: clone(pos), radius: p.radius }, opts);
+    if (this.wake && (p.kind === "phage" || p.kind === "sticky")) boostNodes(this.wake, pos, p.radius); // violet burst speeds the wake
     if (direct) {
       const kind: TargetKind = direct.id >= 3000 ? "mech" : direct.id >= 2000 ? "wasp" : direct.id >= 1000 ? "dummy" : "player";
       const id = direct.id >= 3000 ? direct.id - 3000 : direct.id >= 2000 ? direct.id - 2000 : direct.id >= 1000 ? direct.id - 1000 : direct.id;
@@ -530,6 +554,7 @@ export class World {
       mfx: p.mantleFrom.x, mfy: p.mantleFrom.y, mfz: p.mantleFrom.z, mtx: p.mantleTo.x, mty: p.mantleTo.y, mtz: p.mantleTo.z, mantleT: p.mantleT,
       health: p.health, alive: p.alive ? 1 : 0, respawnTimer: p.respawnTimer, prevButtons: p.prevButtons,
       kills: p.stats.kills, deaths: p.stats.deaths, shots: p.stats.shots, hits: p.stats.hits,
+      team: p.team,
       slot: w.slot, ammo: w.ammo.slice(), reloadTimer: w.reloadTimer, reloadTotal: w.reloadTotal, reloadSeated: w.reloadSeated ? 1 : 0, fireCooldown: w.fireCooldown,
       charge: w.charge, charging: w.charging ? 1 : 0, shotIndex: w.shotIndex, magSeed: w.magSeed, magCount: w.magCount, altActive: w.altActive ? 1 : 0, altCooldown: w.altCooldown,
       lungeT: w.lungeT, lungeHit: w.lungeHit ? 1 : 0, grenades: w.grenades.slice(), grenadeSel: w.grenadeSel, grenadeCooldown: w.grenadeCooldown, swapTimer: w.swapTimer,
@@ -561,6 +586,7 @@ export class World {
     p.stats.deaths = l.deaths;
     p.stats.shots = l.shots;
     p.stats.hits = l.hits;
+    p.team = l.team;
     const w = p.weapon;
     w.slot = l.slot;
     w.ammo = l.ammo.slice();
@@ -632,6 +658,10 @@ export function hashWorld(w: World): string {
   for (const m of w.mechs) {
     push(m.pos);
     parts.push(m.health, m.alive ? 1 : 0, m.lightYaw, m.lockTimer);
+  }
+  if (w.wake) {
+    parts.push(w.wake.timeLeft, w.wake.score[1], w.wake.score[2], w.wake.kernelTimer, w.wake.phase === "wake" ? 1 : w.wake.phase === "warmup" ? 0 : 2);
+    for (const n of w.wake.nodes) parts.push(n.owner, n.hold, n.boost);
   }
   const buf = new Float64Array(parts);
   const bytes = new Uint8Array(buf.buffer);

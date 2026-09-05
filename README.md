@@ -25,6 +25,7 @@ npm run probe      # headless Playwright probe: bot path + kill + screenshot
 npm run probe:look # look probe: frames measured against the reference clip's statistics
 npm run probe:net  # netcode probe: two clients at 150 ms RTT + 5% loss, rejoin, cheater
 npm run probe:arsenal # TTK harness table + every weapon, grenade and VANTAGE unit in the browser
+npm run probe:wake # the wake: flips, spread, phage boost, KERNEL pulse; online contest between two cells
 npm run verify     # all of the above
 ```
 
@@ -46,7 +47,7 @@ Add `?headless=1` to the URL to start with the simulation paused; the
 ```
 shared/     pure TS simulation shared by client and (Stage 2) server
   math/     vec3
-  sim/      constants, input, level, collision, player, weapons, projectiles, ai, ttk, world
+  sim/      constants, input, level, collision, player, weapons, projectiles, ai, wake, ttk, world
   weapons/  weapon + grenade manifest
   economy/  WAKE token constants, Robinhood Chain config, no-paid-power lint
 client/     Vite + Three.js presentation: input, renderer (post chain, rain, wet floor, city), audio, HUD, game loop, bot

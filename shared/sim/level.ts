@@ -30,6 +30,8 @@ export interface LevelDef {
   wasps: { waypoints: Vec3[] }[];
   /** Repo mechs walking a two-point path with a sweeping searchlight centred on `face` (yaw; default: path heading). */
   mechs: { path: Vec3[]; face?: number }[];
+  /** Wake nodes (hex city nodes) and their district-graph links. */
+  nodes: { id: number; label: string; pos: Vec3; links: number[] }[];
 }
 
 const box = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, tag?: string): Box => ({
@@ -121,5 +123,12 @@ export function drainageYard(): LevelDef {
     { waypoints: [v3(-12, 3.5, -10), v3(-20, 3.8, 4), v3(-10, 3.2, 8)] },
   ];
   const mechs = [{ path: [v3(13, 0, -22), v3(24, 0, -22)], face: Math.PI }]; // light sweeps the arena to the north
-  return { name: "drainage_yard", boxes, spawns, dummies, killY: -20, wasps, mechs };
+  const nodes = [
+    { id: 1, label: "A", pos: v3(0, 1.2, -5), links: [2, 3, 4] },
+    { id: 2, label: "B", pos: v3(18, 0, 0), links: [1, 4, 5] },
+    { id: 3, label: "C", pos: v3(-14, 0, -2), links: [1, 4] },
+    { id: 4, label: "D", pos: v3(0, 0, 17), links: [1, 2, 3] },
+    { id: 5, label: "E", pos: v3(20, 0, -12), links: [2] },
+  ];
+  return { name: "drainage_yard", boxes, spawns, dummies, killY: -20, wasps, mechs, nodes };
 }

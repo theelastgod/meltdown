@@ -90,3 +90,11 @@ html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; f
 #hud .emp { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: repeating-linear-gradient(0deg, rgba(53,242,255,0.05) 0 2px, rgba(0,0,0,0.85) 2px 5px); mix-blend-mode: normal; }
 #hud .emp.on { animation: empflicker 0.12s steps(2) infinite; }
 @keyframes empflicker { 50% { filter: invert(0.08); } }
+
+#hud .nodes { display: flex; gap: 5px; justify-content: center; margin-top: 5px; }
+#hud .hex { position: relative; width: 26px; height: 22px; line-height: 22px; font-size: 11px; text-align: center; border: 1px solid; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background: rgba(0,0,0,0.5); overflow: hidden; }
+#hud .hex.vi { color: #b48cff; border-color: #8f4dff; background: rgba(143,77,255,0.25); }
+#hud .hex.gr { color: #04120a; border-color: var(--gr); background: var(--gr); }
+#hud .hex.cy { color: #041014; border-color: var(--cy); background: var(--cy); }
+#hud .hex.am { color: var(--am); border-color: var(--am); background: rgba(255,176,46,0.25); animation: blink 0.5s steps(2) infinite; }
+#hud .hex i { position: absolute; left: 0; bottom: 0; height: 3px; background: #fff; opacity: 0.9; }

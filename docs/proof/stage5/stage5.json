@@ -1,0 +1,131 @@
+{
+  "flips": [
+    {
+      "node": 4,
+      "tick": 287
+    },
+    {
+      "node": 1,
+      "tick": 713
+    }
+  ],
+  "spread": {
+    "plain": 4.016666666666667,
+    "spread": 2.966666666666667
+  },
+  "boosted": 2.3666666666666725,
+  "pulse": {
+    "pulses": 1,
+    "ev": 1,
+    "holds": [
+      "A:1/1.00",
+      "B:0/1.00",
+      "C:0/1.00",
+      "D:1/1.00",
+      "E:0/1.00"
+    ]
+  },
+  "online": {
+    "phase": "wake",
+    "timeLeft": 341.28333333335036,
+    "score": [
+      0,
+      4.39999999999999,
+      0
+    ],
+    "nodes": [
+      {
+        "id": 1,
+        "owner": 0,
+        "hold": 1,
+        "contested": false
+      },
+      {
+        "id": 2,
+        "owner": 0,
+        "hold": 1,
+        "contested": false
+      },
+      {
+        "id": 3,
+        "owner": 0,
+        "hold": 1,
+        "contested": false
+      },
+      {
+        "id": 4,
+        "owner": 1,
+        "hold": 1,
+        "contested": false
+      },
+      {
+        "id": 5,
+        "owner": 0,
+        "hold": 1,
+        "contested": false
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "offline: node D flips violet → green under one Blank",
+      "pass": true,
+      "detail": "owner 1, hold 1.00"
+    },
+    {
+      "name": "offline: node A (adjacent to held D) flips too",
+      "pass": true,
+      "detail": "owner 1, hold 1.00"
+    },
+    {
+      "name": "offline: score accrues for held nodes",
+      "pass": true,
+      "detail": "cell one 13.7 pts, timer 345 s"
+    },
+    {
+      "name": "offline: the wake spreads — flipping next to a held node is faster",
+      "pass": true,
+      "detail": "4.02 s alone vs 2.97 s with D held"
+    },
+    {
+      "name": "offline: a phage burst boosts the node it lands on",
+      "pass": true,
+      "detail": "node B boost 2.37 s remaining"
+    },
+    {
+      "name": "offline: the KERNEL pulses on schedule and drains the weakest hold",
+      "pass": true,
+      "detail": "1 pulse(s); A:1/1.00 B:0/1.00 C:0/1.00 D:1/1.00 E:0/1.00"
+    },
+    {
+      "name": "offline: no page errors",
+      "pass": true,
+      "detail": "clean console"
+    },
+    {
+      "name": "online: the room balances the two Blanks into opposite cells",
+      "pass": true,
+      "detail": "ALPHA cell 1, BRAVO cell 2"
+    },
+    {
+      "name": "online: the round starts once both cells have a Blank",
+      "pass": true,
+      "detail": "phase wake, 359 s on the clock"
+    },
+    {
+      "name": "online: a node with both cells on it is contested and stays leased",
+      "pass": true,
+      "detail": "contested=true owner=0 hold=1.00"
+    },
+    {
+      "name": "online: when BRAVO leaves, ALPHA's cell takes the node and scores",
+      "pass": true,
+      "detail": "owner=1 hold=1.00 score 4.4 : 0.0"
+    },
+    {
+      "name": "online: clients receive node entities and the match header",
+      "pass": true,
+      "detail": "entities 1:0,2:0,3:0,4:1,5:0; snapshots 1160"
+    }
+  ]
+}

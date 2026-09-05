@@ -237,6 +237,29 @@ export class GameAudio {
     this.burst({ dur: 0.25, freq: 1600, q: 0.5, gain: 0.3 });
   }
 
+  /** A node coming off the model: rising cyan-green chord, chunk-thud underneath. */
+  nodeFlip(mine: boolean): void {
+    this.count("nodeFlip");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.25, from: 110, to: 50, gain: 0.5 });
+    const base = mine ? 440 : 330;
+    for (const [i, m] of [1, 1.25, 1.5, 2].entries()) this.tone({ dur: 0.7, from: base * m, gain: 0.08, type: "triangle", delay: 0.05 * i });
+  }
+
+  contest(): void {
+    this.count("contest");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.1, from: 700, gain: 0.08, type: "square" });
+    this.tone({ dur: 0.1, from: 700, gain: 0.08, type: "square", delay: 0.15 });
+  }
+
+  kernelPulse(): void {
+    this.count("kernelPulse");
+    if (!this.ctx) return;
+    this.tone({ dur: 1.2, from: 42, to: 30, gain: 0.7 });
+    this.burst({ dur: 0.6, freq: 260, q: 0.5, gain: 0.3, type: "lowpass" });
+  }
+
   hurt(): void {
     this.count("hurt");
     if (!this.ctx) return;

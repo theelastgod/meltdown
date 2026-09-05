@@ -5,7 +5,7 @@
 import type { InputFrame } from "../sim/input";
 import type { HitZone } from "../sim/world";
 
-export const PROTOCOL_VERSION = 3;
+export const PROTOCOL_VERSION = 4;
 /** Server snapshot cadence in sim ticks (60 Hz sim → 30 Hz snapshots). */
 export const SNAPSHOT_EVERY = 2;
 /** Lag compensation rewind cap in ticks (200 ms at 60 Hz). */
@@ -39,6 +39,7 @@ export interface NetInput extends InputFrame {
 export interface RemotePlayerQ {
   id: number;
   slot: number;
+  team: number;
   x: number;
   y: number;
   z: number;
@@ -66,6 +67,7 @@ export interface LocalAuth {
   mfx: number; mfy: number; mfz: number; mtx: number; mty: number; mtz: number; mantleT: number;
   health: number; alive: number; respawnTimer: number; prevButtons: number;
   kills: number; deaths: number; shots: number; hits: number;
+  team: number;
   // weapon state (exact)
   slot: number; ammo: number[]; reloadTimer: number; reloadTotal: number; reloadSeated: number; fireCooldown: number;
   charge: number; charging: number; shotIndex: number; magSeed: number; magCount: number; altActive: number; altCooldown: number;
@@ -75,7 +77,7 @@ export interface LocalAuth {
 
 /** Generic server-driven entity record: projectiles, clouds, wasps, mechs. */
 export interface NetEntity {
-  kind: 1 | 2 | 3 | 4;
+  kind: 1 | 2 | 3 | 4 | 5;
   id: number;
   x: number;
   y: number;
@@ -85,7 +87,17 @@ export interface NetEntity {
   c: number;
   d: number;
 }
-export const ENT_PROJECTILE = 1, ENT_CLOUD = 2, ENT_WASP = 3, ENT_MECH = 4;
+export const ENT_PROJECTILE = 1, ENT_CLOUD = 2, ENT_WASP = 3, ENT_MECH = 4, ENT_NODE = 5;
+
+/** Match header carried in every snapshot. */
+export interface MatchQ {
+  phase: number; // 0 warmup, 1 wake, 2 results
+  timeLeft: number;
+  score1: number;
+  score2: number;
+  winner: number;
+  round: number;
+}
 
 export interface DummyQ {
   id: number;
@@ -105,7 +117,7 @@ export type NetEvent =
   /** Generic effect: kind (FX_*), player, position, two small args. */
   | { type: "fx"; kind: number; playerId: number; x: number; y: number; z: number; a: number; b: number };
 
-export const FX = { explode: 1, cloud: 2, emp: 3, flagged: 4, stun: 5, swap: 6, melee: 7, mechBeam: 8, hurt: 9, waspDeath: 10, mechDeath: 11, throw: 12, chargeFull: 13, lunge: 14 } as const;
+export const FX = { explode: 1, cloud: 2, emp: 3, flagged: 4, stun: 5, swap: 6, melee: 7, mechBeam: 8, hurt: 9, waspDeath: 10, mechDeath: 11, throw: 12, chargeFull: 13, lunge: 14, nodeFlip: 15, nodeContest: 16, kernelPulse: 17, phase: 18, fullWake: 19 } as const;
 /** weapon numbering on the wire: 0 wasp/none, 1..6 slots, 7 grenade, 8 mech */
 export const WEAPON_WIRE: Record<string, number> = { wasp: 0, lease_breaker: 1, repo_hammer: 2, stack_smg: 3, longwave: 4, phage: 5, shock_baton: 6, frag: 7, smoke: 7, emp: 7, grenade: 7, mech: 8 };
 
@@ -116,6 +128,7 @@ export interface Snapshot {
   players: RemotePlayerQ[];
   dummies: DummyQ[];
   entities: NetEntity[];
+  match: MatchQ | null;
   events: NetEvent[];
   bytes: number;
 }
@@ -286,6 +299,7 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     w.u16(l.deaths);
     w.u32(l.shots);
     w.u32(l.hits);
+    w.u8(l.team);
     w.u8(l.slot);
     for (let i = 0; i < 7; i++) w.u8(l.ammo[i] ?? 0);
     w.u8(l.reloadSeated);
@@ -306,14 +320,14 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     if (!b || b.x !== p.x || b.y !== p.y || b.z !== p.z) mask |= F_POS;
     if (!b || b.vx !== p.vx || b.vy !== p.vy || b.vz !== p.vz) mask |= F_VEL;
     if (!b || b.yaw !== p.yaw || b.pitch !== p.pitch) mask |= F_VIEW;
-    if (!b || b.health !== p.health || b.ammo !== p.ammo || b.alive !== p.alive || b.grounded !== p.grounded || b.stance !== p.stance || b.height !== p.height || b.slot !== p.slot) mask |= F_STATE;
+    if (!b || b.health !== p.health || b.ammo !== p.ammo || b.alive !== p.alive || b.grounded !== p.grounded || b.stance !== p.stance || b.height !== p.height || b.slot !== p.slot || b.team !== p.team) mask |= F_STATE;
     if (!b || b.name !== p.name) mask |= F_NAME;
     w.u8(p.id);
     w.u8(mask);
     if (mask & F_POS) { w.i16(p.x * Q_POS); w.i16(p.y * Q_POS); w.i16(p.z * Q_POS); }
     if (mask & F_VEL) { w.i16(p.vx * Q_VEL); w.i16(p.vy * Q_VEL); w.i16(p.vz * Q_VEL); }
     if (mask & F_VIEW) { w.i16(p.yaw * Q_ANG); w.i16(p.pitch * Q_ANG); }
-    if (mask & F_STATE) { w.i16(p.health); w.u8(p.ammo); w.u8((p.alive ? 1 : 0) | (p.grounded ? 2 : 0) | (p.stance << 2) | (p.slot << 4)); w.i16(p.height * Q_POS); }
+    if (mask & F_STATE) { w.i16(p.health); w.u8(p.ammo); w.u8((p.alive ? 1 : 0) | (p.grounded ? 2 : 0) | (p.stance << 2) | (p.slot << 4)); w.i16(p.height * Q_POS); w.u8(p.team); }
     if (mask & F_NAME) w.str(p.name);
   }
   // dummies (full, small)
@@ -326,6 +340,11 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     w.i16(d.y * Q_POS);
     w.i16(d.z * Q_POS);
   }
+  // match header
+  if (s.match) {
+    w.u8(1);
+    w.u8(s.match.phase); w.u16(Math.max(0, Math.round(s.match.timeLeft))); w.u16(Math.min(65535, Math.round(s.match.score1))); w.u16(Math.min(65535, Math.round(s.match.score2))); w.u8(s.match.winner); w.u8(s.match.round);
+  } else w.u8(0);
   // entities (full each snapshot; small)
   w.u8(Math.min(255, s.entities.length));
   for (const e of s.entities.slice(0, 255)) {
@@ -410,6 +429,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
       const l: Record<string, number> = { seq };
       for (const k of LOCAL_FLOAT_KEYS) l[k] = r.f64();
       l.stance = r.u8(); l.grounded = r.u8(); l.alive = r.u8(); l.health = r.i16(); l.prevButtons = r.u16(); l.kills = r.u16(); l.deaths = r.u16(); l.shots = r.u32(); l.hits = r.u32();
+      l.team = r.u8();
       l.slot = r.u8();
       const ammo: number[] = [];
       for (let i = 0; i < 7; i++) ammo.push(r.u8());
@@ -425,17 +445,19 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
       const id = r.u8();
       const mask = r.u8();
       const b = base?.players.find((x) => x.id === id);
-      const p: RemotePlayerQ = b ? { ...b } : { id, slot: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, health: 100, ammo: 0, alive: true, grounded: true, stance: 0, height: 1.8, name: "BLANK" };
+      const p: RemotePlayerQ = b ? { ...b } : { id, slot: 1, team: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, health: 100, ammo: 0, alive: true, grounded: true, stance: 0, height: 1.8, name: "BLANK" };
       if (mask & F_POS) { p.x = r.i16() / Q_POS; p.y = r.i16() / Q_POS; p.z = r.i16() / Q_POS; }
       if (mask & F_VEL) { p.vx = r.i16() / Q_VEL; p.vy = r.i16() / Q_VEL; p.vz = r.i16() / Q_VEL; }
       if (mask & F_VIEW) { p.yaw = r.i16() / Q_ANG; p.pitch = r.i16() / Q_ANG; }
-      if (mask & F_STATE) { p.health = r.i16(); p.ammo = r.u8(); const fl = r.u8(); p.alive = !!(fl & 1); p.grounded = !!(fl & 2); p.stance = (fl >> 2) & 3; p.slot = fl >> 4; p.height = r.i16() / Q_POS; }
+      if (mask & F_STATE) { p.health = r.i16(); p.ammo = r.u8(); const fl = r.u8(); p.alive = !!(fl & 1); p.grounded = !!(fl & 2); p.stance = (fl >> 2) & 3; p.slot = fl >> 4; p.height = r.i16() / Q_POS; p.team = r.u8(); }
       if (mask & F_NAME) p.name = r.str();
       players.push(p);
     }
     const nd = r.u8();
     const dummies: DummyQ[] = [];
     for (let i = 0; i < nd; i++) dummies.push({ id: r.u8(), alive: r.u8() === 1, health: r.i16(), x: r.i16() / Q_POS, y: r.i16() / Q_POS, z: r.i16() / Q_POS });
+    let match: MatchQ | null = null;
+    if (r.u8() === 1) match = { phase: r.u8(), timeLeft: r.u16(), score1: r.u16(), score2: r.u16(), winner: r.u8(), round: r.u8() };
     const nent = r.u8();
     const entities: NetEntity[] = [];
     for (let i = 0; i < nent; i++) {
@@ -462,7 +484,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
       else if (k === 6) events.push({ type: "fx", kind: r.u8(), playerId: r.u8(), x: r.i16() / Q_POS, y: r.i16() / Q_POS, z: r.i16() / Q_POS, a: r.u8(), b: r.u8() });
       else return null;
     }
-    return { type: "snapshot", baselineTick, snapshot: { tick, serverTimeMs, local, players, dummies, entities, events, bytes: buf.byteLength } };
+    return { type: "snapshot", baselineTick, snapshot: { tick, serverTimeMs, local, players, dummies, entities, match, events, bytes: buf.byteLength } };
   } catch {
     return null;
   }

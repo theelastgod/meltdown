@@ -8,6 +8,7 @@ import { Rain } from "./rain";
 import { makeWetFloor } from "./wetfloor";
 import { buildSkyline, dressArena, PALETTE } from "./city";
 import { ArsenalFx, buildViewmodel } from "./weapons";
+import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 
 /** Interpolated view state handed to the renderer each frame. */
@@ -64,6 +65,7 @@ export class Renderer {
   private vmSlot = 1;
   private vmSwap = 0;
   readonly fx: ArsenalFx;
+  readonly wake: WakeFx;
   private baseFov = 80;
   private fovNow = 80;
   private vmKick = 0;
@@ -112,6 +114,7 @@ export class Renderer {
     this.viewmodel = this.viewmodels.get("lease_breaker")!;
     this.viewmodel.visible = true;
     this.fx = new ArsenalFx(this.scene);
+    this.wake = new WakeFx(this.scene);
 
     this.post = new PostChain(this.renderer, this.scene, this.camera, window.innerWidth, window.innerHeight, 0.6);
     window.addEventListener("resize", () => this.resize());
@@ -295,6 +298,7 @@ export class Renderer {
       this.camera.updateProjectionMatrix();
     }
     this.fx.update(dt);
+    this.wake.update(dt);
 
     for (let i = this.tracers.length - 1; i >= 0; i--) {
       const t = this.tracers[i]!;

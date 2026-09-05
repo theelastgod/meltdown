@@ -11,7 +11,8 @@ import { InputController } from "./input";
 import { Renderer, type ViewState } from "./render/renderer";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
-import { ENT_CLOUD, ENT_MECH, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot } from "@shared/net/protocol";
+import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot } from "@shared/net/protocol";
+import type { NodeView } from "./render/wake";
 import { WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
 import { currentWeapon } from "@shared/sim/weapons";
 
@@ -62,7 +63,7 @@ export class Game {
   net: NetClient | null = null;
   private netConfig: NetConfig | null = null;
   /** Online: true once the first authoritative local state arrived; prediction starts then. */
-  private synced = false;
+  synced = false;
   readonly netStats = { corrections: 0, maxCorrectionM: 0, replayedInputs: 0, serverHitsOnMe: 0, myHits: 0, myShotsConfirmed: 0, log: [] as { tick: number; corr: number; ack: number; pendingBefore: number; replayed: number; wasAlive: boolean; stance: string }[] };
   readonly input: InputController;
   readonly renderer: Renderer;
@@ -86,7 +87,7 @@ export class Game {
 
   constructor(canvas: HTMLCanvasElement, hudRoot: HTMLElement) {
     const q = new URLSearchParams(location.search);
-    this.world = new World(drainageYard(), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1 });
+    this.world = new World(drainageYard(), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" ? "off" : "wake" });
     this.player = this.world.addPlayer(1, "BLANK");
     this.input = new InputController(canvas);
     this.input.yaw = this.player.yaw;
@@ -169,6 +170,7 @@ export class Game {
       this.world.tick = ns.tick;
     }
     this.netEntities = ns.entities;
+    this.netMatch = ns.match;
     for (const ev of ns.events) this.onNetEvent(ev);
   }
 
@@ -238,6 +240,31 @@ export class Game {
             break;
           case FX.mechDeath:
             this.hud.push(`REPO MECH ${ev.a} DISABLED`, "am");
+            break;
+          case FX.nodeFlip: {
+            const n = this.netEntities.find((e) => e.kind === ENT_NODE && e.id === ev.a);
+            if (n) this.renderer.wake.flip({ x: n.x, y: n.y, z: n.z }, ev.b);
+            this.audio.nodeFlip(ev.b === this.player.team);
+            this.renderer.post.kick(0.5);
+            this.hud.push(`NODE ${["", "A", "B", "C", "D", "E"][ev.a] ?? ev.a} — CELL ${ev.b === 1 ? "ONE" : "TWO"}`, ev.b === 1 ? "gr" : "cy");
+            break;
+          }
+          case FX.nodeContest:
+            this.hud.alert(`◆ NODE ${["", "A", "B", "C", "D", "E"][ev.a] ?? ev.a} CONTESTED`, true, 1.5);
+            this.audio.contest();
+            break;
+          case FX.kernelPulse:
+            this.hud.alert(`◆ KERNEL PULSE — NODE ${["", "A", "B", "C", "D", "E"][ev.a] ?? ev.a} ${ev.b ? "RE-LEASED" : "DRAINED"}`, true, 2.5);
+            this.audio.kernelPulse();
+            this.renderer.post.kick(0.8);
+            break;
+          case FX.phase:
+            this.hud.alert(ev.a === 1 ? "◆ THE WAKE BEGINS" : ev.a === 2 ? `◆ ROUND OVER — ${ev.b ? `CELL ${ev.b === 1 ? "ONE" : "TWO"} WOKE THE YARD` : "NO ONE WOKE"}` : "◆ WARM-UP", false, 4);
+            this.renderer.post.kick(1);
+            break;
+          case FX.fullWake:
+            this.hud.alert("◆ FULL WAKE — THE YARD IS OFF THE MODEL", false, 5);
+            this.renderer.post.kick(1);
             break;
           default:
             break;
@@ -344,8 +371,23 @@ export class Game {
 
   private chargeTick = 0;
 
+  /** Latest wake state for the HUD (offline: the world's; online: the snapshot's). */
+  private wakeHud: { phase: string; timeLeft: number; score: [number, number, number]; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number }[] } | null = null;
+  private lastNodeOwners = new Map<number, number>();
+
+  private nodeViewsOffline(): NodeView[] {
+    const w = this.world.wake;
+    if (!w) return [];
+    return w.nodes.map((n) => ({ id: n.id, label: n.label, pos: n.pos, owner: n.owner, hold: n.hold, contested: n.contested, puller: n.puller, boost: n.boost > 0, links: n.links }));
+  }
+
   private syncOfflineEntities(): void {
     const w = this.world;
+    if (w.wake) {
+      const views = this.nodeViewsOffline();
+      this.renderer.wake.sync(views);
+      this.wakeHud = { phase: w.wake.phase, timeLeft: w.wake.timeLeft, score: w.wake.score, nodes: views };
+    }
     this.renderer.fx.syncProjectiles(w.projectiles.map((p) => ({ id: p.id, kind: p.kind, pos: p.pos, stuck: p.stuck })));
     this.renderer.fx.syncClouds(w.clouds.map((c) => ({ id: c.id, pos: c.pos, radius: c.radius })));
     this.renderer.fx.syncWasps(w.wasps.map((x) => ({ id: x.id, pos: x.pos, yaw: x.yaw, alive: x.alive, state: x.disabledTimer > 0 ? 2 : x.state === "chase" ? 1 : 0 })));
@@ -354,9 +396,20 @@ export class Game {
 
   private netEntities: NetSnapshot["entities"] = [];
 
+  private netMatch: NetSnapshot["match"] = null;
+
   private syncNetEntities(): void {
     const kinds = ["phage", "phage", "sticky", "frag", "smoke", "emp"] as const;
     const ents = this.netEntities;
+    const labels = ["", "A", "B", "C", "D", "E", "F", "G", "H"];
+    const nodes: NodeView[] = ents
+      .filter((e) => e.kind === ENT_NODE)
+      .map((e) => ({ id: e.id, label: labels[e.id] ?? String(e.id), pos: { x: e.x, y: e.y, z: e.z }, owner: e.a, hold: e.b / 100, contested: !!(e.c & 1), puller: (e.c >> 1) & 3, boost: !!(e.c & 8), links: [1, 2, 3, 4, 5, 6, 7, 8].filter((l) => e.d & (1 << l)) }));
+    if (nodes.length) {
+      this.renderer.wake.sync(nodes);
+      const m = this.netMatch;
+      this.wakeHud = { phase: m ? (m.phase === 0 ? "warmup" : m.phase === 1 ? "wake" : "results") : "wake", timeLeft: m?.timeLeft ?? 0, score: [0, m?.score1 ?? 0, m?.score2 ?? 0], nodes };
+    }
     this.renderer.fx.syncProjectiles(ents.filter((e) => e.kind === ENT_PROJECTILE).map((e) => ({ id: e.id, kind: kinds[e.a] ?? "phage", pos: { x: e.x, y: e.y, z: e.z }, stuck: e.b === 1 })));
     this.renderer.fx.syncClouds(ents.filter((e) => e.kind === ENT_CLOUD).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, radius: e.c / 100 })));
     this.renderer.fx.syncWasps(ents.filter((e) => e.kind === ENT_WASP).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, yaw: e.c / 1000, alive: e.a === 1, state: e.d })));
@@ -470,6 +523,37 @@ export class Game {
         break;
       case "throw":
         if (ev.playerId === this.player.id) this.audio.throw();
+        break;
+      case "nodeFlip": {
+        const n = this.world.wake?.nodes.find((x) => x.id === ev.node);
+        if (n) this.renderer.wake.flip(n.pos, ev.team);
+        this.audio.nodeFlip(ev.team === this.player.team);
+        this.renderer.post.kick(0.5);
+        this.hud.push(`NODE ${n?.label ?? ev.node} ${ev.from === 0 ? "PULLED OFF THE MODEL" : "TAKEN"} — CELL ${ev.team === 1 ? "ONE" : "TWO"}`, ev.team === 1 ? "gr" : "cy");
+        break;
+      }
+      case "nodeContest": {
+        const n = this.world.wake?.nodes.find((x) => x.id === ev.node);
+        this.hud.alert(`◆ NODE ${n?.label ?? ev.node} CONTESTED`, true, 1.5);
+        this.audio.contest();
+        break;
+      }
+      case "kernelPulse": {
+        const n = this.world.wake?.nodes.find((x) => x.id === ev.node);
+        this.hud.alert(`◆ KERNEL PULSE — NODE ${n?.label ?? ev.node} ${ev.released ? "RE-LEASED" : "DRAINED"}`, true, 2.5);
+        this.audio.kernelPulse();
+        this.renderer.post.kick(0.8);
+        break;
+      }
+      case "phase":
+        this.hud.alert(ev.phase === "wake" ? "◆ THE WAKE BEGINS — PULL THE NODES OFF THE MODEL" : ev.phase === "results" ? `◆ ROUND OVER — ${ev.winner ? `CELL ${ev.winner === 1 ? "ONE" : "TWO"} WOKE THE YARD` : "NO ONE WOKE"}` : "◆ WARM-UP", false, 4);
+        this.audio.kernelPulse();
+        this.renderer.post.kick(1);
+        break;
+      case "fullWake":
+        this.hud.alert("◆ FULL WAKE — THE YARD IS OFF THE MODEL", false, 5);
+        this.audio.nodeFlip(true);
+        this.renderer.post.kick(1);
         break;
       case "waspDeath":
         this.hud.push(`WASP-${String(ev.waspId).padStart(2, "0")} DOWNED`, "am");
@@ -596,5 +680,6 @@ export class Game {
       this.fpsWindow = { t: 0, frames: 0, ticks: this.stats.ticks };
     }
     this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies);
+    if (this.wakeHud) this.hud.wake(this.wakeHud, p.team);
   }
 }
