@@ -61,7 +61,7 @@ async function main(): Promise<void> {
     page.on("console", (m) => {
       if (m.type() === "error") errors.push(m.text());
     });
-    await page.goto(URL + "?headless=1", { waitUntil: "load" });
+    await page.goto(URL + "?headless=1&ai=0", { waitUntil: "load" });
     await page.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000 });
     await page.evaluate(() => window.__game.resumeAudio());
 
@@ -115,7 +115,7 @@ async function main(): Promise<void> {
 
     // --- 2. Determinism: same plan on a fresh page, identical hash after the same tick count ---
     const page2 = await browser.newPage({ viewport: { width: 640, height: 360 } });
-    await page2.goto(URL + "?headless=1", { waitUntil: "load" });
+    await page2.goto(URL + "?headless=1&ai=0", { waitUntil: "load" });
     await page2.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000 });
     await page2.evaluate((p) => window.__game.setBot(p), plan);
     await page2.evaluate((n) => window.__game.advance(n), ticksRun);

@@ -6,6 +6,7 @@
  * and supports rejoin by token.
  */
 import { SIM_HZ } from "../shared/sim/constants";
+import { MAX_BUTTONS } from "../shared/sim/input";
 import { drainageYard } from "../shared/sim/level";
 import { World, type RewindPose, type SimEvent } from "../shared/sim/world";
 import type { PlayerState } from "../shared/sim/player";
@@ -21,6 +22,13 @@ import {
   encodeWelcome,
   quantizeRemote,
   stanceToNum,
+  ENT_CLOUD,
+  ENT_MECH,
+  ENT_PROJECTILE,
+  ENT_WASP,
+  FX,
+  WEAPON_WIRE,
+  type NetEntity,
   type NetEvent,
   type NetInput,
   type Snapshot,
@@ -59,6 +67,8 @@ interface ClientRec {
 
 export interface RoomOptions {
   lagComp?: boolean;
+  ai?: boolean;
+  seed?: number;
   maxPlayers?: number;
   /** Seconds a disconnected player is kept for rejoin. */
   rejoinGraceSeconds?: number;
@@ -86,7 +96,7 @@ const MAX_INPUT_RATE_PER_SEC = 95;
 const MAX_STRIKES = 3;
 
 export class Room {
-  readonly world = new World(drainageYard());
+  readonly world: World;
   readonly opts: Required<RoomOptions>;
   private clients = new Map<number, ClientRec>();
   private byConn = new Map<Conn, ClientRec>();
@@ -106,11 +116,14 @@ export class Room {
   constructor(opts: RoomOptions = {}) {
     this.opts = {
       lagComp: opts.lagComp ?? true,
+      ai: opts.ai ?? true,
+      seed: opts.seed ?? ((Date.now() >>> 0) ^ 0x5eed),
       maxPlayers: opts.maxPlayers ?? 8,
       rejoinGraceSeconds: opts.rejoinGraceSeconds ?? 60,
       now: opts.now ?? (() => Date.now()),
       onLog: opts.onLog ?? (() => {}),
     };
+    this.world = new World(drainageYard(), { ai: this.opts.ai, seed: this.opts.seed });
     this.startedAt = this.opts.now();
     this.lastRateAt = this.startedAt;
   }
@@ -191,7 +204,7 @@ export class Room {
   private validInput(i: NetInput): boolean {
     if (!Number.isFinite(i.yaw) || !Number.isFinite(i.pitch)) return false;
     if (Math.abs(i.pitch) > 1.6) return false;
-    if (i.buttons < 0 || i.buttons > 0x3ff) return false;
+    if (i.buttons < 0 || i.buttons > MAX_BUTTONS) return false;
     if (!Number.isFinite(i.px) || !Number.isFinite(i.py) || !Number.isFinite(i.pz)) return false;
     return true;
   }
@@ -255,7 +268,7 @@ export class Room {
           rec.traceSkipUntilSeq = 0;
           rec.strikes = 0;
           this.byConn.set(conn, rec);
-          conn.send(encodeWelcome(rec.playerId, this.tick, rec.token, this.world.level.name));
+          conn.send(encodeWelcome(rec.playerId, this.tick, rec.token, this.world.level.name, this.world.seed));
           this.opts.onLog(`player ${rec.playerId} rejoined`);
           return;
         }
@@ -291,7 +304,7 @@ export class Room {
     this.clients.set(playerId, rec);
     this.byConn.set(conn, rec);
     this.world.addPlayer(playerId, safeName);
-    conn.send(encodeWelcome(playerId, this.tick, newToken, this.world.level.name));
+    conn.send(encodeWelcome(playerId, this.tick, newToken, this.world.level.name, this.world.seed));
     for (const other of this.clients.values()) if (other !== rec) other.pendingEvents.push({ type: "join", playerId, name: safeName });
     this.opts.onLog(`player ${playerId} (${safeName}) joined`);
   }
@@ -382,24 +395,66 @@ export class Room {
   }
 
   private toNetEvent(ev: SimEvent): NetEvent | null {
+    const pid = (id: number) => (id < 0 ? 200 + Math.min(55, -id % 100) : id & 0xff);
+    const hitKindNum = (k: string) => (k === "none" ? 0 : k === "world" ? 1 : k === "dummy" ? 2 : k === "player" ? 3 : k === "wasp" ? 4 : 5);
     switch (ev.type) {
       case "shot":
         return {
           type: "shot",
-          playerId: ev.playerId,
+          playerId: pid(ev.playerId),
+          weapon: WEAPON_WIRE[ev.weapon] ?? 0,
           fx: ev.from.x, fy: ev.from.y, fz: ev.from.z,
           tx: ev.to.x, ty: ev.to.y, tz: ev.to.z,
-          hitKind: ev.hit.kind === "none" ? 0 : ev.hit.kind === "world" ? 1 : ev.hit.kind === "dummy" ? 2 : 3,
+          hitKind: hitKindNum(ev.hit.kind),
           zone: ev.hit.zone,
           victimId: ev.hit.id < 0 ? 255 : ev.hit.id,
+          pierce: ev.hits.length,
         };
       case "kill":
-        return { type: "kill", playerId: ev.playerId, victimKind: ev.victimKind === "dummy" ? 0 : 1, victimId: ev.victimId, ttkTicks: ev.ttkTicks };
+        return { type: "kill", playerId: pid(ev.playerId), victimKind: ev.victimKind === "dummy" ? 0 : ev.victimKind === "player" ? 1 : ev.victimKind === "wasp" ? 2 : 3, victimId: ev.victimId, ttkTicks: ev.ttkTicks, weapon: WEAPON_WIRE[ev.weapon] ?? 0 };
       case "death":
-        return { type: "death", playerId: ev.playerId, killerId: ev.killerId < 0 ? 255 : ev.killerId };
+        return { type: "death", playerId: ev.playerId, killerId: pid(ev.killerId) };
+      case "explode":
+        return { type: "fx", kind: FX.explode, playerId: pid(ev.playerId), x: ev.pos.x, y: ev.pos.y, z: ev.pos.z, a: Math.round(ev.radius * 10), b: ev.projKind === "phage" ? 1 : ev.projKind === "sticky" ? 2 : ev.projKind === "frag" ? 3 : 0 };
+      case "cloud":
+        return { type: "fx", kind: FX.cloud, playerId: pid(ev.playerId), x: ev.pos.x, y: ev.pos.y, z: ev.pos.z, a: Math.round(ev.radius * 10), b: 0 };
+      case "emp":
+        return { type: "fx", kind: FX.emp, playerId: pid(ev.playerId), x: ev.pos.x, y: ev.pos.y, z: ev.pos.z, a: Math.round(ev.radius * 10), b: 0 };
+      case "flagged":
+        return { type: "fx", kind: FX.flagged, playerId: ev.playerId, x: 0, y: 0, z: 0, a: ev.mechId, b: 0 };
+      case "stun":
+        return { type: "fx", kind: FX.stun, playerId: ev.playerId, x: 0, y: 0, z: 0, a: pid(ev.by), b: 0 };
+      case "swap":
+        return { type: "fx", kind: FX.swap, playerId: ev.playerId, x: 0, y: 0, z: 0, a: ev.slot, b: 0 };
+      case "melee":
+        return { type: "fx", kind: FX.melee, playerId: ev.playerId, x: 0, y: 0, z: 0, a: ev.hits.length, b: ev.lunge ? 1 : 0 };
+      case "mechBeam":
+        return { type: "fx", kind: FX.mechBeam, playerId: ev.playerId, x: ev.to.x, y: ev.to.y, z: ev.to.z, a: ev.mechId, b: ev.damage };
+      case "hurt":
+        return { type: "fx", kind: FX.hurt, playerId: ev.playerId, x: 0, y: 0, z: 0, a: Math.min(255, ev.damage), b: ev.kind === "shot" ? 0 : ev.kind === "explosion" ? 1 : ev.kind === "melee" ? 2 : 3 };
+      case "waspDeath":
+        return { type: "fx", kind: FX.waspDeath, playerId: pid(ev.playerId), x: 0, y: 0, z: 0, a: ev.waspId, b: 0 };
+      case "mechDeath":
+        return { type: "fx", kind: FX.mechDeath, playerId: pid(ev.playerId), x: 0, y: 0, z: 0, a: ev.mechId, b: 0 };
+      case "throw":
+        return { type: "fx", kind: FX.throw, playerId: ev.playerId, x: 0, y: 0, z: 0, a: ev.grenade === "frag" ? 0 : ev.grenade === "smoke" ? 1 : 2, b: 0 };
+      case "chargeFull":
+        return { type: "fx", kind: FX.chargeFull, playerId: ev.playerId, x: 0, y: 0, z: 0, a: 0, b: 0 };
+      case "lunge":
+        return { type: "fx", kind: FX.lunge, playerId: ev.playerId, x: 0, y: 0, z: 0, a: 0, b: 0 };
       default:
         return null;
     }
+  }
+
+  private entities(): NetEntity[] {
+    const out: NetEntity[] = [];
+    const w = this.world;
+    for (const p of w.projectiles) out.push({ kind: ENT_PROJECTILE, id: p.id, x: p.pos.x, y: p.pos.y, z: p.pos.z, a: p.kind === "phage" ? 1 : p.kind === "sticky" ? 2 : p.kind === "frag" ? 3 : p.kind === "smoke" ? 4 : 5, b: p.stuck ? 1 : 0, c: Math.round(p.fuse * 100), d: 0 });
+    for (const c of w.clouds) out.push({ kind: ENT_CLOUD, id: c.id, x: c.pos.x, y: c.pos.y, z: c.pos.z, a: 0, b: 0, c: Math.round(c.radius * 100), d: Math.round(c.ttl * 100) });
+    for (const ws of w.wasps) out.push({ kind: ENT_WASP, id: ws.id, x: ws.pos.x, y: ws.pos.y, z: ws.pos.z, a: ws.alive ? 1 : 0, b: Math.max(0, ws.health), c: Math.round(ws.yaw * 1000), d: ws.disabledTimer > 0 ? 2 : ws.state === "chase" ? 1 : 0 });
+    for (const m of w.mechs) out.push({ kind: ENT_MECH, id: m.id, x: m.pos.x, y: m.pos.y, z: m.pos.z, a: m.alive ? 1 : 0, b: Math.round(Math.max(0, m.health) / 2), c: Math.round(m.yaw * 1000), d: Math.round((m.face + m.lightYaw) * 1000) });
+    return out;
   }
 
   private broadcast(): void {
@@ -419,6 +474,7 @@ export class Room {
         local: this.tick % (SNAPSHOT_EVERY * 2) === 0 ? this.world.exportLocal(me, rec.lastAppliedSeq) : null,
         players,
         dummies,
+        entities: this.entities(),
         events: rec.pendingEvents.splice(0),
       };
       const baseline = rec.ackTick ? rec.sent.get(rec.ackTick) ?? null : null;
@@ -439,11 +495,12 @@ export class Room {
     const rec = this.clients.get(p.id);
     return quantizeRemote({
       id: p.id,
+      slot: p.weapon.slot,
       x: p.pos.x, y: p.pos.y, z: p.pos.z,
       vx: p.vel.x, vy: p.vel.y, vz: p.vel.z,
       yaw: p.yaw, pitch: p.pitch,
       health: Math.max(0, Math.round(p.health)),
-      ammo: p.ammo,
+      ammo: p.weapon.ammo[p.weapon.slot] ?? 0,
       alive: p.alive,
       grounded: p.grounded,
       stance: stanceToNum(p.stance),

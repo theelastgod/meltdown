@@ -101,7 +101,7 @@ export class GameAudio {
     this.bed = { gain: g };
   }
 
-  private burst(opts: { dur: number; freq: number; q?: number; gain: number; type?: BiquadFilterType; pan?: number }): void {
+  private burst(opts: { dur: number; freq: number; q?: number; gain: number; type?: BiquadFilterType; pan?: number; delay?: number }): void {
     const ctx = this.ctx!;
     const src = ctx.createBufferSource();
     src.buffer = this.noiseBuf;
@@ -111,7 +111,7 @@ export class GameAudio {
     f.frequency.value = opts.freq;
     f.Q.value = opts.q ?? 1;
     const g = ctx.createGain();
-    const t = ctx.currentTime;
+    const t = ctx.currentTime + (opts.delay ?? 0);
     g.gain.setValueAtTime(opts.gain, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + opts.dur);
     const pan = ctx.createStereoPanner();
@@ -136,13 +136,111 @@ export class GameAudio {
     o.stop(t + opts.dur + 0.02);
   }
 
-  /** Lease-Breaker: crack + sub thump, mixed with real low end. */
-  shot(): void {
+  /** Weapon shot silhouettes: each has a distinct low end and crack so they read blind. */
+  shot(weapon = "lease_breaker"): void {
     this.count("shot");
+    this.count("shot_" + weapon);
     if (!this.ctx) return;
-    this.tone({ dur: 0.12, from: 160, to: 38, gain: 0.55, type: "sine" }); // sub punch
-    this.burst({ dur: 0.07, freq: 2400, q: 0.6, gain: 0.35 }); // crack
-    this.burst({ dur: 0.18, freq: 420, q: 0.8, gain: 0.2, type: "lowpass" }); // body
+    switch (weapon) {
+      case "repo_hammer":
+        this.tone({ dur: 0.22, from: 120, to: 30, gain: 0.8, type: "sine" });
+        this.burst({ dur: 0.16, freq: 900, q: 0.4, gain: 0.5 });
+        this.burst({ dur: 0.35, freq: 220, q: 0.7, gain: 0.35, type: "lowpass" });
+        this.burst({ dur: 0.05, freq: 3000, q: 2, gain: 0.15, delay: 0.25 }); // pump
+        break;
+      case "stack_smg":
+        this.tone({ dur: 0.06, from: 220, to: 60, gain: 0.35, type: "sine" });
+        this.burst({ dur: 0.04, freq: 3200, q: 0.8, gain: 0.3 });
+        break;
+      case "longwave":
+        this.tone({ dur: 0.5, from: 90, to: 28, gain: 0.85, type: "sine" });
+        this.tone({ dur: 0.35, from: 2200, to: 400, gain: 0.25, type: "sawtooth" });
+        this.burst({ dur: 0.4, freq: 1200, q: 0.3, gain: 0.35 });
+        break;
+      case "phage":
+        this.tone({ dur: 0.18, from: 140, to: 50, gain: 0.5, type: "sine" });
+        this.burst({ dur: 0.12, freq: 600, q: 0.5, gain: 0.3, type: "lowpass" });
+        this.tone({ dur: 0.2, from: 500, to: 900, gain: 0.08, type: "triangle" });
+        break;
+      case "shock_baton":
+        this.burst({ dur: 0.12, freq: 2600, q: 3, gain: 0.25 });
+        this.tone({ dur: 0.12, from: 180, to: 120, gain: 0.2, type: "square" });
+        break;
+      case "wasp":
+        this.tone({ dur: 0.05, from: 900, to: 500, gain: 0.12, type: "square" });
+        this.burst({ dur: 0.05, freq: 2400, q: 1, gain: 0.1 });
+        break;
+      default:
+        this.tone({ dur: 0.12, from: 160, to: 38, gain: 0.55, type: "sine" });
+        this.burst({ dur: 0.07, freq: 2400, q: 0.6, gain: 0.35 });
+        this.burst({ dur: 0.18, freq: 420, q: 0.8, gain: 0.2, type: "lowpass" });
+    }
+  }
+
+  charge(level: number): void {
+    if (!this.ctx) return;
+    this.tone({ dur: 0.08, from: 300 + level * 900, to: 320 + level * 900, gain: 0.06, type: "sawtooth" });
+  }
+
+  explosion(big = true): void {
+    this.count("explosion");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.6, from: 80, to: 22, gain: big ? 1.0 : 0.6, type: "sine" });
+    this.burst({ dur: 0.5, freq: 400, q: 0.3, gain: big ? 0.7 : 0.4, type: "lowpass" });
+    this.burst({ dur: 0.25, freq: 2500, q: 0.4, gain: 0.3 });
+  }
+
+  smoke(): void {
+    this.count("smoke");
+    if (!this.ctx) return;
+    this.burst({ dur: 1.4, freq: 1800, q: 0.3, gain: 0.18 });
+  }
+
+  emp(): void {
+    this.count("emp");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.4, from: 1400, to: 40, gain: 0.3, type: "square" });
+    this.burst({ dur: 0.3, freq: 3500, q: 1.5, gain: 0.25 });
+  }
+
+  throw(): void {
+    this.count("throw");
+    if (!this.ctx) return;
+    this.burst({ dur: 0.06, freq: 1200, q: 1.5, gain: 0.12 });
+  }
+
+  swap(): void {
+    this.count("swap");
+    if (!this.ctx) return;
+    this.burst({ dur: 0.08, freq: 700, q: 0.8, gain: 0.14, type: "lowpass" });
+    this.burst({ dur: 0.04, freq: 2200, q: 2, gain: 0.1, delay: 0.09 });
+  }
+
+  stun(): void {
+    this.count("stun");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.35, from: 60, to: 55, gain: 0.3, type: "square" });
+    this.burst({ dur: 0.3, freq: 4000, q: 2, gain: 0.15 });
+  }
+
+  flagged(): void {
+    this.count("flagged");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.12, from: 880, gain: 0.12, type: "square" });
+    this.tone({ dur: 0.12, from: 880, gain: 0.12, type: "square", delay: 0.18 });
+  }
+
+  mechBeam(): void {
+    this.count("mechBeam");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.3, from: 55, to: 45, gain: 0.5, type: "sawtooth" });
+    this.burst({ dur: 0.25, freq: 1600, q: 0.5, gain: 0.3 });
+  }
+
+  hurt(): void {
+    this.count("hurt");
+    if (!this.ctx) return;
+    this.burst({ dur: 0.08, freq: 500, q: 0.6, gain: 0.25, type: "lowpass" });
   }
 
   dryFire(): void {
@@ -203,10 +301,13 @@ export class GameAudio {
     this.tone({ dur: 0.18, from: 80, to: 55, gain: 0.2, delay: 0.25 });
   }
 
-  reload(phase: "start" | "end"): void {
+  reload(phase: "start" | "end" | "seat"): void {
     this.count("reload_" + phase);
     if (!this.ctx) return;
-    if (phase === "start") {
+    if (phase === "seat") {
+      this.tone({ dur: 0.1, from: 150, to: 70, gain: 0.35 }); // the clunk that says "you can cancel now"
+      this.burst({ dur: 0.05, freq: 1400, q: 1.2, gain: 0.2 });
+    } else if (phase === "start") {
       this.burst({ dur: 0.06, freq: 1800, q: 1.5, gain: 0.12 });
       this.burst({ dur: 0.1, freq: 500, q: 0.6, gain: 0.1, type: "lowpass", pan: -0.3 });
     } else {

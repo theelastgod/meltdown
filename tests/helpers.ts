@@ -22,7 +22,7 @@ export interface RunResult {
 }
 
 export function makeWorld(): { world: World; player: PlayerState } {
-  const world = new World(drainageYard());
+  const world = new World(drainageYard(), { ai: false });
   const player = world.addPlayer(1, "TEST");
   return { world, player };
 }

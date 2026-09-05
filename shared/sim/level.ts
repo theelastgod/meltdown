@@ -26,6 +26,10 @@ export interface LevelDef {
   dummies: DummyDef[];
   /** Kill plane: falling below this respawns the player. */
   killY: number;
+  /** VANTAGE wasp patrols (waypoints in the air). */
+  wasps: { waypoints: Vec3[] }[];
+  /** Repo mechs walking a two-point path with a sweeping searchlight centred on `face` (yaw; default: path heading). */
+  mechs: { path: Vec3[]; face?: number }[];
 }
 
 const box = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, tag?: string): Box => ({
@@ -112,5 +116,10 @@ export function drainageYard(): LevelDef {
     { id: 5, pos: v3(28, 3.5, 0) },
   ];
 
-  return { name: "drainage_yard", boxes, spawns, dummies, killY: -20 };
+  const wasps = [
+    { waypoints: [v3(16, 3.5, -6), v3(24, 3.8, 6), v3(14, 3.2, 10)] },
+    { waypoints: [v3(-12, 3.5, -10), v3(-20, 3.8, 4), v3(-10, 3.2, 8)] },
+  ];
+  const mechs = [{ path: [v3(13, 0, -22), v3(24, 0, -22)], face: Math.PI }]; // light sweeps the arena to the north
+  return { name: "drainage_yard", boxes, spawns, dummies, killY: -20, wasps, mechs };
 }

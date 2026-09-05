@@ -2,26 +2,26 @@
   "rtt": 150,
   "loss": 0.05,
   "engagement": {
-    "joinA": 176.80000000004657,
-    "joinB": 176.89999999990687,
+    "joinA": 186.5,
+    "joinB": 178.6999999997206,
     "server": {
-      "tick": 852,
+      "tick": 861,
       "players": 2,
       "connected": 2,
       "tickHz": 60,
-      "avgTickMs": 0.15523064499999692,
-      "maxTickMs": 0.5215199999993274,
+      "avgTickMs": 0.20361926666669206,
+      "maxTickMs": 1.0323219999991124,
       "kicks": 0,
       "inputsRejected": 0,
-      "bytesOut": 162944,
+      "bytesOut": 211880,
       "clients": [
         {
           "id": 1,
           "name": "ALPHA",
           "connected": true,
           "traceMaxErr": 0,
-          "traceSamples": 694,
-          "inputsApplied": 834,
+          "traceSamples": 626,
+          "inputsApplied": 842,
           "inputsRejected": 0,
           "kills": 3,
           "deaths": 0,
@@ -34,8 +34,8 @@
           "name": "BRAVO",
           "connected": true,
           "traceMaxErr": 0,
-          "traceSamples": 85,
-          "inputsApplied": 810,
+          "traceSamples": 80,
+          "inputsApplied": 812,
           "inputsRejected": 0,
           "kills": 0,
           "deaths": 3,
@@ -48,51 +48,51 @@
       "shotDiag": {
         "shots": 26,
         "playerHits": 21,
-        "rewindSum": 278,
+        "rewindSum": 275,
         "rewindMax": 12,
         "clamped": 0,
-        "nearMissSum": 0.4334577273910526,
+        "nearMissSum": 0.29375395450675373,
         "nearMissN": 2,
-        "nearMissMax": 0.23490100395723543,
-        "avgRewind": 10.692307692307692,
-        "avgNearMiss": 0.2167288636955263
+        "nearMissMax": 0.20698194162077338,
+        "avgRewind": 10.576923076923077,
+        "avgNearMiss": 0.14687697725337687
       }
     },
     "netA": {
       "online": true,
       "status": "joined",
       "playerId": 1,
-      "token": "1-bw82h6lp5u-0it9qmmu8x",
-      "rttMs": 155,
-      "joinMs": 176.80000000004657,
-      "pending": 12,
+      "token": "1-4e578vn3ft-539f7nfa28",
+      "rttMs": 158,
+      "joinMs": 186.5,
+      "pending": 10,
       "stats": {
-        "snapshots": 389,
-        "bytesIn": 75009,
-        "bytesOut": 110358,
+        "snapshots": 398,
+        "bytesIn": 100468,
+        "bytesOut": 111282,
         "undecodable": 0,
         "reconciles": 0,
         "maxCorrection": 0,
-        "joinedAtMs": 476,
-        "connectStartMs": 299.19999999995343
+        "joinedAtMs": 573.7000000001863,
+        "connectStartMs": 387.20000000018626
       },
       "game": {
         "corrections": 0,
         "maxCorrectionM": 0,
-        "replayedInputs": 1733,
+        "replayedInputs": 1836,
         "serverHitsOnMe": 0,
-        "myHits": 22,
-        "myShotsConfirmed": 25,
+        "myHits": 21,
+        "myShotsConfirmed": 24,
         "log": []
       },
       "remotes": [
         {
           "id": 2,
           "name": "BRAVO",
-          "x": -17.103600000000004,
+          "x": 2.6473200000004873,
           "y": 0,
-          "z": 0.030419999999999957,
-          "yaw": -0.012,
+          "z": 24.030546000000008,
+          "yaw": -0.0118,
           "pitch": 0,
           "height": 1.8,
           "alive": true,
@@ -106,24 +106,24 @@
       "online": true,
       "status": "joined",
       "playerId": 2,
-      "token": "2-e0a3rgbkj1-ww6eurbsyh",
+      "token": "2-lr6xqosxc4-xfj03g8oh4",
       "rttMs": 160,
-      "joinMs": 176.89999999990687,
-      "pending": 11,
+      "joinMs": 178.6999999997206,
+      "pending": 12,
       "stats": {
-        "snapshots": 393,
-        "bytesIn": 77622,
+        "snapshots": 391,
+        "bytesIn": 100393,
         "bytesOut": 107322,
         "undecodable": 0,
         "reconciles": 0,
         "maxCorrection": 0,
-        "joinedAtMs": 429.39999999990687,
-        "connectStartMs": 252.5
+        "joinedAtMs": 520.3999999999069,
+        "connectStartMs": 341.70000000018626
       },
       "game": {
         "corrections": 0,
         "maxCorrectionM": 0,
-        "replayedInputs": 1838,
+        "replayedInputs": 1844,
         "serverHitsOnMe": 20,
         "myHits": 0,
         "myShotsConfirmed": 0,
@@ -136,8 +136,8 @@
           "x": 0.12,
           "y": 0,
           "z": 17.66,
-          "yaw": 0.7849,
-          "pitch": -0.0264,
+          "yaw": 0.732,
+          "pitch": -0.0607,
           "height": 1.8,
           "alive": true,
           "stance": "stand",
@@ -148,57 +148,57 @@
     }
   },
   "control": {
-    "tick": 844,
+    "tick": 848,
     "players": 2,
     "connected": 2,
-    "tickHz": 60.039370078740156,
-    "avgTickMs": 0.1359832099999585,
-    "maxTickMs": 0.4306299999989278,
+    "tickHz": 60,
+    "avgTickMs": 0.1626526533334921,
+    "maxTickMs": 0.4660299999995914,
     "kicks": 0,
     "inputsRejected": 0,
-    "bytesOut": 166554,
+    "bytesOut": 214326,
     "clients": [
       {
         "id": 1,
         "name": "ALPHA",
         "connected": true,
         "traceMaxErr": 0,
-        "traceSamples": 618,
-        "inputsApplied": 827,
+        "traceSamples": 644,
+        "inputsApplied": 829,
         "inputsRejected": 0,
         "kills": 0,
         "deaths": 0,
         "shots": 63,
         "hits": 7,
-        "queue": 0
+        "queue": 2
       },
       {
         "id": 2,
         "name": "BRAVO",
         "connected": true,
         "traceMaxErr": 0,
-        "traceSamples": 590,
-        "inputsApplied": 805,
+        "traceSamples": 634,
+        "inputsApplied": 806,
         "inputsRejected": 0,
         "kills": 0,
         "deaths": 0,
         "shots": 0,
         "hits": 0,
-        "queue": 1
+        "queue": 2
       }
     ],
     "traceLog": [],
     "shotDiag": {
       "shots": 63,
       "playerHits": 5,
-      "rewindSum": 666,
-      "rewindMax": 13,
-      "clamped": 1,
-      "nearMissSum": 54.796990407752396,
+      "rewindSum": 664,
+      "rewindMax": 12,
+      "clamped": 0,
+      "nearMissSum": 53.296882667000226,
       "nearMissN": 58,
-      "nearMissMax": 1.3423636479884298,
-      "avgRewind": 10.571428571428571,
-      "avgNearMiss": 0.9447756966853862
+      "nearMissMax": 1.4005259759067106,
+      "avgRewind": 10.53968253968254,
+      "avgNearMiss": 0.9189117701206936
     }
   },
   "cheaterKick": "invalid input",
@@ -206,47 +206,47 @@
     {
       "name": "matchmaking: both clients joined in < 5 s",
       "pass": true,
-      "detail": "ALPHA 177 ms, BRAVO 177 ms (through 150 ms RTT)"
+      "detail": "ALPHA 187 ms, BRAVO 179 ms (through 150 ms RTT)"
     },
     {
       "name": "server tick ≥ 30 Hz",
       "pass": true,
-      "detail": "60.0 Hz, avg 0.16 ms, max 0.5 ms per tick"
+      "detail": "60.0 Hz, avg 0.20 ms, max 1.0 ms per tick"
     },
     {
       "name": "measured RTT reflects the simulated link",
       "pass": true,
-      "detail": "ALPHA rtt 155 ms"
+      "detail": "ALPHA rtt 158 ms"
     },
     {
       "name": "hit-reg at 150 ms RTT + 5% loss on a strafing target (lag comp)",
       "pass": true,
-      "detail": "23/26 server-confirmed hits (88%), 3 kills; rewind avg 10.7 max 12 ticks, clamped 0; misses avg 0.22 m max 0.23 m from the axis"
+      "detail": "23/26 server-confirmed hits (88%), 3 kills; rewind avg 10.6 max 12 ticks, clamped 0; misses avg 0.15 m max 0.21 m from the axis"
     },
     {
       "name": "client-predicted movement identical to server (input-trace comparison)",
       "pass": true,
-      "detail": "max error ALPHA 0.00e+0 m / BRAVO 0.00e+0 m over 779 samples"
+      "detail": "max error ALPHA 0.00e+0 m / BRAVO 0.00e+0 m over 706 samples"
     },
     {
       "name": "reconciliation corrections stay sub-centimetre",
       "pass": true,
-      "detail": "max ALPHA 0.00 mm, BRAVO 0.00 mm; replayed 3571 inputs"
+      "detail": "max ALPHA 0.00 mm, BRAVO 0.00 mm; replayed 3680 inputs"
     },
     {
       "name": "delta snapshots decode under loss (no undecodable frames after warm-up)",
       "pass": true,
-      "detail": "undecodable ALPHA 0, BRAVO 0; 389 snapshots in"
+      "detail": "undecodable ALPHA 0, BRAVO 0; 398 snapshots in"
     },
     {
       "name": "bandwidth: < 12 KB/s per client downstream",
       "pass": true,
-      "detail": "5.36 KB/s in, 7.88 KB/s out"
+      "detail": "7.18 KB/s in, 7.95 KB/s out"
     },
     {
       "name": "rejoin restores the same file and state, and inputs flow again",
       "pass": true,
-      "detail": "id 1→1, kills 3→3, players in room 2, inputs applied after rejoin 105"
+      "detail": "id 1→1, kills 3→3, players in room 2, inputs applied after rejoin 107"
     },
     {
       "name": "cheater rejected (invalid inputs + input rate)",

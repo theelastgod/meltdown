@@ -19,10 +19,10 @@ const log = (line: string) => {
   if (process.env.VERBOSE) console.log(line);
 };
 
-function getRoom(name: string, lagComp: boolean): Room {
+function getRoom(name: string, lagComp: boolean, ai: boolean): Room {
   let r = rooms.get(name);
   if (!r) {
-    r = new Room({ lagComp, onLog: (l) => log(`[${name}] ${l}`) });
+    r = new Room({ lagComp, ai, seed: 7, onLog: (l) => log(`[${name}] ${l}`) });
     rooms.set(name, r);
     // fixed-rate loop with drift correction
     let next = performance.now();
@@ -63,7 +63,7 @@ wss.on("connection", (ws: WebSocket, req) => {
     ws.close(4000, "bad room");
     return;
   }
-  const room = getRoom(m[1]!, url.searchParams.get("lagcomp") !== "0");
+  const room = getRoom(m[1]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0");
   ws.binaryType = "arraybuffer";
   const conn: Conn = {
     send: (buf) => {

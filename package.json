@@ -11,10 +11,11 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json",
     "test": "vitest run",
     "probe": "tsx probe/stage1.ts",
-    "verify": "npm run typecheck && npm run test && npm run probe && npm run probe:look && npm run probe:net",
+    "verify": "npm run typecheck && npm run test && npm run probe && npm run probe:look && npm run probe:net && npm run probe:arsenal",
     "probe:look": "tsx probe/stage3.ts",
     "host": "tsx server/node-host.ts",
-    "probe:net": "tsx probe/stage2.ts"
+    "probe:net": "tsx probe/stage2.ts",
+    "probe:arsenal": "tsx probe/stage4.ts"
   },
   "dependencies": {
     "three": "^0.180.0",

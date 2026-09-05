@@ -9,7 +9,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 1 | Grey-box FPS core (solo) | **done** | `docs/proof/stage1/` |
 | 2 | Netcode early: DO rooms, prediction/reconciliation/interp/lag-comp, 8 players, latency/loss bars | **done** | `docs/proof/stage2/` |
 | 3 | The look: lighting rig, neon, GPU rain, wet reflections, fog, post chain, district casts | **done** (pulled ahead of 2 at the owner's request) | `docs/proof/stage3/` |
-| 4 | Arsenal: weapons 1–6 + alt-fires + grenades, recoil seeds, reload cancels, VANTAGE AI | | |
+| 4 | Arsenal: weapons 1–6 + alt-fires + grenades, recoil seeds, reload cancels, VANTAGE AI | **done** | `docs/proof/stage4/` |
 | 5 | The wake: hex nodes, flip/contest/spread, KERNEL timer | | |
 | 6 | Ghostfile foundation: manifest, Fairness Lint, spawn validation, Depth/XP, currencies | | |
 | 7 | Ledger Graph + weapon mastery | | |
@@ -150,3 +150,60 @@ rejoin restores the same file and inputs flow again, cheater kicked.
 **Not yet.** The Durable Object host was smoke-tested under `wrangler dev`
 (join and welcome round-trip); the full probe runs against the Node host.
 Deployment lands in Stage 13.
+
+## Stage 4 — Arsenal
+
+**Goal.** The moment-to-moment fun: six server-authoritative weapons with
+one alt-fire each, three grenades, learnable seeded recoil, reload cancel at
+the seat frame, TTK certified per weapon, and VANTAGE hunting the yard.
+
+**What shipped.**
+- `shared/weapons/manifest.ts`: every number for weapons 1–6 and the
+  grenades (rpm, damage, zone multipliers, magazine, reload seat fraction,
+  pellets, spread, range profile with falloff, recoil profile, alt-fire,
+  projectile, melee). Read by client, server, and CI.
+- `shared/sim/weapons.ts`: the weapon state machine. Recoil is 60% view
+  kick (the camera moves, you pull it back) and 40% pattern climb (a
+  deterministic aim offset you learn), plus per-magazine jitter from a
+  seed derived from the room seed, player, and magazine count, so the
+  server reproduces every shot direction exactly. Reload seats the magazine
+  at 60–70% of the animation; firing after the seat cancels the tail,
+  firing before it aborts with no ammo. Charge (rail), quickshot, choked
+  slug, ADS, brace, sticky round, lunge, grenade cycling and throwing.
+- `shared/sim/projectiles.ts`: launcher rounds and grenades with gravity,
+  bounces, sticking, proximity arming, fuses; smoke clouds that block
+  sight; EMP that blacks out HUDs and disables drones.
+- `shared/sim/ai.ts`: wasp drones patrol, acquire on sight, hold distance
+  and fire with seeded aim jitter, sag when EMP'd, respawn; the repo mech
+  walks a path and sweeps a searchlight that locks, tracks, and fires a
+  beam; smoke breaks the lock.
+- `shared/sim/ttk.ts`: the harness. Perfect accuracy means the player
+  compensates both the visible kick and the learned pattern.
+- Client: six kitbash viewmodels with swap dips, ADS zoom, charge shake,
+  per-weapon tracer colours and audio silhouettes, rail beams, explosions,
+  smoke clouds, EMP blackout, stun wobble, drones and the mech with its
+  cone of light, weapon rack and grenade selector in the HUD.
+
+**TTK harness (perfect accuracy, body shots, 100 hp target, at intended range):**
+
+| Weapon | Range | Primary | Alt |
+| --- | --- | --- | --- |
+| Lease-Breaker | 20 m | 0.800 s | optic 0.800 s |
+| Repo Hammer | 7 m | 0.867 s | slug 0.867 s |
+| Stack SMG | 10 m | 0.917 s | brace 0.917 s |
+| Longwave rail | 40 m | 0.917 s | quickshot 0.933 s |
+| Phage launcher | 10 m | 0.883 s | sticky 0.883 s |
+| Shock baton | 1.5 m | 0.933 s | lunge 0.783 s |
+
+**Acceptance (`npm run probe:arsenal`, 12/12; `npm test`, 52 tests):** every
+primary inside the band and no alt under it; same seed reproduces the shot
+pattern and a different seed does not; reload seat and cancel semantics;
+frag, smoke (breaks the mech's lock), EMP (disables wasps); wasps chase,
+shoot, die and respawn; the mech locks and beams; baton chains; sticky arms
+on proximity; the browser build fires and hits with all six, detonates
+phage and frag, resolves smoke and EMP, and VANTAGE flags and shoots the
+player. Determinism hash covers projectiles and AI.
+
+**Design decisions surfaced by the probes.** A weapon swap resets the fire
+cooldown (the 0.35 s swap delay is the cost; a quick-switch tech exists).
+The lunge ends on contact. A corpse cannot be hit twice through the rewind.

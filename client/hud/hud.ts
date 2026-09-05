@@ -1,5 +1,7 @@
 import type { PlayerState } from "@shared/sim/player";
-import { LEASE_BREAKER, PLAYER_MAX_HEALTH } from "@shared/sim/constants";
+import { PLAYER_MAX_HEALTH } from "@shared/sim/constants";
+import { currentWeapon } from "@shared/sim/weapons";
+import { GRENADE_LIST, WEAPON_LIST } from "@shared/weapons/manifest";
 import type { Dummy } from "@shared/sim/world";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
@@ -10,6 +12,9 @@ export class Hud {
   private alertTimer = 0;
   private radar: CanvasRenderingContext2D;
   private locked = false;
+  private rackKey = "";
+  private nadeKey = "";
+  private flagTimer = 0;
 
   constructor(root: HTMLElement) {
     root.innerHTML = `
@@ -38,7 +43,10 @@ export class Hud {
       <div class="log"></div>
       <div class="p mg prompt">▲ CLICK TO WAKE · <span style="color:var(--cy)">WASD</span> MOVE · <span style="color:var(--cy)">SHIFT</span> SPRINT · <span style="color:var(--cy)">CTRL</span> SLIDE · <span style="color:var(--cy)">SPACE</span> JUMP</div>
 
-      <div class="ammo"><div class="w">LEASE-BREAKER</div><div class="big"><span class="ammon">30</span> <span class="w">/ 30</span></div></div>
+      <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="rack"></div><div class="nades"></div></div>
+      <div class="overlay flag">▲ FLAGGED — VANTAGE SEARCHLIGHT</div>
+      <div class="overlay stun">STUNNED</div>
+      <div class="emp"></div>
 
       <div class="bottom">
         <div class="slots"><div class="slot on">╪</div><div class="slot">▦</div><div class="slot">▦</div><div class="slot mg">◈</div></div>
@@ -58,8 +66,25 @@ export class Hud {
 
   update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[]): void {
     this.q(".hpbar").style.width = `${(100 * Math.max(0, p.health)) / PLAYER_MAX_HEALTH}%`;
-    this.q(".ammobar").style.width = `${(100 * p.ammo) / LEASE_BREAKER.magSize}%`;
-    this.q(".ammon").textContent = p.reloadTimer > 0 ? "--" : String(p.ammo);
+    const def = currentWeapon(p.weapon);
+    const ammo = p.weapon.ammo[p.weapon.slot] ?? 0;
+    this.q(".ammobar").style.width = def.magSize ? `${(100 * ammo) / def.magSize}%` : "100%";
+    this.q(".ammon").textContent = def.magSize === 0 ? "∞" : p.weapon.reloadTimer > 0 ? (p.weapon.reloadSeated ? String(ammo) : "--") : String(ammo);
+    this.q(".mag").textContent = def.magSize === 0 ? "∞" : String(def.magSize);
+    this.q(".wname").textContent = def.name + (p.weapon.altActive ? (def.alt.kind === "slug" ? " · CHOKED" : def.alt.kind === "ads" ? " · OPTIC" : " · BRACED") : "") + (p.weapon.charging ? ` · CHARGE ${Math.round(p.weapon.charge * 100)}%` : "");
+    if (this.rackKey !== p.weapon.slot + ":" + p.weapon.ammo.join(",")) {
+      this.rackKey = p.weapon.slot + ":" + p.weapon.ammo.join(",");
+      this.q(".rack").innerHTML = WEAPON_LIST.map((w) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${w.name.split(" ")[0]}<i>${w.magSize ? p.weapon.ammo[w.slot] : "∞"}</i></span>`).join("");
+    }
+    const nk = p.weapon.grenadeSel + ":" + p.weapon.grenades.join(",");
+    if (this.nadeKey !== nk) {
+      this.nadeKey = nk;
+      this.q(".nades").innerHTML = GRENADE_LIST.map((g, i) => `<span class="${i === p.weapon.grenadeSel ? "on" : ""}">${g.name} <i>${p.weapon.grenades[i]}</i></span>`).join("");
+    }
+    this.q(".stun").classList.toggle("on", p.weapon.stunTimer > 0);
+    const emp = this.q(".emp");
+    emp.classList.toggle("on", p.weapon.empTimer > 0);
+    if (p.weapon.empTimer > 0) emp.style.opacity = String(Math.min(1, p.weapon.empTimer));
     this.q(".vel").textContent = `${speed.toFixed(1)} m/s`;
     this.q(".stance").textContent = p.stance.toUpperCase();
     this.q(".kills").textContent = String(Math.min(5, p.stats.kills));
@@ -69,6 +94,16 @@ export class Hud {
       this.alertTimer -= 1 / 60;
       if (this.alertTimer <= 0) this.q(".alert").classList.remove("on");
     }
+    if (this.flagTimer > 0) {
+      this.flagTimer -= 1 / 60;
+      if (this.flagTimer <= 0) this.q(".flag").classList.remove("on");
+    }
+  }
+
+  /** The repo mech has you in its light. */
+  flagged(): void {
+    this.q(".flag").classList.add("on");
+    this.flagTimer = 0.4;
   }
 
   private drawRadar(p: PlayerState, dummies: readonly Dummy[]): void {

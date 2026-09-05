@@ -1,7 +1,8 @@
-import { MOVE, LEASE_BREAKER, PLAYER_MAX_HEALTH, SIM_DT } from "./constants";
+import { MOVE, PLAYER_MAX_HEALTH, SIM_DT } from "./constants";
 import { Btn, has, type InputFrame } from "./input";
 import type { Box, SpawnPoint } from "./level";
 import { capsuleFree, groundContact, resolveCapsule } from "./collision";
+import { createWeaponState, currentWeapon, resetWeaponState, stepWeapon, weaponMoveMult, type FireRequest, type WeaponEvent, type WeaponState } from "./weapons";
 import { type Vec3, v3, clone, copy, set, lenXZ, yawDir, yawRight, clamp, dot, wrapAngle, hyp2 } from "../math/vec3";
 
 export type Stance = "stand" | "crouch" | "slide" | "mantle";
@@ -42,15 +43,8 @@ export interface PlayerState {
   health: number;
   alive: boolean;
   respawnTimer: number;
-  ammo: number;
-  reloadTimer: number;
-  fireCooldown: number;
-  /** Accumulated view-kick (radians) applied on top of the input view, recovers each tick. */
-  kickPitch: number;
-  kickYaw: number;
+  weapon: WeaponState;
   prevButtons: number;
-  /** Set when a shot was fired this tick (consumed by world for hitscan). */
-  firedThisTick: boolean;
   stats: PlayerStats;
   /** Tick at which this player last took damage from full health (TTK bookkeeping). */
   firstDamageTick: number;
@@ -79,13 +73,8 @@ export function createPlayer(id: number, name: string, spawn: SpawnPoint): Playe
     health: PLAYER_MAX_HEALTH,
     alive: true,
     respawnTimer: 0,
-    ammo: LEASE_BREAKER.magSize,
-    reloadTimer: 0,
-    fireCooldown: 0,
-    kickPitch: 0,
-    kickYaw: 0,
+    weapon: createWeaponState(),
     prevButtons: 0,
-    firedThisTick: false,
     stats: { jumps: 0, slides: 0, slideJumps: 0, mantles: 0, shots: 0, hits: 0, kills: 0, deaths: 0, topSpeed: 0 },
     firstDamageTick: -1,
     lastAttacker: -1,
@@ -101,29 +90,26 @@ export function respawnPlayer(p: PlayerState, spawn: SpawnPoint): void {
   p.height = MOVE.standHeight;
   p.health = PLAYER_MAX_HEALTH;
   p.alive = true;
-  p.ammo = LEASE_BREAKER.magSize;
-  p.reloadTimer = 0;
-  p.fireCooldown = 0;
+  resetWeaponState(p.weapon);
   p.slideTime = 0;
   p.slideCooldown = 0;
   p.firstDamageTick = -1;
   p.lastAttacker = -1;
 }
 
+export const kickOf = (p: PlayerState): { pitch: number; yaw: number } => ({ pitch: p.weapon.kickPitch, yaw: p.weapon.kickYaw });
 export const eyeHeight = (p: PlayerState): number => (p.height < MOVE.standHeight - 0.01 ? MOVE.eyeLow : MOVE.eyeStand);
 export const eyePos = (p: PlayerState): Vec3 => v3(p.pos.x, p.pos.y + eyeHeight(p), p.pos.z);
 
 export type PlayerEvent =
+  | WeaponEvent
   | { type: "jump" }
   | { type: "slide" }
   | { type: "slideEnd" }
   | { type: "slideJump" }
   | { type: "mantle"; from: Vec3; to: Vec3 }
   | { type: "mantleEnd" }
-  | { type: "land"; speed: number }
-  | { type: "reloadStart" }
-  | { type: "reloadEnd" }
-  | { type: "dryFire" };
+  | { type: "land"; speed: number };
 
 const MOVE_SUBSTEPS = 3;
 
@@ -178,33 +164,28 @@ function findMantle(p: PlayerState, boxes: readonly Box[]): Vec3 | null {
   return land;
 }
 
-/** Advance one player one fixed tick. Pure: only mutates `p`. Emits events into `events`. */
-export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Box[], events: PlayerEvent[]): void {
+/**
+ * Advance one player one fixed tick. Pure: only mutates `p`. Emits events into
+ * `events`. Returns the weapon's fire requests for the world to resolve.
+ */
+export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Box[], events: PlayerEvent[], roomSeed = 1): FireRequest[] {
   const dt = SIM_DT;
   const r = MOVE.capsuleRadius;
-  p.firedThisTick = false;
 
   // View: absolute from input (client-owned), pitch clamped. Kick is a visual overlay.
   p.yaw = wrapAngle(input.yaw);
   p.pitch = clamp(input.pitch, -1.55, 1.55);
-  p.kickPitch *= Math.max(0, 1 - LEASE_BREAKER.kickRecover * dt);
-  p.kickYaw *= Math.max(0, 1 - LEASE_BREAKER.kickRecover * dt);
-
-  // Timers
-  p.fireCooldown = Math.max(0, p.fireCooldown - dt);
   p.slideCooldown = Math.max(0, p.slideCooldown - dt);
-  if (p.reloadTimer > 0) {
-    p.reloadTimer -= dt;
-    if (p.reloadTimer <= 0) {
-      p.reloadTimer = 0;
-      p.ammo = LEASE_BREAKER.magSize;
-      events.push({ type: "reloadEnd" });
-    }
-  }
 
   const pressed = input.buttons & ~p.prevButtons;
+  const prevButtons = p.prevButtons;
   p.prevButtons = input.buttons;
-  if (!p.alive) return;
+  // weapon first: its requests use this tick's view; movement follows
+  const wevents: WeaponEvent[] = [];
+  const reqs = stepWeapon(p.weapon, input, prevButtons, p.yaw, p.pitch, p.alive, roomSeed, p.id, wevents);
+  for (const e of wevents) events.push(e);
+  if (!p.alive) return reqs;
+  const moveMult = weaponMoveMult(p.weapon);
 
   const jumpPressed = has(pressed, Btn.Jump);
   const crouchPressed = has(pressed, Btn.Crouch);
@@ -234,7 +215,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
       p.grounded = true;
       events.push({ type: "mantleEnd" });
     }
-    return;
+    return reqs;
   }
 
   const wish = wishDirection(input);
@@ -305,8 +286,14 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
           p.height = MOVE.standHeight;
         }
       }
-      const maxSpeed = p.stance === "crouch" ? MOVE.crouchSpeed : sprintHeld && forwardHeld ? MOVE.sprintSpeed : MOVE.walkSpeed;
-      if (p.grounded) {
+      const maxSpeed = (p.stance === "crouch" ? MOVE.crouchSpeed : sprintHeld && forwardHeld && moveMult >= 1 ? MOVE.sprintSpeed : MOVE.walkSpeed) * moveMult;
+      if (p.weapon.lungeT > 0) {
+        // baton lunge: a fixed-speed dash along the view
+        const f = yawDir(p.yaw);
+        const ls = currentWeapon(p.weapon).alt.lungeSpeed ?? 20;
+        p.vel.x = f.x * ls;
+        p.vel.z = f.z * ls;
+      } else if (p.grounded) {
         if (hspeed > maxSpeed + 0.05) {
           // Post-slide momentum: decay toward max, keep heading, allow steering.
           const ns = Math.max(maxSpeed, hspeed - MOVE.momentumDecay * dt);
@@ -383,7 +370,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
       set(p.vel, 0, 0, 0);
       p.stats.mantles++;
       events.push({ type: "mantle", from: clone(p.mantleFrom), to: clone(p.mantleTo) });
-      return;
+      return reqs;
     }
   }
 
@@ -460,23 +447,6 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
   const hs = lenXZ(p.vel);
   if (hs > p.stats.topSpeed) p.stats.topSpeed = hs;
 
-  // ---- Weapon: reload + fire request (hitscan resolved by the world) ----
-  const wantReload = has(pressed, Btn.Reload) || (has(input.buttons, Btn.Fire) && p.ammo === 0);
-  if (wantReload && p.reloadTimer <= 0 && p.ammo < LEASE_BREAKER.magSize) {
-    p.reloadTimer = LEASE_BREAKER.reloadTime;
-    events.push({ type: "reloadStart" });
-  }
-  if (has(input.buttons, Btn.Fire) && p.fireCooldown <= 0 && p.reloadTimer <= 0) {
-    if (p.ammo > 0) {
-      p.ammo--;
-      p.fireCooldown = 60 / LEASE_BREAKER.rpm;
-      p.firedThisTick = true;
-      p.stats.shots++;
-      p.kickPitch += LEASE_BREAKER.kickPitch;
-      // deterministic alternating yaw kick; full seeded pattern arrives in Stage 4
-      p.kickYaw += (p.stats.shots & 1 ? 1 : -1) * LEASE_BREAKER.kickYaw;
-    } else if (has(pressed, Btn.Fire)) {
-      events.push({ type: "dryFire" });
-    }
-  }
+  if (reqs.length) p.stats.shots += reqs.filter((q) => q.kind !== "projectile" || q.weapon !== "grenade").length;
+  return reqs;
 }

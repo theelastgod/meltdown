@@ -1,0 +1,224 @@
+{
+  "ttk": [
+    {
+      "weapon": "lease_breaker",
+      "mode": "primary",
+      "range": 20,
+      "seconds": 0.8,
+      "ticks": 48,
+      "shots": 7,
+      "killed": true
+    },
+    {
+      "weapon": "lease_breaker",
+      "mode": "alt",
+      "range": 20,
+      "seconds": 0.8,
+      "ticks": 48,
+      "shots": 7,
+      "killed": true
+    },
+    {
+      "weapon": "repo_hammer",
+      "mode": "primary",
+      "range": 7,
+      "seconds": 0.8666666666666667,
+      "ticks": 52,
+      "shots": 2,
+      "killed": true
+    },
+    {
+      "weapon": "repo_hammer",
+      "mode": "alt",
+      "range": 7,
+      "seconds": 0.8666666666666667,
+      "ticks": 52,
+      "shots": 2,
+      "killed": true
+    },
+    {
+      "weapon": "stack_smg",
+      "mode": "primary",
+      "range": 10,
+      "seconds": 0.9166666666666666,
+      "ticks": 55,
+      "shots": 12,
+      "killed": true
+    },
+    {
+      "weapon": "stack_smg",
+      "mode": "alt",
+      "range": 10,
+      "seconds": 0.9166666666666666,
+      "ticks": 55,
+      "shots": 12,
+      "killed": true
+    },
+    {
+      "weapon": "longwave",
+      "mode": "primary",
+      "range": 40,
+      "seconds": 0.9166666666666666,
+      "ticks": 55,
+      "shots": 1,
+      "killed": true
+    },
+    {
+      "weapon": "longwave",
+      "mode": "alt",
+      "range": 40,
+      "seconds": 0.9333333333333333,
+      "ticks": 56,
+      "shots": 3,
+      "killed": true
+    },
+    {
+      "weapon": "phage",
+      "mode": "primary",
+      "range": 10,
+      "seconds": 0.8833333333333333,
+      "ticks": 53,
+      "shots": 2,
+      "killed": true
+    },
+    {
+      "weapon": "phage",
+      "mode": "alt",
+      "range": 10,
+      "seconds": 0.8833333333333333,
+      "ticks": 53,
+      "shots": 2,
+      "killed": true
+    },
+    {
+      "weapon": "shock_baton",
+      "mode": "primary",
+      "range": 1.5,
+      "seconds": 0.9333333333333333,
+      "ticks": 56,
+      "shots": 3,
+      "killed": true
+    },
+    {
+      "weapon": "shock_baton",
+      "mode": "alt",
+      "range": 1.5,
+      "seconds": 0.7833333333333333,
+      "ticks": 47,
+      "shots": 2,
+      "killed": true
+    }
+  ],
+  "shots": {
+    "lease_breaker": 8,
+    "repo_hammer": 2,
+    "stack_smg": 8,
+    "longwave": 1,
+    "phage": 1,
+    "shock_baton": 3
+  },
+  "hits": {
+    "lease_breaker": 7,
+    "repo_hammer": 9,
+    "stack_smg": 8,
+    "longwave": 1,
+    "shock_baton": 1
+  },
+  "kills": 3,
+  "explosions": 2,
+  "captures": {
+    "slot1": "probe/out/stage4-slot1.png",
+    "slot2": "probe/out/stage4-slot2.png",
+    "slot3": "probe/out/stage4-slot3.png",
+    "slot4": "probe/out/stage4-slot4.png",
+    "slot5": "probe/out/stage4-slot5.png",
+    "slot6": "probe/out/stage4-slot6.png",
+    "aftermath": "probe/out/stage4-aftermath.png"
+  },
+  "audio": {
+    "land": 4,
+    "shot": 180,
+    "shot_lease_breaker": 8,
+    "hit_legs": 4,
+    "hit_body": 22,
+    "shot_wasp": 144,
+    "hurt": 166,
+    "kill": 4,
+    "swap": 5,
+    "shot_repo_hammer": 16,
+    "flagged": 25,
+    "mechBeam": 23,
+    "shot_stack_smg": 8,
+    "shot_longwave": 1,
+    "explosion": 2,
+    "step": 10,
+    "jump": 2,
+    "mantle": 1,
+    "shot_shock_baton": 3,
+    "throw": 3,
+    "smoke": 1,
+    "emp": 1
+  },
+  "checks": [
+    {
+      "name": "every core weapon's primary TTK is inside the 0.6–1.0 s band at its intended range",
+      "pass": true,
+      "detail": "lease_breaker 0.80s, repo_hammer 0.87s, stack_smg 0.92s, longwave 0.92s, phage 0.88s, shock_baton 0.93s"
+    },
+    {
+      "name": "no alt-fire undercuts the band",
+      "pass": true,
+      "detail": "lease_breaker 0.80s, repo_hammer 0.87s, stack_smg 0.92s, longwave 0.93s, phage 0.88s, shock_baton 0.78s"
+    },
+    {
+      "name": "all six weapons fired in the browser build",
+      "pass": true,
+      "detail": "lease_breaker:8 repo_hammer:2 stack_smg:8 longwave:1 phage:1 shock_baton:3"
+    },
+    {
+      "name": "hitscan, pellets, rail and baton all registered hits on the dummy",
+      "pass": true,
+      "detail": "lease_breaker:7 repo_hammer:9 stack_smg:8 longwave:1 phage:0 shock_baton:1"
+    },
+    {
+      "name": "the dummy died at least once per weapon class (respawns between)",
+      "pass": true,
+      "detail": "see kills"
+    },
+    {
+      "name": "rail shot is a piercing beam",
+      "pass": true,
+      "detail": "pierce flag set"
+    },
+    {
+      "name": "phage rounds and the frag detonated",
+      "pass": true,
+      "detail": "2 explosions: phage,frag"
+    },
+    {
+      "name": "smoke cloud and EMP resolved",
+      "pass": true,
+      "detail": "cloud=true emp=true"
+    },
+    {
+      "name": "the dummy died repeatedly across the cycle",
+      "pass": true,
+      "detail": "3 kills"
+    },
+    {
+      "name": "VANTAGE hunted: the mech flagged the player and a wasp opened fire",
+      "pass": true,
+      "detail": "flagged=781 waspShots=144"
+    },
+    {
+      "name": "audio cues fired for shots, explosions and the kill stamp",
+      "pass": true,
+      "detail": "{\"land\":4,\"shot\":180,\"shot_lease_breaker\":8,\"hit_legs\":4,\"hit_body\":22,\"shot_wasp\":144,\"hurt\":166,\"kill\":4,\"swap\":5,\"shot_repo_hammer\":16,\"flagged\":25,\"mechBeam\":23,\"shot_stack_smg\":8,\"shot_longwave\":1,\"explosion\":2,\"step\":10,\"jump\":2,\"mantle\":1,\"shot_shock_baton\":3,\"throw\":3,\"smoke\":1,\"emp\":1}"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": "clean console"
+    }
+  ]
+}

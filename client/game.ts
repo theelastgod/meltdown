@@ -3,7 +3,7 @@ import type { InputFrame } from "@shared/sim/input";
 import { drainageYard } from "@shared/sim/level";
 import { eyeHeight, type PlayerState } from "@shared/sim/player";
 import { hashWorld, World, type SimEvent } from "@shared/sim/world";
-import { lenXZ } from "@shared/math/vec3";
+import { lenXZ, wrapAngle } from "@shared/math/vec3";
 import { GameAudio } from "./audio";
 import { Bot, type BotStep, type BotTarget } from "./bot";
 import { Hud } from "./hud/hud";
@@ -11,7 +11,9 @@ import { InputController } from "./input";
 import { Renderer, type ViewState } from "./render/renderer";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
-import type { NetInput, Snapshot as NetSnapshot } from "@shared/net/protocol";
+import { ENT_CLOUD, ENT_MECH, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot } from "@shared/net/protocol";
+import { WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
+import { currentWeapon } from "@shared/sim/weapons";
 
 export interface NetConfig {
   url: string;
@@ -38,8 +40,8 @@ const snap = (p: PlayerState): Snapshot => ({
   eye: eyeHeight(p),
   yaw: p.yaw,
   pitch: p.pitch,
-  kickPitch: p.kickPitch,
-  kickYaw: p.kickYaw,
+  kickPitch: p.weapon.kickPitch,
+  kickYaw: p.weapon.kickYaw,
 });
 
 const lerpAngle = (a: number, b: number, t: number): number => {
@@ -83,7 +85,8 @@ export class Game {
   private fpsWindow = { t: 0, frames: 0, ticks: 0 };
 
   constructor(canvas: HTMLCanvasElement, hudRoot: HTMLElement) {
-    this.world = new World(drainageYard());
+    const q = new URLSearchParams(location.search);
+    this.world = new World(drainageYard(), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1 });
     this.player = this.world.addPlayer(1, "BLANK");
     this.input = new InputController(canvas);
     this.input.yaw = this.player.yaw;
@@ -111,6 +114,7 @@ export class Game {
     this.net = net;
     net.onStatus = (st) => {
       if (st === "joined") {
+        (this.world as { seed: number }).seed = net.seed;
         this.player = this.world.addPlayer(net.playerId, cfg.name);
         this.input.yaw = this.player.yaw;
         this.hud.push(`LINKED · ROOM ${cfg.url.split("/").pop()} · FILE #${net.playerId}`, "cy");
@@ -164,6 +168,7 @@ export class Game {
       this.prev = this.cur = snap(p);
       this.world.tick = ns.tick;
     }
+    this.netEntities = ns.entities;
     for (const ev of ns.events) this.onNetEvent(ev);
   }
 
@@ -171,7 +176,9 @@ export class Game {
     const me = this.player.id;
     switch (ev.type) {
       case "shot": {
-        const hit = ev.hitKind === 2 || ev.hitKind === 3;
+        const hit = ev.hitKind >= 2;
+        const def = WEAPON_LIST[ev.weapon - 1];
+        const color = def?.tracer ?? 0xffb02e;
         if (ev.playerId === me) {
           this.netStats.myShotsConfirmed++;
           if (hit) {
@@ -181,12 +188,59 @@ export class Game {
             if (this.hitmarkers) this.hud.flashHit();
           }
         } else {
-          this.renderer.tracer({ x: ev.fx, y: ev.fy, z: ev.fz }, { x: ev.tx, y: ev.ty, z: ev.tz }, ev.hitKind === 1, true);
+          if (ev.weapon === 4) this.renderer.fx.beam({ x: ev.fx, y: ev.fy, z: ev.fz }, { x: ev.tx, y: ev.ty, z: ev.tz }, color, 0.05, 0.6);
+          else this.renderer.tracer({ x: ev.fx, y: ev.fy, z: ev.fz }, { x: ev.tx, y: ev.ty, z: ev.tz }, ev.hitKind === 1, true, color);
+          if (ev.weapon === 0) this.audio.shot("wasp");
+          else if (def) this.audio.shot(def.id);
           if (ev.hitKind === 3 && ev.victimId === me) {
             this.netStats.serverHitsOnMe++;
-            this.audio.land(2);
+            this.audio.hurt();
             this.hud.alert("▲ INTEGRITY BREACH", true, 1);
           }
+        }
+        break;
+      }
+      case "fx": {
+        const pos = { x: ev.x, y: ev.y, z: ev.z };
+        switch (ev.kind) {
+          case FX.explode:
+            this.renderer.fx.explosion(pos, ev.a / 10, ev.b === 3 ? 0xffb02e : 0x8f4dff, ev.b === 3);
+            this.audio.explosion(ev.b === 3);
+            break;
+          case FX.cloud:
+            this.audio.smoke();
+            break;
+          case FX.emp:
+            this.audio.emp();
+            this.renderer.fx.explosion(pos, ev.a / 10, 0x35f2ff, false);
+            break;
+          case FX.flagged:
+            if (ev.playerId === me) this.hud.flagged();
+            break;
+          case FX.stun:
+            if (ev.playerId === me) {
+              this.audio.stun();
+              this.renderer.post.kick(0.8);
+            }
+            break;
+          case FX.mechBeam:
+            this.renderer.fx.beam({ x: ev.x, y: ev.y + 2.5, z: ev.z }, pos, 0xffb02e, 0.08, 0.35);
+            if (ev.playerId === me) this.audio.mechBeam();
+            break;
+          case FX.hurt:
+            if (ev.playerId === me) {
+              this.audio.hurt();
+              this.hud.alert(`▲ INTEGRITY −${ev.a}`, true, 0.8);
+            }
+            break;
+          case FX.waspDeath:
+            this.hud.push(`WASP-${String(ev.a).padStart(2, "0")} DOWNED`, "am");
+            break;
+          case FX.mechDeath:
+            this.hud.push(`REPO MECH ${ev.a} DISABLED`, "am");
+            break;
+          default:
+            break;
         }
         break;
       }
@@ -195,8 +249,9 @@ export class Game {
           this.audio.kill();
           this.hud.killStamp();
           this.renderer.post.kick(1);
-          this.hud.push(`FILE #${me} ⟶ ${ev.victimKind === 0 ? "DUMMY" : "FILE"}-${String(ev.victimId).padStart(2, "0")} · TTK ${(ev.ttkTicks / SIM_HZ).toFixed(2)}s`, "mg");
-        } else this.hud.push(`FILE #${ev.playerId} ⟶ ${ev.victimKind === 0 ? "DUMMY" : "FILE"}-${String(ev.victimId).padStart(2, "0")}`, "k");
+          const vk = ["DUMMY", "FILE", "WASP", "MECH"][ev.victimKind] ?? "?";
+          this.hud.push(`FILE #${me} ⟶ ${vk}-${String(ev.victimId).padStart(2, "0")}${ev.ttkTicks ? ` · TTK ${(ev.ttkTicks / SIM_HZ).toFixed(2)}s` : ""}`, "mg");
+        } else this.hud.push(`FILE #${ev.playerId} ⟶ ${["DUMMY", "FILE", "WASP", "MECH"][ev.victimKind] ?? "?"}-${String(ev.victimId).padStart(2, "0")}`, "k");
         break;
       case "death":
         if (ev.playerId === me) {
@@ -222,8 +277,9 @@ export class Game {
 
   start(): void {
     this.stats.wallStart = performance.now();
-    const loop = (now: number) => {
-      this.frame(now, true);
+    const loop = () => {
+      // one clock for both drivers: rAF timestamps lag performance.now() under load and would double-count
+      this.frame(performance.now(), true);
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
@@ -264,8 +320,9 @@ export class Game {
       if (this.net.status !== "joined" || !this.synced) return;
       const frame: InputFrame = this.bot ? this.bot.sample(this.world, this.player, t, this.botTargets()) : this.input.sample(t);
       // apply exactly what the wire carries (angles quantized to 1e-4 rad) so prediction and server agree bit for bit
-      frame.yaw = Math.round(frame.yaw * 10000) / 10000;
-      frame.pitch = Math.round(frame.pitch * 10000) / 10000;
+      // wrap first: the wire's i16 cannot carry angles beyond ±3.2767 rad, and both sides must apply the same value
+      frame.yaw = Math.round(wrapAngle(frame.yaw) * 10000) / 10000;
+      frame.pitch = Math.round(Math.max(-1.55, Math.min(1.55, frame.pitch)) * 10000) / 10000;
       const ni: NetInput = { ...frame, seq: this.net.nextSeq(), viewTick: this.net.viewTick(), px: 0, py: 0, pz: 0 };
       this.world.applyInput(this.player, ni, { predictOnly: true });
       ni.px = this.player.pos.x;
@@ -285,7 +342,32 @@ export class Game {
     this.renderer.syncDummies(this.world.dummies);
   }
 
+  private chargeTick = 0;
+
+  private syncOfflineEntities(): void {
+    const w = this.world;
+    this.renderer.fx.syncProjectiles(w.projectiles.map((p) => ({ id: p.id, kind: p.kind, pos: p.pos, stuck: p.stuck })));
+    this.renderer.fx.syncClouds(w.clouds.map((c) => ({ id: c.id, pos: c.pos, radius: c.radius })));
+    this.renderer.fx.syncWasps(w.wasps.map((x) => ({ id: x.id, pos: x.pos, yaw: x.yaw, alive: x.alive, state: x.disabledTimer > 0 ? 2 : x.state === "chase" ? 1 : 0 })));
+    this.renderer.fx.syncMechs(w.mechs.map((m) => ({ id: m.id, pos: m.pos, yaw: m.yaw, lightYaw: m.face + m.lightYaw, alive: m.alive, locked: m.targetId >= 0 })));
+  }
+
+  private netEntities: NetSnapshot["entities"] = [];
+
+  private syncNetEntities(): void {
+    const kinds = ["phage", "phage", "sticky", "frag", "smoke", "emp"] as const;
+    const ents = this.netEntities;
+    this.renderer.fx.syncProjectiles(ents.filter((e) => e.kind === ENT_PROJECTILE).map((e) => ({ id: e.id, kind: kinds[e.a] ?? "phage", pos: { x: e.x, y: e.y, z: e.z }, stuck: e.b === 1 })));
+    this.renderer.fx.syncClouds(ents.filter((e) => e.kind === ENT_CLOUD).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, radius: e.c / 100 })));
+    this.renderer.fx.syncWasps(ents.filter((e) => e.kind === ENT_WASP).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, yaw: e.c / 1000, alive: e.a === 1, state: e.d })));
+    this.renderer.fx.syncMechs(ents.filter((e) => e.kind === ENT_MECH).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, yaw: e.c / 1000, lightYaw: e.d / 1000, alive: e.a === 1, locked: false })));
+  }
+
   private footsteps(): void {
+    if (this.player.weapon.charging) {
+      this.chargeTick++;
+      if (this.chargeTick % 6 === 0) this.audio.charge(this.player.weapon.charge);
+    }
     const p = this.player;
     const sp = lenXZ(p.vel);
     if (p.grounded && sp > 0.8 && p.stance !== "slide") {
@@ -301,22 +383,108 @@ export class Game {
 
   private onEvent(ev: SimEvent): void {
     this.recentEvents.push(ev);
-    if (this.recentEvents.length > 200) this.recentEvents.shift();
+    if (this.recentEvents.length > 1500) this.recentEvents.shift();
     switch (ev.type) {
-      case "shot":
-        this.audio.shot();
-        this.renderer.tracer(ev.from, ev.to, ev.hit.kind === "world");
-        if (!this.net && (ev.hit.kind === "dummy" || ev.hit.kind === "player")) {
-          this.audio.hit(ev.hit.zone ?? "body");
-          if (ev.hit.kind === "dummy") this.renderer.flashDummy(ev.hit.id);
+      case "shot": {
+        const mine = ev.playerId === this.player.id;
+        const def = ev.weapon === "wasp" ? null : WEAPONS[ev.weapon];
+        const color = def?.tracer ?? 0xffb02e;
+        if (mine) this.audio.shot(ev.weapon);
+        else if (ev.weapon === "wasp") this.audio.shot("wasp");
+        if (ev.weapon === "longwave") this.renderer.fx.beam(ev.from, ev.to, color, 0.05, 0.6);
+        else this.renderer.tracer(ev.from, ev.to, ev.hit.kind === "world", !mine, color);
+        if (!this.net && mine && ev.hits.length) {
+          const h = ev.hits[0]!;
+          this.audio.hit(h.zone ?? "body");
+          if (h.kind === "dummy") this.renderer.flashDummy(h.id);
           if (this.hitmarkers) this.hud.flashHit();
         }
+        break;
+      }
+      case "melee":
+        if (ev.playerId === this.player.id) {
+          this.audio.shot("shock_baton");
+          if (ev.hits.length) {
+            this.audio.hit("body");
+            for (const h of ev.hits) if (h.kind === "dummy") this.renderer.flashDummy(h.id);
+          }
+          if (ev.lunge) this.renderer.post.kick(0.4);
+        }
+        break;
+      case "explode":
+        this.renderer.fx.explosion(ev.pos, ev.radius, ev.projKind === "frag" ? 0xffb02e : 0x8f4dff, ev.projKind === "frag");
+        this.audio.explosion(ev.projKind === "frag");
+        if (Math.hypot(ev.pos.x - this.player.pos.x, ev.pos.z - this.player.pos.z) < ev.radius * 2) this.renderer.post.kick(0.6);
+        break;
+      case "cloud":
+        this.audio.smoke();
+        break;
+      case "emp":
+        this.audio.emp();
+        this.renderer.fx.explosion(ev.pos, ev.radius, 0x35f2ff, false);
+        if (Math.hypot(ev.pos.x - this.player.pos.x, ev.pos.z - this.player.pos.z) < ev.radius) this.renderer.post.kick(1);
+        break;
+      case "stun":
+        if (ev.playerId === this.player.id) {
+          this.audio.stun();
+          this.renderer.post.kick(0.8);
+        }
+        break;
+      case "flagged":
+        if (ev.playerId === this.player.id) {
+          this.hud.flagged();
+          if (this.world.tick % 30 === 0) this.audio.flagged();
+        }
+        break;
+      case "mechBeam":
+        this.renderer.fx.beam(ev.from, ev.to, 0xffb02e, 0.08, 0.35);
+        if (ev.playerId === this.player.id) {
+          this.audio.mechBeam();
+          this.renderer.post.kick(0.5);
+        }
+        break;
+      case "hurt":
+        if (ev.playerId === this.player.id) {
+          this.audio.hurt();
+          this.hud.alert(`▲ INTEGRITY −${ev.damage}`, true, 0.8);
+        }
+        break;
+      case "swap":
+        if (ev.playerId === this.player.id) this.audio.swap();
+        break;
+      case "reloadSeat":
+        if (ev.playerId === this.player.id) this.audio.reload("seat");
+        break;
+      case "reloadCancel":
+        break;
+      case "chargeStart":
+      case "chargeCancel":
+      case "altToggle":
+      case "fire":
+        break;
+      case "chargeFull":
+        if (ev.playerId === this.player.id) this.audio.charge(1);
+        break;
+      case "lunge":
+        if (ev.playerId === this.player.id) this.audio.jump();
+        break;
+      case "throw":
+        if (ev.playerId === this.player.id) this.audio.throw();
+        break;
+      case "waspDeath":
+        this.hud.push(`WASP-${String(ev.waspId).padStart(2, "0")} DOWNED`, "am");
+        this.audio.explosion(false);
+        break;
+      case "mechDeath":
+        this.hud.push(`REPO MECH ${ev.mechId} DISABLED — VANTAGE RE-LEASING`, "am");
+        this.audio.explosion(true);
+        this.renderer.post.kick(1);
         break;
       case "kill":
         this.audio.kill();
         this.hud.killStamp();
         this.renderer.post.kick(1);
-        this.hud.push(`BLANK ⟶ DUMMY-${String(ev.victimId).padStart(2, "0")} · TTK ${ev.ttkSeconds.toFixed(2)}s`, "mg");
+        this.hud.push(`BLANK ⟶ ${ev.victimKind.toUpperCase()}-${String(ev.victimId).padStart(2, "0")} · ${ev.weapon.toUpperCase()}${ev.ttkTicks ? ` · TTK ${ev.ttkSeconds.toFixed(2)}s` : ""}`, "mg");
         break;
       case "slide":
         this.audio.slide();
@@ -401,8 +569,13 @@ export class Game {
       speed: lenXZ(p.vel),
       grounded: p.grounded,
       stance: p.stance,
-      reloading: p.reloadTimer > 0 ? 1 - p.reloadTimer / 1.9 : 0,
+      reloading: p.weapon.reloadTimer > 0 && p.weapon.reloadTotal > 0 ? 1 - p.weapon.reloadTimer / p.weapon.reloadTotal : 0,
+      slot: p.weapon.slot,
+      zoom: p.weapon.altActive && currentWeapon(p.weapon).alt.kind === "ads" ? currentWeapon(p.weapon).alt.zoom ?? 1 : 1,
+      charge: p.weapon.charging ? p.weapon.charge : 0,
+      stunned: p.weapon.stunTimer > 0,
     };
+    this.input.currentSlot = p.weapon.slot;
     // Local view is not interpolated when the keyboard drives it: mouse look
     // must feel immediate, so use the live input angles.
     if (!this.bot && this.input.isLocked) {
@@ -411,6 +584,8 @@ export class Game {
     }
     if (!render || !this.drawing) return;
     if (this.net) this.renderer.syncRemotes(this.net.remoteViews());
+    if (!this.net) this.syncOfflineEntities();
+    else this.syncNetEntities();
     this.renderer.render(view, dt);
     this.stats.frames++;
     this.fpsWindow.frames++;

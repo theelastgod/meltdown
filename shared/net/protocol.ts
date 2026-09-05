@@ -5,7 +5,7 @@
 import type { InputFrame } from "../sim/input";
 import type { HitZone } from "../sim/world";
 
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 /** Server snapshot cadence in sim ticks (60 Hz sim → 30 Hz snapshots). */
 export const SNAPSHOT_EVERY = 2;
 /** Lag compensation rewind cap in ticks (200 ms at 60 Hz). */
@@ -38,6 +38,7 @@ export interface NetInput extends InputFrame {
 
 export interface RemotePlayerQ {
   id: number;
+  slot: number;
   x: number;
   y: number;
   z: number;
@@ -63,10 +64,28 @@ export interface LocalAuth {
   stance: number; height: number; grounded: number; airTime: number; jumpBuffer: number;
   slideTime: number; slideCooldown: number; sdx: number; sdz: number;
   mfx: number; mfy: number; mfz: number; mtx: number; mty: number; mtz: number; mantleT: number;
-  health: number; alive: number; respawnTimer: number; ammo: number; reloadTimer: number; fireCooldown: number;
-  kickPitch: number; kickYaw: number; prevButtons: number;
+  health: number; alive: number; respawnTimer: number; prevButtons: number;
   kills: number; deaths: number; shots: number; hits: number;
+  // weapon state (exact)
+  slot: number; ammo: number[]; reloadTimer: number; reloadTotal: number; reloadSeated: number; fireCooldown: number;
+  charge: number; charging: number; shotIndex: number; magSeed: number; magCount: number; altActive: number; altCooldown: number;
+  lungeT: number; lungeHit: number; grenades: number[]; grenadeSel: number; grenadeCooldown: number; swapTimer: number;
+  kickPitch: number; kickYaw: number; patX: number; patY: number; stunTimer: number; empTimer: number; sinceShot: number;
 }
+
+/** Generic server-driven entity record: projectiles, clouds, wasps, mechs. */
+export interface NetEntity {
+  kind: 1 | 2 | 3 | 4;
+  id: number;
+  x: number;
+  y: number;
+  z: number;
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+}
+export const ENT_PROJECTILE = 1, ENT_CLOUD = 2, ENT_WASP = 3, ENT_MECH = 4;
 
 export interface DummyQ {
   id: number;
@@ -78,11 +97,17 @@ export interface DummyQ {
 }
 
 export type NetEvent =
-  | { type: "shot"; playerId: number; fx: number; fy: number; fz: number; tx: number; ty: number; tz: number; hitKind: number; zone?: HitZone; victimId: number }
-  | { type: "kill"; playerId: number; victimKind: number; victimId: number; ttkTicks: number }
+  | { type: "shot"; playerId: number; weapon: number; fx: number; fy: number; fz: number; tx: number; ty: number; tz: number; hitKind: number; zone?: HitZone; victimId: number; pierce: number }
+  | { type: "kill"; playerId: number; victimKind: number; victimId: number; ttkTicks: number; weapon: number }
   | { type: "death"; playerId: number; killerId: number }
   | { type: "join"; playerId: number; name: string }
-  | { type: "leave"; playerId: number };
+  | { type: "leave"; playerId: number }
+  /** Generic effect: kind (FX_*), player, position, two small args. */
+  | { type: "fx"; kind: number; playerId: number; x: number; y: number; z: number; a: number; b: number };
+
+export const FX = { explode: 1, cloud: 2, emp: 3, flagged: 4, stun: 5, swap: 6, melee: 7, mechBeam: 8, hurt: 9, waspDeath: 10, mechDeath: 11, throw: 12, chargeFull: 13, lunge: 14 } as const;
+/** weapon numbering on the wire: 0 wasp/none, 1..6 slots, 7 grenade, 8 mech */
+export const WEAPON_WIRE: Record<string, number> = { wasp: 0, lease_breaker: 1, repo_hammer: 2, stack_smg: 3, longwave: 4, phage: 5, shock_baton: 6, frag: 7, smoke: 7, emp: 7, grenade: 7, mech: 8 };
 
 export interface Snapshot {
   tick: number;
@@ -90,6 +115,7 @@ export interface Snapshot {
   local: LocalAuth | null;
   players: RemotePlayerQ[];
   dummies: DummyQ[];
+  entities: NetEntity[];
   events: NetEvent[];
   bytes: number;
 }
@@ -138,6 +164,14 @@ class R {
   str(): string { const n = this.u16(); const b = new Uint8Array(this.dv.buffer, this.dv.byteOffset + this.o, n); this.o += n; return new TextDecoder().decode(b); }
 }
 
+const LOCAL_FLOAT_KEYS = ["x", "y", "z", "vx", "vy", "vz", "yaw", "pitch", "height", "airTime", "jumpBuffer", "slideTime", "slideCooldown", "sdx", "sdz", "mfx", "mfy", "mfz", "mtx", "mty", "mtz", "mantleT", "respawnTimer", "reloadTimer", "reloadTotal", "fireCooldown", "charge", "altCooldown", "lungeT", "grenadeCooldown", "swapTimer", "kickPitch", "kickYaw", "patX", "patY", "stunTimer", "empTimer", "sinceShot"] as const;
+const localFloats = (l: LocalAuth): number[] => LOCAL_FLOAT_KEYS.map((k) => l[k]);
+
+const wrapRad = (a: number): number => {
+  while (a > Math.PI) a -= Math.PI * 2;
+  while (a < -Math.PI) a += Math.PI * 2;
+  return a;
+};
 const Q_POS = 100; // 1 cm
 const Q_VEL = 100;
 const Q_ANG = 10000;
@@ -163,7 +197,7 @@ export function encodeInputs(inputs: NetInput[], ackTick: number): ArrayBuffer {
     w.u32(i.seq);
     w.u32(i.tick);
     w.u16(i.buttons);
-    w.i16(i.yaw * Q_ANG);
+    w.i16(wrapRad(i.yaw) * Q_ANG);
     w.i16(i.pitch * Q_ANG);
     w.u32(i.viewTick);
     w.f64(i.px);
@@ -183,13 +217,14 @@ export function encodePing(clientTime: number): ArrayBuffer {
 // ---------------------------------------------------------------------------
 // Server → client
 
-export function encodeWelcome(playerId: number, tick: number, token: string, levelName: string): ArrayBuffer {
+export function encodeWelcome(playerId: number, tick: number, token: string, levelName: string, seed: number): ArrayBuffer {
   const w = new W();
   w.u8(Msg.Welcome);
   w.u8(playerId);
   w.u32(tick);
   w.str(token);
   w.str(levelName);
+  w.u32(seed);
   return w.done();
 }
 
@@ -241,17 +276,27 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     w.u8(1);
     const l = s.local;
     w.u32(l.seq);
-    for (const v of [l.x, l.y, l.z, l.vx, l.vy, l.vz, l.yaw, l.pitch, l.height, l.airTime, l.jumpBuffer, l.slideTime, l.slideCooldown, l.sdx, l.sdz, l.mfx, l.mfy, l.mfz, l.mtx, l.mty, l.mtz, l.mantleT, l.respawnTimer, l.reloadTimer, l.fireCooldown, l.kickPitch, l.kickYaw]) w.f64(v);
+    for (const v of localFloats(l)) w.f64(v);
     w.u8(l.stance);
     w.u8(l.grounded);
     w.u8(l.alive);
     w.i16(l.health);
-    w.u8(l.ammo);
     w.u16(l.prevButtons);
     w.u16(l.kills);
     w.u16(l.deaths);
     w.u32(l.shots);
     w.u32(l.hits);
+    w.u8(l.slot);
+    for (let i = 0; i < 7; i++) w.u8(l.ammo[i] ?? 0);
+    w.u8(l.reloadSeated);
+    w.u8(l.charging);
+    w.u16(l.shotIndex);
+    w.u32(l.magSeed);
+    w.u16(l.magCount);
+    w.u8(l.altActive);
+    w.u8(l.lungeHit);
+    for (let i = 0; i < 3; i++) w.u8(l.grenades[i] ?? 0);
+    w.u8(l.grenadeSel);
   } else w.u8(0);
   // remote players (delta vs baseline)
   w.u8(s.players.length);
@@ -261,14 +306,14 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     if (!b || b.x !== p.x || b.y !== p.y || b.z !== p.z) mask |= F_POS;
     if (!b || b.vx !== p.vx || b.vy !== p.vy || b.vz !== p.vz) mask |= F_VEL;
     if (!b || b.yaw !== p.yaw || b.pitch !== p.pitch) mask |= F_VIEW;
-    if (!b || b.health !== p.health || b.ammo !== p.ammo || b.alive !== p.alive || b.grounded !== p.grounded || b.stance !== p.stance || b.height !== p.height) mask |= F_STATE;
+    if (!b || b.health !== p.health || b.ammo !== p.ammo || b.alive !== p.alive || b.grounded !== p.grounded || b.stance !== p.stance || b.height !== p.height || b.slot !== p.slot) mask |= F_STATE;
     if (!b || b.name !== p.name) mask |= F_NAME;
     w.u8(p.id);
     w.u8(mask);
     if (mask & F_POS) { w.i16(p.x * Q_POS); w.i16(p.y * Q_POS); w.i16(p.z * Q_POS); }
     if (mask & F_VEL) { w.i16(p.vx * Q_VEL); w.i16(p.vy * Q_VEL); w.i16(p.vz * Q_VEL); }
     if (mask & F_VIEW) { w.i16(p.yaw * Q_ANG); w.i16(p.pitch * Q_ANG); }
-    if (mask & F_STATE) { w.i16(p.health); w.u8(p.ammo); w.u8((p.alive ? 1 : 0) | (p.grounded ? 2 : 0) | (p.stance << 2)); w.i16(p.height * Q_POS); }
+    if (mask & F_STATE) { w.i16(p.health); w.u8(p.ammo); w.u8((p.alive ? 1 : 0) | (p.grounded ? 2 : 0) | (p.stance << 2) | (p.slot << 4)); w.i16(p.height * Q_POS); }
     if (mask & F_NAME) w.str(p.name);
   }
   // dummies (full, small)
@@ -281,20 +326,28 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     w.i16(d.y * Q_POS);
     w.i16(d.z * Q_POS);
   }
+  // entities (full each snapshot; small)
+  w.u8(Math.min(255, s.entities.length));
+  for (const e of s.entities.slice(0, 255)) {
+    w.u8(e.kind); w.u16(e.id);
+    w.i16(e.x * Q_POS); w.i16(e.y * Q_POS); w.i16(e.z * Q_POS);
+    w.u8(e.a); w.u8(e.b); w.i16(e.c); w.i16(e.d);
+  }
   // events
   w.u8(Math.min(255, s.events.length));
   for (const e of s.events.slice(0, 255)) {
     switch (e.type) {
       case "shot":
-        w.u8(1); w.u8(e.playerId);
+        w.u8(1); w.u8(e.playerId & 0xff); w.u8(e.weapon);
         w.i16(e.fx * Q_POS); w.i16(e.fy * Q_POS); w.i16(e.fz * Q_POS);
         w.i16(e.tx * Q_POS); w.i16(e.ty * Q_POS); w.i16(e.tz * Q_POS);
-        w.u8(e.hitKind); w.u8(e.zone === "head" ? 1 : e.zone === "legs" ? 2 : 0); w.u8(e.victimId & 0xff);
+        w.u8(e.hitKind); w.u8(e.zone === "head" ? 1 : e.zone === "legs" ? 2 : 0); w.u8(e.victimId & 0xff); w.u8(e.pierce);
         break;
-      case "kill": w.u8(2); w.u8(e.playerId); w.u8(e.victimKind); w.u8(e.victimId & 0xff); w.u16(e.ttkTicks); break;
+      case "kill": w.u8(2); w.u8(e.playerId & 0xff); w.u8(e.victimKind); w.u8(e.victimId & 0xff); w.u16(e.ttkTicks); w.u8(e.weapon); break;
       case "death": w.u8(3); w.u8(e.playerId); w.u8(e.killerId & 0xff); break;
       case "join": w.u8(4); w.u8(e.playerId); w.str(e.name); break;
       case "leave": w.u8(5); w.u8(e.playerId); break;
+      case "fx": w.u8(6); w.u8(e.kind); w.u8(e.playerId & 0xff); w.i16(e.x * Q_POS); w.i16(e.y * Q_POS); w.i16(e.z * Q_POS); w.u8(e.a); w.u8(e.b); break;
     }
   }
   return w.done();
@@ -332,7 +385,7 @@ export function decodeClientMessage(buf: ArrayBuffer): ClientMessage | null {
 }
 
 export type ServerMessage =
-  | { type: "welcome"; playerId: number; tick: number; token: string; level: string }
+  | { type: "welcome"; playerId: number; tick: number; token: string; level: string; seed: number }
   | { type: "snapshot"; snapshot: Snapshot; baselineTick: number }
   | { type: "pong"; clientTime: number; tick: number }
   | { type: "kick"; reason: string };
@@ -342,7 +395,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
   try {
     const r = new R(buf);
     const t = r.u8();
-    if (t === Msg.Welcome) return { type: "welcome", playerId: r.u8(), tick: r.u32(), token: r.str(), level: r.str() };
+    if (t === Msg.Welcome) return { type: "welcome", playerId: r.u8(), tick: r.u32(), token: r.str(), level: r.str(), seed: r.u32() };
     if (t === Msg.Pong) return { type: "pong", clientTime: r.u32(), tick: r.u32() };
     if (t === Msg.Kick) return { type: "kick", reason: r.str() };
     if (t !== Msg.Snapshot) return null;
@@ -354,15 +407,17 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     let local: LocalAuth | null = null;
     if (r.u8() === 1) {
       const seq = r.u32();
-      const f: number[] = [];
-      for (let i = 0; i < 27; i++) f.push(r.f64());
-      local = {
-        seq,
-        x: f[0]!, y: f[1]!, z: f[2]!, vx: f[3]!, vy: f[4]!, vz: f[5]!, yaw: f[6]!, pitch: f[7]!, height: f[8]!, airTime: f[9]!, jumpBuffer: f[10]!,
-        slideTime: f[11]!, slideCooldown: f[12]!, sdx: f[13]!, sdz: f[14]!, mfx: f[15]!, mfy: f[16]!, mfz: f[17]!, mtx: f[18]!, mty: f[19]!, mtz: f[20]!, mantleT: f[21]!,
-        respawnTimer: f[22]!, reloadTimer: f[23]!, fireCooldown: f[24]!, kickPitch: f[25]!, kickYaw: f[26]!,
-        stance: r.u8(), grounded: r.u8(), alive: r.u8(), health: r.i16(), ammo: r.u8(), prevButtons: r.u16(), kills: r.u16(), deaths: r.u16(), shots: r.u32(), hits: r.u32(),
-      };
+      const l: Record<string, number> = { seq };
+      for (const k of LOCAL_FLOAT_KEYS) l[k] = r.f64();
+      l.stance = r.u8(); l.grounded = r.u8(); l.alive = r.u8(); l.health = r.i16(); l.prevButtons = r.u16(); l.kills = r.u16(); l.deaths = r.u16(); l.shots = r.u32(); l.hits = r.u32();
+      l.slot = r.u8();
+      const ammo: number[] = [];
+      for (let i = 0; i < 7; i++) ammo.push(r.u8());
+      l.reloadSeated = r.u8(); l.charging = r.u8(); l.shotIndex = r.u16(); l.magSeed = r.u32(); l.magCount = r.u16(); l.altActive = r.u8(); l.lungeHit = r.u8();
+      const grenades: number[] = [];
+      for (let i = 0; i < 3; i++) grenades.push(r.u8());
+      l.grenadeSel = r.u8();
+      local = { ...(l as unknown as LocalAuth), ammo, grenades };
     }
     const n = r.u8();
     const players: RemotePlayerQ[] = [];
@@ -370,36 +425,44 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
       const id = r.u8();
       const mask = r.u8();
       const b = base?.players.find((x) => x.id === id);
-      const p: RemotePlayerQ = b ? { ...b } : { id, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, health: 100, ammo: 0, alive: true, grounded: true, stance: 0, height: 1.8, name: "BLANK" };
+      const p: RemotePlayerQ = b ? { ...b } : { id, slot: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, health: 100, ammo: 0, alive: true, grounded: true, stance: 0, height: 1.8, name: "BLANK" };
       if (mask & F_POS) { p.x = r.i16() / Q_POS; p.y = r.i16() / Q_POS; p.z = r.i16() / Q_POS; }
       if (mask & F_VEL) { p.vx = r.i16() / Q_VEL; p.vy = r.i16() / Q_VEL; p.vz = r.i16() / Q_VEL; }
       if (mask & F_VIEW) { p.yaw = r.i16() / Q_ANG; p.pitch = r.i16() / Q_ANG; }
-      if (mask & F_STATE) { p.health = r.i16(); p.ammo = r.u8(); const fl = r.u8(); p.alive = !!(fl & 1); p.grounded = !!(fl & 2); p.stance = fl >> 2; p.height = r.i16() / Q_POS; }
+      if (mask & F_STATE) { p.health = r.i16(); p.ammo = r.u8(); const fl = r.u8(); p.alive = !!(fl & 1); p.grounded = !!(fl & 2); p.stance = (fl >> 2) & 3; p.slot = fl >> 4; p.height = r.i16() / Q_POS; }
       if (mask & F_NAME) p.name = r.str();
       players.push(p);
     }
     const nd = r.u8();
     const dummies: DummyQ[] = [];
     for (let i = 0; i < nd; i++) dummies.push({ id: r.u8(), alive: r.u8() === 1, health: r.i16(), x: r.i16() / Q_POS, y: r.i16() / Q_POS, z: r.i16() / Q_POS });
+    const nent = r.u8();
+    const entities: NetEntity[] = [];
+    for (let i = 0; i < nent; i++) {
+      entities.push({ kind: r.u8() as NetEntity["kind"], id: r.u16(), x: r.i16() / Q_POS, y: r.i16() / Q_POS, z: r.i16() / Q_POS, a: r.u8(), b: r.u8(), c: r.i16(), d: r.i16() });
+    }
     const ne = r.u8();
     const events: NetEvent[] = [];
     for (let i = 0; i < ne; i++) {
       const k = r.u8();
       if (k === 1) {
         const playerId = r.u8();
+        const weapon = r.u8();
         const fx = r.i16() / Q_POS, fy = r.i16() / Q_POS, fz = r.i16() / Q_POS;
         const tx = r.i16() / Q_POS, ty = r.i16() / Q_POS, tz = r.i16() / Q_POS;
         const hitKind = r.u8();
         const z = r.u8();
         const victimId = r.u8();
-        events.push({ type: "shot", playerId, fx, fy, fz, tx, ty, tz, hitKind, zone: z === 1 ? "head" : z === 2 ? "legs" : "body", victimId });
-      } else if (k === 2) events.push({ type: "kill", playerId: r.u8(), victimKind: r.u8(), victimId: r.u8(), ttkTicks: r.u16() });
+        const pierce = r.u8();
+        events.push({ type: "shot", playerId, weapon, fx, fy, fz, tx, ty, tz, hitKind, zone: z === 1 ? "head" : z === 2 ? "legs" : "body", victimId, pierce });
+      } else if (k === 2) events.push({ type: "kill", playerId: r.u8(), victimKind: r.u8(), victimId: r.u8(), ttkTicks: r.u16(), weapon: r.u8() });
       else if (k === 3) events.push({ type: "death", playerId: r.u8(), killerId: r.u8() });
       else if (k === 4) events.push({ type: "join", playerId: r.u8(), name: r.str() });
       else if (k === 5) events.push({ type: "leave", playerId: r.u8() });
+      else if (k === 6) events.push({ type: "fx", kind: r.u8(), playerId: r.u8(), x: r.i16() / Q_POS, y: r.i16() / Q_POS, z: r.i16() / Q_POS, a: r.u8(), b: r.u8() });
       else return null;
     }
-    return { type: "snapshot", baselineTick, snapshot: { tick, serverTimeMs, local, players, dummies, events, bytes: buf.byteLength } };
+    return { type: "snapshot", baselineTick, snapshot: { tick, serverTimeMs, local, players, dummies, entities, events, bytes: buf.byteLength } };
   } catch {
     return null;
   }

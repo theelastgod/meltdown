@@ -1,13 +1,13 @@
-PASS  matchmaking: both clients joined in < 5 s  — ALPHA 177 ms, BRAVO 177 ms (through 150 ms RTT)
-PASS  server tick ≥ 30 Hz  — 60.0 Hz, avg 0.16 ms, max 0.5 ms per tick
-PASS  measured RTT reflects the simulated link  — ALPHA rtt 155 ms
-PASS  hit-reg at 150 ms RTT + 5% loss on a strafing target (lag comp)  — 23/26 server-confirmed hits (88%), 3 kills; rewind avg 10.7 max 12 ticks, clamped 0; misses avg 0.22 m max 0.23 m from the axis
-server log: ["2026-09-05T14:59:37.514Z [probe] t144 death player 2 at (10.2,0.0,14.2) lastSeq 103","2026-09-05T14:59:40.514Z [probe] t324 respawn player 2 at (20.0,0.0,20.0) lastSeq 283","2026-09-05T14:59:41.530Z [probe] t385 death player 2 at (14.1,0.0,16.5) lastSeq 343","2026-09-05T14:59:44.531Z [probe] t565 respawn player 2 at (-20.0,0.0,0.0) lastSeq 524","2026-09-05T14:59:45.597Z [probe] t629 death player 2 at (-16.8,0.0,0.8) lastSeq 587","2026-09-05T14:59:48.597Z [probe] t809 respawn player 2 at (-20.0,0.0,0.0) lastSeq 768"]
-PASS  client-predicted movement identical to server (input-trace comparison)  — max error ALPHA 0.00e+0 m / BRAVO 0.00e+0 m over 779 samples
-PASS  reconciliation corrections stay sub-centimetre  — max ALPHA 0.00 mm, BRAVO 0.00 mm; replayed 3571 inputs
-PASS  delta snapshots decode under loss (no undecodable frames after warm-up)  — undecodable ALPHA 0, BRAVO 0; 389 snapshots in
-PASS  bandwidth: < 12 KB/s per client downstream  — 5.36 KB/s in, 7.88 KB/s out
-PASS  rejoin restores the same file and state, and inputs flow again  — id 1→1, kills 3→3, players in room 2, inputs applied after rejoin 105
+PASS  matchmaking: both clients joined in < 5 s  — ALPHA 187 ms, BRAVO 179 ms (through 150 ms RTT)
+PASS  server tick ≥ 30 Hz  — 60.0 Hz, avg 0.20 ms, max 1.0 ms per tick
+PASS  measured RTT reflects the simulated link  — ALPHA rtt 158 ms
+PASS  hit-reg at 150 ms RTT + 5% loss on a strafing target (lag comp)  — 23/26 server-confirmed hits (88%), 3 kills; rewind avg 10.6 max 12 ticks, clamped 0; misses avg 0.15 m max 0.21 m from the axis
+server log: ["2026-09-05T15:32:42.213Z [probe] t153 death player 2 at (10.0,0.0,14.0) lastSeq 103","2026-09-05T15:32:45.212Z [probe] t333 respawn player 2 at (-20.0,0.0,0.0) lastSeq 284","2026-09-05T15:32:46.280Z [probe] t397 death player 2 at (-16.6,0.0,0.8) lastSeq 347","2026-09-05T15:32:49.279Z [probe] t577 respawn player 2 at (-20.0,0.0,0.0) lastSeq 528","2026-09-05T15:32:50.312Z [probe] t639 death player 2 at (-13.5,0.0,2.6) lastSeq 589","2026-09-05T15:32:53.313Z [probe] t819 respawn player 2 at (0.0,0.0,24.0) lastSeq 770"]
+PASS  client-predicted movement identical to server (input-trace comparison)  — max error ALPHA 0.00e+0 m / BRAVO 0.00e+0 m over 706 samples
+PASS  reconciliation corrections stay sub-centimetre  — max ALPHA 0.00 mm, BRAVO 0.00 mm; replayed 3680 inputs
+PASS  delta snapshots decode under loss (no undecodable frames after warm-up)  — undecodable ALPHA 0, BRAVO 0; 398 snapshots in
+PASS  bandwidth: < 12 KB/s per client downstream  — 7.18 KB/s in, 7.95 KB/s out
+PASS  rejoin restores the same file and state, and inputs flow again  — id 1→1, kills 3→3, players in room 2, inputs applied after rejoin 107
 PASS  cheater rejected (invalid inputs + input rate)  — kicked: "invalid input" (rejected 0 inputs)
 PASS  control: lag compensation raises hit-reg on the moving target  — lag comp 88% vs none 11% (7/63)
 

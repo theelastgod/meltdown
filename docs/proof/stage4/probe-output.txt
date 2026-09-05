@@ -1,0 +1,60 @@
+TTK harness (perfect accuracy, body shots, 100 hp):
+  lease_breaker  primary  @  20 m  0.800 s  (7 shots)
+  lease_breaker  alt      @  20 m  0.800 s  (7 shots)
+  repo_hammer    primary  @   7 m  0.867 s  (2 shots)
+  repo_hammer    alt      @   7 m  0.867 s  (2 shots)
+  stack_smg      primary  @  10 m  0.917 s  (12 shots)
+  stack_smg      alt      @  10 m  0.917 s  (12 shots)
+  longwave       primary  @  40 m  0.917 s  (1 shots)
+  longwave       alt      @  40 m  0.933 s  (3 shots)
+  phage          primary  @  10 m  0.883 s  (2 shots)
+  phage          alt      @  10 m  0.883 s  (2 shots)
+  shock_baton    primary  @ 1.5 m  0.933 s  (3 shots)
+  shock_baton    alt      @ 1.5 m  0.783 s  (2 shots)
+PASS  every core weapon's primary TTK is inside the 0.6–1.0 s band at its intended range  — lease_breaker 0.80s, repo_hammer 0.87s, stack_smg 0.92s, longwave 0.92s, phage 0.88s, shock_baton 0.93s
+PASS  no alt-fire undercuts the band  — lease_breaker 0.80s, repo_hammer 0.87s, stack_smg 0.92s, longwave 0.93s, phage 0.88s, shock_baton 0.78s
+bot log:
+  t+20 hold → held
+  t+1 slot → slot 1
+  t+70 fire → fired
+  t+165 hold → held
+  t+1 slot → slot 2
+  t+90 fire → fired
+  t+165 hold → held
+  t+1 slot → slot 3
+  t+70 fire → fired
+  t+165 hold → held
+  t+1 slot → slot 4
+  t+90 fire → fired
+  t+165 hold → held
+  t+1 slot → slot 5
+  t+60 fire → fired
+  t+165 hold → held
+  t+1 slot → slot 6
+  t+22 goto → reached (0.0,-6.2)
+  t+37 mantle → mantled
+  t+17 goto → reached (0.0,-10.1)
+  t+70 fire → fired
+  t+43 goto → reached (0.0,-9.0)
+  t+4 throw → threw
+  t+150 hold → held
+  t+6 throw → threw
+  t+100 hold → held
+  t+6 throw → threw
+  t+120 hold → held
+  t+63 goto → reached (2.5,-2.1)
+  t+113 goto → reached (11.2,-11.1)
+  t+20 look → looked
+  t+260 hold → held
+PASS  all six weapons fired in the browser build  — lease_breaker:8 repo_hammer:2 stack_smg:8 longwave:1 phage:1 shock_baton:3
+PASS  hitscan, pellets, rail and baton all registered hits on the dummy  — lease_breaker:7 repo_hammer:9 stack_smg:8 longwave:1 phage:0 shock_baton:1
+PASS  the dummy died at least once per weapon class (respawns between)  — see kills
+PASS  rail shot is a piercing beam  — pierce flag set
+PASS  phage rounds and the frag detonated  — 2 explosions: phage,frag
+PASS  smoke cloud and EMP resolved  — cloud=true emp=true
+PASS  the dummy died repeatedly across the cycle  — 3 kills
+PASS  VANTAGE hunted: the mech flagged the player and a wasp opened fire  — flagged=781 waspShots=144
+PASS  audio cues fired for shots, explosions and the kill stamp  — {"land":4,"shot":180,"shot_lease_breaker":8,"hit_legs":4,"hit_body":22,"shot_wasp":144,"hurt":166,"kill":4,"swap":5,"shot_repo_hammer":16,"flagged":25,"mechBeam":23,"shot_stack_smg":8,"shot_longwave":1,"explosion":2,"step":10,"jump":2,"mantle":1,"shot_shock_baton":3,"throw":3,"smoke":1,"emp":1}
+PASS  no page errors  — clean console
+
+12/12 checks passed.

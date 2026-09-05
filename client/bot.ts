@@ -1,4 +1,4 @@
-import { Btn, type InputFrame } from "@shared/sim/input";
+import { Btn, withSlot, type InputFrame } from "@shared/sim/input";
 import type { PlayerState } from "@shared/sim/player";
 import type { World } from "@shared/sim/world";
 import { eyePos } from "@shared/sim/player";
@@ -12,6 +12,9 @@ export type BotStep =
   | { kind: "mantle"; x: number; z: number; timeoutTicks?: number }
   | { kind: "kill"; dummyId: number; zone?: "head" | "body" | "legs"; timeoutTicks?: number }
   | { kind: "strafe"; ticks: number; period?: number; sprint?: boolean }
+  | { kind: "slot"; slot: number }
+  | { kind: "fire"; ticks: number; alt?: boolean; aimAt?: { x: number; y: number; z: number }; dummyId?: number; pulse?: number }
+  | { kind: "throw"; grenade?: number; aimAt?: { x: number; y: number; z: number } }
   | { kind: "killPlayer"; targetId: number; ticks: number; zone?: "head" | "body" | "legs" };
 
 export interface BotTarget {
@@ -56,7 +59,7 @@ export class Bot {
   }
 
   private turnToward(targetYaw: number, targetPitch: number, rate = 0.25): void {
-    this.yaw += wrapAngle(targetYaw - this.yaw) * rate;
+    this.yaw = wrapAngle(this.yaw + wrapAngle(targetYaw - this.yaw) * rate);
     this.pitch += (targetPitch - this.pitch) * rate;
   }
 
@@ -124,6 +127,38 @@ export class Bot {
         } else if (this.stepTicks > (step.timeoutTicks ?? 300)) this.advance("TIMEOUT");
         break;
       }
+      case "slot":
+        buttons = withSlot(buttons, step.slot);
+        this.advance(`slot ${step.slot}`);
+        break;
+      case "fire": {
+        let target = step.aimAt ?? null;
+        if (step.dummyId !== undefined) {
+          const d = world.dummies.find((x) => x.id === step.dummyId);
+          if (d) target = { x: d.pos.x, y: d.pos.y + 1.0, z: d.pos.z };
+        }
+        if (target) {
+          const e = eyePos(p);
+          this.turnToward(yawTo(e, target), pitchTo(e, target), 0.6);
+        }
+        const releasing = step.ticks - this.stepTicks < 12; // let charged shots release before the step ends
+        const on = !releasing && (step.pulse ? this.stepTicks % step.pulse === 1 : true);
+        if (on) buttons |= step.alt ? Btn.Alt : Btn.Fire;
+        if (this.stepTicks >= step.ticks) this.advance("fired");
+        break;
+      }
+      case "throw": {
+        if (step.aimAt) {
+          const e = eyePos(p);
+          this.turnToward(yawTo(e, step.aimAt), pitchTo(e, step.aimAt), 0.6);
+        }
+        // pulse the cycle key once per selection step (edge-triggered), then throw
+        const cycles = step.grenade ?? 0;
+        if (this.stepTicks <= cycles * 2 && this.stepTicks % 2 === 1) buttons |= Btn.GrenadeNext;
+        else if (this.stepTicks === cycles * 2 + 3) buttons |= Btn.Grenade;
+        if (this.stepTicks >= cycles * 2 + 4) this.advance("threw");
+        break;
+      }
       case "strafe": {
         const period = step.period ?? 60;
         const phase = Math.floor(this.stepTicks / period) % 2;
@@ -138,8 +173,9 @@ export class Bot {
           const zoneY = step.zone === "head" ? t.height * 0.9 : step.zone === "legs" ? t.height * 0.2 : t.height * 0.55;
           const target: Vec3 = { x: t.x, y: t.y + zoneY, z: t.z };
           const e = eyePos(p);
-          const wantYaw = yawTo(e, target);
-          const wantPitch = pitchTo(e, target);
+          // a competent player pulls against the visible kick and the learned pattern
+          const wantYaw = yawTo(e, target) - (p.weapon.kickYaw + p.weapon.patX);
+          const wantPitch = pitchTo(e, target) - (p.weapon.kickPitch + p.weapon.patY);
           this.turnToward(wantYaw, wantPitch, 0.6);
           const err = Math.abs(wrapAngle(wantYaw - this.yaw)) + Math.abs(wantPitch - this.pitch);
           if (err < 0.015 && p.alive) {

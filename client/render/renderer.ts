@@ -7,6 +7,8 @@ import { PostChain } from "./post";
 import { Rain } from "./rain";
 import { makeWetFloor } from "./wetfloor";
 import { buildSkyline, dressArena, PALETTE } from "./city";
+import { ArsenalFx, buildViewmodel } from "./weapons";
+import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 
 /** Interpolated view state handed to the renderer each frame. */
 export interface ViewState {
@@ -22,6 +24,11 @@ export interface ViewState {
   grounded: boolean;
   stance: string;
   reloading: number; // 0..1 progress, 0 when idle
+  slot: number;
+  /** ADS zoom factor (1 = none). */
+  zoom: number;
+  charge: number;
+  stunned: boolean;
 }
 
 /** Layer for things the wet-floor mirror must not see (rain, far skyline): cheaper and no blown-out sky. */
@@ -53,6 +60,12 @@ export class Renderer {
   private muzzle: THREE.PointLight;
   private muzzleT = 0;
   private viewmodel: THREE.Group;
+  private viewmodels = new Map<WeaponId, THREE.Group>();
+  private vmSlot = 1;
+  private vmSwap = 0;
+  readonly fx: ArsenalFx;
+  private baseFov = 80;
+  private fovNow = 80;
   private vmKick = 0;
   private eyeSmooth = MOVE.eyeStand;
   private bobPhase = 0;
@@ -90,8 +103,15 @@ export class Renderer {
     this.camera.add(this.muzzle);
     this.muzzle.position.set(0.25, -0.2, -0.8);
 
-    this.viewmodel = this.buildViewmodel();
-    this.camera.add(this.viewmodel);
+    for (const w of WEAPON_LIST) {
+      const vm = buildViewmodel(w.id);
+      vm.visible = false;
+      this.camera.add(vm);
+      this.viewmodels.set(w.id, vm);
+    }
+    this.viewmodel = this.viewmodels.get("lease_breaker")!;
+    this.viewmodel.visible = true;
+    this.fx = new ArsenalFx(this.scene);
 
     this.post = new PostChain(this.renderer, this.scene, this.camera, window.innerWidth, window.innerHeight, 0.6);
     window.addEventListener("resize", () => this.resize());
@@ -127,24 +147,6 @@ export class Renderer {
     const crates = new THREE.PointLight(PALETTE.amber, 8, 12, 1.8);
     crates.position.set(-11, 2.5, 21);
     this.scene.add(crates);
-  }
-
-  private buildViewmodel(): THREE.Group {
-    const g = new THREE.Group();
-    const body = new THREE.MeshStandardMaterial({ color: 0x151a22, roughness: 0.5, metalness: 0.6 });
-    const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.12, 0.42), body);
-    const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.36), body);
-    barrel.position.set(0, 0.03, -0.36);
-    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.07), body);
-    grip.position.set(0, -0.12, 0.08);
-    const strip = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.3), new THREE.MeshBasicMaterial({ color: PALETTE.cyan }));
-    strip.position.set(0.05, 0.03, -0.1);
-    const strip2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.008, 0.03), new THREE.MeshBasicMaterial({ color: PALETTE.magenta }));
-    strip2.position.set(0, 0.065, 0.1);
-    g.add(receiver, barrel, grip, strip, strip2);
-    g.position.set(0.28, -0.26, -0.55);
-    g.rotation.y = -0.04;
-    return g;
   }
 
   syncDummies(dummies: readonly Dummy[]): void {
@@ -225,7 +227,7 @@ export class Renderer {
   }
 
   /** Cyan tracer from the muzzle (or a world-space origin for other players) to the impact point, plus a muzzle flash. */
-  tracer(from: Vec3, to: Vec3, hitWorld: boolean, worldOrigin = false): void {
+  tracer(from: Vec3, to: Vec3, hitWorld: boolean, worldOrigin = false, color: number = PALETTE.cyan): void {
     const start = new THREE.Vector3();
     if (worldOrigin) start.set(from.x, from.y, from.z);
     else {
@@ -233,7 +235,7 @@ export class Renderer {
       start.add(new THREE.Vector3(0, 0.03, 0));
     }
     const geo = new THREE.BufferGeometry().setFromPoints([start, new THREE.Vector3(to.x, to.y, to.z)]);
-    const mat = new THREE.LineBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
     const line = new THREE.Line(geo, mat);
     this.scene.add(line);
     this.tracers.push({ line, mat, born: this.clock, life: 0.12 });
@@ -242,7 +244,7 @@ export class Renderer {
       this.vmKick = 1;
     }
     if (hitWorld) {
-      const s = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), new THREE.MeshBasicMaterial({ color: PALETTE.cyan }));
+      const s = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), new THREE.MeshBasicMaterial({ color }));
       s.position.set(to.x, to.y, to.z);
       this.scene.add(s);
       this.sparks.push({ mesh: s, born: this.clock });
@@ -267,6 +269,32 @@ export class Renderer {
     this.viewmodel.rotation.x = this.vmKick * 0.08 - dip * 0.8;
     this.muzzleT = Math.max(0, this.muzzleT - dt * 18);
     this.muzzle.intensity = this.muzzleT * 8;
+    // weapon swap: hide/show viewmodels with a quick dip
+    const wantId = WEAPON_LIST[v.slot - 1]?.id ?? "lease_breaker";
+    const want = this.viewmodels.get(wantId)!;
+    if (want !== this.viewmodel) {
+      this.viewmodel.visible = false;
+      this.viewmodel = want;
+      this.viewmodel.visible = true;
+      this.vmSwap = 1;
+      this.muzzle.color.set(WEAPON_LIST[v.slot - 1]?.tracer ?? PALETTE.cyan);
+    }
+    this.vmSwap = Math.max(0, this.vmSwap - dt * 4);
+    this.viewmodel.position.y -= this.vmSwap * 0.25;
+    this.viewmodel.rotation.x -= this.vmSwap * 0.5;
+    if (v.charge > 0) {
+      this.viewmodel.position.z += Math.sin(this.clock * 60) * 0.004 * v.charge;
+      this.muzzle.intensity = Math.max(this.muzzle.intensity, v.charge * 5);
+    }
+    if (v.stunned) this.camera.rotation.z += Math.sin(this.clock * 25) * 0.02;
+    // ADS zoom
+    const targetFov = this.baseFov / v.zoom;
+    this.fovNow += (targetFov - this.fovNow) * Math.min(1, dt * 14);
+    if (Math.abs(this.camera.fov - this.fovNow) > 0.01) {
+      this.camera.fov = this.fovNow;
+      this.camera.updateProjectionMatrix();
+    }
+    this.fx.update(dt);
 
     for (let i = this.tracers.length - 1; i >= 0; i--) {
       const t = this.tracers[i]!;

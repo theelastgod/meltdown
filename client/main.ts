@@ -23,6 +23,7 @@ export interface GameHook {
     grounded: boolean;
     health: number;
     ammo: number;
+    slot: number;
     stats: typeof Game.prototype.player.stats;
     dummies: { id: number; alive: boolean; health: number; pos: { x: number; y: number; z: number } }[];
     loop: typeof Game.prototype.stats;
@@ -81,7 +82,8 @@ window.__game = {
     stance: game.player.stance,
     grounded: game.player.grounded,
     health: game.player.health,
-    ammo: game.player.ammo,
+    ammo: game.player.weapon.ammo[game.player.weapon.slot] ?? 0,
+    slot: game.player.weapon.slot,
     stats: { ...game.player.stats },
     dummies: game.world.dummies.map((d) => ({ id: d.id, alive: d.alive, health: d.health, pos: { ...d.pos } })),
     loop: { ...game.stats },

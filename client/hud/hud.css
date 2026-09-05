@@ -73,3 +73,20 @@ html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; f
 #hud .tear.on { animation: tear 0.25s steps(3) forwards; }
 @keyframes tear { 0% { opacity: 1; transform: translateY(-40%); } 100% { opacity: 0; transform: translateY(40%); } }
 #hud .keys { position: absolute; left: 0; right: 0; bottom: 2px; text-align: center; font-size: 9px; color: rgba(53,242,255,0.45); }
+
+#hud .rack { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; font-size: 9px; color: rgba(53,242,255,0.55); }
+#hud .rack span { padding: 1px 4px; border: 1px solid rgba(53,242,255,0.25); }
+#hud .rack span.on { color: var(--cy); border-color: var(--cy); box-shadow: 0 0 6px rgba(53,242,255,0.35); }
+#hud .rack i, #hud .nades i { font-style: normal; color: var(--ye); margin-left: 3px; }
+#hud .nades { display: flex; gap: 6px; justify-content: flex-end; margin-top: 3px; font-size: 9px; color: rgba(255,62,201,0.6); }
+#hud .nades span { padding: 1px 4px; border: 1px solid rgba(255,62,201,0.25); }
+#hud .nades span.on { color: var(--mg); border-color: var(--mg); }
+#hud .overlay { position: absolute; left: 50%; transform: translateX(-50%); padding: 4px 12px; border: 1px solid var(--am); color: var(--am); background: var(--pan); font-size: 12px; letter-spacing: 0.15em; opacity: 0; text-shadow: 0 0 6px rgba(255,176,46,0.6); }
+#hud .overlay.on { opacity: 1; }
+#hud .flag { top: 92px; animation: none; }
+#hud .flag.on { animation: blink 0.4s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0.35; } }
+#hud .stun { top: 58%; border-color: var(--mg); color: var(--mg); }
+#hud .emp { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: repeating-linear-gradient(0deg, rgba(53,242,255,0.05) 0 2px, rgba(0,0,0,0.85) 2px 5px); mix-blend-mode: normal; }
+#hud .emp.on { animation: empflicker 0.12s steps(2) infinite; }
+@keyframes empflicker { 50% { filter: invert(0.08); } }

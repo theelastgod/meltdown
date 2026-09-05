@@ -1,4 +1,4 @@
-import { Btn, type InputFrame } from "@shared/sim/input";
+import { Btn, withSlot, type InputFrame } from "@shared/sim/input";
 
 /** Pointer-lock mouse look + keyboard → InputFrame per simulation tick. */
 export class InputController {
@@ -7,6 +7,10 @@ export class InputController {
   sensitivity = 0.0022;
   private keys = new Set<string>();
   private mouseDown = new Set<number>();
+  /** One-shot slot request (1–6), consumed by the next sample. */
+  private slotRequest = 0;
+  private grenadeTap = false;
+  private grenadeNextTap = false;
   private locked = false;
   private canvas: HTMLCanvasElement;
   onLockChange: ((locked: boolean) => void) | null = null;
@@ -39,8 +43,17 @@ export class InputController {
     document.addEventListener("keydown", (e) => {
       if (e.repeat) return;
       this.keys.add(e.code);
-      if (["Space", "Tab", "ControlLeft", "KeyR"].includes(e.code)) e.preventDefault();
+      const m = e.code.match(/^Digit([1-6])$/);
+      if (m) this.slotRequest = Number(m[1]);
+      if (e.code === "KeyG") this.grenadeTap = true;
+      if (e.code === "KeyQ") this.grenadeNextTap = true;
+      if (["Space", "Tab", "ControlLeft", "KeyR", "KeyQ"].includes(e.code)) e.preventDefault();
     });
+    document.addEventListener("wheel", (e) => {
+      if (!this.locked) return;
+      this.slotRequest = ((this.currentSlot - 1 + (e.deltaY > 0 ? 1 : 5)) % 6) + 1;
+    });
+    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
     document.addEventListener("keyup", (e) => this.keys.delete(e.code));
     window.addEventListener("blur", () => {
       this.keys.clear();
@@ -51,6 +64,9 @@ export class InputController {
   get isLocked(): boolean {
     return this.locked;
   }
+
+  /** Mirrors the player's current slot so the wheel can cycle relative to it. */
+  currentSlot = 1;
 
   sample(tick: number): InputFrame {
     let b = 0;
@@ -65,6 +81,14 @@ export class InputController {
     if (k.has("KeyR")) b |= Btn.Reload;
     if (this.mouseDown.has(0)) b |= Btn.Fire;
     if (this.mouseDown.has(2)) b |= Btn.Alt;
+    if (this.grenadeTap || k.has("KeyG")) b |= Btn.Grenade;
+    if (this.grenadeNextTap) b |= Btn.GrenadeNext;
+    this.grenadeTap = false;
+    this.grenadeNextTap = false;
+    if (this.slotRequest) {
+      b = withSlot(b, this.slotRequest);
+      this.slotRequest = 0;
+    }
     return { tick, buttons: b, yaw: this.yaw, pitch: this.pitch };
   }
 }

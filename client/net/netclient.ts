@@ -45,6 +45,8 @@ export class NetClient {
   status: "connecting" | "joined" | "closed" | "kicked" = "connecting";
   kickReason = "";
   levelName = "";
+  /** Room seed from Welcome: magazine seeds derive from it on both sides. */
+  seed = 1;
   rttMs = 0;
   private rttSamples: number[] = [];
   private seq = 0;
@@ -126,6 +128,7 @@ export class NetClient {
         this.playerId = msg.playerId;
         this.token = msg.token;
         this.levelName = msg.level;
+        this.seed = msg.seed;
         this.status = "joined";
         this.stats.joinedAtMs = performance.now();
         this.latestTick = msg.tick;
