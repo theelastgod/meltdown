@@ -1,0 +1,22 @@
+bot log:
+  t+20 hold → held
+  t+66 goto → reached (0.0,16.5)
+  t+30 slide → slid (stance stand)
+  t+77 goto → reached (0.0,2.3)
+  t+59 mantle → mantled
+  t+22 goto → reached (0.0,-4.5)
+  t+60 kill → killed
+  t+24 look → looked
+PASS  bot completed the plan without timeouts  — 8 steps in 362 ticks
+PASS  slide + slide-jump performed  — slides=1 slideJumps=1 topSpeed=9.40 m/s
+PASS  momentum preserved: top speed above sprint speed, below the slide cap  — top 9.40 m/s vs sprint 7.20 / slide cap 10.50
+PASS  mantle performed onto the 1.2 m deck  — mantles=1 y=1.20
+PASS  bot killed dummy 1 with hitscan  — victim 1 after 52 ticks
+PASS  TTK inside the 0.6–1.0 s band  — 0.867 s
+PASS  tracers + zone-pitched hit audio fired for every hit  — shots=7 hits=7 audio={"land":3,"step":7,"slide":1,"jump":3,"mantle":1,"shot":7,"hit_body":7,"kill":1}
+PASS  kill-confirm stamp audio fired  — kill cues=1
+PASS  replaying the same input plan reproduces the same world hash  — e8c55bee == e8c55bee
+PASS  fixed-timestep sim runs at 60 Hz independent of render fps  — 58.4 ticks/s over 2.00s while rendering at 23.6 fps
+PASS  no page errors  — clean console
+
+11/11 checks passed. Screenshot: probe/out/stage1.png

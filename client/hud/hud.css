@@ -1,0 +1,44 @@
+/* MELTDOWN — Stage 1 HUD. Diegetic CRT ledger chrome: cyan monospace, scanlines, no generic game UI. */
+:root {
+  --cy: #35f2ff;
+  --cy-dim: rgba(53, 242, 255, 0.55);
+  --mg: #ff3ec9;
+  --am: #ffb02e;
+  --bg: #04060a;
+  --mono: "IBM Plex Mono", "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; font-family: var(--mono); color: var(--cy); }
+#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: none; }
+#hud { position: fixed; inset: 0; pointer-events: none; user-select: none; text-shadow: 0 0 6px var(--cy-dim); font-size: 13px; letter-spacing: 0.06em; }
+#hud .scan { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 1px, transparent 2px, transparent 4px); mix-blend-mode: multiply; opacity: 0.7; }
+#hud .vig { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%); }
+#hud .xh { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); }
+#hud .xh::before, #hud .xh::after { content: ""; position: absolute; background: var(--cy); box-shadow: 0 0 4px var(--cy); }
+#hud .xh::before { left: 50%; top: 0; width: 1px; height: 100%; transform: translateX(-50%); }
+#hud .xh::after { top: 50%; left: 0; height: 1px; width: 100%; transform: translateY(-50%); }
+#hud .xh i { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; transform: translate(-50%,-50%); background: var(--bg); }
+#hud .panel { position: absolute; padding: 8px 12px; border: 1px solid var(--cy-dim); background: rgba(4, 6, 10, 0.55); backdrop-filter: blur(2px); }
+#hud .panel.bl { left: 24px; bottom: 24px; min-width: 220px; }
+#hud .panel.br { right: 24px; bottom: 24px; min-width: 200px; text-align: right; }
+#hud .panel.tl { left: 24px; top: 24px; }
+#hud .panel.tr { right: 24px; top: 24px; text-align: right; opacity: 0.8; }
+#hud .k { opacity: 0.6; }
+#hud .big { font-size: 26px; line-height: 1; }
+#hud .row { display: flex; justify-content: space-between; gap: 18px; }
+#hud .bar { height: 3px; background: rgba(53,242,255,0.15); margin-top: 6px; position: relative; }
+#hud .bar > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--cy); box-shadow: 0 0 6px var(--cy); }
+#hud .stamp { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%) rotate(-4deg); padding: 6px 14px; border: 2px solid var(--cy); color: var(--cy); font-size: 22px; letter-spacing: 0.2em; opacity: 0; }
+#hud .stamp.on { animation: stamp 0.9s steps(6, end) forwards; }
+@keyframes stamp { 0% { opacity: 0; transform: translate(-50%,-50%) rotate(-4deg) scale(1.6); } 12% { opacity: 1; transform: translate(-50%,-50%) rotate(-4deg) scale(1); } 70% { opacity: 1; } 100% { opacity: 0; } }
+#hud .hit { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; transform: translate(-50%,-50%) rotate(45deg); border: 1px solid var(--cy); opacity: 0; }
+#hud .hit.on { animation: hit 0.16s ease-out forwards; }
+@keyframes hit { 0% { opacity: 0.9; transform: translate(-50%,-50%) rotate(45deg) scale(1.15); } 100% { opacity: 0; transform: translate(-50%,-50%) rotate(45deg) scale(0.9); } }
+#hud .log { position: absolute; right: 24px; top: 80px; text-align: right; font-size: 12px; opacity: 0.75; }
+#hud .log div { margin-top: 2px; }
+#hud .log .mg { color: var(--mg); }
+#hud .log .am { color: var(--am); }
+#hud .hint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, 60px); text-align: center; opacity: 0.85; font-size: 12px; white-space: pre; }
+#hud .hint.off { display: none; }
+#hud .tear { position: absolute; inset: 0; opacity: 0; background: linear-gradient(180deg, transparent 48%, rgba(53,242,255,0.08) 49%, rgba(255,62,201,0.08) 51%, transparent 52%); }
+#hud .tear.on { animation: tear 0.25s steps(3) forwards; }
+@keyframes tear { 0% { opacity: 1; transform: translateY(-40%); } 100% { opacity: 0; transform: translateY(40%); } }

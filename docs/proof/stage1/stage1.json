@@ -1,0 +1,183 @@
+{
+  "url": "http://127.0.0.1:5179/",
+  "ticksRun": 362,
+  "measuredHz": 58.39488919943829,
+  "renderFps": 23.636363636363633,
+  "state": {
+    "tick": 362,
+    "pos": {
+      "x": 2.692238814606756e-16,
+      "y": 1.2001,
+      "z": -6.464368634000776
+    },
+    "vel": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "yaw": -1.7999914709135911,
+    "pitch": -0.05999896877038265,
+    "stance": "stand",
+    "grounded": true,
+    "health": 100,
+    "ammo": 23,
+    "stats": {
+      "jumps": 3,
+      "slides": 1,
+      "slideJumps": 1,
+      "mantles": 1,
+      "shots": 7,
+      "hits": 7,
+      "kills": 1,
+      "deaths": 0,
+      "topSpeed": 9.4
+    },
+    "dummies": [
+      {
+        "id": 1,
+        "alive": false,
+        "health": -12,
+        "pos": {
+          "x": 0,
+          "y": 2.7,
+          "z": -12
+        }
+      },
+      {
+        "id": 2,
+        "alive": true,
+        "health": 100,
+        "pos": {
+          "x": 18,
+          "y": 0,
+          "z": -0.34666666666668355
+        }
+      },
+      {
+        "id": 3,
+        "alive": true,
+        "health": 100,
+        "pos": {
+          "x": -12,
+          "y": 0,
+          "z": -4
+        }
+      },
+      {
+        "id": 4,
+        "alive": true,
+        "health": 100,
+        "pos": {
+          "x": -3.653333333333368,
+          "y": 0,
+          "z": 18
+        }
+      },
+      {
+        "id": 5,
+        "alive": true,
+        "health": 100,
+        "pos": {
+          "x": 28,
+          "y": 3.5,
+          "z": 0
+        }
+      }
+    ],
+    "loop": {
+      "ticks": 362,
+      "frames": 15,
+      "droppedTime": 0.04999999999999999,
+      "fps": 9.37558597412338,
+      "simHz": 0,
+      "wallStart": 255.6999999997206
+    },
+    "audio": {
+      "land": 3,
+      "step": 7,
+      "slide": 1,
+      "jump": 3,
+      "mantle": 1,
+      "shot": 7,
+      "hit_body": 7,
+      "kill": 1
+    },
+    "hash": "e8c55bee"
+  },
+  "botLog": [
+    "t+20 hold → held",
+    "t+66 goto → reached (0.0,16.5)",
+    "t+30 slide → slid (stance stand)",
+    "t+77 goto → reached (0.0,2.3)",
+    "t+59 mantle → mantled",
+    "t+22 goto → reached (0.0,-4.5)",
+    "t+60 kill → killed",
+    "t+24 look → looked"
+  ],
+  "checks": [
+    {
+      "name": "bot completed the plan without timeouts",
+      "pass": true,
+      "detail": "8 steps in 362 ticks"
+    },
+    {
+      "name": "slide + slide-jump performed",
+      "pass": true,
+      "detail": "slides=1 slideJumps=1 topSpeed=9.40 m/s"
+    },
+    {
+      "name": "momentum preserved: top speed above sprint speed, below the slide cap",
+      "pass": true,
+      "detail": "top 9.40 m/s vs sprint 7.20 / slide cap 10.50"
+    },
+    {
+      "name": "mantle performed onto the 1.2 m deck",
+      "pass": true,
+      "detail": "mantles=1 y=1.20"
+    },
+    {
+      "name": "bot killed dummy 1 with hitscan",
+      "pass": true,
+      "detail": "victim 1 after 52 ticks"
+    },
+    {
+      "name": "TTK inside the 0.6–1.0 s band",
+      "pass": true,
+      "detail": "0.867 s"
+    },
+    {
+      "name": "tracers + zone-pitched hit audio fired for every hit",
+      "pass": true,
+      "detail": "shots=7 hits=7 audio={\"land\":3,\"step\":7,\"slide\":1,\"jump\":3,\"mantle\":1,\"shot\":7,\"hit_body\":7,\"kill\":1}"
+    },
+    {
+      "name": "kill-confirm stamp audio fired",
+      "pass": true,
+      "detail": "kill cues=1"
+    },
+    {
+      "name": "replaying the same input plan reproduces the same world hash",
+      "pass": true,
+      "detail": "e8c55bee == e8c55bee"
+    },
+    {
+      "name": "fixed-timestep sim runs at 60 Hz independent of render fps",
+      "pass": true,
+      "detail": "58.4 ticks/s over 2.00s while rendering at 23.6 fps"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": "clean console"
+    }
+  ],
+  "kill": {
+    "tick": 332,
+    "playerId": 1,
+    "type": "kill",
+    "victimKind": "dummy",
+    "victimId": 1,
+    "ttkTicks": 52,
+    "ttkSeconds": 0.8666666666666667
+  }
+}
