@@ -8,18 +8,23 @@
     "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "preview": "vite preview --port 5173",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json",
     "test": "vitest run",
     "probe": "tsx probe/stage1.ts",
-    "verify": "npm run typecheck && npm run test && npm run probe && npm run probe:look",
-    "probe:look": "tsx probe/stage3.ts"
+    "verify": "npm run typecheck && npm run test && npm run probe && npm run probe:look && npm run probe:net",
+    "probe:look": "tsx probe/stage3.ts",
+    "host": "tsx server/node-host.ts",
+    "probe:net": "tsx probe/stage2.ts"
   },
   "dependencies": {
-    "three": "^0.180.0"
+    "three": "^0.180.0",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260702.1",
     "@types/node": "^22.20.1",
     "@types/three": "^0.180.0",
+    "@types/ws": "^8.18.1",
     "playwright": "^1.56.1",
     "tsx": "^4.23.13",
     "typescript": "5.9",

@@ -1,0 +1,409 @@
+/**
+ * Wire protocol. Binary, little-endian, versioned. Shared verbatim by the
+ * browser client, the Node host, and the Cloudflare Durable Object host.
+ */
+import type { InputFrame } from "../sim/input";
+import type { HitZone } from "../sim/world";
+
+export const PROTOCOL_VERSION = 2;
+/** Server snapshot cadence in sim ticks (60 Hz sim → 30 Hz snapshots). */
+export const SNAPSHOT_EVERY = 2;
+/** Lag compensation rewind cap in ticks (200 ms at 60 Hz). */
+export const MAX_REWIND_TICKS = 12;
+/** Inputs re-sent per packet for loss tolerance. */
+export const INPUT_REDUNDANCY = 3;
+/** Max inputs a client may have queued server-side before extras are dropped. */
+export const MAX_INPUT_QUEUE = 24;
+
+export const Msg = {
+  Join: 1,
+  Input: 2,
+  Ping: 3,
+  Welcome: 10,
+  Snapshot: 11,
+  Pong: 12,
+  Kick: 13,
+} as const;
+
+export interface NetInput extends InputFrame {
+  /** Monotonic client sequence. */
+  seq: number;
+  /** Server tick of the remote states the client was rendering (for lag comp). */
+  viewTick: number;
+  /** Client's predicted feet position after applying this input (trace comparison). */
+  px: number;
+  py: number;
+  pz: number;
+}
+
+export interface RemotePlayerQ {
+  id: number;
+  x: number;
+  y: number;
+  z: number;
+  vx: number;
+  vy: number;
+  vz: number;
+  yaw: number;
+  pitch: number;
+  health: number;
+  ammo: number;
+  alive: boolean;
+  grounded: boolean;
+  stance: number; // 0 stand 1 crouch 2 slide 3 mantle
+  height: number;
+  name: string;
+}
+
+export interface LocalAuth {
+  seq: number; // last processed input seq
+  x: number; y: number; z: number;
+  vx: number; vy: number; vz: number;
+  yaw: number; pitch: number;
+  stance: number; height: number; grounded: number; airTime: number; jumpBuffer: number;
+  slideTime: number; slideCooldown: number; sdx: number; sdz: number;
+  mfx: number; mfy: number; mfz: number; mtx: number; mty: number; mtz: number; mantleT: number;
+  health: number; alive: number; respawnTimer: number; ammo: number; reloadTimer: number; fireCooldown: number;
+  kickPitch: number; kickYaw: number; prevButtons: number;
+  kills: number; deaths: number; shots: number; hits: number;
+}
+
+export interface DummyQ {
+  id: number;
+  alive: boolean;
+  health: number;
+  x: number;
+  y: number;
+  z: number;
+}
+
+export type NetEvent =
+  | { type: "shot"; playerId: number; fx: number; fy: number; fz: number; tx: number; ty: number; tz: number; hitKind: number; zone?: HitZone; victimId: number }
+  | { type: "kill"; playerId: number; victimKind: number; victimId: number; ttkTicks: number }
+  | { type: "death"; playerId: number; killerId: number }
+  | { type: "join"; playerId: number; name: string }
+  | { type: "leave"; playerId: number };
+
+export interface Snapshot {
+  tick: number;
+  serverTimeMs: number;
+  local: LocalAuth | null;
+  players: RemotePlayerQ[];
+  dummies: DummyQ[];
+  events: NetEvent[];
+  bytes: number;
+}
+
+// ---------------------------------------------------------------------------
+// Writer / reader
+
+class W {
+  private buf = new ArrayBuffer(2048);
+  private dv = new DataView(this.buf);
+  private o = 0;
+  private grow(n: number): void {
+    if (this.o + n <= this.buf.byteLength) return;
+    const nb = new ArrayBuffer(Math.max(this.buf.byteLength * 2, this.o + n));
+    new Uint8Array(nb).set(new Uint8Array(this.buf));
+    this.buf = nb;
+    this.dv = new DataView(nb);
+  }
+  u8(v: number): void { this.grow(1); this.dv.setUint8(this.o, v); this.o += 1; }
+  u16(v: number): void { this.grow(2); this.dv.setUint16(this.o, v, true); this.o += 2; }
+  i16(v: number): void { this.grow(2); this.dv.setInt16(this.o, Math.max(-32768, Math.min(32767, Math.round(v))), true); this.o += 2; }
+  u32(v: number): void { this.grow(4); this.dv.setUint32(this.o, v >>> 0, true); this.o += 4; }
+  f32(v: number): void { this.grow(4); this.dv.setFloat32(this.o, v, true); this.o += 4; }
+  f64(v: number): void { this.grow(8); this.dv.setFloat64(this.o, v, true); this.o += 8; }
+  str(s: string): void {
+    const b = new TextEncoder().encode(s);
+    this.u16(b.length);
+    this.grow(b.length);
+    new Uint8Array(this.buf, this.o, b.length).set(b);
+    this.o += b.length;
+  }
+  done(): ArrayBuffer { return this.buf.slice(0, this.o); }
+}
+
+class R {
+  private dv: DataView;
+  private o = 0;
+  constructor(buf: ArrayBuffer) { this.dv = new DataView(buf); }
+  get remaining(): number { return this.dv.byteLength - this.o; }
+  u8(): number { const v = this.dv.getUint8(this.o); this.o += 1; return v; }
+  u16(): number { const v = this.dv.getUint16(this.o, true); this.o += 2; return v; }
+  i16(): number { const v = this.dv.getInt16(this.o, true); this.o += 2; return v; }
+  u32(): number { const v = this.dv.getUint32(this.o, true); this.o += 4; return v; }
+  f32(): number { const v = this.dv.getFloat32(this.o, true); this.o += 4; return v; }
+  f64(): number { const v = this.dv.getFloat64(this.o, true); this.o += 8; return v; }
+  str(): string { const n = this.u16(); const b = new Uint8Array(this.dv.buffer, this.dv.byteOffset + this.o, n); this.o += n; return new TextDecoder().decode(b); }
+}
+
+const Q_POS = 100; // 1 cm
+const Q_VEL = 100;
+const Q_ANG = 10000;
+
+// ---------------------------------------------------------------------------
+// Client → server
+
+export function encodeJoin(name: string, token: string): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Join);
+  w.u8(PROTOCOL_VERSION);
+  w.str(name);
+  w.str(token);
+  return w.done();
+}
+
+export function encodeInputs(inputs: NetInput[], ackTick: number): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Input);
+  w.u32(ackTick);
+  w.u8(inputs.length);
+  for (const i of inputs) {
+    w.u32(i.seq);
+    w.u32(i.tick);
+    w.u16(i.buttons);
+    w.i16(i.yaw * Q_ANG);
+    w.i16(i.pitch * Q_ANG);
+    w.u32(i.viewTick);
+    w.f64(i.px);
+    w.f64(i.py);
+    w.f64(i.pz);
+  }
+  return w.done();
+}
+
+export function encodePing(clientTime: number): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Ping);
+  w.u32(clientTime);
+  return w.done();
+}
+
+// ---------------------------------------------------------------------------
+// Server → client
+
+export function encodeWelcome(playerId: number, tick: number, token: string, levelName: string): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Welcome);
+  w.u8(playerId);
+  w.u32(tick);
+  w.str(token);
+  w.str(levelName);
+  return w.done();
+}
+
+export function encodePong(clientTime: number, tick: number): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Pong);
+  w.u32(clientTime);
+  w.u32(tick);
+  return w.done();
+}
+
+export function encodeKick(reason: string): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Kick);
+  w.str(reason);
+  return w.done();
+}
+
+/** Per-remote-player field mask for delta encoding. */
+const F_POS = 1, F_VEL = 2, F_VIEW = 4, F_STATE = 8, F_NAME = 16;
+
+export function quantizeRemote(p: RemotePlayerQ): RemotePlayerQ {
+  return {
+    ...p,
+    x: Math.round(p.x * Q_POS) / Q_POS,
+    y: Math.round(p.y * Q_POS) / Q_POS,
+    z: Math.round(p.z * Q_POS) / Q_POS,
+    vx: Math.round(p.vx * Q_VEL) / Q_VEL,
+    vy: Math.round(p.vy * Q_VEL) / Q_VEL,
+    vz: Math.round(p.vz * Q_VEL) / Q_VEL,
+    yaw: Math.round(p.yaw * Q_ANG) / Q_ANG,
+    pitch: Math.round(p.pitch * Q_ANG) / Q_ANG,
+    height: Math.round(p.height * Q_POS) / Q_POS,
+  };
+}
+
+/**
+ * Encode a snapshot. `baseline` is the last snapshot the receiver acked (or
+ * null for a full snapshot): unchanged remote fields are omitted.
+ */
+export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | null): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Snapshot);
+  w.u32(s.tick);
+  w.u32(baseline ? baseline.tick : 0);
+  w.u32(s.serverTimeMs >>> 0);
+  // local authoritative state (exact)
+  if (s.local) {
+    w.u8(1);
+    const l = s.local;
+    w.u32(l.seq);
+    for (const v of [l.x, l.y, l.z, l.vx, l.vy, l.vz, l.yaw, l.pitch, l.height, l.airTime, l.jumpBuffer, l.slideTime, l.slideCooldown, l.sdx, l.sdz, l.mfx, l.mfy, l.mfz, l.mtx, l.mty, l.mtz, l.mantleT, l.respawnTimer, l.reloadTimer, l.fireCooldown, l.kickPitch, l.kickYaw]) w.f64(v);
+    w.u8(l.stance);
+    w.u8(l.grounded);
+    w.u8(l.alive);
+    w.i16(l.health);
+    w.u8(l.ammo);
+    w.u16(l.prevButtons);
+    w.u16(l.kills);
+    w.u16(l.deaths);
+    w.u32(l.shots);
+    w.u32(l.hits);
+  } else w.u8(0);
+  // remote players (delta vs baseline)
+  w.u8(s.players.length);
+  for (const p of s.players) {
+    const b = baseline?.players.find((x) => x.id === p.id);
+    let mask = 0;
+    if (!b || b.x !== p.x || b.y !== p.y || b.z !== p.z) mask |= F_POS;
+    if (!b || b.vx !== p.vx || b.vy !== p.vy || b.vz !== p.vz) mask |= F_VEL;
+    if (!b || b.yaw !== p.yaw || b.pitch !== p.pitch) mask |= F_VIEW;
+    if (!b || b.health !== p.health || b.ammo !== p.ammo || b.alive !== p.alive || b.grounded !== p.grounded || b.stance !== p.stance || b.height !== p.height) mask |= F_STATE;
+    if (!b || b.name !== p.name) mask |= F_NAME;
+    w.u8(p.id);
+    w.u8(mask);
+    if (mask & F_POS) { w.i16(p.x * Q_POS); w.i16(p.y * Q_POS); w.i16(p.z * Q_POS); }
+    if (mask & F_VEL) { w.i16(p.vx * Q_VEL); w.i16(p.vy * Q_VEL); w.i16(p.vz * Q_VEL); }
+    if (mask & F_VIEW) { w.i16(p.yaw * Q_ANG); w.i16(p.pitch * Q_ANG); }
+    if (mask & F_STATE) { w.i16(p.health); w.u8(p.ammo); w.u8((p.alive ? 1 : 0) | (p.grounded ? 2 : 0) | (p.stance << 2)); w.i16(p.height * Q_POS); }
+    if (mask & F_NAME) w.str(p.name);
+  }
+  // dummies (full, small)
+  w.u8(s.dummies.length);
+  for (const d of s.dummies) {
+    w.u8(d.id);
+    w.u8(d.alive ? 1 : 0);
+    w.i16(d.health);
+    w.i16(d.x * Q_POS);
+    w.i16(d.y * Q_POS);
+    w.i16(d.z * Q_POS);
+  }
+  // events
+  w.u8(Math.min(255, s.events.length));
+  for (const e of s.events.slice(0, 255)) {
+    switch (e.type) {
+      case "shot":
+        w.u8(1); w.u8(e.playerId);
+        w.i16(e.fx * Q_POS); w.i16(e.fy * Q_POS); w.i16(e.fz * Q_POS);
+        w.i16(e.tx * Q_POS); w.i16(e.ty * Q_POS); w.i16(e.tz * Q_POS);
+        w.u8(e.hitKind); w.u8(e.zone === "head" ? 1 : e.zone === "legs" ? 2 : 0); w.u8(e.victimId & 0xff);
+        break;
+      case "kill": w.u8(2); w.u8(e.playerId); w.u8(e.victimKind); w.u8(e.victimId & 0xff); w.u16(e.ttkTicks); break;
+      case "death": w.u8(3); w.u8(e.playerId); w.u8(e.killerId & 0xff); break;
+      case "join": w.u8(4); w.u8(e.playerId); w.str(e.name); break;
+      case "leave": w.u8(5); w.u8(e.playerId); break;
+    }
+  }
+  return w.done();
+}
+
+// ---------------------------------------------------------------------------
+// Decoding
+
+export type ClientMessage =
+  | { type: "join"; version: number; name: string; token: string }
+  | { type: "input"; ackTick: number; inputs: NetInput[] }
+  | { type: "ping"; clientTime: number };
+
+export function decodeClientMessage(buf: ArrayBuffer): ClientMessage | null {
+  try {
+    const r = new R(buf);
+    const t = r.u8();
+    if (t === Msg.Join) return { type: "join", version: r.u8(), name: r.str(), token: r.str() };
+    if (t === Msg.Input) {
+      const ackTick = r.u32();
+      const n = r.u8();
+      if (n > 32) return null;
+      const inputs: NetInput[] = [];
+      for (let i = 0; i < n; i++) {
+        inputs.push({ seq: r.u32(), tick: r.u32(), buttons: r.u16(), yaw: r.i16() / Q_ANG, pitch: r.i16() / Q_ANG, viewTick: r.u32(), px: r.f64(), py: r.f64(), pz: r.f64() });
+      }
+      if (r.remaining !== 0) return null;
+      return { type: "input", ackTick, inputs };
+    }
+    if (t === Msg.Ping) return { type: "ping", clientTime: r.u32() };
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export type ServerMessage =
+  | { type: "welcome"; playerId: number; tick: number; token: string; level: string }
+  | { type: "snapshot"; snapshot: Snapshot; baselineTick: number }
+  | { type: "pong"; clientTime: number; tick: number }
+  | { type: "kick"; reason: string };
+
+/** Decode a server message. `baselines` resolves the acked snapshot a delta was built on. */
+export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) => Snapshot | null): ServerMessage | null {
+  try {
+    const r = new R(buf);
+    const t = r.u8();
+    if (t === Msg.Welcome) return { type: "welcome", playerId: r.u8(), tick: r.u32(), token: r.str(), level: r.str() };
+    if (t === Msg.Pong) return { type: "pong", clientTime: r.u32(), tick: r.u32() };
+    if (t === Msg.Kick) return { type: "kick", reason: r.str() };
+    if (t !== Msg.Snapshot) return null;
+    const tick = r.u32();
+    const baselineTick = r.u32();
+    const serverTimeMs = r.u32();
+    const base = baselineTick ? baselines(baselineTick) : null;
+    if (baselineTick && !base) return null; // can't apply this delta; the server will send a full one once it sees our ack
+    let local: LocalAuth | null = null;
+    if (r.u8() === 1) {
+      const seq = r.u32();
+      const f: number[] = [];
+      for (let i = 0; i < 27; i++) f.push(r.f64());
+      local = {
+        seq,
+        x: f[0]!, y: f[1]!, z: f[2]!, vx: f[3]!, vy: f[4]!, vz: f[5]!, yaw: f[6]!, pitch: f[7]!, height: f[8]!, airTime: f[9]!, jumpBuffer: f[10]!,
+        slideTime: f[11]!, slideCooldown: f[12]!, sdx: f[13]!, sdz: f[14]!, mfx: f[15]!, mfy: f[16]!, mfz: f[17]!, mtx: f[18]!, mty: f[19]!, mtz: f[20]!, mantleT: f[21]!,
+        respawnTimer: f[22]!, reloadTimer: f[23]!, fireCooldown: f[24]!, kickPitch: f[25]!, kickYaw: f[26]!,
+        stance: r.u8(), grounded: r.u8(), alive: r.u8(), health: r.i16(), ammo: r.u8(), prevButtons: r.u16(), kills: r.u16(), deaths: r.u16(), shots: r.u32(), hits: r.u32(),
+      };
+    }
+    const n = r.u8();
+    const players: RemotePlayerQ[] = [];
+    for (let i = 0; i < n; i++) {
+      const id = r.u8();
+      const mask = r.u8();
+      const b = base?.players.find((x) => x.id === id);
+      const p: RemotePlayerQ = b ? { ...b } : { id, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, health: 100, ammo: 0, alive: true, grounded: true, stance: 0, height: 1.8, name: "BLANK" };
+      if (mask & F_POS) { p.x = r.i16() / Q_POS; p.y = r.i16() / Q_POS; p.z = r.i16() / Q_POS; }
+      if (mask & F_VEL) { p.vx = r.i16() / Q_VEL; p.vy = r.i16() / Q_VEL; p.vz = r.i16() / Q_VEL; }
+      if (mask & F_VIEW) { p.yaw = r.i16() / Q_ANG; p.pitch = r.i16() / Q_ANG; }
+      if (mask & F_STATE) { p.health = r.i16(); p.ammo = r.u8(); const fl = r.u8(); p.alive = !!(fl & 1); p.grounded = !!(fl & 2); p.stance = fl >> 2; p.height = r.i16() / Q_POS; }
+      if (mask & F_NAME) p.name = r.str();
+      players.push(p);
+    }
+    const nd = r.u8();
+    const dummies: DummyQ[] = [];
+    for (let i = 0; i < nd; i++) dummies.push({ id: r.u8(), alive: r.u8() === 1, health: r.i16(), x: r.i16() / Q_POS, y: r.i16() / Q_POS, z: r.i16() / Q_POS });
+    const ne = r.u8();
+    const events: NetEvent[] = [];
+    for (let i = 0; i < ne; i++) {
+      const k = r.u8();
+      if (k === 1) {
+        const playerId = r.u8();
+        const fx = r.i16() / Q_POS, fy = r.i16() / Q_POS, fz = r.i16() / Q_POS;
+        const tx = r.i16() / Q_POS, ty = r.i16() / Q_POS, tz = r.i16() / Q_POS;
+        const hitKind = r.u8();
+        const z = r.u8();
+        const victimId = r.u8();
+        events.push({ type: "shot", playerId, fx, fy, fz, tx, ty, tz, hitKind, zone: z === 1 ? "head" : z === 2 ? "legs" : "body", victimId });
+      } else if (k === 2) events.push({ type: "kill", playerId: r.u8(), victimKind: r.u8(), victimId: r.u8(), ttkTicks: r.u16() });
+      else if (k === 3) events.push({ type: "death", playerId: r.u8(), killerId: r.u8() });
+      else if (k === 4) events.push({ type: "join", playerId: r.u8(), name: r.str() });
+      else if (k === 5) events.push({ type: "leave", playerId: r.u8() });
+      else return null;
+    }
+    return { type: "snapshot", baselineTick, snapshot: { tick, serverTimeMs, local, players, dummies, events, bytes: buf.byteLength } };
+  } catch {
+    return null;
+  }
+}
+
+export const stanceToNum = (s: string): number => (s === "stand" ? 0 : s === "crouch" ? 1 : s === "slide" ? 2 : 3);
+export const numToStance = (n: number): "stand" | "crouch" | "slide" | "mantle" => (n === 0 ? "stand" : n === 1 ? "crouch" : n === 2 ? "slide" : "mantle");

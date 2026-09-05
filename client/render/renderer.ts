@@ -183,25 +183,70 @@ export class Renderer {
     if (e) e.flash = 1;
   }
 
-  /** Cyan tracer from the muzzle to the impact point, plus a muzzle flash. */
-  tracer(from: Vec3, to: Vec3, hitWorld: boolean): void {
+  private remoteMeshes = new Map<number, { group: THREE.Group; mat: THREE.MeshStandardMaterial }>();
+
+  /** Other players: hooded silhouettes with cyan Blank trim. Zero mechanical data touches this. */
+  syncRemotes(views: readonly { id: number; x: number; y: number; z: number; yaw: number; height: number; alive: boolean; stance: string }[]): void {
+    const seen = new Set<number>();
+    for (const v of views) {
+      seen.add(v.id);
+      let e = this.remoteMeshes.get(v.id);
+      if (!e) {
+        const mat = new THREE.MeshStandardMaterial({ color: 0x0a0c12, emissive: PALETTE.cyan, emissiveIntensity: 0.08, roughness: 0.8 });
+        const group = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.CapsuleGeometry(MOVE.capsuleRadius - 0.02, MOVE.standHeight - MOVE.capsuleRadius * 2, 4, 10), mat);
+        body.position.y = MOVE.standHeight / 2;
+        group.add(body);
+        const hood = new THREE.Mesh(new THREE.ConeGeometry(MOVE.capsuleRadius + 0.06, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0x07080c, roughness: 0.9 }));
+        hood.position.y = MOVE.standHeight - 0.05;
+        group.add(hood);
+        const trim = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.6, 0.05), new THREE.MeshBasicMaterial({ color: PALETTE.cyan }));
+        trim.position.set(MOVE.capsuleRadius - 0.02, 1.05, 0);
+        group.add(trim);
+        const gun = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.6), new THREE.MeshStandardMaterial({ color: 0x151a22, roughness: 0.5, metalness: 0.6 }));
+        gun.position.set(0.25, 1.35, -0.35);
+        group.add(gun);
+        this.scene.add(group);
+        e = { group, mat };
+        this.remoteMeshes.set(v.id, e);
+      }
+      e.group.visible = v.alive;
+      e.group.position.set(v.x, v.y, v.z);
+      e.group.rotation.y = v.yaw;
+      const crouch = v.stance === "slide" || v.stance === "crouch";
+      e.group.scale.y = crouch ? 0.65 : 1;
+    }
+    for (const [id, e] of this.remoteMeshes) {
+      if (!seen.has(id)) {
+        this.scene.remove(e.group);
+        this.remoteMeshes.delete(id);
+      }
+    }
+  }
+
+  /** Cyan tracer from the muzzle (or a world-space origin for other players) to the impact point, plus a muzzle flash. */
+  tracer(from: Vec3, to: Vec3, hitWorld: boolean, worldOrigin = false): void {
     const start = new THREE.Vector3();
-    this.viewmodel.getWorldPosition(start);
-    start.add(new THREE.Vector3(0, 0.03, 0));
+    if (worldOrigin) start.set(from.x, from.y, from.z);
+    else {
+      this.viewmodel.getWorldPosition(start);
+      start.add(new THREE.Vector3(0, 0.03, 0));
+    }
     const geo = new THREE.BufferGeometry().setFromPoints([start, new THREE.Vector3(to.x, to.y, to.z)]);
     const mat = new THREE.LineBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
     const line = new THREE.Line(geo, mat);
     this.scene.add(line);
     this.tracers.push({ line, mat, born: this.clock, life: 0.12 });
-    this.muzzleT = 1;
-    this.vmKick = 1;
+    if (!worldOrigin) {
+      this.muzzleT = 1;
+      this.vmKick = 1;
+    }
     if (hitWorld) {
       const s = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), new THREE.MeshBasicMaterial({ color: PALETTE.cyan }));
       s.position.set(to.x, to.y, to.z);
       this.scene.add(s);
       this.sparks.push({ mesh: s, born: this.clock });
     }
-    void from;
   }
 
   render(v: ViewState, rawDt: number): void {

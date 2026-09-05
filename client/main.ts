@@ -1,4 +1,5 @@
-import { Game } from "./game";
+import { Game, type NetConfig } from "./game";
+import type { NetClient } from "./net/netclient";
 import type { BotStep } from "./bot";
 import { SIM_HZ } from "@shared/sim/constants";
 import type { SimEvent } from "@shared/sim/world";
@@ -32,6 +33,23 @@ export interface GameHook {
   events: () => SimEvent[];
   clearEvents: () => void;
   resumeAudio: () => void;
+  setDrawing: (on: boolean) => void;
+  connect: (cfg: NetConfig) => void;
+  reconnect: () => void;
+  disconnect: () => void;
+  net: () => {
+    online: boolean;
+    status: string;
+    playerId: number;
+    token: string;
+    rttMs: number;
+    joinMs: number;
+    pending: number;
+    stats: NetClient["stats"];
+    game: Game["netStats"];
+    remotes: ReturnType<NetClient["remoteViews"]>;
+    kickReason: string;
+  } | null;
 }
 
 declare global {
@@ -76,6 +94,41 @@ window.__game = {
     game.recentEvents.length = 0;
   },
   resumeAudio: () => game.audio.resume(),
+  setDrawing: (on) => {
+    game.drawing = on;
+  },
+  connect: (cfg) => game.connect(cfg),
+  reconnect: () => game.reconnect(),
+  disconnect: () => game.net?.close(),
+  net: () =>
+    game.net
+      ? {
+          online: true,
+          status: game.net.status,
+          playerId: game.net.playerId,
+          token: game.net.token,
+          rttMs: game.net.rttMs,
+          joinMs: game.net.stats.joinedAtMs ? game.net.stats.joinedAtMs - game.net.stats.connectStartMs : -1,
+          pending: game.net.pendingInputs.length,
+          stats: { ...game.net.stats },
+          game: { ...game.netStats },
+          remotes: game.net.remoteViews(),
+          kickReason: game.net.kickReason,
+        }
+      : null,
 };
+
+// URL-driven connect: ?net=ws://host/room/name&name=ALPHA&lat=75&jitter=8&loss=0.05
+{
+  const q = new URLSearchParams(location.search);
+  const url = q.get("net");
+  if (url) {
+    const lat = Number(q.get("lat") ?? 0);
+    const loss = Number(q.get("loss") ?? 0);
+    const jitter = Number(q.get("jitter") ?? 0);
+    const seed = Number(q.get("seed") ?? 1);
+    game.connect({ url, name: q.get("name") ?? "BLANK", sim: lat || loss || jitter ? { latencyMs: lat, jitterMs: jitter, loss, seed } : undefined });
+  }
+}
 
 game.start();

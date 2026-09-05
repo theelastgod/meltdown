@@ -10,7 +10,18 @@ export type BotStep =
   | { kind: "look"; yaw: number; pitch?: number; ticks?: number }
   | { kind: "slide"; ticks: number; jumpAt?: number }
   | { kind: "mantle"; x: number; z: number; timeoutTicks?: number }
-  | { kind: "kill"; dummyId: number; zone?: "head" | "body" | "legs"; timeoutTicks?: number };
+  | { kind: "kill"; dummyId: number; zone?: "head" | "body" | "legs"; timeoutTicks?: number }
+  | { kind: "strafe"; ticks: number; period?: number; sprint?: boolean }
+  | { kind: "killPlayer"; targetId: number; ticks: number; zone?: "head" | "body" | "legs" };
+
+export interface BotTarget {
+  id: number;
+  x: number;
+  y: number;
+  z: number;
+  height: number;
+  alive: boolean;
+}
 
 /**
  * Deterministic scripted driver that produces InputFrames from a plan. Used by
@@ -49,7 +60,10 @@ export class Bot {
     this.pitch += (targetPitch - this.pitch) * rate;
   }
 
-  sample(world: World, p: PlayerState, tick: number): InputFrame {
+  /** Shots fired while a killPlayer step was aimed (probe bookkeeping). */
+  aimedShots = 0;
+
+  sample(world: World, p: PlayerState, tick: number, remotes: readonly BotTarget[] = []): InputFrame {
     const step = this.current;
     let buttons = 0;
     if (!step) return { tick, buttons, yaw: this.yaw, pitch: this.pitch };
@@ -108,6 +122,32 @@ export class Bot {
           this.killed = true;
           this.advance("killed");
         } else if (this.stepTicks > (step.timeoutTicks ?? 300)) this.advance("TIMEOUT");
+        break;
+      }
+      case "strafe": {
+        const period = step.period ?? 60;
+        const phase = Math.floor(this.stepTicks / period) % 2;
+        buttons |= phase === 0 ? Btn.Left : Btn.Right;
+        if (step.sprint) buttons |= Btn.Sprint;
+        if (this.stepTicks >= step.ticks) this.advance("strafed");
+        break;
+      }
+      case "killPlayer": {
+        const t = remotes.find((r) => r.id === step.targetId);
+        if (t && t.alive) {
+          const zoneY = step.zone === "head" ? t.height * 0.9 : step.zone === "legs" ? t.height * 0.2 : t.height * 0.55;
+          const target: Vec3 = { x: t.x, y: t.y + zoneY, z: t.z };
+          const e = eyePos(p);
+          const wantYaw = yawTo(e, target);
+          const wantPitch = pitchTo(e, target);
+          this.turnToward(wantYaw, wantPitch, 0.6);
+          const err = Math.abs(wrapAngle(wantYaw - this.yaw)) + Math.abs(wantPitch - this.pitch);
+          if (err < 0.015 && p.alive) {
+            buttons |= Btn.Fire;
+            this.aimedShots++;
+          }
+        }
+        if (this.stepTicks >= step.ticks) this.advance(`engaged (kills ${p.stats.kills})`);
         break;
       }
     }

@@ -28,6 +28,8 @@ export const normalize = (a: Vec3): Vec3 => {
 };
 export const lerp = (a: Vec3, b: Vec3, t: number): Vec3 =>
   v3(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t);
+/** sqrt(x²+y²) via IEEE sqrt only: bit-identical on every V8 build (Math.hypot is not). */
+export const hyp2 = (x: number, y: number): number => Math.sqrt(x * x + y * y);
 export const clamp = (x: number, lo: number, hi: number): number => (x < lo ? lo : x > hi ? hi : x);
 
 /** Unit vector for a yaw (radians, 0 = -Z forward, increasing turns left) on the XZ plane. */

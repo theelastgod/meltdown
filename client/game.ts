@@ -5,10 +5,20 @@ import { eyeHeight, type PlayerState } from "@shared/sim/player";
 import { hashWorld, World, type SimEvent } from "@shared/sim/world";
 import { lenXZ } from "@shared/math/vec3";
 import { GameAudio } from "./audio";
-import { Bot, type BotStep } from "./bot";
+import { Bot, type BotStep, type BotTarget } from "./bot";
 import { Hud } from "./hud/hud";
 import { InputController } from "./input";
 import { Renderer, type ViewState } from "./render/renderer";
+import { NetClient } from "./net/netclient";
+import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
+import type { NetInput, Snapshot as NetSnapshot } from "@shared/net/protocol";
+
+export interface NetConfig {
+  url: string;
+  name: string;
+  token?: string;
+  sim?: LinkSim;
+}
 
 interface Snapshot {
   x: number;
@@ -45,7 +55,13 @@ const lerpAngle = (a: number, b: number, t: number): number => {
  */
 export class Game {
   readonly world: World;
-  readonly player: PlayerState;
+  /** Local player. Offline: created at construction. Online: created on Welcome; a placeholder until then. */
+  player: PlayerState;
+  net: NetClient | null = null;
+  private netConfig: NetConfig | null = null;
+  /** Online: true once the first authoritative local state arrived; prediction starts then. */
+  private synced = false;
+  readonly netStats = { corrections: 0, maxCorrectionM: 0, replayedInputs: 0, serverHitsOnMe: 0, myHits: 0, myShotsConfirmed: 0, log: [] as { tick: number; corr: number; ack: number; pendingBefore: number; replayed: number; wasAlive: boolean; stance: string }[] };
   readonly input: InputController;
   readonly renderer: Renderer;
   readonly hud: Hud;
@@ -57,6 +73,8 @@ export class Game {
   private last = -1;
   /** When false the rAF loop only renders; the sim advances via advance(). `?headless=1` starts paused. */
   realtime = !new URLSearchParams(location.search).has("headless");
+  /** When false, the loop simulates but skips drawing (probes on software GL). */
+  drawing = !new URLSearchParams(location.search).has("norender");
   hitmarkers = false;
   readonly recentEvents: SimEvent[] = [];
   readonly stats = { ticks: 0, frames: 0, droppedTime: 0, fps: 0, simHz: 0, wallStart: 0, realtimeWall: 0, realtimeTicks: 0, maxFrameDt: 0, catchupHits: 0 };
@@ -78,13 +96,142 @@ export class Game {
     this.renderer.syncDummies(this.world.dummies);
   }
 
+  get online(): boolean {
+    return this.net !== null;
+  }
+
+  /** Connect to a room. The offline world is replaced by a server-fed one. */
+  connect(cfg: NetConfig): void {
+    this.netConfig = cfg;
+    this.synced = false;
+    this.world.removePlayer(this.player.id);
+    const inner = new WsTransport(cfg.url);
+    const transport = cfg.sim ? new SimulatedLink(inner, cfg.sim) : inner;
+    const net = new NetClient(transport, cfg.name, cfg.token ?? "");
+    this.net = net;
+    net.onStatus = (st) => {
+      if (st === "joined") {
+        this.player = this.world.addPlayer(net.playerId, cfg.name);
+        this.input.yaw = this.player.yaw;
+        this.hud.push(`LINKED · ROOM ${cfg.url.split("/").pop()} · FILE #${net.playerId}`, "cy");
+      } else this.hud.push(`LINK ${st.toUpperCase()}${net.kickReason ? " · " + net.kickReason : ""}`, "mg");
+    };
+    net.onSnapshot = (snap) => this.onSnapshot(snap);
+    this.hud.push(`LINKING ${cfg.url}${cfg.sim ? ` (sim ${cfg.sim.latencyMs * 2}ms rtt, ${(cfg.sim.loss * 100).toFixed(0)}% loss)` : ""}`, "k");
+  }
+
+  /** Rejoin the same room with the session token (state is restored server-side). */
+  reconnect(): void {
+    if (!this.netConfig || !this.net) return;
+    const token = this.net.token;
+    this.net.close();
+    this.connect({ ...this.netConfig, token });
+  }
+
+  private onSnapshot(ns: NetSnapshot): void {
+    const net = this.net!;
+    if (net.status !== "joined") return;
+    const p = this.player;
+    // dummies are server-driven online
+    for (const d of ns.dummies) {
+      const local = this.world.dummies.find((x) => x.id === d.id);
+      if (!local) continue;
+      local.alive = d.alive;
+      local.health = d.health;
+      local.pos.x = d.x;
+      local.pos.y = d.y;
+      local.pos.z = d.z;
+    }
+    if (ns.local) {
+      const before = { x: p.pos.x, y: p.pos.y, z: p.pos.z };
+      const wasSynced = this.synced;
+      const wasAlive = p.alive;
+      const pendingBefore = net.pendingInputs.length;
+      const yawBefore = p.yaw;
+      const velBefore = [+p.vel.x.toFixed(2), +p.vel.z.toFixed(2)];
+      const lastIn = net.pendingInputs[net.pendingInputs.length - 1];
+      this.world.importLocal(p, ns.local);
+      const replay = net.ackUpTo(ns.local.seq);
+      for (const r of replay) this.world.applyInput(p, r, { predictOnly: true, silent: true });
+      this.netStats.replayedInputs += replay.length;
+      if (wasSynced && wasAlive && p.alive) {
+        const corr = Math.hypot(p.pos.x - before.x, p.pos.y - before.y, p.pos.z - before.z);
+        if (corr > 0.001) this.netStats.corrections++;
+        if (corr > this.netStats.maxCorrectionM) this.netStats.maxCorrectionM = corr;
+        if (corr > 0.02 && this.netStats.log.length < 12) this.netStats.log.push({ tick: ns.tick, corr, ack: ns.local.seq, pendingBefore, replayed: replay.length, wasAlive, stance: p.stance, yawBefore: +yawBefore.toFixed(4), yawAfter: +p.yaw.toFixed(4), yawSrv: +ns.local.yaw.toFixed(4), yawIn: lastIn ? +lastIn.yaw.toFixed(4) : 0, velBefore, velAfter: [+p.vel.x.toFixed(2), +p.vel.z.toFixed(2)] } as never);
+      }
+      this.synced = true;
+      this.prev = this.cur = snap(p);
+      this.world.tick = ns.tick;
+    }
+    for (const ev of ns.events) this.onNetEvent(ev);
+  }
+
+  private onNetEvent(ev: NetSnapshot["events"][number]): void {
+    const me = this.player.id;
+    switch (ev.type) {
+      case "shot": {
+        const hit = ev.hitKind === 2 || ev.hitKind === 3;
+        if (ev.playerId === me) {
+          this.netStats.myShotsConfirmed++;
+          if (hit) {
+            this.netStats.myHits++;
+            this.audio.hit(ev.zone ?? "body");
+            if (ev.hitKind === 2) this.renderer.flashDummy(ev.victimId);
+            if (this.hitmarkers) this.hud.flashHit();
+          }
+        } else {
+          this.renderer.tracer({ x: ev.fx, y: ev.fy, z: ev.fz }, { x: ev.tx, y: ev.ty, z: ev.tz }, ev.hitKind === 1, true);
+          if (ev.hitKind === 3 && ev.victimId === me) {
+            this.netStats.serverHitsOnMe++;
+            this.audio.land(2);
+            this.hud.alert("▲ INTEGRITY BREACH", true, 1);
+          }
+        }
+        break;
+      }
+      case "kill":
+        if (ev.playerId === me) {
+          this.audio.kill();
+          this.hud.killStamp();
+          this.renderer.post.kick(1);
+          this.hud.push(`FILE #${me} ⟶ ${ev.victimKind === 0 ? "DUMMY" : "FILE"}-${String(ev.victimId).padStart(2, "0")} · TTK ${(ev.ttkTicks / SIM_HZ).toFixed(2)}s`, "mg");
+        } else this.hud.push(`FILE #${ev.playerId} ⟶ ${ev.victimKind === 0 ? "DUMMY" : "FILE"}-${String(ev.victimId).padStart(2, "0")}`, "k");
+        break;
+      case "death":
+        if (ev.playerId === me) {
+          this.hud.alert("◆ FILE CLOSED — RE-LEASING IN 3s", true, 3);
+          this.renderer.post.kick(1);
+        }
+        break;
+      case "join":
+        this.hud.push(`FILE #${ev.playerId} (${ev.name}) ENTERED THE YARD`, "cy");
+        break;
+      case "leave":
+        this.hud.push(`FILE #${ev.playerId} DROPPED OFF THE LEDGER`, "k");
+        break;
+    }
+  }
+
+  private botTargets(): BotTarget[] {
+    if (!this.net) return [];
+    return this.net.remoteViews().map((v) => ({ id: v.id, x: v.x, y: v.y, z: v.z, height: v.height, alive: v.alive }));
+  }
+
+  private lastFrameAt = 0;
+
   start(): void {
     this.stats.wallStart = performance.now();
     const loop = (now: number) => {
-      this.frame(now);
+      this.frame(now, true);
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
+    // Hidden tabs get no animation frames; keep the simulation (and the net link) alive on a timer.
+    setInterval(() => {
+      const now = performance.now();
+      if (now - this.lastFrameAt > 60) this.frame(now, false);
+    }, 16);
   }
 
   /** Attach a scripted driver; passing null returns control to the keyboard. */
@@ -112,8 +259,24 @@ export class Game {
 
   private tick(): void {
     const t = this.world.tick;
-    const frame: InputFrame = this.bot ? this.bot.sample(this.world, this.player, t) : this.input.sample(t);
-    this.world.step(new Map([[this.player.id, frame]]));
+    if (this.net) {
+      // Online: predict the local player only; the server owns everything else.
+      if (this.net.status !== "joined" || !this.synced) return;
+      const frame: InputFrame = this.bot ? this.bot.sample(this.world, this.player, t, this.botTargets()) : this.input.sample(t);
+      // apply exactly what the wire carries (angles quantized to 1e-4 rad) so prediction and server agree bit for bit
+      frame.yaw = Math.round(frame.yaw * 10000) / 10000;
+      frame.pitch = Math.round(frame.pitch * 10000) / 10000;
+      const ni: NetInput = { ...frame, seq: this.net.nextSeq(), viewTick: this.net.viewTick(), px: 0, py: 0, pz: 0 };
+      this.world.applyInput(this.player, ni, { predictOnly: true });
+      ni.px = this.player.pos.x;
+      ni.py = this.player.pos.y;
+      ni.pz = this.player.pos.z;
+      this.net.sendInput(ni);
+      this.world.tick++;
+    } else {
+      const frame: InputFrame = this.bot ? this.bot.sample(this.world, this.player, t) : this.input.sample(t);
+      this.world.step(new Map([[this.player.id, frame]]));
+    }
     this.stats.ticks++;
     this.prev = this.cur;
     this.cur = snap(this.player);
@@ -143,7 +306,7 @@ export class Game {
       case "shot":
         this.audio.shot();
         this.renderer.tracer(ev.from, ev.to, ev.hit.kind === "world");
-        if (ev.hit.kind === "dummy" || ev.hit.kind === "player") {
+        if (!this.net && (ev.hit.kind === "dummy" || ev.hit.kind === "player")) {
           this.audio.hit(ev.hit.zone ?? "body");
           if (ev.hit.kind === "dummy") this.renderer.flashDummy(ev.hit.id);
           if (this.hitmarkers) this.hud.flashHit();
@@ -195,7 +358,8 @@ export class Game {
     }
   }
 
-  private frame(now: number): void {
+  private frame(now: number, render: boolean): void {
+    this.lastFrameAt = now;
     if (this.last < 0) this.last = now;
     let dt = (now - this.last) / 1000;
     this.last = now;
@@ -245,6 +409,8 @@ export class Game {
       view.yaw = this.input.yaw;
       view.pitch = this.input.pitch;
     }
+    if (!render || !this.drawing) return;
+    if (this.net) this.renderer.syncRemotes(this.net.remoteViews());
     this.renderer.render(view, dt);
     this.stats.frames++;
     this.fpsWindow.frames++;

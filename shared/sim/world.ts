@@ -3,7 +3,30 @@ import { emptyInput, type InputFrame } from "./input";
 import type { DummyDef, LevelDef } from "./level";
 import { rayBox, rayCapsule } from "./collision";
 import { createPlayer, eyePos, respawnPlayer, stepPlayer, type PlayerEvent, type PlayerState } from "./player";
-import { type Vec3, v3, clone, addScaled, viewDir, dist, lenXZ, sub, normalize } from "../math/vec3";
+import { type Vec3, v3, clone, copy, set, addScaled, viewDir, dist, lenXZ, sub, normalize } from "../math/vec3";
+import type { LocalAuth } from "../net/protocol";
+
+/** Historical pose of a player, used by lag-compensated hit resolution. */
+export interface RewindPose {
+  pos: Vec3;
+  height: number;
+  alive: boolean;
+}
+
+export interface StepOpts {
+  /** Server-side: returns other players' poses at the shooter's view tick (capped rewind). */
+  rewind?: (shooterId: number, viewTick: number) => ReadonlyMap<number, RewindPose> | null;
+  /** Online server: a player with no queued input freezes instead of idling (keeps client/server traces identical). */
+  online?: boolean;
+  /** Client prediction: shots are cast against the level only; no damage is applied. */
+  predictOnly?: boolean;
+  /** Suppress event emission (reconciliation replay). */
+  silent?: boolean;
+}
+
+export interface TickInput extends InputFrame {
+  viewTick?: number;
+}
 
 export type HitZone = "head" | "body" | "legs";
 
@@ -30,6 +53,9 @@ export type SimEvent =
       from: Vec3;
       to: Vec3;
       hit: { kind: "world" | "dummy" | "player" | "none"; id: number; zone?: HitZone; damage: number };
+      /** Closest approach (m) between the ray and any live player capsule axis, for hit-reg diagnostics. */
+      nearMiss: number;
+      rewindTicks: number;
     }
   | { tick: number; playerId: number; type: "kill"; victimKind: "dummy" | "player"; victimId: number; ttkTicks: number; ttkSeconds: number }
   | { tick: number; playerId: number; type: "death"; killerId: number }
@@ -103,30 +129,97 @@ export class World {
     return e;
   }
 
-  /** Advance exactly one tick with the given per-player inputs (missing players idle). */
-  step(inputs: ReadonlyMap<number, InputFrame>): void {
-    const boxes = this.level.boxes;
-    const perPlayer: PlayerEvent[] = [];
+  /**
+   * Advance exactly one tick. Each player may carry several inputs (server
+   * catch-up after loss) or none (online: freeze; offline: idle). A player's
+   * movement depends only on their own inputs and the static level, so
+   * applying inputs strictly in order keeps client prediction and server
+   * simulation bit-identical.
+   */
+  step(inputs: ReadonlyMap<number, TickInput | TickInput[]>, opts: StepOpts = {}): void {
     for (const p of this.players.values()) {
-      const input = inputs.get(p.id) ?? { ...emptyInput(this.tick), yaw: p.yaw, pitch: p.pitch };
-      perPlayer.length = 0;
-      stepPlayer(p, input, boxes, perPlayer);
-      for (const ev of perPlayer) this.pending.push({ tick: this.tick, playerId: p.id, ...ev });
-      if (p.pos.y < this.level.killY && p.alive) this.killPlayer(p, -1);
-      if (!p.alive) {
+      const raw = inputs.get(p.id);
+      const list: TickInput[] = raw === undefined ? [] : Array.isArray(raw) ? raw : [raw];
+      if (list.length === 0) {
+        if (opts.online) continue;
+        list.push({ ...emptyInput(this.tick), yaw: p.yaw, pitch: p.pitch });
+      }
+      for (const input of list) this.applyInput(p, input, opts);
+    }
+    for (const p of this.players.values()) {
+      if (p.pos.y < this.level.killY && p.alive) this.killPlayer(p, -1, opts);
+      if (!p.alive && !opts.predictOnly) {
         p.respawnTimer -= SIM_DT;
         if (p.respawnTimer <= 0) {
           respawnPlayer(p, this.level.spawns[(p.id + this.tick) % this.level.spawns.length]!);
-          this.pending.push({ tick: this.tick, playerId: p.id, type: "respawn" });
+          if (!opts.silent) this.pending.push({ tick: this.tick, playerId: p.id, type: "respawn" });
         }
       }
     }
-    // Hitscan resolves after all movement so both parties are at this tick's positions.
-    for (const p of this.players.values()) {
-      if (p.firedThisTick && p.alive) this.resolveShot(p);
-    }
     this.stepDummies();
     this.tick++;
+  }
+
+  /** Apply one input to one player: movement, then hitscan if a shot fired. */
+  applyInput(p: PlayerState, input: TickInput, opts: StepOpts = {}): void {
+    const events: PlayerEvent[] = [];
+    stepPlayer(p, input, this.level.boxes, events);
+    if (!opts.silent) for (const ev of events) this.pending.push({ tick: this.tick, playerId: p.id, ...ev });
+    if (p.firedThisTick && p.alive) this.resolveShot(p, input.viewTick ?? this.tick, opts);
+  }
+
+  /** Exact local-player state for reconciliation (server → owning client). */
+  exportLocal(p: PlayerState, seq: number): LocalAuth {
+    return {
+      seq,
+      x: p.pos.x, y: p.pos.y, z: p.pos.z, vx: p.vel.x, vy: p.vel.y, vz: p.vel.z,
+      yaw: p.yaw, pitch: p.pitch,
+      stance: p.stance === "stand" ? 0 : p.stance === "crouch" ? 1 : p.stance === "slide" ? 2 : 3,
+      height: p.height, grounded: p.grounded ? 1 : 0, airTime: p.airTime, jumpBuffer: p.jumpBuffer,
+      slideTime: p.slideTime, slideCooldown: p.slideCooldown, sdx: p.slideDir.x, sdz: p.slideDir.z,
+      mfx: p.mantleFrom.x, mfy: p.mantleFrom.y, mfz: p.mantleFrom.z, mtx: p.mantleTo.x, mty: p.mantleTo.y, mtz: p.mantleTo.z, mantleT: p.mantleT,
+      health: p.health, alive: p.alive ? 1 : 0, respawnTimer: p.respawnTimer, ammo: p.ammo, reloadTimer: p.reloadTimer, fireCooldown: p.fireCooldown,
+      kickPitch: p.kickPitch, kickYaw: p.kickYaw, prevButtons: p.prevButtons,
+      kills: p.stats.kills, deaths: p.stats.deaths, shots: p.stats.shots, hits: p.stats.hits,
+    };
+  }
+
+  importLocal(p: PlayerState, l: LocalAuth): void {
+    set(p.pos, l.x, l.y, l.z);
+    set(p.vel, l.vx, l.vy, l.vz);
+    p.yaw = l.yaw;
+    p.pitch = l.pitch;
+    p.stance = l.stance === 0 ? "stand" : l.stance === 1 ? "crouch" : l.stance === 2 ? "slide" : "mantle";
+    p.height = l.height;
+    p.grounded = l.grounded === 1;
+    p.airTime = l.airTime;
+    p.jumpBuffer = l.jumpBuffer;
+    p.slideTime = l.slideTime;
+    p.slideCooldown = l.slideCooldown;
+    set(p.slideDir, l.sdx, 0, l.sdz);
+    set(p.mantleFrom, l.mfx, l.mfy, l.mfz);
+    set(p.mantleTo, l.mtx, l.mty, l.mtz);
+    p.mantleT = l.mantleT;
+    p.health = l.health;
+    p.alive = l.alive === 1;
+    p.respawnTimer = l.respawnTimer;
+    p.ammo = l.ammo;
+    p.reloadTimer = l.reloadTimer;
+    p.fireCooldown = l.fireCooldown;
+    p.kickPitch = l.kickPitch;
+    p.kickYaw = l.kickYaw;
+    p.prevButtons = l.prevButtons;
+    p.stats.kills = l.kills;
+    p.stats.deaths = l.deaths;
+    p.stats.shots = l.shots;
+    p.stats.hits = l.hits;
+  }
+
+  /** Poses of every player right now (recorded per tick by the server for rewinds). */
+  poses(): Map<number, RewindPose> {
+    const m = new Map<number, RewindPose>();
+    for (const p of this.players.values()) m.set(p.id, { pos: clone(p.pos), height: p.height, alive: p.alive });
+    return m;
   }
 
   private stepDummies(): void {
@@ -161,8 +254,12 @@ export class World {
     }
   }
 
-  /** Cast the shooter's view ray against the level, dummies and other players. */
-  private resolveShot(shooter: PlayerState): void {
+  /**
+   * Cast the shooter's view ray against the level, dummies and other players.
+   * With `opts.rewind`, other players are tested at the poses they had at the
+   * shooter's view tick (lag compensation, capped by the provider).
+   */
+  private resolveShot(shooter: PlayerState, viewTick: number, opts: StepOpts): void {
     const origin = eyePos(shooter);
     const dir = viewDir(shooter.yaw + shooter.kickYaw, shooter.pitch + shooter.kickPitch);
     const maxT = LEASE_BREAKER.range;
@@ -175,8 +272,10 @@ export class World {
         hit = { kind: "world", id: -1, damage: 0 };
       }
     }
+    const rewound = opts.predictOnly ? null : opts.rewind?.(shooter.id, viewTick) ?? null;
+    let nearMiss = Infinity;
     for (const d of this.dummies) {
-      if (!d.alive) continue;
+      if (!d.alive || opts.predictOnly) continue;
       const t = rayCapsule(origin, dir, d.pos, DUMMY_RADIUS, DUMMY_HEIGHT, bestT);
       if (t !== null && t < bestT) {
         bestT = t;
@@ -185,16 +284,32 @@ export class World {
       }
     }
     for (const other of this.players.values()) {
-      if (other === shooter || !other.alive) continue;
-      const t = rayCapsule(origin, dir, other.pos, MOVE.capsuleRadius, other.height, bestT);
+      if (other === shooter || opts.predictOnly) continue;
+      const pose = rewound?.get(other.id);
+      // must be alive now (no double kills on a corpse) and at the rewound time
+      if (!other.alive || (pose && !pose.alive)) continue;
+      const pos = pose ? pose.pos : other.pos;
+      const height = pose ? pose.height : other.height;
+      {
+        // distance from the ray to the capsule axis midpoint (diagnostic only)
+        const cx = pos.x - origin.x, cy = pos.y + height * 0.5 - origin.y, cz = pos.z - origin.z;
+        const along = cx * dir.x + cy * dir.y + cz * dir.z;
+        if (along > 0) {
+          const px = origin.x + dir.x * along, py = origin.y + dir.y * along, pz = origin.z + dir.z * along;
+          const d = Math.sqrt((px - pos.x) ** 2 + (py - (pos.y + height * 0.5)) ** 2 + (pz - pos.z) ** 2);
+          if (d < nearMiss) nearMiss = d;
+        }
+      }
+      const t = rayCapsule(origin, dir, pos, MOVE.capsuleRadius, height, bestT);
       if (t !== null && t < bestT) {
         bestT = t;
-        const zone = zoneOf(origin.y + dir.y * t, other.pos.y, other.height);
+        const zone = zoneOf(origin.y + dir.y * t, pos.y, height);
         hit = { kind: "player", id: other.id, zone, damage: Math.round(LEASE_BREAKER.damage * zoneMult(zone)) };
       }
     }
     const to = addScaled(origin, dir, bestT);
-    this.pending.push({ tick: this.tick, playerId: shooter.id, type: "shot", from: origin, to, hit });
+    if (!opts.silent) this.pending.push({ tick: this.tick, playerId: shooter.id, type: "shot", from: origin, to, hit, nearMiss: Number.isFinite(nearMiss) ? nearMiss : -1, rewindTicks: this.tick - viewTick });
+    if (opts.predictOnly) return;
 
     if (hit.kind === "dummy") {
       const d = this.dummies.find((x) => x.id === hit.id)!;
@@ -217,19 +332,19 @@ export class World {
       v.health -= hit.damage;
       if (v.health <= 0) {
         const ttk = this.tick - v.firstDamageTick;
-        this.killPlayer(v, shooter.id);
+        this.killPlayer(v, shooter.id, opts);
         shooter.stats.kills++;
-        this.pending.push({ tick: this.tick, playerId: shooter.id, type: "kill", victimKind: "player", victimId: v.id, ttkTicks: ttk, ttkSeconds: ttk / SIM_HZ });
+        if (!opts.silent) this.pending.push({ tick: this.tick, playerId: shooter.id, type: "kill", victimKind: "player", victimId: v.id, ttkTicks: ttk, ttkSeconds: ttk / SIM_HZ });
       }
     }
   }
 
-  private killPlayer(v: PlayerState, killerId: number): void {
+  private killPlayer(v: PlayerState, killerId: number, opts: StepOpts = {}): void {
     v.alive = false;
     v.health = 0;
     v.respawnTimer = 3;
     v.stats.deaths++;
-    this.pending.push({ tick: this.tick, playerId: v.id, type: "death", killerId });
+    if (!opts.silent) this.pending.push({ tick: this.tick, playerId: v.id, type: "death", killerId });
   }
 
   /** Direction from a player's eye to a dummy's chest; used by bots and tests. */
@@ -266,4 +381,4 @@ export function hashWorld(w: World): string {
 }
 
 export const horizontalSpeed = (p: PlayerState): number => lenXZ(p.vel);
-export { v3 };
+export { v3, copy };

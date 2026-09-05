@@ -2,7 +2,7 @@ import { MOVE, LEASE_BREAKER, PLAYER_MAX_HEALTH, SIM_DT } from "./constants";
 import { Btn, has, type InputFrame } from "./input";
 import type { Box, SpawnPoint } from "./level";
 import { capsuleFree, groundContact, resolveCapsule } from "./collision";
-import { type Vec3, v3, clone, copy, set, lenXZ, yawDir, yawRight, clamp, dot, wrapAngle } from "../math/vec3";
+import { type Vec3, v3, clone, copy, set, lenXZ, yawDir, yawRight, clamp, dot, wrapAngle, hyp2 } from "../math/vec3";
 
 export type Stance = "stand" | "crouch" | "slide" | "mantle";
 
@@ -148,7 +148,7 @@ function wishDirection(input: InputFrame): Vec3 {
     x -= r.x;
     z -= r.z;
   }
-  const l = Math.hypot(x, z);
+  const l = hyp2(x, z);
   return l > 1e-6 ? v3(x / l, 0, z / l) : v3();
 }
 
@@ -315,7 +315,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
             p.vel.x += wish.x * MOVE.airAccel * dt;
             p.vel.z += wish.z * MOVE.airAccel * dt;
           }
-          const k = ns / Math.max(1e-6, Math.hypot(p.vel.x, p.vel.z));
+          const k = ns / Math.max(1e-6, hyp2(p.vel.x, p.vel.z));
           p.vel.x *= k;
           p.vel.z *= k;
         } else if (wish.x !== 0 || wish.z !== 0) {
@@ -323,7 +323,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
           const tz = wish.z * maxSpeed;
           const dx = tx - p.vel.x;
           const dz = tz - p.vel.z;
-          const dl = Math.hypot(dx, dz);
+          const dl = hyp2(dx, dz);
           const maxStep = MOVE.groundAccel * dt;
           if (dl <= maxStep) {
             p.vel.x = tx;
@@ -336,7 +336,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
           const f = Math.max(0, 1 - MOVE.groundFriction * dt);
           p.vel.x *= f;
           p.vel.z *= f;
-          if (Math.hypot(p.vel.x, p.vel.z) < 0.05) {
+          if (hyp2(p.vel.x, p.vel.z) < 0.05) {
             p.vel.x = 0;
             p.vel.z = 0;
           }
@@ -352,7 +352,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
           const limit = Math.max(hspeed, cap);
           p.vel.x += wish.x * add;
           p.vel.z += wish.z * add;
-          const ns = Math.hypot(p.vel.x, p.vel.z);
+          const ns = hyp2(p.vel.x, p.vel.z);
           if (ns > limit) {
             p.vel.x *= limit / ns;
             p.vel.z *= limit / ns;
