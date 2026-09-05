@@ -17,6 +17,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 9 | Lethe proper: three districts, THE KERNEL horizon | | |
 | 10 | Campaign | | |
 | 11 | Endgame loops | | |
+| 11b | The Counter-Ledger: WAKE on Robinhood Chain, WalletConnect link, Ghostfile SBT + stamps, market, names (`docs/TOKENOMICS.md`) | | |
 | 12 | Opening crawl | | |
 | 13 | Polish & ship | | |
 
@@ -53,3 +54,23 @@ timestep independent of render rate, and provable headlessly.
   never calls into it.
 - `window.__game` exposes state, deterministic `advance(n)`, and a scripted
   `Bot` so every later stage's probe is a plan, not a replay of mouse input.
+
+## Stage 11b — The Counter-Ledger
+
+**Goal.** WAKE (ERC-20 on Robinhood Chain) and the wallet link, built so the
+token touches identity, ownership, creation, hosting, and competition, and
+never a stat. Spec: `docs/TOKENOMICS.md`. Seed already on main:
+`shared/economy/` (manifest shapes, chain config, lint) and
+`tests/economy.test.ts`.
+
+**Acceptance (probe):**
+- Headless client links a wallet over SIWE using a `viem` local account in
+  place of WalletConnect; the Worker verifies and binds it 1:1 in D1.
+- Ghostfile SBT and one attestation stamp mint on a local Orbit-compatible
+  devnet (anvil) through a Worker-signed EIP-712 voucher with sponsored gas.
+- A cosmetic bought on the LedgerMarket appears on the player's rig in the
+  next match snapshot as an ID only; the match Durable Object bundle contains
+  no economy module (bundle graph assertion).
+- `lintEconomy` runs in CI over the full manifest; a priced item with a
+  stat fails the build.
+- Chain unreachable: equip, match, and progression all still work.

@@ -38,11 +38,13 @@ Add `?headless=1` to the URL to start with the simulation paused; the
 shared/     pure TS simulation shared by client and (Stage 2) server
   math/     vec3
   sim/      constants, input, level, collision, player, world
+  economy/  WAKE token constants, Robinhood Chain config, no-paid-power lint
 client/     Vite + Three.js presentation: input, renderer, audio, HUD, game loop, bot
 probe/      headless acceptance probes (one per stage)
 tests/      vitest unit tests for the simulation
 docs/       ART_BIBLE.md, STAGES.md, proof/ artifacts per stage
 ```
 
-See `docs/STAGES.md` for the stage plan and `docs/ART_BIBLE.md` for the
-visual ground truth.
+See `docs/STAGES.md` for the stage plan, `docs/ART_BIBLE.md` for the
+visual ground truth, and `docs/TOKENOMICS.md` for WAKE, the in-game currency
+on Robinhood Chain.
