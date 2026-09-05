@@ -12,7 +12,7 @@ import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
 import { devSeed, MemoryAccountStore } from "./accounts";
-import { buyNode, refundNode } from "../shared/progression/account";
+import { buyNode, recordGhost, refundNode, validGhost } from "../shared/progression/account";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 8787);
 const rooms = new Map<string, Room>();
@@ -57,7 +57,7 @@ const http = createServer((req, res) => {
     res.end();
     return;
   }
-  const file = req.url?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund))?$/);
+  const file = req.url?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost))?$/);
   if (file) {
     const id = file[1]!;
     const name = "BLANK";
@@ -71,12 +71,24 @@ const http = createServer((req, res) => {
       req.on("data", (c) => (body += c));
       req.on("end", () => {
         let node = "";
+        let parsed: { node?: string; run?: unknown } = {};
         try {
-          node = String((JSON.parse(body || "{}") as { node?: string }).node ?? "");
+          parsed = JSON.parse(body || "{}") as { node?: string; run?: unknown };
+          node = String(parsed.node ?? "");
         } catch {
           node = "";
         }
         const a = accounts.load(id, name);
+        if (file[3] === "ghost") {
+          // a range ghost: kept when it is the best run of its course; the client never reads anything mechanical back from it
+          const run = validGhost(parsed.run);
+          const ok = run ? recordGhost(a, run) : false;
+          if (ok) accounts.save(a);
+          log(`[file] ${id} ghost ${run ? run.level + " " + run.seconds.toFixed(2) + "s" : "malformed"}: ${ok ? "kept" : "not kept"}`);
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ ok, reason: run ? undefined : "malformed run", ghost: run ? a.ghosts[run.level] ?? null : null }));
+          return;
+        }
         const r = file[3] === "buy" ? buyNode(a, node) : refundNode(a, node);
         if (r.ok) accounts.save(a);
         log(`[file] ${id} ${file[3]} ${node}: ${r.ok ? "ok" : r.reason}`);

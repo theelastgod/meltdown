@@ -3,8 +3,7 @@ import { weaponDefOf } from "@shared/sim/player";
 import { GRENADE_LIST, WEAPON_LIST } from "@shared/weapons/manifest";
 import type { Dummy } from "@shared/sim/world";
 import type { FileView } from "../file";
-import type { LevelDef } from "@shared/sim/level";
-import { DISTRICT_SPECS } from "@shared/sim/city";
+import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
 export class Hud {
@@ -12,6 +11,13 @@ export class Hud {
   private lines: string[] = [];
   private ledgerLine = 0;
   private alertTimer = 0;
+  private dossierTimer = 0;
+  private debtTimer = 0;
+  private riteTimer = 0;
+  /** the post-match receipt: lines to print, how many are printed, the print clock, and whether it was signed */
+  readonly receiptState = { open: false, lines: [] as string[], printed: 0, timer: 0, stamped: false, signed: 0 };
+  onPrint: (() => void) | null = null;
+  onStamp: (() => void) | null = null;
   private radar: CanvasRenderingContext2D;
   private locked = false;
   private rackKey = "";
@@ -29,7 +35,7 @@ export class Hud {
       <div class="tear"></div>
 
       <div class="p status">
-        <div class="line">▲ <span class="handle">BLANK</span> · <span class="dim">DRAINAGE YARD (MAGENTA)</span> · <span class="online">1 online</span></div>
+        <div class="line"><span class="glyph"></span>▲ <span class="handle">BLANK</span><span class="moniker"></span> · <span class="dim">DRAINAGE YARD (MAGENTA)</span> · <span class="online">1 online</span></div>
         <div class="line dim">LV <span class="depth">01</span> · XP <span class="xp">0/100</span> · ¢ <span class="scrip">0</span> · ◆ <span class="wake">0</span></div>
         <div class="bars">
           <div class="bar cy"><i class="shbar" style="width:100%"></i></div>
@@ -40,6 +46,10 @@ export class Hud {
 
       <div class="p mg mission"><span class="mtitle">◈ THE WAKE — DRAINAGE YARD</span><div class="sub"><span class="mline">⌖ CONTRACT — DUMMIES <span class="kills">0</span>/5</span></div><div class="sub mscore"></div><div class="nodes"></div></div>
       <div class="alert"></div>
+      <div class="debt"></div>
+      <div class="dossier" hidden><div class="dt">▲ DOSSIER · BOTH CELLS · FILES AS THE CITY SEES THEM</div><div class="cells"></div></div>
+      <div class="p am receipt" hidden><div class="rh">▲ LEDGER ENTRY · VANTAGE CLEARING HOUSE</div><div class="rl"></div><div class="rs">◆ <span class="rst">PRINTING…</span></div><div class="rf">[ENTER] SIGN</div></div>
+      <div class="rite" hidden><div class="rn"></div><div class="rt"></div><div class="rlines"></div></div>
 
       <div class="p cy map"><div class="t">AREA MAP</div><canvas width="54" height="42"></canvas><div class="f">click to walk</div></div>
       <div class="side"><div><span class="k">▸</span> ONLINE (1)</div><div class="perf"></div></div>
@@ -74,7 +84,7 @@ export class Hud {
     const kills = this.q(".mline");
     if (kills) kills.style.display = level.dummies.length ? "" : "none";
     const list = this.q(".travel .list");
-    const rows = [{ id: "drainage_yard", displayName: "DRAINAGE YARD (RANGE)", cast: "magenta" }, ...DISTRICT_SPECS.map((d) => ({ id: d.id, displayName: d.displayName, cast: d.cast }))];
+    const rows = LEVEL_INFO;
     list.innerHTML = rows.map((r) => `<div class="row ${r.id === level.name ? "on" : ""} ${r.cast}" data-travel="${r.id}">${r.id === level.name ? "▣" : "▢"} ${r.displayName} <span class="cast">${r.cast.toUpperCase()}</span></div>`).join("");
     const panel = this.q(".travel");
     panel.onclick = (e) => {
@@ -105,7 +115,7 @@ export class Hud {
     this.q(".xp").textContent = `${f.xpIntoDepth}/${f.xpForNext === Infinity ? "∞" : f.xpForNext}`;
     this.q(".scrip").textContent = String(f.scrip);
     this.q(".wake").textContent = String(f.wakelight);
-    this.q(".handle").textContent = f.account.slice(0, 18).toUpperCase();
+    // the handle is what the city calls you (setIdentity); the file id stays in the FILE panel
     const tab = this.q(".tabs .tab .n");
     if (tab) tab.textContent = f.legal ? "·" : "!";
     const graphTab = this.q(".tabs .tab:nth-child(2) .n");
@@ -117,7 +127,108 @@ export class Hud {
     this.q(".prompt").classList.toggle("off", locked);
   }
 
-  update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[]): void {
+  /** The local file's identity in the status line: glyph, what the city calls you, and the moniker. */
+  setIdentity(glyphSvg: string, display: string, moniker: string | null, chapter: number): void {
+    this.q(".glyph").innerHTML = glyphSvg;
+    this.q(".handle").textContent = display;
+    this.q(".moniker").textContent = moniker && moniker !== display ? ` · ${moniker}` : "";
+    this.q(".status").classList.toggle("named", chapter >= 3);
+  }
+
+  /** 1.2 s pre-match dossier flash: both cells' files, identity only. */
+  dossier(entries: { team: number; display: string; glyphSvg: string; chapter: number; moniker: string | null; stamps: number; debt: boolean; me: boolean }[], seconds: number): void {
+    const cell = (t: number) => `<div class="cell c${t}"><div class="ch">CELL ${t === 1 ? "ONE" : "TWO"}</div>${entries.filter((e) => e.team === t).map((e) => `<div class="ent ${e.me ? "me" : ""} ${e.debt ? "debt" : ""}">${e.glyphSvg}<div><div class="nm">${e.display}${e.debt ? ' <span class="dbt">◆ DEBT</span>' : ""}</div><div class="sub">CH ${["—", "I", "II", "III"][e.chapter] ?? "—"}${e.moniker ? " · " + e.moniker : ""} · ${e.stamps} STAMPS</div></div></div>`).join("") || '<div class="ent dim">— EMPTY —</div>'}</div>`;
+    this.q(".dossier .cells").innerHTML = cell(1) + cell(2);
+    const d = this.q(".dossier");
+    d.hidden = false;
+    d.classList.remove("on");
+    void d.offsetWidth;
+    d.classList.add("on");
+    this.dossierTimer = seconds;
+  }
+
+  /** DEBT OWED (someone has your number) / DEBT CLEARED (you settled it). */
+  debt(event: "owed" | "cleared", display: string, extra = ""): void {
+    const el = this.q(".debt");
+    el.textContent = event === "cleared" ? `◆ DEBT CLEARED — ${display}${extra ? " · " + extra : ""}` : `◆ DEBT — ${display} HAS YOUR NUMBER${extra ? " · " + extra : ""}`;
+    el.classList.toggle("cleared", event === "cleared");
+    el.classList.remove("on");
+    void el.offsetWidth;
+    el.classList.add("on");
+    this.debtTimer = event === "cleared" ? 3.5 : 4;
+  }
+
+  /** The post-match Ledger Entry: the receipt prints line by line, the stamp thunks, the player signs. */
+  receipt(lines: string[]): void {
+    const r = this.receiptState;
+    r.open = true;
+    r.lines = lines.slice();
+    r.printed = 0;
+    r.timer = 0.4;
+    r.stamped = false;
+    this.q(".receipt .rl").innerHTML = "";
+    this.q(".receipt .rst").textContent = "PRINTING…";
+    this.q(".receipt").hidden = false;
+    this.q(".receipt").classList.remove("stamped");
+  }
+
+  /** Sign the receipt (Enter). Returns false when there was nothing to sign or it is still printing. */
+  sign(): boolean {
+    const r = this.receiptState;
+    if (!r.open || !r.stamped) return false;
+    r.open = false;
+    r.signed++;
+    this.q(".receipt").hidden = true;
+    return true;
+  }
+
+  /** A Chapter rite: the screen goes to the rite card for a few seconds. */
+  rite(numeral: string, title: string, lines: string[], seconds = 5): void {
+    this.q(".rite .rn").textContent = `CHAPTER ${numeral}`;
+    this.q(".rite .rt").textContent = title;
+    this.q(".rite .rlines").innerHTML = lines.map((l) => `<div>${l}</div>`).join("");
+    const el = this.q(".rite");
+    el.hidden = false;
+    el.classList.remove("on");
+    void el.offsetWidth;
+    el.classList.add("on");
+    this.riteTimer = seconds;
+  }
+
+  private tickRituals(dt: number): void {
+    if (this.dossierTimer > 0) {
+      this.dossierTimer -= dt;
+      if (this.dossierTimer <= 0) this.q(".dossier").hidden = true;
+    }
+    if (this.debtTimer > 0) {
+      this.debtTimer -= dt;
+      if (this.debtTimer <= 0) this.q(".debt").classList.remove("on");
+    }
+    if (this.riteTimer > 0) {
+      this.riteTimer -= dt;
+      if (this.riteTimer <= 0) this.q(".rite").hidden = true;
+    }
+    const r = this.receiptState;
+    if (r.open && !r.stamped) {
+      r.timer -= dt;
+      if (r.timer <= 0) {
+        if (r.printed < r.lines.length) {
+          const line = r.lines[r.printed++]!;
+          this.q(".receipt .rl").innerHTML += `<div>${line}</div>`;
+          this.onPrint?.();
+          r.timer = 0.32;
+        } else {
+          r.stamped = true;
+          this.q(".receipt").classList.add("stamped");
+          this.q(".receipt .rst").textContent = "SETTLED · VANTAGE CLEARING HOUSE";
+          this.onStamp?.();
+        }
+      }
+    }
+  }
+
+  update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60): void {
+    this.tickRituals(dt);
     this.q(".hpbar").style.width = `${(100 * Math.max(0, p.health)) / Math.max(1, p.maxHealth)}%`;
     this.q(".shbar").style.width = p.maxShield > 0 ? `${(100 * Math.max(0, p.shield)) / p.maxShield}%` : "0%";
     const def = weaponDefOf(p);
@@ -145,11 +256,11 @@ export class Hud {
     this.q(".perf").textContent = `${fps.toFixed(0)} FPS · SIM ${tickHz.toFixed(0)} Hz`;
     this.drawRadar(p, dummies);
     if (this.alertTimer > 0) {
-      this.alertTimer -= 1 / 60;
+      this.alertTimer -= dt;
       if (this.alertTimer <= 0) this.q(".alert").classList.remove("on");
     }
     if (this.flagTimer > 0) {
-      this.flagTimer -= 1 / 60;
+      this.flagTimer -= dt;
       if (this.flagTimer <= 0) this.q(".flag").classList.remove("on");
     }
   }

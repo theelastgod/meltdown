@@ -9,7 +9,7 @@ import {
   type NetInput,
   type RemotePlayerQ,
   type Snapshot,
-  type FileMsg,
+  type FileMsg, type SocialMsg,
 } from "@shared/net/protocol";
 import type { Transport } from "./transport";
 
@@ -19,6 +19,8 @@ export const INTERP_DELAY_TICKS = 6;
 export interface RemoteView {
   id: number;
   name: string;
+  /** identity tag (glyph seed, chapter, moniker, debt flag) — render only */
+  tag: string;
   x: number;
   y: number;
   z: number;
@@ -57,16 +59,18 @@ export class NetClient {
   private latestAt = 0;
   private remotes = new Map<number, RemoteSample[]>();
   private names = new Map<number, string>();
+  private tags = new Map<number, string>();
   private pingTimer: ReturnType<typeof setInterval> | null = null;
   readonly stats = { snapshots: 0, bytesIn: 0, bytesOut: 0, undecodable: 0, reconciles: 0, maxCorrection: 0, joinedAtMs: 0, connectStartMs: performance.now() };
   onSnapshot: ((s: Snapshot) => void) | null = null;
   onStatus: ((s: NetClient["status"]) => void) | null = null;
   onFile: ((f: FileMsg) => void) | null = null;
+  onSocial: ((m: SocialMsg) => void) | null = null;
 
-  constructor(private transport: Transport, private name: string, token = "", private account = "", private loadout = "") {
+  constructor(private transport: Transport, private name: string, token = "", private account = "", private loadout = "", private identity = "") {
     this.token = token;
     transport.onOpen = () => {
-      transport.send(encodeJoin(this.name, this.token, this.account, this.loadout));
+      transport.send(encodeJoin(this.name, this.token, this.account, this.loadout, this.identity));
     };
     transport.onMessage = (buf) => this.receive(buf);
     transport.onClose = (reason) => {
@@ -129,6 +133,9 @@ export class NetClient {
       case "file":
         this.onFile?.(msg.file);
         break;
+      case "social":
+        this.onSocial?.(msg.social);
+        break;
       case "welcome":
         this.playerId = msg.playerId;
         this.token = msg.token;
@@ -167,6 +174,7 @@ export class NetClient {
         for (const t of this.baselines.keys()) if (t < s.tick - 120) this.baselines.delete(t);
         for (const p of s.players) {
           this.names.set(p.id, p.name);
+          this.tags.set(p.id, p.tag);
           let list = this.remotes.get(p.id);
           if (!list) this.remotes.set(p.id, (list = []));
           list.push({ tick: s.tick, q: p });
@@ -212,6 +220,7 @@ export class NetClient {
       out.push({
         id,
         name: this.names.get(id) ?? "BLANK",
+        tag: this.tags.get(id) ?? "",
         x, y, z,
         yaw: a.q.yaw + dy * k,
         pitch: a.q.pitch + (b.q.pitch - a.q.pitch) * k,

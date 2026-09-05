@@ -3,7 +3,7 @@
  * id; the match room settles through it so two rooms can never race a write.
  * Durable rows go to D1 (schema.sql) on every save; DO storage is the cache.
  */
-import { buyNode, createAccount, refundNode, upgradeAccount, type Account } from "../shared/progression/account";
+import { buyNode, createAccount, refundNode, upgradeAccount, type Account, recordGhost, validGhost } from "../shared/progression/account";
 import type { AccountStore } from "./accounts";
 import { MIGRATIONS, SCHEMA } from "./schema";
 
@@ -85,6 +85,29 @@ export class PlayerFile implements DurableObject {
         }
       }
       return Response.json({ ok: r.ok, reason: r.reason, account: a });
+    }
+    if (request.method === "POST" && url.pathname === "/ghost") {
+      const { id, run } = (await request.json()) as { id: string; run?: unknown };
+      let a = await this.state.storage.get<Account>(KEY);
+      if (!a && this.env.DB) {
+        const db = this.env.DB;
+        a = (await withSchema(db, () => loadRow(db, id))) ?? undefined;
+      }
+      if (!a) a = createAccount(id, "BLANK");
+      a = upgradeAccount(a);
+      const g = validGhost(run);
+      const ok = g ? recordGhost(a, g) : false;
+      if (ok) {
+        const prev = await this.state.storage.get<Account>(KEY);
+        await this.state.storage.put(KEY, a);
+        if (this.env.DB) {
+          const db = this.env.DB;
+          const acc = a;
+          const fresh = acc.ledger.slice(prev?.ledger.length ?? 0);
+          await withSchema(db, () => saveRow(db, acc, fresh));
+        }
+      }
+      return Response.json({ ok, reason: g ? undefined : "malformed run", ghost: g ? a.ghosts[g.level] ?? null : null });
     }
     if (url.pathname === "/file") {
       const a = (await this.state.storage.get<Account>(KEY)) ?? null;

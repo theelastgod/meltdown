@@ -15,6 +15,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 7 | Ledger Graph (48 nodes / 3 rings), chips + sockets + firmwares, challenge-gated mastery, attestation stamps, ledger shop | **done** | `docs/proof/stage7/` |
 | 8 | Identity & rituals | | |
 | 9 | Lethe proper: three districts, THE KERNEL horizon, district select, render budget | **done** (pulled ahead at the owner's request: "the game needs to feel and be like it's in a city") | `docs/proof/stage9/` |
+| 8 | Identity & rituals: glyphs, monikers, Debts, dossier flash, tiered kill audio, Ledger Entry receipt, Chapter rites, Deadletter Office + range ghosts | **done** | `docs/proof/stage8/` |
 | 9b | City life: crowds, monorail, street vistas through sealed gates, ad tickers, sign flicker, steam, skyline blinkers, airship, soundscape + VANTAGE PA | **done** (the owner repeated the note; the district is now inhabited, not just built) | `docs/proof/stage9b/` |
 | 10 | Campaign | | |
 | 11 | Endgame loops | | |
@@ -435,6 +436,108 @@ holds; the sim holds 60 Hz; the MAP tab lists the range and three
 districts; online, a room built with `?level=deadletter_docks` plays the
 docks and a client that arrives for Lease Row travels to the docks and
 rejoins as the same file.
+
+## Stage 8 — Identity & rituals
+
+**Goal.** What others see of a file, and the ceremonies around a match —
+with zero gameplay effect and zero information leak. A procedural
+three-layer GLYPH derived from the file id that grows a layer at the
+Chapter gates; equippable MONIKERS the city calls you by (earned by
+stamps, counters and Chapters; worn only if earned); DEBTS (nemesis-lite:
+the enemy who closed your file most last match is written to your file,
+flagged in the next dossier and over their head, and a DEBT CLEARED banner
+fires when you settle it — +5 Wakelight, once per pair per round, three per
+pair per day); a 1.2 s pre-match DOSSIER flash of both cells' files;
+kill-confirm audio that gains layers with the shooter's own mastery tier
+(shooter-side only); the post-match LEDGER ENTRY that prints line by line,
+stamps, and waits for the player to sign; CHAPTER RITES at Depth 10 / 25 /
+50 (LISTED, DIVERGENT, NAMED — at 50 the NAME field fills and the killfeed
+stops reading BLANK); and the DEADLETTER OFFICE hub that renovates itself
+with the Chapters, hangs trophies cut from the file's real ledger, and has a
+firing range whose ghosts replay your own best run. The probe's contract:
+identity data leaks nothing mechanical — every social payload and every
+over-the-head tag passes a scanner that knows every stat, item, chip,
+firmware and weapon id, and the room refuses to send a payload that fails it.
+
+**Files.**
+- `shared/identity/glyph.ts` — FNV seed from the file id; three layers
+  (ring / spokes / orbit / shard) derived so earned layers never change
+  when a new one grows; `layersForDepth` (1 / 2 at 10 / 3 at 25, the outer
+  ring closes at 50); SVG for the HUD and dossier, canvas drawing for the
+  over-the-head tags.
+- `shared/identity/monikers.ts` — 20 monikers with unlocks (free, Chapter,
+  stamp, counter); `CHAPTERS` (10 LISTED, 25 DIVERGENT, 50 NAMED with their
+  rite lines); `chapterFor`, `unlockedMonikers`, `wornMoniker` (equipped
+  and earned, else none — never a kick).
+- `shared/identity/identity.ts` — `PublicIdentity` (glyph seed, chapter,
+  moniker, display, stamp count, Debt flag), `IDENTITY_KEYS`,
+  `displayName` (moniker or BLANK until Chapter III, then the name), the
+  wire tag `seed.chapter.moniker.debt`, and `mechanicalLeaks` /
+  `assertClean` — the scanner.
+- `shared/progression/account.ts` — `moniker`, `chapters`, `debt`,
+  `social` (pair caps), `ghosts`; `upgradeAccount` fills them on old rows;
+  `validGhost` / `recordGhost`; the sandbox seed now completes every
+  curriculum so rank 30 holds once it earns XP.
+- `shared/net/protocol.ts` (v7) — identity string on join, `tag` beside the
+  remote name (under the name mask), `Msg.Social` with `dossier` / `debt` /
+  `rite`; `FileMsg.identity` for the file's own identity.
+- `server/room.ts` — identity per client (refreshed at join, round start,
+  settlement), display names on the wire, dossiers at round start
+  (viewer-relative Debt flag), `onPlayerKill` (Debt ledger, DEBT CLEARED
+  with the velocity caps), `rituals` at settlement (the Debt, Chapter
+  rites), `sendSocial` behind `assertClean`; stats expose identity and
+  social counts.
+- `server/node-host.ts`, `server/worker.ts`, `server/player-do.ts` —
+  `POST /file/:id/ghost` keeps a validated run when it is the best.
+- `client/hud/hud.ts` + `hud.css` — glyph and moniker in the status line,
+  the dossier panel, the Debt banner, the receipt (prints on the render
+  clock, stamps, `[ENTER] SIGN`), the rite card.
+- `client/audio.ts` — `kill(tier)` layers (second tick, chord, sub drop +
+  sweep), `printTick`, `sign`, `rite`, `debtCleared`, `debtOwed`, `dossier`.
+- `client/render/renderer.ts` — a canvas sprite over every remote: glyph
+  (regenerated from the seed on the wire), what the city calls them, the
+  Debt marker in magenta.
+- `client/file.ts` — moniker persisted and sent at link; the IDENTITY
+  section of the FILE panel (glyph, display, Chapter, moniker picker with
+  how each is earned, rites, the Debt); `?shop=` loads the real file offline
+  (the hub); `postGhost`.
+- `client/game.ts` — Social handling (dossier / Debt / rite → HUD + audio),
+  the receipt ritual on settlement, Enter to sign, kill tiers from the
+  file's own mastery, remote Debt marker, hub wiring.
+- `shared/sim/hub.ts` — the Deadletter Office level: office, furniture,
+  doorway, range with cover, start/end pads, renovation slots per Chapter,
+  the trophy wall; `overPad`.
+- `client/render/hub.ts` — renovation decor by Chapter, trophy plaques from
+  ledger lines (matches, Debts, Chapters, stamps, range records), the desk
+  nameplate at Chapter III, the ghost figure.
+- `client/ghost.ts` — the range recorder (10 Hz from leaving the start pad
+  to reaching the end pad; voided on death or return) and playback on the
+  sim clock; best run in localStorage and on the file.
+- Tests: `tests/identity.test.ts` (9), `tests/rituals.test.ts` (3, room
+  level). Probe: `probe/stage8.ts` (`npm run probe:identity`).
+
+**Acceptance (`npm run probe:identity`, 17/17; `npm test`, 119 tests):**
+online, a NAMED sandbox file is called ALPHA in the status line with its
+glyph and the equipped NAMED moniker while a fresh file claiming NAMED
+wears nothing and is called BLANK; the dossier flashes 3 files for 1.2 s
+at round start carrying only identity keys (leak scan: 0); others see
+ALPHA by name at Chapter III and BRAVO as BLANK with tags of seed, chapter
+and moniker only; a rank-1 shooter hears the tier-0 confirm and a rank-30
+shooter the tier-3 confirm; at settlement the Ledger Entry prints line by
+line with print chatter, stamps, and closes on Enter; the file that was
+closed twice owes a Debt to the closer and is told so; a file crossing
+Depth 10 performs Chapter I (LISTED card, chord); round two's dossier flags
+the Debt; killing that file fires DEBT CLEARED (+5 Wakelight, uncapped)
+and clears it on the file; 10 social messages and 4 tags pass the scanner
+that flags a control loadout; offline, the Deadletter Office loads ALPHA's
+real file (6 renovation pieces, 16 trophies from the ledger), a range run
+is recorded, posted and kept as the best (5.57 s), and after a reload the
+ghost replays the best run, pulls 38 m ahead of a walking Blank, and the
+slower run does not replace it; clean console.
+
+**Proof.** `docs/proof/stage8/` — `stage8-dossier.png`, `stage8-receipt.png`,
+`stage8-rite.png`, `stage8-debt.png`, `stage8-office.png`,
+`stage8-ghost.png`, `stage8.json`.
 
 ## Stage 9b — City life
 

@@ -6,6 +6,7 @@
  */
 import { ALL_ITEMS } from "../shared/manifest/items";
 import { createAccount, sandboxAccount, upgradeAccount, type Account } from "../shared/progression/account";
+import { totalXpToReach } from "../shared/progression/depth";
 
 export interface AccountStore {
   load(id: string, name: string): Account | Promise<Account>;
@@ -14,7 +15,8 @@ export interface AccountStore {
 
 /**
  * Dev seeding: ids starting with "sandbox" get a Depth-50 file that owns every node and has mastered
- * every weapon; "rich" ids get a Depth-10 file with Scrip to spend in the ledger shop; anything else starts Blank.
+ * every weapon; "rich" ids get a Depth-10 file with Scrip to spend in the ledger shop; "rite" ids sit just under
+ * Depth 10 so one settlement performs Chapter I; anything else starts Blank.
  */
 export function devSeed(id: string, name: string): Account {
   if (id.startsWith("sandbox")) {
@@ -28,6 +30,10 @@ export function devSeed(id: string, name: string): Account {
     a.depth = 10;
     a.xp = 60000;
     a.wallet.scrip = 5000;
+  }
+  if (id.startsWith("rite")) {
+    a.depth = 9;
+    a.xp = totalXpToReach(10) - 200;
   }
   return a;
 }

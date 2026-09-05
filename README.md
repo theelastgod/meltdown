@@ -32,6 +32,7 @@ npm run probe:city # Lethe proper: three districts load, bots route the streets 
 npm run probe:cityLife # city life: crowds walk, the monorail crosses and whooshes, gates seal the exits while vistas continue the city, PA and sirens on the sim clock
 npm run certify:firmware # every firmware measured in the TTK harness at its ideal range (must sit in the band)
 npm run probe:mastery # Ledger Graph + mastery: lint over nodes/chips/firmwares, chips and firmwares enforced at spawn, ledger shop, stamps un-redact online
+npm run probe:identity # identity & rituals: dossier flash, tags, tiered kill audio, Debts, receipt, Chapter rite, leak scan, Deadletter Office + range ghost
 npm run verify     # all of the above
 ```
 
@@ -57,14 +58,15 @@ Rooms take the same parameter: `ws://host/room/<name>?level=repo_depot`.
 ```
 shared/     pure TS simulation shared by client and (Stage 2) server
   math/     vec3
-  sim/      constants, input, box, level (+registry), city (district generator), nav (walkability + paths), collision, player, weapons, projectiles, ai, wake, ttk, world
+  sim/      constants, input, box, level (+registry), city (district generator), hub (Deadletter Office), nav (walkability + paths), collision, player, weapons, projectiles, ai, wake, ttk, world
+  identity/ glyph (procedural 3-layer mark), monikers + Chapters, identity (what others see + the mechanical-leak scanner)
   weapons/  weapon + grenade manifest
   manifest/ stat sheet, Ledger Graph (48 nodes + keystones), chips, firmwares, loadout validation (one manifest for client, server, CI)
   progression/ Depth/XP curve, currencies, deterministic crafting, weapon mastery + curricula, attestation stamps, the Ghostfile account
   fairness/ the Fairness Lint (simulated duels + mobility course) and its CLI
   campaign/ Kernel Protocols stub — quarantined from PvP by an import-graph test
   economy/  WAKE token constants, Robinhood Chain config, no-paid-power lint
-client/     Vite + Three.js presentation: input, renderer (post chain, rain, wet floor, city, life: crowds/monorail/steam/ads/sky), audio, HUD, game loop, bot
+client/     Vite + Three.js presentation: input, renderer (post chain, rain, wet floor, city, life: crowds/monorail/steam/ads/sky, hub), audio, HUD, game loop, ghost (range replays), bot
 server/     authoritative room (transport-agnostic), Node host, Cloudflare Durable Object host, PlayerFile DO + D1 schema
 probe/      headless acceptance probes (one per stage)
 tests/      vitest unit tests for the simulation

@@ -55,7 +55,7 @@ export class NeonBatch {
  * ~15 materials becomes ~15 draw calls (×2 with the mirror) instead of 600.
  * Box UVs are scaled per face so brick and window grids stay in metres.
  */
-class MeshBatch {
+export class MeshBatch {
   private parts = new Map<THREE.Material, THREE.BufferGeometry[]>();
   constructor(private parent: THREE.Object3D) {}
   /** `uvMetres` = texture tile size in metres (0 = leave UVs alone). */
@@ -119,7 +119,7 @@ function tube(batch: NeonBatch, x: number, y: number, z: number, len: number, ax
  * All of a level's signs on one atlas → one mesh. Text is pixel monospace in
  * the clip's register; every sign is a flat emissive quad.
  */
-class SignAtlas {
+export class SignAtlas {
   private canvas = document.createElement("canvas");
   private g: CanvasRenderingContext2D;
   private cols = 8;
@@ -236,6 +236,8 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
     railMg: basic(0x8a1f6a),
     lampHead: basic(0xfff1c8),
     glow: basic(0x9ce8ff, 0.18),
+    padStart: basic(0x0f3a22),
+    padEnd: basic(0x3a0f2c),
     shopA: basic(castColor, 0.42),
     shopB: basic(altColor, 0.42),
     shopC: basic(cast === "amber" ? PALETTE.amber : PALETTE.yellow, 0.22),
@@ -264,7 +266,9 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
     switch (b.tag) {
       case "floor":
         break; // the wet floor replaces it
-      case "wall": {
+      case "wall":
+      case "rangewall":
+      case "lintel": {
         batch.box(b, M.brick, 3);
         // cyan tube lights and shutters along the inner face (the range)
         const alongX = sx > sz;
@@ -345,6 +349,30 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
         batch.box(b, M.concrete);
         neonPerimeter(neon, b, PALETTE.violet, b.max.y + 0.03);
         neon.box(0.07, sy - 0.6, 0.07, b.max.x + 0.05, cy, cz, PALETTE.violet);
+        break;
+      // the Deadletter Office
+      case "desk":
+      case "chair":
+      case "terminal":
+        batch.box(b, M.metal, 2);
+        if (b.tag === "terminal") batch.box(b3(b.min.x + 0.05, b.min.y + 0.15, b.max.z, b.max.x - 0.05, b.max.y - 0.05, b.max.z + 0.02), M.glassDim);
+        break;
+      case "cot":
+        batch.box(b, M.stall, 2);
+        break;
+      case "locker":
+        batch.box(b, M.containerC, 2);
+        break;
+      case "bench":
+        batch.box(b, M.crate, 2);
+        break;
+      case "cover":
+        batch.box(b, M.hazard, 1.5);
+        break;
+      case "pad_start":
+      case "pad_end":
+        batch.box(b, b.tag === "pad_start" ? M.padStart : M.padEnd);
+        neonPerimeter(neon, b, b.tag === "pad_start" ? PALETTE.green : PALETTE.magenta, b.max.y + 0.03, 0.08);
         break;
       case "crate":
       case "stall":
@@ -531,6 +559,17 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
     const dcx = (d.min.x + d.max.x) / 2;
     const dcz = (d.min.z + d.max.z) / 2;
     switch (d.tag) {
+      case "ceiling":
+        batch.box(d, M.base, 4);
+        break;
+      case "strip_cy":
+      case "strip_mg":
+        neon.box(dx, d.max.y - d.min.y, d.max.z - d.min.z, dcx, (d.min.y + d.max.y) / 2, (d.min.z + d.max.z) / 2, d.tag === "strip_cy" ? PALETTE.cyan : PALETTE.magenta);
+        break;
+      case "target_wall":
+        batch.box(d, M.hazard, 1.5);
+        neonPerimeter(neon, d, PALETTE.amber, d.max.y + 0.04, 0.1);
+        break;
       case "awning_mg":
       case "awning_cy":
         batch.box(d, d.tag === "awning_mg" ? M.awningMg : M.awningCy);

@@ -5,7 +5,7 @@
 import type { InputFrame } from "../sim/input";
 import type { HitZone } from "../sim/world";
 
-export const PROTOCOL_VERSION = 6;
+export const PROTOCOL_VERSION = 7;
 /** Server snapshot cadence in sim ticks (60 Hz sim → 30 Hz snapshots). */
 export const SNAPSHOT_EVERY = 2;
 /** Lag compensation rewind cap in ticks (200 ms at 60 Hz). */
@@ -25,7 +25,26 @@ export const Msg = {
   Kick: 13,
   /** Ghostfile snapshot / ledger entry (JSON payload; sent on join and at results). */
   File: 14,
+  /** Identity & rituals (JSON payload): the pre-match dossier, Debts, Chapter rites. Carries nothing mechanical. */
+  Social: 15,
 } as const;
+
+/** One file as the dossier shows it: identity only (see shared/identity/identity.ts). */
+export interface DossierEntry {
+  id: number;
+  team: number;
+  glyph: number;
+  chapter: number;
+  moniker: string | null;
+  display: string;
+  stamps: number;
+  debt: boolean;
+}
+
+export type SocialMsg =
+  | { kind: "dossier"; seconds: number; entries: DossierEntry[] }
+  | { kind: "debt"; event: "owed" | "cleared"; id: number; display: string; glyph: number; kills: number; credit: number; capped: boolean }
+  | { kind: "rite"; chapter: number; numeral: string; title: string; lines: string[]; named: boolean; display: string };
 
 /** What the server tells a client about its own Ghostfile. */
 export interface FileMsg {
@@ -50,6 +69,8 @@ export interface FileMsg {
   /** ranks gained and challenges completed since the last message: `weapon:r12`, `lease_breaker:r5` */
   ranks?: string[];
   challenges?: string[];
+  /** the file's own identity (Stage 8): glyph seed, Chapter, moniker worn + earned, display name, the Debt owed */
+  identity?: { glyph: number; chapter: number; moniker: string | null; display: string; unlocked: string[]; debt: { display: string; glyph: number; kills: number } | null; chapters: number[] };
 }
 
 export interface NetInput extends InputFrame {
@@ -83,6 +104,8 @@ export interface RemotePlayerQ {
   stance: number; // 0 stand 1 crouch 2 slide 3 mantle
   height: number;
   name: string;
+  /** identity tag `glyph.chapter.moniker.debt` (shared/identity/identity.ts); "" for a guest */
+  tag: string;
 }
 
 export interface LocalAuth {
@@ -226,7 +249,7 @@ const Q_ANG = 10000;
  * Join. `account` is the Ghostfile id the client claims; `loadout` is raw JSON
  * (validated server-side against that file: unknown fields are refused, not stripped).
  */
-export function encodeJoin(name: string, token: string, account = "", loadout = ""): ArrayBuffer {
+export function encodeJoin(name: string, token: string, account = "", loadout = "", identity = ""): ArrayBuffer {
   const w = new W();
   w.u8(Msg.Join);
   w.u8(PROTOCOL_VERSION);
@@ -234,6 +257,7 @@ export function encodeJoin(name: string, token: string, account = "", loadout = 
   w.str(token);
   w.str(account);
   w.str(loadout);
+  w.str(identity);
   return w.done();
 }
 
@@ -289,6 +313,13 @@ export function encodeFile(f: FileMsg): ArrayBuffer {
   const w = new W();
   w.u8(Msg.File);
   w.str(JSON.stringify(f));
+  return w.done();
+}
+
+export function encodeSocial(m: SocialMsg): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Social);
+  w.str(JSON.stringify(m));
   return w.done();
 }
 
@@ -364,14 +395,14 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     if (!b || b.vx !== p.vx || b.vy !== p.vy || b.vz !== p.vz) mask |= F_VEL;
     if (!b || b.yaw !== p.yaw || b.pitch !== p.pitch) mask |= F_VIEW;
     if (!b || b.health !== p.health || b.ammo !== p.ammo || b.alive !== p.alive || b.grounded !== p.grounded || b.stance !== p.stance || b.height !== p.height || b.slot !== p.slot || b.team !== p.team || b.shield !== p.shield) mask |= F_STATE;
-    if (!b || b.name !== p.name) mask |= F_NAME;
+    if (!b || b.name !== p.name || b.tag !== p.tag) mask |= F_NAME;
     w.u8(p.id);
     w.u8(mask);
     if (mask & F_POS) { w.i16(p.x * Q_POS); w.i16(p.y * Q_POS); w.i16(p.z * Q_POS); }
     if (mask & F_VEL) { w.i16(p.vx * Q_VEL); w.i16(p.vy * Q_VEL); w.i16(p.vz * Q_VEL); }
     if (mask & F_VIEW) { w.i16(p.yaw * Q_ANG); w.i16(p.pitch * Q_ANG); }
     if (mask & F_STATE) { w.i16(p.health); w.u8(p.ammo); w.u8((p.alive ? 1 : 0) | (p.grounded ? 2 : 0) | (p.stance << 2) | (p.slot << 4)); w.i16(p.height * Q_POS); w.u8(p.team); w.u8(p.shield); }
-    if (mask & F_NAME) w.str(p.name);
+    if (mask & F_NAME) { w.str(p.name); w.str(p.tag); }
   }
   // dummies (full, small)
   w.u8(s.dummies.length);
@@ -419,7 +450,7 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
 // Decoding
 
 export type ClientMessage =
-  | { type: "join"; version: number; name: string; token: string; account: string; loadout: string }
+  | { type: "join"; version: number; name: string; token: string; account: string; loadout: string; identity: string }
   | { type: "input"; ackTick: number; inputs: NetInput[] }
   | { type: "ping"; clientTime: number };
 
@@ -434,7 +465,8 @@ export function decodeClientMessage(buf: ArrayBuffer): ClientMessage | null {
       // v4 joins carried no file; tolerate the short form so the version check can answer properly
       const account = r.remaining > 0 ? r.str() : "";
       const loadout = r.remaining > 0 ? r.str() : "";
-      return { type: "join", version, name, token, account, loadout };
+      const identity = r.remaining > 0 ? r.str() : "";
+      return { type: "join", version, name, token, account, loadout, identity };
     }
     if (t === Msg.Input) {
       const ackTick = r.u32();
@@ -459,7 +491,8 @@ export type ServerMessage =
   | { type: "snapshot"; snapshot: Snapshot; baselineTick: number }
   | { type: "pong"; clientTime: number; tick: number }
   | { type: "kick"; reason: string }
-  | { type: "file"; file: FileMsg };
+  | { type: "file"; file: FileMsg }
+  | { type: "social"; social: SocialMsg };
 
 /** Decode a server message. `baselines` resolves the acked snapshot a delta was built on. */
 export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) => Snapshot | null): ServerMessage | null {
@@ -470,6 +503,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     if (t === Msg.Pong) return { type: "pong", clientTime: r.u32(), tick: r.u32() };
     if (t === Msg.Kick) return { type: "kick", reason: r.str() };
     if (t === Msg.File) return { type: "file", file: JSON.parse(r.str()) as FileMsg };
+    if (t === Msg.Social) return { type: "social", social: JSON.parse(r.str()) as SocialMsg };
     if (t !== Msg.Snapshot) return null;
     const tick = r.u32();
     const baselineTick = r.u32();
@@ -498,12 +532,12 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
       const id = r.u8();
       const mask = r.u8();
       const b = base?.players.find((x) => x.id === id);
-      const p: RemotePlayerQ = b ? { ...b } : { id, slot: 1, team: 0, shield: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, health: 100, ammo: 0, alive: true, grounded: true, stance: 0, height: 1.8, name: "BLANK" };
+      const p: RemotePlayerQ = b ? { ...b } : { id, slot: 1, team: 0, shield: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, health: 100, ammo: 0, alive: true, grounded: true, stance: 0, height: 1.8, name: "BLANK", tag: "" };
       if (mask & F_POS) { p.x = r.i16() / Q_POS; p.y = r.i16() / Q_POS; p.z = r.i16() / Q_POS; }
       if (mask & F_VEL) { p.vx = r.i16() / Q_VEL; p.vy = r.i16() / Q_VEL; p.vz = r.i16() / Q_VEL; }
       if (mask & F_VIEW) { p.yaw = r.i16() / Q_ANG; p.pitch = r.i16() / Q_ANG; }
       if (mask & F_STATE) { p.health = r.i16(); p.ammo = r.u8(); const fl = r.u8(); p.alive = !!(fl & 1); p.grounded = !!(fl & 2); p.stance = (fl >> 2) & 3; p.slot = fl >> 4; p.height = r.i16() / Q_POS; p.team = r.u8(); p.shield = r.u8(); }
-      if (mask & F_NAME) p.name = r.str();
+      if (mask & F_NAME) { p.name = r.str(); p.tag = r.str(); }
       players.push(p);
     }
     const nd = r.u8();

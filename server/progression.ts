@@ -31,6 +31,11 @@ export class ProgressionTracker {
 
   constructor(readonly account: Account | null) {}
 
+  /** Social counters (Debts cleared, …): lifetime, on the file; monikers read them. */
+  social(key: string, n = 1): void {
+    this.count(key, n);
+  }
+
   /** Lifetime counter (persisted on the file). */
   private count(key: StampCounter | string, n = 1): number {
     if (!this.account) return 0;

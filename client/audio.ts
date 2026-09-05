@@ -394,14 +394,74 @@ export class GameAudio {
     this.burst({ dur: 0.05, freq: f * 1.5, q: 2, gain: 0.12 });
   }
 
-  /** Kill confirm: receipt-printer stamp — a thunk and a short cyan tick. */
-  kill(): void {
+  /**
+   * Kill confirm: receipt-printer stamp — a thunk and a short cyan tick. It
+   * gains layers with the shooter's mastery tier (rank 1–9: 0, 10–19: 1,
+   * 20–29: 2, 30: 3) — growth you can hear, shooter-side only, zero info leak.
+   */
+  kill(tier = 0): void {
     this.count("kill");
+    this.count("kill_t" + Math.max(0, Math.min(3, tier)));
     if (!this.ctx) return;
     this.tone({ dur: 0.16, from: 90, to: 40, gain: 0.6, type: "sine" }); // thunk
     this.burst({ dur: 0.05, freq: 800, q: 0.4, gain: 0.3, type: "lowpass" });
     this.tone({ dur: 0.09, from: 1760, gain: 0.12, type: "square", delay: 0.09 }); // tick
     this.tone({ dur: 0.12, from: 2349, gain: 0.1, type: "square", delay: 0.16 });
+    if (tier >= 1) this.tone({ dur: 0.14, from: 3520, gain: 0.07, type: "square", delay: 0.24 }); // second tick, an octave up
+    if (tier >= 2) for (const [i, f] of [1319, 1568, 1976].entries()) this.tone({ dur: 0.5, from: f, gain: 0.05, type: "triangle", delay: 0.28 + i * 0.04 }); // a chord under it
+    if (tier >= 3) {
+      this.tone({ dur: 0.7, from: 48, to: 30, gain: 0.5 }); // sub drop
+      this.burst({ dur: 0.6, freq: 2200, q: 0.5, gain: 0.12, delay: 0.3 }); // reverse-sweep tail
+    }
+  }
+
+  /** The receipt printing a line: a dot-matrix chatter. */
+  printTick(): void {
+    this.count("print");
+    if (!this.ctx) return;
+    for (let i = 0; i < 4; i++) this.burst({ dur: 0.02, freq: 2600 + i * 300, q: 3, gain: 0.08, delay: i * 0.03 });
+  }
+
+  /** The stamp at the bottom of the receipt, and the player's signature. */
+  sign(): void {
+    this.count("sign");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.2, from: 110, to: 45, gain: 0.7 }); // stamp thunk
+    this.burst({ dur: 0.08, freq: 600, q: 0.5, gain: 0.35, type: "lowpass" });
+    this.tone({ dur: 0.25, from: 1760, gain: 0.08, type: "square", delay: 0.22 });
+  }
+
+  /** A Chapter rite: a slow four-note rise on a saw pad, the CRT hum swelling under it. */
+  rite(chapter: number): void {
+    this.count("rite");
+    this.count("rite_" + chapter);
+    if (!this.ctx) return;
+    const base = 110 * (1 + chapter * 0.25);
+    for (const [i, m] of [1, 1.5, 2, 3].entries()) this.tone({ dur: 2.4 - i * 0.3, from: base * m, gain: 0.09, type: "sawtooth", delay: i * 0.45 });
+    this.tone({ dur: 3, from: 55, to: 50, gain: 0.35 });
+  }
+
+  /** DEBT CLEARED: a stamp thunk then a descending three-note sting in magenta. */
+  debtCleared(): void {
+    this.count("debtCleared");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.2, from: 100, to: 40, gain: 0.7 });
+    for (const [i, f] of [1568, 1319, 1047].entries()) this.tone({ dur: 0.35, from: f, gain: 0.1, type: "square", delay: 0.15 + i * 0.12 });
+  }
+
+  /** A Debt owed: the same three notes, rising — someone has your number. */
+  debtOwed(): void {
+    this.count("debtOwed");
+    if (!this.ctx) return;
+    for (const [i, f] of [1047, 1319, 1568].entries()) this.tone({ dur: 0.3, from: f, gain: 0.07, type: "square", delay: i * 0.12 });
+  }
+
+  /** The dossier flash: a data sweep as the files print across the screen. */
+  dossier(): void {
+    this.count("dossier");
+    if (!this.ctx) return;
+    this.burst({ dur: 1.1, freq: 1400, q: 1.5, gain: 0.12 });
+    for (let i = 0; i < 6; i++) this.tone({ dur: 0.05, from: 2200 + i * 180, gain: 0.05, type: "square", delay: i * 0.15 });
   }
 
   footstep(speed: number, pan: number): void {

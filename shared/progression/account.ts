@@ -4,7 +4,7 @@ import { emptyWallet, scripForMatch, NODE_REFUND, type Wallet } from "./currency
 import { craft, RECIPES, type CraftResult } from "./crafting";
 import { DEFAULT_LOADOUT, type Loadout } from "../manifest/loadout";
 import { ALL_ITEMS, itemById } from "../manifest/items";
-import { emptyMasteries, type Mastery } from "./mastery";
+import { CURRICULA, emptyMasteries, type Mastery } from "./mastery";
 import type { WeaponId } from "../weapons/manifest";
 
 export interface Account {
@@ -25,10 +25,58 @@ export interface Account {
   /** un-redacted attestation stamps (ids) and lifetime counters behind them */
   stamps: string[];
   counters: Record<string, number>;
+  /** equipped moniker id (Stage 8 identity; zero gameplay effect) */
+  moniker: string | null;
+  /** Chapter rites already performed (1, 2, 3) */
+  chapters: number[];
+  /** nemesis-lite: the enemy file that killed you most last match, until you settle it */
+  debt: Debt | null;
+  /** social-earning velocity caps: `pair:<file>:<day>` → clears credited */
+  social: Record<string, number>;
+  /** range ghosts: best recorded run per range course (positions at 10 Hz) */
+  ghosts: Record<string, GhostRun>;
+}
+
+export interface Debt {
+  account: string;
+  display: string;
+  kills: number;
+}
+
+export interface GhostRun {
+  level: string;
+  seconds: number;
+  /** flat [x, y, z, yaw] per sample at GHOST_HZ */
+  samples: number[];
+  at: number;
+}
+
+export const GHOST_HZ = 10;
+/** the longest run a ghost keeps: two minutes at GHOST_HZ */
+export const GHOST_MAX_SAMPLES = 120 * GHOST_HZ + 2;
+
+/** A ghost run as the client posts it, checked for shape and size; null when malformed. */
+export function validGhost(raw: unknown): GhostRun | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Partial<GhostRun>;
+  if (typeof r.level !== "string" || !/^[a-z_]{1,32}$/.test(r.level)) return null;
+  if (typeof r.seconds !== "number" || !(r.seconds > 0.5 && r.seconds < 600)) return null;
+  if (!Array.isArray(r.samples) || r.samples.length < 8 || r.samples.length % 4 !== 0 || r.samples.length > GHOST_MAX_SAMPLES * 4) return null;
+  if (!r.samples.every((v) => typeof v === "number" && Number.isFinite(v))) return null;
+  return { level: r.level, seconds: r.seconds, samples: r.samples.map((v) => Math.round(v * 100) / 100), at: typeof r.at === "number" ? r.at : Date.now() };
+}
+
+/** Keep a run on the file if it is the best for its course. */
+export function recordGhost(a: Account, run: GhostRun): boolean {
+  const cur = a.ghosts[run.level];
+  if (cur && cur.seconds <= run.seconds) return false;
+  a.ghosts[run.level] = run;
+  a.ledger.push(`RANGE · ${run.level.toUpperCase().replace(/_/g, " ")} · ${run.seconds.toFixed(2)}s${cur ? ` (−${(cur.seconds - run.seconds).toFixed(2)}s)` : " · FIRST RUN"}`);
+  return true;
 }
 
 export function createAccount(id: string, name = "BLANK"): Account {
-  return { id, name, xp: 0, depth: 1, wallet: emptyWallet(), owned: [], loadout: { ...DEFAULT_LOADOUT, attested: [], chips: {}, firmware: {} }, wears: [], crafts: 0, matches: 0, ledger: [], mastery: emptyMasteries(), stamps: [], counters: {} };
+  return { id, name, xp: 0, depth: 1, wallet: emptyWallet(), owned: [], loadout: { ...DEFAULT_LOADOUT, attested: [], chips: {}, firmware: {} }, wears: [], crafts: 0, matches: 0, ledger: [], mastery: emptyMasteries(), stamps: [], counters: {}, moniker: null, chapters: [], debt: null, social: {}, ghosts: {} };
 }
 
 /** Rows written before mastery/stamps existed come back without them. */
@@ -39,6 +87,11 @@ export function upgradeAccount(a: Partial<Account> & { id: string }): Account {
   for (const w of Object.keys(base.mastery) as WeaponId[]) if (!out.mastery[w]) out.mastery[w] = base.mastery[w];
   if (!out.stamps) out.stamps = [];
   if (!out.counters) out.counters = {};
+  if (out.moniker === undefined) out.moniker = null;
+  if (!out.chapters) out.chapters = [];
+  if (out.debt === undefined) out.debt = null;
+  if (!out.social) out.social = {};
+  if (!out.ghosts) out.ghosts = {};
   if (!out.loadout.chips) out.loadout.chips = {};
   if (!out.loadout.firmware) out.loadout.firmware = {};
   return out;
@@ -58,9 +111,11 @@ export function sandboxAccount(id = "sandbox"): Account {
   a.xp = 2_000_000;
   a.wallet.scrip = 20000;
   a.owned = ALL_ITEMS.map((i) => i.id);
-  for (const m of Object.values(a.mastery)) {
+  for (const [w, m] of Object.entries(a.mastery)) {
+    // rank 30 holds only past every gate: the sandbox has done the whole curriculum
     m.rank = 30;
     m.xp = 70000;
+    m.done = (CURRICULA[w as WeaponId] ?? []).map((c) => c.id);
   }
   return a;
 }

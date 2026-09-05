@@ -166,3 +166,44 @@ html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; f
 #hud .file .kit .sock select { width: 100%; background: #060a10; color: var(--cy); border: 1px solid rgba(53,242,255,0.35); font-family: var(--mono); font-size: 9px; }
 #hud .file .stamps { max-height: 150px; overflow: auto; font-size: 9.5px; color: rgba(255,176,46,0.55); }
 #hud .file .stamps .st.on { color: var(--am); }
+
+/* Stage 8 — identity & rituals */
+#hud .status .glyph { display: inline-block; vertical-align: middle; margin-right: 5px; }
+#hud .status .glyph svg { display: block; }
+#hud .status .moniker { color: var(--cy); }
+#hud .status.named .handle { color: var(--ye); text-shadow: 0 0 6px rgba(255,227,74,0.6); }
+#hud .debt { position: absolute; left: 50%; top: 120px; transform: translateX(-50%); padding: 5px 14px; border: 1px solid var(--mg); color: var(--mg); background: var(--pan); font-size: 13px; letter-spacing: 0.18em; opacity: 0; white-space: nowrap; }
+#hud .debt.on { animation: debt 0.5s steps(4) forwards; }
+#hud .debt.cleared { border-color: var(--ye); color: var(--ye); text-shadow: 0 0 6px rgba(255,227,74,0.6); }
+@keyframes debt { 0% { opacity: 0; transform: translateX(-50%) scale(1.4); } 100% { opacity: 1; transform: translateX(-50%) scale(1); } }
+#hud .dossier { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 720px; max-width: 92vw; padding: 10px 14px; background: rgba(3,5,9,0.9); border: 1px solid var(--cy); color: var(--cy); box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 0 18px rgba(53,242,255,0.25); }
+#hud .dossier.on { animation: dossier 0.35s steps(5) forwards; }
+@keyframes dossier { 0% { opacity: 0; clip-path: inset(0 0 100% 0); } 100% { opacity: 1; clip-path: inset(0); } }
+#hud .dossier .dt { font-size: 11px; letter-spacing: 0.14em; margin-bottom: 6px; }
+#hud .dossier .cells { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#hud .dossier .ch { color: var(--mg); letter-spacing: 0.12em; border-bottom: 1px solid rgba(255,62,201,0.4); margin-bottom: 4px; }
+#hud .dossier .cell.c1 .ch { color: var(--gr); border-color: rgba(55,255,139,0.4); }
+#hud .dossier .ent { display: flex; gap: 8px; align-items: center; padding: 3px 4px; margin: 2px 0; border: 1px solid rgba(53,242,255,0.2); }
+#hud .dossier .ent.me { border-color: var(--gr); }
+#hud .dossier .ent.debt { border-color: var(--mg); }
+#hud .dossier .ent .nm { color: #e8fbff; font-size: 12px; }
+#hud .dossier .ent .sub { font-size: 9.5px; color: rgba(53,242,255,0.7); }
+#hud .dossier .ent .dbt { color: var(--mg); }
+#hud .dossier .ent.dim { color: rgba(53,242,255,0.4); }
+#hud .receipt { left: 50%; top: 50%; transform: translate(-50%, -50%); width: 380px; border-color: var(--am); color: var(--am); text-shadow: 0 0 4px rgba(255,176,46,0.5); padding: 10px 14px 8px; background: rgba(12,8,2,0.94); }
+#hud .receipt .rh { font-size: 11px; letter-spacing: 0.14em; border-bottom: 1px dashed rgba(255,176,46,0.5); padding-bottom: 4px; margin-bottom: 6px; }
+#hud .receipt .rl { min-height: 60px; font-size: 11px; }
+#hud .receipt .rl div { margin: 2px 0; white-space: nowrap; overflow: hidden; }
+#hud .receipt .rs { margin-top: 8px; padding: 4px 8px; border: 2px solid rgba(255,176,46,0.3); display: inline-block; letter-spacing: 0.18em; font-size: 11px; transform: rotate(-3deg); opacity: 0.35; }
+#hud .receipt.stamped .rs { opacity: 1; border-color: var(--am); animation: stamp2 0.35s steps(3) forwards; }
+@keyframes stamp2 { 0% { transform: rotate(-3deg) scale(1.5); } 100% { transform: rotate(-3deg) scale(1); } }
+#hud .receipt .rf { float: right; margin-top: 12px; font-size: 10px; color: rgba(255,176,46,0.5); }
+#hud .receipt.stamped .rf { color: var(--ye); animation: blink 0.8s steps(2) infinite; }
+#hud .rite[hidden], #hud .dossier[hidden], #hud .receipt[hidden] { display: none; }
+#hud .rite { position: absolute; inset: 0; background: rgba(2,3,6,0.92); color: var(--ye); text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; }
+#hud .rite.on { animation: rite 0.6s steps(6) forwards; }
+@keyframes rite { 0% { opacity: 0; } 100% { opacity: 1; } }
+#hud .rite .rn { font-size: 14px; letter-spacing: 0.4em; color: var(--cy); }
+#hud .rite .rt { font-size: 42px; letter-spacing: 0.3em; text-shadow: 0 0 18px rgba(255,227,74,0.6); }
+#hud .rite .rlines { font-size: 12px; color: rgba(255,227,74,0.75); letter-spacing: 0.1em; line-height: 1.8; }
+#hud .file select { background: rgba(0,0,0,0.5); color: var(--cy); border: 1px solid rgba(53,242,255,0.4); font-family: var(--mono); font-size: 10px; }

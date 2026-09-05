@@ -11,11 +11,14 @@ import { BUDGET_PER_PERCENT, ADDITIVE, type StatMod } from "@shared/manifest/sta
 import { xpForDepth, totalXpToReach } from "@shared/progression/depth";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import type { FileMsg } from "@shared/net/protocol";
-import { sandboxAccount } from "@shared/progression/account";
+import { sandboxAccount, type Account, type GhostRun } from "@shared/progression/account";
+import { publicIdentity } from "@shared/identity/identity";
 import { CHIPS, chipById, type Socket } from "@shared/manifest/chips";
 import { FIRMWARES, firmwareById } from "@shared/manifest/firmwares";
 import { CURRICULA, gateFor, MAX_RANK, xpForRank, type Mastery } from "@shared/progression/mastery";
 import { redact, STAMPS } from "@shared/progression/stamps";
+import { glyphFor, glyphSvg } from "@shared/identity/glyph";
+import { CHAPTERS, chapterFor, MONIKERS, monikerById, unlockedMonikers, wornMoniker } from "@shared/identity/monikers";
 
 const KEY = "meltdown.file";
 
@@ -43,6 +46,8 @@ export interface FileView {
   stampCount: number;
   /** the host that serves the ledger shop (null offline: everything is already in the sandbox file) */
   shop: string | null;
+  /** identity (Stage 8): what the city calls you, the glyph, the Chapter, monikers earned, the Debt owed */
+  identity: { glyph: number; glyphSvg: string; chapter: number; moniker: string | null; monikerText: string | null; display: string; unlocked: string[]; debt: { display: string; kills: number } | null; chapters: number[] };
 }
 
 export class GhostFile {
@@ -62,6 +67,11 @@ export class GhostFile {
   stamps: string[] = [];
   /** Ledger shop base URL (derived from the room URL); null offline. */
   shop: string | null = null;
+  /** equipped moniker id (sent at link; the server wears it only if earned) */
+  moniker: string | null = null;
+  /** identity as the server last described it (null offline: derived from the sandbox file) */
+  serverIdentity: FileMsg["identity"] | null = null;
+  onIdentity: ((f: GhostFile) => void) | null = null;
   onChange: ((f: GhostFile) => void) | null = null;
   onStamp: ((lines: string[], ranks: string[], challenges: string[]) => void) | null = null;
   private panel: HTMLElement | null = null;
@@ -72,13 +82,14 @@ export class GhostFile {
 
   constructor(private online: () => boolean) {
     const q = new URLSearchParams(location.search);
-    let stored: { account?: string; loadout?: Record<string, unknown> } = {};
+    let stored: { account?: string; loadout?: Record<string, unknown>; moniker?: string | null } = {};
     try {
       stored = JSON.parse(localStorage.getItem(KEY) ?? "{}");
     } catch {
       stored = {};
     }
     this.account = q.get("account") ?? stored.account ?? `blank:${Math.random().toString(36).slice(2, 10)}`;
+    this.moniker = q.get("moniker") ?? stored.moniker ?? null;
     const urlLoadout = q.get("loadout");
     if (urlLoadout) {
       try {
@@ -103,7 +114,63 @@ export class GhostFile {
         this.shop = null;
       }
     }
+    // offline in the hub: `?shop=<host>` loads the real file from the ledger host (trophies, ghosts, identity)
+    const shop = q.get("shop");
+    if (shop && !net) {
+      this.shop = shop;
+      void this.load();
+    }
     this.persist();
+  }
+
+  /** the file's range ghosts as last loaded from the host */
+  ghosts: Record<string, GhostRun> = {};
+  loaded = false;
+
+  /** Fetch the file from the ledger host and apply it (offline hub). */
+  async load(): Promise<boolean> {
+    if (!this.shop) return false;
+    try {
+      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}`);
+      const a = (await res.json()) as Account | null;
+      if (!a || !a.id) return false;
+      this.applyAccount(a);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Apply a whole account record (from the ledger host): the same fields a File message carries, identity derived here. */
+  applyAccount(a: Account): void {
+    this.depth = a.depth;
+    this.xp = a.xp;
+    this.scrip = a.wallet.scrip;
+    this.wakelight = a.wallet.wakelight;
+    this.salvage = a.wallet.salvage;
+    this.owned = a.owned.slice();
+    this.ledger = a.ledger.slice();
+    this.stamps = a.stamps.slice();
+    this.ghosts = { ...a.ghosts };
+    for (const [w, m] of Object.entries(a.mastery)) this.mastery[w] = { xp: m.xp, rank: m.rank, done: m.done.slice(), counters: { ...m.counters } };
+    const pi = publicIdentity(a, a.name);
+    this.serverIdentity = { glyph: pi.glyph, chapter: pi.chapter, moniker: pi.moniker, display: pi.display, unlocked: unlockedMonikers(a).map((m) => m.id), debt: a.debt ? { display: a.debt.display, glyph: 0, kills: a.debt.kills } : null, chapters: a.chapters.slice() };
+    this.loaded = true;
+    this.render();
+    this.onIdentity?.(this);
+    this.onChange?.(this);
+  }
+
+  /** Post a range ghost to the file (best effort). */
+  async postGhost(run: GhostRun): Promise<boolean> {
+    if (!this.shop) return false;
+    try {
+      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/ghost`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ run }) });
+      const r = (await res.json()) as { ok: boolean };
+      return r.ok;
+    } catch {
+      return false;
+    }
   }
 
   ranks(): Ranks {
@@ -114,6 +181,34 @@ export class GhostFile {
 
   loadoutJson(): string {
     return JSON.stringify(this.raw);
+  }
+
+  /** Identity claims sent at link: only the equipped moniker (the server decides whether it was earned). */
+  identityJson(): string {
+    return JSON.stringify({ moniker: this.moniker });
+  }
+
+  setMoniker(id: string | null): void {
+    this.moniker = id && monikerById(id) ? id : null;
+    this.persist();
+    this.render();
+    this.onIdentity?.(this);
+    this.onChange?.(this);
+  }
+
+  /** The identity view: server-described online; offline derived from the sandbox file (Depth 50 → NAMED). */
+  identityView(): FileView["identity"] {
+    const si = this.serverIdentity;
+    if (si) {
+      const g = glyphFor(this.account, si.chapter >= 3 ? 50 : si.chapter >= 2 ? 25 : si.chapter >= 1 ? 10 : 1);
+      g.seed = si.glyph;
+      return { glyph: si.glyph, glyphSvg: glyphSvg(g, 22, "#35f2ff"), chapter: si.chapter, moniker: si.moniker, monikerText: monikerById(si.moniker)?.text ?? null, display: si.display, unlocked: si.unlocked.slice(), debt: si.debt ? { display: si.debt.display, kills: si.debt.kills } : null, chapters: si.chapters.slice() };
+    }
+    const sb = sandboxAccount(this.account);
+    sb.moniker = this.moniker;
+    const worn = wornMoniker(sb, this.moniker);
+    const g = glyphFor(this.account, sb.depth);
+    return { glyph: g.seed, glyphSvg: glyphSvg(g, 22, "#35f2ff"), chapter: chapterFor(sb.depth), moniker: worn?.id ?? null, monikerText: worn?.text ?? null, display: chapterFor(sb.depth) >= 3 ? "BLANK" : (worn?.text ?? "BLANK"), unlocked: unlockedMonikers(sb).map((m) => m.id), debt: null, chapters: [1, 2, 3] };
   }
 
   /** The loadout as the sim should apply it locally (validated against what we know). */
@@ -134,6 +229,15 @@ export class GhostFile {
       for (const [w, m] of Object.entries(f.mastery)) this.mastery[w] = { xp: m.xp, rank: m.rank, done: m.done.slice(), counters: { ...m.counters } };
     }
     if (f.stamps) this.stamps = f.stamps.slice();
+    if (f.identity) {
+      this.serverIdentity = f.identity;
+      // the server wears what was earned: mirror it so the panel and the next link agree
+      if (f.identity.moniker !== this.moniker) {
+        this.moniker = f.identity.moniker;
+        this.persist();
+      }
+      this.onIdentity?.(this);
+    }
     if (f.ledger.length) this.ledger.push(...f.ledger);
     if ((f.newStamps?.length || f.ranks?.length || f.challenges?.length) && f.reason === "stamp") {
       this.onStamp?.(f.newStamps?.map((id) => STAMPS.find((s) => s.id === id)?.line ?? id) ?? [], f.ranks ?? [], f.challenges ?? []);
@@ -195,6 +299,7 @@ export class GhostFile {
       if (m) mastery[w.id] = { xp: m.xp, rank: m.rank, done: m.done.slice(), gate: gateFor(w.id, m)?.text ?? null };
     }
     return {
+      identity: this.identityView(),
       mastery,
       stamps: this.stamps.slice(),
       stampCount: STAMPS.length,
@@ -246,7 +351,7 @@ export class GhostFile {
 
   private persist(): void {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ account: this.account, loadout: this.raw }));
+      localStorage.setItem(KEY, JSON.stringify({ account: this.account, loadout: this.raw, moniker: this.moniker }));
     } catch {
       /* private mode */
     }
@@ -274,6 +379,7 @@ export class GhostFile {
       const t = e.target as HTMLSelectElement;
       if (t.dataset.chip) this.setChip(t.dataset.chip as WeaponId, t.dataset.socket as Socket, t.value || null);
       else if (t.dataset.fw) this.setFirmware(t.dataset.fw as WeaponId, t.value || null);
+      else if (t.dataset.moniker !== undefined) this.setMoniker(t.value || null);
     });
     document.addEventListener("keydown", (e) => {
       if (e.code === "Tab") {
@@ -429,6 +535,8 @@ export class GhostFile {
     this.panel.innerHTML = `
       <div class="hd">▲ GHOSTFILE · <span class="cy">${v.account}</span> <span class="x" data-act="close">[TAB] CLOSE</span></div>
       <div class="ln">DEPTH <b>${String(v.depth).padStart(2, "0")}</b> · XP <b>${v.xp}</b> (${v.xpIntoDepth}/${v.xpForNext === Infinity ? "∞" : v.xpForNext}) · SCRIP <b>${v.scrip}</b> · WAKELIGHT <b>${v.wakelight}</b> · SALVAGE <b>${v.salvage}</b></div>
+      <div class="ln idn">${v.identity.glyphSvg} <span class="dim">THE CITY CALLS YOU</span> <b>${v.identity.display}</b> · CHAPTER <b>${["—", "I", "II", "III"][v.identity.chapter] ?? "—"}</b>${v.identity.chapter >= 3 ? ' <span class="ye">NAMED</span>' : ""} · MONIKER <select data-moniker="1"><option value="">— none —</option>${MONIKERS.map((m) => `<option value="${m.id}" ${m.id === v.identity.moniker ? "selected" : ""} ${v.identity.unlocked.includes(m.id) ? "" : "disabled"}>${m.text}${v.identity.unlocked.includes(m.id) ? "" : " · " + m.how}</option>`).join("")}</select>${v.identity.debt ? ` · <span class="c">DEBT: ${v.identity.debt.display} (${v.identity.debt.kills} files on you)</span>` : ""}</div>
+      <div class="ln dim">RITES ${CHAPTERS.map((c) => `${v.identity.chapters.includes(c.chapter) ? "▣" : "▢"} ${c.numeral} ${c.title} (D${c.depth})`).join(" · ")} · ${v.identity.unlocked.length}/${MONIKERS.length} MONIKERS EARNED</div>
       <div class="ln">PRIMARY <span class="wp" data-act="primary">[${wname(this.raw.primary)}]</span> · SECONDARY <span class="wp" data-act="secondary">[${wname(this.raw.secondary)}]</span> <span class="dim">(D${WEAPON_DEPTH[this.raw.primary as WeaponId] ?? "?"} / D${WEAPON_DEPTH[this.raw.secondary as WeaponId] ?? "?"})</span></div>
       <div class="cols">
         <div><div class="sh">ATTESTED NODES · ≤ ${MAX_ATTESTED} · CONNECTED <span class="dim">(G opens the whole graph)</span></div>${LEDGER_ITEMS.filter((n) => this.owned.includes(n.id) && (attested.includes(n.id) || n.ring === 1)).map(row).join("")}

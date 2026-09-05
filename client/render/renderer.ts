@@ -8,6 +8,9 @@ import { Rain } from "./rain";
 import { makeWetFloor } from "./wetfloor";
 import { buildSkyline, dressLevel, PALETTE, Traffic } from "./city";
 import { CityLife, flickerMaterial } from "./life";
+import { HubDressing } from "./hub";
+import { drawGlyph, glyphFor } from "@shared/identity/glyph";
+import { parseTag } from "@shared/identity/identity";
 import { ArsenalFx, buildViewmodel } from "./weapons";
 import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
@@ -61,6 +64,8 @@ export class Renderer {
   private traffic: Traffic | null = null;
   /** crowds, monorail, steam, ads, skyline blinkers, airship (render-only) */
   readonly life: CityLife;
+  /** the Deadletter Office's renovation, trophies and ghost (null outside the hub) */
+  readonly hub: HubDressing | null;
   /** sign atlas flicker (null when the level has no signs) */
   signFlicker: { setTime: (t: number) => void } | null = null;
   private listener = new THREE.Vector3();
@@ -107,6 +112,7 @@ export class Renderer {
     skyline.traverse((o) => o.layers.set(FAR_LAYER));
     this.life = new CityLife(level, skyline);
     this.scene.add(this.life.group);
+    this.hub = level.hub ? new HubDressing(this.scene, level) : null;
     if (level.traffic?.length) {
       this.traffic = new Traffic(level.traffic, level.skylineSeed ?? 5);
       this.traffic.object.layers.set(FAR_LAYER);
@@ -199,10 +205,37 @@ export class Renderer {
     if (e) e.flash = 1;
   }
 
-  private remoteMeshes = new Map<number, { group: THREE.Group; mat: THREE.MeshStandardMaterial }>();
+  private remoteMeshes = new Map<number, { group: THREE.Group; mat: THREE.MeshStandardMaterial; tag: THREE.Sprite; tagKey: string; canvas: HTMLCanvasElement }>();
 
   /** Other players: hooded silhouettes with cyan Blank trim. Zero mechanical data touches this. */
-  syncRemotes(views: readonly { id: number; x: number; y: number; z: number; yaw: number; height: number; alive: boolean; stance: string }[]): void {
+  /** The over-the-head tag: glyph, what the city calls them, and the Debt marker. Identity only; redrawn when the tag changes. */
+  private drawTag(e: { tag: THREE.Sprite; tagKey: string; canvas: HTMLCanvasElement }, name: string, tag: string, debt: boolean): void {
+    const key = `${name}|${tag}|${debt ? 1 : 0}`;
+    if (e.tagKey === key) return;
+    e.tagKey = key;
+    const c = e.canvas;
+    const g = c.getContext("2d")!;
+    g.clearRect(0, 0, c.width, c.height);
+    const pi = parseTag(tag, name);
+    const glyph = glyphFor("", pi.chapter >= 3 ? 50 : pi.chapter >= 2 ? 25 : pi.chapter >= 1 ? 10 : 1);
+    glyph.seed = pi.glyph;
+    // the glyph is regenerated from the seed on the wire (the id itself never travels)
+    const color = debt ? "#ff3ec9" : "#35f2ff";
+    if (tag) drawGlyph(g, { ...glyphFor(String(pi.glyph), pi.chapter >= 3 ? 50 : pi.chapter >= 2 ? 25 : pi.chapter >= 1 ? 10 : 1), seed: pi.glyph }, 22, 22, 18, color);
+    g.font = "bold 22px 'Courier New', monospace";
+    g.textBaseline = "middle";
+    g.fillStyle = color;
+    g.shadowColor = color;
+    g.shadowBlur = 6;
+    g.fillText(name, 48, 22);
+    if (debt) {
+      g.font = "bold 14px 'Courier New', monospace";
+      g.fillText("◆ DEBT", 48, 44);
+    }
+    (e.tag.material as THREE.SpriteMaterial).map!.needsUpdate = true;
+  }
+
+  syncRemotes(views: readonly { id: number; x: number; y: number; z: number; yaw: number; height: number; alive: boolean; stance: string; name?: string; tag?: string; debt?: boolean }[]): void {
     const seen = new Set<number>();
     for (const v of views) {
       seen.add(v.id);
@@ -222,10 +255,21 @@ export class Renderer {
         const gun = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.6), new THREE.MeshStandardMaterial({ color: 0x151a22, roughness: 0.5, metalness: 0.6 }));
         gun.position.set(0.25, 1.35, -0.35);
         group.add(gun);
+        const canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 56;
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false }));
+        tag.scale.set(1.6, 0.35, 1);
+        tag.position.y = MOVE.standHeight + 0.45;
+        tag.center.set(0.1, 0.5);
+        group.add(tag);
         this.scene.add(group);
-        e = { group, mat };
+        e = { group, mat, tag, tagKey: "", canvas };
         this.remoteMeshes.set(v.id, e);
       }
+      this.drawTag(e, v.name ?? "BLANK", v.tag ?? "", !!v.debt);
       e.group.visible = v.alive;
       e.group.position.set(v.x, v.y, v.z);
       e.group.rotation.y = v.yaw;

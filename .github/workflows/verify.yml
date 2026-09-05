@@ -30,6 +30,7 @@ jobs:
       - run: npm run probe:cityLife
       - run: npm run certify:firmware
       - run: npm run probe:mastery
+      - run: npm run probe:identity
       - uses: actions/upload-artifact@v4
         if: always()
         with:

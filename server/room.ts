@@ -34,11 +34,13 @@ import {
   type NetEntity,
   type NetEvent,
   type NetInput,
-  type Snapshot,
-} from "../shared/net/protocol";
+  type Snapshot, encodeSocial, type DossierEntry, type SocialMsg } from "../shared/net/protocol";
 import { DEFAULT_LOADOUT, validateLoadout, type Loadout } from "../shared/manifest/loadout";
 import { applyMatch, ranksOf, type Account } from "../shared/progression/account";
 import { ProgressionTracker, type ProgressNote } from "./progression";
+import { assertClean, displayName, identityTag, publicIdentity, type PublicIdentity } from "../shared/identity/identity";
+import { CHAPTERS, chapterFor, unlockedMonikers, wornMoniker } from "../shared/identity/monikers";
+import { glyphSeed } from "../shared/identity/glyph";
 import type { AccountStore } from "./accounts";
 import type { PlayerStats } from "../shared/sim/player";
 
@@ -79,6 +81,13 @@ interface ClientRec {
   roundStartTick: number;
   settlements: number;
   progress: ProgressionTracker;
+  /** what others see of this file (Stage 8); refreshed at join, round start and settlement */
+  identity: PublicIdentity;
+  /** this round: killer playerId → kills on me (feeds the Debt at settlement) */
+  killedBy: Map<number, number>;
+  /** playerId in this room of the file I owe a Debt to (−1 none) */
+  debtTargetId: number;
+  debtClearedThisRound: boolean;
 }
 
 export interface RoomOptions {
@@ -109,8 +118,10 @@ export interface RoomStats {
   kicks: number;
   inputsRejected: number;
   bytesOut: number;
-  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; inputsApplied: number; inputsRejected: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number; stamps: number; ranks: Record<string, number> } | null; loadout: Loadout }[];
+  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; inputsApplied: number; inputsRejected: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number; stamps: number; ranks: Record<string, number> } | null; loadout: Loadout; identity: { display: string; chapter: number; moniker: string | null; debt: string | null; debtTarget: number; wakelight: number; chapters: number[] } }[];
   settlements: number;
+  /** social messages sent, by kind (dossier / debt / rite) */
+  social: Record<string, number>;
   loadoutRejections: string[];
   shotDiag: Record<string, number>;
   traceLog: unknown[];
@@ -183,7 +194,7 @@ export class Room {
     if (msg.type === "join") {
       if (rec) return this.strike(rec, "duplicate join");
       if (msg.version !== PROTOCOL_VERSION) return this.kickConn(conn, `protocol ${msg.version} != ${PROTOCOL_VERSION}`);
-      this.join(conn, msg.name, msg.token, msg.account, msg.loadout);
+      this.join(conn, msg.name, msg.token, msg.account, msg.loadout, msg.identity);
       return;
     }
     if (!rec) return this.kickConn(conn, "message before join");
@@ -288,7 +299,7 @@ export class Room {
     for (const other of this.clients.values()) other.pendingEvents.push({ type: "leave", playerId: rec.playerId });
   }
 
-  private join(conn: Conn, name: string, token: string, accountId: string, loadoutJson: string): void {
+  private join(conn: Conn, name: string, token: string, accountId: string, loadoutJson: string, identityJson = ""): void {
     const safeName = (name || "BLANK").replace(/[^\x20-\x7e]/g, "").slice(0, 16) || "BLANK";
     // rejoin by token
     if (token) {
@@ -314,7 +325,7 @@ export class Room {
     }
     if (this.clients.size + this.pendingJoins.size >= this.opts.maxPlayers) return this.kickConn(conn, "room full");
     const safeAccount = (accountId || "").replace(/[^a-zA-Z0-9_:.-]/g, "").slice(0, 64);
-    if (!this.opts.accounts) return this.admit(conn, safeName, null, loadoutJson);
+    if (!this.opts.accounts) return this.admit(conn, safeName, null, loadoutJson, identityJson);
     // A guest without a file id plays a fresh Blank file keyed to this link.
     const id = safeAccount || `guest:${this.nextId}:${Math.random().toString(36).slice(2, 8)}`;
     const loaded = this.opts.accounts.load(id, safeName);
@@ -323,18 +334,27 @@ export class Room {
       loaded.then(
         (acc) => {
           if (!this.pendingJoins.delete(conn)) return; // closed while loading
-          this.admit(conn, safeName, acc, loadoutJson);
+          this.admit(conn, safeName, acc, loadoutJson, identityJson);
         },
         (err) => {
           this.pendingJoins.delete(conn);
           this.kickConn(conn, `FILE UNAVAILABLE: ${String(err)}`);
         },
       );
-    } else this.admit(conn, safeName, loaded, loadoutJson);
+    } else this.admit(conn, safeName, loaded, loadoutJson, identityJson);
   }
 
   /** Validate the claimed loadout against the file, then spawn. Illegal loadouts are refused, never stripped. */
-  private admit(conn: Conn, safeName: string, account: Account | null, loadoutJson: string): void {
+  private admit(conn: Conn, safeName: string, account: Account | null, loadoutJson: string, identityJson = ""): void {
+    // identity: an equipped moniker is worn only if earned; anything else is ignored, never a kick
+    if (account && identityJson) {
+      try {
+        const req = (JSON.parse(identityJson) as { moniker?: unknown }).moniker;
+        if (typeof req === "string" || req === null) account.moniker = wornMoniker(account, req)?.id ?? null;
+      } catch {
+        /* malformed identity: keep the file's own */
+      }
+    }
     let raw: unknown = DEFAULT_LOADOUT;
     if (loadoutJson) {
       try {
@@ -384,6 +404,10 @@ export class Room {
       roundStartTick: this.tick,
       settlements: 0,
       progress: new ProgressionTracker(account),
+      identity: publicIdentity(account, safeName),
+      killedBy: new Map(),
+      debtTargetId: -1,
+      debtClearedThisRound: false,
     };
     if (account) account.loadout = v.loadout;
     const joinNote = rec.progress.fileMilestones({ stamps: [], ranks: [], challenges: [] });
@@ -391,6 +415,7 @@ export class Room {
     this.byConn.set(conn, rec);
     conn.send(encodeWelcome(playerId, this.tick, newToken, this.world.level.name, this.world.seed));
     conn.send(encodeFile(this.fileMsg(rec, [], "join", joinNote)));
+    this.resolveDebts();
     for (const other of this.clients.values()) if (other !== rec) other.pendingEvents.push({ type: "join", playerId, name: safeName });
     this.opts.onLog(`player ${playerId} (${safeName}) joined as ${account?.id ?? "guest"} depth ${depth} · ${v.loadout.primary}/${v.loadout.secondary} · attested [${v.loadout.attested.join(",")}]${v.loadout.keystone ? " · keystone " + v.loadout.keystone : ""}`);
   }
@@ -419,7 +444,115 @@ export class Room {
       owned: a?.owned ?? [],
       ledger,
       loadout: rec.loadout,
+      identity: { glyph: rec.identity.glyph, chapter: rec.identity.chapter, moniker: rec.identity.moniker, display: rec.identity.display, unlocked: a ? unlockedMonikers(a).map((m) => m.id) : [], debt: a?.debt ? { display: a.debt.display, glyph: glyphSeed(a.debt.account), kills: a.debt.kills } : null, chapters: a?.chapters.slice() ?? [] },
     };
+  }
+
+  // ---- identity & rituals (Stage 8) ----
+
+  private social: Record<string, number> = {};
+
+  /** Every social send passes the leak scanner: a payload naming a stat, item, chip, firmware or weapon never leaves. */
+  private sendSocial(rec: ClientRec, msg: SocialMsg): void {
+    assertClean(msg, `social:${msg.kind}`);
+    this.social[msg.kind] = (this.social[msg.kind] ?? 0) + 1;
+    rec.conn?.send(encodeSocial(msg));
+  }
+
+  private refreshIdentity(rec: ClientRec): void {
+    rec.identity = publicIdentity(rec.account, rec.name);
+  }
+
+  /** Point every file's Debt at the connected player who owes it (by file id), and tell the ones who just found their number in the room. */
+  private resolveDebts(): void {
+    for (const rec of this.clients.values()) {
+      const debt = rec.account?.debt;
+      if (!debt) {
+        rec.debtTargetId = -1;
+        continue;
+      }
+      const before = rec.debtTargetId;
+      rec.debtTargetId = -1;
+      for (const other of this.clients.values()) if (other !== rec && other.account?.id === debt.account) rec.debtTargetId = other.playerId;
+      if (rec.debtTargetId >= 0 && before !== rec.debtTargetId) this.sendSocial(rec, { kind: "debt", event: "owed", id: rec.debtTargetId, display: debt.display, glyph: glyphSeed(debt.account), kills: debt.kills, credit: 0, capped: false });
+    }
+  }
+
+  /** The pre-match dossier: both cells' files as the city sees them — identity only, viewer-relative Debt flag. */
+  private sendDossiers(): void {
+    for (const viewer of this.clients.values()) {
+      const entries: DossierEntry[] = [];
+      for (const rec of this.clients.values()) {
+        const p = this.world.players.get(rec.playerId);
+        if (!p) continue;
+        entries.push({ id: rec.playerId, team: p.team, glyph: rec.identity.glyph, chapter: rec.identity.chapter, moniker: rec.identity.moniker, display: rec.identity.display, stamps: rec.identity.stamps, debt: viewer.debtTargetId === rec.playerId });
+      }
+      this.sendSocial(viewer, { kind: "dossier", seconds: 1.2, entries });
+    }
+  }
+
+  /** A player killed a player: feed the victim's Debt ledger; settle the killer's Debt if this was their number. */
+  private onPlayerKill(killerId: number, victimId: number): void {
+    const killer = this.clients.get(killerId);
+    const victim = this.clients.get(victimId);
+    if (!killer || !victim) return;
+    victim.killedBy.set(killerId, (victim.killedBy.get(killerId) ?? 0) + 1);
+    const a = killer.account;
+    if (!a || killer.debtTargetId !== victimId || !a.debt) return;
+    // DEBT CLEARED. Social earnings are velocity-capped: one clear per pair per round, three per pair per day.
+    const day = Math.floor(this.opts.now() / 86_400_000);
+    const key = `pair:${a.debt.account}:${day}`;
+    const already = a.social[key] ?? 0;
+    const capped = killer.debtClearedThisRound || already >= 3;
+    let wakelight = 0;
+    if (!capped) {
+      a.social[key] = already + 1;
+      wakelight = 5;
+      a.wallet.wakelight += wakelight;
+    }
+    killer.debtClearedThisRound = true;
+    killer.progress.social("debtsCleared");
+    a.ledger.push(`DEBT CLEARED · ${a.debt.display}${wakelight ? ` · +${wakelight} WAKELIGHT` : " · CAPPED"}`);
+    const display = a.debt.display;
+    const glyph = glyphSeed(a.debt.account);
+    const kills = a.debt.kills;
+    a.debt = null;
+    killer.debtTargetId = -1;
+    const saved = this.opts.accounts?.save(a);
+    if (saved instanceof Promise) saved.catch(() => {});
+    this.sendSocial(killer, { kind: "debt", event: "cleared", id: victimId, display, glyph, kills, credit: wakelight, capped });
+    this.opts.onLog(`debt cleared: ${a.id} settled ${display}${capped ? " (capped)" : ""}`);
+  }
+
+  /** At settlement: the enemy who killed you most becomes your Debt; a Depth crossing 10/25/50 performs its Chapter rite. */
+  private rituals(rec: ClientRec, depthBefore: number, depthAfter: number): void {
+    const a = rec.account;
+    if (!a) return;
+    let top: ClientRec | null = null;
+    let topKills = 0;
+    for (const [id, n] of rec.killedBy) {
+      const other = this.clients.get(id);
+      if (!other?.account || other.account.id === a.id) continue;
+      if (n > topKills) {
+        topKills = n;
+        top = other;
+      }
+    }
+    if (top && topKills > 0) {
+      a.debt = { account: top.account!.id, display: top.identity.display, kills: topKills };
+      a.ledger.push(`DEBT · ${top.identity.display} · ${topKills} FILES ON YOU`);
+    }
+    rec.killedBy = new Map();
+    rec.debtClearedThisRound = false;
+    for (const ch of CHAPTERS) {
+      if (chapterFor(depthAfter) >= ch.chapter && chapterFor(depthBefore) < ch.chapter && !a.chapters.includes(ch.chapter)) {
+        a.chapters.push(ch.chapter);
+        a.ledger.push(`CHAPTER ${ch.numeral} · ${ch.title}`);
+        this.refreshIdentity(rec);
+        this.sendSocial(rec, { kind: "rite", chapter: ch.chapter, numeral: ch.numeral, title: ch.title, lines: ch.lines, named: ch.chapter === 3, display: displayName(a, rec.name) });
+      }
+    }
+    this.refreshIdentity(rec);
   }
 
   /** Round start: everyone's credit counts from here. */
@@ -429,7 +562,12 @@ export class Room {
       if (!p) continue;
       rec.roundBase = { ...p.stats };
       rec.roundStartTick = this.tick;
+      rec.killedBy = new Map();
+      rec.debtClearedThisRound = false;
+      this.refreshIdentity(rec);
     }
+    this.resolveDebts();
+    this.sendDossiers();
   }
 
   /** Results: settle every file through the store and hand each client its ledger entry. */
@@ -457,11 +595,14 @@ export class Room {
       const entry = applyMatch(rec.account, contribution);
       const note = rec.progress.onRoundEnd(p, contribution.won, contribution.seconds, p.stats.kills === top, this.world.level.name);
       for (const id of note.stamps) entry.lines.push(`STAMP · ${id.toUpperCase().replace(/[:_]/g, " ")}`);
+      this.rituals(rec, entry.depthBefore, entry.depthAfter);
+      if (rec.account.debt) entry.lines.push(`DEBT · ${rec.account.debt.display} · ${rec.account.debt.kills} FILES ON YOU`);
       const saved = this.opts.accounts?.save(rec.account);
       if (saved instanceof Promise) saved.catch((err) => this.opts.onLog(`file save failed for ${rec.account?.id}: ${String(err)}`));
       this.opts.onLog(`settled ${rec.account.id}: xp +${entry.xp.total} (obj ${entry.xp.objective} / combat ${entry.xp.combat} / support ${entry.xp.support}) scrip +${entry.scrip} depth ${entry.depthBefore}→${entry.depthAfter}`);
       rec.conn?.send(encodeFile(this.fileMsg(rec, entry.lines, "settle", note)));
     }
+    this.resolveDebts();
   }
 
   // ---- simulation ----
@@ -519,9 +660,10 @@ export class Room {
       }
     }
     for (const ev of tickEvents) {
+      if (ev.type === "kill" && ev.victimKind === "player") this.onPlayerKill(ev.playerId, ev.victimId);
       if (ev.type === "death" || ev.type === "respawn" || ev.type === "kill") {
         const p = this.world.players.get(ev.playerId);
-        this.opts.onLog(`t${this.tick} ${ev.type} player ${ev.playerId} at (${p?.pos.x.toFixed(1)},${p?.pos.y.toFixed(1)},${p?.pos.z.toFixed(1)}) lastSeq ${this.clients.get(ev.playerId)?.lastSeq}`);
+        this.opts.onLog(`t${this.tick} ${ev.type} player ${ev.playerId}${ev.type === "kill" ? ` → ${ev.victimKind} ${ev.victimId} (${ev.weapon})` : ""} at (${p?.pos.x.toFixed(1)},${p?.pos.y.toFixed(1)},${p?.pos.z.toFixed(1)}) lastSeq ${this.clients.get(ev.playerId)?.lastSeq}`);
       }
       if (ev.type === "shot") {
         const d = this.shotDiag;
@@ -689,7 +831,8 @@ export class Room {
       grounded: p.grounded,
       stance: stanceToNum(p.stance),
       height: p.height,
-      name: rec?.name ?? p.name,
+      name: rec ? rec.identity.display : p.name,
+      tag: rec ? identityTag(rec.identity) : "",
     });
   }
 
@@ -721,6 +864,7 @@ export class Room {
         support: p.stats.support,
         file: c.account ? { account: c.account.id, depth: c.account.depth, xp: c.account.xp, scrip: c.account.wallet.scrip, settlements: c.settlements, stamps: c.account.stamps.length, ranks: Object.fromEntries(Object.entries(c.account.mastery).map(([w, m]) => [w, m.rank])) } : null,
         loadout: c.loadout,
+        identity: { display: c.identity.display, chapter: c.identity.chapter, moniker: c.identity.moniker, debt: c.account?.debt?.display ?? null, debtTarget: c.debtTargetId, wakelight: c.account?.wallet.wakelight ?? 0, chapters: c.account?.chapters.slice() ?? [] },
       };
     });
     return {
@@ -733,6 +877,7 @@ export class Room {
       maxTickMs: max,
       kicks: this.kicks,
       settlements: this.settlements,
+      social: { ...this.social },
       loadoutRejections: this.loadoutRejections.slice(),
       inputsRejected,
       bytesOut,

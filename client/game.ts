@@ -12,7 +12,11 @@ import { InputController } from "./input";
 import { Renderer, type ViewState } from "./render/renderer";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
-import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot } from "@shared/net/protocol";
+import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
+import { glyphFor, glyphSvg } from "@shared/identity/glyph";
+import { RangeGhost } from "./ghost";
+import { trophiesFromLedger } from "./render/hub";
+import { monikerById } from "@shared/identity/monikers";
 import type { NodeView } from "./render/wake";
 import { WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
 import { weaponDefOf } from "@shared/sim/player";
@@ -93,6 +97,12 @@ export class Game {
   private city = { nextSiren: 0, nextPa: 0, paIndex: 0, sirenSide: 1 };
   /** Every PA line the city has spoken this session (probe-readable). */
   readonly cityLog: string[] = [];
+  /** Identity & rituals: social messages received, and the room id of the file I owe a Debt to (−1 none). */
+  readonly socialLog: SocialMsg[] = [];
+  debtTargetId = -1;
+  /** the range ghost recorder/player (hub only) */
+  ghost: RangeGhost | null = null;
+  ghostPose: { x: number; y: number; z: number; yaw: number } | null = null;
   private fpsWindow = { t: 0, frames: 0, ticks: 0 };
 
   constructor(canvas: HTMLCanvasElement, hudRoot: HTMLElement) {
@@ -112,6 +122,7 @@ export class Game {
       // offline the loadout applies at once; online the server decides at the next link
       if (!this.online) this.world.setLoadout(this.player, f.localLoadout());
       this.hud.setFile(f.view());
+      this.refreshHub();
     };
     this.file.onStamp = (lines, ranks, challenges) => {
       // a first, verified by the server: the CRT stutters and the line commits
@@ -123,6 +134,25 @@ export class Game {
       for (const c of challenges) this.hud.push(`CHALLENGE CLEARED · ${c.replace(/_/g, " ").toUpperCase()}`, "cy");
       if (lines.length || ranks.length) this.renderer.post.kick(0.6);
     };
+    this.file.onIdentity = (f) => this.applyIdentity(f.identityView());
+    this.applyIdentity(this.file.identityView());
+    if (this.world.level.hub) {
+      this.ghost = new RangeGhost(this.world.level.hub, this.levelId, `meltdown.ghost.${this.file.account}.${this.levelId}`);
+      this.ghost.onFinish = (run, improved) => {
+        this.hud.push(`RANGE · ${run.seconds.toFixed(2)}s${improved ? " · NEW BEST" : ` · BEST ${this.ghost!.best!.seconds.toFixed(2)}s`}`, improved ? "am" : "k");
+        this.hud.alert(improved ? `◆ RANGE RECORD — ${run.seconds.toFixed(2)}s` : `◆ RANGE — ${run.seconds.toFixed(2)}s`, !improved, 3);
+        if (improved) {
+          this.audio.sign();
+          void this.file.postGhost(run);
+        }
+      };
+      this.refreshHub();
+    }
+    this.hud.onPrint = () => this.audio.printTick();
+    this.hud.onStamp = () => this.audio.sign();
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Enter" || e.code === "NumpadEnter") this.sign();
+    });
     this.prev = snap(this.player);
     this.cur = snap(this.player);
     this.input.onGesture = () => this.audio.resume();
@@ -134,6 +164,75 @@ export class Game {
     return this.net !== null;
   }
 
+  private applyIdentity(v: ReturnType<GhostFile["identityView"]>): void {
+    this.hud.setIdentity(v.glyphSvg, v.display, v.monikerText, v.chapter);
+    this.refreshHub();
+  }
+
+  /** The office renovates with the Chapter; the trophy wall is cut from the file's ledger; the ghost adopts the file's best run. */
+  private refreshHub(): void {
+    if (!this.renderer.hub) return;
+    const v = this.file.identityView();
+    this.renderer.hub.set({ chapter: v.chapter, named: v.chapter >= 3 ? v.display : null, trophies: trophiesFromLedger(this.file.ledger) });
+    this.ghost?.adopt(this.file.ghosts[this.levelId]);
+  }
+
+  /** Sign the post-match Ledger Entry (Enter). The receipt must have finished printing. */
+  sign(): boolean {
+    const ok = this.hud.sign();
+    if (ok) {
+      this.audio.sign();
+      this.hud.push("LEDGER ENTRY SIGNED", "am");
+    }
+    return ok;
+  }
+
+  /** Kill-confirm layers follow the shooter's own mastery tier for the weapon (rank 1–9 → 0 … 30 → 3). */
+  private killTier(weapon: string): number {
+    const r = this.file.mastery[weapon]?.rank ?? 1;
+    return Math.min(3, Math.floor(r / 10));
+  }
+
+  private onSocial(m: SocialMsg): void {
+    this.socialLog.push(m);
+    if (this.socialLog.length > 64) this.socialLog.shift();
+    const svgFor = (seed: number, chapter: number) => {
+      const g = glyphFor(String(seed), chapter >= 3 ? 50 : chapter >= 2 ? 25 : chapter >= 1 ? 10 : 1);
+      g.seed = seed;
+      return glyphSvg(g, 26, "#35f2ff");
+    };
+    switch (m.kind) {
+      case "dossier": {
+        const me = this.player.id;
+        this.hud.dossier(m.entries.map((e) => ({ team: e.team, display: e.display, glyphSvg: svgFor(e.glyph, e.chapter), chapter: e.chapter, moniker: monikerById(e.moniker)?.text ?? null, stamps: e.stamps, debt: e.debt, me: e.id === me })), m.seconds);
+        this.audio.dossier();
+        const target = m.entries.find((e) => e.debt);
+        this.debtTargetId = target ? target.id : -1;
+        break;
+      }
+      case "debt":
+        if (m.event === "owed") {
+          this.debtTargetId = m.id;
+          this.hud.debt("owed", m.display, `${m.kills} FILES`);
+          this.audio.debtOwed();
+          this.hud.push(`DEBT · ${m.display} · ${m.kills} FILES ON YOU`, "mg");
+        } else {
+          this.debtTargetId = -1;
+          this.hud.debt("cleared", m.display, m.capped ? "CAPPED" : `+${m.credit} WAKELIGHT`);
+          this.audio.debtCleared();
+          this.renderer.post.kick(1);
+          this.hud.push(`DEBT CLEARED · ${m.display}${m.capped ? " · CAPPED" : ` · +${m.credit} WAKELIGHT`}`, "am");
+        }
+        break;
+      case "rite":
+        this.hud.rite(m.numeral, m.title, m.lines, 5);
+        this.audio.rite(m.chapter);
+        this.renderer.post.kick(1);
+        this.hud.push(`CHAPTER ${m.numeral} · ${m.title}${m.named ? ` · THE CITY CALLS YOU ${m.display}` : ""}`, "am");
+        break;
+    }
+  }
+
   /** Connect to a room. The offline world is replaced by a server-fed one. */
   connect(cfg: NetConfig): void {
     this.netConfig = cfg;
@@ -141,8 +240,9 @@ export class Game {
     this.world.removePlayer(this.player.id);
     const inner = new WsTransport(cfg.url);
     const transport = cfg.sim ? new SimulatedLink(inner, cfg.sim) : inner;
-    const net = new NetClient(transport, cfg.name, cfg.token ?? "", this.file.account, this.file.loadoutJson());
+    const net = new NetClient(transport, cfg.name, cfg.token ?? "", this.file.account, this.file.loadoutJson(), this.file.identityJson());
     this.net = net;
+    net.onSocial = (m) => this.onSocial(m);
     net.onFile = (f) => {
       this.file.applyServer(f);
       if (f.reason === "join" && this.net === net) {
@@ -150,7 +250,8 @@ export class Game {
         this.world.setLoadout(this.player, f.loadout as Parameters<World["setLoadout"]>[1]);
         this.hud.push(`FILE ${f.account} · DEPTH ${String(f.depth).padStart(2, "0")} · ATTESTED [${f.loadout.attested.join(", ") || "none"}]${f.loadout.keystone ? " · " + f.loadout.keystone.toUpperCase() : ""}`, "cy");
       } else if (f.reason === "settle") {
-        for (const line of f.ledger) this.hud.push(line, line.startsWith("DEPTH") ? "mg" : "am");
+        // the Ledger Entry ritual: the receipt prints line by line, the stamp thunks, the player signs
+        this.hud.receipt(f.ledger);
         this.hud.alert(`◆ LEDGER SETTLED — ${f.ledger[2] ?? ""}`, false, 5);
       }
     };
@@ -330,7 +431,8 @@ export class Game {
       }
       case "kill":
         if (ev.playerId === me) {
-          this.audio.kill();
+          // shooter-side: the tier follows the weapon in hand at the confirm (the file's own mastery; nothing leaves the client)
+          this.audio.kill(this.killTier(weaponDefOf(this.player).id));
           this.hud.killStamp();
           this.renderer.post.kick(1);
           const vk = ["DUMMY", "FILE", "WASP", "MECH"][ev.victimKind] ?? "?";
@@ -456,6 +558,7 @@ export class Game {
       this.world.step(new Map([[this.player.id, frame]]));
     }
     this.stats.ticks++;
+    this.ghost?.tick(this.player);
     this.prev = this.cur;
     this.cur = snap(this.player);
     for (const ev of this.world.drainEvents()) this.onEvent(ev);
@@ -659,7 +762,7 @@ export class Game {
         this.renderer.post.kick(1);
         break;
       case "kill":
-        this.audio.kill();
+        this.audio.kill(this.killTier(ev.weapon));
         this.hud.killStamp();
         this.renderer.post.kick(1);
         this.hud.push(`BLANK ⟶ ${ev.victimKind.toUpperCase()}-${String(ev.victimId).padStart(2, "0")} · ${ev.weapon.toUpperCase()}${ev.ttkTicks ? ` · TTK ${ev.ttkSeconds.toFixed(2)}s` : ""}`, "mg");
@@ -761,11 +864,15 @@ export class Game {
       view.pitch = this.input.pitch;
     }
     if (!render || !this.drawing) return;
-    if (this.net) this.renderer.syncRemotes(this.net.remoteViews());
+    if (this.net) this.renderer.syncRemotes(this.net.remoteViews().map((r) => ({ ...r, debt: r.id === this.debtTargetId })));
     if (!this.net) this.syncOfflineEntities();
     else this.syncNetEntities();
     const rdt = this.lastRenderAt < 0 ? dt : Math.min(0.5, (now - this.lastRenderAt) / 1000);
     this.lastRenderAt = now;
+    if (this.ghost && this.renderer.hub) {
+      this.ghostPose = this.ghost.pose();
+      this.renderer.hub.setGhost(this.ghostPose);
+    }
     this.renderer.render(view, rdt);
     if (this.renderer.life.tram?.passing) this.audio.tram();
     this.stats.frames++;
@@ -776,7 +883,7 @@ export class Game {
       this.stats.simHz = (this.stats.ticks - this.fpsWindow.ticks) / this.fpsWindow.t;
       this.fpsWindow = { t: 0, frames: 0, ticks: this.stats.ticks };
     }
-    this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies);
+    this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt);
     if (this.wakeHud) this.hud.wake(this.wakeHud, p.team);
   }
 }

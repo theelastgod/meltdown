@@ -199,7 +199,7 @@ async function main(): Promise<void> {
     await page.waitForTimeout(300);
     const rows = await page.evaluate(() => [...document.querySelectorAll("#hud .travel .row")].map((r) => r.textContent?.trim() ?? ""));
     await page.screenshot({ path: `${OUT}/stage9-map.png` });
-    check("MAP tab lists the range and the three districts of Lethe", rows.length === 4 && rows.some((r) => /LEASE ROW/.test(r)) && rows.some((r) => /DEADLETTER DOCKS/.test(r)) && rows.some((r) => /REPO DEPOT/.test(r)), rows.join(" | "));
+    check("MAP tab lists the range, the three districts of Lethe and the Deadletter Office", rows.length === 5 && rows.some((r) => /LEASE ROW/.test(r)) && rows.some((r) => /DEADLETTER DOCKS/.test(r)) && rows.some((r) => /REPO DEPOT/.test(r)) && rows.some((r) => /DEADLETTER OFFICE/.test(r)), rows.join(" | "));
     check("no page errors across three districts", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     await page.close();
 

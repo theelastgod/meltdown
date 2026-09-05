@@ -1,5 +1,6 @@
 import { type Vec3, v3 } from "../math/vec3";
 import { box, type Box } from "./box";
+import type { HubDef } from "./hub";
 
 export { box, type Box };
 
@@ -117,6 +118,8 @@ export interface LevelDef {
   mechs: { path: Vec3[]; face?: number }[];
   /** Wake nodes (hex city nodes) and their district-graph links. */
   nodes: { id: number; label: string; pos: Vec3; links: number[] }[];
+  /** The Deadletter Office: range course pads, trophy wall, renovation slots (Stage 8). */
+  hub?: HubDef;
 }
 
 /**
@@ -230,14 +233,23 @@ export function drainageYard(): LevelDef {
 // ---------------------------------------------------------------------------
 // Registry: the range plus the three districts of Lethe (shared/sim/city.ts).
 import { DISTRICT_SPECS, generateDistrict } from "./city";
+import { deadletterOffice, HUB_LEVEL_ID } from "./hub";
 
 export const DEFAULT_LEVEL_ID = "lease_row";
 
-export const LEVEL_IDS: readonly string[] = ["drainage_yard", ...DISTRICT_SPECS.map((d) => d.id)];
+export const LEVEL_IDS: readonly string[] = ["drainage_yard", ...DISTRICT_SPECS.map((d) => d.id), HUB_LEVEL_ID];
+
+/** What the district select lists, without building the levels. */
+export const LEVEL_INFO: readonly { id: string; displayName: string; cast: DistrictCast; kind: "range" | "district" | "hub" }[] = [
+  { id: "drainage_yard", displayName: "DRAINAGE YARD (RANGE)", cast: "magenta", kind: "range" },
+  ...DISTRICT_SPECS.map((d) => ({ id: d.id, displayName: d.displayName, cast: d.cast, kind: "district" as const })),
+  { id: HUB_LEVEL_ID, displayName: "DEADLETTER OFFICE (HUB)", cast: "cyan", kind: "hub" },
+];
 
 /** Build a level by id; unknown ids fall back to the default district. */
 export function levelById(id: string | null | undefined): LevelDef {
   if (id === "drainage_yard") return drainageYard();
+  if (id === HUB_LEVEL_ID) return deadletterOffice();
   const spec = DISTRICT_SPECS.find((d) => d.id === id) ?? DISTRICT_SPECS.find((d) => d.id === DEFAULT_LEVEL_ID)!;
   return generateDistrict(spec);
 }

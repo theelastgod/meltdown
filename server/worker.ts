@@ -21,7 +21,7 @@ export default {
       const id = env.MATCH_ROOM.idFromName(m[1]!);
       return env.MATCH_ROOM.get(id).fetch(request);
     }
-    const f = url.pathname.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund))?$/);
+    const f = url.pathname.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost))?$/);
     if (f) {
       const id = env.PLAYER_FILE.idFromName(f[1]!);
       const stub = env.PLAYER_FILE.get(id);

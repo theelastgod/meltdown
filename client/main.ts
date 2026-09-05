@@ -4,6 +4,7 @@ import type { BotStep } from "./bot";
 import { SIM_HZ } from "@shared/sim/constants";
 import type { SimEvent } from "@shared/sim/world";
 import type { FileView } from "./file";
+import type { SocialMsg } from "@shared/net/protocol";
 import { modsFor, weaponDefOf } from "@shared/sim/player";
 
 /** Headless/state hook used by probes and CI. Everything here is read-only or deterministic. */
@@ -42,6 +43,13 @@ export interface GameHook {
     /** the weapon definition the sim runs for the held slot (firmware applied) */
     weaponDef: { id: string; rpm: number; magSize: number; damage: number; burst: { count: number; rpm: number } | null };
     /** City life (render-only): crowd size and a sample of positions, the tram's coordinate along its line, PA lines spoken. */
+    /** identity & rituals (Stage 8): the file's identity, HUD ritual state, social messages received, the Debt target */
+    identity: FileView["identity"];
+    rituals: { receipt: { open: boolean; lines: string[]; printed: number; stamped: boolean; signed: number }; dossierOpen: boolean; dossierEntries: number; debtText: string; riteOpen: boolean; riteTitle: string };
+    social: SocialMsg[];
+    debtTargetId: number;
+    /** the Deadletter Office: renovation pieces built, trophies on the wall, the range ghost */
+    hub: { renovations: number; trophies: number; ghost: { recording: boolean; playing: boolean; best: number | null; runs: number; last: number; pose: { x: number; z: number } | null }; fileLoaded: boolean } | null;
     life: { crowd: number; sample: { x: number; z: number }[]; tram: number | null; tramNear: boolean; tramDist: number; pa: string[]; steam: boolean; ads: number; adRedraws: number; ship: { x: number; y: number; z: number }; blinkers: number; flicker: boolean };
   };
   /** Ghostfile view: account, Depth/XP/Scrip, loadout legality, ledger. */
@@ -52,6 +60,10 @@ export interface GameHook {
   toggleGraph: (on?: boolean) => void;
   /** Buy (or refund) a Ledger Graph node through the ledger shop of the linked host. */
   buy: (nodeId: string, refund?: boolean) => Promise<{ ok: boolean; reason?: string }>;
+  /** Sign the post-match receipt (Enter). */
+  sign: () => boolean;
+  /** Equip a moniker (worn online only if earned). */
+  setMoniker: (id: string | null) => void;
   events: () => SimEvent[];
   clearEvents: () => void;
   resumeAudio: () => void;
@@ -120,6 +132,15 @@ window.__game = {
     weaponDef: (() => { const d = weaponDefOf(game.player); return { id: d.id, rpm: d.rpm, magSize: d.magSize, damage: d.damage, burst: d.burst ?? null }; })(),
     maxShield: game.player.maxShield,
     maxHealth: game.player.maxHealth,
+    identity: game.file.identityView(),
+    rituals: (() => {
+      const r = game.hud.receiptState;
+      const q = (sel: string) => document.querySelector("#hud " + sel) as HTMLElement | null;
+      return { receipt: { open: r.open, lines: r.lines.slice(), printed: r.printed, stamped: r.stamped, signed: r.signed }, dossierOpen: !(q(".dossier")?.hidden ?? true), dossierEntries: document.querySelectorAll("#hud .dossier .ent:not(.dim)").length, debtText: q(".debt")?.classList.contains("on") ? (q(".debt")?.textContent ?? "") : "", riteOpen: !(q(".rite")?.hidden ?? true), riteTitle: q(".rite .rt")?.textContent ?? "" };
+    })(),
+    social: game.socialLog.slice(),
+    debtTargetId: game.debtTargetId,
+    hub: game.renderer.hub ? { renovations: game.renderer.hub.renovations, trophies: game.renderer.hub.trophyCount, ghost: { recording: game.ghost?.recording ?? false, playing: game.ghost?.playing ?? false, best: game.ghost?.best?.seconds ?? null, runs: game.ghost?.runs ?? 0, last: game.ghost?.lastSeconds ?? 0, pose: (() => { const g = game.ghost?.pose() ?? null; return g ? { x: g.x, z: g.z } : null; })() }, fileLoaded: game.file.loaded } : null,
     life: (() => {
       const L = game.renderer.life;
       const eye = { x: game.player.pos.x, y: game.player.pos.y + 1.6, z: game.player.pos.z };
@@ -131,6 +152,8 @@ window.__game = {
   toggleFile: (on) => game.file.toggle(on),
   toggleGraph: (on) => game.file.toggleGraph(on),
   buy: (id, refund) => game.file.buy(id, refund),
+  sign: () => game.sign(),
+  setMoniker: (id) => game.file.setMoniker(id),
   events: () => game.recentEvents.slice(),
   clearEvents: () => {
     game.recentEvents.length = 0;
