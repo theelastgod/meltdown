@@ -1,0 +1,401 @@
+{
+  "results": {
+    "lease_row": {
+      "shots": {
+        "street": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.10519585671978071,
+          "darkFrac": 0.6679535590277778,
+          "neonFrac": 0.03916883680555556,
+          "hue": {
+            "cyan": 0.3131198404343731,
+            "magenta": 0.23945924981993463,
+            "yellow": 0.0663471660479805,
+            "green": 0.19070308604354813,
+            "red": 0.1485400853232866,
+            "blue": 0.029115186436921712,
+            "other": 0.012715385893955343
+          }
+        },
+        "node": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.18502750474626914,
+          "darkFrac": 0.5507953559027777,
+          "neonFrac": 0.12624891493055557,
+          "hue": {
+            "cyan": 0.22731218468255537,
+            "magenta": 0.22705434418268858,
+            "yellow": 0.03222146780001891,
+            "green": 0.4361458002079913,
+            "red": 0.04863731295820405,
+            "blue": 0.019346632173337572,
+            "other": 0.009282257995204166
+          }
+        },
+        "walkway": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.08962002378547622,
+          "darkFrac": 0.7907194010416667,
+          "neonFrac": 0.05159071180555556,
+          "hue": {
+            "cyan": 0.24407941782694653,
+            "magenta": 0.1962099861187061,
+            "yellow": 0.1572161696041728,
+            "green": 0.21762083035376267,
+            "red": 0.1421781012072519,
+            "blue": 0.021684263660455137,
+            "other": 0.021011231228704835
+          }
+        },
+        "kernel": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.07993968037172129,
+          "darkFrac": 0.7872612847222222,
+          "neonFrac": 0.05684136284722222,
+          "hue": {
+            "cyan": 0.2748496707072635,
+            "magenta": 0.13650854252171424,
+            "yellow": 0.133988737233941,
+            "green": 0.23539181063281472,
+            "red": 0.14093729120931564,
+            "blue": 0.051885081607330345,
+            "other": 0.026438866087620503
+          }
+        }
+      },
+      "perf": {
+        "calls": 154,
+        "tris": 48468,
+        "levelCalls": 29
+      },
+      "route": 2,
+      "climb": 26,
+      "wasps": 0,
+      "mechs": 0,
+      "boxes": 293
+    },
+    "deadletter_docks": {
+      "shots": {
+        "street": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.10238572740321215,
+          "darkFrac": 0.6771256510416667,
+          "neonFrac": 0.06962565104166667,
+          "hue": {
+            "cyan": 0.643477176741939,
+            "magenta": 0.1515732385805788,
+            "yellow": 0.08622812349026758,
+            "green": 0.08097620272102482,
+            "red": 0.019340159271899887,
+            "blue": 0.015880436984742938,
+            "other": 0.0025246622095469635
+          }
+        },
+        "node": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.18253626139457257,
+          "darkFrac": 0.5498578559027778,
+          "neonFrac": 0.08846896701388889,
+          "hue": {
+            "cyan": 0.23822256019035237,
+            "magenta": 0.09045417193038402,
+            "yellow": 0.031447389400610794,
+            "green": 0.6013638649381232,
+            "red": 0.015196300884304514,
+            "blue": 0.01644732807574847,
+            "other": 0.006868384580476617
+          }
+        },
+        "walkway": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.07427124842299296,
+          "darkFrac": 0.8148643663194445,
+          "neonFrac": 0.06061089409722222,
+          "hue": {
+            "cyan": 0.39141409620652,
+            "magenta": 0.17447501745466262,
+            "yellow": 0.08170572333912171,
+            "green": 0.19214450670438069,
+            "red": 0.13802610143396768,
+            "blue": 0.016291018457186845,
+            "other": 0.005943536404160475
+          }
+        },
+        "kernel": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.06725839826390272,
+          "darkFrac": 0.8439181857638889,
+          "neonFrac": 0.05890190972222222,
+          "hue": {
+            "cyan": 0.4005047527816668,
+            "magenta": 0.18427160857711297,
+            "yellow": 0.06252302704295926,
+            "green": 0.19108761329305135,
+            "red": 0.14013337263282,
+            "blue": 0.014295188269103235,
+            "other": 0.00718443740328642
+          }
+        }
+      },
+      "perf": {
+        "calls": 120,
+        "tris": 35832,
+        "levelCalls": 31
+      },
+      "route": 2,
+      "climb": 26,
+      "wasps": 0,
+      "mechs": 0,
+      "boxes": 262
+    },
+    "repo_depot": {
+      "shots": {
+        "street": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.11734682922366577,
+          "darkFrac": 0.6582497829861111,
+          "neonFrac": 0.044344618055555556,
+          "hue": {
+            "cyan": 0.2916952138592542,
+            "magenta": 0.2833512772829598,
+            "yellow": 0.10105706175981208,
+            "green": 0.1843985514338847,
+            "red": 0.10768816678085544,
+            "blue": 0.023270040129196437,
+            "other": 0.008539688754037388
+          }
+        },
+        "node": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.1591558525982437,
+          "darkFrac": 0.58578125,
+          "neonFrac": 0.11145290798611111,
+          "hue": {
+            "cyan": 0.17633257070534974,
+            "magenta": 0.2733388502166188,
+            "yellow": 0.023949763909847637,
+            "green": 0.44741274400038944,
+            "red": 0.05129727887845008,
+            "blue": 0.020970646935695857,
+            "other": 0.006698145353648445
+          }
+        },
+        "walkway": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.08817348545237888,
+          "darkFrac": 0.7709092881944445,
+          "neonFrac": 0.053232421875,
+          "hue": {
+            "cyan": 0.3018202572412809,
+            "magenta": 0.18689740924193318,
+            "yellow": 0.11480054628100858,
+            "green": 0.2301922175339897,
+            "red": 0.13226930838378279,
+            "blue": 0.0174891457224974,
+            "other": 0.01653111559550745
+          }
+        },
+        "kernel": {
+          "width": 1280,
+          "height": 720,
+          "meanLuma": 0.07619096073750446,
+          "darkFrac": 0.7892903645833333,
+          "neonFrac": 0.054217664930555555,
+          "hue": {
+            "cyan": 0.3627794344267216,
+            "magenta": 0.1534212580303,
+            "yellow": 0.08631696919967179,
+            "green": 0.21558228430764304,
+            "red": 0.09810474913442872,
+            "blue": 0.06600356235115176,
+            "other": 0.017791742550083055
+          }
+        }
+      },
+      "perf": {
+        "calls": 154,
+        "tris": 50092,
+        "levelCalls": 30
+      },
+      "route": 2,
+      "climb": 29,
+      "wasps": 0,
+      "mechs": 0,
+      "boxes": 278
+    }
+  },
+  "simHz": 59.4049520766787,
+  "checks": [
+    {
+      "name": "lease_row: loads as LEASE ROW with the magenta cast",
+      "pass": true,
+      "detail": "293 boxes · 0 wasps · 0 mechs · HUD \"LEASE ROW (MAGENTA)\""
+    },
+    {
+      "name": "lease_row: a Blank sprints the streets spawn → node B along nav waypoints (2 legs) and flips it",
+      "pass": true,
+      "detail": "ended 0.3 m from B · owner 1 hold 0.65 · 7.2 m/s top"
+    },
+    {
+      "name": "lease_row: the Blank climbs the switchback stairs onto the walkway (26 legs)",
+      "pass": true,
+      "detail": "y 4.60 at (0.7, 15.8) · t+1 goto → reached (1.2,15.7)"
+    },
+    {
+      "name": "lease_row: THE KERNEL reads on the horizon (blood-red, fog-immune)",
+      "pass": true,
+      "detail": "red 14.09% of neon pixels"
+    },
+    {
+      "name": "lease_row/street: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.105 dark 67% neon 3.9% cy 31% mg 24% ye 7% red 14.9%"
+    },
+    {
+      "name": "lease_row/node: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.185 dark 55% neon 12.6% cy 23% mg 23% ye 3% red 4.9% gr 44%"
+    },
+    {
+      "name": "lease_row/walkway: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.090 dark 79% neon 5.2% cy 24% mg 20% ye 16% red 14.2%"
+    },
+    {
+      "name": "lease_row/kernel: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.080 dark 79% neon 5.7% cy 27% mg 14% ye 13% red 14.1%"
+    },
+    {
+      "name": "lease_row: render budget — ≤ 180 draw calls/frame (mirror + scene + post), ≤ 200k triangles",
+      "pass": true,
+      "detail": "154 calls · 48468 triangles · 29 level batches"
+    },
+    {
+      "name": "deadletter_docks: loads as DEADLETTER DOCKS with the cyan cast",
+      "pass": true,
+      "detail": "262 boxes · 0 wasps · 0 mechs · HUD \"DEADLETTER DOCKS (CYAN)\""
+    },
+    {
+      "name": "deadletter_docks: a Blank sprints the streets spawn → node B along nav waypoints (2 legs) and flips it",
+      "pass": true,
+      "detail": "ended 0.3 m from B · owner 1 hold 0.65 · 7.2 m/s top"
+    },
+    {
+      "name": "deadletter_docks: the Blank climbs the switchback stairs onto the walkway (26 legs)",
+      "pass": true,
+      "detail": "y 4.60 at (16.7, 1.2) · t+541 goto → reached (16.7,1.7)"
+    },
+    {
+      "name": "deadletter_docks: THE KERNEL reads on the horizon (blood-red, fog-immune)",
+      "pass": true,
+      "detail": "red 14.01% of neon pixels"
+    },
+    {
+      "name": "deadletter_docks/street: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.102 dark 68% neon 7.0% cy 64% mg 15% ye 9% red 1.9%"
+    },
+    {
+      "name": "deadletter_docks/node: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.183 dark 55% neon 8.8% cy 24% mg 9% ye 3% red 1.5% gr 60%"
+    },
+    {
+      "name": "deadletter_docks/walkway: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.074 dark 81% neon 6.1% cy 39% mg 17% ye 8% red 13.8%"
+    },
+    {
+      "name": "deadletter_docks/kernel: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.067 dark 84% neon 5.9% cy 40% mg 18% ye 6% red 14.0%"
+    },
+    {
+      "name": "deadletter_docks: render budget — ≤ 180 draw calls/frame (mirror + scene + post), ≤ 200k triangles",
+      "pass": true,
+      "detail": "120 calls · 35832 triangles · 31 level batches"
+    },
+    {
+      "name": "repo_depot: loads as REPO DEPOT with the amber cast",
+      "pass": true,
+      "detail": "278 boxes · 0 wasps · 0 mechs · HUD \"REPO DEPOT (AMBER)\""
+    },
+    {
+      "name": "repo_depot: a Blank sprints the streets spawn → node B along nav waypoints (2 legs) and flips it",
+      "pass": true,
+      "detail": "ended 0.3 m from B · owner 1 hold 0.65 · 7.2 m/s top"
+    },
+    {
+      "name": "repo_depot: the Blank climbs the switchback stairs onto the walkway (29 legs)",
+      "pass": true,
+      "detail": "y 4.60 at (0.9, 15.8) · t+1 goto → reached (1.2,15.7)"
+    },
+    {
+      "name": "repo_depot: THE KERNEL reads on the horizon (blood-red, fog-immune)",
+      "pass": true,
+      "detail": "red 9.81% of neon pixels"
+    },
+    {
+      "name": "repo_depot/street: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.117 dark 66% neon 4.4% cy 29% mg 28% ye 10% red 10.8%"
+    },
+    {
+      "name": "repo_depot/node: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.159 dark 59% neon 11.1% cy 18% mg 27% ye 2% red 5.1% gr 45%"
+    },
+    {
+      "name": "repo_depot/walkway: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.088 dark 77% neon 5.3% cy 30% mg 19% ye 11% red 13.2%"
+    },
+    {
+      "name": "repo_depot/kernel: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)",
+      "pass": true,
+      "detail": "luma 0.076 dark 79% neon 5.4% cy 36% mg 15% ye 9% red 9.8%"
+    },
+    {
+      "name": "repo_depot: render budget — ≤ 180 draw calls/frame (mirror + scene + post), ≤ 200k triangles",
+      "pass": true,
+      "detail": "154 calls · 50092 triangles · 30 level batches"
+    },
+    {
+      "name": "sim holds 60 Hz in the city under the full post chain",
+      "pass": true,
+      "detail": "59.4 ticks/s at 20.0 fps (SwiftShader, 480x270)"
+    },
+    {
+      "name": "MAP tab lists the range and the three districts of Lethe",
+      "pass": true,
+      "detail": "▢ DRAINAGE YARD (RANGE) MAGENTA | ▢ LEASE ROW MAGENTA | ▢ DEADLETTER DOCKS CYAN | ▣ REPO DEPOT AMBER"
+    },
+    {
+      "name": "no page errors across three districts",
+      "pass": true,
+      "detail": "clean console"
+    },
+    {
+      "name": "online: a room built with ?level= plays that district",
+      "pass": true,
+      "detail": "room level deadletter_docks · ALPHA client level deadletter_docks"
+    },
+    {
+      "name": "online: a client that arrives for the wrong district travels to the room's and rejoins",
+      "pass": true,
+      "detail": "BRAVO now in deadletter_docks as file #2 · room players 2 (2 connected)"
+    }
+  ]
+}

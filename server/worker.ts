@@ -32,24 +32,32 @@ export default {
 };
 
 export class MatchRoom implements DurableObject {
-  private room: Room;
+  private room: Room | null = null;
+  private env: Env;
   private timer: ReturnType<typeof setInterval> | null = null;
   private next = 0;
   private sockets = 0;
   private idleSince = 0;
 
   constructor(_state: DurableObjectState, env: Env) {
-    this.room = new Room({ accounts: new DoAccountStore(env.PLAYER_FILE) });
+    this.env = env;
+  }
+
+  /** The room is built on first contact so the opening URL can pick the district (`?level=`). */
+  private roomFor(url: URL): Room {
+    if (!this.room) this.room = new Room({ accounts: new DoAccountStore(this.env.PLAYER_FILE), level: url.searchParams.get("level") ?? undefined, ai: url.searchParams.get("ai") !== "0" });
+    return this.room;
   }
 
   private ensureLoop(): void {
     if (this.timer) return;
     this.next = Date.now();
+    const room = this.room!;
     this.timer = setInterval(() => {
       const now = Date.now();
       let n = 0;
       while (now >= this.next && n < 10) {
-        this.room.step();
+        room.step();
         this.next += SERVER_TICK_MS;
         n++;
       }
@@ -67,7 +75,8 @@ export class MatchRoom implements DurableObject {
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    if (url.pathname.endsWith("/stats")) return Response.json(this.room.stats());
+    const room = this.roomFor(url);
+    if (url.pathname.endsWith("/stats")) return Response.json(room.stats());
     if (request.headers.get("Upgrade") !== "websocket") return new Response("expected websocket", { status: 426 });
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
@@ -77,14 +86,14 @@ export class MatchRoom implements DurableObject {
       close: (code, reason) => server.close(code, reason),
     };
     this.sockets++;
-    this.room.onOpen(conn);
+    room.onOpen(conn);
     server.addEventListener("message", (ev) => {
-      if (ev.data instanceof ArrayBuffer) this.room.onMessage(conn, ev.data);
-      else this.room.onMessage(conn, new ArrayBuffer(0));
+      if (ev.data instanceof ArrayBuffer) room.onMessage(conn, ev.data);
+      else room.onMessage(conn, new ArrayBuffer(0));
     });
     const closed = () => {
       this.sockets = Math.max(0, this.sockets - 1);
-      this.room.onClose(conn);
+      room.onClose(conn);
     };
     server.addEventListener("close", closed);
     server.addEventListener("error", closed);

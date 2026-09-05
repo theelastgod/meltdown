@@ -3,6 +3,8 @@ import { currentWeapon } from "@shared/sim/weapons";
 import { GRENADE_LIST, WEAPON_LIST } from "@shared/weapons/manifest";
 import type { Dummy } from "@shared/sim/world";
 import type { FileView } from "../file";
+import type { LevelDef } from "@shared/sim/level";
+import { DISTRICT_SPECS } from "@shared/sim/city";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
 export class Hud {
@@ -15,6 +17,8 @@ export class Hud {
   private rackKey = "";
   private nadeKey = "";
   private flagTimer = 0;
+  private bounds = 32;
+  private zone = "DRAINAGE YARD";
 
   constructor(root: HTMLElement) {
     root.innerHTML = `
@@ -41,6 +45,7 @@ export class Hud {
       <div class="side"><div><span class="k">▸</span> ONLINE (1)</div><div class="perf"></div></div>
 
       <div class="log"></div>
+      <div class="p cy travel" hidden><div class="t">▲ LETHE · DISTRICT SELECT <span class="x" data-travel="close">[M] CLOSE</span></div><div class="list"></div><div class="f">travel reloads the client; online, the room decides the district</div></div>
       <div class="p mg prompt">▲ CLICK TO WAKE · <span style="color:var(--cy)">WASD</span> MOVE · <span style="color:var(--cy)">SHIFT</span> SPRINT · <span style="color:var(--cy)">CTRL</span> SLIDE · <span style="color:var(--cy)">SPACE</span> JUMP</div>
 
       <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="rack"></div><div class="nades"></div></div>
@@ -57,6 +62,38 @@ export class Hud {
     `;
     this.q = (s) => root.querySelector(s) as HTMLElement;
     this.radar = (root.querySelector(".map canvas") as HTMLCanvasElement).getContext("2d")!;
+  }
+
+  /** Zone label, mission title, radar scale, and the MAP tab's district list. */
+  setLevel(level: LevelDef, onTravel: (id: string) => void): void {
+    this.bounds = level.bounds ?? 32;
+    this.zone = (level.displayName ?? level.name.replace(/_/g, " ")).toUpperCase();
+    const cast = (level.district ?? "magenta").toUpperCase();
+    this.q(".status .dim").textContent = `${this.zone} (${cast})`;
+    this.q(".mtitle").textContent = `◈ THE WAKE — ${this.zone}`;
+    const kills = this.q(".mline");
+    if (kills) kills.style.display = level.dummies.length ? "" : "none";
+    const list = this.q(".travel .list");
+    const rows = [{ id: "drainage_yard", displayName: "DRAINAGE YARD (RANGE)", cast: "magenta" }, ...DISTRICT_SPECS.map((d) => ({ id: d.id, displayName: d.displayName, cast: d.cast }))];
+    list.innerHTML = rows.map((r) => `<div class="row ${r.id === level.name ? "on" : ""} ${r.cast}" data-travel="${r.id}">${r.id === level.name ? "▣" : "▢"} ${r.displayName} <span class="cast">${r.cast.toUpperCase()}</span></div>`).join("");
+    const panel = this.q(".travel");
+    panel.onclick = (e) => {
+      const t = (e.target as HTMLElement).closest("[data-travel]") as HTMLElement | null;
+      if (!t) return;
+      if (t.dataset.travel === "close") panel.hidden = true;
+      else onTravel(t.dataset.travel!);
+    };
+    const tabs = this.q(".tabs");
+    tabs.onclick = (e) => {
+      const t = (e.target as HTMLElement).closest(".tab") as HTMLElement | null;
+      if (t && /MAP/.test(t.textContent ?? "")) panel.hidden = !panel.hidden;
+    };
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "KeyM") {
+        panel.hidden = !panel.hidden;
+        if (!panel.hidden) document.exitPointerLock?.();
+      }
+    });
   }
 
   /** Status line: Depth, XP into the depth, Scrip, Wakelight. */
@@ -119,7 +156,7 @@ export class Hud {
     const mm = Math.floor(Math.max(0, w.timeLeft) / 60);
     const ss = Math.floor(Math.max(0, w.timeLeft) % 60);
     const t = `${mm}:${String(ss).padStart(2, "0")}`;
-    const title = w.phase === "warmup" ? `◈ WARM-UP — WAKE IN ${t}` : w.phase === "results" ? `◈ ROUND OVER — ${w.score[1] > w.score[2] ? "CELL ONE" : w.score[2] > w.score[1] ? "CELL TWO" : "NO ONE"} WOKE THE YARD` : `◈ THE WAKE — ${t}`;
+    const title = w.phase === "warmup" ? `◈ WARM-UP — WAKE IN ${t}` : w.phase === "results" ? `◈ ROUND OVER — ${w.score[1] > w.score[2] ? "CELL ONE" : w.score[2] > w.score[1] ? "CELL TWO" : "NO ONE"} WOKE ${this.zone}` : `◈ THE WAKE — ${t}`;
     this.q(".mtitle").textContent = title;
     this.q(".mscore").innerHTML = `<span style="color:var(--gr)">CELL ONE ${Math.floor(w.score[1])}</span> · <span style="color:var(--cy)">CELL TWO ${Math.floor(w.score[2])}</span>${myTeam ? ` · YOU: ${myTeam === 1 ? "ONE" : "TWO"}` : ""}`;
     const key = w.nodes.map((n) => `${n.owner}${n.contested ? "c" : ""}${n.puller}${Math.round(n.hold * 10)}`).join("");
@@ -149,7 +186,7 @@ export class Hud {
     g.fillStyle = "rgba(53,242,255,0.08)";
     for (let x = 0; x < w; x += 9) g.fillRect(x, 0, 1, h);
     for (let y = 0; y < h; y += 9) g.fillRect(0, y, w, 1);
-    const scale = w / 70;
+    const scale = w / (this.bounds * 2 + 6);
     const cx = w / 2;
     const cy = h / 2;
     const c = Math.cos(-p.yaw);

@@ -1,6 +1,6 @@
 import { MAX_CATCHUP_TICKS, SIM_DT, SIM_HZ } from "@shared/sim/constants";
 import type { InputFrame } from "@shared/sim/input";
-import { drainageYard } from "@shared/sim/level";
+import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS } from "@shared/sim/level";
 import { eyeHeight, type PlayerState } from "@shared/sim/player";
 import { hashWorld, World, type SimEvent } from "@shared/sim/world";
 import { lenXZ, wrapAngle } from "@shared/math/vec3";
@@ -59,6 +59,8 @@ const lerpAngle = (a: number, b: number, t: number): number => {
  */
 export class Game {
   readonly world: World;
+  /** Level id this client built (URL `?level=`; the room's Welcome must agree or the client travels). */
+  readonly levelId: string;
   /** Local player. Offline: created at construction. Online: created on Welcome; a placeholder until then. */
   player: PlayerState;
   net: NetClient | null = null;
@@ -89,13 +91,15 @@ export class Game {
 
   constructor(canvas: HTMLCanvasElement, hudRoot: HTMLElement) {
     const q = new URLSearchParams(location.search);
-    this.world = new World(drainageYard(), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" ? "off" : "wake" });
+    this.levelId = LEVEL_IDS.includes(q.get("level") ?? "") ? q.get("level")! : DEFAULT_LEVEL_ID;
+    this.world = new World(levelById(this.levelId), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" ? "off" : "wake" });
     this.file = new GhostFile(() => this.online);
     this.player = this.world.addPlayer(1, "BLANK", 1, this.file.localLoadout());
     this.input = new InputController(canvas);
     this.input.yaw = this.player.yaw;
     this.renderer = new Renderer(canvas, this.world.level);
     this.hud = new Hud(hudRoot);
+    this.hud.setLevel(this.world.level, (id) => this.travel(id));
     this.file.mount(hudRoot);
     this.hud.setFile(this.file.view());
     this.file.onChange = (f) => {
@@ -136,6 +140,12 @@ export class Game {
     };
     net.onStatus = (st) => {
       if (st === "joined") {
+        if (net.levelName && net.levelName !== this.levelId && LEVEL_IDS.includes(net.levelName)) {
+          // the room plays a different district: travel there (a fresh world and renderer for that level)
+          this.hud.alert(`◆ TRAVELLING — ${net.levelName.replace(/_/g, " ").toUpperCase()}`, false, 3);
+          this.travel(net.levelName);
+          return;
+        }
         (this.world as { seed: number }).seed = net.seed;
         this.player = this.world.addPlayer(net.playerId, cfg.name, 1, this.file.admitted ?? this.file.localLoadout());
         this.input.yaw = this.player.yaw;
@@ -144,6 +154,16 @@ export class Game {
     };
     net.onSnapshot = (snap) => this.onSnapshot(snap);
     this.hud.push(`LINKING ${cfg.url}${cfg.sim ? ` (sim ${cfg.sim.latencyMs * 2}ms rtt, ${(cfg.sim.loss * 100).toFixed(0)}% loss)` : ""}`, "k");
+  }
+
+  /** Travel to another district: the world and renderer are built per level, so the page reloads with `?level=`. */
+  travel(levelId: string): void {
+    if (!LEVEL_IDS.includes(levelId) || levelId === this.levelId) return;
+    const u = new URL(location.href);
+    u.searchParams.set("level", levelId);
+    if (this.net?.token) u.searchParams.set("token", this.net.token);
+    this.renderer.post.kick(1);
+    setTimeout(() => location.replace(u.toString()), 120);
   }
 
   /** Rejoin the same room with the session token (state is restored server-side). */

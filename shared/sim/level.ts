@@ -1,11 +1,7 @@
 import { type Vec3, v3 } from "../math/vec3";
+import { box, type Box } from "./box";
 
-export interface Box {
-  min: Vec3;
-  max: Vec3;
-  /** Semantic tag, used by the renderer for tint and by tests. */
-  tag?: string;
-}
+export { box, type Box };
 
 export interface SpawnPoint {
   pos: Vec3;
@@ -19,8 +15,54 @@ export interface DummyDef {
   patrolTo?: Vec3;
 }
 
+export type DistrictCast = "magenta" | "cyan" | "amber";
+
+/** A flat emissive sign quad (text rendered client-side; the sim ignores it). */
+export interface SignDef {
+  text: string;
+  x: number;
+  y: number;
+  z: number;
+  rotY: number;
+  w: number;
+  h: number;
+  fg: string;
+  bg: string;
+  border: string;
+}
+
+/** A point light in the district rig (the client caps how many it honours). */
+export interface LightDef {
+  x: number;
+  y: number;
+  z: number;
+  color: "cyan" | "magenta" | "amber" | "violet" | "yellow" | "green";
+  intensity: number;
+  range: number;
+}
+
+/** A traffic lane beyond the perimeter: head/tail-light streaks move from → to (render only). */
+export interface TrafficLane {
+  from: Vec3;
+  to: Vec3;
+  speed: number;
+  count: number;
+}
+
 export interface LevelDef {
   name: string;
+  /** Ledger-UI name, e.g. "LEASE ROW". */
+  displayName?: string;
+  /** District colour cast; drives fog, rig, and skyline. */
+  district?: DistrictCast;
+  /** Half extent of the playable area (radar scale, skyline inner radius). */
+  bounds?: number;
+  /** Render-only geometry (awnings, canopies): never collides. */
+  decor?: Box[];
+  signs?: SignDef[];
+  lights?: LightDef[];
+  traffic?: TrafficLane[];
+  skylineSeed?: number;
   boxes: Box[];
   spawns: SpawnPoint[];
   dummies: DummyDef[];
@@ -33,12 +75,6 @@ export interface LevelDef {
   /** Wake nodes (hex city nodes) and their district-graph links. */
   nodes: { id: number; label: string; pos: Vec3; links: number[] }[];
 }
-
-const box = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, tag?: string): Box => ({
-  min: v3(Math.min(x0, x1), Math.min(y0, y1), Math.min(z0, z1)),
-  max: v3(Math.max(x0, x1), Math.max(y0, y1), Math.max(z0, z1)),
-  tag,
-});
 
 /**
  * Stage 1 grey-box: "Drainage Yard". A 64x64 m arena with a sunken channel,
@@ -130,5 +166,35 @@ export function drainageYard(): LevelDef {
     { id: 4, label: "D", pos: v3(0, 0, 17), links: [1, 2, 3] },
     { id: 5, label: "E", pos: v3(20, 0, -12), links: [2] },
   ];
-  return { name: "drainage_yard", boxes, spawns, dummies, killY: -20, wasps, mechs, nodes };
+  const lights: LightDef[] = [
+    { x: 22, y: 9, z: 18, color: "magenta", intensity: 60, range: 80 },
+    { x: -20, y: 9, z: -20, color: "cyan", intensity: 60, range: 80 },
+    { x: 0, y: 4.5, z: -6, color: "cyan", intensity: 14, range: 22 },
+    { x: 0, y: 4.3, z: 14, color: "cyan", intensity: 12, range: 20 },
+    { x: -11, y: 2.5, z: 21, color: "amber", intensity: 8, range: 12 },
+  ];
+  const signs: SignDef[] = [
+    { text: "DEADLETTER", fg: "#35f2ff", bg: "#07111a", border: "#35f2ff", w: 6, h: 1.5, x: -22, y: 3.8, z: -13.9, rotY: 0 },
+    { text: "REPO DEPOT", fg: "#ff3ec9", bg: "#170714", border: "#ff3ec9", w: 5, h: 1.25, x: -23, y: 1.9, z: 22.06, rotY: 0 },
+    { text: "再租 RE-LEASE", fg: "#ffe34a", bg: "#1a1206", border: "#ffe34a", w: 4.4, h: 1.1, x: 18, y: 1.7, z: 15.06, rotY: 0 },
+    { text: "VANTAGE", fg: "#ffb02e", bg: "#160f04", border: "#ffb02e", w: 5, h: 1.25, x: 31.9, y: 4.6, z: 0, rotY: -Math.PI / 2 },
+    { text: "CHILL UNDER", fg: "#35f2ff", bg: "#07111a", border: "#ff3ec9", w: 3.6, h: 0.9, x: 0, y: 3.2, z: -31.9, rotY: 0 },
+    { text: "LEASE-BREAKER", fg: "#ff3ec9", bg: "#170714", border: "#35f2ff", w: 4.2, h: 1.0, x: -31.9, y: 3.4, z: -4, rotY: Math.PI / 2 },
+  ];
+  return { name: "drainage_yard", displayName: "DRAINAGE YARD", district: "magenta", bounds: H, boxes, spawns, dummies, killY: -20, wasps, mechs, nodes, lights, signs, skylineSeed: 42 };
+}
+
+// ---------------------------------------------------------------------------
+// Registry: the range plus the three districts of Lethe (shared/sim/city.ts).
+import { DISTRICT_SPECS, generateDistrict } from "./city";
+
+export const DEFAULT_LEVEL_ID = "lease_row";
+
+export const LEVEL_IDS: readonly string[] = ["drainage_yard", ...DISTRICT_SPECS.map((d) => d.id)];
+
+/** Build a level by id; unknown ids fall back to the default district. */
+export function levelById(id: string | null | undefined): LevelDef {
+  if (id === "drainage_yard") return drainageYard();
+  const spec = DISTRICT_SPECS.find((d) => d.id === id) ?? DISTRICT_SPECS.find((d) => d.id === DEFAULT_LEVEL_ID)!;
+  return generateDistrict(spec);
 }

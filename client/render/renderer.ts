@@ -6,7 +6,7 @@ import type { Vec3 } from "@shared/math/vec3";
 import { PostChain } from "./post";
 import { Rain } from "./rain";
 import { makeWetFloor } from "./wetfloor";
-import { buildSkyline, dressArena, PALETTE } from "./city";
+import { buildSkyline, dressLevel, PALETTE, Traffic } from "./city";
 import { ArsenalFx, buildViewmodel } from "./weapons";
 import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
@@ -54,7 +54,10 @@ export class Renderer {
   readonly camera: THREE.PerspectiveCamera;
   readonly post: PostChain;
   readonly district: DistrictId;
+  /** Draw calls the level dressing added (probes budget this). */
+  readonly levelCalls: number;
   private rain: Rain;
+  private traffic: Traffic | null = null;
   private dummyMeshes = new Map<number, { group: THREE.Group; mat: THREE.MeshStandardMaterial; flash: number }>();
   private tracers: { line: THREE.Line; mat: THREE.LineBasicMaterial; born: number; life: number }[] = [];
   private sparks: { mesh: THREE.Mesh; born: number }[] = [];
@@ -74,11 +77,12 @@ export class Renderer {
   private clock = 0;
   frames = 0;
 
-  constructor(canvas: HTMLCanvasElement, level: LevelDef, district: DistrictId = "magenta") {
+  constructor(canvas: HTMLCanvasElement, level: LevelDef, district: DistrictId = level.district ?? "magenta") {
     this.district = district;
     const cast = DISTRICTS[district];
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.info.autoReset = false; // counts cover the whole frame (mirror + scene + post), reset in render()
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.25;
     this.scene.background = new THREE.Color(PALETTE.bg);
@@ -90,10 +94,15 @@ export class Renderer {
     this.camera.rotation.order = "YXZ";
     this.scene.add(this.camera);
 
-    dressArena(this.scene, level);
-    const skyline = buildSkyline(this.scene);
+    this.levelCalls = dressLevel(this.scene, level);
+    const skyline = buildSkyline(this.scene, level.skylineSeed ?? 42, (level.bounds ?? 32) + 44, district);
     skyline.traverse((o) => o.layers.set(FAR_LAYER));
-    this.buildLights(cast);
+    if (level.traffic?.length) {
+      this.traffic = new Traffic(level.traffic, level.skylineSeed ?? 5);
+      this.traffic.object.layers.set(FAR_LAYER);
+      this.scene.add(this.traffic.object);
+    }
+    this.buildLights(cast, level);
     this.rain = new Rain();
     this.rain.object.layers.set(FAR_LAYER);
     this.scene.add(this.rain.object);
@@ -128,28 +137,20 @@ export class Renderer {
     this.camera.updateProjectionMatrix();
   }
 
-  private buildLights(cast: (typeof DISTRICTS)[DistrictId]): void {
+  private buildLights(cast: (typeof DISTRICTS)[DistrictId], level: LevelDef): void {
     this.scene.add(new THREE.AmbientLight(cast.ambient, 1.35));
     this.scene.add(new THREE.HemisphereLight(cast.sky, 0x06070b, 1.0));
     const key = new THREE.DirectionalLight(0x8fc8ff, 1.1);
     key.position.set(-20, 40, 10);
     this.scene.add(key);
-    // district rig: two big casts on opposite corners, two local pools
-    const a = new THREE.PointLight(cast.keyA, 60, 80, 1.5);
-    a.position.set(22, 9, 18);
-    this.scene.add(a);
-    const b = new THREE.PointLight(cast.keyB, 60, 80, 1.5);
-    b.position.set(-20, 9, -20);
-    this.scene.add(b);
-    const deck = new THREE.PointLight(PALETTE.cyan, 14, 22, 1.6);
-    deck.position.set(0, 4.5, -6);
-    this.scene.add(deck);
-    const lane = new THREE.PointLight(PALETTE.cyan, 12, 20, 1.6);
-    lane.position.set(0, 4.3, 14);
-    this.scene.add(lane);
-    const crates = new THREE.PointLight(PALETTE.amber, 8, 12, 1.8);
-    crates.position.set(-11, 2.5, 21);
-    this.scene.add(crates);
+    // district rig from level data: the strongest lights win the point-light budget
+    const colors = { cyan: PALETTE.cyan, magenta: PALETTE.magenta, amber: PALETTE.amber, violet: PALETTE.violet, yellow: PALETTE.yellow, green: PALETTE.green } as const;
+    const defs = [...(level.lights ?? [])].sort((a, b) => b.intensity * b.range - a.intensity * a.range).slice(0, 8);
+    for (const l of defs) {
+      const pl = new THREE.PointLight(colors[l.color], l.intensity, l.range, 1.5);
+      pl.position.set(l.x, l.y, l.z);
+      this.scene.add(pl);
+    }
   }
 
   syncDummies(dummies: readonly Dummy[]): void {
@@ -318,7 +319,9 @@ export class Renderer {
         this.sparks.splice(i, 1);
       } else s.mesh.scale.setScalar(1 + age * 12);
     }
+    this.renderer.info.reset();
     this.rain.update(this.clock, this.camera);
+    this.traffic?.update(dt);
     this.post.render(this.clock, dt);
   }
 }

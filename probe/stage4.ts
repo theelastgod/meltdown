@@ -15,7 +15,7 @@ import { ttkTable } from "../shared/sim/ttk";
 import { TTK_BAND } from "../shared/weapons/manifest";
 
 const PORT = 5185;
-const URL = `http://127.0.0.1:${PORT}/?headless=1&seed=3`;
+const URL = `http://127.0.0.1:${PORT}/?headless=1&seed=3&level=drainage_yard`;
 const OUT = "probe/out";
 
 function startVite(): Promise<ChildProcess> {

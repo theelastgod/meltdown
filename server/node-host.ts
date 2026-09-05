@@ -4,7 +4,7 @@
  *
  *   npx tsx server/node-host.ts [port]
  *   GET  /stats              → JSON stats for every room
- *   WS   /room/<name>[?lagcomp=0&ai=0&warmup=<s>&round=<s>]
+ *   WS   /room/<name>[?lagcomp=0&ai=0&warmup=<s>&round=<s>&level=<id>]
  */
 import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
@@ -22,10 +22,10 @@ const log = (line: string) => {
   if (process.env.VERBOSE) console.log(line);
 };
 
-function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: number, roundSeconds?: number): Room {
+function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: number, roundSeconds?: number, level?: string): Room {
   let r = rooms.get(name);
   if (!r) {
-    r = new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, onLog: (l) => log(`[${name}] ${l}`) });
+    r = new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, onLog: (l) => log(`[${name}] ${l}`) });
     rooms.set(name, r);
     // fixed-rate loop with drift correction
     let next = performance.now();
@@ -69,7 +69,7 @@ wss.on("connection", (ws: WebSocket, req) => {
     return;
   }
   const num = (k: string) => (url.searchParams.has(k) ? Number(url.searchParams.get(k)) : undefined);
-  const room = getRoom(m[1]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"));
+  const room = getRoom(m[1]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"), url.searchParams.get("level") ?? undefined);
   ws.binaryType = "arraybuffer";
   const conn: Conn = {
     send: (buf) => {

@@ -59,7 +59,7 @@ async function main(): Promise<void> {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(String(e)));
-    await page.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&ai=0&seed=5`, { waitUntil: "load" });
+    await page.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&ai=0&seed=5&level=drainage_yard`, { waitUntil: "load" });
     await page.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 });
     const plan: BotStep[] = [
       { kind: "hold", ticks: 20 },
@@ -137,7 +137,7 @@ async function main(): Promise<void> {
     // ---------------- online: contest ----------------
     const open = async (name: string, seed: number): Promise<Page> => {
       const pg = await browser.newPage({ viewport: { width: 480, height: 270 } });
-      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?norender=1&net=ws://127.0.0.1:${HOST_PORT}/room/wake?ai=0&name=${name}&seed=${seed}`, { waitUntil: "load" });
+      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?norender=1&net=ws://127.0.0.1:${HOST_PORT}/room/wake?ai=0%26level=drainage_yard&level=drainage_yard&name=${name}&seed=${seed}`, { waitUntil: "load" });
       await pg.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 });
       await pg.waitForFunction(() => window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 15000, polling: 100 });
       return pg;

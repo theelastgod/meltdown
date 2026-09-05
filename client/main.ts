@@ -29,7 +29,8 @@ export interface GameHook {
     dummies: { id: number; alive: boolean; health: number; pos: { x: number; y: number; z: number } }[];
     loop: typeof Game.prototype.stats;
     audio: Record<string, number>;
-    render: { post: boolean; district: string; frames: number; internalScale: number };
+    render: { post: boolean; district: string; frames: number; internalScale: number; levelCalls: number; calls: number; triangles: number };
+    level: string;
     wake: { phase: string; timeLeft: number; score: number[]; pulses: number; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number; boost: number; flips: number }[] } | null;
     team: number;
     hash: string;
@@ -102,7 +103,8 @@ window.__game = {
     dummies: game.world.dummies.map((d) => ({ id: d.id, alive: d.alive, health: d.health, pos: { ...d.pos } })),
     loop: { ...game.stats },
     audio: { ...game.audio.fired },
-    render: { post: !!game.renderer.post, district: game.renderer.district, frames: game.renderer.frames, internalScale: game.renderer.post.scale },
+    render: { post: !!game.renderer.post, district: game.renderer.district, frames: game.renderer.frames, internalScale: game.renderer.post.scale, levelCalls: game.renderer.levelCalls, calls: game.renderer.renderer.info.render.calls, triangles: game.renderer.renderer.info.render.triangles },
+    level: game.levelId,
     wake: game.world.wake ? { phase: game.world.wake.phase, timeLeft: game.world.wake.timeLeft, score: [...game.world.wake.score], pulses: game.world.wake.pulses, nodes: game.world.wake.nodes.map((n) => ({ id: n.id, label: n.label, owner: n.owner, hold: n.hold, contested: n.contested, puller: n.puller, boost: n.boost, flips: n.flips })) } : null,
     team: game.player.team,
     hash: game.hash(),
@@ -152,7 +154,7 @@ window.__game = {
     const loss = Number(q.get("loss") ?? 0);
     const jitter = Number(q.get("jitter") ?? 0);
     const seed = Number(q.get("seed") ?? 1);
-    game.connect({ url, name: q.get("name") ?? "BLANK", sim: lat || loss || jitter ? { latencyMs: lat, jitterMs: jitter, loss, seed } : undefined });
+    game.connect({ url, name: q.get("name") ?? "BLANK", token: q.get("token") ?? undefined, sim: lat || loss || jitter ? { latencyMs: lat, jitterMs: jitter, loss, seed } : undefined });
   }
 }
 

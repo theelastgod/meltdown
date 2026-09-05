@@ -43,7 +43,7 @@ function join(room: Room, name: string, account: string, loadout: unknown) {
 const legal = { primary: "lease_breaker", secondary: "shock_baton", attested: ["slipfile", "static_skin", "quiet_ledger"], keystone: "debtless" };
 
 describe("room — loadout validation at spawn", () => {
-  const mk = () => new Room({ ai: false, seed: 3, accounts: new MemoryAccountStore(devSeed), warmupSeconds: 1, roundSeconds: 5 });
+  const mk = () => new Room({ ai: false, seed: 3, level: "drainage_yard", accounts: new MemoryAccountStore(devSeed), warmupSeconds: 1, roundSeconds: 5 });
 
   it("admits a legal attestation and echoes the admitted loadout in the File message", () => {
     const room = mk();
@@ -107,13 +107,14 @@ describe("room — loadout validation at spawn", () => {
     const c = join(room, "GUEST", "", undefined);
     expect(c.kick()).toBeUndefined();
     expect(room.stats().players).toBe(1);
+    expect(room.stats().level).toBe("lease_row"); // the default room is a district of Lethe
   });
 });
 
 describe("room — settlement", () => {
   it("credits flips and node time during the round and pays XP/Scrip into the file at results", () => {
     const store = new MemoryAccountStore(devSeed);
-    const room = new Room({ ai: false, seed: 3, accounts: store, warmupSeconds: 0.5, roundSeconds: 6 });
+    const room = new Room({ ai: false, seed: 3, level: "drainage_yard", accounts: store, warmupSeconds: 0.5, roundSeconds: 6 });
     const a = join(room, "ALPHA", "fresh-alpha", { primary: "lease_breaker", secondary: "shock_baton", attested: [] });
     const b = join(room, "BRAVO", "fresh-bravo", { primary: "lease_breaker", secondary: "shock_baton", attested: [] });
     // put ALPHA on node D and BRAVO in a corner; no inputs needed, presence is what the wake reads

@@ -1,0 +1,47 @@
+PASS  lease_row: loads as LEASE ROW with the magenta cast  — 293 boxes · 0 wasps · 0 mechs · HUD "LEASE ROW (MAGENTA)"
+shot lease_row/street: luma 0.105 dark 67% neon 3.9% cy 31% mg 24% ye 7% red 14.9%
+PASS  lease_row: a Blank sprints the streets spawn → node B along nav waypoints (2 legs) and flips it  — ended 0.3 m from B · owner 1 hold 0.65 · 7.2 m/s top
+shot lease_row/node: luma 0.185 dark 55% neon 12.6% cy 23% mg 23% ye 3% red 4.9%
+PASS  lease_row: the Blank climbs the switchback stairs onto the walkway (26 legs)  — y 4.60 at (0.7, 15.8) · t+1 goto → reached (1.2,15.7)
+shot lease_row/walkway: luma 0.090 dark 79% neon 5.2% cy 24% mg 20% ye 16% red 14.2%
+shot lease_row/kernel: luma 0.080 dark 79% neon 5.7% cy 27% mg 14% ye 13% red 14.1%
+PASS  lease_row: THE KERNEL reads on the horizon (blood-red, fog-immune)  — red 14.09% of neon pixels
+PASS  lease_row/street: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.105 dark 67% neon 3.9% cy 31% mg 24% ye 7% red 14.9%
+PASS  lease_row/node: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.185 dark 55% neon 12.6% cy 23% mg 23% ye 3% red 4.9% gr 44%
+PASS  lease_row/walkway: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.090 dark 79% neon 5.2% cy 24% mg 20% ye 16% red 14.2%
+PASS  lease_row/kernel: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.080 dark 79% neon 5.7% cy 27% mg 14% ye 13% red 14.1%
+PASS  lease_row: render budget — ≤ 180 draw calls/frame (mirror + scene + post), ≤ 200k triangles  — 154 calls · 48468 triangles · 29 level batches
+PASS  deadletter_docks: loads as DEADLETTER DOCKS with the cyan cast  — 262 boxes · 0 wasps · 0 mechs · HUD "DEADLETTER DOCKS (CYAN)"
+shot deadletter_docks/street: luma 0.102 dark 68% neon 7.0% cy 64% mg 15% ye 9% red 1.9%
+PASS  deadletter_docks: a Blank sprints the streets spawn → node B along nav waypoints (2 legs) and flips it  — ended 0.3 m from B · owner 1 hold 0.65 · 7.2 m/s top
+shot deadletter_docks/node: luma 0.183 dark 55% neon 8.8% cy 24% mg 9% ye 3% red 1.5%
+PASS  deadletter_docks: the Blank climbs the switchback stairs onto the walkway (26 legs)  — y 4.60 at (16.7, 1.2) · t+541 goto → reached (16.7,1.7)
+shot deadletter_docks/walkway: luma 0.074 dark 81% neon 6.1% cy 39% mg 17% ye 8% red 13.8%
+shot deadletter_docks/kernel: luma 0.067 dark 84% neon 5.9% cy 40% mg 18% ye 6% red 14.0%
+PASS  deadletter_docks: THE KERNEL reads on the horizon (blood-red, fog-immune)  — red 14.01% of neon pixels
+PASS  deadletter_docks/street: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.102 dark 68% neon 7.0% cy 64% mg 15% ye 9% red 1.9%
+PASS  deadletter_docks/node: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.183 dark 55% neon 8.8% cy 24% mg 9% ye 3% red 1.5% gr 60%
+PASS  deadletter_docks/walkway: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.074 dark 81% neon 6.1% cy 39% mg 17% ye 8% red 13.8%
+PASS  deadletter_docks/kernel: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.067 dark 84% neon 5.9% cy 40% mg 18% ye 6% red 14.0%
+PASS  deadletter_docks: render budget — ≤ 180 draw calls/frame (mirror + scene + post), ≤ 200k triangles  — 120 calls · 35832 triangles · 31 level batches
+PASS  repo_depot: loads as REPO DEPOT with the amber cast  — 278 boxes · 0 wasps · 0 mechs · HUD "REPO DEPOT (AMBER)"
+shot repo_depot/street: luma 0.117 dark 66% neon 4.4% cy 29% mg 28% ye 10% red 10.8%
+PASS  repo_depot: a Blank sprints the streets spawn → node B along nav waypoints (2 legs) and flips it  — ended 0.3 m from B · owner 1 hold 0.65 · 7.2 m/s top
+shot repo_depot/node: luma 0.159 dark 59% neon 11.1% cy 18% mg 27% ye 2% red 5.1%
+PASS  repo_depot: the Blank climbs the switchback stairs onto the walkway (29 legs)  — y 4.60 at (0.9, 15.8) · t+1 goto → reached (1.2,15.7)
+shot repo_depot/walkway: luma 0.088 dark 77% neon 5.3% cy 30% mg 19% ye 11% red 13.2%
+shot repo_depot/kernel: luma 0.076 dark 79% neon 5.4% cy 36% mg 15% ye 9% red 9.8%
+PASS  repo_depot: THE KERNEL reads on the horizon (blood-red, fog-immune)  — red 9.81% of neon pixels
+PASS  repo_depot/street: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.117 dark 66% neon 4.4% cy 29% mg 28% ye 10% red 10.8%
+PASS  repo_depot/node: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.159 dark 59% neon 11.1% cy 18% mg 27% ye 2% red 5.1% gr 45%
+PASS  repo_depot/walkway: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.088 dark 77% neon 5.3% cy 30% mg 19% ye 11% red 13.2%
+PASS  repo_depot/kernel: reads like the clip (dark 62% · luma 0.13 · neon 4.1% · cy+mg 51% ref)  — luma 0.076 dark 79% neon 5.4% cy 36% mg 15% ye 9% red 9.8%
+PASS  repo_depot: render budget — ≤ 180 draw calls/frame (mirror + scene + post), ≤ 200k triangles  — 154 calls · 50092 triangles · 30 level batches
+PASS  sim holds 60 Hz in the city under the full post chain  — 59.4 ticks/s at 20.0 fps (SwiftShader, 480x270)
+PASS  MAP tab lists the range and the three districts of Lethe  — ▢ DRAINAGE YARD (RANGE) MAGENTA | ▢ LEASE ROW MAGENTA | ▢ DEADLETTER DOCKS CYAN | ▣ REPO DEPOT AMBER
+PASS  no page errors across three districts  — clean console
+PASS  online: a room built with ?level= plays that district  — room level deadletter_docks · ALPHA client level deadletter_docks
+PASS  online: a client that arrives for the wrong district travels to the room's and rejoins  — BRAVO now in deadletter_docks as file #2 · room players 2 (2 connected)
+
+32/32 checks passed.
+exit 0

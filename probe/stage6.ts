@@ -70,13 +70,13 @@ async function main(): Promise<void> {
   const vite = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", String(VITE_PORT), "--strictPort"], { stdio: ["ignore", "pipe", "pipe"] });
   await waitFor(vite, /127\.0\.0\.1/, "vite");
   const browser = await chromium.launch({ args: ARGS });
-  const room = `ghost?ai=0&warmup=2&round=24`;
+  const room = `ghost?ai=0&warmup=2&round=24&level=drainage_yard`;
   const stats = async () => (await (await fetch(`http://127.0.0.1:${HOST_PORT}/stats`)).json()) as { rooms: Record<string, { settlements: number; loadoutRejections: string[]; match: { phase: string; winner: number; score: number[] }; clients: { name: string; flips: number; nodeSeconds: number; file: { depth: number; xp: number; scrip: number } | null; loadout: { attested: string[]; keystone: string | null } }[] }>; files: Record<string, { depth: number; xp: number; scrip: number; matches: number; ledger: string[] }>; saves: number };
   try {
     const open = async (name: string, account: string, loadout: unknown, render = false): Promise<Page> => {
       const pg = await browser.newPage({ viewport: render ? { width: 1280, height: 720 } : { width: 480, height: 270 } });
       const lo = loadout === undefined ? "" : `&loadout=${encodeURIComponent(JSON.stringify(loadout))}`;
-      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?${render ? "" : "norender=1&"}net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&name=${name}&account=${account}${lo}`, { waitUntil: "load" });
+      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?${render ? "" : "norender=1&"}net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&level=drainage_yard&name=${name}&account=${account}${lo}`, { waitUntil: "load" });
       await pg.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 });
       await pg.waitForFunction(() => { const n = window.__game.net(); return !!n && (n.status === "kicked" || n.status === "closed" || (n.status === "joined" && n.synced)); }, null, { timeout: 15000, polling: 100 });
       return pg;

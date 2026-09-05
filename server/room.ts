@@ -7,7 +7,7 @@
  */
 import { SIM_HZ } from "../shared/sim/constants";
 import { MAX_BUTTONS } from "../shared/sim/input";
-import { drainageYard } from "../shared/sim/level";
+import { levelById } from "../shared/sim/level";
 import { World, type RewindPose, type SimEvent } from "../shared/sim/world";
 import type { PlayerState } from "../shared/sim/player";
 import {
@@ -92,10 +92,13 @@ export interface RoomOptions {
   accounts?: AccountStore | null;
   warmupSeconds?: number;
   roundSeconds?: number;
+  /** Level id (shared/sim/level.ts registry); unknown ids fall back to the default district. */
+  level?: string;
 }
 
 export interface RoomStats {
   tick: number;
+  level: string;
   players: number;
   connected: number;
   tickHz: number;
@@ -150,8 +153,9 @@ export class Room {
       accounts: opts.accounts ?? null,
       warmupSeconds: opts.warmupSeconds ?? 20,
       roundSeconds: opts.roundSeconds ?? 360,
+      level: opts.level ?? "",
     };
-    this.world = new World(drainageYard(), { ai: this.opts.ai, seed: this.opts.seed, wakePhase: "warmup", warmupSeconds: this.opts.warmupSeconds, roundSeconds: this.opts.roundSeconds });
+    this.world = new World(levelById(this.opts.level || undefined), { ai: this.opts.ai, seed: this.opts.seed, wakePhase: "warmup", warmupSeconds: this.opts.warmupSeconds, roundSeconds: this.opts.roundSeconds });
     this.startedAt = this.opts.now();
     this.lastRateAt = this.startedAt;
   }
@@ -694,6 +698,7 @@ export class Room {
     });
     return {
       tick: this.tick,
+      level: this.world.level.name,
       players: this.clients.size,
       connected: this.byConn.size,
       tickHz: this.tickHz || (this.tick * 1000) / Math.max(1, this.opts.now() - this.startedAt),

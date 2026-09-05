@@ -14,7 +14,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 6 | Ghostfile foundation: manifest, Fairness Lint, spawn validation, Depth/XP, currencies, crafting | **done** | `docs/proof/stage6/` |
 | 7 | Ledger Graph + weapon mastery | | |
 | 8 | Identity & rituals | | |
-| 9 | Lethe proper: three districts, THE KERNEL horizon | | |
+| 9 | Lethe proper: three districts, THE KERNEL horizon, district select, render budget | **done** (pulled ahead at the owner's request: "the game needs to feel and be like it's in a city") | `docs/proof/stage9/` |
 | 10 | Campaign | | |
 | 11 | Endgame loops | | |
 | 11b | The Counter-Ledger: WAKE on Robinhood Chain, WalletConnect link, Ghostfile SBT + stamps, market, names (`docs/TOKENOMICS.md`) | | |
@@ -341,3 +341,96 @@ flips D and holds it, results settle both files (ALPHA +1104 XP / +132
 Scrip with 354 objective XP; BRAVO 250 participation XP), the store saves
 twice, the client's ledger carries the MATCH / OBJECTIVE / XP lines, and
 the FILE panel shows `NET DELTA: −24.700 — RECONCILED`.
+
+## Stage 9 — Lethe proper (pulled ahead)
+
+**Goal.** The owner's note: *the game needs to feel and be like it's in a
+city.* The playable space stops being a yard and becomes a district of
+Lethe: streets between building blocks, sidewalks and curbs, alleys with
+dumpsters and fire escapes, storefronts under awnings, parked cars, lamps,
+pedestrian rails, an elevated walkway with switchback stairs, a metro
+kiosk on the plaza, the wake's nodes at the intersections — enclosed by
+tall facades, with the skyline, traffic on an elevated ring road, and THE
+KERNEL beyond. Three districts ship (Lease Row / magenta, Deadletter Docks
+/ cyan, Repo Depot / amber), the range stays for tests, and the ledger UI
+travels between them.
+
+**Files.**
+- `shared/sim/city.ts` — the district generator: a 3×3 grid of 24 m blocks
+  on 9 m streets (1.5 m sidewalks, 15 cm curbs), block kinds (`tower`,
+  `split` with an alley, `court`, `market`, `lot`, `yard`, `stack`,
+  `plaza`), storefronts, awnings (render-only `decor`), vending machines,
+  cars, lamps, rails, the walkway (landings + stairs in the perimeter
+  streets, a spur into the plaza), signs in each district's voice, the
+  light rig, wasp patrols over the streets, mechs on the ring avenue,
+  traffic lanes. Deterministic per spec (seeded LCG). `DISTRICT_SPECS`.
+- `shared/sim/level.ts` — `LevelDef` grew `displayName`, `district`,
+  `bounds`, `decor`, `signs`, `lights`, `traffic`, `skylineSeed`; the
+  registry `levelById` / `LEVEL_IDS` / `DEFAULT_LEVEL_ID` (`lease_row`);
+  the yard's lights and signs became data. `shared/sim/box.ts` holds the
+  `Box` type so the city and the level registry don't import in a cycle.
+- `shared/sim/nav.ts` — a 1 m walkability grid over any level: ground is
+  the highest surface under 3 m (walkways and awnings are overhead), a
+  cell is standable when the only contacts are step-height vertical ones
+  (a curb beside your foot is a step-up, not a wall); BFS paths with a step
+  limit, turning-point waypoints, reachability sets. Probes route bots
+  along streets with it; campaign AI will too.
+- `client/render/city.ts` — `dressLevel` replaces `dressArena`: a
+  material-keyed `MeshBatch` (per-face UV scaling so brick and window grids
+  stay in metres), the `NeonBatch`, a `SignAtlas` (all of a level's signs
+  on one texture → one mesh), tags for every city element (facades with
+  ledge strips every few floors, ground-floor plinths with shutters and
+  coloured shop glow, cars with cabins, glass, wheels, tail and head
+  lights, lamps with pools, rails in the clip's magenta-post/cyan-bar
+  motif, chain-link impound fences with amber top strips, containers,
+  cranes, the metro mouth with green light bars and the hex lock glyph),
+  `buildSkyline` seeded per district with an inner radius past the
+  facades, and `Traffic` (head/tail-light streaks on the ring road, one
+  LineSegments updated per frame).
+- `client/render/renderer.ts` — district cast from the level, point lights
+  from level data (strongest eight), traffic on the far layer, frame-wide
+  render counters for the budget check.
+- `client/game.ts`, `client/main.ts` — `?level=` builds the level; a Welcome
+  naming a different district makes the client travel (reload with the
+  room's level and the session token, so it rejoins as the same file).
+- `client/hud/hud.ts` — zone label, mission title, radar scale from the
+  level; the MAP tab / **M** opens the district select (travel).
+- `server/room.ts`, `server/node-host.ts`, `server/worker.ts` — `level`
+  option; `?level=` on the room URL picks the district (the Durable Object
+  builds its room on first contact so the opening URL decides).
+- `tests/city.test.ts` — registry, determinism, spawns/nodes in free space,
+  every spawn reaches every node at street level in every district, the
+  walkway is reachable up its stairs with steps only, a district plays and
+  hashes deterministically.
+- `probe/stage9.ts` — below.
+
+**Design decisions surfaced by the tests and probe.**
+- The walkway must follow a real street (the first draft crossed through
+  building masses) and its stairs must be entered from their low end: the
+  first stairs ran straight into the perimeter facade, so the nav showed
+  them as unreachable; the landings + switchback stairs along the perimeter
+  street fixed it and kept that street open beside them.
+- Node B sits under the walkway, so a nav that treats the walkway as
+  ground can't route from B; the probe steps back down the street before
+  routing up. (A multi-level nav is future work; the two-`maxTop` grids
+  cover streets and the walkway.)
+- Amber is VANTAGE's colour, not a district's wallpaper: the depot's rig
+  is cyan/magenta with amber on a fifth of the strips and on the lot lights,
+  fences and towers; the first amber-lit depot read 58% yellow.
+- Everything is batched: ~290 boxes and ~60 signs become ~30 level draw
+  calls; a full frame (mirror + scene + post) is ~120–155 calls and ~48k
+  triangles — well inside a 60 fps budget on an integrated GPU (SwiftShader
+  here still holds the 60 Hz sim; rendering is the software rasteriser's
+  problem, not the scene's).
+
+**Acceptance (`npm run probe:city`, 32/32; `npm test`, 96 tests):** each
+district loads with its name and cast; a Blank sprints the streets from
+spawn to node B along nav waypoints and flips it, walks back down the
+street, and climbs the switchback stairs onto the walkway; THE KERNEL reads
+on the horizon; every street / node / walkway / horizon frame sits in the
+clip's bands (near-black base, luma, neon fraction, cyan + magenta
+carrying the neon — green counted at a flipped node); the render budget
+holds; the sim holds 60 Hz; the MAP tab lists the range and three
+districts; online, a room built with `?level=deadletter_docks` plays the
+docks and a client that arrives for Lease Row travels to the docks and
+rejoins as the same file.

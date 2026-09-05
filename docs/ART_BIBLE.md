@@ -56,5 +56,8 @@ Market / Quests). Everything typed, nothing rounded, no icons except glyphs.
   screenshots; it drops to the near-black base in Stage 3.
 - **Stage 3:** lighting rig, GPU rain, wet reflections, fog, post chain,
   district colour casts, screenshot-diff tests against frames from the clip.
-- **Stage 9:** three districts of Lethe kitbashed from this vocabulary, THE
-  KERNEL on every horizon.
+- **Stage 9 (shipped early, at the owner's request):** three districts of
+  Lethe kitbashed from this vocabulary — streets, blocks, alleys, walkway,
+  storefronts, cars, rails, lamps, the metro mouth — THE KERNEL on every
+  horizon, traffic on the ring road. Cyan and magenta carry every district;
+  amber appears only where VANTAGE is (the depot's lots, fences, towers).

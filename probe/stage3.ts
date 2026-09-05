@@ -14,7 +14,7 @@ import type { BotStep } from "../client/bot";
 import { computeLookStatsSource, type LookStats } from "./look-metrics";
 
 const PORT = 5181;
-const URL = `http://127.0.0.1:${PORT}/?headless=1&ai=0`;
+const URL = `http://127.0.0.1:${PORT}/?headless=1&ai=0&level=drainage_yard`;
 const OUT = "probe/out";
 
 function startVite(): Promise<ChildProcess> {

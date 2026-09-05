@@ -26,6 +26,7 @@ jobs:
       - run: npm run probe:wake
       - run: npm run lint:fairness -- --quick
       - run: npm run probe:file
+      - run: npm run probe:city
       - uses: actions/upload-artifact@v4
         if: always()
         with:
