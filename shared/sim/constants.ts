@@ -4,8 +4,8 @@
  */
 export const SIM_HZ = 60;
 export const SIM_DT = 1 / SIM_HZ;
-/** Max ticks the client loop will catch up in one frame before it drops time. */
-export const MAX_CATCHUP_TICKS = 8;
+/** Max ticks the client loop will catch up in one frame before it drops time (0.5 s; a tick costs ~0.02 ms, so hitches are absorbed, not dropped). */
+export const MAX_CATCHUP_TICKS = 30;
 
 export const MOVE = {
   walkSpeed: 5.2,

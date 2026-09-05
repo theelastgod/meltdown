@@ -1,8 +1,12 @@
 import * as THREE from "three";
-import type { LevelDef, Box } from "@shared/sim/level";
+import type { LevelDef } from "@shared/sim/level";
 import type { Dummy } from "@shared/sim/world";
 import { MOVE } from "@shared/sim/constants";
 import type { Vec3 } from "@shared/math/vec3";
+import { PostChain } from "./post";
+import { Rain } from "./rain";
+import { makeWetFloor } from "./wetfloor";
+import { buildSkyline, dressArena, PALETTE } from "./city";
 
 /** Interpolated view state handed to the renderer each frame. */
 export interface ViewState {
@@ -20,25 +24,29 @@ export interface ViewState {
   reloading: number; // 0..1 progress, 0 when idle
 }
 
-const PALETTE = {
-  bg: 0x04060a,
-  fog: 0x05070c,
-  cyan: 0x35f2ff,
-  magenta: 0xff3ec9,
-  amber: 0xffb02e,
-  violet: 0x8f4dff,
-  surface: 0x2e3646,
-};
+/** Layer for things the wet-floor mirror must not see (rain, far skyline): cheaper and no blown-out sky. */
+export const FAR_LAYER = 1;
+
+/** District colour casts: fog colour, ambient tint, and the two rig lights. */
+export const DISTRICTS = {
+  magenta: { fog: 0x0b0610, ambient: 0x2c2238, sky: 0x3a2a55, keyA: PALETTE.magenta, keyB: PALETTE.cyan },
+  cyan: { fog: 0x05090f, ambient: 0x1e2a38, sky: 0x224055, keyA: PALETTE.cyan, keyB: PALETTE.magenta },
+  amber: { fog: 0x0e0904, ambient: 0x362a1a, sky: 0x554020, keyA: PALETTE.amber, keyB: PALETTE.cyan },
+} as const;
+export type DistrictId = keyof typeof DISTRICTS;
 
 /**
- * Stage 1 renderer: grey-box kitbash with neon edge strips (the trailer's
- * silhouette language), fog, and a cheap wet-floor sheen. The full lighting
- * rig, GPU rain and the post chain arrive in Stage 3.
+ * The look: neon kitbash on a near-black wet city, rain, fog, and a full-screen
+ * CRT post chain. Geometry is low-poly by design; lighting, fog, and post do
+ * the work.
  */
 export class Renderer {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
+  readonly post: PostChain;
+  readonly district: DistrictId;
+  private rain: Rain;
   private dummyMeshes = new Map<number, { group: THREE.Group; mat: THREE.MeshStandardMaterial; flash: number }>();
   private tracers: { line: THREE.Line; mat: THREE.LineBasicMaterial; born: number; life: number }[] = [];
   private sparks: { mesh: THREE.Mesh; born: number }[] = [];
@@ -51,128 +59,74 @@ export class Renderer {
   private clock = 0;
   frames = 0;
 
-  constructor(canvas: HTMLCanvasElement, level: LevelDef) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    this.renderer.setSize(window.innerWidth, window.innerHeight, false);
+  constructor(canvas: HTMLCanvasElement, level: LevelDef, district: DistrictId = "magenta") {
+    this.district = district;
+    const cast = DISTRICTS[district];
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.25;
     this.scene.background = new THREE.Color(PALETTE.bg);
-    this.scene.fog = new THREE.FogExp2(PALETTE.fog, 0.028);
+    const fogColor = new THREE.Color(cast.fog);
+    const fogDensity = 0.013;
+    this.scene.fog = new THREE.FogExp2(cast.fog, fogDensity);
 
-    this.camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.05, 260);
+    this.camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.05, 900);
     this.camera.rotation.order = "YXZ";
     this.scene.add(this.camera);
 
-    this.buildLevel(level);
-    this.buildLights();
+    dressArena(this.scene, level);
+    const skyline = buildSkyline(this.scene);
+    skyline.traverse((o) => o.layers.set(FAR_LAYER));
+    this.buildLights(cast);
+    this.rain = new Rain();
+    this.rain.object.layers.set(FAR_LAYER);
+    this.scene.add(this.rain.object);
+    this.camera.layers.enable(FAR_LAYER);
+    const floor = level.boxes.find((b) => b.tag === "floor")!;
+    this.scene.add(makeWetFloor(floor.max.x - floor.min.x, floor.max.z - floor.min.z, floor.max.y + 0.002, fogColor, fogDensity));
 
-    this.muzzle = new THREE.PointLight(PALETTE.cyan, 0, 6, 2);
+    this.muzzle = new THREE.PointLight(PALETTE.cyan, 0, 7, 2);
     this.camera.add(this.muzzle);
     this.muzzle.position.set(0.25, -0.2, -0.8);
 
     this.viewmodel = this.buildViewmodel();
     this.camera.add(this.viewmodel);
 
+    this.post = new PostChain(this.renderer, this.scene, this.camera, window.innerWidth, window.innerHeight, 0.6);
     window.addEventListener("resize", () => this.resize());
   }
 
   resize(): void {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    this.renderer.setSize(w, h, false);
+    this.post.resize(this.renderer, w, h);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
 
-  private tint(tag: string | undefined): number {
-    switch (tag) {
-      case "deck":
-      case "upperdeck":
-      case "gantry":
-      case "gantrystair":
-        return PALETTE.cyan;
-      case "block":
-      case "highwall":
-      case "lowwall":
-        return PALETTE.magenta;
-      case "pillar":
-        return PALETTE.violet;
-      case "crate":
-      case "curb":
-      case "kerb":
-        return PALETTE.amber;
-      case "wall":
-        return PALETTE.magenta;
-      default:
-        return PALETTE.cyan;
-    }
-  }
-
-  private buildLevel(level: LevelDef): void {
-    const surf = new THREE.MeshStandardMaterial({ color: PALETTE.surface, roughness: 0.6, metalness: 0.25 });
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x141a24, roughness: 0.3, metalness: 0.5 });
-    for (const b of level.boxes) {
-      const sx = b.max.x - b.min.x;
-      const sy = b.max.y - b.min.y;
-      const sz = b.max.z - b.min.z;
-      const geo = new THREE.BoxGeometry(sx, sy, sz);
-      const mesh = new THREE.Mesh(geo, b.tag === "floor" ? floorMat : surf);
-      mesh.position.set((b.min.x + b.max.x) / 2, (b.min.y + b.max.y) / 2, (b.min.z + b.max.z) / 2);
-      this.scene.add(mesh);
-      if (b.tag === "floor") {
-        this.addFloorGrid(b);
-        continue;
-      }
-      const edges = new THREE.EdgesGeometry(geo);
-      const col = this.tint(b.tag);
-      const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.85 }));
-      line.position.copy(mesh.position);
-      this.scene.add(line);
-      // neon tube along the top perimeter of taller pieces (the clip's ledge strips)
-      if (sy >= 1 && b.tag !== "wall") {
-        const stripMat = new THREE.MeshBasicMaterial({ color: col });
-        const t = 0.06;
-        const y = b.max.y + t / 2;
-        const bars: [number, number, number, number][] = [
-          [sx + t, t, mesh.position.x, b.min.z],
-          [sx + t, t, mesh.position.x, b.max.z],
-          [t, sz + t, b.min.x, mesh.position.z],
-          [t, sz + t, b.max.x, mesh.position.z],
-        ];
-        for (const [w, d, x, z] of bars) {
-          const bar = new THREE.Mesh(new THREE.BoxGeometry(w, t, d), stripMat);
-          bar.position.set(x, y, z);
-          this.scene.add(bar);
-        }
-      }
-    }
-  }
-
-  private addFloorGrid(b: Box): void {
-    const size = Math.max(b.max.x - b.min.x, b.max.z - b.min.z);
-    const grid = new THREE.GridHelper(size, size / 2, PALETTE.cyan, 0x0d2a33);
-    (grid.material as THREE.Material).transparent = true;
-    (grid.material as THREE.Material).opacity = 0.35;
-    grid.position.set((b.min.x + b.max.x) / 2, b.max.y + 0.005, (b.min.z + b.max.z) / 2);
-    this.scene.add(grid);
-  }
-
-  private buildLights(): void {
-    this.scene.add(new THREE.AmbientLight(0x7080a0, 1.6));
-    const hemi = new THREE.HemisphereLight(0x6a80b0, 0x101418, 1.4);
-    this.scene.add(hemi);
-    const key = new THREE.DirectionalLight(0x8fc8ff, 3.0);
+  private buildLights(cast: (typeof DISTRICTS)[DistrictId]): void {
+    this.scene.add(new THREE.AmbientLight(cast.ambient, 1.35));
+    this.scene.add(new THREE.HemisphereLight(cast.sky, 0x06070b, 1.0));
+    const key = new THREE.DirectionalLight(0x8fc8ff, 1.1);
     key.position.set(-20, 40, 10);
     this.scene.add(key);
-    // district cast: a cyan and a magenta point light on opposite sides
-    const cy = new THREE.PointLight(PALETTE.cyan, 40, 70, 1.4);
-    cy.position.set(-20, 8, -20);
-    this.scene.add(cy);
-    const mg = new THREE.PointLight(PALETTE.magenta, 40, 70, 1.4);
-    mg.position.set(22, 8, 18);
-    this.scene.add(mg);
+    // district rig: two big casts on opposite corners, two local pools
+    const a = new THREE.PointLight(cast.keyA, 60, 80, 1.5);
+    a.position.set(22, 9, 18);
+    this.scene.add(a);
+    const b = new THREE.PointLight(cast.keyB, 60, 80, 1.5);
+    b.position.set(-20, 9, -20);
+    this.scene.add(b);
+    const deck = new THREE.PointLight(PALETTE.cyan, 14, 22, 1.6);
+    deck.position.set(0, 4.5, -6);
+    this.scene.add(deck);
+    const lane = new THREE.PointLight(PALETTE.cyan, 12, 20, 1.6);
+    lane.position.set(0, 4.3, 14);
+    this.scene.add(lane);
+    const crates = new THREE.PointLight(PALETTE.amber, 8, 12, 1.8);
+    crates.position.set(-11, 2.5, 21);
+    this.scene.add(crates);
   }
 
   private buildViewmodel(): THREE.Group {
@@ -185,7 +139,9 @@ export class Renderer {
     grip.position.set(0, -0.12, 0.08);
     const strip = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.3), new THREE.MeshBasicMaterial({ color: PALETTE.cyan }));
     strip.position.set(0.05, 0.03, -0.1);
-    g.add(receiver, barrel, grip, strip);
+    const strip2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.008, 0.03), new THREE.MeshBasicMaterial({ color: PALETTE.magenta }));
+    strip2.position.set(0, 0.065, 0.1);
+    g.add(receiver, barrel, grip, strip, strip2);
     g.position.set(0.28, -0.26, -0.55);
     g.rotation.y = -0.04;
     return g;
@@ -195,16 +151,22 @@ export class Renderer {
     for (const d of dummies) {
       let e = this.dummyMeshes.get(d.id);
       if (!e) {
-        const mat = new THREE.MeshStandardMaterial({ color: 0x1a1208, emissive: PALETTE.amber, emissiveIntensity: 0.55, roughness: 0.6 });
+        // VANTAGE repo unit: hooded dark silhouette, amber servo light, never a lit face
+        const mat = new THREE.MeshStandardMaterial({ color: 0x0d0a06, emissive: PALETTE.amber, emissiveIntensity: 0.12, roughness: 0.7 });
         const cap = new THREE.Mesh(new THREE.CapsuleGeometry(MOVE.capsuleRadius, MOVE.standHeight - MOVE.capsuleRadius * 2, 4, 10), mat);
         cap.position.y = MOVE.standHeight / 2;
         const group = new THREE.Group();
         group.add(cap);
-        // head band, so zones read at a glance
-        const band = new THREE.Mesh(new THREE.TorusGeometry(MOVE.capsuleRadius + 0.02, 0.015, 6, 24), new THREE.MeshBasicMaterial({ color: PALETTE.amber }));
+        const hood = new THREE.Mesh(new THREE.ConeGeometry(MOVE.capsuleRadius + 0.08, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0x0a0806, roughness: 0.9 }));
+        hood.position.y = MOVE.standHeight - 0.05;
+        group.add(hood);
+        const band = new THREE.Mesh(new THREE.TorusGeometry(MOVE.capsuleRadius + 0.02, 0.02, 6, 24), new THREE.MeshBasicMaterial({ color: PALETTE.amber }));
         band.rotation.x = Math.PI / 2;
         band.position.y = MOVE.standHeight * 0.82;
         group.add(band);
+        const servo = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.06), new THREE.MeshBasicMaterial({ color: PALETTE.amber }));
+        servo.position.set(0, 1.0, -MOVE.capsuleRadius);
+        group.add(servo);
         this.scene.add(group);
         e = { group, mat, flash: 0 };
         this.dummyMeshes.set(d.id, e);
@@ -212,7 +174,7 @@ export class Renderer {
       e.group.visible = d.alive;
       e.group.position.set(d.pos.x, d.pos.y, d.pos.z);
       e.flash = Math.max(0, e.flash - 0.08);
-      e.mat.emissiveIntensity = 0.55 + e.flash * 2.5;
+      e.mat.emissiveIntensity = 0.12 + e.flash * 0.9;
     }
   }
 
@@ -247,22 +209,19 @@ export class Renderer {
     const dt = Math.min(rawDt, 1 / 30);
     this.clock += dt;
     this.frames++;
-    // eye height smoothing (slides dip the camera)
     this.eyeSmooth += (v.eye - this.eyeSmooth) * Math.min(1, dt * 18);
-    // view bob while grounded and moving
     if (v.grounded && v.speed > 0.5 && v.stance !== "slide") this.bobPhase += dt * (6 + v.speed * 0.9);
     const bobY = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase * 2) * 0.012 * Math.min(1, v.speed / 5) : 0;
     const bobX = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase) * 0.008 * Math.min(1, v.speed / 5) : 0;
     this.camera.position.set(v.x, v.y + this.eyeSmooth + bobY, v.z);
     this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, v.stance === "slide" ? 0.03 : bobX * 0.6);
 
-    // viewmodel kick + reload dip
     this.vmKick = Math.max(0, this.vmKick - dt * 14);
     const dip = v.reloading > 0 ? Math.sin(v.reloading * Math.PI) * 0.18 : 0;
     this.viewmodel.position.set(0.28 + bobX * 0.5, -0.26 - dip + bobY * 0.5, -0.55 + this.vmKick * 0.06);
     this.viewmodel.rotation.x = this.vmKick * 0.08 - dip * 0.8;
     this.muzzleT = Math.max(0, this.muzzleT - dt * 18);
-    this.muzzle.intensity = this.muzzleT * 6;
+    this.muzzle.intensity = this.muzzleT * 8;
 
     for (let i = this.tracers.length - 1; i >= 0; i--) {
       const t = this.tracers[i]!;
@@ -282,6 +241,7 @@ export class Renderer {
         this.sparks.splice(i, 1);
       } else s.mesh.scale.setScalar(1 + age * 12);
     }
-    this.renderer.render(this.scene, this.camera);
+    this.rain.update(this.clock, this.camera);
+    this.post.render(this.clock, dt);
   }
 }

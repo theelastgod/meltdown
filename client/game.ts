@@ -59,7 +59,7 @@ export class Game {
   realtime = !new URLSearchParams(location.search).has("headless");
   hitmarkers = false;
   readonly recentEvents: SimEvent[] = [];
-  readonly stats = { ticks: 0, frames: 0, droppedTime: 0, fps: 0, simHz: 0, wallStart: 0 };
+  readonly stats = { ticks: 0, frames: 0, droppedTime: 0, fps: 0, simHz: 0, wallStart: 0, realtimeWall: 0, realtimeTicks: 0, maxFrameDt: 0, catchupHits: 0 };
   private stepDist = 0;
   private stepSide = 1;
   private fpsWindow = { t: 0, frames: 0, ticks: 0 };
@@ -152,6 +152,7 @@ export class Game {
       case "kill":
         this.audio.kill();
         this.hud.killStamp();
+        this.renderer.post.kick(1);
         this.hud.push(`BLANK ⟶ DUMMY-${String(ev.victimId).padStart(2, "0")} · TTK ${ev.ttkSeconds.toFixed(2)}s`, "mg");
         break;
       case "slide":
@@ -182,6 +183,12 @@ export class Game {
         break;
       case "dummyRespawn":
         this.hud.push(`DUMMY-${String(ev.dummyId).padStart(2, "0")} RE-LEASED`, "am");
+        this.hud.alert(`◆ VANTAGE RE-LEASE — DUMMY-${String(ev.dummyId).padStart(2, "0")} back on the ledger`, true);
+        break;
+      case "mantleEnd":
+      case "slideEnd":
+      case "death":
+      case "respawn":
         break;
       default:
         break;
@@ -192,19 +199,24 @@ export class Game {
     if (this.last < 0) this.last = now;
     let dt = (now - this.last) / 1000;
     this.last = now;
-    if (dt > 0.25) {
-      this.stats.droppedTime += dt - 0.25;
-      dt = 0.25;
+    if (dt > 0.5) {
+      // a tab switch or a very long hitch: drop the excess rather than simulate it
+      this.stats.droppedTime += dt - 0.5;
+      dt = 0.5;
     }
     if (this.realtime) {
       this.acc += dt;
+      this.stats.realtimeWall += dt;
+      if (dt > this.stats.maxFrameDt) this.stats.maxFrameDt = dt;
       let n = 0;
       while (this.acc >= SIM_DT && n < MAX_CATCHUP_TICKS) {
         this.tick();
         this.acc -= SIM_DT;
         n++;
       }
+      this.stats.realtimeTicks += n;
       if (n === MAX_CATCHUP_TICKS && this.acc > SIM_DT) {
+        this.stats.catchupHits++;
         this.stats.droppedTime += this.acc;
         this.acc = 0;
       }
@@ -242,6 +254,6 @@ export class Game {
       this.stats.simHz = (this.stats.ticks - this.fpsWindow.ticks) / this.fpsWindow.t;
       this.fpsWindow = { t: 0, frames: 0, ticks: this.stats.ticks };
     }
-    this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ);
+    this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies);
   }
 }

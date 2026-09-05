@@ -26,6 +26,7 @@ export interface GameHook {
     dummies: { id: number; alive: boolean; health: number; pos: { x: number; y: number; z: number } }[];
     loop: typeof Game.prototype.stats;
     audio: Record<string, number>;
+    render: { post: boolean; district: string; frames: number; internalScale: number };
     hash: string;
   };
   events: () => SimEvent[];
@@ -67,6 +68,7 @@ window.__game = {
     dummies: game.world.dummies.map((d) => ({ id: d.id, alive: d.alive, health: d.health, pos: { ...d.pos } })),
     loop: { ...game.stats },
     audio: { ...game.audio.fired },
+    render: { post: !!game.renderer.post, district: game.renderer.district, frames: game.renderer.frames, internalScale: game.renderer.post.scale },
     hash: game.hash(),
   }),
   events: () => game.recentEvents.slice(),

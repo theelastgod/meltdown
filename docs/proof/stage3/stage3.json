@@ -1,0 +1,145 @@
+{
+  "reference": {
+    "meanLuma": 0.13324019641517404,
+    "darkFrac": 0.6222593245967741,
+    "neonFrac": 0.04103545960274791,
+    "hue": {
+      "cyan": 0.374827410568705,
+      "magenta": 0.13811758127037824,
+      "yellow": 0.08809007134945011,
+      "green": 0.2990462946291703,
+      "red": 0.024140358179897185,
+      "blue": 0.06675825013163811,
+      "other": 0.009020033870761066
+    }
+  },
+  "shots": {
+    "lane": {
+      "width": 1280,
+      "height": 720,
+      "meanLuma": 0.08592369716267054,
+      "darkFrac": 0.6224283854166667,
+      "neonFrac": 0.026089409722222224,
+      "hue": {
+        "cyan": 0.26168690733654965,
+        "magenta": 0.19726335052403926,
+        "yellow": 0.11162868075195476,
+        "green": 0.2997005489935119,
+        "red": 0.07627682581933122,
+        "blue": 0.020171352520379306,
+        "other": 0.0332723340542339
+      }
+    },
+    "arena": {
+      "width": 1280,
+      "height": 720,
+      "meanLuma": 0.06183504123945993,
+      "darkFrac": 0.8239507378472222,
+      "neonFrac": 0.021983506944444446,
+      "hue": {
+        "cyan": 0.22961500493583414,
+        "magenta": 0.2521717670286278,
+        "yellow": 0.0935340572556762,
+        "green": 0.29338598223099704,
+        "red": 0.08928923988153999,
+        "blue": 0.021520236920039487,
+        "other": 0.02048371174728529
+      }
+    },
+    "skyline": {
+      "width": 1280,
+      "height": 720,
+      "meanLuma": 0.06584131572801193,
+      "darkFrac": 0.8457356770833333,
+      "neonFrac": 0.028502604166666667,
+      "hue": {
+        "cyan": 0.3830135526115426,
+        "magenta": 0.19464747982335923,
+        "yellow": 0.09654332267397595,
+        "green": 0.24025430181209076,
+        "red": 0.038031064412973964,
+        "blue": 0.011611085731688746,
+        "other": 0.035899192934368815
+      }
+    }
+  },
+  "checks": [
+    {
+      "name": "post chain active at reduced internal resolution",
+      "pass": true,
+      "detail": "post=true scale=0.6"
+    },
+    {
+      "name": "lane: near-black base like the clip (dark 62% ref)",
+      "pass": true,
+      "detail": "dark 62%"
+    },
+    {
+      "name": "lane: mean luma in the clip's band (ref 0.133)",
+      "pass": true,
+      "detail": "luma 0.086"
+    },
+    {
+      "name": "lane: neon coverage in the clip's band (ref 4.1%)",
+      "pass": true,
+      "detail": "neon 2.6%"
+    },
+    {
+      "name": "lane: cyan + magenta dominate the neon (ref 51%)",
+      "pass": true,
+      "detail": "cy+mg 46%"
+    },
+    {
+      "name": "arena: near-black base like the clip (dark 62% ref)",
+      "pass": true,
+      "detail": "dark 82%"
+    },
+    {
+      "name": "arena: mean luma in the clip's band (ref 0.133)",
+      "pass": true,
+      "detail": "luma 0.062"
+    },
+    {
+      "name": "arena: neon coverage in the clip's band (ref 4.1%)",
+      "pass": true,
+      "detail": "neon 2.2%"
+    },
+    {
+      "name": "arena: cyan + magenta dominate the neon (ref 51%)",
+      "pass": true,
+      "detail": "cy+mg 48%"
+    },
+    {
+      "name": "skyline: near-black base like the clip (dark 62% ref)",
+      "pass": true,
+      "detail": "dark 85%"
+    },
+    {
+      "name": "skyline: mean luma in the clip's band (ref 0.133)",
+      "pass": true,
+      "detail": "luma 0.066"
+    },
+    {
+      "name": "skyline: neon coverage in the clip's band (ref 4.1%)",
+      "pass": true,
+      "detail": "neon 2.9%"
+    },
+    {
+      "name": "skyline: cyan + magenta dominate the neon (ref 51%)",
+      "pass": true,
+      "detail": "cy+mg 58%"
+    },
+    {
+      "name": "sim holds 60 Hz under the full post chain",
+      "pass": true,
+      "detail": "59.4 ticks/s at 15.0 fps (SwiftShader, 480x270)"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": "clean console"
+    }
+  ],
+  "simHz": 59.4049520766718,
+  "renderFps": 15.000937558597432
+}

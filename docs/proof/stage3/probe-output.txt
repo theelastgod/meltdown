@@ -1,0 +1,20 @@
+shot lane: luma 0.086 dark 62% neon 2.6% cy 26% mg 20% ye 11% gr 30%
+shot arena: luma 0.062 dark 82% neon 2.2% cy 23% mg 25% ye 9% gr 29%
+shot skyline: luma 0.066 dark 85% neon 2.9% cy 38% mg 19% ye 10% gr 24%
+PASS  post chain active at reduced internal resolution  — post=true scale=0.6
+PASS  lane: near-black base like the clip (dark 62% ref)  — dark 62%
+PASS  lane: mean luma in the clip's band (ref 0.133)  — luma 0.086
+PASS  lane: neon coverage in the clip's band (ref 4.1%)  — neon 2.6%
+PASS  lane: cyan + magenta dominate the neon (ref 51%)  — cy+mg 46%
+PASS  arena: near-black base like the clip (dark 62% ref)  — dark 82%
+PASS  arena: mean luma in the clip's band (ref 0.133)  — luma 0.062
+PASS  arena: neon coverage in the clip's band (ref 4.1%)  — neon 2.2%
+PASS  arena: cyan + magenta dominate the neon (ref 51%)  — cy+mg 48%
+PASS  skyline: near-black base like the clip (dark 62% ref)  — dark 85%
+PASS  skyline: mean luma in the clip's band (ref 0.133)  — luma 0.066
+PASS  skyline: neon coverage in the clip's band (ref 4.1%)  — neon 2.9%
+PASS  skyline: cyan + magenta dominate the neon (ref 51%)  — cy+mg 58%
+PASS  sim holds 60 Hz under the full post chain  — 59.4 ticks/s at 15.0 fps (SwiftShader, 480x270)
+PASS  no page errors  — clean console
+
+15/15 checks passed.

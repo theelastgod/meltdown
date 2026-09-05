@@ -20,6 +20,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run probe
+      - run: npm run probe:look
       - uses: actions/upload-artifact@v4
         if: always()
         with:

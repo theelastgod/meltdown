@@ -86,6 +86,17 @@ export function drainageYard(): LevelDef {
   boxes.push(box(-14, 0, 18, -8, 1.6, 24, "crate"));
   boxes.push(box(-14, 1.6, 21, -11, 2.4, 24, "crate"));
 
+  // --- dressing that also collides: light gantry over the lane, barrels, cones ---
+  boxes.push(box(-6.3, 0, 13.7, -5.7, 4.6, 14.3, "post"));
+  boxes.push(box(5.7, 0, 13.7, 6.3, 4.6, 14.3, "post"));
+  boxes.push(box(-6.3, 4.4, 13.8, 6.3, 4.6, 14.2, "bar"));
+  boxes.push(box(-15.5, 0, -15.3, -14.9, 0.9, -14.7, "barrel"));
+  boxes.push(box(-14.8, 0, -15.9, -14.2, 0.9, -15.3, "barrel"));
+  boxes.push(box(10.4, 0, -15.6, 11.0, 0.9, -15.0, "barrel"));
+  boxes.push(box(23.2, 0, 12.6, 23.8, 0.9, 13.2, "barrel"));
+  boxes.push(box(26.6, 0, 13.8, 27.2, 0.7, 14.4, "cone"));
+  boxes.push(box(-9.5, 0, 25.0, -8.9, 0.7, 25.6, "cone"));
+
   const spawns: SpawnPoint[] = [
     { pos: v3(0, 0, 24), yaw: 0 },
     { pos: v3(20, 0, 20), yaw: Math.PI / 2 },

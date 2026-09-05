@@ -8,7 +8,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | --- | --- | --- | --- |
 | 1 | Grey-box FPS core (solo) | **done** | `docs/proof/stage1/` |
 | 2 | Netcode early: DO rooms, prediction/reconciliation/interp/lag-comp, 8 players, latency/loss bars | next | |
-| 3 | The look: lighting rig, neon, GPU rain, wet reflections, fog, post chain, district casts | | |
+| 3 | The look: lighting rig, neon, GPU rain, wet reflections, fog, post chain, district casts | **done** (pulled ahead of 2 at the owner's request) | `docs/proof/stage3/` |
 | 4 | Arsenal: weapons 1–6 + alt-fires + grenades, recoil seeds, reload cancels, VANTAGE AI | | |
 | 5 | The wake: hex nodes, flip/contest/spread, KERNEL timer | | |
 | 6 | Ghostfile foundation: manifest, Fairness Lint, spawn validation, Depth/XP, currencies | | |
@@ -74,3 +74,37 @@ never a stat. Spec: `docs/TOKENOMICS.md`. Seed already on main:
 - `lintEconomy` runs in CI over the full manifest; a priced item with a
   stat fails the build.
 - Chain unreachable: equip, match, and progression all still work.
+
+## Stage 3 — The look
+
+**Goal.** Make the game look like the place the reference clip was filmed:
+near-black kitbash city, neon edge strips, rain, wet streets, fog, and a
+full-screen CRT post pass, with the clip's terminal HUD.
+
+**What shipped.**
+- `client/render/post.ts`: bloom → anamorphic streak → tone map → CRT
+  (film grain, chromatic aberration, scanlines, vignette, ritual stutter).
+  Rendered at 0.6× and upscaled nearest-neighbour for the clip's pixel read.
+- `client/render/rain.ts`: GPU line-streak rain wrapped around the camera.
+- `client/render/wetfloor.ts`: planar mirror at 256×144, vertically smeared,
+  puddle-masked, fresnel-weighted, with cyan lane lines. Rain and the far
+  skyline live on a layer the mirror cannot see.
+- `client/render/city.ts`: arena dressing by collision tag (brick walls with
+  cyan tube lights and shutters, hazard kerbs, crates, barrels, cones, a
+  light gantry, signage), a 90-slab skyline with sparse lit windows and
+  neon parapets, and THE KERNEL on the horizon. All neon is batched into a
+  few draw calls per colour.
+- `client/render/renderer.ts`: district colour casts (magenta, cyan, amber)
+  driving fog, ambient, and the two rig lights.
+- `client/hud/`: 1-px green / magenta / cyan panels, status bars, mission
+  strip, AREA MAP radar, comms log, prompt bar, tabbed ledger.
+
+**Acceptance (`npm run probe:look`).** Three vantage points are measured
+against statistics extracted from the clip's street-level frames
+(`docs/proof/stage3/reference-stats.json`): near-black fraction, mean luma,
+neon coverage, and cyan + magenta share of the lit neon. All within band.
+The sim holds 60 Hz under the full chain (SwiftShader, 15 fps render).
+
+**Not yet.** The 60 fps at 1080p on integrated GPU bar cannot be measured
+in this headless environment; draw calls are already batched for it and it
+is verified in Stage 9 on hardware.
