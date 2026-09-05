@@ -15,6 +15,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 7 | Ledger Graph (48 nodes / 3 rings), chips + sockets + firmwares, challenge-gated mastery, attestation stamps, ledger shop | **done** | `docs/proof/stage7/` |
 | 8 | Identity & rituals | | |
 | 9 | Lethe proper: three districts, THE KERNEL horizon, district select, render budget | **done** (pulled ahead at the owner's request: "the game needs to feel and be like it's in a city") | `docs/proof/stage9/` |
+| 9b | City life: crowds, monorail, street vistas through sealed gates, ad tickers, sign flicker, steam, skyline blinkers, airship, soundscape + VANTAGE PA | **done** (the owner repeated the note; the district is now inhabited, not just built) | `docs/proof/stage9b/` |
 | 10 | Campaign | | |
 | 11 | Endgame loops | | |
 | 11b | The Counter-Ledger: WAKE on Robinhood Chain, WalletConnect link, Ghostfile SBT + stamps, market, names (`docs/TOKENOMICS.md`) | | |
@@ -434,6 +435,81 @@ holds; the sim holds 60 Hz; the MAP tab lists the range and three
 districts; online, a room built with `?level=deadletter_docks` plays the
 docks and a client that arrives for Lease Row travels to the docks and
 rejoins as the same file.
+
+## Stage 9b — City life
+
+**Goal.** The owner repeated the note — *the game needs to feel and be like
+it's in a city* — after Stage 9 had built the districts. A built district is
+still a set: nothing moved, nothing spoke, and every street ended at a wall.
+This pass makes Lethe inhabited. Citizens walk the sidewalks under
+umbrellas, the monorail crosses the walkway street on its beam, every
+street runs out through the perimeter into a vista of road, lamps, receding
+towers and traffic — sealed for play by a chain-link gate the Blank cannot
+mantle — holographic ad panels run VANTAGE tickers, the signs flicker and
+drop out, steam lifts off the grates, the tallest slabs on the skyline
+carry aircraft blinkers and an airship drifts over the district. Under it
+the soundscape: distant traffic swelling and fading, crowd murmur, sirens
+crossing the district, the PA's three-note chime and a speaker-on-a-wall
+voice, and the monorail's whoosh overhead. All of it is render-only: the
+sim reads the same boxes it did before (plus the gates and the monorail
+posts), the nav grid is unchanged, and PA/sirens run on the sim clock so
+the headless probe hears the same city every run.
+
+**Files.**
+- `shared/sim/level.ts` — `WalkLoop`, `TramLine`, `StreetExit`, `AdPanel`;
+  `LevelDef.walks / pedestrians / tram / vents / exits / ads`.
+- `shared/sim/city.ts` — facades cut at the four street exits per axis with
+  3.2 m `gate` boxes (collidable, too tall to mantle); a 170 m vista beyond
+  each exit (`vista_road`, `vista_bldg`, `vista_lamp` decor) with two traffic
+  lanes; sidewalk loops per block + the perimeter loop; six steam vents;
+  three ad panels; the monorail line over the walkway street (`beam` and
+  `portal` decor, collidable `post` boxes); pedestrians per district
+  (Lease Row 110, Deadletter Docks 55, Repo Depot 70).
+- `client/render/life.ts` — `Crowd` (four instanced meshes: body, hood,
+  wrist lamp, umbrella; each citizen walks a loop at its own pace, pauses,
+  turns around), `Tram` (two lit cars, head/tail lights, a point light
+  under the car, `passing` rising edge for the whoosh), `Steam` (additive
+  points shader), `HoloAds` (canvas tickers redrawn at 12 Hz, colour
+  cycling), `Sky` (blinker points on slabs over 60 m + an airship on the
+  far layer), `flickerMaterial` (the sign atlas takes a time uniform and a
+  per-quad `flick` phase: slow breathing plus random drop-outs), and
+  `CityLife` owning them.
+- `client/render/city.ts` — tags for gates, vistas, beam, portal; the sign
+  atlas carries the `flick` attribute and `dressLevel` returns the sign
+  material; the skyline records slab roofs for the blinkers.
+- `client/render/renderer.ts` — `life` updated every frame on wall-clock
+  time (capped at a hitch) so a slow frame still moves the crowd and the
+  tram their full distance; VFX keep their hitch-capped clock.
+- `client/audio.ts` — traffic swell and crowd murmur in the bed;
+  `siren(pan)`, `pa()`, `tram()` cues (counted in `fired`).
+- `client/game.ts` — `cityTick()` on the sim clock: first PA at 5 s, then
+  every 27–43 s; first siren at 9 s, then every 38–60 s, alternating sides;
+  PA lines name the district and land in the HUD log (`cityLog` keeps them
+  all); the tram whoosh fires on the tram's rising edge after render.
+- `client/main.ts` — `state().life`: crowd size and sample, tram position and
+  earshot, PA lines, ad redraws, airship position, blinker count, flicker.
+- `probe/stage9b.ts` (`npm run probe:cityLife`).
+
+**Acceptance (`npm run probe:cityLife`, 16/16; `npm run probe:city` still
+32/32; `npm test`, 107 tests):** Lease Row has 110 citizens, a monorail,
+steam, 3 ad panels, 46 blinkers and sign flicker; citizens walk at ~1 m/s
+on render time while the sim tick stands still, and every sampled citizen
+is on a sidewalk loop; the monorail car advances along its beam; the ad
+tickers redraw every drawn frame (12 Hz cap) and the airship drifts; 8
+gates seal the 8 street exits — no nav path leads beyond the facade line
+and a Blank sprinting for the exit stops at z = −53.6 m against the gate at
+−54; 296 vista pieces and 22 traffic lanes continue the city beyond; the
+vista through the gate reads like the clip (dark 62%, luma 0.12, neon
+6.2%, cyan + magenta 66%); the monorail whoosh fires exactly once on the
+rising edge of earshot; in 75 s of sim time 2 sirens and 2 PA lines fire
+and the PA copy (district name substituted) is in the HUD log; the audio
+bed runs; the render budget holds at 198 calls / 117k triangles; the sim
+holds 60 Hz with the city alive; no page errors.
+
+**Proof.** `docs/proof/stage9b/` — `stage9b-street.png` (the crowd on the
+sidewalks, the beam overhead, the ticker), `stage9b-vista.png` (through the
+gate: lamps, traffic, the towers receding), `stage9b-monorail.png` (the beam
+and posts from the street), `stage9b.json`.
 
 ## Stage 7 — Ledger Graph + weapon mastery
 

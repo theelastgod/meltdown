@@ -97,8 +97,121 @@ export class GameAudio {
     buzz.connect(bf).connect(bg).connect(g);
     buzz.start();
     lfo.start();
+    // distant traffic: low rumble of noise whose level swells and fades like cars passing on the vista roads
+    const traffic = ctx.createBufferSource();
+    traffic.buffer = this.noiseBuf;
+    traffic.loop = true;
+    traffic.playbackRate.value = 0.37;
+    const tf = ctx.createBiquadFilter();
+    tf.type = "lowpass";
+    tf.frequency.value = 180;
+    tf.Q.value = 0.8;
+    const tg = ctx.createGain();
+    tg.gain.value = 0.16;
+    const swell = ctx.createOscillator();
+    swell.type = "sine";
+    swell.frequency.value = 0.09;
+    const sg = ctx.createGain();
+    sg.gain.value = 0.11;
+    swell.connect(sg).connect(tg.gain);
+    traffic.connect(tf).connect(tg).connect(g);
+    traffic.start();
+    swell.start();
+    // crowd murmur: two narrow bands of noise around the vowel range, each breathing on its own slow LFO
+    for (const [freq, rate, gain] of [[420, 0.23, 0.05], [760, 0.31, 0.035]] as const) {
+      const src = ctx.createBufferSource();
+      src.buffer = this.noiseBuf;
+      src.loop = true;
+      src.playbackRate.value = 0.8;
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = freq;
+      bp.Q.value = 2.2;
+      const cg = ctx.createGain();
+      cg.gain.value = gain;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = rate;
+      const lg = ctx.createGain();
+      lg.gain.value = gain * 0.7;
+      lfo.connect(lg).connect(cg.gain);
+      src.connect(bp).connect(cg).connect(g);
+      src.start();
+      lfo.start();
+    }
     g.gain.linearRampToValueAtTime(1, ctx.currentTime + 2.5);
     this.bed = { gain: g };
+  }
+
+  /** A VANTAGE siren somewhere across the district: a two-tone wail, panned, dull with distance, fading as it passes. */
+  siren(pan = 0.6): void {
+    this.count("siren");
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    o.type = "sawtooth";
+    const f = ctx.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.value = 900;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.exponentialRampToValueAtTime(0.09, t + 1.2);
+    g.gain.setValueAtTime(0.09, t + 3.6);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 6.5);
+    const p = ctx.createStereoPanner();
+    p.pan.setValueAtTime(pan, t);
+    p.pan.linearRampToValueAtTime(-pan, t + 6.5);
+    for (let i = 0; i < 8; i++) {
+      o.frequency.setValueAtTime(i % 2 ? 660 : 494, t + i * 0.8);
+    }
+    o.connect(f).connect(g).connect(p).connect(this.master!);
+    o.start(t);
+    o.stop(t + 6.6);
+  }
+
+  /** The PA: a three-note VANTAGE chime, then a formant-filtered burst that reads as a voice through street speakers. */
+  pa(): void {
+    this.count("pa");
+    if (!this.ctx) return;
+    for (const [i, hz] of [523, 659, 784].entries()) this.tone({ dur: 0.35, from: hz, gain: 0.07, type: "triangle", delay: i * 0.22 });
+    // "voice": syllables of narrow-band noise across a few formants, slap-echoed like a speaker on a wall
+    let d = 0.9;
+    const formants = [640, 820, 1100, 720, 980, 560, 1250, 880, 700];
+    for (let i = 0; i < formants.length; i++) {
+      const f = formants[i] ?? 700;
+      this.burst({ dur: 0.11, freq: f, q: 5, gain: 0.07, delay: d, pan: 0.35 });
+      this.burst({ dur: 0.11, freq: f * 0.5, q: 4, gain: 0.05, delay: d, pan: 0.35 });
+      this.burst({ dur: 0.09, freq: f, q: 5, gain: 0.025, delay: d + 0.17, pan: -0.5 }); // echo off the far facade
+      d += 0.14 + (i % 3) * 0.05;
+    }
+  }
+
+  /** The monorail passing overhead: a rising then falling whoosh with a doppler-shifted motor note. */
+  tram(): void {
+    this.count("tram");
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    src.loop = true;
+    const f = ctx.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.setValueAtTime(200, t);
+    f.frequency.exponentialRampToValueAtTime(1800, t + 1.1);
+    f.frequency.exponentialRampToValueAtTime(160, t + 2.6);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.exponentialRampToValueAtTime(0.3, t + 1.1);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 2.7);
+    const p = ctx.createStereoPanner();
+    p.pan.setValueAtTime(-0.8, t);
+    p.pan.linearRampToValueAtTime(0.8, t + 2.6);
+    src.connect(f).connect(g).connect(p).connect(this.master!);
+    src.start(t);
+    src.stop(t + 2.8);
+    this.tone({ dur: 2.4, from: 210, to: 140, gain: 0.08, type: "sawtooth" });
+    this.tone({ dur: 0.5, from: 60, to: 45, gain: 0.25 });
   }
 
   private burst(opts: { dur: number; freq: number; q?: number; gain: number; type?: BiquadFilterType; pan?: number; delay?: number }): void {

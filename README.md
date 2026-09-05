@@ -29,6 +29,7 @@ npm run probe:wake # the wake: flips, spread, phage boost, KERNEL pulse; online 
 npm run lint:fairness -- --quick # Fairness Lint: every candidate build duelled + run through the mobility course
 npm run probe:file # Ghostfile: lint injections fail, illegal loadouts refused at spawn, a round settles XP/Scrip
 npm run probe:city # Lethe proper: three districts load, bots route the streets and climb the walkway, frames read like the clip, budgets hold
+npm run probe:cityLife # city life: crowds walk, the monorail crosses and whooshes, gates seal the exits while vistas continue the city, PA and sirens on the sim clock
 npm run certify:firmware # every firmware measured in the TTK harness at its ideal range (must sit in the band)
 npm run probe:mastery # Ledger Graph + mastery: lint over nodes/chips/firmwares, chips and firmwares enforced at spawn, ledger shop, stamps un-redact online
 npm run verify     # all of the above
@@ -63,7 +64,7 @@ shared/     pure TS simulation shared by client and (Stage 2) server
   fairness/ the Fairness Lint (simulated duels + mobility course) and its CLI
   campaign/ Kernel Protocols stub — quarantined from PvP by an import-graph test
   economy/  WAKE token constants, Robinhood Chain config, no-paid-power lint
-client/     Vite + Three.js presentation: input, renderer (post chain, rain, wet floor, city), audio, HUD, game loop, bot
+client/     Vite + Three.js presentation: input, renderer (post chain, rain, wet floor, city, life: crowds/monorail/steam/ads/sky), audio, HUD, game loop, bot
 server/     authoritative room (transport-agnostic), Node host, Cloudflare Durable Object host, PlayerFile DO + D1 schema
 probe/      headless acceptance probes (one per stage)
 tests/      vitest unit tests for the simulation

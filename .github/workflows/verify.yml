@@ -27,6 +27,7 @@ jobs:
       - run: npm run lint:fairness -- --quick
       - run: npm run probe:file
       - run: npm run probe:city
+      - run: npm run probe:cityLife
       - run: npm run certify:firmware
       - run: npm run probe:mastery
       - uses: actions/upload-artifact@v4

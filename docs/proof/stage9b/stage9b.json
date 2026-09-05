@@ -1,0 +1,187 @@
+{
+  "results": {
+    "lease_row": {
+      "life": {
+        "crowd": 110,
+        "sample": [
+          {
+            "x": 20.25,
+            "z": -23.140548375293292
+          },
+          {
+            "x": 38.10569135375542,
+            "z": -12.75
+          },
+          {
+            "x": -53.25,
+            "z": -32.07357725776865
+          },
+          {
+            "x": -43.900211354752585,
+            "z": -12.75
+          },
+          {
+            "x": 33.39355575982246,
+            "z": -12.75
+          },
+          {
+            "x": -38.92346667664856,
+            "z": -20.25
+          },
+          {
+            "x": 45.49305990846392,
+            "z": -20.25
+          },
+          {
+            "x": 42.3353921679919,
+            "z": 20.25
+          }
+        ],
+        "tram": -97.79389999998733,
+        "tramNear": false,
+        "tramDist": 119.16834972930985,
+        "pa": [],
+        "steam": true,
+        "ads": 3,
+        "adRedraws": 2,
+        "ship": {
+          "x": 209.98625938279068,
+          "y": 150.5685209297739,
+          "z": -57.597736395948225
+        },
+        "blinkers": 46,
+        "flicker": true
+      },
+      "crowdSpeed": 0.9807414540442327,
+      "perf": {
+        "calls": 153,
+        "tris": 116492,
+        "levelCalls": 30
+      },
+      "simHz": 60.204995521948064,
+      "street": {
+        "width": 1280,
+        "height": 720,
+        "meanLuma": 0.1131886130659582,
+        "darkFrac": 0.6568381076388888,
+        "neonFrac": 0.04046223958333333,
+        "hue": {
+          "cyan": 0.2804237060874229,
+          "magenta": 0.2802628050415661,
+          "yellow": 0.1204612496647895,
+          "green": 0.18597479216948243,
+          "red": 0.10498793242156074,
+          "blue": 0.014373826763207294,
+          "other": 0.013515687851971037
+        }
+      },
+      "vista": {
+        "width": 1280,
+        "height": 720,
+        "meanLuma": 0.12204765127229608,
+        "darkFrac": 0.6213465711805556,
+        "neonFrac": 0.06186089409722222,
+        "hue": {
+          "cyan": 0.5758888635526478,
+          "magenta": 0.07642384802932767,
+          "yellow": 0.1339741453403729,
+          "green": 0.11780182771745804,
+          "red": 0.07268772692989073,
+          "blue": 0.008945642069074389,
+          "other": 0.014277946361228535
+        }
+      },
+      "pa": [
+        "VANTAGE ADVISES LEASE ROW: LEASE RENEWAL IS AUTOMATIC. THANK YOU FOR YOUR CONTINUED COMPLIANCE.",
+        "CITIZENS OF LEASE ROW: CURFEW BEGINS WHEN THE KERNEL SAYS IT DOES.",
+        "UNLISTED FILES DETECTED IN LEASE ROW. RE-LEASE CREWS DISPATCHED."
+      ],
+      "ref": {
+        "darkFrac": 0.6222593245967741,
+        "meanLuma": 0.13324019641517404
+      }
+    }
+  },
+  "checks": [
+    {
+      "name": "Lease Row has a crowd on its sidewalks, a monorail, steam at the grates, ad panels, blinkers on the skyline, and sign flicker",
+      "pass": true,
+      "detail": "110 citizens · 3 ad panels · 46 blinkers · tram at -97.8 · flicker true"
+    },
+    {
+      "name": "citizens walk the sidewalks (render time; the sim tick did not advance)",
+      "pass": true,
+      "detail": "mean 2.46 m over 2.5 s (0.98 m/s) · tick 30 → 30"
+    },
+    {
+      "name": "the monorail car advances along its beam",
+      "pass": true,
+      "detail": "car -40.1 → 8.4 m in 2.5 s"
+    },
+    {
+      "name": "ad tickers redraw at 12 Hz (every drawn frame when frames are slower) and the airship drifts",
+      "pass": true,
+      "detail": "7 redraws over 8 drawn frames in 2.5 s · airship moved 7.2 m"
+    },
+    {
+      "name": "citizens keep to the sidewalk loops (never in the road, never in the sim)",
+      "pass": true,
+      "detail": "(20,-23) (45,-13) (-53,-38) (-44,-13) (42,-13) (-32,-20) (40,-20) (34,20)"
+    },
+    {
+      "name": "8 gates seal the street exits: no nav path leads beyond the facade line",
+      "pass": true,
+      "detail": "8 gates · 8 exits · 7029 reachable cells · path beyond: none"
+    },
+    {
+      "name": "the city continues beyond every exit as a vista (road, receding buildings, lamps, traffic lanes)",
+      "pass": true,
+      "detail": "296 vista pieces · 22 traffic lanes"
+    },
+    {
+      "name": "a Blank sprinting for the exit is held at the gate (inside the facade line)",
+      "pass": true,
+      "detail": "stopped at (16.5, -53.6) · facade at z=-54"
+    },
+    {
+      "name": "the vista through the gate reads like the clip (dark, neon-fractioned, cyan/magenta)",
+      "pass": true,
+      "detail": "luma 0.122 dark 62% neon 6.2% cy 58% mg 8%"
+    },
+    {
+      "name": "the monorail passes overhead and the whoosh fires once on the rising edge of earshot",
+      "pass": true,
+      "detail": "primed at 41.2 m (116 steps) · tram cues 1 → 2 · now 32.5 m"
+    },
+    {
+      "name": "sirens cross the district and the PA speaks on a sim-tick schedule (≥1 siren, ≥2 PA lines in 75 s)",
+      "pass": true,
+      "detail": "2 sirens · 2 PA cues · 3 lines spoken"
+    },
+    {
+      "name": "PA lines name the district and land in the HUD log",
+      "pass": true,
+      "detail": "\"UNLISTED FILES DETECTED IN LEASE ROW. RE-LEASE CREWS DISPATCHED.\""
+    },
+    {
+      "name": "the audio bed is running (rain, hum, neon buzz, traffic swell, crowd murmur)",
+      "pass": true,
+      "detail": "audio context running"
+    },
+    {
+      "name": "render budget with city life — ≤ 230 draw calls/frame, ≤ 260k triangles",
+      "pass": true,
+      "detail": "153 calls · 116492 triangles · 30 level batches"
+    },
+    {
+      "name": "sim holds 60 Hz with the city alive around it",
+      "pass": true,
+      "detail": "60.2 ticks/s at 17.5 fps (SwiftShader, 480x270)"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": "clean console"
+    }
+  ]
+}

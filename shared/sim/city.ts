@@ -9,7 +9,7 @@
  */
 import { v3, type Vec3 } from "../math/vec3";
 import { box, type Box } from "./box";
-import type { LevelDef, LightDef, SignDef, SpawnPoint, TrafficLane, DistrictCast } from "./level";
+import type { LevelDef, LightDef, SignDef, SpawnPoint, TrafficLane, DistrictCast, WalkLoop, StreetExit, AdPanel, TramLine } from "./level";
 
 export interface DistrictSpec {
   id: string;
@@ -27,6 +27,8 @@ export interface DistrictSpec {
   carDensity: number;
   mechs: number;
   wasps: number;
+  /** citizens on the sidewalks (render only) */
+  pedestrians: number;
 }
 
 export type BlockKind = "tower" | "split" | "court" | "market" | "lot" | "plaza" | "yard" | "stack";
@@ -321,13 +323,77 @@ function block(c: Ctx, bx: number, bz: number, kind: BlockKind, nodePos?: Vec3):
 export function generateDistrict(spec: DistrictSpec): LevelDef {
   const c: Ctx = { spec, rnd: lcg(spec.seed), boxes: [], decor: [], signs: [], lights: [] };
   const H = CITY_HALF;
-  // ground slab and the perimeter of tall facades (the city continues, you don't)
-  c.boxes.push(box(-H - 20, -1, -H - 20, H + 20, 0, H + 20, "floor"));
+  // ground slab (wide: the vista roads beyond the exits sit on it too) and the perimeter of tall facades.
+  // Each inner street runs out through the perimeter: a gate seals it, the city continues beyond as a vista.
   const F = 30;
-  c.boxes.push(box(-H - F, 0, -H - F, H + F, 36, -H, "facade"));
-  c.boxes.push(box(-H - F, 0, H, H + F, 36, H + F, "facade"));
-  c.boxes.push(box(-H - F, 0, -H, -H, 36, H, "facade"));
-  c.boxes.push(box(H, 0, -H, H + F, 36, H, "facade"));
+  const V = 170; // vista length beyond the facade
+  c.boxes.push(box(-H - F - V, -1, -H - F - V, H + F + V, 0, H + F + V, "floor"));
+  const I0 = -H + S / 2 + (B + S); // -16.5: the first inner street centreline
+  const streets = [I0, -I0];
+  const gapHalf = S / 2;
+  const facadeRuns = (lo: number, hi: number): [number, number][] => {
+    const runs: [number, number][] = [];
+    let a = lo;
+    for (const sc of streets) {
+      runs.push([a, sc - gapHalf]);
+      a = sc + gapHalf;
+    }
+    runs.push([a, hi]);
+    return runs;
+  };
+  for (const [a, b] of facadeRuns(-H - F, H + F)) {
+    c.boxes.push(box(a, 0, -H - F, b, 36, -H, "facade"));
+    c.boxes.push(box(a, 0, H, b, 36, H + F, "facade"));
+  }
+  for (const [a, b] of facadeRuns(-H, H)) {
+    c.boxes.push(box(-H - F, 0, a, -H, 36, b, "facade"));
+    c.boxes.push(box(H, 0, a, H + F, 36, b, "facade"));
+  }
+  const exits: StreetExit[] = [];
+  const vistaLanes: TrafficLane[] = [];
+  for (const sc of streets) {
+    // gates at the facade line (chain-link, too tall to mantle), one per exit
+    c.boxes.push(box(sc - gapHalf, 0, -H - 0.6, sc + gapHalf, 3.2, -H, "gate"));
+    c.boxes.push(box(sc - gapHalf, 0, H, sc + gapHalf, 3.2, H + 0.6, "gate"));
+    c.boxes.push(box(-H - 0.6, 0, sc - gapHalf, -H, 3.2, sc + gapHalf, "gate"));
+    c.boxes.push(box(H, 0, sc - gapHalf, H + 0.6, 3.2, sc + gapHalf, "gate"));
+    exits.push({ x: sc, z: -H, dir: "n" }, { x: sc, z: H, dir: "s" }, { x: -H, z: sc, dir: "w" }, { x: H, z: sc, dir: "e" });
+    // the vista: road, sidewalks, receding buildings and lamps (decor: render only)
+    for (const dir of ["n", "s"] as const) {
+      const sgn = dir === "n" ? -1 : 1;
+      const z0 = sgn * H;
+      const z1 = sgn * (H + F + V);
+      c.decor.push(box(sc - 3, -0.05, Math.min(z0, z1), sc + 3, 0.0, Math.max(z0, z1), "vista_road"));
+      for (let d = 0; d < F + V; d += 22) {
+        const zz = z0 + sgn * d;
+        const h = 22 + ((d * 7) % 30);
+        if (d >= F) {
+          c.decor.push(box(sc - gapHalf - 14, 0, Math.min(zz, zz + sgn * 18), sc - gapHalf, h, Math.max(zz, zz + sgn * 18), "vista_bldg"));
+          c.decor.push(box(sc + gapHalf, 0, Math.min(zz, zz + sgn * 18), sc + gapHalf + 14, h + 8, Math.max(zz, zz + sgn * 18), "vista_bldg"));
+        }
+        c.decor.push(box(sc - gapHalf + 0.5, 0, zz - 0.15, sc - gapHalf + 0.8, 5.2, zz + 0.15, "vista_lamp"));
+        c.decor.push(box(sc + gapHalf - 0.8, 0, zz - 0.15, sc + gapHalf - 0.5, 5.2, zz + 0.15, "vista_lamp"));
+      }
+      vistaLanes.push({ from: v3(sc - 1.5, 0.7, z0 + sgn * 4), to: v3(sc - 1.5, 0.7, z1), speed: 13, count: 5 }, { from: v3(sc + 1.5, 0.7, z1), to: v3(sc + 1.5, 0.7, z0 + sgn * 4), speed: 12, count: 5 });
+    }
+    for (const dir of ["w", "e"] as const) {
+      const sgn = dir === "w" ? -1 : 1;
+      const x0 = sgn * H;
+      const x1 = sgn * (H + F + V);
+      c.decor.push(box(Math.min(x0, x1), -0.05, sc - 3, Math.max(x0, x1), 0.0, sc + 3, "vista_road"));
+      for (let d = 0; d < F + V; d += 22) {
+        const xx = x0 + sgn * d;
+        const h = 22 + ((d * 11) % 30);
+        if (d >= F) {
+          c.decor.push(box(Math.min(xx, xx + sgn * 18), 0, sc - gapHalf - 14, Math.max(xx, xx + sgn * 18), h, sc - gapHalf, "vista_bldg"));
+          c.decor.push(box(Math.min(xx, xx + sgn * 18), 0, sc + gapHalf, Math.max(xx, xx + sgn * 18), h + 8, sc + gapHalf + 14, "vista_bldg"));
+        }
+        c.decor.push(box(xx - 0.15, 0, sc - gapHalf + 0.5, xx + 0.15, 5.2, sc - gapHalf + 0.8, "vista_lamp"));
+        c.decor.push(box(xx - 0.15, 0, sc + gapHalf - 0.8, xx + 0.15, 5.2, sc + gapHalf - 0.5, "vista_lamp"));
+      }
+      vistaLanes.push({ from: v3(x0 + sgn * 4, 0.7, sc - 1.5), to: v3(x1, 0.7, sc - 1.5), speed: 13, count: 5 }, { from: v3(x1, 0.7, sc + 1.5), to: v3(x0 + sgn * 4, 0.7, sc + 1.5), speed: 12, count: 5 });
+    }
+  }
 
   // sidewalks ring every block; curbs are step-height
   for (let bx = 0; bx < N; bx++) {
@@ -409,6 +475,38 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     lamp(c, x, H - 1.1);
   }
 
+  // city life: sidewalk loops the citizens walk, steam vents, holo ads, the monorail's beam and posts
+  const walks: WalkLoop[] = [];
+  for (let bx = 0; bx < N; bx++) {
+    for (let bz = 0; bz < N; bz++) {
+      const { x0, z0, x1, z1 } = blockRect(bx, bz);
+      walks.push({ x0: x0 - SW / 2, z0: z0 - SW / 2, x1: x1 + SW / 2, z1: z1 + SW / 2 });
+    }
+  }
+  walks.push({ x0: -H + SW / 2, z0: -H + SW / 2, x1: H - SW / 2, z1: H - SW / 2 });
+  const vents = [v3(-I - 6, 0, I0 + 3), v3(I + 6, 0, -I0 - 3), v3(4, 0, -9), v3(-30, 0, 2), v3(30, 0, -2), v3(2, 0, 30)];
+  const ads: AdPanel[] = [
+    { x: 0, y: 6.4, z: 6.6, rotY: 0, w: 5, h: 1.6 }, // over the plaza pylon
+    { x: -H - 0.2, y: 20, z: 30, rotY: Math.PI / 2, w: 14, h: 4 },
+    { x: 34, y: 22, z: -H - 0.2, rotY: 0, w: 14, h: 4 },
+  ];
+  const tram: TramLine = spec.walkway === "x" ? { axis: "x", at: WS, y: 8.6, from: -H - F - 30, to: H + F + 30, period: 26 } : { axis: "z", at: WS, y: 8.6, from: -H - F - 30, to: H + F + 30, period: 26 };
+  for (let p = -H + S; p <= H - S; p += 24) {
+    if (spec.walkway === "x") {
+      c.boxes.push(box(p - 0.2, 0, WS - 4.3, p + 0.2, 9.4, WS - 3.9, "post"));
+      c.boxes.push(box(p - 0.2, 0, WS + 3.9, p + 0.2, 9.4, WS + 4.3, "post"));
+      c.decor.push(box(p - 0.25, 9.0, WS - 4.3, p + 0.25, 9.4, WS + 4.3, "beam"));
+    } else {
+      c.boxes.push(box(WS - 4.3, 0, p - 0.2, WS - 3.9, 9.4, p + 0.2, "post"));
+      c.boxes.push(box(WS + 3.9, 0, p - 0.2, WS + 4.3, 9.4, p + 0.2, "post"));
+      c.decor.push(box(WS - 4.3, 9.0, p - 0.25, WS + 4.3, 9.4, p + 0.25, "beam"));
+    }
+  }
+  if (spec.walkway === "x") c.decor.push(box(-H - F - 30, 9.0, WS - 1.0, H + F + 30, 9.3, WS + 1.0, "beam"));
+  else c.decor.push(box(WS - 1.0, 9.0, -H - F - 30, WS + 1.0, 9.3, H + F + 30, "beam"));
+  // the beam passes through the perimeter facades: notch them visually with a "portal" of neon (decor)
+  c.decor.push(...(spec.walkway === "x" ? [box(-H - 0.3, 7.8, WS - 2.2, -H + 0.3, 10.4, WS + 2.2, "portal"), box(H - 0.3, 7.8, WS - 2.2, H + 0.3, 10.4, WS + 2.2, "portal")] : [box(WS - 2.2, 7.8, -H - 0.3, WS + 2.2, 10.4, -H + 0.3, "portal"), box(WS - 2.2, 7.8, H - 0.3, WS + 2.2, 10.4, H + 0.3, "portal")]));
+
   // big district signage on the perimeter facades
   const big = [`${spec.displayName}`, "VANTAGE INTEGRITY", "LEASE · RENEW · COMPLY", ...spec.words.slice(0, 3)];
   for (let i = 0; i < 4; i++) {
@@ -477,7 +575,13 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     decor: c.decor,
     signs: c.signs,
     lights: c.lights,
-    traffic,
+    traffic: [...traffic, ...vistaLanes],
+    walks,
+    pedestrians: spec.pedestrians,
+    tram,
+    vents,
+    exits,
+    ads,
     skylineSeed: spec.seed,
     spawns,
     dummies: [],
@@ -504,6 +608,7 @@ export const DISTRICT_SPECS: DistrictSpec[] = [
     carDensity: 0.45,
     mechs: 1,
     wasps: 3,
+    pedestrians: 110,
   },
   {
     id: "deadletter_docks",
@@ -517,6 +622,7 @@ export const DISTRICT_SPECS: DistrictSpec[] = [
     carDensity: 0.25,
     mechs: 2,
     wasps: 3,
+    pedestrians: 55,
   },
   {
     id: "repo_depot",
@@ -530,6 +636,7 @@ export const DISTRICT_SPECS: DistrictSpec[] = [
     carDensity: 0.6,
     mechs: 3,
     wasps: 4,
+    pedestrians: 70,
   },
 ];
 

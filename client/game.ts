@@ -78,6 +78,8 @@ export class Game {
   private cur: Snapshot;
   private acc = 0;
   private last = -1;
+  /** wall time of the last drawn frame: render-side motion (crowds, tram, tickers) advances by this, not by sim time */
+  private lastRenderAt = -1;
   /** When false the rAF loop only renders; the sim advances via advance(). `?headless=1` starts paused. */
   realtime = !new URLSearchParams(location.search).has("headless");
   /** When false, the loop simulates but skips drawing (probes on software GL). */
@@ -87,6 +89,10 @@ export class Game {
   readonly stats = { ticks: 0, frames: 0, droppedTime: 0, fps: 0, simHz: 0, wallStart: 0, realtimeWall: 0, realtimeTicks: 0, maxFrameDt: 0, catchupHits: 0 };
   private stepDist = 0;
   private stepSide = 1;
+  /** City soundscape schedule (sim ticks, so headless probes hear the same city): next siren, next PA line, PA index. */
+  private city = { nextSiren: 0, nextPa: 0, paIndex: 0, sirenSide: 1 };
+  /** Every PA line the city has spoken this session (probe-readable). */
+  readonly cityLog: string[] = [];
   private fpsWindow = { t: 0, frames: 0, ticks: 0 };
 
   constructor(canvas: HTMLCanvasElement, hudRoot: HTMLElement) {
@@ -391,8 +397,45 @@ export class Game {
     return hashWorld(this.world);
   }
 
+  /** VANTAGE PA copy; `{D}` is the district name. */
+  static readonly PA_LINES = [
+    "VANTAGE ADVISES {D}: LEASE RENEWAL IS AUTOMATIC. THANK YOU FOR YOUR CONTINUED COMPLIANCE.",
+    "CITIZENS OF {D}: CURFEW BEGINS WHEN THE KERNEL SAYS IT DOES.",
+    "UNLISTED FILES DETECTED IN {D}. RE-LEASE CREWS DISPATCHED.",
+    "REMINDER: SLEEP IS COLLATERAL. DREAM RESPONSIBLY.",
+    "THE MONORAIL RUNS ON TIME. SO WILL YOU.",
+    "STABILITY IS A SERVICE. YOUR SUBSCRIPTION IS CURRENT.",
+    "REPORT UNLISTED NEIGHBOURS. GRATITUDE IS CREDITED.",
+    "{D} INTEGRITY: NOMINAL. WAKE ACTIVITY: BEING PRICED.",
+  ];
+
+  /** The city keeps talking whether or not you fight: sirens across the district and PA lines on a sim-tick schedule. */
+  private cityTick(): void {
+    const t = this.world.tick;
+    const c = this.city;
+    if (t === 0) {
+      c.nextSiren = 9 * SIM_HZ;
+      c.nextPa = 5 * SIM_HZ;
+    }
+    if (t >= c.nextSiren) {
+      c.sirenSide = -c.sirenSide;
+      this.audio.siren(0.6 * c.sirenSide);
+      c.nextSiren = t + Math.round((38 + ((t * 7) % 23)) * SIM_HZ);
+    }
+    if (t >= c.nextPa) {
+      const district = (this.world.level.displayName ?? this.levelId).toUpperCase();
+      const line = Game.PA_LINES[c.paIndex % Game.PA_LINES.length]!.replace(/\{D\}/g, district);
+      c.paIndex++;
+      this.audio.pa();
+      this.cityLog.push(line);
+      this.hud.push(`VANTAGE PA · ${line}`, "am");
+      c.nextPa = t + Math.round((27 + ((c.paIndex * 11) % 17)) * SIM_HZ);
+    }
+  }
+
   private tick(): void {
     const t = this.world.tick;
+    this.cityTick();
     if (this.net) {
       // Online: predict the local player only; the server owns everything else.
       if (this.net.status !== "joined" || !this.synced) return;
@@ -721,7 +764,10 @@ export class Game {
     if (this.net) this.renderer.syncRemotes(this.net.remoteViews());
     if (!this.net) this.syncOfflineEntities();
     else this.syncNetEntities();
-    this.renderer.render(view, dt);
+    const rdt = this.lastRenderAt < 0 ? dt : Math.min(0.5, (now - this.lastRenderAt) / 1000);
+    this.lastRenderAt = now;
+    this.renderer.render(view, rdt);
+    if (this.renderer.life.tram?.passing) this.audio.tram();
     this.stats.frames++;
     this.fpsWindow.frames++;
     this.fpsWindow.t += dt;

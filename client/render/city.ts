@@ -161,6 +161,7 @@ class SignAtlas {
     const v1 = 1 - cy / this.canvas.height;
     const v0 = 1 - (cy + this.ch) / this.canvas.height;
     const geo = new THREE.PlaneGeometry(s.w, s.h);
+    geo.setAttribute("flick", new THREE.Float32BufferAttribute([this.n * 0.37, this.n * 0.37, this.n * 0.37, this.n * 0.37], 1));
     const uv = geo.getAttribute("uv") as THREE.BufferAttribute;
     uv.setXY(0, u0, v1);
     uv.setXY(1, u1, v1);
@@ -171,19 +172,21 @@ class SignAtlas {
     this.geos.push(geo);
     this.n++;
   }
-  flush(parent: THREE.Object3D): void {
-    if (!this.geos.length) return;
+  flush(parent: THREE.Object3D): THREE.MeshBasicMaterial | null {
+    if (!this.geos.length) return null;
     const tex = new THREE.CanvasTexture(this.canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.magFilter = THREE.NearestFilter;
     tex.minFilter = THREE.LinearMipmapLinearFilter;
     const merged = mergeGeometries(this.geos, false)!;
-    parent.add(new THREE.Mesh(merged, new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide })));
+    const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
+    parent.add(new THREE.Mesh(merged, mat));
+    return mat;
   }
 }
 
-/** Dress a level's collision boxes and decor with the clip's kitbash vocabulary. Returns the draw-call count it added. */
-export function dressLevel(scene: THREE.Scene, level: LevelDef): number {
+/** Dress a level's collision boxes and decor with the clip's kitbash vocabulary. Returns the draw-call count it added and the sign material (for flicker). */
+export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number; signMat: THREE.MeshBasicMaterial | null } {
   const group = new THREE.Group();
   scene.add(group);
   const neon = new NeonBatch(group);
@@ -499,7 +502,20 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): number {
       }
       case "post":
         batch.box(b, M.metal);
+        if (sy > 6) neon.box(0.06, sy - 1, 0.06, b.max.x + 0.02, cy, b.max.z + 0.02, PALETTE.cyan); // monorail posts carry a light line
         break;
+      case "gate": {
+        // chain-link gate sealing a street exit: mesh panel, posts, an amber light bar, a LEASE CHECKPOINT feel
+        batch.box(b, M.fenceMat, 0.5, 0.5);
+        const alongX = sx > sz;
+        for (const p of [0, 0.5, 1]) {
+          const px = alongX ? b.min.x + sx * p : cx;
+          const pz = alongX ? cz : b.min.z + sz * p;
+          batch.box(b3(px - 0.08, b.min.y, pz - 0.08, px + 0.08, b.max.y + 0.3, pz + 0.08), M.metal);
+        }
+        neon.box(alongX ? sx : 0.08, 0.08, alongX ? 0.08 : sz, cx, b.max.y + 0.2, cz, PALETTE.amber);
+        break;
+      }
       case "bar":
         batch.box(b, M.metal);
         tube(neon, cx, b.min.y - 0.06, cz, sx - 0.4, "x", PALETTE.cyan, 0.09);
@@ -509,21 +525,54 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): number {
     }
   }
   for (const d of level.decor ?? []) {
-    if (d.tag === "awning_mg" || d.tag === "awning_cy") {
-      batch.box(d, d.tag === "awning_mg" ? M.awningMg : M.awningCy);
-      neon.box(d.max.x - d.min.x, 0.04, 0.04, (d.min.x + d.max.x) / 2, d.min.y - 0.02, d.max.z, d.tag === "awning_mg" ? PALETTE.magenta : PALETTE.cyan);
-    } else batch.box(d, M.concrete);
+    const dx = d.max.x - d.min.x;
+    const dy = d.max.y - d.min.y;
+    const dz = d.max.z - d.min.z;
+    const dcx = (d.min.x + d.max.x) / 2;
+    const dcz = (d.min.z + d.max.z) / 2;
+    switch (d.tag) {
+      case "awning_mg":
+      case "awning_cy":
+        batch.box(d, d.tag === "awning_mg" ? M.awningMg : M.awningCy);
+        neon.box(dx, 0.04, 0.04, dcx, d.min.y - 0.02, d.max.z, d.tag === "awning_mg" ? PALETTE.magenta : PALETTE.cyan);
+        break;
+      case "vista_road":
+        batch.box(d, M.base);
+        // lane line down the middle
+        neon.box(dx > dz ? dx : 0.12, 0.02, dz > dx ? dz : 0.12, dcx, d.max.y + 0.01, dcz, 0x2a3a48);
+        break;
+      case "vista_bldg": {
+        batch.box(d, facades[Math.floor(rnd() * facades.length)]!, 14, 28);
+        neonPerimeter(neon, d, rnd() < 0.5 ? castColor : altColor, d.max.y + 0.05, 0.2);
+        if (rnd() < 0.6) neonPerimeter(neon, d, altColor, d.min.y + dy * 0.45, 0.12);
+        break;
+      }
+      case "vista_lamp":
+        batch.box(d, M.metal);
+        batch.box(b3(dcx - 0.3, d.max.y - 0.2, dcz - 0.15, dcx + 0.3, d.max.y, dcz + 0.15), M.lampHead);
+        break;
+      case "beam":
+        batch.box(d, M.metal, 3);
+        if (dx > 40 || dz > 40) neon.box(dx > dz ? dx : 0.06, 0.06, dz > dx ? dz : 0.06, dcx, d.min.y - 0.04, dcz, PALETTE.magenta);
+        break;
+      case "portal":
+        neonPerimeter(neon, d, PALETTE.cyan, d.max.y, 0.14);
+        neonPerimeter(neon, d, PALETTE.cyan, d.min.y, 0.14);
+        break;
+      default:
+        batch.box(d, M.concrete);
+    }
   }
   const signs = new SignAtlas();
   for (const s of level.signs ?? []) {
     signs.add(s);
     signsPlaced++;
   }
-  signs.flush(group);
+  const signMat = signs.flush(group);
   neon.flush();
   const calls = batch.flush();
   void signsPlaced;
-  return calls;
+  return { calls, signMat };
 }
 
 /** Skyline of dark slabs with neon edges and sparse lit windows beyond the playable area, and THE KERNEL on the horizon. */
@@ -539,6 +588,9 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
   });
   const castColor = cast === "cyan" ? PALETTE.cyan : cast === "amber" ? PALETTE.amber : PALETTE.magenta;
   const signs = new SignAtlas();
+  /** roof positions of every slab (the sky's warning blinkers sit on the tall ones) */
+  const slabs: { x: number; z: number; top: number }[] = [];
+  group.userData.slabs = slabs;
   const words = ["LEASE", "VANTAGE", "保安", "NIGHT CO", "RE-LEASE", "ヴァンテージ", "SEC-9", "INTEGRITY", "COMPLY", "RENEW"];
   for (let i = 0; i < 110; i++) {
     const ang = rnd() * Math.PI * 2;
@@ -549,6 +601,7 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
     const d = 8 + rnd() * 18;
     const h = 18 + rnd() * 70 + (dist > inner + 80 ? 50 : 0);
     const box: Box = { min: { x: x - w / 2, y: -1, z: z - d / 2 }, max: { x: x + w / 2, y: h - 1, z: z + d / 2 } };
+    slabs.push({ x, z, top: h - 1 });
     batch.box(box, facades[Math.floor(rnd() * facades.length)]!, 14, 28);
     const col = rnd() < 0.55 ? castColor : PALETTE.cyan;
     neonPerimeter(neon, box, col, h - 1 + 0.05, 0.25);

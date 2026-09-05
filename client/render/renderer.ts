@@ -7,6 +7,7 @@ import { PostChain } from "./post";
 import { Rain } from "./rain";
 import { makeWetFloor } from "./wetfloor";
 import { buildSkyline, dressLevel, PALETTE, Traffic } from "./city";
+import { CityLife, flickerMaterial } from "./life";
 import { ArsenalFx, buildViewmodel } from "./weapons";
 import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
@@ -58,6 +59,11 @@ export class Renderer {
   readonly levelCalls: number;
   private rain: Rain;
   private traffic: Traffic | null = null;
+  /** crowds, monorail, steam, ads, skyline blinkers, airship (render-only) */
+  readonly life: CityLife;
+  /** sign atlas flicker (null when the level has no signs) */
+  signFlicker: { setTime: (t: number) => void } | null = null;
+  private listener = new THREE.Vector3();
   private dummyMeshes = new Map<number, { group: THREE.Group; mat: THREE.MeshStandardMaterial; flash: number }>();
   private tracers: { line: THREE.Line; mat: THREE.LineBasicMaterial; born: number; life: number }[] = [];
   private sparks: { mesh: THREE.Mesh; born: number }[] = [];
@@ -94,9 +100,13 @@ export class Renderer {
     this.camera.rotation.order = "YXZ";
     this.scene.add(this.camera);
 
-    this.levelCalls = dressLevel(this.scene, level);
+    const dressed = dressLevel(this.scene, level);
+    this.levelCalls = dressed.calls;
+    if (dressed.signMat) this.signFlicker = flickerMaterial(dressed.signMat);
     const skyline = buildSkyline(this.scene, level.skylineSeed ?? 42, (level.bounds ?? 32) + 44, district);
     skyline.traverse((o) => o.layers.set(FAR_LAYER));
+    this.life = new CityLife(level, skyline);
+    this.scene.add(this.life.group);
     if (level.traffic?.length) {
       this.traffic = new Traffic(level.traffic, level.skylineSeed ?? 5);
       this.traffic.object.layers.set(FAR_LAYER);
@@ -321,7 +331,12 @@ export class Renderer {
     }
     this.renderer.info.reset();
     this.rain.update(this.clock, this.camera);
-    this.traffic?.update(dt);
+    // the city runs on wall time (capped at a hitch): a slow frame still moves the crowd and the tram their full distance
+    const cityDt = Math.min(rawDt, 0.5);
+    this.traffic?.update(cityDt);
+    this.listener.copy(this.camera.position);
+    this.life.update(cityDt, this.listener);
+    this.signFlicker?.setTime(this.clock);
     this.post.render(this.clock, dt);
   }
 }

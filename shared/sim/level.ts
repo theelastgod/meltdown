@@ -49,8 +49,51 @@ export interface TrafficLane {
   count: number;
 }
 
+/** A sidewalk loop citizens walk (render-only crowds). */
+export interface WalkLoop {
+  x0: number;
+  z0: number;
+  x1: number;
+  z1: number;
+}
+
+/** The monorail line over a street: axis it runs along, the fixed coordinate, height, and span. */
+export interface TramLine {
+  axis: "x" | "z";
+  at: number;
+  y: number;
+  from: number;
+  to: number;
+  /** seconds between passes (each direction) */
+  period: number;
+}
+
+/** A street exit through the perimeter: where the vista beyond starts and which way it runs. */
+export interface StreetExit {
+  x: number;
+  z: number;
+  dir: "n" | "s" | "e" | "w";
+}
+
+/** A holographic ad panel: a ticker of VANTAGE copy cycling colours (render only). */
+export interface AdPanel {
+  x: number;
+  y: number;
+  z: number;
+  rotY: number;
+  w: number;
+  h: number;
+}
+
 export interface LevelDef {
   name: string;
+  /** city life (render only): crowds, monorail, steam, exits, ads */
+  walks?: WalkLoop[];
+  pedestrians?: number;
+  tram?: TramLine;
+  vents?: Vec3[];
+  exits?: StreetExit[];
+  ads?: AdPanel[];
   /** Ledger-UI name, e.g. "LEASE ROW". */
   displayName?: string;
   /** District colour cast; drives fog, rig, and skyline. */
