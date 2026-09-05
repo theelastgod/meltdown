@@ -7,6 +7,7 @@ import { lenXZ, wrapAngle } from "@shared/math/vec3";
 import { GameAudio } from "./audio";
 import { Bot, type BotStep, type BotTarget } from "./bot";
 import { Hud } from "./hud/hud";
+import { GhostFile } from "./file";
 import { InputController } from "./input";
 import { Renderer, type ViewState } from "./render/renderer";
 import { NetClient } from "./net/netclient";
@@ -68,6 +69,7 @@ export class Game {
   readonly input: InputController;
   readonly renderer: Renderer;
   readonly hud: Hud;
+  readonly file: GhostFile;
   readonly audio = new GameAudio();
   private bot: Bot | null = null;
   private prev: Snapshot;
@@ -88,11 +90,19 @@ export class Game {
   constructor(canvas: HTMLCanvasElement, hudRoot: HTMLElement) {
     const q = new URLSearchParams(location.search);
     this.world = new World(drainageYard(), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" ? "off" : "wake" });
-    this.player = this.world.addPlayer(1, "BLANK");
+    this.file = new GhostFile(() => this.online);
+    this.player = this.world.addPlayer(1, "BLANK", 1, this.file.localLoadout());
     this.input = new InputController(canvas);
     this.input.yaw = this.player.yaw;
     this.renderer = new Renderer(canvas, this.world.level);
     this.hud = new Hud(hudRoot);
+    this.file.mount(hudRoot);
+    this.hud.setFile(this.file.view());
+    this.file.onChange = (f) => {
+      // offline the loadout applies at once; online the server decides at the next link
+      if (!this.online) this.world.setLoadout(this.player, f.localLoadout());
+      this.hud.setFile(f.view());
+    };
     this.prev = snap(this.player);
     this.cur = snap(this.player);
     this.input.onGesture = () => this.audio.resume();
@@ -111,12 +121,23 @@ export class Game {
     this.world.removePlayer(this.player.id);
     const inner = new WsTransport(cfg.url);
     const transport = cfg.sim ? new SimulatedLink(inner, cfg.sim) : inner;
-    const net = new NetClient(transport, cfg.name, cfg.token ?? "");
+    const net = new NetClient(transport, cfg.name, cfg.token ?? "", this.file.account, this.file.loadoutJson());
     this.net = net;
+    net.onFile = (f) => {
+      this.file.applyServer(f);
+      if (f.reason === "join" && this.net === net) {
+        // the server admitted this loadout: run the same sheet locally (arrives before the first snapshot)
+        this.world.setLoadout(this.player, f.loadout as Parameters<World["setLoadout"]>[1]);
+        this.hud.push(`FILE ${f.account} · DEPTH ${String(f.depth).padStart(2, "0")} · ATTESTED [${f.loadout.attested.join(", ") || "none"}]${f.loadout.keystone ? " · " + f.loadout.keystone.toUpperCase() : ""}`, "cy");
+      } else if (f.reason === "settle") {
+        for (const line of f.ledger) this.hud.push(line, line.startsWith("DEPTH") ? "mg" : "am");
+        this.hud.alert(`◆ LEDGER SETTLED — ${f.ledger[2] ?? ""}`, false, 5);
+      }
+    };
     net.onStatus = (st) => {
       if (st === "joined") {
         (this.world as { seed: number }).seed = net.seed;
-        this.player = this.world.addPlayer(net.playerId, cfg.name);
+        this.player = this.world.addPlayer(net.playerId, cfg.name, 1, this.file.admitted ?? this.file.localLoadout());
         this.input.yaw = this.player.yaw;
         this.hud.push(`LINKED · ROOM ${cfg.url.split("/").pop()} · FILE #${net.playerId}`, "cy");
       } else this.hud.push(`LINK ${st.toUpperCase()}${net.kickReason ? " · " + net.kickReason : ""}`, "mg");

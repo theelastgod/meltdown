@@ -64,6 +64,9 @@ export interface WakeState {
   winner: number;
   round: number;
   pulses: number;
+  /** Per-room timing (dev rooms and probes shorten rounds; production uses WAKE). */
+  warmupSeconds: number;
+  roundSeconds: number;
 }
 
 export interface WakeOccupant {
@@ -72,6 +75,8 @@ export interface WakeOccupant {
   /** faction perk / node multiplier (1 = none) */
   flipMult: number;
   alive: boolean;
+  /** Optional credit sink: flips you were on, seconds pulling/holding, contest seconds as support. */
+  credit?: { flips: number; nodeSeconds: number; support: number };
 }
 
 export type WakeEvent =
@@ -81,10 +86,14 @@ export type WakeEvent =
   | { type: "phase"; phase: Phase; winner: number }
   | { type: "fullWake"; team: number };
 
-export function createWake(defs: readonly NodeDef[], startPhase: Phase = "wake"): WakeState {
+export function createWake(defs: readonly NodeDef[], startPhase: Phase = "wake", timing: { warmupSeconds?: number; roundSeconds?: number } = {}): WakeState {
+  const warmupSeconds = timing.warmupSeconds ?? WAKE.warmupSeconds;
+  const roundSeconds = timing.roundSeconds ?? WAKE.roundSeconds;
   return {
     phase: startPhase,
-    timeLeft: startPhase === "warmup" ? WAKE.warmupSeconds : WAKE.roundSeconds,
+    timeLeft: startPhase === "warmup" ? warmupSeconds : roundSeconds,
+    warmupSeconds,
+    roundSeconds,
     score: [0, 0, 0],
     nodes: defs.map((d) => ({ id: d.id, label: d.label, pos: clone(d.pos), links: d.links.slice(), owner: 0, hold: 1, puller: 0, contested: false, boost: 0, flips: 0 })),
     kernelTimer: WAKE.kernelPulseSeconds,
@@ -98,7 +107,7 @@ export function createWake(defs: readonly NodeDef[], startPhase: Phase = "wake")
 
 export function resetRound(w: WakeState, phase: Phase): void {
   w.phase = phase;
-  w.timeLeft = phase === "warmup" ? WAKE.warmupSeconds : phase === "wake" ? WAKE.roundSeconds : WAKE.resultsSeconds;
+  w.timeLeft = phase === "warmup" ? w.warmupSeconds : phase === "wake" ? w.roundSeconds : WAKE.resultsSeconds;
   if (phase === "wake") {
     w.score = [0, 0, 0];
     for (const n of w.nodes) {
@@ -160,6 +169,7 @@ export function stepWake(w: WakeState, occupants: readonly WakeOccupant[], playe
   }
   // ---- wake round ----
   w.timeLeft -= dt;
+  const on: WakeOccupant[] = [];
   for (const n of w.nodes) {
     n.boost = Math.max(0, n.boost - dt);
     // who is standing on it
@@ -167,11 +177,13 @@ export function stepWake(w: WakeState, occupants: readonly WakeOccupant[], playe
     let c2 = 0;
     let m1 = 1;
     let m2 = 1;
+    on.length = 0;
     for (const o of occupants) {
       if (!o.alive || (o.team !== 1 && o.team !== 2)) continue;
       const dx = o.pos.x - n.pos.x;
       const dz = o.pos.z - n.pos.z;
       if (dx * dx + dz * dz > WAKE.nodeRadius * WAKE.nodeRadius) continue;
+      on.push(o);
       if (o.team === 1) {
         c1++;
         m1 = Math.max(m1, o.flipMult);
@@ -184,6 +196,7 @@ export function stepWake(w: WakeState, occupants: readonly WakeOccupant[], playe
     n.contested = c1 > 0 && c2 > 0;
     if (n.contested) {
       n.puller = 0;
+      for (const o of on) if (o.credit) o.credit.support += dt;
       if (!wasContested) events.push({ type: "nodeContest", node: n.id });
       continue;
     }
@@ -194,6 +207,7 @@ export function stepWake(w: WakeState, occupants: readonly WakeOccupant[], playe
       continue;
     }
     n.puller = team;
+    for (const o of on) if (o.credit) o.credit.nodeSeconds += dt;
     const count = team === 1 ? c1 : c2;
     const mult = team === 1 ? m1 : m2;
     let adjacent = 0;
@@ -211,6 +225,7 @@ export function stepWake(w: WakeState, occupants: readonly WakeOccupant[], playe
         n.owner = team;
         n.hold = Math.min(1, -n.hold);
         n.flips++;
+        for (const o of on) if (o.credit) o.credit.flips++;
         events.push({ type: "nodeFlip", node: n.id, team, from });
       }
     }

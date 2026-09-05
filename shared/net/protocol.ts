@@ -5,7 +5,7 @@
 import type { InputFrame } from "../sim/input";
 import type { HitZone } from "../sim/world";
 
-export const PROTOCOL_VERSION = 4;
+export const PROTOCOL_VERSION = 5;
 /** Server snapshot cadence in sim ticks (60 Hz sim → 30 Hz snapshots). */
 export const SNAPSHOT_EVERY = 2;
 /** Lag compensation rewind cap in ticks (200 ms at 60 Hz). */
@@ -23,7 +23,26 @@ export const Msg = {
   Snapshot: 11,
   Pong: 12,
   Kick: 13,
+  /** Ghostfile snapshot / ledger entry (JSON payload; sent on join and at results). */
+  File: 14,
 } as const;
+
+/** What the server tells a client about its own Ghostfile. */
+export interface FileMsg {
+  /** "join": your file as admitted (apply the loadout); "settle": a ledger entry after results. */
+  reason: "join" | "settle";
+  account: string;
+  depth: number;
+  xp: number;
+  scrip: number;
+  wakelight: number;
+  salvage: number;
+  owned: string[];
+  /** Ledger lines from the latest match settlement (empty on join). */
+  ledger: string[];
+  /** Validated loadout the server applied (what you actually spawned with). */
+  loadout: { primary: string; secondary: string; attested: string[]; keystone: string | null };
+}
 
 export interface NetInput extends InputFrame {
   /** Monotonic client sequence. */
@@ -40,6 +59,7 @@ export interface RemotePlayerQ {
   id: number;
   slot: number;
   team: number;
+  shield: number;
   x: number;
   y: number;
   z: number;
@@ -68,6 +88,7 @@ export interface LocalAuth {
   health: number; alive: number; respawnTimer: number; prevButtons: number;
   kills: number; deaths: number; shots: number; hits: number;
   team: number;
+  shield: number; sinceDamage: number;
   // weapon state (exact)
   slot: number; ammo: number[]; reloadTimer: number; reloadTotal: number; reloadSeated: number; fireCooldown: number;
   charge: number; charging: number; shotIndex: number; magSeed: number; magCount: number; altActive: number; altCooldown: number;
@@ -177,7 +198,7 @@ class R {
   str(): string { const n = this.u16(); const b = new Uint8Array(this.dv.buffer, this.dv.byteOffset + this.o, n); this.o += n; return new TextDecoder().decode(b); }
 }
 
-const LOCAL_FLOAT_KEYS = ["x", "y", "z", "vx", "vy", "vz", "yaw", "pitch", "height", "airTime", "jumpBuffer", "slideTime", "slideCooldown", "sdx", "sdz", "mfx", "mfy", "mfz", "mtx", "mty", "mtz", "mantleT", "respawnTimer", "reloadTimer", "reloadTotal", "fireCooldown", "charge", "altCooldown", "lungeT", "grenadeCooldown", "swapTimer", "kickPitch", "kickYaw", "patX", "patY", "stunTimer", "empTimer", "sinceShot"] as const;
+const LOCAL_FLOAT_KEYS = ["x", "y", "z", "vx", "vy", "vz", "yaw", "pitch", "height", "airTime", "jumpBuffer", "slideTime", "slideCooldown", "sdx", "sdz", "mfx", "mfy", "mfz", "mtx", "mty", "mtz", "mantleT", "respawnTimer", "reloadTimer", "reloadTotal", "fireCooldown", "charge", "altCooldown", "lungeT", "grenadeCooldown", "swapTimer", "kickPitch", "kickYaw", "patX", "patY", "stunTimer", "empTimer", "sinceShot", "shield", "sinceDamage"] as const;
 const localFloats = (l: LocalAuth): number[] => LOCAL_FLOAT_KEYS.map((k) => l[k]);
 
 const wrapRad = (a: number): number => {
@@ -192,12 +213,18 @@ const Q_ANG = 10000;
 // ---------------------------------------------------------------------------
 // Client → server
 
-export function encodeJoin(name: string, token: string): ArrayBuffer {
+/**
+ * Join. `account` is the Ghostfile id the client claims; `loadout` is raw JSON
+ * (validated server-side against that file: unknown fields are refused, not stripped).
+ */
+export function encodeJoin(name: string, token: string, account = "", loadout = ""): ArrayBuffer {
   const w = new W();
   w.u8(Msg.Join);
   w.u8(PROTOCOL_VERSION);
   w.str(name);
   w.str(token);
+  w.str(account);
+  w.str(loadout);
   return w.done();
 }
 
@@ -246,6 +273,13 @@ export function encodePong(clientTime: number, tick: number): ArrayBuffer {
   w.u8(Msg.Pong);
   w.u32(clientTime);
   w.u32(tick);
+  return w.done();
+}
+
+export function encodeFile(f: FileMsg): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.File);
+  w.str(JSON.stringify(f));
   return w.done();
 }
 
@@ -320,14 +354,14 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     if (!b || b.x !== p.x || b.y !== p.y || b.z !== p.z) mask |= F_POS;
     if (!b || b.vx !== p.vx || b.vy !== p.vy || b.vz !== p.vz) mask |= F_VEL;
     if (!b || b.yaw !== p.yaw || b.pitch !== p.pitch) mask |= F_VIEW;
-    if (!b || b.health !== p.health || b.ammo !== p.ammo || b.alive !== p.alive || b.grounded !== p.grounded || b.stance !== p.stance || b.height !== p.height || b.slot !== p.slot || b.team !== p.team) mask |= F_STATE;
+    if (!b || b.health !== p.health || b.ammo !== p.ammo || b.alive !== p.alive || b.grounded !== p.grounded || b.stance !== p.stance || b.height !== p.height || b.slot !== p.slot || b.team !== p.team || b.shield !== p.shield) mask |= F_STATE;
     if (!b || b.name !== p.name) mask |= F_NAME;
     w.u8(p.id);
     w.u8(mask);
     if (mask & F_POS) { w.i16(p.x * Q_POS); w.i16(p.y * Q_POS); w.i16(p.z * Q_POS); }
     if (mask & F_VEL) { w.i16(p.vx * Q_VEL); w.i16(p.vy * Q_VEL); w.i16(p.vz * Q_VEL); }
     if (mask & F_VIEW) { w.i16(p.yaw * Q_ANG); w.i16(p.pitch * Q_ANG); }
-    if (mask & F_STATE) { w.i16(p.health); w.u8(p.ammo); w.u8((p.alive ? 1 : 0) | (p.grounded ? 2 : 0) | (p.stance << 2) | (p.slot << 4)); w.i16(p.height * Q_POS); w.u8(p.team); }
+    if (mask & F_STATE) { w.i16(p.health); w.u8(p.ammo); w.u8((p.alive ? 1 : 0) | (p.grounded ? 2 : 0) | (p.stance << 2) | (p.slot << 4)); w.i16(p.height * Q_POS); w.u8(p.team); w.u8(p.shield); }
     if (mask & F_NAME) w.str(p.name);
   }
   // dummies (full, small)
@@ -376,7 +410,7 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
 // Decoding
 
 export type ClientMessage =
-  | { type: "join"; version: number; name: string; token: string }
+  | { type: "join"; version: number; name: string; token: string; account: string; loadout: string }
   | { type: "input"; ackTick: number; inputs: NetInput[] }
   | { type: "ping"; clientTime: number };
 
@@ -384,7 +418,15 @@ export function decodeClientMessage(buf: ArrayBuffer): ClientMessage | null {
   try {
     const r = new R(buf);
     const t = r.u8();
-    if (t === Msg.Join) return { type: "join", version: r.u8(), name: r.str(), token: r.str() };
+    if (t === Msg.Join) {
+      const version = r.u8();
+      const name = r.str();
+      const token = r.str();
+      // v4 joins carried no file; tolerate the short form so the version check can answer properly
+      const account = r.remaining > 0 ? r.str() : "";
+      const loadout = r.remaining > 0 ? r.str() : "";
+      return { type: "join", version, name, token, account, loadout };
+    }
     if (t === Msg.Input) {
       const ackTick = r.u32();
       const n = r.u8();
@@ -407,7 +449,8 @@ export type ServerMessage =
   | { type: "welcome"; playerId: number; tick: number; token: string; level: string; seed: number }
   | { type: "snapshot"; snapshot: Snapshot; baselineTick: number }
   | { type: "pong"; clientTime: number; tick: number }
-  | { type: "kick"; reason: string };
+  | { type: "kick"; reason: string }
+  | { type: "file"; file: FileMsg };
 
 /** Decode a server message. `baselines` resolves the acked snapshot a delta was built on. */
 export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) => Snapshot | null): ServerMessage | null {
@@ -417,6 +460,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     if (t === Msg.Welcome) return { type: "welcome", playerId: r.u8(), tick: r.u32(), token: r.str(), level: r.str(), seed: r.u32() };
     if (t === Msg.Pong) return { type: "pong", clientTime: r.u32(), tick: r.u32() };
     if (t === Msg.Kick) return { type: "kick", reason: r.str() };
+    if (t === Msg.File) return { type: "file", file: JSON.parse(r.str()) as FileMsg };
     if (t !== Msg.Snapshot) return null;
     const tick = r.u32();
     const baselineTick = r.u32();
@@ -445,11 +489,11 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
       const id = r.u8();
       const mask = r.u8();
       const b = base?.players.find((x) => x.id === id);
-      const p: RemotePlayerQ = b ? { ...b } : { id, slot: 1, team: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, health: 100, ammo: 0, alive: true, grounded: true, stance: 0, height: 1.8, name: "BLANK" };
+      const p: RemotePlayerQ = b ? { ...b } : { id, slot: 1, team: 0, shield: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, health: 100, ammo: 0, alive: true, grounded: true, stance: 0, height: 1.8, name: "BLANK" };
       if (mask & F_POS) { p.x = r.i16() / Q_POS; p.y = r.i16() / Q_POS; p.z = r.i16() / Q_POS; }
       if (mask & F_VEL) { p.vx = r.i16() / Q_VEL; p.vy = r.i16() / Q_VEL; p.vz = r.i16() / Q_VEL; }
       if (mask & F_VIEW) { p.yaw = r.i16() / Q_ANG; p.pitch = r.i16() / Q_ANG; }
-      if (mask & F_STATE) { p.health = r.i16(); p.ammo = r.u8(); const fl = r.u8(); p.alive = !!(fl & 1); p.grounded = !!(fl & 2); p.stance = (fl >> 2) & 3; p.slot = fl >> 4; p.height = r.i16() / Q_POS; p.team = r.u8(); }
+      if (mask & F_STATE) { p.health = r.i16(); p.ammo = r.u8(); const fl = r.u8(); p.alive = !!(fl & 1); p.grounded = !!(fl & 2); p.stance = (fl >> 2) & 3; p.slot = fl >> 4; p.height = r.i16() / Q_POS; p.team = r.u8(); p.shield = r.u8(); }
       if (mask & F_NAME) p.name = r.str();
       players.push(p);
     }

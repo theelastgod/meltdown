@@ -3,6 +3,7 @@ import type { NetClient } from "./net/netclient";
 import type { BotStep } from "./bot";
 import { SIM_HZ } from "@shared/sim/constants";
 import type { SimEvent } from "@shared/sim/world";
+import type { FileView } from "./file";
 
 /** Headless/state hook used by probes and CI. Everything here is read-only or deterministic. */
 export interface GameHook {
@@ -32,7 +33,16 @@ export interface GameHook {
     wake: { phase: string; timeLeft: number; score: number[]; pulses: number; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number; boost: number; flips: number }[] } | null;
     team: number;
     hash: string;
+    /** Build sheet the sim is running for the local player (loadout applied). */
+    mods: Record<string, number>;
+    maxShield: number;
+    maxHealth: number;
   };
+  /** Ghostfile view: account, Depth/XP/Scrip, loadout legality, ledger. */
+  file: () => FileView;
+  /** Replace the raw loadout the client will send at the next link (offline: applies now). */
+  setLoadout: (raw: Record<string, unknown>) => void;
+  toggleFile: (on?: boolean) => void;
   events: () => SimEvent[];
   clearEvents: () => void;
   resumeAudio: () => void;
@@ -96,7 +106,13 @@ window.__game = {
     wake: game.world.wake ? { phase: game.world.wake.phase, timeLeft: game.world.wake.timeLeft, score: [...game.world.wake.score], pulses: game.world.wake.pulses, nodes: game.world.wake.nodes.map((n) => ({ id: n.id, label: n.label, owner: n.owner, hold: n.hold, contested: n.contested, puller: n.puller, boost: n.boost, flips: n.flips })) } : null,
     team: game.player.team,
     hash: game.hash(),
+    mods: { ...game.player.mods },
+    maxShield: game.player.maxShield,
+    maxHealth: game.player.maxHealth,
   }),
+  file: () => game.file.view(),
+  setLoadout: (raw) => game.file.setRaw(raw),
+  toggleFile: (on) => game.file.toggle(on),
   events: () => game.recentEvents.slice(),
   clearEvents: () => {
     game.recentEvents.length = 0;

@@ -9,6 +9,7 @@ import {
   type NetInput,
   type RemotePlayerQ,
   type Snapshot,
+  type FileMsg,
 } from "@shared/net/protocol";
 import type { Transport } from "./transport";
 
@@ -60,11 +61,12 @@ export class NetClient {
   readonly stats = { snapshots: 0, bytesIn: 0, bytesOut: 0, undecodable: 0, reconciles: 0, maxCorrection: 0, joinedAtMs: 0, connectStartMs: performance.now() };
   onSnapshot: ((s: Snapshot) => void) | null = null;
   onStatus: ((s: NetClient["status"]) => void) | null = null;
+  onFile: ((f: FileMsg) => void) | null = null;
 
-  constructor(private transport: Transport, private name: string, token = "") {
+  constructor(private transport: Transport, private name: string, token = "", private account = "", private loadout = "") {
     this.token = token;
     transport.onOpen = () => {
-      transport.send(encodeJoin(this.name, this.token));
+      transport.send(encodeJoin(this.name, this.token, this.account, this.loadout));
     };
     transport.onMessage = (buf) => this.receive(buf);
     transport.onClose = (reason) => {
@@ -124,6 +126,9 @@ export class NetClient {
       return;
     }
     switch (msg.type) {
+      case "file":
+        this.onFile?.(msg.file);
+        break;
       case "welcome":
         this.playerId = msg.playerId;
         this.token = msg.token;

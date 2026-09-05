@@ -1,8 +1,8 @@
 import type { PlayerState } from "@shared/sim/player";
-import { PLAYER_MAX_HEALTH } from "@shared/sim/constants";
 import { currentWeapon } from "@shared/sim/weapons";
 import { GRENADE_LIST, WEAPON_LIST } from "@shared/weapons/manifest";
 import type { Dummy } from "@shared/sim/world";
+import type { FileView } from "../file";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
 export class Hud {
@@ -28,7 +28,7 @@ export class Hud {
         <div class="line">▲ <span class="handle">BLANK</span> · <span class="dim">DRAINAGE YARD (MAGENTA)</span> · <span class="online">1 online</span></div>
         <div class="line dim">LV <span class="depth">01</span> · XP <span class="xp">0/100</span> · ¢ <span class="scrip">0</span> · ◆ <span class="wake">0</span></div>
         <div class="bars">
-          <div class="bar cy"><i class="xpbar" style="width:0%"></i></div>
+          <div class="bar cy"><i class="shbar" style="width:100%"></i></div>
           <div class="bar gr"><i class="hpbar" style="width:100%"></i></div>
           <div class="bar ye"><i class="ammobar" style="width:100%"></i></div>
         </div>
@@ -59,13 +59,25 @@ export class Hud {
     this.radar = (root.querySelector(".map canvas") as HTMLCanvasElement).getContext("2d")!;
   }
 
+  /** Status line: Depth, XP into the depth, Scrip, Wakelight. */
+  setFile(f: FileView): void {
+    this.q(".depth").textContent = String(f.depth).padStart(2, "0");
+    this.q(".xp").textContent = `${f.xpIntoDepth}/${f.xpForNext === Infinity ? "∞" : f.xpForNext}`;
+    this.q(".scrip").textContent = String(f.scrip);
+    this.q(".wake").textContent = String(f.wakelight);
+    this.q(".handle").textContent = f.account.slice(0, 18).toUpperCase();
+    const tab = this.q(".tabs .tab .n");
+    if (tab) tab.textContent = f.legal ? "·" : "!";
+  }
+
   setLocked(locked: boolean): void {
     this.locked = locked;
     this.q(".prompt").classList.toggle("off", locked);
   }
 
   update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[]): void {
-    this.q(".hpbar").style.width = `${(100 * Math.max(0, p.health)) / PLAYER_MAX_HEALTH}%`;
+    this.q(".hpbar").style.width = `${(100 * Math.max(0, p.health)) / Math.max(1, p.maxHealth)}%`;
+    this.q(".shbar").style.width = p.maxShield > 0 ? `${(100 * Math.max(0, p.shield)) / p.maxShield}%` : "0%";
     const def = currentWeapon(p.weapon);
     const ammo = p.weapon.ammo[p.weapon.slot] ?? 0;
     this.q(".ammobar").style.width = def.magSize ? `${(100 * ammo) / def.magSize}%` : "100%";

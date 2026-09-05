@@ -1,0 +1,269 @@
+{
+  "lint": {
+    "clean": "FAIRNESS LINT PASS — 42 builds, 15 baseline duels, 1.633s",
+    "tradeless": 1,
+    "netpower": 1
+  },
+  "rejections": [
+    "LOADOUT REJECTED: attest-limit: 8 attested, max 7",
+    "LOADOUT REJECTED: connected: attestation is not a connected subgraph (1 of 2 reachable from slipfile)",
+    "LOADOUT REJECTED: not-owned: slipfile is not in your file",
+    "LOADOUT REJECTED: unknown-field: field \"protocols\" is not part of a PvP loadout"
+  ],
+  "files": {
+    "sandbox-eight": {
+      "depth": 50,
+      "xp": 2000000,
+      "scrip": 20000,
+      "matches": 0,
+      "ledger": []
+    },
+    "sandbox-split": {
+      "depth": 50,
+      "xp": 2000000,
+      "scrip": 20000,
+      "matches": 0,
+      "ledger": []
+    },
+    "fresh-poor": {
+      "depth": 1,
+      "xp": 0,
+      "scrip": 0,
+      "matches": 0,
+      "ledger": []
+    },
+    "sandbox-smuggle": {
+      "depth": 50,
+      "xp": 2000000,
+      "scrip": 20000,
+      "matches": 0,
+      "ledger": []
+    },
+    "sandbox-alpha": {
+      "depth": 50,
+      "xp": 2001104,
+      "scrip": 20132,
+      "matches": 1,
+      "ledger": [
+        "MATCH 0001 · WOKE",
+        "OBJECTIVE 354 · COMBAT 0 · SUPPORT 0",
+        "XP +1104 · SCRIP +132 · SALVAGE +3"
+      ]
+    },
+    "fresh-bravo": {
+      "depth": 1,
+      "xp": 250,
+      "scrip": 30,
+      "matches": 1,
+      "ledger": [
+        "MATCH 0001 · LEASED",
+        "OBJECTIVE 0 · COMBAT 0 · SUPPORT 0",
+        "XP +250 · SCRIP +30 · SALVAGE +1"
+      ]
+    }
+  },
+  "room": {
+    "settlements": 2,
+    "match": {
+      "phase": "results",
+      "timeLeft": 14.816666666666658,
+      "score": [
+        0,
+        11.433333333333481,
+        0
+      ],
+      "winner": 1,
+      "round": 1,
+      "nodes": [
+        {
+          "id": 1,
+          "owner": 0,
+          "hold": 1,
+          "contested": false
+        },
+        {
+          "id": 2,
+          "owner": 0,
+          "hold": 1,
+          "contested": false
+        },
+        {
+          "id": 3,
+          "owner": 0,
+          "hold": 1,
+          "contested": false
+        },
+        {
+          "id": 4,
+          "owner": 1,
+          "hold": 1,
+          "contested": false
+        },
+        {
+          "id": 5,
+          "owner": 0,
+          "hold": 1,
+          "contested": false
+        }
+      ]
+    },
+    "clients": [
+      {
+        "id": 1,
+        "name": "ALPHA",
+        "connected": true,
+        "traceMaxErr": 0,
+        "traceSamples": 395,
+        "inputsApplied": 1392,
+        "inputsRejected": 4,
+        "kills": 0,
+        "deaths": 0,
+        "shots": 0,
+        "hits": 0,
+        "queue": 0,
+        "flips": 1,
+        "nodeSeconds": 15.43333333333368,
+        "support": 0,
+        "file": {
+          "account": "sandbox-alpha",
+          "depth": 50,
+          "xp": 2001104,
+          "scrip": 20132,
+          "settlements": 1
+        },
+        "loadout": {
+          "primary": "lease_breaker",
+          "secondary": "shock_baton",
+          "attested": [
+            "slipfile",
+            "static_skin",
+            "quiet_ledger"
+          ],
+          "keystone": "debtless"
+        }
+      },
+      {
+        "id": 2,
+        "name": "BRAVO",
+        "connected": true,
+        "traceMaxErr": 0,
+        "traceSamples": 828,
+        "inputsApplied": 968,
+        "inputsRejected": 0,
+        "kills": 0,
+        "deaths": 0,
+        "shots": 0,
+        "hits": 0,
+        "queue": 0,
+        "flips": 0,
+        "nodeSeconds": 0,
+        "support": 0,
+        "file": {
+          "account": "fresh-bravo",
+          "depth": 1,
+          "xp": 250,
+          "scrip": 30,
+          "settlements": 1
+        },
+        "loadout": {
+          "primary": "lease_breaker",
+          "secondary": "shock_baton",
+          "attested": [],
+          "keystone": null
+        }
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "lint: the shipped catalogue passes the Fairness Lint",
+      "pass": true,
+      "detail": "FAIRNESS LINT PASS — 42 builds, 15 baseline duels, 1.633s"
+    },
+    {
+      "name": "lint: an injected trade-less node fails (schema + TTK + beats-every-bracket)",
+      "pass": true,
+      "detail": "  ✗ injected:tradeless                 offense ±16.3%  defense ±0.0%  mobility 7.22 s  BEATS EVERY BRACKET |   VIOLATION [free_lunch] schema:non-empty-costs: a trade-less buff cannot ship"
+    },
+    {
+      "name": "lint: an injected reconciled-but-net-power node fails on simulation, not arithmetic",
+      "pass": true,
+      "detail": "  VIOLATION [quiet_power] schema:link-symmetric: slipfile does not link back |   VIOLATION [injected:netpower] ttk-deviation: lease_breaker @3 m offense -16.3% (0.600 vs 0.717 s)"
+    },
+    {
+      "name": "spawn: EIGHT refused (attest-limit)",
+      "pass": true,
+      "detail": "kicked: LOADOUT REJECTED: attest-limit: 8 attested, max 7"
+    },
+    {
+      "name": "spawn: SPLIT refused (connected)",
+      "pass": true,
+      "detail": "kicked: LOADOUT REJECTED: connected: attestation is not a connected subgraph (1 of 2 reachable from slipfile)"
+    },
+    {
+      "name": "spawn: POOR refused (not-owned)",
+      "pass": true,
+      "detail": "kicked: LOADOUT REJECTED: not-owned: slipfile is not in your file"
+    },
+    {
+      "name": "spawn: SMUGGLE refused (unknown-field)",
+      "pass": true,
+      "detail": "kicked: LOADOUT REJECTED: unknown-field: field \"protocols\" is not part of a PvP loadout"
+    },
+    {
+      "name": "spawn: refused players never entered the world",
+      "pass": true,
+      "detail": "0 in room, 4 rejections logged"
+    },
+    {
+      "name": "spawn: a legal attestation with a linked keystone is admitted",
+      "pass": true,
+      "detail": "status joined · depth 50 · owned 14 items"
+    },
+    {
+      "name": "spawn: the admitted sheet runs client-side (DEBTLESS +12% move × QUIET LEDGER −2.5%, no shield)",
+      "pass": true,
+      "detail": "moveSpeed ×1.092 slideBoost ×1.375 maxShield 0"
+    },
+    {
+      "name": "file: NET DELTA never overdraws the Auditor's ledger (keystones may over-pay)",
+      "pass": true,
+      "detail": "net delta -24.700 · legal"
+    },
+    {
+      "name": "spawn: server and client agree on the admitted loadout",
+      "pass": true,
+      "detail": "server attested [slipfile, static_skin, quiet_ledger] keystone debtless"
+    },
+    {
+      "name": "settle: the round reaches results with cell one ahead",
+      "pass": true,
+      "detail": "phase results winner 1 score 11 : 0"
+    },
+    {
+      "name": "settle: node credit accrues to the Blank on the node",
+      "pass": true,
+      "detail": "ALPHA flips 1, 15.4 s on nodes"
+    },
+    {
+      "name": "settle: XP and Scrip land in both files, objective play paying more",
+      "pass": true,
+      "detail": "ALPHA +1104 xp / 132 scrip · BRAVO +250 xp / 30 scrip · saves 2"
+    },
+    {
+      "name": "settle: a fresh Blank's first match is booked (participation XP, no win bonus)",
+      "pass": true,
+      "detail": "BRAVO depth 1 (250 xp, 3 ledger lines)"
+    },
+    {
+      "name": "settle: the client's ledger carries the settlement lines",
+      "pass": true,
+      "detail": "MATCH 0001 · WOKE | OBJECTIVE 354 · COMBAT 0 · SUPPORT 0 | XP +1104 · SCRIP +132 · SALVAGE +3"
+    },
+    {
+      "name": "file: the FILE panel shows the NET DELTA stamp",
+      "pass": true,
+      "detail": "NET DELTA: −24.700 — RECONCILED · ATTESTATION LEGAL · APPLIES ON NEXT LINK"
+    }
+  ]
+}

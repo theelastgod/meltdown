@@ -2,7 +2,8 @@ import { DUMMY_MAX_HEALTH, DUMMY_RESPAWN_SECONDS, MOVE, SIM_DT, SIM_HZ } from ".
 import { emptyInput, type InputFrame } from "./input";
 import type { DummyDef, LevelDef } from "./level";
 import { rayBox, rayCapsule } from "./collision";
-import { createPlayer, eyePos, respawnPlayer, stepPlayer, type PlayerEvent, type PlayerState } from "./player";
+import { applySheet, createPlayer, eyePos, respawnPlayer, stepPlayer, type PlayerEvent, type PlayerState } from "./player";
+import { sheetFor, DEFAULT_LOADOUT, type Loadout } from "../manifest/loadout";
 import { type FireRequest } from "./weapons";
 import { createProjectile, stepProjectiles, type CapsuleTarget, type Cloud, type Projectile, type ProjKind } from "./projectiles";
 import { canSee, createMech, createWasp, stepMech, stepWasp, type AiRequest, type Mech, type SightTarget, type Wasp, WASP, MECH } from "./ai";
@@ -91,6 +92,8 @@ export interface WorldOptions {
   ai?: boolean;
   /** Start the wake immediately (offline sandbox) or in warm-up (rooms). */
   wakePhase?: "warmup" | "wake" | "off";
+  warmupSeconds?: number;
+  roundSeconds?: number;
 }
 
 /**
@@ -119,7 +122,7 @@ export class World {
     this.seed = opts.seed ?? 1;
     this.ai = opts.ai ?? true;
     const wp = opts.wakePhase ?? "wake";
-    this.wake = wp === "off" || level.nodes.length === 0 ? null : createWake(level.nodes, wp);
+    this.wake = wp === "off" || level.nodes.length === 0 ? null : createWake(level.nodes, wp, { warmupSeconds: opts.warmupSeconds, roundSeconds: opts.roundSeconds });
     for (const d of level.dummies) {
       this.dummies.push({ id: d.id, def: d, pos: clone(d.pos), health: DUMMY_MAX_HEALTH, alive: true, respawnTimer: 0, phase: 0, dir: 1, firstDamageTick: -1, hitsTaken: 0 });
     }
@@ -133,13 +136,21 @@ export class World {
     return this.tick / SIM_HZ;
   }
 
-  addPlayer(id: number, name = "BLANK", team = 1): PlayerState {
+  addPlayer(id: number, name = "BLANK", team = 1, loadout: Loadout = DEFAULT_LOADOUT): PlayerState {
     const spawn = this.level.spawns[this.nextSpawn % this.level.spawns.length]!;
     this.nextSpawn++;
     const p = createPlayer(id, name, spawn);
     p.team = team;
+    this.setLoadout(p, loadout);
     this.players.set(id, p);
     return p;
+  }
+
+  /** Apply a validated loadout: the build sheet and the starting weapon. */
+  setLoadout(p: PlayerState, loadout: Loadout): void {
+    applySheet(p, sheetFor(loadout));
+    const slot = WEAPONS[loadout.primary]?.slot ?? 1;
+    p.weapon.slot = slot;
   }
 
   removePlayer(id: number): void {
@@ -188,7 +199,7 @@ export class World {
 
   private stepWakeMode(opts: StepOpts): void {
     const w = this.wake!;
-    const occupants = [...this.players.values()].map((p) => ({ team: p.team, pos: p.pos, flipMult: p.flipMult, alive: p.alive }));
+    const occupants = [...this.players.values()].map((p) => ({ team: p.team, pos: p.pos, flipMult: p.flipMult, alive: p.alive, credit: p.stats }));
     const per: [number, number, number] = [0, 0, 0];
     for (const p of this.players.values()) if (p.team === 1 || p.team === 2) per[p.team]++;
     const events: WakeEvent[] = [];
@@ -240,8 +251,9 @@ export class World {
       if (!first) for (const w of this.wasps) if (w.alive && inArc(v3(w.pos.x, w.pos.y - WASP_HEIGHT / 2, w.pos.z), WASP_RADIUS)) { first = { kind: "wasp", id: w.id, pos: w.pos }; break; }
       if (!first) for (const m of this.mechs) if (m.alive && inArc(m.pos, MECH_RADIUS)) { first = { kind: "mech", id: m.id, pos: m.pos }; break; }
       if (first) {
-        hits.push({ kind: first.kind, id: first.id, damage: r.damage, zone: "body" });
-        this.applyDamage(first.kind, first.id, r.damage, p.id, r.weapon, "melee", opts);
+        const md = Math.round(r.damage * p.mods.damage);
+        hits.push({ kind: first.kind, id: first.id, damage: md, zone: "body" });
+        this.applyDamage(first.kind, first.id, md, p.id, r.weapon, "melee", opts);
         if (first.kind === "player") this.stunPlayer(first.id, r.stun, p.id, opts);
         if (r.lunge) {
           p.weapon.lungeHit = true;
@@ -291,10 +303,13 @@ export class World {
     }
     const cands: { t: number; hit: ShotHit }[] = [];
     let nearMiss = Infinity;
+    const shooterMods = shooterId > 0 ? this.players.get(shooterId)?.mods : undefined;
+    const dmgMult = shooterMods?.damage ?? 1;
+    const rangeP: RangeProfile = shooterMods && shooterMods.range !== 1 ? { ...range, fullTo: range.fullTo * shooterMods.range, falloffTo: range.falloffTo * shooterMods.range } : range;
     const zoneDmg = (t: number, feetY: number, height: number, hm: number, lm: number): { zone: HitZone; damage: number } => {
       const zone = zoneOf(origin.y + dir.y * t, feetY, height);
-      const mult = zone === "head" ? hm : zone === "legs" ? lm : 1;
-      return { zone, damage: Math.max(1, Math.round(damage * mult * falloff(range, t))) };
+      const mult = zone === "head" ? hm * (shooterMods?.headMult ?? 1) : zone === "legs" ? lm : 1;
+      return { zone, damage: Math.max(1, Math.round(damage * dmgMult * mult * falloff(rangeP, t))) };
     };
     if (!opts.predictOnly) {
       for (const d of this.dummies) {
@@ -323,12 +338,12 @@ export class World {
       for (const w of this.wasps) {
         if (!w.alive || shooterId < 0) continue;
         const t = rayCapsule(origin, dir, v3(w.pos.x, w.pos.y - WASP_HEIGHT / 2, w.pos.z), WASP_RADIUS, WASP_HEIGHT, worldT);
-        if (t !== null) cands.push({ t, hit: { kind: "wasp", id: w.id, zone: "body", damage: Math.max(1, Math.round(damage * falloff(range, t))) } });
+        if (t !== null) cands.push({ t, hit: { kind: "wasp", id: w.id, zone: "body", damage: Math.max(1, Math.round(damage * dmgMult * falloff(rangeP, t))) } });
       }
       for (const m of this.mechs) {
         if (!m.alive || shooterId < 0) continue;
         const t = rayCapsule(origin, dir, m.pos, MECH_RADIUS, MECH_HEIGHT, worldT);
-        if (t !== null) cands.push({ t, hit: { kind: "mech", id: m.id, zone: "body", damage: Math.max(1, Math.round(damage * 0.5 * falloff(range, t))) } });
+        if (t !== null) cands.push({ t, hit: { kind: "mech", id: m.id, zone: "body", damage: Math.max(1, Math.round(damage * dmgMult * 0.5 * falloff(rangeP, t))) } });
       }
     }
     cands.sort((a, b) => a.t - b.t);
@@ -379,7 +394,11 @@ export class World {
       if (!v || !v.alive) return;
       if (v.firstDamageTick < 0) v.firstDamageTick = this.tick;
       v.lastAttacker = attacker;
-      v.health -= damage;
+      v.sinceDamage = 0;
+      // shields soak first
+      const toShield = Math.min(v.shield, damage);
+      v.shield -= toShield;
+      v.health -= damage - toShield;
       this.emit({ tick: this.tick, playerId: id, type: "hurt", damage, by: attacker, kind: how }, opts);
       if (v.health <= 0) {
         const ttk = this.tick - v.firstDamageTick;
@@ -399,6 +418,8 @@ export class World {
       if (w.health <= 0) {
         w.alive = false;
         w.respawnTimer = WASP.respawn;
+        const sh = this.players.get(attacker);
+        if (sh) sh.stats.support += 2;
         this.emit({ tick: this.tick, playerId: attacker, type: "waspDeath", waspId: w.id }, opts);
         this.emit({ tick: this.tick, playerId: attacker, type: "kill", victimKind: "wasp", victimId: w.id, ttkTicks: 0, ttkSeconds: 0, weapon }, opts);
       }
@@ -411,6 +432,8 @@ export class World {
       if (m.health <= 0) {
         m.alive = false;
         m.respawnTimer = MECH.respawn;
+        const sh = this.players.get(attacker);
+        if (sh) sh.stats.support += 6;
         this.emit({ tick: this.tick, playerId: attacker, type: "mechDeath", mechId: m.id }, opts);
         this.emit({ tick: this.tick, playerId: attacker, type: "kill", victimKind: "mech", victimId: m.id, ttkTicks: 0, ttkSeconds: 0, weapon }, opts);
       }
@@ -454,7 +477,11 @@ export class World {
     if (p.kind === "emp") {
       for (const o of this.players.values()) {
         if (!o.alive) continue;
-        if (dist(v3(o.pos.x, o.pos.y + 0.9, o.pos.z), pos) <= p.radius) o.weapon.empTimer = Math.max(o.weapon.empTimer, GRENADES.emp.duration);
+        if (dist(v3(o.pos.x, o.pos.y + 0.9, o.pos.z), pos) <= p.radius) {
+          o.weapon.empTimer = Math.max(o.weapon.empTimer, GRENADES.emp.duration);
+          o.shield = 0;
+          o.sinceDamage = 0;
+        }
       }
       for (const w of this.wasps) if (w.alive && dist(w.pos, pos) <= p.radius + 1) w.disabledTimer = Math.max(w.disabledTimer, GRENADES.emp.duration);
       for (const m of this.mechs) if (m.alive && dist(v3(m.pos.x, m.pos.y + 1.7, m.pos.z), pos) <= p.radius + 1.5) m.disabledTimer = Math.max(m.disabledTimer, GRENADES.emp.duration);
@@ -488,7 +515,7 @@ export class World {
 
   private stepAI(opts: StepOpts): void {
     const targets: SightTarget[] = [];
-    for (const p of this.players.values()) targets.push({ id: p.id, eye: eyePos(p), chest: v3(p.pos.x, p.pos.y + p.height * 0.55, p.pos.z), alive: p.alive });
+    for (const p of this.players.values()) targets.push({ id: p.id, eye: eyePos(p), chest: v3(p.pos.x, p.pos.y + p.height * 0.55, p.pos.z), alive: p.alive, detectMult: p.mods.droneDetect * (0.85 + 0.15 * p.mods.footstep) });
     const reqs: AiRequest[] = [];
     for (const w of this.wasps) stepWasp(w, targets, this.level.boxes, this.clouds, this.tick, reqs);
     for (const m of this.mechs) stepMech(m, targets, this.level.boxes, this.clouds, reqs);
@@ -553,6 +580,7 @@ export class World {
       slideTime: p.slideTime, slideCooldown: p.slideCooldown, sdx: p.slideDir.x, sdz: p.slideDir.z,
       mfx: p.mantleFrom.x, mfy: p.mantleFrom.y, mfz: p.mantleFrom.z, mtx: p.mantleTo.x, mty: p.mantleTo.y, mtz: p.mantleTo.z, mantleT: p.mantleT,
       health: p.health, alive: p.alive ? 1 : 0, respawnTimer: p.respawnTimer, prevButtons: p.prevButtons,
+      shield: p.shield, sinceDamage: p.sinceDamage,
       kills: p.stats.kills, deaths: p.stats.deaths, shots: p.stats.shots, hits: p.stats.hits,
       team: p.team,
       slot: w.slot, ammo: w.ammo.slice(), reloadTimer: w.reloadTimer, reloadTotal: w.reloadTotal, reloadSeated: w.reloadSeated ? 1 : 0, fireCooldown: w.fireCooldown,
@@ -579,6 +607,8 @@ export class World {
     set(p.mantleTo, l.mtx, l.mty, l.mtz);
     p.mantleT = l.mantleT;
     p.health = l.health;
+    p.shield = l.shield;
+    p.sinceDamage = l.sinceDamage;
     p.alive = l.alive === 1;
     p.respawnTimer = l.respawnTimer;
     p.prevButtons = l.prevButtons;
@@ -636,7 +666,7 @@ export function hashWorld(w: World): string {
   for (const p of [...w.players.values()].sort((a, b) => a.id - b.id)) {
     push(p.pos);
     push(p.vel);
-    parts.push(p.yaw, p.pitch, p.height, p.grounded ? 1 : 0, p.health, p.slideTime, p.mantleT);
+    parts.push(p.yaw, p.pitch, p.height, p.grounded ? 1 : 0, p.health, p.shield, p.slideTime, p.mantleT);
     parts.push(p.stance === "stand" ? 0 : p.stance === "crouch" ? 1 : p.stance === "slide" ? 2 : 3);
     const wp = p.weapon;
     parts.push(wp.slot, wp.reloadTimer, wp.fireCooldown, wp.charge, wp.shotIndex, wp.magSeed, wp.kickPitch, wp.kickYaw, wp.patX, wp.patY, wp.stunTimer, wp.empTimer, ...wp.ammo, ...wp.grenades);

@@ -60,6 +60,8 @@ export interface SightTarget {
   eye: Vec3;
   chest: Vec3;
   alive: boolean;
+  /** detection radius multiplier against this target (build) */
+  detectMult?: number;
 }
 
 export type AiRequest =
@@ -137,7 +139,7 @@ export function stepWasp(w: Wasp, targets: readonly SightTarget[], boxes: readon
   let bestD = w.state === "chase" ? WASP.fireRange + 4 : WASP.detect;
   for (const t of targets) {
     if (!t.alive || t.id === w.jammedBy) continue;
-    const d = len(sub(t.chest, w.pos));
+    const d = len(sub(t.chest, w.pos)) / (t.detectMult ?? 1);
     if (d < bestD && canSee(w.pos, t.chest, boxes, clouds)) {
       best = t;
       bestD = d;
@@ -226,7 +228,7 @@ export function stepMech(m: Mech, targets: readonly SightTarget[], boxes: readon
     if (!t.alive) continue;
     const d = sub(t.chest, origin);
     const dist = len(d);
-    if (dist > MECH.lightRange) continue;
+    if (dist > MECH.lightRange * (t.detectMult ?? 1)) continue;
     const yawTo = Math.atan2(-d.x, -d.z);
     const ang = Math.abs(wrapAngle(yawTo - lightDirYaw));
     const half = m.targetId === t.id ? MECH.lightHalfAngle * 1.8 : MECH.lightHalfAngle;

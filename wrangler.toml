@@ -3,8 +3,22 @@ main = "server/worker.ts"
 compatibility_date = "2025-06-01"
 
 [durable_objects]
-bindings = [{ name = "MATCH_ROOM", class_name = "MatchRoom" }]
+bindings = [
+  { name = "MATCH_ROOM", class_name = "MatchRoom" },
+  { name = "PLAYER_FILE", class_name = "PlayerFile" },
+]
 
 [[migrations]]
 tag = "v1"
 new_classes = ["MatchRoom"]
+
+[[migrations]]
+tag = "v2"
+new_classes = ["PlayerFile"]
+
+# Ghostfile rows. Create with `npx wrangler d1 create meltdown-ghostfile`, paste the id here,
+# then `npx wrangler d1 execute meltdown-ghostfile --file=server/schema.sql`.
+[[d1_databases]]
+binding = "DB"
+database_name = "meltdown-ghostfile"
+database_id = "00000000-0000-0000-0000-000000000000"

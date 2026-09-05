@@ -98,3 +98,26 @@ html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; f
 #hud .hex.cy { color: #041014; border-color: var(--cy); background: var(--cy); }
 #hud .hex.am { color: var(--am); border-color: var(--am); background: rgba(255,176,46,0.25); animation: blink 0.5s steps(2) infinite; }
 #hud .hex i { position: absolute; left: 0; bottom: 0; height: 3px; background: #fff; opacity: 0.9; }
+
+/* FILE panel (Tab): the Ghostfile — attestation, keystone, weapons, ledger. */
+#hud .file { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 760px; max-width: 94vw; max-height: 88vh; overflow: auto; pointer-events: auto; padding: 10px 14px; background: rgba(3,5,9,0.92); border: 1px solid var(--cy); color: var(--cy); text-shadow: 0 0 4px rgba(53,242,255,0.4); box-shadow: 0 0 0 1px rgba(0,0,0,0.7), 0 0 16px rgba(53,242,255,0.2); font-size: 10.5px; cursor: default; }
+#hud .file .hd { font-size: 12px; letter-spacing: 0.12em; margin-bottom: 4px; }
+#hud .file .hd .x { float: right; color: var(--mg); cursor: pointer; }
+#hud .file .ln { margin: 2px 0; color: rgba(55,255,139,0.9); }
+#hud .file .ln b { color: var(--gr); }
+#hud .file .dim { color: rgba(53,242,255,0.5); }
+#hud .file .wp { color: var(--ye); cursor: pointer; }
+#hud .file .cols { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; margin-top: 6px; }
+#hud .file .sh { color: var(--mg); letter-spacing: 0.1em; margin: 6px 0 3px; border-bottom: 1px solid rgba(255,62,201,0.35); }
+#hud .file .it { padding: 3px 4px; margin: 2px 0; border: 1px solid rgba(53,242,255,0.18); cursor: pointer; }
+#hud .file .it:hover { border-color: rgba(53,242,255,0.6); }
+#hud .file .it.on { border-color: var(--gr); color: var(--gr); background: rgba(55,255,139,0.06); }
+#hud .file .it.locked { opacity: 0.45; }
+#hud .file .it .chk { margin-right: 5px; }
+#hud .file .it .ring { float: right; color: rgba(53,242,255,0.55); font-size: 9.5px; }
+#hud .file .it .tr { font-size: 9.5px; color: rgba(53,242,255,0.75); }
+#hud .file .it .b { color: var(--gr); }
+#hud .file .it .c { color: var(--mg); }
+#hud .file .ledger { font-size: 9.5px; color: var(--am); max-height: 160px; overflow: auto; }
+#hud .file .ft { margin-top: 8px; padding-top: 5px; border-top: 1px solid rgba(53,242,255,0.35); color: var(--gr); letter-spacing: 0.06em; }
+#hud .file .ft.bad { color: var(--mg); }

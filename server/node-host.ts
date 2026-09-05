@@ -4,14 +4,17 @@
  *
  *   npx tsx server/node-host.ts [port]
  *   GET  /stats              → JSON stats for every room
- *   WS   /room/<name>[?lagcomp=0]
+ *   WS   /room/<name>[?lagcomp=0&ai=0&warmup=<s>&round=<s>]
  */
 import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
+import { devSeed, MemoryAccountStore } from "./accounts";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 8787);
 const rooms = new Map<string, Room>();
+/** One Ghostfile store for the whole host: "sandbox*" ids own every node, anything else starts Blank. */
+const accounts = new MemoryAccountStore(devSeed);
 const logs: string[] = [];
 const log = (line: string) => {
   logs.push(`${new Date().toISOString()} ${line}`);
@@ -19,10 +22,10 @@ const log = (line: string) => {
   if (process.env.VERBOSE) console.log(line);
 };
 
-function getRoom(name: string, lagComp: boolean, ai: boolean): Room {
+function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: number, roundSeconds?: number): Room {
   let r = rooms.get(name);
   if (!r) {
-    r = new Room({ lagComp, ai, seed: 7, onLog: (l) => log(`[${name}] ${l}`) });
+    r = new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, onLog: (l) => log(`[${name}] ${l}`) });
     rooms.set(name, r);
     // fixed-rate loop with drift correction
     let next = performance.now();
@@ -48,7 +51,9 @@ const http = createServer((req, res) => {
     const out: Record<string, unknown> = {};
     for (const [k, r] of rooms) out[k] = r.stats();
     res.setHeader("content-type", "application/json");
-    res.end(JSON.stringify({ rooms: out, logs: logs.slice(-60) }));
+    const files: Record<string, unknown> = {};
+    for (const [id, a] of accounts.accounts) files[id] = { depth: a.depth, xp: a.xp, scrip: a.wallet.scrip, matches: a.matches, ledger: a.ledger.slice(-8) };
+    res.end(JSON.stringify({ rooms: out, files, saves: accounts.saves, logs: logs.slice(-60) }));
     return;
   }
   res.statusCode = 404;
@@ -63,7 +68,8 @@ wss.on("connection", (ws: WebSocket, req) => {
     ws.close(4000, "bad room");
     return;
   }
-  const room = getRoom(m[1]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0");
+  const num = (k: string) => (url.searchParams.has(k) ? Number(url.searchParams.get(k)) : undefined);
+  const room = getRoom(m[1]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"));
   ws.binaryType = "arraybuffer";
   const conn: Conn = {
     send: (buf) => {

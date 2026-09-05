@@ -1,0 +1,20 @@
+PASS  lint: the shipped catalogue passes the Fairness Lint  — FAIRNESS LINT PASS — 42 builds, 15 baseline duels, 1.633s
+PASS  lint: an injected trade-less node fails (schema + TTK + beats-every-bracket)  —   ✗ injected:tradeless                 offense ±16.3%  defense ±0.0%  mobility 7.22 s  BEATS EVERY BRACKET |   VIOLATION [free_lunch] schema:non-empty-costs: a trade-less buff cannot ship
+PASS  lint: an injected reconciled-but-net-power node fails on simulation, not arithmetic  —   VIOLATION [quiet_power] schema:link-symmetric: slipfile does not link back |   VIOLATION [injected:netpower] ttk-deviation: lease_breaker @3 m offense -16.3% (0.600 vs 0.717 s)
+PASS  spawn: EIGHT refused (attest-limit)  — kicked: LOADOUT REJECTED: attest-limit: 8 attested, max 7
+PASS  spawn: SPLIT refused (connected)  — kicked: LOADOUT REJECTED: connected: attestation is not a connected subgraph (1 of 2 reachable from slipfile)
+PASS  spawn: POOR refused (not-owned)  — kicked: LOADOUT REJECTED: not-owned: slipfile is not in your file
+PASS  spawn: SMUGGLE refused (unknown-field)  — kicked: LOADOUT REJECTED: unknown-field: field "protocols" is not part of a PvP loadout
+PASS  spawn: refused players never entered the world  — 0 in room, 4 rejections logged
+PASS  spawn: a legal attestation with a linked keystone is admitted  — status joined · depth 50 · owned 14 items
+PASS  spawn: the admitted sheet runs client-side (DEBTLESS +12% move × QUIET LEDGER −2.5%, no shield)  — moveSpeed ×1.092 slideBoost ×1.375 maxShield 0
+PASS  file: NET DELTA never overdraws the Auditor's ledger (keystones may over-pay)  — net delta -24.700 · legal
+PASS  spawn: server and client agree on the admitted loadout  — server attested [slipfile, static_skin, quiet_ledger] keystone debtless
+PASS  settle: the round reaches results with cell one ahead  — phase results winner 1 score 11 : 0
+PASS  settle: node credit accrues to the Blank on the node  — ALPHA flips 1, 15.4 s on nodes
+PASS  settle: XP and Scrip land in both files, objective play paying more  — ALPHA +1104 xp / 132 scrip · BRAVO +250 xp / 30 scrip · saves 2
+PASS  settle: a fresh Blank's first match is booked (participation XP, no win bonus)  — BRAVO depth 1 (250 xp, 3 ledger lines)
+PASS  settle: the client's ledger carries the settlement lines  — MATCH 0001 · WOKE | OBJECTIVE 354 · COMBAT 0 · SUPPORT 0 | XP +1104 · SCRIP +132 · SALVAGE +3
+PASS  file: the FILE panel shows the NET DELTA stamp  — NET DELTA: −24.700 — RECONCILED · ATTESTATION LEGAL · APPLIES ON NEXT LINK
+
+18/18 checks passed.

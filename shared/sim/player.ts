@@ -1,11 +1,30 @@
-import { MOVE, PLAYER_MAX_HEALTH, SIM_DT } from "./constants";
+import { MOVE, SIM_DT } from "./constants";
 import { Btn, has, type InputFrame } from "./input";
 import type { Box, SpawnPoint } from "./level";
 import { capsuleFree, groundContact, resolveCapsule } from "./collision";
 import { createWeaponState, currentWeapon, resetWeaponState, stepWeapon, weaponMoveMult, type FireRequest, type WeaponEvent, type WeaponState } from "./weapons";
+import { baseSheet, type StatSheet } from "../manifest/stats";
+import { GRENADE_LIST } from "../weapons/manifest";
 import { type Vec3, v3, clone, copy, set, lenXZ, yawDir, yawRight, clamp, dot, wrapAngle, hyp2 } from "../math/vec3";
 
 export type Stance = "stand" | "crouch" | "slide" | "mantle";
+
+/** Baseline Blank: 70 integrity + 30 shield = 100 effective, the TTK harness's target. */
+export const BASE_HEALTH = 70;
+export const BASE_SHIELD = 30;
+export const SHIELD_REGEN_RATE = 15;
+export const SHIELD_REGEN_DELAY = 4;
+
+/** Apply a build to a player: derived caps, flip rate, grenades. Called at spawn and on loadout change. */
+export function applySheet(p: PlayerState, sheet: StatSheet): void {
+  p.mods = sheet;
+  p.maxHealth = Math.max(10, Math.round(BASE_HEALTH + sheet.maxHealth));
+  p.maxShield = Math.max(0, Math.round(BASE_SHIELD + sheet.maxShield));
+  p.health = p.maxHealth;
+  p.shield = p.maxShield;
+  p.flipMult = sheet.flipRate;
+  p.weapon.grenades = GRENADE_LIST.map((g, i) => (i === 0 ? Math.max(0, g.count + Math.round(sheet.grenades)) : g.count));
+}
 
 export interface PlayerStats {
   jumps: number;
@@ -18,6 +37,11 @@ export interface PlayerStats {
   deaths: number;
   /** Peak horizontal speed reached (m/s). */
   topSpeed: number;
+  /** Match credit (the Ghostfile reads these at results): node flips you stood on, seconds pulling/holding, support points. */
+  flips: number;
+  nodeSeconds: number;
+  assists: number;
+  support: number;
 }
 
 export interface PlayerState {
@@ -27,6 +51,13 @@ export interface PlayerState {
   team: number;
   /** Node flip multiplier (faction perk / Ledger node; 1 = none). */
   flipMult: number;
+  /** The build: derived from the validated loadout on both client and server. */
+  mods: StatSheet;
+  shield: number;
+  maxShield: number;
+  maxHealth: number;
+  /** seconds since last damage (shield regen gate) */
+  sinceDamage: number;
   /** Feet position. */
   pos: Vec3;
   vel: Vec3;
@@ -61,6 +92,11 @@ export function createPlayer(id: number, name: string, spawn: SpawnPoint): Playe
     name,
     team: 0,
     flipMult: 1,
+    mods: baseSheet(),
+    shield: BASE_SHIELD,
+    maxShield: BASE_SHIELD,
+    maxHealth: BASE_HEALTH,
+    sinceDamage: 99,
     pos: clone(spawn.pos),
     vel: v3(),
     yaw: spawn.yaw,
@@ -76,12 +112,12 @@ export function createPlayer(id: number, name: string, spawn: SpawnPoint): Playe
     mantleFrom: v3(),
     mantleTo: v3(),
     mantleT: 0,
-    health: PLAYER_MAX_HEALTH,
+    health: BASE_HEALTH,
     alive: true,
     respawnTimer: 0,
     weapon: createWeaponState(),
     prevButtons: 0,
-    stats: { jumps: 0, slides: 0, slideJumps: 0, mantles: 0, shots: 0, hits: 0, kills: 0, deaths: 0, topSpeed: 0 },
+    stats: { jumps: 0, slides: 0, slideJumps: 0, mantles: 0, shots: 0, hits: 0, kills: 0, deaths: 0, topSpeed: 0, flips: 0, nodeSeconds: 0, assists: 0, support: 0 },
     firstDamageTick: -1,
     lastAttacker: -1,
   };
@@ -94,9 +130,10 @@ export function respawnPlayer(p: PlayerState, spawn: SpawnPoint): void {
   p.pitch = 0;
   p.stance = "stand";
   p.height = MOVE.standHeight;
-  p.health = PLAYER_MAX_HEALTH;
   p.alive = true;
   resetWeaponState(p.weapon);
+  applySheet(p, p.mods);
+  p.sinceDamage = 99;
   p.slideTime = 0;
   p.slideCooldown = 0;
   p.firstDamageTick = -1;
@@ -188,10 +225,14 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
   p.prevButtons = input.buttons;
   // weapon first: its requests use this tick's view; movement follows
   const wevents: WeaponEvent[] = [];
-  const reqs = stepWeapon(p.weapon, input, prevButtons, p.yaw, p.pitch, p.alive, roomSeed, p.id, wevents);
+  const reqs = stepWeapon(p.weapon, input, prevButtons, p.yaw, p.pitch, p.alive, roomSeed, p.id, wevents, p.mods);
   for (const e of wevents) events.push(e);
   if (!p.alive) return reqs;
-  const moveMult = weaponMoveMult(p.weapon);
+  const mods = p.mods;
+  const moveMult = weaponMoveMult(p.weapon, mods.adsMove) * mods.moveSpeed;
+  // shield regen
+  p.sinceDamage += dt;
+  if (p.shield < p.maxShield && p.sinceDamage >= SHIELD_REGEN_DELAY * mods.shieldDelay) p.shield = Math.min(p.maxShield, p.shield + SHIELD_REGEN_RATE * mods.shieldRegen * dt);
 
   const jumpPressed = has(pressed, Btn.Jump);
   const crouchPressed = has(pressed, Btn.Crouch);
@@ -202,7 +243,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
 
   // ---- Mantle: scripted pull-up, no physics ----
   if (p.stance === "mantle") {
-    p.mantleT = Math.min(1, p.mantleT + dt / MOVE.mantleTime);
+    p.mantleT = Math.min(1, p.mantleT + dt / (MOVE.mantleTime * p.mods.mantleTime));
     const t = p.mantleT;
     // vertical first (ease-out), then forward (ease-in)
     const ty = Math.min(1, t / 0.6);
@@ -235,7 +276,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
     let speed = lenXZ(p.vel);
     const canStand = capsuleFree(p.pos, r, MOVE.standHeight, boxes);
     const slideJumping = p.jumpBuffer > 0 && p.grounded && canStand;
-    if (p.grounded && !slideJumping) speed = Math.max(0, speed - MOVE.slideFriction * dt);
+    if (p.grounded && !slideJumping) speed = Math.max(0, speed - MOVE.slideFriction * mods.slideFriction * dt);
     // gentle steering toward wish direction
     if (wish.x !== 0 || wish.z !== 0) {
       const cur = Math.atan2(p.slideDir.x, p.slideDir.z);
@@ -269,14 +310,14 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
     // ---- Standing / crouching ----
     const hspeed = lenXZ(p.vel);
     const canSlide =
-      crouchPressed && p.grounded && sprintHeld && hspeed >= MOVE.slideEntrySpeed && p.slideCooldown <= 0 && (wish.x !== 0 || wish.z !== 0);
+      crouchPressed && p.grounded && sprintHeld && hspeed >= MOVE.slideEntrySpeed * Math.min(1, mods.moveSpeed) && p.slideCooldown <= 0 && (wish.x !== 0 || wish.z !== 0);
     if (canSlide) {
       p.stance = "slide";
       p.height = MOVE.lowHeight;
       p.slideTime = 0;
       const d = hspeed > 1e-6 ? v3(p.vel.x / hspeed, 0, p.vel.z / hspeed) : wish;
       copy(p.slideDir, d);
-      const s = Math.min(hspeed + MOVE.slideBoost, MOVE.slideMaxSpeed);
+      const s = Math.min(hspeed + MOVE.slideBoost * mods.slideBoost, MOVE.slideMaxSpeed * Math.max(1, mods.slideBoost));
       p.vel.x = d.x * s;
       p.vel.z = d.z * s;
       p.stats.slides++;
@@ -292,7 +333,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
           p.height = MOVE.standHeight;
         }
       }
-      const maxSpeed = (p.stance === "crouch" ? MOVE.crouchSpeed : sprintHeld && forwardHeld && moveMult >= 1 ? MOVE.sprintSpeed : MOVE.walkSpeed) * moveMult;
+      const maxSpeed = (p.stance === "crouch" ? MOVE.crouchSpeed : sprintHeld && forwardHeld && weaponMoveMult(p.weapon, mods.adsMove) >= 1 ? MOVE.sprintSpeed : MOVE.walkSpeed) * moveMult;
       if (p.weapon.lungeT > 0) {
         // baton lunge: a fixed-speed dash along the view
         const f = yawDir(p.yaw);

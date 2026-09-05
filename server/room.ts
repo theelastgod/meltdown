@@ -16,7 +16,9 @@ import {
   MAX_REWIND_TICKS,
   MAX_INPUT_QUEUE,
   decodeClientMessage,
+  encodeFile,
   encodeKick,
+  type FileMsg,
   encodePong,
   encodeSnapshot,
   encodeWelcome,
@@ -34,6 +36,10 @@ import {
   type NetInput,
   type Snapshot,
 } from "../shared/net/protocol";
+import { DEFAULT_LOADOUT, validateLoadout, type Loadout } from "../shared/manifest/loadout";
+import { applyMatch, type Account } from "../shared/progression/account";
+import type { AccountStore } from "./accounts";
+import type { PlayerStats } from "../shared/sim/player";
 
 export interface Conn {
   send(buf: ArrayBuffer): void;
@@ -64,6 +70,13 @@ interface ClientRec {
   inputsRejected: number;
   /** Trace comparison is skipped until this seq after a server-driven respawn. */
   traceSkipUntilSeq: number;
+  /** The Ghostfile this connection plays as (null for a guest without a store). */
+  account: Account | null;
+  loadout: Loadout;
+  /** Stats at the start of the current round; settlement credits the delta. */
+  roundBase: PlayerStats;
+  roundStartTick: number;
+  settlements: number;
 }
 
 export interface RoomOptions {
@@ -75,6 +88,10 @@ export interface RoomOptions {
   rejoinGraceSeconds?: number;
   now?: () => number;
   onLog?: (line: string) => void;
+  /** Ghostfile store; joins validate their loadout against it and results settle into it. */
+  accounts?: AccountStore | null;
+  warmupSeconds?: number;
+  roundSeconds?: number;
 }
 
 export interface RoomStats {
@@ -87,7 +104,9 @@ export interface RoomStats {
   kicks: number;
   inputsRejected: number;
   bytesOut: number;
-  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; inputsApplied: number; inputsRejected: number; kills: number; deaths: number; shots: number; hits: number; queue: number }[];
+  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; inputsApplied: number; inputsRejected: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number } | null; loadout: Loadout }[];
+  settlements: number;
+  loadoutRejections: string[];
   shotDiag: Record<string, number>;
   traceLog: unknown[];
   match: unknown;
@@ -111,6 +130,10 @@ export class Room {
   private lastRateTick = 0;
   private tickHz = 0;
   kicks = 0;
+  settlements = 0;
+  /** Reasons of every loadout refused at join (probes assert on these). */
+  readonly loadoutRejections: string[] = [];
+  private pendingJoins = new Set<Conn>();
   /** Last few large prediction/server divergences, for diagnosis. */
   readonly traceLog: { tick: number; id: number; seq: number; err: number; batch: number; queue: number; alive: boolean; stance: string; srv: number[]; cli: number[]; buttons: number }[] = [];
   readonly shotDiag = { shots: 0, playerHits: 0, rewindSum: 0, rewindMax: 0, clamped: 0, nearMissSum: 0, nearMissN: 0, nearMissMax: 0 };
@@ -124,8 +147,11 @@ export class Room {
       rejoinGraceSeconds: opts.rejoinGraceSeconds ?? 60,
       now: opts.now ?? (() => Date.now()),
       onLog: opts.onLog ?? (() => {}),
+      accounts: opts.accounts ?? null,
+      warmupSeconds: opts.warmupSeconds ?? 20,
+      roundSeconds: opts.roundSeconds ?? 360,
     };
-    this.world = new World(drainageYard(), { ai: this.opts.ai, seed: this.opts.seed, wakePhase: "warmup" });
+    this.world = new World(drainageYard(), { ai: this.opts.ai, seed: this.opts.seed, wakePhase: "warmup", warmupSeconds: this.opts.warmupSeconds, roundSeconds: this.opts.roundSeconds });
     this.startedAt = this.opts.now();
     this.lastRateAt = this.startedAt;
   }
@@ -151,7 +177,7 @@ export class Room {
     if (msg.type === "join") {
       if (rec) return this.strike(rec, "duplicate join");
       if (msg.version !== PROTOCOL_VERSION) return this.kickConn(conn, `protocol ${msg.version} != ${PROTOCOL_VERSION}`);
-      this.join(conn, msg.name, msg.token);
+      this.join(conn, msg.name, msg.token, msg.account, msg.loadout);
       return;
     }
     if (!rec) return this.kickConn(conn, "message before join");
@@ -194,6 +220,7 @@ export class Room {
   }
 
   onClose(conn: Conn): void {
+    this.pendingJoins.delete(conn);
     const rec = this.byConn.get(conn);
     if (!rec) return;
     this.byConn.delete(conn);
@@ -255,7 +282,7 @@ export class Room {
     for (const other of this.clients.values()) other.pendingEvents.push({ type: "leave", playerId: rec.playerId });
   }
 
-  private join(conn: Conn, name: string, token: string): void {
+  private join(conn: Conn, name: string, token: string, accountId: string, loadoutJson: string): void {
     const safeName = (name || "BLANK").replace(/[^\x20-\x7e]/g, "").slice(0, 16) || "BLANK";
     // rejoin by token
     if (token) {
@@ -271,14 +298,55 @@ export class Room {
           rec.strikes = 0;
           this.byConn.set(conn, rec);
           conn.send(encodeWelcome(rec.playerId, this.tick, rec.token, this.world.level.name, this.world.seed));
+          conn.send(encodeFile(this.fileMsg(rec, [], "join")));
           this.opts.onLog(`player ${rec.playerId} rejoined`);
           return;
         }
       }
     }
+    if (this.clients.size + this.pendingJoins.size >= this.opts.maxPlayers) return this.kickConn(conn, "room full");
+    const safeAccount = (accountId || "").replace(/[^a-zA-Z0-9_:.-]/g, "").slice(0, 64);
+    if (!this.opts.accounts) return this.admit(conn, safeName, null, loadoutJson);
+    // A guest without a file id plays a fresh Blank file keyed to this link.
+    const id = safeAccount || `guest:${this.nextId}:${Math.random().toString(36).slice(2, 8)}`;
+    const loaded = this.opts.accounts.load(id, safeName);
+    if (loaded instanceof Promise) {
+      this.pendingJoins.add(conn);
+      loaded.then(
+        (acc) => {
+          if (!this.pendingJoins.delete(conn)) return; // closed while loading
+          this.admit(conn, safeName, acc, loadoutJson);
+        },
+        (err) => {
+          this.pendingJoins.delete(conn);
+          this.kickConn(conn, `FILE UNAVAILABLE: ${String(err)}`);
+        },
+      );
+    } else this.admit(conn, safeName, loaded, loadoutJson);
+  }
+
+  /** Validate the claimed loadout against the file, then spawn. Illegal loadouts are refused, never stripped. */
+  private admit(conn: Conn, safeName: string, account: Account | null, loadoutJson: string): void {
+    let raw: unknown = DEFAULT_LOADOUT;
+    if (loadoutJson) {
+      try {
+        raw = JSON.parse(loadoutJson);
+      } catch {
+        return this.rejectLoadout(conn, "unparseable: loadout is not JSON");
+      }
+    }
+    const owned = account?.owned ?? [];
+    const depth = account?.depth ?? 1;
+    const v = validateLoadout(raw, owned, depth);
+    if (!v.ok) return this.rejectLoadout(conn, v.errors.map((e) => `${e.rule}: ${e.detail}`).join("; "));
     if (this.clients.size >= this.opts.maxPlayers) return this.kickConn(conn, "room full");
     const playerId = this.nextId++;
     const newToken = `${playerId}-${Math.random().toString(36).slice(2, 12)}-${Math.random().toString(36).slice(2, 12)}`;
+    // balance cells: join the smaller one, ties to cell 1
+    let c1 = 0;
+    let c2 = 0;
+    for (const p of this.world.players.values()) p.team === 1 ? c1++ : p.team === 2 ? c2++ : 0;
+    const player = this.world.addPlayer(playerId, safeName, c1 <= c2 ? 1 : 2, v.loadout);
     const rec: ClientRec = {
       conn,
       playerId,
@@ -302,17 +370,78 @@ export class Room {
       inputsApplied: 0,
       inputsRejected: 0,
       traceSkipUntilSeq: 0,
+      account,
+      loadout: v.loadout,
+      roundBase: { ...player.stats },
+      roundStartTick: this.tick,
+      settlements: 0,
     };
+    if (account) account.loadout = v.loadout;
     this.clients.set(playerId, rec);
     this.byConn.set(conn, rec);
-    // balance cells: join the smaller one, ties to cell 1
-    let c1 = 0;
-    let c2 = 0;
-    for (const p of this.world.players.values()) p.team === 1 ? c1++ : p.team === 2 ? c2++ : 0;
-    this.world.addPlayer(playerId, safeName, c1 <= c2 ? 1 : 2);
     conn.send(encodeWelcome(playerId, this.tick, newToken, this.world.level.name, this.world.seed));
+    conn.send(encodeFile(this.fileMsg(rec, [], "join")));
     for (const other of this.clients.values()) if (other !== rec) other.pendingEvents.push({ type: "join", playerId, name: safeName });
-    this.opts.onLog(`player ${playerId} (${safeName}) joined`);
+    this.opts.onLog(`player ${playerId} (${safeName}) joined as ${account?.id ?? "guest"} depth ${depth} · ${v.loadout.primary}/${v.loadout.secondary} · attested [${v.loadout.attested.join(",")}]${v.loadout.keystone ? " · keystone " + v.loadout.keystone : ""}`);
+  }
+
+  private rejectLoadout(conn: Conn, why: string): void {
+    this.loadoutRejections.push(why);
+    this.kickConn(conn, `LOADOUT REJECTED: ${why}`);
+  }
+
+  private fileMsg(rec: ClientRec, ledger: string[], reason: "join" | "settle"): FileMsg {
+    const a = rec.account;
+    return {
+      reason,
+      account: a?.id ?? "guest",
+      depth: a?.depth ?? 1,
+      xp: a?.xp ?? 0,
+      scrip: a?.wallet.scrip ?? 0,
+      wakelight: a?.wallet.wakelight ?? 0,
+      salvage: a?.wallet.salvage ?? 0,
+      owned: a?.owned ?? [],
+      ledger,
+      loadout: rec.loadout,
+    };
+  }
+
+  /** Round start: everyone's credit counts from here. */
+  private beginRound(): void {
+    for (const rec of this.clients.values()) {
+      const p = this.world.players.get(rec.playerId);
+      if (!p) continue;
+      rec.roundBase = { ...p.stats };
+      rec.roundStartTick = this.tick;
+    }
+  }
+
+  /** Results: settle every file through the store and hand each client its ledger entry. */
+  private settle(winner: number): void {
+    for (const rec of this.clients.values()) {
+      const p = this.world.players.get(rec.playerId);
+      if (!p) continue;
+      const b = rec.roundBase;
+      const contribution = {
+        flips: p.stats.flips - b.flips,
+        nodeSeconds: p.stats.nodeSeconds - b.nodeSeconds,
+        kills: p.stats.kills - b.kills,
+        assists: p.stats.assists - b.assists,
+        supportPoints: p.stats.support - b.support,
+        seconds: (this.tick - rec.roundStartTick) / SIM_HZ,
+        won: winner !== 0 && winner === p.team,
+      };
+      rec.roundBase = { ...p.stats };
+      rec.roundStartTick = this.tick;
+      rec.settlements++;
+      this.settlements++;
+      if (!rec.account) continue;
+      const entry = applyMatch(rec.account, contribution);
+      const saved = this.opts.accounts?.save(rec.account);
+      if (saved instanceof Promise) saved.catch((err) => this.opts.onLog(`file save failed for ${rec.account?.id}: ${String(err)}`));
+      this.opts.onLog(`settled ${rec.account.id}: xp +${entry.xp.total} (obj ${entry.xp.objective} / combat ${entry.xp.combat} / support ${entry.xp.support}) scrip +${entry.scrip} depth ${entry.depthBefore}→${entry.depthAfter}`);
+      rec.conn?.send(encodeFile(this.fileMsg(rec, entry.lines, "settle")));
+    }
   }
 
   // ---- simulation ----
@@ -375,6 +504,10 @@ export class Room {
           d.nearMissN++;
           if (ev.nearMiss > d.nearMissMax) d.nearMissMax = ev.nearMiss;
         }
+      }
+      if (ev.type === "phase") {
+        if (ev.phase === "wake") this.beginRound();
+        else if (ev.phase === "results") this.settle(ev.winner);
       }
       const ne = this.toNetEvent(ev);
       if (!ne) continue;
@@ -515,6 +648,7 @@ export class Room {
       id: p.id,
       slot: p.weapon.slot,
       team: p.team,
+      shield: Math.max(0, Math.round(p.shield)),
       x: p.pos.x, y: p.pos.y, z: p.pos.z,
       vx: p.vel.x, vy: p.vel.y, vz: p.vel.z,
       yaw: p.yaw, pitch: p.pitch,
@@ -551,6 +685,11 @@ export class Room {
         shots: p.stats.shots,
         hits: p.stats.hits,
         queue: c.queue.length,
+        flips: p.stats.flips,
+        nodeSeconds: p.stats.nodeSeconds,
+        support: p.stats.support,
+        file: c.account ? { account: c.account.id, depth: c.account.depth, xp: c.account.xp, scrip: c.account.wallet.scrip, settlements: c.settlements } : null,
+        loadout: c.loadout,
       };
     });
     return {
@@ -561,11 +700,13 @@ export class Room {
       avgTickMs: avg,
       maxTickMs: max,
       kicks: this.kicks,
+      settlements: this.settlements,
+      loadoutRejections: this.loadoutRejections.slice(),
       inputsRejected,
       bytesOut,
       clients,
       traceLog: this.traceLog,
-      match: this.world.wake ? { phase: this.world.wake.phase, timeLeft: this.world.wake.timeLeft, score: this.world.wake.score, nodes: this.world.wake.nodes.map((n) => ({ id: n.id, owner: n.owner, hold: n.hold, contested: n.contested })) } : null,
+      match: this.world.wake ? { phase: this.world.wake.phase, timeLeft: this.world.wake.timeLeft, score: this.world.wake.score, winner: this.world.wake.winner, round: this.world.wake.round, nodes: this.world.wake.nodes.map((n) => ({ id: n.id, owner: n.owner, hold: n.hold, contested: n.contested })) } : null,
       shotDiag: { ...this.shotDiag, avgRewind: this.shotDiag.shots ? this.shotDiag.rewindSum / this.shotDiag.shots : 0, avgNearMiss: this.shotDiag.nearMissN ? this.shotDiag.nearMissSum / this.shotDiag.nearMissN : 0 },
     };
   }

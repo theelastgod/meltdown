@@ -1,0 +1,22 @@
+FAIRNESS LINT FAIL — 1 builds, 15 baseline duels, 0.288s
+baseline mobility course: 7.22 s
+  ✗ injected:tradeless                 offense ±16.3%  defense ±0.0%  mobility 7.22 s  BEATS EVERY BRACKET
+  VIOLATION [free_lunch] schema:non-empty-costs: a trade-less buff cannot ship
+  VIOLATION [free_lunch] schema:reconciled: benefits weigh 24.0, costs 0.0 (tolerance 1.5)
+  VIOLATION [free_lunch] schema:link-symmetric: slipfile does not link back
+  VIOLATION [injected:tradeless] ttk-deviation: lease_breaker @3 m offense -16.3% (0.600 vs 0.717 s)
+  VIOLATION [injected:tradeless] ttk-deviation: lease_breaker @8 m offense -16.3% (0.600 vs 0.717 s)
+  VIOLATION [injected:tradeless] ttk-deviation: lease_breaker @15 m offense -16.3% (0.600 vs 0.717 s)
+  VIOLATION [injected:tradeless] ttk-deviation: lease_breaker @25 m offense -16.3% (0.600 vs 0.717 s)
+  VIOLATION [injected:tradeless] ttk-deviation: lease_breaker @40 m offense -14.0% (0.717 vs 0.833 s)
+  VIOLATION [injected:tradeless] beats-every-bracket: faster than baseline in all five range brackets
+FAIRNESS LINT FAIL — 1 builds, 15 baseline duels, 0.293s
+baseline mobility course: 7.22 s
+  ✗ injected:netpower                  offense ±16.3%  defense ±0.0%  mobility 7.22 s  BEATS EVERY BRACKET
+  VIOLATION [quiet_power] schema:link-symmetric: slipfile does not link back
+  VIOLATION [injected:netpower] ttk-deviation: lease_breaker @3 m offense -16.3% (0.600 vs 0.717 s)
+  VIOLATION [injected:netpower] ttk-deviation: lease_breaker @8 m offense -16.3% (0.600 vs 0.717 s)
+  VIOLATION [injected:netpower] ttk-deviation: lease_breaker @15 m offense -16.3% (0.600 vs 0.717 s)
+  VIOLATION [injected:netpower] ttk-deviation: lease_breaker @25 m offense -16.3% (0.600 vs 0.717 s)
+  VIOLATION [injected:netpower] ttk-deviation: lease_breaker @40 m offense -14.0% (0.717 vs 0.833 s)
+  VIOLATION [injected:netpower] beats-every-bracket: faster than baseline in all five range brackets

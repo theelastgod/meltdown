@@ -11,7 +11,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 3 | The look: lighting rig, neon, GPU rain, wet reflections, fog, post chain, district casts | **done** (pulled ahead of 2 at the owner's request) | `docs/proof/stage3/` |
 | 4 | Arsenal: weapons 1–6 + alt-fires + grenades, recoil seeds, reload cancels, VANTAGE AI | **done** | `docs/proof/stage4/` |
 | 5 | The wake: hex nodes, flip/contest/spread, KERNEL timer | **done** | `docs/proof/stage5/` |
-| 6 | Ghostfile foundation: manifest, Fairness Lint, spawn validation, Depth/XP, currencies | | |
+| 6 | Ghostfile foundation: manifest, Fairness Lint, spawn validation, Depth/XP, currencies, crafting | **done** | `docs/proof/stage6/` |
 | 7 | Ledger Graph + weapon mastery | | |
 | 8 | Identity & rituals | | |
 | 9 | Lethe proper: three districts, THE KERNEL horizon | | |
@@ -184,16 +184,18 @@ the seat frame, TTK certified per weapon, and VANTAGE hunting the yard.
   smoke clouds, EMP blackout, stun wobble, drones and the mech with its
   cone of light, weapon rack and grenade selector in the HUD.
 
-**TTK harness (perfect accuracy, body shots, 100 hp target, at intended range):**
+**TTK harness (perfect accuracy, body shots, 70 hp + 30 shield target, at
+intended range; retuned in Stage 6 when shields and the fire-rate
+accumulator landed):**
 
 | Weapon | Range | Primary | Alt |
 | --- | --- | --- | --- |
-| Lease-Breaker | 20 m | 0.800 s | optic 0.800 s |
-| Repo Hammer | 7 m | 0.867 s | slug 0.867 s |
-| Stack SMG | 10 m | 0.917 s | brace 0.917 s |
-| Longwave rail | 40 m | 0.917 s | quickshot 0.933 s |
-| Phage launcher | 10 m | 0.883 s | sticky 0.883 s |
-| Shock baton | 1.5 m | 0.933 s | lunge 0.783 s |
+| Lease-Breaker | 20 m | 0.717 s (7 hits) | optic 0.717 s |
+| Repo Hammer | 7 m | 0.850 s (2 shells) | slug 0.850 s |
+| Stack SMG | 10 m | 0.733 s (12 hits) | brace 0.733 s |
+| Longwave rail | 40 m | 0.917 s (1 shot) | quickshot 0.933 s (3) |
+| Phage launcher | 10 m | 0.867 s (2) | sticky 0.883 s |
+| Shock baton | 1.5 m | 0.917 s (3) | lunge 0.767 s (2) |
 
 **Acceptance (`npm run probe:arsenal`, 12/12; `npm test`, 52 tests):** every
 primary inside the band and no alt under it; same seed reproduces the shot
@@ -248,3 +250,94 @@ schedule; online, the room puts ALPHA and BRAVO in opposite cells, the
 round starts once both are present, a node with both on it stays contested
 and leased, and when BRAVO leaves ALPHA's cell takes it and scores. Node
 entities and the match header reach the clients.
+
+## Stage 6 — Ghostfile foundation
+
+**Goal.** The progression spine, built so that power can never be bought:
+one manifest that the client, the server, and CI all import; a Fairness
+Lint that simulates every candidate build before it can ship; spawn-time
+validation that refuses illegal loadouts instead of stripping them; Depth,
+XP and the three currencies; deterministic crafting; and the Kernel
+Protocol quarantine enforced by an import-graph test.
+
+**Files.**
+- `shared/manifest/stats.ts` — the StatSheet (21 tunables the sim reads:
+  move, slide, ADS, mantle, health, shield, damage, headshot, fire rate,
+  reload, spread, recoil, range, flip, drone detection, footsteps,
+  grenades, throw) and the budget weights (`BUDGET_PER_PERCENT`).
+- `shared/manifest/items.ts` — Ledger Graph nodes (ring 1 complete, ring 2
+  partial; Stage 7 fills 48) and the three launch keystones, each a paired
+  trade; `lintItemSchema` refuses trade-less items, non-reconciled nodes,
+  keystones that over-*earn*, asymmetric links, forbidden stats, silly deltas.
+- `shared/manifest/loadout.ts` — `validateLoadout` (≤7 attested, all owned,
+  connected subgraph, one keystone linked to the attestation, Depth-gated
+  weapons, unknown fields refused), `sheetFor`, `netDelta`.
+- `shared/progression/` — `depth.ts` (Depth 1–50, XP curve
+  `1100 + 950(d−1) + 8(d−1)²`, objective-weighted match XP 40/35/25),
+  `currency.ts` (Scrip, Wakelight, salvage), `crafting.ts` (deterministic
+  recipes: same inputs → same wear seed), `account.ts` (the Ghostfile:
+  `applyMatch`, `buyNode`, `refundNode`, `craftFor`, ledger lines).
+- `shared/fairness/lint.ts` + `cli.ts` — the Fairness Lint (below).
+- `shared/campaign/kernelProtocols.ts` — the campaign-only power stub;
+  `tests/quarantine.test.ts` walks the import graph and fails if anything
+  under `shared/sim`, `shared/net`, `shared/manifest` or `server/` reaches it.
+- `shared/sim/player.ts` — shields: 70 health + 30 shield, regen 15/s after
+  4 s, damage soaks shield first, EMP zeroes it; `applySheet`; per-player
+  match credit (`flips`, `nodeSeconds`, `support`).
+- `shared/sim/wake.ts` — credits occupants (flips they stood on, seconds
+  pulling, contest seconds as support); per-room warm-up/round length.
+- `shared/net/protocol.ts` — v5: Join carries the file id and the raw
+  loadout JSON; `File` message returns the admitted loadout on join and
+  the ledger entry at results.
+- `server/room.ts` — validates at join (kick `LOADOUT REJECTED: <rule>:
+  <detail>`), applies the sheet at spawn, snapshots credit at round start,
+  settles every file at results through the store.
+- `server/accounts.ts` (store interface + memory store with dev seeding),
+  `server/player-do.ts` (PlayerFile Durable Object: hot copy per account,
+  write-through to D1), `server/schema.sql` (D1 `ghostfile` + append-only
+  `ledger`), `wrangler.toml` (PLAYER_FILE binding, D1 binding).
+- `client/file.ts` — the Ghostfile client: account id + loadout in
+  localStorage (`?account=` / `?loadout=` override for probes), the FILE
+  panel (Tab): Depth/XP/Scrip/Wakelight/salvage, weapon picks with Depth
+  gates, attest toggles with each node's trade and budget weight, keystone
+  pick, ledger, and the `NET DELTA: ±x.xxx — RECONCILED` stamp.
+
+**The Fairness Lint** (`npm run lint:fairness [--quick] [--inject=…]`).
+Not arithmetic: it runs the simulation. For every candidate build (each
+node solo, every linked pair, growth chains, each keystone with its
+attested neighbours, and three adversarial max-stacks) it duels the build
+against the baseline Blank with every weapon at five range brackets
+(3/8/15/25/40 m), attacker and defender both, and runs a mobility course
+(sprint, slide, slide-jump, mantle). Rules: TTK within ±4% of baseline in
+any bracket for nodes (keystones may be slower in either role, never
+faster than −4%), no build faster than baseline in all five brackets, the
+in-role baseline (a weapon out of its range) is exempt beyond 3 s, mobility
+±5% (keystones ±12%). Injections prove the gate bites: `--inject=tradeless`
+(a free +10% damage) fails on schema, TTK and beats-every-bracket;
+`--inject=netpower` (reconciled on paper: +damage paid with footsteps) fails
+on simulation alone. Quick mode runs in ~2 s; the full lint duels every
+weapon at every bracket.
+
+**Design decisions surfaced by the lint.**
+- Effective health is flat: nodes may not touch `maxHealth`/`maxShield`
+  (a −5 hp node made the rail a one-shot, a +5 made the hammer three).
+- The fire-rate cooldown is an accumulator (remainder carried), so +2% fire
+  rate is +2% and not a whole-tick cliff; swaps still reset it.
+- Global offence (damage, head multiplier without a damage cost) fails
+  "beats every bracket"; SPITE CLAUSE trades +12% headshot for −6% damage.
+- Move-speed costs stack multiplicatively across attested nodes; the
+  mobility course caught a −7% chain that read as −4% on paper.
+- Keystones over-pay (DEBTLESS gives up the whole shield) and the FILE
+  panel reads that as RECONCILED: only an overdraft is a flag.
+
+**Acceptance (`npm run probe:file`, 18/18; `npm test`, 90 tests):** the
+catalogue passes the lint and both injections fail it; at spawn, eight
+attested nodes, a disconnected pair, an unowned node, and a smuggled
+`protocols` field are each refused with the rule in the kick reason and
+never enter the world; a legal attestation with DEBTLESS is admitted, the
+server's admitted loadout matches the client's, and the sheet runs on
+both sides (×1.092 move, ×1.375 slide, no shield); in a 24 s round ALPHA
+flips D and holds it, results settle both files (ALPHA +1104 XP / +132
+Scrip with 354 objective XP; BRAVO 250 participation XP), the store saves
+twice, the client's ledger carries the MATCH / OBJECTIVE / XP lines, and
+the FILE panel shows `NET DELTA: −24.700 — RECONCILED`.

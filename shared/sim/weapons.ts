@@ -18,6 +18,7 @@ import {
   type WeaponDef,
   type WeaponId,
 } from "../weapons/manifest";
+import { baseSheet, type StatSheet } from "../manifest/stats";
 
 export interface WeaponState {
   slot: number;
@@ -89,11 +90,11 @@ export function resetWeaponState(w: WeaponState): void {
 export const currentWeapon = (w: WeaponState): WeaponDef => weaponBySlot(w.slot) ?? WEAPONS.lease_breaker;
 
 /** Movement multiplier from weapon state (ADS, brace, stun). */
-export function weaponMoveMult(w: WeaponState): number {
+export function weaponMoveMult(w: WeaponState, adsMove = 1): number {
   const def = currentWeapon(w);
   let m = 1;
   if (w.stunTimer > 0) m *= 0.4;
-  if (w.altActive && (def.alt.kind === "ads" || def.alt.kind === "brace")) m *= def.alt.moveMult ?? 1;
+  if (w.altActive && (def.alt.kind === "ads" || def.alt.kind === "brace")) m *= (def.alt.moveMult ?? 1) * adsMove;
   return m;
 }
 
@@ -173,11 +174,18 @@ function shotDirs(w: WeaponState, def: WeaponDef, yaw: number, pitch: number, sp
  * Advance the weapon one tick with this input. Returns fire requests for the
  * world to resolve. `roomSeed`/`playerId` derive magazine seeds.
  */
-export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: number, yaw: number, pitch: number, alive: boolean, roomSeed: number, playerId: number, events: WeaponEvent[]): FireRequest[] {
+export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: number, yaw: number, pitch: number, alive: boolean, roomSeed: number, playerId: number, events: WeaponEvent[], mods: StatSheet = baseSheet()): FireRequest[] {
   const dt = SIM_DT;
   const reqs: FireRequest[] = [];
+  // accumulator cooldown: the remainder carries so the average rate is exact at any tick rate
+  const cycle = (rpm: number) => 60 / (rpm * mods.fireRate);
+  const fired = (rpm: number) => {
+    // carry the (bounded) negative remainder: the average cycle is exact at any tick rate
+    w.fireCooldown = Math.max(-SIM_DT, w.fireCooldown) + cycle(rpm);
+  };
   // timers
-  w.fireCooldown = Math.max(0, w.fireCooldown - dt);
+  w.fireCooldown = w.fireCooldown - dt; // may go slightly negative: the remainder feeds the next cycle
+  if (w.fireCooldown < -SIM_DT) w.fireCooldown = -SIM_DT;
   w.altCooldown = Math.max(0, w.altCooldown - dt);
   w.grenadeCooldown = Math.max(0, w.grenadeCooldown - dt);
   w.swapTimer = Math.max(0, w.swapTimer - dt);
@@ -232,7 +240,7 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
     w.grenades[w.grenadeSel]!--;
     w.grenadeCooldown = GRENADE_COOLDOWN;
     const g = GRENADE_LIST[w.grenadeSel]!;
-    reqs.push({ kind: "projectile", weapon: "grenade", projKind: g.id, speed: g.throwSpeed });
+    reqs.push({ kind: "projectile", weapon: "grenade", projKind: g.id, speed: g.throwSpeed * mods.throwSpeed });
     events.push({ type: "throw", grenade: g.id });
   }
 
@@ -261,8 +269,8 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
   }
   const wantReload = d.magSize > 0 && (w.ammo[w.slot] ?? 0) < d.magSize && (has(pressed, Btn.Reload) || (fireHeld && (w.ammo[w.slot] ?? 0) === 0));
   if (wantReload && w.reloadTimer <= 0) {
-    w.reloadTimer = d.reloadTime;
-    w.reloadTotal = d.reloadTime;
+    w.reloadTimer = d.reloadTime / mods.reloadSpeed;
+    w.reloadTotal = d.reloadTime / mods.reloadSpeed;
     w.reloadSeated = false;
     w.charging = false;
     w.charge = 0;
@@ -286,7 +294,7 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
     default:
       break;
   }
-  const altMult = w.altActive && (d.alt.kind === "ads" || d.alt.kind === "brace") ? { spread: d.alt.spreadMult ?? 1, recoil: d.alt.recoilMult ?? 1 } : { spread: 1, recoil: 1 };
+  const altMult = w.altActive && (d.alt.kind === "ads" || d.alt.kind === "brace") ? { spread: (d.alt.spreadMult ?? 1) * mods.spread, recoil: (d.alt.recoilMult ?? 1) * mods.recoil } : { spread: mods.spread, recoil: mods.recoil };
   const ammo = w.ammo[w.slot] ?? 0;
 
   switch (d.cls) {
@@ -295,7 +303,7 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
       if (fireHeld && w.fireCooldown <= 0) {
         if (ammo > 0) {
           w.ammo[w.slot] = ammo - 1;
-          w.fireCooldown = 60 / d.rpm;
+          fired(d.rpm);
           const slug = d.alt.kind === "slug" && w.altActive;
           const spread = d.spread * altMult.spread * (slug ? d.alt.spreadMult ?? 1 : 1);
           const dirs = shotDirs(w, d, yaw, pitch, spread, slug ? 1 : d.pellets);
@@ -330,12 +338,12 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
           events.push({ type: "chargeStart" });
         }
         const before = w.charge;
-        w.charge = Math.min(1, w.charge + dt / c.time);
+        w.charge = Math.min(1, w.charge + (dt * mods.fireRate) / c.time);
         if (before < 1 && w.charge >= 1) events.push({ type: "chargeFull" });
       } else if (w.charging) {
         if (w.charge >= 1 && ammo > 0) {
           w.ammo[w.slot] = ammo - 1;
-          w.fireCooldown = 60 / d.rpm;
+          fired(d.rpm);
           const dirs = shotDirs(w, d, yaw, pitch, 0, 1);
           applyRecoil(w, d, 1);
           w.shotIndex++;
@@ -354,7 +362,7 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
         if (ammo > 0) {
           const sticky = altPressed && !fireHeld;
           w.ammo[w.slot] = ammo - 1;
-          w.fireCooldown = 60 / d.rpm;
+          fired(d.rpm);
           applyRecoil(w, d, 1);
           w.shotIndex++;
           w.sinceShot = 0;
@@ -376,7 +384,7 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
         w.fireCooldown = 0.3;
         events.push({ type: "lunge" });
       } else if (fireHeld && w.fireCooldown <= 0) {
-        w.fireCooldown = 60 / d.rpm;
+        fired(d.rpm);
         w.sinceShot = 0;
         reqs.push({ kind: "melee", weapon: d.id, reach: m.reach, arc: m.arc, damage: d.damage, chainRange: m.chainRange, chainDamage: m.chainDamage, stun: m.stun, lunge: false });
         events.push({ type: "fire", weapon: d.id, alt: false });

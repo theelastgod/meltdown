@@ -26,6 +26,8 @@ npm run probe:look # look probe: frames measured against the reference clip's st
 npm run probe:net  # netcode probe: two clients at 150 ms RTT + 5% loss, rejoin, cheater
 npm run probe:arsenal # TTK harness table + every weapon, grenade and VANTAGE unit in the browser
 npm run probe:wake # the wake: flips, spread, phage boost, KERNEL pulse; online contest between two cells
+npm run lint:fairness -- --quick # Fairness Lint: every candidate build duelled + run through the mobility course
+npm run probe:file # Ghostfile: lint injections fail, illegal loadouts refused at spawn, a round settles XP/Scrip
 npm run verify     # all of the above
 ```
 
@@ -49,9 +51,13 @@ shared/     pure TS simulation shared by client and (Stage 2) server
   math/     vec3
   sim/      constants, input, level, collision, player, weapons, projectiles, ai, wake, ttk, world
   weapons/  weapon + grenade manifest
+  manifest/ stat sheet, Ledger Graph items + keystones, loadout validation (one manifest for client, server, CI)
+  progression/ Depth/XP curve, currencies, deterministic crafting, the Ghostfile account
+  fairness/ the Fairness Lint (simulated duels + mobility course) and its CLI
+  campaign/ Kernel Protocols stub — quarantined from PvP by an import-graph test
   economy/  WAKE token constants, Robinhood Chain config, no-paid-power lint
 client/     Vite + Three.js presentation: input, renderer (post chain, rain, wet floor, city), audio, HUD, game loop, bot
-server/     authoritative room (transport-agnostic), Node host, Cloudflare Durable Object host
+server/     authoritative room (transport-agnostic), Node host, Cloudflare Durable Object host, PlayerFile DO + D1 schema
 probe/      headless acceptance probes (one per stage)
 tests/      vitest unit tests for the simulation
 docs/       ART_BIBLE.md, STAGES.md, proof/ artifacts per stage

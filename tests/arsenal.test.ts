@@ -236,7 +236,7 @@ describe("baton chain + lunge, launcher sticky", () => {
     const ev = run(w, 1, 2, Btn.Fire, { x: 20, y: 1, z: -1.6 });
     const m = ev.find((e) => e.type === "melee");
     expect(m && m.type === "melee" && m.hits.length).toBe(2);
-    expect(w.dummies[0]!.health).toBe(65);
+    expect(w.dummies[0]!.health).toBe(64);
     expect(w.dummies[1]!.health).toBe(85);
   });
   it("sticky round arms and detonates on proximity", () => {

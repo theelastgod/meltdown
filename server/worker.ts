@@ -3,9 +3,14 @@
  * The Room class is identical to the Node host's.
  */
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
+import { DoAccountStore, PlayerFile } from "./player-do";
+
+export { PlayerFile };
 
 export interface Env {
   MATCH_ROOM: DurableObjectNamespace;
+  PLAYER_FILE: DurableObjectNamespace;
+  DB?: D1Database;
 }
 
 export default {
@@ -15,6 +20,11 @@ export default {
     if (m) {
       const id = env.MATCH_ROOM.idFromName(m[1]!);
       return env.MATCH_ROOM.get(id).fetch(request);
+    }
+    const f = url.pathname.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})$/);
+    if (f) {
+      const id = env.PLAYER_FILE.idFromName(f[1]!);
+      return env.PLAYER_FILE.get(id).fetch(new Request("https://file/file"));
     }
     if (url.pathname === "/health") return new Response("ok");
     return new Response("meltdown worker", { status: 404 });
@@ -28,8 +38,8 @@ export class MatchRoom implements DurableObject {
   private sockets = 0;
   private idleSince = 0;
 
-  constructor(_state: DurableObjectState) {
-    this.room = new Room({});
+  constructor(_state: DurableObjectState, env: Env) {
+    this.room = new Room({ accounts: new DoAccountStore(env.PLAYER_FILE) });
   }
 
   private ensureLoop(): void {
