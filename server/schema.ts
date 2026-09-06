@@ -42,6 +42,20 @@ export const SCHEMA = [
   epoch INTEGER PRIMARY KEY,
   json  TEXT NOT NULL
 )`,
+  `CREATE TABLE IF NOT EXISTS run_day (
+  day     INTEGER NOT NULL,
+  file    TEXT NOT NULL,
+  units   INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, file)
+)`,
+  `CREATE TABLE IF NOT EXISTS run_settled (
+  day       INTEGER PRIMARY KEY,
+  epoch     INTEGER NOT NULL,
+  units     INTEGER NOT NULL,
+  minted    TEXT NOT NULL,
+  rate      TEXT NOT NULL,
+  settled_at INTEGER NOT NULL
+)`,
 ];
 
 /** Column additions for databases created before a column existed (each is ignored when the column is already there). */

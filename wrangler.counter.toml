@@ -22,9 +22,11 @@ bindings = [
   { name = "ENDGAME", class_name = "Endgame", script_name = "meltdown-match" },
 ]
 
-# The weekly prize job: POST /prizes/post {kind:"audit", week} after each Audit week, {kind:"season"} at season end.
+# The nightly job (server/counter-worker.ts `scheduled`): THE RUN settles yesterday at 01:00 UTC
+# every day, the Audit posts on Mondays, the Deep Wake at a season boundary. Each is guarded
+# against settling a period twice, so a duplicated trigger costs nothing.
 [triggers]
-crons = ["0 1 * * 1"]
+crons = ["0 1 * * *"]
 
 [[d1_databases]]
 binding = "DB"

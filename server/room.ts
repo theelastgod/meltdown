@@ -137,6 +137,12 @@ export interface RoomOptions {
   onLog?: (line: string) => void;
   /** Ghostfile store; joins validate their loadout against it and results settle into it. */
   accounts?: AccountStore | null;
+  /**
+   * Told about every bank that earns units, so the host can accumulate the day's total for the
+   * nightly settlement. A callback rather than a store because the room must not import the
+   * economy — what the units are worth is not the sim's business (`shared/sim/run.ts`).
+   */
+  onRunBank?: (day: number, file: string, units: number) => void;
   warmupSeconds?: number;
   roundSeconds?: number;
   /** Level id (shared/sim/level.ts registry); unknown ids fall back to the default district. */
@@ -213,6 +219,7 @@ export class Room {
       now: opts.now ?? (() => Date.now()),
       onLog: opts.onLog ?? (() => {}),
       accounts: opts.accounts ?? null,
+      onRunBank: opts.onRunBank ?? (() => {}),
       warmupSeconds: opts.warmupSeconds ?? 20,
       roundSeconds: opts.roundSeconds ?? 360,
       level: opts.level ?? "",
@@ -798,6 +805,7 @@ export class Room {
       run.banked += paid;
       // units, not $CAPITAL: the day's rate is set by the settlement, which the room never sees
       run.owed += paid;
+      if (paid > 0) this.opts.onRunBank(day, a.id, paid);
       line = paid < value ? `BANKED ${value} AT ${zone} · ${paid} UNITS OWED · DAY CAP ${RUN_DAILY_CAP} REACHED` : `BANKED ${value} AT ${zone} · ${paid} UNITS OWED`;
     }
     a.counter.run = run;

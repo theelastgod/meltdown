@@ -194,6 +194,28 @@ async function main(): Promise<void> {
     await a.evaluate(() => window.__game.toggleFile(false));
     check("a Depth-50 file with a linked wallet banks for $CAPITAL owed (today against the day's cap) and WITHDRAW pays it from the treasury to the wallet on chain", link.ok && bankedA && va.owed === target2.value && va.today === target2.value && (fa.counter?.run?.owed ?? 0) === target2.value && pay.ok && bal1 - bal0 === parseEther(String(target2.value)) && (fa2.counter?.run?.owed ?? -1) === 0 && fa2.counter?.run?.paid === target2.value, `owed ${va.owed} today ${va.today}/${va.cap} · payout ${pay.ok} ${pay.reason ?? ""} · wallet +${Number(bal1 - bal0) / 1e18} $CAPITAL · paid ${fa2.counter?.run?.paid}`);
 
+    // ---- the nightly settlement (Stage 18): bank again, settle the day, claim the epoch ----
+    // The withdrawal above already spent its units, so this proves the other half: units that were
+    // *not* withdrawn are paid by the night, and the same day cannot be settled twice.
+    const t3 = Date.now();
+    while (Date.now() - t3 < RUN.respawnSeconds * 1000 + 5000 && (await a.evaluate(() => window.__game.run()!.claims.length)) < claims.length) await a.waitForTimeout(500);
+    const pa4 = await a.evaluate(() => window.__game.state().pos);
+    const target4 = claims.map((c) => ({ c, d: Math.hypot(c.pos.x - pa4.x, c.pos.z - pa4.z) })).sort((x, y) => x.d - y.d)[0]!.c;
+    await a.evaluate((plan) => window.__game.setBot(plan), goto({ x: target4.pos.x, z: target4.pos.z }, 0.9, pa4));
+    await a.waitForFunction(() => (window.__game.run()?.carried ?? 0) > 0, null, { timeout: 60000, polling: 100 }).catch(() => null);
+    const pa5 = await a.evaluate(() => window.__game.state().pos);
+    await a.evaluate((plan) => window.__game.setBot(plan), goto({ x: gate.pos.x, z: gate.pos.z }, 1.2, pa5));
+    const bankedB = await a.waitForFunction(() => (window.__game.run()?.owed ?? 0) > 0, null, { timeout: 60000, polling: 100 }).then(() => true, () => false);
+    const owedB = (await file(acct)).counter?.run?.owed ?? 0;
+    const day = Math.floor(Date.now() / 86_400_000);
+    const settle = (await (await fetch(`${HOST}/prizes/post`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "run", day }) })).json()) as { ok: boolean; reason?: string; units: number; rate: number; minted: number; pot: number; epoch?: number; paid: number };
+    const twice = (await (await fetch(`${HOST}/prizes/post`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "run", day }) })).json()) as { ok: boolean; reason?: string };
+    const balS0 = await read<bigint>(info.contracts.capital, "$CAPITAL", "balanceOf", [player.address]);
+    const claimed = await a.evaluate((e) => window.__game.claimPrize(e), settle.epoch ?? 0);
+    const balS1 = await read<bigint>(info.contracts.capital, "$CAPITAL", "balanceOf", [player.address]);
+    const fa3 = await file(acct);
+    check("the night settles the day: unwithdrawn units become an epoch at the day's rate, the file claims it on chain, and the same day cannot be settled twice", bankedB && settle.ok && settle.units === owedB && settle.rate === 1 && settle.minted === owedB && settle.paid === 1 && !twice.ok && /already settled/.test(twice.reason ?? "") && claimed.ok && balS1 - balS0 === parseEther(String(owedB)) && (fa3.counter?.run?.owed ?? -1) === 0, `banked ${owedB} · settle ${settle.ok} units ${settle.units} rate ${settle.rate} minted ${settle.minted} of pot ${Math.round(settle.pot)} epoch ${settle.epoch} · twice "${twice.reason ?? ""}" · claim ${claimed.ok} wallet +${Number(balS1 - balS0) / 1e18} · owed ${fa3.counter?.run?.owed}`);
+
     // ---- the market is player to player ----
     await post("/chain/faucet", { address: player.address });
     await post("/chain/faucet", { address: player2.address });

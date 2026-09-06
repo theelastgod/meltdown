@@ -129,28 +129,71 @@ The stress population is the point of the rule. A constraint checked only at the
 for is not a constraint. Reintroducing a fixed rate fails both checks and six cases in
 `tests/model.test.ts`, which was verified by making the change and watching them go red.
 
-## 4. Still open
+## 4. How it runs
 
-1. **A production index of who banked what.** The dev host reads it from its account map; the
-   Worker is handed it in the request. Neither is a nightly job over a real player base — the
-   counter-ledger needs a D1 table of daily banking and a cron trigger to settle it.
-2. **Unclaimed epochs.** `PrizeVault.reclaim` sweeps them to the treasury, which is correct, but
+`server/chain/settle-run.ts`, called by the Cloudflare cron at 01:00 UTC and by
+`POST /prizes/post {kind:"run", day}` on either host — the same function both ways, because a job
+that only ever runs unattended is a job nobody has watched work.
+
+The order is the safety argument:
+
+1. refuse a day already settled — the store's row, *and* the epoch on chain, so a store restored
+   from a backup that lost the row still cannot pay twice;
+2. read the day's banking and settle it against the day's pot;
+3. post the epoch — the money is committed here and nowhere else;
+4. only then spend the units it paid for.
+
+Clearing before posting would lose a player's day if the post reverted, so clearing is best-effort
+*after* the commit, and a file whose clear fails is reported as `stranded` rather than swallowed.
+A day with nothing banked is still marked settled, or the job retries an empty day for the rest of
+the game's life.
+
+The day's banking accumulates in D1 (`run_day`), written by the match Worker on every bank through
+a callback — `Room` takes an `onRunBank` hook rather than a store, because the room must not import
+the economy, and `tests/quarantine.test.ts` now holds the PvP bundle to that (it reaches neither
+viem nor a `shared/economy` module; that rule used to live only in a comment in
+`wrangler.counter.toml`).
+
+### Two payment paths, one ledger of units
+
+The direct withdrawal survives alongside the settlement, and two payment paths over the same units
+is exactly how a double-spend happens. So `run_day` is the single record of what is still unpaid
+and **both** paths spend from it: a withdrawal refuses a day the night has settled, and when it
+does pay it removes the units so the night cannot find them. Tested in both orders; removing either
+guard fails a case.
+
+Until then the counter Worker's cron had no `scheduled` handler at all — `wrangler.counter.toml`
+declared a weekly trigger firing into a Worker that only exported `fetch`. The Audit prize job had
+never run.
+
+## 5. Still open
+
+1. **Unclaimed epochs.** `PrizeVault.reclaim` sweeps them to the treasury, which is correct, but
    nothing calls it on a schedule, and reclaimed emission should arguably return to the pot rather
    than the treasury.
+2. **Two records that can drift.** A file's `owed` and its `run_day` row are written by different
+   paths, so a failed D1 write leaves a player owed units the night will never pay for, and a
+   failed clear after a posted epoch leaves units already paid for. Both are logged loudly (the
+   second as `stranded`), neither is reconciled automatically. A reconciliation pass comparing the
+   two is the next thing this needs.
 3. **The sinks are unbuilt.** Names and the market exist; the Forge, RoomCredits and SeasonBuyout
    contracts in `docs/TOKENOMICS.md` §7 do not. The 78% burn ratio in §2 assumes them. Until they
-   ship, the honest number is the market and name fees alone.
+   ship, the honest burn is the market and name fees alone.
 4. **The ceiling is a game-design number, not a derived one.** 1 $CAPITAL a unit sets when
    dilution starts to be felt. It should be revisited against a real launch population, and it is
    the one constant here a designer should own rather than a model.
 5. **`capUse` and `runnerShare` are guesses.** Every projection in §1 rests on them. They are the
    first thing to replace with telemetry, and the model takes them as parameters for exactly that
    reason.
+6. **The client's WITHDRAW should claim epochs, not transfer.** In production the settlement is the
+   payment; the direct transfer is the devnet's convenience and the relayer is the treasury there.
 
-## 5. Running it
+## 6. Running it
 
 ```sh
 npm run lint:economy                     # the rules, including the schedule
-npx vitest run tests/model.test.ts       # 15 cases: the finding and the fix
+npx vitest run tests/model.test.ts       # 16 cases: the finding and the fix
+npx vitest run tests/settle.test.ts      # 10 cases: the nightly job, against a real EVM
+npm run probe:economy                    # the projection as a table, with checks
 npx tsx -e "import('./shared/economy/model.ts').then(m=>m.summarise().forEach(l=>console.log(l)))"
 ```

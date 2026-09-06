@@ -662,6 +662,62 @@ holds each file to the day's cap even when the room does not, and pays a sub-tok
 rounding it away. Six of them fail if the rate is fixed again, which was checked by doing it. The
 run probe still banks, drops, kills, withdraws and trades end to end, now reading `OWED 1 UNITS`.
 
+## Stage 18 — The settlement actually runs
+
+**Goal.** Stage 17 shipped a settlement with no way to run it. The dev host enumerated its own
+account map; the Worker made the caller hand it the day's banking. Neither is a nightly job over a
+real player base, and a payout rule nothing executes is a document, not a mechanism.
+
+**What was found on the way in.** `wrangler.counter.toml` declared a weekly cron trigger firing into
+a Worker that only exported `fetch`. There was no `scheduled` handler at all — the Audit prize job
+had never run, and would not have when the game launched.
+
+**What was built.**
+
+- **`run_day` in D1**, one row per file per day, written by the match Worker on every bank. The room
+  takes an `onRunBank` callback rather than a store, because the room must not import the economy —
+  it counts units and never names a price.
+- **`server/chain/settle-run.ts`**, one function called by both the cron and
+  `POST /prizes/post {kind:"run", day}`. A job that only ever runs unattended is a job nobody has
+  watched work.
+- **A `scheduled` handler** on the counter Worker, 01:00 UTC daily: THE RUN settles yesterday, the
+  Audit posts on Mondays, the Deep Wake at a season boundary. Each is guarded against running a
+  period twice, so a duplicated trigger costs nothing.
+
+**Files.** `server/run-store.ts` (the interface and the memory store), `server/run-d1.ts`,
+`server/chain/settle-run.ts`, `server/room.ts` (`onRunBank`), `server/worker.ts`,
+`server/counter-worker.ts` (`scheduled`), `server/node-host.ts`, `server/chain/ledger.ts`
+(`epoch`, the spend on payout), `server/chain/boot.ts`, `server/schema.sql` + `server/schema.ts`,
+`wrangler.counter.toml`; `docs/ECONOMY.md` §4; `tests/settle.test.ts` (10),
+`tests/quarantine.test.ts` (3 new), `probe/stage14.ts`.
+
+**Design decisions.**
+- **The order is the safety argument.** Refuse a settled day; settle; post the epoch; *then* spend
+  the units. Clearing before posting loses a player's day if the post reverts, so clearing is
+  best-effort after the commit and a file it fails on is reported as `stranded` rather than
+  swallowed. A day with nothing banked is still marked settled, or the job retries an empty day for
+  the rest of the game's life.
+- **Two guards, not one.** A day is refused both by the store's own row and by the epoch already on
+  chain, so a store restored from a backup that lost the row still cannot pay twice.
+- **The probe design found a double-pay.** Writing the end-to-end check surfaced that a direct
+  withdrawal did not remove the units from `run_day`, so the night would have paid for them again —
+  the reverse of the order Stage 17 had guarded. `run_day` is now the single ledger of unpaid units
+  and both paths spend from it. Tested in both orders; removing either guard fails a case.
+- **A comment became a test.** `wrangler.counter.toml` said the counter is a separate script "so the
+  PvP Durable Object bundle never carries an economy module or a chain client". Giving the match
+  Worker a write on every bank is exactly the change that drags a chain client in behind it, so
+  `tests/quarantine.test.ts` now walks the import graph from `server/worker.ts` and fails on viem,
+  the ledger, or a `shared/economy` module — while asserting the banking store *is* reachable,
+  because that is the point of the hook.
+
+**Acceptance (`npm test`, 198 tests; `npm run probe:run`, 10/10):** the settlement cases run against
+a real EVM — a day settled and claimed; the same day refused twice, and refused again from a store
+that lost its row; a quiet day marked rather than retried; a file with no wallet named but its units
+still counted in the split and still owed to it; only the units the settled day paid for spent, not
+what a file banked afterwards; a day past its pot split pro rata; nothing spent when the post
+reverts, and the day left for the next cron. The run probe banks, withdraws, banks again, settles
+the day through the real host route, is refused a second settlement, and claims the epoch on chain.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

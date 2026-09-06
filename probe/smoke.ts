@@ -64,7 +64,9 @@ async function main(): Promise<void> {
     await pg.screenshot({ path: "probe/out/smoke.png" });
     check("the built bundle boots, joins a room on the host, the sim advances and the canvas has a size", joined && st.tick > 30 && px.w > 0 && px.h > 0, `joined ${joined} · tick ${st.tick} · level ${st.level} · canvas ${px.w}×${px.h}`);
     await pg.goto(`http://127.0.0.1:${PREVIEW_PORT}/?headless=1&menu=1&crawl=0&nonav=1`, { waitUntil: "load" });
-    await pg.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "cards", null, { timeout: 40000, polling: 100 });
+    // wait for a card to be *up*, not merely for the cards screen: between cards, and for a frame
+    // as the screen opens, `cardText` is empty, and the check is about which card it is
+    await pg.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "cards" && !!window.__game.menu()?.cardText, null, { timeout: 40000, polling: 50 });
     const card = await pg.evaluate(() => window.__game.menu()!.cardText);
     check("the menu flow runs from the built bundle: a title card is up", /leased|woke free/.test(card), `card "${card}"`);
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");

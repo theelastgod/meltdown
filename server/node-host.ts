@@ -29,7 +29,8 @@ import { buyCosmetic, rewrite, savePreset, setAlias, setTheme } from "../shared/
 import { bootDevnetLedger } from "./chain/boot";
 import { counterRequest } from "../shared/economy/endpoint";
 import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
-import { settleRun, type Banked } from "../shared/economy/settlement";
+import { settleRunDay } from "./chain/settle-run";
+import { MemoryRunStore } from "./run-store";
 
 import { MAX_PLAYERS_PER_ROOM, matchRoomName } from "../shared/net/matchmaking";
 import type { Hex } from "viem";
@@ -59,7 +60,9 @@ function rateOk(id: string, now = Date.now()): boolean {
   return w.n <= RATE_PER_MINUTE;
 }
 /** The counter-ledger on an in-process devnet: a real EVM with the contracts deployed at boot and the market seeded. */
-const counter = await bootDevnetLedger({ onLog: (l) => log(`[counter] ${l}`) });
+/** the day's banking, for the nightly settlement (the Workers keep it in D1) */
+const runs = new MemoryRunStore();
+const counter = await bootDevnetLedger({ runs, onLog: (l) => log(`[counter] ${l}`) });
 const readBody = (req: import("node:http").IncomingMessage): Promise<Record<string, unknown>> =>
   new Promise((resolve) => {
     let body = "";
@@ -93,7 +96,7 @@ function startLoop(room: Room): void {
 function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: number, roundSeconds?: number, level?: string, audit = false, run = false): Room {
   let r = rooms.get(name);
   if (!r) {
-    r = new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, endgame, audit: audit ? { week: currentAudit().week, def: currentAudit().audit } : null, run, onLog: (l) => log(`[${name}] ${l}`) });
+    r = new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, endgame, audit: audit ? { week: currentAudit().week, def: currentAudit().audit } : null, run, onRunBank: (day, file, units) => void runs.add(day, file, units), onLog: (l) => log(`[${name}] ${l}`) });
     rooms.set(name, r);
     startLoop(r);
   }
@@ -169,22 +172,9 @@ const http = createServer((req, res) => {
       // slice of the emission schedule. Gathered from the dev host's account map; a production host
       // reads them from its counter-ledger index.
       if (kind === "run") {
-        const day = Number(body.day ?? dayIndex(Date.now()));
-        const banked: Banked[] = [...accounts.accounts.values()].filter((a) => a.counter?.run?.day === day && a.counter.run.owed > 0).map((a) => ({ account: a.id, units: a.counter!.run!.owed }));
-        const s = settleRun(day, banked);
-        const rr = await counter.ledger.postEpoch("run", day, s.lines);
-        if (rr.ok) {
-          // the units are spent: what the epoch pays is claimed from the vault, not withdrawn again
-          const settled = new Set(rr.epoch!.leaves.map((l) => l.file));
-          for (const a of accounts.accounts.values()) {
-            if (!settled.has(a.id) || !a.counter?.run) continue;
-            const paid = Number(s.lines.find((l) => l.account === a.id)?.amount ?? 0);
-            a.counter = { ...a.counter, run: { ...a.counter.run, owed: 0, paid: a.counter.run.paid + paid } };
-            accounts.save(a);
-          }
-        }
-        log(`[prizes] settle run day ${day}: ${s.units} units at ${s.rate.toFixed(4)} $CAPITAL — ${rr.ok ? `${rr.epoch?.leaves.length} leaves, ${s.minted} minted of a ${Math.round(s.pot)} pot` : rr.reason}`);
-        res.end(JSON.stringify({ ok: rr.ok, reason: rr.reason, settlement: { day, units: s.units, rate: s.rate, minted: s.minted, pot: s.pot }, epoch: rr.epoch ? { epoch: rr.epoch.epoch, root: rr.epoch.root, total: rr.epoch.total } : null, skipped: rr.skipped ?? [], lines: s.lines }));
+        const day = Number(body.day ?? dayIndex(Date.now()) - 1);
+        const r = await settleRunDay(day, { ledger: counter.ledger, runs, load: (id) => accounts.load(id, "BLANK"), save: (a) => accounts.save(a), log });
+        res.end(JSON.stringify(r));
         return;
       }
       const period = kind === "audit" ? Number(body.week ?? currentAudit().week) : endgame.season().season;

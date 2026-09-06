@@ -6,6 +6,7 @@ import { MAX_PLAYERS_PER_ROOM, matchRoomName } from "../shared/net/matchmaking";
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
 import { DoAccountStore, PlayerFile } from "./player-do";
 import { DoEndgameStore, Endgame } from "./endgame-do";
+import { D1RunStore } from "./run-d1";
 import { seasonView } from "./endgame";
 import { currentAudit } from "../shared/endgame/audits";
 import { contractsFor } from "../shared/endgame/contracts";
@@ -77,7 +78,17 @@ export class MatchRoom implements DurableObject {
   private roomFor(url: URL): Room {
     if (!this.room) {
       const audit = url.searchParams.get("audit") === "1" ? { week: currentAudit().week, def: currentAudit().audit } : null;
-      this.room = new Room({ accounts: new DoAccountStore(this.env.PLAYER_FILE), endgame: new DoEndgameStore(this.env.ENDGAME), audit, run: url.searchParams.get("mode") === "run", level: url.searchParams.get("level") ?? undefined, ai: url.searchParams.get("ai") !== "0" });
+      this.room = new Room({
+        accounts: new DoAccountStore(this.env.PLAYER_FILE),
+        endgame: new DoEndgameStore(this.env.ENDGAME),
+        // the day's banking goes straight to the shared database; the counter Worker settles it
+        // nightly. A lost write is money the night will not pay for, so it is logged rather than
+        // swallowed — the file's own `owed` still records it, and the two can be reconciled.
+        onRunBank: (day, file, units) => {
+          if (!this.env.DB) return;
+          void new D1RunStore(this.env.DB).add(day, file, units).catch((e: unknown) => console.error(`run bank lost: day ${day} ${file} ${units} units — ${String((e as Error).message).slice(0, 200)}`));
+        },
+        audit, run: url.searchParams.get("mode") === "run", level: url.searchParams.get("level") ?? undefined, ai: url.searchParams.get("ai") !== "0" });
     }
     return this.room;
   }

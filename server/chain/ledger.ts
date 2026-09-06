@@ -17,6 +17,7 @@ import { GameSigner } from "./signer";
 import type { WalletStore } from "./wallets";
 import { buildEpoch } from "./merkle";
 import { EPOCH_BASE, type EpochKind, type PrizeStore, type StoredEpoch } from "./prizes-store";
+import type { RunStore } from "../run-store";
 import type { PrizeLine } from "../../shared/economy/prizes";
 
 export interface LedgerOptions {
@@ -32,6 +33,8 @@ export interface LedgerOptions {
   domains?: string[];
   /** posted prize epochs (Stage 15) */
   prizes?: PrizeStore;
+  /** the day's unspent banking; the direct payout spends here so the nightly settlement cannot pay for it again */
+  runs?: RunStore;
   now?: () => number;
   onLog?: (line: string) => void;
 }
@@ -205,6 +208,11 @@ export class CounterLedger {
   // ---- the PrizeVault (Stage 15): the emission channels as Merkle epochs ----
 
   /** Post an epoch: resolve each file's wallet, build the tree, fund the vault from the treasury (the relayer) and set the root. Files without a wallet are left out and named in the answer. */
+  /** A posted epoch by id, or null. The settlement job's second guard against paying a day twice. */
+  async epoch(id: number): Promise<StoredEpoch | null> {
+    return (await this.opts.prizes?.get(id)) ?? null;
+  }
+
   async postEpoch(kind: EpochKind, period: number, lines: readonly PrizeLine[]): Promise<Result & { epoch?: StoredEpoch; skipped?: string[] }> {
     const store = this.opts.prizes;
     if (!store) return { ok: false, reason: "no prize store" };
@@ -297,8 +305,10 @@ export class CounterLedger {
    * (`shared/economy/settlement.ts`). Production settles the day through `settleRun` and
    * `postEpoch("run", day, …)` instead, so the emission is pro rata and bounded by the schedule.
    *
-   * The two paths must never both pay the same units, so this one refuses once the day it would
-   * pay for has been settled: the file claims the epoch.
+   * The two paths must never both pay the same units, and the guard runs in both directions: this
+   * one refuses a day the settlement has already paid (the file claims the epoch instead), and when
+   * it does pay it spends the units out of the day's store so tonight's settlement does not find
+   * them. A ledger with no run store must not also run settlements — the devnet's does neither.
    */
   async payout(a: Account): Promise<Result & { paid?: number }> {
     const c = a.counter;
@@ -312,6 +322,8 @@ export class CounterLedger {
       const r = await this.pub.waitForTransactionReceipt({ hash });
       if (r.status !== "success") return { ok: false, reason: "payout reverted" };
       a.counter = { ...c, run: { ...run, owed: 0, paid: run.paid + units } };
+      // spent, so tonight's settlement does not pay for them a second time
+      await this.opts.runs?.spend(run.day, a.id, units);
       this.log(`payout ${units} $CAPITAL → ${a.id}`);
       await this.reconcile(a);
       return { ok: true, paid: units };

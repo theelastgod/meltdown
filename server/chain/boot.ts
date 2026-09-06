@@ -7,6 +7,7 @@ import { deployAll } from "./deploy";
 import { CounterLedger } from "./ledger";
 import { MemoryWalletStore } from "./wallets";
 import { MemoryPrizeStore } from "./prizes-store";
+import { MemoryRunStore } from "../run-store";
 
 /** dev keys (the classic anvil set); never used on a real network */
 export const DEV_KEYS = {
@@ -17,7 +18,7 @@ export const DEV_KEYS = {
   player2: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6" as Hex,
 };
 
-export async function bootDevnetLedger(opts: { now?: () => number; onLog?: (l: string) => void; seedMarket?: boolean } = {}) {
+export async function bootDevnetLedger(opts: { now?: () => number; onLog?: (l: string) => void; seedMarket?: boolean; runs?: MemoryRunStore } = {}) {
   const relayer = privateKeyToAccount(DEV_KEYS.relayer);
   const devnet = await Devnet.create([relayer.address]);
   const transport = custom({ request: async ({ method, params }) => devnet.rpc(method, params as unknown[]) });
@@ -27,7 +28,8 @@ export async function bootDevnetLedger(opts: { now?: () => number; onLog?: (l: s
   const contracts = await deployAll(pub, wal, privateKeyToAccount(DEV_KEYS.signer).address, relayer.address);
   const wallets = new MemoryWalletStore(opts.now);
   const prizes = new MemoryPrizeStore();
-  const ledger = new CounterLedger({ chainId: devnet.chainId, transport, signerKey: DEV_KEYS.signer, relayerKey: DEV_KEYS.relayer, contracts, wallets, devnet: true, now: opts.now, onLog: opts.onLog, prizes });
+  const runs = opts.runs ?? new MemoryRunStore();
+  const ledger = new CounterLedger({ chainId: devnet.chainId, transport, signerKey: DEV_KEYS.signer, relayerKey: DEV_KEYS.relayer, contracts, wallets, devnet: true, now: opts.now, onLog: opts.onLog, prizes, runs });
   if (opts.seedMarket !== false) await ledger.seedMarket();
-  return { devnet, ledger, wallets, prizes, contracts, transport, pub };
+  return { devnet, ledger, wallets, prizes, runs, contracts, transport, pub };
 }

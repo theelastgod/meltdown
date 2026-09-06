@@ -11,8 +11,9 @@ import { CounterLedger } from "./chain/ledger";
 import { D1WalletStore } from "./chain/wallets-d1";
 import { D1PrizeStore } from "./chain/prizes-d1";
 import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
-import { settleRun, type Banked } from "../shared/economy/settlement";
-import { dayIndex } from "../shared/endgame/clock";
+import { settleRunDay } from "./chain/settle-run";
+import { D1RunStore } from "./run-d1";
+import { dayIndex, seasonIndex, weekIndex } from "../shared/endgame/clock";
 import type { Contracts } from "./chain/deploy";
 import { counterRequest } from "../shared/economy/endpoint";
 import { upgradeAccount, type Account } from "../shared/progression/account";
@@ -52,9 +53,19 @@ function ledgerOf(env: Env): CounterLedger {
     contracts: JSON.parse(env.CONTRACTS) as Contracts,
     wallets: new D1WalletStore(env.DB),
     prizes: new D1PrizeStore(env.DB),
+    runs: new D1RunStore(env.DB),
     devnet: false,
     domains: env.SIWE_DOMAINS ? env.SIWE_DOMAINS.split(",") : [],
   });
+}
+
+/** Files live in the PvP worker's PlayerFile DO; the counter reaches them by name (load → apply → save). */
+function filesOf(env: Env) {
+  const stubOf = (id: string) => env.PLAYER_FILE.get(env.PLAYER_FILE.idFromName(id));
+  return {
+    load: async (id: string): Promise<Account> => upgradeAccount((await (await stubOf(id).fetch(new Request("https://file/file", { method: "POST", body: JSON.stringify({ id, name: "BLANK" }) }))).json()) as Account),
+    save: (a: Account) => stubOf(a.id).fetch(new Request("https://file/save", { method: "POST", body: JSON.stringify(a) })),
+  };
 }
 
 /** Until Robinhood Chain's parameters land, the Worker answers every chain route with one reason instead of building a client on an empty RPC. */
@@ -71,9 +82,7 @@ export default {
       if (url.pathname === "/link/nonce") return json({ ok: false, reason: NOT_CONFIGURED }, 503);
       return json({ ok: false, reason: NOT_CONFIGURED, counter: null }, 503);
     }
-    const stubOf = (id: string) => env.PLAYER_FILE.get(env.PLAYER_FILE.idFromName(id));
-    const load = async (id: string): Promise<Account> => upgradeAccount((await (await stubOf(id).fetch(new Request("https://file/file", { method: "POST", body: JSON.stringify({ id, name: "BLANK" }) }))).json()) as Account);
-    const save = (a: Account) => stubOf(a.id).fetch(new Request("https://file/save", { method: "POST", body: JSON.stringify(a) }));
+    const { load, save } = filesOf(env);
     if (url.pathname === "/counter") {
       const ledger = ledgerOf(env);
       try {
@@ -104,16 +113,12 @@ export default {
       return json(r);
     }
     if (request.method === "POST" && url.pathname === "/prizes/post") {
-      // the weekly / season-end / nightly job (a cron trigger or a hand call): the boards come from the
-      // PvP worker's Endgame DO; a run settlement is handed its day's banking
-      const body = (await request.json().catch(() => ({}))) as { kind?: string; week?: number; day?: number; banked?: Banked[] };
+      // the same jobs the cron runs (`scheduled` below), callable by hand: the boards come from the
+      // PvP worker's Endgame DO, the run's day from the shared database
+      const body = (await request.json().catch(() => ({}))) as { kind?: string; week?: number; day?: number };
       if (body.kind === "run") {
-        // THE RUN settles a day at a rate the emission schedule can afford. The Worker holds no index
-        // of who banked what — the caller supplies it, and the settlement, not the caller, sets the rate.
-        const day = Number(body.day ?? dayIndex(Date.now()));
-        const s = settleRun(day, Array.isArray(body.banked) ? body.banked : []);
-        const rr = await ledgerOf(env).postEpoch("run", day, s.lines);
-        return json({ ok: rr.ok, reason: rr.reason, settlement: { day, units: s.units, rate: s.rate, minted: s.minted, pot: s.pot }, epoch: rr.epoch ? { epoch: rr.epoch.epoch, root: rr.epoch.root, total: rr.epoch.total, leaves: rr.epoch.leaves.length } : null, skipped: rr.skipped ?? [] });
+        const day = Number(body.day ?? dayIndex(Date.now()) - 1);
+        return json(await settleRunDay(day, { ledger: ledgerOf(env), runs: new D1RunStore(env.DB), load, save, log: (l) => console.log(l) }));
       }
       if (!env.ENDGAME) return json({ ok: false, reason: "no ENDGAME binding" }, 500);
       const stub = env.ENDGAME.get(env.ENDGAME.idFromName("endgame"));
@@ -134,5 +139,53 @@ export default {
     }
     if (url.pathname === "/health") return new Response("ok");
     return new Response("meltdown counter-ledger worker", { status: 404 });
+  },
+
+  /**
+   * The cron (`wrangler.counter.toml`), 01:00 UTC daily.
+   *
+   * THE RUN settles every night: yesterday's banking, priced out of yesterday's share of the
+   * emission schedule (docs/ECONOMY.md). The Audit posts on Mondays, the Deep Wake at a season
+   * boundary. Each is guarded against a second run of the same period, so a retry after a failed
+   * deploy or a duplicated trigger costs nothing.
+   *
+   * A day with nothing to settle is still marked settled — otherwise the job retries an empty day
+   * for the rest of the game's life.
+   */
+  async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil((async () => {
+      const at = event.scheduledTime ?? Date.now();
+      if (unconfigured(env)) return console.log(`cron ${new Date(at).toISOString()}: skipped — ${NOT_CONFIGURED}`);
+      const { load, save } = filesOf(env);
+      const ledger = ledgerOf(env);
+
+      const day = dayIndex(at) - 1; // yesterday: today is not over
+      try {
+        const r = await settleRunDay(day, { ledger, runs: new D1RunStore(env.DB), load, save, now: () => at, log: (l) => console.log(l) });
+        if (!r.ok) console.log(`cron: run day ${day} not settled — ${r.reason}`);
+      } catch (e) {
+        console.log(`cron: run day ${day} threw — ${String((e as Error).message).slice(0, 200)}`);
+      }
+
+      if (!env.ENDGAME) return;
+      const stub = env.ENDGAME.get(env.ENDGAME.idFromName("endgame"));
+      const d = new Date(at);
+      try {
+        if (d.getUTCDay() === 1) {
+          // the Audit week that just ended
+          const week = weekIndex(at) - 1;
+          const board = (await (await stub.fetch(new Request(`https://endgame/audit?week=${week}`))).json()) as { account: string; score: number }[];
+          const r = await ledger.postEpoch("audit", week, auditPrizes(board));
+          console.log(`cron: audit week ${week} — ${r.ok ? `${r.epoch?.leaves.length} leaves` : r.reason}`);
+        }
+        const season = (await (await stub.fetch(new Request("https://endgame/season"))).json()) as { season: number; contributors?: Record<string, number> };
+        if (seasonIndex(at) > season.season) {
+          const r = await ledger.postEpoch("season", season.season, seasonPrizes(season.contributors ?? {}));
+          console.log(`cron: season ${season.season} — ${r.ok ? `${r.epoch?.leaves.length} leaves` : r.reason}`);
+        }
+      } catch (e) {
+        console.log(`cron: prize job threw — ${String((e as Error).message).slice(0, 200)}`);
+      }
+    })());
   },
 };
