@@ -26,4 +26,4 @@ new_classes = ["Endgame"]
 [[d1_databases]]
 binding = "DB"
 database_name = "meltdown-ghostfile"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "fda078bf-052f-48fb-a061-0d5393226bb7"

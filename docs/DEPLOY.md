@@ -7,6 +7,10 @@ steps below are the same commands by hand.
 
 ## 1. Cloudflare
 
+The D1 database `meltdown-ghostfile` exists (id `fda078bf-052f-48fb-a061-0d5393226bb7`,
+already in `wrangler.toml` and `wrangler.counter.toml`) and carries the schema. For a fresh
+account:
+
 ```sh
 npx wrangler login
 npx wrangler d1 create meltdown-ghostfile          # paste the id into wrangler.toml and wrangler.counter.toml
