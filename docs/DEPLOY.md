@@ -20,6 +20,9 @@ npx wrangler d1 execute meltdown-ghostfile --file=server/schema.sql
 Repository secrets: `CLOUDFLARE_API_TOKEN` (Workers Scripts:Edit, Pages:Edit, D1:Edit),
 `CLOUDFLARE_ACCOUNT_ID`. Repository variables: `CF_DEPLOY=1` and the `VITE_*` hosts below.
 
+The Durable Object migrations use `new_sqlite_classes`: the free plan requires the SQLite backend,
+and the storage API the objects use is the same on both.
+
 ## 2. Workers (in this order — the campaign and counter Workers bind to the match Worker's PlayerFile)
 
 ```sh
@@ -55,7 +58,16 @@ The `VITE_*` values are read at build time (`client/config.ts`). Development nee
 `npm run dev` and `npx tsx server/node-host.ts` are the whole stack, including an in-process EVM
 devnet for the counter-ledger.
 
-## 4. What CI checks
+## 4. Where it runs today
+
+| Piece | URL |
+| --- | --- |
+| client (Pages) | https://meltdown-45y.pages.dev |
+| meltdown-match | https://meltdown-match.wendellphillips.workers.dev |
+| meltdown-campaign | https://meltdown-campaign.wendellphillips.workers.dev |
+| meltdown-counter | https://meltdown-counter.wendellphillips.workers.dev |
+
+## 5. What CI checks
 
 `verify.yml` runs the typecheck, the unit suite, every stage probe, the Fairness Lint and the
 economy lint, then builds the client and runs the smoke test against the built bundle.

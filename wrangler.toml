@@ -11,15 +11,15 @@ bindings = [
 
 [[migrations]]
 tag = "v1"
-new_classes = ["MatchRoom"]
+new_sqlite_classes = ["MatchRoom"]
 
 [[migrations]]
 tag = "v2"
-new_classes = ["PlayerFile"]
+new_sqlite_classes = ["PlayerFile"]
 
 [[migrations]]
 tag = "v3"
-new_classes = ["Endgame"]
+new_sqlite_classes = ["Endgame"]
 
 # Ghostfile rows. Create with `npx wrangler d1 create meltdown-ghostfile`, paste the id here,
 # then `npx wrangler d1 execute meltdown-ghostfile --file=server/schema.sql`.
