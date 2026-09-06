@@ -170,22 +170,28 @@ those past the Depth gate running and banking half the cap. These come out
 of `shared/economy/model.ts`, which reads the same constants the game does,
 so the table cannot quietly go stale:
 
-| Flow | From | $CAPITAL / month |
-| --- | --- | --- |
-| Emissions | the schedule's daily pots, settled (§4.5) | 6.48M out |
-| Season buyout | 20% of MAU × 400 | 4.0M burned |
-| Name registry | 1,500 Depth-50 names × 500 | 0.75M burned |
-| Market fees | 10M volume × 2% burn | 0.2M burned |
-| Room credits | 20k room-hours × 5 | 0.1M burned |
-| **Net** | | **5.05M burned ≈ 78% of emissions** |
+| Flow | From | Built | $CAPITAL / month |
+| --- | --- | --- | --- |
+| Emissions | the schedule's daily pots, settled (§4.5) | yes | 6.48M out |
+| Season buyout | 20% of MAU × 400, 100% burned | `SeasonBuyout.sol` | 4.0M burned |
+| Name registry | 1,500 Depth-50 names × 500, 100% burned | `Names.sol` | 0.75M burned |
+| Market fees | 10M volume × 2% burn | `LedgerMarket.sol` | 0.2M burned |
+| Room credits | 20k room-hours × 5, 100% burned | `RoomCredits.sol` | 0.1M burned |
+| **Net** | | | **5.05M burned ≈ 78% of emissions** |
+
+Every row of that table is a contract that exists. **The ratio may only ever
+be quoted from built sinks**, and `shared/economy/sinks.ts` carries a `built`
+flag per channel that the model reads to decide what counts — an earlier
+draft of this table quoted 65% on a season buyout whose contract had never
+been written, which was 79% of the burn it was claiming. The Forge (§7) is
+still specified and unbuilt; it would add about 0.15M a month, and that
+number is reported separately rather than folded in.
 
 The levers are the emission decay, the buyout price, and the name price. If
 burn falls below target for two quarters the emission rate for the next year
-is cut, not the other way round.
-
-Note that the sinks below the first row are not all built: the Forge, room
-credits and the season buyout are specified in §7 and unimplemented. Until
-they ship the honest burn is the market and name fees alone.
+is cut, not the other way round. Prices are steward-settable on chain
+(`setPrice`) so a quarterly retune does not need a redeploy; a purchase
+passes the price it agreed to, so a retune cannot front-run one.
 
 ### 4.5 The daily settlement — why a unit is not a price
 An earlier draft of this document paid THE RUN a fixed rate: one $CAPITAL per
@@ -276,9 +282,9 @@ claim UI: signs nothing but       Worker: EIP-712 voucher signer   Names       (
 | `Names` | ERC-721, soulbound | Depth-50 voucher required; length-priced; burn on register |
 | `Cosmetics` | ERC-1155 | metadata carries the deterministic wear seed; no stats field exists |
 | `LedgerMarket` | custom | fee split 2/2/1; only venue the game equips from |
-| `Forge` | custom | listing bond, 70/20/10 primary split, curation role |
-| `RoomCredits` | custom | burn per room-hour; Worker reads the burn receipt |
-| `SeasonBuyout` | custom | burn; emits the pass to the Ghostfile |
+| `Forge` | custom | **not built**: listing bond, 70/20/10 primary split, curation role. Needs a creator asset pipeline first; §4.4 does not count it. |
+| `RoomCredits` | custom | built (Stage 19): 100% burn per room-hour, credits held on chain, spent by the host when a room opens |
+| `SeasonBuyout` | custom | built (Stage 19): 100% burn, one pass per wallet per season; what it grants is off-chain cosmetics, so the pass is never resellable |
 | `PrizeVault` | Merkle claims | built (Stage 15): weekly roots posted by the counter Worker's cron, sponsored claims, unclaimed after 90 days returns to treasury |
 | `Testimony` | custom | 1 Ghostfile = 1 vote, Depth gate via voucher, proposal bond |
 

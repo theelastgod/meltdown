@@ -65,6 +65,9 @@ export interface CounterRecord {
   capital: string;
   /** THE RUN (Stage 14): the day's banked units against the cap, units owed to the wallet, units paid out */
   run?: { day: number; banked: number; owed: number; paid: number };
+  /** The sinks (Stage 19), read from the chain: Deep Wake seasons the wallet has bought out, and unspent private room-hours. */
+  seasons?: number[];
+  roomHours?: number;
 }
 
 export interface CampaignRecord {

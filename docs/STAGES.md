@@ -718,6 +718,65 @@ what a file banked afterwards; a day past its pot split pro rata; nothing spent 
 reverts, and the day left for the next cron. The run probe banks, withdraws, banks again, settles
 the day through the real host route, is refused a second settlement, and claims the epoch on chain.
 
+## Stage 19 — The sinks, and a number that was allowed to be published
+
+**Goal.** Stage 17 made the emission side real and Stage 18 made it run. This is the other half of
+the discipline the whole token rests on — and it had the opposite problem. The burn side was being
+*reported* without being built.
+
+**What was found.** `docs/TOKENOMICS.md` §4.4 published a burn ratio of 65%. The season buyout was
+**79% of the burn in that table**, and its contract had never been written. Room credits and the
+Forge were the same. The headline number of the tokenomics document was a sum over things that did
+not exist.
+
+**What was built.** `SeasonBuyout.sol` and `RoomCredits.sol`, both 100% burned:
+
+- **The Deep Wake pass** records that a wallet holds a season and nothing else. What it grants is a
+  theme and two slots, defined off chain — deliberately, because a pass that minted a tradable token
+  would turn the game's largest sink into a trading vehicle, and "no wagering or staking mechanics
+  of any kind" is the first rule the brief states. There is no track to grind inside it and no tier
+  to chase: it is bought, not played toward, and holding one changes no number the sim reads.
+- **Room-hours** sell a server, not a stat: the buyer's own rules and invite list, the same weapons
+  and the same sim. Credits live on chain so a host that loses its database cannot lose a player's
+  hours, and the host is a named `spender` that draws them down — so a host key compromise wastes
+  hours and can do nothing else.
+
+**Files.** `contracts/Stewarded.sol`, `contracts/SeasonBuyout.sol`, `contracts/RoomCredits.sol`;
+`shared/economy/sinks.ts` (the registry and the `built` flag), `shared/economy/catalog.ts` (what the
+pass grants), `shared/economy/model.ts` (built vs specified), `shared/economy/counter.ts`,
+`shared/progression/account.ts`; `server/chain/deploy.ts`, `server/chain/ledger.ts` (the reconcile
+and the prices in `info()`); `client/counter.ts`, `client/main.ts`, `client/file.ts`;
+`docs/TOKENOMICS.md` §4.4 and §7, `docs/ECONOMY.md` §5; `tests/sinks.test.ts` (13),
+`probe/stage14.ts`, `probe/stage17.ts`.
+
+**Design decisions.**
+- **`built` is a claim about an artifact, not an opinion.** `shared/economy/sinks.ts` flags each
+  channel, the model's `sinks.total` sums only the flagged ones, and everything else is reported
+  separately as `specified`. A test asserts every `built: true` names a contract that compiles, so
+  the flag cannot be set by wishing. With the buyout built the ratio is legitimately 78%; the
+  unbuilt Forge would add 2.3 points and they are not folded in.
+- **A purchase carries the price it agreed to.** §4.4 retunes prices quarterly, and prices are
+  steward-settable so that does not need a redeploy — which means a retune could otherwise land
+  between a player's `approve` and their `buy` and burn more than they meant. Both contracts take
+  `expectedPrice` and revert on a mismatch.
+- **One privileged surface, two calls.** `Stewarded` gives both sinks a steward that can set the
+  price and hand the role on, and nothing else. An auditor can read the whole blast radius of a
+  stolen steward key in twenty lines: it can make a sink cheaper or dearer. It cannot mint, move a
+  player's tokens, or take a pass away.
+- **The pass grants nothing tradable.** Off-chain cosmetics, so the biggest sink cannot become a
+  market. The economy lint's existing `identity-is-cosmetic` and `no-paid-power` rules then do the
+  rest, and a case proves it by giving a grant a stat and watching the lint reject it.
+- **The player pays, not the game.** Like a market buy, both sinks are the player's own two
+  transactions from their own wallet. The game never holds the money and never needs to.
+
+**Acceptance (`npm test`, 211 tests; `npm run probe:economy`, 15 checks; `npm run probe:run`, 11/11):**
+the contract cases run against a real EVM — the fee leaves the supply rather than moving to a
+treasury, a season sells once and only the season asked for, a price retune mid-purchase reverts,
+nobody but the steward moves the price or the role, room-hours credit and spend down, a spend by
+anyone but the host reverts and so does one past the credit, and 1000 hours is the allowed edge
+while 1001 is not. Each was mutation-checked. The run probe buys a pass and three room-hours from
+the browser and watches `totalSupply` fall by exactly the fee.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

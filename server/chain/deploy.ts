@@ -3,7 +3,8 @@
  * The Node host runs this against its in-process devnet at boot; `npm run contracts:deploy`
  * runs it against a real RPC (Robinhood Chain testnet) and prints the addresses for wrangler.
  */
-import { encodeDeployData, type Abi, type Hex, type PublicClient, type WalletClient } from "viem";
+import { encodeDeployData, parseEther, type Abi, type Hex, type PublicClient, type WalletClient } from "viem";
+import { ROOM_HOUR_PRICE, SEASON_PASS_PRICE } from "../../shared/economy/sinks";
 import artifactsJson from "../../contracts/out/artifacts.json";
 
 export const ARTIFACTS = artifactsJson as Record<string, { abi: Abi; bytecode: Hex }>;
@@ -17,6 +18,9 @@ export interface Contracts {
   market: Hex;
   /** the PrizeVault (Stage 15): weekly Merkle roots for the emission channels */
   vault: Hex;
+  /** the sinks (Stage 19): the Deep Wake pass and private room-hours, both 100% burned */
+  buyout: Hex;
+  rooms: Hex;
 }
 
 export async function deployAll(pub: PublicClient, wal: WalletClient, signer: Hex, treasury: Hex): Promise<Contracts> {
@@ -35,5 +39,8 @@ export async function deployAll(pub: PublicClient, wal: WalletClient, signer: He
   const cosmetics = await deploy("Cosmetics", []);
   const market = await deploy("LedgerMarket", [capital, cosmetics, treasury]);
   const vault = await deploy("PrizeVault", [capital, treasury]);
-  return { capital, ghostfile, stamps, names, cosmetics, market, vault };
+  // the sinks. Prices are the tokenomics doc's starting numbers (§4.4); the steward retunes them.
+  const buyout = await deploy("SeasonBuyout", [treasury, capital, parseEther(String(SEASON_PASS_PRICE))]);
+  const rooms = await deploy("RoomCredits", [treasury, capital, parseEther(String(ROOM_HOUR_PRICE))]);
+  return { capital, ghostfile, stamps, names, cosmetics, market, vault, buyout, rooms };
 }

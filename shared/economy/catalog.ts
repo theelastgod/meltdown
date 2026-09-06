@@ -10,6 +10,7 @@ import { CHIPS } from "../manifest/chips";
 import { FIRMWARES } from "../manifest/firmwares";
 import { COSMETICS } from "../endgame/rewrite";
 import type { EconomyItem, MarketBlock } from "./manifest";
+import { ROOM_HOUR_PRICE, SEASON_PASS_PRICE } from "./sinks";
 
 /** An on-chain cosmetic: an ERC-1155 token id, a $CAPITAL price, a wear seed, and a palette the renderer tints with. Nothing else. */
 export interface SkinDef {
@@ -34,6 +35,21 @@ export const SKINS: readonly SkinDef[] = [
   skin(4, "skin_deadletter", "DEADLETTER WHITE", "the office's own paint, cut from a sealed door", 200, 0x0c02, "#f2f4ff"),
 ];
 
+/**
+ * What a Deep Wake pass grants (Stage 19). Off-chain on purpose: the pass is burned, and what it
+ * hands back is not resellable — a season pass that minted a tradable token would turn the game's
+ * biggest sink into a trading vehicle, and "no wagering or staking mechanics of any kind" is a rule
+ * the brief states first. They are a theme and two slots: no stat, no token, nothing the sim reads.
+ * The lint's `identity-is-cosmetic` rule refuses a mechanical block on any of them.
+ */
+export const SEASON_PASS_COSMETICS: readonly { id: string; kind: "theme" | "alias" | "preset"; name: string; line: string }[] = [
+  { id: "theme_deep_wake", kind: "theme", name: "DEEP WAKE", line: "the colour the graph goes when a season ends and nobody wins" },
+  { id: "alias_4", kind: "alias", name: "ALIAS SLOT IV", line: "a fourth saved name, for the season you paid to sit out of" },
+  { id: "preset_6", kind: "preset", name: "PRESET SLOT VI", line: "a sixth saved loadout" },
+] as const;
+
+export const SEASON_PASS_GRANTS: readonly string[] = SEASON_PASS_COSMETICS.map((c) => c.id);
+
 export const skinByToken = (token: number): SkinDef | undefined => SKINS.find((s) => s.token === token);
 export const skinById = (id: string): SkinDef | undefined => SKINS.find((s) => s.id === id);
 
@@ -50,8 +66,10 @@ export function economyManifest(): EconomyItem[] {
   for (const c of COSMETICS) out.push({ id: c.id, kind: c.kind === "theme" ? "theme" : "cosmetic", mechanical: null, market: null });
   for (const s of SKINS) out.push({ id: s.id, kind: "cosmetic", mechanical: null, market: onChain(s.capital, true, "wear_seed") });
   out.push({ id: "name_registry", kind: "name", mechanical: null, market: onChain(150, false) });
-  out.push({ id: "room_hour", kind: "room_credit", mechanical: null, market: onChain(5, false) });
-  out.push({ id: "lease_buyout", kind: "season_buyout", mechanical: null, market: onChain(400, false) });
+  out.push({ id: "room_hour", kind: "room_credit", mechanical: null, market: onChain(ROOM_HOUR_PRICE, false) });
+  out.push({ id: "lease_buyout", kind: "season_buyout", mechanical: null, market: onChain(SEASON_PASS_PRICE, false) });
+  // what the pass hands back: cosmetics only, and not on chain, so the pass cannot be resold
+  for (const c of SEASON_PASS_COSMETICS) out.push({ id: c.id, kind: c.kind === "theme" ? "theme" : "cosmetic", mechanical: null, market: null });
   out.push({ id: "rewrite_certificate", kind: "rewrite_certificate", mechanical: null, market: { capital: null, onChain: true, tradable: false, randomness: "none" } });
   return out;
 }

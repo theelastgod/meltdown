@@ -22,6 +22,8 @@ import { levelById } from "../shared/sim/level";
 import { buildNav, findPath } from "../shared/sim/nav";
 import { RUN } from "../shared/sim/run";
 import { RUN_DEPTH, RUN_SCRIP_PER_UNIT } from "../shared/economy/counter";
+import { ROOM_HOUR_PRICE, SEASON_PASS_PRICE } from "../shared/economy/sinks";
+import { SEASON_PASS_GRANTS } from "../shared/economy/catalog";
 
 const VITE_PORT = 5211;
 const HOST_PORT = 8813;
@@ -54,9 +56,10 @@ const ARGS = ["--no-proxy-server", "--use-angle=swiftshader", "--use-gl=angle", 
 
 interface FileRec {
   depth: number;
+  owned: string[];
   wallet: { scrip: number };
   ledger: string[];
-  counter: { address: string | null; run?: { day: number; banked: number; owed: number; paid: number }; capital: string } | null;
+  counter: { address: string | null; run?: { day: number; banked: number; owed: number; paid: number }; capital: string; seasons?: number[]; roomHours?: number } | null;
 }
 
 async function main(): Promise<void> {
@@ -242,6 +245,18 @@ async function main(): Promise<void> {
     const buyerHas = await read<bigint>(info.contracts.cosmetics, "Cosmetics", "balanceOf", [1n, player2.address]);
     const price = parseEther("60");
     check("the market is player to player: ALPHA buys a skin from the studio, lists it for 60 $CAPITAL, a second wallet buys it — ALPHA nets 95%, 2% burns, the skin moves", bought.ok && listed.ok && !!mine && mine.price === 60 && sale && sellerAfter - sellerBefore === (price * 9500n) / 10_000n && burnedAfter - burnedBefore === (price * 200n) / 10_000n && buyerHas === 1n, `bought ${bought.ok} · listed ${listed.ok} ${listed.reason ?? ""} · listing ${mine?.listing} @${mine?.price} · sale ${sale} · seller +${Number(sellerAfter - sellerBefore) / 1e18} · burned +${Number(burnedAfter - burnedBefore) / 1e18} · buyer has ${buyerHas}`);
+    // ---- the sinks (Stage 19): the pass and the room-hours, both burned ----
+    const supply0 = await read<bigint>(info.contracts.capital, "$CAPITAL", "totalSupply");
+    const burn0 = await read<bigint>(info.contracts.capital, "$CAPITAL", "burned");
+    const buyS = await a.evaluate(() => window.__game.buySeason());
+    const buyR = await a.evaluate(() => window.__game.buyRoomHours(3));
+    const supply1 = await read<bigint>(info.contracts.capital, "$CAPITAL", "totalSupply");
+    const burn1 = await read<bigint>(info.contracts.capital, "$CAPITAL", "burned");
+    const fs = await file(acct);
+    const season = (await (await fetch(`${HOST}/counter`)).json() as { season: number }).season;
+    const owed = parseEther(String(SEASON_PASS_PRICE + ROOM_HOUR_PRICE * 3));
+    check("the sinks burn: the Deep Wake pass and three room-hours leave the supply for good, the pass grants cosmetics and nothing the sim reads", buyS.ok && buyR.ok && supply0 - supply1 === owed && burn1 - burn0 === owed && (fs.counter?.seasons ?? []).includes(season) && fs.counter?.roomHours === 3 && SEASON_PASS_GRANTS.every((g) => fs.owned.includes(g)), `pass ${buyS.ok} ${buyS.reason ?? ""} · hours ${buyR.ok} ${buyR.reason ?? ""} · supply -${Number(supply0 - supply1) / 1e18} · burned +${Number(burn1 - burn0) / 1e18} · seasons [${(fs.counter?.seasons ?? []).join(",")}] · hours ${fs.counter?.roomHours} · granted ${SEASON_PASS_GRANTS.filter((g) => fs.owned.includes(g)).length}/${SEASON_PASS_GRANTS.length}`);
+
     await a.close();
     await b.close();
 

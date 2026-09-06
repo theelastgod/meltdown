@@ -17,6 +17,7 @@ import { DOC_POPULATION, STRESS_POPULATION, dailyEmissionBudget, emissionSchedul
 import { dilutionThreshold, runPot, settleRun } from "../shared/economy/settlement";
 import { lintTokenConstants } from "../shared/economy/lint";
 import { MAX_CAPITAL_PER_UNIT, RUN_DAILY_CAP } from "../shared/sim/run";
+import { SINKS } from "../shared/economy/sinks";
 
 const out: string[] = [];
 const say = (s = "") => {
@@ -76,11 +77,22 @@ for (const files of [100, 1_000, 2_126, 10_000, 250_000]) {
 }
 say();
 
-say("5. THE MONTH AT THE DOC'S POPULATION");
+say("5. THE SINKS, AND WHICH OF THEM EXIST");
+say("   sink                                 built   burn   note");
+for (const k of SINKS) say(`   ${k.label.padEnd(36)} ${(k.built ? "yes" : "NO ").padStart(5)}  ${((k.burnBps / 100).toFixed(0) + "%").padStart(4)}   ${k.note}`);
+{
+  const r = project();
+  say(`   built sinks burn ${n(r.sinks.total)} a month (${(r.burnRatio * 100).toFixed(1)}%); the unbuilt would add ${n(r.sinks.specified)} (${(r.burnRatioSpecified * 100).toFixed(1)}%).`);
+  say("   Only the first number may be published. The season buyout was 79% of this table before");
+  say("   its contract existed, which is how a 33% burn was being reported as 65%.");
+}
+say();
+
+say("6. THE MONTH AT THE DOC'S POPULATION");
 for (const l of summarise()) say(`   ${l}`);
 say();
 
-say("6. CHECKS");
+say("7. CHECKS");
 for (const [label, p] of populations) {
   const r = project(p);
   check(r.settled.total <= r.monthlyBudget, `${label}: a settled month fits the year-one budget`, `${n(r.settled.total)} of ${n(r.monthlyBudget)}`);
@@ -94,6 +106,9 @@ check(small.rate === MAX_CAPITAL_PER_UNIT, "below the crossover the rate is unch
 const doc = project(DOC_POPULATION);
 check(doc.burnRatio >= 0.6, "the sinks clear §4.4's month-12 burn target against settled emissions", `${(doc.burnRatio * 100).toFixed(1)}%`);
 check(doc.sinks.total / doc.emissions.total < 0.6, "and did not against the unsettled demand, which is what was being missed", `${((doc.sinks.total / doc.emissions.total) * 100).toFixed(1)}%`);
+for (const k of SINKS.filter((x) => x.built)) check(k.burnBps > 0, `${k.label}: a built sink burns something`, `${k.burnBps / 100}% of the fee`);
+const doc2 = project(DOC_POPULATION);
+check(doc2.sinks.total === doc2.sinks.names + doc2.sinks.market + doc2.sinks.buyout + doc2.sinks.rooms, "the published burn counts built sinks only", `${n(doc2.sinks.total)} built, ${n(doc2.sinks.specified)} specified but unwritten`);
 const v = lintTokenConstants();
 check(v.length === 0, "the economy lint passes on the constants as they stand", v.map((x) => `${x.itemId}: ${x.rule}`).join("; ") || "0 violations");
 

@@ -11,11 +11,14 @@ import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import { parseSiweMessage, validateSiweMessage } from "viem/siwe";
 import type { Account, CounterRecord } from "../../shared/progression/account";
 import { MAX_CAPITAL_PER_UNIT, emptyCounter, LAUNCH_GRANT, LAUNCH_GRANT_DEPTH, NAME_DEPTH, nameFee, SIWE_STATEMENT, validName } from "../../shared/economy/counter";
-import { SKINS } from "../../shared/economy/catalog";
+import { SEASON_PASS_GRANTS, SKINS } from "../../shared/economy/catalog";
 import { ARTIFACTS, type Contracts } from "./deploy";
 import { GameSigner } from "./signer";
 import type { WalletStore } from "./wallets";
 import { buildEpoch } from "./merkle";
+
+import { seasonIndex } from "../../shared/endgame/clock";
+import { ROOM_HOUR_PRICE, SEASON_PASS_PRICE } from "../../shared/economy/sinks";
 import { EPOCH_BASE, type EpochKind, type PrizeStore, type StoredEpoch } from "./prizes-store";
 import type { RunStore } from "../run-store";
 import type { PrizeLine } from "../../shared/economy/prizes";
@@ -85,7 +88,7 @@ export class CounterLedger {
 
   /** What the panel needs to talk to the chain itself: id, addresses, the signer it should expect. */
   info() {
-    return { chainId: this.opts.chainId, devnet: this.opts.devnet, contracts: this.opts.contracts, signer: this.signer.address, relayer: this.relayerAccount.address, statement: SIWE_STATEMENT };
+    return { chainId: this.opts.chainId, devnet: this.opts.devnet, contracts: this.opts.contracts, signer: this.signer.address, relayer: this.relayerAccount.address, statement: SIWE_STATEMENT, season: seasonIndex(this.now()), sinks: { seasonPass: SEASON_PASS_PRICE, roomHour: ROOM_HOUR_PRICE } };
   }
 
   // ---- SIWE link ----
@@ -339,15 +342,24 @@ export class CounterLedger {
     try {
       const wallet = c.address as Hex;
       const k = this.opts.contracts;
-      const [capital, token, name, balances] = await Promise.all([
+      // the season pass is read for the current season and the few before it: the pass is per season,
+      // and a file that comes back after a break should still show the ones it paid for
+      const season = seasonIndex(this.now());
+      const seasons = [season, season - 1, season - 2].filter((s) => s >= 0);
+      const [capital, token, name, balances, held, hours] = await Promise.all([
         this.pub.readContract({ address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [wallet] }) as Promise<bigint>,
         this.pub.readContract({ address: k.ghostfile, abi: ARTIFACTS.Ghostfile!.abi, functionName: "tokenOf", args: [wallet] }) as Promise<bigint>,
         this.pub.readContract({ address: k.names, abi: ARTIFACTS.Names!.abi, functionName: "nameOf", args: [wallet] }) as Promise<string>,
         this.pub.readContract({ address: k.cosmetics, abi: ARTIFACTS.Cosmetics!.abi, functionName: "balanceOfBatch", args: [SKINS.map(() => wallet), SKINS.map((s) => BigInt(s.token))] }) as Promise<bigint[]>,
+        Promise.all(seasons.map((s) => this.pub.readContract({ address: k.buyout, abi: ARTIFACTS.SeasonBuyout!.abi, functionName: "holds", args: [BigInt(s), wallet] }) as Promise<boolean>)),
+        this.pub.readContract({ address: k.rooms, abi: ARTIFACTS.RoomCredits!.abi, functionName: "hoursOf", args: [wallet] }) as Promise<bigint>,
       ]);
       const rig = SKINS.filter((_, i) => (balances[i] ?? 0n) > 0n).map((s) => s.token);
       const worn = rig.includes(c.worn) ? c.worn : 0;
-      a.counter = { ...c, capital: formatEther(capital), ghostfile: Number(token), name: name || null, rig, worn };
+      const bought = seasons.filter((_, i) => held[i]);
+      a.counter = { ...c, capital: formatEther(capital), ghostfile: Number(token), name: name || null, rig, worn, seasons: bought, roomHours: Number(hours) };
+      // a pass grants cosmetics and nothing else — the lint refuses a mechanical block on any of them
+      if (bought.includes(season)) for (const id of SEASON_PASS_GRANTS) if (!a.owned.includes(id)) a.owned.push(id);
       return { ok: true, counter: a.counter };
     } catch (e) {
       return soft(e);

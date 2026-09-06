@@ -69,5 +69,8 @@ export function counterView(a: Account) {
     run: c.run ?? { day: 0, banked: 0, owed: 0, paid: 0 },
     runGate: a.depth >= RUN_DEPTH,
     skins: SKINS.map((s) => ({ ...s, owned: c.rig.includes(s.token) })),
+    /** the sinks (Stage 19): Deep Wake seasons bought out, and unspent private room-hours */
+    seasons: c.seasons ?? [],
+    roomHours: c.roomHours ?? 0,
   };
 }

@@ -166,7 +166,44 @@ Until then the counter Worker's cron had no `scheduled` handler at all — `wran
 declared a weekly trigger firing into a Worker that only exported `fetch`. The Audit prize job had
 never run.
 
-## 5. Still open
+## 5. The other half: the sinks
+
+Stage 19. The emission side was made real in §2 and made to run in §4. The burn side had the
+opposite problem — it was being *reported* without being built.
+
+§4.4's table quoted 65%, and 79% of the burn in it was the season buyout: a contract that had never
+been written. Two of the four remaining rows were the same. The discipline the whole token rests on
+was a sum over things that did not exist.
+
+**Built in this stage.** `SeasonBuyout.sol` and `RoomCredits.sol`, both 100% burned, both careful
+about what they are allowed to sell:
+
+- **The Deep Wake pass** records that a wallet holds a season and nothing else. What it grants is a
+  theme and two slots, defined off chain in `shared/economy/catalog.ts` — off chain deliberately,
+  because a pass that minted a tradable token would turn the game's largest sink into a trading
+  vehicle, and "no wagering or staking mechanics of any kind" is the first rule the brief states.
+  There is no track to grind inside it and no tier to chase: it is bought, not played toward, and
+  holding one changes no number the sim reads. That is the whole difference between a season pass
+  and paid progression, and `tests/sinks.test.ts` fails if a grant ever grows a mechanical block.
+- **Room-hours** sell a server, not a stat: the buyer's own rules and invite list, the same weapons
+  and the same sim. Credits live on chain so a host that loses its database cannot lose a player's
+  hours; the host is a named `spender` that draws them down, so a host key compromise wastes hours
+  and can do nothing else.
+
+Both take the price the buyer agreed to as an argument, so a steward retuning the price (§4.4 does
+this quarterly) cannot land between the approve and the buy and burn more than was meant. Both keep
+their privileged surface to two calls — set the price, hand the role on — in a shared `Stewarded`
+base, so the blast radius of a stolen steward key reads in one file: it can make a sink cheaper or
+dearer, and cannot mint, move a player's tokens, or take a pass away.
+
+**And the rule that stops the reporting problem coming back.** `shared/economy/sinks.ts` carries a
+`built` flag per channel. The model's `sinks.total` — the number `docs/TOKENOMICS.md` publishes —
+sums only built channels; everything else is reported separately as `specified`. A test asserts
+that `built: true` names a contract that actually compiles, so the flag is a claim about an
+artifact rather than an opinion. With the buyout built the ratio is legitimately **78%**; the
+unbuilt Forge would add 2.3 points, and those are not folded in.
+
+## 6. Still open
 
 1. **Unclaimed epochs.** `PrizeVault.reclaim` sweeps them to the treasury, which is correct, but
    nothing calls it on a schedule, and reclaimed emission should arguably return to the pot rather
@@ -176,24 +213,28 @@ never run.
    failed clear after a posted epoch leaves units already paid for. Both are logged loudly (the
    second as `stranded`), neither is reconciled automatically. A reconciliation pass comparing the
    two is the next thing this needs.
-3. **The sinks are unbuilt.** Names and the market exist; the Forge, RoomCredits and SeasonBuyout
-   contracts in `docs/TOKENOMICS.md` §7 do not. The 78% burn ratio in §2 assumes them. Until they
-   ship, the honest burn is the market and name fees alone.
-4. **The ceiling is a game-design number, not a derived one.** 1 $CAPITAL a unit sets when
+3. **Room-hours are bought but not yet spent.** The contract holds the credit and the host can draw
+   it down; no host route opens a private room against one. The sink burns correctly; the feature
+   behind it is half a stage away.
+4. **The Forge.** The last specified sink, and the only one needing infrastructure rather than a
+   contract: creator uploads, moderation, and an asset pipeline. Until it exists the model counts
+   it at zero.
+5. **The ceiling is a game-design number, not a derived one.** 1 $CAPITAL a unit sets when
    dilution starts to be felt. It should be revisited against a real launch population, and it is
    the one constant here a designer should own rather than a model.
-5. **`capUse` and `runnerShare` are guesses.** Every projection in §1 rests on them. They are the
+6. **`capUse` and `runnerShare` are guesses.** Every projection in §1 rests on them. They are the
    first thing to replace with telemetry, and the model takes them as parameters for exactly that
    reason.
-6. **The client's WITHDRAW should claim epochs, not transfer.** In production the settlement is the
+7. **The client's WITHDRAW should claim epochs, not transfer.** In production the settlement is the
    payment; the direct transfer is the devnet's convenience and the relayer is the treasury there.
 
-## 6. Running it
+## 7. Running it
 
 ```sh
 npm run lint:economy                     # the rules, including the schedule
 npx vitest run tests/model.test.ts       # 16 cases: the finding and the fix
 npx vitest run tests/settle.test.ts      # 10 cases: the nightly job, against a real EVM
+npx vitest run tests/sinks.test.ts       # 13 cases: the burn side, and what may be published
 npm run probe:economy                    # the projection as a table, with checks
 npx tsx -e "import('./shared/economy/model.ts').then(m=>m.summarise().forEach(l=>console.log(l)))"
 ```

@@ -11,6 +11,7 @@
  */
 import { CAPITAL, ALLOCATION } from "./manifest";
 import { AUDIT_POOL, SEASON_POOL } from "./prizes";
+import { isBuilt, ROOM_HOUR_PRICE, SEASON_PASS_PRICE, SINKS } from "./sinks";
 import { RUN_DAILY_CAP, MAX_CAPITAL_PER_UNIT } from "../sim/run";
 import { runPot, settledRate } from "./settlement";
 
@@ -59,6 +60,8 @@ export interface Population {
   /** room-hours a month, and the burn per hour */
   roomHours: number;
   roomHourPrice: number;
+  /** Forge primary volume a month, in whole $CAPITAL (unbuilt: counted separately) */
+  forgeVolume: number;
 }
 
 /** docs/TOKENOMICS.md §4.4's illustrative month-12 population. */
@@ -71,9 +74,10 @@ export const DOC_POPULATION: Population = {
   nameFee: 500,
   marketVolume: 10_000_000,
   buyoutShare: 0.2,
-  buyoutPrice: 400,
+  buyoutPrice: SEASON_PASS_PRICE,
   roomHours: 20_000,
-  roomHourPrice: 5,
+  roomHourPrice: ROOM_HOUR_PRICE,
+  forgeVolume: 1_500_000,
 };
 
 /**
@@ -89,9 +93,16 @@ export interface Projection {
   settled: { run: number; audit: number; season: number; total: number };
   /** whole $CAPITAL a banked unit settles for, at the ceiling until the pot binds */
   unitRate: number;
-  sinks: { names: number; market: number; buyout: number; rooms: number; total: number };
-  /** sinks as a share of settled emissions */
+  /**
+   * Sinks a month. `total` counts only channels that are **built** — a burn target met by an
+   * unwritten contract is a wish, and this table used to be 79% one (see docs/ECONOMY.md §3).
+   * `specified` is what the rest of `docs/TOKENOMICS.md` §7 would add once it exists.
+   */
+  sinks: { names: number; market: number; buyout: number; rooms: number; forge: number; total: number; specified: number };
+  /** built sinks as a share of settled emissions: the number the doc is allowed to publish */
   burnRatio: number;
+  /** what the ratio becomes once the specified sinks ship */
+  burnRatioSpecified: number;
   /** what the schedule allows in year one, a month */
   monthlyBudget: number;
   /** demand as a multiple of that budget: over 1 means a fixed rate would blow the schedule */
@@ -119,12 +130,16 @@ export function project(p: Population = DOC_POPULATION): Projection {
   const runSettled = unitsPerDay * unitRate * DAYS_PER_MONTH;
   const settledTotal = runSettled + audit + season;
 
-  // sinks: 100% burns except the market, which burns 2% of volume
+  // sinks: 100% burns except the market, which burns 2% of volume, and the Forge's 10% of primaries
   const names = p.namesPerMonth * p.nameFee;
   const market = (p.marketVolume * CAPITAL.marketFeeSplit.burnBps) / 10_000;
   const buyout = p.mau * p.buyoutShare * p.buyoutPrice;
   const rooms = p.roomHours * p.roomHourPrice;
-  const sinksTotal = names + market + buyout + rooms;
+  const forge = (p.forgeVolume * (SINKS.find((x) => x.id === "forge")?.burnBps ?? 0)) / 10_000;
+  // only what exists counts toward the published ratio
+  const channels: [string, number][] = [["names", names], ["market", market], ["buyout", buyout], ["rooms", rooms], ["forge", forge]];
+  const sinksTotal = channels.filter(([id]) => isBuilt(id)).reduce((a, [, v]) => a + v, 0);
+  const specified = channels.filter(([id]) => !isBuilt(id)).reduce((a, [, v]) => a + v, 0);
 
   const yearOne = emissionSchedule()[0]!;
   const monthlyBudget = yearOne / 12;
@@ -132,8 +147,9 @@ export function project(p: Population = DOC_POPULATION): Projection {
     emissions: { run, audit, season, total: emissionsTotal },
     settled: { run: runSettled, audit, season, total: settledTotal },
     unitRate,
-    sinks: { names, market, buyout, rooms, total: sinksTotal },
+    sinks: { names, market, buyout, rooms, forge, total: sinksTotal, specified },
     burnRatio: settledTotal === 0 ? 0 : sinksTotal / settledTotal,
+    burnRatioSpecified: settledTotal === 0 ? 0 : (sinksTotal + specified) / settledTotal,
     monthlyBudget,
     budgetRatio: emissionsTotal / monthlyBudget,
     yearOneDays: emissionsTotal === 0 ? Infinity : yearOne / (emissionsTotal / DAYS_PER_MONTH),
@@ -175,7 +191,8 @@ export function summarise(p: Population = DOC_POPULATION): string[] {
     `budget:     ${n(r.monthlyBudget)} a month, from the year-one schedule`,
     `demand:     THE RUN ${n(r.emissions.run)} + Audit ${n(r.emissions.audit)} + season ${n(r.emissions.season)} = ${n(r.emissions.total)} a month at a fixed 1:1 — ${r.budgetRatio.toFixed(1)}× the budget (${r.yearOneDays.toFixed(0)} days of runway, not 365)`,
     `settled:    ${n(r.settled.total)} a month at ${r.unitRate.toFixed(4)} $CAPITAL a unit — ${(r.settled.total / r.monthlyBudget).toFixed(2)}× the budget`,
-    `sinks:      names ${n(r.sinks.names)} + market ${n(r.sinks.market)} + buyout ${n(r.sinks.buyout)} + rooms ${n(r.sinks.rooms)} = ${n(r.sinks.total)} a month`,
+    `sinks:      names ${n(r.sinks.names)} + market ${n(r.sinks.market)} + buyout ${n(r.sinks.buyout)} + rooms ${n(r.sinks.rooms)} = ${n(r.sinks.total)} a month, all built`,
     `burn ratio: ${(r.burnRatio * 100).toFixed(1)}% of settled emissions (target 60% by month 12, 100% by month 24)`,
+    `unbuilt:    ${n(r.sinks.specified)} a month more once the Forge ships — ${(r.burnRatioSpecified * 100).toFixed(1)}%, which is not the number to publish yet`,
   ];
 }

@@ -18,11 +18,14 @@ const ABI = artifacts as Record<string, { abi: Abi }>;
 export interface CounterInfo {
   chainId: number;
   devnet: boolean;
-  contracts: { capital: Hex; ghostfile: Hex; stamps: Hex; names: Hex; cosmetics: Hex; market: Hex };
+  contracts: { capital: Hex; ghostfile: Hex; stamps: Hex; names: Hex; cosmetics: Hex; market: Hex; buyout: Hex; rooms: Hex };
   signer: Hex;
   statement: string;
   rpc?: string;
   listings: { listing: number; token: number; amount: number; price: number; seller: Hex }[];
+  /** the current Deep Wake season, and the sinks' prices in whole $CAPITAL (Stage 19) */
+  season?: number;
+  sinks?: { seasonPass: number; roomHour: number };
   treasury: { supply: string; burned: string; volume: string } | null;
   reason?: string;
 }
@@ -173,6 +176,50 @@ export class CounterClient {
     } finally {
       this.busy = false;
     }
+  }
+
+  /**
+   * The sinks (Stage 19): approve, then burn. Both are the player's own transactions from their own
+   * wallet, like a market buy — the game never holds the money and never needs to.
+   *
+   * The price is passed to the contract as well as to `approve`, so a steward retuning the price
+   * cannot land between the two and burn more than the player agreed to.
+   */
+  private async burnSink(kind: "season" | "rooms", target: Hex, abi: Abi, fn: string, args: (p: bigint) => unknown[], fee: number, unit: number, label: string): Promise<{ ok: boolean; reason?: string }> {
+    if (!this.wallet && !(await this.connect())) return { ok: false, reason: "no wallet" };
+    if (!this.wallet || !this.info) return { ok: false, reason: "no wallet" };
+    this.busy = true;
+    try {
+      const price = parseEther(String(fee));
+      if (!(await this.tx(this.info.contracts.capital, ABI["$CAPITAL"]!.abi, "approve", [target, price]))) return { ok: false, reason: "approve reverted" };
+      if (!(await this.tx(target, abi, fn, args(parseEther(String(unit)))))) return { ok: false, reason: `${kind} reverted` };
+      await this.op("reconcile");
+      await this.load();
+      this.say(`${label} · ${fee} $CAPITAL BURNED`);
+      return { ok: true };
+    } catch (e) {
+      const reason = String((e as Error).message ?? e).split("\n").find((l) => /revert|Error|fetch|failed/i.test(l))?.slice(0, 100) ?? "failed";
+      this.say(`${label} FAILED: ${reason}`);
+      return { ok: false, reason };
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  /** The Deep Wake pass: one season, burned, cosmetics back. */
+  async buySeason(): Promise<{ ok: boolean; reason?: string }> {
+    const price = this.info?.sinks?.seasonPass ?? 0;
+    const season = this.info?.season ?? 0;
+    if (!price) return { ok: false, reason: "no price" };
+    return this.burnSink("season", this.info!.contracts.buyout, ABI.SeasonBuyout!.abi, "buy", (p) => [BigInt(season), p], price, price, `DEEP WAKE SEASON ${season}`);
+  }
+
+  /** Private room-hours: a server of your own, burned by the hour. */
+  async buyRoomHours(hours: number): Promise<{ ok: boolean; reason?: string }> {
+    const unit = this.info?.sinks?.roomHour ?? 0;
+    const n = Math.max(1, Math.min(1000, Math.floor(hours)));
+    if (!unit) return { ok: false, reason: "no price" };
+    return this.burnSink("rooms", this.info!.contracts.rooms, ABI.RoomCredits!.abi, "buy", (p) => [BigInt(n), p], unit * n, unit, `${n} ROOM-HOUR${n === 1 ? "" : "S"}`);
   }
 
   /** A market listing: the player's own two transactions (approve the market for the rig, list); the host's market view refreshes. */
