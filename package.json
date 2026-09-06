@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json",
     "test": "vitest run",
     "probe": "tsx probe/stage1.ts",
-    "verify": "npm run typecheck && npm run test && npm run probe && npm run probe:look && npm run probe:net && npm run probe:arsenal && npm run probe:wake && npm run lint:fairness -- --quick && npm run probe:file && npm run probe:city && npm run probe:cityLife && npm run probe:mastery && npm run probe:identity",
+    "verify": "npm run typecheck && npm run test && npm run probe && npm run probe:look && npm run probe:net && npm run probe:arsenal && npm run probe:wake && npm run lint:fairness -- --quick && npm run probe:file && npm run probe:city && npm run probe:cityLife && npm run probe:mastery && npm run probe:identity && npm run probe:campaign",
     "probe:look": "tsx probe/stage3.ts",
     "host": "tsx server/node-host.ts",
     "probe:net": "tsx probe/stage2.ts",
@@ -23,7 +23,8 @@
     "probe:mastery": "tsx probe/stage7.ts",
     "certify:firmware": "tsx -e \"import(\\\"./shared/sim/ttk\\\").then(m=>{for(const r of m.certifyFirmwares()) console.log((r.ok?\\\"OK \\\":\\\"BAD\\\")+\\\" \\\"+r.firmware.padEnd(28)+r.seconds.toFixed(3)+\\\" s \\\"+r.shots+\\\" shots\\\")})\"",
     "probe:cityLife": "tsx probe/stage9b.ts",
-    "probe:identity": "tsx probe/stage8.ts"
+    "probe:identity": "tsx probe/stage8.ts",
+    "probe:campaign": "tsx probe/stage10.ts"
   },
   "dependencies": {
     "three": "^0.180.0",

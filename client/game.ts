@@ -15,6 +15,8 @@ import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
 import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
 import { glyphFor, glyphSvg } from "@shared/identity/glyph";
 import { RangeGhost } from "./ghost";
+import { Campaign } from "./campaign";
+import { emptyInput } from "@shared/sim/input";
 import { trophiesFromLedger } from "./render/hub";
 import { monikerById } from "@shared/identity/monikers";
 import type { NodeView } from "./render/wake";
@@ -102,13 +104,17 @@ export class Game {
   debtTargetId = -1;
   /** the range ghost recorder/player (hub only) */
   ghost: RangeGhost | null = null;
+  /** the campaign (Stage 10): contracts, missions, dialogue, Threat, protocols */
+  readonly campaign: Campaign;
   ghostPose: { x: number; y: number; z: number; yaw: number } | null = null;
   private fpsWindow = { t: 0, frames: 0, ticks: 0 };
 
   constructor(canvas: HTMLCanvasElement, hudRoot: HTMLElement) {
     const q = new URLSearchParams(location.search);
     this.levelId = LEVEL_IDS.includes(q.get("level") ?? "") ? q.get("level")! : DEFAULT_LEVEL_ID;
-    this.world = new World(levelById(this.levelId), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" ? "off" : "wake" });
+    // a contract or an explorable district runs without the wake and without dummy respawns (targets stay down)
+    const campaignMode = q.has("mission") || q.get("explore") === "1" || q.get("mode") === "campaign";
+    this.world = new World(levelById(this.levelId), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" || campaignMode ? "off" : "wake", dummyRespawn: !campaignMode });
     this.file = new GhostFile(() => this.online);
     this.player = this.world.addPlayer(1, "BLANK", 1, this.file.localLoadout());
     this.input = new InputController(canvas);
@@ -136,6 +142,19 @@ export class Game {
     };
     this.file.onIdentity = (f) => this.applyIdentity(f.identityView());
     this.applyIdentity(this.file.identityView());
+    this.campaign = new Campaign(this);
+    // the contracts panel's clicks
+    hudRoot.querySelector(".contracts")?.addEventListener("click", (e) => {
+      const t = (e.target as HTMLElement).closest("[data-act],[data-launch],[data-wear],[data-explore]") as HTMLElement | null;
+      if (t) this.campaign.onPanelAction(t);
+    });
+    hudRoot.querySelector(".contracts")?.addEventListener("change", (e) => {
+      const t = e.target as HTMLElement;
+      if (t.dataset.wear !== undefined) this.campaign.onPanelAction(t);
+    });
+    // the campaign starts once the file is known: at once offline, after the ledger host answers with ?shop=
+    if (this.file.shop && !this.online) this.file.onLoaded = () => this.campaign.start();
+    else this.campaign.start();
     if (this.world.level.hub) {
       this.ghost = new RangeGhost(this.world.level.hub, this.levelId, `meltdown.ghost.${this.file.account}.${this.levelId}`);
       this.ghost.onFinish = (run, improved) => {
@@ -243,6 +262,7 @@ export class Game {
     const net = new NetClient(transport, cfg.name, cfg.token ?? "", this.file.account, this.file.loadoutJson(), this.file.identityJson());
     this.net = net;
     net.onSocial = (m) => this.onSocial(m);
+    net.onMission = (m) => this.campaign.onMissionMsg(m);
     net.onFile = (f) => {
       this.file.applyServer(f);
       if (f.reason === "join" && this.net === net) {
@@ -526,7 +546,9 @@ export class Game {
     }
     if (t >= c.nextPa) {
       const district = (this.world.level.displayName ?? this.levelId).toUpperCase();
-      const line = Game.PA_LINES[c.paIndex % Game.PA_LINES.length]!.replace(/\{D\}/g, district);
+      const named = this.campaign?.threat.named && c.paIndex % 2 === 1;
+      const who = this.file.identityView().display;
+      const line = named ? `VANTAGE ADVISES ${district}: ${who} IS UNLISTED. REPORT ON SIGHT. THREAT RATING ${this.campaign.threat.rating}.` : Game.PA_LINES[c.paIndex % Game.PA_LINES.length]!.replace(/\{D\}/g, district);
       c.paIndex++;
       this.audio.pa();
       this.cityLog.push(line);
@@ -554,14 +576,18 @@ export class Game {
       this.net.sendInput(ni);
       this.world.tick++;
     } else {
-      const frame: InputFrame = this.bot ? this.bot.sample(this.world, this.player, t) : this.input.sample(t);
+      let frame: InputFrame = this.bot ? this.bot.sample(this.world, this.player, t) : this.input.sample(t);
+      // a terminal or the contracts desk has the keyboard: the Blank stands still
+      if (this.campaign?.uiOpen && !this.bot) frame = { ...emptyInput(t), yaw: frame.yaw, pitch: frame.pitch };
       this.world.step(new Map([[this.player.id, frame]]));
     }
     this.stats.ticks++;
     this.ghost?.tick(this.player);
     this.prev = this.cur;
     this.cur = snap(this.player);
-    for (const ev of this.world.drainEvents()) this.onEvent(ev);
+    const drained = this.world.drainEvents();
+    for (const ev of drained) this.onEvent(ev);
+    this.campaign?.tick(drained);
     this.footsteps();
     this.renderer.syncDummies(this.world.dummies);
   }

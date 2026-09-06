@@ -16,6 +16,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 8 | Identity & rituals | | |
 | 9 | Lethe proper: three districts, THE KERNEL horizon, district select, render budget | **done** (pulled ahead at the owner's request: "the game needs to feel and be like it's in a city") | `docs/proof/stage9/` |
 | 8 | Identity & rituals: glyphs, monikers, Debts, dossier flash, tiered kill audio, Ledger Entry receipt, Chapter rites, Deadletter Office + range ghosts | **done** | `docs/proof/stage8/` |
+| 10 | Campaign: three houses and their fixers, 7 missions + 12 gigs on a data-driven runtime, CRT testimony dialogue, Threat Rating, Kernel Protocols behind the PvP wall, weapons 7–8, endings, solo + co-op | **done** | `docs/proof/stage10/` |
 | 9b | City life: crowds, monorail, street vistas through sealed gates, ad tickers, sign flicker, steam, skyline blinkers, airship, soundscape + VANTAGE PA | **done** (the owner repeated the note; the district is now inhabited, not just built) | `docs/proof/stage9b/` |
 | 10 | Campaign | | |
 | 11 | Endgame loops | | |
@@ -538,6 +539,122 @@ slower run does not replace it; clean console.
 **Proof.** `docs/proof/stage8/` — `stage8-dossier.png`, `stage8-receipt.png`,
 `stage8-rite.png`, `stage8-debt.png`, `stage8-office.png`,
 `stage8-ghost.png`, `stage8.json`.
+
+## Stage 10 — Campaign
+
+**Goal.** MELTDOWN as a focused, browser-scale open-city RPG on top of the
+FPS: the Deadletter Office is the hub, three houses (the Estate, the
+Clockeaters, the wake cells) each speak through a fixer, ~12 side gigs
+(escrow heists, drone-convoy ambushes, wake-cell rescues, sensor-lattice
+sabotage) pay Scrip, XP, stamps and Kernel Protocols, a THREAT RATING rises
+with the file so VANTAGE hunts harder and the PA calls your moniker,
+CRT-terminal dialogue with real choices is tracked as TESTIMONY that changes
+later layouts, which handlers survive and which endings are reachable, and
+the seven-mission arc ends in the white office on a choice, not a trigger
+pull. Kernel Protocols are real campaign-only power (+damage/+health/+rate)
+drawn with blood-red Kernel filament, living in a module the PvP room never
+imports; a loadout that carries them is stripped and re-validated at PvP
+join. Weapons 7 (THE DIRECTIVE) and 8 (CLOCKEATER) unlock here. Solo and
+2-player co-op.
+
+**Files.**
+- `shared/campaign/factions.ts` — the houses and handlers (Ida Vessel,
+  Marrow, the Deacon, Wern, VANTAGE).
+- `shared/campaign/testimony.ts` — testimony gates, survivors
+  (`handlersAlive`), the four endings (two hidden) and `endingsFor`.
+- `shared/campaign/threat.ts` — `threatRating` from Depth, wins, kills,
+  missions and gigs; `threatProfile` (extra wasps/mechs, detection, named).
+- `shared/campaign/protocols.ts` — five Kernel Protocols, `protocolMods`,
+  `MAX_PROTOCOLS` (3 worn).
+- `shared/campaign/script.ts` — dialogue graphs (creation, the seven mission
+  beats, Wern's argument in THE LEAK, the white office offer) with gated
+  choices that write testimony.
+- `shared/campaign/missions.ts` — 7 missions + 12 gigs as data: typed
+  objectives (dialogue / reach / kill / destroy / survive / hold / escort),
+  variants keyed on testimony, rewards, Threat and testimony requirements.
+- `shared/campaign/runtime.ts` — the mission runtime both hosts step:
+  spawns the contract's VANTAGE presence and the Threat patrols, resolves
+  spots against the level, advances objectives from the world and the
+  tick's events, spawns waves, walks the escort, waits on dialogue; fails
+  when every Blank stays down.
+- `shared/campaign/save.ts` — the save on the file (faction, testimony,
+  done, protocols owned/worn, weapons, ending); arc order, gig offers,
+  `completeContract` (idempotent rewards), `pickFaction`, `wearProtocols`.
+- `shared/campaign/endpoint.ts` — the campaign file endpoint's one
+  validator (node host + campaign worker).
+- `shared/sim/world.ts` — `spawnWasp / spawnMech / spawnDummy`,
+  `dummyRespawn` option, `setLoadout(p, loadout, extra?)` (the only door
+  campaign power has into the sim; PvP rooms never pass it).
+- `shared/sim/white.ts` — the white office level; `LEVEL_INFO`,
+  `HIDDEN_LEVELS` in the registry; dresser materials for the hub and the
+  office.
+- `shared/weapons/manifest.ts` — `directive` (slot 7, marksman) and
+  `clockeater` (slot 8, three-round burst pistol), `CAMPAIGN_WEAPONS`;
+  ammo slots 1–8 on the wire, 4-bit slot field in the input, curricula,
+  chips (20 templates × 8 = 160), viewmodels, audio.
+- `shared/manifest/loadout.ts` — `CAMPAIGN_ONLY_FIELDS` +
+  `stripCampaignFields`; the `weapon-locked` rule (a file must own
+  `weapon:<id>`).
+- `server/room.ts` — strip-and-revalidate at join (`campaignStripped` in
+  stats); `RoomHooks` (afterStep / onAdmit / onClientMessage), `send`,
+  `accountOf`, `saveAccount`, `wakePhase` / `dummyRespawn` options.
+- `server/campaign-room.ts` — the co-op room: a Room with the runtime
+  attached through hooks; the first file is the host and resolves dialogue;
+  every file wears its own protocols and settles the contract.
+- `server/campaign-worker.ts` + `wrangler.campaign.toml` — a separate
+  Worker (the co-op DO and the campaign file route through a cross-script
+  PlayerFile binding) so the PvP Durable Object never loads the campaign;
+  `server/node-host.ts` serves both in development.
+- `shared/net/protocol.ts` v7 — `Msg.Mission` (room → clients) and
+  `Msg.Choice` (host → room).
+- `client/campaign.ts` — the controller: contracts desk (creation script,
+  the arc, fixers and gigs, protocols worn, explore), missions stepped
+  offline, scripts played on the CRT terminal, completion posted to the
+  ledger host (or a local save), Threat presence in explorable districts,
+  co-op mirror, endings.
+- `client/render/campaign.ts` — objective beam, escort figure, target
+  markers, the filament over the weapon.
+- `client/hud/hud.ts` + `hud.css` — objective block, CRT terminal (typed
+  lines, numbered choices), contracts panel, full-screen cards.
+- Tests: `tests/campaign.test.ts` (10). Probe: `probe/stage10.ts`
+  (`npm run probe:campaign`).
+
+**Acceptance (`npm run probe:campaign`, 20/20; `npm test`, 133 tests):** a
+fresh file opens the contracts desk in the Deadletter Office and the
+creation script plays; picking a house writes it to the file on the ledger
+host and the desk lists the arc, the fixers and the gigs on offer; launching
+WAKE UNLISTED travels to Lease Row with the wake off and the contract's
+VANTAGE placed; the terminal resolves, the runtime moves to B (marker up),
+reaching B starts a 20 s hold with a wave halfway, the file at E opens a
+two-way choice, and out through the plaza the contract closes, the card
+prints and the host settles it (testimony `m1:lease=burn`, +300 Scrip, XP,
+Threat 1); the endpoint settles contracts in arc order only and refuses an
+out-of-order one; worn Kernel Protocols are real in a campaign district
+(70 → 105 health, ×1.15 damage, the filament over the weapon); an
+explorable district carries the file's Threat with extra patrols and no
+wake; at Threat ≥ 3 the PA calls the file by name; a loadout carrying
+protocols joins a PvP room stripped (`campaignStripped` 1) at base health
+with no damage mod and no filament; the Directive is refused for a file
+without the unlock and spawns in slot 7 for one that owns it; co-op: two
+files see the room's contract, the first is the host, the host's choice
+reaches the room's runtime, and the contract settles on both files with the
+host's testimony; the white office has no guards, the desk is the objective,
+the endings open follow the testimony, Wern's offer plays, the chair is
+taken and the ending is written to the file; no page errors.
+
+**Proof.** `docs/proof/stage10/` — `stage10-contracts.png` (the desk),
+`stage10-terminal.png` (the CRT terminal on the street),
+`stage10-mission.png` (the hold at B), `stage10-closed.png` (the contract
+card), `stage10-filament.png` (Kernel filament over the weapon),
+`stage10-white.png` (the white office), `stage10-ending.png` (the chair),
+`stage10.json`.
+
+**The PvP wall (probe-tested).** `tests/campaign.test.ts` walks the import
+graph from `server/room.ts`, `server/worker.ts`, `server/player-do.ts` and
+`shared/manifest/loadout.ts` and asserts no path reaches
+`shared/campaign/`; the room test and the probe show a loadout carrying
+`protocols` admitted stripped at base health with no damage mod, while a
+differently named unknown field is still refused.
 
 ## Stage 9b — City life
 

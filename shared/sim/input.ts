@@ -12,13 +12,13 @@ export const Btn = {
   Alt: 1 << 9,
   Grenade: 1 << 10,
   GrenadeNext: 1 << 11,
-  /** Bits 12–14: weapon slot select (0 = no change, 1–6). */
+  /** Bits 12–15: weapon slot select (0 = no change, 1–8). */
   SlotShift: 12,
 } as const;
 
-export const SLOT_MASK = 0x7 << 12;
-export const slotOf = (buttons: number): number => (buttons >> 12) & 0x7;
-export const withSlot = (buttons: number, slot: number): number => (buttons & ~SLOT_MASK) | ((slot & 0x7) << 12);
+export const SLOT_MASK = 0xf << 12;
+export const slotOf = (buttons: number): number => (buttons >> 12) & 0xf;
+export const withSlot = (buttons: number, slot: number): number => (buttons & ~SLOT_MASK) | ((slot & 0xf) << 12);
 /** Highest valid button value (used by server validation). */
 export const MAX_BUTTONS = 0x7fff;
 

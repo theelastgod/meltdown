@@ -7,12 +7,16 @@
  *   GET  /file/<id>          → the Ghostfile (JSON)
  *   POST /file/<id>/buy      → { node } buys a Ledger Graph node with Scrip; /refund gives half back
  *   WS   /room/<name>[?lagcomp=0&ai=0&warmup=<s>&round=<s>&level=<id>]
+ *   WS   /campaign/<name>?mission=<id>   → a co-op contract (the mission runtime on the server)
+ *   POST /file/<id>/campaign → { op: faction | complete | wear | state }
  */
 import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
 import { devSeed, MemoryAccountStore } from "./accounts";
 import { buyNode, recordGhost, refundNode, validGhost } from "../shared/progression/account";
+import { campaignRequest } from "../shared/campaign/endpoint";
+import { createCampaignRoom, type CampaignRoomHandle } from "./campaign-room";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 8787);
 const rooms = new Map<string, Room>();
@@ -25,28 +29,42 @@ const log = (line: string) => {
   if (process.env.VERBOSE) console.log(line);
 };
 
+/** fixed-rate loop with drift correction */
+function startLoop(room: Room): void {
+  let next = performance.now();
+  const loop = () => {
+    const now = performance.now();
+    let n = 0;
+    while (now >= next && n < 10) {
+      room.step();
+      next += SERVER_TICK_MS;
+      n++;
+    }
+    if (n === 10) next = now; // fell far behind: resync rather than spiral
+    setTimeout(loop, Math.max(0, next - performance.now()));
+  };
+  setTimeout(loop, 0);
+}
+
 function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: number, roundSeconds?: number, level?: string): Room {
   let r = rooms.get(name);
   if (!r) {
     r = new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, onLog: (l) => log(`[${name}] ${l}`) });
     rooms.set(name, r);
-    // fixed-rate loop with drift correction
-    let next = performance.now();
-    const room = r;
-    const loop = () => {
-      const now = performance.now();
-      let n = 0;
-      while (now >= next && n < 10) {
-        room.step();
-        next += SERVER_TICK_MS;
-        n++;
-      }
-      if (n === 10) next = now; // fell far behind: resync rather than spiral
-      setTimeout(loop, Math.max(0, next - performance.now()));
-    };
-    setTimeout(loop, 0);
+    startLoop(r);
   }
   return r;
+}
+
+const campaigns = new Map<string, CampaignRoomHandle>();
+function getCampaignRoom(name: string, mission: string): CampaignRoomHandle {
+  let h = campaigns.get(name);
+  if (!h) {
+    h = createCampaignRoom({ lagComp: true, seed: 7, accounts, mission, onLog: (l) => log(`[campaign ${name}] ${l}`) });
+    campaigns.set(name, h);
+    startLoop(h.room);
+  }
+  return h;
 }
 
 const http = createServer((req, res) => {
@@ -57,7 +75,7 @@ const http = createServer((req, res) => {
     res.end();
     return;
   }
-  const file = req.url?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost))?$/);
+  const file = req.url?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|campaign))?$/);
   if (file) {
     const id = file[1]!;
     const name = "BLANK";
@@ -71,14 +89,23 @@ const http = createServer((req, res) => {
       req.on("data", (c) => (body += c));
       req.on("end", () => {
         let node = "";
-        let parsed: { node?: string; run?: unknown } = {};
+        let parsed: { node?: string; run?: unknown; op?: string } = {};
         try {
-          parsed = JSON.parse(body || "{}") as { node?: string; run?: unknown };
+          parsed = JSON.parse(body || "{}") as { node?: string; run?: unknown; op?: string };
           node = String(parsed.node ?? "");
         } catch {
           node = "";
         }
         const a = accounts.load(id, name);
+        if (file[3] === "campaign") {
+          // the campaign save: faction, contract completions (rewards), worn protocols — never the match room's business
+          const r = campaignRequest(a, parsed);
+          if (r.ok) accounts.save(a);
+          log(`[file] ${id} campaign ${String((parsed as { op?: string }).op)}: ${r.ok ? "ok" : r.reason}`);
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ ...r, account: a }));
+          return;
+        }
         if (file[3] === "ghost") {
           // a range ghost: kept when it is the best run of its course; the client never reads anything mechanical back from it
           const run = validGhost(parsed.run);
@@ -101,6 +128,7 @@ const http = createServer((req, res) => {
   if (req.url?.startsWith("/stats")) {
     const out: Record<string, unknown> = {};
     for (const [k, r] of rooms) out[k] = r.stats();
+    for (const [k, h] of campaigns) out[`campaign:${k}`] = { ...h.room.stats(), campaign: h.state() };
     res.setHeader("content-type", "application/json");
     const files: Record<string, unknown> = {};
     for (const [id, a] of accounts.accounts) files[id] = { depth: a.depth, xp: a.xp, scrip: a.wallet.scrip, matches: a.matches, ledger: a.ledger.slice(-8) };
@@ -114,13 +142,13 @@ const http = createServer((req, res) => {
 const wss = new WebSocketServer({ server: http });
 wss.on("connection", (ws: WebSocket, req) => {
   const url = new URL(req.url ?? "/", "http://x");
-  const m = url.pathname.match(/^\/room\/([a-zA-Z0-9_-]{1,32})$/);
+  const m = url.pathname.match(/^\/(room|campaign)\/([a-zA-Z0-9_-]{1,32})$/);
   if (!m) {
     ws.close(4000, "bad room");
     return;
   }
   const num = (k: string) => (url.searchParams.has(k) ? Number(url.searchParams.get(k)) : undefined);
-  const room = getRoom(m[1]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"), url.searchParams.get("level") ?? undefined);
+  const room = m[1] === "campaign" ? getCampaignRoom(m[2]!, url.searchParams.get("mission") ?? "g_escrow_row").room : getRoom(m[2]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"), url.searchParams.get("level") ?? undefined);
   ws.binaryType = "arraybuffer";
   const conn: Conn = {
     send: (buf) => {

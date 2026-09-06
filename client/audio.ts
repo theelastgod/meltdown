@@ -279,6 +279,15 @@ export class GameAudio {
         this.burst({ dur: 0.12, freq: 2600, q: 3, gain: 0.25 });
         this.tone({ dur: 0.12, from: 180, to: 120, gain: 0.2, type: "square" });
         break;
+      case "directive":
+        this.tone({ dur: 0.3, from: 130, to: 32, gain: 0.85, type: "sine" });
+        this.burst({ dur: 0.12, freq: 1800, q: 0.5, gain: 0.4 });
+        this.burst({ dur: 0.3, freq: 300, q: 0.7, gain: 0.3, type: "lowpass" });
+        break;
+      case "clockeater":
+        this.tone({ dur: 0.05, from: 260, to: 70, gain: 0.3, type: "sine" });
+        this.burst({ dur: 0.035, freq: 2800, q: 1.2, gain: 0.28 });
+        break;
       case "wasp":
         this.tone({ dur: 0.05, from: 900, to: 500, gain: 0.12, type: "square" });
         this.burst({ dur: 0.05, freq: 2400, q: 1, gain: 0.1 });

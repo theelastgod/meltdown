@@ -22,7 +22,7 @@ export function devSeed(id: string, name: string): Account {
   if (id.startsWith("sandbox")) {
     const a = sandboxAccount(id);
     a.name = name;
-    a.owned = ALL_ITEMS.map((i) => i.id);
+    a.owned = [...ALL_ITEMS.map((i) => i.id), "weapon:directive", "weapon:clockeater"];
     return a;
   }
   const a = createAccount(id, name);

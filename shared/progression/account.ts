@@ -35,6 +35,19 @@ export interface Account {
   social: Record<string, number>;
   /** range ghosts: best recorded run per range course (positions at 10 Hz) */
   ghosts: Record<string, GhostRun>;
+  /** the campaign save (Stage 10): plain data; the power it names lives in shared/campaign, which the PvP room never imports */
+  campaign?: CampaignRecord;
+}
+
+export interface CampaignRecord {
+  faction: string | null;
+  testimony: Record<string, string>;
+  missionsDone: string[];
+  gigsDone: string[];
+  protocols: string[];
+  worn: string[];
+  weapons: string[];
+  ending: string | null;
 }
 
 export interface Debt {
@@ -110,7 +123,7 @@ export function sandboxAccount(id = "sandbox"): Account {
   a.depth = 50;
   a.xp = 2_000_000;
   a.wallet.scrip = 20000;
-  a.owned = ALL_ITEMS.map((i) => i.id);
+  a.owned = [...ALL_ITEMS.map((i) => i.id), "weapon:directive", "weapon:clockeater"];
   for (const [w, m] of Object.entries(a.mastery)) {
     // rank 30 holds only past every gate: the sandbox has done the whole curriculum
     m.rank = 30;

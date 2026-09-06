@@ -22,7 +22,7 @@ import { baseSheet, type StatSheet } from "../manifest/stats";
 
 export interface WeaponState {
   slot: number;
-  /** ammo by slot (index 1..6) */
+  /** ammo by slot (index 1..8) */
   ammo: number[];
   reloadTimer: number;
   reloadTotal: number;
@@ -57,7 +57,7 @@ export interface WeaponState {
 export function createWeaponState(): WeaponState {
   return {
     slot: 1,
-    ammo: [0, WEAPONS.lease_breaker.magSize, WEAPONS.repo_hammer.magSize, WEAPONS.stack_smg.magSize, WEAPONS.longwave.magSize, WEAPONS.phage.magSize, 0],
+    ammo: [0, WEAPONS.lease_breaker.magSize, WEAPONS.repo_hammer.magSize, WEAPONS.stack_smg.magSize, WEAPONS.longwave.magSize, WEAPONS.phage.magSize, 0, WEAPONS.directive.magSize, WEAPONS.clockeater.magSize],
     reloadTimer: 0,
     reloadTotal: 0,
     reloadSeated: false,
@@ -226,7 +226,7 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
 
   // weapon swap
   const sel = slotOf(input.buttons);
-  if (sel >= 1 && sel <= 6 && sel !== w.slot) {
+  if (sel >= 1 && sel <= 8 && sel !== w.slot) {
     w.slot = sel;
     w.swapTimer = 0.35; // the swap delay is the cost; the previous weapon's cycle does not carry over
     w.fireCooldown = 0;

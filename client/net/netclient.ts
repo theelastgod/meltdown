@@ -9,7 +9,7 @@ import {
   type NetInput,
   type RemotePlayerQ,
   type Snapshot,
-  type FileMsg, type SocialMsg,
+  type FileMsg, type SocialMsg, type MissionMsg, encodeChoice,
 } from "@shared/net/protocol";
 import type { Transport } from "./transport";
 
@@ -66,6 +66,7 @@ export class NetClient {
   onStatus: ((s: NetClient["status"]) => void) | null = null;
   onFile: ((f: FileMsg) => void) | null = null;
   onSocial: ((m: SocialMsg) => void) | null = null;
+  onMission: ((m: MissionMsg) => void) | null = null;
 
   constructor(private transport: Transport, private name: string, token = "", private account = "", private loadout = "", private identity = "") {
     this.token = token;
@@ -79,6 +80,12 @@ export class NetClient {
       if (this.pingTimer) clearInterval(this.pingTimer);
       this.onStatus?.(this.status);
     };
+  }
+
+  /** Co-op: resolve a dialogue on the room (host only; the room ignores others). */
+  sendChoice(script: string, testimony: Record<string, string>): void {
+    this.transport.send(encodeChoice(script, testimony));
+    this.stats.bytesOut += 8;
   }
 
   get pendingInputs(): readonly NetInput[] {
@@ -135,6 +142,9 @@ export class NetClient {
         break;
       case "social":
         this.onSocial?.(msg.social);
+        break;
+      case "mission":
+        this.onMission?.(msg.mission);
         break;
       case "welcome":
         this.playerId = msg.playerId;

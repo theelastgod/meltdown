@@ -9,6 +9,7 @@ import { makeWetFloor } from "./wetfloor";
 import { buildSkyline, dressLevel, PALETTE, Traffic } from "./city";
 import { CityLife, flickerMaterial } from "./life";
 import { HubDressing } from "./hub";
+import { CampaignFx } from "./campaign";
 import { drawGlyph, glyphFor } from "@shared/identity/glyph";
 import { parseTag } from "@shared/identity/identity";
 import { ArsenalFx, buildViewmodel } from "./weapons";
@@ -66,6 +67,7 @@ export class Renderer {
   readonly life: CityLife;
   /** the Deadletter Office's renovation, trophies and ghost (null outside the hub) */
   readonly hub: HubDressing | null;
+  readonly campaignFx: CampaignFx;
   /** sign atlas flicker (null when the level has no signs) */
   signFlicker: { setTime: (t: number) => void } | null = null;
   private listener = new THREE.Vector3();
@@ -113,6 +115,7 @@ export class Renderer {
     this.life = new CityLife(level, skyline);
     this.scene.add(this.life.group);
     this.hub = level.hub ? new HubDressing(this.scene, level) : null;
+    this.campaignFx = new CampaignFx(this.scene, this.camera);
     if (level.traffic?.length) {
       this.traffic = new Traffic(level.traffic, level.skylineSeed ?? 5);
       this.traffic.object.layers.set(FAR_LAYER);
@@ -123,7 +126,7 @@ export class Renderer {
     this.rain.object.layers.set(FAR_LAYER);
     this.scene.add(this.rain.object);
     this.camera.layers.enable(FAR_LAYER);
-    const floor = level.boxes.find((b) => b.tag === "floor")!;
+    const floor = level.boxes.find((b) => b.tag === "floor" || b.tag === "white_floor") ?? level.boxes[0]!;
     this.scene.add(makeWetFloor(floor.max.x - floor.min.x, floor.max.z - floor.min.z, floor.max.y + 0.002, fogColor, fogDensity));
 
     this.muzzle = new THREE.PointLight(PALETTE.cyan, 0, 7, 2);
@@ -380,6 +383,7 @@ export class Renderer {
     this.traffic?.update(cityDt);
     this.listener.copy(this.camera.position);
     this.life.update(cityDt, this.listener);
+    this.campaignFx.update(cityDt);
     this.signFlicker?.setTime(this.clock);
     this.post.render(this.clock, dt);
   }

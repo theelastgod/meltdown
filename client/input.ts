@@ -43,7 +43,7 @@ export class InputController {
     document.addEventListener("keydown", (e) => {
       if (e.repeat) return;
       this.keys.add(e.code);
-      const m = e.code.match(/^Digit([1-6])$/);
+      const m = e.code.match(/^Digit([1-8])$/);
       if (m) this.slotRequest = Number(m[1]);
       if (e.code === "KeyG") this.grenadeTap = true;
       if (e.code === "KeyQ") this.grenadeNextTap = true;
@@ -51,7 +51,7 @@ export class InputController {
     });
     document.addEventListener("wheel", (e) => {
       if (!this.locked) return;
-      this.slotRequest = ((this.currentSlot - 1 + (e.deltaY > 0 ? 1 : 5)) % 6) + 1;
+      this.slotRequest = ((this.currentSlot - 1 + (e.deltaY > 0 ? 1 : 7)) % 8) + 1;
     });
     canvas.addEventListener("contextmenu", (e) => e.preventDefault());
     document.addEventListener("keyup", (e) => this.keys.delete(e.code));

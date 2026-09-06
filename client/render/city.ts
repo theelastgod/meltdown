@@ -238,6 +238,12 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
     glow: basic(0x9ce8ff, 0.18),
     padStart: basic(0x0f3a22),
     padEnd: basic(0x3a0f2c),
+    white: std({ color: 0xd9dde3, roughness: 0.92, metalness: 0.0 }),
+    whiteDesk: std({ color: 0xe9e5dc, roughness: 0.6, metalness: 0.05 }),
+    whiteRug: std({ color: 0xb9b3a6, roughness: 1 }),
+    whiteFloor: std({ color: 0xcfd3d8, roughness: 0.35, metalness: 0.1 }),
+    glassWall: new THREE.MeshBasicMaterial({ color: 0x9fd8e8, transparent: true, opacity: 0.3, depthWrite: false }),
+    page: basic(0xfff6d5),
     shopA: basic(castColor, 0.42),
     shopB: basic(altColor, 0.42),
     shopC: basic(cast === "amber" ? PALETTE.amber : PALETTE.yellow, 0.22),
@@ -349,6 +355,15 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
         batch.box(b, M.concrete);
         neonPerimeter(neon, b, PALETTE.violet, b.max.y + 0.03);
         neon.box(0.07, sy - 0.6, 0.07, b.max.x + 0.05, cy, cz, PALETTE.violet);
+        break;
+      // the white office
+      case "white_wall":
+      case "white_floor":
+      case "white_desk":
+        batch.box(b, b.tag === "white_desk" ? M.whiteDesk : b.tag === "white_floor" ? M.whiteFloor : M.white, 4);
+        break;
+      case "glass_wall":
+        batch.box(b, M.glassWall);
         break;
       // the Deadletter Office
       case "desk":
@@ -561,6 +576,15 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
     switch (d.tag) {
       case "ceiling":
         batch.box(d, M.base, 4);
+        break;
+      case "white_ceiling":
+        batch.box(d, M.white, 4);
+        break;
+      case "white_rug":
+        batch.box(d, M.whiteRug);
+        break;
+      case "directive_page":
+        batch.box(d, M.page);
         break;
       case "strip_cy":
       case "strip_mg":

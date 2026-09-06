@@ -60,6 +60,22 @@ export function buildViewmodel(id: WeaponId): THREE.Group {
       add(new THREE.BoxGeometry(0.012, 0.012, 0.36), strip, -0.02, -0.005, -0.3);
       add(new THREE.SphereGeometry(0.03, 8, 8), strip, 0, -0.02, -0.51);
       break;
+    case "directive":
+      // a long marksman rifle: slab receiver, long barrel, a boxy optic, an amber strip down the rail
+      add(new THREE.BoxGeometry(0.09, 0.12, 0.5), body, 0, 0, 0);
+      add(new THREE.CylinderGeometry(0.02, 0.02, 0.62, 8).rotateX(Math.PI / 2), dark, 0, 0.03, -0.52);
+      add(new THREE.BoxGeometry(0.05, 0.06, 0.16), dark, 0, 0.1, -0.02);
+      add(new THREE.BoxGeometry(0.012, 0.012, 0.44), strip, 0.05, 0.04, -0.2);
+      add(new THREE.BoxGeometry(0.06, 0.18, 0.08), body, 0, -0.13, 0.12);
+      add(new THREE.BoxGeometry(0.03, 0.03, 0.03), new THREE.MeshBasicMaterial({ color: 0xff2a3a }), 0, 0.1, -0.11);
+      break;
+    case "clockeater":
+      // a burst pistol: short, wide, three magenta slits across the slide
+      add(new THREE.BoxGeometry(0.08, 0.09, 0.26), body, 0, 0, 0);
+      add(new THREE.BoxGeometry(0.03, 0.03, 0.12), dark, 0, 0.02, -0.18);
+      add(new THREE.BoxGeometry(0.06, 0.15, 0.06), body, 0, -0.11, 0.06);
+      for (let i = 0; i < 3; i++) add(new THREE.BoxGeometry(0.085, 0.01, 0.02), strip, 0, 0.05, -0.08 + i * 0.05);
+      break;
   }
   g.position.set(0.28, -0.26, -0.55);
   g.rotation.y = -0.04;

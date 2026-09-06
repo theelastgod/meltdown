@@ -35,7 +35,7 @@ import {
   type NetEvent,
   type NetInput,
   type Snapshot, encodeSocial, type DossierEntry, type SocialMsg } from "../shared/net/protocol";
-import { DEFAULT_LOADOUT, validateLoadout, type Loadout } from "../shared/manifest/loadout";
+import { DEFAULT_LOADOUT, validateLoadout, type Loadout, stripCampaignFields } from "../shared/manifest/loadout";
 import { applyMatch, ranksOf, type Account } from "../shared/progression/account";
 import { ProgressionTracker, type ProgressNote } from "./progression";
 import { assertClean, displayName, identityTag, publicIdentity, type PublicIdentity } from "../shared/identity/identity";
@@ -90,7 +90,21 @@ interface ClientRec {
   debtClearedThisRound: boolean;
 }
 
+/** Hooks a host may attach to run a mode on top of the room without the room importing it (the campaign co-op room). */
+export interface RoomHooks {
+  /** after every tick, with the tick's sim events */
+  afterStep?: (room: Room, events: readonly SimEvent[]) => void;
+  /** a client was admitted (its player exists) */
+  onAdmit?: (room: Room, playerId: number, account: Account | null) => void;
+  /** a client message the room does not handle itself */
+  onClientMessage?: (room: Room, playerId: number, msg: { type: "choice"; script: string; testimony: Record<string, string> }) => void;
+}
+
 export interface RoomOptions {
+  hooks?: RoomHooks;
+  /** "warmup" (the wake) or "off" (a campaign contract) */
+  wakePhase?: "warmup" | "off";
+  dummyRespawn?: boolean;
   lagComp?: boolean;
   ai?: boolean;
   seed?: number;
@@ -122,6 +136,7 @@ export interface RoomStats {
   settlements: number;
   /** social messages sent, by kind (dossier / debt / rite) */
   social: Record<string, number>;
+  campaignStripped: number;
   loadoutRejections: string[];
   shotDiag: Record<string, number>;
   traceLog: unknown[];
@@ -167,8 +182,11 @@ export class Room {
       warmupSeconds: opts.warmupSeconds ?? 20,
       roundSeconds: opts.roundSeconds ?? 360,
       level: opts.level ?? "",
+      hooks: opts.hooks ?? {},
+      wakePhase: opts.wakePhase ?? "warmup",
+      dummyRespawn: opts.dummyRespawn ?? true,
     };
-    this.world = new World(levelById(this.opts.level || undefined), { ai: this.opts.ai, seed: this.opts.seed, wakePhase: "warmup", warmupSeconds: this.opts.warmupSeconds, roundSeconds: this.opts.roundSeconds });
+    this.world = new World(levelById(this.opts.level || undefined), { ai: this.opts.ai, seed: this.opts.seed, wakePhase: this.opts.wakePhase, warmupSeconds: this.opts.warmupSeconds, roundSeconds: this.opts.roundSeconds, dummyRespawn: this.opts.dummyRespawn });
     this.startedAt = this.opts.now();
     this.lastRateAt = this.startedAt;
   }
@@ -198,6 +216,10 @@ export class Room {
       return;
     }
     if (!rec) return this.kickConn(conn, "message before join");
+    if (msg.type === "choice") {
+      this.opts.hooks?.onClientMessage?.(this, rec.playerId, msg);
+      return;
+    }
     if (msg.type === "ping") {
       conn.send(encodePong(msg.clientTime, this.tick));
       return;
@@ -363,6 +385,13 @@ export class Room {
         return this.rejectLoadout(conn, "unparseable: loadout is not JSON");
       }
     }
+    // campaign-only power never enters a PvP room: strip it, then validate what is left like any other loadout
+    const strip = stripCampaignFields(raw);
+    raw = strip.raw;
+    if (strip.stripped.length) {
+      this.campaignStripped += strip.stripped.length;
+      this.opts.onLog(`stripped campaign fields [${strip.stripped.join(", ")}] from ${safeName}'s loadout at join`);
+    }
     const owned = account?.owned ?? [];
     const depth = account?.depth ?? 1;
     const v = validateLoadout(raw, owned, depth, account ? ranksOf(account) : {});
@@ -417,7 +446,27 @@ export class Room {
     conn.send(encodeFile(this.fileMsg(rec, [], "join", joinNote)));
     this.resolveDebts();
     for (const other of this.clients.values()) if (other !== rec) other.pendingEvents.push({ type: "join", playerId, name: safeName });
+    this.opts.hooks?.onAdmit?.(this, playerId, account);
     this.opts.onLog(`player ${playerId} (${safeName}) joined as ${account?.id ?? "guest"} depth ${depth} · ${v.loadout.primary}/${v.loadout.secondary} · attested [${v.loadout.attested.join(",")}]${v.loadout.keystone ? " · keystone " + v.loadout.keystone : ""}`);
+  }
+
+  /** Send a prebuilt message to one player or everyone (hooks use this). */
+  send(buf: ArrayBuffer, playerId?: number): void {
+    for (const rec of this.clients.values()) if (playerId === undefined || rec.playerId === playerId) rec.conn?.send(buf);
+  }
+
+  /** The file behind a player (hooks apply campaign rewards through it). */
+  accountOf(playerId: number): Account | null {
+    return this.clients.get(playerId)?.account ?? null;
+  }
+
+  playerIds(): number[] {
+    return [...this.clients.keys()];
+  }
+
+  saveAccount(a: Account): void {
+    const saved = this.opts.accounts?.save(a);
+    if (saved instanceof Promise) saved.catch(() => {});
   }
 
   private rejectLoadout(conn: Conn, why: string): void {
@@ -451,6 +500,8 @@ export class Room {
   // ---- identity & rituals (Stage 8) ----
 
   private social: Record<string, number> = {};
+  /** campaign-only loadout fields stripped at join (stats) */
+  private campaignStripped = 0;
 
   /** Every social send passes the leak scanner: a payload naming a stat, item, chip, firmware or weapon never leaves. */
   private sendSocial(rec: ClientRec, msg: SocialMsg): void {
@@ -686,6 +737,7 @@ export class Room {
       if (!ne) continue;
       for (const rec of this.clients.values()) rec.pendingEvents.push(ne);
     }
+    this.opts.hooks?.afterStep?.(this, tickEvents);
     if (this.tick % SNAPSHOT_EVERY === 0) this.broadcast();
     const dt = performance.now() - t0;
     this.tickTimes.push(dt);
@@ -878,6 +930,7 @@ export class Room {
       kicks: this.kicks,
       settlements: this.settlements,
       social: { ...this.social },
+      campaignStripped: this.campaignStripped,
       loadoutRejections: this.loadoutRejections.slice(),
       inputsRejected,
       bytesOut,

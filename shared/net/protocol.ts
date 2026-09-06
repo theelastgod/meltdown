@@ -27,7 +27,21 @@ export const Msg = {
   File: 14,
   /** Identity & rituals (JSON payload): the pre-match dossier, Debts, Chapter rites. Carries nothing mechanical. */
   Social: 15,
+  /** Campaign co-op: mission state / events from the room (JSON). */
+  Mission: 16,
+  /** Campaign co-op: a dialogue resolution from the host player (JSON). */
+  Choice: 4,
 } as const;
+
+/** Co-op mission traffic (the campaign room only; the PvP room never sends this). */
+export interface MissionMsg {
+  view: unknown;
+  events: unknown[];
+  /** the player who resolves dialogue (the first to join) */
+  hostId: number;
+  /** contract completion applied to every file (rewards) */
+  settled?: { id: string; ok: boolean; reason?: string }[];
+}
 
 /** One file as the dossier shows it: identity only (see shared/identity/identity.ts). */
 export interface DossierEntry {
@@ -172,7 +186,9 @@ export type NetEvent =
 
 export const FX = { explode: 1, cloud: 2, emp: 3, flagged: 4, stun: 5, swap: 6, melee: 7, mechBeam: 8, hurt: 9, waspDeath: 10, mechDeath: 11, throw: 12, chargeFull: 13, lunge: 14, nodeFlip: 15, nodeContest: 16, kernelPulse: 17, phase: 18, fullWake: 19 } as const;
 /** weapon numbering on the wire: 0 wasp/none, 1..6 slots, 7 grenade, 8 mech */
-export const WEAPON_WIRE: Record<string, number> = { wasp: 0, lease_breaker: 1, repo_hammer: 2, stack_smg: 3, longwave: 4, phage: 5, shock_baton: 6, frag: 7, smoke: 7, emp: 7, grenade: 7, mech: 8 };
+export const WEAPON_WIRE: Record<string, number> = { wasp: 0, lease_breaker: 1, repo_hammer: 2, stack_smg: 3, longwave: 4, phage: 5, shock_baton: 6, frag: 7, smoke: 7, emp: 7, grenade: 7, mech: 8, directive: 9, clockeater: 10 };
+/** ammo slots carried on the wire: index 0 unused, 1–8 the weapon slots */
+export const AMMO_SLOTS = 9;
 
 export interface Snapshot {
   tick: number;
@@ -316,6 +332,21 @@ export function encodeFile(f: FileMsg): ArrayBuffer {
   return w.done();
 }
 
+export function encodeMission(m: MissionMsg): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Mission);
+  w.str(JSON.stringify(m));
+  return w.done();
+}
+
+/** Client → room: the host resolved a dialogue (script id + the testimony chosen). */
+export function encodeChoice(script: string, testimony: Record<string, string>): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Choice);
+  w.str(JSON.stringify({ script, testimony }));
+  return w.done();
+}
+
 export function encodeSocial(m: SocialMsg): ArrayBuffer {
   const w = new W();
   w.u8(Msg.Social);
@@ -375,7 +406,7 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     w.u32(l.hits);
     w.u8(l.team);
     w.u8(l.slot);
-    for (let i = 0; i < 7; i++) w.u8(l.ammo[i] ?? 0);
+    for (let i = 0; i < AMMO_SLOTS; i++) w.u8(l.ammo[i] ?? 0);
     w.u8(l.reloadSeated);
     w.u8(l.charging);
     w.u16(l.shotIndex);
@@ -451,6 +482,7 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
 
 export type ClientMessage =
   | { type: "join"; version: number; name: string; token: string; account: string; loadout: string; identity: string }
+  | { type: "choice"; script: string; testimony: Record<string, string> }
   | { type: "input"; ackTick: number; inputs: NetInput[] }
   | { type: "ping"; clientTime: number };
 
@@ -467,6 +499,12 @@ export function decodeClientMessage(buf: ArrayBuffer): ClientMessage | null {
       const loadout = r.remaining > 0 ? r.str() : "";
       const identity = r.remaining > 0 ? r.str() : "";
       return { type: "join", version, name, token, account, loadout, identity };
+    }
+    if (t === Msg.Choice) {
+      const c = JSON.parse(r.str()) as { script?: unknown; testimony?: unknown };
+      const testimony: Record<string, string> = {};
+      if (c.testimony && typeof c.testimony === "object") for (const [k, v] of Object.entries(c.testimony as Record<string, unknown>)) if (typeof v === "string" && /^[a-z0-9:_]{1,32}$/.test(k) && /^[a-z0-9_]{1,32}$/.test(v)) testimony[k] = v;
+      return { type: "choice", script: String(c.script ?? "").slice(0, 48), testimony };
     }
     if (t === Msg.Input) {
       const ackTick = r.u32();
@@ -492,7 +530,8 @@ export type ServerMessage =
   | { type: "pong"; clientTime: number; tick: number }
   | { type: "kick"; reason: string }
   | { type: "file"; file: FileMsg }
-  | { type: "social"; social: SocialMsg };
+  | { type: "social"; social: SocialMsg }
+  | { type: "mission"; mission: MissionMsg };
 
 /** Decode a server message. `baselines` resolves the acked snapshot a delta was built on. */
 export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) => Snapshot | null): ServerMessage | null {
@@ -504,6 +543,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     if (t === Msg.Kick) return { type: "kick", reason: r.str() };
     if (t === Msg.File) return { type: "file", file: JSON.parse(r.str()) as FileMsg };
     if (t === Msg.Social) return { type: "social", social: JSON.parse(r.str()) as SocialMsg };
+    if (t === Msg.Mission) return { type: "mission", mission: JSON.parse(r.str()) as MissionMsg };
     if (t !== Msg.Snapshot) return null;
     const tick = r.u32();
     const baselineTick = r.u32();
@@ -519,7 +559,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
       l.team = r.u8();
       l.slot = r.u8();
       const ammo: number[] = [];
-      for (let i = 0; i < 7; i++) ammo.push(r.u8());
+      for (let i = 0; i < AMMO_SLOTS; i++) ammo.push(r.u8());
       l.reloadSeated = r.u8(); l.charging = r.u8(); l.shotIndex = r.u16(); l.magSeed = r.u32(); l.magCount = r.u16(); l.altActive = r.u8(); l.lungeHit = r.u8();
       const grenades: number[] = [];
       for (let i = 0; i < 3; i++) grenades.push(r.u8());

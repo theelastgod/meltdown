@@ -62,6 +62,14 @@ export interface GameHook {
   buy: (nodeId: string, refund?: boolean) => Promise<{ ok: boolean; reason?: string }>;
   /** Sign the post-match receipt (Enter). */
   sign: () => boolean;
+  /** Campaign (Stage 10): state, dialogue advance/choose, contracts desk, launch, faction, protocols. */
+  campaign: () => ReturnType<Game["campaign"]["view"]>;
+  dialogueAdvance: (choice?: number) => boolean;
+  contracts: (on?: boolean) => void;
+  launch: (id: string) => { ok: boolean; reason?: string };
+  pickFaction: (f: "estate" | "clockeaters" | "cells") => Promise<boolean>;
+  wear: (ids: string[]) => Promise<string[]>;
+  playScript: (id: string) => void;
   /** Equip a moniker (worn online only if earned). */
   setMoniker: (id: string | null) => void;
   events: () => SimEvent[];
@@ -153,6 +161,13 @@ window.__game = {
   toggleGraph: (on) => game.file.toggleGraph(on),
   buy: (id, refund) => game.file.buy(id, refund),
   sign: () => game.sign(),
+  campaign: () => game.campaign.view(),
+  dialogueAdvance: (choice) => game.campaign.advance(choice ?? -1),
+  contracts: (on) => game.campaign.toggleContracts(on),
+  launch: (id) => game.campaign.launch(id),
+  pickFaction: (f) => game.campaign.chooseFaction(f),
+  wear: (ids) => game.campaign.wear(ids),
+  playScript: (id) => game.campaign.playScript(id, () => {}),
   setMoniker: (id) => game.file.setMoniker(id),
   events: () => game.recentEvents.slice(),
   clearEvents: () => {

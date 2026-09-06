@@ -207,3 +207,51 @@ html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; f
 #hud .rite .rt { font-size: 42px; letter-spacing: 0.3em; text-shadow: 0 0 18px rgba(255,227,74,0.6); }
 #hud .rite .rlines { font-size: 12px; color: rgba(255,227,74,0.75); letter-spacing: 0.1em; line-height: 1.8; }
 #hud .file select { background: rgba(0,0,0,0.5); color: var(--cy); border: 1px solid rgba(53,242,255,0.4); font-family: var(--mono); font-size: 10px; }
+
+/* Stage 10 — campaign */
+#hud .mission .prog { color: var(--ye); margin-left: 6px; }
+#hud .terminal { left: 50%; bottom: 120px; transform: translateX(-50%); width: 640px; max-width: 92vw; padding: 10px 14px; pointer-events: auto; }
+#hud .terminal .th { font-size: 12px; letter-spacing: 0.14em; border-bottom: 1px solid rgba(53,242,255,0.35); padding-bottom: 4px; margin-bottom: 6px; }
+#hud .terminal .tl { font-size: 12px; line-height: 1.6; min-height: 40px; color: #dff9ff; }
+#hud .terminal .tl .cur { animation: blink 0.6s steps(2) infinite; }
+#hud .terminal .tc { margin-top: 6px; }
+#hud .terminal .ch { padding: 3px 6px; margin: 2px 0; border: 1px solid rgba(53,242,255,0.3); color: var(--cy); }
+#hud .terminal .ch b { color: var(--ye); margin-right: 6px; }
+#hud .terminal .tf { margin-top: 6px; font-size: 9px; color: rgba(53,242,255,0.5); text-align: right; }
+#hud .terminal.am { border-color: var(--am); color: var(--am); } #hud .terminal.am .th { border-color: rgba(255,176,46,0.4); }
+#hud .terminal.mg { border-color: var(--mg); color: var(--mg); } #hud .terminal.mg .th { border-color: rgba(255,62,201,0.4); }
+#hud .terminal.red { border-color: #ff1e3c; color: #ff6b7a; text-shadow: 0 0 6px rgba(255,30,60,0.6); } #hud .terminal.red .th { border-color: rgba(255,30,60,0.5); } #hud .terminal.red .tl { color: #ffd6da; }
+#hud .terminal.ye { border-color: var(--ye); color: var(--ye); }
+#hud .terminal.gr { border-color: var(--gr); color: var(--gr); }
+#hud .contracts { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 820px; max-width: 96vw; max-height: 90vh; overflow: auto; pointer-events: auto; padding: 10px 14px; background: rgba(3,5,9,0.94); border: 1px solid var(--am); color: var(--am); text-shadow: 0 0 4px rgba(255,176,46,0.4); box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 0 18px rgba(255,176,46,0.2); }
+#hud .contracts .hd { font-size: 12px; letter-spacing: 0.12em; margin-bottom: 4px; }
+#hud .contracts .hd .x { float: right; color: var(--mg); cursor: pointer; }
+#hud .contracts .ln { margin: 2px 0; color: rgba(255,176,46,0.9); }
+#hud .contracts .ln b { color: var(--ye); }
+#hud .contracts .dim { color: rgba(53,242,255,0.55); }
+#hud .contracts .cy { color: var(--cy); cursor: pointer; }
+#hud .contracts .mg { color: var(--mg); }
+#hud .contracts .red { color: #ff1e3c; }
+#hud .contracts .cols { display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; margin-top: 6px; }
+#hud .contracts .sh { color: var(--cy); letter-spacing: 0.1em; margin: 8px 0 4px; border-bottom: 1px solid rgba(53,242,255,0.35); }
+#hud .contracts .ct { padding: 4px 6px; margin: 3px 0; border: 1px solid rgba(255,176,46,0.3); cursor: pointer; }
+#hud .contracts .ct:hover { border-color: var(--am); }
+#hud .contracts .ct.off { opacity: 0.5; cursor: default; }
+#hud .contracts .ct .nm { color: #ffe9c2; }
+#hud .contracts .ct .lv { float: right; font-size: 9.5px; color: rgba(53,242,255,0.6); }
+#hud .contracts .ct .br { font-size: 9.5px; color: rgba(255,176,46,0.75); margin-top: 2px; }
+#hud .contracts .ct .rw { font-size: 9.5px; color: var(--ye); margin-top: 2px; }
+#hud .contracts .fx { margin: 6px 0; padding: 4px 6px; border-left: 2px solid; }
+#hud .contracts .fx.cy { border-color: var(--cy); } #hud .contracts .fx.mg { border-color: var(--mg); } #hud .contracts .fx.am { border-color: var(--am); }
+#hud .contracts .fh { color: #ffe9c2; margin-bottom: 3px; }
+#hud .contracts .pr { display: block; padding: 3px 4px; margin: 2px 0; border: 1px solid rgba(255,30,60,0.35); color: #ffb3bb; cursor: pointer; }
+#hud .contracts .pr.worn { border-color: #ff1e3c; box-shadow: 0 0 8px rgba(255,30,60,0.35); }
+#hud .contracts .pr.off { opacity: 0.4; cursor: default; }
+#hud .contracts .pr b { color: #ff1e3c; }
+#hud .card { position: absolute; inset: 0; background: rgba(2,3,6,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; text-align: center; color: var(--am); }
+#hud .card[hidden] { display: none; }
+#hud .card .ct { font-size: 28px; letter-spacing: 0.3em; text-shadow: 0 0 16px rgba(255,176,46,0.5); }
+#hud .card .cl { font-size: 12px; line-height: 1.9; letter-spacing: 0.08em; color: rgba(255,227,74,0.8); }
+#hud .card.mg { color: var(--mg); } #hud .card.mg .cl { color: rgba(255,62,201,0.8); }
+#hud .card.ye { color: var(--ye); }
+#hud .card.cy { color: var(--cy); }

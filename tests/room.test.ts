@@ -89,10 +89,16 @@ describe("room — loadout validation at spawn", () => {
     const c = join(room, "X", "fresh-2", { primary: "phage", secondary: "shock_baton", attested: [] });
     expect(c.kick()?.reason).toMatch(/weapon-depth/);
   });
-  it("refuses a Kernel Protocol smuggled in as an unknown field — refused, not stripped", () => {
+  it("strips Kernel Protocols at join and re-validates what is left; any other unknown field is still refused", () => {
     const room = mk();
-    const c = join(room, "X", "sandbox-d", { ...legal, protocols: ["kp_redline"] });
-    expect(c.kick()?.reason).toMatch(/unknown-field: field "protocols"/);
+    const c = join(room, "X", "sandbox-d", { ...legal, protocols: ["filament_core"] });
+    expect(c.kick()).toBeUndefined();
+    expect(room.loadoutRejections.length).toBe(0);
+    expect(room.stats().campaignStripped).toBe(1);
+    const admitted = c.file()[0]!.file.loadout as unknown as Record<string, unknown>;
+    expect(admitted["protocols"]).toBeUndefined();
+    const d = join(room, "Y", "sandbox-e", { ...legal, kernel: ["filament_core"] });
+    expect(d.kick()?.reason).toMatch(/unknown-field: field "kernel"/);
     expect(room.loadoutRejections.length).toBe(1);
   });
   it("a guest with no file and no loadout spawns the default build", () => {

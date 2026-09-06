@@ -1,0 +1,155 @@
+{
+  "results": {
+    "files": {
+      "fresh": {
+        "faction": "cells",
+        "testimony": {
+          "faction": "cells",
+          "m1:lease": "burn"
+        },
+        "missionsDone": [
+          "m1_wake_unlisted"
+        ],
+        "gigsDone": [],
+        "protocols": [],
+        "worn": [],
+        "weapons": [],
+        "ending": null
+      },
+      "arc": {
+        "faction": "cells",
+        "testimony": {
+          "faction": "cells",
+          "m3:volatility": "hold",
+          "m4:directive": "kept",
+          "m4:vessel": "shield",
+          "m7:ending": "chair"
+        },
+        "missionsDone": [
+          "m1_wake_unlisted",
+          "m2_deadletter_run",
+          "m3_repo_volatility",
+          "m4_the_leak",
+          "m5_blind_the_model",
+          "m6_trial_by_data",
+          "m7_white_office"
+        ],
+        "gigsDone": [],
+        "protocols": [
+          "red_lease",
+          "filament_core",
+          "wern_pulse",
+          "blood_ledger",
+          "directive_optic"
+        ],
+        "worn": [],
+        "weapons": [
+          "directive"
+        ],
+        "ending": "chair"
+      }
+    }
+  },
+  "checks": [
+    {
+      "name": "the contracts desk opens on a fresh file with the creation script: no house yet, three to choose from",
+      "pass": true,
+      "detail": "dialogue creation:wake · faction null · next m1_wake_unlisted"
+    },
+    {
+      "name": "picking a house at the terminal writes it to the file on the ledger host and the desk lists the arc, the fixers and the gigs",
+      "pass": true,
+      "detail": "script creation:wake → creation:wake → creation:cells → creation:cells · faction cells · offers [g_escrow_row, g_convoy_docks, g_lattice_row] · threat 0"
+    },
+    {
+      "name": "launching a contract travels to its district with the wake off and its VANTAGE presence placed; the first objective is the street",
+      "pass": true,
+      "detail": "level lease_row · wake off · 5 wasps · objective \"READ THE STREET\" · dialogue m1_intro"
+    },
+    {
+      "name": "the terminal resolves and the runtime moves to the escrow terminal at B (marker up)",
+      "pass": true,
+      "detail": "objective \"REACH THE ESCROW TERMINAL AT B\" (reach)"
+    },
+    {
+      "name": "reaching B starts the hold: 20 s while the file decrypts",
+      "pass": true,
+      "detail": "objective \"HOLD THE TERMINAL WHILE THE FILE DECRYPTS\" (survive) 0.5/20"
+    },
+    {
+      "name": "the hold completes and VANTAGE responded with a wave during it; next: the file at E",
+      "pass": true,
+      "detail": "objective \"TAKE THE FILE FROM THE CABINET AT E\" · wasps 5 → 7 · OBJECTIVE 3 · HOLD THE TERMINAL WHILE THE FILE DECRYPTS | OBJECTIVE 4 · TAKE THE FILE FROM THE CABINET AT E"
+    },
+    {
+      "name": "the file at E opens a terminal with a real choice: burn it or keep it",
+      "pass": true,
+      "detail": "dialogue m1_file:a · choices 2"
+    },
+    {
+      "name": "out through the plaza: the contract closes, the card prints, and the ledger host settles it — testimony, Scrip, XP, Threat",
+      "pass": true,
+      "detail": "status complete · settled true · card \"CONTRACT CLOSED · WAKE UNLISTED\" · file: missions [m1_wake_unlisted] testimony {\"faction\":\"cells\",\"m1:lease\":\"burn\"} scrip 300"
+    },
+    {
+      "name": "the endpoint settles contracts in arc order only, hands out Kernel Protocols, and wears at most what the file owns",
+      "pass": true,
+      "detail": "protocols [red_lease, filament_core] worn [red_lease, filament_core] · out-of-order m5 refused"
+    },
+    {
+      "name": "Kernel Protocols worn in a campaign district are real: +35 health (70 → 105), +15% damage on the sheet, and the blood-red filament over the weapon",
+      "pass": true,
+      "detail": "maxHealth 105 · damage ×1.15 · filament true"
+    },
+    {
+      "name": "an explorable district carries the file's Threat: extra patrols on top of the district's own, no wake",
+      "pass": true,
+      "detail": "threat 3 \"NAMED · THE PA KNOWS YOUR MONIKER\" · wasps 3 → 4"
+    },
+    {
+      "name": "at Threat ≥ 3 the PA calls the file by name and prices it",
+      "pass": true,
+      "detail": "threat 7 · display BLANK · PA: VANTAGE ADVISES LEASE ROW: BLANK IS UNLISTED. REPORT ON SIGHT. THREAT RATING 7."
+    },
+    {
+      "name": "a loadout carrying Kernel Protocols joins a PvP room stripped and re-validated: admitted at base health, no damage mod, no filament",
+      "pass": true,
+      "detail": "stripped 1 · maxHealth 70 · damage ×1 · filament false"
+    },
+    {
+      "name": "weapons 7–8: the Directive is refused for a file without the unlock and spawns (slot 7, burst-free marksman) for one that owns it; it fires",
+      "pass": true,
+      "detail": "locked: \"LOADOUT REJECTED: weapon-locked: directive unlocks in the campaign; weapon-locked: clockeater unlocks in the campaign\" · armed: directive slot 7 rpm 150 · shots 1 · ammo 11"
+    },
+    {
+      "name": "co-op: both files see the room's contract; the first to join is the host and holds the terminal",
+      "pass": true,
+      "detail": "A host true dialogue m1_intro · B host false dialogue undefined · objective \"READ THE STREET\""
+    },
+    {
+      "name": "the host's choice reaches the room's runtime and the contract moves on",
+      "pass": true,
+      "detail": "room: choices 1 · objective \"REACH THE ESCROW TERMINAL AT B\" (reach)"
+    },
+    {
+      "name": "co-op: the contract completes on the room and settles on both files with the host's testimony",
+      "pass": true,
+      "detail": "room complete · settled true,true · files [m1_wake_unlisted] [m1_wake_unlisted] · testimony keep"
+    },
+    {
+      "name": "the white office: no guards, the desk is the objective, and the endings open follow the testimony",
+      "pass": true,
+      "detail": "wasps 0 · objective \"APPROACH THE DESK\" · endings [wipe, chair]"
+    },
+    {
+      "name": "Wern's offer plays at the desk; the final input is a choice, the chair is taken, and the ending is written to the file",
+      "pass": true,
+      "detail": "dialogue m7_office:a → m7_office:a → m7_office:b → m7_office:b → m7_office:c → m7_office:c · ending chair · card \"TAKE THE CHAIR\" · file ending chair, 7/7"
+    },
+    {
+      "name": "no page errors across the desk, two districts, the PvP room, the co-op room and the white office",
+      "pass": true,
+      "detail": "clean console"
+    }
+  ]
+}

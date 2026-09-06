@@ -31,6 +31,7 @@ jobs:
       - run: npm run certify:firmware
       - run: npm run probe:mastery
       - run: npm run probe:identity
+      - run: npm run probe:campaign
       - uses: actions/upload-artifact@v4
         if: always()
         with:

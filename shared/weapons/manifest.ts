@@ -4,7 +4,9 @@
  * resolution, and by the TTK harness in CI. Stage 6 folds this into the
  * shared stat manifest with the Fairness Lint.
  */
-export type WeaponId = "lease_breaker" | "repo_hammer" | "stack_smg" | "longwave" | "phage" | "shock_baton";
+export type WeaponId = "lease_breaker" | "repo_hammer" | "stack_smg" | "longwave" | "phage" | "shock_baton" | "directive" | "clockeater";
+/** Weapons 7–8 unlock in the campaign (the arc and a Clockeater gig); a file must own `weapon:<id>` to spawn with one. */
+export const CAMPAIGN_WEAPONS: readonly WeaponId[] = ["directive", "clockeater"];
 export type WeaponClass = "hitscan" | "pellet" | "charge" | "launcher" | "melee";
 export type AltKind = "ads" | "slug" | "brace" | "quickshot" | "sticky" | "lunge";
 
@@ -201,6 +203,48 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     tracer: 0x35f2ff,
     melee: { reach: 1.6, arc: 0.6, chainRange: 2.5, chainDamage: 15, stun: 0.5 },
     alt: { kind: "lunge", damage: 60, cooldown: 4, lungeSpeed: 20, lungeTime: 0.2 },
+    ttkBand: TTK_BAND,
+  },
+  // ---- campaign unlocks: weapon 7 from THE LEAK, weapon 8 from the Clockeaters' depot heist ----
+  directive: {
+    id: "directive",
+    slot: 7,
+    name: "THE DIRECTIVE",
+    cls: "hitscan",
+    rpm: 150,
+    damage: 34,
+    headMult: 2.0,
+    legMult: 0.85,
+    magSize: 12,
+    reloadTime: 2.2,
+    seatFrac: 0.65,
+    pellets: 1,
+    spread: 0.0012,
+    range: R(35, 45, 75, 0.75, 140),
+    recoil: { vertical: 0.028, horizontal: 0.006, pattern: [[0, 1], [0.3, 1], [-0.3, 1]], jitter: 0.001, recover: 7 },
+    tracer: 0xffd166,
+    alt: { kind: "ads", spreadMult: 0.25, recoilMult: 0.7, moveMult: 0.6, zoom: 3 },
+    ttkBand: TTK_BAND,
+  },
+  clockeater: {
+    id: "clockeater",
+    slot: 8,
+    name: "CLOCKEATER",
+    cls: "hitscan",
+    rpm: 240,
+    damage: 13,
+    headMult: 1.5,
+    legMult: 0.85,
+    magSize: 18,
+    reloadTime: 1.6,
+    seatFrac: 0.6,
+    pellets: 1,
+    spread: 0.006,
+    range: R(14, 20, 40, 0.6, 90),
+    recoil: { vertical: 0.012, horizontal: 0.005, pattern: [[0, 1], [0.5, 1], [-0.6, 1], [0.8, 0.8]], jitter: 0.0015, recover: 10 },
+    tracer: 0xff3ec9,
+    burst: { count: 3, rpm: 1200 },
+    alt: { kind: "ads", spreadMult: 0.5, recoilMult: 0.8, moveMult: 0.8, zoom: 1.5 },
     ttkBand: TTK_BAND,
   },
 };

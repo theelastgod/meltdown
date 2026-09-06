@@ -126,6 +126,9 @@ export class GhostFile {
   /** the file's range ghosts as last loaded from the host */
   ghosts: Record<string, GhostRun> = {};
   loaded = false;
+  /** the whole account as the host last described it (the campaign reads its save from here) */
+  accountRecord: Account | null = null;
+  onLoaded: ((f: GhostFile) => void) | null = null;
 
   /** Fetch the file from the ledger host and apply it (offline hub). */
   async load(): Promise<boolean> {
@@ -143,6 +146,7 @@ export class GhostFile {
 
   /** Apply a whole account record (from the ledger host): the same fields a File message carries, identity derived here. */
   applyAccount(a: Account): void {
+    this.accountRecord = a;
     this.depth = a.depth;
     this.xp = a.xp;
     this.scrip = a.wallet.scrip;
@@ -155,10 +159,24 @@ export class GhostFile {
     for (const [w, m] of Object.entries(a.mastery)) this.mastery[w] = { xp: m.xp, rank: m.rank, done: m.done.slice(), counters: { ...m.counters } };
     const pi = publicIdentity(a, a.name);
     this.serverIdentity = { glyph: pi.glyph, chapter: pi.chapter, moniker: pi.moniker, display: pi.display, unlocked: unlockedMonikers(a).map((m) => m.id), debt: a.debt ? { display: a.debt.display, glyph: 0, kills: a.debt.kills } : null, chapters: a.chapters.slice() };
+    const first = !this.loaded;
     this.loaded = true;
     this.render();
     this.onIdentity?.(this);
     this.onChange?.(this);
+    if (first) this.onLoaded?.(this);
+  }
+
+  /** The campaign endpoint on the ledger host: faction, completions, worn protocols. */
+  async postCampaign(body: Record<string, unknown>): Promise<{ ok: boolean; reason?: string; account?: Account }> {
+    if (!this.shop) return { ok: false, reason: "no ledger host linked" };
+    try {
+      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/campaign`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const r = (await res.json()) as { ok: boolean; reason?: string; account?: Account };
+      return r;
+    } catch (e) {
+      return { ok: false, reason: String(e) };
+    }
   }
 
   /** Post a range ghost to the file (best effort). */

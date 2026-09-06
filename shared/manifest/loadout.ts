@@ -7,7 +7,7 @@
  */
 import { ALL_ITEMS, MAX_ATTESTED, MAX_KEYSTONES, itemById } from "./items";
 import { applyMods, baseSheet, modWeight, type StatSheet } from "./stats";
-import { WEAPONS, WEAPON_LIST, type WeaponDef, type WeaponId } from "../weapons/manifest";
+import { WEAPONS, WEAPON_LIST, type WeaponDef, type WeaponId, CAMPAIGN_WEAPONS } from "../weapons/manifest";
 import { chipById, type ChipMechanic, type Socket } from "./chips";
 import { firmwareById, weaponWithFirmware } from "./firmwares";
 
@@ -32,7 +32,20 @@ export type Ranks = Partial<Record<WeaponId, number>>;
 export const SANDBOX_RANKS: Ranks = Object.fromEntries(WEAPON_LIST.map((w) => [w.id, 30])) as Ranks;
 
 /** Depth at which each weapon becomes available. Everything baseline is in by Depth 5. */
-export const WEAPON_DEPTH: Record<WeaponId, number> = { lease_breaker: 1, stack_smg: 1, shock_baton: 1, repo_hammer: 2, longwave: 3, phage: 5 };
+export const WEAPON_DEPTH: Record<WeaponId, number> = { lease_breaker: 1, stack_smg: 1, shock_baton: 1, repo_hammer: 2, longwave: 3, phage: 5, directive: 1, clockeater: 1 };
+
+/** Fields a campaign client may carry that a PvP loadout must not: stripped at room join, then re-validated. */
+export const CAMPAIGN_ONLY_FIELDS: readonly string[] = ["protocols", "campaign"];
+export function stripCampaignFields(raw: unknown): { raw: unknown; stripped: string[] } {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { raw, stripped: [] };
+  const out: Record<string, unknown> = { ...(raw as Record<string, unknown>) };
+  const stripped: string[] = [];
+  for (const k of CAMPAIGN_ONLY_FIELDS) if (k in out) {
+    delete out[k];
+    stripped.push(k);
+  }
+  return { raw: out, stripped };
+}
 
 export interface LoadoutError {
   rule: string;
@@ -51,6 +64,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
   if (!primary) errors.push({ rule: "weapon", detail: `unknown primary ${String(lo.primary)}` });
   if (!secondary) errors.push({ rule: "weapon", detail: `unknown secondary ${String(lo.secondary)}` });
   for (const w of [primary, secondary]) if (w && WEAPON_DEPTH[w] > depth) errors.push({ rule: "weapon-depth", detail: `${w} needs Depth ${WEAPON_DEPTH[w]} (you are ${depth})` });
+  for (const w of [primary, secondary]) if (w && CAMPAIGN_WEAPONS.includes(w) && !owned.includes(`weapon:${w}`)) errors.push({ rule: "weapon-locked", detail: `${w} unlocks in the campaign` });
   const attested = Array.isArray(lo.attested) ? lo.attested.filter((x): x is string => typeof x === "string") : [];
   if (!Array.isArray(lo.attested) && lo.attested !== undefined) errors.push({ rule: "attested-shape", detail: "attested must be a list of node ids" });
   if (attested.length > MAX_ATTESTED) errors.push({ rule: "attest-limit", detail: `${attested.length} attested, max ${MAX_ATTESTED}` });

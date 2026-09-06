@@ -50,6 +50,9 @@ export class Hud {
       <div class="dossier" hidden><div class="dt">▲ DOSSIER · BOTH CELLS · FILES AS THE CITY SEES THEM</div><div class="cells"></div></div>
       <div class="p am receipt" hidden><div class="rh">▲ LEDGER ENTRY · VANTAGE CLEARING HOUSE</div><div class="rl"></div><div class="rs">◆ <span class="rst">PRINTING…</span></div><div class="rf">[ENTER] SIGN</div></div>
       <div class="rite" hidden><div class="rn"></div><div class="rt"></div><div class="rlines"></div></div>
+      <div class="p cy terminal" hidden><div class="th"><span class="sg"></span> <span class="sp"></span></div><div class="tl"></div><div class="tc"></div><div class="tf">[ENTER] CONTINUE · [1–4] CHOOSE</div></div>
+      <div class="contracts" hidden></div>
+      <div class="card" hidden><div class="ct"></div><div class="cl"></div></div>
 
       <div class="p cy map"><div class="t">AREA MAP</div><canvas width="54" height="42"></canvas><div class="f">click to walk</div></div>
       <div class="side"><div><span class="k">▸</span> ONLINE (1)</div><div class="perf"></div></div>
@@ -195,7 +198,105 @@ export class Hud {
     this.riteTimer = seconds;
   }
 
+  // ---- campaign: objective, terminal, contracts, cards ----
+
+  /** Mission title and the current objective under it (replaces the wake strip while a contract runs). */
+  setObjective(title: string, text: string, progress: string | null): void {
+    this.q(".mtitle").textContent = title;
+    const line = this.q(".mline");
+    line.style.display = "";
+    line.innerHTML = `⌖ ${text}${progress ? ` <span class="prog">${progress}</span>` : ""}`;
+    this.q(".mscore").innerHTML = "";
+    this.q(".nodes").innerHTML = "";
+  }
+
+  /** the CRT terminal: typed lines then choices */
+  private term = { lines: [] as string[], shown: 0, chars: 0, ready: false, choices: null as string[] | null };
+  get terminalReady(): boolean {
+    return this.term.ready;
+  }
+
+  terminal(speaker: string, sigil: string, color: string, lines: string[], choices: string[] | null): void {
+    const t = this.q(".terminal");
+    t.hidden = false;
+    t.className = `p terminal ${color}`;
+    this.q(".terminal .sg").textContent = sigil;
+    this.q(".terminal .sp").textContent = speaker;
+    this.term = { lines: lines.slice(), shown: 0, chars: 0, ready: false, choices };
+    this.q(".terminal .tl").innerHTML = "";
+    this.q(".terminal .tc").innerHTML = "";
+    this.q(".terminal .tf").textContent = choices ? "[1–4] CHOOSE" : "[ENTER] CONTINUE";
+  }
+
+  /** show everything now (a second Enter) */
+  terminalSkip(): void {
+    const t = this.term;
+    t.shown = t.lines.length;
+    t.chars = 0;
+    this.q(".terminal .tl").innerHTML = t.lines.map((l) => `<div>${l}</div>`).join("");
+    this.finishTerminal();
+  }
+
+  private finishTerminal(): void {
+    const t = this.term;
+    t.ready = true;
+    if (t.choices) this.q(".terminal .tc").innerHTML = t.choices.map((c, i) => `<div class="ch"><b>${i + 1}</b> ${c}</div>`).join("");
+  }
+
+  terminalClose(): void {
+    this.q(".terminal").hidden = true;
+    this.term = { lines: [], shown: 0, chars: 0, ready: false, choices: null };
+  }
+
+  private tickTerminal(dt: number): void {
+    const t = this.term;
+    if (this.q(".terminal").hidden || t.ready) return;
+    const speed = 55; // chars per second
+    t.chars += dt * speed;
+    const cur = t.lines[t.shown];
+    if (cur === undefined) {
+      this.finishTerminal();
+      return;
+    }
+    const n = Math.min(cur.length, Math.floor(t.chars));
+    const done = t.lines.slice(0, t.shown).map((l) => `<div>${l}</div>`).join("");
+    this.q(".terminal .tl").innerHTML = done + `<div>${cur.slice(0, n)}<span class="cur">▮</span></div>`;
+    if (n >= cur.length) {
+      t.shown++;
+      t.chars = -8; // a beat between lines
+      if (t.shown >= t.lines.length) this.finishTerminal();
+    }
+  }
+
+  contracts(open: boolean, html: string): void {
+    const el = this.q(".contracts");
+    el.hidden = !open;
+    if (open) el.innerHTML = html;
+  }
+
+  /** a full-screen card (contract closed / failed / ending); seconds 0 = until the next card or contracts */
+  private cardTimer = 0;
+  card(title: string, lines: string[], color: "am" | "mg" | "ye" | "cy", seconds: number): void {
+    const el = this.q(".card");
+    el.hidden = false;
+    el.className = `card ${color}`;
+    this.q(".card .ct").textContent = title;
+    this.q(".card .cl").innerHTML = lines.map((l) => `<div>${l}</div>`).join("");
+    this.cardTimer = seconds;
+  }
+  cardClose(): void {
+    this.q(".card").hidden = true;
+  }
+  get cardOpen(): boolean {
+    return !this.q(".card").hidden;
+  }
+
   private tickRituals(dt: number): void {
+    this.tickTerminal(dt);
+    if (this.cardTimer > 0) {
+      this.cardTimer -= dt;
+      if (this.cardTimer <= 0) this.cardClose();
+    }
     if (this.dossierTimer > 0) {
       this.dossierTimer -= dt;
       if (this.dossierTimer <= 0) this.q(".dossier").hidden = true;
@@ -252,7 +353,8 @@ export class Hud {
     if (p.weapon.empTimer > 0) emp.style.opacity = String(Math.min(1, p.weapon.empTimer));
     this.q(".vel").textContent = `${speed.toFixed(1)} m/s`;
     this.q(".stance").textContent = p.stance.toUpperCase();
-    this.q(".kills").textContent = String(Math.min(5, p.stats.kills));
+    const kills = document.querySelector("#hud .kills");
+    if (kills) kills.textContent = String(Math.min(5, p.stats.kills)); // the strip is replaced by a contract's objective line
     this.q(".perf").textContent = `${fps.toFixed(0)} FPS · SIM ${tickHz.toFixed(0)} Hz`;
     this.drawRadar(p, dummies);
     if (this.alertTimer > 0) {

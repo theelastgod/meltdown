@@ -33,6 +33,7 @@ npm run probe:cityLife # city life: crowds walk, the monorail crosses and whoosh
 npm run certify:firmware # every firmware measured in the TTK harness at its ideal range (must sit in the band)
 npm run probe:mastery # Ledger Graph + mastery: lint over nodes/chips/firmwares, chips and firmwares enforced at spawn, ledger shop, stamps un-redact online
 npm run probe:identity # identity & rituals: dossier flash, tags, tiered kill audio, Debts, receipt, Chapter rite, leak scan, Deadletter Office + range ghost
+npm run probe:campaign # campaign: the contracts desk, a contract played through and settled, Kernel Protocols worn (and stripped at PvP join), Threat, co-op, the white office ending
 npm run verify     # all of the above
 ```
 
@@ -60,6 +61,7 @@ shared/     pure TS simulation shared by client and (Stage 2) server
   math/     vec3
   sim/      constants, input, box, level (+registry), city (district generator), hub (Deadletter Office), nav (walkability + paths), collision, player, weapons, projectiles, ai, wake, ttk, world
   identity/ glyph (procedural 3-layer mark), monikers + Chapters, identity (what others see + the mechanical-leak scanner)
+  campaign/ factions, testimony + endings, threat, Kernel Protocols, scripts, missions + gigs, the mission runtime, the save — never imported by the PvP room
   weapons/  weapon + grenade manifest
   manifest/ stat sheet, Ledger Graph (48 nodes + keystones), chips, firmwares, loadout validation (one manifest for client, server, CI)
   progression/ Depth/XP curve, currencies, deterministic crafting, weapon mastery + curricula, attestation stamps, the Ghostfile account

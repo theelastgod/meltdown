@@ -1,3 +1,4 @@
+import { ADDITIVE, type StatSheet } from "../manifest/stats";
 import { DUMMY_MAX_HEALTH, DUMMY_RESPAWN_SECONDS, MOVE, SIM_DT, SIM_HZ } from "./constants";
 import { emptyInput, type InputFrame } from "./input";
 import type { DummyDef, LevelDef } from "./level";
@@ -111,6 +112,8 @@ export interface WorldOptions {
   wakePhase?: "warmup" | "wake" | "off";
   warmupSeconds?: number;
   roundSeconds?: number;
+  /** dummies come back after DUMMY_RESPAWN_SECONDS (false: campaign targets stay down) */
+  dummyRespawn?: boolean;
 }
 
 /**
@@ -121,6 +124,7 @@ export class World {
   tick = 0;
   readonly seed: number;
   readonly ai: boolean;
+  readonly dummyRespawn: boolean;
   readonly level: LevelDef;
   readonly players = new Map<number, PlayerState>();
   readonly dummies: Dummy[] = [];
@@ -138,6 +142,7 @@ export class World {
     this.level = level;
     this.seed = opts.seed ?? 1;
     this.ai = opts.ai ?? true;
+    this.dummyRespawn = opts.dummyRespawn ?? true;
     const wp = opts.wakePhase ?? "wake";
     this.wake = wp === "off" || level.nodes.length === 0 ? null : createWake(level.nodes, wp, { warmupSeconds: opts.warmupSeconds, roundSeconds: opts.roundSeconds });
     for (const d of level.dummies) {
@@ -153,6 +158,32 @@ export class World {
     return this.tick / SIM_HZ;
   }
 
+  // ---- runtime spawns (campaign missions; the wake never calls these) ----
+
+  /** A wasp patrol added mid-match (Threat, mission waves). Ids continue after the level's own. */
+  spawnWasp(waypoints: Vec3[]): Wasp {
+    const id = this.wasps.reduce((m, w) => Math.max(m, w.id), 0) + 1;
+    const w = createWasp(id, waypoints.map(clone));
+    this.wasps.push(w);
+    return w;
+  }
+
+  spawnMech(path: Vec3[], face?: number): Mech {
+    const id = this.mechs.reduce((m, x) => Math.max(m, x.id), 0) + 1;
+    const m = createMech(id, path.map(clone), face);
+    this.mechs.push(m);
+    return m;
+  }
+
+  /** A static target (a relay, a lattice node): a dummy that does not patrol. */
+  spawnDummy(pos: Vec3): Dummy {
+    const id = this.dummies.reduce((m, d) => Math.max(m, d.id), 0) + 1;
+    const def: DummyDef = { id, pos: clone(pos) };
+    const d: Dummy = { id, def, pos: clone(pos), health: DUMMY_MAX_HEALTH, alive: true, respawnTimer: 0, phase: 0, dir: 1, firstDamageTick: -1, hitsTaken: 0 };
+    this.dummies.push(d);
+    return d;
+  }
+
   addPlayer(id: number, name = "BLANK", team = 1, loadout: Loadout = DEFAULT_LOADOUT): PlayerState {
     const spawn = this.level.spawns[this.nextSpawn % this.level.spawns.length]!;
     this.nextSpawn++;
@@ -164,8 +195,11 @@ export class World {
   }
 
   /** Apply a validated loadout: the build sheet, the per-weapon kit (firmware, chips), and the starting weapon. */
-  setLoadout(p: PlayerState, loadout: Loadout): void {
-    applySheet(p, sheetFor(loadout));
+  setLoadout(p: PlayerState, loadout: Loadout, extra?: Partial<StatSheet>): void {
+    // `extra` is campaign-only power (Kernel Protocols) folded into the sheet; PvP rooms never pass it
+    const sheet = sheetFor(loadout);
+    if (extra) for (const [k, v] of Object.entries(extra) as [keyof StatSheet, number][]) sheet[k] = ADDITIVE.has(k) ? sheet[k] + v : sheet[k] * v;
+    applySheet(p, sheet);
     const kit = kitFor(loadout);
     p.kit = { defs: {}, mods: {}, mechanics: {} };
     for (const w of Object.values(WEAPONS)) {
@@ -593,6 +627,7 @@ export class World {
   private stepDummies(): void {
     for (const d of this.dummies) {
       if (!d.alive) {
+        if (!this.dummyRespawn) continue;
         d.respawnTimer -= SIM_DT;
         if (d.respawnTimer <= 0) {
           d.alive = true;

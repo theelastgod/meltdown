@@ -79,6 +79,20 @@ export const CURRICULA: Record<WeaponId, Challenge[]> = {
     cur("shock_baton", 20, "doubleKills", 2, "2 double kills"),
     cur("shock_baton", 25, "airKills", 3, "3 kills mid-air"),
   ],
+  directive: [
+    cur("directive", 5, "headshotKills", 8, "8 headshot kills"),
+    cur("directive", 10, "longKills", 6, "6 kills beyond 30 m"),
+    cur("directive", 15, "adsKills", 12, "12 kills through the optic"),
+    cur("directive", 20, "quickshotKills", 4, "4 kills within a second of raising the optic"),
+    cur("directive", 25, "doubleKills", 2, "2 double kills"),
+  ],
+  clockeater: [
+    cur("clockeater", 5, "pointBlankKills", 6, "6 kills inside 6 m"),
+    cur("clockeater", 10, "slideKills", 3, "3 kills mid-slide"),
+    cur("clockeater", 15, "headshotKills", 10, "10 headshot kills"),
+    cur("clockeater", 20, "airKills", 3, "3 kills airborne"),
+    cur("clockeater", 25, "doubleKills", 3, "3 double kills"),
+  ],
 };
 
 export interface Mastery {

@@ -1,0 +1,16 @@
+# The campaign Worker: co-op rooms and the campaign file route. A separate script from
+# meltdown-match so the PvP Durable Object never loads shared/campaign (Kernel Protocols).
+# Deploy after meltdown-match: `npx wrangler deploy -c wrangler.campaign.toml`.
+name = "meltdown-campaign"
+main = "server/campaign-worker.ts"
+compatibility_date = "2025-06-01"
+
+[durable_objects]
+bindings = [
+  { name = "CAMPAIGN_ROOM", class_name = "CampaignRoom" },
+  { name = "PLAYER_FILE", class_name = "PlayerFile", script_name = "meltdown-match" },
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["CampaignRoom"]

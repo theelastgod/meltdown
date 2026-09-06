@@ -55,8 +55,8 @@ describe("the Ledger Graph at launch size", () => {
 });
 
 describe("chips and firmwares", () => {
-  it("120 chips: three sockets × six weapons, every one a reconciled paired trade, no damage or health", () => {
-    expect(CHIPS.length).toBe(120);
+  it("160 chips: three sockets × eight weapons, every one a reconciled paired trade, no damage or health", () => {
+    expect(CHIPS.length).toBe(160);
     expect(lintChipSchema()).toEqual([]);
     for (const w of WEAPON_LIST) expect(CHIPS.filter((c) => c.weapon === w.id).length).toBe(20);
     expect(new Set(CHIPS.map((c) => c.socket)).size).toBe(3);
