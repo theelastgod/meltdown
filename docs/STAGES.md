@@ -21,7 +21,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 10 | Campaign | | |
 | 11 | Endgame loops: daily contracts, weekly Audit playlists with per-week leaderboards, the Deep Wake seasonal district graph, Rewrite prestige + the Wakelight shop (themes, alias and preset slots — never a stat) | **done** | `docs/proof/stage11/` |
 | 11b | The Counter-Ledger: WAKE on Robinhood Chain, SIWE wallet link, soulbound Ghostfile + stamp attestations through game-signed vouchers, the Ledger Market, names at Depth 50, an in-process EVM devnet until the testnet parameters land (`docs/TOKENOMICS.md`) | **done** (devnet; testnet is configuration) | `docs/proof/stage11b/` |
-| 12 | Opening crawl | | |
+| 12 | Opening crawl: cyan monospace on black, typed-then-held paragraphs, scanline flicker, glitch tears, ~34 s, skippable after the first view, hard cut to silence, the MELTDOWN title; original copy until the owner's text lands | **done** | `docs/proof/stage12/` |
 | 13 | Polish & ship | | |
 
 ## Stage 1 — Grey-box FPS core
@@ -259,6 +259,68 @@ the worn skin, the round and the settlement work, and reconcile succeeds
 again once it is back; the full manifest lints clean and a priced item
 with a stat fails; the unit test walks the PvP bundle's import graph and
 finds no `shared/economy`, `server/chain` or `viem`; no page errors.
+
+## Stage 12 — The opening crawl
+
+**Goal.** Cyan monospace on black. One paragraph at a time, typed then held.
+Scanlines flickering over it. A glitch tear between paragraphs. About 35
+seconds. Skippable after the first view. A hard cut to silence, then the
+MELTDOWN title. The owner's OPENING_TEXT is rendered verbatim when it is
+supplied; until then an original crawl in the brief's register ships:
+clinical compressed history read as a runaway process, paragraphs
+shortening, ending on a single isolated line announcing something arriving
+from the future.
+
+**Files.**
+- `client/crawl-text.ts` — `OPENING_TEXT` (null until supplied; rendered
+  verbatim, never edited) and `DEFAULT_CRAWL`, seven original paragraphs,
+  276 → 205 → 169 → 137 → 90 → 68 → 57 characters, the last a single line.
+- `client/crawl-schedule.ts` — the crawl as a pure schedule: type at 60
+  characters a second, hold for 0.9 s + 8 ms a character, a 0.35 s tear
+  between paragraphs, a 1.6 s cut, then the title; `crawlAt(t)` gives the
+  phase, the paragraph, the characters visible, the tears so far;
+  `crawlShape()` checks the register (shortening, isolated last line).
+- `client/crawl.ts` — the overlay above everything: the typed text with a
+  block cursor, two ghost layers, the scanline pass (a repeating gradient
+  flickering at 9 Hz with a slow roll), the tear (three layers sliced into
+  random bands and pushed apart, the ghosts tinted magenta and cyan, the
+  body jolting), the cut (text gone, hum stopped dead), the title (MELTDOWN
+  in the terminal type with a chromatic shadow, snapping in over three
+  steps), the CLICK TO WAKE prompt; the click hands the gesture to the game
+  (audio resume + pointer lock). `?crawl=1` forces it, `?crawl=0` never,
+  headless probes skip it by default, `?crawlspeed=k` runs it k× faster.
+- `client/audio.ts` — `crawlHum` (a low sawtooth under the text, stopped
+  without a fade at the cut), `crawlTick` (a dry key every two characters),
+  `tear` (a torn-noise burst and a pitch drop).
+- `client/hud/hud.css` — the crawl block; `client/main.ts` — the boot and
+  the `crawl` / `crawlSkip` / `crawlFinish` hooks.
+- `tests/crawl.test.ts` (2), `probe/stage12.ts`.
+
+**Design decisions.**
+- The crawl is a schedule, not a set of timers, so it can be run at speed
+  in a probe, sampled on its own clock (frames under SwiftShader are slow),
+  and asserted at 1× in a unit test: 34.1 s from the first keystroke to
+  the title.
+- Not skippable on the first view, as the brief has it; the second view
+  shows `[SPACE] SKIP` and SPACE / ESC / ENTER jump to the cut, never past
+  it — the silence and the title are always seen.
+- The copy quotes nothing: it is written for this fiction (the lease on
+  attention, VANTAGE as collections, THE KERNEL filing its last report a
+  year ahead, the Blanks as a clerical error that became a schedule).
+  Everything is uppercase and unquoted; the test enforces the shape.
+
+**Acceptance (`npm run probe:crawl`, 10/10; `npm test`, 147 tests):** the
+crawl runs 34.1 s at 1× and the copy shortens to one isolated line; the
+text is `rgb(53, 242, 255)` monospace on `rgb(0, 0, 0)` under a
+`crawl-flicker` scanline pass at z-index 1000; the first paragraph's
+character count rises monotonically to 276 and holds there; on the first
+view SPACE does nothing; a tear frame shows three bands pushed apart with
+both ghost layers lit, and six tears for seven paragraphs; after the cut
+the text is hidden, the hum is off and MELTDOWN is up with the view now
+recorded; the title's click removes the overlay with the game ready
+underneath; on the second view the hint shows, SPACE lands in the cut
+(silent, no text) and the title follows; `?headless=1` alone boots straight
+into the game; no page errors.
 
 ## Stage 3 — The look
 

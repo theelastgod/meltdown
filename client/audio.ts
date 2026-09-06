@@ -424,6 +424,47 @@ export class GameAudio {
     }
   }
 
+  // ---- the opening crawl: a hum under the text, a soft key per two characters, the tear ----
+  private humNodes: { osc: OscillatorNode; gain: GainNode } | null = null;
+  /** The CRT hum under the crawl; stops dead (not faded) at the cut. */
+  crawlHum(on: boolean): void {
+    this.count(on ? "crawlHumOn" : "crawlHumOff");
+    if (!this.ctx) return;
+    if (on && !this.humNodes) {
+      const osc = this.ctx.createOscillator();
+      osc.type = "sawtooth";
+      osc.frequency.value = 60;
+      const f = this.ctx.createBiquadFilter();
+      f.type = "lowpass";
+      f.frequency.value = 220;
+      const gain = this.ctx.createGain();
+      gain.gain.value = 0.05;
+      osc.connect(f).connect(gain).connect(this.master!);
+      osc.start();
+      this.humNodes = { osc, gain };
+    } else if (!on && this.humNodes) {
+      this.humNodes.gain.gain.value = 0;
+      this.humNodes.osc.stop();
+      this.humNodes = null;
+    }
+  }
+  get crawlHumming(): boolean {
+    return !!this.humNodes;
+  }
+  /** One typed character pair: a short, dry key. */
+  crawlTick(): void {
+    this.count("crawlTick");
+    if (!this.ctx) return;
+    this.burst({ dur: 0.012, freq: 3200, q: 4, gain: 0.05 });
+  }
+  /** The tear between paragraphs: a torn-noise burst and a pitch drop. */
+  tear(): void {
+    this.count("tear");
+    if (!this.ctx) return;
+    this.burst({ dur: 0.18, freq: 900, q: 0.4, gain: 0.3, type: "bandpass" });
+    this.tone({ dur: 0.16, from: 640, to: 90, gain: 0.18, type: "square" });
+  }
+
   /** The receipt printing a line: a dot-matrix chatter. */
   printTick(): void {
     this.count("print");

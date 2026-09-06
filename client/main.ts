@@ -1,3 +1,4 @@
+import { crawlWanted, OpeningCrawl, type CrawlView } from "./crawl";
 import { parseTag } from "@shared/identity/identity";
 import type { counterView } from "@shared/economy/counter";
 import { Game, type NetConfig } from "./game";
@@ -79,6 +80,12 @@ export interface GameHook {
   wearSkin: (token: number) => Promise<{ ok: boolean; reason?: string }>;
   registerName: (name: string) => Promise<{ ok: boolean; reason?: string }>;
   reconcile: () => Promise<{ ok: boolean; reason?: string }>;
+  /** The opening crawl (Stage 12): its live state, a skip, and the title's click. */
+  crawl: () => CrawlView | null;
+  crawlSkip: () => boolean;
+  crawlFinish: () => void;
+  crawlPause: (on: boolean) => void;
+  crawlSeek: (t: number) => void;
   /** Campaign (Stage 10): state, dialogue advance/choose, contracts desk, launch, faction, protocols. */
   campaign: () => ReturnType<Game["campaign"]["view"]>;
   dialogueAdvance: (choice?: number) => boolean;
@@ -191,6 +198,13 @@ window.__game = {
   wearSkin: (token) => game.file.counter?.op("wear", { token }) ?? Promise.resolve({ ok: false, reason: "offline" }),
   registerName: (name) => game.file.counter?.registerName(name) ?? Promise.resolve({ ok: false, reason: "offline" }),
   reconcile: () => game.file.counter?.op("reconcile") ?? Promise.resolve({ ok: false, reason: "offline" }),
+  crawl: () => crawl?.view() ?? null,
+  crawlSkip: () => crawl?.skip() ?? false,
+  crawlFinish: () => crawl?.finish(true),
+  crawlPause: (on) => {
+    if (crawl) crawl.paused = on;
+  },
+  crawlSeek: (t) => crawl?.seek(t),
   campaign: () => game.campaign.view(),
   dialogueAdvance: (choice) => game.campaign.advance(choice ?? -1),
   contracts: (on) => game.campaign.toggleContracts(on),
@@ -242,4 +256,6 @@ window.__game = {
   }
 }
 
+/** The opening crawl plays over the booting game; headless probes skip it unless they ask for it. */
+const crawl = crawlWanted(new URLSearchParams(location.search)) ? new OpeningCrawl(game.audio, Number(new URLSearchParams(location.search).get("crawlspeed") ?? 1) || 1) : null;
 game.start();
