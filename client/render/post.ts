@@ -115,8 +115,22 @@ export class PostChain {
     this.composer.addPass(new OutputPass());
     this.crt = new ShaderPass(CrtShader);
     this.crt.uniforms.resolution!.value.set(w, h);
+    this.crtBase = { grain: this.crt.uniforms.grain!.value as number, aberration: this.crt.uniforms.aberration!.value as number, scanline: this.crt.uniforms.scanline!.value as number, vignette: this.crt.uniforms.vignette!.value as number };
     this.crt.renderToScreen = true;
     this.composer.addPass(this.crt);
+  }
+
+  private crtBase = { grain: 0.07, aberration: 0.0016, scanline: 0.14, vignette: 0.42 };
+  /** The CRT setting: 0 is a clean image, 1 the look as shipped, 1.5 heavier grain, aberration, scanlines and vignette. */
+  setCrt(k: number): void {
+    const c = Math.max(0, Math.min(1.5, k));
+    this.crt.uniforms.grain!.value = this.crtBase.grain * c;
+    this.crt.uniforms.aberration!.value = this.crtBase.aberration * c;
+    this.crt.uniforms.scanline!.value = this.crtBase.scanline * c;
+    this.crt.uniforms.vignette!.value = this.crtBase.vignette * Math.min(1, c);
+  }
+  crtLevel(): { grain: number; aberration: number; scanline: number; vignette: number } {
+    return { grain: this.crt.uniforms.grain!.value as number, aberration: this.crt.uniforms.aberration!.value as number, scanline: this.crt.uniforms.scanline!.value as number, vignette: this.crt.uniforms.vignette!.value as number };
   }
 
   resize(renderer: THREE.WebGLRenderer, width: number, height: number): void {

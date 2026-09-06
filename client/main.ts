@@ -1,3 +1,5 @@
+import { Menu, menuWanted, type MenuView } from "./menu";
+import { clampSettings, saveSettings, type Settings } from "./settings";
 import { crawlWanted, OpeningCrawl, type CrawlView } from "./crawl";
 import { parseTag } from "@shared/identity/identity";
 import type { counterView } from "@shared/economy/counter";
@@ -86,6 +88,16 @@ export interface GameHook {
   crawlFinish: () => void;
   crawlPause: (on: boolean) => void;
   crawlSeek: (t: number) => void;
+  /** The menu flow (Stage 13): its view, a key, a choice, the pause menu; settings; the audio cues fired. */
+  menu: () => MenuView | null;
+  menuKey: (code: string) => void;
+  menuChoose: (id: string) => string | null;
+  pause: () => void;
+  settings: () => Settings & { applied: { sensitivity: number; fov: number; crt: { grain: number; scanline: number; vignette: number; aberration: number }; volumes: { master: number; sfx: number; bed: number } } };
+  setSetting: (key: keyof Settings, value: number | boolean) => Settings;
+  audioCues: () => Record<string, number>;
+  /** the probe's damage: drops the local file's health (the low-health pulse) */
+  hurt: (dmg: number) => number;
   /** Campaign (Stage 10): state, dialogue advance/choose, contracts desk, launch, faction, protocols. */
   campaign: () => ReturnType<Game["campaign"]["view"]>;
   dialogueAdvance: (choice?: number) => boolean;
@@ -205,6 +217,22 @@ window.__game = {
     if (crawl) crawl.paused = on;
   },
   crawlSeek: (t) => crawl?.seek(t),
+  menu: () => menu?.view() ?? null,
+  menuKey: (code) => menu?.key(code),
+  menuChoose: (id) => menu?.choose(id) ?? null,
+  pause: () => menu?.pause(),
+  settings: () => ({ ...game.settings, applied: { sensitivity: game.input.sensitivity, fov: game.renderer.fov, crt: game.renderer.crtLevel(), volumes: game.audio.getVolumes() } }),
+  setSetting: (key, value) => {
+    const s = clampSettings({ ...game.settings, [key]: value });
+    saveSettings(s);
+    game.applySettings(s);
+    return s;
+  },
+  audioCues: () => ({ ...game.audio.fired }),
+  hurt: (dmg) => {
+    game.player.health = Math.max(1, game.player.health - dmg);
+    return game.player.health;
+  },
   campaign: () => game.campaign.view(),
   dialogueAdvance: (choice) => game.campaign.advance(choice ?? -1),
   contracts: (on) => game.campaign.toggleContracts(on),
@@ -257,5 +285,30 @@ window.__game = {
 }
 
 /** The opening crawl plays over the booting game; headless probes skip it unless they ask for it. */
-const crawl = crawlWanted(new URLSearchParams(location.search)) ? new OpeningCrawl(game.audio, Number(new URLSearchParams(location.search).get("crawlspeed") ?? 1) || 1) : null;
+const bootQ = new URLSearchParams(location.search);
+const crawl = crawlWanted(bootQ) ? new OpeningCrawl(game.audio, Number(bootQ.get("crawlspeed") ?? 1) || 1) : null;
+/** The CRT menu flow: title cards then the menu after the crawl (or straight away); ESC in play is the pause menu. */
+const menu = menuWanted(bootQ)
+  ? new Menu(
+      {
+        audio: game.audio,
+        settings: game.settings,
+        applySettings: (s) => game.applySettings(s),
+        openFile: () => game.file.toggle(true),
+        resume: () => (document.getElementById("view") as HTMLCanvasElement | null)?.requestPointerLock?.(),
+        identityLine: () => {
+          const v = game.file.identityView();
+          return `${v.display} · DEPTH ${String(game.file.depth).padStart(2, "0")} · ${game.file.account}`;
+        },
+      },
+      Number(bootQ.get("menuspeed") ?? 1) || 1,
+    )
+  : null;
+if (menu) {
+  if (crawl) crawl.onFinish = () => menu.start();
+  else menu.start();
+  game.onLockLost = () => {
+    if (menu.screen === "hidden" && !game.file.isOpen && !crawl?.active) menu.pause();
+  };
+}
 game.start();

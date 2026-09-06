@@ -34,6 +34,8 @@ npm run probe:endgame # endgame: daily contracts, the week's Audit room (rules, 
 npm run lint:economy  # the one rule over the full manifest: WAKE never touches a stat
 npm run probe:counter # the counter-ledger: SIWE wallet link, sponsored Ghostfile + stamps on a real EVM devnet, a market buy on the rig, the name, chain-down drill
 npm run probe:crawl   # the opening crawl: typed-then-held paragraphs, scanline flicker, glitch tears, ~35 s, skippable after first view, hard cut to the title
+npm run probe:ship    # the menu flow (title cards, WAKE / CAMPAIGN / OFFICE / RANGE / FILE / SETTINGS, pause), settings applied live, the audio buses and cues
+npm run build && npm run smoke  # the production bundle boots, joins a room and renders (what CI and the Pages deploy run)
 npm run certify:firmware # every firmware measured in the TTK harness at its ideal range (must sit in the band)
 npm run probe:mastery # Ledger Graph + mastery: lint over nodes/chips/firmwares, chips and firmwares enforced at spawn, ledger shop, stamps un-redact online
 npm run probe:identity # identity & rituals: dossier flash, tags, tiered kill audio, Debts, receipt, Chapter rite, leak scan, Deadletter Office + range ghost

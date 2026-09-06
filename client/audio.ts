@@ -9,6 +9,10 @@ export class GameAudio {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private bed: { gain: GainNode } | null = null;
+  /** the buses the settings drive: everything but the bed goes through sfx */
+  private sfx: GainNode | null = null;
+  private volumes = { master: 0.7, sfx: 1, bed: 1 };
+  private bedLevel = 0;
   /** Counts of each cue fired; readable by the probe to prove audio is wired. */
   readonly fired: Record<string, number> = {};
   private noiseBuf: AudioBuffer | null = null;
@@ -20,7 +24,10 @@ export class GameAudio {
       if (!AC) return;
       this.ctx = new AC();
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.7;
+      this.master.gain.value = this.volumes.master;
+      this.sfx = this.ctx.createGain();
+      this.sfx.gain.value = this.volumes.sfx;
+      this.sfx.connect(this.master);
       const comp = this.ctx.createDynamicsCompressor();
       comp.threshold.value = -14;
       comp.ratio.value = 6;
@@ -60,6 +67,7 @@ export class GameAudio {
     const g = ctx.createGain();
     g.gain.value = 0.0;
     g.connect(this.master!);
+    // (the bed is its own bus; the cues below go through sfx)
     // rain: filtered noise
     const rain = ctx.createBufferSource();
     rain.buffer = this.noiseBuf;
@@ -138,7 +146,8 @@ export class GameAudio {
       src.start();
       lfo.start();
     }
-    g.gain.linearRampToValueAtTime(1, ctx.currentTime + 2.5);
+    this.bedLevel = 1;
+    g.gain.linearRampToValueAtTime(this.bedLevel * this.volumes.bed, ctx.currentTime + 2.5);
     this.bed = { gain: g };
   }
 
@@ -164,7 +173,7 @@ export class GameAudio {
     for (let i = 0; i < 8; i++) {
       o.frequency.setValueAtTime(i % 2 ? 660 : 494, t + i * 0.8);
     }
-    o.connect(f).connect(g).connect(p).connect(this.master!);
+    o.connect(f).connect(g).connect(p).connect(this.sfx!);
     o.start(t);
     o.stop(t + 6.6);
   }
@@ -207,7 +216,7 @@ export class GameAudio {
     const p = ctx.createStereoPanner();
     p.pan.setValueAtTime(-0.8, t);
     p.pan.linearRampToValueAtTime(0.8, t + 2.6);
-    src.connect(f).connect(g).connect(p).connect(this.master!);
+    src.connect(f).connect(g).connect(p).connect(this.sfx!);
     src.start(t);
     src.stop(t + 2.8);
     this.tone({ dur: 2.4, from: 210, to: 140, gain: 0.08, type: "sawtooth" });
@@ -229,7 +238,7 @@ export class GameAudio {
     g.gain.exponentialRampToValueAtTime(0.001, t + opts.dur);
     const pan = ctx.createStereoPanner();
     pan.pan.value = opts.pan ?? 0;
-    src.connect(f).connect(g).connect(pan).connect(this.master!);
+    src.connect(f).connect(g).connect(pan).connect(this.sfx!);
     src.start(t);
     src.stop(t + opts.dur + 0.02);
   }
@@ -244,7 +253,7 @@ export class GameAudio {
     const g = ctx.createGain();
     g.gain.setValueAtTime(opts.gain, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + opts.dur);
-    o.connect(g).connect(this.master!);
+    o.connect(g).connect(this.sfx!);
     o.start(t);
     o.stop(t + opts.dur + 0.02);
   }
@@ -424,6 +433,72 @@ export class GameAudio {
     }
   }
 
+  // ---- settings: the buses ----
+  /** master / sfx / bed as 0..1; safe before the context exists (applied at resume). */
+  setVolumes(v: Partial<{ master: number; sfx: number; bed: number }>): void {
+    Object.assign(this.volumes, v);
+    if (this.master) this.master.gain.value = this.volumes.master;
+    if (this.sfx) this.sfx.gain.value = this.volumes.sfx;
+    if (this.bed) this.bed.gain.gain.value = this.bedLevel * this.volumes.bed;
+  }
+  getVolumes(): { master: number; sfx: number; bed: number } {
+    return { ...this.volumes };
+  }
+  /** The bed's own level (the city's loudness, 0..1) under the bed volume. */
+  setBedLevel(level: number): void {
+    this.bedLevel = level;
+    if (this.bed) this.bed.gain.gain.value = level * this.volumes.bed;
+  }
+  /** Tab hidden: everything ducks; back: restored. */
+  duck(on: boolean): void {
+    if (this.master) this.master.gain.value = on ? 0 : this.volumes.master;
+  }
+
+  // ---- the menu ----
+  /** A cursor move: a dry tick. */
+  uiMove(): void {
+    this.count("uiMove");
+    if (!this.ctx) return;
+    this.burst({ dur: 0.015, freq: 2400, q: 3, gain: 0.08 });
+  }
+  /** A selection: a short two-note confirm. */
+  uiSelect(): void {
+    this.count("uiSelect");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.06, from: 880, gain: 0.12, type: "square" });
+    this.tone({ dur: 0.1, from: 1320, gain: 0.1, type: "square", delay: 0.06 });
+  }
+  /** Back / cancel: the confirm in reverse. */
+  uiBack(): void {
+    this.count("uiBack");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.08, from: 660, to: 330, gain: 0.1, type: "square" });
+  }
+  /** A title card landing: a low CRT thump and a rising hum edge. */
+  card(): void {
+    this.count("card");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.35, from: 70, to: 40, gain: 0.5 });
+    this.burst({ dur: 0.25, freq: 240, q: 0.7, gain: 0.2, type: "lowpass" });
+    this.tone({ dur: 0.9, from: 220, to: 440, gain: 0.05, type: "sawtooth", delay: 0.1 });
+  }
+
+  // ---- low health: a pulse that follows the heartbeat until the shield is back ----
+  private pulseAt = 0;
+  private pulsing = false;
+  lowHealth(on: boolean, now = performance.now()): void {
+    if (on !== this.pulsing) {
+      this.pulsing = on;
+      this.count(on ? "lowHealthOn" : "lowHealthOff");
+    }
+    if (!on || !this.ctx) return;
+    if (now - this.pulseAt < 620) return;
+    this.pulseAt = now;
+    this.count("pulse");
+    this.tone({ dur: 0.12, from: 55, to: 40, gain: 0.35 });
+    this.tone({ dur: 0.1, from: 50, to: 38, gain: 0.25, delay: 0.16 });
+  }
+
   // ---- the opening crawl: a hum under the text, a soft key per two characters, the tear ----
   private humNodes: { osc: OscillatorNode; gain: GainNode } | null = null;
   /** The CRT hum under the crawl; stops dead (not faded) at the cut. */
@@ -439,7 +514,7 @@ export class GameAudio {
       f.frequency.value = 220;
       const gain = this.ctx.createGain();
       gain.gain.value = 0.05;
-      osc.connect(f).connect(gain).connect(this.master!);
+      osc.connect(f).connect(gain).connect(this.sfx!);
       osc.start();
       this.humNodes = { osc, gain };
     } else if (!on && this.humNodes) {

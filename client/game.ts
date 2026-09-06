@@ -1,3 +1,4 @@
+import { loadSettings, type Settings } from "./settings";
 import { skinByToken } from "@shared/economy/catalog";
 import { MAX_CATCHUP_TICKS, SIM_DT, SIM_HZ } from "@shared/sim/constants";
 import type { InputFrame } from "@shared/sim/input";
@@ -81,6 +82,11 @@ export class Game {
   readonly hud: Hud;
   readonly file: GhostFile;
   readonly audio = new GameAudio();
+  /** the player's settings (client/settings.ts), applied live */
+  settings: Settings = loadSettings();
+  /** the pause menu's hook: set by main when the menu flow is on */
+  onLockLost: (() => void) | null = null;
+  private lowHealthOn = false;
   private bot: Bot | null = null;
   private prev: Snapshot;
   private cur: Snapshot;
@@ -186,7 +192,12 @@ export class Game {
     this.prev = snap(this.player);
     this.cur = snap(this.player);
     this.input.onGesture = () => this.audio.resume();
-    this.input.onLockChange = (l) => this.hud.setLocked(l);
+    this.applySettings(this.settings);
+    document.addEventListener("visibilitychange", () => this.audio.duck(document.hidden));
+    this.input.onLockChange = (l) => {
+      this.hud.setLocked(l);
+      if (!l) this.onLockLost?.(); // the pause menu, when the menu flow is on
+    };
     this.renderer.syncDummies(this.world.dummies);
   }
 
@@ -514,6 +525,15 @@ export class Game {
   }
 
   private lastFrameAt = 0;
+
+  /** Settings, applied live: sensitivity is input, FOV and CRT the renderer, volumes the audio buses. Never the sim. */
+  applySettings(s: Settings): void {
+    this.settings = s;
+    this.input.sensitivity = 0.0022 * s.sensitivity;
+    this.renderer.setFov(s.fov);
+    this.renderer.setCrt(s.crt);
+    this.audio.setVolumes({ master: s.master, sfx: s.sfx, bed: s.bed });
+  }
 
   start(): void {
     this.stats.wallStart = performance.now();
@@ -944,6 +964,10 @@ export class Game {
       this.fpsWindow = { t: 0, frames: 0, ticks: this.stats.ticks };
     }
     this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt);
+    // low health: the pulse until the shield is back (a real cue, not a HUD colour)
+    const low = p.alive && p.health > 0 && p.health < 30;
+    if (low || this.lowHealthOn) this.audio.lowHealth(low);
+    this.lowHealthOn = low;
     if (this.wakeHud) this.hud.wake(this.wakeHud, p.team);
   }
 }

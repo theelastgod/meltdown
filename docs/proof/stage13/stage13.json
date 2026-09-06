@@ -1,0 +1,84 @@
+{
+  "results": {
+    "ship": {
+      "cards": [
+        "Every mind in Lethe is leased.",
+        "You woke free."
+      ],
+      "entries": [
+        "WAKE",
+        "CAMPAIGN",
+        "THE OFFICE",
+        "THE RANGE",
+        "FILE",
+        "SETTINGS"
+      ],
+      "district": "http://127.0.0.1:5209/?headless=1&nonav=1&menuspeed=2&account=sandbox-ship&level=lease_row&net=ws%3A%2F%2F127.0.0.1%3A8787%2Froom%2Flethe-lease_row%3Flevel%3Dlease_row",
+      "settings": {
+        "sensitivity": 1.05,
+        "fov": 85,
+        "master": 0.3,
+        "sfx": 1,
+        "bed": 1,
+        "crt": 1.5,
+        "crawlEveryTime": false
+      },
+      "cues": {
+        "card": 2,
+        "uiMove": 5,
+        "uiSelect": 1,
+        "uiBack": 2,
+        "land": 1,
+        "lowHealthOn": 1,
+        "pulse": 2
+      }
+    }
+  },
+  "checks": [
+    {
+      "name": "the two title cards, in order, CRT chrome (black, terminal type, a scanline pass), then the menu",
+      "pass": true,
+      "detail": "cards [\"Every mind in Lethe is leased.\", \"You woke free.\"] · bg rgb(0, 0, 0) · scan crawl-flicker"
+    },
+    {
+      "name": "the menu lists WAKE / CAMPAIGN / THE OFFICE / THE RANGE / FILE / SETTINGS with the file's identity line; ↓↑ move the cursor",
+      "pass": true,
+      "detail": "[WAKE, CAMPAIGN, THE OFFICE, THE RANGE, FILE, SETTINGS] · cursor 0→2→1 · \"BLANK · DEPTH 50 · sandbox-ship\""
+    },
+    {
+      "name": "a choice is a URL that names the mode: CAMPAIGN opens the desk at the hub, THE OFFICE the hub, THE RANGE the yard; WAKE lists the districts and picks the public room for one",
+      "pass": true,
+      "detail": "campaign ?headless=1&nonav=1&menuspeed=2&account=sandbox-ship&level=deadletter_office&mode=campaign&ai=0&shop=http%3A%2F%2F127.0.0.1%3A8787 · wake [LEASE ROW, DEADLETTER DOCKS, REPO DEPOT…] · district → ws://127.0.0.1:8787/room/lethe-lease_row?level=lease_row"
+    },
+    {
+      "name": "SETTINGS adjust live: ← → step sensitivity and FOV, the CRT setting scales grain/scanline/vignette (0 is clean), volumes reach the buses; every change is kept in the browser",
+      "pass": true,
+      "detail": "sens 1.05 (0.00231) · fov 85 · crt 0 → scan 0, 1.5 → scan 0.210 · master 0.3 · stored {\"sensitivity\":1.05,\"fov\":85,\"master\":0.3,\"sfx\":1,\"bed\":1,\"crt\":1.5,\"crawlEveryTime\":false}"
+    },
+    {
+      "name": "a reload applies the saved settings before the first frame",
+      "pass": true,
+      "detail": "fov 85 applied 85 · crt 1.5 · master 0.3"
+    },
+    {
+      "name": "ESC in play is the pause menu: RESUME / SETTINGS / FILE / QUIT TO MENU; ESC resumes; QUIT TO MENU is the menu's URL",
+      "pass": true,
+      "detail": "pause [RESUME, SETTINGS, FILE, QUIT TO MENU] · quit → ?headless=1&menu=1&crawl=0&nonav=1&menuspeed=8&account=sandbox-ship · after ESC hidden"
+    },
+    {
+      "name": "the audio pass: master/sfx/bed buses under the settings, UI cues (move / select / back), the title-card sting, and a low-health pulse that beats while the file is under 30",
+      "pass": true,
+      "detail": "card 2 · move 5 · select 1 · back 2 · health 1 · pulses 2"
+    },
+    {
+      "name": "a deep link (a level, a room, a mission) and headless boots skip the menu flow",
+      "pass": true,
+      "detail": "menu null · overlay false"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": "clean console"
+    }
+  ]
+}

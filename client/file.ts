@@ -23,6 +23,7 @@ import { redact, STAMPS } from "@shared/progression/stamps";
 import { glyphFor, glyphSvg } from "@shared/identity/glyph";
 import { counterView, nameFee, NAME_DEPTH } from "@shared/economy/counter";
 import { CounterClient, type CounterView } from "./counter";
+import { COUNTER_URL } from "./config";
 import { CHAPTERS, chapterFor, MONIKERS, monikerById, unlockedMonikers, wornMoniker } from "@shared/identity/monikers";
 
 const KEY = "meltdown.file";
@@ -126,7 +127,8 @@ export class GhostFile {
       void this.load().then(() => this.loadEndgame());
     } else if (this.shop) void this.loadEndgame();
     if (this.shop) {
-      this.counter = new CounterClient(this.shop, this.account, (c, view) => {
+      // in production the counter-ledger is its own Worker (VITE_COUNTER_URL); in development it is the same host
+      this.counter = new CounterClient(COUNTER_URL ?? this.shop, this.account, (c, view) => {
         if (this.accountRecord) this.accountRecord.counter = c;
         this.counterState = view;
         this.render();

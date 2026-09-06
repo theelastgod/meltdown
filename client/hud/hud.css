@@ -305,3 +305,28 @@ html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; f
 #crawl .title .prompt { color: var(--mg); font-size: 12px; letter-spacing: 0.2em; text-shadow: 0 0 4px rgba(255,62,201,0.5); transition: opacity 0.3s; }
 #crawl .skip { position: absolute; right: 18px; bottom: 14px; font-size: 11px; color: rgba(53,242,255,0.55); letter-spacing: 0.15em; }
 #crawl .skip[hidden] { display: none; }
+
+/* ---- the CRT menu flow (Stage 13): title cards, the main menu, pause, settings ---- */
+#menu { position: fixed; inset: 0; z-index: 900; background: #000; color: var(--cy); font-family: var(--mono); overflow: hidden; }
+#menu[hidden] { display: none; }
+#menu.pause { background: rgba(0,0,0,0.78); }
+#menu .card { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 12vw; font-size: clamp(22px, 3.6vw, 40px); letter-spacing: 0.08em; color: var(--cy); text-shadow: 0 0 14px rgba(53,242,255,0.6), 2px 0 0 rgba(255,62,201,0.45); animation: menu-card 0.5s steps(3) both; }
+#menu .card.gap { animation: none; }
+#menu:not(.cards) .card { display: none; }
+@keyframes menu-card { 0% { opacity: 0; transform: scaleY(0.05); } 100% { opacity: 1; transform: none; } }
+#menu .panel { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(720px, 90vw); border: 1px solid var(--cy); background: rgba(0,0,0,0.85); box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 0 18px rgba(53,242,255,0.18); padding: 14px 18px 12px; }
+#menu.cards .panel { display: none; }
+#menu .hd { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid rgba(53,242,255,0.35); padding-bottom: 6px; margin-bottom: 10px; }
+#menu .hd .word { font-size: 22px; letter-spacing: 0.3em; text-shadow: 0 0 10px rgba(53,242,255,0.6), 2px 0 0 rgba(255,62,201,0.45); }
+#menu .hd .who { font-size: 11px; color: var(--gr); letter-spacing: 0.1em; }
+#menu .row { display: flex; align-items: baseline; gap: 10px; padding: 5px 6px; font-size: 15px; letter-spacing: 0.14em; cursor: pointer; border-left: 2px solid transparent; }
+#menu .row.on { color: var(--ye); border-left-color: var(--ye); background: rgba(255,227,74,0.06); text-shadow: 0 0 6px rgba(255,227,74,0.5); }
+#menu .row .k { width: 12px; }
+#menu .row .lb { flex: 1; }
+#menu .row .v { color: var(--cy); font-size: 13px; letter-spacing: 0.06em; }
+#menu .row.on .v { color: var(--ye); }
+#menu .row .adj { cursor: pointer; opacity: 0.7; }
+#menu .line { min-height: 18px; margin-top: 10px; font-size: 11px; color: var(--gr); letter-spacing: 0.08em; opacity: 0.85; }
+#menu .ft { margin-top: 8px; font-size: 10px; color: rgba(53,242,255,0.55); letter-spacing: 0.12em; }
+#menu .ft .build { color: var(--mg); }
+#menu .scan { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.5) 2px 3px); animation: crawl-flicker 0.11s steps(2) infinite; }

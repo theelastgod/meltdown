@@ -84,6 +84,19 @@ export class Renderer {
   readonly fx: ArsenalFx;
   readonly wake: WakeFx;
   private baseFov = 80;
+  /** Settings: field of view and the CRT intensity. */
+  setFov(fov: number): void {
+    this.baseFov = Math.max(60, Math.min(110, fov));
+  }
+  get fov(): number {
+    return this.baseFov;
+  }
+  setCrt(k: number): void {
+    this.post.setCrt(k);
+  }
+  crtLevel() {
+    return this.post.crtLevel();
+  }
   private fovNow = 80;
   private vmKick = 0;
   private eyeSmooth = MOVE.eyeStand;

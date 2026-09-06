@@ -22,7 +22,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 11 | Endgame loops: daily contracts, weekly Audit playlists with per-week leaderboards, the Deep Wake seasonal district graph, Rewrite prestige + the Wakelight shop (themes, alias and preset slots — never a stat) | **done** | `docs/proof/stage11/` |
 | 11b | The Counter-Ledger: WAKE on Robinhood Chain, SIWE wallet link, soulbound Ghostfile + stamp attestations through game-signed vouchers, the Ledger Market, names at Depth 50, an in-process EVM devnet until the testnet parameters land (`docs/TOKENOMICS.md`) | **done** (devnet; testnet is configuration) | `docs/proof/stage11b/` |
 | 12 | Opening crawl: cyan monospace on black, typed-then-held paragraphs, scanline flicker, glitch tears, ~34 s, skippable after the first view, hard cut to silence, the MELTDOWN title; original copy until the owner's text lands | **done** | `docs/proof/stage12/` |
-| 13 | Polish & ship | | |
+| 13 | Polish & ship: the CRT menu flow with the two title cards, settings applied live and kept, the audio pass (buses, UI cues, the card sting, the low-health pulse), Cloudflare Pages + Workers deploy, the smoke test in CI | **done** (deploy is a workflow gated on the Cloudflare secrets) | `docs/proof/stage13/` |
 
 ## Stage 1 — Grey-box FPS core
 
@@ -321,6 +321,81 @@ recorded; the title's click removes the overlay with the game ready
 underneath; on the second view the hint shows, SPACE lands in the cut
 (silent, no text) and the title follows; `?headless=1` alone boots straight
 into the game; no page errors.
+
+## Stage 13 — Polish & ship
+
+**Goal.** The CRT menu flow with the title cards "Every mind in Lethe is
+leased." / "You woke free.", settings, a full audio pass, deploy to
+Cloudflare Pages + Workers, and a smoke test in CI.
+
+**Files.**
+- `client/menu.ts` — the flow after the crawl's title (or straight away):
+  the two title cards, each on its own clock so a slow frame cannot skip
+  one, then the menu — WAKE (a district, then the public room on the
+  configured host), CAMPAIGN (the desk at the Deadletter Office), THE
+  OFFICE (the hub), THE RANGE (the yard, offline), FILE (the Ghostfile
+  panel), SETTINGS. ↑↓ move, ENTER selects, ← → adjust, ESC backs out.
+  A choice is a URL that names the mode, like district travel. In play,
+  losing pointer lock (ESC) opens the pause menu: RESUME / SETTINGS / FILE /
+  QUIT TO MENU. `?menu=1` forces the flow, `?menu=0` never; deep links
+  (a level, a room, a mission) and headless boots skip it; `?nonav=1`
+  reports the URL a choice would load (the probe).
+- `client/settings.ts` — mouse sensitivity, field of view, master / SFX /
+  city-bed volumes, the CRT intensity, "opening crawl every visit"; clamped
+  and rounded to their ranges on read, persisted in the browser, applied
+  live: sensitivity is input, FOV and CRT are the renderer, volumes are the
+  audio buses. Never the sim.
+- `client/render/post.ts`, `client/render/renderer.ts` — `setCrt(k)` scales
+  grain, aberration, scanlines and vignette (0 clean, 1 as shipped, 1.5
+  heavy); `setFov`.
+- `client/audio.ts` — the audio pass: a master → sfx bus for every cue with
+  the city bed on its own bus under master; `setVolumes`; a duck when the
+  tab is hidden; UI cues (move / select / back); the title-card sting; the
+  low-health pulse that beats every 620 ms under 30 health until the
+  shield is back. `client/game.ts` — settings applied at boot and live;
+  the pulse in the frame; the lock-lost hook.
+- `client/config.ts` — the hosts from `VITE_*` at build time (the three
+  Workers, the public room), dev defaults to the Node host; the counter
+  client uses `VITE_COUNTER_URL` when set.
+- `probe/smoke.ts` (`npm run smoke`) — the built bundle served by
+  `vite preview`: boots, joins a room on the host, the sim advances, a frame
+  renders, the menu flow runs, no errors. What CI runs after `npm run build`
+  and what the Pages deploy runs before publishing.
+- `.github/workflows/deploy.yml` — Workers (match, campaign, counter) with
+  wrangler, then the Pages build with the `VITE_*` variables, the smoke test,
+  `wrangler pages deploy`; gated on the `CF_DEPLOY` variable and the
+  Cloudflare secrets. `docs/DEPLOY.md` — the same by hand: D1, the secrets,
+  the three deploys, the counter-ledger's contract deploy when the testnet
+  parameters land. `.env.example`.
+- `.github/workflows/verify.yml` — every stage probe, both lints, the build
+  and the smoke test. `tests/settings.test.ts` (2), `probe/stage13.ts`.
+
+**Design decisions.**
+- Modes are URLs. The menu's choices reload the client with the query that
+  describes the mode, the same way district travel already works, so every
+  screen is a deep link a probe (or a friend) can open directly.
+- The pause menu rides on pointer-lock loss, which is what ESC does in a
+  browser; it stays out of the way when the FILE panel or the crawl has the
+  screen.
+- Settings never reach the sim: the deterministic step is shared with the
+  server, so sensitivity, FOV, CRT and volumes are the only knobs.
+- Deploy is a workflow, not a promise: it runs on `main` once the secrets
+  are set and refuses to publish a build the smoke test did not pass.
+
+**Acceptance (`npm run probe:ship`, 9/9; `npm run build && npm run smoke`,
+3/3; `npm test`, 149 tests):** the two title cards appear in order over
+black terminal chrome with the scanline pass, then the menu; the menu lists
+the six entries with the file's identity line and ↓↑ move the cursor;
+CAMPAIGN / THE OFFICE / THE RANGE resolve to the hub-desk, hub and yard
+URLs, WAKE lists the districts and a pick resolves to the public room on
+the host; SETTINGS step sensitivity (1.05×) and FOV (85°), CRT 0 zeroes
+grain and scanlines and 1.5 raises them, master 0.3 reaches the bus, and
+the store holds all of it; a reload applies the saved settings; ESC in
+play is the pause menu with RESUME / SETTINGS / FILE / QUIT TO MENU, ESC
+resumes, QUIT is the menu's URL; the audio pass fires the card sting, the
+UI cues and the low-health pulse under 30 health; deep links and headless
+boots skip the flow; the smoke test on the production bundle joins a room,
+advances the sim and shows the first title card; no page errors.
 
 ## Stage 3 — The look
 
