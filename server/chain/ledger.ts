@@ -10,7 +10,7 @@ import { createPublicClient, createWalletClient, defineChain, formatEther, parse
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import { parseSiweMessage, validateSiweMessage } from "viem/siwe";
 import type { Account, CounterRecord } from "../../shared/progression/account";
-import { emptyCounter, LAUNCH_GRANT, LAUNCH_GRANT_DEPTH, NAME_DEPTH, nameFee, SIWE_STATEMENT, validName } from "../../shared/economy/counter";
+import { CAPITAL_PER_UNIT, emptyCounter, LAUNCH_GRANT, LAUNCH_GRANT_DEPTH, NAME_DEPTH, nameFee, SIWE_STATEMENT, validName } from "../../shared/economy/counter";
 import { SKINS } from "../../shared/economy/catalog";
 import { ARTIFACTS, type Contracts } from "./deploy";
 import { GameSigner } from "./signer";
@@ -40,7 +40,7 @@ export interface Listing {
   listing: number;
   token: number;
   amount: number;
-  /** whole WAKE per unit */
+  /** whole $CAPITAL per unit */
   price: number;
   seller: Hex;
 }
@@ -172,12 +172,12 @@ export class CounterLedger {
     const c = a.counter;
     if (!c?.address || !this.opts.devnet || a.depth < LAUNCH_GRANT_DEPTH || this.granted.has(a.id)) return { ok: false, reason: "no grant" };
     try {
-      const bal = (await this.pub.readContract({ address: this.opts.contracts.wake, abi: ARTIFACTS.WAKE!.abi, functionName: "balanceOf", args: [c.address as Hex] })) as bigint;
+      const bal = (await this.pub.readContract({ address: this.opts.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "balanceOf", args: [c.address as Hex] })) as bigint;
       if (bal > 0n) return { ok: false, reason: "already funded" };
-      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.wake, abi: ARTIFACTS.WAKE!.abi, functionName: "transfer", args: [c.address as Hex, parseEther(String(LAUNCH_GRANT))] });
+      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "transfer", args: [c.address as Hex, parseEther(String(LAUNCH_GRANT))] });
       await this.pub.waitForTransactionReceipt({ hash });
       this.granted.add(a.id);
-      this.log(`launch grant ${LAUNCH_GRANT} WAKE → ${a.id}`);
+      this.log(`launch grant ${LAUNCH_GRANT} $CAPITAL → ${a.id}`);
       return { ok: true };
     } catch (e) {
       return soft(e);
@@ -197,22 +197,42 @@ export class CounterLedger {
     return { ok: true, voucher: { name: n, nonce: v.message.nonce.toString(), deadline: v.message.deadline.toString(), signature: v.signature, fee } };
   }
 
-  /** Read the chain into the file's cache: WAKE balance, Ghostfile, name, and the rig from the skin balances. */
+  /** THE RUN's payout: what the file is owed goes from the treasury to the wallet (the devnet's relayer is the treasury; production posts a PrizeVault Merkle root). */
+  async payout(a: Account): Promise<Result & { paid?: number }> {
+    const c = a.counter;
+    if (!c?.address) return { ok: false, reason: "no wallet linked" };
+    const run = c.run ?? { day: 0, banked: 0, owed: 0, paid: 0 };
+    if (run.owed <= 0) return { ok: false, reason: "nothing owed" };
+    try {
+      const units = run.owed;
+      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "transfer", args: [c.address as Hex, parseEther(String(units * CAPITAL_PER_UNIT))] });
+      const r = await this.pub.waitForTransactionReceipt({ hash });
+      if (r.status !== "success") return { ok: false, reason: "payout reverted" };
+      a.counter = { ...c, run: { ...run, owed: 0, paid: run.paid + units } };
+      this.log(`payout ${units} $CAPITAL → ${a.id}`);
+      await this.reconcile(a);
+      return { ok: true, paid: units };
+    } catch (e) {
+      return soft(e);
+    }
+  }
+
+  /** Read the chain into the file's cache: $CAPITAL balance, Ghostfile, name, and the rig from the skin balances. */
   async reconcile(a: Account): Promise<Result & { counter?: CounterRecord }> {
     const c = a.counter;
     if (!c?.address) return { ok: false, reason: "no wallet linked" };
     try {
       const wallet = c.address as Hex;
       const k = this.opts.contracts;
-      const [wake, token, name, balances] = await Promise.all([
-        this.pub.readContract({ address: k.wake, abi: ARTIFACTS.WAKE!.abi, functionName: "balanceOf", args: [wallet] }) as Promise<bigint>,
+      const [capital, token, name, balances] = await Promise.all([
+        this.pub.readContract({ address: k.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "balanceOf", args: [wallet] }) as Promise<bigint>,
         this.pub.readContract({ address: k.ghostfile, abi: ARTIFACTS.Ghostfile!.abi, functionName: "tokenOf", args: [wallet] }) as Promise<bigint>,
         this.pub.readContract({ address: k.names, abi: ARTIFACTS.Names!.abi, functionName: "nameOf", args: [wallet] }) as Promise<string>,
         this.pub.readContract({ address: k.cosmetics, abi: ARTIFACTS.Cosmetics!.abi, functionName: "balanceOfBatch", args: [SKINS.map(() => wallet), SKINS.map((s) => BigInt(s.token))] }) as Promise<bigint[]>,
       ]);
       const rig = SKINS.filter((_, i) => (balances[i] ?? 0n) > 0n).map((s) => s.token);
       const worn = rig.includes(c.worn) ? c.worn : 0;
-      a.counter = { ...c, wake: formatEther(wake), ghostfile: Number(token), name: name || null, rig, worn };
+      a.counter = { ...c, capital: formatEther(capital), ghostfile: Number(token), name: name || null, rig, worn };
       return { ok: true, counter: a.counter };
     } catch (e) {
       return soft(e);
@@ -235,8 +255,8 @@ export class CounterLedger {
   async treasury() {
     const k = this.opts.contracts;
     const [supply, burned, volume] = await Promise.all([
-      this.pub.readContract({ address: k.wake, abi: ARTIFACTS.WAKE!.abi, functionName: "totalSupply" }) as Promise<bigint>,
-      this.pub.readContract({ address: k.wake, abi: ARTIFACTS.WAKE!.abi, functionName: "burned" }) as Promise<bigint>,
+      this.pub.readContract({ address: k.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "totalSupply" }) as Promise<bigint>,
+      this.pub.readContract({ address: k.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "burned" }) as Promise<bigint>,
       this.pub.readContract({ address: k.market, abi: ARTIFACTS.LedgerMarket!.abi, functionName: "volume" }) as Promise<bigint>,
     ]);
     return { supply: formatEther(supply), burned: formatEther(burned), volume: formatEther(volume) };
@@ -253,7 +273,7 @@ export class CounterLedger {
     };
     for (const s of SKINS) await w(k.cosmetics, ARTIFACTS.Cosmetics!.abi, "mint", [me, BigInt(s.token), BigInt(units), me, s.wearSeed]);
     await w(k.cosmetics, ARTIFACTS.Cosmetics!.abi, "setApprovalForAll", [k.market, true]);
-    for (const s of SKINS) await w(k.market, ARTIFACTS.LedgerMarket!.abi, "list", [BigInt(s.token), BigInt(units), parseEther(String(s.wake))]);
+    for (const s of SKINS) await w(k.market, ARTIFACTS.LedgerMarket!.abi, "list", [BigInt(s.token), BigInt(units), parseEther(String(s.capital))]);
     this.log(`market seeded: ${SKINS.length} skins × ${units}`);
   }
 }

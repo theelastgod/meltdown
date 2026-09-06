@@ -6,7 +6,7 @@
  *  buys a skin on the LedgerMarket with its own transactions (the 2/2/1 fee lands on chain), the
  *  host reconciles the rig from the chain, the file wears the skin, and in the next match the
  *  other client's snapshot carries it as a token id only. The round's stamps attest on chain
- *  through vouchers; a Depth-50 file writes its name (WAKE burned by length). A second file cannot
+ *  through vouchers; a Depth-50 file writes its name ($CAPITAL burned by length). A second file cannot
  *  bind the same wallet. With the chain dead, link and reconcile fail soft while equip, the match
  *  and the settlement keep working. The one rule lints the full manifest.
  *
@@ -56,7 +56,7 @@ const ARGS = ["--no-proxy-server", "--use-angle=swiftshader", "--use-gl=angle", 
 interface Info {
   chainId: number;
   devnet: boolean;
-  contracts: { wake: Hex; ghostfile: Hex; stamps: Hex; names: Hex; cosmetics: Hex; market: Hex };
+  contracts: { capital: Hex; ghostfile: Hex; stamps: Hex; names: Hex; cosmetics: Hex; market: Hex };
   signer: Hex;
   rpc: string;
   listings: { listing: number; token: number; amount: number; price: number }[];
@@ -68,7 +68,7 @@ interface FileRec {
   depth: number;
   xp: number;
   stamps: string[];
-  counter: { address: string | null; ghostfile: number; stamps: string[]; name: string | null; rig: number[]; worn: number; wake: string } | null;
+  counter: { address: string | null; ghostfile: number; stamps: string[]; name: string | null; rig: number[]; worn: number; capital: string } | null;
 }
 
 async function main(): Promise<void> {
@@ -104,8 +104,8 @@ async function main(): Promise<void> {
     const rpcChain = await pub.getChainId();
     const code = await pub.getCode({ address: i0.contracts.ghostfile });
     const read = <T>(address: Hex, name: string, fn: string, args: unknown[] = []) => pub.readContract({ address, abi: ARTIFACTS[name]!.abi, functionName: fn, args }) as Promise<T>;
-    const supply = await read<bigint>(i0.contracts.wake, "WAKE", "totalSupply");
-    check("the ledger host runs an EVM devnet behind JSON-RPC with the six contracts deployed, WAKE at its fixed cap and the market seeded with every skin", rpcChain === i0.chainId && !!code && code.length > 100 && Object.keys(i0.contracts).length === 6 && supply === parseEther("1000000000") && i0.listings.length === SKINS.length && i0.listings.every((l) => SKINS.some((s) => s.token === l.token && s.wake === l.price)), `chain ${rpcChain} · ghostfile code ${code ? code.length / 2 - 1 : 0} B · listings ${i0.listings.map((l) => `#${l.token}@${l.price}`).join(" ")}`);
+    const supply = await read<bigint>(i0.contracts.capital, "CAPITAL", "totalSupply");
+    check("the ledger host runs an EVM devnet behind JSON-RPC with the six contracts deployed, $CAPITAL at its fixed cap and the market seeded with every skin", rpcChain === i0.chainId && !!code && code.length > 100 && Object.keys(i0.contracts).length === 6 && supply === parseEther("1000000000") && i0.listings.length === SKINS.length && i0.listings.every((l) => SKINS.some((s) => s.token === l.token && s.capital === l.price)), `chain ${rpcChain} · ghostfile code ${code ? code.length / 2 - 1 : 0} B · listings ${i0.listings.map((l) => `#${l.token}@${l.price}`).join(" ")}`);
 
     // ---------------- the link ----------------
     const acct = "sandbox-cl";
@@ -122,7 +122,7 @@ async function main(): Promise<void> {
     const f1 = await file(acct);
     const owner = await read<Hex>(i0.contracts.ghostfile, "Ghostfile", "ownerOf", [1n]);
     const ethAfter = await pub.getBalance({ address: player.address });
-    check("the panel offers the link; SIWE with a local account in place of WalletConnect: the host verifies, binds the wallet 1:1 to the file, and mints the soulbound Ghostfile with sponsored gas", /COUNTER-LEDGER/.test(panel0) && /LINK A WALLET/.test(panel0) && link.ok && v1.view?.linked === true && v1.view.address?.toLowerCase() === player.address.toLowerCase() && v1.view.ghostfile === 1 && f1.counter?.ghostfile === 1 && owner.toLowerCase() === player.address.toLowerCase() && ethBefore === 0n && ethAfter === 0n && Number(v1.view.wake) === LAUNCH_GRANT, `link ${link.ok} ${link.reason ?? ""} · wallet ${v1.wallet} · ghostfile #${v1.view?.ghostfile} owner ${owner.slice(0, 8)} · wallet ETH ${ethAfter} · WAKE ${v1.view?.wake}`);
+    check("the panel offers the link; SIWE with a local account in place of WalletConnect: the host verifies, binds the wallet 1:1 to the file, and mints the soulbound Ghostfile with sponsored gas", /COUNTER-LEDGER/.test(panel0) && /LINK A WALLET/.test(panel0) && link.ok && v1.view?.linked === true && v1.view.address?.toLowerCase() === player.address.toLowerCase() && v1.view.ghostfile === 1 && f1.counter?.ghostfile === 1 && owner.toLowerCase() === player.address.toLowerCase() && ethBefore === 0n && ethAfter === 0n && Number(v1.view.capital) === LAUNCH_GRANT, `link ${link.ok} ${link.reason ?? ""} · wallet ${v1.wallet} · ghostfile #${v1.view?.ghostfile} owner ${owner.slice(0, 8)} · wallet ETH ${ethAfter} · $CAPITAL ${v1.view?.capital}`);
     let soulbound = false;
     try {
       await pub.simulateContract({ address: i0.contracts.ghostfile, abi: ARTIFACTS.Ghostfile!.abi, functionName: "transferFrom", args: [player.address, i0.signer, 1n], account: player });
@@ -139,10 +139,10 @@ async function main(): Promise<void> {
     // ---------------- the market ----------------
     await post("/chain/faucet", { address: player.address }); // gas for the wallet's own transactions (devnet)
     const rust = i0.listings.find((l) => l.token === 1)!;
-    const burned0 = await read<bigint>(i0.contracts.wake, "WAKE", "burned");
+    const burned0 = await read<bigint>(i0.contracts.capital, "CAPITAL", "burned");
     const buy = await a.evaluate((l) => window.__game.buySkin(l), rust.listing);
     await a.waitForTimeout(300);
-    const burned1 = await read<bigint>(i0.contracts.wake, "WAKE", "burned");
+    const burned1 = await read<bigint>(i0.contracts.capital, "CAPITAL", "burned");
     const bal = await read<bigint>(i0.contracts.cosmetics, "Cosmetics", "balanceOf", [1n, player.address]);
     const v2 = await a.evaluate(() => window.__game.counter());
     const wear = await a.evaluate(() => window.__game.wearSkin(1));
@@ -154,7 +154,7 @@ async function main(): Promise<void> {
     await a.screenshot({ path: `${OUT}/stage11b-file.png` });
     const panel1 = await a.evaluate(() => (document.querySelector("#hud .file .cl") as HTMLElement)?.textContent ?? "");
     const price = parseEther(String(rust.price));
-    check("a market buy is the player's own signed transactions: the 2% burn lands on chain, the skin lands in the wallet, the host reconciles it onto the rig, the file wears it and the local viewmodel takes the tint", !!buy.ok && burned1 - burned0 === (price * 200n) / 10_000n && bal === 1n && !!v2.view?.rig.some((r) => r.token === 1) && Number(v2.view.wake) === LAUNCH_GRANT - rust.price && wear.ok && v3.view?.worn === 1 && v3.tint === SKINS[0]!.tint && /WORN/.test(panel1), `buy ${buy.ok} ${buy.reason ?? ""} · burned +${(burned1 - burned0).toString()} wei · 1155 balance ${bal} · rig [${v2.view?.rig.map((r) => r.id).join(", ")}] · worn ${v3.view?.worn} tint ${v3.tint}`);
+    check("a market buy is the player's own signed transactions: the 2% burn lands on chain, the skin lands in the wallet, the host reconciles it onto the rig, the file wears it and the local viewmodel takes the tint", !!buy.ok && burned1 - burned0 === (price * 200n) / 10_000n && bal === 1n && !!v2.view?.rig.some((r) => r.token === 1) && Number(v2.view.capital) === LAUNCH_GRANT - rust.price && wear.ok && v3.view?.worn === 1 && v3.tint === SKINS[0]!.tint && /WORN/.test(panel1), `buy ${buy.ok} ${buy.reason ?? ""} · burned +${(burned1 - burned0).toString()} wei · 1155 balance ${bal} · rig [${v2.view?.rig.map((r) => r.id).join(", ")}] · worn ${v3.view?.worn} tint ${v3.tint}`);
 
     // ---------------- the match: the skin travels as an ID ----------------
     const roomUrl = (room: string) => `ws://127.0.0.1:${HOST_PORT}/room/${room}?warmup=0.5&round=6&ai=0&level=drainage_yard`;
@@ -189,10 +189,10 @@ async function main(): Promise<void> {
     const firstAt = fAfter.stamps.length ? await read<bigint>(i0.contracts.stamps, "Stamps", "attestedAt", [player.address, stampIdOf(fAfter.stamps[0]!)]) : 0n;
     const fStamped = await file(acct);
     check("the round's stamps reach the chain as server-signed attestations (one voucher each, gas sponsored), readable by anyone", phase === "results" && fAfter.stamps.length > 0 && st.ok && Number(onChain) === Math.min(12, fAfter.stamps.length) && firstAt > 0n && fStamped.counter?.stamps.length === Number(onChain), `stamps on file ${fAfter.stamps.length} · on chain ${onChain} · first at ${firstAt}`);
-    const burned2 = await read<bigint>(i0.contracts.wake, "WAKE", "burned");
+    const burned2 = await read<bigint>(i0.contracts.capital, "CAPITAL", "burned");
     const named = await a.evaluate(() => window.__game.registerName("the_auditor"));
     await a.waitForTimeout(300);
-    const burned3 = await read<bigint>(i0.contracts.wake, "WAKE", "burned");
+    const burned3 = await read<bigint>(i0.contracts.capital, "CAPITAL", "burned");
     const nameOnChain = await read<string>(i0.contracts.names, "Names", "nameOf", [player.address]);
     const v4 = await a.evaluate(() => window.__game.counter());
     await a.evaluate(() => window.__game.toggleFile(true));
@@ -200,7 +200,7 @@ async function main(): Promise<void> {
     await a.evaluate(() => document.querySelector("#hud .file .cl")?.scrollIntoView());
     await a.screenshot({ path: `${OUT}/stage11b-name.png` });
     await a.evaluate(() => window.__game.toggleFile(false));
-    check("at Depth 50 the file writes its name: a game voucher, the player's own transaction, the fee burned by length (11 characters → 250 WAKE), soulbound", named.ok && nameOnChain === "THE_AUDITOR" && burned3 - burned2 === parseEther(String(nameFee(11))) && v4.view?.name === "THE_AUDITOR", `name ${nameOnChain} · burned +${Number(burned3 - burned2) / 1e18} WAKE · ${named.reason ?? ""}`);
+    check("at Depth 50 the file writes its name: a game voucher, the player's own transaction, the fee burned by length (11 characters → 250 $CAPITAL), soulbound", named.ok && nameOnChain === "THE_AUDITOR" && burned3 - burned2 === parseEther(String(nameFee(11))) && v4.view?.name === "THE_AUDITOR", `name ${nameOnChain} · burned +${Number(burned3 - burned2) / 1e18} $CAPITAL · ${named.reason ?? ""}`);
     const fresh = await file("fresh-cl");
     const noVoucher = await post(`/file/fresh-cl/counter`, { op: "name", name: "someone" });
     check("a Depth-1 file gets no name voucher", fresh.depth < 50 && !noVoucher.ok, `${noVoucher.reason}`);
@@ -244,7 +244,7 @@ async function main(): Promise<void> {
     // ---------------- the one rule ----------------
     const items = economyManifest();
     const clean = lintEconomy(items);
-    const dirty = lintEconomy([...items, { id: "skin_with_stats", kind: "cosmetic", mechanical: { benefits: [{ stat: "damage", delta: 0.05 }], costs: [{ stat: "recoil", delta: 0.05 }] }, market: { wake: 40, onChain: true, tradable: true, randomness: "wear_seed" } }]);
+    const dirty = lintEconomy([...items, { id: "skin_with_stats", kind: "cosmetic", mechanical: { benefits: [{ stat: "damage", delta: 0.05 }], costs: [{ stat: "recoil", delta: 0.05 }] }, market: { capital: 40, onChain: true, tradable: true, randomness: "wear_seed" } }]);
     const tr = (await info()).treasury;
     check("the one rule over the full manifest: every node, chip, firmware, theme, skin and registry item lints clean; a priced item with a stat fails the build; the treasury line reconciles burns", clean.length === 0 && items.length > 200 && dirty.some((v) => v.rule === "no-paid-power") && !!tr && Number(tr.burned) > 0 && Number(tr.volume) === rust.price, `${items.length} items · 0 violations · dirty: ${dirty.map((v) => v.rule).join(",")} · burned ${Number(tr?.burned).toFixed(2)} · volume ${tr?.volume}`);
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");

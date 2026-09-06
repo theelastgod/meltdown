@@ -60,8 +60,8 @@ describe("the counter-ledger on the devnet", () => {
     const first = a.stamps[0]!;
     const at = (await b.pub.readContract({ address: b.contracts.stamps, abi: ARTIFACTS.Stamps!.abi, functionName: "attestedAt", args: [player.address, (await import("../server/chain/signer")).stampIdOf(first)] })) as bigint;
     expect(at).toBeGreaterThan(0n);
-    // launch grant on the devnet: a Depth-50 file holds WAKE now
-    expect(Number(a.counter!.wake)).toBe(LAUNCH_GRANT);
+    // launch grant on the devnet: a Depth-50 file holds $CAPITAL now
+    expect(Number(a.counter!.capital)).toBe(LAUNCH_GRANT);
   }, 60_000);
 
   it("a market buy is player-signed, takes the 2/2/1 fee on chain, and lands on the rig through reconcile — as an ID only", async () => {
@@ -71,18 +71,18 @@ describe("the counter-ledger on the devnet", () => {
     const wal = createWalletClient({ chain, transport: b.transport, account: player });
     const listings = await b.ledger.listings();
     const rust = listings.find((l) => l.token === 1)!;
-    expect(rust.price).toBe(skinByToken(1)!.wake);
+    expect(rust.price).toBe(skinByToken(1)!.capital);
     const price = parseEther(String(rust.price));
-    const burnedBefore = (await b.pub.readContract({ address: b.contracts.wake, abi: ARTIFACTS.WAKE!.abi, functionName: "burned" })) as bigint;
-    await b.pub.waitForTransactionReceipt({ hash: await wal.writeContract({ chain, address: b.contracts.wake, abi: ARTIFACTS.WAKE!.abi, functionName: "approve", args: [b.contracts.market, price] }) });
+    const burnedBefore = (await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "burned" })) as bigint;
+    await b.pub.waitForTransactionReceipt({ hash: await wal.writeContract({ chain, address: b.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "approve", args: [b.contracts.market, price] }) });
     const rc = await b.pub.waitForTransactionReceipt({ hash: await wal.writeContract({ chain, address: b.contracts.market, abi: ARTIFACTS.LedgerMarket!.abi, functionName: "buy", args: [BigInt(rust.listing), 1n] }) });
     expect(rc.status).toBe("success");
-    const burnedAfter = (await b.pub.readContract({ address: b.contracts.wake, abi: ARTIFACTS.WAKE!.abi, functionName: "burned" })) as bigint;
+    const burnedAfter = (await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "burned" })) as bigint;
     expect(burnedAfter - burnedBefore).toBe((price * 200n) / 10_000n);
     const r = await counterRequest(a, { op: "reconcile" }, b.ledger);
     expect(r.ok).toBe(true);
     expect(a.counter!.rig).toEqual([1]);
-    expect(Number(a.counter!.wake)).toBe(LAUNCH_GRANT - rust.price);
+    expect(Number(a.counter!.capital)).toBe(LAUNCH_GRANT - rust.price);
     expect(wearSkin(a, 2).ok).toBe(false);
     expect(wearSkin(a, 1).ok).toBe(true);
     // the identity carries the token id and nothing else of the purchase
@@ -92,7 +92,7 @@ describe("the counter-ledger on the devnet", () => {
     expect(identityTag({ ...pi, skin: 0 }).split(".").length).toBe(4);
   }, 60_000);
 
-  it("a name at Depth 50 burns WAKE by length through a game voucher; a Depth-1 file gets no voucher", async () => {
+  it("a name at Depth 50 burns $CAPITAL by length through a game voucher; a Depth-1 file gets no voucher", async () => {
     const a = store.accounts.get("sandbox-link")!;
     expect((await b.ledger.nameVoucher(a, "x")).reason).toMatch(/3–24/);
     const v = await b.ledger.nameVoucher(a, "the auditor");
@@ -102,11 +102,11 @@ describe("the counter-ledger on the devnet", () => {
     expect(ok.voucher!.fee).toBe(nameFee(11));
     const wal = createWalletClient({ chain, transport: b.transport, account: player });
     const fee = parseEther(String(ok.voucher!.fee));
-    await b.pub.waitForTransactionReceipt({ hash: await wal.writeContract({ chain, address: b.contracts.wake, abi: ARTIFACTS.WAKE!.abi, functionName: "approve", args: [b.contracts.names, fee] }) });
-    const burnedBefore = (await b.pub.readContract({ address: b.contracts.wake, abi: ARTIFACTS.WAKE!.abi, functionName: "burned" })) as bigint;
+    await b.pub.waitForTransactionReceipt({ hash: await wal.writeContract({ chain, address: b.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "approve", args: [b.contracts.names, fee] }) });
+    const burnedBefore = (await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "burned" })) as bigint;
     const rc = await b.pub.waitForTransactionReceipt({ hash: await wal.writeContract({ chain, address: b.contracts.names, abi: ARTIFACTS.Names!.abi, functionName: "register", args: [ok.voucher!.name, BigInt(ok.voucher!.nonce), BigInt(ok.voucher!.deadline), ok.voucher!.signature] }) });
     expect(rc.status).toBe("success");
-    const burnedAfter = (await b.pub.readContract({ address: b.contracts.wake, abi: ARTIFACTS.WAKE!.abi, functionName: "burned" })) as bigint;
+    const burnedAfter = (await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "burned" })) as bigint;
     expect(burnedAfter - burnedBefore).toBe(fee);
     await b.ledger.reconcile(a);
     expect(a.counter!.name).toBe("THE_AUDITOR");

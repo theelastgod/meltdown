@@ -5,6 +5,9 @@
  * pose history for lag-compensated hitscan, sends quantized delta snapshots,
  * and supports rejoin by token.
  */
+import { encodeRun, type RunMsg } from "../shared/net/protocol";
+import { CAPITAL_PER_UNIT, RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT, runView } from "../shared/sim/run";
+import { dayIndex } from "../shared/endgame/clock";
 import { SIM_HZ } from "../shared/sim/constants";
 import { auditErrors, type AuditDef } from "../shared/endgame/audits";
 import { itemById } from "../shared/manifest/items";
@@ -112,6 +115,8 @@ export interface RoomOptions {
   audit?: { week: number; def: AuditDef } | null;
   /** Audit leaderboards and the Deep Wake season (settlement pushes into it) */
   endgame?: EndgameStore | null;
+  /** THE RUN (Stage 14): claims, safe zones, banking; the room credits the file per bank and the counter-ledger pays the wallet */
+  run?: boolean;
   /** "warmup" (the wake) or "off" (a campaign contract) */
   wakePhase?: "warmup" | "off";
   dummyRespawn?: boolean;
@@ -148,6 +153,8 @@ export interface RoomStats {
   social: Record<string, number>;
   campaignStripped: number;
   audit: { id: string; week: number; scores: number[] } | null;
+  /** THE RUN (Stage 14) */
+  run: { totalBanked: number; claims: number; carried: Record<string, number>; banked: Record<string, number>; credits: string[] } | null;
   seasonLast: string | null;
   loadoutRejections: string[];
   shotDiag: Record<string, number>;
@@ -197,10 +204,11 @@ export class Room {
       hooks: opts.hooks ?? {},
       audit: opts.audit ?? null,
       endgame: opts.endgame ?? null,
+      run: opts.run ?? false,
       wakePhase: opts.wakePhase ?? "warmup",
       dummyRespawn: opts.dummyRespawn ?? true,
     };
-    this.world = new World(levelById(this.opts.level || undefined), { ai: this.opts.ai, seed: this.opts.seed, wakePhase: this.opts.wakePhase, warmupSeconds: this.opts.warmupSeconds, roundSeconds: this.opts.roundSeconds, dummyRespawn: this.opts.dummyRespawn });
+    this.world = new World(levelById(this.opts.level || undefined), { run: !!opts.run, ai: this.opts.ai, seed: this.opts.seed, wakePhase: this.opts.wakePhase, warmupSeconds: this.opts.warmupSeconds, roundSeconds: this.opts.roundSeconds, dummyRespawn: this.opts.dummyRespawn });
     if (this.opts.audit) this.world.gravityMult = this.opts.audit.def.gravityMult;
     this.startedAt = this.opts.now();
     this.lastRateAt = this.startedAt;
@@ -633,6 +641,7 @@ export class Room {
   /** Round start: everyone's credit counts from here. */
   /** what the Welcome tells a client about the room: "" for a plain wake, `audit:<id>:<week>` for a playlist, `campaign` for co-op */
   mode(): string {
+    if (this.opts.run) return "run";
     if (this.opts.audit) return `audit:${this.opts.audit.def.id}:${this.opts.audit.week}`;
     return this.opts.hooks.afterStep ? "campaign" : "";
   }
@@ -740,6 +749,54 @@ export class Room {
     }
   }
 
+  // ---- THE RUN (Stage 14): the room credits the file per bank; the counter-ledger pays the wallet ----
+  private runDirty = false;
+  private runCredits: string[] = [];
+  /** A bank: at the gate, the day's units against the cap become $CAPITAL owed; below it, Scrip. Never a stat. */
+  private onBank(playerId: number, value: number, zone: string): void {
+    const rec = this.clients.get(playerId);
+    const a = rec?.account;
+    if (!rec || !a) return;
+    const day = dayIndex(this.opts.now());
+    if (!a.counter) a.counter = { address: null, linkedAt: 0, ghostfile: 0, stamps: [], name: null, rig: [], worn: 0, capital: "0" };
+    const run = a.counter.run && a.counter.run.day === day ? a.counter.run : { day, banked: 0, owed: a.counter.run?.owed ?? 0, paid: a.counter.run?.paid ?? 0 };
+    let line: string;
+    if (a.depth < RUN_DEPTH) {
+      a.wallet.scrip += value * RUN_SCRIP_PER_UNIT;
+      line = `BANKED ${value} AT ${zone} · ${value * RUN_SCRIP_PER_UNIT} SCRIP (the run pays $CAPITAL from Depth ${RUN_DEPTH})`;
+    } else {
+      const room = Math.max(0, RUN_DAILY_CAP - run.banked);
+      const paid = Math.min(value, room);
+      run.banked += paid;
+      run.owed += paid * CAPITAL_PER_UNIT;
+      line = paid < value ? `BANKED ${value} AT ${zone} · ${paid} $CAPITAL OWED · DAY CAP ${RUN_DAILY_CAP} REACHED` : `BANKED ${value} AT ${zone} · ${paid} $CAPITAL OWED`;
+    }
+    a.counter.run = run;
+    a.counters["runBanked"] = (a.counters["runBanked"] ?? 0) + value;
+    a.ledger.push(line);
+    if (a.ledger.length > 200) a.ledger.splice(0, a.ledger.length - 200);
+    this.runCredits.push(`${rec.name}: ${line}`);
+    this.saveAccount(a);
+    this.opts.onLog(`run · ${a.id}: ${line}`);
+    rec.conn?.send(encodeFile(this.fileMsg(rec, [line], "settle", rec.progress.fileMilestones({ stamps: [], ranks: [], challenges: [] }))));
+  }
+  /** The run as each client sees it, pushed on change and every half second. */
+  private pushRun(): void {
+    const run = this.world.run;
+    if (!run) return;
+    if (!this.runDirty && this.tick % 30 !== 0) return;
+    this.runDirty = false;
+    const day = dayIndex(this.opts.now());
+    for (const rec of this.clients.values()) {
+      const p = this.world.players.get(rec.playerId);
+      if (!p || !rec.conn) continue;
+      const v = runView(run, rec.playerId, p.pos);
+      const r = rec.account?.counter?.run;
+      const msg: RunMsg = { ...v, today: r && r.day === day ? r.banked : 0, cap: RUN_DAILY_CAP, owed: r?.owed ?? 0, events: [] };
+      rec.conn.send(encodeRun(msg));
+    }
+  }
+
   /** audit scores submitted this session and the Deep Wake's last line (stats) */
   private auditScores: number[] = [];
   private seasonLast: string | null = null;
@@ -800,6 +857,8 @@ export class Room {
     }
     for (const ev of tickEvents) {
       if (ev.type === "kill" && ev.victimKind === "player") this.onPlayerKill(ev.playerId, ev.victimId);
+      if (ev.type === "bank") this.onBank(ev.playerId, ev.value, ev.zone);
+      if (ev.type === "claim" || ev.type === "drop" || ev.type === "bank" || ev.type === "claimReturn") this.runDirty = true;
       if (ev.type === "death" || ev.type === "respawn" || ev.type === "kill") {
         const p = this.world.players.get(ev.playerId);
         this.opts.onLog(`t${this.tick} ${ev.type} player ${ev.playerId}${ev.type === "kill" ? ` → ${ev.victimKind} ${ev.victimId} (${ev.weapon})` : ""} at (${p?.pos.x.toFixed(1)},${p?.pos.y.toFixed(1)},${p?.pos.z.toFixed(1)}) lastSeq ${this.clients.get(ev.playerId)?.lastSeq}`);
@@ -841,6 +900,7 @@ export class Room {
       this.lastRateAt = now;
       this.lastRateTick = this.tick;
     }
+    this.pushRun();
   }
 
   private rewindFor(shooterId: number, viewTick: number): ReadonlyMap<number, RewindPose> | null {
@@ -1025,6 +1085,7 @@ export class Room {
       social: { ...this.social },
       campaignStripped: this.campaignStripped,
       audit: this.opts.audit ? { id: this.opts.audit.def.id, week: this.opts.audit.week, scores: this.auditScores.slice() } : null,
+      run: this.world.run ? { totalBanked: this.world.run.totalBanked, claims: this.world.run.claims.filter((c) => c.active).length, carried: Object.fromEntries([...this.clients.values()].map((c) => [c.name, this.world.run!.carried.get(c.playerId) ?? 0])), banked: Object.fromEntries([...this.clients.values()].map((c) => [c.name, this.world.run!.banked.get(c.playerId) ?? 0])), credits: this.runCredits.slice(-20) } : null,
       seasonLast: this.seasonLast,
       loadoutRejections: this.loadoutRejections.slice(),
       inputsRejected,

@@ -9,7 +9,7 @@ import artifactsJson from "../../contracts/out/artifacts.json";
 export const ARTIFACTS = artifactsJson as Record<string, { abi: Abi; bytecode: Hex }>;
 
 export interface Contracts {
-  wake: Hex;
+  capital: Hex;
   ghostfile: Hex;
   stamps: Hex;
   names: Hex;
@@ -26,11 +26,11 @@ export async function deployAll(pub: PublicClient, wal: WalletClient, signer: He
     if (r.status !== "success" || !r.contractAddress) throw new Error(`${name} deploy failed`);
     return r.contractAddress;
   };
-  const wake = await deploy("WAKE", [treasury]);
+  const capital = await deploy("CAPITAL", [treasury]);
   const ghostfile = await deploy("Ghostfile", [signer]);
   const stamps = await deploy("Stamps", [signer]);
-  const names = await deploy("Names", [signer, wake]);
+  const names = await deploy("Names", [signer, capital]);
   const cosmetics = await deploy("Cosmetics", []);
-  const market = await deploy("LedgerMarket", [wake, cosmetics, treasury]);
-  return { wake, ghostfile, stamps, names, cosmetics, market };
+  const market = await deploy("LedgerMarket", [capital, cosmetics, treasury]);
+  return { capital, ghostfile, stamps, names, cosmetics, market };
 }

@@ -9,7 +9,7 @@ import {
   type NetInput,
   type RemotePlayerQ,
   type Snapshot,
-  type FileMsg, type SocialMsg, type MissionMsg, encodeChoice,
+  type FileMsg, type SocialMsg, type MissionMsg, type RunMsg, encodeChoice,
 } from "@shared/net/protocol";
 import type { Transport } from "./transport";
 
@@ -69,6 +69,7 @@ export class NetClient {
   onFile: ((f: FileMsg) => void) | null = null;
   onSocial: ((m: SocialMsg) => void) | null = null;
   onMission: ((m: MissionMsg) => void) | null = null;
+  onRun: ((m: RunMsg) => void) | null = null;
 
   constructor(private transport: Transport, private name: string, token = "", private account = "", private loadout = "", private identity = "") {
     this.token = token;
@@ -147,6 +148,9 @@ export class NetClient {
         break;
       case "mission":
         this.onMission?.(msg.mission);
+        break;
+      case "run":
+        this.onRun?.(msg.run);
         break;
       case "welcome":
         this.playerId = msg.playerId;

@@ -1,3 +1,4 @@
+import { createRun, dropCarried, inSafeZone, stepRun, type RunEvent, type RunState } from "./run";
 import { ADDITIVE, type StatSheet } from "../manifest/stats";
 import { DUMMY_MAX_HEALTH, DUMMY_RESPAWN_SECONDS, MOVE, SIM_DT, SIM_HZ } from "./constants";
 import { emptyInput, type InputFrame } from "./input";
@@ -89,6 +90,11 @@ export type SimEvent =
   | { tick: number; playerId: number; type: "hurt"; damage: number; by: number; kind: "shot" | "explosion" | "melee" | "beam" }
   | { tick: number; playerId: number; type: "waspDeath"; waspId: number }
   | { tick: number; playerId: number; type: "mechDeath"; mechId: number }
+  // THE RUN
+  | { tick: number; playerId: number; type: "claim"; claimId: number; value: number; carried: number }
+  | { tick: number; playerId: number; type: "drop"; claimId: number; value: number; pos: Vec3 }
+  | { tick: number; playerId: number; type: "bank"; value: number; zone: string; banked: number }
+  | { tick: number; playerId: number; type: "claimReturn"; claimId: number }
   | ({ tick: number; playerId: number } & WakeEvent);
 
 export const DUMMY_RADIUS = MOVE.capsuleRadius;
@@ -110,6 +116,8 @@ export interface WorldOptions {
   ai?: boolean;
   /** Start the wake immediately (offline sandbox) or in warm-up (rooms). */
   wakePhase?: "warmup" | "wake" | "off";
+  /** THE RUN (Stage 14): claims, safe zones, banking; the wake is off in a run */
+  run?: boolean;
   warmupSeconds?: number;
   roundSeconds?: number;
   /** dummies come back after DUMMY_RESPAWN_SECONDS (false: campaign targets stay down) */
@@ -133,6 +141,8 @@ export class World {
   readonly wasps: Wasp[] = [];
   readonly mechs: Mech[] = [];
   readonly wake: WakeState | null;
+  /** THE RUN: null unless the room runs it */
+  readonly run: RunState | null;
   private pending: SimEvent[] = [];
   /** an Audit playlist's gravity (symmetric for every file in the room; 1 outside an Audit) */
   gravityMult = 1;
@@ -146,7 +156,8 @@ export class World {
     this.ai = opts.ai ?? true;
     this.dummyRespawn = opts.dummyRespawn ?? true;
     const wp = opts.wakePhase ?? "wake";
-    this.wake = wp === "off" || level.nodes.length === 0 ? null : createWake(level.nodes, wp, { warmupSeconds: opts.warmupSeconds, roundSeconds: opts.roundSeconds });
+    this.wake = wp === "off" || opts.run || level.nodes.length === 0 ? null : createWake(level.nodes, wp, { warmupSeconds: opts.warmupSeconds, roundSeconds: opts.roundSeconds });
+    this.run = opts.run ? createRun(level.zones ?? [], level.claims ?? []) : null;
     for (const d of level.dummies) {
       this.dummies.push({ id: d.id, def: d, pos: clone(d.pos), health: DUMMY_MAX_HEALTH, alive: true, respawnTimer: 0, phase: 0, dir: 1, firstDamageTick: -1, hitsTaken: 0 });
     }
@@ -255,9 +266,16 @@ export class World {
       this.stepProjectilesAndClouds(opts);
       if (this.ai) this.stepAI(opts);
       if (this.wake) this.stepWakeMode(opts);
+      if (this.run) this.stepRunMode(opts);
     }
     this.stepDummies();
     this.tick++;
+  }
+
+  private stepRunMode(opts: StepOpts): void {
+    const events: RunEvent[] = [];
+    stepRun(this.run!, [...this.players.values()].map((p) => ({ id: p.id, team: p.team, pos: p.pos, alive: p.alive })), events);
+    for (const e of events) this.emit({ tick: this.tick, playerId: "playerId" in e ? e.playerId : -1, ...e }, opts);
   }
 
   private stepWakeMode(opts: StepOpts): void {
@@ -442,6 +460,14 @@ export class World {
   applyDamage(kind: TargetKind, id: number, damage: number, attacker: number, weapon: string, how: "shot" | "explosion" | "melee" | "beam", opts: StepOpts = {}, hit: { zone?: HitZone; distance?: number; alt?: boolean; through?: boolean; projKind?: string } = {}): void {
     if (damage <= 0) return;
     const shooter = attacker > 0 ? this.players.get(attacker) : undefined;
+    // THE RUN's safe zones: nothing inside one takes damage, and nothing inside one deals it
+    if (this.run) {
+      if (shooter && inSafeZone(this.run, shooter.pos)) return;
+      if (kind === "player") {
+        const v = this.players.get(id);
+        if (v && inSafeZone(this.run, v.pos)) return;
+      }
+    }
     const mech = shooter ? (shooter.kit.mechanics[shooter.weapon.slot] ?? []) : [];
     if (shooter && (kind === "wasp" || kind === "mech") && mech.includes("vantage_bane")) damage = Math.round(damage * 1.25);
     const ctx = (victimTeam: number, victimEmp: boolean): KillCtx => ({
@@ -537,6 +563,11 @@ export class World {
     v.respawnTimer = 3;
     v.stats.deaths++;
     this.emit({ tick: this.tick, playerId: v.id, type: "death", killerId }, opts);
+    if (this.run) {
+      const dropped: RunEvent[] = [];
+      dropCarried(this.run, v.id, v.pos, dropped);
+      for (const e of dropped) this.emit({ tick: this.tick, playerId: v.id, ...e }, opts);
+    }
   }
 
   private capsuleTargets(): CapsuleTarget[] {

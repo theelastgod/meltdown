@@ -61,8 +61,10 @@ export interface CounterRecord {
   rig: number[];
   /** worn cosmetic token id (0 = none): the only thing that travels in a match snapshot */
   worn: number;
-  /** last known WAKE balance, as a decimal string (display only) */
-  wake: string;
+  /** last known $CAPITAL balance, as a decimal string (display only) */
+  capital: string;
+  /** THE RUN (Stage 14): the day's banked units against the cap, units owed to the wallet, units paid out */
+  run?: { day: number; banked: number; owed: number; paid: number };
 }
 
 export interface CampaignRecord {

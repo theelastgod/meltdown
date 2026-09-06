@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// @title WAKE — the counter-ledger token.
+/// @title CAPITAL — the counter-ledger token ($CAPITAL).
 /// @notice Fixed supply minted once at genesis to the treasury. No admin mint, no owner. Burnable.
 ///         It touches identity, ownership, creation, hosting and competition — never a stat.
-contract WAKE {
-    string public constant name = "Wake";
-    string public constant symbol = "WAKE";
+contract CAPITAL {
+    string public constant name = "Capital";
+    string public constant symbol = "CAPITAL";
     uint8 public constant decimals = 18;
     uint256 public constant CAP = 1_000_000_000 ether;
 

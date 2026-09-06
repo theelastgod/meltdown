@@ -5,7 +5,7 @@
 import type { InputFrame } from "../sim/input";
 import type { HitZone } from "../sim/world";
 
-export const PROTOCOL_VERSION = 8;
+export const PROTOCOL_VERSION = 9;
 /** Server snapshot cadence in sim ticks (60 Hz sim → 30 Hz snapshots). */
 export const SNAPSHOT_EVERY = 2;
 /** Lag compensation rewind cap in ticks (200 ms at 60 Hz). */
@@ -29,6 +29,8 @@ export const Msg = {
   Social: 15,
   /** Campaign co-op: mission state / events from the room (JSON). */
   Mission: 16,
+  /** room → client: THE RUN (Stage 14): carried / banked / banking, the claims and the safe zones */
+  Run: 18,
   /** Campaign co-op: a dialogue resolution from the host player (JSON). */
   Choice: 4,
 } as const;
@@ -341,6 +343,28 @@ export function encodeMission(m: MissionMsg): ArrayBuffer {
   return w.done();
 }
 
+/** Room → client: the run as this client sees it (JSON, like a Mission). */
+export interface RunMsg {
+  carried: number;
+  banked: number;
+  banking: number;
+  inSafe: boolean;
+  zone: string | null;
+  /** $CAPITAL units credited to the file today / the day's cap / units owed to the wallet */
+  today: number;
+  cap: number;
+  owed: number;
+  claims: { id: number; x: number; y: number; z: number; value: number; dropped: boolean }[];
+  zones: { label: string; x: number; z: number; radius: number }[];
+  events: { type: string; value?: number; zone?: string; playerId?: number }[];
+}
+export function encodeRun(m: RunMsg): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Run);
+  w.str(JSON.stringify(m));
+  return w.done();
+}
+
 /** Client → room: the host resolved a dialogue (script id + the testimony chosen). */
 export function encodeChoice(script: string, testimony: Record<string, string>): ArrayBuffer {
   const w = new W();
@@ -533,7 +557,8 @@ export type ServerMessage =
   | { type: "kick"; reason: string }
   | { type: "file"; file: FileMsg }
   | { type: "social"; social: SocialMsg }
-  | { type: "mission"; mission: MissionMsg };
+  | { type: "mission"; mission: MissionMsg }
+  | { type: "run"; run: RunMsg };
 
 /** Decode a server message. `baselines` resolves the acked snapshot a delta was built on. */
 export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) => Snapshot | null): ServerMessage | null {
@@ -549,6 +574,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     if (t === Msg.File) return { type: "file", file: JSON.parse(r.str()) as FileMsg };
     if (t === Msg.Social) return { type: "social", social: JSON.parse(r.str()) as SocialMsg };
     if (t === Msg.Mission) return { type: "mission", mission: JSON.parse(r.str()) as MissionMsg };
+    if (t === Msg.Run) return { type: "run", run: JSON.parse(r.str()) as RunMsg };
     if (t !== Msg.Snapshot) return null;
     const tick = r.u32();
     const baselineTick = r.u32();

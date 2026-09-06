@@ -94,7 +94,7 @@ async function main(): Promise<void> {
     await a.evaluate(() => window.__game.menuKey("ArrowUp"));
     const m2 = await a.evaluate(() => window.__game.menu()!);
     const who = await a.evaluate(() => (document.querySelector("#menu .who") as HTMLElement).textContent ?? "");
-    check("the menu lists WAKE / CAMPAIGN / THE OFFICE / THE RANGE / FILE / SETTINGS with the file's identity line; ↓↑ move the cursor", m0.entries.join("|") === "WAKE|CAMPAIGN|THE OFFICE|THE RANGE|FILE|SETTINGS" && m0.cursor === 0 && m1.cursor === 2 && m2.cursor === 1 && /DEPTH 50/.test(who) && /sandbox-ship/.test(who), `[${m0.entries.join(", ")}] · cursor 0→2→1 · "${who}"`);
+    check("the menu lists WAKE / THE RUN / CAMPAIGN / THE OFFICE / THE RANGE / FILE / SETTINGS with the file's identity line; ↓↑ move the cursor", m0.entries.join("|") === "WAKE|THE RUN|CAMPAIGN|THE OFFICE|THE RANGE|FILE|SETTINGS" && m0.cursor === 0 && m1.cursor === 2 && m2.cursor === 1 && /DEPTH 50/.test(who) && /sandbox-ship/.test(who), `[${m0.entries.join(", ")}] · cursor 0→2→1 · "${who}"`);
     // choices are URLs that name the mode
     const campaign = await a.evaluate(() => window.__game.menuChoose("campaign"));
     const office = await a.evaluate(() => window.__game.menuChoose("office"));

@@ -98,6 +98,10 @@ export interface GameHook {
   audioCues: () => Record<string, number>;
   /** the probe's damage: drops the local file's health (the low-health pulse) */
   hurt: (dmg: number) => number;
+  /** THE RUN (Stage 14): the view as the client has it; the payout to the wallet */
+  run: () => Game["runView"];
+  payout: () => Promise<{ ok: boolean; reason?: string }>;
+  sellSkin: (token: number, price: number) => Promise<{ ok: boolean; reason?: string }>;
   /** Campaign (Stage 10): state, dialogue advance/choose, contracts desk, launch, faction, protocols. */
   campaign: () => ReturnType<Game["campaign"]["view"]>;
   dialogueAdvance: (choice?: number) => boolean;
@@ -229,6 +233,9 @@ window.__game = {
     return s;
   },
   audioCues: () => ({ ...game.audio.fired }),
+  run: () => game.runView,
+  payout: () => game.file.counter?.op("payout") ?? Promise.resolve({ ok: false, reason: "offline" }),
+  sellSkin: (token, price) => game.file.counter?.sell(token, price) ?? Promise.resolve({ ok: false, reason: "offline" }),
   hurt: (dmg) => {
     game.player.health = Math.max(1, game.player.health - dmg);
     return game.player.health;

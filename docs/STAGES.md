@@ -18,9 +18,10 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 9b | City life: crowds, monorail, street vistas through sealed gates, ad tickers, sign flicker, steam, skyline blinkers, airship, soundscape + VANTAGE PA | **done** (the owner repeated the note; the district is now inhabited, not just built) | `docs/proof/stage9b/` |
 | 10 | Campaign: three houses and their fixers, 7 missions + 12 gigs on a data-driven runtime, CRT testimony dialogue, Threat Rating, Kernel Protocols behind the PvP wall, weapons 7–8, endings, solo + co-op | **done** | `docs/proof/stage10/` |
 | 11 | Endgame loops: daily contracts, weekly Audit playlists with per-week leaderboards, the Deep Wake seasonal district graph, Rewrite prestige + the Wakelight shop (themes, alias and preset slots — never a stat) | **done** | `docs/proof/stage11/` |
-| 11b | The Counter-Ledger: WAKE on Robinhood Chain, SIWE wallet link, soulbound Ghostfile + stamp attestations through game-signed vouchers, the Ledger Market, names at Depth 50, an in-process EVM devnet until the testnet parameters land (`docs/TOKENOMICS.md`) | **done** (devnet; testnet is configuration) | `docs/proof/stage11b/` |
+| 11b | The Counter-Ledger: $CAPITAL on Robinhood Chain, SIWE wallet link, soulbound Ghostfile + stamp attestations through game-signed vouchers, the Ledger Market, names at Depth 50, an in-process EVM devnet until the testnet parameters land (`docs/TOKENOMICS.md`) | **done** (devnet; testnet is configuration) | `docs/proof/stage11b/` |
 | 12 | Opening crawl: cyan monospace on black, typed-then-held paragraphs, scanline flicker, glitch tears, ~34 s, skippable after the first view, hard cut to silence, the MELTDOWN title; original copy until the owner's text lands | **done** | `docs/proof/stage12/` |
 | 13 | Polish & ship: the CRT menu flow with the two title cards, settings applied live and kept, the audio pass (buses, UI cues, the card sting, the low-health pulse), Cloudflare Pages + Workers deploy, the smoke test in CI | **done** (deploy is a workflow gated on the Cloudflare secrets) | `docs/proof/stage13/` |
+| 14 | THE RUN — $CAPITAL play-to-earn: the token renamed WAKE → CAPITAL, PvP zones with claims, safe zones (no damage in or out, the markets, banking), the day's cap and the Depth gate, the treasury payout to the wallet | **done** (devnet; testnet is configuration) | `docs/proof/stage14/` |
 
 ## Stage 1 — Grey-box FPS core
 
@@ -146,7 +147,7 @@ no page errors.
 
 ## Stage 11b — The Counter-Ledger
 
-**Goal.** WAKE (ERC-20 on Robinhood Chain) and the wallet link, built so the
+**Goal.** $CAPITAL (ERC-20 on Robinhood Chain) and the wallet link, built so the
 token touches identity, ownership, creation, hosting and competition, and
 never a stat. Spec: `docs/TOKENOMICS.md`. Every contract and client path is
 plain Orbit EVM; the chain id, RPC and addresses are configuration. Until
@@ -155,12 +156,12 @@ on an in-process EVM devnet, so everything below is exercised for real —
 signatures, reverts, fee splits — without a network.
 
 **What shipped.**
-- `contracts/` — six Solidity contracts, no framework: `WAKE` (fixed cap
+- `contracts/` — six Solidity contracts, no framework: `CAPITAL` (fixed cap
   minted once to the treasury, burnable, no admin mint), `Ghostfile`
   (soulbound ERC-721, one per wallet, minted against a game voucher, every
   transfer path reverts, holder-burnable), `Stamps` (EAS-style attestations:
   server-signed `{wallet, fileId, stampId}`, steward-revocable for anti-cheat),
-  `Names` (soulbound handle at Depth 50, WAKE fee burned, priced by length
+  `Names` (soulbound handle at Depth 50, $CAPITAL fee burned, priced by length
   3 → 2000 … 12+ → 150), `Cosmetics` (ERC-1155 with a creator and a wear
   seed per id; no stats field exists), `LedgerMarket` (exact listings, 5%
   fee: 2% burned, 2% treasury, 1% creator, on chain). `Vouchers.sol` is the
@@ -177,7 +178,7 @@ signatures, reverts, fee splits — without a network.
   domain, expiry, nonce, signature), the 1:1 bind, the sponsored Ghostfile
   mint (the relayer pays), stamp attestations (bounded per call), the name
   voucher (Depth 50), the market view, the treasury line, and `reconcile()`
-  that reads the chain into the file's cache (WAKE, Ghostfile, name, the
+  that reads the chain into the file's cache ($CAPITAL, Ghostfile, name, the
   rig from the skin balances). Every chain call fails soft with a reason.
 - `server/chain/wallets.ts` (memory) and `wallets-d1.ts` (D1 `wallet`,
   `siwe_nonce`; `server/schema.sql` + `schema.ts` mirror).
@@ -196,7 +197,7 @@ signatures, reverts, fee splits — without a network.
   `counterView`, the SIWE statement, the voucher domains/types, name fees);
   `shared/economy/endpoint.ts` — the request both hosts share.
 - `shared/progression/account.ts` — `counter` (plain data: address, Ghostfile
-  id, stamps on chain, name, rig cache, worn token, WAKE display string).
+  id, stamps on chain, name, rig cache, worn token, $CAPITAL display string).
 - `shared/identity/identity.ts` — the tag grows a fifth segment only when a
   skin is worn: `seed.chapter.moniker.debt[.skin]`; `skin` is a token id.
   The renderer maps it onto the catalog's tint (remote emissive + trim, the
@@ -205,8 +206,8 @@ signatures, reverts, fee splits — without a network.
   (Robinhood Wallet over WalletConnect, MetaMask, Rabby) or, headless, a
   viem local account from `?wallet=<key>`; SIWE through the host; the
   player's own transactions (approve + buy, approve + register) straight
-  to the chain's RPC. `client/file.ts` — the COUNTER-LEDGER // WAKE section
-  of the FILE panel: link, Ghostfile, stamps on chain, WAKE, the name field
+  to the chain's RPC. `client/file.ts` — the COUNTER-LEDGER // $CAPITAL section
+  of the FILE panel: link, Ghostfile, stamps on chain, $CAPITAL, the name field
   at Depth 50, the rig with WEAR, the Ledger Market, the treasury's NET
   DELTA line. `client/main.ts` hooks: `counter`, `link`, `buySkin`,
   `wearSkin`, `registerName`, `reconcile`.
@@ -242,7 +243,7 @@ signatures, reverts, fee splits — without a network.
 
 **Acceptance (`npm run probe:counter`, 11/11; `npm run lint:economy`, 241
 items / 0 violations; `npm test`, 145 tests):** the host runs the devnet
-with the six contracts deployed, WAKE at its cap and every skin listed; the
+with the six contracts deployed, $CAPITAL at its cap and every skin listed; the
 panel links a wallet over SIWE, the host binds it 1:1 and mints Ghostfile #1
 to the wallet with the wallet's ETH balance staying 0; the token cannot be
 transferred and a second file cannot bind the same wallet; the buy burns
@@ -251,7 +252,7 @@ rig, WEAR sets it and the viewmodel takes `#d86a2a`; in the next match the
 other client sees ALPHA with a five-segment tag ending `.1` and BRAVO with
 four, and the remote record carries no name, price or colour; the round's
 stamps attest on chain (count readable by anyone); THE_AUDITOR registers
-for 250 WAKE burned; a Depth-1 file gets no voucher; with the chain dead,
+for 250 $CAPITAL burned; a Depth-1 file gets no voucher; with the chain dead,
 reconcile and a new link say CHAIN UNREACHABLE while wear, the join with
 the worn skin, the round and the settlement work, and reconcile succeeds
 again once it is back; the full manifest lints clean and a priced item
@@ -284,7 +285,7 @@ from the future.
   random bands and pushed apart, the ghosts tinted magenta and cyan, the
   body jolting), the cut (text gone, hum stopped dead), the title (MELTDOWN
   in the terminal type with a chromatic shadow, snapping in over three
-  steps), the CLICK TO WAKE prompt; the click hands the gesture to the game
+  steps), the CLICK TO $CAPITAL prompt; the click hands the gesture to the game
   (audio resume + pointer lock). `?crawl=1` forces it, `?crawl=0` never,
   headless probes skip it by default, `?crawlspeed=k` runs it k× faster.
 - `client/audio.ts` — `crawlHum` (a low sawtooth under the text, stopped
@@ -329,7 +330,7 @@ Cloudflare Pages + Workers, and a smoke test in CI.
 **Files.**
 - `client/menu.ts` — the flow after the crawl's title (or straight away):
   the two title cards, each on its own clock so a slow frame cannot skip
-  one, then the menu — WAKE (a district, then the public room on the
+  one, then the menu — $CAPITAL (a district, then the public room on the
   configured host), CAMPAIGN (the desk at the Deadletter Office), THE
   OFFICE (the hub), THE RANGE (the yard, offline), FILE (the Ghostfile
   panel), SETTINGS. ↑↓ move, ENTER selects, ← → adjust, ESC backs out.
@@ -385,7 +386,7 @@ Cloudflare Pages + Workers, and a smoke test in CI.
 black terminal chrome with the scanline pass, then the menu; the menu lists
 the six entries with the file's identity line and ↓↑ move the cursor;
 CAMPAIGN / THE OFFICE / THE RANGE resolve to the hub-desk, hub and yard
-URLs, WAKE lists the districts and a pick resolves to the public room on
+URLs, $CAPITAL lists the districts and a pick resolves to the public room on
 the host; SETTINGS step sensitivity (1.05×) and FOV (85°), CRT 0 zeroes
 grain and scanlines and 1.5 raises them, master 0.3 reaches the bus, and
 the store holds all of it; a reload applies the saved settings; ESC in
@@ -394,6 +395,87 @@ resumes, QUIT is the menu's URL; the audio pass fires the card sting, the
 UI cues and the low-health pulse under 30 health; deep links and headless
 boots skip the flow; the smoke test on the production bundle joins a room,
 advances the sim and shows the first title card; no page errors.
+
+## Stage 14 — THE RUN: $CAPITAL, PvP zones, safe zones, the markets
+
+**Goal.** The owner's direction after Stage 13: a play-to-earn and PvP
+component tied to a cryptocurrency called $CAPITAL on Robinhood Chain, with
+markets, PvP zones and safe zones. Two calls made here, both reversible:
+$CAPITAL replaces WAKE as the one transferable token (the PvP mode "the
+wake" keeps its name, which removes a collision), and play-to-earn is an
+extraction loop rather than a wager — claims carried out of a PvP zone and
+banked at a safe zone, behind the Depth gate and a daily cap so a script
+cannot farm kills into a token.
+
+**Files.**
+- `contracts/CAPITAL.sol` (was `WAKE.sol`: name Capital, symbol CAPITAL),
+  `Names.sol`, `LedgerMarket.sol` (the interfaces), `contracts/out`
+  rebuilt; `server/chain/*`, `shared/economy/*`, `client/counter.ts`,
+  `client/file.ts`, the tests and probes, `docs/TOKENOMICS.md`, the README:
+  the rename, field by field (`market.capital`, `counter.capital`,
+  `contracts.capital`, `CAPITAL_KINDS`).
+- `shared/sim/run.ts` — THE RUN as a deterministic sim module: claims (id,
+  position, value, respawn timer; a drop lies where a file fell and
+  expires), safe zones (circles), carrying (a pickup radius, a carry cap),
+  the banking dwell (2 s standing in a safe zone), `dropCarried()` on death,
+  `runView()` for the client. `shared/sim/level.ts` — `zones` and `claims`
+  on a level; the yard has one gate and six claims; `shared/sim/city.ts`
+  gives every district two gates at the ends of the walkway street and
+  claims on the nodes and the street midpoints, worth more the farther
+  from a gate. `shared/sim/world.ts` — `run` option (the wake is off in a
+  run), the run stepped after the players, safe zones in `applyDamage`
+  (nothing inside one takes damage, nothing inside one deals it), the death
+  drop, four new sim events.
+- `shared/net/protocol.ts` (v9) — `Msg.Run`: carried / banked / banking /
+  the zone, today against the cap, owed, the claims and the zones.
+- `server/room.ts` — `run` option, `mode()` → `run`; a bank credits the
+  file: at Depth 10 the day's units against the 200 cap become $CAPITAL
+  owed on `counter.run`, below it Scrip (10 a unit); the ledger line, the
+  File message, the Run push on change and every half second; `stats.run`.
+  Both hosts route `?mode=run`.
+- `server/chain/ledger.ts` — `payout()`: what is owed goes from the treasury
+  to the linked wallet (the devnet's relayer is the treasury; production
+  posts a PrizeVault Merkle root); `shared/economy/endpoint.ts` — the
+  `payout` op; the run's rules (`RUN_DEPTH`, `RUN_DAILY_CAP`,
+  `RUN_SCRIP_PER_UNIT`, `CAPITAL_PER_UNIT`) live in `shared/sim/run.ts` so
+  the match room never imports the economy module (the import-graph test
+  holds); `shared/economy/counter.ts` re-exports them for the panel.
+- `client/render/run.ts` — claims as amber octahedra (a drop burns magenta),
+  safe zones as a cyan ring, a column of light and a label. `client/game.ts`
+  — `?mode=run` offline on the same sim, the Run message online, the strip
+  and the cues (a pickup, a bank). `client/hud/hud.ts` — the run strip
+  (CARRYING / BANKED / TODAY / OWED, PVP ZONE or SAFE ZONE, the banking
+  bar) and the cyan edge inside a safe zone. `client/menu.ts` — THE RUN
+  entry (a district, then the run room). `client/file.ts` — THE RUN block
+  in the counter-ledger section with WITHDRAW TO WALLET.
+- `tests/run.test.ts` (4), `probe/stage14.ts`.
+
+**Design decisions.**
+- The run pays the counter-ledger; the wake pays the file. A run has no
+  rounds and no XP: banked units are the only thing it produces, and kills
+  in it pay nothing — a kill only makes a drop.
+- Safe zones are geometry in the shared sim, so the server and the
+  predicting client agree on where damage stops; they are not a stat.
+- The gate and the cap live in the room, not the client, and the payout is
+  a separate, explicit chain write the player asks for.
+- The token rename is a constant and a contract name; nothing on the wire
+  changed for it.
+
+**Acceptance (`npm run probe:run`, 9/9; `npm test`, 153 tests):** a run
+room's Welcome says `run`, the wake is off, the client sees the gate and all
+five claims and the strip reads PVP ZONE; walking over a claim carries it
+(the strip, the room and the street agree); BRAVO kills ALPHA in the PvP
+zone and the carried unit drops where ALPHA fell, burning magenta, with
+ALPHA carrying nothing; BRAVO takes the drop, walks it into the gate (SAFE
+ZONE on the strip, the cyan edge), stands the dwell and banks it — a
+Depth-1 file is paid 10 Scrip, no $CAPITAL owed; ALPHA empties a magazine
+at BRAVO inside the gate and BRAVO's health does not move; ALPHA links a
+wallet, banks a respawned claim for 1 $CAPITAL owed (1/200 today) and
+WITHDRAW moves exactly 1 $CAPITAL from the treasury to the wallet on chain;
+the market is player to player — ALPHA buys RUST LEASE from the studio,
+lists it for 60, a second wallet buys it, ALPHA nets 57, 1.2 burns, the
+skin moves; offline `?mode=run` runs the same sim and the menu's THE RUN
+entry resolves to the run room's URL; no page errors.
 
 ## Stage 3 — The look
 

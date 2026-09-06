@@ -14,6 +14,7 @@ import { drawGlyph, glyphFor } from "@shared/identity/glyph";
 import { parseTag } from "@shared/identity/identity";
 import { skinByToken } from "@shared/economy/catalog";
 import { ArsenalFx, buildViewmodel } from "./weapons";
+import { RunFx } from "./run";
 import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 
@@ -83,6 +84,8 @@ export class Renderer {
   private vmSwap = 0;
   readonly fx: ArsenalFx;
   readonly wake: WakeFx;
+  /** THE RUN: claims and safe zones */
+  readonly run: RunFx;
   private baseFov = 80;
   /** Settings: field of view and the CRT intensity. */
   setFov(fov: number): void {
@@ -157,6 +160,7 @@ export class Renderer {
     this.viewmodel.visible = true;
     this.fx = new ArsenalFx(this.scene);
     this.wake = new WakeFx(this.scene);
+    this.run = new RunFx(this.scene);
 
     this.post = new PostChain(this.renderer, this.scene, this.camera, window.innerWidth, window.innerHeight, 0.6);
     window.addEventListener("resize", () => this.resize());
@@ -391,6 +395,7 @@ export class Renderer {
     }
     this.fx.update(dt);
     this.wake.update(dt);
+    this.run.update(dt);
 
     for (let i = this.tracers.length - 1; i >= 0; i--) {
       const t = this.tracers[i]!;

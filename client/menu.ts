@@ -28,6 +28,7 @@ export interface MenuEntry {
 
 const MAIN: MenuEntry[] = [
   { id: "wake", label: "WAKE", line: "the signature mode: flip the nodes, hold the district, beat THE KERNEL's clock" },
+  { id: "run", label: "THE RUN", line: "play to earn: carry $CAPITAL claims out of the PvP zone to a gate; die and they drop" },
   { id: "campaign", label: "CAMPAIGN", line: "the desk at the Deadletter Office: fixers, gigs, the seven-mission arc" },
   { id: "office", label: "THE OFFICE", line: "the hub: your file on the wall, the range ghosts, the dossier" },
   { id: "range", label: "THE RANGE", line: "the drainage yard, offline, with dummies" },
@@ -101,6 +102,13 @@ export function choiceUrl(id: string, base: string, opts: { level?: string; acco
         u.searchParams.set("net", `${HOSTS.ws}/room/${HOSTS.publicRoom}-${level}?level=${level}`);
         return u.toString();
       }
+      if (id.startsWith("run:")) {
+        const level = id.slice(4);
+        u.searchParams.set("level", level);
+        u.searchParams.set("mode", "run");
+        u.searchParams.set("net", `${HOSTS.ws}/room/${HOSTS.publicRoom}-run-${level}?level=${level}&mode=run`);
+        return u.toString();
+      }
       return null;
   }
 }
@@ -115,6 +123,8 @@ export class Menu {
   private seen: boolean;
   private nonav: boolean;
   private prev: MenuScreen = "main";
+  /** which mode the district list serves: the wake or the run */
+  private pick: "wake" | "run" = "wake";
   private raf = 0;
   private started = 0;
   onQuit: (() => void) | null = null;
@@ -222,7 +232,7 @@ export class Menu {
       case "pause":
         return PAUSE;
       case "wake":
-        return [...LEVEL_INFO.filter((l) => l.kind === "district").map((l) => ({ id: `wake:${l.id}`, label: l.displayName, line: `${l.cast.toUpperCase()} cast · public room ${HOSTS.publicRoom}-${l.id}` })), { id: "back", label: "BACK", line: "" }];
+        return [...LEVEL_INFO.filter((l) => l.kind === "district").map((l) => ({ id: `${this.pick}:${l.id}`, label: l.displayName, line: this.pick === "run" ? `${l.cast.toUpperCase()} cast · PvP zone with two gates · room ${HOSTS.publicRoom}-run-${l.id}` : `${l.cast.toUpperCase()} cast · public room ${HOSTS.publicRoom}-${l.id}` })), { id: "back", label: "BACK", line: "" }];
       case "settings":
         return [...(Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]).map((k) => ({ id: `set:${k}`, label: SETTING_LABELS[k], line: formatSetting(this.host.settings, k) })), { id: "back", label: "BACK", line: "" }];
       default:
@@ -240,7 +250,7 @@ export class Menu {
     const cur = es[this.cursor];
     line.textContent = cur && !cur.id.startsWith("set:") ? cur.line : cur ? "← → adjusts · applied live · kept in this browser" : "";
     const hd = this.root.querySelector(".hd .word") as HTMLElement;
-    hd.textContent = this.screen === "pause" ? "PAUSED" : this.screen === "wake" ? "WAKE · PICK A DISTRICT" : this.screen === "settings" ? "SETTINGS" : "MELTDOWN";
+    hd.textContent = this.screen === "pause" ? "PAUSED" : this.screen === "wake" ? `${this.pick === "run" ? "THE RUN" : "WAKE"} · PICK A DISTRICT` : this.screen === "settings" ? "SETTINGS" : "MELTDOWN";
   }
 
   private onKey = (e: KeyboardEvent): void => {
@@ -303,8 +313,9 @@ export class Menu {
       this.back();
       return null;
     }
-    if (id === "wake") {
+    if (id === "wake" || id === "run") {
       this.cursor = 0;
+      this.pick = id;
       this.show("wake");
       return null;
     }

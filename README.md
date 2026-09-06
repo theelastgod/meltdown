@@ -35,6 +35,7 @@ npm run lint:economy  # the one rule over the full manifest: WAKE never touches 
 npm run probe:counter # the counter-ledger: SIWE wallet link, sponsored Ghostfile + stamps on a real EVM devnet, a market buy on the rig, the name, chain-down drill
 npm run probe:crawl   # the opening crawl: typed-then-held paragraphs, scanline flicker, glitch tears, ~35 s, skippable after first view, hard cut to the title
 npm run probe:ship    # the menu flow (title cards, WAKE / CAMPAIGN / OFFICE / RANGE / FILE / SETTINGS, pause), settings applied live, the audio buses and cues
+npm run probe:run     # THE RUN: $CAPITAL claims in the PvP zone, carried, dropped on death, banked at a safe zone, credited with the Depth gate and the day's cap, paid to the wallet
 npm run build && npm run smoke  # the production bundle boots, joins a room and renders (what CI and the Pages deploy run)
 npm run certify:firmware # every firmware measured in the TTK harness at its ideal range (must sit in the band)
 npm run probe:mastery # Ledger Graph + mastery: lint over nodes/chips/firmwares, chips and firmwares enforced at spawn, ledger shop, stamps un-redact online
@@ -73,8 +74,8 @@ shared/     pure TS simulation shared by client and (Stage 2) server
   progression/ Depth/XP curve, currencies, deterministic crafting, weapon mastery + curricula, attestation stamps, the Ghostfile account
   fairness/ the Fairness Lint (simulated duels + mobility course) and its CLI
   campaign/ Kernel Protocols stub — quarantined from PvP by an import-graph test
-  economy/  WAKE token constants, Robinhood Chain config, no-paid-power lint, the full catalog + skins, the counter record
-contracts/  WAKE (ERC-20), Ghostfile (soulbound 721), Stamps (attestations), Names, Cosmetics (1155), LedgerMarket — solc-js build in contracts/out
+  economy/  $CAPITAL token constants, Robinhood Chain config, no-paid-power lint, the full catalog + skins, the counter record
+contracts/  CAPITAL (ERC-20), Ghostfile (soulbound 721), Stamps (attestations), Names, Cosmetics (1155), LedgerMarket — solc-js build in contracts/out
 server/chain/ the in-process EVM devnet, the deployer, the game signer (EIP-712 vouchers), the CounterLedger service, wallet stores
 client/     Vite + Three.js presentation: input, renderer (post chain, rain, wet floor, city, life: crowds/monorail/steam/ads/sky, hub), audio, HUD, game loop, ghost (range replays), bot
 server/     authoritative room (transport-agnostic), Node host, Cloudflare Durable Object host, PlayerFile DO + D1 schema
@@ -84,5 +85,5 @@ docs/       ART_BIBLE.md, STAGES.md, proof/ artifacts per stage
 ```
 
 See `docs/STAGES.md` for the stage plan, `docs/ART_BIBLE.md` for the
-visual ground truth, and `docs/TOKENOMICS.md` for WAKE, the in-game currency
+visual ground truth, and `docs/TOKENOMICS.md` for $CAPITAL, the on-chain currency
 on Robinhood Chain.

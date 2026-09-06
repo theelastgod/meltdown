@@ -330,3 +330,13 @@ html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; f
 #menu .ft { margin-top: 8px; font-size: 10px; color: rgba(53,242,255,0.55); letter-spacing: 0.12em; }
 #menu .ft .build { color: var(--mg); }
 #menu .scan { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.5) 2px 3px); animation: crawl-flicker 0.11s steps(2) infinite; }
+
+/* ---- THE RUN (Stage 14): the strip, the zone edge ---- */
+#hud .runstrip { display: block; margin-top: 4px; padding: 3px 8px; background: var(--pan); border: 1px solid var(--am); color: var(--am); font-size: 11px; letter-spacing: 0.08em; white-space: nowrap; text-shadow: 0 0 4px rgba(255,176,46,0.5); }
+#hud .runstrip[hidden] { display: none; }
+#hud .runstrip b { color: var(--ye); }
+#hud .runstrip .pvp { color: var(--mg); }
+#hud .runstrip .zone { color: var(--cy); }
+#hud .runstrip .bar { display: inline-block; width: 70px; height: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(53,242,255,0.5); vertical-align: middle; position: relative; }
+#hud .runstrip .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--cy); }
+#hud.safe::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 60px rgba(53,242,255,0.25); }

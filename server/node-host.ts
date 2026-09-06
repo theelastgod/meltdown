@@ -6,7 +6,7 @@
  *   GET  /stats              → JSON stats for every room
  *   GET  /file/<id>          → the Ghostfile (JSON)
  *   POST /file/<id>/buy      → { node } buys a Ledger Graph node with Scrip; /refund gives half back
- *   WS   /room/<name>[?lagcomp=0&ai=0&warmup=<s>&round=<s>&level=<id>]
+ *   WS   /room/<name>[?lagcomp=0&ai=0&warmup=<s>&round=<s>&level=<id>&mode=run]
  *   WS   /campaign/<name>?mission=<id>   → a co-op contract (the mission runtime on the server)
  *   POST /file/<id>/campaign → { op: faction | complete | wear | state }
  *   POST /chain              → JSON-RPC to the in-process devnet (a real EVM; the contracts are deployed at boot)
@@ -74,10 +74,10 @@ function startLoop(room: Room): void {
   setTimeout(loop, 0);
 }
 
-function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: number, roundSeconds?: number, level?: string, audit = false): Room {
+function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: number, roundSeconds?: number, level?: string, audit = false, run = false): Room {
   let r = rooms.get(name);
   if (!r) {
-    r = new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, endgame, audit: audit ? { week: currentAudit().week, def: currentAudit().audit } : null, onLog: (l) => log(`[${name}] ${l}`) });
+    r = new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, endgame, audit: audit ? { week: currentAudit().week, def: currentAudit().audit } : null, run, onLog: (l) => log(`[${name}] ${l}`) });
     rooms.set(name, r);
     startLoop(r);
   }
@@ -267,7 +267,7 @@ wss.on("connection", (ws: WebSocket, req) => {
     return;
   }
   const num = (k: string) => (url.searchParams.has(k) ? Number(url.searchParams.get(k)) : undefined);
-  const room = m[1] === "campaign" ? getCampaignRoom(m[2]!, url.searchParams.get("mission") ?? "g_escrow_row").room : getRoom(m[2]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"), url.searchParams.get("level") ?? undefined, url.searchParams.get("audit") === "1");
+  const room = m[1] === "campaign" ? getCampaignRoom(m[2]!, url.searchParams.get("mission") ?? "g_escrow_row").room : getRoom(m[2]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"), url.searchParams.get("level") ?? undefined, url.searchParams.get("audit") === "1", url.searchParams.get("mode") === "run");
   ws.binaryType = "arraybuffer";
   const conn: Conn = {
     send: (buf) => {

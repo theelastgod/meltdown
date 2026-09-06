@@ -3,17 +3,17 @@ pragma solidity ^0.8.24;
 
 import {Vouchers} from "./Vouchers.sol";
 
-interface IWAKEBurn {
+interface ICAPITALBurn {
     function burnFrom(address from, uint256 value) external;
 }
 
 /// @title Names — "the city learns your name".
 /// @notice A soulbound handle written at Depth 50. The game signs the voucher (it checks the Depth);
-///         the player pays the fee in WAKE, 100% burned, priced by length like a name service.
+///         the player pays the fee in $CAPITAL, 100% burned, priced by length like a name service.
 ///         Non-transferable, releasable by the holder, one per wallet.
 contract Names is Vouchers {
     bytes32 public constant NAME_TYPEHASH = keccak256("Name(address wallet,string name,uint256 nonce,uint256 deadline)");
-    IWAKEBurn public immutable wake;
+    ICAPITALBurn public immutable capital;
 
     mapping(bytes32 => address) public holderOf;
     mapping(address => string) public nameOf;
@@ -25,15 +25,15 @@ contract Names is Vouchers {
     error HasName();
     error BadLength();
 
-    constructor(address signer_, address wake_) Vouchers(signer_) {
-        wake = IWAKEBurn(wake_);
+    constructor(address signer_, address capital_) Vouchers(signer_) {
+        capital = ICAPITALBurn(capital_);
     }
 
     function _domainName() internal pure override returns (string memory) {
         return "MELTDOWN Names";
     }
 
-    /// @notice 3 characters cost more than 12: 3 → 2000, 4 → 1000, 5 → 600, 6–7 → 400, 8–11 → 250, 12+ → 150 WAKE.
+    /// @notice 3 characters cost more than 12: 3 → 2000, 4 → 1000, 5 → 600, 6–7 → 400, 8–11 → 250, 12+ → 150 $CAPITAL.
     function priceOf(uint256 len) public pure returns (uint256) {
         if (len < 3 || len > 24) revert BadLength();
         if (len == 3) return 2000 ether;
@@ -50,7 +50,7 @@ contract Names is Vouchers {
         if (bytes(nameOf[msg.sender]).length != 0) revert HasName();
         _consume(msg.sender, nonce, deadline, keccak256(abi.encode(NAME_TYPEHASH, msg.sender, key, nonce, deadline)), sig);
         uint256 fee = priceOf(bytes(name_).length);
-        wake.burnFrom(msg.sender, fee);
+        capital.burnFrom(msg.sender, fee);
         holderOf[key] = msg.sender;
         nameOf[msg.sender] = name_;
         emit Registered(msg.sender, name_, fee);

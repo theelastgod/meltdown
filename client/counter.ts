@@ -18,7 +18,7 @@ const ABI = artifacts as Record<string, { abi: Abi }>;
 export interface CounterInfo {
   chainId: number;
   devnet: boolean;
-  contracts: { wake: Hex; ghostfile: Hex; stamps: Hex; names: Hex; cosmetics: Hex; market: Hex };
+  contracts: { capital: Hex; ghostfile: Hex; stamps: Hex; names: Hex; cosmetics: Hex; market: Hex };
   signer: Hex;
   statement: string;
   rpc?: string;
@@ -129,7 +129,7 @@ export class CounterClient {
   }
 
   /** wear / reconcile / stamps / name on the file through the host */
-  async op(op: "view" | "wear" | "reconcile" | "stamps" | "name", body: Record<string, unknown> = {}): Promise<{ ok: boolean; reason?: string; voucher?: { name: string; nonce: string; deadline: string; signature: Hex; fee: number } }> {
+  async op(op: "view" | "wear" | "reconcile" | "stamps" | "name" | "payout", body: Record<string, unknown> = {}): Promise<{ ok: boolean; reason?: string; voucher?: { name: string; nonce: string; deadline: string; signature: Hex; fee: number } }> {
     try {
       const r = (await (await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/counter`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op, ...body }) })).json()) as { ok: boolean; reason?: string; counter: CounterRecord | null; view: CounterView; voucher?: { name: string; nonce: string; deadline: string; signature: Hex; fee: number } };
       this.applyCounter(r.counter, r.view);
@@ -157,15 +157,36 @@ export class CounterClient {
     this.busy = true;
     try {
       const price = parseEther(String(L.price));
-      if (!(await this.tx(this.info.contracts.wake, ABI.WAKE!.abi, "approve", [this.info.contracts.market, price]))) return { ok: false, reason: "approve reverted" };
+      if (!(await this.tx(this.info.contracts.capital, ABI.CAPITAL!.abi, "approve", [this.info.contracts.market, price]))) return { ok: false, reason: "approve reverted" };
       if (!(await this.tx(this.info.contracts.market, ABI.LedgerMarket!.abi, "buy", [BigInt(listing), 1n]))) return { ok: false, reason: "buy reverted" };
       await this.op("reconcile");
       await this.load();
-      this.say(`BOUGHT · listing ${listing} · ${L.price} WAKE`);
+      this.say(`BOUGHT · listing ${listing} · ${L.price} $CAPITAL`);
       return { ok: true };
     } catch (e) {
       const reason = String((e as Error).message ?? e).split("\n").find((l) => /revert|Error|fetch|failed/i.test(l))?.slice(0, 100) ?? "failed";
       this.say(`BUY FAILED: ${reason}`);
+      return { ok: false, reason };
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  /** A market listing: the player's own two transactions (approve the market for the rig, list); the host's market view refreshes. */
+  async sell(token: number, price: number): Promise<{ ok: boolean; reason?: string }> {
+    if (!this.wallet || !this.info) return { ok: false, reason: "no wallet" };
+    if (!(price > 0)) return { ok: false, reason: "price must be positive" };
+    this.busy = true;
+    try {
+      if (!(await this.tx(this.info.contracts.cosmetics, ABI.Cosmetics!.abi, "setApprovalForAll", [this.info.contracts.market, true]))) return { ok: false, reason: "approval reverted" };
+      if (!(await this.tx(this.info.contracts.market, ABI.LedgerMarket!.abi, "list", [BigInt(token), 1n, parseEther(String(price))]))) return { ok: false, reason: "list reverted" };
+      await this.op("reconcile");
+      await this.load();
+      this.say(`LISTED · token ${token} · ${price} $CAPITAL`);
+      return { ok: true };
+    } catch (e) {
+      const reason = String((e as Error).message ?? e).split("\n").find((l) => /revert|Error|fetch|failed/i.test(l))?.slice(0, 100) ?? "failed";
+      this.say(`SELL FAILED: ${reason}`);
       return { ok: false, reason };
     } finally {
       this.busy = false;
@@ -181,10 +202,10 @@ export class CounterClient {
       const v = await this.op("name", { name });
       if (!v.ok || !v.voucher) return { ok: false, reason: v.reason ?? "no voucher" };
       const fee = parseEther(String(v.voucher.fee));
-      if (!(await this.tx(this.info.contracts.wake, ABI.WAKE!.abi, "approve", [this.info.contracts.names, fee]))) return { ok: false, reason: "approve reverted" };
+      if (!(await this.tx(this.info.contracts.capital, ABI.CAPITAL!.abi, "approve", [this.info.contracts.names, fee]))) return { ok: false, reason: "approve reverted" };
       if (!(await this.tx(this.info.contracts.names, ABI.Names!.abi, "register", [v.voucher.name, BigInt(v.voucher.nonce), BigInt(v.voucher.deadline), v.voucher.signature]))) return { ok: false, reason: "register reverted" };
       await this.op("reconcile");
-      this.say(`NAMED · ${v.voucher.name} · ${v.voucher.fee} WAKE BURNED`);
+      this.say(`NAMED · ${v.voucher.name} · ${v.voucher.fee} $CAPITAL BURNED`);
       return { ok: true };
     } catch (e) {
       const reason = String((e as Error).message ?? e).split("\n").find((l) => /revert|Error|fetch|failed/i.test(l))?.slice(0, 100) ?? "failed";

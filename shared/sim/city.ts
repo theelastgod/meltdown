@@ -1,3 +1,4 @@
+import type { ClaimDef, ZoneDef } from "./run";
 /**
  * Lethe proper: procedural city districts. One deterministic generator, three
  * district specs. A district is a 3×3 grid of building blocks split by
@@ -421,6 +422,20 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     { id: 5, label: "E", pos: v3(I, 0, I), links: [1, 3, 4] },
   ];
 
+  // THE RUN: two safe zones at the ends of the walkway street, in the perimeter street; claims on the nodes and at the
+  // street midpoints between them, worth more the farther they lie from a gate
+  const gateA = spec.walkway === "x" ? v3(-H + S / 2, 0, -I) : v3(-I, 0, -H + S / 2);
+  const gateB = spec.walkway === "x" ? v3(H - S / 2, 0, -I) : v3(-I, 0, H - S / 2);
+  const zones: ZoneDef[] = [
+    { kind: "safe", label: "WEST GATE", pos: gateA, radius: 6 },
+    { kind: "safe", label: "EAST GATE", pos: gateB, radius: 6 },
+  ];
+  const claimSpots: Vec3[] = [...nodes.map((n) => n.pos), v3(0, 0, -I), v3(0, 0, I), v3(-I, 0, 0), v3(I, 0, 0), v3(-I, 0, -H + S / 2), v3(I, 0, H - S / 2)];
+  const claims: ClaimDef[] = claimSpots.map((p) => {
+    const d = Math.min(Math.hypot(p.x - gateA.x, p.z - gateA.z), Math.hypot(p.x - gateB.x, p.z - gateB.z));
+    return { pos: v3(p.x, 0, p.z), value: 1 + Math.min(4, Math.floor(d / 14)) };
+  }).filter((cl) => !zones.some((z) => Math.hypot(cl.pos.x - z.pos.x, cl.pos.z - z.pos.z) < z.radius + 2));
+
   // blocks
   for (let bz = 0; bz < N; bz++) for (let bx = 0; bx < N; bx++) block(c, bx, bz, spec.blocks[bz * N + bx]!, bx === 1 && bz === 1 ? nodes[0]!.pos : undefined);
 
@@ -589,6 +604,8 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     wasps,
     mechs,
     nodes,
+    zones,
+    claims,
   };
 }
 

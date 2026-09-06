@@ -44,7 +44,7 @@ export class Hud {
         </div>
       </div>
 
-      <div class="p mg mission"><span class="mtitle">◈ THE WAKE — DRAINAGE YARD</span><div class="sub"><span class="mline">⌖ CONTRACT — DUMMIES <span class="kills">0</span>/5</span></div><div class="sub mscore"></div><div class="nodes"></div></div>
+      <div class="p mg mission"><span class="mtitle">◈ THE WAKE — DRAINAGE YARD</span><div class="sub"><span class="mline">⌖ CONTRACT — DUMMIES <span class="kills">0</span>/5</span></div><div class="runstrip" hidden></div><div class="sub mscore"></div><div class="nodes"></div></div>
       <div class="alert"></div>
       <div class="debt"></div>
       <div class="dossier" hidden><div class="dt">▲ DOSSIER · BOTH CELLS · FILES AS THE CITY SEES THEM</div><div class="cells"></div></div>
@@ -225,6 +225,17 @@ export class Hud {
   }
 
   // ---- campaign: objective, terminal, contracts, cards ----
+
+  /** THE RUN (Stage 14): the strip replaces the wake's while a run is on — carried, banked, the zone, the banking bar. */
+  setRun(v: { carried: number; banked: number; banking: number; inSafe: boolean; zone: string | null; today: number; cap: number; owed: number; claims: number } | null): void {
+    const el = this.q(".runstrip") as HTMLElement | null;
+    if (!el) return;
+    el.hidden = !v;
+    document.getElementById("hud")?.classList.toggle("safe", !!v?.inSafe);
+    if (!v) return;
+    const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? "SAFE ZONE" : `<span class="pvp">PVP ZONE</span>`;
+    el.innerHTML = `◈ CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · OWED <b>${v.owed}</b> $CAPITAL · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${v.claims} CLAIMS OUT`;
+  }
 
   /** Mission title and the current objective under it (replaces the wake strip while a contract runs). */
   setObjective(title: string, text: string, progress: string | null): void {

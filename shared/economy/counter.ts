@@ -21,11 +21,11 @@ export const SIWE_STATEMENT = "COUNTER-LEDGER LINK: bind this wallet to my Ghost
 export const RELINK_COOLDOWN_MS = 30 * 86_400_000;
 /** The name registry opens at Depth 50 (Chapter III). */
 export const NAME_DEPTH = 50;
-/** devnet / testnet only: the launch distribution to a Depth-10+ file at link, in whole WAKE */
+/** devnet / testnet only: the launch distribution to a Depth-10+ file at link, in whole $CAPITAL */
 export const LAUNCH_GRANT = 1000;
 export const LAUNCH_GRANT_DEPTH = 10;
 
-/** Mirror of Names.priceOf: 3 → 2000 … 12+ → 150 WAKE. */
+/** Mirror of Names.priceOf: 3 → 2000 … 12+ → 150 $CAPITAL. */
 export function nameFee(len: number): number | null {
   if (len < 3 || len > 24) return null;
   if (len === 3) return 2000;
@@ -38,7 +38,11 @@ export function nameFee(len: number): number | null {
 
 export const validName = (n: string): boolean => /^[A-Z0-9_-]{3,24}$/.test(n);
 
-export const emptyCounter = (): CounterRecord => ({ address: null, linkedAt: 0, ghostfile: 0, stamps: [], name: null, rig: [], worn: 0, wake: "0" });
+export const emptyCounter = (): CounterRecord => ({ address: null, linkedAt: 0, ghostfile: 0, stamps: [], name: null, rig: [], worn: 0, capital: "0", run: { day: 0, banked: 0, owed: 0, paid: 0 } });
+
+/** THE RUN's payout rules live with the sim (shared/sim/run.ts) so the match room never imports this module; re-exported for the panel and the ledger. */
+export { CAPITAL_PER_UNIT, RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT } from "../sim/run";
+import { RUN_DEPTH } from "../sim/run";
 
 /** Wear an owned skin (token id) or 0 for none. Cached ownership is enough: equipping never waits on a chain read. */
 export function wearSkin(a: Account, token: number): { ok: boolean; reason?: string } {
@@ -60,8 +64,10 @@ export function counterView(a: Account) {
     name: c.name,
     rig: c.rig.map((t) => ({ token: t, id: skinByToken(t)?.id ?? `token:${t}`, name: skinByToken(t)?.name ?? `TOKEN ${t}`, worn: c.worn === t })),
     worn: c.worn,
-    wake: c.wake,
+    capital: c.capital,
     nameOpen: a.depth >= NAME_DEPTH && !c.name,
+    run: c.run ?? { day: 0, banked: 0, owed: 0, paid: 0 },
+    runGate: a.depth >= RUN_DEPTH,
     skins: SKINS.map((s) => ({ ...s, owned: c.rig.includes(s.token) })),
   };
 }

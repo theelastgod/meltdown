@@ -21,7 +21,7 @@ import { FIRMWARES, firmwareById } from "@shared/manifest/firmwares";
 import { CURRICULA, gateFor, MAX_RANK, xpForRank, type Mastery } from "@shared/progression/mastery";
 import { redact, STAMPS } from "@shared/progression/stamps";
 import { glyphFor, glyphSvg } from "@shared/identity/glyph";
-import { counterView, nameFee, NAME_DEPTH } from "@shared/economy/counter";
+import { counterView, nameFee, NAME_DEPTH, RUN_DAILY_CAP, RUN_DEPTH } from "@shared/economy/counter";
 import { CounterClient, type CounterView } from "./counter";
 import { COUNTER_URL } from "./config";
 import { CHAPTERS, chapterFor, MONIKERS, monikerById, unlockedMonikers, wornMoniker } from "@shared/identity/monikers";
@@ -475,6 +475,11 @@ export class GhostFile {
       else if (act === "buyListing") void this.counter?.buy(Number(id));
       else if (act === "wear") void this.counter?.op("wear", { token: Number(id) });
       else if (act === "reconcile") void this.counter?.op("reconcile");
+      else if (act === "payout") void this.counter?.op("payout");
+      else if (act === "sell") {
+        const price = Number(window.prompt("List for how much $CAPITAL?", "50") ?? 0);
+        if (price > 0) void this.counter?.sell(Number(id), price);
+      }
       else if (act === "attestStamps") void this.counter?.op("stamps");
       else if (act === "registerName") {
         const input = el.querySelector<HTMLInputElement>("input[data-name]");
@@ -517,27 +522,31 @@ export class GhostFile {
     this.render();
   }
 
-  /** COUNTER-LEDGER // WAKE: the wallet link, the Ghostfile, the stamps on chain, the name, the rig and the market. Identity and ownership only. */
+  /** COUNTER-LEDGER // $CAPITAL: the wallet link, the Ghostfile, the stamps on chain, the name, the rig and the market. Identity and ownership only. */
   counterHtml(): string {
     const c = this.counter;
     if (!c) return "";
     const v = this.counterState;
     const info = c.info;
     const wallet = c.address ? `WALLET <b>${c.short()}</b>` : `<span class="btn" data-act="link">[LINK A WALLET]</span> <span class="dim">Robinhood Wallet · WalletConnect · injected</span>`;
-    const linked = v?.linked ? `LINKED <b>${v.address!.slice(0, 6)}…${v.address!.slice(-4)}</b> · GHOSTFILE <b>${v.ghostfile ? "#" + v.ghostfile : "—"}</b> · STAMPS ON CHAIN <b>${v.stamps}</b>/${this.stamps.length} ${this.stamps.length > v.stamps ? `<span class="btn" data-act="attestStamps">[ATTEST]</span>` : ""} · WAKE <b>${Number(v.wake).toFixed(0)}</b> <span class="btn" data-act="reconcile">[RECONCILE]</span>` : c.address ? `<span class="btn" data-act="link">[SIGN THE LINK]</span> <span class="dim">one SIWE statement; the Ghostfile mints with sponsored gas</span>` : "";
-    const name = v?.linked ? (v.name ? `NAME <b class="ye">${v.name}</b> <span class="dim">written where they can't redact it</span>` : v.nameOpen ? `NAME <input data-name="1" maxlength="24" placeholder="3–24 · A-Z 0-9 _ -"> <span class="btn" data-act="registerName">[WRITE IT]</span> <span class="dim">${nameFee(3)}–${nameFee(12)} WAKE by length, burned</span>` : `NAME <span class="dim">the registry opens at Depth ${NAME_DEPTH}</span>`) : "";
-    const rig = v?.linked ? `RIG ${v.rig.length ? v.rig.map((r) => `<span class="btn ${r.worn ? "on" : ""}" data-act="wear" data-id="${r.worn ? 0 : r.token}">[${r.name}${r.worn ? " · WORN" : ""}]</span>`).join(" ") : "<span class='dim'>nothing on the rig yet</span>"}` : "";
+    const linked = v?.linked ? `LINKED <b>${v.address!.slice(0, 6)}…${v.address!.slice(-4)}</b> · GHOSTFILE <b>${v.ghostfile ? "#" + v.ghostfile : "—"}</b> · STAMPS ON CHAIN <b>${v.stamps}</b>/${this.stamps.length} ${this.stamps.length > v.stamps ? `<span class="btn" data-act="attestStamps">[ATTEST]</span>` : ""} · $CAPITAL <b>${Number(v.capital).toFixed(0)}</b> <span class="btn" data-act="reconcile">[RECONCILE]</span>` : c.address ? `<span class="btn" data-act="link">[SIGN THE LINK]</span> <span class="dim">one SIWE statement; the Ghostfile mints with sponsored gas</span>` : "";
+    const name = v?.linked ? (v.name ? `NAME <b class="ye">${v.name}</b> <span class="dim">written where they can't redact it</span>` : v.nameOpen ? `NAME <input data-name="1" maxlength="24" placeholder="3–24 · A-Z 0-9 _ -"> <span class="btn" data-act="registerName">[WRITE IT]</span> <span class="dim">${nameFee(3)}–${nameFee(12)} $CAPITAL by length, burned</span>` : `NAME <span class="dim">the registry opens at Depth ${NAME_DEPTH}</span>`) : "";
+    const rig = v?.linked ? `RIG ${v.rig.length ? v.rig.map((r) => `<span class="btn ${r.worn ? "on" : ""}" data-act="wear" data-id="${r.worn ? 0 : r.token}">[${r.name}${r.worn ? " · WORN" : ""}]</span> <span class="btn" data-act="sell" data-id="${r.token}">[SELL]</span>`).join(" ") : "<span class='dim'>nothing on the rig yet</span>"}` : "";
     const market = (info?.listings ?? []).map((l) => {
       const s = v?.skins.find((k) => k.token === l.token);
-      return `<div class="cos ${s?.owned ? "owned" : ""}"><b>${s?.name ?? "TOKEN " + l.token}</b> <span class="dim">${s?.line ?? ""}</span> · <span class="sw" style="background:${s?.tint ?? "#fff"}"></span> · ${l.amount} listed · <span class="btn ${v?.linked && !c.busy ? "" : "off"}" data-act="buyListing" data-id="${l.listing}">[${l.price} WAKE]</span></div>`;
+      const mine = !!c.address && l.seller.toLowerCase() === c.address.toLowerCase();
+      return `<div class="cos ${s?.owned ? "owned" : ""}"><b>${s?.name ?? "TOKEN " + l.token}</b> <span class="dim">${s?.line ?? ""}</span> · <span class="sw" style="background:${s?.tint ?? "#fff"}"></span> · ${l.amount} listed by ${mine ? "<span class='ye'>YOU</span>" : l.seller.slice(0, 6) + "…"} · <span class="btn ${v?.linked && !c.busy && !mine ? "" : "off"}" data-act="buyListing" data-id="${l.listing}">[${l.price} $CAPITAL]</span></div>`;
     }).join("");
+    const run = v?.run ?? { day: 0, banked: 0, owed: 0, paid: 0 };
+    const runBlock = v?.linked ? `<div class="ln">THE RUN · TODAY <b>${run.banked}</b>/${RUN_DAILY_CAP} · OWED <b>${run.owed}</b> $CAPITAL · PAID ${run.paid} ${run.owed > 0 ? `<span class="btn" data-act="payout">[WITHDRAW TO WALLET]</span>` : ""}${v.runGate ? "" : ` <span class="dim">· below Depth ${RUN_DEPTH} the run pays Scrip</span>`}</div>` : `<div class="ln dim">THE RUN pays the wallet: link one and the units you bank at a gate become $CAPITAL owed.</div>`;
     const t = info?.treasury;
     const delta = t ? `SUPPLY ${Number(t.supply).toLocaleString()} · BURNED <b>${Number(t.burned).toFixed(0)}</b> · MARKET VOLUME ${Number(t.volume).toFixed(0)} · <span class="gr">NET DELTA: 0.000 — RECONCILED</span>` : info?.reason ?? "loading…";
-    return `<div class="sh">COUNTER-LEDGER // WAKE <span class="dim">${info ? (info.devnet ? "DEVNET" : "ROBINHOOD CHAIN") + " · chain " + info.chainId : ""}</span></div>
+    return `<div class="sh">COUNTER-LEDGER // $CAPITAL <span class="dim">${info ? (info.devnet ? "DEVNET" : "ROBINHOOD CHAIN") + " · chain " + info.chainId : ""}</span></div>
       <div class="ln dim">VANTAGE priced you. This is the other book. It does not buy damage. It does not buy armor. It does not buy a node.</div>
       <div class="ln">${wallet}${linked ? " · " + linked : ""}</div>
       ${name ? `<div class="ln">${name}</div>` : ""}${rig ? `<div class="ln">${rig}</div>` : ""}
-      <div class="sh">LEDGER MARKET · settles only in WAKE · 5% fee: 2% burned, 2% treasury, 1% creator</div>${market || "<div class='dim'>no listings</div>"}
+      ${runBlock}
+      <div class="sh">LEDGER MARKET · settles only in $CAPITAL · 5% fee: 2% burned, 2% treasury, 1% creator</div>${market || "<div class='dim'>no listings</div>"}
       <div class="ln dim">${delta}</div>
       ${c.last ? `<div class="ln am">${c.last}</div>` : ""}`;
   }

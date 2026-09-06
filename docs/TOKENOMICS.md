@@ -1,6 +1,7 @@
-# MELTDOWN — WAKE: the counter-ledger
+# MELTDOWN — $CAPITAL: the counter-ledger
 
 **Status:** design spec, adopted. Implemented in Stage 11b (see `docs/STAGES.md`): the contracts in `contracts/`, the wallet link, vouchers, market and names run against an in-process EVM devnet until Robinhood Chain's testnet parameters are published; the testnet is configuration (`wrangler.counter.toml`, `shared/economy/chain.ts`).
+**Token:** $CAPITAL (ERC-20). The play-to-earn extraction loop (THE RUN: PvP zones, safe zones, the markets) is Stage 14.
 **Chain:** Robinhood Chain (Arbitrum Orbit L2, EVM). **Wallets:** WalletConnect via Reown AppKit.
 **Enforced today:** `shared/economy/` — no item that carries a token price or an on-chain binding may carry a stat.
 
@@ -15,7 +16,7 @@ MELTDOWN's fairness doctrine already says PvP growth is breadth, budgeted
 trades, and expression — never net stat gain. The token inherits that rule
 and adds one of its own:
 
-**WAKE touches identity, ownership, creation, hosting, and competition. It
+**$CAPITAL touches identity, ownership, creation, hosting, and competition. It
 never touches a stat.** Not directly, not through a shortcut, not through a
 key that opens a shortcut. The Fairness Lint fails the build if an item has
 both a price and a mechanical field.
@@ -30,21 +31,21 @@ file, a record that they were here. Power stays free and flat.
 | --- | --- | --- | --- | --- |
 | **Scrip** | off-chain (D1) | never | Ledger Graph nodes, chips — *progression breadth* | matches, campaign |
 | **Wakelight** | off-chain (D1) | never | CRT themes, alias slots, preset slots — *prestige cosmetics* | Rewrite (Depth-50 prestige) |
-| **WAKE** | on-chain, Robinhood Chain | yes (ERC-20) | see §3 | competition, creation, prestige certificates (§4) |
+| **$CAPITAL** | on-chain, Robinhood Chain | yes (ERC-20) | see §3 | competition, creation, prestige certificates (§4) |
 
 Scrip and Wakelight are deliberately not on-chain and not purchasable.
 Progression is the player writing their own file; selling that would make the
-Ghostfile a receipt instead of a forgery. WAKE is the only transferable value
+Ghostfile a receipt instead of a forgery. $CAPITAL is the only transferable value
 and it lives entirely in the identity and community layer.
 
-## 3. What WAKE does (demand)
+## 3. What $CAPITAL does (demand)
 
 Every use below is a **sink** (burn), a **transfer** (player to player or
 player to creator), or a **bond** (refundable). None is a wager and none
 produces yield.
 
 ### 3.1 The Ledger Market — player-to-player cosmetics
-The in-game market for cosmetics settles only in WAKE. Cosmetics are
+The in-game market for cosmetics settles only in $CAPITAL. Cosmetics are
 ERC-1155 tokens: weapon wear skins (the deterministic wear seed is the only
 RNG the game allows, and it is cosmetic), faction trims, glyph plates,
 kill-stamp designs, CRT themes, moniker typefaces, Deadletter Office
@@ -58,7 +59,7 @@ game recognises for equipping.
 
 ### 3.2 The Name Registry — "the city learns your name"
 At Depth 50 the Ghostfile's empty NAME field fills in. The player may write
-that name to the chain as a **soulbound ERC-721 handle**. Fee in WAKE,
+that name to the chain as a **soulbound ERC-721 handle**. Fee in $CAPITAL,
 100% burned, priced by length like a name service (3 characters cost more
 than 12). Names are permanent, non-transferable, and releasable. Squatting
 is structurally impossible: registering requires Depth 50, which is 55–75
@@ -74,7 +75,7 @@ of the economy weight: cosmetics attach to a record that cannot be bought,
 and the record is readable by anyone.
 
 ### 3.4 Room Credits — hosting
-Private rooms, custom Audit playlists, and community tournaments cost WAKE
+Private rooms, custom Audit playlists, and community tournaments cost $CAPITAL
 per room-hour, **100% burned**. This is the sink with a real cost basis
 (Durable Object minutes) and it scales with the community rather than with
 speculation. Public matchmaking is always free.
@@ -82,7 +83,7 @@ speculation. Public matchmaking is always free.
 ### 3.5 The Forge — creator economy
 Players publish cosmetics made with in-game tools (wear patterns, CRT
 themes, kill stamps, Audit mutator sets, Deadletter props). A listing
-requires a **WAKE bond**, refunded on approval and forfeited (burned) on a
+requires a **$CAPITAL bond**, refunded on approval and forfeited (burned) on a
 terms-of-service rejection. Primary sale split: 70% creator, 20% treasury,
 10% burned. Secondary: the 1% creator royalty in §3.1. Creators are members,
 not vendors; the Forge is curated and the curation is the studio's, in
@@ -90,20 +91,45 @@ public.
 
 ### 3.6 Season Buyout
 The seasonal cosmetic track ("Lease Buyout" in the fiction) is bought with
-WAKE, **100% burned**. Fiat purchases route through a WAKE buy-and-burn so
+$CAPITAL, **100% burned**. Fiat purchases route through a $CAPITAL buy-and-burn so
 that every dollar spent on cosmetics is a token sink.
+
+### 3.8 THE RUN — play to earn (Stage 14)
+The play-to-earn loop is an extraction run, not a wager. A district is a
+**PvP zone** with $CAPITAL **claims** lying in it — units VANTAGE never
+collected. A Blank who walks over one carries it. Carried claims drop where
+the file falls, for anyone, and expire back into the city if nobody takes
+them. Carrying them into a **safe zone** (the gates: no damage in, no damage
+out, the markets) and standing still for two seconds **banks** them: the
+room credits the file, the counter-ledger pays the wallet from the treasury's
+emission schedule (§4.3) — on the devnet the relayer is the treasury; in
+production the weekly PrizeVault Merkle root.
+
+Rules that keep it an emission and not a farm:
+
+- The **Depth gate**: below Depth 10 the run pays Scrip (10 per unit), not
+  $CAPITAL — a script has to play 8–10 hours of the wake before it can earn.
+- The **day's cap**: 200 units a day per file; anything banked past it is
+  recorded, not paid.
+- **One wallet per Ghostfile, one Ghostfile per wallet** (§3.3): the cap is a
+  cap per person.
+- Claims **respawn on a timer** at fixed positions, so the map can be learned
+  but not drained; deeper claims are worth more.
+- Nothing about the run touches a stat. Safe zones are geometry, not power.
+- The client can spend $CAPITAL in the safe zones' markets (§3.1) or
+  withdraw what it is owed to the wallet.
 
 ### 3.7 Testimony — governance without token-weighting
 Deep Wake season parameters (which district is contested next, the Audit
-mutator set) are put to **one-Ghostfile-one-vote**, gated at Depth 10. WAKE
-is not a vote. A proposal requires a WAKE bond, refunded when the proposal
+mutator set) are put to **one-Ghostfile-one-vote**, gated at Depth 10. $CAPITAL
+is not a vote. A proposal requires a $CAPITAL bond, refunded when the proposal
 reaches quorum. Treasury spending is a studio decision published in a
 quarterly reconciliation, not a DAO vote.
 
-## 4. Where WAKE comes from (supply)
+## 4. Where $CAPITAL comes from (supply)
 
 ### 4.1 Fixed supply
-1,000,000,000 WAKE, minted once, capped in the contract.
+1,000,000,000 $CAPITAL, minted once, capped in the contract.
 
 | Allocation | Share | Terms |
 | --- | --- | --- |
@@ -120,11 +146,14 @@ Emissions are paid only through the channels in §4.3. Unclaimed emissions
 return to the treasury; they are never rolled forward.
 
 ### 4.3 Emission channels — competition, creation, prestige. Never grind.
-Ordinary matches pay Scrip and Depth. They never pay WAKE. This is the
-anti-bot rule: there is no loop where a script farms kills into a token.
+Ordinary matches (the wake) pay Scrip and Depth. They never pay $CAPITAL.
+THE RUN pays $CAPITAL, behind the Depth gate and the day's cap (§3.8), and
+kills in it pay nothing — only banked claims do. There is no loop where a
+script farms kills into a token.
 
 | Channel | What earns | Cap / gate |
 | --- | --- | --- |
+| **THE RUN** | claims carried out of a PvP zone and banked at a safe zone (§3.8) | Depth ≥ 10, 200 units a day per file, one file per wallet |
 | **Weekly Audits** | leaderboard placement on the server-seeded mutator playlist | Depth ≥ 10, clean anti-cheat record, prize curve to top 10%, one Ghostfile per wallet |
 | **Deep Wake season end** | faction contribution (node flips, objective-weighted, same 40/35/25 weighting as Depth) | Depth ≥ 15, per-account cap, diminishing returns, same-party and per-pair velocity caps as all social earnings |
 | **Rewrite certificate** | each Depth-50 prestige mints a certificate NFT and a fixed grant | naturally rate-limited to one per 55–75 h |
@@ -137,7 +166,7 @@ by month 24. The treasury tunes prices (buyout, names, room-hours) quarterly
 against a public dashboard, in the game's own register: a **NET DELTA** line.
 Illustrative month-12 flows at 50k monthly active players:
 
-| Flow | Illustrative | WAKE / month |
+| Flow | Illustrative | $CAPITAL / month |
 | --- | --- | --- |
 | Emissions | schedule | 8.0M out |
 | Season buyout | 20% of MAU × 400 | 4.0M burned |
@@ -177,7 +206,7 @@ Why this chain and not a generic L2:
 ```
 browser                           Cloudflare                       Robinhood Chain
 ─────────────────────             ──────────────────────           ──────────────────
-Reown AppKit (WalletConnect v2)   Worker: /link/nonce              WAKE        (ERC-20, capped, permit)
+Reown AppKit (WalletConnect v2)   Worker: /link/nonce              $CAPITAL        (ERC-20, capped, permit)
 wagmi + viem, custom chain def    Worker: /link/verify  (SIWE)     Ghostfile   (soulbound ERC-721)
 "COUNTER-LEDGER LINK" CRT panel   D1: wallet ↔ account (1:1)       Stamps      (EAS-style attestations)
 claim UI: signs nothing but       Worker: EIP-712 voucher signer   Names       (soulbound ERC-721)
@@ -213,7 +242,7 @@ claim UI: signs nothing but       Worker: EIP-712 voucher signer   Names       (
 
 | Contract | Standard | Notes |
 | --- | --- | --- |
-| `WAKE` | ERC-20 + permit + burnable | fixed cap, no mint after genesis, no admin mint |
+| `CAPITAL` | ERC-20 + permit + burnable | fixed cap, no mint after genesis, no admin mint |
 | `Ghostfile` | ERC-721, soulbound | one per wallet, burnable by holder (Rewrite keeps stamps and glyph age) |
 | `Stamps` | EAS-style attestation schema | server-signed, revocable only for anti-cheat reversal |
 | `Names` | ERC-721, soulbound | Depth-50 voucher required; length-priced; burn on register |
@@ -225,7 +254,7 @@ claim UI: signs nothing but       Worker: EIP-712 voucher signer   Names       (
 | `PrizeVault` | Merkle claims | weekly roots posted by the Worker; unclaimed after 90 days returns to treasury |
 | `Testimony` | custom | 1 Ghostfile = 1 vote, Depth gate via voucher, proposal bond |
 
-All contracts upgradeable only through a timelocked multisig; the WAKE
+All contracts upgradeable only through a timelocked multisig; the $CAPITAL
 token itself is not upgradeable. External audit before mainnet.
 
 ## 8. Enforcement in code (already on main)
@@ -234,13 +263,13 @@ token itself is not upgradeable. External audit before mainnet.
 `shared/economy/catalog.ts` builds the full manifest from the real game data
 (`npm run lint:economy` runs it in CI). An item has a
 `mechanical` block (costs and benefits — the Ghostfile's paired trades) and a
-`market` block (WAKE price, on-chain binding, tradability).
+`market` block ($CAPITAL price, on-chain binding, tradability).
 `shared/economy/lint.ts` fails on any of:
 
 - an item with a `market` price or `onChain: true` that also has a
   `mechanical` block (paid power);
 - a progression item (node, chip, keystone, firmware) that is on-chain or
-  WAKE-priced (paid progression);
+  $CAPITAL-priced (paid progression);
 - a Kernel Protocol (campaign-only power) that is priced, on-chain, or
   tradable — it is not even allowed to *exist* in the economy manifest;
 - a purchasable cosmetic whose randomness is anything other than a wear seed.
@@ -267,16 +296,16 @@ it rejects a trade-less buff.
 
 ## 10. Player-facing copy (front-facing, in-fiction)
 
-> **COUNTER-LEDGER // WAKE**
+> **COUNTER-LEDGER // $CAPITAL**
 >
 > VANTAGE priced you. This is the other book.
 >
-> WAKE is what the city pays a Blank who did something it can verify: a
+> $CAPITAL is what the city pays a Blank who did something it can verify: a
 > placement in the weekly Audit, a district turned green at season's end, a
 > file burned and rewritten. You cannot farm it. Matches pay Scrip; Scrip
 > writes your file; the file is yours.
 >
-> WAKE buys the things VANTAGE would have stamped over: how your rig looks,
+> $CAPITAL buys the things VANTAGE would have stamped over: how your rig looks,
 > what your kill stamp reads, the furnishings of your safehouse, an hour of
 > a room nobody else can enter. At Depth 50, it buys the one line the ledger
 > never had for you. Your name. Written where they can't redact it.
@@ -286,7 +315,7 @@ it rejects a trade-less buff.
 
 ## 11. Internal notes (backend)
 
-- **Investor framing.** WAKE is membership infrastructure for a competitive
+- **Investor framing.** $CAPITAL is membership infrastructure for a competitive
   community, not a play-to-earn token: the Ghostfile is the durable asset,
   cosmetics and creator royalties are the recurring revenue, and the burn
   schedule is the discipline. Lead with active players and Forge creator

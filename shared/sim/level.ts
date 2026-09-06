@@ -1,6 +1,7 @@
 import { type Vec3, v3 } from "../math/vec3";
 import { box, type Box } from "./box";
 import type { HubDef } from "./hub";
+import type { ClaimDef, ZoneDef } from "./run";
 
 export { box, type Box };
 
@@ -120,6 +121,10 @@ export interface LevelDef {
   nodes: { id: number; label: string; pos: Vec3; links: number[] }[];
   /** The Deadletter Office: range course pads, trophy wall, renovation slots (Stage 8). */
   hub?: HubDef;
+  /** THE RUN (Stage 14): safe zones (no damage, the markets, banking) — everything else is the PvP zone. */
+  zones?: ZoneDef[];
+  /** THE RUN: where $CAPITAL claims lie; deeper into the district is worth more. */
+  claims?: ClaimDef[];
 }
 
 /**
@@ -227,7 +232,13 @@ export function drainageYard(): LevelDef {
     { text: "CHILL UNDER", fg: "#35f2ff", bg: "#07111a", border: "#ff3ec9", w: 3.6, h: 0.9, x: 0, y: 3.2, z: -31.9, rotY: 0 },
     { text: "LEASE-BREAKER", fg: "#ff3ec9", bg: "#170714", border: "#35f2ff", w: 4.2, h: 1.0, x: -31.9, y: 3.4, z: -4, rotY: Math.PI / 2 },
   ];
-  return { name: "drainage_yard", displayName: "DRAINAGE YARD", district: "magenta", bounds: H, boxes, spawns, dummies, killY: -20, wasps, mechs, nodes, lights, signs, skylineSeed: 42 };
+  // the gate sits on the west spawn: you wake safe, and the street beyond is the PvP zone
+  const zones: ZoneDef[] = [{ kind: "safe", label: "GATE", pos: v3(-20, 0, 0), radius: 5 }];
+  // claims on the nodes and one deep in the far corner; none inside the gate or on a spawn (a respawn must not pick one up)
+  const claims: ClaimDef[] = [...nodes.map((n, i) => ({ pos: v3(n.pos.x, n.pos.y, n.pos.z), value: 1 + (i % 3) })), { pos: v3(H - 8, 0, H - 8), value: 5 }].filter(
+    (c) => !zones.some((z) => Math.hypot(c.pos.x - z.pos.x, c.pos.z - z.pos.z) < z.radius + 2) && !spawns.some((sp) => Math.hypot(c.pos.x - sp.pos.x, c.pos.z - sp.pos.z) < 4),
+  );
+  return { name: "drainage_yard", displayName: "DRAINAGE YARD", district: "magenta", bounds: H, boxes, spawns, dummies, killY: -20, wasps, mechs, nodes, lights, signs, skylineSeed: 42, zones, claims };
 }
 
 // ---------------------------------------------------------------------------

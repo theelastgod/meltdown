@@ -1,3 +1,5 @@
+import { runView, type RunView } from "@shared/sim/run";
+import type { RunMsg } from "@shared/net/protocol";
 import { loadSettings, type Settings } from "./settings";
 import { skinByToken } from "@shared/economy/catalog";
 import { MAX_CATCHUP_TICKS, SIM_DT, SIM_HZ } from "@shared/sim/constants";
@@ -84,6 +86,10 @@ export class Game {
   readonly audio = new GameAudio();
   /** the player's settings (client/settings.ts), applied live */
   settings: Settings = loadSettings();
+  /** THE RUN (Stage 14): `?mode=run` offline, or the room's Welcome mode "run" online; the last view */
+  runMode = false;
+  runView: (RunView & { today: number; cap: number; owed: number }) | null = null;
+  runLog: string[] = [];
   /** the pause menu's hook: set by main when the menu flow is on */
   onLockLost: (() => void) | null = null;
   private lowHealthOn = false;
@@ -122,7 +128,8 @@ export class Game {
     this.levelId = LEVEL_IDS.includes(q.get("level") ?? "") ? q.get("level")! : DEFAULT_LEVEL_ID;
     // a contract or an explorable district runs without the wake and without dummy respawns (targets stay down)
     const campaignMode = q.has("mission") || q.get("explore") === "1" || q.get("mode") === "campaign";
-    this.world = new World(levelById(this.levelId), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" || campaignMode ? "off" : "wake", dummyRespawn: !campaignMode });
+    this.runMode = q.get("mode") === "run";
+    this.world = new World(levelById(this.levelId), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" || campaignMode ? "off" : "wake", dummyRespawn: !campaignMode, run: this.runMode });
     this.file = new GhostFile(() => this.online);
     this.player = this.world.addPlayer(1, "BLANK", 1, this.file.localLoadout());
     this.input = new InputController(canvas);
@@ -300,6 +307,7 @@ export class Game {
     this.net = net;
     net.onSocial = (m) => this.onSocial(m);
     net.onMission = (m) => this.campaign.onMissionMsg(m);
+    net.onRun = (m) => this.onRunMsg(m);
     net.onFile = (f) => {
       this.file.applyServer(f);
       if (f.reason === "join" && this.net === net) {
@@ -323,6 +331,10 @@ export class Game {
         (this.world as { seed: number }).seed = net.seed;
         this.player = this.world.addPlayer(net.playerId, cfg.name, 1, this.file.admitted ?? this.file.localLoadout());
         // an Audit room: the same symmetric rules the room runs, so prediction agrees
+        if (net.mode === "run") {
+          this.runMode = true;
+          this.hud.push("THE RUN · carry the claims to a gate; die and they drop", "am");
+        }
         const am = net.mode.match(/^audit:([a-z_]+):(\d+)$/);
         const audit = am ? AUDITS.find((x) => x.id === am[1]) : undefined;
         if (audit) {
@@ -658,8 +670,36 @@ export class Game {
     return w.nodes.map((n) => ({ id: n.id, label: n.label, pos: n.pos, owner: n.owner, hold: n.hold, contested: n.contested, puller: n.puller, boost: n.boost > 0, links: n.links }));
   }
 
+  /** The room's view of the run (online). */
+  private onRunMsg(m: RunMsg): void {
+    const prev = this.runView;
+    this.runView = { carried: m.carried, banked: m.banked, banking: m.banking, inSafe: m.inSafe, zone: m.zone, claims: m.claims, zones: m.zones, today: m.today, cap: m.cap, owed: m.owed };
+    if (prev && m.carried > prev.carried) this.audio.nodeFlip(true);
+    if (prev && m.banked > prev.banked) {
+      this.audio.sign();
+      this.hud.push(`BANKED ${m.banked - prev.banked} ◈ AT ${m.zone ?? "THE GATE"}`, "am");
+    }
+    if (prev && !prev.inSafe && m.inSafe) this.hud.push(`SAFE ZONE · ${m.zone}`, "cy");
+    this.applyRunView();
+  }
+
+  private applyRunView(): void {
+    const v = this.runView;
+    this.renderer.run.syncZones(v?.zones ?? []);
+    this.renderer.run.syncClaims(v?.claims ?? []);
+    this.hud.setRun(v ? { carried: v.carried, banked: v.banked, banking: v.banking, inSafe: v.inSafe, zone: v.zone, today: v.today, cap: v.cap, owed: v.owed, claims: v.claims.length } : null);
+  }
+
   private syncOfflineEntities(): void {
     const w = this.world;
+    if (w.run) {
+      const v = runView(w.run, this.player.id, this.player.pos);
+      const prev = this.runView;
+      this.runView = { ...v, today: 0, cap: 0, owed: 0 };
+      if (prev && v.carried > prev.carried) this.audio.nodeFlip(true);
+      if (prev && v.banked > prev.banked) this.audio.sign();
+      this.applyRunView();
+    }
     if (w.wake) {
       const views = this.nodeViewsOffline();
       this.renderer.wake.sync(views);

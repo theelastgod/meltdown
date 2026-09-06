@@ -3,11 +3,11 @@
  * doctrine is a type and a lint, not a convention. See docs/TOKENOMICS.md.
  */
 
-export const WAKE = {
-  symbol: "WAKE",
-  name: "Wake",
+export const CAPITAL = {
+  symbol: "CAPITAL",
+  name: "Capital",
   decimals: 18,
-  /** Fixed cap: 1,000,000,000 WAKE, minted once at genesis. */
+  /** Fixed cap: 1,000,000,000 $CAPITAL, minted once at genesis. */
   cap: 1_000_000_000n * 10n ** 18n,
   /** Ledger Market fee in basis points and its split. */
   marketFeeBps: 500,
@@ -30,14 +30,14 @@ export const ALLOCATION = {
 
 /** Every item kind that can appear in any manifest. */
 export type ItemKind =
-  // progression (Scrip, off-chain, never priced in WAKE)
+  // progression (Scrip, off-chain, never priced in $CAPITAL)
   | "node"
   | "chip"
   | "keystone"
   | "firmware"
   // campaign-only power: lives in the Kernel Protocols module and never here
   | "kernel_protocol"
-  // identity and community (the only WAKE-touching kinds)
+  // identity and community (the only $CAPITAL-touching kinds)
   | "cosmetic"
   | "name"
   | "theme"
@@ -58,8 +58,8 @@ export interface MechanicalBlock {
 }
 
 export interface MarketBlock {
-  /** Price in whole WAKE, or null when not sold for WAKE. */
-  wake: number | null;
+  /** Price in whole $CAPITAL, or null when not sold for $CAPITAL. */
+  capital: number | null;
   onChain: boolean;
   tradable: boolean;
   /** The only randomness a purchasable item may carry. */
@@ -71,11 +71,11 @@ export interface EconomyItem {
   kind: ItemKind;
   /** null for anything with zero gameplay effect. */
   mechanical: MechanicalBlock | null;
-  /** null for anything that never touches WAKE or the chain. */
+  /** null for anything that never touches $CAPITAL or the chain. */
   market: MarketBlock | null;
   /** Scrip price, for progression items only. */
   scrip?: number;
 }
 
 export const PROGRESSION_KINDS: ReadonlySet<ItemKind> = new Set(["node", "chip", "keystone", "firmware"]);
-export const WAKE_KINDS: ReadonlySet<ItemKind> = new Set(["cosmetic", "name", "theme", "room_credit", "season_buyout", "rewrite_certificate"]);
+export const CAPITAL_KINDS: ReadonlySet<ItemKind> = new Set(["cosmetic", "name", "theme", "room_credit", "season_buyout", "rewrite_certificate"]);

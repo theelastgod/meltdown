@@ -67,7 +67,7 @@ export class MatchRoom implements DurableObject {
   private roomFor(url: URL): Room {
     if (!this.room) {
       const audit = url.searchParams.get("audit") === "1" ? { week: currentAudit().week, def: currentAudit().audit } : null;
-      this.room = new Room({ accounts: new DoAccountStore(this.env.PLAYER_FILE), endgame: new DoEndgameStore(this.env.ENDGAME), audit, level: url.searchParams.get("level") ?? undefined, ai: url.searchParams.get("ai") !== "0" });
+      this.room = new Room({ accounts: new DoAccountStore(this.env.PLAYER_FILE), endgame: new DoEndgameStore(this.env.ENDGAME), audit, run: url.searchParams.get("mode") === "run", level: url.searchParams.get("level") ?? undefined, ai: url.searchParams.get("ai") !== "0" });
     }
     return this.room;
   }
