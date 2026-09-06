@@ -41,7 +41,7 @@ export const validName = (n: string): boolean => /^[A-Z0-9_-]{3,24}$/.test(n);
 export const emptyCounter = (): CounterRecord => ({ address: null, linkedAt: 0, ghostfile: 0, stamps: [], name: null, rig: [], worn: 0, capital: "0", run: { day: 0, banked: 0, owed: 0, paid: 0 } });
 
 /** THE RUN's payout rules live with the sim (shared/sim/run.ts) so the match room never imports this module; re-exported for the panel and the ledger. */
-export { CAPITAL_PER_UNIT, RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT } from "../sim/run";
+export { MAX_CAPITAL_PER_UNIT, RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT } from "../sim/run";
 import { RUN_DEPTH } from "../sim/run";
 
 /** Wear an owned skin (token id) or 0 for none. Cached ownership is enough: equipping never waits on a chain read. */

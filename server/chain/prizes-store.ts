@@ -1,10 +1,15 @@
 /** Posted prize epochs (the leaves with proofs) so the host can serve claims: memory on the Node host, D1 on the Worker. */
 import type { Hex } from "viem";
 
+/** The emission channels that post an epoch. */
+export type EpochKind = "audit" | "season" | "run";
+/** Epoch ids are namespaced by channel so a week, a season and a day can never collide. */
+export const EPOCH_BASE: Record<EpochKind, number> = { audit: 1_000_000, season: 2_000_000, run: 3_000_000 };
+
 export interface StoredEpoch {
   epoch: number;
-  kind: "audit" | "season";
-  /** the week or season index the epoch pays */
+  kind: EpochKind;
+  /** the week, season or day index the epoch pays */
   period: number;
   root: Hex;
   total: string;

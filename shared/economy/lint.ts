@@ -1,4 +1,7 @@
 import { ALLOCATION, PROGRESSION_KINDS, CAPITAL, CAPITAL_KINDS, type EconomyItem } from "./manifest";
+import { project, STRESS_POPULATION } from "./model";
+import { settleRun } from "./settlement";
+import { RUN_DAILY_CAP } from "../sim/run";
 
 export interface Violation {
   itemId: string;
@@ -63,5 +66,18 @@ export function lintTokenConstants(): Violation[] {
   }
   const budget = (CAPITAL.cap * BigInt(ALLOCATION.emissions)) / 10_000n;
   if (total > budget) out.push({ itemId: "CAPITAL.emissions", rule: "emissions-within-allocation", detail: `${total / 10n ** 18n} > ${budget / 10n ** 18n}` });
+
+  // THE RUN must settle inside the schedule at any population. A rate fixed per unit cannot: its
+  // emission is the product of a constant and the player count, and the schedule is neither
+  // (docs/ECONOMY.md). Two checks, because the property and the projection can fail apart: the
+  // settlement itself must never mint past its pot, and the modelled month at a stress population
+  // must fit the year-one budget.
+  const banked = Array.from({ length: 2_000 }, (_, i) => ({ account: `stress-${i}`, units: RUN_DAILY_CAP }));
+  const s0 = settleRun(0, banked, { pot: 1_000 });
+  if (s0.minted > s0.pot) out.push({ itemId: "THE RUN", rule: "emission-rate-within-schedule", detail: `a settlement minted ${s0.minted} out of a pot of ${s0.pot}` });
+  const proj = project(STRESS_POPULATION);
+  if (proj.settled.total > proj.monthlyBudget) {
+    out.push({ itemId: "THE RUN", rule: "emission-rate-within-schedule", detail: `${Math.round(proj.settled.total)} a month against a ${Math.round(proj.monthlyBudget)} budget at ${STRESS_POPULATION.mau.toLocaleString("en-US")} MAU` });
+  }
   return out;
 }

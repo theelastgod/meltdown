@@ -7,7 +7,7 @@
  */
 import { SEASON_DEPTH } from "../shared/endgame/season";
 import { encodeRun, type RunMsg } from "../shared/net/protocol";
-import { CAPITAL_PER_UNIT, RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT, runView } from "../shared/sim/run";
+import { RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT, runView } from "../shared/sim/run";
 import { dayIndex } from "../shared/endgame/clock";
 import { SIM_HZ } from "../shared/sim/constants";
 import { auditErrors, type AuditDef } from "../shared/endgame/audits";
@@ -780,7 +780,7 @@ export class Room {
   // ---- THE RUN (Stage 14): the room credits the file per bank; the counter-ledger pays the wallet ----
   private runDirty = false;
   private runCredits: string[] = [];
-  /** A bank: at the gate, the day's units against the cap become $CAPITAL owed; below it, Scrip. Never a stat. */
+  /** A bank: at the gate, the day's units against the cap are owed and settle at the day's rate; below it, Scrip. Never a stat. */
   private onBank(playerId: number, value: number, zone: string): void {
     const rec = this.clients.get(playerId);
     const a = rec?.account;
@@ -796,8 +796,9 @@ export class Room {
       const room = Math.max(0, RUN_DAILY_CAP - run.banked);
       const paid = Math.min(value, room);
       run.banked += paid;
-      run.owed += paid * CAPITAL_PER_UNIT;
-      line = paid < value ? `BANKED ${value} AT ${zone} · ${paid} $CAPITAL OWED · DAY CAP ${RUN_DAILY_CAP} REACHED` : `BANKED ${value} AT ${zone} · ${paid} $CAPITAL OWED`;
+      // units, not $CAPITAL: the day's rate is set by the settlement, which the room never sees
+      run.owed += paid;
+      line = paid < value ? `BANKED ${value} AT ${zone} · ${paid} UNITS OWED · DAY CAP ${RUN_DAILY_CAP} REACHED` : `BANKED ${value} AT ${zone} · ${paid} UNITS OWED`;
     }
     a.counter.run = run;
     a.counters["runBanked"] = (a.counters["runBanked"] ?? 0) + value;

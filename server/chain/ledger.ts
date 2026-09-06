@@ -10,13 +10,13 @@ import { createPublicClient, createWalletClient, defineChain, formatEther, parse
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import { parseSiweMessage, validateSiweMessage } from "viem/siwe";
 import type { Account, CounterRecord } from "../../shared/progression/account";
-import { CAPITAL_PER_UNIT, emptyCounter, LAUNCH_GRANT, LAUNCH_GRANT_DEPTH, NAME_DEPTH, nameFee, SIWE_STATEMENT, validName } from "../../shared/economy/counter";
+import { MAX_CAPITAL_PER_UNIT, emptyCounter, LAUNCH_GRANT, LAUNCH_GRANT_DEPTH, NAME_DEPTH, nameFee, SIWE_STATEMENT, validName } from "../../shared/economy/counter";
 import { SKINS } from "../../shared/economy/catalog";
 import { ARTIFACTS, type Contracts } from "./deploy";
 import { GameSigner } from "./signer";
 import type { WalletStore } from "./wallets";
 import { buildEpoch } from "./merkle";
-import type { PrizeStore, StoredEpoch } from "./prizes-store";
+import { EPOCH_BASE, type EpochKind, type PrizeStore, type StoredEpoch } from "./prizes-store";
 import type { PrizeLine } from "../../shared/economy/prizes";
 
 export interface LedgerOptions {
@@ -205,10 +205,10 @@ export class CounterLedger {
   // ---- the PrizeVault (Stage 15): the emission channels as Merkle epochs ----
 
   /** Post an epoch: resolve each file's wallet, build the tree, fund the vault from the treasury (the relayer) and set the root. Files without a wallet are left out and named in the answer. */
-  async postEpoch(kind: "audit" | "season", period: number, lines: readonly PrizeLine[]): Promise<Result & { epoch?: StoredEpoch; skipped?: string[] }> {
+  async postEpoch(kind: EpochKind, period: number, lines: readonly PrizeLine[]): Promise<Result & { epoch?: StoredEpoch; skipped?: string[] }> {
     const store = this.opts.prizes;
     if (!store) return { ok: false, reason: "no prize store" };
-    const epoch = (kind === "audit" ? 1_000_000 : 2_000_000) + period;
+    const epoch = EPOCH_BASE[kind] + period;
     if (await store.get(epoch)) return { ok: false, reason: `epoch ${epoch} already posted` };
     const skipped: string[] = [];
     const leaves: { account: Hex; file: string; amount: bigint; reason: string }[] = [];
@@ -289,15 +289,26 @@ export class CounterLedger {
     }
   }
 
-  /** THE RUN's payout: what the file is owed goes from the treasury to the wallet (the devnet's relayer is the treasury; production posts a PrizeVault Merkle root). */
+  /**
+   * THE RUN's direct payout: the units a file is owed go straight from the treasury to the wallet.
+   *
+   * This is the devnet's convenience, and it prices at the ceiling — one whole $CAPITAL a unit —
+   * which is only the settled rate while the day's banking sits under the dilution threshold
+   * (`shared/economy/settlement.ts`). Production settles the day through `settleRun` and
+   * `postEpoch("run", day, …)` instead, so the emission is pro rata and bounded by the schedule.
+   *
+   * The two paths must never both pay the same units, so this one refuses once the day it would
+   * pay for has been settled: the file claims the epoch.
+   */
   async payout(a: Account): Promise<Result & { paid?: number }> {
     const c = a.counter;
     if (!c?.address) return { ok: false, reason: "no wallet linked" };
     const run = c.run ?? { day: 0, banked: 0, owed: 0, paid: 0 };
     if (run.owed <= 0) return { ok: false, reason: "nothing owed" };
+    if (await this.opts.prizes?.get(EPOCH_BASE.run + run.day)) return { ok: false, reason: `day ${run.day} is settled — claim the epoch` };
     try {
       const units = run.owed;
-      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: [c.address as Hex, parseEther(String(units * CAPITAL_PER_UNIT))] });
+      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: [c.address as Hex, parseEther(String(units * MAX_CAPITAL_PER_UNIT))] });
       const r = await this.pub.waitForTransactionReceipt({ hash });
       if (r.status !== "success") return { ok: false, reason: "payout reverted" };
       a.counter = { ...c, run: { ...run, owed: 0, paid: run.paid + units } };

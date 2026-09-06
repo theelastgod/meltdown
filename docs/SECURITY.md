@@ -149,6 +149,10 @@ An auditor should know which of these are decisions rather than oversights.
    players; the voucher shapes already suit it.
 5. **A cap per cosmetic id**, if scarcity is ever to be a promise rather than a policy.
 6. **Legal review** of the emission channels, as `docs/TOKENOMICS.md` §9 says.
+7. **The emission schedule is now enforced in code**, not only published — see `docs/ECONOMY.md`.
+   A day's emission is a PrizeVault epoch, so §1.2's per-epoch funding guard bounds it on chain as
+   well as in the arithmetic. What is still trusted there is the *poster*: nothing on chain checks
+   that a day's root was built from a real day's banking.
 
 ## 4. Running the review's tests
 

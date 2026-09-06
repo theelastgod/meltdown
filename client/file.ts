@@ -21,7 +21,7 @@ import { FIRMWARES, firmwareById } from "@shared/manifest/firmwares";
 import { CURRICULA, gateFor, MAX_RANK, xpForRank, type Mastery } from "@shared/progression/mastery";
 import { redact, STAMPS } from "@shared/progression/stamps";
 import { glyphFor, glyphSvg } from "@shared/identity/glyph";
-import { counterView, nameFee, NAME_DEPTH, RUN_DAILY_CAP, RUN_DEPTH } from "@shared/economy/counter";
+import { counterView, MAX_CAPITAL_PER_UNIT, nameFee, NAME_DEPTH, RUN_DAILY_CAP, RUN_DEPTH } from "@shared/economy/counter";
 import { CounterClient, type CounterView } from "./counter";
 import { COUNTER_URL } from "./config";
 import { CHAPTERS, chapterFor, MONIKERS, monikerById, unlockedMonikers, wornMoniker } from "@shared/identity/monikers";
@@ -542,7 +542,8 @@ export class GhostFile {
       return `<div class="cos ${s?.owned ? "owned" : ""}"><b>${s?.name ?? "TOKEN " + l.token}</b> <span class="dim">${s?.line ?? ""}</span> · <span class="sw" style="background:${s?.tint ?? "#fff"}"></span> · ${l.amount} listed by ${mine ? "<span class='ye'>YOU</span>" : l.seller.slice(0, 6) + "…"} · <span class="btn ${v?.linked && !c.busy && !mine ? "" : "off"}" data-act="buyListing" data-id="${l.listing}">[${l.price} $CAPITAL]</span></div>`;
     }).join("");
     const run = v?.run ?? { day: 0, banked: 0, owed: 0, paid: 0 };
-    const runBlock = v?.linked ? `<div class="ln">THE RUN · TODAY <b>${run.banked}</b>/${RUN_DAILY_CAP} · OWED <b>${run.owed}</b> $CAPITAL · PAID ${run.paid} ${run.owed > 0 ? `<span class="btn" data-act="payout">[WITHDRAW TO WALLET]</span>` : ""}${v.runGate ? "" : ` <span class="dim">· below Depth ${RUN_DEPTH} the run pays Scrip</span>`}</div>` : `<div class="ln dim">THE RUN pays the wallet: link one and the units you bank at a gate become $CAPITAL owed.</div>`;
+    // units, not $CAPITAL: the day's rate is set when the day settles, and a unit is worth at most one
+    const runBlock = v?.linked ? `<div class="ln">THE RUN · TODAY <b>${run.banked}</b>/${RUN_DAILY_CAP} · OWED <b>${run.owed}</b> UNITS · PAID ${run.paid} $CAPITAL ${run.owed > 0 ? `<span class="btn" data-act="payout">[WITHDRAW TO WALLET]</span>` : ""}${v.runGate ? "" : ` <span class="dim">· below Depth ${RUN_DEPTH} the run pays Scrip</span>`}<span class="dim"> · units settle nightly at up to ${MAX_CAPITAL_PER_UNIT} $CAPITAL each, out of the day's emission</span></div>` : `<div class="ln dim">THE RUN pays the wallet: link one and the units you bank at a gate settle into $CAPITAL.</div>`;
     const prizes = c.prizes;
     const prizeBlock = v?.linked ? `<div class="ln">PRIZES ${prizes.length ? prizes.map((p) => `<span class="${p.claimed ? "dim" : ""}">${p.reason} · ${Number(p.amount).toFixed(0)} $CAPITAL ${p.claimed ? "· CLAIMED" : `<span class="btn" data-act="claimPrize" data-id="${p.epoch}">[CLAIM]</span>`}</span>`).join(" · ") : `<span class="dim">none posted for this wallet</span>`} <span class="btn" data-act="prizes">[REFRESH]</span> <span class="dim">Audit placements weekly, Deep Wake contributions at season end; claims are sponsored</span></div>` : "";
     const t = info?.treasury;

@@ -11,6 +11,8 @@ import { CounterLedger } from "./chain/ledger";
 import { D1WalletStore } from "./chain/wallets-d1";
 import { D1PrizeStore } from "./chain/prizes-d1";
 import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
+import { settleRun, type Banked } from "../shared/economy/settlement";
+import { dayIndex } from "../shared/endgame/clock";
 import type { Contracts } from "./chain/deploy";
 import { counterRequest } from "../shared/economy/endpoint";
 import { upgradeAccount, type Account } from "../shared/progression/account";
@@ -102,9 +104,18 @@ export default {
       return json(r);
     }
     if (request.method === "POST" && url.pathname === "/prizes/post") {
-      // the weekly / season-end job (a cron trigger or a hand call): reads the boards from the PvP worker's Endgame DO
+      // the weekly / season-end / nightly job (a cron trigger or a hand call): the boards come from the
+      // PvP worker's Endgame DO; a run settlement is handed its day's banking
+      const body = (await request.json().catch(() => ({}))) as { kind?: string; week?: number; day?: number; banked?: Banked[] };
+      if (body.kind === "run") {
+        // THE RUN settles a day at a rate the emission schedule can afford. The Worker holds no index
+        // of who banked what — the caller supplies it, and the settlement, not the caller, sets the rate.
+        const day = Number(body.day ?? dayIndex(Date.now()));
+        const s = settleRun(day, Array.isArray(body.banked) ? body.banked : []);
+        const rr = await ledgerOf(env).postEpoch("run", day, s.lines);
+        return json({ ok: rr.ok, reason: rr.reason, settlement: { day, units: s.units, rate: s.rate, minted: s.minted, pot: s.pot }, epoch: rr.epoch ? { epoch: rr.epoch.epoch, root: rr.epoch.root, total: rr.epoch.total, leaves: rr.epoch.leaves.length } : null, skipped: rr.skipped ?? [] });
+      }
       if (!env.ENDGAME) return json({ ok: false, reason: "no ENDGAME binding" }, 500);
-      const body = (await request.json().catch(() => ({}))) as { kind?: string; week?: number };
       const stub = env.ENDGAME.get(env.ENDGAME.idFromName("endgame"));
       const kind = body.kind === "season" ? "season" : "audit";
       let period: number;

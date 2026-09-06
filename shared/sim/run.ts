@@ -26,11 +26,13 @@ export const RUN = {
   carryCap: 40,
 } as const;
 
-/** THE RUN's payout rules, owned by the sim so the match room never imports the economy: the Depth gate (below it a run pays Scrip), the day's cap in units, Scrip per unit below the gate, whole $CAPITAL per unit at it. */
+/** THE RUN's payout rules, owned by the sim so the match room never imports the economy: the Depth gate (below it a run pays Scrip), the day’s cap in units, Scrip per unit below the gate, and the ceiling on what a unit settles for at it. */
 export const RUN_DEPTH = 10;
 export const RUN_DAILY_CAP = 200;
 export const RUN_SCRIP_PER_UNIT = 10;
-export const CAPITAL_PER_UNIT = 1;
+/** The ceiling on what one banked unit settles for. The rate the day actually pays is derived from the
+ *  emission schedule and may be lower (shared/economy/settlement.ts); it is never higher. */
+export const MAX_CAPITAL_PER_UNIT = 1;
 
 export interface ZoneDef {
   kind: "safe";

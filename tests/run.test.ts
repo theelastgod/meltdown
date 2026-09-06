@@ -6,7 +6,9 @@ import { levelById } from "../shared/sim/level";
 import { Room, type Conn } from "../server/room";
 import { devSeed, MemoryAccountStore } from "../server/accounts";
 import { decodeServerMessage, encodeJoin } from "../shared/net/protocol";
-import { RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT } from "../shared/economy/counter";
+import { MAX_CAPITAL_PER_UNIT, RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT } from "../shared/economy/counter";
+import { settleRun } from "../shared/economy/settlement";
+import { EPOCH_BASE } from "../server/chain/prizes-store";
 import { bootDevnetLedger, DEV_KEYS } from "../server/chain/boot";
 import { ARTIFACTS } from "../server/chain/deploy";
 import { privateKeyToAccount } from "viem/accounts";
@@ -123,7 +125,8 @@ describe("THE RUN — the room and the payout", () => {
     const acc = store.accounts.get("sandbox-run")!;
     expect(acc.counter?.run?.owed).toBe(claim.value);
     expect(acc.counter?.run?.banked).toBe(claim.value);
-    expect(acc.ledger.some((l) => /BANKED .* \$CAPITAL OWED/.test(l))).toBe(true);
+    // the room banks units; the day's settlement, not the room, decides what a unit is worth
+    expect(acc.ledger.some((l) => /BANKED .* UNITS OWED/.test(l))).toBe(true);
     const runMsgs = a.msgs.filter((m) => m?.type === "run") as { type: "run"; run: { carried: number; banked: number; owed: number; zones: unknown[]; claims: unknown[] } }[];
     expect(runMsgs.length).toBeGreaterThan(0);
     expect(runMsgs[runMsgs.length - 1]!.run.owed).toBe(claim.value);
@@ -166,5 +169,32 @@ describe("THE RUN — the room and the payout", () => {
     expect(a.counter!.run!.owed).toBe(0);
     expect(a.counter!.run!.paid).toBe(7);
     expect(Number(a.counter!.capital)).toBe(Number(before / 10n ** 18n) + 7);
+  }, 60_000);
+  it("a day settled through the vault cannot also be withdrawn directly: the two paths never double-pay", async () => {
+    const b = await bootDevnetLedger({ onLog: () => {}, seedMarket: false });
+    const store = new MemoryAccountStore(devSeed);
+    const a = store.load("sandbox-settle", "SETTLE");
+    const player = privateKeyToAccount(DEV_KEYS.player);
+    const nonce = await b.ledger.nonce(a.id);
+    const message = createSiweMessage({ address: player.address, chainId: b.devnet.chainId, domain: "127.0.0.1", nonce, uri: "http://127.0.0.1/", version: "1", statement: SIWE_STATEMENT });
+    expect((await b.ledger.link(a, message, await player.signMessage({ message }))).ok).toBe(true);
+    const day = 4242;
+    a.counter!.run = { day, banked: 60, owed: 60, paid: 0 };
+    // the nightly settlement: the day's banking priced out of the day's pot, posted as an epoch
+    const s = settleRun(day, [{ account: a.id, units: 60 }, { account: "no-wallet", units: 40 }]);
+    expect(s.rate).toBe(MAX_CAPITAL_PER_UNIT); // one file: nowhere near the crossover
+    const post = await b.ledger.postEpoch("run", day, s.lines);
+    expect(post.ok).toBe(true);
+    expect(post.epoch!.epoch).toBe(EPOCH_BASE.run + day);
+    expect(post.skipped).toContain("no-wallet"); // a file with no wallet is named, not paid
+    // and now the direct withdrawal refuses, because the units are already promised on chain
+    const pay = await b.ledger.payout(a);
+    expect(pay.ok).toBe(false);
+    expect(pay.reason).toMatch(/settled/);
+    // the epoch pays instead
+    const before = (await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [player.address] })) as bigint;
+    expect((await b.ledger.claimPrize(a, post.epoch!.epoch)).ok).toBe(true);
+    const after = (await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [player.address] })) as bigint;
+    expect(after - before).toBe(60n * 10n ** 18n);
   }, 60_000);
 });

@@ -153,7 +153,7 @@ script farms kills into a token.
 
 | Channel | What earns | Cap / gate |
 | --- | --- | --- |
-| **THE RUN** | claims carried out of a PvP zone and banked at a safe zone (§3.8) | Depth ≥ 10, 200 units a day per file, one file per wallet |
+| **THE RUN** | claims carried out of a PvP zone and banked at a safe zone (§3.8) | Depth ≥ 10, 200 **units** a day per file, one file per wallet; units settle against the day's pot (§4.5) |
 | **Weekly Audits** | leaderboard placement on the server-seeded mutator playlist | Depth ≥ 10, clean anti-cheat record, prize curve to top 10%, one Ghostfile per wallet |
 | **Deep Wake season end** | faction contribution (node flips, objective-weighted, same 40/35/25 weighting as Depth) | Depth ≥ 15, per-account cap, diminishing returns, same-party and per-pair velocity caps as all social earnings |
 | **Rewrite certificate** | each Depth-50 prestige mints a certificate NFT and a fixed grant | naturally rate-limited to one per 55–75 h |
@@ -164,21 +164,49 @@ script farms kills into a token.
 Sinks must burn at least 60% of the month's emissions by month 12 and 100%
 by month 24. The treasury tunes prices (buyout, names, room-hours) quarterly
 against a public dashboard, in the game's own register: a **NET DELTA** line.
-Illustrative month-12 flows at 50k monthly active players:
 
-| Flow | Illustrative | $CAPITAL / month |
+Month-12 flows at 50k monthly active players, 20% of them daily, half of
+those past the Depth gate running and banking half the cap. These come out
+of `shared/economy/model.ts`, which reads the same constants the game does,
+so the table cannot quietly go stale:
+
+| Flow | From | $CAPITAL / month |
 | --- | --- | --- |
-| Emissions | schedule | 8.0M out |
+| Emissions | the schedule's daily pots, settled (§4.5) | 6.48M out |
 | Season buyout | 20% of MAU × 400 | 4.0M burned |
 | Name registry | 1,500 Depth-50 names × 500 | 0.75M burned |
 | Market fees | 10M volume × 2% burn | 0.2M burned |
 | Room credits | 20k room-hours × 5 | 0.1M burned |
-| Forge bonds and primary burns | | 0.15M burned |
-| **Net** | | **5.2M burned ≈ 65% of emissions** |
+| **Net** | | **5.05M burned ≈ 78% of emissions** |
 
 The levers are the emission decay, the buyout price, and the name price. If
 burn falls below target for two quarters the emission rate for the next year
 is cut, not the other way round.
+
+Note that the sinks below the first row are not all built: the Forge, room
+credits and the season buyout are specified in §7 and unimplemented. Until
+they ship the honest burn is the market and name fees alone.
+
+### 4.5 The daily settlement — why a unit is not a price
+An earlier draft of this document paid THE RUN a fixed rate: one $CAPITAL per
+unit banked. That made the year's emission `runners × 200 × capUse × 365`,
+which contains the player count, against a schedule that does not — 1.9× the
+year-one budget at the population in §4.4, and 90× at a million MAU. No choice
+of rate fixes it, because the two sides are not the same kind of quantity.
+
+So a day is a pot, not a price. The day's slice of the schedule is split pro
+rata among the units banked that day, capped at one $CAPITAL a unit:
+
+```
+rate = min(1, (year's schedule ÷ 365 × 0.8) ÷ units banked today)
+```
+
+Below roughly 21,000 MAU the pot never binds and the rate is the old 1:1;
+above it a unit dilutes. Emission is `≤ pot` at every population, forever.
+A day is paid as a PrizeVault Merkle epoch, so the vault's per-epoch funding
+guard ring-fences it on chain too. The full arithmetic, the sensitivities and
+the open questions are in `docs/ECONOMY.md`; `npm run lint:economy` fails the
+build if a rate ever escapes the schedule again.
 
 ## 5. Robinhood Chain
 

@@ -593,6 +593,75 @@ through the real wire protocol on a clock that advances one tick per step: pre-f
 by 4.4 m in three seconds and widens by 0.84 m a second; post-fix the lead is the burst allowance
 and stops growing.
 
+## Stage 17 — Does the token add up?
+
+**Goal.** Stage 16 asked whether the money paths could be stolen from. This one asks whether they
+add up at all: check `docs/TOKENOMICS.md`'s published emission schedule against the constants the
+game actually pays out on.
+
+**What was found.** They were not the same kind of quantity, and nothing in the build noticed.
+
+The schedule promises 97,000,000 $CAPITAL in year one, decaying 25% a year, and the burn discipline
+in §4.4 is stated as a ratio against it. THE RUN paid a fixed rate — `CAPITAL_PER_UNIT = 1`, one
+token per unit banked, 200 units a file a day — so the year's emission was `runners × 200 × capUse ×
+365`. That contains the player count. The schedule does not. At the tokenomics doc's own month-12
+population it came to **15.2M a month against a budget of 8.08M — 1.9×, the year's allocation gone
+in 194 days**. The same 10,000 daily players at the full cap: 7.5×, and 48 days. A million-MAU game:
+90×. No choice of rate fixes that, because a rate low enough to be solvent at a million players is
+not worth banking for at ten thousand.
+
+It was the Audit and Deep Wake pools that showed the way out. They pay *fixed pools per event* —
+1,000 a week, 5,000 a season, whatever the board size — so they never scaled, and together they are
+0.06% of THE RUN. They were the right shape all along.
+
+**The fix.** A day is a pot, not a price. The day's slice of the schedule is split pro rata among
+the units banked that day, capped at one $CAPITAL a unit:
+`rate = min(1, (schedule ÷ 365 × 0.8) ÷ unitsToday)`. Emission is `min(pot, units × ceiling)`,
+which is `≤ pot` at every population, forever — the quantity that scales with the player count is
+now the denominator.
+
+**Files.** `shared/economy/model.ts` (the projection, from the real constants),
+`shared/economy/settlement.ts` (the day's settlement), `shared/economy/lint.ts`
+(`emission-rate-within-schedule`), `shared/sim/run.ts` (`CAPITAL_PER_UNIT` → `MAX_CAPITAL_PER_UNIT`,
+a ceiling rather than a price), `server/room.ts` (banks units), `server/chain/prizes-store.ts`
+(`EpochKind`, `EPOCH_BASE`), `server/chain/ledger.ts` (the `"run"` epoch, the double-pay guard),
+`server/node-host.ts` and `server/counter-worker.ts` (the settle route), `client/hud/hud.ts` and
+`client/file.ts` (units, not tokens); `docs/ECONOMY.md`, `docs/TOKENOMICS.md` §4.4–4.5;
+`tests/model.test.ts` (16), `probe/stage17.ts`.
+
+**Design decisions.**
+- **Nothing changes for players at today's scale.** The ceiling is still 1 $CAPITAL a unit, and
+  below the crossover — 212,603 units a day, about 2,126 runners or 21,000 MAU — the pot never
+  binds and the settled rate *is* the old fixed rate. An economic change to a live game should be
+  invisible until it is needed.
+- **The ceiling is why the rule is a `min` of two things.** Pro rata alone runs backwards at small
+  numbers: four hundred runners would split a whole day's budget, thousands of tokens a unit. The
+  budget stops the giveaway at the top, the ceiling stops it at the bottom.
+- **The room banks units and never names a price.** `shared/sim/run.ts` opens by saying nothing in
+  the sim reads a wallet, and a token price is a wallet fact. The HUD reads `OWED 40 UNITS`; what a
+  unit is worth is a property of the day, and the day is not over.
+- **Paid through machinery that already exists.** A settlement is a PrizeVault Merkle epoch,
+  `kind: "run"`, ids based at 3,000,000 so a day, a week and a season cannot collide — so the
+  vault's per-epoch funding guard from Stage 16 ring-fences a day's emission on chain too. Because
+  two payment paths over the same units is how double-spends happen, the direct devnet withdrawal
+  now refuses a day that has been settled.
+- **The probe found a bug the tests had not.** Printing a day at 250,000 files showed the whole pot
+  minting to zero: `Math.floor` to whole tokens pays nothing to anyone whose day is worth less than
+  one, which at that population is every player in the game. Settlement rounds to a millionth now.
+  Whole tokens were a fiction of the model — the vault pays in wei.
+- **A document cannot fail a build.** The schedule lived in one file, the rate in another, and the
+  sentence connecting them in Markdown. `npm run lint:economy` now runs the check in CI against a
+  *stress* population — a million MAU — because a constraint checked only at the numbers you hoped
+  for is not a constraint.
+
+**Acceptance (`npm test`, 185 tests; `npm run probe:economy`, 10 checks; `npm run probe:run`, 9/9):**
+the model cases pin both halves — a fixed rate blows the budget at the doc's population, gets
+linearly worse with success, and is THE RUN's doing alone; the settlement never mints past its pot
+at 1, 10, 1,000 or 50,000 files, pays the old rate below the crossover, dilutes pro rata above it,
+holds each file to the day's cap even when the room does not, and pays a sub-token day rather than
+rounding it away. Six of them fail if the rate is fixed again, which was checked by doing it. The
+run probe still banks, drops, kills, withdraws and trades end to end, now reading `OWED 1 UNITS`.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:
