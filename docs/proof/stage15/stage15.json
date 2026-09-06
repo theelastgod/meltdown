@@ -1,0 +1,57 @@
+{
+  "results": {
+    "harden": {
+      "match": [
+        "neochina-lease_row",
+        "neochina-lease_row-2",
+        "neochina-run-repo_depot"
+      ],
+      "epoch": 1002957,
+      "prize": 1000,
+      "season": [
+        {
+          "account": "sandbox-hard",
+          "amount": 1000,
+          "reason": "DEEP WAKE CONTRIBUTION"
+        }
+      ]
+    }
+  },
+  "checks": [
+    {
+      "name": "matchmaking: /match names the first public room with space; a full room (8) rolls to the next shard; the run has its own rooms",
+      "pass": true,
+      "detail": "first neochina-lease_row · filled 8 · next neochina-lease_row-2 · run neochina-run-repo_depot"
+    },
+    {
+      "name": "the menu's district pick asks the host for a room and navigates to the shard with space",
+      "pass": true,
+      "detail": "target net → ws://127.0.0.1:8814/room/neochina-lease_row-2?level=lease_row"
+    },
+    {
+      "name": "the weekly job posts the Audit's prizes as a Merkle epoch to the PrizeVault: the placed file with a wallet gets a leaf, the file without one is skipped, a second post is refused; the file sees its prize and a sponsored claim moves the $CAPITAL to the wallet",
+      "pass": true,
+      "detail": "epoch 1002957 · leaves sandbox-hard:1000… · skipped  · line 1000/1000 · claim true  · wallet +1000 · gas paid by wallet false"
+    },
+    {
+      "name": "the Deep Wake epoch pays the round's contributor (a Depth-15+ file that flipped a node) and the file can claim it too",
+      "pass": true,
+      "detail": "ALPHA flips 0 · season lines sandbox-hard:1000 · listed DEEP WAKE CONTRIBUTION 1000"
+    },
+    {
+      "name": "the counter-ledger rate limit: past 30 requests a minute a file gets 429 with the reason",
+      "pass": true,
+      "detail": "limited 10 of 34 · first at #25"
+    },
+    {
+      "name": "the safe zone has a market kiosk: inside the gate the strip offers [TAB] MARKET and Tab opens the file panel on the market",
+      "pass": true,
+      "detail": "in gate true · strip \" SAFE ZONE · [TAB] MARKET · 5 CLAIMS OUT\" · panel true market visible true"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": "clean console"
+    }
+  ]
+}

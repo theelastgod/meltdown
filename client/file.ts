@@ -153,6 +153,8 @@ export class GhostFile {
   /** the counter record as the panel sees it (from the account record; refreshed by every counter op) */
   counterState: CounterView | null = null;
   onJoinAudit: (() => void) | null = null;
+  /** which section Tab opens on: the game answers "market" from a safe zone's kiosk */
+  openSection: () => "top" | "market" = () => "top";
 
   /** Fetch the endgame board (host-wide) and the file's daily progress. */
   async loadEndgame(): Promise<boolean> {
@@ -476,6 +478,8 @@ export class GhostFile {
       else if (act === "wear") void this.counter?.op("wear", { token: Number(id) });
       else if (act === "reconcile") void this.counter?.op("reconcile");
       else if (act === "payout") void this.counter?.op("payout");
+      else if (act === "prizes") void this.counter?.op("prizes");
+      else if (act === "claimPrize") void this.counter?.op("claimPrize", { epoch: Number(id) });
       else if (act === "sell") {
         const price = Number(window.prompt("List for how much $CAPITAL?", "50") ?? 0);
         if (price > 0) void this.counter?.sell(Number(id), price);
@@ -495,7 +499,7 @@ export class GhostFile {
     document.addEventListener("keydown", (e) => {
       if (e.code === "Tab") {
         e.preventDefault();
-        this.toggle();
+        this.toggle(undefined, this.openSection());
       }
       if (e.code === "KeyG") this.toggleGraph();
       if (e.code === "Escape") {
@@ -539,6 +543,8 @@ export class GhostFile {
     }).join("");
     const run = v?.run ?? { day: 0, banked: 0, owed: 0, paid: 0 };
     const runBlock = v?.linked ? `<div class="ln">THE RUN · TODAY <b>${run.banked}</b>/${RUN_DAILY_CAP} · OWED <b>${run.owed}</b> $CAPITAL · PAID ${run.paid} ${run.owed > 0 ? `<span class="btn" data-act="payout">[WITHDRAW TO WALLET]</span>` : ""}${v.runGate ? "" : ` <span class="dim">· below Depth ${RUN_DEPTH} the run pays Scrip</span>`}</div>` : `<div class="ln dim">THE RUN pays the wallet: link one and the units you bank at a gate become $CAPITAL owed.</div>`;
+    const prizes = c.prizes;
+    const prizeBlock = v?.linked ? `<div class="ln">PRIZES ${prizes.length ? prizes.map((p) => `<span class="${p.claimed ? "dim" : ""}">${p.reason} · ${Number(p.amount).toFixed(0)} $CAPITAL ${p.claimed ? "· CLAIMED" : `<span class="btn" data-act="claimPrize" data-id="${p.epoch}">[CLAIM]</span>`}</span>`).join(" · ") : `<span class="dim">none posted for this wallet</span>`} <span class="btn" data-act="prizes">[REFRESH]</span> <span class="dim">Audit placements weekly, Deep Wake contributions at season end; claims are sponsored</span></div>` : "";
     const t = info?.treasury;
     const delta = t ? `SUPPLY ${Number(t.supply).toLocaleString()} · BURNED <b>${Number(t.burned).toFixed(0)}</b> · MARKET VOLUME ${Number(t.volume).toFixed(0)} · <span class="gr">NET DELTA: 0.000 — RECONCILED</span>` : info?.reason ?? "loading…";
     return `<div class="sh">COUNTER-LEDGER // $CAPITAL <span class="dim">${info ? (info.devnet ? "DEVNET" : "ROBINHOOD CHAIN") + " · chain " + info.chainId : ""}</span></div>
@@ -546,6 +552,7 @@ export class GhostFile {
       <div class="ln">${wallet}${linked ? " · " + linked : ""}</div>
       ${name ? `<div class="ln">${name}</div>` : ""}${rig ? `<div class="ln">${rig}</div>` : ""}
       ${runBlock}
+      ${prizeBlock}
       <div class="sh">LEDGER MARKET · settles only in $CAPITAL · 5% fee: 2% burned, 2% treasury, 1% creator</div>${market || "<div class='dim'>no listings</div>"}
       <div class="ln dim">${delta}</div>
       ${c.last ? `<div class="ln am">${c.last}</div>` : ""}`;
@@ -657,11 +664,13 @@ export class GhostFile {
     return this.open;
   }
 
-  toggle(on = !this.open): void {
+  toggle(on = !this.open, section: "top" | "market" = "top"): void {
     this.open = on;
     if (this.panel) this.panel.hidden = !on;
     if (on) document.exitPointerLock?.();
     if (on) this.render();
+    // from a safe zone's kiosk the panel opens on the market
+    if (on && section === "market") this.panel?.querySelector(".cl")?.scrollIntoView();
   }
 
   render(): void {

@@ -6,6 +6,7 @@ import { Devnet } from "./devnet";
 import { deployAll } from "./deploy";
 import { CounterLedger } from "./ledger";
 import { MemoryWalletStore } from "./wallets";
+import { MemoryPrizeStore } from "./prizes-store";
 
 /** dev keys (the classic anvil set); never used on a real network */
 export const DEV_KEYS = {
@@ -25,7 +26,8 @@ export async function bootDevnetLedger(opts: { now?: () => number; onLog?: (l: s
   const wal = createWalletClient({ chain, transport, account: relayer });
   const contracts = await deployAll(pub, wal, privateKeyToAccount(DEV_KEYS.signer).address, relayer.address);
   const wallets = new MemoryWalletStore(opts.now);
-  const ledger = new CounterLedger({ chainId: devnet.chainId, transport, signerKey: DEV_KEYS.signer, relayerKey: DEV_KEYS.relayer, contracts, wallets, devnet: true, now: opts.now, onLog: opts.onLog });
+  const prizes = new MemoryPrizeStore();
+  const ledger = new CounterLedger({ chainId: devnet.chainId, transport, signerKey: DEV_KEYS.signer, relayerKey: DEV_KEYS.relayer, contracts, wallets, devnet: true, now: opts.now, onLog: opts.onLog, prizes });
   if (opts.seedMarket !== false) await ledger.seedMarket();
-  return { devnet, ledger, wallets, contracts, transport, pub };
+  return { devnet, ledger, wallets, prizes, contracts, transport, pub };
 }

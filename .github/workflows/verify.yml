@@ -38,6 +38,7 @@ jobs:
       - run: npm run probe:crawl
       - run: npm run probe:ship
       - run: npm run probe:run
+      - run: npm run probe:harden
       - run: npm run build
       - run: npm run smoke
       - uses: actions/upload-artifact@v4

@@ -28,6 +28,8 @@ import { dayIndex } from "../shared/endgame/clock";
 import { buyCosmetic, rewrite, savePreset, setAlias, setTheme } from "../shared/endgame/rewrite";
 import { bootDevnetLedger } from "./chain/boot";
 import { counterRequest } from "../shared/economy/endpoint";
+import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
+import { MAX_PLAYERS_PER_ROOM, matchRoomName } from "../shared/net/matchmaking";
 import type { Hex } from "viem";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 8787);
@@ -42,6 +44,18 @@ const log = (line: string) => {
   if (logs.length > 500) logs.shift();
   if (process.env.VERBOSE) console.log(line);
 };
+/** Per-file rate limit on the counter-ledger endpoints: a chain write is not free, and a script should not spin them. */
+const rateWindows = new Map<string, { at: number; n: number }>();
+export const RATE_PER_MINUTE = 30;
+function rateOk(id: string, now = Date.now()): boolean {
+  const w = rateWindows.get(id);
+  if (!w || now - w.at > 60_000) {
+    rateWindows.set(id, { at: now, n: 1 });
+    return true;
+  }
+  w.n++;
+  return w.n <= RATE_PER_MINUTE;
+}
 /** The counter-ledger on an in-process devnet: a real EVM with the contracts deployed at boot and the market seeded. */
 const counter = await bootDevnetLedger({ onLog: (l) => log(`[counter] ${l}`) });
 const readBody = (req: import("node:http").IncomingMessage): Promise<Record<string, unknown>> =>
@@ -135,6 +149,44 @@ const http = createServer((req, res) => {
     });
     return;
   }
+  if (req.url === "/prizes") {
+    // every posted epoch (the leaves name files, not wallets, so the board can read it)
+    void (async () => {
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ epochs: counter.prizes.list().map((e) => ({ epoch: e.epoch, kind: e.kind, period: e.period, total: e.total, postedAt: e.postedAt, leaves: e.leaves.map((l) => ({ file: l.file, amount: l.amount, reason: l.reason })) })) }));
+    })();
+    return;
+  }
+  if (req.method === "POST" && req.url === "/prizes/post") {
+    // the weekly / season-end job, callable by hand on the dev host: { kind: "audit", week } | { kind: "season" }
+    void readBody(req).then(async (body) => {
+      res.setHeader("content-type", "application/json");
+      const kind = body.kind === "season" ? "season" : "audit";
+      const period = kind === "audit" ? Number(body.week ?? currentAudit().week) : endgame.season().season;
+      const lines = kind === "audit" ? auditPrizes(endgame.audit(period)) : seasonPrizes(endgame.season().contributors ?? {});
+      const r = await counter.ledger.postEpoch(kind, period, lines);
+      log(`[prizes] post ${kind} ${period}: ${r.ok ? `${r.epoch?.leaves.length} leaves` : r.reason}${r.skipped?.length ? ` · no wallet: ${r.skipped.join(", ")}` : ""}`);
+      res.end(JSON.stringify({ ok: r.ok, reason: r.reason, epoch: r.epoch ? { epoch: r.epoch.epoch, root: r.epoch.root, total: r.epoch.total, leaves: r.epoch.leaves.map((l) => ({ file: l.file, amount: l.amount, reason: l.reason })) } : null, skipped: r.skipped ?? [], lines }));
+    });
+    return;
+  }
+  if (req.url?.startsWith("/match")) {
+    // matchmaking: the public room for a district and a mode that still has room, sharded by fill
+    const u = new URL(req.url, "http://x");
+    const district = (u.searchParams.get("district") ?? "lease_row").replace(/[^a-z_]/g, "");
+    const mode = u.searchParams.get("mode") === "run" ? "run" : "wake";
+    let shard = 0;
+    while (shard < 64) {
+      const name = matchRoomName("neochina", district, mode, shard);
+      const r = rooms.get(name);
+      if (!r || r.stats().players < MAX_PLAYERS_PER_ROOM) break;
+      shard++;
+    }
+    const name = matchRoomName("neochina", district, mode, shard);
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ room: name, district, mode, players: rooms.get(name)?.stats().players ?? 0, max: MAX_PLAYERS_PER_ROOM, url: `ws://127.0.0.1:${port}/room/${name}?level=${district}${mode === "run" ? "&mode=run" : ""}` }));
+    return;
+  }
   if (req.url === "/counter") {
     void (async () => {
       res.setHeader("content-type", "application/json");
@@ -158,6 +210,11 @@ const http = createServer((req, res) => {
         res.end(JSON.stringify({ nonce: counter.ledger.nonce(id), statement: counter.ledger.info().statement, chainId: counter.ledger.info().chainId }));
         return;
       }
+      if (!rateOk(id)) {
+        res.statusCode = 429;
+        res.end(JSON.stringify({ ok: false, reason: "RATE LIMITED: the counter-ledger takes 30 requests a minute per file" }));
+        return;
+      }
       const a = accounts.load(id, "BLANK");
       const r = await counter.ledger.link(a, String(body.message ?? ""), String(body.signature ?? "") as Hex);
       if (r.ok) accounts.save(a);
@@ -172,7 +229,13 @@ const http = createServer((req, res) => {
     res.end(JSON.stringify({ day: dayIndex(), contracts: contractsFor(dayIndex()), audit: { week, ...audit }, board: endgame.audit(week), season: seasonView(endgame.season()) }));
     return;
   }
-  const file = req.url?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|campaign|daily|claim|rewrite|cosmetic|counter))?$/);
+  const file = (() => {
+    try {
+      return decodeURIComponent(req.url ?? "").match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|campaign|daily|claim|rewrite|cosmetic|counter))?$/);
+    } catch {
+      return null;
+    }
+  })();
   if (file) {
     const id = file[1]!;
     const name = "BLANK";
@@ -195,6 +258,12 @@ const http = createServer((req, res) => {
         }
         const a = accounts.load(id, name);
         if (file[3] === "counter") {
+          if (!rateOk(id)) {
+            res.statusCode = 429;
+            res.setHeader("content-type", "application/json");
+            res.end(JSON.stringify({ ok: false, reason: "RATE LIMITED: the counter-ledger takes 30 requests a minute per file", counter: a.counter ?? null }));
+            return;
+          }
           // the counter-ledger: wear is cache-only; reconcile / stamps / name go to the chain and fail soft
           void counterRequest(a, parsed, counter.ledger).then((r) => {
             if (r.ok) accounts.save(a);

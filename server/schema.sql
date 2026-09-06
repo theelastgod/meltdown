@@ -36,3 +36,9 @@ CREATE TABLE IF NOT EXISTS siwe_nonce (
   nonce   TEXT NOT NULL,
   at      INTEGER NOT NULL
 );
+
+-- Posted prize epochs (Stage 15): the Merkle leaves with proofs, so claims can be served.
+CREATE TABLE IF NOT EXISTS prize_epoch (
+  epoch INTEGER PRIMARY KEY,
+  json  TEXT NOT NULL
+);

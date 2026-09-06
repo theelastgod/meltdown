@@ -5,6 +5,7 @@
  * pose history for lag-compensated hitscan, sends quantized delta snapshots,
  * and supports rejoin by token.
  */
+import { SEASON_DEPTH } from "../shared/endgame/season";
 import { encodeRun, type RunMsg } from "../shared/net/protocol";
 import { CAPITAL_PER_UNIT, RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT, runView } from "../shared/sim/run";
 import { dayIndex } from "../shared/endgame/clock";
@@ -89,6 +90,8 @@ interface ClientRec {
   settlements: number;
   /** XP of the last settlement (an Audit's score) */
   lastSettleXp: number;
+  /** flips at the last settlement (the season's per-file contribution is the delta) */
+  lastRoundFlips: number;
   progress: ProgressionTracker;
   /** what others see of this file (Stage 8); refreshed at join, round start and settlement */
   identity: PublicIdentity;
@@ -464,6 +467,7 @@ export class Room {
       roundStartTick: this.tick,
       settlements: 0,
       lastSettleXp: 0,
+      lastRoundFlips: 0,
       progress: new ProgressionTracker(account),
       identity: publicIdentity(account, safeName),
       killedBy: new Map(),
@@ -738,8 +742,18 @@ export class Room {
       }
     }
     const winners = winner ? houseOf(winner) : [];
+    // the season's prize channel: flips per file this round, from Depth 15
+    const contributors: Record<string, number> = {};
+    for (const rec of this.clients.values()) {
+      const p = this.world.players.get(rec.playerId);
+      const a = rec.account;
+      if (!p || !a || a.depth < SEASON_DEPTH) continue;
+      const f = p.stats.flips - rec.lastRoundFlips;
+      if (f > 0) contributors[a.id] = (contributors[a.id] ?? 0) + f;
+      rec.lastRoundFlips = p.stats.flips;
+    }
     if (flips.length || winners.length) {
-      const pushed = store.pushSeason({ level: this.world.level.name, flips, winners });
+      const pushed = store.pushSeason({ level: this.world.level.name, flips, winners, contributors });
       const done = (st: { last: string | null }) => {
         this.seasonLast = st.last;
         if (st.last) this.opts.onLog(`deep wake · ${st.last}`);

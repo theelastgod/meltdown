@@ -22,6 +22,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 12 | Opening crawl: cyan monospace on black, typed-then-held paragraphs, scanline flicker, glitch tears, ~34 s, skippable after the first view, hard cut to silence, the MELTDOWN title; original copy until the owner's text lands | **done** | `docs/proof/stage12/` |
 | 13 | Polish & ship: the CRT menu flow with the two title cards, settings applied live and kept, the audio pass (buses, UI cues, the card sting, the low-health pulse), Cloudflare Pages + Workers deploy, the smoke test in CI | **done** (deploy is a workflow gated on the Cloudflare secrets) | `docs/proof/stage13/` |
 | 14 | THE RUN — $CAPITAL play-to-earn: the token renamed WAKE → CAPITAL, PvP zones with claims, safe zones (no damage in or out, the markets, banking), the day's cap and the Depth gate, the treasury payout to the wallet | **done** (devnet; testnet is configuration) | `docs/proof/stage14/` |
+| 15 | Hardening: the PrizeVault (Merkle epochs for Audit placements and Deep Wake contributions, sponsored claims, 90-day reclaim), matchmaking shards, the safe-zone market kiosk, a per-file rate limit on the counter-ledger, the flaky probe waits | **done** | `docs/proof/stage15/` |
 
 ## Stage 1 — Grey-box FPS core
 
@@ -483,6 +484,59 @@ the market is player to player — ALPHA buys RUST LEASE from the studio,
 lists it for 60, a second wallet buys it, ALPHA nets 57, 1.2 burns, the
 skin moves; offline `?mode=run` runs the same sim and the menu's THE RUN
 entry resolves to the run room's URL; no page errors.
+
+## Stage 15 — Hardening: prizes on chain, matchmaking, kiosks, limits
+
+**Goal.** The production paths the tokenomics spec names but Stage 11b and
+14 left on the relayer: the emission channels paid through a Merkle
+PrizeVault, matchmaking for public rooms, a market kiosk in the safe zones,
+a rate limit on the counter-ledger, and the three probe waits that flaked
+under CPU load.
+
+**Files.**
+- `contracts/PrizeVault.sol` — one root per epoch, funded by the poster on
+  post; `claim(epoch, account, amount, proof)` callable by anyone for the
+  account in the leaf (the relayer sponsors it); a claimed bitmap; unclaimed
+  returns to the treasury after 90 days. `server/chain/merkle.ts` — the same
+  leaf (`keccak256(abi.encode(epoch, account, amount))`) and sorted-pair
+  hashing, with proofs. `shared/economy/prizes.ts` — the maths: the Audit
+  pays the top 10% of the board on a 1/rank curve (at least one), the
+  season pays contributors by sqrt share of flips, capped at 20% of the
+  pool. `shared/endgame/season.ts` — contributions per file, recorded by
+  the room from Depth 15.
+- `server/chain/ledger.ts` — `postEpoch()` (resolve wallets, merge leaves
+  per wallet, fund the vault, set the root; files without a wallet are
+  named as skipped), `prizes()` (every epoch with a leaf for the wallet,
+  claimed or not, read from the chain), `claimPrize()` (relayer-submitted).
+  `server/chain/prizes-store.ts` (memory) / `prizes-d1.ts` (D1
+  `prize_epoch`). The Node host: `GET /prizes`, `POST /prizes/post` (the
+  weekly job by hand); the counter Worker: the same job on a Monday cron,
+  reading the boards from the PvP worker's Endgame DO.
+- `shared/net/matchmaking.ts`, both hosts' `GET /match?district=&mode=`:
+  the Node host walks its rooms for the first shard under 8 players; a
+  Worker cannot enumerate rooms, so its shard is the ten-minute slot.
+  `client/menu.ts` — a district pick asks the host and navigates to the
+  answer, falling back to the default name.
+- `client/render/run.ts` — the kiosk at each gate (a counter, an amber
+  screen, a MARKET sign); `client/hud/hud.ts` — `[TAB] MARKET` inside a
+  safe zone; `client/file.ts` / `client/game.ts` — Tab opens the panel on
+  the market from a gate.
+- The Node host and the counter Worker: 30 counter-ledger requests a minute
+  per file, then 429 with the reason.
+- `probe/stage8.ts`, `probe/stage11b.ts` — the dossier and outage waits are
+  conditions, not fixed sleeps. `tests/prizes.test.ts` (3),
+  `probe/stage15.ts`.
+
+**Design decisions.**
+- Prizes are pull-based and sponsored: the vault pays the wallet in the leaf
+  whoever submits the claim, so the wallet never needs gas to be paid.
+- A file without a wallet at posting time is skipped and named; its prize
+  is not held. Linking before the week closes is part of the game.
+- The rate limit is per file, not per IP: the thing being protected is the
+  chain write a file can cause.
+
+**Acceptance (`npm run probe:harden`, 7/7; `npm test`, 156 tests):** see the
+probe's checks.
 
 ## Stage 3 — The look
 

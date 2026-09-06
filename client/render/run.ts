@@ -66,6 +66,23 @@ export class RunFx {
       const label = this.labelSprite(`SAFE · ${z.label}`);
       label.position.y = 3.2;
       group.add(label);
+      // the market kiosk: a counter, a screen lit amber, a MARKET sign — the panel's market opens from here
+      const kiosk = new THREE.Group();
+      kiosk.add(new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.1, 0.7), new THREE.MeshStandardMaterial({ color: 0x0c1016, roughness: 0.6, metalness: 0.4 })));
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ color: PALETTE.amber }));
+      screen.position.set(0, 1.25, 0.36);
+      kiosk.add(screen);
+      const sign = this.labelSprite("MARKET");
+      sign.scale.set(2.6, 0.5, 1);
+      sign.position.y = 2.0;
+      (sign.material as THREE.SpriteMaterial).color.set(PALETTE.amber);
+      kiosk.add(sign);
+      const glow = new THREE.PointLight(PALETTE.amber, 0.8, 6, 2);
+      glow.position.set(0, 1.4, 0.8);
+      kiosk.add(glow);
+      kiosk.position.set(z.radius * 0.55, 0.55, -z.radius * 0.55);
+      kiosk.rotation.y = -Math.PI / 4;
+      group.add(kiosk);
       group.position.set(z.x, 0, z.z);
       this.scene.add(group);
       this.zones.push({ group, ring, column, colMat });

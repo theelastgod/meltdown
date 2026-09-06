@@ -38,6 +38,10 @@ export const SCHEMA = [
   nonce   TEXT NOT NULL,
   at      INTEGER NOT NULL
 )`,
+  `CREATE TABLE IF NOT EXISTS prize_epoch (
+  epoch INTEGER PRIMARY KEY,
+  json  TEXT NOT NULL
+)`,
 ];
 
 /** Column additions for databases created before a column existed (each is ignored when the column is already there). */

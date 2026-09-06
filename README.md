@@ -36,6 +36,7 @@ npm run probe:counter # the counter-ledger: SIWE wallet link, sponsored Ghostfil
 npm run probe:crawl   # the opening crawl: typed-then-held paragraphs, scanline flicker, glitch tears, ~35 s, skippable after first view, hard cut to the title
 npm run probe:ship    # the menu flow (title cards, WAKE / CAMPAIGN / OFFICE / RANGE / FILE / SETTINGS, pause), settings applied live, the audio buses and cues
 npm run probe:run     # THE RUN: $CAPITAL claims in the PvP zone, carried, dropped on death, banked at a safe zone, credited with the Depth gate and the day's cap, paid to the wallet
+npm run probe:harden  # hardening: matchmaking shards, the PrizeVault's Merkle epochs (Audit + Deep Wake) with sponsored claims, the rate limit, the safe-zone market kiosk
 npm run build && npm run smoke  # the production bundle boots, joins a room and renders (what CI and the Pages deploy run)
 npm run certify:firmware # every firmware measured in the TTK harness at its ideal range (must sit in the band)
 npm run probe:mastery # Ledger Graph + mastery: lint over nodes/chips/firmwares, chips and firmwares enforced at spawn, ledger shop, stamps un-redact online

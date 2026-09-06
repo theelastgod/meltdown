@@ -160,12 +160,13 @@ async function main(): Promise<void> {
 
     // ---- no shot lands inside the gate ----
     const hpB0 = await b.evaluate(() => window.__game.state().health);
+    const killsA0 = (await stats()).rooms["run-yard"]!.clients.find((c) => c.name === "ALPHA")?.kills ?? 0;
     const idB = await b.evaluate(() => window.__game.net()!.playerId);
     await a.evaluate(({ to, id }) => window.__game.setBot([{ kind: "goto", x: to.x, z: to.z, sprint: true, radius: 9, timeoutTicks: 900 }, { kind: "killPlayer", targetId: id, ticks: 900 }]), { to: { x: gate.pos.x + 9, z: gate.pos.z }, id: idB });
     await a.waitForTimeout(9000);
     const hpB1 = await b.evaluate(() => window.__game.state().health);
-    const shots = (await stats()).rooms["run-yard"]!.clients.find((c) => c.name === "ALPHA")?.kills ?? 0;
-    check("inside the safe zone no damage lands: ALPHA empties a magazine at BRAVO standing in the gate and BRAVO's health does not move", hpB1 === hpB0 && shots === 0, `health ${hpB0} → ${hpB1} · ALPHA kills ${shots}`);
+    const killsA1 = (await stats()).rooms["run-yard"]!.clients.find((c) => c.name === "ALPHA")?.kills ?? 0;
+    check("inside the safe zone no damage lands: ALPHA empties a magazine at BRAVO standing in the gate and BRAVO's health does not move", hpB1 === hpB0 && killsA1 === killsA0, `health ${hpB0} → ${hpB1} · ALPHA kills ${killsA0} → ${killsA1}`);
 
     // ---- ALPHA links, banks for $CAPITAL owed, withdraws to the wallet ----
     await a.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 9000 }]));

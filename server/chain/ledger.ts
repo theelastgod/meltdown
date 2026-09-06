@@ -15,6 +15,9 @@ import { SKINS } from "../../shared/economy/catalog";
 import { ARTIFACTS, type Contracts } from "./deploy";
 import { GameSigner } from "./signer";
 import type { WalletStore } from "./wallets";
+import { buildEpoch } from "./merkle";
+import type { PrizeStore, StoredEpoch } from "./prizes-store";
+import type { PrizeLine } from "../../shared/economy/prizes";
 
 export interface LedgerOptions {
   chainId: number;
@@ -27,6 +30,8 @@ export interface LedgerOptions {
   devnet: boolean;
   /** SIWE domains the host accepts (empty: any) */
   domains?: string[];
+  /** posted prize epochs (Stage 15) */
+  prizes?: PrizeStore;
   now?: () => number;
   onLog?: (line: string) => void;
 }
@@ -195,6 +200,93 @@ export class CounterLedger {
     const fee = nameFee(n.length)!;
     const v = await this.signer.name(c.address as Hex, n);
     return { ok: true, voucher: { name: n, nonce: v.message.nonce.toString(), deadline: v.message.deadline.toString(), signature: v.signature, fee } };
+  }
+
+  // ---- the PrizeVault (Stage 15): the emission channels as Merkle epochs ----
+
+  /** Post an epoch: resolve each file's wallet, build the tree, fund the vault from the treasury (the relayer) and set the root. Files without a wallet are left out and named in the answer. */
+  async postEpoch(kind: "audit" | "season", period: number, lines: readonly PrizeLine[]): Promise<Result & { epoch?: StoredEpoch; skipped?: string[] }> {
+    const store = this.opts.prizes;
+    if (!store) return { ok: false, reason: "no prize store" };
+    const epoch = (kind === "audit" ? 1_000_000 : 2_000_000) + period;
+    if (await store.get(epoch)) return { ok: false, reason: `epoch ${epoch} already posted` };
+    const skipped: string[] = [];
+    const leaves: { account: Hex; file: string; amount: bigint; reason: string }[] = [];
+    for (const l of lines) {
+      const address = await this.opts.wallets.addressOf(l.account);
+      if (!address || l.amount <= 0) {
+        skipped.push(l.account);
+        continue;
+      }
+      leaves.push({ account: address as Hex, file: l.account, amount: parseEther(String(l.amount)), reason: l.reason });
+    }
+    // one leaf per wallet: merge files that share one
+    const byWallet = new Map<string, (typeof leaves)[number]>();
+    for (const l of leaves) {
+      const k = l.account.toLowerCase();
+      const cur = byWallet.get(k);
+      if (cur) cur.amount += l.amount;
+      else byWallet.set(k, { ...l });
+    }
+    const merged = [...byWallet.values()];
+    const tree = buildEpoch(epoch, merged);
+    try {
+      if (tree.total > 0n) {
+        const k = this.opts.contracts;
+        const approve = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "approve", args: [k.vault, tree.total] });
+        await this.pub.waitForTransactionReceipt({ hash: approve });
+        const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "post", args: [BigInt(epoch), tree.root, tree.total] });
+        const r = await this.pub.waitForTransactionReceipt({ hash });
+        if (r.status !== "success") return { ok: false, reason: "post reverted" };
+      }
+      const stored: StoredEpoch = { epoch, kind, period, root: tree.root, total: tree.total.toString(), postedAt: this.now(), leaves: tree.leaves.map((l) => ({ account: l.account, file: merged.find((m) => m.account.toLowerCase() === l.account.toLowerCase())!.file, amount: l.amount.toString(), reason: merged.find((m) => m.account.toLowerCase() === l.account.toLowerCase())!.reason, proof: l.proof })) };
+      await store.put(stored);
+      this.log(`prizes · ${kind} ${period} posted as epoch ${epoch}: ${stored.leaves.length} leaves, ${formatEther(tree.total)} $CAPITAL`);
+      return { ok: true, epoch: stored, skipped };
+    } catch (e) {
+      return { ...soft(e), skipped };
+    }
+  }
+
+  /** What a file can claim: every posted epoch with a leaf for its wallet, claimed or not (read from the chain). */
+  async prizes(a: Account): Promise<{ epoch: number; kind: string; period: number; amount: string; reason: string; claimed: boolean }[]> {
+    const store = this.opts.prizes;
+    const c = a.counter;
+    if (!store || !c?.address) return [];
+    const out: { epoch: number; kind: string; period: number; amount: string; reason: string; claimed: boolean }[] = [];
+    for (const e of await store.list()) {
+      const leaf = e.leaves.find((l) => l.account.toLowerCase() === c.address!.toLowerCase());
+      if (!leaf) continue;
+      let claimed = false;
+      try {
+        claimed = (await this.pub.readContract({ address: this.opts.contracts.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "claimedBy", args: [BigInt(e.epoch), leaf.account] })) as boolean;
+      } catch {
+        claimed = false;
+      }
+      out.push({ epoch: e.epoch, kind: e.kind, period: e.period, amount: formatEther(BigInt(leaf.amount)), reason: leaf.reason, claimed });
+    }
+    return out;
+  }
+
+  /** A claim, submitted by the relayer (sponsored): the vault pays the wallet in the leaf. */
+  async claimPrize(a: Account, epoch: number): Promise<Result & { amount?: string }> {
+    const store = this.opts.prizes;
+    const c = a.counter;
+    if (!store || !c?.address) return { ok: false, reason: "no wallet linked" };
+    const e = await store.get(epoch);
+    const leaf = e?.leaves.find((l) => l.account.toLowerCase() === c.address!.toLowerCase());
+    if (!e || !leaf) return { ok: false, reason: "no prize in that epoch" };
+    try {
+      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "claim", args: [BigInt(e.epoch), leaf.account, BigInt(leaf.amount), leaf.proof] });
+      const r = await this.pub.waitForTransactionReceipt({ hash });
+      if (r.status !== "success") return { ok: false, reason: "claim reverted" };
+      this.log(`prizes · ${a.id} claimed epoch ${epoch}: ${formatEther(BigInt(leaf.amount))} $CAPITAL`);
+      a.ledger.push(`PRIZE · ${leaf.reason} · ${formatEther(BigInt(leaf.amount))} $CAPITAL TO THE WALLET`);
+      await this.reconcile(a);
+      return { ok: true, amount: formatEther(BigInt(leaf.amount)) };
+    } catch (e2) {
+      return soft(e2);
+    }
   }
 
   /** THE RUN's payout: what the file is owed goes from the treasury to the wallet (the devnet's relayer is the treasury; production posts a PrizeVault Merkle root). */

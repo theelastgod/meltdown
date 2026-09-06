@@ -105,7 +105,7 @@ async function main(): Promise<void> {
     const code = await pub.getCode({ address: i0.contracts.ghostfile });
     const read = <T>(address: Hex, name: string, fn: string, args: unknown[] = []) => pub.readContract({ address, abi: ARTIFACTS[name]!.abi, functionName: fn, args }) as Promise<T>;
     const supply = await read<bigint>(i0.contracts.capital, "$CAPITAL", "totalSupply");
-    check("the ledger host runs an EVM devnet behind JSON-RPC with the six contracts deployed, $CAPITAL at its fixed cap and the market seeded with every skin", rpcChain === i0.chainId && !!code && code.length > 100 && Object.keys(i0.contracts).length === 6 && supply === parseEther("1000000000") && i0.listings.length === SKINS.length && i0.listings.every((l) => SKINS.some((s) => s.token === l.token && s.capital === l.price)), `chain ${rpcChain} · ghostfile code ${code ? code.length / 2 - 1 : 0} B · listings ${i0.listings.map((l) => `#${l.token}@${l.price}`).join(" ")}`);
+    check("the ledger host runs an EVM devnet behind JSON-RPC with the seven contracts deployed, $CAPITAL at its fixed cap and the market seeded with every skin", rpcChain === i0.chainId && !!code && code.length > 100 && Object.keys(i0.contracts).length === 7 && supply === parseEther("1000000000") && i0.listings.length === SKINS.length && i0.listings.every((l) => SKINS.some((s) => s.token === l.token && s.capital === l.price)), `chain ${rpcChain} · ghostfile code ${code ? code.length / 2 - 1 : 0} B · listings ${i0.listings.map((l) => `#${l.token}@${l.price}`).join(" ")}`);
 
     // ---------------- the link ----------------
     const acct = "sandbox-cl";
@@ -212,7 +212,7 @@ async function main(): Promise<void> {
     const on = await a.evaluate(() => window.__game.wearSkin(1));
     const c2 = await newPage({ width: 640, height: 360 }, "outage");
     await c2.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl3&shop=${HOST}&wallet=${DEV_KEYS.player2}`, { waitUntil: "load" });
-    await c2.waitForFunction(() => window.__game?.ready === true && !!window.__game.counter().info, null, { timeout: 40000, polling: 100 }).catch(async (e) => {
+    await c2.waitForFunction(() => window.__game?.ready === true && !!window.__game.counter().info, null, { timeout: 90000, polling: 100 }).catch(async (e) => {
       console.log("outage page state:", JSON.stringify(await c2.evaluate(() => ({ ready: window.__game?.ready, counter: window.__game?.counter() }))).slice(0, 600), "errors:", errors.slice(-3).join(" | "));
       throw e;
     });

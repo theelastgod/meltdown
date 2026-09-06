@@ -178,7 +178,7 @@ async function main(): Promise<void> {
       }
       await a.waitForTimeout(60);
     }
-    await a.waitForTimeout(1600);
+    await a.waitForFunction(() => !window.__game.state().rituals.dossierOpen, null, { timeout: 8000, polling: 50 }).catch(() => null);
     const after = await a.evaluate(() => ({ r: window.__game.state().rituals, social: window.__game.state().social, audio: window.__game.state().audio }));
     const dossier = after.social.find((m) => m.kind === "dossier");
     const dKeys = dossier?.kind === "dossier" ? [...new Set(dossier.entries.flatMap((e) => Object.keys(e)))].sort() : [];

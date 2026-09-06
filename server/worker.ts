@@ -2,6 +2,7 @@
  * Cloudflare Workers host: one Durable Object per match room, WebSockets.
  * The Room class is identical to the Node host's.
  */
+import { MAX_PLAYERS_PER_ROOM, matchRoomName } from "../shared/net/matchmaking";
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
 import { DoAccountStore, PlayerFile } from "./player-do";
 import { DoEndgameStore, Endgame } from "./endgame-do";
@@ -27,13 +28,22 @@ export default {
       const id = env.MATCH_ROOM.idFromName(m[1]!);
       return env.MATCH_ROOM.get(id).fetch(request);
     }
+    if (url.pathname === "/match") {
+      // matchmaking: a Worker cannot enumerate rooms, so the shard is the ten-minute slot — rooms fill together and rotate
+      const district = (url.searchParams.get("district") ?? "lease_row").replace(/[^a-z_]/g, "");
+      const mode = url.searchParams.get("mode") === "run" ? "run" : "wake";
+      const shard = Math.floor(Date.now() / 600_000) % 6;
+      const name = matchRoomName("neochina", district, mode, shard);
+      const wsHost = url.host;
+      return new Response(JSON.stringify({ room: name, district, mode, max: MAX_PLAYERS_PER_ROOM, url: `wss://${wsHost}/room/${name}?level=${district}${mode === "run" ? "&mode=run" : ""}` }), { headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
+    }
     if (url.pathname === "/endgame") {
       const store = new DoEndgameStore(env.ENDGAME);
       const { week, audit } = currentAudit();
       const body = { day: dayIndex(), contracts: contractsFor(dayIndex()), audit: { week, ...audit }, board: await store.audit(week), season: seasonView(await store.season()) };
       return new Response(JSON.stringify(body), { headers: { "access-control-allow-origin": "*", "content-type": "application/json" } });
     }
-    const f = url.pathname.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|daily|claim|rewrite|cosmetic))?$/);
+    const f = decodeURIComponent(url.pathname).match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|daily|claim|rewrite|cosmetic))?$/);
     if (f) {
       const id = env.PLAYER_FILE.idFromName(f[1]!);
       const stub = env.PLAYER_FILE.get(id);

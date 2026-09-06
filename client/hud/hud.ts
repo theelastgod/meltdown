@@ -233,7 +233,7 @@ export class Hud {
     el.hidden = !v;
     document.getElementById("hud")?.classList.toggle("safe", !!v?.inSafe);
     if (!v) return;
-    const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? "SAFE ZONE" : `<span class="pvp">PVP ZONE</span>`;
+    const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? `SAFE ZONE · <span class="zone">[TAB] MARKET</span>` : `<span class="pvp">PVP ZONE</span>`;
     el.innerHTML = `◈ CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · OWED <b>${v.owed}</b> $CAPITAL · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${v.claims} CLAIMS OUT`;
   }
 

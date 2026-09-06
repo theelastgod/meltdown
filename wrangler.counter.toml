@@ -19,7 +19,12 @@ SIWE_DOMAINS = ""
 [durable_objects]
 bindings = [
   { name = "PLAYER_FILE", class_name = "PlayerFile", script_name = "meltdown-match" },
+  { name = "ENDGAME", class_name = "Endgame", script_name = "meltdown-match" },
 ]
+
+# The weekly prize job: POST /prizes/post {kind:"audit", week} after each Audit week, {kind:"season"} at season end.
+[triggers]
+crons = ["0 1 * * 1"]
 
 [[d1_databases]]
 binding = "DB"

@@ -251,7 +251,7 @@ claim UI: signs nothing but       Worker: EIP-712 voucher signer   Names       (
 | `Forge` | custom | listing bond, 70/20/10 primary split, curation role |
 | `RoomCredits` | custom | burn per room-hour; Worker reads the burn receipt |
 | `SeasonBuyout` | custom | burn; emits the pass to the Ghostfile |
-| `PrizeVault` | Merkle claims | weekly roots posted by the Worker; unclaimed after 90 days returns to treasury |
+| `PrizeVault` | Merkle claims | built (Stage 15): weekly roots posted by the counter Worker's cron, sponsored claims, unclaimed after 90 days returns to treasury |
 | `Testimony` | custom | 1 Ghostfile = 1 vote, Depth gate via voucher, proposal bond |
 
 All contracts upgradeable only through a timelocked multisig; the $CAPITAL

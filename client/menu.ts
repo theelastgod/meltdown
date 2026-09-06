@@ -44,6 +44,8 @@ const PAUSE: MenuEntry[] = [
 ];
 
 export interface MenuView {
+  /** a district pick asked the host for a room (the target updates when it answers) */
+  matched: boolean;
   screen: MenuScreen;
   card: number;
   cardText: string;
@@ -96,17 +98,13 @@ export function choiceUrl(id: string, base: string, opts: { level?: string; acco
       u.searchParams.set("shop", HOSTS.ledger);
       return u.toString();
     default:
-      if (id.startsWith("wake:")) {
-        const level = id.slice(5);
+      if (id.startsWith("wake:") || id.startsWith("run:")) {
+        // the default room; matchmaking (host /match) swaps in the first shard with space before the client navigates
+        const run = id.startsWith("run:");
+        const level = id.slice(run ? 4 : 5);
         u.searchParams.set("level", level);
-        u.searchParams.set("net", `${HOSTS.ws}/room/${HOSTS.publicRoom}-${level}?level=${level}`);
-        return u.toString();
-      }
-      if (id.startsWith("run:")) {
-        const level = id.slice(4);
-        u.searchParams.set("level", level);
-        u.searchParams.set("mode", "run");
-        u.searchParams.set("net", `${HOSTS.ws}/room/${HOSTS.publicRoom}-run-${level}?level=${level}&mode=run`);
+        if (run) u.searchParams.set("mode", "run");
+        u.searchParams.set("net", `${HOSTS.ws}/room/${HOSTS.publicRoom}-${run ? "run-" : ""}${level}?level=${level}${run ? "&mode=run" : ""}`);
         return u.toString();
       }
       return null;
@@ -119,6 +117,8 @@ export class Menu {
   cursor = 0;
   card = -1;
   target: string | null = null;
+  /** the matchmaking answer, when a district was picked */
+  matched: Promise<string> | null = null;
   private cardTimer = 0;
   private seen: boolean;
   private nonav: boolean;
@@ -364,12 +364,37 @@ export class Menu {
     const url = choiceUrl(id, location.href);
     if (!url) return null;
     this.target = url;
+    if (id.startsWith("wake:") || id.startsWith("run:")) {
+      // ask the host for the room with space; fall back to the default name when it does not answer
+      const run = id.startsWith("run:");
+      const level = id.slice(run ? 4 : 5);
+      // the host to ask: `?shop=` when given, the built host in production; a dev page without either keeps the default room (no failed fetch in the console)
+      const ledger = new URLSearchParams(location.search).get("shop") ?? (HOSTS.build !== "dev" ? HOSTS.ledger : null);
+      if (!ledger) {
+        if (!this.nonav) location.assign(url);
+        return url;
+      }
+      this.matched = fetch(`${ledger}/match?district=${level}&mode=${run ? "run" : "wake"}`)
+        .then((r) => r.json() as Promise<{ room: string; url: string }>)
+        .then((m) => {
+          const u2 = new URL(url);
+          u2.searchParams.set("net", m.url);
+          this.target = u2.toString();
+          return this.target;
+        })
+        .catch(() => url)
+        .then((t) => {
+          if (!this.nonav) location.assign(t);
+          return t;
+        });
+      return url;
+    }
     if (!this.nonav) location.assign(url);
     return url;
   }
 
   view(): MenuView {
-    return { screen: this.screen, card: this.card, cardText: (this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen };
+    return { matched: !!this.matched, screen: this.screen, card: this.card, cardText: (this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen };
   }
 
   static settingsOf(): Settings {

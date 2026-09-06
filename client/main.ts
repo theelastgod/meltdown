@@ -103,6 +103,9 @@ export interface GameHook {
   run: () => Game["runView"];
   payout: () => Promise<{ ok: boolean; reason?: string }>;
   sellSkin: (token: number, price: number) => Promise<{ ok: boolean; reason?: string }>;
+  /** the PrizeVault (Stage 15): posted prizes for the linked wallet, a sponsored claim */
+  prizes: () => Promise<{ epoch: number; kind: string; period: number; amount: string; reason: string; claimed: boolean }[]>;
+  claimPrize: (epoch: number) => Promise<{ ok: boolean; reason?: string }>;
   /** Campaign (Stage 10): state, dialogue advance/choose, contracts desk, launch, faction, protocols. */
   campaign: () => ReturnType<Game["campaign"]["view"]>;
   dialogueAdvance: (choice?: number) => boolean;
@@ -240,6 +243,11 @@ window.__game = {
   run: () => game.runView,
   payout: () => game.file.counter?.op("payout") ?? Promise.resolve({ ok: false, reason: "offline" }),
   sellSkin: (token, price) => game.file.counter?.sell(token, price) ?? Promise.resolve({ ok: false, reason: "offline" }),
+  prizes: async () => {
+    await game.file.counter?.op("prizes");
+    return game.file.counter?.prizes ?? [];
+  },
+  claimPrize: (epoch) => game.file.counter?.op("claimPrize", { epoch }) ?? Promise.resolve({ ok: false, reason: "offline" }),
   hurt: (dmg) => {
     game.player.health = Math.max(1, game.player.health - dmg);
     return game.player.health;

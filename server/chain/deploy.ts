@@ -15,6 +15,8 @@ export interface Contracts {
   names: Hex;
   cosmetics: Hex;
   market: Hex;
+  /** the PrizeVault (Stage 15): weekly Merkle roots for the emission channels */
+  vault: Hex;
 }
 
 export async function deployAll(pub: PublicClient, wal: WalletClient, signer: Hex, treasury: Hex): Promise<Contracts> {
@@ -32,5 +34,6 @@ export async function deployAll(pub: PublicClient, wal: WalletClient, signer: He
   const names = await deploy("Names", [signer, capital]);
   const cosmetics = await deploy("Cosmetics", []);
   const market = await deploy("LedgerMarket", [capital, cosmetics, treasury]);
-  return { capital, ghostfile, stamps, names, cosmetics, market };
+  const vault = await deploy("PrizeVault", [capital, treasury]);
+  return { capital, ghostfile, stamps, names, cosmetics, market, vault };
 }

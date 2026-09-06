@@ -156,6 +156,8 @@ export class Game {
       if (lines.length || ranks.length) this.renderer.post.kick(0.6);
     };
     this.file.onIdentity = (f) => this.applyIdentity(f.identityView());
+    // from a safe zone's kiosk, Tab opens the panel on the market (offline and online alike)
+    this.file.openSection = () => (this.runView?.inSafe ? "market" : "top");
     this.applyIdentity(this.file.identityView());
     this.campaign = new Campaign(this);
     this.file.onEndgame = (f) => {

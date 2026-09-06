@@ -14,6 +14,8 @@ export const DISTRICTS: readonly string[] = ["lease_row", "deadletter_docks", "r
 export const NODE_LABELS: readonly string[] = ["A", "B", "C", "D", "E"];
 /** pressure needed to turn a node */
 export const TURN_AT = 6;
+/** the Deep Wake's prize channel pays from this Depth: the room records contributions only at it */
+export const SEASON_DEPTH = 15;
 
 export interface NodeState {
   house: House;
@@ -30,6 +32,8 @@ export interface SeasonState {
   history: string[];
   /** last round's summary line (probe-readable) */
   last: string | null;
+  /** flips this season per file (Depth ≥ SEASON_DEPTH only; the room decides): the Deep Wake's prize channel */
+  contributors: Record<string, number>;
 }
 
 const emptyNode = (): NodeState => ({ house: "unaligned", pressure: { estate: 0, clockeaters: 0, cells: 0, unaligned: 0 }, turns: 0 });
@@ -40,7 +44,7 @@ export function emptySeason(season = seasonIndex()): SeasonState {
     districts[d] = {};
     for (const n of NODE_LABELS) districts[d]![n] = emptyNode();
   }
-  return { season, districts, rounds: 0, history: [], last: null };
+  return { season, districts, rounds: 0, history: [], last: null, contributors: {} };
 }
 
 export interface RoundPush {
@@ -49,6 +53,8 @@ export interface RoundPush {
   flips: { label: string; house: House; count: number }[];
   /** the winning cell's houses (each gets +1 on every node it holds at round end) */
   winners: House[];
+  /** flips per file this round, for the season's prize channel (the room gates by Depth) */
+  contributors?: Record<string, number>;
 }
 
 /** Roll the season over when the index moved: write the log from the real data, then reset. */
@@ -89,6 +95,8 @@ export function applyRound(st: SeasonState, push: RoundPush, now = Date.now()): 
     n.pressure[f.house] += f.count;
   }
   for (const n of Object.values(nodes)) for (const h of push.winners) if (h !== "unaligned" && n.house === h) n.pressure[h] += 1;
+  if (!st.contributors) st.contributors = {};
+  for (const [account, flips] of Object.entries(push.contributors ?? {})) if (flips > 0) st.contributors[account] = (st.contributors[account] ?? 0) + flips;
   for (const [label, n] of Object.entries(nodes)) {
     const [h, p] = (Object.entries(n.pressure) as [House, number][]).filter(([k]) => k !== "unaligned").sort((a, b) => b[1] - a[1])[0]!;
     // the holding house defends: a challenger needs TURN_AT and strictly more pressure than the holder has
@@ -118,5 +126,6 @@ export function seasonView(st: SeasonState) {
   }
   const held: Record<House, number> = { estate: 0, clockeaters: 0, cells: 0, unaligned: 0 };
   for (const nodes of Object.values(st.districts)) for (const n of Object.values(nodes)) held[n.house]++;
-  return { season: st.season, week: seasonWeek(), rounds: st.rounds, held, districts, history: st.history.slice(-8), last: st.last };
+  const top = Object.entries(st.contributors ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  return { season: st.season, week: seasonWeek(), rounds: st.rounds, held, districts, history: st.history.slice(-8), last: st.last, contributors: top };
 }

@@ -21,7 +21,7 @@ export default {
     const url = new URL(request.url);
     const m = url.pathname.match(/^\/campaign\/([a-zA-Z0-9_-]{1,32})$/);
     if (m) return env.CAMPAIGN_ROOM.get(env.CAMPAIGN_ROOM.idFromName(m[1]!)).fetch(request);
-    const f = url.pathname.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})\/campaign$/);
+    const f = decodeURIComponent(url.pathname).match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})\/campaign$/);
     if (f) {
       const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" };
       if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
