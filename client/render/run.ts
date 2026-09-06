@@ -4,6 +4,7 @@
  * label. Render only; the sim owns the truth.
  */
 import * as THREE from "three";
+import { markShared, release } from "./dispose";
 import { PALETTE } from "./city";
 
 export interface RunClaimView {
@@ -26,7 +27,8 @@ export class RunFx {
   private zones: { group: THREE.Group; ring: THREE.Mesh; column: THREE.Mesh; colMat: THREE.MeshBasicMaterial }[] = [];
   private zoneKey = "";
   private clock = 0;
-  private geo = new THREE.OctahedronGeometry(0.28, 0);
+  /** one octahedron for every claim: shared, so a claim that is picked up must not dispose it */
+  private geo = markShared(new THREE.OctahedronGeometry(0.28, 0));
 
   constructor(private scene: THREE.Scene) {}
 
@@ -51,7 +53,7 @@ export class RunFx {
     const key = views.map((z) => `${z.label}:${z.x}:${z.z}:${z.radius}`).join("|");
     if (key === this.zoneKey) return;
     this.zoneKey = key;
-    for (const z of this.zones) this.scene.remove(z.group);
+    for (const z of this.zones) release(z.group);
     this.zones = [];
     for (const z of views) {
       const group = new THREE.Group();
@@ -110,7 +112,7 @@ export class RunFx {
     }
     for (const [id, e] of this.claims) {
       if (seen.has(id)) continue;
-      this.scene.remove(e.mesh);
+      release(e.mesh);
       this.claims.delete(id);
     }
   }

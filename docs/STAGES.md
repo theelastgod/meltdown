@@ -824,6 +824,69 @@ private room writes neither board while the public one writes both. Each was mut
 the first attempt at the board case was vacuous — it passed with the guard removed, because the
 yard is not a Deep Wake district and the flips were being dropped before they reached it.
 
+## Stage 21 — The frame budget, and what the renderer left behind
+
+**Goal.** The project calls itself a AAA-quality browser FPS. Draw calls and triangles have been
+budgeted since Stage 9; per-frame allocation and GPU resource lifetime never had been, and those are
+what make a browser game hitch rather than merely render. Measure them.
+
+**What the sim measured at.** Healthy, and worth writing down: a full 12-player room costs **429 µs
+a tick** (2.6% of a core at 60 Hz), the client's own prediction **46 µs**, and **51 bytes** of
+retained heap a tick. The first version of that measurement said 5.3 KB a tick and looked like a
+serious leak — the harness had never called `drainEvents()`, which the room and the client both do
+every tick, so it was measuring its own event backlog. A harness that does not do what the caller
+does is measuring itself.
+
+**What was found in the renderer.** Removing an `Object3D` from a scene does not free its GPU
+buffers; three.js releases them only on `dispose()`, and nothing in the scene graph reminds you. So
+the natural way to write it — `scene.remove(x); map.delete(id)` — leaks every time, and the
+renderer did it in **eight** places: impact sparks, wake flip rings, projectiles, wasp drones,
+mechs, gas clouds, run claims, and remote players. The worst two: a 600 RPM rifle hitting geometry
+leaked ten buffers a second per shooter, and every player who ever joined left a 256×56 name-tag
+texture behind when they left.
+
+None of it was visible as a bug. A leaked buffer renders nothing and throws nothing; it accumulates
+until the tab is slow, which gets blamed on browsers.
+
+**Files.** `client/render/dispose.ts` (`release`, `markShared`), `client/render/vfx.ts` (the pools),
+`client/render/renderer.ts`, `weapons.ts`, `wake.ts`, `run.ts`, `hub.ts`, `client/main.ts` (the
+resource counters on the state hook); `docs/RENDER.md`; `probe/stage21.ts`.
+
+**Design decisions.**
+- **One helper, so there is one place to be right.** `release(obj)` walks the subtree and disposes
+  what it owns. Eight sites call it. Shared resources — one octahedron for every claim, one
+  material per projectile kind — are marked once where they are created, so the knowledge lives
+  with the thing that is shared rather than with each of its users.
+- **Tracers and sparks became pools, not corrected allocations.** Disposing properly would have
+  fixed the leak and left the churn: a fresh geometry and material per shot, ten times a second per
+  shooter. Now every tracer is two vertices in one `LineSegments` and every spark one instance of an
+  `InstancedMesh` — one draw call each for all of them, six floats written per shot, and no leak
+  possible because there is nothing to forget to dispose. Ring buffers of 64: the oldest effect is
+  overwritten, which is the right failure for a visual effect and the wrong one for anything else.
+- **The probe measures a rate, because the defect was a rate.** This took three attempts, and the
+  trap was in the metric. `info.memory.geometries` counts what the renderer has *initialised*, so it
+  rises whenever anything enters the frustum — warm-up, a camera turn, a pedestrian. Three versions
+  asserted it was flat and each was wrong for a different reason. But the leak was **per shot**: N
+  world hits left N geometries. So the probe measures growth per shot against an idle control in a
+  static level, which is robust to a city that never stops moving. Pre-fix ≈ 1.0 per shot; now
+  < 0.1.
+- **The budget is on shape, not absolute time.** SwiftShader cannot tell you anything about a real
+  GPU, so the frame check is that the worst frame in a window is within 4× the median — a GC pause
+  is a spike whatever the renderer. Absolute frame time on real hardware is the honest gap, and
+  `docs/RENDER.md` §5 says so.
+- **That check found a second thing.** With the leak fixed it still failed under fire at 5.5×: one
+  567 ms frame, on the first shot. The pools are hidden when empty, so their materials had never
+  been rendered and the first shot compiled two shader programs mid-frame — a stutter at exactly
+  the moment a duel starts. Compiling at startup took the worst frame under fire to 123 ms, 1.2×,
+  the same as idle.
+
+**Acceptance (`npm run probe:frame` 6/6; `npm run probe:look` 15/15; `npm run probe:city` 32/32;
+`npm test` 223):** sixty-nine shots of sustained fire create **0.029 geometries per shot** where the
+leak was about 1.0, and no textures at all; the effects add **zero** draw calls while in flight
+where each used to cost one; and the worst frame is within 1.3× the median idle and 1.2× under
+fire. The city's own draw-call budget is back inside its Stage 9 limits, because the pools are
+hidden when empty rather than costing two calls in every idle frame.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

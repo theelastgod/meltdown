@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { markSharedAll, release } from "./dispose";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import { PALETTE } from "./city";
 import type { Vec3 } from "@shared/math/vec3";
@@ -94,13 +95,14 @@ export class ArsenalFx {
   private wasps = new Map<number, { group: THREE.Group; rotors: THREE.Mesh[]; light: THREE.PointLight }>();
   private mechs = new Map<number, { group: THREE.Group; head: THREE.Group; spot: THREE.SpotLight; cone: THREE.Mesh; target: THREE.Object3D }>();
   private clock = 0;
-  private projMats = {
+  /** one material per projectile kind, shared by every projectile of it */
+  private projMats = markSharedAll({
     phage: new THREE.MeshBasicMaterial({ color: PALETTE.violet }),
     sticky: new THREE.MeshBasicMaterial({ color: PALETTE.violet }),
     frag: new THREE.MeshStandardMaterial({ color: 0x2a2f3a, roughness: 0.6, metalness: 0.5 }),
     smoke: new THREE.MeshStandardMaterial({ color: 0x3a4250, roughness: 0.7 }),
     emp: new THREE.MeshStandardMaterial({ color: 0x142230, emissive: PALETTE.cyan, emissiveIntensity: 0.5 }),
-  };
+  });
 
   constructor(private scene: THREE.Scene) {}
 
@@ -152,7 +154,7 @@ export class ArsenalFx {
   removeCloud(id: number): void {
     const c = this.clouds.get(id);
     if (!c) return;
-    this.scene.remove(c.group);
+    release(c.group);
     this.clouds.delete(id);
   }
 
@@ -185,7 +187,7 @@ export class ArsenalFx {
     }
     for (const [id, m] of this.projectiles) {
       if (!seen.has(id)) {
-        this.scene.remove(m);
+        release(m);
         this.projectiles.delete(id);
       }
     }
@@ -230,7 +232,7 @@ export class ArsenalFx {
     }
     for (const [id, e] of this.wasps) {
       if (!seen.has(id)) {
-        this.scene.remove(e.group);
+        release(e.group);
         this.wasps.delete(id);
       }
     }
@@ -295,7 +297,7 @@ export class ArsenalFx {
     }
     for (const [id, e] of this.mechs) {
       if (!seen.has(id)) {
-        this.scene.remove(e.group);
+        release(e.group);
         this.mechs.delete(id);
       }
     }
@@ -307,8 +309,7 @@ export class ArsenalFx {
       const b = this.beams[i]!;
       const a = 1 - (this.clock - b.born) / b.life;
       if (a <= 0) {
-        this.scene.remove(b.mesh);
-        b.mesh.geometry.dispose();
+        release(b.mesh);
         this.beams.splice(i, 1);
       } else {
         b.mat.opacity = a * 0.95;
@@ -319,7 +320,8 @@ export class ArsenalFx {
       const b = this.blasts[i]!;
       const t = (this.clock - b.born) / b.life;
       if (t >= 1) {
-        this.scene.remove(b.mesh, b.light);
+        release(b.mesh);
+        release(b.light);
         this.blasts.splice(i, 1);
       } else {
         b.mesh.scale.setScalar(0.3 + t * 3.2);

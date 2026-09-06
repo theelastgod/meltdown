@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json",
     "test": "vitest run",
     "probe": "tsx probe/stage1.ts",
-    "verify": "npm run typecheck && npm run test && npm run probe && npm run probe:look && npm run probe:net && npm run probe:arsenal && npm run probe:wake && npm run lint:fairness -- --quick && npm run probe:file && npm run probe:city && npm run probe:cityLife && npm run probe:mastery && npm run probe:identity && npm run probe:campaign && npm run probe:endgame && npm run lint:economy && npm run probe:economy && npm run probe:counter && npm run probe:crawl && npm run probe:ship && npm run probe:run && npm run probe:harden && npm run build && npm run smoke",
+    "verify": "npm run typecheck && npm run test && npm run probe && npm run probe:look && npm run probe:net && npm run probe:arsenal && npm run probe:wake && npm run lint:fairness -- --quick && npm run probe:file && npm run probe:city && npm run probe:cityLife && npm run probe:mastery && npm run probe:identity && npm run probe:campaign && npm run probe:endgame && npm run lint:economy && npm run probe:economy && npm run probe:counter && npm run probe:crawl && npm run probe:ship && npm run probe:run && npm run probe:harden && npm run probe:frame && npm run build && npm run smoke",
     "probe:look": "tsx probe/stage3.ts",
     "host": "tsx server/node-host.ts",
     "probe:net": "tsx probe/stage2.ts",
@@ -38,7 +38,8 @@
     "lint:economy": "tsx shared/economy/cli.ts",
     "contracts:build": "tsx server/chain/compile.ts",
     "contracts:deploy": "tsx server/chain/deploy-cli.ts",
-    "probe:economy": "tsx probe/stage17.ts"
+    "probe:economy": "tsx probe/stage17.ts",
+    "probe:frame": "tsx probe/stage21.ts"
   },
   "dependencies": {
     "@ethereumjs/block": "^10.1.3",

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { release } from "./dispose";
 import { PALETTE } from "./city";
 import type { Vec3 } from "@shared/math/vec3";
 import { WAKE } from "@shared/sim/wake";
@@ -152,7 +153,8 @@ export class WakeFx {
       const p = this.pulses[i]!;
       const t = (this.clock - p.born) / 1.4;
       if (t >= 1) {
-        this.scene.remove(p.mesh);
+        // removing a mesh from a scene does not release its GPU buffers (client/render/dispose.ts)
+        release(p.mesh);
         this.pulses.splice(i, 1);
       } else {
         p.mesh.scale.setScalar(1 + t * 22);

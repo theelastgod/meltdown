@@ -5,6 +5,7 @@
  * Everything here is render-only and rebuilt whenever the file changes.
  */
 import * as THREE from "three";
+import { release } from "./dispose";
 import type { LevelDef } from "@shared/sim/level";
 import type { HubDef } from "@shared/sim/hub";
 import { MeshBatch, PALETTE, SignAtlas } from "./city";
@@ -100,8 +101,8 @@ export class HubDressing {
   }
 
   dispose(): void {
-    this.scene.remove(this.group);
-    this.scene.remove(this.ghost);
+    release(this.group);
+    release(this.ghost);
   }
 }
 

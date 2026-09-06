@@ -7,6 +7,8 @@ import { PostChain } from "./post";
 import { Rain } from "./rain";
 import { makeWetFloor } from "./wetfloor";
 import { buildSkyline, dressLevel, PALETTE, Traffic } from "./city";
+import { VfxPool } from "./vfx";
+import { release } from "./dispose";
 import { CityLife, flickerMaterial } from "./life";
 import { HubDressing } from "./hub";
 import { CampaignFx } from "./campaign";
@@ -74,8 +76,12 @@ export class Renderer {
   signFlicker: { setTime: (t: number) => void } | null = null;
   private listener = new THREE.Vector3();
   private dummyMeshes = new Map<number, { group: THREE.Group; mat: THREE.MeshStandardMaterial; flash: number }>();
-  private tracers: { line: THREE.Line; mat: THREE.LineBasicMaterial; born: number; life: number }[] = [];
-  private sparks: { mesh: THREE.Mesh; born: number }[] = [];
+  /** Tracers and impact sparks, pooled: two draw calls for all of them, and nothing allocated per shot. */
+  private vfxPool!: VfxPool;
+  /** live tracers + sparks, for the frame-budget probe */
+  liveVfx = 0;
+  /** scratch for the tracer origin: reused so a shot allocates nothing */
+  private tmpStart = new THREE.Vector3();
   private muzzle: THREE.PointLight;
   private muzzleT = 0;
   private viewmodel: THREE.Group;
@@ -142,6 +148,15 @@ export class Renderer {
     this.rain = new Rain();
     this.rain.object.layers.set(FAR_LAYER);
     this.scene.add(this.rain.object);
+    // tracers and sparks: two draw calls for the lot, allocated once (client/render/vfx.ts)
+    this.vfxPool = new VfxPool(this.scene);
+    // Compile every shader now rather than on the frame that first needs it. The pools are hidden
+    // when empty, so without this the first shot of a match compiles two programs mid-frame — one
+    // 500 ms stutter, measured, at exactly the moment a duel starts. `compile` only walks visible
+    // objects, so they are shown for the call and hidden again on the first update.
+    this.vfxPool.tracers.visible = true;
+    this.vfxPool.sparks.visible = true;
+    this.renderer.compile(this.scene, this.camera);
     this.camera.layers.enable(FAR_LAYER);
     const floor = level.boxes.find((b) => b.tag === "floor" || b.tag === "white_floor") ?? level.boxes[0]!;
     this.scene.add(makeWetFloor(floor.max.x - floor.min.x, floor.max.z - floor.min.z, floor.max.y + 0.002, fogColor, fogDensity));
@@ -319,7 +334,7 @@ export class Renderer {
     }
     for (const [id, e] of this.remoteMeshes) {
       if (!seen.has(id)) {
-        this.scene.remove(e.group);
+        release(e.group);
         this.remoteMeshes.delete(id);
       }
     }
@@ -327,27 +342,17 @@ export class Renderer {
 
   /** Cyan tracer from the muzzle (or a world-space origin for other players) to the impact point, plus a muzzle flash. */
   tracer(from: Vec3, to: Vec3, hitWorld: boolean, worldOrigin = false, color: number = PALETTE.cyan): void {
-    const start = new THREE.Vector3();
-    if (worldOrigin) start.set(from.x, from.y, from.z);
+    if (worldOrigin) this.tmpStart.set(from.x, from.y, from.z);
     else {
-      this.viewmodel.getWorldPosition(start);
-      start.add(new THREE.Vector3(0, 0.03, 0));
+      this.viewmodel.getWorldPosition(this.tmpStart);
+      this.tmpStart.y += 0.03;
     }
-    const geo = new THREE.BufferGeometry().setFromPoints([start, new THREE.Vector3(to.x, to.y, to.z)]);
-    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
-    const line = new THREE.Line(geo, mat);
-    this.scene.add(line);
-    this.tracers.push({ line, mat, born: this.clock, life: 0.12 });
+    this.vfxPool.addTracer(this.tmpStart.x, this.tmpStart.y, this.tmpStart.z, to.x, to.y, to.z, color, this.clock);
     if (!worldOrigin) {
       this.muzzleT = 1;
       this.vmKick = 1;
     }
-    if (hitWorld) {
-      const s = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), new THREE.MeshBasicMaterial({ color }));
-      s.position.set(to.x, to.y, to.z);
-      this.scene.add(s);
-      this.sparks.push({ mesh: s, born: this.clock });
-    }
+    if (hitWorld) this.vfxPool.addSpark(to.x, to.y, to.z, color, this.clock);
   }
 
   render(v: ViewState, rawDt: number): void {
@@ -397,24 +402,8 @@ export class Renderer {
     this.wake.update(dt);
     this.run.update(dt);
 
-    for (let i = this.tracers.length - 1; i >= 0; i--) {
-      const t = this.tracers[i]!;
-      const a = 1 - (this.clock - t.born) / t.life;
-      if (a <= 0) {
-        this.scene.remove(t.line);
-        t.line.geometry.dispose();
-        t.mat.dispose();
-        this.tracers.splice(i, 1);
-      } else t.mat.opacity = a * 0.9;
-    }
-    for (let i = this.sparks.length - 1; i >= 0; i--) {
-      const s = this.sparks[i]!;
-      const age = this.clock - s.born;
-      if (age > 0.12) {
-        this.scene.remove(s.mesh);
-        this.sparks.splice(i, 1);
-      } else s.mesh.scale.setScalar(1 + age * 12);
-    }
+    this.vfxPool.update(this.clock);
+    this.liveVfx = this.vfxPool.live(this.clock);
     this.renderer.info.reset();
     this.rain.update(this.clock, this.camera);
     // the city runs on wall time (capped at a hitch): a slow frame still moves the crowd and the tram their full distance
