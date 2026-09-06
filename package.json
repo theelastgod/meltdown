@@ -32,6 +32,7 @@
     "probe:run": "tsx probe/stage14.ts",
     "probe:harden": "tsx probe/stage15.ts",
     "smoke": "tsx probe/smoke.ts",
+    "probe:live": "tsx probe/live.ts",
     "deploy:workers": "npx wrangler deploy && npx wrangler deploy -c wrangler.campaign.toml && npx wrangler deploy -c wrangler.counter.toml",
     "deploy:pages": "npm run build && npm run smoke && npx wrangler pages deploy dist --project-name meltdown",
     "lint:economy": "tsx shared/economy/cli.ts",

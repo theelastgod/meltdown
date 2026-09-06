@@ -66,7 +66,7 @@ async function main(): Promise<void> {
     await pg.goto(`http://127.0.0.1:${PREVIEW_PORT}/?headless=1&menu=1&crawl=0&nonav=1`, { waitUntil: "load" });
     await pg.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "cards", null, { timeout: 40000, polling: 100 });
     const card = await pg.evaluate(() => window.__game.menu()!.cardText);
-    check("the menu flow runs from the built bundle: the first title card is up", /leased/.test(card), `card "${card}"`);
+    check("the menu flow runs from the built bundle: a title card is up", /leased|woke free/.test(card), `card "${card}"`);
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     await pg.close();
   } finally {

@@ -55,10 +55,20 @@ function ledgerOf(env: Env): CounterLedger {
   });
 }
 
+/** Until Robinhood Chain's parameters land, the Worker answers every chain route with one reason instead of building a client on an empty RPC. */
+const unconfigured = (env: Env): boolean => !env.CHAIN_RPC || !Number(env.CHAIN_ID) || !env.SIGNER_KEY || !env.RELAYER_KEY;
+const NOT_CONFIGURED = "CHAIN NOT CONFIGURED: the counter-ledger waits for Robinhood Chain's testnet parameters (CHAIN_ID, CHAIN_RPC, CONTRACTS)";
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+    if (url.pathname === "/health") return new Response("ok");
+    if (unconfigured(env)) {
+      if (url.pathname === "/counter") return json({ chainId: Number(env.CHAIN_ID) || 0, devnet: false, contracts: {}, signer: null, statement: "", listings: [], treasury: null, reason: NOT_CONFIGURED });
+      if (url.pathname === "/link/nonce") return json({ ok: false, reason: NOT_CONFIGURED }, 503);
+      return json({ ok: false, reason: NOT_CONFIGURED, counter: null }, 503);
+    }
     const stubOf = (id: string) => env.PLAYER_FILE.get(env.PLAYER_FILE.idFromName(id));
     const load = async (id: string): Promise<Account> => upgradeAccount((await (await stubOf(id).fetch(new Request("https://file/file", { method: "POST", body: JSON.stringify({ id, name: "BLANK" }) }))).json()) as Account);
     const save = (a: Account) => stubOf(a.id).fetch(new Request("https://file/save", { method: "POST", body: JSON.stringify(a) }));
