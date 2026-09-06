@@ -71,6 +71,10 @@ interface ClientRec {
   strikeWindowStart: number;
   inputWindowStart: number;
   inputCount: number;
+  /** unspent input credits: one accrues per sim tick, capped at INPUT_BURST_CREDITS */
+  credits: number;
+  /** inputs held back this session because the client outran the sim */
+  throttled: number;
   disconnectedAt: number;
   pendingEvents: NetEvent[];
   sent: Map<number, Snapshot>;
@@ -150,7 +154,7 @@ export interface RoomStats {
   kicks: number;
   inputsRejected: number;
   bytesOut: number;
-  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; inputsApplied: number; inputsRejected: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number; stamps: number; ranks: Record<string, number> } | null; loadout: Loadout; identity: { display: string; chapter: number; moniker: string | null; debt: string | null; debtTarget: number; wakelight: number; chapters: number[] } }[];
+  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; throttled: number; inputsApplied: number; inputsRejected: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number; stamps: number; ranks: Record<string, number> } | null; loadout: Loadout; identity: { display: string; chapter: number; moniker: string | null; debt: string | null; debtTarget: number; wakelight: number; chapters: number[] } }[];
   settlements: number;
   /** social messages sent, by kind (dossier / debt / rite) */
   social: Record<string, number>;
@@ -167,6 +171,14 @@ export interface RoomStats {
 
 const MAX_INPUTS_PER_TICK = 6;
 const MAX_INPUT_RATE_PER_SEC = 95;
+/**
+ * A client may only ever spend as many inputs as the sim has ticked. Every input is a full
+ * `stepPlayer` at SIM_DT, so a client allowed to spend more inputs than ticks simply moves and
+ * shoots faster than everyone else — a speed hack that needs no modified physics, just a faster
+ * send loop. Credits accrue one per tick and cap at a short burst, so a hitching client still
+ * catches up while a flooder cannot outrun the clock.
+ */
+export const INPUT_BURST_CREDITS = 12;
 const MAX_STRIKES = 3;
 
 export class Room {
@@ -452,6 +464,8 @@ export class Room {
       strikeWindowStart: 0,
       inputWindowStart: this.opts.now(),
       inputCount: 0,
+      credits: INPUT_BURST_CREDITS,
+      throttled: 0,
       disconnectedAt: 0,
       pendingEvents: [],
       sent: new Map(),
@@ -828,8 +842,14 @@ export class Room {
     const inputs = new Map<number, NetInput[]>();
     const applied = new Map<number, NetInput[]>();
     for (const rec of this.clients.values()) {
+      // one credit per tick, so no client can spend more sim time than the sim has run
+      rec.credits = Math.min(INPUT_BURST_CREDITS, rec.credits + 1);
       if (rec.queue.length === 0) continue;
-      const list = rec.queue.splice(0, Math.min(MAX_INPUTS_PER_TICK, rec.queue.length));
+      const allowed = Math.min(MAX_INPUTS_PER_TICK, Math.floor(rec.credits), rec.queue.length);
+      if (allowed <= 0) continue;
+      if (rec.queue.length > allowed) rec.throttled += rec.queue.length - allowed;
+      rec.credits -= allowed;
+      const list = rec.queue.splice(0, allowed);
       inputs.set(rec.playerId, list);
       applied.set(rec.playerId, list);
     }
@@ -1071,6 +1091,7 @@ export class Room {
         connected: c.conn !== null,
         traceMaxErr: c.traceMaxErr,
         traceSamples: c.traceSamples,
+        throttled: c.throttled,
         inputsApplied: c.inputsApplied,
         inputsRejected: c.inputsRejected,
         kills: p.stats.kills,

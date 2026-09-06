@@ -74,13 +74,17 @@ contract LedgerMarket {
         uint256 treasuryAmt = (paid * TREASURY_BPS) / 10_000;
         uint256 creatorAmt = (paid * CREATOR_BPS) / 10_000;
         address creator = cosmetics.creatorOf(L.id);
+        address seller = L.seller;
+        uint256 id = L.id;
+        // effects before interactions: the escrow is drawn down first, so a cosmetics or token
+        // contract that ever gains a receiver callback cannot re-enter and buy the same units twice
+        L.amount -= amount;
+        volume += paid;
         capital.burnFrom(msg.sender, burnAmt);
         capital.transferFrom(msg.sender, treasury, treasuryAmt + (creator == address(0) ? creatorAmt : 0));
         if (creator != address(0)) capital.transferFrom(msg.sender, creator, creatorAmt);
-        capital.transferFrom(msg.sender, L.seller, paid - burnAmt - treasuryAmt - creatorAmt);
-        L.amount -= amount;
-        volume += paid;
-        cosmetics.safeTransferFrom(address(this), msg.sender, L.id, amount, "");
-        emit Sold(l, msg.sender, L.id, amount, paid, burnAmt, treasuryAmt, creatorAmt);
+        capital.transferFrom(msg.sender, seller, paid - burnAmt - treasuryAmt - creatorAmt);
+        cosmetics.safeTransferFrom(address(this), msg.sender, id, amount, "");
+        emit Sold(l, msg.sender, id, amount, paid, burnAmt, treasuryAmt, creatorAmt);
     }
 }

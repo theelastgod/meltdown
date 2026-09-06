@@ -23,6 +23,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 13 | Polish & ship: the CRT menu flow with the two title cards, settings applied live and kept, the audio pass (buses, UI cues, the card sting, the low-health pulse), Cloudflare Pages + Workers deploy, the smoke test in CI | **done** (deploy is a workflow gated on the Cloudflare secrets) | `docs/proof/stage13/` |
 | 14 | THE RUN — $CAPITAL play-to-earn: the token renamed WAKE → CAPITAL, PvP zones with claims, safe zones (no damage in or out, the markets, banking), the day's cap and the Depth gate, the treasury payout to the wallet | **done** (devnet; testnet is configuration) | `docs/proof/stage14/` |
 | 15 | Hardening: the PrizeVault (Merkle epochs for Audit placements and Deep Wake contributions, sponsored claims, 90-day reclaim), matchmaking shards, the safe-zone market kiosk, a per-file rate limit on the counter-ledger, the flaky probe waits | **done** | `docs/proof/stage15/` |
+| 16 | Security review of the money paths: eight findings across the contracts and the room, two of them fund-safety and one a live speed hack, each fixed and pinned by a mutation-checked regression test (`docs/SECURITY.md`) | **done** | `tests/security.test.ts`, `tests/speedhack.test.ts` |
 
 ## Stage 1 — Grey-box FPS core
 
@@ -537,6 +538,60 @@ under CPU load.
 
 **Acceptance (`npm run probe:harden`, 7/7; `npm test`, 156 tests):** see the
 probe's checks.
+
+## Stage 16 — The money paths, read adversarially
+
+**Goal.** Before spending on an external audit, read every contract and every server path that
+signs for one, as an attacker would. Stage 14 tied $CAPITAL to PvP outcomes and Stage 15 put prize
+money in a vault, so the cost of a bug stopped being a spoiled match and started being a mint.
+
+**What was found.** Eight findings, written up in full in `docs/SECURITY.md`. The two that mattered
+most:
+
+- **A prize epoch could pay out of another epoch's pot.** `PrizeVault.claim` verified the Merkle
+  proof but never checked the epoch's own funding, and every epoch shares one balance. A root whose
+  leaves exceeded what funded it — an off-chain tree bug, a compromised poster — spent whatever else
+  the vault held. Now each epoch is ring-fenced by `claimed + amount <= total`.
+- **A client could outrun the sim clock.** Every input is a full `stepPlayer` at `SIM_DT`, and the
+  room allowed 95 inputs a second against a 60 Hz sim. A send loop at 90 a second — legal, no strike,
+  nothing for the trace comparison to flag, because the server itself does the extra stepping — moved
+  and fired 50% faster than everyone else. The drain is now a token bucket denominated in ticks:
+  one credit per tick, a 200 ms burst allowance so hitching clients still catch up, and a flooder's
+  surplus dies in its own queue.
+
+The rest: a zero signer would have validated every forged voucher (the classic `ecrecover` hole,
+latent behind operator error); one file could be linked to two wallets on chain; supply could be
+destroyed without being counted as burned, which would have made the published NET DELTA wrong; a
+name priced per byte could be bought with multi-byte characters; the market updated state after
+paying out; and the EIP-2612 permit the tokenomics doc promised did not exist, costing every player
+a second transaction on every buy.
+
+**Files.** `contracts/Vouchers.sol`, `CAPITAL.sol` (permit, `nonces`, `DOMAIN_SEPARATOR`),
+`Ghostfile.sol` (`tokenOfFile`), `Names.sol` (ASCII), `LedgerMarket.sol` (checks-effects-interactions),
+`PrizeVault.sol` (`Overclaim`); `server/room.ts` (the credit bucket, `throttled` in stats);
+`docs/SECURITY.md`; `tests/security.test.ts` (9), `tests/speedhack.test.ts` (3).
+
+**Design decisions.**
+- **Every regression test was mutation-checked.** Revert the fix, re-run, watch it fail. A test that
+  passes on the broken code proves nothing, and two of these did at first: the overclaim case was
+  reverting on the vault's balance rather than on the guard until the numbers were chosen so the
+  vault genuinely held the money, and the speed-hack case measured only the final gap, which cannot
+  tell a bounded head start from a rate. It now samples the gap each second.
+- **The invariant, not the symptom.** A rate cap cannot express "no client may spend more sim time
+  than the sim has run" — that is a statement about totals. Hence a bucket denominated in ticks
+  rather than a tighter number of inputs per second.
+- **What stays trusted is written down.** Aim is client-authoritative, as in every FPS; the host
+  owns the game rules; the minter role can mint without a cap. `docs/SECURITY.md` §2 lists these as
+  decisions so an auditor does not spend time rediscovering them, and §3 lists what is still open —
+  chiefly that the treasury and the relayer are the same key in the devnet wiring and must not be
+  on mainnet.
+
+**Acceptance (`npm test`, 168 tests):** the nine contract cases deploy the real bytecode to the
+in-process EVM and drive it with viem — forged signatures, cross-epoch claims, double links, a
+permit and its replay, the fee split. The three room cases race an honest client against a flooder
+through the real wire protocol on a clock that advances one tick per step: pre-fix the cheat leads
+by 4.4 m in three seconds and widens by 0.84 m a second; post-fix the lead is the burst allowance
+and stops growing.
 
 ## Stage 3 — The look
 

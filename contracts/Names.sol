@@ -24,6 +24,7 @@ contract Names is Vouchers {
     error Taken();
     error HasName();
     error BadLength();
+    error BadCharacter();
 
     constructor(address signer_, address capital_) Vouchers(signer_) {
         capital = ICAPITALBurn(capital_);
@@ -44,7 +45,18 @@ contract Names is Vouchers {
         return 150 ether;
     }
 
+    /// @dev The price is per byte, so a multi-byte name would buy more characters than it paid for.
+    ///      The game only ever signs A-Z 0-9 _ - ; this holds the same line without trusting it.
+    function _requireAscii(bytes memory b) private pure {
+        for (uint256 i = 0; i < b.length; i++) {
+            uint8 c = uint8(b[i]);
+            bool ok = (c >= 0x41 && c <= 0x5A) || (c >= 0x30 && c <= 0x39) || c == 0x5F || c == 0x2D;
+            if (!ok) revert BadCharacter();
+        }
+    }
+
     function register(string calldata name_, uint256 nonce, uint256 deadline, bytes calldata sig) external {
+        _requireAscii(bytes(name_));
         bytes32 key = keccak256(bytes(name_));
         if (holderOf[key] != address(0)) revert Taken();
         if (bytes(nameOf[msg.sender]).length != 0) revert HasName();

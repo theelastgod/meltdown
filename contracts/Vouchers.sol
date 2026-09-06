@@ -14,13 +14,16 @@ abstract contract Vouchers {
     mapping(address => mapping(uint256 => bool)) public nonceUsed;
 
     event SignerChanged(address indexed signer);
+    event StewardChanged(address indexed steward);
 
     error NotSteward();
     error BadSigner();
     error Expired();
     error NonceUsed();
+    error ZeroAddress();
 
     constructor(address signer_) {
+        if (signer_ == address(0)) revert ZeroAddress();
         signer = signer_;
         steward = msg.sender;
     }
@@ -30,9 +33,19 @@ abstract contract Vouchers {
         _;
     }
 
+    /// @notice Rotate the game signer. Never zero: a zero signer would make every malformed
+    ///         signature recover to it and validate (see `_consume`).
     function setSigner(address s) external onlySteward {
+        if (s == address(0)) revert ZeroAddress();
         signer = s;
         emit SignerChanged(s);
+    }
+
+    /// @notice Hand the steward role to a timelocked multisig after deployment.
+    function setSteward(address s) external onlySteward {
+        if (s == address(0)) revert ZeroAddress();
+        steward = s;
+        emit StewardChanged(s);
     }
 
     function _domainName() internal pure virtual returns (string memory);
@@ -49,7 +62,10 @@ abstract contract Vouchers {
     function _consume(address wallet, uint256 nonce, uint256 deadline, bytes32 structHash, bytes calldata sig) internal {
         if (block.timestamp > deadline) revert Expired();
         if (nonceUsed[wallet][nonce]) revert NonceUsed();
-        if (_recover(_digest(structHash), sig) != signer) revert BadSigner();
+        address got = _recover(_digest(structHash), sig);
+        // `_recover` answers the zero address for a malformed signature, and so does `ecrecover`.
+        // Comparing to `signer` alone would validate any garbage if the signer were ever zero.
+        if (got == address(0) || got != signer) revert BadSigner();
         nonceUsed[wallet][nonce] = true;
     }
 

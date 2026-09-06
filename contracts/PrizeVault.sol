@@ -37,6 +37,7 @@ contract PrizeVault {
     error AlreadyClaimed();
     error BadProof();
     error TooEarly();
+    error Overclaim();
 
     constructor(address capital_, address treasury_) {
         capital = ICAPITALMove(capital_);
@@ -69,13 +70,18 @@ contract PrizeVault {
             node = node < p ? keccak256(abi.encodePacked(node, p)) : keccak256(abi.encodePacked(p, node));
         }
         if (node != e.root) revert BadProof();
+        // An epoch is a ring-fenced pot: it may never pay out more than it was funded with, so a
+        // bad root (an off-chain tree bug, a compromised poster) cannot reach another epoch's money.
+        // This also closes a claim that arrives after `reclaim` swept the epoch.
+        if (e.claimed + amount > e.total) revert Overclaim();
         claimedBy[epoch][account] = true;
         e.claimed += amount;
         capital.transfer(account, amount);
         emit Claimed(epoch, account, amount);
     }
 
-    /// @notice After 90 days what was not claimed returns to the treasury.
+    /// @notice After 90 days what was not claimed returns to the treasury. Idempotent: a second
+    ///         call sweeps nothing, and claims after it revert with `Overclaim`.
     function reclaim(uint256 epoch) external {
         Epoch storage e = epochs[epoch];
         if (e.root == bytes32(0)) revert NoEpoch();

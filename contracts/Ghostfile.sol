@@ -16,12 +16,15 @@ contract Ghostfile is Vouchers {
     mapping(uint256 => address) public ownerOf;
     mapping(address => uint256) public tokenOf;
     mapping(uint256 => bytes32) public fileOf;
+    /// fileId => the token that holds it: one wallet per file, enforced here and not only by the host
+    mapping(bytes32 => uint256) public tokenOfFile;
 
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
     event Linked(address indexed wallet, uint256 indexed tokenId, bytes32 fileId);
 
     error Soulbound();
     error AlreadyLinked();
+    error FileLinked();
     error NotHolder();
 
     constructor(address signer_) Vouchers(signer_) {}
@@ -37,11 +40,13 @@ contract Ghostfile is Vouchers {
     /// @notice Anyone may submit the voucher (the game relayer sponsors the gas); the token goes to the wallet in it.
     function mint(address wallet, bytes32 fileId, uint256 nonce, uint256 deadline, bytes calldata sig) external returns (uint256 id) {
         if (tokenOf[wallet] != 0) revert AlreadyLinked();
+        if (tokenOfFile[fileId] != 0) revert FileLinked();
         _consume(wallet, nonce, deadline, keccak256(abi.encode(LINK_TYPEHASH, wallet, fileId, nonce, deadline)), sig);
         id = nextId++;
         ownerOf[id] = wallet;
         tokenOf[wallet] = id;
         fileOf[id] = fileId;
+        tokenOfFile[fileId] = id;
         emit Transfer(address(0), wallet, id);
         emit Linked(wallet, id, fileId);
     }
@@ -50,6 +55,7 @@ contract Ghostfile is Vouchers {
         if (ownerOf[id] != msg.sender) revert NotHolder();
         delete ownerOf[id];
         delete tokenOf[msg.sender];
+        delete tokenOfFile[fileOf[id]];
         delete fileOf[id];
         emit Transfer(msg.sender, address(0), id);
     }
