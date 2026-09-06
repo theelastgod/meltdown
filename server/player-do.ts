@@ -4,6 +4,8 @@
  * Durable rows go to D1 (schema.sql) on every save; DO storage is the cache.
  */
 import { buyNode, createAccount, refundNode, upgradeAccount, type Account, recordGhost, validGhost } from "../shared/progression/account";
+import { claimContract, dailyView } from "../shared/endgame/contracts";
+import { buyCosmetic, rewrite, savePreset, setAlias, setTheme } from "../shared/endgame/rewrite";
 import type { AccountStore } from "./accounts";
 import { MIGRATIONS, SCHEMA } from "./schema";
 
@@ -85,6 +87,32 @@ export class PlayerFile implements DurableObject {
         }
       }
       return Response.json({ ok: r.ok, reason: r.reason, account: a });
+    }
+    if (request.method === "POST" && ["/daily", "/claim", "/rewrite", "/cosmetic"].includes(url.pathname)) {
+      const body = (await request.json()) as { id: string; op?: string; slot?: number; name?: string; loadout?: unknown; alias?: string };
+      let a = await this.state.storage.get<Account>(KEY);
+      if (!a && this.env.DB) {
+        const db = this.env.DB;
+        a = (await withSchema(db, () => loadRow(db, body.id))) ?? undefined;
+      }
+      if (!a) a = createAccount(body.id, "BLANK");
+      a = upgradeAccount(a);
+      let r: { ok: boolean; reason?: string } = { ok: true };
+      if (url.pathname === "/claim") r = claimContract(a, String((body as { id?: unknown }).id ?? ""));
+      else if (url.pathname === "/rewrite") r = rewrite(a);
+      else if (url.pathname === "/cosmetic") r = body.op === "buy" ? buyCosmetic(a, String((body as { cosmetic?: unknown }).cosmetic ?? body.id)) : body.op === "theme" ? { ok: setTheme(a, (body as { theme?: string | null }).theme ?? null), reason: "not owned" } : body.op === "preset" ? savePreset(a, Number(body.slot ?? 0), String(body.name ?? ""), body.loadout) : body.op === "alias" ? setAlias(a, Number(body.slot ?? 0), String(body.alias ?? "")) : { ok: false, reason: "unknown op" };
+      if (url.pathname !== "/daily") dailyView(a); // rolls the day
+      if (r.ok && url.pathname !== "/daily") {
+        const prev = await this.state.storage.get<Account>(KEY);
+        await this.state.storage.put(KEY, a);
+        if (this.env.DB) {
+          const db = this.env.DB;
+          const acc = a;
+          const fresh = acc.ledger.slice(prev?.ledger.length ?? 0);
+          await withSchema(db, () => saveRow(db, acc, fresh));
+        }
+      }
+      return Response.json(url.pathname === "/daily" ? dailyView(a) : { ...r, account: a, daily: dailyView(a) });
     }
     if (request.method === "POST" && url.pathname === "/ghost") {
       const { id, run } = (await request.json()) as { id: string; run?: unknown };

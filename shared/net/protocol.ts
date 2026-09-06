@@ -5,7 +5,7 @@
 import type { InputFrame } from "../sim/input";
 import type { HitZone } from "../sim/world";
 
-export const PROTOCOL_VERSION = 7;
+export const PROTOCOL_VERSION = 8;
 /** Server snapshot cadence in sim ticks (60 Hz sim → 30 Hz snapshots). */
 export const SNAPSHOT_EVERY = 2;
 /** Lag compensation rewind cap in ticks (200 ms at 60 Hz). */
@@ -306,7 +306,8 @@ export function encodePing(clientTime: number): ArrayBuffer {
 // ---------------------------------------------------------------------------
 // Server → client
 
-export function encodeWelcome(playerId: number, tick: number, token: string, levelName: string, seed: number): ArrayBuffer {
+/** `mode`: "" for a plain wake, `audit:<playlist>:<week>` for an Audit room, `campaign` for co-op — the client applies the same rules it will be judged by. */
+export function encodeWelcome(playerId: number, tick: number, token: string, levelName: string, seed: number, mode = ""): ArrayBuffer {
   const w = new W();
   w.u8(Msg.Welcome);
   w.u8(playerId);
@@ -314,6 +315,7 @@ export function encodeWelcome(playerId: number, tick: number, token: string, lev
   w.str(token);
   w.str(levelName);
   w.u32(seed);
+  w.str(mode);
   return w.done();
 }
 
@@ -525,7 +527,7 @@ export function decodeClientMessage(buf: ArrayBuffer): ClientMessage | null {
 }
 
 export type ServerMessage =
-  | { type: "welcome"; playerId: number; tick: number; token: string; level: string; seed: number }
+  | { type: "welcome"; playerId: number; tick: number; token: string; level: string; seed: number; mode: string }
   | { type: "snapshot"; snapshot: Snapshot; baselineTick: number }
   | { type: "pong"; clientTime: number; tick: number }
   | { type: "kick"; reason: string }
@@ -538,7 +540,10 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
   try {
     const r = new R(buf);
     const t = r.u8();
-    if (t === Msg.Welcome) return { type: "welcome", playerId: r.u8(), tick: r.u32(), token: r.str(), level: r.str(), seed: r.u32() };
+    if (t === Msg.Welcome) {
+      const playerId = r.u8(), tick = r.u32(), token = r.str(), level = r.str(), seed = r.u32();
+      return { type: "welcome", playerId, tick, token, level, seed, mode: r.remaining > 0 ? r.str() : "" };
+    }
     if (t === Msg.Pong) return { type: "pong", clientTime: r.u32(), tick: r.u32() };
     if (t === Msg.Kick) return { type: "kick", reason: r.str() };
     if (t === Msg.File) return { type: "file", file: JSON.parse(r.str()) as FileMsg };

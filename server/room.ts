@@ -6,6 +6,10 @@
  * and supports rejoin by token.
  */
 import { SIM_HZ } from "../shared/sim/constants";
+import { auditErrors, type AuditDef } from "../shared/endgame/audits";
+import { itemById } from "../shared/manifest/items";
+import type { EndgameStore } from "./endgame";
+import type { House } from "../shared/endgame/season";
 import { MAX_BUTTONS } from "../shared/sim/input";
 import { levelById } from "../shared/sim/level";
 import { World, type RewindPose, type SimEvent } from "../shared/sim/world";
@@ -80,6 +84,8 @@ interface ClientRec {
   roundBase: PlayerStats;
   roundStartTick: number;
   settlements: number;
+  /** XP of the last settlement (an Audit's score) */
+  lastSettleXp: number;
   progress: ProgressionTracker;
   /** what others see of this file (Stage 8); refreshed at join, round start and settlement */
   identity: PublicIdentity;
@@ -102,6 +108,10 @@ export interface RoomHooks {
 
 export interface RoomOptions {
   hooks?: RoomHooks;
+  /** an Audit playlist: symmetric rules for every file in the room, scored to the week's leaderboard */
+  audit?: { week: number; def: AuditDef } | null;
+  /** Audit leaderboards and the Deep Wake season (settlement pushes into it) */
+  endgame?: EndgameStore | null;
   /** "warmup" (the wake) or "off" (a campaign contract) */
   wakePhase?: "warmup" | "off";
   dummyRespawn?: boolean;
@@ -137,6 +147,8 @@ export interface RoomStats {
   /** social messages sent, by kind (dossier / debt / rite) */
   social: Record<string, number>;
   campaignStripped: number;
+  audit: { id: string; week: number; scores: number[] } | null;
+  seasonLast: string | null;
   loadoutRejections: string[];
   shotDiag: Record<string, number>;
   traceLog: unknown[];
@@ -183,10 +195,13 @@ export class Room {
       roundSeconds: opts.roundSeconds ?? 360,
       level: opts.level ?? "",
       hooks: opts.hooks ?? {},
+      audit: opts.audit ?? null,
+      endgame: opts.endgame ?? null,
       wakePhase: opts.wakePhase ?? "warmup",
       dummyRespawn: opts.dummyRespawn ?? true,
     };
     this.world = new World(levelById(this.opts.level || undefined), { ai: this.opts.ai, seed: this.opts.seed, wakePhase: this.opts.wakePhase, warmupSeconds: this.opts.warmupSeconds, roundSeconds: this.opts.roundSeconds, dummyRespawn: this.opts.dummyRespawn });
+    if (this.opts.audit) this.world.gravityMult = this.opts.audit.def.gravityMult;
     this.startedAt = this.opts.now();
     this.lastRateAt = this.startedAt;
   }
@@ -336,7 +351,7 @@ export class Room {
           rec.traceSkipUntilSeq = 0;
           rec.strikes = 0;
           this.byConn.set(conn, rec);
-          conn.send(encodeWelcome(rec.playerId, this.tick, rec.token, this.world.level.name, this.world.seed));
+          conn.send(encodeWelcome(rec.playerId, this.tick, rec.token, this.world.level.name, this.world.seed, this.mode()));
           const note: ProgressNote = { stamps: [], ranks: [], challenges: [] };
           rec.progress.onRejoin(note);
           conn.send(encodeFile(this.fileMsg(rec, [], "join", note)));
@@ -368,6 +383,8 @@ export class Room {
 
   /** Validate the claimed loadout against the file, then spawn. Illegal loadouts are refused, never stripped. */
   private admit(conn: Conn, safeName: string, account: Account | null, loadoutJson: string, identityJson = ""): void {
+    // a file first touched by a ledger endpoint (the FILE panel loads before the join) is a placeholder BLANK: the join names it
+    if (account && (!account.name || account.name === "BLANK") && safeName !== "BLANK") account.name = safeName;
     // identity: an equipped moniker is worn only if earned; anything else is ignored, never a kick
     if (account && identityJson) {
       try {
@@ -396,6 +413,10 @@ export class Room {
     const depth = account?.depth ?? 1;
     const v = validateLoadout(raw, owned, depth, account ? ranksOf(account) : {});
     if (!v.ok) return this.rejectLoadout(conn, v.errors.map((e) => `${e.rule}: ${e.detail}`).join("; "));
+    if (this.opts.audit) {
+      const ae = auditErrors(v.loadout, this.opts.audit.def, (id) => itemById(id)?.ring);
+      if (ae.length) return this.rejectLoadout(conn, ae.map((e) => `${e.rule}: ${e.detail}`).join("; "));
+    }
     if (this.clients.size >= this.opts.maxPlayers) return this.kickConn(conn, "room full");
     const playerId = this.nextId++;
     const newToken = `${playerId}-${Math.random().toString(36).slice(2, 12)}-${Math.random().toString(36).slice(2, 12)}`;
@@ -404,6 +425,8 @@ export class Room {
     let c2 = 0;
     for (const p of this.world.players.values()) p.team === 1 ? c1++ : p.team === 2 ? c2++ : 0;
     const player = this.world.addPlayer(playerId, safeName, c1 <= c2 ? 1 : 2, v.loadout);
+    // an Audit's sheet mutator is the same for every file in the room (the client applies it too, from the Welcome)
+    if (this.opts.audit && Object.keys(this.opts.audit.def.sheet).length) this.world.setLoadout(player, v.loadout, this.opts.audit.def.sheet);
     const rec: ClientRec = {
       conn,
       playerId,
@@ -432,6 +455,7 @@ export class Room {
       roundBase: { ...player.stats },
       roundStartTick: this.tick,
       settlements: 0,
+      lastSettleXp: 0,
       progress: new ProgressionTracker(account),
       identity: publicIdentity(account, safeName),
       killedBy: new Map(),
@@ -442,7 +466,7 @@ export class Room {
     const joinNote = rec.progress.fileMilestones({ stamps: [], ranks: [], challenges: [] });
     this.clients.set(playerId, rec);
     this.byConn.set(conn, rec);
-    conn.send(encodeWelcome(playerId, this.tick, newToken, this.world.level.name, this.world.seed));
+    conn.send(encodeWelcome(playerId, this.tick, newToken, this.world.level.name, this.world.seed, this.mode()));
     conn.send(encodeFile(this.fileMsg(rec, [], "join", joinNote)));
     this.resolveDebts();
     for (const other of this.clients.values()) if (other !== rec) other.pendingEvents.push({ type: "join", playerId, name: safeName });
@@ -607,7 +631,17 @@ export class Room {
   }
 
   /** Round start: everyone's credit counts from here. */
+  /** what the Welcome tells a client about the room: "" for a plain wake, `audit:<id>:<week>` for a playlist, `campaign` for co-op */
+  mode(): string {
+    if (this.opts.audit) return `audit:${this.opts.audit.def.id}:${this.opts.audit.week}`;
+    return this.opts.hooks.afterStep ? "campaign" : "";
+  }
+
+  /** flips this round per node id per cell (the Deep Wake reads them at settlement) */
+  private roundFlips = new Map<number, Map<number, number>>();
+
   private beginRound(): void {
+    this.roundFlips.clear();
     for (const rec of this.clients.values()) {
       const p = this.world.players.get(rec.playerId);
       if (!p) continue;
@@ -644,6 +678,7 @@ export class Room {
       this.settlements++;
       if (!rec.account) continue;
       const entry = applyMatch(rec.account, contribution);
+      rec.lastSettleXp = entry.xp.total;
       const note = rec.progress.onRoundEnd(p, contribution.won, contribution.seconds, p.stats.kills === top, this.world.level.name);
       for (const id of note.stamps) entry.lines.push(`STAMP · ${id.toUpperCase().replace(/[:_]/g, " ")}`);
       this.rituals(rec, entry.depthBefore, entry.depthAfter);
@@ -654,7 +689,60 @@ export class Room {
       rec.conn?.send(encodeFile(this.fileMsg(rec, entry.lines, "settle", note)));
     }
     this.resolveDebts();
+    this.pushEndgame(winner);
   }
+
+  /** Audit scores to the week's board; the round's flips to the Deep Wake, by the flipping files' houses. */
+  private pushEndgame(winner: number): void {
+    const store = this.opts.endgame;
+    if (!store) return;
+    const houseOf = (team: number): House[] => {
+      const out: House[] = [];
+      for (const rec of this.clients.values()) {
+        const p = this.world.players.get(rec.playerId);
+        if (!p || p.team !== team) continue;
+        const f = rec.account?.campaign?.faction;
+        out.push(f === "estate" || f === "clockeaters" || f === "cells" ? f : "unaligned");
+      }
+      return out;
+    };
+    if (this.opts.audit) {
+      for (const rec of this.clients.values()) {
+        const a = rec.account;
+        if (!a) continue;
+        const score = rec.lastSettleXp;
+        const best = a.audits && a.audits.week === this.opts.audit.week ? a.audits.best : 0;
+        a.audits = { week: this.opts.audit.week, best: Math.max(best, score), played: (a.audits?.week === this.opts.audit.week ? a.audits.played : 0) + 1 };
+        const saved = store.submitAudit(this.opts.audit.week, { account: a.id, display: rec.identity.display, score, at: this.opts.now() });
+        if (saved instanceof Promise) saved.catch(() => {});
+        this.saveAccount(a);
+        this.auditScores.push(score);
+      }
+    }
+    const flips: { label: string; house: House; count: number }[] = [];
+    for (const [nodeId, byTeam] of this.roundFlips) {
+      const label = this.world.level.nodes.find((n) => n.id === nodeId)?.label ?? String(nodeId);
+      for (const [team, count] of byTeam) {
+        const houses = houseOf(team);
+        if (!houses.length) continue;
+        for (const h of houses) flips.push({ label, house: h, count: count / houses.length });
+      }
+    }
+    const winners = winner ? houseOf(winner) : [];
+    if (flips.length || winners.length) {
+      const pushed = store.pushSeason({ level: this.world.level.name, flips, winners });
+      const done = (st: { last: string | null }) => {
+        this.seasonLast = st.last;
+        if (st.last) this.opts.onLog(`deep wake · ${st.last}`);
+      };
+      if (pushed instanceof Promise) pushed.then(done).catch(() => {});
+      else done(pushed);
+    }
+  }
+
+  /** audit scores submitted this session and the Deep Wake's last line (stats) */
+  private auditScores: number[] = [];
+  private seasonLast: string | null = null;
 
   // ---- simulation ----
 
@@ -728,6 +816,11 @@ export class Room {
           d.nearMissN++;
           if (ev.nearMiss > d.nearMissMax) d.nearMissMax = ev.nearMiss;
         }
+      }
+      if (ev.type === "nodeFlip") {
+        const byTeam = this.roundFlips.get(ev.node) ?? new Map<number, number>();
+        byTeam.set(ev.team, (byTeam.get(ev.team) ?? 0) + 1);
+        this.roundFlips.set(ev.node, byTeam);
       }
       if (ev.type === "phase") {
         if (ev.phase === "wake") this.beginRound();
@@ -931,6 +1024,8 @@ export class Room {
       settlements: this.settlements,
       social: { ...this.social },
       campaignStripped: this.campaignStripped,
+      audit: this.opts.audit ? { id: this.opts.audit.def.id, week: this.opts.audit.week, scores: this.auditScores.slice() } : null,
+      seasonLast: this.seasonLast,
       loadoutRejections: this.loadoutRejections.slice(),
       inputsRejected,
       bytesOut,

@@ -62,6 +62,14 @@ export interface GameHook {
   buy: (nodeId: string, refund?: boolean) => Promise<{ ok: boolean; reason?: string }>;
   /** Sign the post-match receipt (Enter). */
   sign: () => boolean;
+  /** Endgame (Stage 11): the board as the file sees it; claim / rewrite / cosmetics; the Audit room; presets. */
+  endgame: () => Game["file"]["endgame"] & { wakelight: number; rewrites: number; theme: string | null; cosmetics: string[]; presets: { name: string }[]; aliases: string[]; audits: { week: number; best: number; played: number } | null; mode: string; gravity: number };
+  loadEndgame: () => Promise<boolean>;
+  claim: (id: string) => Promise<{ ok: boolean; reason?: string }>;
+  rewrite: () => Promise<{ ok: boolean; reason?: string }>;
+  cosmetic: (body: Record<string, unknown>) => Promise<{ ok: boolean; reason?: string }>;
+  loadPreset: (slot: number) => boolean;
+  joinAudit: () => void;
   /** Campaign (Stage 10): state, dialogue advance/choose, contracts desk, launch, faction, protocols. */
   campaign: () => ReturnType<Game["campaign"]["view"]>;
   dialogueAdvance: (choice?: number) => boolean;
@@ -161,6 +169,13 @@ window.__game = {
   toggleGraph: (on) => game.file.toggleGraph(on),
   buy: (id, refund) => game.file.buy(id, refund),
   sign: () => game.sign(),
+  endgame: () => ({ ...game.file.endgame, wakelight: game.file.accountRecord?.wallet.wakelight ?? game.file.wakelight, rewrites: game.file.accountRecord?.rewrites ?? 0, theme: game.file.accountRecord?.theme ?? null, cosmetics: game.file.accountRecord?.cosmetics ?? [], presets: (game.file.accountRecord?.presets ?? []).map((p) => ({ name: p?.name ?? "" })), aliases: game.file.accountRecord?.aliases ?? [], audits: game.file.accountRecord?.audits ?? null, mode: game.net?.mode ?? "", gravity: game.world.gravityMult }),
+  loadEndgame: () => game.file.loadEndgame(),
+  claim: (id) => game.file.postEndgame("claim", { id }),
+  rewrite: () => game.file.postEndgame("rewrite", {}),
+  cosmetic: (body) => game.file.postEndgame("cosmetic", body),
+  loadPreset: (slot) => game.file.loadPreset(slot),
+  joinAudit: () => game.joinAudit(),
   campaign: () => game.campaign.view(),
   dialogueAdvance: (choice) => game.campaign.advance(choice ?? -1),
   contracts: (on) => game.campaign.toggleContracts(on),

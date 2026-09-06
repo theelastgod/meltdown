@@ -13,6 +13,9 @@ import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import type { FileMsg } from "@shared/net/protocol";
 import { sandboxAccount, type Account, type GhostRun } from "@shared/progression/account";
 import { publicIdentity } from "@shared/identity/identity";
+import { COSMETICS, canRewrite, slotsOf, cosmeticById } from "@shared/endgame/rewrite";
+import type { ContractView } from "@shared/endgame/contracts";
+import type { AuditDef, AuditEntry } from "@shared/endgame/audits";
 import { CHIPS, chipById, type Socket } from "@shared/manifest/chips";
 import { FIRMWARES, firmwareById } from "@shared/manifest/firmwares";
 import { CURRICULA, gateFor, MAX_RANK, xpForRank, type Mastery } from "@shared/progression/mastery";
@@ -118,8 +121,8 @@ export class GhostFile {
     const shop = q.get("shop");
     if (shop && !net) {
       this.shop = shop;
-      void this.load();
-    }
+      void this.load().then(() => this.loadEndgame());
+    } else if (this.shop) void this.loadEndgame();
     this.persist();
   }
 
@@ -128,6 +131,53 @@ export class GhostFile {
   loaded = false;
   /** the whole account as the host last described it (the campaign reads its save from here) */
   accountRecord: Account | null = null;
+  /** endgame (Stage 11): today's board, the week's Audit and leaderboard, the Deep Wake — from the ledger host */
+  endgame: { day: number; contracts: ContractView[]; audit: (AuditDef & { week: number }) | null; board: AuditEntry[]; season: Parameters<import("./hud/hud").Hud["setSeason"]>[0] } = { day: 0, contracts: [], audit: null, board: [], season: null };
+  onEndgame: ((f: GhostFile) => void) | null = null;
+  onJoinAudit: (() => void) | null = null;
+
+  /** Fetch the endgame board (host-wide) and the file's daily progress. */
+  async loadEndgame(): Promise<boolean> {
+    if (!this.shop) return false;
+    try {
+      const [eg, daily] = await Promise.all([fetch(`${this.shop}/endgame`).then((r) => r.json()), fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/daily`).then((r) => r.json())]);
+      const e = eg as { day: number; audit: AuditDef & { week: number }; board: AuditEntry[]; season: GhostFile["endgame"]["season"] };
+      const d = daily as { day: number; contracts: ContractView[] };
+      this.endgame = { day: d.day, contracts: d.contracts, audit: e.audit, board: e.board, season: e.season };
+      this.render();
+      this.onEndgame?.(this);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** claim / rewrite / cosmetic ops on the ledger host; the answer carries the account and today's board */
+  async postEndgame(op: "claim" | "rewrite" | "cosmetic", body: Record<string, unknown>): Promise<{ ok: boolean; reason?: string }> {
+    if (!this.shop) return { ok: false, reason: "no ledger host linked" };
+    try {
+      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/${op}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const r = (await res.json()) as { ok: boolean; reason?: string; account?: Account; daily?: { day: number; contracts: ContractView[] } };
+      if (r.account) this.applyAccount(r.account);
+      if (r.daily) {
+        this.endgame.contracts = r.daily.contracts;
+        this.endgame.day = r.daily.day;
+      }
+      this.render();
+      this.onEndgame?.(this);
+      return { ok: r.ok, reason: r.reason };
+    } catch (e) {
+      return { ok: false, reason: String(e) };
+    }
+  }
+
+  /** Apply a saved preset's raw loadout (validated like any loadout). */
+  loadPreset(slot: number): boolean {
+    const p = this.accountRecord?.presets?.[slot - 1];
+    if (!p || !p.loadout || typeof p.loadout !== "object") return false;
+    this.setRaw({ ...(p.loadout as Record<string, unknown>) });
+    return true;
+  }
   onLoaded: ((f: GhostFile) => void) | null = null;
 
   /** Fetch the file from the ledger host and apply it (offline hub). */
@@ -392,6 +442,16 @@ export class GhostFile {
       else if (act === "keystone") this.setKeystone(id);
       else if (act === "primary" || act === "secondary") this.cycleWeapon(act);
       else if (act === "close") this.toggle(false);
+      else if (act === "claim") void this.postEndgame("claim", { id });
+      else if (act === "rewrite") void this.postEndgame("rewrite", {});
+      else if (act === "buyCosmetic") void this.postEndgame("cosmetic", { op: "buy", id });
+      else if (act === "theme") void this.postEndgame("cosmetic", { op: "theme", id: this.accountRecord?.theme === id ? null : id });
+      else if (act === "savePreset") void this.postEndgame("cosmetic", { op: "preset", slot: Number(id), name: `PRESET ${id}`, loadout: this.raw });
+      else if (act === "loadPreset") this.loadPreset(Number(id));
+      else if (act === "setAlias") {
+        const input = el.querySelector<HTMLInputElement>(`input[data-alias="${id}"]`);
+        void this.postEndgame("cosmetic", { op: "alias", slot: Number(id), alias: input?.value ?? "" });
+      } else if (act === "joinAudit") this.onJoinAudit?.();
     });
     el.addEventListener("change", (e) => {
       const t = e.target as HTMLSelectElement;
@@ -427,6 +487,39 @@ export class GhostFile {
       else if (act === "closeGraph") this.toggleGraph(false);
     });
     this.render();
+  }
+
+  /** Daily contracts, the week's Audit and its board, Rewrite, the Wakelight shop, presets and aliases. */
+  endgameHtml(): string {
+    const eg = this.endgame;
+    const a = this.accountRecord;
+    if (!this.shop) return `<div class="sh">ENDGAME</div><div class="dim">contracts, Audits, the Deep Wake and Rewrite need a ledger host (link a room or open with ?shop=)</div>`;
+    const contracts = eg.contracts.map((c) => `<div class="ct ${c.done ? "done" : ""} ${c.claimed ? "claimed" : ""}"><span>${c.text} <span class="dim">+${c.scrip}¢ +${c.wakelight}◆</span></span><span><span class="bar"><i style="width:${Math.round((100 * c.progress) / c.need)}%"></i></span> ${c.progress}/${c.need} ${c.claimed ? "CLAIMED" : c.done ? `<span class="btn" data-act="claim" data-id="${c.id}">[CLAIM]</span>` : ""}</span></div>`).join("") || "<div class='dim'>loading the board…</div>";
+    const au = eg.audit;
+    const me = this.account;
+    const board = eg.board.slice(0, 10).map((e, i) => `<div class="${e.account === me ? "me" : ""}"><span>${String(i + 1).padStart(2, "0")} ${e.display}</span><span>${e.score}</span></div>`).join("") || "<div class='dim'>no scores yet this week</div>";
+    const myAudit = a?.audits && au && a.audits.week === au.week ? `BEST ${a.audits.best} · ${a.audits.played} PLAYED` : "not played yet";
+    const audit = au ? `<div class="ln"><b>${au.name}</b> · WEEK ${au.week} · ${au.line}${au.weapons.length ? ` · <span class="dim">${au.weapons.join(", ")}</span>` : ""} · <span class="btn" data-act="joinAudit">[JOIN THE AUDIT]</span> <span class="dim">${myAudit}</span></div><div class="board">${board}</div>` : "<div class='dim'>loading…</div>";
+    const rw = a ? canRewrite(a) : { ok: false, reason: "no file" };
+    const rewriteBox = `<div class="rew">REWRITE · ${a?.rewrites ?? 0} SO FAR · ${rw.ok ? `<span class="btn" data-act="rewrite">[BURN THE FILE — KEEP THE STAMPS AND THE GLYPH'S AGE — +500 WAKELIGHT]</span>` : `<span class="dim">${rw.reason}</span>`}</div>`;
+    const slots = a ? slotsOf(a) : { aliases: 1, presets: 1 };
+    const owned = a?.cosmetics ?? [];
+    const shop = COSMETICS.map((c) => `<div class="cos ${owned.includes(c.id) ? "owned" : ""}"><b>${c.name}</b> <span class="dim">${c.line}</span> · ${owned.includes(c.id) ? (c.kind === "theme" ? `<span class="btn" data-act="theme" data-id="${c.id}">[${a?.theme === c.id ? "WORN" : "WEAR"}]</span>` : "OWNED") : `<span class="btn ${(a?.wallet.wakelight ?? 0) >= c.wakelight ? "" : "off"}" data-act="buyCosmetic" data-id="${c.id}">[${c.wakelight}◆]</span>`}</div>`).join("");
+    const presets = Array.from({ length: slots.presets }, (_, i) => {
+      const p = a?.presets?.[i];
+      return `<div class="ct"><span>PRESET ${i + 1} · ${p ? p.name : "<span class='dim'>empty</span>"}</span><span>${p ? `<span class="btn" data-act="loadPreset" data-id="${i + 1}">[LOAD]</span> ` : ""}<span class="btn" data-act="savePreset" data-id="${i + 1}">[SAVE CURRENT]</span></span></div>`;
+    }).join("");
+    const aliases = Array.from({ length: slots.aliases }, (_, i) => `<div class="ct"><span>ALIAS ${i + 1} · ${a?.aliases?.[i] ?? "<span class='dim'>empty</span>"}</span><span><input type="text" maxlength="16" data-alias="${i + 1}" placeholder="a name the city may call you"> <span class="btn" data-act="setAlias" data-id="${i + 1}">[SET]</span></span></div>`).join("");
+    return `<div class="sh">DAILY CONTRACTS · DAY ${eg.day}</div>${contracts}
+      <div class="sh">AUDIT · THE WEEK'S PLAYLIST · LEADERBOARD</div>${audit}
+      <div class="sh">REWRITE · WAKELIGHT ${a?.wallet.wakelight ?? this.wakelight}◆</div>${rewriteBox}
+      <div class="cols"><div><div class="sh">WAKELIGHT SHOP · THEMES · SLOTS</div>${shop}</div><div><div class="sh">PRESETS · ${slots.presets} SLOTS</div>${presets}<div class="sh">ALIASES · ${slots.aliases} SLOTS</div>${aliases}</div></div>`;
+  }
+
+  /** the theme the file wears (palette for the HUD) */
+  themePalette(): { cy: string; gr: string; mg: string; ye: string; am: string } | null {
+    const id = this.accountRecord?.theme;
+    return id ? cosmeticById(id)?.palette ?? null : null;
   }
 
   get isGraphOpen(): boolean {
@@ -564,6 +657,7 @@ export class GhostFile {
           <div class="sh">LEDGER</div><div class="ledger">${v.ledger.length ? v.ledger.map((l) => `<div>${l}</div>`).join("") : "<div class='dim'>no lines yet</div>"}</div>
         </div>
       </div>
+      <div class="eg">${this.endgameHtml()}</div>
       <div class="ft ${v.legal ? "" : "bad"}">NET DELTA: ${delta >= 0 ? "+" : "−"}${Math.abs(delta).toFixed(3)} — ${stamp} · ${v.legal ? "ATTESTATION LEGAL" : "ILLEGAL: " + v.errors.join("; ")} · ${v.applies === "now" ? "APPLIED" : "APPLIES ON NEXT LINK"}</div>
     `;
   }

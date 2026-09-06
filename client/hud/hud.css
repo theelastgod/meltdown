@@ -255,3 +255,25 @@ html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; f
 #hud .card.mg { color: var(--mg); } #hud .card.mg .cl { color: rgba(255,62,201,0.8); }
 #hud .card.ye { color: var(--ye); }
 #hud .card.cy { color: var(--cy); }
+
+/* Stage 11 — endgame */
+#hud .travel .season { margin-top: 8px; border-top: 1px solid rgba(53,242,255,0.35); padding-top: 6px; font-size: 10px; }
+#hud .travel .season .t { color: var(--cy); letter-spacing: 0.1em; margin-bottom: 4px; }
+#hud .travel .season .dw { margin: 2px 0; color: rgba(53,242,255,0.85); }
+#hud .travel .season .dw b { color: #dff9ff; margin-right: 4px; }
+#hud .travel .season .dw i { font-style: normal; color: rgba(255,227,74,0.7); margin-left: 2px; font-size: 9px; }
+#hud .travel .season .h.estate { color: var(--am); } #hud .travel .season .h.clockeaters { color: var(--mg); } #hud .travel .season .h.cells { color: var(--gr); } #hud .travel .season .h.unaligned { color: rgba(53,242,255,0.4); }
+#hud .travel .season .hist { margin-top: 4px; color: rgba(255,176,46,0.85); }
+#hud .file .eg .ct { padding: 3px 6px; margin: 2px 0; border: 1px solid rgba(53,242,255,0.25); display: flex; justify-content: space-between; gap: 8px; }
+#hud .file .eg .ct.done { border-color: var(--gr); }
+#hud .file .eg .ct.claimed { opacity: 0.45; }
+#hud .file .eg .bar { display: inline-block; width: 90px; height: 5px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); vertical-align: middle; position: relative; }
+#hud .file .eg .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--gr); }
+#hud .file .eg .btn { color: var(--ye); cursor: pointer; border: 1px solid rgba(255,227,74,0.4); padding: 1px 6px; }
+#hud .file .eg .btn.off { opacity: 0.4; cursor: default; }
+#hud .file .eg .board div { display: flex; justify-content: space-between; }
+#hud .file .eg .board .me { color: var(--ye); }
+#hud .file .eg .cos { display: block; padding: 2px 4px; border: 1px solid rgba(53,242,255,0.2); margin: 2px 0; }
+#hud .file .eg .cos.owned { border-color: var(--cy); }
+#hud .file .eg .rew { border: 1px solid var(--mg); color: var(--mg); padding: 4px 6px; margin: 4px 0; }
+#hud .file .eg input[type=text] { background: rgba(0,0,0,0.5); color: var(--cy); border: 1px solid rgba(53,242,255,0.4); font-family: var(--mono); font-size: 10px; width: 120px; }

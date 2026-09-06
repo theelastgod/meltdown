@@ -19,7 +19,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 10 | Campaign: three houses and their fixers, 7 missions + 12 gigs on a data-driven runtime, CRT testimony dialogue, Threat Rating, Kernel Protocols behind the PvP wall, weapons 7–8, endings, solo + co-op | **done** | `docs/proof/stage10/` |
 | 9b | City life: crowds, monorail, street vistas through sealed gates, ad tickers, sign flicker, steam, skyline blinkers, airship, soundscape + VANTAGE PA | **done** (the owner repeated the note; the district is now inhabited, not just built) | `docs/proof/stage9b/` |
 | 10 | Campaign | | |
-| 11 | Endgame loops | | |
+| 11 | Endgame loops: daily contracts, weekly Audit playlists with per-week leaderboards, the Deep Wake seasonal district graph, Rewrite prestige + the Wakelight shop (themes, alias and preset slots — never a stat) | **done** | `docs/proof/stage11/` |
 | 11b | The Counter-Ledger: WAKE on Robinhood Chain, WalletConnect link, Ghostfile SBT + stamps, market, names (`docs/TOKENOMICS.md`) | | |
 | 12 | Opening crawl | | |
 | 13 | Polish & ship | | |
@@ -57,6 +57,94 @@ timestep independent of render rate, and provable headlessly.
   never calls into it.
 - `window.__game` exposes state, deterministic `advance(n)`, and a scripted
   `Bot` so every later stage's probe is a plan, not a replay of mouse input.
+
+## Stage 11 — Endgame loops
+
+**Goal.** Reasons to come back that are all made of matches: three DAILY
+CONTRACTS a day scored from the file's own lifetime counters, a weekly
+AUDIT playlist (rules, sheet mutators, gravity) with a per-week
+leaderboard, the DEEP WAKE — a 28-day seasonal district graph that only
+settled rounds can move — and REWRITE, the prestige at Depth 50 that burns
+the file and pays Wakelight, which buys CRT themes, alias slots and preset
+slots and nothing that touches a stat. No wagering, no staking, nothing to
+buy that helps you shoot.
+
+**Files.**
+- `shared/endgame/clock.ts` — the UTC day / week / season index, the
+  season week, a seeded LCG and `pickDistinct()` so every host offers the
+  same three contracts and the same playlist on the same day.
+- `shared/endgame/contracts.ts` — an 18-contract pool, `contractsFor(day)`
+  picks three; `dailyOf()` snapshots the counters at the day's start so
+  progress is the delta since then; `claimContract()` pays Scrip and
+  Wakelight once and refuses with the progress otherwise.
+- `shared/endgame/audits.ts` — eight playlists (PELLET WEEK, GLASS, LONG
+  LEASE, NO KEYSTONE, RING ONE, LOW LEASE, HEAVY AIR, STACK & PHAGE) each
+  made of a weapon allow-list, a `noKeystone` / `ringOnly` rule, a sheet
+  mutator (the same `setLoadout` extra the campaign uses) and a gravity
+  multiplier; `auditErrors()` refuses a banned loadout with the rule;
+  `leaderboard()` keeps the best score per file.
+- `shared/endgame/season.ts` — three districts × nodes A–E, each held by
+  a house (ESTATE / CLOCKEATERS / CELLS / unaligned); `applyRound()` adds
+  the round's flips as pressure toward the flipping files' houses (+1 on
+  every held node for the winning cell's houses); a node turns at pressure
+  6 when the challenger strictly out-presses the holder (the holder
+  defends a tie); `rollSeason()` writes the closing log from the real data
+  and resets pressure, holdings carry over; `seasonView()` is the MAP tab.
+- `shared/endgame/rewrite.ts` — `rewrite()` at Depth 50 resets XP, Depth,
+  Scrip, Salvage, attested nodes, loadout, mastery and Debts, keeps stamps,
+  counters, moniker, chapters, cosmetics and campaign, and pays 500
+  Wakelight; four themes with palettes, two alias slots and four preset
+  slots bought in order; `setTheme` / `savePreset` / `setAlias`.
+- `shared/sim/player.ts`, `shared/sim/world.ts` — `gravityMult` threaded
+  into `stepPlayer()` so an Audit's gravity runs identically on the room
+  and the predicting client.
+- `shared/net/protocol.ts` (v8) — the Welcome carries a `mode` string
+  (`audit:<id>:<week>`); the client re-applies the same sheet and gravity.
+- `server/endgame.ts` (`EndgameStore`, memory), `server/endgame-do.ts`
+  (the `Endgame` Durable Object: `/audit?week=`, `/season`),
+  `server/room.ts` (`audit` + `endgame` options: refuse at admit, sheet at
+  join, scores + flips pushed at settlement, `audit` / `seasonLast` in
+  stats), `server/node-host.ts` + `server/worker.ts` + `server/player-do.ts`
+  (`GET /endgame`, `/file/:id/daily`, `POST /file/:id/claim|rewrite|cosmetic`,
+  the `?audit=1` room), `wrangler.toml` (ENDGAME binding, migration v3).
+- `client/file.ts` (the ENDGAME section: contracts with CLAIM, the Audit
+  and its board, JOIN THE AUDIT, the Rewrite box, the shop, presets,
+  aliases), `client/game.ts` (Audit join, mode parse, the HUD line),
+  `client/hud/hud.ts` (`setTheme()` swaps the palette variables;
+  `setSeason()` draws the Deep Wake on the MAP tab), `client/main.ts` hooks.
+- `tests/endgame.test.ts` (6), `probe/stage11.ts`.
+
+**Design decisions.**
+- Contracts read the file's counters, so nothing new is tracked and a
+  contract can never be farmed against a private tally; the day base is a
+  snapshot the file itself carries.
+- An Audit is a room option, not a game mode: the same room, the same
+  settlement, one extra refusal at the door and one extra push at the end.
+  A playlist that bans the lease-breaker still lets a Depth-1 file in only
+  if it can hold a listed weapon at all — weapon-depth stays the first rule.
+- The Deep Wake is moved by flips attributed to houses through the
+  campaign's faction choice; unaligned files push nothing, so a house has to
+  be chosen in the story before a file can move the map.
+- Rewrite keeps the counters and the stamps because the glyph's age and the
+  attestations are the file's history; everything that is power resets.
+  Wakelight is the only currency Rewrite pays and the shop takes, and
+  every item in it is a palette, a name or a slot.
+
+**Acceptance (`npm run probe:endgame`, 13/13; `npm test`, 139 tests):**
+the host serves today's three contracts, the week's playlist and an empty
+season; the FILE panel shows the contracts with delta progress, the Audit,
+Rewrite and the shop; a contract cannot be claimed before it is done; the
+playlist's mutators reach the sheet and gravity; the Welcome names the
+playlist and the client runs the same gravity (×0.6) and shield the room
+runs; a settled Audit round lands both files on the week's board (best per
+file) and on each file's record; ALPHA's one real flip at B pushes +1 CELLS
+pressure on LEASE ROW B and writes the season line; the MAP tab shows the
+season, holders, pressure leaders and the last lines; REWRITE at Depth 50
+takes the file to Depth 1 / XP 0 / Scrip 0 with the 12 stamps intact and
+500 Wakelight paid; a second Rewrite waits for Depth 50; Wakelight buys
+AMBER and the HUD's `--cy` becomes `#ffd27a`; preset slot 3 is refused
+before slot 2, a preset saves and loads back, an alias slot takes a name;
+no page errors.
 
 ## Stage 11b — The Counter-Ledger
 

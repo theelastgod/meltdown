@@ -48,6 +48,8 @@ export class NetClient {
   status: "connecting" | "joined" | "closed" | "kicked" = "connecting";
   kickReason = "";
   levelName = "";
+  /** the room's mode from the Welcome: "", `audit:<id>:<week>`, or `campaign` */
+  mode = "";
   /** Room seed from Welcome: magazine seeds derive from it on both sides. */
   seed = 1;
   rttMs = 0;
@@ -151,6 +153,7 @@ export class NetClient {
         this.token = msg.token;
         this.levelName = msg.level;
         this.seed = msg.seed;
+        this.mode = msg.mode;
         this.status = "joined";
         this.stats.joinedAtMs = performance.now();
         this.latestTick = msg.tick;

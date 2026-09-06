@@ -1,0 +1,204 @@
+{
+  "results": {
+    "endgame": {
+      "audit": "low_lease",
+      "board": [
+        {
+          "account": "sandbox-eg",
+          "display": "BLANK",
+          "score": 1090,
+          "at": 1788654663593
+        },
+        {
+          "account": "fresh-eg",
+          "display": "BLANK",
+          "score": 250,
+          "at": 1788654663593
+        }
+      ],
+      "season": {
+        "season": 739,
+        "week": 2,
+        "rounds": 1,
+        "held": {
+          "estate": 0,
+          "clockeaters": 0,
+          "cells": 0,
+          "unaligned": 15
+        },
+        "districts": {
+          "lease_row": [
+            {
+              "label": "A",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            },
+            {
+              "label": "B",
+              "house": "unaligned",
+              "pressure": 1,
+              "leader": "cells"
+            },
+            {
+              "label": "C",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            },
+            {
+              "label": "D",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            },
+            {
+              "label": "E",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            }
+          ],
+          "deadletter_docks": [
+            {
+              "label": "A",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            },
+            {
+              "label": "B",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            },
+            {
+              "label": "C",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            },
+            {
+              "label": "D",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            },
+            {
+              "label": "E",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            }
+          ],
+          "repo_depot": [
+            {
+              "label": "A",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            },
+            {
+              "label": "B",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            },
+            {
+              "label": "C",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            },
+            {
+              "label": "D",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            },
+            {
+              "label": "E",
+              "house": "unaligned",
+              "pressure": 0,
+              "leader": "unaligned"
+            }
+          ]
+        },
+        "history": [],
+        "last": "S739 W2 · LEASE ROW · 1 FLIPS"
+      },
+      "rewrite": {
+        "before": 50,
+        "after": 1,
+        "wakelight": 500
+      }
+    }
+  },
+  "checks": [
+    {
+      "name": "the ledger host serves today's three contracts, the week's Audit playlist and an empty Deep Wake season",
+      "pass": true,
+      "detail": "day 20702 · [longwave_3, matches_3, heads_3] · audit low_lease week 2957 · season 739 w2"
+    },
+    {
+      "name": "the FILE panel shows the day's contracts with progress as the counter delta since the day began, the Audit, Rewrite and the Wakelight shop",
+      "pass": true,
+      "detail": "contracts longwave_3:0 matches_3:0 heads_3:0 · audit LOW LEASE"
+    },
+    {
+      "name": "a contract cannot be claimed before it is done (the answer is the progress)",
+      "pass": true,
+      "detail": "claim longwave_3: 0/3"
+    },
+    {
+      "name": "the playlist has no loadout rule this week (LOW LEASE); its mutators are on the sheet and gravity",
+      "pass": true,
+      "detail": "Gravity ×0.6, slide boost +25%. The city floats."
+    },
+    {
+      "name": "the Welcome names the playlist and the client runs the same gravity and sheet the room runs",
+      "pass": true,
+      "detail": "mode audit:low_lease:2957 · gravity 0.6 · shield 30 · move ×1 range ×1"
+    },
+    {
+      "name": "the settled Audit round lands on the week's leaderboard (best per file) and on each file",
+      "pass": true,
+      "detail": "scores [250, 1090] · board BLANK:1090 BLANK:250 · ALPHA best 1090"
+    },
+    {
+      "name": "the Deep Wake: the round's flips push pressure toward the flipping file's house (cells at B), written from the real round",
+      "pass": true,
+      "detail": "ALPHA flips 1 · B leader cells +1 · \"S739 W2 · LEASE ROW · 1 FLIPS\""
+    },
+    {
+      "name": "the MAP tab shows the Deep Wake: the season, who holds each node, the pressure leader and the last lines",
+      "pass": true,
+      "detail": "▲ DEEP WAKE · SEASON 739 · WEEK 2 · ESTATE 0 · CLOCKEATERS 0 · CELLS 0LEASE ROW A — · B —+1 CEL · C — · D — · E —DEADLETTER DOCKS A — · B — · C — · D — · E —REP"
+    },
+    {
+      "name": "REWRITE at Depth 50 burns the file — Depth 1, XP 0, Scrip 0, nodes gone — keeps the stamps and the counters (the glyph's age) and pays 500 Wakelight",
+      "pass": true,
+      "detail": "depth 50 → 1 · stamps 12 → 12 · wakelight 0 → 500"
+    },
+    {
+      "name": "a second Rewrite waits for Depth 50 again",
+      "pass": true,
+      "detail": "Depth 1 — Rewrite opens at 50"
+    },
+    {
+      "name": "Wakelight buys a CRT theme and the HUD wears it (the palette variables change); never a stat",
+      "pass": true,
+      "detail": "--cy #ffd27a · theme theme_amber · wakelight 380"
+    },
+    {
+      "name": "preset slots come in order, a preset saves the current loadout to the file and loads back; an alias slot takes a name",
+      "pass": true,
+      "detail": "slot3 first: needs preset slot 2 first · presets [, SMG KIT] · alias true"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": "clean console"
+    }
+  ]
+}

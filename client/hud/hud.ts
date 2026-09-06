@@ -130,6 +130,32 @@ export class Hud {
     this.q(".prompt").classList.toggle("off", locked);
   }
 
+  /** A CRT theme: swap the palette variables on the HUD root (null: the default). */
+  setTheme(palette: { cy: string; gr: string; mg: string; ye: string; am: string } | null): void {
+    const root = this.q(".status").parentElement as HTMLElement;
+    for (const k of ["cy", "gr", "mg", "ye", "am"] as const) {
+      if (palette) root.style.setProperty(`--${k}`, palette[k]);
+      else root.style.removeProperty(`--${k}`);
+    }
+    root.dataset.theme = palette ? "custom" : "";
+  }
+
+  /** The Deep Wake on the MAP tab: per district, who holds each node, and the season's last lines. */
+  setSeason(v: { season: number; week: number; held: Record<string, number>; districts: Record<string, { label: string; house: string; leader: string; pressure: number }[]>; history: string[] } | null): void {
+    let el = this.q(".travel .season");
+    if (!el) {
+      el = document.createElement("div");
+      el.className = "season";
+      this.q(".travel").appendChild(el);
+    }
+    if (!v) {
+      el.innerHTML = "";
+      return;
+    }
+    const house = (h: string) => `<span class="h ${h}">${h === "unaligned" ? "—" : h.toUpperCase()}</span>`;
+    el.innerHTML = `<div class="t">▲ DEEP WAKE · SEASON ${v.season} · WEEK ${v.week} <span class="dim">· ESTATE ${v.held["estate"] ?? 0} · CLOCKEATERS ${v.held["clockeaters"] ?? 0} · CELLS ${v.held["cells"] ?? 0}</span></div>${Object.entries(v.districts).map(([d, nodes]) => `<div class="dw"><b>${d.replace(/_/g, " ").toUpperCase()}</b> ${nodes.map((n) => `${n.label} ${house(n.house)}${n.pressure > 0 ? `<i>+${n.pressure.toFixed(0)} ${n.leader.slice(0, 3).toUpperCase()}</i>` : ""}`).join(" · ")}</div>`).join("")}<div class="hist">${v.history.slice(-4).map((l) => `<div>» ${l}</div>`).join("") || "<div class='dim'>no rounds have moved the graph yet</div>"}</div>`;
+  }
+
   /** The local file's identity in the status line: glyph, what the city calls you, and the moniker. */
   setIdentity(glyphSvg: string, display: string, moniker: string | null, chapter: number): void {
     this.q(".glyph").innerHTML = glyphSvg;

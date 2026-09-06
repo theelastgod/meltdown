@@ -134,6 +134,8 @@ export class World {
   readonly mechs: Mech[] = [];
   readonly wake: WakeState | null;
   private pending: SimEvent[] = [];
+  /** an Audit playlist's gravity (symmetric for every file in the room; 1 outside an Audit) */
+  gravityMult = 1;
   private nextSpawn = 0;
   private nextProjId = 1;
   private nextCloudId = 1;
@@ -272,7 +274,7 @@ export class World {
   /** Apply one input to one player: movement + weapon; resolve its fire requests. */
   applyInput(p: PlayerState, input: TickInput, opts: StepOpts = {}): void {
     const events: PlayerEvent[] = [];
-    const reqs = stepPlayer(p, input, this.level.boxes, events, this.seed);
+    const reqs = stepPlayer(p, input, this.level.boxes, events, this.seed, this.gravityMult);
     for (const ev of events) this.emit({ tick: this.tick, playerId: p.id, ...ev }, opts);
     if (!p.alive) return;
     for (const r of reqs) this.resolveRequest(p, r, input.viewTick ?? this.tick, opts);

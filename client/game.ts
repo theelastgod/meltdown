@@ -16,6 +16,7 @@ import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetIn
 import { glyphFor, glyphSvg } from "@shared/identity/glyph";
 import { RangeGhost } from "./ghost";
 import { Campaign } from "./campaign";
+import { AUDITS } from "@shared/endgame/audits";
 import { emptyInput } from "@shared/sim/input";
 import { trophiesFromLedger } from "./render/hub";
 import { monikerById } from "@shared/identity/monikers";
@@ -143,6 +144,11 @@ export class Game {
     this.file.onIdentity = (f) => this.applyIdentity(f.identityView());
     this.applyIdentity(this.file.identityView());
     this.campaign = new Campaign(this);
+    this.file.onEndgame = (f) => {
+      this.hud.setTheme(f.themePalette());
+      this.hud.setSeason(f.endgame.season);
+    };
+    this.file.onJoinAudit = () => this.joinAudit();
     // the contracts panel's clicks
     hudRoot.querySelector(".contracts")?.addEventListener("click", (e) => {
       const t = (e.target as HTMLElement).closest("[data-act],[data-launch],[data-wear],[data-explore]") as HTMLElement | null;
@@ -155,6 +161,10 @@ export class Game {
     // the campaign starts once the file is known: at once offline, after the ledger host answers with ?shop=
     if (this.file.shop && !this.online) this.file.onLoaded = () => this.campaign.start();
     else this.campaign.start();
+    this.file.onChange = ((prev) => (f: GhostFile) => {
+      prev?.(f);
+      this.hud.setTheme(f.themePalette());
+    })(this.file.onChange);
     if (this.world.level.hub) {
       this.ghost = new RangeGhost(this.world.level.hub, this.levelId, `meltdown.ghost.${this.file.account}.${this.levelId}`);
       this.ghost.onFinish = (run, improved) => {
@@ -194,6 +204,20 @@ export class Game {
     const v = this.file.identityView();
     this.renderer.hub.set({ chapter: v.chapter, named: v.chapter >= 3 ? v.display : null, trophies: trophiesFromLedger(this.file.ledger) });
     this.ghost?.adopt(this.file.ghosts[this.levelId]);
+  }
+
+  /** Travel into this week's Audit room on the linked ledger host (a plain wake elsewhere becomes the playlist). */
+  joinAudit(): void {
+    const shop = this.file.shop;
+    const au = this.file.endgame.audit;
+    if (!shop || !au) return;
+    const ws = shop.replace(/^http/, "ws");
+    const u = new URL(location.href);
+    u.searchParams.set("net", `${ws}/room/audit-${au.week}?audit=1&level=${this.levelId}`);
+    u.searchParams.delete("mission");
+    u.searchParams.delete("explore");
+    this.renderer.post.kick(1);
+    setTimeout(() => location.replace(u.toString()), 120);
   }
 
   /** Sign the post-match Ledger Entry (Enter). The receipt must have finished printing. */
@@ -285,6 +309,14 @@ export class Game {
         }
         (this.world as { seed: number }).seed = net.seed;
         this.player = this.world.addPlayer(net.playerId, cfg.name, 1, this.file.admitted ?? this.file.localLoadout());
+        // an Audit room: the same symmetric rules the room runs, so prediction agrees
+        const am = net.mode.match(/^audit:([a-z_]+):(\d+)$/);
+        const audit = am ? AUDITS.find((x) => x.id === am[1]) : undefined;
+        if (audit) {
+          this.world.gravityMult = audit.gravityMult;
+          if (Object.keys(audit.sheet).length) this.world.setLoadout(this.player, this.file.admitted ?? this.file.localLoadout(), audit.sheet);
+          this.hud.push(`AUDIT · ${audit.name} · ${audit.line}`, "am");
+        }
         this.input.yaw = this.player.yaw;
         this.hud.push(`LINKED · ROOM ${cfg.url.split("/").pop()} · FILE #${net.playerId}`, "cy");
       } else this.hud.push(`LINK ${st.toUpperCase()}${net.kickReason ? " · " + net.kickReason : ""}`, "mg");

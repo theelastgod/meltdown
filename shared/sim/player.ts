@@ -239,7 +239,7 @@ function findMantle(p: PlayerState, boxes: readonly Box[]): Vec3 | null {
  * Advance one player one fixed tick. Pure: only mutates `p`. Emits events into
  * `events`. Returns the weapon's fire requests for the world to resolve.
  */
-export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Box[], events: PlayerEvent[], roomSeed = 1): FireRequest[] {
+export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Box[], events: PlayerEvent[], roomSeed = 1, gravityMult = 1): FireRequest[] {
   const dt = SIM_DT;
   const r = MOVE.capsuleRadius;
 
@@ -452,7 +452,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
   }
 
   // ---- Gravity ----
-  if (!p.grounded) p.vel.y = Math.max(-MOVE.terminalVel, p.vel.y - MOVE.gravity * dt);
+  if (!p.grounded) p.vel.y = Math.max(-MOVE.terminalVel, p.vel.y - MOVE.gravity * gravityMult * dt);
   else if (p.vel.y < 0) p.vel.y = 0;
 
   // ---- Integrate with collision (substeps + step-up) ----

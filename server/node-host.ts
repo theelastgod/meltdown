@@ -17,11 +17,19 @@ import { devSeed, MemoryAccountStore } from "./accounts";
 import { buyNode, recordGhost, refundNode, validGhost } from "../shared/progression/account";
 import { campaignRequest } from "../shared/campaign/endpoint";
 import { createCampaignRoom, type CampaignRoomHandle } from "./campaign-room";
+import { MemoryEndgameStore, seasonView } from "./endgame";
+import { currentAudit } from "../shared/endgame/audits";
+import { contractsFor } from "../shared/endgame/contracts";
+import { claimContract, dailyView } from "../shared/endgame/contracts";
+import { dayIndex } from "../shared/endgame/clock";
+import { buyCosmetic, rewrite, savePreset, setAlias, setTheme } from "../shared/endgame/rewrite";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 8787);
 const rooms = new Map<string, Room>();
 /** One Ghostfile store for the whole host: "sandbox*" ids own every node, anything else starts Blank. */
 const accounts = new MemoryAccountStore(devSeed);
+/** Audit boards and the Deep Wake season, in memory */
+const endgame = new MemoryEndgameStore();
 const logs: string[] = [];
 const log = (line: string) => {
   logs.push(`${new Date().toISOString()} ${line}`);
@@ -46,10 +54,10 @@ function startLoop(room: Room): void {
   setTimeout(loop, 0);
 }
 
-function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: number, roundSeconds?: number, level?: string): Room {
+function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: number, roundSeconds?: number, level?: string, audit = false): Room {
   let r = rooms.get(name);
   if (!r) {
-    r = new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, onLog: (l) => log(`[${name}] ${l}`) });
+    r = new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, endgame, audit: audit ? { week: currentAudit().week, def: currentAudit().audit } : null, onLog: (l) => log(`[${name}] ${l}`) });
     rooms.set(name, r);
     startLoop(r);
   }
@@ -75,13 +83,19 @@ const http = createServer((req, res) => {
     res.end();
     return;
   }
-  const file = req.url?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|campaign))?$/);
+  if (req.url?.startsWith("/endgame")) {
+    const { week, audit } = currentAudit();
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ day: dayIndex(), contracts: contractsFor(dayIndex()), audit: { week, ...audit }, board: endgame.audit(week), season: seasonView(endgame.season()) }));
+    return;
+  }
+  const file = req.url?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|campaign|daily|claim|rewrite|cosmetic))?$/);
   if (file) {
     const id = file[1]!;
     const name = "BLANK";
     if (req.method === "GET") {
       res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify(accounts.load(id, name)));
+      res.end(JSON.stringify(file[3] === "daily" ? dailyView(accounts.load(id, name)) : accounts.load(id, name)));
       return;
     }
     if (req.method === "POST" && file[3]) {
@@ -89,14 +103,26 @@ const http = createServer((req, res) => {
       req.on("data", (c) => (body += c));
       req.on("end", () => {
         let node = "";
-        let parsed: { node?: string; run?: unknown; op?: string } = {};
+        let parsed: Record<string, unknown> = {};
         try {
-          parsed = JSON.parse(body || "{}") as { node?: string; run?: unknown; op?: string };
-          node = String(parsed.node ?? "");
+          parsed = JSON.parse(body || "{}") as Record<string, unknown>;
+          node = String((parsed as { node?: unknown }).node ?? "");
         } catch {
           node = "";
         }
         const a = accounts.load(id, name);
+        if (file[3] === "claim" || file[3] === "rewrite" || file[3] === "cosmetic") {
+          const body = parsed as { id?: string; op?: string; slot?: number; name?: string; loadout?: unknown; alias?: string };
+          let r: { ok: boolean; reason?: string };
+          if (file[3] === "claim") r = claimContract(a, String(body.id ?? ""));
+          else if (file[3] === "rewrite") r = rewrite(a);
+          else r = body.op === "buy" ? buyCosmetic(a, String(body.id ?? "")) : body.op === "theme" ? { ok: setTheme(a, body.id ? String(body.id) : null), reason: "not owned" } : body.op === "preset" ? savePreset(a, Number(body.slot ?? 0), String(body.name ?? ""), body.loadout) : body.op === "alias" ? setAlias(a, Number(body.slot ?? 0), String(body.alias ?? "")) : { ok: false, reason: "unknown op" };
+          if (r.ok) accounts.save(a);
+          log(`[file] ${id} ${file[3]} ${body.op ?? body.id ?? ""}: ${r.ok ? "ok" : r.reason}`);
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ ...r, account: a, daily: dailyView(a) }));
+          return;
+        }
         if (file[3] === "campaign") {
           // the campaign save: faction, contract completions (rewards), worn protocols — never the match room's business
           const r = campaignRequest(a, parsed);
@@ -108,7 +134,7 @@ const http = createServer((req, res) => {
         }
         if (file[3] === "ghost") {
           // a range ghost: kept when it is the best run of its course; the client never reads anything mechanical back from it
-          const run = validGhost(parsed.run);
+          const run = validGhost((parsed as { run?: unknown }).run);
           const ok = run ? recordGhost(a, run) : false;
           if (ok) accounts.save(a);
           log(`[file] ${id} ghost ${run ? run.level + " " + run.seconds.toFixed(2) + "s" : "malformed"}: ${ok ? "kept" : "not kept"}`);
@@ -148,7 +174,7 @@ wss.on("connection", (ws: WebSocket, req) => {
     return;
   }
   const num = (k: string) => (url.searchParams.has(k) ? Number(url.searchParams.get(k)) : undefined);
-  const room = m[1] === "campaign" ? getCampaignRoom(m[2]!, url.searchParams.get("mission") ?? "g_escrow_row").room : getRoom(m[2]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"), url.searchParams.get("level") ?? undefined);
+  const room = m[1] === "campaign" ? getCampaignRoom(m[2]!, url.searchParams.get("mission") ?? "g_escrow_row").room : getRoom(m[2]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"), url.searchParams.get("level") ?? undefined, url.searchParams.get("audit") === "1");
   ws.binaryType = "arraybuffer";
   const conn: Conn = {
     send: (buf) => {

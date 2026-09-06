@@ -37,6 +37,14 @@ export interface Account {
   ghosts: Record<string, GhostRun>;
   /** the campaign save (Stage 10): plain data; the power it names lives in shared/campaign, which the PvP room never imports */
   campaign?: CampaignRecord;
+  /** endgame (Stage 11): the day's contracts, the week's Audit, Rewrite count, Wakelight cosmetics */
+  daily?: { day: number; base: Record<string, number>; claimed: string[] };
+  audits?: { week: number; best: number; played: number };
+  rewrites?: number;
+  cosmetics?: string[];
+  theme?: string | null;
+  presets?: { name: string; loadout: unknown }[];
+  aliases?: string[];
 }
 
 export interface CampaignRecord {
@@ -105,6 +113,11 @@ export function upgradeAccount(a: Partial<Account> & { id: string }): Account {
   if (out.debt === undefined) out.debt = null;
   if (!out.social) out.social = {};
   if (!out.ghosts) out.ghosts = {};
+  if (out.rewrites === undefined) out.rewrites = 0;
+  if (!out.cosmetics) out.cosmetics = [];
+  if (out.theme === undefined) out.theme = null;
+  if (!out.presets) out.presets = [];
+  if (!out.aliases) out.aliases = [];
   if (!out.loadout.chips) out.loadout.chips = {};
   if (!out.loadout.firmware) out.loadout.firmware = {};
   return out;

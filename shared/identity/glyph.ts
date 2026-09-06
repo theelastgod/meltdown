@@ -118,8 +118,26 @@ export function glyphSvg(g: Glyph, size: number, color: string): string {
   return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">${parts.join("")}</svg>`;
 }
 
+/** The slice of a 2D canvas context the glyph drawer uses (structural, so the server build needs no DOM lib). */
+export interface GlyphCanvas {
+  save(): void;
+  restore(): void;
+  strokeStyle: unknown;
+  fillStyle: unknown;
+  lineCap: string;
+  lineWidth: number;
+  beginPath(): void;
+  closePath(): void;
+  setLineDash(segments: number[]): void;
+  arc(x: number, y: number, r: number, a0: number, a1: number): void;
+  moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
+  stroke(): void;
+  fill(): void;
+}
+
 /** Draw the glyph onto a 2D canvas (the renderer's over-the-head tags). */
-export function drawGlyph(ctx: CanvasRenderingContext2D, g: Glyph, cx: number, cy: number, R: number, color: string): void {
+export function drawGlyph(ctx: GlyphCanvas, g: Glyph, cx: number, cy: number, R: number, color: string): void {
   ctx.save();
   ctx.strokeStyle = color;
   ctx.fillStyle = color;

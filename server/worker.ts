@@ -4,12 +4,18 @@
  */
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
 import { DoAccountStore, PlayerFile } from "./player-do";
+import { DoEndgameStore, Endgame } from "./endgame-do";
+import { seasonView } from "./endgame";
+import { currentAudit } from "../shared/endgame/audits";
+import { contractsFor } from "../shared/endgame/contracts";
+import { dayIndex } from "../shared/endgame/clock";
 
-export { PlayerFile };
+export { PlayerFile, Endgame };
 
 export interface Env {
   MATCH_ROOM: DurableObjectNamespace;
   PLAYER_FILE: DurableObjectNamespace;
+  ENDGAME: DurableObjectNamespace;
   DB?: D1Database;
 }
 
@@ -21,13 +27,21 @@ export default {
       const id = env.MATCH_ROOM.idFromName(m[1]!);
       return env.MATCH_ROOM.get(id).fetch(request);
     }
-    const f = url.pathname.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost))?$/);
+    if (url.pathname === "/endgame") {
+      const store = new DoEndgameStore(env.ENDGAME);
+      const { week, audit } = currentAudit();
+      const body = { day: dayIndex(), contracts: contractsFor(dayIndex()), audit: { week, ...audit }, board: await store.audit(week), season: seasonView(await store.season()) };
+      return new Response(JSON.stringify(body), { headers: { "access-control-allow-origin": "*", "content-type": "application/json" } });
+    }
+    const f = url.pathname.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|daily|claim|rewrite|cosmetic))?$/);
     if (f) {
       const id = env.PLAYER_FILE.idFromName(f[1]!);
       const stub = env.PLAYER_FILE.get(id);
       const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" };
       if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-      const res = f[3] && request.method === "POST"
+      const res = f[3] === "daily"
+        ? await stub.fetch(new Request("https://file/daily", { method: "POST", body: JSON.stringify({ id: f[1] }) }))
+        : f[3] && request.method === "POST"
         ? await stub.fetch(new Request(`https://file/${f[3]}`, { method: "POST", body: JSON.stringify({ id: f[1], ...((await request.json().catch(() => ({}))) as object) }) }))
         : await stub.fetch(new Request("https://file/file", { method: "POST", body: JSON.stringify({ id: f[1], name: "BLANK" }) }));
       return new Response(res.body, { status: res.status, headers: { ...cors, "content-type": "application/json" } });
@@ -51,7 +65,10 @@ export class MatchRoom implements DurableObject {
 
   /** The room is built on first contact so the opening URL can pick the district (`?level=`). */
   private roomFor(url: URL): Room {
-    if (!this.room) this.room = new Room({ accounts: new DoAccountStore(this.env.PLAYER_FILE), level: url.searchParams.get("level") ?? undefined, ai: url.searchParams.get("ai") !== "0" });
+    if (!this.room) {
+      const audit = url.searchParams.get("audit") === "1" ? { week: currentAudit().week, def: currentAudit().audit } : null;
+      this.room = new Room({ accounts: new DoAccountStore(this.env.PLAYER_FILE), endgame: new DoEndgameStore(this.env.ENDGAME), audit, level: url.searchParams.get("level") ?? undefined, ai: url.searchParams.get("ai") !== "0" });
+    }
     return this.room;
   }
 

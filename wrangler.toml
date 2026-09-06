@@ -6,6 +6,7 @@ compatibility_date = "2025-06-01"
 bindings = [
   { name = "MATCH_ROOM", class_name = "MatchRoom" },
   { name = "PLAYER_FILE", class_name = "PlayerFile" },
+  { name = "ENDGAME", class_name = "Endgame" },
 ]
 
 [[migrations]]
@@ -15,6 +16,10 @@ new_classes = ["MatchRoom"]
 [[migrations]]
 tag = "v2"
 new_classes = ["PlayerFile"]
+
+[[migrations]]
+tag = "v3"
+new_classes = ["Endgame"]
 
 # Ghostfile rows. Create with `npx wrangler d1 create meltdown-ghostfile`, paste the id here,
 # then `npx wrangler d1 execute meltdown-ghostfile --file=server/schema.sql`.

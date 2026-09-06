@@ -30,6 +30,7 @@ npm run lint:fairness -- --quick # Fairness Lint: every candidate build duelled 
 npm run probe:file # Ghostfile: lint injections fail, illegal loadouts refused at spawn, a round settles XP/Scrip
 npm run probe:city # Lethe proper: three districts load, bots route the streets and climb the walkway, frames read like the clip, budgets hold
 npm run probe:cityLife # city life: crowds walk, the monorail crosses and whooshes, gates seal the exits while vistas continue the city, PA and sirens on the sim clock
+npm run probe:endgame # endgame: daily contracts, the week's Audit room (rules, gravity, sheet, leaderboard), the Deep Wake, Rewrite + the Wakelight shop
 npm run certify:firmware # every firmware measured in the TTK harness at its ideal range (must sit in the band)
 npm run probe:mastery # Ledger Graph + mastery: lint over nodes/chips/firmwares, chips and firmwares enforced at spawn, ledger shop, stamps un-redact online
 npm run probe:identity # identity & rituals: dossier flash, tags, tiered kill audio, Debts, receipt, Chapter rite, leak scan, Deadletter Office + range ghost
