@@ -148,7 +148,7 @@ async function main(): Promise<void> {
     const titled = await b.waitForFunction(() => window.__game.crawl()?.phase === "title", null, { timeout: 15000, polling: 30 }).then(() => true, () => false);
     const s2 = await b.evaluate(() => window.__game.crawl()!);
     void titled;
-    check("after the first view the crawl is skippable: the hint shows, SPACE jumps to the cut (black, silent, ~1.6 s at 1×), then the title", s0.c.seen && s0.c.skippable && s0.hint && /SKIP/.test(s0.hintText ?? "") && s1.phase === "cut" && !s1.hum && s1.typed === 0 && s2.phase === "title" && s2.done, `seen ${s0.c.seen} · hint "${s0.hintText}" · after SPACE: ${s1.phase} hum ${s1.hum} · then ${s2.phase}`);
+    check("after the first view the crawl is skippable: the hint shows, SPACE jumps to the cut (black, silent, ~1.6 s at 1×), then the title", s0.c.seen && s0.c.skippable && s0.hint && /SKIP/.test(s0.hintText ?? "") && s1.phase === "cut" && !s1.hum && s1.typed === 0 && s2.phase === "title" && s2.done, `seen ${s0.c.seen} skippable ${s0.c.skippable} · hint ${s0.hint} "${s0.hintText}" · after SPACE: ${s1.phase} typed ${s1.typed} hum ${s1.hum} · then ${s2.phase} done ${s2.done}`);
     await b.close();
 
     // ---------------- headless default: no crawl ----------------
