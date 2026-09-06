@@ -93,6 +93,7 @@ export interface GameHook {
   menuKey: (code: string) => void;
   menuChoose: (id: string) => string | null;
   pause: () => void;
+  menuPause: (on: boolean) => void;
   settings: () => Settings & { applied: { sensitivity: number; fov: number; crt: { grain: number; scanline: number; vignette: number; aberration: number }; volumes: { master: number; sfx: number; bed: number } } };
   setSetting: (key: keyof Settings, value: number | boolean) => Settings;
   audioCues: () => Record<string, number>;
@@ -225,6 +226,9 @@ window.__game = {
   menuKey: (code) => menu?.key(code),
   menuChoose: (id) => menu?.choose(id) ?? null,
   pause: () => menu?.pause(),
+  menuPause: (on) => {
+    if (menu) menu.paused = on;
+  },
   settings: () => ({ ...game.settings, applied: { sensitivity: game.input.sensitivity, fov: game.renderer.fov, crt: game.renderer.crtLevel(), volumes: game.audio.getVolumes() } }),
   setSetting: (key, value) => {
     const s = clampSettings({ ...game.settings, [key]: value });

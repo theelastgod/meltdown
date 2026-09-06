@@ -1,6 +1,6 @@
 import type { ClaimDef, ZoneDef } from "./run";
 /**
- * Lethe proper: procedural city districts. One deterministic generator, three
+ * Neo-China proper: procedural city districts. One deterministic generator, three
  * district specs. A district is a 3×3 grid of building blocks split by
  * streets with sidewalks, alleys through some blocks, an elevated walkway,
  * storefronts, parked cars, rails, lamps, vending machines, dumpsters, a
@@ -304,7 +304,7 @@ function block(c: Ctx, bx: number, bz: number, kind: BlockKind, nodePos?: Vec3):
       const cx = (x0 + x1) / 2;
       const cz = (z0 + z1) / 2;
       c.boxes.push(box(cx - 9, 0, z0 + 1, cx - 3, 3.2, z0 + 5, "metro"));
-      addSign(c, "METRO · LETHE TRANSIT", cx - 6, 3.6, z0 + 5.05, 0, 5.6, COLORS.green);
+      addSign(c, "METRO · NEO-CHINA TRANSIT", cx - 6, 3.6, z0 + 5.05, 0, 5.6, COLORS.green);
       c.boxes.push(box(cx + 4, 0, z0 + 1, cx + 5.2, 0.5, z0 + 6, "planter"));
       c.boxes.push(box(cx + 4, 0, z1 - 6, cx + 5.2, 0.5, z1 - 1, "planter"));
       c.boxes.push(box(x0 + 1, 0, cz - 0.6, x0 + 6, 0.5, cz + 0.6, "planter"));

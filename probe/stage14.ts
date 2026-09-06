@@ -130,11 +130,11 @@ async function main(): Promise<void> {
     let dropSeen: { x: number; z: number; value: number } | null = null;
     let aDead = -1;
     while (Date.now() - t0 < 90000) {
-      const [v, ac] = await Promise.all([b.evaluate(() => window.__game.run()), a.evaluate(() => window.__game.run()!.carried)]);
+      const v = await b.evaluate(() => window.__game.run());
       const d = v?.claims.find((c) => c.dropped);
       if (d) {
         dropSeen = { x: d.x, z: d.z, value: d.value };
-        aDead = ac;
+        aDead = (await stats()).rooms["run-yard"]!.run?.carried["ALPHA"] ?? -1; // the room's truth, not a client view that lags a push
         break;
       }
       await b.waitForTimeout(300);
@@ -182,9 +182,9 @@ async function main(): Promise<void> {
     const bankedA = await a.waitForFunction(() => (window.__game.run()?.owed ?? 0) > 0, null, { timeout: 60000, polling: 100 }).then(() => true, () => false);
     const va = await a.evaluate(() => window.__game.run()!);
     const fa = await file(acct);
-    const bal0 = await read<bigint>(info.contracts.capital, "CAPITAL", "balanceOf", [player.address]);
+    const bal0 = await read<bigint>(info.contracts.capital, "$CAPITAL", "balanceOf", [player.address]);
     const pay = await a.evaluate(() => window.__game.payout());
-    const bal1 = await read<bigint>(info.contracts.capital, "CAPITAL", "balanceOf", [player.address]);
+    const bal1 = await read<bigint>(info.contracts.capital, "$CAPITAL", "balanceOf", [player.address]);
     const fa2 = await file(acct);
     await a.evaluate(() => window.__game.toggleFile(true));
     await a.waitForTimeout(300);
@@ -205,17 +205,17 @@ async function main(): Promise<void> {
     const wal2 = createWalletClient({ chain, transport: http(info.rpc), account: player2 });
     // fund the second wallet with $CAPITAL from the first (a transfer), then approve + buy
     const wal1 = createWalletClient({ chain, transport: http(info.rpc), account: player });
-    await pub.waitForTransactionReceipt({ hash: await wal1.writeContract({ chain, address: info.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "transfer", args: [player2.address, parseEther("100")] }) });
-    const sellerBefore = await read<bigint>(info.contracts.capital, "CAPITAL", "balanceOf", [player.address]);
-    const burnedBefore = await read<bigint>(info.contracts.capital, "CAPITAL", "burned");
+    await pub.waitForTransactionReceipt({ hash: await wal1.writeContract({ chain, address: info.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: [player2.address, parseEther("100")] }) });
+    const sellerBefore = await read<bigint>(info.contracts.capital, "$CAPITAL", "balanceOf", [player.address]);
+    const burnedBefore = await read<bigint>(info.contracts.capital, "$CAPITAL", "burned");
     let sale = false;
     if (mine) {
-      await pub.waitForTransactionReceipt({ hash: await wal2.writeContract({ chain, address: info.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "approve", args: [info.contracts.market, parseEther("60")] }) });
+      await pub.waitForTransactionReceipt({ hash: await wal2.writeContract({ chain, address: info.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "approve", args: [info.contracts.market, parseEther("60")] }) });
       const rc = await pub.waitForTransactionReceipt({ hash: await wal2.writeContract({ chain, address: info.contracts.market, abi: ARTIFACTS.LedgerMarket!.abi, functionName: "buy", args: [BigInt(mine.listing), 1n] }) });
       sale = rc.status === "success";
     }
-    const sellerAfter = await read<bigint>(info.contracts.capital, "CAPITAL", "balanceOf", [player.address]);
-    const burnedAfter = await read<bigint>(info.contracts.capital, "CAPITAL", "burned");
+    const sellerAfter = await read<bigint>(info.contracts.capital, "$CAPITAL", "balanceOf", [player.address]);
+    const burnedAfter = await read<bigint>(info.contracts.capital, "$CAPITAL", "burned");
     const buyerHas = await read<bigint>(info.contracts.cosmetics, "Cosmetics", "balanceOf", [1n, player2.address]);
     const price = parseEther("60");
     check("the market is player to player: ALPHA buys a skin from the studio, lists it for 60 $CAPITAL, a second wallet buys it — ALPHA nets 95%, 2% burns, the skin moves", bought.ok && listed.ok && !!mine && mine.price === 60 && sale && sellerAfter - sellerBefore === (price * 9500n) / 10_000n && burnedAfter - burnedBefore === (price * 200n) / 10_000n && buyerHas === 1n, `bought ${bought.ok} · listed ${listed.ok} ${listed.reason ?? ""} · listing ${mine?.listing} @${mine?.price} · sale ${sale} · seller +${Number(sellerAfter - sellerBefore) / 1e18} · burned +${Number(burnedAfter - burnedBefore) / 1e18} · buyer has ${buyerHas}`);

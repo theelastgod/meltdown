@@ -1,5 +1,5 @@
 /**
- * City life: everything that moves in Lethe and touches nothing in the sim.
+ * City life: everything that moves in Neo-China and touches nothing in the sim.
  * Crowds of leased citizens on the sidewalks, the monorail over the walkway
  * street, steam from the grates, holographic ad tickers, blinking warning
  * lights on the skyline, an airship, and the shader flicker on the signs.

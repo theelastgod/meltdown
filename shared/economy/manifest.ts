@@ -5,7 +5,7 @@
 
 export const CAPITAL = {
   symbol: "CAPITAL",
-  name: "Capital",
+  name: "$CAPITAL",
   decimals: 18,
   /** Fixed cap: 1,000,000,000 $CAPITAL, minted once at genesis. */
   cap: 1_000_000_000n * 10n ** 18n,

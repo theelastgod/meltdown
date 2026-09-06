@@ -17,7 +17,7 @@ export const HOSTS = {
   /** the counter-ledger Worker */
   counter: env.VITE_COUNTER_URL ?? devHttp,
   /** the public room the WAKE entry joins */
-  publicRoom: env.VITE_PUBLIC_ROOM ?? "lethe",
+  publicRoom: env.VITE_PUBLIC_ROOM ?? "neochina",
   build: env.VITE_BUILD ?? "dev",
 } as const;
 

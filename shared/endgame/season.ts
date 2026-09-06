@@ -1,6 +1,6 @@
 /**
  * DEEP WAKE: a seasonal, persistent district graph. Every wake node in
- * Lethe has a holding house; each settled round pushes pressure toward the
+ * Neo-China has a holding house; each settled round pushes pressure toward the
  * houses of the files that flipped it, and enough pressure turns the node.
  * A season is 28 days; at its end a history log is written from the real
  * data (who held what, the swings) and pressures reset. No wagering, no

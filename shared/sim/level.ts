@@ -242,7 +242,7 @@ export function drainageYard(): LevelDef {
 }
 
 // ---------------------------------------------------------------------------
-// Registry: the range plus the three districts of Lethe (shared/sim/city.ts).
+// Registry: the range plus the three districts of Neo-China (shared/sim/city.ts).
 import { DISTRICT_SPECS, generateDistrict } from "./city";
 import { deadletterOffice, HUB_LEVEL_ID } from "./hub";
 import { whiteOffice, WHITE_LEVEL_ID } from "./white";

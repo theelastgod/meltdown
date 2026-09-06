@@ -157,7 +157,7 @@ export class CounterClient {
     this.busy = true;
     try {
       const price = parseEther(String(L.price));
-      if (!(await this.tx(this.info.contracts.capital, ABI.CAPITAL!.abi, "approve", [this.info.contracts.market, price]))) return { ok: false, reason: "approve reverted" };
+      if (!(await this.tx(this.info.contracts.capital, ABI["$CAPITAL"]!.abi, "approve", [this.info.contracts.market, price]))) return { ok: false, reason: "approve reverted" };
       if (!(await this.tx(this.info.contracts.market, ABI.LedgerMarket!.abi, "buy", [BigInt(listing), 1n]))) return { ok: false, reason: "buy reverted" };
       await this.op("reconcile");
       await this.load();
@@ -202,7 +202,7 @@ export class CounterClient {
       const v = await this.op("name", { name });
       if (!v.ok || !v.voucher) return { ok: false, reason: v.reason ?? "no voucher" };
       const fee = parseEther(String(v.voucher.fee));
-      if (!(await this.tx(this.info.contracts.capital, ABI.CAPITAL!.abi, "approve", [this.info.contracts.names, fee]))) return { ok: false, reason: "approve reverted" };
+      if (!(await this.tx(this.info.contracts.capital, ABI["$CAPITAL"]!.abi, "approve", [this.info.contracts.names, fee]))) return { ok: false, reason: "approve reverted" };
       if (!(await this.tx(this.info.contracts.names, ABI.Names!.abi, "register", [v.voucher.name, BigInt(v.voucher.nonce), BigInt(v.voucher.deadline), v.voucher.signature]))) return { ok: false, reason: "register reverted" };
       await this.op("reconcile");
       this.say(`NAMED · ${v.voucher.name} · ${v.voucher.fee} $CAPITAL BURNED`);

@@ -1,5 +1,5 @@
 /**
- * Lethe proper: the districts are generated, not hand-placed, so the tests
+ * Neo-China proper: the districts are generated, not hand-placed, so the tests
  * prove what a level designer would walk: every spawn reaches every node at
  * street level, the walkway is reachable by its stairs, nothing spawns
  * inside a wall, and the same seed always builds the same city.

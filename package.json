@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MELTDOWN — browser multiplayer FPS set in Lethe, the city that forgets you.",
+  "description": "MELTDOWN — browser multiplayer FPS set in Neo-China, the city that forgets you.",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc --noEmit -p tsconfig.json && vite build",

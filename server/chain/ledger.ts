@@ -172,9 +172,9 @@ export class CounterLedger {
     const c = a.counter;
     if (!c?.address || !this.opts.devnet || a.depth < LAUNCH_GRANT_DEPTH || this.granted.has(a.id)) return { ok: false, reason: "no grant" };
     try {
-      const bal = (await this.pub.readContract({ address: this.opts.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "balanceOf", args: [c.address as Hex] })) as bigint;
+      const bal = (await this.pub.readContract({ address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [c.address as Hex] })) as bigint;
       if (bal > 0n) return { ok: false, reason: "already funded" };
-      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "transfer", args: [c.address as Hex, parseEther(String(LAUNCH_GRANT))] });
+      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: [c.address as Hex, parseEther(String(LAUNCH_GRANT))] });
       await this.pub.waitForTransactionReceipt({ hash });
       this.granted.add(a.id);
       this.log(`launch grant ${LAUNCH_GRANT} $CAPITAL → ${a.id}`);
@@ -205,7 +205,7 @@ export class CounterLedger {
     if (run.owed <= 0) return { ok: false, reason: "nothing owed" };
     try {
       const units = run.owed;
-      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "transfer", args: [c.address as Hex, parseEther(String(units * CAPITAL_PER_UNIT))] });
+      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: [c.address as Hex, parseEther(String(units * CAPITAL_PER_UNIT))] });
       const r = await this.pub.waitForTransactionReceipt({ hash });
       if (r.status !== "success") return { ok: false, reason: "payout reverted" };
       a.counter = { ...c, run: { ...run, owed: 0, paid: run.paid + units } };
@@ -225,7 +225,7 @@ export class CounterLedger {
       const wallet = c.address as Hex;
       const k = this.opts.contracts;
       const [capital, token, name, balances] = await Promise.all([
-        this.pub.readContract({ address: k.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "balanceOf", args: [wallet] }) as Promise<bigint>,
+        this.pub.readContract({ address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [wallet] }) as Promise<bigint>,
         this.pub.readContract({ address: k.ghostfile, abi: ARTIFACTS.Ghostfile!.abi, functionName: "tokenOf", args: [wallet] }) as Promise<bigint>,
         this.pub.readContract({ address: k.names, abi: ARTIFACTS.Names!.abi, functionName: "nameOf", args: [wallet] }) as Promise<string>,
         this.pub.readContract({ address: k.cosmetics, abi: ARTIFACTS.Cosmetics!.abi, functionName: "balanceOfBatch", args: [SKINS.map(() => wallet), SKINS.map((s) => BigInt(s.token))] }) as Promise<bigint[]>,
@@ -255,8 +255,8 @@ export class CounterLedger {
   async treasury() {
     const k = this.opts.contracts;
     const [supply, burned, volume] = await Promise.all([
-      this.pub.readContract({ address: k.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "totalSupply" }) as Promise<bigint>,
-      this.pub.readContract({ address: k.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "burned" }) as Promise<bigint>,
+      this.pub.readContract({ address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "totalSupply" }) as Promise<bigint>,
+      this.pub.readContract({ address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "burned" }) as Promise<bigint>,
       this.pub.readContract({ address: k.market, abi: ARTIFACTS.LedgerMarket!.abi, functionName: "volume" }) as Promise<bigint>,
     ]);
     return { supply: formatEther(supply), burned: formatEther(burned), volume: formatEther(volume) };

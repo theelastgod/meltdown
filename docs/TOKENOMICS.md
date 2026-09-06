@@ -1,7 +1,7 @@
 # MELTDOWN — $CAPITAL: the counter-ledger
 
 **Status:** design spec, adopted. Implemented in Stage 11b (see `docs/STAGES.md`): the contracts in `contracts/`, the wallet link, vouchers, market and names run against an in-process EVM devnet until Robinhood Chain's testnet parameters are published; the testnet is configuration (`wrangler.counter.toml`, `shared/economy/chain.ts`).
-**Token:** $CAPITAL (ERC-20). The play-to-earn extraction loop (THE RUN: PvP zones, safe zones, the markets) is Stage 14.
+**Token:** $CAPITAL (ERC-20; the contract is named `$CAPITAL`, symbol CAPITAL). The play-to-earn extraction loop (THE RUN: PvP zones, safe zones, the markets) is Stage 14.
 **Chain:** Robinhood Chain (Arbitrum Orbit L2, EVM). **Wallets:** WalletConnect via Reown AppKit.
 **Enforced today:** `shared/economy/` — no item that carries a token price or an on-chain binding may carry a stat.
 
@@ -242,7 +242,7 @@ claim UI: signs nothing but       Worker: EIP-712 voucher signer   Names       (
 
 | Contract | Standard | Notes |
 | --- | --- | --- |
-| `CAPITAL` | ERC-20 + permit + burnable | fixed cap, no mint after genesis, no admin mint |
+| `$CAPITAL` | ERC-20 + permit + burnable | fixed cap, no mint after genesis, no admin mint |
 | `Ghostfile` | ERC-721, soulbound | one per wallet, burnable by holder (Rewrite keeps stamps and glyph age) |
 | `Stamps` | EAS-style attestation schema | server-signed, revocable only for anti-cheat reversal |
 | `Names` | ERC-721, soulbound | Depth-50 voucher required; length-priced; burn on register |

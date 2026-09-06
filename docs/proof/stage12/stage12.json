@@ -1,9 +1,9 @@
 {
   "results": {
     "crawl": {
-      "duration": 34.765333333333345,
+      "duration": 34.86400000000001,
       "paragraphs": [
-        276,
+        280,
         205,
         169,
         137,
@@ -15,9 +15,9 @@
       "tearFrame": {
         "phase": "tear",
         "bands": [
-          3,
-          -19,
-          -19
+          1,
+          15,
+          -26
         ],
         "tearing": true,
         "ghosts": 2
@@ -28,7 +28,7 @@
     {
       "name": "the crawl runs ~35 s at 1× (first keystroke to title); the copy shortens paragraph by paragraph and ends on one isolated line",
       "pass": true,
-      "detail": "34.8 s · 7 paragraphs · lengths 276 > 205 > 169 > 137 > 90 > 70 > 57"
+      "detail": "34.9 s · 7 paragraphs · lengths 280 > 205 > 169 > 137 > 90 > 70 > 57"
     },
     {
       "name": "cyan monospace on black, scanlines flickering over it, above everything else",
@@ -38,7 +38,7 @@
     {
       "name": "one paragraph at a time, typed then held: the character count rises monotonically to the full paragraph, then holds it",
       "pass": true,
-      "detail": "61 typing samples 32→266 · held 28 at 276/276"
+      "detail": "19 typing samples 45→269 · held 80 at 280/280"
     },
     {
       "name": "the first view is not skippable: SPACE does nothing but the crawl keeps its place",
@@ -48,7 +48,7 @@
     {
       "name": "a glitch tear between paragraphs: three layers sliced into bands and pushed apart, the ghosts tinted magenta and cyan, one tear per paragraph gap",
       "pass": true,
-      "detail": "phase tear · bands [3, -19, -19] · ghosts 2 · tears 6/6"
+      "detail": "phase tear · bands [1, 15, -26] · ghosts 2 · tears 6/6"
     },
     {
       "name": "hard cut, then the MELTDOWN title: the text is gone, the hum is off, the title is up, and the first view is now recorded",
@@ -63,7 +63,7 @@
     {
       "name": "after the first view the crawl is skippable: the hint shows, SPACE jumps to the cut (black, silent, ~1.6 s at 1×), then the title",
       "pass": true,
-      "detail": "seen true · hint \"[SPACE] SKIP\" · after SPACE: cut hum false · then title"
+      "detail": "seen true skippable true · hint true \"[SPACE] SKIP\" · after SPACE: cut typed 0 hum false · then title done true"
     },
     {
       "name": "headless probes and ?crawl=0 boot straight into the game; a browser visit gets the crawl",

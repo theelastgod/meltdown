@@ -1,9 +1,9 @@
 # MELTDOWN
 
 A browser-based multiplayer first-person shooter with a deep RPG progression
-layer and a branching campaign, set in **Lethe, the city that forgets you**.
+layer and a branching campaign, set in **Neo-China, the city that forgets you**.
 
-> Every mind in Lethe is leased. You woke free.
+> Every mind in Neo-China is leased. You woke free.
 
 ## Run
 
@@ -28,7 +28,7 @@ npm run probe:arsenal # TTK harness table + every weapon, grenade and VANTAGE un
 npm run probe:wake # the wake: flips, spread, phage boost, KERNEL pulse; online contest between two cells
 npm run lint:fairness -- --quick # Fairness Lint: every candidate build duelled + run through the mobility course
 npm run probe:file # Ghostfile: lint injections fail, illegal loadouts refused at spawn, a round settles XP/Scrip
-npm run probe:city # Lethe proper: three districts load, bots route the streets and climb the walkway, frames read like the clip, budgets hold
+npm run probe:city # Neo-China proper: three districts load, bots route the streets and climb the walkway, frames read like the clip, budgets hold
 npm run probe:cityLife # city life: crowds walk, the monorail crosses and whooshes, gates seal the exits while vistas continue the city, PA and sirens on the sim clock
 npm run probe:endgame # endgame: daily contracts, the week's Audit room (rules, gravity, sheet, leaderboard), the Deep Wake, Rewrite + the Wakelight shop
 npm run lint:economy  # the one rule over the full manifest: WAKE never touches a stat

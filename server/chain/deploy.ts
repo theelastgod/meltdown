@@ -26,7 +26,7 @@ export async function deployAll(pub: PublicClient, wal: WalletClient, signer: He
     if (r.status !== "success" || !r.contractAddress) throw new Error(`${name} deploy failed`);
     return r.contractAddress;
   };
-  const capital = await deploy("CAPITAL", [treasury]);
+  const capital = await deploy("$CAPITAL", [treasury]);
   const ghostfile = await deploy("Ghostfile", [signer]);
   const stamps = await deploy("Stamps", [signer]);
   const names = await deploy("Names", [signer, capital]);

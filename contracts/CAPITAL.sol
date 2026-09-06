@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// @title CAPITAL — the counter-ledger token ($CAPITAL).
+/// @title $CAPITAL — the counter-ledger token.
 /// @notice Fixed supply minted once at genesis to the treasury. No admin mint, no owner. Burnable.
 ///         It touches identity, ownership, creation, hosting and competition — never a stat.
-contract CAPITAL {
-    string public constant name = "Capital";
+contract $CAPITAL {
+    string public constant name = "$CAPITAL";
     string public constant symbol = "CAPITAL";
     uint8 public constant decimals = 18;
     uint256 public constant CAP = 1_000_000_000 ether;

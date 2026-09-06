@@ -1,5 +1,5 @@
 /**
- * The three houses of Lethe and their fixers. Faction is picked when the
+ * The three houses of Neo-China and their fixers. Faction is picked when the
  * campaign starts and colours every conversation; the fixers are the
  * handlers who offer gigs from the Deadletter Office. Fiction only —
  * nothing here reads a stat. The PvP room never imports this module.

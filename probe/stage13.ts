@@ -1,6 +1,6 @@
 /**
  * Stage 13 probe — polish & ship.
- *  The CRT menu flow: the two title cards in order ("Every mind in Lethe is leased." / "You woke
+ *  The CRT menu flow: the two title cards in order ("Every mind in Neo-China is leased." / "You woke
  *  free."), then the menu with WAKE / CAMPAIGN / THE OFFICE / THE RANGE / FILE / SETTINGS; keys
  *  move the cursor and a choice is a URL that names the mode (WAKE picks a district and the
  *  public room); SETTINGS adjust live (sensitivity, FOV, volumes, CRT) and persist; ESC in play
@@ -63,7 +63,7 @@ async function main(): Promise<void> {
   try {
     // ---------------- the title cards ----------------
     const a = await newPage("menu");
-    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&menu=1&crawl=0&nonav=1&menuspeed=2&level=drainage_yard&account=sandbox-ship`, { waitUntil: "load" });
+    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&menu=1&crawl=0&nonav=1&menuspeed=1.5&level=drainage_yard&account=sandbox-ship`, { waitUntil: "load" });
     await a.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "cards", null, { timeout: 40000, polling: 30 });
     const cards: string[] = [];
     const t0 = Date.now();
@@ -73,7 +73,9 @@ async function main(): Promise<void> {
       if (v.cardText && cards[cards.length - 1] !== v.cardText) {
         cards.push(v.cardText);
         await a.waitForTimeout(260); // past the card's snap-in (its first step is dark)
+        await a.evaluate(() => window.__game.menuPause(true)); // hold the card clock for the shot
         await a.screenshot({ path: `${OUT}/stage13-card${cards.length}.png` });
+        await a.evaluate(() => window.__game.menuPause(false));
       }
       await a.waitForTimeout(20);
     }
@@ -105,7 +107,7 @@ async function main(): Promise<void> {
     await a.evaluate(() => window.__game.menuKey("Enter"));
     const district = await a.evaluate(() => window.__game.menu()!.target);
     const u = (s: string | null) => new URL(s ?? "http://x/");
-    check("a choice is a URL that names the mode: CAMPAIGN opens the desk at the hub, THE OFFICE the hub, THE RANGE the yard; WAKE lists the districts and picks the public room for one", u(campaign).searchParams.get("mode") === "campaign" && u(campaign).searchParams.get("level") === "deadletter_office" && u(office).searchParams.get("level") === "deadletter_office" && u(range).searchParams.get("level") === "drainage_yard" && wake.screen === "wake" && wake.entries.length >= 4 && /\/room\/lethe-lease_row/.test(u(district).searchParams.get("net") ?? "") && u(district).searchParams.get("level") === "lease_row", `campaign ${u(campaign).search} · wake [${wake.entries.slice(0, 3).join(", ")}…] · district → ${u(district).searchParams.get("net")}`);
+    check("a choice is a URL that names the mode: CAMPAIGN opens the desk at the hub, THE OFFICE the hub, THE RANGE the yard; WAKE lists the districts and picks the public room for one", u(campaign).searchParams.get("mode") === "campaign" && u(campaign).searchParams.get("level") === "deadletter_office" && u(office).searchParams.get("level") === "deadletter_office" && u(range).searchParams.get("level") === "drainage_yard" && wake.screen === "wake" && wake.entries.length >= 4 && /\/room\/neochina-lease_row/.test(u(district).searchParams.get("net") ?? "") && u(district).searchParams.get("level") === "lease_row", `campaign ${u(campaign).search} · wake [${wake.entries.slice(0, 3).join(", ")}…] · district → ${u(district).searchParams.get("net")}`);
 
     // ---------------- settings, live and persisted ----------------
     await a.evaluate(() => window.__game.menuKey("Escape"));

@@ -157,11 +157,11 @@ describe("THE RUN — the room and the payout", () => {
     expect((await b.ledger.link(a, message, await player.signMessage({ message }))).ok).toBe(true);
     expect((await b.ledger.payout(a)).reason).toMatch(/nothing owed/);
     a.counter!.run = { day: 0, banked: 7, owed: 7, paid: 0 };
-    const before = (await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "balanceOf", args: [player.address] })) as bigint;
+    const before = (await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [player.address] })) as bigint;
     const r = await b.ledger.payout(a);
     expect(r.ok).toBe(true);
     expect(r.paid).toBe(7);
-    const after = (await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS.CAPITAL!.abi, functionName: "balanceOf", args: [player.address] })) as bigint;
+    const after = (await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [player.address] })) as bigint;
     expect(after - before).toBe(7n * 10n ** 18n);
     expect(a.counter!.run!.owed).toBe(0);
     expect(a.counter!.run!.paid).toBe(7);

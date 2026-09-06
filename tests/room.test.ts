@@ -113,7 +113,7 @@ describe("room — loadout validation at spawn", () => {
     const c = join(room, "GUEST", "", undefined);
     expect(c.kick()).toBeUndefined();
     expect(room.stats().players).toBe(1);
-    expect(room.stats().level).toBe("lease_row"); // the default room is a district of Lethe
+    expect(room.stats().level).toBe("lease_row"); // the default room is a district of Neo-China
   });
 });
 

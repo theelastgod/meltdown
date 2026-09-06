@@ -26,7 +26,7 @@
     {
       "name": "a death in the PvP zone drops the carried claim where the file fell: it burns magenta on the street, ALPHA carries nothing",
       "pass": true,
-      "detail": "BRAVO kills 1 · drop 1 at (0.5,17.8) · ALPHA carrying 0"
+      "detail": "BRAVO kills 2 · drop 1 at (0.5,17.8) · ALPHA carrying 0"
     },
     {
       "name": "BRAVO takes the drop, walks it into the gate (the strip says SAFE ZONE, the edge glows), stands the dwell and banks it — a Depth-1 file is paid in Scrip, not $CAPITAL",
@@ -51,7 +51,7 @@
     {
       "name": "offline the yard runs the same sim (`?mode=run`), and the menu's THE RUN entry picks a district and names the run room",
       "pass": true,
-      "detail": "offline claims 5 picked true · entries [WAKE, THE RUN, CAMPAIGN, THE OFFICE, THE RANGE, FILE, SETTINGS] · run → ws://127.0.0.1:8787/room/lethe-run-lease_row?level=lease_row&mode=run"
+      "detail": "offline claims 5 picked true · entries [WAKE, THE RUN, CAMPAIGN, THE OFFICE, THE RANGE, FILE, SETTINGS] · run → ws://127.0.0.1:8787/room/neochina-run-lease_row?level=lease_row&mode=run"
     },
     {
       "name": "no page errors",

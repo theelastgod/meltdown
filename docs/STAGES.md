@@ -14,7 +14,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 6 | Ghostfile foundation: manifest, Fairness Lint, spawn validation, Depth/XP, currencies, crafting | **done** | `docs/proof/stage6/` |
 | 7 | Ledger Graph (48 nodes / 3 rings), chips + sockets + firmwares, challenge-gated mastery, attestation stamps, ledger shop | **done** | `docs/proof/stage7/` |
 | 8 | Identity & rituals: glyphs, monikers, Debts, dossier flash, tiered kill audio, Ledger Entry receipt, Chapter rites, Deadletter Office + range ghosts | **done** | `docs/proof/stage8/` |
-| 9 | Lethe proper: three districts, THE KERNEL horizon, district select, render budget | **done** (pulled ahead at the owner's request: "the game needs to feel and be like it's in a city") | `docs/proof/stage9/` |
+| 9 | Neo-China proper: three districts, THE KERNEL horizon, district select, render budget | **done** (pulled ahead at the owner's request: "the game needs to feel and be like it's in a city") | `docs/proof/stage9/` |
 | 9b | City life: crowds, monorail, street vistas through sealed gates, ad tickers, sign flicker, steam, skyline blinkers, airship, soundscape + VANTAGE PA | **done** (the owner repeated the note; the district is now inhabited, not just built) | `docs/proof/stage9b/` |
 | 10 | Campaign: three houses and their fixers, 7 missions + 12 gigs on a data-driven runtime, CRT testimony dialogue, Threat Rating, Kernel Protocols behind the PvP wall, weapons 7–8, endings, solo + co-op | **done** | `docs/proof/stage10/` |
 | 11 | Endgame loops: daily contracts, weekly Audit playlists with per-week leaderboards, the Deep Wake seasonal district graph, Rewrite prestige + the Wakelight shop (themes, alias and preset slots — never a stat) | **done** | `docs/proof/stage11/` |
@@ -273,7 +273,7 @@ from the future.
 **Files.**
 - `client/crawl-text.ts` — `OPENING_TEXT` (null until supplied; rendered
   verbatim, never edited) and `DEFAULT_CRAWL`, seven original paragraphs,
-  276 → 205 → 169 → 137 → 90 → 68 → 57 characters, the last a single line.
+  280 → 205 → 169 → 137 → 90 → 70 → 57 characters, the last a single line.
 - `client/crawl-schedule.ts` — the crawl as a pure schedule: type at 60
   characters a second, hold for 0.9 s + 8 ms a character, a 0.35 s tear
   between paragraphs, a 1.6 s cut, then the title; `crawlAt(t)` gives the
@@ -309,10 +309,10 @@ from the future.
   Everything is uppercase and unquoted; the test enforces the shape.
 
 **Acceptance (`npm run probe:crawl`, 10/10; `npm test`, 147 tests):** the
-crawl runs 34.1 s at 1× and the copy shortens to one isolated line; the
+crawl runs 34.9 s at 1× and the copy shortens to one isolated line; the
 text is `rgb(53, 242, 255)` monospace on `rgb(0, 0, 0)` under a
 `crawl-flicker` scanline pass at z-index 1000; the first paragraph's
-character count rises monotonically to 276 and holds there; on the first
+character count rises monotonically to 280 and holds there; on the first
 view SPACE does nothing; a tear frame shows three bands pushed apart with
 both ghost layers lit, and six tears for seven paragraphs; after the cut
 the text is hidden, the hum is off and MELTDOWN is up with the view now
@@ -323,7 +323,7 @@ into the game; no page errors.
 
 ## Stage 13 — Polish & ship
 
-**Goal.** The CRT menu flow with the title cards "Every mind in Lethe is
+**Goal.** The CRT menu flow with the title cards "Every mind in Neo-China is
 leased." / "You woke free.", settings, a full audio pass, deploy to
 Cloudflare Pages + Workers, and a smoke test in CI.
 
@@ -408,7 +408,9 @@ banked at a safe zone, behind the Depth gate and a daily cap so a script
 cannot farm kills into a token.
 
 **Files.**
-- `contracts/CAPITAL.sol` (was `WAKE.sol`: name Capital, symbol CAPITAL),
+- `contracts/CAPITAL.sol` (was `WAKE.sol`): the contract is named `$CAPITAL`
+  (the owner's name for it; `$` is a legal Solidity identifier), token name
+  `$CAPITAL`, symbol `CAPITAL`; the artifact key is `"$CAPITAL"`,
   `Names.sol`, `LedgerMarket.sol` (the interfaces), `contracts/out`
   rebuilt; `server/chain/*`, `shared/economy/*`, `client/counter.ts`,
   `client/file.ts`, the tests and probes, `docs/TOKENOMICS.md`, the README:
@@ -449,6 +451,11 @@ cannot farm kills into a token.
   entry (a district, then the run room). `client/file.ts` — THE RUN block
   in the counter-ledger section with WITHDRAW TO WALLET.
 - `tests/run.test.ts` (4), `probe/stage14.ts`.
+
+**Owner's namings (after the stage landed).** The city is **Neo-China**
+(was Lethe) everywhere: the crawl, the title cards ("Every mind in Neo-China
+is leased."), the district select, the transit signs, the docs; the default
+public room is `neochina`. The token contract is named `$CAPITAL`.
 
 **Design decisions.**
 - The run pays the counter-ledger; the wake pays the file. A run has no
@@ -744,11 +751,11 @@ Scrip with 354 objective XP; BRAVO 250 participation XP), the store saves
 twice, the client's ledger carries the MATCH / OBJECTIVE / XP lines, and
 the FILE panel shows `NET DELTA: −24.700 — RECONCILED`.
 
-## Stage 9 — Lethe proper (pulled ahead)
+## Stage 9 — Neo-China proper (pulled ahead)
 
 **Goal.** The owner's note: *the game needs to feel and be like it's in a
 city.* The playable space stops being a yard and becomes a district of
-Lethe: streets between building blocks, sidewalks and curbs, alleys with
+Neo-China: streets between building blocks, sidewalks and curbs, alleys with
 dumpsters and fire escapes, storefronts under awnings, parked cars, lamps,
 pedestrian rails, an elevated walkway with switchback stairs, a metro
 kiosk on the plaza, the wake's nodes at the intersections — enclosed by
@@ -1060,7 +1067,7 @@ differently named unknown field is still refused.
 **Goal.** The owner repeated the note — *the game needs to feel and be like
 it's in a city* — after Stage 9 had built the districts. A built district is
 still a set: nothing moved, nothing spoke, and every street ended at a wall.
-This pass makes Lethe inhabited. Citizens walk the sidewalks under
+This pass makes Neo-China inhabited. Citizens walk the sidewalks under
 umbrellas, the monorail crosses the walkway street on its beam, every
 street runs out through the perimeter into a vista of road, lamps, receding
 towers and traffic — sealed for play by a chain-link gate the Blank cannot

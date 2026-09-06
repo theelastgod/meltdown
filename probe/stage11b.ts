@@ -104,7 +104,7 @@ async function main(): Promise<void> {
     const rpcChain = await pub.getChainId();
     const code = await pub.getCode({ address: i0.contracts.ghostfile });
     const read = <T>(address: Hex, name: string, fn: string, args: unknown[] = []) => pub.readContract({ address, abi: ARTIFACTS[name]!.abi, functionName: fn, args }) as Promise<T>;
-    const supply = await read<bigint>(i0.contracts.capital, "CAPITAL", "totalSupply");
+    const supply = await read<bigint>(i0.contracts.capital, "$CAPITAL", "totalSupply");
     check("the ledger host runs an EVM devnet behind JSON-RPC with the six contracts deployed, $CAPITAL at its fixed cap and the market seeded with every skin", rpcChain === i0.chainId && !!code && code.length > 100 && Object.keys(i0.contracts).length === 6 && supply === parseEther("1000000000") && i0.listings.length === SKINS.length && i0.listings.every((l) => SKINS.some((s) => s.token === l.token && s.capital === l.price)), `chain ${rpcChain} · ghostfile code ${code ? code.length / 2 - 1 : 0} B · listings ${i0.listings.map((l) => `#${l.token}@${l.price}`).join(" ")}`);
 
     // ---------------- the link ----------------
@@ -139,10 +139,10 @@ async function main(): Promise<void> {
     // ---------------- the market ----------------
     await post("/chain/faucet", { address: player.address }); // gas for the wallet's own transactions (devnet)
     const rust = i0.listings.find((l) => l.token === 1)!;
-    const burned0 = await read<bigint>(i0.contracts.capital, "CAPITAL", "burned");
+    const burned0 = await read<bigint>(i0.contracts.capital, "$CAPITAL", "burned");
     const buy = await a.evaluate((l) => window.__game.buySkin(l), rust.listing);
     await a.waitForTimeout(300);
-    const burned1 = await read<bigint>(i0.contracts.capital, "CAPITAL", "burned");
+    const burned1 = await read<bigint>(i0.contracts.capital, "$CAPITAL", "burned");
     const bal = await read<bigint>(i0.contracts.cosmetics, "Cosmetics", "balanceOf", [1n, player.address]);
     const v2 = await a.evaluate(() => window.__game.counter());
     const wear = await a.evaluate(() => window.__game.wearSkin(1));
@@ -189,10 +189,10 @@ async function main(): Promise<void> {
     const firstAt = fAfter.stamps.length ? await read<bigint>(i0.contracts.stamps, "Stamps", "attestedAt", [player.address, stampIdOf(fAfter.stamps[0]!)]) : 0n;
     const fStamped = await file(acct);
     check("the round's stamps reach the chain as server-signed attestations (one voucher each, gas sponsored), readable by anyone", phase === "results" && fAfter.stamps.length > 0 && st.ok && Number(onChain) === Math.min(12, fAfter.stamps.length) && firstAt > 0n && fStamped.counter?.stamps.length === Number(onChain), `stamps on file ${fAfter.stamps.length} · on chain ${onChain} · first at ${firstAt}`);
-    const burned2 = await read<bigint>(i0.contracts.capital, "CAPITAL", "burned");
+    const burned2 = await read<bigint>(i0.contracts.capital, "$CAPITAL", "burned");
     const named = await a.evaluate(() => window.__game.registerName("the_auditor"));
     await a.waitForTimeout(300);
-    const burned3 = await read<bigint>(i0.contracts.capital, "CAPITAL", "burned");
+    const burned3 = await read<bigint>(i0.contracts.capital, "$CAPITAL", "burned");
     const nameOnChain = await read<string>(i0.contracts.names, "Names", "nameOf", [player.address]);
     const v4 = await a.evaluate(() => window.__game.counter());
     await a.evaluate(() => window.__game.toggleFile(true));
@@ -212,7 +212,10 @@ async function main(): Promise<void> {
     const on = await a.evaluate(() => window.__game.wearSkin(1));
     const c2 = await newPage({ width: 640, height: 360 }, "outage");
     await c2.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl3&shop=${HOST}&wallet=${DEV_KEYS.player2}`, { waitUntil: "load" });
-    await c2.waitForFunction(() => window.__game?.ready === true && !!window.__game.counter().info, null, { timeout: 40000, polling: 100 });
+    await c2.waitForFunction(() => window.__game?.ready === true && !!window.__game.counter().info, null, { timeout: 40000, polling: 100 }).catch(async (e) => {
+      console.log("outage page state:", JSON.stringify(await c2.evaluate(() => ({ ready: window.__game?.ready, counter: window.__game?.counter() }))).slice(0, 600), "errors:", errors.slice(-3).join(" | "));
+      throw e;
+    });
     const linkDown = await c2.evaluate(() => window.__game.link());
     await c2.close();
     const xpBefore = (await file(acct)).xp;

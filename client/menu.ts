@@ -1,5 +1,5 @@
 /**
- * The CRT menu flow (Stage 13). After the crawl's title: two title cards — "Every mind in Lethe
+ * The CRT menu flow (Stage 13). After the crawl's title: two title cards — "Every mind in Neo-China
  * is leased." / "You woke free." — then the menu: WAKE (a district and the public room), CAMPAIGN
  * (the desk), THE OFFICE (the hub), THE RANGE (offline, dummies), FILE, SETTINGS. In play, ESC
  * opens the pause menu (RESUME / SETTINGS / FILE / QUIT TO MENU). Choices are URLs, like district
@@ -14,7 +14,7 @@ import { HOSTS } from "./config";
 import { DEFAULT_SETTINGS, formatSetting, loadSettings, saveSettings, SETTING_LABELS, stepSetting, type Settings } from "./settings";
 import type { GameAudio } from "./audio";
 
-export const TITLE_CARDS: readonly string[] = ["Every mind in Lethe is leased.", "You woke free."];
+export const TITLE_CARDS: readonly string[] = ["Every mind in Neo-China is leased.", "You woke free."];
 export const CARD_SECONDS = 2.4;
 export const CARD_GAP = 0.5;
 
@@ -172,8 +172,20 @@ export class Menu {
 
   private cardStart = 0;
   /** Each card runs its own clock from the frame it appeared, so a slow frame can never skip one. */
+  /** the probe's freeze: the card clock holds while paused (screenshots under SwiftShader are slow) */
+  paused = false;
+  private pausedAt = 0;
   private tick = (now: number): void => {
     if (this.screen !== "cards") return;
+    if (this.paused) {
+      if (!this.pausedAt) this.pausedAt = now;
+      this.raf = requestAnimationFrame(this.tick);
+      return;
+    }
+    if (this.pausedAt) {
+      this.cardStart += now - this.pausedAt;
+      this.pausedAt = 0;
+    }
     if (!this.cardStart) this.cardStart = now;
     const t = ((now - this.cardStart) / 1000) * this.speed;
     if (t >= CARD_SECONDS + CARD_GAP) {
