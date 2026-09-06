@@ -78,6 +78,12 @@ const TEMPLATES: Template[] = [
  */
 const SPREAD_SCALE: Partial<Record<WeaponId, number>> = { repo_hammer: 0.7 };
 const SPREAD_TO_RECOIL = new Set<WeaponId>(["stack_smg"]);
+/**
+ * A burst pistol's fire rate is quantised by the burst cadence: +2% on the CLOCKEATER crossed a
+ * whole burst gap (the lint measured −10% TTK at every range), so its fire-rate benefits become
+ * reload benefits of the same weight.
+ */
+const FIRERATE_TO_RELOAD = new Set<WeaponId>(["clockeater"]);
 
 function settle(benefits: StatMod[], costs: StatMod[], mechanic: boolean): StatMod[] {
   const b = benefits.reduce((a, x) => a + modWeight(x), 0) + (mechanic ? 3 : 0);
@@ -90,7 +96,13 @@ function settle(benefits: StatMod[], costs: StatMod[], mechanic: boolean): StatM
 export const CHIPS: ChipDef[] = WEAPON_LIST.flatMap((w) =>
   TEMPLATES.map((t) => {
     const k = SPREAD_SCALE[w.id] ?? 1;
-    const benefits = t.benefits.map((x) => (x.stat === "spread" && SPREAD_TO_RECOIL.has(w.id) ? { stat: "recoil" as const, delta: x.delta } : { stat: x.stat, delta: x.stat === "spread" ? Math.round(x.delta * k * 400) / 400 : x.delta }));
+    const benefits = t.benefits.map((x) =>
+      x.stat === "spread" && SPREAD_TO_RECOIL.has(w.id)
+        ? { stat: "recoil" as const, delta: x.delta }
+        : x.stat === "fireRate" && FIRERATE_TO_RELOAD.has(w.id)
+          ? { stat: "reloadSpeed" as const, delta: Math.round((x.delta * modWeight(x)) / modWeight({ stat: "reloadSpeed", delta: x.delta }) * 400) / 400 }
+          : { stat: x.stat, delta: x.stat === "spread" ? Math.round(x.delta * k * 400) / 400 : x.delta },
+    );
     const costs = settle(benefits, t.costs.map((x) => ({ ...x })), !!t.mechanic);
     return {
       id: `${w.id}:${t.key}`,
@@ -101,7 +113,7 @@ export const CHIPS: ChipDef[] = WEAPON_LIST.flatMap((w) =>
       benefits,
       costs,
       mechanic: t.mechanic,
-      line: `${t.name}: ${t.line}`,
+      line: `${t.name}: ${FIRERATE_TO_RELOAD.has(w.id) && t.benefits.some((x) => x.stat === "fireRate") ? t.line.replace(/\+[\d.]+% fire rate/, `+${(benefits.find((x) => x.stat === "reloadSpeed")!.delta * 100).toFixed(2).replace(/\.?0+$/, "")}% reload`) : t.line}`,
     };
   }),
 );

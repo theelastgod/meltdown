@@ -20,7 +20,7 @@ One stage per session / PR. A stage is done only when `npm run verify`
 | 9b | City life: crowds, monorail, street vistas through sealed gates, ad tickers, sign flicker, steam, skyline blinkers, airship, soundscape + VANTAGE PA | **done** (the owner repeated the note; the district is now inhabited, not just built) | `docs/proof/stage9b/` |
 | 10 | Campaign | | |
 | 11 | Endgame loops: daily contracts, weekly Audit playlists with per-week leaderboards, the Deep Wake seasonal district graph, Rewrite prestige + the Wakelight shop (themes, alias and preset slots — never a stat) | **done** | `docs/proof/stage11/` |
-| 11b | The Counter-Ledger: WAKE on Robinhood Chain, WalletConnect link, Ghostfile SBT + stamps, market, names (`docs/TOKENOMICS.md`) | | |
+| 11b | The Counter-Ledger: WAKE on Robinhood Chain, SIWE wallet link, soulbound Ghostfile + stamp attestations through game-signed vouchers, the Ledger Market, names at Depth 50, an in-process EVM devnet until the testnet parameters land (`docs/TOKENOMICS.md`) | **done** (devnet; testnet is configuration) | `docs/proof/stage11b/` |
 | 12 | Opening crawl | | |
 | 13 | Polish & ship | | |
 
@@ -149,22 +149,116 @@ no page errors.
 ## Stage 11b — The Counter-Ledger
 
 **Goal.** WAKE (ERC-20 on Robinhood Chain) and the wallet link, built so the
-token touches identity, ownership, creation, hosting, and competition, and
-never a stat. Spec: `docs/TOKENOMICS.md`. Seed already on main:
-`shared/economy/` (manifest shapes, chain config, lint) and
-`tests/economy.test.ts`.
+token touches identity, ownership, creation, hosting and competition, and
+never a stat. Spec: `docs/TOKENOMICS.md`. Every contract and client path is
+plain Orbit EVM; the chain id, RPC and addresses are configuration. Until
+Robinhood publishes the testnet parameters the hosts run the same contracts
+on an in-process EVM devnet, so everything below is exercised for real —
+signatures, reverts, fee splits — without a network.
 
-**Acceptance (probe):**
-- Headless client links a wallet over SIWE using a `viem` local account in
-  place of WalletConnect; the Worker verifies and binds it 1:1 in D1.
-- Ghostfile SBT and one attestation stamp mint on a local Orbit-compatible
-  devnet (anvil) through a Worker-signed EIP-712 voucher with sponsored gas.
-- A cosmetic bought on the LedgerMarket appears on the player's rig in the
-  next match snapshot as an ID only; the match Durable Object bundle contains
-  no economy module (bundle graph assertion).
-- `lintEconomy` runs in CI over the full manifest; a priced item with a
-  stat fails the build.
-- Chain unreachable: equip, match, and progression all still work.
+**What shipped.**
+- `contracts/` — six Solidity contracts, no framework: `WAKE` (fixed cap
+  minted once to the treasury, burnable, no admin mint), `Ghostfile`
+  (soulbound ERC-721, one per wallet, minted against a game voucher, every
+  transfer path reverts, holder-burnable), `Stamps` (EAS-style attestations:
+  server-signed `{wallet, fileId, stampId}`, steward-revocable for anti-cheat),
+  `Names` (soulbound handle at Depth 50, WAKE fee burned, priced by length
+  3 → 2000 … 12+ → 150), `Cosmetics` (ERC-1155 with a creator and a wear
+  seed per id; no stats field exists), `LedgerMarket` (exact listings, 5%
+  fee: 2% burned, 2% treasury, 1% creator, on chain). `Vouchers.sol` is the
+  EIP-712 base: signer address, per-wallet single-use nonces, deadlines.
+  `npm run contracts:build` compiles with solc-js into
+  `contracts/out/artifacts.json` (committed: ABIs + bytecode).
+- `server/chain/devnet.ts` — an Orbit-compatible devnet in process: a real
+  EVM (ethereumjs, Cancun) behind the JSON-RPC subset viem needs, one block
+  per transaction, a faucet, and an outage switch for the chain-down drill.
+  `server/chain/deploy.ts` + `deploy-cli.ts` deploy to it or to a real RPC.
+- `server/chain/signer.ts` — the game signer: EIP-712 vouchers for the
+  link, each stamp and the name; the key never leaves the host.
+- `server/chain/ledger.ts` — `CounterLedger`: SIWE link (statement, chain,
+  domain, expiry, nonce, signature), the 1:1 bind, the sponsored Ghostfile
+  mint (the relayer pays), stamp attestations (bounded per call), the name
+  voucher (Depth 50), the market view, the treasury line, and `reconcile()`
+  that reads the chain into the file's cache (WAKE, Ghostfile, name, the
+  rig from the skin balances). Every chain call fails soft with a reason.
+- `server/chain/wallets.ts` (memory) and `wallets-d1.ts` (D1 `wallet`,
+  `siwe_nonce`; `server/schema.sql` + `schema.ts` mirror).
+- `server/counter-worker.ts` + `wrangler.counter.toml` — a third Worker,
+  like the campaign's: the PvP bundle carries no economy module and no
+  chain client. Node host: `/chain` (JSON-RPC), `/chain/faucet`,
+  `/chain/outage`, `/counter`, `/link/nonce`, `/link/verify`,
+  `/file/:id/counter` (`wear` is cache-only; `reconcile` / `stamps` /
+  `name` go to the chain).
+- `shared/economy/catalog.ts` — the full manifest in the lint's shape
+  (every node, keystone, chip, firmware, Wakelight theme, the four on-chain
+  skins, the registry, room credits, the buyout, the Rewrite certificate);
+  `SKINS` carry a token id, a price, a wear seed and a tint — nothing else.
+  `npm run lint:economy` runs the one rule over it in CI.
+- `shared/economy/counter.ts` — the counter record helpers (`wearSkin`,
+  `counterView`, the SIWE statement, the voucher domains/types, name fees);
+  `shared/economy/endpoint.ts` — the request both hosts share.
+- `shared/progression/account.ts` — `counter` (plain data: address, Ghostfile
+  id, stamps on chain, name, rig cache, worn token, WAKE display string).
+- `shared/identity/identity.ts` — the tag grows a fifth segment only when a
+  skin is worn: `seed.chapter.moniker.debt[.skin]`; `skin` is a token id.
+  The renderer maps it onto the catalog's tint (remote emissive + trim, the
+  local viewmodel strips). Nothing in the sim reads it.
+- `client/counter.ts` — the panel's wallet: an injected EIP-1193 provider
+  (Robinhood Wallet over WalletConnect, MetaMask, Rabby) or, headless, a
+  viem local account from `?wallet=<key>`; SIWE through the host; the
+  player's own transactions (approve + buy, approve + register) straight
+  to the chain's RPC. `client/file.ts` — the COUNTER-LEDGER // WAKE section
+  of the FILE panel: link, Ghostfile, stamps on chain, WAKE, the name field
+  at Depth 50, the rig with WEAR, the Ledger Market, the treasury's NET
+  DELTA line. `client/main.ts` hooks: `counter`, `link`, `buySkin`,
+  `wearSkin`, `registerName`, `reconcile`.
+- `tests/counter.test.ts` (6), `probe/stage11b.ts`.
+
+**Design decisions.**
+- Vouchers, not admin calls: the Ghostfile, every stamp and the name are
+  EIP-712 messages the game signs and anyone may submit. The relayer
+  sponsors the Ghostfile and the stamps (the wallet holds no ETH and never
+  pays); trades and the name burn are the player's own transactions, as
+  the spec has them. ERC-4337 sponsorship is the production path for the
+  same vouchers; the devnet has a faucet for the player's own gas.
+- The tag carries a token id, never a name, a price or a colour. The
+  catalog that turns the id into a tint is client-side; a snapshot with a
+  skin in it is one integer longer than one without.
+- Chain down, game up: `wear` reads the cache the last reconcile wrote,
+  the room reads only `counter.worn`, and settlement never touches the
+  chain. The drill in the probe flips the devnet dead, links, reconciles,
+  wears, joins, settles, and flips it back.
+- The SIWE statement is fixed and the host refuses any other: the link
+  signs nothing else, and a replayed message is a stale nonce.
+- A Depth-1 file that links gets a Ghostfile and its stamps but no name
+  voucher and (on the devnet) no launch grant; the registry and the grant
+  are gated on Depth, which is play.
+- Two regressions caught by the full sweep and fixed here: the Stage 6
+  probe's smuggled `protocols` field is stripped at PvP join by design
+  since Stage 10 (the probe now smuggles a field the manifest never knew),
+  and the CLOCKEATER's BUMP STOCK crossed the TTK band (a burst pistol's
+  fire rate is quantised by the burst cadence: +2% was a whole burst gap,
+  −10% TTK at every range), so on that weapon the fire-rate benefit becomes
+  a reload benefit of the same weight — the same move the SMG's spread
+  chips made in Stage 7.
+
+**Acceptance (`npm run probe:counter`, 11/11; `npm run lint:economy`, 241
+items / 0 violations; `npm test`, 145 tests):** the host runs the devnet
+with the six contracts deployed, WAKE at its cap and every skin listed; the
+panel links a wallet over SIWE, the host binds it 1:1 and mints Ghostfile #1
+to the wallet with the wallet's ETH balance staying 0; the token cannot be
+transferred and a second file cannot bind the same wallet; the buy burns
+exactly 2% on chain, the 1155 balance is 1, reconcile puts token 1 on the
+rig, WEAR sets it and the viewmodel takes `#d86a2a`; in the next match the
+other client sees ALPHA with a five-segment tag ending `.1` and BRAVO with
+four, and the remote record carries no name, price or colour; the round's
+stamps attest on chain (count readable by anyone); THE_AUDITOR registers
+for 250 WAKE burned; a Depth-1 file gets no voucher; with the chain dead,
+reconcile and a new link say CHAIN UNREACHABLE while wear, the join with
+the worn skin, the round and the settlement work, and reconcile succeeds
+again once it is back; the full manifest lints clean and a priced item
+with a stat fails; the unit test walks the PvP bundle's import graph and
+finds no `shared/economy`, `server/chain` or `viem`; no page errors.
 
 ## Stage 3 — The look
 

@@ -45,6 +45,24 @@ export interface Account {
   theme?: string | null;
   presets?: { name: string; loadout: unknown }[];
   aliases?: string[];
+  /** the counter-ledger (Stage 11b): wallet link, Ghostfile token, on-chain stamps, name, rig cache, worn skin — plain data, identity and ownership only */
+  counter?: CounterRecord | null;
+}
+
+export interface CounterRecord {
+  address: string | null;
+  linkedAt: number;
+  /** Ghostfile token id (0 = not minted) */
+  ghostfile: number;
+  /** stamp ids attested on chain */
+  stamps: string[];
+  name: string | null;
+  /** owned cosmetic token ids, cached from the chain (equipping never waits on a read) */
+  rig: number[];
+  /** worn cosmetic token id (0 = none): the only thing that travels in a match snapshot */
+  worn: number;
+  /** last known WAKE balance, as a decimal string (display only) */
+  wake: string;
 }
 
 export interface CampaignRecord {
@@ -118,6 +136,7 @@ export function upgradeAccount(a: Partial<Account> & { id: string }): Account {
   if (out.theme === undefined) out.theme = null;
   if (!out.presets) out.presets = [];
   if (!out.aliases) out.aliases = [];
+  if (out.counter === undefined) out.counter = null;
   if (!out.loadout.chips) out.loadout.chips = {};
   if (!out.loadout.firmware) out.loadout.firmware = {};
   return out;

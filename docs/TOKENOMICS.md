@@ -1,6 +1,6 @@
 # MELTDOWN — WAKE: the counter-ledger
 
-**Status:** design spec, adopted. Implementation is Stage 11b (see `docs/STAGES.md`).
+**Status:** design spec, adopted. Implemented in Stage 11b (see `docs/STAGES.md`): the contracts in `contracts/`, the wallet link, vouchers, market and names run against an in-process EVM devnet until Robinhood Chain's testnet parameters are published; the testnet is configuration (`wrangler.counter.toml`, `shared/economy/chain.ts`).
 **Chain:** Robinhood Chain (Arbitrum Orbit L2, EVM). **Wallets:** WalletConnect via Reown AppKit.
 **Enforced today:** `shared/economy/` — no item that carries a token price or an on-chain binding may carry a stat.
 
@@ -230,7 +230,9 @@ token itself is not upgradeable. External audit before mainnet.
 
 ## 8. Enforcement in code (already on main)
 
-`shared/economy/manifest.ts` defines the economy item shape. An item has a
+`shared/economy/manifest.ts` defines the economy item shape and
+`shared/economy/catalog.ts` builds the full manifest from the real game data
+(`npm run lint:economy` runs it in CI). An item has a
 `mechanical` block (costs and benefits — the Ghostfile's paired trades) and a
 `market` block (WAKE price, on-chain binding, tradability).
 `shared/economy/lint.ts` fails on any of:

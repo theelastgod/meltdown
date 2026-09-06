@@ -10,6 +10,9 @@ export function buildViewmodel(id: WeaponId): THREE.Group {
   const dark = new THREE.MeshStandardMaterial({ color: 0x0c0f15, roughness: 0.7, metalness: 0.3 });
   const def = WEAPON_LIST.find((w) => w.id === id)!;
   const strip = new THREE.MeshBasicMaterial({ color: def.tracer });
+  // the rig tint (a worn skin) recolours the strip and nothing else — the read stays the silhouette
+  g.userData.strip = strip;
+  g.userData.tracer = def.tracer;
   const add = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => {
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);

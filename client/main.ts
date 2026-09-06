@@ -1,3 +1,5 @@
+import { parseTag } from "@shared/identity/identity";
+import type { counterView } from "@shared/economy/counter";
 import { Game, type NetConfig } from "./game";
 import type { NetClient } from "./net/netclient";
 import type { BotStep } from "./bot";
@@ -70,6 +72,13 @@ export interface GameHook {
   cosmetic: (body: Record<string, unknown>) => Promise<{ ok: boolean; reason?: string }>;
   loadPreset: (slot: number) => boolean;
   joinAudit: () => void;
+  /** The counter-ledger (Stage 11b): the panel's view, the wallet link, a market buy, wear, the name, reconcile; the skins others wear as the snapshot carries them. */
+  counter: () => { view: ReturnType<typeof counterView> | null; wallet: string | null; last: string; info: unknown; tint: string | null; remotes: { id: number; name: string; tag: string; skin: number }[] };
+  link: () => Promise<{ ok: boolean; reason?: string }>;
+  buySkin: (listing: number) => Promise<{ ok: boolean; reason?: string }>;
+  wearSkin: (token: number) => Promise<{ ok: boolean; reason?: string }>;
+  registerName: (name: string) => Promise<{ ok: boolean; reason?: string }>;
+  reconcile: () => Promise<{ ok: boolean; reason?: string }>;
   /** Campaign (Stage 10): state, dialogue advance/choose, contracts desk, launch, faction, protocols. */
   campaign: () => ReturnType<Game["campaign"]["view"]>;
   dialogueAdvance: (choice?: number) => boolean;
@@ -176,6 +185,12 @@ window.__game = {
   cosmetic: (body) => game.file.postEndgame("cosmetic", body),
   loadPreset: (slot) => game.file.loadPreset(slot),
   joinAudit: () => game.joinAudit(),
+  counter: () => ({ view: game.file.counterState, wallet: game.file.counter?.address ?? null, last: game.file.counter?.last ?? "", info: game.file.counter?.info ?? null, tint: game.renderer.skinTint, remotes: (game.net?.remoteViews() ?? []).map((r) => ({ id: r.id, name: r.name ?? "", tag: r.tag ?? "", skin: parseTag(r.tag ?? "", "").skin })) }),
+  link: () => game.file.counter?.link() ?? Promise.resolve({ ok: false, reason: "offline" }),
+  buySkin: (listing) => game.file.counter?.buy(listing) ?? Promise.resolve({ ok: false, reason: "offline" }),
+  wearSkin: (token) => game.file.counter?.op("wear", { token }) ?? Promise.resolve({ ok: false, reason: "offline" }),
+  registerName: (name) => game.file.counter?.registerName(name) ?? Promise.resolve({ ok: false, reason: "offline" }),
+  reconcile: () => game.file.counter?.op("reconcile") ?? Promise.resolve({ ok: false, reason: "offline" }),
   campaign: () => game.campaign.view(),
   dialogueAdvance: (choice) => game.campaign.advance(choice ?? -1),
   contracts: (on) => game.campaign.toggleContracts(on),

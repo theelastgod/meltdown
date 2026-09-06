@@ -28,6 +28,16 @@ export const SCHEMA = [
   at      INTEGER NOT NULL
 )`,
   `CREATE INDEX IF NOT EXISTS ledger_account ON ledger (account, seq)`,
+  `CREATE TABLE IF NOT EXISTS wallet (
+  address    TEXT PRIMARY KEY,
+  account    TEXT NOT NULL UNIQUE,
+  linked_at  INTEGER NOT NULL DEFAULT 0
+)`,
+  `CREATE TABLE IF NOT EXISTS siwe_nonce (
+  account TEXT PRIMARY KEY,
+  nonce   TEXT NOT NULL,
+  at      INTEGER NOT NULL
+)`,
 ];
 
 /** Column additions for databases created before a column existed (each is ignored when the column is already there). */

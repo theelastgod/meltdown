@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MELTDOWN \u2014 browser multiplayer FPS set in Lethe, the city that forgets you.",
+  "description": "MELTDOWN — browser multiplayer FPS set in Lethe, the city that forgets you.",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc --noEmit -p tsconfig.json && vite build",
@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json",
     "test": "vitest run",
     "probe": "tsx probe/stage1.ts",
-    "verify": "npm run typecheck && npm run test && npm run probe && npm run probe:look && npm run probe:net && npm run probe:arsenal && npm run probe:wake && npm run lint:fairness -- --quick && npm run probe:file && npm run probe:city && npm run probe:cityLife && npm run probe:mastery && npm run probe:identity && npm run probe:campaign && npm run probe:endgame",
+    "verify": "npm run typecheck && npm run test && npm run probe && npm run probe:look && npm run probe:net && npm run probe:arsenal && npm run probe:wake && npm run lint:fairness -- --quick && npm run probe:file && npm run probe:city && npm run probe:cityLife && npm run probe:mastery && npm run probe:identity && npm run probe:campaign && npm run probe:endgame && npm run lint:economy && npm run probe:counter",
     "probe:look": "tsx probe/stage3.ts",
     "host": "tsx server/node-host.ts",
     "probe:net": "tsx probe/stage2.ts",
@@ -25,10 +25,23 @@
     "probe:cityLife": "tsx probe/stage9b.ts",
     "probe:identity": "tsx probe/stage8.ts",
     "probe:campaign": "tsx probe/stage10.ts",
-    "probe:endgame": "tsx probe/stage11.ts"
+    "probe:endgame": "tsx probe/stage11.ts",
+    "probe:counter": "tsx probe/stage11b.ts",
+    "lint:economy": "tsx shared/economy/cli.ts",
+    "contracts:build": "tsx server/chain/compile.ts",
+    "contracts:deploy": "tsx server/chain/deploy-cli.ts"
   },
   "dependencies": {
+    "@ethereumjs/block": "^10.1.3",
+    "@ethereumjs/common": "^10.1.3",
+    "@ethereumjs/evm": "^10.1.3",
+    "@ethereumjs/statemanager": "^10.1.3",
+    "@ethereumjs/tx": "^10.1.3",
+    "@ethereumjs/util": "^10.1.3",
+    "@ethereumjs/vm": "^10.1.3",
+    "solc": "^0.8.36",
     "three": "^0.180.0",
+    "viem": "^2.56.3",
     "ws": "^8.21.3"
   },
   "devDependencies": {

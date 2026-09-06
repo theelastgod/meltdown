@@ -12,6 +12,7 @@ import { HubDressing } from "./hub";
 import { CampaignFx } from "./campaign";
 import { drawGlyph, glyphFor } from "@shared/identity/glyph";
 import { parseTag } from "@shared/identity/identity";
+import { skinByToken } from "@shared/economy/catalog";
 import { ArsenalFx, buildViewmodel } from "./weapons";
 import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
@@ -208,7 +209,18 @@ export class Renderer {
     if (e) e.flash = 1;
   }
 
-  private remoteMeshes = new Map<number, { group: THREE.Group; mat: THREE.MeshStandardMaterial; tag: THREE.Sprite; tagKey: string; canvas: HTMLCanvasElement }>();
+  private remoteMeshes = new Map<number, { group: THREE.Group; mat: THREE.MeshStandardMaterial; trim: THREE.MeshBasicMaterial; skin: number; tag: THREE.Sprite; tagKey: string; canvas: HTMLCanvasElement }>();
+  /** the local rig's worn skin tint (null: stock) */
+  skinTint: string | null = null;
+
+  /** Wear a skin on the local rig: the viewmodel strips take the tint. Cosmetic; nothing in the sim reads it. */
+  setSkin(tint: string | null): void {
+    this.skinTint = tint;
+    for (const vm of this.viewmodels.values()) {
+      const strip = vm.userData.strip as THREE.MeshBasicMaterial | undefined;
+      if (strip) strip.color.set(tint ?? (vm.userData.tracer as string));
+    }
+  }
 
   /** Other players: hooded silhouettes with cyan Blank trim. Zero mechanical data touches this. */
   /** The over-the-head tag: glyph, what the city calls them, and the Debt marker. Identity only; redrawn when the tag changes. */
@@ -252,7 +264,8 @@ export class Renderer {
         const hood = new THREE.Mesh(new THREE.ConeGeometry(MOVE.capsuleRadius + 0.06, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0x07080c, roughness: 0.9 }));
         hood.position.y = MOVE.standHeight - 0.05;
         group.add(hood);
-        const trim = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.6, 0.05), new THREE.MeshBasicMaterial({ color: PALETTE.cyan }));
+        const trimMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan });
+        const trim = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.6, 0.05), trimMat);
         trim.position.set(MOVE.capsuleRadius - 0.02, 1.05, 0);
         group.add(trim);
         const gun = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.6), new THREE.MeshStandardMaterial({ color: 0x151a22, roughness: 0.5, metalness: 0.6 }));
@@ -269,10 +282,18 @@ export class Renderer {
         tag.center.set(0.1, 0.5);
         group.add(tag);
         this.scene.add(group);
-        e = { group, mat, tag, tagKey: "", canvas };
+        e = { group, mat, trim: trimMat, skin: -1, tag, tagKey: "", canvas };
         this.remoteMeshes.set(v.id, e);
       }
       this.drawTag(e, v.name ?? "BLANK", v.tag ?? "", !!v.debt);
+      // the worn skin travels as a token id in the tag; the palette it names is the client's catalog
+      const skin = v.tag ? parseTag(v.tag, "").skin : 0;
+      if (skin !== e.skin) {
+        e.skin = skin;
+        const tint = skinByToken(skin)?.tint;
+        e.mat.emissive.set(tint ?? PALETTE.cyan);
+        e.trim.color.set(tint ?? PALETTE.cyan);
+      }
       e.group.visible = v.alive;
       e.group.position.set(v.x, v.y, v.z);
       e.group.rotation.y = v.yaw;

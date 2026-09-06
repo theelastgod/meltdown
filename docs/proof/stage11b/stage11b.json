@@ -1,0 +1,85 @@
+{
+  "results": {
+    "counter": {
+      "chainId": 31911,
+      "contracts": {
+        "wake": "0x8464135c8f25da09e49bc8782676a84730c318bc",
+        "ghostfile": "0x71c95911e9a5d330f4d621842ec243ee1343292e",
+        "stamps": "0x948b3c65b89df0b4894abe91e6d02fe579834f8f",
+        "names": "0x712516e61c8b383df4a63cfe83d7701bce54b03e",
+        "cosmetics": "0xbcf26943c0197d2ee0e5d05c716be60cc2761508",
+        "market": "0x59f2f1fcfe2474fd5f0b9ba1e73ca90b143eb8d0"
+      },
+      "ghostfile": 1,
+      "rig": [
+        {
+          "token": 1,
+          "id": "skin_rust",
+          "name": "RUST LEASE",
+          "worn": true
+        }
+      ],
+      "tagSeen": "1071hi4.3.-1.0.1",
+      "stampsOnChain": 10,
+      "name": "THE_AUDITOR",
+      "burned": "250.8"
+    }
+  },
+  "checks": [
+    {
+      "name": "the ledger host runs an EVM devnet behind JSON-RPC with the six contracts deployed, WAKE at its fixed cap and the market seeded with every skin",
+      "pass": true,
+      "detail": "chain 31911 · ghostfile code 3056 B · listings #1@40 #2@60 #3@120 #4@200"
+    },
+    {
+      "name": "the panel offers the link; SIWE with a local account in place of WalletConnect: the host verifies, binds the wallet 1:1 to the file, and mints the soulbound Ghostfile with sponsored gas",
+      "pass": true,
+      "detail": "link true  · wallet 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65 · ghostfile #1 owner 0x15d34A · wallet ETH 0 · WAKE 1000"
+    },
+    {
+      "name": "the Ghostfile cannot move (soulbound), and a second file cannot bind the same wallet",
+      "pass": true,
+      "detail": "transfer reverted true · second link: wallet already bound to another file"
+    },
+    {
+      "name": "a market buy is the player's own signed transactions: the 2% burn lands on chain, the skin lands in the wallet, the host reconciles it onto the rig, the file wears it and the local viewmodel takes the tint",
+      "pass": true,
+      "detail": "buy true  · burned +800000000000000000 wei · 1155 balance 1 · rig [skin_rust] · worn 1 tint #d86a2a"
+    },
+    {
+      "name": "in the next match the other client's snapshot carries the worn skin as a token id in the tag and nothing else of the purchase; the file that wears nothing keeps the four-segment tag",
+      "pass": true,
+      "detail": "BRAVO sees ALPHA [1071hi4.3.-1.0.1] skin 1 · ALPHA sees [1aa2du1.0.-1.0] · remote keys id,name,tag,x,y,z,yaw,pitch,height,alive,stance,health"
+    },
+    {
+      "name": "the round's stamps reach the chain as server-signed attestations (one voucher each, gas sponsored), readable by anyone",
+      "pass": true,
+      "detail": "stamps on file 10 · on chain 10 · first at 1788658414"
+    },
+    {
+      "name": "at Depth 50 the file writes its name: a game voucher, the player's own transaction, the fee burned by length (11 characters → 250 WAKE), soulbound",
+      "pass": true,
+      "detail": "name THE_AUDITOR · burned +250 WAKE · "
+    },
+    {
+      "name": "a Depth-1 file gets no name voucher",
+      "pass": true,
+      "detail": "no wallet linked"
+    },
+    {
+      "name": "chain down, game up: reconcile and a new link fail soft with CHAIN UNREACHABLE while wear (the cache), the join with the worn skin, the round and the settlement all still work; back up, reconcile succeeds",
+      "pass": true,
+      "detail": "reconcile: CHAIN UNREACHABLE: (devnet outage drill) · link: CHAIN UNREACHABLE: (devnet outage drill) · skin seen 1 · settlements 2 · xp 2000250 → 2000750 · after: true"
+    },
+    {
+      "name": "the one rule over the full manifest: every node, chip, firmware, theme, skin and registry item lints clean; a priced item with a stat fails the build; the treasury line reconciles burns",
+      "pass": true,
+      "detail": "241 items · 0 violations · dirty: no-paid-power,identity-is-cosmetic · burned 250.80 · volume 40"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": "clean console"
+    }
+  ]
+}

@@ -33,6 +33,8 @@ jobs:
       - run: npm run probe:identity
       - run: npm run probe:campaign
       - run: npm run probe:endgame
+      - run: npm run lint:economy
+      - run: npm run probe:counter
       - uses: actions/upload-artifact@v4
         if: always()
         with:

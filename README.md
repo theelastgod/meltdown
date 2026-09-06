@@ -31,6 +31,8 @@ npm run probe:file # Ghostfile: lint injections fail, illegal loadouts refused a
 npm run probe:city # Lethe proper: three districts load, bots route the streets and climb the walkway, frames read like the clip, budgets hold
 npm run probe:cityLife # city life: crowds walk, the monorail crosses and whooshes, gates seal the exits while vistas continue the city, PA and sirens on the sim clock
 npm run probe:endgame # endgame: daily contracts, the week's Audit room (rules, gravity, sheet, leaderboard), the Deep Wake, Rewrite + the Wakelight shop
+npm run lint:economy  # the one rule over the full manifest: WAKE never touches a stat
+npm run probe:counter # the counter-ledger: SIWE wallet link, sponsored Ghostfile + stamps on a real EVM devnet, a market buy on the rig, the name, chain-down drill
 npm run certify:firmware # every firmware measured in the TTK harness at its ideal range (must sit in the band)
 npm run probe:mastery # Ledger Graph + mastery: lint over nodes/chips/firmwares, chips and firmwares enforced at spawn, ledger shop, stamps un-redact online
 npm run probe:identity # identity & rituals: dossier flash, tags, tiered kill audio, Debts, receipt, Chapter rite, leak scan, Deadletter Office + range ghost
@@ -68,7 +70,9 @@ shared/     pure TS simulation shared by client and (Stage 2) server
   progression/ Depth/XP curve, currencies, deterministic crafting, weapon mastery + curricula, attestation stamps, the Ghostfile account
   fairness/ the Fairness Lint (simulated duels + mobility course) and its CLI
   campaign/ Kernel Protocols stub — quarantined from PvP by an import-graph test
-  economy/  WAKE token constants, Robinhood Chain config, no-paid-power lint
+  economy/  WAKE token constants, Robinhood Chain config, no-paid-power lint, the full catalog + skins, the counter record
+contracts/  WAKE (ERC-20), Ghostfile (soulbound 721), Stamps (attestations), Names, Cosmetics (1155), LedgerMarket — solc-js build in contracts/out
+server/chain/ the in-process EVM devnet, the deployer, the game signer (EIP-712 vouchers), the CounterLedger service, wallet stores
 client/     Vite + Three.js presentation: input, renderer (post chain, rain, wet floor, city, life: crowds/monorail/steam/ads/sky, hub), audio, HUD, game loop, ghost (range replays), bot
 server/     authoritative room (transport-agnostic), Node host, Cloudflare Durable Object host, PlayerFile DO + D1 schema
 probe/      headless acceptance probes (one per stage)

@@ -1,0 +1,27 @@
+# The counter-ledger Worker: SIWE wallet link, sponsored Ghostfile + stamp vouchers, name vouchers,
+# the market view. A separate script from meltdown-match so the PvP Durable Object bundle never
+# carries an economy module or a chain client. Deploy after meltdown-match:
+#   npx wrangler secret put SIGNER_KEY -c wrangler.counter.toml
+#   npx wrangler secret put RELAYER_KEY -c wrangler.counter.toml
+#   npx wrangler deploy -c wrangler.counter.toml
+name = "meltdown-counter"
+main = "server/counter-worker.ts"
+compatibility_date = "2025-06-01"
+
+[vars]
+# Robinhood Chain testnet parameters go here when published (shared/economy/chain.ts); the
+# addresses come from `npm run contracts:deploy -- <rpc> <relayer key>`.
+CHAIN_ID = "0"
+CHAIN_RPC = ""
+CONTRACTS = "{}"
+SIWE_DOMAINS = ""
+
+[durable_objects]
+bindings = [
+  { name = "PLAYER_FILE", class_name = "PlayerFile", script_name = "meltdown-match" },
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "meltdown-ghostfile"
+database_id = "replace-with-your-d1-id"

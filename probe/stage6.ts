@@ -89,7 +89,8 @@ async function main(): Promise<void> {
       { name: "EIGHT", account: "sandbox-eight", loadout: { ...base, attested: ["slipfile", "static_skin", "contagion_rider", "long_lease", "quiet_ledger", "spite_clause", "collateral", "hair_trigger"] }, rule: /attest-limit/ },
       { name: "SPLIT", account: "sandbox-split", loadout: { ...base, attested: ["slipfile", "black_swan"] }, rule: /connected/ },
       { name: "POOR", account: "fresh-poor", loadout: { ...base, attested: ["slipfile"] }, rule: /not-owned/ },
-      { name: "SMUGGLE", account: "sandbox-smuggle", loadout: { ...base, attested: ["slipfile"], protocols: ["kp_redline"] }, rule: /unknown-field/ },
+      // a campaign-only field (protocols) is stripped at PvP join by design (Stage 10); a field the manifest has never heard of is refused
+      { name: "SMUGGLE", account: "sandbox-smuggle", loadout: { ...base, attested: ["slipfile"], damage: 2 }, rule: /unknown-field/ },
     ];
     const rejections: string[] = [];
     for (const c of illegal) {

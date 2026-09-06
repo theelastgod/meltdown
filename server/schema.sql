@@ -24,3 +24,15 @@ CREATE TABLE IF NOT EXISTS ledger (
   at      INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ledger_account ON ledger (account, seq);
+
+-- The counter-ledger index: one wallet per Ghostfile, one Ghostfile per wallet (Stage 11b).
+CREATE TABLE IF NOT EXISTS wallet (
+  address    TEXT PRIMARY KEY,
+  account    TEXT NOT NULL UNIQUE,
+  linked_at  INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS siwe_nonce (
+  account TEXT PRIMARY KEY,
+  nonce   TEXT NOT NULL,
+  at      INTEGER NOT NULL
+);

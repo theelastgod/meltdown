@@ -1,3 +1,4 @@
+import { skinByToken } from "@shared/economy/catalog";
 import { MAX_CATCHUP_TICKS, SIM_DT, SIM_HZ } from "@shared/sim/constants";
 import type { InputFrame } from "@shared/sim/input";
 import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS } from "@shared/sim/level";
@@ -195,6 +196,7 @@ export class Game {
 
   private applyIdentity(v: ReturnType<GhostFile["identityView"]>): void {
     this.hud.setIdentity(v.glyphSvg, v.display, v.monikerText, v.chapter);
+    this.renderer.setSkin(skinByToken(this.file.accountRecord?.counter?.worn ?? 0)?.tint ?? null);
     this.refreshHub();
   }
 

@@ -28,10 +28,12 @@ export interface PublicIdentity {
   stamps: number;
   /** true when this file is the viewer's Debt (the one who killed them most last match) */
   debt: boolean;
+  /** worn cosmetic token id (0 = none): an ID only — the palette it names lives in the client's catalog */
+  skin: number;
 }
 
 /** The only keys an identity may carry on the wire. */
-export const IDENTITY_KEYS: readonly string[] = ["id", "team", "glyph", "chapter", "moniker", "display", "stamps", "debt"];
+export const IDENTITY_KEYS: readonly string[] = ["id", "team", "glyph", "chapter", "moniker", "display", "stamps", "debt", "skin"];
 
 export function displayName(a: Account | null, handle: string): string {
   if (!a) return handle;
@@ -40,20 +42,20 @@ export function displayName(a: Account | null, handle: string): string {
 }
 
 export function publicIdentity(a: Account | null, handle: string, debt = false): PublicIdentity {
-  if (!a) return { glyph: glyphSeed(handle), chapter: 0, moniker: null, display: handle, stamps: 0, debt };
-  return { glyph: glyphSeed(a.id), chapter: chapterFor(a.depth), moniker: wornMoniker(a, a.moniker)?.id ?? null, display: displayName(a, handle), stamps: a.stamps.length, debt };
+  if (!a) return { glyph: glyphSeed(handle), chapter: 0, moniker: null, display: handle, stamps: 0, debt, skin: 0 };
+  return { glyph: glyphSeed(a.id), chapter: chapterFor(a.depth), moniker: wornMoniker(a, a.moniker)?.id ?? null, display: displayName(a, handle), stamps: a.stamps.length, debt, skin: a.counter?.worn ?? 0 };
 }
 
-/** Compact wire form for the snapshot: `seed.chapter.monikerIndex.debt`. */
+/** Compact wire form for the snapshot: `seed.chapter.monikerIndex.debt[.skin]` — the skin segment only when one is worn. */
 export function identityTag(pi: PublicIdentity): string {
   const mi = pi.moniker ? MONIKERS.findIndex((m) => m.id === pi.moniker) : -1;
-  return `${pi.glyph.toString(36)}.${pi.chapter}.${mi}.${pi.debt ? 1 : 0}`;
+  return `${pi.glyph.toString(36)}.${pi.chapter}.${mi}.${pi.debt ? 1 : 0}${pi.skin ? `.${pi.skin}` : ""}`;
 }
 
 export function parseTag(tag: string, display: string): PublicIdentity {
-  const [s, c, mi, d] = tag.split(".");
+  const [s, c, mi, d, sk] = tag.split(".");
   const idx = Number(mi ?? -1);
-  return { glyph: parseInt(s ?? "0", 36) >>> 0, chapter: Number(c ?? 0) || 0, moniker: idx >= 0 ? (MONIKERS[idx]?.id ?? null) : null, display, stamps: 0, debt: d === "1" };
+  return { glyph: parseInt(s ?? "0", 36) >>> 0, chapter: Number(c ?? 0) || 0, moniker: idx >= 0 ? (MONIKERS[idx]?.id ?? null) : null, display, stamps: 0, debt: d === "1", skin: Number(sk ?? 0) || 0 };
 }
 
 // ---------------------------------------------------------------------------

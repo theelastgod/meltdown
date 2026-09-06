@@ -9,6 +9,9 @@
  *   WS   /room/<name>[?lagcomp=0&ai=0&warmup=<s>&round=<s>&level=<id>]
  *   WS   /campaign/<name>?mission=<id>   → a co-op contract (the mission runtime on the server)
  *   POST /file/<id>/campaign → { op: faction | complete | wear | state }
+ *   POST /chain              → JSON-RPC to the in-process devnet (a real EVM; the contracts are deployed at boot)
+ *   GET  /counter            → chain id, contract addresses, the market's listings, treasury figures
+ *   POST /link/nonce | /link/verify | /file/<id>/counter → the counter-ledger (SIWE link, vouchers, rig)
  */
 import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
@@ -23,6 +26,9 @@ import { contractsFor } from "../shared/endgame/contracts";
 import { claimContract, dailyView } from "../shared/endgame/contracts";
 import { dayIndex } from "../shared/endgame/clock";
 import { buyCosmetic, rewrite, savePreset, setAlias, setTheme } from "../shared/endgame/rewrite";
+import { bootDevnetLedger } from "./chain/boot";
+import { counterRequest } from "../shared/economy/endpoint";
+import type { Hex } from "viem";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 8787);
 const rooms = new Map<string, Room>();
@@ -36,6 +42,20 @@ const log = (line: string) => {
   if (logs.length > 500) logs.shift();
   if (process.env.VERBOSE) console.log(line);
 };
+/** The counter-ledger on an in-process devnet: a real EVM with the contracts deployed at boot and the market seeded. */
+const counter = await bootDevnetLedger({ onLog: (l) => log(`[counter] ${l}`) });
+const readBody = (req: import("node:http").IncomingMessage): Promise<Record<string, unknown>> =>
+  new Promise((resolve) => {
+    let body = "";
+    req.on("data", (c) => (body += c));
+    req.on("end", () => {
+      try {
+        resolve(JSON.parse(body || "{}") as Record<string, unknown>);
+      } catch {
+        resolve({});
+      }
+    });
+  });
 
 /** fixed-rate loop with drift correction */
 function startLoop(room: Room): void {
@@ -83,13 +103,76 @@ const http = createServer((req, res) => {
     res.end();
     return;
   }
+  if (req.method === "POST" && req.url === "/chain") {
+    // the devnet's JSON-RPC: the panel's own transactions (market buys, name registration) go here
+    void readBody(req).then(async (body) => {
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify(await counter.devnet.handle(Array.isArray(body) ? body : Object.keys(body).length ? body : [])));
+    });
+    return;
+  }
+  if (req.method === "POST" && req.url === "/chain/faucet") {
+    // devnet only: gas for the wallet's own transactions (market buys, the name burn)
+    void readBody(req).then(async (body) => {
+      const address = String(body.address ?? "");
+      res.setHeader("content-type", "application/json");
+      if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+        res.end(JSON.stringify({ ok: false, reason: "bad address" }));
+        return;
+      }
+      await counter.devnet.fund(address as Hex);
+      res.end(JSON.stringify({ ok: true }));
+    });
+    return;
+  }
+  if (req.method === "POST" && req.url === "/chain/outage") {
+    // the "chain unreachable" drill: every RPC fails until it is switched back
+    void readBody(req).then((body) => {
+      counter.devnet.outage = !!body.on;
+      log(`[counter] outage drill ${counter.devnet.outage ? "ON" : "OFF"}`);
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ ok: true, outage: counter.devnet.outage }));
+    });
+    return;
+  }
+  if (req.url === "/counter") {
+    void (async () => {
+      res.setHeader("content-type", "application/json");
+      try {
+        res.end(JSON.stringify({ ...counter.ledger.info(), rpc: `http://127.0.0.1:${port}/chain`, listings: await counter.ledger.listings(), treasury: await counter.ledger.treasury() }));
+      } catch (e) {
+        res.end(JSON.stringify({ ...counter.ledger.info(), rpc: `http://127.0.0.1:${port}/chain`, listings: [], treasury: null, reason: `CHAIN UNREACHABLE: ${String((e as Error).message).slice(0, 80)}` }));
+      }
+    })();
+    return;
+  }
+  if (req.method === "POST" && (req.url === "/link/nonce" || req.url === "/link/verify")) {
+    void readBody(req).then(async (body) => {
+      res.setHeader("content-type", "application/json");
+      const id = String(body.account ?? "").replace(/[^a-zA-Z0-9_:.-]/g, "").slice(0, 64);
+      if (!id) {
+        res.end(JSON.stringify({ ok: false, reason: "no account" }));
+        return;
+      }
+      if (req.url === "/link/nonce") {
+        res.end(JSON.stringify({ nonce: counter.ledger.nonce(id), statement: counter.ledger.info().statement, chainId: counter.ledger.info().chainId }));
+        return;
+      }
+      const a = accounts.load(id, "BLANK");
+      const r = await counter.ledger.link(a, String(body.message ?? ""), String(body.signature ?? "") as Hex);
+      if (r.ok) accounts.save(a);
+      log(`[counter] link ${id}: ${r.ok ? "ok" : r.reason}${r.ok && r.reason ? " (" + r.reason + ")" : ""}`);
+      res.end(JSON.stringify({ ok: r.ok, reason: r.reason, counter: a.counter ?? null }));
+    });
+    return;
+  }
   if (req.url?.startsWith("/endgame")) {
     const { week, audit } = currentAudit();
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ day: dayIndex(), contracts: contractsFor(dayIndex()), audit: { week, ...audit }, board: endgame.audit(week), season: seasonView(endgame.season()) }));
     return;
   }
-  const file = req.url?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|campaign|daily|claim|rewrite|cosmetic))?$/);
+  const file = req.url?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|campaign|daily|claim|rewrite|cosmetic|counter))?$/);
   if (file) {
     const id = file[1]!;
     const name = "BLANK";
@@ -111,6 +194,16 @@ const http = createServer((req, res) => {
           node = "";
         }
         const a = accounts.load(id, name);
+        if (file[3] === "counter") {
+          // the counter-ledger: wear is cache-only; reconcile / stamps / name go to the chain and fail soft
+          void counterRequest(a, parsed, counter.ledger).then((r) => {
+            if (r.ok) accounts.save(a);
+            log(`[counter] ${id} ${String((parsed as { op?: string }).op)}: ${r.ok ? "ok" : r.reason}`);
+            res.setHeader("content-type", "application/json");
+            res.end(JSON.stringify(r));
+          });
+          return;
+        }
         if (file[3] === "claim" || file[3] === "rewrite" || file[3] === "cosmetic") {
           const body = parsed as { id?: string; op?: string; slot?: number; name?: string; loadout?: unknown; alias?: string };
           let r: { ok: boolean; reason?: string };

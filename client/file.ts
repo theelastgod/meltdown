@@ -21,6 +21,8 @@ import { FIRMWARES, firmwareById } from "@shared/manifest/firmwares";
 import { CURRICULA, gateFor, MAX_RANK, xpForRank, type Mastery } from "@shared/progression/mastery";
 import { redact, STAMPS } from "@shared/progression/stamps";
 import { glyphFor, glyphSvg } from "@shared/identity/glyph";
+import { counterView, nameFee, NAME_DEPTH } from "@shared/economy/counter";
+import { CounterClient, type CounterView } from "./counter";
 import { CHAPTERS, chapterFor, MONIKERS, monikerById, unlockedMonikers, wornMoniker } from "@shared/identity/monikers";
 
 const KEY = "meltdown.file";
@@ -123,6 +125,16 @@ export class GhostFile {
       this.shop = shop;
       void this.load().then(() => this.loadEndgame());
     } else if (this.shop) void this.loadEndgame();
+    if (this.shop) {
+      this.counter = new CounterClient(this.shop, this.account, (c, view) => {
+        if (this.accountRecord) this.accountRecord.counter = c;
+        this.counterState = view;
+        this.render();
+        this.onIdentity?.(this);
+      });
+      this.counter.onChange = () => this.render();
+      void this.counter.load();
+    }
     this.persist();
   }
 
@@ -134,6 +146,10 @@ export class GhostFile {
   /** endgame (Stage 11): today's board, the week's Audit and leaderboard, the Deep Wake — from the ledger host */
   endgame: { day: number; contracts: ContractView[]; audit: (AuditDef & { week: number }) | null; board: AuditEntry[]; season: Parameters<import("./hud/hud").Hud["setSeason"]>[0] } = { day: 0, contracts: [], audit: null, board: [], season: null };
   onEndgame: ((f: GhostFile) => void) | null = null;
+  /** the counter-ledger client (Stage 11b); null offline */
+  counter: CounterClient | null = null;
+  /** the counter record as the panel sees it (from the account record; refreshed by every counter op) */
+  counterState: CounterView | null = null;
   onJoinAudit: (() => void) | null = null;
 
   /** Fetch the endgame board (host-wide) and the file's daily progress. */
@@ -197,6 +213,7 @@ export class GhostFile {
   /** Apply a whole account record (from the ledger host): the same fields a File message carries, identity derived here. */
   applyAccount(a: Account): void {
     this.accountRecord = a;
+    this.counterState = counterView(a);
     this.depth = a.depth;
     this.xp = a.xp;
     this.scrip = a.wallet.scrip;
@@ -452,6 +469,15 @@ export class GhostFile {
         const input = el.querySelector<HTMLInputElement>(`input[data-alias="${id}"]`);
         void this.postEndgame("cosmetic", { op: "alias", slot: Number(id), alias: input?.value ?? "" });
       } else if (act === "joinAudit") this.onJoinAudit?.();
+      else if (act === "link") void this.counter?.link();
+      else if (act === "buyListing") void this.counter?.buy(Number(id));
+      else if (act === "wear") void this.counter?.op("wear", { token: Number(id) });
+      else if (act === "reconcile") void this.counter?.op("reconcile");
+      else if (act === "attestStamps") void this.counter?.op("stamps");
+      else if (act === "registerName") {
+        const input = el.querySelector<HTMLInputElement>("input[data-name]");
+        void this.counter?.registerName(input?.value ?? "");
+      }
     });
     el.addEventListener("change", (e) => {
       const t = e.target as HTMLSelectElement;
@@ -487,6 +513,31 @@ export class GhostFile {
       else if (act === "closeGraph") this.toggleGraph(false);
     });
     this.render();
+  }
+
+  /** COUNTER-LEDGER // WAKE: the wallet link, the Ghostfile, the stamps on chain, the name, the rig and the market. Identity and ownership only. */
+  counterHtml(): string {
+    const c = this.counter;
+    if (!c) return "";
+    const v = this.counterState;
+    const info = c.info;
+    const wallet = c.address ? `WALLET <b>${c.short()}</b>` : `<span class="btn" data-act="link">[LINK A WALLET]</span> <span class="dim">Robinhood Wallet · WalletConnect · injected</span>`;
+    const linked = v?.linked ? `LINKED <b>${v.address!.slice(0, 6)}…${v.address!.slice(-4)}</b> · GHOSTFILE <b>${v.ghostfile ? "#" + v.ghostfile : "—"}</b> · STAMPS ON CHAIN <b>${v.stamps}</b>/${this.stamps.length} ${this.stamps.length > v.stamps ? `<span class="btn" data-act="attestStamps">[ATTEST]</span>` : ""} · WAKE <b>${Number(v.wake).toFixed(0)}</b> <span class="btn" data-act="reconcile">[RECONCILE]</span>` : c.address ? `<span class="btn" data-act="link">[SIGN THE LINK]</span> <span class="dim">one SIWE statement; the Ghostfile mints with sponsored gas</span>` : "";
+    const name = v?.linked ? (v.name ? `NAME <b class="ye">${v.name}</b> <span class="dim">written where they can't redact it</span>` : v.nameOpen ? `NAME <input data-name="1" maxlength="24" placeholder="3–24 · A-Z 0-9 _ -"> <span class="btn" data-act="registerName">[WRITE IT]</span> <span class="dim">${nameFee(3)}–${nameFee(12)} WAKE by length, burned</span>` : `NAME <span class="dim">the registry opens at Depth ${NAME_DEPTH}</span>`) : "";
+    const rig = v?.linked ? `RIG ${v.rig.length ? v.rig.map((r) => `<span class="btn ${r.worn ? "on" : ""}" data-act="wear" data-id="${r.worn ? 0 : r.token}">[${r.name}${r.worn ? " · WORN" : ""}]</span>`).join(" ") : "<span class='dim'>nothing on the rig yet</span>"}` : "";
+    const market = (info?.listings ?? []).map((l) => {
+      const s = v?.skins.find((k) => k.token === l.token);
+      return `<div class="cos ${s?.owned ? "owned" : ""}"><b>${s?.name ?? "TOKEN " + l.token}</b> <span class="dim">${s?.line ?? ""}</span> · <span class="sw" style="background:${s?.tint ?? "#fff"}"></span> · ${l.amount} listed · <span class="btn ${v?.linked && !c.busy ? "" : "off"}" data-act="buyListing" data-id="${l.listing}">[${l.price} WAKE]</span></div>`;
+    }).join("");
+    const t = info?.treasury;
+    const delta = t ? `SUPPLY ${Number(t.supply).toLocaleString()} · BURNED <b>${Number(t.burned).toFixed(0)}</b> · MARKET VOLUME ${Number(t.volume).toFixed(0)} · <span class="gr">NET DELTA: 0.000 — RECONCILED</span>` : info?.reason ?? "loading…";
+    return `<div class="sh">COUNTER-LEDGER // WAKE <span class="dim">${info ? (info.devnet ? "DEVNET" : "ROBINHOOD CHAIN") + " · chain " + info.chainId : ""}</span></div>
+      <div class="ln dim">VANTAGE priced you. This is the other book. It does not buy damage. It does not buy armor. It does not buy a node.</div>
+      <div class="ln">${wallet}${linked ? " · " + linked : ""}</div>
+      ${name ? `<div class="ln">${name}</div>` : ""}${rig ? `<div class="ln">${rig}</div>` : ""}
+      <div class="sh">LEDGER MARKET · settles only in WAKE · 5% fee: 2% burned, 2% treasury, 1% creator</div>${market || "<div class='dim'>no listings</div>"}
+      <div class="ln dim">${delta}</div>
+      ${c.last ? `<div class="ln am">${c.last}</div>` : ""}`;
   }
 
   /** Daily contracts, the week's Audit and its board, Rewrite, the Wakelight shop, presets and aliases. */
@@ -658,6 +709,7 @@ export class GhostFile {
         </div>
       </div>
       <div class="eg">${this.endgameHtml()}</div>
+      <div class="eg cl">${this.counterHtml()}</div>
       <div class="ft ${v.legal ? "" : "bad"}">NET DELTA: ${delta >= 0 ? "+" : "−"}${Math.abs(delta).toFixed(3)} — ${stamp} · ${v.legal ? "ATTESTATION LEGAL" : "ILLEGAL: " + v.errors.join("; ")} · ${v.applies === "now" ? "APPLIED" : "APPLIES ON NEXT LINK"}</div>
     `;
   }
