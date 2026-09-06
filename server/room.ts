@@ -147,6 +147,14 @@ export interface RoomOptions {
   roundSeconds?: number;
   /** Level id (shared/sim/level.ts registry); unknown ids fall back to the default district. */
   level?: string;
+  /**
+   * A private room, bought by the hour (`shared/net/private.ts`). It mints nothing: THE RUN pays
+   * Scrip, the Audit board is not written and the Deep Wake is not fed. The room applies that
+   * itself rather than trusting the host to pass the right flags — a room-hour costs 5 $CAPITAL and
+   * a day's banking is worth about 86, so a paid room that could pay would be the economy's
+   * cheapest mint.
+   */
+  private?: boolean;
 }
 
 export interface RoomStats {
@@ -224,8 +232,10 @@ export class Room {
       roundSeconds: opts.roundSeconds ?? 360,
       level: opts.level ?? "",
       hooks: opts.hooks ?? {},
-      audit: opts.audit ?? null,
+      // a private room is never a prize channel, whatever the caller passed
+      audit: opts.private ? null : opts.audit ?? null,
       endgame: opts.endgame ?? null,
+      private: opts.private ?? false,
       run: opts.run ?? false,
       wakePhase: opts.wakePhase ?? "warmup",
       dummyRespawn: opts.dummyRespawn ?? true,
@@ -664,11 +674,15 @@ export class Room {
   }
 
   /** Round start: everyone's credit counts from here. */
-  /** what the Welcome tells a client about the room: "" for a plain wake, `audit:<id>:<week>` for a playlist, `campaign` for co-op */
+  /**
+   * What the Welcome tells a client about the room: "" for a plain wake, `audit:<id>:<week>` for a
+   * playlist, `campaign` for co-op, and a `private:` prefix on any of them for a room-hour room —
+   * the client says so on the HUD, because a player should know before they play that this one
+   * pays no $CAPITAL.
+   */
   mode(): string {
-    if (this.opts.run) return "run";
-    if (this.opts.audit) return `audit:${this.opts.audit.def.id}:${this.opts.audit.week}`;
-    return this.opts.hooks.afterStep ? "campaign" : "";
+    const base = this.opts.run ? "run" : this.opts.audit ? `audit:${this.opts.audit.def.id}:${this.opts.audit.week}` : this.opts.hooks.afterStep ? "campaign" : "";
+    return this.opts.private ? `private:${base}` : base;
   }
 
   /** flips this round per node id per cell (the Deep Wake reads them at settlement) */
@@ -730,6 +744,8 @@ export class Room {
   private pushEndgame(winner: number): void {
     const store = this.opts.endgame;
     if (!store) return;
+    // MINTLESS: a private room writes neither board, so neither prize channel can be farmed in one
+    if (this.opts.private) return;
     const houseOf = (team: number): House[] => {
       const out: House[] = [];
       for (const rec of this.clients.values()) {
@@ -796,7 +812,11 @@ export class Room {
     if (!a.counter) a.counter = { address: null, linkedAt: 0, ghostfile: 0, stamps: [], name: null, rig: [], worn: 0, capital: "0" };
     const run = a.counter.run && a.counter.run.day === day ? a.counter.run : { day, banked: 0, owed: a.counter.run?.owed ?? 0, paid: a.counter.run?.paid ?? 0 };
     let line: string;
-    if (a.depth < RUN_DEPTH) {
+    if (this.opts.private) {
+      // a room you paid for is not a room that pays you (shared/net/private.ts): Scrip, never units
+      a.wallet.scrip += value * RUN_SCRIP_PER_UNIT;
+      line = `BANKED ${value} AT ${zone} · ${value * RUN_SCRIP_PER_UNIT} SCRIP (a private room pays no $CAPITAL)`;
+    } else if (a.depth < RUN_DEPTH) {
       a.wallet.scrip += value * RUN_SCRIP_PER_UNIT;
       line = `BANKED ${value} AT ${zone} · ${value * RUN_SCRIP_PER_UNIT} SCRIP (the run pays $CAPITAL from Depth ${RUN_DEPTH})`;
     } else {

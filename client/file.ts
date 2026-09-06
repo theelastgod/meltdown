@@ -152,6 +152,8 @@ export class GhostFile {
   counter: CounterClient | null = null;
   /** the counter record as the panel sees it (from the account record; refreshed by every counter op) */
   counterState: CounterView | null = null;
+  /** the last private room this file opened (Stage 20): the code is the access control, so it is shown, not the URL */
+  privateCode: string | null = null;
   onJoinAudit: (() => void) | null = null;
   /** which section Tab opens on: the game answers "market" from a safe zone's kiosk */
   openSection: () => "top" | "market" = () => "top";
@@ -480,6 +482,12 @@ export class GhostFile {
       else if (act === "payout") void this.counter?.op("payout");
       else if (act === "buyseason") void this.counter?.buySeason();
       else if (act === "buyroom") void this.counter?.buyRoomHours(1);
+      else if (act === "openroom") {
+        void this.counter?.openRoom(1).then((r) => {
+          if (r.ok && r.code) this.privateCode = r.code;
+          this.render();
+        });
+      }
       else if (act === "prizes") void this.counter?.op("prizes");
       else if (act === "claimPrize") void this.counter?.op("claimPrize", { epoch: Number(id) });
       else if (act === "sell") {
@@ -551,7 +559,7 @@ export class GhostFile {
     const held = (v?.seasons ?? []).includes(season);
     const hours = v?.roomHours ?? 0;
     const sinkBlock = v?.linked && prices
-      ? `<div class="ln">DEEP WAKE SEASON ${season} · ${held ? "<b>BOUGHT OUT</b>" : `<span class="btn" data-act="buyseason">[BUY OUT · ${prices.seasonPass} $CAPITAL]</span>`} · ROOM-HOURS <b>${hours}</b> <span class="btn" data-act="buyroom">[+1 · ${prices.roomHour} $CAPITAL]</span><span class="dim"> · both burned in full; a pass is cosmetics, an hour is a server of your own</span></div>`
+      ? `<div class="ln">DEEP WAKE SEASON ${season} · ${held ? "<b>BOUGHT OUT</b>" : `<span class="btn" data-act="buyseason">[BUY OUT · ${prices.seasonPass} $CAPITAL]</span>`} · ROOM-HOURS <b>${hours}</b> <span class="btn" data-act="buyroom">[+1 · ${prices.roomHour} $CAPITAL]</span>${hours > 0 ? ` <span class="btn" data-act="openroom">[OPEN A PRIVATE ROOM]</span>` : ""}<span class="dim"> · both burned in full; a pass is cosmetics, an hour is a server of your own — a private room banks Scrip, never $CAPITAL</span>${this.privateCode ? `<br><span class="ye">INVITE CODE <b>${this.privateCode}</b></span> <span class="dim">give it to whoever you want in; it is the only way in</span>` : ""}</div>`
       : "";
     const runBlock = v?.linked ? `<div class="ln">THE RUN · TODAY <b>${run.banked}</b>/${RUN_DAILY_CAP} · OWED <b>${run.owed}</b> UNITS · PAID ${run.paid} $CAPITAL ${run.owed > 0 ? `<span class="btn" data-act="payout">[WITHDRAW TO WALLET]</span>` : ""}${v.runGate ? "" : ` <span class="dim">· below Depth ${RUN_DEPTH} the run pays Scrip</span>`}<span class="dim"> · units settle nightly at up to ${MAX_CAPITAL_PER_UNIT} $CAPITAL each, out of the day's emission</span></div>` : `<div class="ln dim">THE RUN pays the wallet: link one and the units you bank at a gate settle into $CAPITAL.</div>`;
     const prizes = c.prizes;

@@ -206,6 +206,33 @@ export class CounterClient {
     }
   }
 
+  /**
+   * Open a private room against the file's room-hours (Stage 20). The host spends the credit on
+   * chain before the room exists, and answers with an invite code — which is the whole access
+   * control, so the code is the thing worth copying, not the URL.
+   */
+  async openRoom(hours = 1, rules: Record<string, unknown> = {}): Promise<{ ok: boolean; reason?: string; code?: string; room?: string; join?: string }> {
+    try {
+      const r = (await (await fetch(`${this.shop}/rooms/open`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: this.account, hours, rules }) })).json()) as { ok: boolean; reason?: string; code?: string; room?: string; join?: string };
+      if (r.ok) await this.op("reconcile");
+      this.say(r.ok ? `PRIVATE ROOM · CODE ${r.code} · ${hours}h` : `ROOM REFUSED: ${r.reason}`);
+      return r;
+    } catch (e) {
+      const reason = String((e as Error).message ?? e).slice(0, 100);
+      this.say(`ROOM FAILED: ${reason}`);
+      return { ok: false, reason };
+    }
+  }
+
+  /** What a code opens, for the join screen. Never lists rooms: a code is the access control. */
+  async lookupRoom(code: string): Promise<{ ok: boolean; reason?: string; url?: string; rules?: unknown; players?: number }> {
+    try {
+      return (await (await fetch(`${this.shop}/rooms/${encodeURIComponent(code.toUpperCase())}`)).json()) as { ok: boolean; reason?: string; url?: string };
+    } catch (e) {
+      return { ok: false, reason: String((e as Error).message ?? e).slice(0, 100) };
+    }
+  }
+
   /** The Deep Wake pass: one season, burned, cosmetics back. */
   async buySeason(): Promise<{ ok: boolean; reason?: string }> {
     const price = this.info?.sinks?.seasonPass ?? 0;

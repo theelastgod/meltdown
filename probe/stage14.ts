@@ -13,6 +13,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { WebSocket as WsClient } from "ws";
 import { createPublicClient, createWalletClient, defineChain, http, parseEther, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import type { BotStep } from "../client/bot";
@@ -256,6 +257,20 @@ async function main(): Promise<void> {
     const season = (await (await fetch(`${HOST}/counter`)).json() as { season: number }).season;
     const owed = parseEther(String(SEASON_PASS_PRICE + ROOM_HOUR_PRICE * 3));
     check("the sinks burn: the Deep Wake pass and three room-hours leave the supply for good, the pass grants cosmetics and nothing the sim reads", buyS.ok && buyR.ok && supply0 - supply1 === owed && burn1 - burn0 === owed && (fs.counter?.seasons ?? []).includes(season) && fs.counter?.roomHours === 3 && SEASON_PASS_GRANTS.every((g) => fs.owned.includes(g)), `pass ${buyS.ok} ${buyS.reason ?? ""} · hours ${buyR.ok} ${buyR.reason ?? ""} · supply -${Number(supply0 - supply1) / 1e18} · burned +${Number(burn1 - burn0) / 1e18} · seasons [${(fs.counter?.seasons ?? []).join(",")}] · hours ${fs.counter?.roomHours} · granted ${SEASON_PASS_GRANTS.filter((g) => fs.owned.includes(g)).length}/${SEASON_PASS_GRANTS.length}`);
+
+    // ---- private rooms (Stage 20): the hours open a room, the code is the door, it mints nothing ----
+    const hoursBefore = (await file(acct)).counter?.roomHours ?? 0;
+    const opened = await a.evaluate(() => window.__game.openRoom(1, { district: "lease_row", mode: "run", roundSeconds: 120 }));
+    const hoursAfter = (await file(acct)).counter?.roomHours ?? 0;
+    const found = opened.code ? await a.evaluate((c) => window.__game.lookupRoom(c), opened.code) : { ok: false };
+    const wrong = await a.evaluate(() => window.__game.lookupRoom("ZZZZZZZZ"));
+    // the door: the room name without the code
+    const noCode = await new Promise<number>((resolve) => {
+      const ws = new WsClient(`ws://127.0.0.1:${HOST_PORT}/room/${opened.room ?? "priv-xxxxxxxx"}`);
+      ws.on("close", (code: number) => resolve(code));
+      ws.on("error", () => resolve(-1));
+    });
+    check("a room-hour opens a private room: the credit is spent on chain first, the code is the only door, and a wrong code opens nothing", opened.ok && hoursBefore - hoursAfter === 1 && found.ok && !wrong.ok && noCode === 4003, `opened ${opened.ok} ${opened.reason ?? ""} · code ${opened.code} · hours ${hoursBefore}→${hoursAfter} · lookup ${found.ok} · wrong ${wrong.ok} · no-code close ${noCode}`);
 
     await a.close();
     await b.close();

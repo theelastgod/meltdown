@@ -82,6 +82,9 @@ export interface GameHook {
   /** the sinks (Stage 19): the Deep Wake pass and private room-hours, both 100% burned */
   buySeason: () => Promise<{ ok: boolean; reason?: string }>;
   buyRoomHours: (hours: number) => Promise<{ ok: boolean; reason?: string }>;
+  /** private rooms (Stage 20): open one against a room-hour, or look one up by its invite code */
+  openRoom: (hours?: number, rules?: Record<string, unknown>) => Promise<{ ok: boolean; reason?: string; code?: string; room?: string; join?: string }>;
+  lookupRoom: (code: string) => Promise<{ ok: boolean; reason?: string; url?: string; players?: number }>;
   wearSkin: (token: number) => Promise<{ ok: boolean; reason?: string }>;
   registerName: (name: string) => Promise<{ ok: boolean; reason?: string }>;
   reconcile: () => Promise<{ ok: boolean; reason?: string }>;
@@ -220,6 +223,8 @@ window.__game = {
   buySkin: (listing) => game.file.counter?.buy(listing) ?? Promise.resolve({ ok: false, reason: "offline" }),
   buySeason: () => game.file.counter?.buySeason() ?? Promise.resolve({ ok: false, reason: "offline" }),
   buyRoomHours: (hours) => game.file.counter?.buyRoomHours(hours) ?? Promise.resolve({ ok: false, reason: "offline" }),
+  openRoom: (hours = 1, rules = {}) => game.file.counter?.openRoom(hours, rules) ?? Promise.resolve({ ok: false, reason: "offline" }),
+  lookupRoom: (code) => game.file.counter?.lookupRoom(code) ?? Promise.resolve({ ok: false, reason: "offline" }),
   wearSkin: (token) => game.file.counter?.op("wear", { token }) ?? Promise.resolve({ ok: false, reason: "offline" }),
   registerName: (name) => game.file.counter?.registerName(name) ?? Promise.resolve({ ok: false, reason: "offline" }),
   reconcile: () => game.file.counter?.op("reconcile") ?? Promise.resolve({ ok: false, reason: "offline" }),

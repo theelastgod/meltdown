@@ -30,6 +30,7 @@ import { bootDevnetLedger } from "./chain/boot";
 import { counterRequest } from "../shared/economy/endpoint";
 import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
 import { settleRunDay } from "./chain/settle-run";
+import { isPrivateRoom, makeInviteCode, privateRoomName, sanitiseRules, validInviteCode, type PrivateRules } from "../shared/net/private";
 import { MemoryRunStore } from "./run-store";
 
 import { MAX_PLAYERS_PER_ROOM, matchRoomName } from "../shared/net/matchmaking";
@@ -37,6 +38,12 @@ import type { Hex } from "viem";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 8787);
 const rooms = new Map<string, Room>();
+/**
+ * Private rooms bought with a room-hour (Stage 20), by invite code. The code is the whole access
+ * control — the room name is derived from it, so a room cannot be guessed into — and the entry is
+ * what the WebSocket upgrade reads to build the room with the buyer's rules.
+ */
+const privateRooms = new Map<string, { rules: PrivateRules; owner: string; wallet: string; openedAt: number; expiresAt: number }>();
 /** One Ghostfile store for the whole host: "sandbox*" ids own every node, anything else starts Blank. */
 const accounts = new MemoryAccountStore(devSeed);
 /** Audit boards and the Deep Wake season, in memory */
@@ -96,7 +103,11 @@ function startLoop(room: Room): void {
 function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: number, roundSeconds?: number, level?: string, audit = false, run = false): Room {
   let r = rooms.get(name);
   if (!r) {
-    r = new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, endgame, audit: audit ? { week: currentAudit().week, def: currentAudit().audit } : null, run, onRunBank: (day, file, units) => void runs.add(day, file, units), onLog: (l) => log(`[${name}] ${l}`) });
+    // a private room takes its settings from what its buyer paid for, and mints nothing
+    const priv = isPrivateRoom(name) ? privateRooms.get(name.slice(5).toUpperCase()) : undefined;
+    r = priv
+      ? new Room({ lagComp, ai: priv.rules.ai, seed: 7, accounts, warmupSeconds: priv.rules.warmupSeconds, roundSeconds: priv.rules.roundSeconds, level: priv.rules.district, endgame, audit: null, run: priv.rules.mode === "run", private: true, onLog: (l) => log(`[${name}] ${l}`) })
+      : new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, endgame, audit: audit ? { week: currentAudit().week, def: currentAudit().audit } : null, run, onRunBank: (day, file, units) => void runs.add(day, file, units), onLog: (l) => log(`[${name}] ${l}`) });
     rooms.set(name, r);
     startLoop(r);
   }
@@ -183,6 +194,45 @@ const http = createServer((req, res) => {
       log(`[prizes] post ${kind} ${period}: ${r.ok ? `${r.epoch?.leaves.length} leaves` : r.reason}${r.skipped?.length ? ` · no wallet: ${r.skipped.join(", ")}` : ""}`);
       res.end(JSON.stringify({ ok: r.ok, reason: r.reason, epoch: r.epoch ? { epoch: r.epoch.epoch, root: r.epoch.root, total: r.epoch.total, leaves: r.epoch.leaves.map((l) => ({ file: l.file, amount: l.amount, reason: l.reason })) } : null, skipped: r.skipped ?? [], lines }));
     });
+    return;
+  }
+  if (req.method === "POST" && req.url === "/rooms/open") {
+    /**
+     * Open a private room against a room-hour (Stage 19's `RoomCredits`).
+     *
+     * The credit is spent on chain *before* the room exists. The other order — open it, then bill —
+     * gives away a room for free whenever the spend reverts, and a room-hour is a real burn, so it
+     * has to be the thing that gates the door rather than a receipt filed after it.
+     */
+    void readBody(req).then(async (body) => {
+      res.setHeader("content-type", "application/json");
+      const id = String(body.account ?? "");
+      const a = id ? accounts.load(id, "BLANK") : null;
+      const wallet = a?.counter?.address;
+      if (!a || !wallet) return res.end(JSON.stringify({ ok: false, reason: "link a wallet first: a private room is bought, not requested" }));
+      const rules = sanitiseRules(body.rules as Partial<PrivateRules>);
+      const hours = Math.max(1, Math.min(24, Math.round(Number(body.hours ?? 1)) || 1));
+      const code = makeInviteCode();
+      const spent = await counter.ledger.spendRoomHours(a, hours, privateRoomName(code));
+      if (!spent.ok) return res.end(JSON.stringify({ ok: false, reason: spent.reason }));
+      const now = Date.now();
+      privateRooms.set(code, { rules, owner: a.id, wallet, openedAt: now, expiresAt: now + hours * 3_600_000 });
+      const name = privateRoomName(code);
+      log(`[rooms] ${a.id} opened ${name} for ${hours}h · ${rules.mode} ${rules.district} ${rules.roundSeconds}s`);
+      res.end(JSON.stringify({ ok: true, code, room: name, hours, rules, expiresAt: now + hours * 3_600_000, url: `ws://127.0.0.1:${port}/room/${name}?code=${code}`, join: `?net=${encodeURIComponent(`ws://127.0.0.1:${port}/room/${name}?code=${code}`)}` }));
+    });
+    return;
+  }
+  if (req.url?.startsWith("/rooms/")) {
+    // what a code opens, for the client's join screen. Never lists them: a code is the access control.
+    const code = decodeURIComponent(req.url.slice(7)).split("?")[0]!.toUpperCase();
+    res.setHeader("content-type", "application/json");
+    const p = validInviteCode(code) ? privateRooms.get(code) : undefined;
+    if (!p || p.expiresAt < Date.now()) {
+      res.end(JSON.stringify({ ok: false, reason: "no such room, or the hours ran out" }));
+      return;
+    }
+    res.end(JSON.stringify({ ok: true, code, room: privateRoomName(code), rules: p.rules, expiresAt: p.expiresAt, players: rooms.get(privateRoomName(code))?.stats().players ?? 0, url: `ws://127.0.0.1:${port}/room/${privateRoomName(code)}?code=${code}` }));
     return;
   }
   if (req.url?.startsWith("/match")) {
@@ -349,6 +399,21 @@ wss.on("connection", (ws: WebSocket, req) => {
   if (!m) {
     ws.close(4000, "bad room");
     return;
+  }
+  // a private room's door: the code, the room it names, and the hours still on it
+  if (m[1] === "room" && isPrivateRoom(m[2]!)) {
+    const code = (url.searchParams.get("code") ?? "").toUpperCase();
+    const p = validInviteCode(code) ? privateRooms.get(code) : undefined;
+    if (!p || privateRoomName(code) !== m[2]) {
+      ws.close(4003, "this room takes an invite code");
+      return;
+    }
+    if (p.expiresAt < Date.now()) {
+      privateRooms.delete(code);
+      rooms.delete(m[2]!);
+      ws.close(4003, "the room-hours ran out");
+      return;
+    }
   }
   const num = (k: string) => (url.searchParams.has(k) ? Number(url.searchParams.get(k)) : undefined);
   const room = m[1] === "campaign" ? getCampaignRoom(m[2]!, url.searchParams.get("mission") ?? "g_escrow_row").room : getRoom(m[2]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"), url.searchParams.get("level") ?? undefined, url.searchParams.get("audit") === "1", url.searchParams.get("mode") === "run");

@@ -203,6 +203,34 @@ that `built: true` names a contract that actually compiles, so the flag is a cla
 artifact rather than an opinion. With the buyout built the ratio is legitimately **78%**; the
 unbuilt Forge would add 2.3 points, and those are not folded in.
 
+### 5.1 A room you paid for cannot be a room that pays you
+
+Stage 20 spends the room-hours, and the rule in the heading is the reason the feature needed care
+rather than plumbing.
+
+A room-hour costs 5 $CAPITAL. Inside a run room a file may bank 200 units a day, worth about 86
+$CAPITAL at the doc-population settled rate — and a private room is one you control, with the claims
+where you want them and only your friends in it. Five in, eighty-six out, repeatable. **The
+economy's cheapest sink would have been its largest mint**, at roughly seventeen to one.
+
+So a private room mints nothing: THE RUN banks Scrip rather than units and nothing reaches the day's
+settlement, no Audit placement is written, and no flips reach the Deep Wake. `Room` applies that
+itself from its own `private` flag rather than trusting the host to pass the right arguments — a
+host that forgot `audit: null` must not be able to turn a paid room into a prize channel, and a test
+passes an Audit definition in deliberately to prove the room throws it away. Scrip and Depth still
+accrue, because those are off chain and already earnable against bots in the offline sandbox;
+nothing that reaches the chain does.
+
+What a room-hour actually buys is a short list, and it is short on purpose: district, mode, round
+length, warmup length, and whether bots fill the empty slots. Everything that decides a duel —
+weapon numbers, movement, hit registration, the Fairness Lint's whole surface — is not on it and
+never will be. A private room is a scrim, not a mod.
+
+The credit is spent on chain **before** the room exists. The other order hands out a free room
+whenever the spend reverts, and the hours are a real burn. The invite code is the whole access
+control: the room name is derived from it, so a room cannot be guessed into, and the alphabet drops
+`0/O` and `1/I/L` so a code survives being read aloud.
+
 ## 6. Still open
 
 1. **Unclaimed epochs.** `PrizeVault.reclaim` sweeps them to the treasury, which is correct, but
@@ -213,9 +241,7 @@ unbuilt Forge would add 2.3 points, and those are not folded in.
    failed clear after a posted epoch leaves units already paid for. Both are logged loudly (the
    second as `stranded`), neither is reconciled automatically. A reconciliation pass comparing the
    two is the next thing this needs.
-3. **Room-hours are bought but not yet spent.** The contract holds the credit and the host can draw
-   it down; no host route opens a private room against one. The sink burns correctly; the feature
-   behind it is half a stage away.
+3. ~~Room-hours are bought but not yet spent.~~ Done in Stage 20 — see §5.1.
 4. **The Forge.** The last specified sink, and the only one needing infrastructure rather than a
    contract: creator uploads, moderation, and an asset pipeline. Until it exists the model counts
    it at zero.

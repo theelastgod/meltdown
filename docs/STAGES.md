@@ -777,6 +777,53 @@ anyone but the host reverts and so does one past the credit, and 1000 hours is t
 while 1001 is not. Each was mutation-checked. The run probe buys a pass and three room-hours from
 the browser and watches `totalSupply` fall by exactly the fee.
 
+## Stage 20 — Private rooms, and the rule that keeps the cheapest sink from being the largest mint
+
+**Goal.** Stage 19 sold room-hours and nothing spent them. Spend them: a host route that opens a
+room against a credit, an invite code that is the door, and the buyer's own rules inside.
+
+**The rule that made this care rather than plumbing.** A room-hour costs 5 $CAPITAL. Inside a run
+room a file may bank 200 units a day, worth about 86 $CAPITAL at the settled rate — and a private
+room is one you control, with the claims where you want them and only your friends in it. Five in,
+eighty-six out, repeatable, at roughly **seventeen to one**. Built naively, the economy's cheapest
+sink would have been its largest mint.
+
+So a private room mints nothing. THE RUN banks Scrip rather than units and nothing reaches the day's
+settlement; no Audit placement is written; no flips reach the Deep Wake. Scrip and Depth still
+accrue, because those are off chain and already earnable against bots in the offline sandbox —
+nothing that reaches the chain does.
+
+**Files.** `shared/net/private.ts` (the rules, the codes, `MINTLESS`), `server/room.ts` (the
+`private` flag and the three refusals), `server/node-host.ts` (`POST /rooms/open`, `GET /rooms/<code>`,
+the door on the WebSocket upgrade), `server/chain/ledger.ts` (`spendRoomHours`), `client/counter.ts`,
+`client/main.ts`, `client/file.ts`, `client/game.ts` (the HUD line); `docs/ECONOMY.md` §5.1;
+`tests/private.test.ts` (12), `probe/stage14.ts`.
+
+**Design decisions.**
+- **The room enforces it, not the host.** A host that forgot to pass `audit: null` must not be able
+  to turn a paid room into a prize channel, so `Room` reads its own `private` flag and throws the
+  Audit definition away. A case passes one in deliberately to prove it.
+- **What a room-hour buys is a short list, on purpose.** District, mode, round length, warmup
+  length, bot fill. Everything that decides a duel — weapon numbers, movement, hit registration,
+  the Fairness Lint's whole surface — is not on it and never will be. A private room is a scrim,
+  not a mod. A case asserts the shape of the list, so widening it is a deliberate act.
+- **The credit is spent before the room exists.** The other order hands out a free room whenever
+  the spend reverts, and the hours are a real burn.
+- **The code is the access control, not a label on it.** The room name is derived from the code, so
+  a room cannot be guessed into; the door refuses a join without it and refuses one whose hours ran
+  out. The alphabet drops `0/O` and `1/I/L`, because a code that starts an argument when read aloud
+  is a worse code, and 31⁸ ≈ 8.5×10¹¹ is space enough.
+- **The client is told.** The Welcome's mode carries a `private:` prefix and the HUD says the room
+  banks Scrip and never $CAPITAL, so nobody plays an hour before finding out.
+
+**Acceptance (`npm test`, 223 tests; `npm run probe:run`, 12/12):** the mint cases run the same bank
+and the same settlement through a private and a public room side by side — the private one owes
+Scrip and reports nothing to the day, the public one owes 40 units and does; the private one is not
+an Audit room even when handed one; and with a full round of flips in a real Deep Wake district the
+private room writes neither board while the public one writes both. Each was mutation-checked, and
+the first attempt at the board case was vacuous — it passed with the guard removed, because the
+yard is not a Deep Wake district and the flips were being dropped before they reached it.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

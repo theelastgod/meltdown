@@ -6,7 +6,7 @@
  *
  * The match room never imports this module (tests/counter.test.ts walks the graph).
  */
-import { createPublicClient, createWalletClient, defineChain, formatEther, parseEther, verifyMessage, type Hex, type PublicClient, type Transport, type WalletClient } from "viem";
+import { createPublicClient, createWalletClient, defineChain, formatEther, keccak256, parseEther, toHex, verifyMessage, type Hex, type PublicClient, type Transport, type WalletClient } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import { parseSiweMessage, validateSiweMessage } from "viem/siwe";
 import type { Account, CounterRecord } from "../../shared/progression/account";
@@ -330,6 +330,35 @@ export class CounterLedger {
       this.log(`payout ${units} $CAPITAL → ${a.id}`);
       await this.reconcile(a);
       return { ok: true, paid: units };
+    } catch (e) {
+      return soft(e);
+    }
+  }
+
+  /**
+   * Spend a file's room-hours to open a private room (Stage 20).
+   *
+   * The host is the contract's `spender`, so this is the one place the game may draw a player's
+   * credit down, and it draws it down *before* the room opens — a room handed out on a spend that
+   * reverted is a room given away, and the hours are a real burn.
+   */
+  async spendRoomHours(a: Account, hours: number, room: string): Promise<Result & { left?: number }> {
+    const c = a.counter;
+    if (!c?.address) return { ok: false, reason: "no wallet linked" };
+    if (!(hours > 0)) return { ok: false, reason: "no hours asked for" };
+    try {
+      const wallet = c.address as Hex;
+      const have = (await this.pub.readContract({ address: this.opts.contracts.rooms, abi: ARTIFACTS.RoomCredits!.abi, functionName: "hoursOf", args: [wallet] })) as bigint;
+      if (have < BigInt(hours)) return { ok: false, reason: `not enough room-hours: ${have} of ${hours}` };
+      const tag = keccak256(toHex(room));
+      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.rooms, abi: ARTIFACTS.RoomCredits!.abi, functionName: "spend", args: [wallet, BigInt(hours), tag] });
+      const r = await this.pub.waitForTransactionReceipt({ hash });
+      if (r.status !== "success") return { ok: false, reason: "spend reverted" };
+      const left = Number((await this.pub.readContract({ address: this.opts.contracts.rooms, abi: ARTIFACTS.RoomCredits!.abi, functionName: "hoursOf", args: [wallet] })) as bigint);
+      a.counter = { ...c, roomHours: left };
+      a.ledger.push(`PRIVATE ROOM · ${hours} ROOM-HOUR${hours === 1 ? "" : "S"} SPENT · ${left} LEFT`);
+      this.log(`rooms · ${a.id} spent ${hours}h, ${left} left`);
+      return { ok: true, left };
     } catch (e) {
       return soft(e);
     }
