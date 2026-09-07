@@ -9,7 +9,7 @@ import { SEASON_DEPTH } from "../shared/endgame/season";
 import { encodeRun, type RunMsg } from "../shared/net/protocol";
 import { RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT, runView } from "../shared/sim/run";
 import { dayIndex } from "../shared/endgame/clock";
-import { SIM_HZ } from "../shared/sim/constants";
+import { MOVE, SIM_HZ } from "../shared/sim/constants";
 import { auditErrors, type AuditDef } from "../shared/endgame/audits";
 import { itemById } from "../shared/manifest/items";
 import type { EndgameStore } from "./endgame";
@@ -224,7 +224,7 @@ export class Room {
   private pendingJoins = new Set<Conn>();
   /** Last few large prediction/server divergences, for diagnosis. */
   readonly traceLog: { tick: number; id: number; seq: number; err: number; batch: number; queue: number; alive: boolean; stance: string; srv: number[]; cli: number[]; buttons: number }[] = [];
-  readonly shotDiag = { shots: 0, playerHits: 0, rewindSum: 0, rewindMax: 0, clamped: 0, nearMissSum: 0, nearMissN: 0, nearMissMax: 0 };
+  readonly shotDiag = { shots: 0, playerHits: 0, rewindSum: 0, rewindMax: 0, clamped: 0, nearMissSum: 0, nearMissN: 0, nearMissMax: 0, missBlocked: 0, missClean: 0, missInsideHitbox: 0 };
 
   constructor(opts: RoomOptions = {}) {
     this.opts = {
@@ -1000,6 +1000,13 @@ export class Room {
           d.nearMissSum += ev.nearMiss;
           d.nearMissN++;
           if (ev.nearMiss > d.nearMissMax) d.nearMissMax = ev.nearMiss;
+          // A miss whose ray passed closer to the target's centre than the target's own capsule
+          // radius did not miss the player — something got in the way, or the ray ended first. Split
+          // those out by what the shot actually struck, because "0.14 m from the centre" against a
+          // 0.4 m capsule is not a story about aim at all (Stage 34).
+          if (ev.nearMiss < MOVE.capsuleRadius) d.missInsideHitbox++;
+          if (ev.hit.kind === "none") d.missClean++;
+          else d.missBlocked++;
         }
       }
       if (ev.type === "nodeFlip") {
