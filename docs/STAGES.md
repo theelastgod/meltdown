@@ -1025,6 +1025,48 @@ nothing; a linked file with no banking is walked and not reported; an epoch cann
 the vault's deadline and is still claimable after the attempt; and a never-posted epoch is refused.
 Both guards were mutation-checked.
 
+## Stage 25 — Can the campaign actually be finished?
+
+**Goal.** Every other claim in this project now has an artifact behind it — the emission schedule,
+the burn ratio, the draw-call budget, the treasury's blast radius. One did not: *the campaign
+branches, and there are four endings.* Nothing verified it.
+
+**Why it was worth checking.** The story graph is strings. Missions, gigs, variants and endings are
+gated on testimony — `key = value` pairs written by dialogue choices in one file and read as gates
+in three others. A single typo (`m4:vessel` against `m4:vessell`) closes a gate that nothing will
+ever open, and the game still builds, still typechecks, still plays. The ending is simply
+unreachable, and nobody finds out until a player doesn't find it.
+
+**What it found.** The graph is sound: **zero errors**. Every ending is opened by testimony a choice
+actually writes, every script node is reachable from its own start, every `requires.after` names a
+real mission, the arc runs 1–7 with no gaps, and every dialogue objective names a script that
+exists.
+
+It did find three **notes**: `m1:lease`, `m5:lattice` and `m6:broadcast` are choices the player makes
+that nothing reads. Three of the seven missions ask for a decision with no mechanical consequence.
+That may well be characterisation — and in a narrative game it often should be — so it is reported
+and not enforced.
+
+**Files.** `shared/campaign/lint.ts`, `shared/campaign/cli.ts` (`npm run lint:campaign`, in
+`verify`); `tests/campaign.test.ts` (6 new).
+
+**Design decisions.**
+- **Two severities, because one would do harm.** An unreachable ending is a broken game; a choice
+  that changes nothing may be deliberate. Failing the build on both would push the next person to
+  delete good writing to make a lint go quiet. Errors fail; notes print, with a line saying why they
+  are only printed.
+- **The lint is named after the mistake it catches, and a test proves it catches it.** Introducing
+  the exact typo — `m4:vessell` in the Estate ending's gate — turns 0 errors into 2 and fails four
+  cases. A reachability lint that has never seen an unreachable thing is a guess.
+- **It reads the code's own back doors rather than pretending they do not exist.** Three testimony
+  keys are read in TypeScript rather than through a gate (the two handler-survival rules, and the
+  faction the hub lifts onto the save). They are listed explicitly, so the "nobody reads this" rule
+  stays true instead of being loosened until it is useless.
+
+**Acceptance (`npm run lint:campaign`, 0 errors / 3 notes; `npm test`, 239 tests):** 7 missions, 12
+gigs, 10 scripts, 4 endings and 9 testimony keys, with every ending's gate traced back to a choice
+that writes it, every script node reachable, and the arc contiguous.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

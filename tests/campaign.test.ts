@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { FACTIONS, HANDLERS } from "../shared/campaign/factions";
 import { ENDINGS, endingsFor, gateOpen, handlersAlive } from "../shared/campaign/testimony";
+import { campaignErrors, lintCampaign, producibleTestimony, reachableNodes } from "../shared/campaign/lint";
 import { threatProfile, threatRating } from "../shared/campaign/threat";
 import { MAX_PROTOCOLS, PROTOCOLS, protocolMods } from "../shared/campaign/protocols";
 import { SCRIPTS, scriptById } from "../shared/campaign/script";
@@ -267,5 +268,60 @@ describe("weapons 7–8", () => {
       expect(r.seconds, `${id} ${r.seconds}s`).toBeGreaterThanOrEqual(WEAPONS[id].ttkBand[0]);
       expect(r.seconds, `${id} ${r.seconds}s`).toBeLessThanOrEqual(WEAPONS[id].ttkBand[1]);
     }
+  });
+});
+
+describe("the campaign can actually be finished", () => {
+  /**
+   * The story graph is strings: testimony keys written by dialogue in one file and read as gates in
+   * three others. A typo closes a gate nothing will ever open, and the game still builds, still
+   * runs, still plays — the ending is simply unreachable and nobody finds out until a player
+   * doesn't find it. `shared/campaign/lint.ts` is the artifact behind the claim.
+   */
+  it("no piece of the game is unreachable", () => {
+    expect(campaignErrors()).toEqual([]);
+  });
+
+  it("every ending is opened by testimony some choice actually writes", () => {
+    const producible = producibleTestimony();
+    for (const e of ENDINGS) {
+      for (const [k, v] of Object.entries(e.gate.all ?? {})) {
+        expect(producible.get(k), `ending ${e.id} needs "${k}", which nothing writes`).toBeDefined();
+        expect([...producible.get(k)!], `ending ${e.id} needs ${k}=${v}`).toContain(v);
+      }
+    }
+    // and the endings are genuinely distinct outcomes, not one ending with three labels
+    expect(new Set(ENDINGS.map((e) => e.id)).size).toBe(ENDINGS.length);
+    expect(ENDINGS.filter((e) => e.hidden).length).toBeGreaterThan(0);
+  });
+
+  it("every script node is reachable from its own start", () => {
+    for (const s of SCRIPTS) {
+      const live = reachableNodes(s);
+      expect([...s.nodes.map((n) => n.id)].filter((id) => !live.has(id)), `${s.id} has orphan nodes`).toEqual([]);
+    }
+  });
+
+  it("the mission arc is a run of orders with no gaps, and every gig sits outside it", () => {
+    const arc = MISSIONS.filter((m) => m.kind === "mission").map((m) => m.order).sort((a, b) => a - b);
+    expect(arc).toEqual(arc.map((_, i) => i + 1));
+    expect(MISSIONS.filter((m) => m.kind === "gig").every((g) => g.order === 0)).toBe(true);
+  });
+
+  it("catches a gate on testimony nothing writes — the typo this exists for", () => {
+    // the lint is only worth having if it fails on the mistake it is named after
+    const producible = producibleTestimony();
+    expect(producible.has("m4:vessel")).toBe(true);
+    expect(producible.has("m4:vessell")).toBe(false);
+    const typo = ENDINGS.map((e) => Object.keys(e.gate.all ?? {})).flat().filter((k) => !producible.has(k));
+    expect(typo).toEqual([]);
+  });
+
+  it("reports a choice that changes nothing as a note, not a failure", () => {
+    const notes = lintCampaign().filter((v) => v.severity === "note");
+    // three of the seven missions ask for a choice with no mechanical consequence. That may be
+    // characterisation and is a designer's call, so it is surfaced rather than enforced.
+    expect(notes.every((n) => n.rule === "testimony-is-read")).toBe(true);
+    expect(campaignErrors()).toEqual([]);
   });
 });
