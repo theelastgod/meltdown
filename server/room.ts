@@ -17,6 +17,7 @@ import type { House } from "../shared/endgame/season";
 import { Btn, MAX_BUTTONS } from "../shared/sim/input";
 import { levelById } from "../shared/sim/level";
 import { World, type RewindPose, type SimEvent } from "../shared/sim/world";
+import type { Vec3 } from "../shared/math/vec3";
 import type { PlayerState } from "../shared/sim/player";
 import {
   PROTOCOL_VERSION,
@@ -184,6 +185,8 @@ export interface RoomStats {
   seasonLast: string | null;
   loadoutRejections: string[];
   shotDiag: Record<string, number>;
+  /** histogram of the whole-tick rewind offset that would have fitted each missed shot best (Stage 34) */
+  rewindOffsets: Record<string, number>;
   traceLog: unknown[];
   match: unknown;
 }
@@ -191,6 +194,8 @@ export interface RoomStats {
 const MAX_INPUTS_PER_TICK = 6;
 /** Consecutive lost inputs the server will fill by repeating the last one (Stage 31). ~67 ms. */
 const MAX_GAP_FILL = 4;
+/** how far either side of the shooter's reported tick the miss-fit scan looks (Stage 34) */
+const REWIND_SCAN = 12;
 /** What survives into a filled input: movement, stance and look. Never a discrete action. */
 const GAP_FILL_BUTTONS = Btn.Forward | Btn.Back | Btn.Left | Btn.Right | Btn.Jump | Btn.Sprint | Btn.Crouch;
 const MAX_INPUT_RATE_PER_SEC = 95;
@@ -225,6 +230,16 @@ export class Room {
   /** Last few large prediction/server divergences, for diagnosis. */
   readonly traceLog: { tick: number; id: number; seq: number; err: number; batch: number; queue: number; alive: boolean; stance: string; srv: number[]; cli: number[]; buttons: number }[] = [];
   readonly shotDiag = { shots: 0, playerHits: 0, rewindSum: 0, rewindMax: 0, clamped: 0, nearMissSum: 0, nearMissN: 0, nearMissMax: 0 };
+  /**
+   * For each shot that missed: which whole-tick rewind offset would have come closest (Stage 34).
+   *
+   * Aggregate hit rate is too noisy to bisect a one-tick effect — a single engagement ends early
+   * when a kill lands, and a sweep across offsets came back 49/17/17/88/57 per cent, which is
+   * variance and not a curve. This asks the question per shot instead, so one run yields hundreds of
+   * paired samples: a histogram centred on 0 means the rewind is aimed at the right instant and the
+   * misses are the shooter's; a histogram centred anywhere else names the skew and its direction.
+   */
+  readonly rewindOffsets = new Map<number, number>();
 
   constructor(opts: RoomOptions = {}) {
     this.opts = {
@@ -1000,6 +1015,7 @@ export class Room {
           d.nearMissSum += ev.nearMiss;
           d.nearMissN++;
           if (ev.nearMiss > d.nearMissMax) d.nearMissMax = ev.nearMiss;
+          this.scoreRewindOffsets(ev.playerId, ev.from, ev.to, this.tick - ev.rewindTicks);
         }
       }
       if (ev.type === "nodeFlip") {
@@ -1043,6 +1059,44 @@ export class Room {
    * point the client drew. A target with no later snapshot (the newest tick) holds; the pair is
    * clamped into the rewind window first so this can never reach further back than lag comp allows.
    */
+  /**
+   * Replay one missed shot against neighbouring pose history and record the offset that fits best.
+   *
+   * The ray is the one the server actually cast, so this asks exactly: of the ticks around the one
+   * the shooter told us they were looking at, which holds the target nearest their line? It is the
+   * question the aggregate hit rate cannot answer without far more runs than it is worth.
+   */
+  private scoreRewindOffsets(shooterId: number, from: Vec3, to: Vec3, usedTick: number): void {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const dz = to.z - from.z;
+    const len2 = dx * dx + dy * dy + dz * dz;
+    if (len2 <= 0) return;
+    let bestD = 0;
+    let best = Infinity;
+    for (let d = -REWIND_SCAN; d <= REWIND_SCAN; d++) {
+      const poses = this.history.get(usedTick + d);
+      if (!poses) continue;
+      for (const [id, pose] of poses) {
+        if (id === shooterId || !pose.alive) continue;
+        // distance from the target's centre of mass to the ray the server cast
+        const px = pose.pos.x - from.x;
+        const py = pose.pos.y + pose.height * 0.5 - from.y;
+        const pz = pose.pos.z - from.z;
+        const t = Math.max(0, Math.min(1, (px * dx + py * dy + pz * dz) / len2));
+        const ex = px - dx * t;
+        const ey = py - dy * t;
+        const ez = pz - dz * t;
+        const dist = Math.hypot(ex, ey, ez);
+        if (dist < best) {
+          best = dist;
+          bestD = d;
+        }
+      }
+    }
+    if (best < Infinity) this.rewindOffsets.set(bestD, (this.rewindOffsets.get(bestD) ?? 0) + 1);
+  }
+
   private rewindFor(shooterId: number, viewTick: number, viewFrac = 0): ReadonlyMap<number, RewindPose> | null {
     const oldest = this.tick - MAX_REWIND_TICKS;
     const target = Math.max(oldest, Math.min(this.tick, viewTick));
@@ -1250,6 +1304,7 @@ export class Room {
       clients,
       traceLog: this.traceLog,
       match: this.world.wake ? { phase: this.world.wake.phase, timeLeft: this.world.wake.timeLeft, score: this.world.wake.score, winner: this.world.wake.winner, round: this.world.wake.round, nodes: this.world.wake.nodes.map((n) => ({ id: n.id, owner: n.owner, hold: n.hold, contested: n.contested })) } : null,
+      rewindOffsets: Object.fromEntries([...this.rewindOffsets.entries()].sort((x, y) => x[0] - y[0])),
       shotDiag: { ...this.shotDiag, avgRewind: this.shotDiag.shots ? this.shotDiag.rewindSum / this.shotDiag.shots : 0, avgNearMiss: this.shotDiag.nearMissN ? this.shotDiag.nearMissSum / this.shotDiag.nearMissN : 0 },
     };
   }

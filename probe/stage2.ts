@@ -134,7 +134,12 @@ async function main(): Promise<void> {
     check("measured RTT reflects the simulated link", E.netA.rttMs >= RTT * 0.8 && E.netA.rttMs <= RTT * 1.6, `ALPHA rtt ${E.netA.rttMs} ms`);
     const hitRate = cA.shots ? cA.hits / cA.shots : 0;
     const dg = E.st.shotDiag;
+    const offs = (E.st.rewindOffsets ?? {}) as Record<string, number>;
+    const offStr = Object.entries(offs).map(([k, n]) => `${k}:${n}`).join(" ") || "none";
     check("hit-reg at 150 ms RTT + 5% loss on a strafing target (lag comp)", cA.shots >= 20 && hitRate >= 0.6, `${cA.hits}/${cA.shots} server-confirmed hits (${(hitRate * 100).toFixed(0)}%), ${cA.kills} kills; rewind avg ${dg.avgRewind.toFixed(1)} max ${dg.rewindMax} ticks, clamped ${dg.clamped}; misses avg ${dg.avgNearMiss.toFixed(2)} m max ${dg.nearMissMax.toFixed(2)} m from the axis`);
+    // which whole-tick offset would have fitted each missed shot best: 0 means the rewind is aimed
+    // at the right instant and the misses are the shooter's own (Stage 34)
+    console.log(`rewind offset that best fits each miss: ${offStr}`);
     if (E.st.traceLog.length) console.log("server trace log:", JSON.stringify(E.st.traceLog));
     console.log("server log:", JSON.stringify((await (await fetch(`http://127.0.0.1:${HOST_PORT}/stats`)).json()).logs.filter((l: string) => /death|respawn/.test(l))));
     if (E.netB.game.log.length) console.log("BRAVO correction log:", JSON.stringify(E.netB.game.log));
