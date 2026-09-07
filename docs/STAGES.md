@@ -1691,20 +1691,27 @@ SLIPFILE node over the city; `stage6-file.png` went from 65 KB to 933 KB.
 from the crawl, and no probe writes a screenshot outside the guard. Two exemptions, both principled
 — `stage12` and `stage13` are the probes whose *subject* is an overlay.
 
-**Two more the guard found on its first full run,** neither of them the crawl:
-`stage8-dossier.png` and `stage8-rite.png` are transient cards — 1.2 s and a beat — and both were
-being shot after their window had closed. The dossier was polled for its open flag with an
-`evaluate` round trip every 60 ms and then given a flat 450 ms "to let the reveal paint"; between
-them that is most of the 1.2 s hold, so on a slow box the card was down before the shutter. Both
-wait *inside* the page now, where a poll costs nothing.
+**Three more the guard found on its first full run,** none of them the crawl. All three were
+transient cards being shot after their window had shut, and they failed for three different reasons.
 
-The dossier's fix is worth stating precisely, because the first attempt at it was wrong. Dropping
-the 450 ms made the artifact fail a different way: the reveal is
-`animation: dossier 0.35s steps(5)` from `opacity: 0`, so shooting the instant the flag flips
-catches the frame where there is nothing to see, and the guard — correctly — refused it. The wait
-was there for a real reason; what was wrong with it was that it was a fixed guess. It waits on what
-the camera actually sees now: the panel unhidden **and** the reveal far enough along to have
-painted. That is exactly as long as the animation needs on any machine.
+`stage8-dossier.png`. The flash holds 1.2 s. It was polled for its open flag with an `evaluate`
+round trip every 60 ms and then given a flat 450 ms "to let the reveal paint" — between them most of
+the hold, so on a slow box the card was down before the shutter. Worth stating precisely, because
+the first attempt at the fix was wrong: dropping the 450 ms made it fail a *different* way, since
+the reveal is `animation: dossier 0.35s steps(5)` from `opacity: 0` and shooting the instant the
+flag flips catches the frame with nothing in it. The guard refused that too, correctly. The wait was
+there for a real reason; what was wrong with it was that it was a fixed guess. It waits on what the
+camera sees now — unhidden **and** the reveal far enough along to have painted — which is exactly as
+long as the animation needs on any machine.
+
+`stage8-rite.png` could not be fixed at the shutter at all. CHARLIE's Chapter rite goes up at
+settlement and holds five seconds; the probe reaches the rite check only after printing ALPHA's
+receipt line by line and signing it, which takes longer than that. The card was not merely missed,
+it was structurally unreachable: **that artifact has never once been a picture of a rite**, in any
+run since Stage 8, and no wait placed where the check is could have made it one. It is watched from
+the moment the results phase opens now, on its own page, and the shot is awaited where the check is.
+
+`stage32-mobile.png` is the `.tc` collision below.
 
 Worth recording: the first version of that lint only read URLs written inline in `.goto()`, and
 `probe/stage2.ts` builds its URL into a `const` first. The lint passed it. The runtime guard caught
@@ -1735,9 +1742,34 @@ to `passing = near` fails it, and shows the whoosh machine-gunning (1 cue → 5)
 diagnostics, startup times in the proof); `probe/stage9b.ts` (three checks rewritten); seven probes
 gained `?crawl=0`; sixteen probes route their screenshots through the guard.
 
+**The `.tc` collision, and the one it hid.** The guard reported that `stage32-mobile.png` did not
+show `.tc`, and it was right for a reason worth keeping: `#hud` holds *two* elements with that class
+— the touch controls' root from Stage 32 and the campaign terminal's choice list, which has had it
+since Stage 10. `querySelector` finds the terminal's, under a `hidden` panel. Not only the probe's
+problem: Stage 32's `#hud .tc { position: absolute; inset: 0; pointer-events: none }` lands on the
+choice list too (`#hud .terminal .tc` is more specific but only sets a margin), so the dialogue
+options were pulled out of the panel's flow and stretched over the HUD with their pointer events
+off. No screenshot had caught it because the terminal shots land between choices.
+
+Renaming the root to `.touch` traded that for a subtler one — Stage 32 also does
+`hudRoot.classList.add("touch")`, so `#hud.touch` and `#hud .touch` would have sat in one stylesheet
+distinguished by a space. It is `.thumbs`. And that second rename caught what the first missed:
+three `#hud .tc .tc-b` queries, one of them in the client's own `mobile()` hook, that a grep
+excluding `tc-` had skipped. `probe:mobile` reported 0 pads and threw. It was right both times.
+
 **Acceptance:** `probe:mastery` 23/23 (was a `TimeoutError`), `probe:cityLife` 19/19 (was 13/16),
-`probe:net` 13/13, and every other probe green with its artifacts now checked. `npm test` 295
-(3 new); typecheck clean over both configs. Both lint arms and the tram latch are mutation-tested.
+`probe:mobile` 14/14, `probe:net` 13/13, `probe:city` 45/45, `probe:identity` 22/23 with the rite
+artifact the last one outstanding, and every other probe green with its artifacts now checked. `npm test` 295 (3 new); typecheck clean over both
+configs. Both lint arms and the tram latch are mutation-tested.
+
+**Left open, named rather than fixed.** `probe:harden` is intermittent: green on CI run #41, red on
+#42, then red twice and green once here, with no relevant change between. The symptom is a client
+reporting `status: joined` with `snapshots: 0` — the room accepts the join and the page never
+receives a snapshot. One run of `probe:identity` failed five checks in a way that fits the same
+shape (a Debt targeting player `#4` when the probe opens three pages, which reads as a client
+reconnecting mid-round with a new id) and did not reproduce. Both now print the page's console
+errors on that failure, because a page that fails to sync usually said why first. I do not have the
+cause, and a guess in this entry would be worth less than the two diagnostics.
 
 ## Stage 3 — The look
 

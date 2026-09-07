@@ -226,6 +226,19 @@ async function main(): Promise<void> {
     const phaseAtKills = await phaseNow();
     const phase = await waitPhase("results", 60000);
     console.log(`kills done in phase ${phaseAtKills}; ${phase} at +${((Date.now() - tRoom) / 1000).toFixed(1)}s`);
+    // CHARLIE's Chapter rite card goes up at settlement and holds five seconds. The receipt work
+    // below — printing line by line, then signing — takes longer than that on ALPHA, so by the time
+    // the rite check runs the card has always been down; the artifact for it has never once been a
+    // picture of a rite. Start watching for it now, on its own page, and await the shot at the
+    // check. `.rite.on` fades in from opacity 0, so wait for a frame with something in it, the same
+    // way the dossier does (Stage 33).
+    const riteShot = c
+      .waitForFunction(() => {
+        const el = document.querySelector("#hud .rite") as HTMLElement | null;
+        return !!el && !el.hidden && Number(getComputedStyle(el).opacity) > 0.5;
+      }, null, { timeout: 30000, polling: 30 })
+      .catch(() => null)
+      .then(() => shot(c, `${OUT}/stage8-rite.png`, "#hud .rite"));
     // the receipt prints line by line on ALPHA's screen
     let printed: number[] = [];
     let stamped = false;
@@ -248,10 +261,9 @@ async function main(): Promise<void> {
     const socA = await a.evaluate(() => ({ social: window.__game.state().social, debt: window.__game.state().debtTargetId, id: window.__game.state().identity }));
     const owed = socA.social.find((m) => m.kind === "debt" && m.event === "owed");
     check("a Debt: the enemy who closed your file most is written to your file at settlement and flagged to you", sa.identity.debt === "BLANK" && sa.identity.debtTarget === ids.b && !!owed && owed.kind === "debt" && owed.id === ids.b && owed.kills >= 2 && socA.debt === ids.b && socA.id.debt?.display === "BLANK", `ALPHA owes ${sa.identity.debt} (${owed?.kind === "debt" ? owed.kills : "?"} files) · target #${sa.identity.debtTarget} · client target #${socA.debt}`);
-    // the rite card holds for a beat only, so wait for it in the page and shoot on the same breath
-    await c.waitForFunction(() => window.__game.state().rituals.riteOpen === true, null, { timeout: 15000, polling: 30 }).catch(() => null);
     const rite = await c.evaluate(() => ({ social: window.__game.state().social, r: window.__game.state().rituals, audio: window.__game.state().audio, id: window.__game.state().identity }));
-    await shotCheck(c, "stage8-rite.png", "#hud .rite");
+    const rs = await riteShot;
+    check("artifact: stage8-rite.png", rs.ok, rs.detail);
     const riteMsg = rite.social.find((m) => m.kind === "rite");
     check("Chapter I: a file crossing Depth 10 at settlement performs the LISTED rite (card, chord, glyph layer)", sc.file!.depth >= 10 && sc.identity.chapter === 1 && sc.identity.chapters.join() === "1" && riteMsg?.kind === "rite" && riteMsg.title === "LISTED" && (rite.audio["rite_1"] ?? 0) >= 1 && rite.id.chapter === 1 && rite.id.chapters.join() === "1", `CHARLIE depth ${sc.file!.depth} · chapter ${sc.identity.chapter} · rite "${riteMsg?.kind === "rite" ? riteMsg.title : ""}" · card ${rite.r.riteOpen ? "open" : "closed"} "${rite.r.riteTitle}" · rite cues ${rite.audio["rite"] ?? 0}`);
 
