@@ -657,7 +657,7 @@ export class Game {
       // wrap first: the wire's i16 cannot carry angles beyond ±3.2767 rad, and both sides must apply the same value
       frame.yaw = Math.round(wrapAngle(frame.yaw) * 10000) / 10000;
       frame.pitch = Math.round(Math.max(-1.55, Math.min(1.55, frame.pitch)) * 10000) / 10000;
-      const ni: NetInput = { ...frame, seq: this.net.nextSeq(), viewTick: this.net.viewTick(), px: 0, py: 0, pz: 0 };
+      const ni: NetInput = { ...frame, seq: this.net.nextSeq(), viewTick: this.net.viewTick(), viewFrac: this.net.viewFrac(), px: 0, py: 0, pz: 0 };
       this.world.applyInput(this.player, ni, { predictOnly: true });
       ni.px = this.player.pos.x;
       ni.py = this.player.pos.y;

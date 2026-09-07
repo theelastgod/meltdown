@@ -106,6 +106,18 @@ export class NetClient {
     return Math.max(0, Math.floor(this.serverTickNow() - INTERP_DELAY_TICKS));
   }
 
+  /**
+   * The part of the view time `viewTick()` throws away, in [0, 1) (Stage 34).
+   *
+   * `remoteViews()` poses remotes at the continuous `serverTickNow() - INTERP_DELAY_TICKS`; this is
+   * the same quantity's fraction, so the pair names the exact instant the player aimed at and the
+   * server can rewind to it rather than to the tick before it.
+   */
+  viewFrac(): number {
+    const t = this.serverTickNow() - INTERP_DELAY_TICKS;
+    return t <= 0 ? 0 : t - Math.floor(t);
+  }
+
   nextSeq(): number {
     return ++this.seq;
   }

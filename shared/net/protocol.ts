@@ -94,6 +94,14 @@ export interface NetInput extends InputFrame {
   seq: number;
   /** Server tick of the remote states the client was rendering (for lag comp). */
   viewTick: number;
+  /**
+   * How far past `viewTick` the client had actually interpolated, in 1/256ths of a tick (Stage 34).
+   *
+   * The client draws remotes at a *continuous* view time and aims at what it drew, but `viewTick` is
+   * that time floored — so without this the server rewinds to a snapshot up to one whole tick before
+   * the position the shooter was looking at. At a strafe that is more than a body's width.
+   */
+  viewFrac: number;
   /** Client's predicted feet position after applying this input (trace comparison). */
   px: number;
   py: number;
@@ -297,6 +305,7 @@ export function encodeInputs(inputs: NetInput[], ackTick: number): ArrayBuffer {
     w.i16(wrapRad(i.yaw) * Q_ANG);
     w.i16(i.pitch * Q_ANG);
     w.u32(i.viewTick);
+    w.u8(Math.max(0, Math.min(255, Math.round(i.viewFrac * 256))));
     w.f64(i.px);
     w.f64(i.py);
     w.f64(i.pz);
@@ -546,7 +555,7 @@ export function decodeClientMessage(buf: ArrayBuffer): ClientMessage | null {
       if (n > 32) return null;
       const inputs: NetInput[] = [];
       for (let i = 0; i < n; i++) {
-        inputs.push({ seq: r.u32(), tick: r.u32(), buttons: r.u16(), yaw: r.i16() / Q_ANG, pitch: r.i16() / Q_ANG, viewTick: r.u32(), px: r.f64(), py: r.f64(), pz: r.f64() });
+        inputs.push({ seq: r.u32(), tick: r.u32(), buttons: r.u16(), yaw: r.i16() / Q_ANG, pitch: r.i16() / Q_ANG, viewTick: r.u32(), viewFrac: r.u8() / 256, px: r.f64(), py: r.f64(), pz: r.f64() });
       }
       if (r.remaining !== 0) return null;
       return { type: "input", ackTick, inputs };

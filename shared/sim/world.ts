@@ -37,7 +37,7 @@ export interface RewindPose {
 }
 
 export interface StepOpts {
-  rewind?: (shooterId: number, viewTick: number) => ReadonlyMap<number, RewindPose> | null;
+  rewind?: (shooterId: number, viewTick: number, viewFrac: number) => ReadonlyMap<number, RewindPose> | null;
   online?: boolean;
   predictOnly?: boolean;
   silent?: boolean;
@@ -45,6 +45,8 @@ export interface StepOpts {
 
 export interface TickInput extends InputFrame {
   viewTick?: number;
+  /** fraction of a tick past `viewTick` the shooter had interpolated to (Stage 34) */
+  viewFrac?: number;
 }
 
 export type TargetKind = "world" | "dummy" | "player" | "wasp" | "mech" | "none";
@@ -295,13 +297,13 @@ export class World {
     const reqs = stepPlayer(p, input, this.level.boxes, events, this.seed, this.gravityMult);
     for (const ev of events) this.emit({ tick: this.tick, playerId: p.id, ...ev }, opts);
     if (!p.alive) return;
-    for (const r of reqs) this.resolveRequest(p, r, input.viewTick ?? this.tick, opts);
+    for (const r of reqs) this.resolveRequest(p, r, input.viewTick ?? this.tick, input.viewFrac ?? 0, opts);
   }
 
-  private resolveRequest(p: PlayerState, r: FireRequest, viewTick: number, opts: StepOpts): void {
+  private resolveRequest(p: PlayerState, r: FireRequest, viewTick: number, viewFrac: number, opts: StepOpts): void {
     const origin = eyePos(p);
     if (r.kind === "ray") {
-      const rewound = opts.predictOnly ? null : opts.rewind?.(p.id, viewTick) ?? null;
+      const rewound = opts.predictOnly ? null : opts.rewind?.(p.id, viewTick, viewFrac) ?? null;
       for (const d of r.dirs) {
         const dir = viewDir(d.yaw, d.pitch);
         this.castRay(p.id, r.weapon, origin, dir, r.damage, r.headMult, r.legMult, r.range, r.pierce, rewound, viewTick, opts, r.slug);

@@ -35,7 +35,7 @@ class Sender {
     for (let i = 0; i < n; i++) {
       this.seq++;
       const p = this.room.world.players.get(this.playerId)!;
-      this.room.onMessage(this.conn, encodeInputs([{ seq: this.seq, tick, viewTick: tick, buttons: Btn.Forward | Btn.Sprint, yaw: 0, pitch: 0, px: p.pos.x, py: p.pos.y, pz: p.pos.z }], 0));
+      this.room.onMessage(this.conn, encodeInputs([{ seq: this.seq, tick, viewTick: tick, viewFrac: 0, buttons: Btn.Forward | Btn.Sprint, yaw: 0, pitch: 0, px: p.pos.x, py: p.pos.y, pz: p.pos.z }], 0));
     }
   }
   get pos() {

@@ -1641,6 +1641,64 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 34 — The slow client, made reproducible (in progress)
+
+**Goal.** `probe:net` has been green by hand and red on CI since Stage 2. Stages 30, 31 and 33 each
+touched it; it was red on CI runs #42, #43 and #45 and green on #41. Every previous attempt reasoned
+about the difference from a distance, because there was no way to produce it here.
+
+**The reproduction.** `CPU=<n>` throttles the browser's main thread through CDP
+(`Emulation.setCPUThrottlingRate`). `CPU=8` reproduces the CI failure on this machine:
+
+```
+CI  (run #45):  12/60 hits (20%) · misses avg 0.12 m max 0.22 m
+CPU=8 locally:   9/60 hits (15%) · misses avg 0.12 m max 0.25 m
+CPU=1 locally:  21/24 hits (88%) · misses avg 0.00 m max 0.00 m
+```
+
+That is the artifact this failure has been missing for four stages. `CPU=1` is the default and
+changes nothing, so the gate is unaffected until someone asks for a slow client.
+
+**What the CI artifact settled first.** Downloading run #45's `stage-proof` and reading `stage2.json`
+rather than inferring from the summary line: **Stage 31's fix is green on CI** —
+`max error ALPHA 0.00e+0 m / BRAVO 0.00e+0 m over 1151 samples · gaps filled 0`. The check that held
+the gate shut for thirty-nine runs passes. The two that fail are the hit-registration pair, and they
+are a different fault.
+
+**A real defect, which was not the one causing it.** `NetClient.remoteViews()` poses remotes at a
+*continuous* view time `serverTickNow() - INTERP_DELAY_TICKS` and the player aims at what it drew;
+`NetClient.viewTick()` reports `Math.floor` of that same quantity, and `Room.rewindFor` rewound to
+exactly that integer snapshot. So the server reconstructed every target up to one whole tick before
+the position the shooter was looking at — half a tick on average, and one tick at a sprinting strafe
+is ~12 cm. `tests/subtick.test.ts` pins that: half a tick of travel at the mean, zero on a tick
+boundary, worst just before the next one, and closed exactly by interpolating the rewind.
+
+The client now sends the fraction it threw away and the server interpolates between the two
+snapshots it already holds — the ones the client itself interpolated between — clamped so it can
+never reach outside the rewind window.
+
+**And it did not fix the hit registration.** Under the same `CPU=8` reproduction: 15% → 17%, misses
+0.12 m → 0.13 m. That is inside the run-to-run noise. The sub-tick gap is real, provable and worth
+closing on its own terms, but it is not what costs a slow client its shots, and it is recorded here
+as a correction rather than a fix.
+
+**A bisect that proved only that the measurement is too noisy.** Biasing the rewind by whole ticks
+to look for a systematic skew gave:
+
+```
+bias -2: 49%   bias -1: 17%   bias 0: 17%   bias +1: 88%   bias +2: 57%
+```
+
+A real one-tick skew would be a smooth unimodal curve. This is variance: one 60-shot engagement, in
+which a kill ends the engagement early, cannot resolve a one-tick effect. An earlier reading of the
+first two rows as "two ticks back nearly triples the hit rate" was a conclusion drawn from noise,
+and is withdrawn here rather than quietly dropped.
+
+**Still open.** What actually costs the slow client its shots. The next measurement is the one that
+does not depend on aggregate hit rate at all: record, per shot, the position the client aimed at
+against the position the server rewound to, and read the disagreement directly. Hundreds of paired
+samples from one run, instead of one noisy percentage.
+
 ## Stage 33 — A screenshot is a claim
 
 **Goal.** Two probes were red. `probe:mastery` timed out on CI and here; `probe:cityLife` was 13/16.

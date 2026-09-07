@@ -31,12 +31,13 @@ interface Cmd {
   pitch: number;
   seq: number;
   viewTick: number;
+  viewFrac: number;
   px: number;
   py: number;
   pz: number;
 }
 
-const cmd = (t: number, buttons: number): Cmd => ({ tick: t, buttons, yaw: 0.3, pitch: 0, seq: t, viewTick: t, px: 0, py: 0, pz: 0 });
+const cmd = (t: number, buttons: number): Cmd => ({ tick: t, buttons, yaw: 0.3, pitch: 0, seq: t, viewTick: t, viewFrac: 0, px: 0, py: 0, pz: 0 });
 /** sprint forward, then release and coast to a full stop */
 const SCRIPT = Array.from({ length: 90 }, (_, i) => cmd(i + 1, i < 30 ? Btn.Forward | Btn.Sprint : 0));
 

@@ -944,7 +944,7 @@ export class Room {
     }
     const wasAlive = new Map<number, boolean>();
     for (const p of this.world.players.values()) wasAlive.set(p.id, p.alive);
-    this.world.step(inputs, { online: true, rewind: this.opts.lagComp ? (id, viewTick) => this.rewindFor(id, viewTick) : undefined });
+    this.world.step(inputs, { online: true, rewind: this.opts.lagComp ? (id, viewTick, viewFrac) => this.rewindFor(id, viewTick, viewFrac) : undefined });
     for (const p of this.world.players.values()) {
       const rec = this.clients.get(p.id);
       if (rec && !wasAlive.get(p.id) && p.alive) rec.traceSkipUntilSeq = rec.lastSeq + 120; // client learns the respawn from the next snapshot (+ slow-frame input bursts)
@@ -1029,12 +1029,41 @@ export class Room {
     this.pushRun();
   }
 
-  private rewindFor(shooterId: number, viewTick: number): ReadonlyMap<number, RewindPose> | null {
-    const target = Math.max(this.tick - MAX_REWIND_TICKS, Math.min(this.tick, viewTick));
+  /**
+   * The poses the shooter was actually looking at, reconstructed at their sub-tick view time.
+   *
+   * The client draws remotes at a continuous view time and aims at what it drew, then reports that
+   * time as a whole tick plus a fraction. Rewinding to the whole tick alone puts every target back
+   * where it was up to one tick *before* the shooter's crosshair — half a tick on average, and at a
+   * sprinting strafe one tick is ~12 cm, wider than the margin most shots have. That was worth
+   * 15-20% hit registration on a slow client against ~90% on a fast one, because the fraction is a
+   * function of the wall clock and nothing else (Stage 34).
+   *
+   * So interpolate between the bracketing snapshots, which the server already keeps, to the same
+   * point the client drew. A target with no later snapshot (the newest tick) holds; the pair is
+   * clamped into the rewind window first so this can never reach further back than lag comp allows.
+   */
+  private rewindFor(shooterId: number, viewTick: number, viewFrac = 0): ReadonlyMap<number, RewindPose> | null {
+    const oldest = this.tick - MAX_REWIND_TICKS;
+    const target = Math.max(oldest, Math.min(this.tick, viewTick));
     const poses = this.history.get(target);
     if (!poses) return null;
     void shooterId;
-    return poses;
+    // the fraction only means anything between two snapshots we hold, and only if it is one we did
+    // not have to clamp away — otherwise the whole tick is the best the server can honestly do
+    const k = target === viewTick ? Math.max(0, Math.min(1, viewFrac)) : 0;
+    const next = k > 0 ? this.history.get(target + 1) : undefined;
+    if (!next) return poses;
+    const out = new Map<number, RewindPose>();
+    for (const [id, a] of poses) {
+      const b = next.get(id);
+      if (!b || !b.alive || !a.alive) {
+        out.set(id, a);
+        continue;
+      }
+      out.set(id, { alive: a.alive, height: a.height + (b.height - a.height) * k, pos: { x: a.pos.x + (b.pos.x - a.pos.x) * k, y: a.pos.y + (b.pos.y - a.pos.y) * k, z: a.pos.z + (b.pos.z - a.pos.z) * k } });
+    }
+    return out;
   }
 
   private toNetEvent(ev: SimEvent): NetEvent | null {

@@ -54,9 +54,24 @@ async function stats(): Promise<any> {
   return r.json();
 }
 
+/**
+ * Slow the client down on purpose (Stage 34).
+ *
+ * This probe has been green by hand and red on CI since Stage 2, and every time the difference has
+ * been the same thing: a runner that draws frames slowly. Reasoning about that from a distance has
+ * cost three stages. `CPU=<n>` throttles the browser's main thread by that factor through CDP, so
+ * the slow client is a thing this probe can produce on demand rather than a condition it waits to
+ * meet. `CPU=1` (the default) is the machine's own speed and changes nothing.
+ */
+const CPU = Number(process.env.CPU ?? 1);
+
 async function openClient(browser: Awaited<ReturnType<typeof chromium.launch>>, room: string, name: string, seed: number): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: 480, height: 270 } });
   page.on("pageerror", (e) => console.log(`[${name}] pageerror`, String(e)));
+  if (CPU > 1) {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: CPU });
+  }
   const url = `http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&net=ws://127.0.0.1:${HOST_PORT}/room/${room}?ai=0%26level=drainage_yard&level=drainage_yard&name=${name}&lat=${RTT / 2}&jitter=8&loss=${LOSS}&seed=${seed}`;
   await page.goto(url, { waitUntil: "load" });
   await page.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 });
@@ -156,7 +171,7 @@ async function main(): Promise<void> {
           // 400 inputs/s with fire every tick and an impossible pitch
           for (let i = 0; i < 8; i++) {
             seq++;
-            cheat.send(encodeInputs([{ seq, tick: seq, buttons: 0x80, yaw: 0, pitch: 3.0, viewTick: 0, px: 0, py: 0, pz: 0 }], 0));
+            cheat.send(encodeInputs([{ seq, tick: seq, buttons: 0x80, yaw: 0, pitch: 3.0, viewTick: 0, viewFrac: 0, px: 0, py: 0, pz: 0 }], 0));
           }
         }, 20);
         cheat.on("message", (d: Buffer | ArrayBuffer) => {
