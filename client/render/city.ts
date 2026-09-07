@@ -188,6 +188,7 @@ export class SignAtlas {
 /** Dress a level's collision boxes and decor with the clip's kitbash vocabulary. Returns the draw-call count it added and the sign material (for flicker). */
 export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number; signMat: THREE.MeshBasicMaterial | null } {
   const group = new THREE.Group();
+  group.name = "dressing";
   scene.add(group);
   const neon = new NeonBatch(group);
   const batch = new MeshBatch(group);

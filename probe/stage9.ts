@@ -175,9 +175,13 @@ async function main(): Promise<void> {
       }
       const perf = await page.evaluate(() => {
         const s = window.__game.state();
-        return { calls: s.render.calls, tris: s.render.triangles, levelCalls: s.render.levelCalls };
+        // the breakdown makes a failure self-explaining: "over budget" says nothing, "the dressing
+        // is 39 of it" says where to look. Note that the wet floor renders the scene a second time,
+        // so an object on layer 0 costs two of these calls (client/render/wetfloor.ts).
+        return { calls: s.render.calls, tris: s.render.triangles, levelCalls: s.render.levelCalls, groups: window.__game.renderBreakdown() };
       });
-      check(`${id}: render budget — ≤ 180 draw calls/frame (mirror + scene + post), ≤ 200k triangles`, perf.calls <= 180 && perf.tris <= 200000, `${perf.calls} calls · ${perf.tris} triangles · ${perf.levelCalls} level batches`);
+      const where = Object.entries(perf.groups).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", ");
+      check(`${id}: render budget — ≤ 180 draw calls/frame (mirror + scene + post), ≤ 200k triangles`, perf.calls <= 180 && perf.tris <= 200000, `${perf.calls} calls · ${perf.tris} triangles · ${perf.levelCalls} level batches · visible objects: ${where}`);
       results[id] = { shots, perf, route: path.length, climb: up.length, wasps: st0.wasps, mechs: st0.mechs, boxes: st0.boxes };
     }
 

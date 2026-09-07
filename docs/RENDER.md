@@ -124,12 +124,53 @@ rate against a control:
 What it does not check is absolute frame time, because SwiftShader cannot tell you anything about a
 real GPU. That number needs a machine with one, and it is the honest gap in this document.
 
-## 5. Still open
+## 5. Where the draw calls actually go
+
+Measured with `window.__game.renderBreakdown()`, which counts visible renderables per top-level
+scene group. On `lease_row` at a typical vantage:
+
+| Group | Visible objects |
+| --- | ---: |
+| dressing (batched) | 39 |
+| unnamed groups (wake, run, weapon fx) | 20 |
+| city life (crowd is instanced: 4) | 18 |
+| skyline | 9 |
+| viewmodel (the held weapon) | 5 |
+| traffic, rain, tracers, sparks | 1 each |
+| **total visible** | **~94** |
+| **draw calls reported** | **~210** |
+
+**The gap is the point.** Ninety-four objects produce two hundred and ten calls, because the wet
+floor is a `Reflector`: it renders the scene a second time from a mirrored camera. The mirror is
+the largest single line in the budget — larger than the dressing, the crowd and the skyline put
+together — and it is the first place to look if the budget ever needs room.
+
+The control already exists: `FAR_LAYER`. The mirror camera sees only layer 0, the main camera sees
+both, and the rain, skyline, sky and traffic are already on the far layer so they draw once. What
+stays reflected is what reads as *light* — the neon, the signage, the lit dressing — because the
+reflection is smeared over eleven vertical taps and mixed under a puddle mask, so shape does not
+survive it and brightness does.
+
+Two notes on getting this number right, both of which cost me a wrong answer first:
+
+- `Object3D.traverse` walks into hidden subtrees; the renderer does not. Counting with it reports
+  every stowed weapon's viewmodel as drawn — 51 of the camera's children, none of them rendered.
+  `breakdown()` prunes at the first invisible ancestor.
+- The budget the probes enforce (≤ 180) is measured from the probe's own fixed vantage. A different
+  view sees more of the city and reports more calls; 210 above is not a budget failure, it is a
+  different camera.
+
+**On instancing.** §4 of an earlier draft of this document called instancing the crowd and the
+dressing "the next real win". It is not: the crowd is already four `InstancedMesh`es and the
+dressing is already batched into ~30 draw calls by `MeshBatch` and `NeonBatch`. The measurement
+above is what corrected that, and the honest next win is the mirror, not the meshes.
+
+## 6. Still open
 
 1. **Absolute frame time on real hardware.** Everything above is platform-independent by necessity.
-   A pass on a mid-range laptop and a phone is the missing measurement.
-2. **The city's own draw calls.** Stage 9's budget is generous — 180 calls — and the crowd, the
-   signage and the dressing are separate meshes rather than instanced. Instancing them is the next
-   real win, and it is a bigger change than this one.
-3. **Texture memory.** The count is checked; the bytes are not. A canvas atlas for the name tags
+   A pass on a mid-range laptop and a phone is the missing measurement, and no amount of care here
+   substitutes for it.
+2. **Texture memory.** The count is checked; the bytes are not. A canvas atlas for the name tags
    would replace one texture per player with one for the room.
+3. **The mirror's resolution and cadence.** It renders at 256×144 every frame. Rendering it every
+   other frame, or dropping it further under load, is untested headroom nobody has needed yet.

@@ -887,6 +887,54 @@ where each used to cost one; and the worst frame is within 1.3× the median idle
 fire. The city's own draw-call budget is back inside its Stage 9 limits, because the pools are
 hidden when empty rather than costing two calls in every idle frame.
 
+## Stage 22 — Where the draw calls actually go (and a premise that was wrong)
+
+**Goal.** Stage 21's write-up named instancing the crowd and the dressing as "the next real win",
+on the strength of one `lease_row` reading of 182 calls against a 180 budget. Do it.
+
+**What the measurement said instead.** Both halves of the premise were wrong.
+
+- **The budget was not blown.** The 182 was Stage 21's own effect pools costing two draw calls in
+  every idle frame, and hiding them when empty had already fixed it. `probe:city` passes 32/32.
+- **Instancing is not the win.** The crowd is already four `InstancedMesh`es and the dressing is
+  already batched into ~30 calls by `MeshBatch` and `NeonBatch`. There was nothing there to take.
+
+**What it did find.** A new `renderBreakdown()` counts visible renderables per scene group, and the
+gap between that and `info.render.calls` is the whole story: **about 94 visible objects produce
+about 210 draw calls.** The wet floor is a `Reflector` — it renders the scene a second time from a
+mirrored camera, so everything it can see costs two calls. The mirror is the largest single line in
+the budget, larger than the dressing, the crowd and the skyline together.
+
+The control for it already existed and nobody had written down what it was worth: `FAR_LAYER`. The
+mirror camera sees only layer 0; the rain, skyline, sky and traffic are already on the far layer and
+draw once. What stays reflected is what reads as *light*, because the reflection is smeared over
+eleven vertical taps under a puddle mask — shape does not survive it, brightness does.
+
+**Files.** `client/render/renderer.ts` (`breakdown()`, group names), `client/main.ts`
+(`renderBreakdown` on the state hook), `client/render/city.ts` (the dressing group's name),
+`client/render/wetfloor.ts` (what the mirror costs, and the layer that controls it);
+`probe/stage9.ts` (the budget line now names its own composition); `docs/RENDER.md` §5.
+
+**Design decisions.**
+- **The diagnostic ships, the optimisation does not.** There was no optimisation to make. What was
+  missing was the ability to answer "where did the calls go", so that is what got built: every
+  budget line in `probe:city` now lists its visible objects by group, and a future failure explains
+  itself instead of starting another investigation like this one.
+- **`traverse` was the wrong tool, and it cost a wrong answer.** `Object3D.traverse` walks into
+  hidden subtrees; the renderer does not. The first breakdown reported 51 objects under the camera —
+  all eight stowed weapons' viewmodels, none of them drawn. `breakdown()` prunes at the first
+  invisible ancestor.
+- **A budget number belongs to a camera.** 210 calls from a free vantage is not a failure of a
+  180-call budget measured from the probe's fixed one. Both numbers are now in `docs/RENDER.md` with
+  that said plainly, because the next person to see 210 will otherwise open the same investigation.
+- **The wrong claim was corrected where it was made.** `docs/RENDER.md` now says instancing is not
+  the next win and why, rather than leaving a plausible-sounding sentence in a document for someone
+  to act on.
+
+**Acceptance (`npm run probe:city` 32/32; `npm run probe:frame` 6/6; `npm run probe:look` 15/15;
+`npm test` 223):** every district is inside its draw-call and triangle budget, and each check now
+reports the group composition behind its number.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

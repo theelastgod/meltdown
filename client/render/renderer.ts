@@ -128,25 +128,30 @@ export class Renderer {
 
     this.camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.05, 900);
     this.camera.rotation.order = "YXZ";
+    this.camera.name = "viewmodel";
     this.scene.add(this.camera);
 
     const dressed = dressLevel(this.scene, level);
     this.levelCalls = dressed.calls;
     if (dressed.signMat) this.signFlicker = flickerMaterial(dressed.signMat);
     const skyline = buildSkyline(this.scene, level.skylineSeed ?? 42, (level.bounds ?? 32) + 44, district);
+    skyline.name ||= "skyline";
     skyline.traverse((o) => o.layers.set(FAR_LAYER));
     this.life = new CityLife(level, skyline);
+    this.life.group.name = "city life";
     this.scene.add(this.life.group);
     this.hub = level.hub ? new HubDressing(this.scene, level) : null;
     this.campaignFx = new CampaignFx(this.scene, this.camera);
     if (level.traffic?.length) {
       this.traffic = new Traffic(level.traffic, level.skylineSeed ?? 5);
       this.traffic.object.layers.set(FAR_LAYER);
+      this.traffic.object.name = "traffic";
       this.scene.add(this.traffic.object);
     }
     this.buildLights(cast, level);
     this.rain = new Rain();
     this.rain.object.layers.set(FAR_LAYER);
+    this.rain.object.name = "rain";
     this.scene.add(this.rain.object);
     // tracers and sparks: two draw calls for the lot, allocated once (client/render/vfx.ts)
     this.vfxPool = new VfxPool(this.scene);
@@ -154,6 +159,8 @@ export class Renderer {
     // when empty, so without this the first shot of a match compiles two programs mid-frame — one
     // 500 ms stutter, measured, at exactly the moment a duel starts. `compile` only walks visible
     // objects, so they are shown for the call and hidden again on the first update.
+    this.vfxPool.tracers.name = "tracers";
+    this.vfxPool.sparks.name = "sparks";
     this.vfxPool.tracers.visible = true;
     this.vfxPool.sparks.visible = true;
     this.renderer.compile(this.scene, this.camera);
@@ -353,6 +360,31 @@ export class Renderer {
       this.vmKick = 1;
     }
     if (hitWorld) this.vfxPool.addSpark(to.x, to.y, to.z, color, this.clock);
+  }
+
+  /**
+   * Visible renderables per top-level scene group — near enough a draw-call breakdown, and the
+   * thing a budget check needs when it fails. "180 calls, over budget" says nothing; "the dressing
+   * is 96 of them" says where to look. Walked on demand, never per frame.
+   */
+  breakdown(): Record<string, number> {
+    const out: Record<string, number> = {};
+    const drawable = new Set(["Mesh", "InstancedMesh", "SkinnedMesh", "Line", "LineSegments", "LineLoop", "Points", "Sprite"]);
+    // `traverse` walks into hidden subtrees; the renderer does not. Counting with it reports every
+    // stowed weapon's viewmodel as drawn — 51 of the camera's children, none of them rendered.
+    const count = (o: THREE.Object3D): number => {
+      if (!o.visible) return 0;
+      let n = drawable.has(o.type) ? 1 : 0;
+      for (const c of o.children) n += count(c);
+      return n;
+    };
+    for (const child of this.scene.children) {
+      const n = count(child);
+      if (n === 0) continue;
+      const key = child.name || child.type;
+      out[key] = (out[key] ?? 0) + n;
+    }
+    return out;
   }
 
   render(v: ViewState, rawDt: number): void {

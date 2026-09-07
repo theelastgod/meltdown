@@ -5,6 +5,23 @@ import { Reflector } from "three/examples/jsm/objects/Reflector.js";
  * Wet street: a planar reflection rendered at low resolution and smeared
  * vertically, mixed over a dark tiled base by a puddle mask, with cyan lane
  * lines living in the same shader so they reflect nothing and glow.
+ *
+ * ## What the reflection costs
+ *
+ * A `Reflector` renders the scene a second time from a mirrored camera, so every object it can see
+ * costs two draw calls rather than one. Measured: about 94 visible objects produce ~210 calls, which
+ * makes the mirror the largest single line in the render budget — larger than the dressing, the
+ * crowd and the skyline put together, and the first place to look if that budget ever needs room.
+ *
+ * The control is already here and is `FAR_LAYER` (`client/render/renderer.ts`). The mirror camera
+ * sees only layer 0; the main camera sees both. Anything moved to `FAR_LAYER` is drawn once — the
+ * rain, the skyline, the sky and the traffic are, because the reflection is smeared over eleven
+ * vertical taps and mixed under a puddle mask, so what survives of them is nothing a player could
+ * name. What stays on layer 0 is what reads as *light*: the neon, the signage, the lit dressing.
+ *
+ * `probe/stage3.ts` is the guard on moving anything else: it measures neon share and cyan/magenta
+ * dominance against statistics taken from the reference clip, so cutting too much fails the look
+ * rather than quietly costing it.
  */
 export function makeWetFloor(width: number, depth: number, y: number, fogColor: THREE.Color, fogDensity: number): Reflector {
   const geo = new THREE.PlaneGeometry(width, depth);
@@ -81,7 +98,8 @@ export function makeWetFloor(width: number, depth: number, y: number, fogColor: 
   r.onBeforeRender = ((orig) =>
     function (this: Reflector, renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, ...rest: unknown[]) {
       (mat.uniforms.camPos!.value as THREE.Vector3).copy(camera.position);
-      // Objects on FAR_LAYER (rain, skyline) are invisible to the mirror camera, which only sees layer 0.
+      // Objects on FAR_LAYER (rain, skyline, sky, traffic) are invisible to the mirror camera,
+      // which only sees layer 0 — see the note above on what that is worth.
       (orig as (...a: unknown[]) => void).call(this, renderer, scene, camera, ...rest);
     })(r.onBeforeRender);
   return r;

@@ -103,6 +103,8 @@ export interface GameHook {
   settings: () => Settings & { applied: { sensitivity: number; fov: number; crt: { grain: number; scanline: number; vignette: number; aberration: number }; volumes: { master: number; sfx: number; bed: number } } };
   setSetting: (key: keyof Settings, value: number | boolean) => Settings;
   audioCues: () => Record<string, number>;
+  /** where the draw calls go, by scene group: the budget check names what blew it */
+  renderBreakdown: () => Record<string, number>;
   /** the probe's damage: drops the local file's health (the low-health pulse) */
   hurt: (dmg: number) => number;
   /** THE RUN (Stage 14): the view as the client has it; the payout to the wallet */
@@ -251,6 +253,7 @@ window.__game = {
   },
   audioCues: () => ({ ...game.audio.fired }),
   run: () => game.runView,
+  renderBreakdown: () => game.renderer.breakdown(),
   payout: () => game.file.counter?.op("payout") ?? Promise.resolve({ ok: false, reason: "offline" }),
   sellSkin: (token, price) => game.file.counter?.sell(token, price) ?? Promise.resolve({ ok: false, reason: "offline" }),
   prizes: async () => {
