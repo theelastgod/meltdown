@@ -10,6 +10,12 @@ import type { WeaponId } from "../weapons/manifest";
 export interface Account {
   id: string;
   name: string;
+  /**
+   * The file's own secret (Stage 26). The id names the file; this proves the caller is its owner.
+   * Never leaves the host except to the client that owns it, and never appears in a public payload
+   * — the prize board and the room stats publish ids, which is what made the id alone dangerous.
+   */
+  secret?: string;
   xp: number;
   depth: number;
   wallet: Wallet;
@@ -117,6 +123,61 @@ export function recordGhost(a: Account, run: GhostRun): boolean {
   a.ghosts[run.level] = run;
   a.ledger.push(`RANGE · ${run.level.toUpperCase().replace(/_/g, " ")} · ${run.seconds.toFixed(2)}s${cur ? ` (−${(cur.seconds - run.seconds).toFixed(2)}s)` : " · FIRST RUN"}`);
   return true;
+}
+
+/**
+ * A file's own secret, issued once and held by the client beside the id.
+ *
+ * Before Stage 26 the id alone was enough to load a file and mutate it, and the id was published:
+ * the prize board named the winning files and the dev host's `/stats` named every file in every
+ * room. Anyone could read the richest file off a leaderboard and Rewrite it back to Depth 1.
+ *
+ * The id is a name; this is the proof. 24 characters from a 32-symbol alphabet is 120 bits, which
+ * is not guessable, and it never appears in any public payload.
+ */
+export function newFileSecret(random: () => number = Math.random): string {
+  const A = "abcdefghijkmnpqrstuvwxyz23456789";
+  let out = "";
+  for (let i = 0; i < 24; i++) out += A[Math.floor(random() * A.length)]!;
+  return out;
+}
+
+/**
+ * Does `presented` speak for this file?
+ *
+ * A file created before secrets existed has none, and the first caller to present one adopts it —
+ * trust on first use. That is the honest trade for a save file: the alternative locks every
+ * existing player out of their own progression to defend against an attacker who would have had to
+ * arrive first. New files are created *with* a secret by the client that made them, so the window
+ * only ever existed for files that predate this.
+ */
+export function fileAuth(a: Account, presented: string | undefined | null): { ok: boolean; adopted: boolean } {
+  const have = a.secret ?? "";
+  const given = (presented ?? "").trim();
+  if (!have) {
+    if (!given) return { ok: true, adopted: false }; // no secret either side: an anonymous file, as before
+    a.secret = given.slice(0, 64);
+    return { ok: true, adopted: true };
+  }
+  return { ok: given === have, adopted: false };
+}
+
+/**
+ * What a public board may say about a file.
+ *
+ * A prize board has to name its winners, and it used to name them by file id — which was also the
+ * credential for mutating that file. So the board published a list of the richest files and how to
+ * find them. The id is now a secret's partner rather than a display name, so boards get a stable,
+ * non-reversible label instead: enough for a player to recognise their own row, useless to anyone
+ * else.
+ */
+export function publicLabel(id: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `FILE-${h.toString(36).toUpperCase().padStart(7, "0").slice(-7)}`;
 }
 
 export function createAccount(id: string, name = "BLANK"): Account {

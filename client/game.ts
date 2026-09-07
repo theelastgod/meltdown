@@ -305,7 +305,7 @@ export class Game {
     this.world.removePlayer(this.player.id);
     const inner = new WsTransport(cfg.url);
     const transport = cfg.sim ? new SimulatedLink(inner, cfg.sim) : inner;
-    const net = new NetClient(transport, cfg.name, cfg.token ?? "", this.file.account, this.file.loadoutJson(), this.file.identityJson());
+    const net = new NetClient(transport, cfg.name, cfg.token ?? "", this.file.account, this.file.loadoutJson(), this.file.identityJson(), this.file.secret);
     this.net = net;
     net.onSocial = (m) => this.onSocial(m);
     net.onMission = (m) => this.campaign.onMissionMsg(m);

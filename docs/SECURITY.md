@@ -119,6 +119,52 @@ the end, because a bounded head start and a rate advantage look alike if you onl
 This was worth finding twice over: PvP outcomes now pay $CAPITAL through the Audit board and the
 Deep Wake, so a movement advantage is not just an unfair match, it is a mint.
 
+### 1.9 The file id was a bearer credential, and the game published it — HIGH
+
+A Ghostfile is named by an id the client claims. Nothing proved the claim: `join` took the id off
+the wire and loaded that file, and every `POST /file/<id>/…` route took it out of a URL.
+
+The id was not secret either. `GET /prizes` named **every winning file, with the amount it won** —
+the leaves name files rather than wallets so the board can be read — and the dev host's `/stats`
+named every file in every live room.
+
+So the attack was two requests. Read the richest file off the prize board; `POST
+/file/<id>/rewrite`. A Rewrite resets a Depth-50 file to Depth 1, zeroes its Scrip and salvage, and
+strips its Ledger Graph: sixty-odd hours of progression, destroyed by anyone who read a
+leaderboard. The cheaper variants were worse to defend against and nearly as bad — spend the
+victim's Scrip on nodes, refund the nodes they had, burn their Wakelight on cosmetics, spend their
+$CAPITAL on a name, or consume the day's run cap so they could not earn.
+
+Nothing about it was exotic. It is the oldest mistake there is: an identifier used as a credential,
+and then printed.
+
+**Fixed.** A file carries its own secret — 24 characters, 120 bits, issued by the client that made
+the file and kept beside the id. Every mutating route requires it and answers 403 without it, and a
+room join that names a file without the right secret plays a **guest** rather than that file.
+
+Three decisions in that are worth stating, because each is a trade:
+
+- **A wrong secret is not a kick.** The id is published, so a mismatch is at least as likely to be
+  someone typing a friend's id as an attack. Locking the connection out would turn a published id
+  into a way to deny someone a game as well as a way to wreck their file.
+- **Trust on first use.** A file made before secrets existed has none, and the first caller to
+  present one adopts it. The alternative locks every existing player out of their own progression
+  to defend against an attacker who would have had to arrive first.
+- **Boards get a label, not an id.** `publicLabel` gives a stable, non-reversible `FILE-XXXXXXX` —
+  enough to recognise your own row, useless for anything else. A prize board has to name its
+  winners; it does not have to hand out credentials.
+
+`tests/fileauth.test.ts` runs the attack: the Rewrite payload still works once past the door (which
+is the point — the damage is real), a join with the wrong secret or no secret plays a guest and
+leaves the file at Depth 50 with its own secret intact, and the owner's join still gets the owner's
+file. Removing the check fails two cases.
+
+**Still open, and named rather than fixed.** Reading a file — `GET /file/<id>` — is still
+unauthenticated, so someone with an id can see progression, the linked wallet address and the
+ledger. That is a disclosure, not a destruction, and gating it means threading the secret through
+every read path in the client and every probe for a much smaller gain. It should be closed before
+anything real is at stake.
+
 ---
 
 ## 2. What is deliberately trusted
@@ -133,6 +179,7 @@ An auditor should know which of these are decisions rather than oversights.
 | The **minter** role (Cosmetics) | Can mint any id in any quantity. There is no supply cap; scarcity is a studio promise, not a contract one. If that promise matters, cap it per id at definition time. |
 | `Cosmetics` and `$CAPITAL` as **callback-free** | The market's safety argument in 1.6 no longer depends on this, but the ERC-1155 acceptance check is still not implemented, so a contract that cannot handle 1155s can still receive one. |
 | The **host** for game rules | Depth gates, the run's daily cap and the Audit playlists are server-side. The chain never checks them; a host compromise is a game-economy compromise. This is the right trade for a game, but it is the trade. |
+| A file's **id** as a name, not a credential | Since §1.9 the id names a file and the file's secret proves ownership. An id on its own can read a file (see §1.9's residual) and can do nothing else. |
 | The client for **aim** | Yaw and pitch come from the client and are bounded but not judged. An aimbot is accepted by construction, as in every FPS; movement, fire rate and hit registration are not (§1.8). Detecting aim is a statistics problem for a later pass, not a protocol one. |
 
 ## 3. Open before mainnet
@@ -184,6 +231,7 @@ it now asserts each separately.
 
 ```sh
 npx vitest run tests/security.test.ts    # 13 cases, all against a real EVM
+npx vitest run tests/fileauth.test.ts    # 10 cases: the file id, and the attack it allowed
 npx vitest run tests/speedhack.test.ts   # 3 cases, against the real room and sim
 ```
 

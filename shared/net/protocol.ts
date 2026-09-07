@@ -267,7 +267,12 @@ const Q_ANG = 10000;
  * Join. `account` is the Ghostfile id the client claims; `loadout` is raw JSON
  * (validated server-side against that file: unknown fields are refused, not stripped).
  */
-export function encodeJoin(name: string, token: string, account = "", loadout = "", identity = ""): ArrayBuffer {
+/**
+ * `secret` is the file's own credential (Stage 26). A join that names a file without it plays a
+ * guest rather than that file — the id is a name and the secret is the proof, and the id is
+ * published on the prize board.
+ */
+export function encodeJoin(name: string, token: string, account = "", loadout = "", identity = "", secret = ""): ArrayBuffer {
   const w = new W();
   w.u8(Msg.Join);
   w.u8(PROTOCOL_VERSION);
@@ -276,6 +281,7 @@ export function encodeJoin(name: string, token: string, account = "", loadout = 
   w.str(account);
   w.str(loadout);
   w.str(identity);
+  w.str(secret);
   return w.done();
 }
 
@@ -507,7 +513,7 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
 // Decoding
 
 export type ClientMessage =
-  | { type: "join"; version: number; name: string; token: string; account: string; loadout: string; identity: string }
+  | { type: "join"; version: number; name: string; token: string; account: string; loadout: string; identity: string; secret: string }
   | { type: "choice"; script: string; testimony: Record<string, string> }
   | { type: "input"; ackTick: number; inputs: NetInput[] }
   | { type: "ping"; clientTime: number };
@@ -524,7 +530,9 @@ export function decodeClientMessage(buf: ArrayBuffer): ClientMessage | null {
       const account = r.remaining > 0 ? r.str() : "";
       const loadout = r.remaining > 0 ? r.str() : "";
       const identity = r.remaining > 0 ? r.str() : "";
-      return { type: "join", version, name, token, account, loadout, identity };
+      // older joins carry no secret; the room treats a file claimed without one as a guest
+      const secret = r.remaining > 0 ? r.str() : "";
+      return { type: "join", version, name, token, account, loadout, identity, secret };
     }
     if (t === Msg.Choice) {
       const c = JSON.parse(r.str()) as { script?: unknown; testimony?: unknown };

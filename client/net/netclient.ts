@@ -71,10 +71,10 @@ export class NetClient {
   onMission: ((m: MissionMsg) => void) | null = null;
   onRun: ((m: RunMsg) => void) | null = null;
 
-  constructor(private transport: Transport, private name: string, token = "", private account = "", private loadout = "", private identity = "") {
+  constructor(private transport: Transport, private name: string, token = "", private account = "", private loadout = "", private identity = "", private secret = "") {
     this.token = token;
     transport.onOpen = () => {
-      transport.send(encodeJoin(this.name, this.token, this.account, this.loadout, this.identity));
+      transport.send(encodeJoin(this.name, this.token, this.account, this.loadout, this.identity, this.secret));
     };
     transport.onMessage = (buf) => this.receive(buf);
     transport.onClose = (reason) => {

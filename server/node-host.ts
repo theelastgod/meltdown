@@ -17,7 +17,8 @@ import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
 import { devSeed, MemoryAccountStore } from "./accounts";
-import { buyNode, recordGhost, refundNode, validGhost } from "../shared/progression/account";
+import { buyNode, fileAuth, publicLabel, recordGhost, refundNode, validGhost } from "../shared/progression/account";
+import { NOT_YOURS } from "./player-do";
 import { campaignRequest } from "../shared/campaign/endpoint";
 import { createCampaignRoom, type CampaignRoomHandle } from "./campaign-room";
 import { MemoryEndgameStore, seasonView } from "./endgame";
@@ -170,7 +171,7 @@ const http = createServer((req, res) => {
     // every posted epoch (the leaves name files, not wallets, so the board can read it)
     void (async () => {
       res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify({ epochs: counter.prizes.list().map((e) => ({ epoch: e.epoch, kind: e.kind, period: e.period, total: e.total, postedAt: e.postedAt, leaves: e.leaves.map((l) => ({ file: l.file, amount: l.amount, reason: l.reason })) })) }));
+      res.end(JSON.stringify({ epochs: counter.prizes.list().map((e) => ({ epoch: e.epoch, kind: e.kind, period: e.period, total: e.total, postedAt: e.postedAt, leaves: e.leaves.map((l) => ({ file: publicLabel(l.file), amount: l.amount, reason: l.reason })) })) }));
     })();
     return;
   }
@@ -207,7 +208,7 @@ const http = createServer((req, res) => {
       const lines = kind === "audit" ? auditPrizes(endgame.audit(period)) : seasonPrizes(endgame.season().contributors ?? {});
       const r = await counter.ledger.postEpoch(kind, period, lines);
       log(`[prizes] post ${kind} ${period}: ${r.ok ? `${r.epoch?.leaves.length} leaves` : r.reason}${r.skipped?.length ? ` · no wallet: ${r.skipped.join(", ")}` : ""}`);
-      res.end(JSON.stringify({ ok: r.ok, reason: r.reason, epoch: r.epoch ? { epoch: r.epoch.epoch, root: r.epoch.root, total: r.epoch.total, leaves: r.epoch.leaves.map((l) => ({ file: l.file, amount: l.amount, reason: l.reason })) } : null, skipped: r.skipped ?? [], lines }));
+      res.end(JSON.stringify({ ok: r.ok, reason: r.reason, epoch: r.epoch ? { epoch: r.epoch.epoch, root: r.epoch.root, total: r.epoch.total, leaves: r.epoch.leaves.map((l) => ({ file: publicLabel(l.file), amount: l.amount, reason: l.reason })) } : null, skipped: r.skipped ?? [], lines }));
     });
     return;
   }
@@ -337,6 +338,15 @@ const http = createServer((req, res) => {
           node = "";
         }
         const a = accounts.load(id, name);
+        // Every POST to a file mutates it, so every POST must prove it speaks for the file. The id
+        // alone used to be enough, and the id is published — see docs/SECURITY.md §1.9.
+        if (!fileAuth(a, String((parsed as { secret?: unknown }).secret ?? "")).ok) {
+          res.statusCode = 403;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ ok: false, reason: NOT_YOURS }));
+          return;
+        }
+        accounts.save(a); // an adopted secret is kept
         if (file[3] === "counter") {
           if (!rateOk(id)) {
             res.statusCode = 429;

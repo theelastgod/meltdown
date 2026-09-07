@@ -1067,6 +1067,56 @@ and not enforced.
 gigs, 10 scripts, 4 endings and 9 testimony keys, with every ending's gate traced back to a choice
 that writes it, every script node reachable, and the arc contiguous.
 
+## Stage 26 — The file id was a bearer credential, and the game published it
+
+**Goal.** Stage 16 read the money paths adversarially and Stage 25 read the story graph. This is the
+one nobody had read: the identity path.
+
+**What was found.** A Ghostfile is named by an id the client claims, and nothing proved the claim.
+`join` took the id off the wire and loaded that file; every `POST /file/<id>/…` route took it out of
+a URL. The id was not secret either — `GET /prizes` named **every winning file with the amount it
+won**, and `/stats` named every file in every live room.
+
+So the attack was two requests: read the richest file off the prize board, then
+`POST /file/<id>/rewrite`. A Rewrite resets a Depth-50 file to Depth 1, zeroes its Scrip and
+salvage, and strips its Ledger Graph. Sixty hours of progression, destroyed by anyone who read a
+leaderboard. The cheaper variants were nearly as bad: spend the victim's Scrip, refund their nodes,
+burn their Wakelight, spend their $CAPITAL on a name, or eat the day's run cap so they could not
+earn.
+
+Nothing about it was exotic. It is the oldest mistake there is — an identifier used as a
+credential, and then printed.
+
+**Files.** `shared/progression/account.ts` (`newFileSecret`, `fileAuth`, `publicLabel`, the
+`secret` field), `server/room.ts` (the join gate), `server/player-do.ts` and `server/node-host.ts`
+(403 on every mutating route; the prize board labels rather than names), `shared/net/protocol.ts`
+(the join carries a secret, tolerantly), `client/file.ts`, `client/counter.ts`,
+`client/net/netclient.ts`, `client/game.ts`; `docs/SECURITY.md` §1.9;
+`tests/fileauth.test.ts` (10).
+
+**Design decisions.** Each of these is a trade, so each is stated rather than assumed:
+- **A wrong secret is not a kick — it plays a guest.** The id is published, so a mismatch is at
+  least as likely to be someone typing a friend's id as an attack. Kicking would turn a published
+  id into a way to deny someone a game as well as a way to wreck their file.
+- **Trust on first use.** A file made before secrets existed has none, and the first caller to
+  present one adopts it. The alternative locks every existing player out of their own progression to
+  defend against an attacker who would have had to arrive first.
+- **Boards get a label, not an id.** `publicLabel` gives a stable, non-reversible `FILE-XXXXXXX`:
+  enough to recognise your own row, useless for anything else. A prize board has to name its
+  winners; it does not have to hand out credentials.
+- **The read path is named, not fixed.** `GET /file/<id>` is still unauthenticated, so an id still
+  discloses progression, the linked wallet and the ledger. That is disclosure rather than
+  destruction, and gating it means threading the secret through every read in the client and every
+  probe for a much smaller gain. `docs/SECURITY.md` §1.9 says so plainly rather than leaving it
+  implied by the fix.
+
+**Acceptance (`npm test`, 249 tests; `probe:run` 12/12; smoke 3/3):** the Rewrite payload still
+works once past the door, which is the point — the damage is real. A join with the wrong secret,
+and one with no secret, both play a guest and leave the file at Depth 50 with its own secret
+intact, and neither is kicked. The owner's join still gets the owner's file. The secret survives a
+stored-row round trip, adoption happens exactly once, and an anonymous file stays playable.
+Removing the join check fails two cases.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

@@ -22,6 +22,7 @@ import { CURRICULA, gateFor, MAX_RANK, xpForRank, type Mastery } from "@shared/p
 import { redact, STAMPS } from "@shared/progression/stamps";
 import { glyphFor, glyphSvg } from "@shared/identity/glyph";
 import { counterView, MAX_CAPITAL_PER_UNIT, nameFee, NAME_DEPTH, RUN_DAILY_CAP, RUN_DEPTH } from "@shared/economy/counter";
+import { newFileSecret } from "@shared/progression/account";
 import { CounterClient, type CounterView } from "./counter";
 import { COUNTER_URL } from "./config";
 import { CHAPTERS, chapterFor, MONIKERS, monikerById, unlockedMonikers, wornMoniker } from "@shared/identity/monikers";
@@ -86,15 +87,22 @@ export class GhostFile {
   private graphOpen = false;
   private busy = "";
 
+  /** the file's credential, kept beside the id in localStorage and sent with every change */
+  secret = "";
+
   constructor(private online: () => boolean) {
     const q = new URLSearchParams(location.search);
-    let stored: { account?: string; loadout?: Record<string, unknown>; moniker?: string | null } = {};
+    let stored: { account?: string; secret?: string; loadout?: Record<string, unknown>; moniker?: string | null } = {};
     try {
       stored = JSON.parse(localStorage.getItem(KEY) ?? "{}");
     } catch {
       stored = {};
     }
     this.account = q.get("account") ?? stored.account ?? `blank:${Math.random().toString(36).slice(2, 10)}`;
+    // The file's own credential (Stage 26). Generated once, kept beside the id, sent with every
+    // request that changes the file — because the id is published on the prize board and used to be
+    // enough on its own to Rewrite someone back to Depth 1.
+    this.secret = q.get("secret") ?? stored.secret ?? newFileSecret();
     this.moniker = q.get("moniker") ?? stored.moniker ?? null;
     const urlLoadout = q.get("loadout");
     if (urlLoadout) {
@@ -134,6 +142,7 @@ export class GhostFile {
         this.render();
         this.onIdentity?.(this);
       });
+      this.counter.secret = this.secret;
       this.counter.onChange = () => this.render();
       void this.counter.load();
     }
@@ -178,7 +187,7 @@ export class GhostFile {
   async postEndgame(op: "claim" | "rewrite" | "cosmetic", body: Record<string, unknown>): Promise<{ ok: boolean; reason?: string }> {
     if (!this.shop) return { ok: false, reason: "no ledger host linked" };
     try {
-      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/${op}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/${op}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, secret: this.secret }) });
       const r = (await res.json()) as { ok: boolean; reason?: string; account?: Account; daily?: { day: number; contracts: ContractView[] } };
       if (r.account) this.applyAccount(r.account);
       if (r.daily) {
@@ -244,7 +253,7 @@ export class GhostFile {
   async postCampaign(body: Record<string, unknown>): Promise<{ ok: boolean; reason?: string; account?: Account }> {
     if (!this.shop) return { ok: false, reason: "no ledger host linked" };
     try {
-      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/campaign`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/campaign`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, secret: this.secret }) });
       const r = (await res.json()) as { ok: boolean; reason?: string; account?: Account };
       return r;
     } catch (e) {
@@ -442,7 +451,7 @@ export class GhostFile {
 
   private persist(): void {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ account: this.account, loadout: this.raw, moniker: this.moniker }));
+      localStorage.setItem(KEY, JSON.stringify({ account: this.account, secret: this.secret, loadout: this.raw, moniker: this.moniker }));
     } catch {
       /* private mode */
     }

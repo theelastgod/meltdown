@@ -6,6 +6,10 @@
 import { buyNode, createAccount, refundNode, upgradeAccount, type Account, recordGhost, validGhost } from "../shared/progression/account";
 import { claimContract, dailyView } from "../shared/endgame/contracts";
 import { buyCosmetic, rewrite, savePreset, setAlias, setTheme } from "../shared/endgame/rewrite";
+import { fileAuth } from "../shared/progression/account";
+
+/** The one refusal every mutating file route gives, so it reads the same wherever it comes from. */
+export const NOT_YOURS = "NOT YOUR FILE: this file has a secret and the request did not carry it";
 import type { AccountStore } from "./accounts";
 import { MIGRATIONS, SCHEMA } from "./schema";
 
@@ -67,7 +71,7 @@ export class PlayerFile implements DurableObject {
       return Response.json({ ok: true });
     }
     if (request.method === "POST" && (url.pathname === "/buy" || url.pathname === "/refund")) {
-      const { id, node } = (await request.json()) as { id: string; node?: string };
+      const { id, node, secret } = (await request.json()) as { id: string; node?: string; secret?: string };
       let a = await this.state.storage.get<Account>(KEY);
       if (!a && this.env.DB) {
         const db = this.env.DB;
@@ -75,6 +79,8 @@ export class PlayerFile implements DurableObject {
       }
       if (!a) a = createAccount(id, "BLANK");
       a = upgradeAccount(a);
+      // the id names the file; the secret proves the caller owns it (Stage 26)
+      if (!fileAuth(a, secret).ok) return Response.json({ ok: false, reason: NOT_YOURS }, { status: 403 });
       const r = url.pathname === "/buy" ? buyNode(a, String(node ?? "")) : refundNode(a, String(node ?? ""));
       if (r.ok) {
         const prev = await this.state.storage.get<Account>(KEY);
@@ -89,7 +95,7 @@ export class PlayerFile implements DurableObject {
       return Response.json({ ok: r.ok, reason: r.reason, account: a });
     }
     if (request.method === "POST" && ["/daily", "/claim", "/rewrite", "/cosmetic"].includes(url.pathname)) {
-      const body = (await request.json()) as { id: string; op?: string; slot?: number; name?: string; loadout?: unknown; alias?: string };
+      const body = (await request.json()) as { id: string; op?: string; slot?: number; name?: string; loadout?: unknown; alias?: string; secret?: string };
       let a = await this.state.storage.get<Account>(KEY);
       if (!a && this.env.DB) {
         const db = this.env.DB;
@@ -97,6 +103,8 @@ export class PlayerFile implements DurableObject {
       }
       if (!a) a = createAccount(body.id, "BLANK");
       a = upgradeAccount(a);
+      // a Rewrite resets a Depth-50 file to Depth 1: the one call that must never take a bare id
+      if (!fileAuth(a, body.secret).ok) return Response.json({ ok: false, reason: NOT_YOURS }, { status: 403 });
       let r: { ok: boolean; reason?: string } = { ok: true };
       if (url.pathname === "/claim") r = claimContract(a, String((body as { id?: unknown }).id ?? ""));
       else if (url.pathname === "/rewrite") r = rewrite(a);

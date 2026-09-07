@@ -47,6 +47,9 @@ export class CounterClient {
   private wallet: WalletClient | null = null;
   private pub: PublicClient | null = null;
 
+  /** the file's credential: the counter-ledger changes the file, so it needs it like every other mutation */
+  secret = "";
+
   constructor(private shop: string, private account: string, private applyCounter: (c: CounterRecord | null, view: CounterView) => void) {}
 
   private say(line: string): void {
@@ -136,7 +139,7 @@ export class CounterClient {
   prizes: { epoch: number; kind: string; period: number; amount: string; reason: string; claimed: boolean }[] = [];
   async op(op: "view" | "wear" | "reconcile" | "stamps" | "name" | "payout" | "prizes" | "claimPrize", body: Record<string, unknown> = {}): Promise<{ ok: boolean; reason?: string; voucher?: { name: string; nonce: string; deadline: string; signature: Hex; fee: number } }> {
     try {
-      const r = (await (await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/counter`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op, ...body }) })).json()) as { ok: boolean; reason?: string; counter: CounterRecord | null; view: CounterView; voucher?: { name: string; nonce: string; deadline: string; signature: Hex; fee: number }; prizes?: CounterClient["prizes"] };
+      const r = (await (await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/counter`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op, ...body, secret: this.secret }) })).json()) as { ok: boolean; reason?: string; counter: CounterRecord | null; view: CounterView; voucher?: { name: string; nonce: string; deadline: string; signature: Hex; fee: number }; prizes?: CounterClient["prizes"] };
       if (r.prizes) this.prizes = r.prizes;
       this.applyCounter(r.counter, r.view);
       if (op !== "view") this.say(r.ok ? `${op.toUpperCase()} · ok` : `${op.toUpperCase()} · ${r.reason}`);

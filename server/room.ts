@@ -50,6 +50,7 @@ import { assertClean, displayName, identityTag, publicIdentity, type PublicIdent
 import { CHAPTERS, chapterFor, unlockedMonikers, wornMoniker } from "../shared/identity/monikers";
 import { glyphSeed } from "../shared/identity/glyph";
 import type { AccountStore } from "./accounts";
+import { fileAuth } from "../shared/progression/account";
 import type { PlayerStats } from "../shared/sim/player";
 
 export interface Conn {
@@ -267,7 +268,7 @@ export class Room {
     if (msg.type === "join") {
       if (rec) return this.strike(rec, "duplicate join");
       if (msg.version !== PROTOCOL_VERSION) return this.kickConn(conn, `protocol ${msg.version} != ${PROTOCOL_VERSION}`);
-      this.join(conn, msg.name, msg.token, msg.account, msg.loadout, msg.identity);
+      this.join(conn, msg.name, msg.token, msg.account, msg.loadout, msg.identity, msg.secret);
       return;
     }
     if (!rec) return this.kickConn(conn, "message before join");
@@ -376,7 +377,7 @@ export class Room {
     for (const other of this.clients.values()) other.pendingEvents.push({ type: "leave", playerId: rec.playerId });
   }
 
-  private join(conn: Conn, name: string, token: string, accountId: string, loadoutJson: string, identityJson = ""): void {
+  private join(conn: Conn, name: string, token: string, accountId: string, loadoutJson: string, identityJson = "", secret = ""): void {
     const safeName = (name || "BLANK").replace(/[^\x20-\x7e]/g, "").slice(0, 16) || "BLANK";
     // rejoin by token
     if (token) {
@@ -405,20 +406,38 @@ export class Room {
     if (!this.opts.accounts) return this.admit(conn, safeName, null, loadoutJson, identityJson);
     // A guest without a file id plays a fresh Blank file keyed to this link.
     const id = safeAccount || `guest:${this.nextId}:${Math.random().toString(36).slice(2, 8)}`;
+    /**
+     * The file's secret decides whether this connection gets that file or a guest one.
+     *
+     * A wrong secret is not a kick. The id is published on the prize board, so a mismatch is at
+     * least as likely to be someone typing a friend's file id as an attack, and either way the
+     * right answer is the same: play, but as nobody. Locking the connection out would turn a
+     * published id into a way to deny someone a game as well as a way to wreck their file.
+     */
+    const asGuest = (): void => this.admit(conn, safeName, this.opts.accounts!.load(`guest:${this.nextId}:${Math.random().toString(36).slice(2, 8)}`, safeName) as Account, loadoutJson, identityJson);
+    const gated = (acc: Account): void => {
+      if (!fileAuth(acc, secret).ok) {
+        this.opts.onLog(`join refused the file ${acc.id}: wrong secret — playing a guest`);
+        asGuest();
+        return;
+      }
+      this.saveAccount(acc); // an adopted secret is kept
+      this.admit(conn, safeName, acc, loadoutJson, identityJson);
+    };
     const loaded = this.opts.accounts.load(id, safeName);
     if (loaded instanceof Promise) {
       this.pendingJoins.add(conn);
       loaded.then(
         (acc) => {
           if (!this.pendingJoins.delete(conn)) return; // closed while loading
-          this.admit(conn, safeName, acc, loadoutJson, identityJson);
+          gated(acc);
         },
         (err) => {
           this.pendingJoins.delete(conn);
           this.kickConn(conn, `FILE UNAVAILABLE: ${String(err)}`);
         },
       );
-    } else this.admit(conn, safeName, loaded, loadoutJson, identityJson);
+    } else gated(loaded);
   }
 
   /** Validate the claimed loadout against the file, then spawn. Illegal loadouts are refused, never stripped. */
