@@ -1698,33 +1698,53 @@ and is withdrawn here rather than quietly dropped.
 throttle raises the failure rate — it does not reproduce the failure on demand, and the commit that
 introduced it said so more strongly than the evidence supports. Corrected here.
 
-**A per-shot diagnostic, and what it is not good for.** `Room.scoreRewindOffsets` replays each
-missed shot's ray against the pose history either side of the tick the shooter reported and records
-which whole-tick offset holds the target nearest their line. On a failing run (50 misses) it gave:
+**A per-shot diagnostic that did not work, and how that was established.** `scoreRewindOffsets`
+replayed each missed shot's ray against pose history either side of the reported tick and recorded
+which whole-tick offset held the target nearest the line. On failing runs it clustered hard at
++9..+11 — suspiciously equal to the average rewind depth — with a second pile against the −12 edge.
 
-```
-0:1  2:1  5:1  8:1  9:3  10:17  11:12  12:1   |   -12:8  -11:1  -10:1  -8:1  -7:1  -6:1  -4:1
-```
+It survived three separate client-side changes unchanged, which is the tell. The check that settled
+it was running it where there is no bug: at `CPU=1`, with hit registration a healthy 88%, the
+histogram is `10:1 11:1` — **the same place**. A number identical whether the netcode is healthy or
+broken is measuring the scenario's geometry, not the fault. The diagnostic has been removed rather
+than left in with a warning, because it twice looked like an answer.
 
-A cluster at +9..+11 and a second pile against the −12 edge. That is not a skew of +10; it is the
-metric aliasing. The probe's target is *strafing*, so its path is periodic at roughly a 50-tick
-period, and "nearest pose to this ray within ±12 ticks" can match the far side of a swing as
-readily as the near one. A two-sided histogram is evidence the window has wrapped, not evidence of
-the offset it peaks at. The diagnostic now says so in its own doc comment, because a metric that can
-mislead is worse than none unless it carries its own warning.
+**Three hypotheses, all falsified by measurement.**
 
-**What is actually established about the disagreement.** `nearMiss` needs no window and has no
-ambiguity: it is by construction the perpendicular distance between the pose the server rewound to
-and the line the shooter aimed along. It reads ~0.13 m on a slow client and 0.00 m on a fast one,
-against ~12 cm of travel per tick at a sprinting strafe. So the client's aim and the server's rewind
-disagree by roughly one tick of target motion when the client is starved, and not at all when it is
-not.
+1. *The sub-tick floor.* Real, fixed, unit-tested — and worth 15% → 17% with misses 0.12 → 0.13 m,
+   which is inside the noise.
+2. *A whole-tick skew.* The bias sweep was variance, not a curve.
+3. *The extrapolation branch.* On a starved client `remoteViews()` leaves interpolation for its
+   velocity-extrapolation path, which looked like a good candidate. Holding instead of extrapolating:
+   17%, misses 0.14 m, same cluster. No effect.
 
-**Still open, and stated precisely.** Closing the sub-tick half of that disagreement did not move
-hit registration, which the one-tick figure above does not by itself explain. The next measurement
-must remove the last of the inference: have the client log the position it actually aimed at, keyed
-by input sequence, and the server log the pose it rewound to for that same input, then compare the
-pairs directly. Every reading so far has been of one side of that comparison.
+**The correction that matters.** The "one tick of disagreement" reading in this entry's first draft
+rested on *0.00 m unstarved against 0.13 m starved*. With more runs that is wrong: near-miss is
+**~0.14 m in both**, and the 0.00 m was a single unrepresentative run. Fast and slow clients do not
+differ in how far their misses miss — only in how many there are (23/26 against 9/59; the starved
+client fires *more* shots and lands *fewer*).
+
+**Where that points, stated as a hypothesis and not as a finding.** `Bot.sample` fires when its
+angular error is under `0.015` rad. At the ~12 m of this engagement that is ~0.18 m of lateral
+tolerance, against a measured mean near-miss of 0.13–0.15 m — so the *size* of a miss looks set by
+the bot's own firing gate, not by lag compensation. And `botTargets()` reads `remoteViews()`, which
+is a function of `performance.now()`: a throttled client runs several sim steps per frame, all
+seeing the same frozen target sample, so the aim point goes stale for a whole frame while the bot
+keeps firing on every tick of the burst. That would make this check's absolute hit rate a
+measurement of frame rate.
+
+If that is right, the property the check is named for is the one its *control* already asserts —
+lag compensation raises hit registration — and that holds in every run measured here: 88% against
+11% fast, 15% against 9% starved. Changing the absolute threshold is the obvious move and is exactly
+the move to be suspicious of, so it is not being made on a hypothesis. The experiment that would
+settle it: record, at fire time, the perpendicular distance from the bot's aim ray to *its own
+believed* target position. Near zero puts the fault after the client; of the order of the near-miss
+puts it in the firing gate.
+
+**What this stage leaves.** A throttle that makes the failure common enough to work against
+(4 of 6 runs), a real sub-tick defect closed and tested, a wrong diagnostic removed, three
+hypotheses eliminated with measurements rather than argument, and a named next experiment. Not a
+fix.
 
 ## Stage 33 — A screenshot is a claim
 
