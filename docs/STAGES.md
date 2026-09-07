@@ -1753,6 +1753,35 @@ rewind past the cap, and prints the demand against the budget. A probe reporting
 no explanation cost four stages; this one says `70/70 shots asked to rewind past the 12-tick cap ·
 avg demand 22.8 ticks, and 150 ms RTT alone costs 10.5`.
 
+**The other budget, measured at the size the game sells.** `probe:net` asserts
+`< 12 KB/s per client downstream` and measures 10.5-12.2 in a room of **two**. Matchmaking fills a
+public room to **eight** before rolling to the next shard. Nobody had ever measured the number the
+budget is about at the size the product actually runs.
+
+`tests/bandwidth.test.ts` drives the `Room` class directly — no browser, no wall clock — and counts
+the bytes it hands each connection, with every player moving and turning, which is the case delta
+compression cannot shrink away:
+
+```
+1 player   2.61 KB/s per client   room  2.6 KB/s
+2          2.82                   room  5.6
+4          3.24                   room 13.0
+6          3.67                   room 22.0
+8          4.10                   room 32.7
+```
+
+Per client it is linear in the others to describe, about **+0.21 KB/s each**; per room it is
+quadratic, because each of n clients is told about n−1 others. A shard's cost is the second number.
+
+The harness excludes the join burst, so its absolute level sits below what the probe reads over a
+live socket; the transferable quantity is the slope. Carried onto the probe's own two-player
+reading of ~11 KB/s, both extrapolations land at or past the line: **+1.3 by increment (12.3), ×1.46
+by ratio (16.0)**. Either way the budget has no room for a full lobby, and the check that guards it
+has never been run against one.
+
+The honest fix is to measure it at the room cap rather than argue about the extrapolation — a probe
+change, named here rather than made on an estimate.
+
 **Not changed, and why.** Raising `MAX_REWIND_TICKS` is the obvious fix and I have not made it. The
 ceiling trades directly against how long after breaking line of sight a lagging shooter can still
 kill you, in a game whose PvP pays $CAPITAL and where a player could add latency deliberately. That
