@@ -1758,8 +1758,9 @@ three `#hud .tc .tc-b` queries, one of them in the client's own `mobile()` hook,
 excluding `tc-` had skipped. `probe:mobile` reported 0 pads and threw. It was right both times.
 
 **Acceptance:** `probe:mastery` 23/23 (was a `TimeoutError`), `probe:cityLife` 19/19 (was 13/16),
-`probe:mobile` 14/14, `probe:net` 13/13, `probe:city` 45/45, `probe:identity` 22/23 with the rite
-artifact the last one outstanding, and every other probe green with its artifacts now checked. `npm test` 295 (3 new); typecheck clean over both
+`probe:identity` 23/23, `probe:mobile` 14/14, `probe:net` 13/13, `probe:city` 45/45, and every
+other probe green with its artifacts now checked — `stage8-rite.png` is a picture of a rite card
+reading CHAPTER I · LISTED, which it had never been before. `npm test` 295 (3 new); typecheck clean over both
 configs. Both lint arms and the tram latch are mutation-tested.
 
 **Left open, named rather than fixed.** `probe:harden` is intermittent: green on CI run #41, red on
