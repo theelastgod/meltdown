@@ -919,7 +919,10 @@ export class Room {
         const err = Math.hypot(p.pos.x - last.px, p.pos.y - last.py, p.pos.z - last.pz);
         rec.traceSamples++;
         if (err > rec.traceMaxErr) rec.traceMaxErr = err;
-        if (err > 0.02 && this.traceLog.length < 12) this.traceLog.push({ tick: this.tick, id, seq: last.seq, err, batch: list.length, queue: rec.queue.length, alive: p.alive, stance: p.stance, srv: [+p.pos.x.toFixed(3), +p.pos.y.toFixed(3), +p.pos.z.toFixed(3)], cli: [+last.px.toFixed(3), +last.py.toFixed(3), +last.pz.toFixed(3)], buttons: last.buttons, yawIn: +last.yaw.toFixed(4), yawP: +p.yaw.toFixed(4), vel: [+p.vel.x.toFixed(2), +p.vel.z.toFixed(2)] } as never);
+        // log anything that would fail the probe's own threshold (1e-4 m), not only gross
+        // divergence: the CPU-starved failure this was meant to explain is ~5e-3 m and logged
+        // nothing at 0.02, so thirty-nine CI runs reported the number and never the trace
+        if (err > 1e-4 && this.traceLog.length < 12) this.traceLog.push({ tick: this.tick, id, seq: last.seq, err, batch: list.length, queue: rec.queue.length, alive: p.alive, stance: p.stance, srv: [+p.pos.x.toFixed(3), +p.pos.y.toFixed(3), +p.pos.z.toFixed(3)], cli: [+last.px.toFixed(3), +last.py.toFixed(3), +last.pz.toFixed(3)], buttons: last.buttons, yawIn: +last.yaw.toFixed(4), yawP: +p.yaw.toFixed(4), vel: [+p.vel.x.toFixed(2), +p.vel.z.toFixed(2)] } as never);
       }
     }
     // pose history for lag comp

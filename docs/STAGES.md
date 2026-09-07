@@ -1389,6 +1389,103 @@ run after three stages of not naming it. Cheap, and the reason this stage found 
 reinstating the original arithmetic gap, and each of the three client POSTs including reinstating
 the shipped one.
 
+## Stage 30 — The gate had been red for thirty-nine runs, and it skipped what it did not reach
+
+**Goal.** Stages 26–29 each found that the previous stage's fix was incomplete somewhere its own
+tests could not see, and each was found by *running* something rather than reading it. That is a
+statement about a missing habit, and this project has a script for exactly that habit. Find out why
+it never fired.
+
+**What was found.** It fires on every push. It has failed **every one of its thirty-nine runs**.
+
+```
+run #39  Stage 29   failure   2m42s
+run #38  Stage 28   failure
+run #37  Stage 27   failure
+…  all the way back
+```
+
+Two minutes forty-two is not long enough to run twenty-four checks, and it did not: the job dies at
+step 10, `npm run probe:net`, and GitHub Actions **skips every remaining step** when one fails. So
+steps 11–29 — eighteen probes, `npm run build` and `npm run smoke` — have never run on any commit
+of this branch.
+
+That is the whole explanation for the last four stages. `probe:endgame` at 8/13, `probe:counter` at
+9/11, `probe:harden` at 5/7, `probe:identity` at 14/17, a contract count wrong since Stage 19, a
+Deep Wake check that had never passed since Stage 15 — every one of those was sitting in a step CI
+skipped, on a red run nobody opened because it had been red since before any of them.
+
+I have also been reporting green per stage on the strength of the probes I ran by hand. Those runs
+were real, and the subset was mine, not the project's.
+
+**Fixed.**
+
+- **One red step no longer decides what gets measured.** Every check step carries
+  `if: ${{ !cancelled() }}`, so the run does all of it and fails at the end knowing everything. A
+  failed step still fails the job; it just no longer hides the eighteen behind it.
+- **The timeout was 15 minutes** for a run that cannot finish in 15 minutes even when green — the
+  other half of why nobody looked. Now 90.
+- **The workflow had drifted from `npm run verify`.** `lint:campaign` (Stage 25), `probe:economy`
+  (Stage 17) and `probe:frame` (Stage 21) were each added to the script and never to the workflow,
+  so three stages shipped a check that ran only when someone remembered it. All three are in now.
+- **`tests/verify.test.ts` compares the two lists on every test run**, and asserts that no step is
+  unguarded and that the timeout is realistic. The drift is invisible by construction — both files
+  look complete on their own, and you only see the gap by putting them side by side, which nobody
+  does. Now something does it every time. Dropping a check, removing a guard or restoring the
+  15-minute timeout each fail a case.
+
+**Files.** `.github/workflows/verify.yml`; `tests/verify.test.ts` (new, 5); `server/room.ts` (the
+trace threshold); `docs/STAGES.md`.
+
+**What `probe:net` is actually failing on — named, not fixed.** The step that has been holding the
+gate shut since Stage 2 is real, and it is a netcode finding rather than a flaky probe:
+
+```
+FAIL  client-predicted movement identical to server  — max error ALPHA 1.02e-1 m / BRAVO 0.00e+0 m
+FAIL  reconciliation corrections stay sub-centimetre — max ALPHA 87.50 mm, BRAVO 0.00 mm
+```
+
+Established so far:
+
+- **It is a slow-client failure.** Locally it passes 11/11. Under four busy-loops saturating every
+  core — a crude stand-in for a shared CI runner — it reproduces: 4.69e-3 m against a 1e-4 m
+  threshold. So the trigger is the client being starved, not the netcode being wrong on a fast
+  machine, which is why it has never been seen by hand.
+- **On CI the error is exactly one simulation tick.** Across the seven logged samples the ratio of
+  error to the player's velocity is constant at 16.45 ms, against a 16.67 ms tick — the client's
+  predicted state for a given input sits one tick from the server's, and the apparent decay is only
+  the player decelerating. Locally the error is sub-tick, so there may be two severities of the
+  same cause.
+- **It is whichever client is starved, not a particular one.** The first slow run had ALPHA at
+  4.69e-3 m and BRAVO at exactly 0; the second had BRAVO at 5.25e-3 m and ALPHA at exactly 0. An
+  earlier draft of this entry said the diverging client was the one taking corrections. The second
+  run falsified that before it was committed, which is the only reason it is not in here as another
+  wrong diagnosis.
+- **Every logged sample has `batch` ≥ 2.** With the trace threshold lowered, every divergence the
+  server recorded happened on a tick where it applied *several* of that client's inputs at once.
+  None was logged at `batch: 1`.
+- **The error survives the player stopping.** Two samples at `buttons: 0`, `vel: [0,0]` hold the
+  same 1.7 mm offset with identical positions — so it is a residue left in the position, not a
+  phase offset in motion. It shrinks with velocity while moving and then simply stays.
+
+The leading candidate, from those three together: **the server advances its world by one tick per
+`step()` no matter how many of a client's inputs it applies in it, while the client advances one
+tick per input.** A burst of three inputs moves the player three steps and the world one. The
+credit scheme bounds the total (`one credit per sim tick, so no client can spend more sim time than
+the sim has run`), so this averages out and is not a speed exploit — but inside a burst the
+player's motion and the world's clock come apart, and the same asymmetry would coarsen the pose
+history that lag compensation rewinds through. That last part is not idle: the run that produced
+this trace also dropped hit-reg to 20% with six clamped rewinds. Candidate, not conclusion.
+
+I am not fixing it in this stage, and the reason is the point of the stage: I cannot yet explain it,
+and a fix I cannot explain is a fix I cannot verify. What I have done is make the next run *say*
+something — the server logged a trace only above 0.02 m, so a 5e-3 m failure printed the number and
+never the trace, through thirty-nine runs. It now logs anything that would fail the check.
+
+**Acceptance:** `npm test` 284 (5 new); `npm run typecheck` clean over both configs. The gate's
+guards are mutation-tested. The next push is the first one whose CI run will report all twenty-nine
+steps — including, honestly, the one that is still red.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

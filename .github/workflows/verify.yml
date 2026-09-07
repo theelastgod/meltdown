@@ -1,5 +1,24 @@
 name: verify
 
+# The gate. Every check the project claims for itself runs here.
+#
+# Two things were wrong with it until Stage 30, and together they hid a lot of work.
+#
+# 1. A failing step SKIPPED every step after it. `probe:net` had been red since Stage 2's harness met
+#    a slower runner, so steps 11-29 — eighteen probes, the build and the smoke test — had never run
+#    on any commit. Thirty-nine runs, all red, all stopping in the same place. Four stages' worth of
+#    findings (26-29) were failures those skipped probes would have reported immediately.
+#
+#    Every step now carries `if: ${{ !cancelled() }}`, so one red step no longer decides what gets
+#    measured. The job still fails — a failed step fails the job — but it fails knowing everything
+#    rather than the first thing.
+#
+# 2. It had drifted from `npm run verify`. `lint:campaign` (Stage 25), `probe:economy` (Stage 17) and
+#    `probe:frame` (Stage 21) were added to the script and never here. `tests/verify.test.ts` now
+#    compares the two lists, so the next one cannot drift silently.
+#
+# The timeout was 15 minutes for a run that cannot finish in 15 minutes even when green — which is
+# the other half of why nobody looked at it.
 on:
   push:
     branches: ["**"]
@@ -8,7 +27,7 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,29 +37,59 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run typecheck
+        if: ${{ !cancelled() }}
       - run: npm run test
+        if: ${{ !cancelled() }}
       - run: npm run probe
+        if: ${{ !cancelled() }}
       - run: npm run probe:look
+        if: ${{ !cancelled() }}
       - run: npm run probe:net
+        if: ${{ !cancelled() }}
       - run: npm run probe:arsenal
+        if: ${{ !cancelled() }}
       - run: npm run probe:wake
+        if: ${{ !cancelled() }}
       - run: npm run lint:fairness -- --quick
+        if: ${{ !cancelled() }}
       - run: npm run probe:file
+        if: ${{ !cancelled() }}
       - run: npm run probe:city
+        if: ${{ !cancelled() }}
       - run: npm run probe:cityLife
+        if: ${{ !cancelled() }}
       - run: npm run certify:firmware
+        if: ${{ !cancelled() }}
       - run: npm run probe:mastery
+        if: ${{ !cancelled() }}
       - run: npm run probe:identity
+        if: ${{ !cancelled() }}
       - run: npm run probe:campaign
+        if: ${{ !cancelled() }}
       - run: npm run probe:endgame
+        if: ${{ !cancelled() }}
       - run: npm run lint:economy
+        if: ${{ !cancelled() }}
+      - run: npm run lint:campaign
+        if: ${{ !cancelled() }}
+      - run: npm run probe:economy
+        if: ${{ !cancelled() }}
       - run: npm run probe:counter
+        if: ${{ !cancelled() }}
       - run: npm run probe:crawl
+        if: ${{ !cancelled() }}
       - run: npm run probe:ship
+        if: ${{ !cancelled() }}
       - run: npm run probe:run
+        if: ${{ !cancelled() }}
       - run: npm run probe:harden
+        if: ${{ !cancelled() }}
+      - run: npm run probe:frame
+        if: ${{ !cancelled() }}
       - run: npm run build
+        if: ${{ !cancelled() }}
       - run: npm run smoke
+        if: ${{ !cancelled() }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
