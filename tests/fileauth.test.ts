@@ -16,6 +16,8 @@ import { devSeed, MemoryAccountStore } from "../server/accounts";
 import { encodeJoin, decodeClientMessage } from "../shared/net/protocol";
 import { createAccount, fileAuth, newFileSecret, publicLabel, upgradeAccount } from "../shared/progression/account";
 import { rewrite } from "../shared/endgame/rewrite";
+import { campaignRequest } from "../shared/campaign/endpoint";
+import { campaignOf, completeContract } from "../shared/campaign/save";
 
 const KIT = JSON.stringify({ primary: "lease_breaker", secondary: "shock_baton", attested: [] });
 
@@ -133,5 +135,69 @@ describe("the wire still decodes what it used to", () => {
     expect(withSecret).toMatchObject({ type: "join", account: "file", secret: "shh" });
     const without = decodeClientMessage(encodeJoin("A", "", "file", KIT, ""));
     expect(without).toMatchObject({ type: "join", account: "file", secret: "" });
+  });
+});
+
+describe("a contract is closed by the room that ran it, not by asking", () => {
+  /**
+   * A contract hands out Scrip, XP — which is Depth, which is the Ledger Graph — and the two
+   * campaign weapons, and all three follow the player into the wake, where the Audit board pays
+   * $CAPITAL. `campaignRequest` used to close one on request, so the arc was a handful of POSTs
+   * away from Depth 50 with both weapons and nothing played.
+   */
+  /** a file at the hub with a house picked, which is where the arc actually starts */
+  const fresh = () => {
+    const a = devSeed("rite-campaign", "RITE");
+    campaignRequest(a, { op: "faction", faction: "cells" });
+    return a;
+  };
+
+  it("refuses a claimed completion by default, and says who does close a contract", () => {
+    const a = fresh();
+    const r = campaignRequest(a, { op: "complete", id: "m1_wake_unlisted", testimony: { "m1:lease": "burn" } });
+    expect(r.ok).toBe(false);
+    expect(r.reason).toMatch(/closed by the room/);
+    expect(r.campaign.missionsDone).toEqual([]);
+    // and nothing was paid out for the asking
+    expect(a.wallet.scrip).toBe(fresh().wallet.scrip);
+    expect(a.xp).toBe(fresh().xp);
+  });
+
+  it("the whole arc is refused, not just the first one — no walking it request by request", () => {
+    const a = fresh();
+    for (const id of ["m1_wake_unlisted", "m2_deadletter_run", "m3_repo_volatility", "m7_white_office"]) {
+      expect(campaignRequest(a, { op: "complete", id }).ok).toBe(false);
+    }
+    expect(campaignOf(a).missionsDone).toEqual([]);
+    expect(campaignOf(a).weapons).toEqual([]);
+    expect(campaignOf(a).ending).toBeNull();
+  });
+
+  it("the hub still works: a house and worn protocols are the player's own to choose", () => {
+    const a = devSeed("rite-hub", "RITE");
+    expect(campaignRequest(a, { op: "faction", faction: "cells" }).ok).toBe(true);
+    expect(campaignOf(a).faction).toBe("cells");
+    expect(campaignRequest(a, { op: "wear", protocols: ["red_lease"] }).ok).toBe(true);
+    expect(campaignRequest(a, { op: "state" }).ok).toBe(true);
+    // wearing something the file does not own grants nothing
+    expect(campaignOf(a).worn).toEqual([]);
+  });
+
+  it("the dev host's flag is the only way through, and it is off unless asked for", () => {
+    const a = fresh();
+    expect(campaignRequest(a, { op: "complete", id: "m1_wake_unlisted", testimony: { "m1:lease": "burn" } }, {}).ok).toBe(false);
+    const dev = campaignRequest(a, { op: "complete", id: "m1_wake_unlisted", testimony: { "m1:lease": "burn" } }, { trustCompletion: true });
+    expect(dev.ok).toBe(true);
+    expect(campaignOf(a).missionsDone).toContain("m1_wake_unlisted");
+  });
+
+  it("and the room's own path is untouched: it calls completeContract directly", () => {
+    // the server-authoritative path does not go through the endpoint at all, so gating the endpoint
+    // cannot break a player who is actually playing
+    const a = fresh();
+    const r = completeContract(a, "m1_wake_unlisted", { "m1:lease": "burn" });
+    expect(r.ok).toBe(true);
+    expect(campaignOf(a).missionsDone).toContain("m1_wake_unlisted");
+    expect(a.wallet.scrip).toBeGreaterThan(fresh().wallet.scrip);
   });
 });

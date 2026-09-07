@@ -165,6 +165,34 @@ ledger. That is a disclosure, not a destruction, and gating it means threading t
 every read path in the client and every probe for a much smaller gain. It should be closed before
 anything real is at stake.
 
+### 1.10 A campaign contract closed itself on request — HIGH
+
+`campaignRequest` accepted `op: "complete"` from any client and closed the contract. It checked the
+arc's own gates — threat, testimony, what comes after what — but never that the mission had been
+played. Asking was enough.
+
+A contract is not a story beat with no weight behind it. It pays Scrip, it pays XP — which is
+Depth, which is the Ledger Graph — and two of them hand over the campaign weapons. All three follow
+the player out of the campaign and into the wake, where the Audit board pays $CAPITAL to the top
+10%. So the arc was a handful of POSTs from Depth 50 with both weapons, having played nothing, and
+the reward for that was a better placement on a board that pays.
+
+**Fixed.** The op is refused by default and the refusal says who does close a contract: the room
+that ran it. That path already existed and is the one real players take —
+`server/campaign-room.ts` calls `completeContract` itself when the mission's own objectives report
+`complete`, for every player in the room. Server-authoritative, unforgeable, and untouched by this
+change, so gating the endpoint cannot break anyone who is actually playing.
+
+`campaignRequest` takes a `trustCompletion` flag that defaults to false. The Durable Object — the
+production path — never passes it. The Node host does, because a probe has to reach a late arc
+state without playing seven missions, which is the same dev-only affordance as its
+`/chain/faucet`. Making the trust a flag at the call site is the point: it is now impossible to read
+the production path and not see that it does not have it.
+
+`tests/fileauth.test.ts` walks the whole arc through the endpoint and is refused at every step, with
+nothing paid out for the asking; the hub's own ops (house, worn protocols, state) still work; and
+the room's direct path still closes a contract and still pays. Removing the guard fails three cases.
+
 ---
 
 ## 2. What is deliberately trusted
@@ -179,6 +207,7 @@ An auditor should know which of these are decisions rather than oversights.
 | The **minter** role (Cosmetics) | Can mint any id in any quantity. There is no supply cap; scarcity is a studio promise, not a contract one. If that promise matters, cap it per id at definition time. |
 | `Cosmetics` and `$CAPITAL` as **callback-free** | The market's safety argument in 1.6 no longer depends on this, but the ERC-1155 acceptance check is still not implemented, so a contract that cannot handle 1155s can still receive one. |
 | The **host** for game rules | Depth gates, the run's daily cap and the Audit playlists are server-side. The chain never checks them; a host compromise is a game-economy compromise. This is the right trade for a game, but it is the trade. |
+| The **Node host's** dev affordances | `/chain/faucet` and `campaignRequest`'s `trustCompletion` exist so probes can reach a state cheaply. They are on the dev host only; the Workers are the production path and have neither. A self-hoster running `node-host.ts` publicly is running a dev build. |
 | A file's **id** as a name, not a credential | Since §1.9 the id names a file and the file's secret proves ownership. An id on its own can read a file (see §1.9's residual) and can do nothing else. |
 | The client for **aim** | Yaw and pitch come from the client and are bounded but not judged. An aimbot is accepted by construction, as in every FPS; movement, fire rate and hit registration are not (§1.8). Detecting aim is a statistics problem for a later pass, not a protocol one. |
 
@@ -231,7 +260,7 @@ it now asserts each separately.
 
 ```sh
 npx vitest run tests/security.test.ts    # 13 cases, all against a real EVM
-npx vitest run tests/fileauth.test.ts    # 10 cases: the file id, and the attack it allowed
+npx vitest run tests/fileauth.test.ts    # 15 cases: the file id and the campaign contract
 npx vitest run tests/speedhack.test.ts   # 3 cases, against the real room and sim
 ```
 

@@ -1117,6 +1117,57 @@ intact, and neither is kicked. The owner's join still gets the owner's file. The
 stored-row round trip, adoption happens exactly once, and an anonymous file stays playable.
 Removing the join check fails two cases.
 
+## Stage 27 — A contract is closed by the room that ran it, not by asking
+
+**Goal.** Stage 26 found a HIGH by reading a path nobody had read. Keep reading. The next unread
+one was the campaign endpoint — the thing that writes what a player has done.
+
+**What was found.** `campaignRequest` accepted `op: "complete"` from any client and closed the
+contract. It checked the arc's own gates — threat, testimony, what comes after what — but never
+that the mission had been played. Asking was enough.
+
+A contract is not a story beat with no weight behind it. It pays Scrip, it pays XP — which is
+Depth, which is the Ledger Graph — and two of them hand over the campaign weapons. All three follow
+the player out of the campaign and into the wake, **where the Audit board pays $CAPITAL to the top
+10%**. So the arc was a handful of POSTs from Depth 50 with both weapons, having played nothing,
+and the prize for that was a better placement on a board that pays.
+
+**Fixed.** The op is refused by default, and the refusal names who does close a contract: the room
+that ran it. That path already existed and is the one real players take —
+`server/campaign-room.ts` calls `completeContract` itself when the mission's objectives report
+`complete`, for every player in the room. It is untouched, so gating the endpoint cannot break
+anyone who is actually playing.
+
+**Files.** `shared/campaign/endpoint.ts` (`CampaignOptions.trustCompletion`),
+`server/node-host.ts` (the dev host passes it); `probe/stage10.ts` (holds a file secret);
+`docs/SECURITY.md` §1.10 and §2; `tests/fileauth.test.ts` (5 new).
+
+**Design decisions.**
+- **The trust is a flag at the call site, not a comment.** The dev host needs to reach a late arc
+  state without playing seven missions — the same affordance as its `/chain/faucet`. Making that a
+  parameter means it is impossible to read the production path and not see that it does not have
+  it. `docs/SECURITY.md` §2 now lists the Node host's dev affordances as a trusted thing, which
+  they always were and were never written down.
+- **The refusal explains the design.** "A contract is closed by the room that ran it, not by
+  asking" tells the next reader where the real path is, rather than leaving them to find out that
+  removing the guard breaks nothing they can see.
+- **The room's path is asserted by a test, not assumed.** A case calls `completeContract` directly
+  and shows it still closes the contract and still pays — because "the real path is unaffected" is
+  the load-bearing claim of the whole fix.
+- **Stage 26 had already broken the campaign probe, and only running it said so.** The probe drove
+  the arc with bare `fetch` POSTs and page URLs that named a file but proved nothing, so the join
+  gate turned it into a guest and three checks went red — a real consequence of the previous stage
+  that its own tests could not see, because the tests call the functions and the probe drives the
+  product. It now fixes one secret, sends it with every POST, and hands it to all eight pages as
+  `?secret=`, which is exactly what a real client does with the one it generated. `npm run
+  probe:campaign` is back to 20/20.
+
+**Acceptance (`npm test`, 254 tests):** the whole arc — m1, m2, m3, and the white office — is
+refused through the endpoint with nothing paid out for the asking; the hub's own ops still work and
+wearing an unowned protocol still grants nothing; the dev flag is the only way through and is off
+unless asked for; and the room's direct path still closes a contract and still pays. Removing the
+guard fails three cases.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

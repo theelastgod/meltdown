@@ -377,7 +377,9 @@ const http = createServer((req, res) => {
         }
         if (file[3] === "campaign") {
           // the campaign save: faction, contract completions (rewards), worn protocols — never the match room's business
-          const r = campaignRequest(a, parsed);
+          // the dev host trusts a claimed completion so a probe can reach a late arc state without
+          // playing seven missions — the same dev-only affordance as /chain/faucet. The Worker does not.
+          const r = campaignRequest(a, parsed, { trustCompletion: true });
           if (r.ok) accounts.save(a);
           log(`[file] ${id} campaign ${String((parsed as { op?: string }).op)}: ${r.ok ? "ok" : r.reason}`);
           res.setHeader("content-type", "application/json");

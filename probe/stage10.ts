@@ -75,7 +75,13 @@ async function main(): Promise<void> {
   const errors: string[] = [];
   const results: Record<string, unknown> = {};
   const file = async (id: string): Promise<FileRec> => (await (await fetch(`${HOST}/file/${id}`)).json()) as FileRec;
-  const post = async (id: string, body: unknown) => (await (await fetch(`${HOST}/file/${id}/campaign`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })).json()) as { ok: boolean; reason?: string };
+  /**
+   * A file's secret (Stage 26): the id names a file, this proves the caller owns it, and every
+   * mutating route wants it. The probe fixes one and hands the same value to the pages via
+   * `?secret=`, which is exactly what a real client does with the one it generated.
+   */
+  const SECRET = "probestage10secretaaaaaa";
+  const post = async (id: string, body: unknown) => (await (await fetch(`${HOST}/file/${id}/campaign`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(body as object), secret: SECRET }) })).json()) as { ok: boolean; reason?: string };
   const stats = async () => (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { clients: { name: string; kills: number; identity: { display: string } }[]; campaignStripped?: number; campaign?: { hostId: number; view: { status: string; objective: string; kind: string } | null; settled: { id: string; ok: boolean }[]; choices: number } }> };
   const nav = new Map<string, ReturnType<typeof buildNav>>();
   const navOf = (level: string) => {
@@ -143,7 +149,7 @@ async function main(): Promise<void> {
     // ---------------- solo: the desk, the house, WAKE UNLISTED ----------------
     const acct = "fresh-cam";
     const hub = await newPage({ width: 960, height: 540 }, "hub");
-    await hub.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=${HUB_LEVEL_ID}&account=${acct}&shop=${HOST}`, { waitUntil: "load" });
+    await hub.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=${HUB_LEVEL_ID}&account=${acct}&secret=${SECRET}&shop=${HOST}`, { waitUntil: "load" });
     await hub.waitForFunction(() => window.__game?.ready === true && window.__game.state().hub?.fileLoaded === true, null, { timeout: 40000, polling: 100 });
     await hub.evaluate(() => window.__game.resumeAudio());
     await hub.evaluate(() => window.__game.contracts(true));
@@ -209,7 +215,7 @@ async function main(): Promise<void> {
     const f3 = await file(acct);
     check("the endpoint settles contracts in arc order only, hands out Kernel Protocols, and wears at most what the file owns", r2.ok && r3.ok && rw.ok && f3.campaign?.protocols.join() === "red_lease,filament_core" && f3.campaign.worn.join() === "red_lease,filament_core" && (await post(acct, { op: "complete", id: "m5_blind_the_model" })).ok === false, `protocols [${f3.campaign?.protocols.join(", ")}] worn [${f3.campaign?.worn.join(", ")}] · out-of-order m5 refused`);
     const ex = await newPage({ width: 640, height: 360 }, "explore");
-    await ex.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=lease_row&explore=1&account=${acct}&shop=${HOST}`, { waitUntil: "load" });
+    await ex.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=lease_row&explore=1&account=${acct}&secret=${SECRET}&shop=${HOST}`, { waitUntil: "load" });
     await ex.waitForFunction(() => window.__game?.ready === true && window.__game.campaign().mode === "explore", null, { timeout: 40000, polling: 100 });
     await ex.evaluate(() => window.__game.resumeAudio());
     const e0 = await ex.evaluate(() => ({ c: window.__game.campaign(), maxHealth: window.__game.state().maxHealth, mods: window.__game.state().mods, wasps: window.__game.game.world.wasps.length, levelWasps: window.__game.game.world.level.wasps.length, wake: window.__game.state().wake }));
@@ -227,7 +233,7 @@ async function main(): Promise<void> {
     await post(named, { op: "faction", faction: "estate" });
     for (const id of ["m1_wake_unlisted", "m2_deadletter_run", "m3_repo_volatility"]) await post(named, { op: "complete", id, testimony: {} });
     const pa = await newPage({ width: 320, height: 180 }, "pa");
-    await pa.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&level=lease_row&explore=1&account=${named}&shop=${HOST}`, { waitUntil: "load" });
+    await pa.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&level=lease_row&explore=1&account=${named}&secret=${SECRET}&shop=${HOST}`, { waitUntil: "load" });
     await pa.waitForFunction(() => window.__game?.ready === true && window.__game.campaign().mode === "explore", null, { timeout: 40000, polling: 100 });
     await pa.evaluate(() => window.__game.advance(60 * 70));
     const p0 = await pa.evaluate(() => ({ c: window.__game.campaign(), pa: window.__game.state().life.pa, display: window.__game.state().identity.display }));
@@ -238,7 +244,7 @@ async function main(): Promise<void> {
     const roomQ = "wall?ai=0&warmup=30&round=60";
     const wall = await newPage({ width: 320, height: 180 }, "wall");
     const legal = { primary: "lease_breaker", secondary: "shock_baton", attested: [], protocols: ["red_lease", "filament_core"] };
-    await wall.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&level=drainage_yard&account=${acct}&loadout=${encodeURIComponent(JSON.stringify(legal))}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=drainage_yard&name=WALL`, { waitUntil: "load" });
+    await wall.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&level=drainage_yard&account=${acct}&secret=${SECRET}&loadout=${encodeURIComponent(JSON.stringify(legal))}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=drainage_yard&name=WALL`, { waitUntil: "load" });
     await wall.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 });
     await wall.waitForTimeout(300);
     const w0 = await wall.evaluate(() => ({ maxHealth: window.__game.state().maxHealth, mods: window.__game.state().mods, admitted: window.__game.game.file.admitted as unknown as Record<string, unknown> | null, filament: window.__game.campaign().filament, mode: window.__game.campaign().mode }));
@@ -249,12 +255,12 @@ async function main(): Promise<void> {
     // weapons 7–8: the Directive spawns only for a file that unlocked it
     const dir = { primary: "directive", secondary: "clockeater", attested: [] };
     const locked = await newPage({ width: 320, height: 180 }, "locked");
-    await locked.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&level=drainage_yard&account=${acct}&loadout=${encodeURIComponent(JSON.stringify(dir))}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=drainage_yard&name=LOCKED`, { waitUntil: "load" });
+    await locked.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&level=drainage_yard&account=${acct}&secret=${SECRET}&loadout=${encodeURIComponent(JSON.stringify(dir))}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=drainage_yard&name=LOCKED`, { waitUntil: "load" });
     await locked.waitForFunction(() => window.__game?.ready === true && (window.__game.net()?.status === "kicked" || window.__game.net()?.status === "closed"), null, { timeout: 40000, polling: 100 });
     const k0 = await locked.evaluate(() => window.__game.net()!.kickReason);
     await locked.close();
     const armed = await newPage({ width: 320, height: 180 }, "armed");
-    await armed.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&level=drainage_yard&account=sandbox-arms&loadout=${encodeURIComponent(JSON.stringify(dir))}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=drainage_yard&name=ARMED`, { waitUntil: "load" });
+    await armed.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&level=drainage_yard&account=sandbox-arms&secret=${SECRET}&loadout=${encodeURIComponent(JSON.stringify(dir))}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=drainage_yard&name=ARMED`, { waitUntil: "load" });
     await armed.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 });
     await armed.evaluate(() => window.__game.resumeAudio());
     await armed.evaluate(() => {
@@ -268,7 +274,7 @@ async function main(): Promise<void> {
 
     // ---------------- co-op: two files, the campaign room, the host at the terminal ----------------
     for (const id of ["coop-a", "coop-b"]) await post(id, { op: "faction", faction: "clockeaters" });
-    const coopUrl = (name: string, account: string) => `http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&level=lease_row&mode=campaign&account=${account}&net=ws://127.0.0.1:${HOST_PORT}/campaign/${encodeURIComponent("duo?mission=m1_wake_unlisted")}%26level=lease_row&name=${name}`;
+    const coopUrl = (name: string, account: string) => `http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&level=lease_row&mode=campaign&account=${account}&secret=${SECRET}&net=ws://127.0.0.1:${HOST_PORT}/campaign/${encodeURIComponent("duo?mission=m1_wake_unlisted")}%26level=lease_row&name=${name}`;
     const ca = await newPage({ width: 320, height: 180 }, "coop-a");
     await ca.goto(coopUrl("HOSTA", "coop-a"), { waitUntil: "load" });
     await ca.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true && window.__game.campaign().mission !== null, null, { timeout: 40000, polling: 100 });
@@ -347,7 +353,7 @@ async function main(): Promise<void> {
     await post(arc, { op: "faction", faction: "cells" });
     for (const [id, t] of [["m1_wake_unlisted", {}], ["m2_deadletter_run", {}], ["m3_repo_volatility", { "m3:volatility": "hold" }], ["m4_the_leak", { "m4:directive": "kept", "m4:vessel": "shield" }], ["m5_blind_the_model", {}], ["m6_trial_by_data", {}]] as const) await post(arc, { op: "complete", id, testimony: t });
     const wo = await newPage({ width: 960, height: 540 }, "white");
-    await wo.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=white_office&mission=m7_white_office&account=${arc}&shop=${HOST}`, { waitUntil: "load" });
+    await wo.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=white_office&mission=m7_white_office&account=${arc}&secret=${SECRET}&shop=${HOST}`, { waitUntil: "load" });
     await wo.waitForFunction(() => window.__game?.ready === true && window.__game.campaign().mode === "mission", null, { timeout: 40000, polling: 100 });
     await wo.evaluate(() => window.__game.resumeAudio());
     await wo.evaluate(() => {
