@@ -17,7 +17,7 @@ import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
 import { devSeed, MemoryAccountStore } from "./accounts";
-import { buyNode, fileAuth, publicLabel, recordGhost, refundNode, validGhost } from "../shared/progression/account";
+import { buyNode, fileAuth, publicFile, publicLabel, recordGhost, refundNode, validGhost } from "../shared/progression/account";
 import { NOT_YOURS } from "./player-do";
 import { campaignRequest } from "../shared/campaign/endpoint";
 import { createCampaignRoom, type CampaignRoomHandle } from "./campaign-room";
@@ -297,6 +297,14 @@ const http = createServer((req, res) => {
         return;
       }
       const a = accounts.load(id, "BLANK");
+      // linking binds a wallet to a file for good; the SIWE signature proves the wallet, and this
+      // proves the file (Stage 28)
+      if (!fileAuth(a, String(body.secret ?? "")).ok) {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }));
+        return;
+      }
+      accounts.save(a); // an adopted secret is kept
       const r = await counter.ledger.link(a, String(body.message ?? ""), String(body.signature ?? "") as Hex);
       if (r.ok) accounts.save(a);
       log(`[counter] link ${id}: ${r.ok ? "ok" : r.reason}${r.ok && r.reason ? " (" + r.reason + ")" : ""}`);
@@ -322,7 +330,7 @@ const http = createServer((req, res) => {
     const name = "BLANK";
     if (req.method === "GET") {
       res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify(file[3] === "daily" ? dailyView(accounts.load(id, name)) : accounts.load(id, name)));
+      res.end(JSON.stringify(file[3] === "daily" ? dailyView(accounts.load(id, name)) : publicFile(accounts.load(id, name))));
       return;
     }
     if (req.method === "POST" && file[3]) {
@@ -372,7 +380,7 @@ const http = createServer((req, res) => {
           if (r.ok) accounts.save(a);
           log(`[file] ${id} ${file[3]} ${body.op ?? body.id ?? ""}: ${r.ok ? "ok" : r.reason}`);
           res.setHeader("content-type", "application/json");
-          res.end(JSON.stringify({ ...r, account: a, daily: dailyView(a) }));
+          res.end(JSON.stringify({ ...r, account: publicFile(a), daily: dailyView(a) }));
           return;
         }
         if (file[3] === "campaign") {
@@ -383,7 +391,7 @@ const http = createServer((req, res) => {
           if (r.ok) accounts.save(a);
           log(`[file] ${id} campaign ${String((parsed as { op?: string }).op)}: ${r.ok ? "ok" : r.reason}`);
           res.setHeader("content-type", "application/json");
-          res.end(JSON.stringify({ ...r, account: a }));
+          res.end(JSON.stringify({ ...r, account: publicFile(a) }));
           return;
         }
         if (file[3] === "ghost") {
@@ -400,7 +408,7 @@ const http = createServer((req, res) => {
         if (r.ok) accounts.save(a);
         log(`[file] ${id} ${file[3]} ${node}: ${r.ok ? "ok" : r.reason}`);
         res.setHeader("content-type", "application/json");
-        res.end(JSON.stringify({ ok: r.ok, reason: r.reason, account: a }));
+        res.end(JSON.stringify({ ok: r.ok, reason: r.reason, account: publicFile(a) }));
       });
       return;
     }

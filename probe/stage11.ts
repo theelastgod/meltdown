@@ -87,7 +87,13 @@ async function main(): Promise<void> {
   const results: Record<string, unknown> = {};
   const endgame = async (): Promise<Endgame> => (await (await fetch(`${HOST}/endgame`)).json()) as Endgame;
   const file = async (id: string): Promise<FileRec> => (await (await fetch(`${HOST}/file/${id}`)).json()) as FileRec;
-  const post = async (path: string, body: unknown) => (await (await fetch(`${HOST}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })).json()) as { ok: boolean; reason?: string };
+  /**
+   * A file's secret (Stage 26): the id names a file, this proves the caller owns it, and every
+   * mutating route wants it. The probe fixes one and hands the same value to the pages via
+   * `?secret=`, which is exactly what a real client does with the one it generated.
+   */
+  const SECRET = "probestage11secretaaaaaa";
+  const post = async (path: string, body: unknown) => (await (await fetch(`${HOST}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(body as object), secret: SECRET }) })).json()) as { ok: boolean; reason?: string };
   const stats = async () => (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { audit: { id: string; week: number; scores: number[] } | null; seasonLast: string | null; loadoutRejections: string[]; clients: { name: string; kills: number; flips: number }[]; match: { phase: string } | null }> };
   const newPage = async (viewport: { width: number; height: number }, tag: string): Promise<Page> => {
     const pg = await browser.newPage({ viewport });
@@ -107,7 +113,7 @@ async function main(): Promise<void> {
     await post(`/file/${acct}/campaign`, { op: "faction", faction: "cells" });
     await post(`/file/fresh-eg/campaign`, { op: "faction", faction: "estate" });
     const pg = await newPage({ width: 960, height: 540 }, "file");
-    await pg.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&shop=${HOST}`, { waitUntil: "load" });
+    await pg.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&secret=${SECRET}&shop=${HOST}`, { waitUntil: "load" });
     await pg.waitForFunction(() => window.__game?.ready === true && window.__game.endgame().contracts.length === 3, null, { timeout: 40000, polling: 100 });
     await pg.evaluate(() => window.__game.toggleFile(true));
     await pg.waitForTimeout(300);
@@ -141,7 +147,7 @@ async function main(): Promise<void> {
     const roomQ = `audit-${au.week}?audit=1&warmup=14&round=12&ai=0`;
     const open = async (name: string, account: string, loadout: Record<string, unknown>, render: { width: number; height: number } | null): Promise<Page> => {
       const p = await newPage(render ?? { width: 320, height: 180 }, name);
-      await p.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&${render ? "" : "norender=1&"}level=lease_row&account=${account}&loadout=${encodeURIComponent(JSON.stringify(loadout))}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=lease_row&name=${name}`, { waitUntil: "load" });
+      await p.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&${render ? "" : "norender=1&"}level=lease_row&account=${account}&secret=${SECRET}&loadout=${encodeURIComponent(JSON.stringify(loadout))}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=lease_row&name=${name}`, { waitUntil: "load" });
       return p;
     };
     const bad = banned();
@@ -194,7 +200,7 @@ async function main(): Promise<void> {
 
     // ---------------- Rewrite and the Wakelight shop ----------------
     const rw = await newPage({ width: 960, height: 540 }, "rewrite");
-    await rw.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&shop=${HOST}`, { waitUntil: "load" });
+    await rw.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&secret=${SECRET}&shop=${HOST}`, { waitUntil: "load" });
     await rw.waitForFunction(() => window.__game?.ready === true && window.__game.endgame().contracts.length === 3, null, { timeout: 40000, polling: 100 });
     const before = await file(acct);
     const r1 = await rw.evaluate(() => window.__game.rewrite());

@@ -17,7 +17,8 @@ import { D1RunStore } from "./run-d1";
 import { dayIndex, seasonIndex, weekIndex } from "../shared/endgame/clock";
 import type { Contracts } from "./chain/deploy";
 import { counterRequest } from "../shared/economy/endpoint";
-import { upgradeAccount, type Account } from "../shared/progression/account";
+import { fileAuth, upgradeAccount, type Account } from "../shared/progression/account";
+import { NOT_YOURS } from "./player-do";
 
 export interface Env {
   PLAYER_FILE: DurableObjectNamespace;
@@ -30,6 +31,18 @@ export interface Env {
   SIGNER_KEY: string;
   RELAYER_KEY: string;
   SIWE_DOMAINS?: string;
+  /**
+   * The shared secret for `/prizes/post` (`wrangler secret put ADMIN_KEY`).
+   *
+   * That route runs the same settlement the cron runs, but with a day the *caller* chooses, and a
+   * settled day is refused a second time by design — so an anonymous POST naming today could mark
+   * today settled before anybody had finished banking, and every unit banked afterwards would be
+   * stranded for good. It is an operator's button, and until Stage 28 it had no lock on it.
+   *
+   * With no ADMIN_KEY configured the route is closed rather than open: a missing secret is the
+   * likeliest state of a fresh deploy, and the cron does not need this route.
+   */
+  ADMIN_KEY?: string;
 }
 
 const rateWindows = new Map<string, { at: number; n: number }>();
@@ -71,6 +84,7 @@ function filesOf(env: Env) {
 
 /** Until Robinhood Chain's parameters land, the Worker answers every chain route with one reason instead of building a client on an empty RPC. */
 const unconfigured = (env: Env): boolean => !env.CHAIN_RPC || !Number(env.CHAIN_ID) || !env.SIGNER_KEY || !env.RELAYER_KEY;
+const NOT_ADMIN = "NOT AN OPERATOR: /prizes/post runs the settlement for a day of the caller's choosing and needs the x-admin-key header";
 const NOT_CONFIGURED = "CHAIN NOT CONFIGURED: the counter-ledger waits for Robinhood Chain's testnet parameters (CHAIN_ID, CHAIN_RPC, CONTRACTS)";
 
 export default {
@@ -98,8 +112,11 @@ export default {
       return json({ nonce: await ledger.nonce(account), statement: ledger.info().statement, chainId: ledger.info().chainId });
     }
     if (request.method === "POST" && url.pathname === "/link/verify") {
-      const { account, message, signature } = (await request.json()) as { account: string; message: string; signature: Hex };
+      const { account, message, signature, secret } = (await request.json()) as { account: string; message: string; signature: Hex; secret?: string };
       const a = await load(account);
+      // linking binds a wallet to a file for good; the SIWE signature proves the wallet, and this
+      // proves the file (Stage 28)
+      if (!fileAuth(a, secret).ok) return json({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }, 403);
       const r = await ledgerOf(env).link(a, message, signature);
       if (r.ok) await save(a);
       return json({ ok: r.ok, reason: r.reason, counter: a.counter ?? null });
@@ -108,12 +125,18 @@ export default {
     if (f && request.method === "POST") {
       if (!rateOk(f[1]!)) return json({ ok: false, reason: "RATE LIMITED: the counter-ledger takes 30 requests a minute per file" }, 429);
       const a = await load(f[1]!);
+      const body = (await request.json().catch(() => ({}))) as { secret?: string };
+      // the id names the file; the secret proves the caller owns it (Stage 26). This is the money
+      // route — it links a wallet, banks the run and asks for signed vouchers — and it was never
+      // checking (Stage 28).
+      if (!fileAuth(a, body.secret).ok) return json({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }, 403);
       const ledger = ledgerOf(env);
-      const r = await counterRequest(a, await request.json().catch(() => ({})), ledger);
+      const r = await counterRequest(a, body, ledger);
       if (r.ok) await save(a);
       return json(r);
     }
     if (request.method === "POST" && url.pathname === "/prizes/post") {
+      if (!env.ADMIN_KEY || request.headers.get("x-admin-key") !== env.ADMIN_KEY) return json({ ok: false, reason: NOT_ADMIN }, 403);
       // the same jobs the cron runs (`scheduled` below), callable by hand: the boards come from the
       // PvP worker's Endgame DO, the run's day from the shared database
       const body = (await request.json().catch(() => ({}))) as { kind?: string; week?: number; day?: number };

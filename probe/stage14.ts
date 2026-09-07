@@ -78,7 +78,13 @@ async function main(): Promise<void> {
   const errors: string[] = [];
   const results: Record<string, unknown> = {};
   const file = async (id: string): Promise<FileRec> => (await (await fetch(`${HOST}/file/${id}`)).json()) as FileRec;
-  const post = async (path: string, body: unknown) => (await (await fetch(`${HOST}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })).json()) as { ok: boolean; reason?: string };
+  /**
+   * A file's secret (Stage 26): the id names a file, this proves the caller owns it, and every
+   * mutating route wants it. The probe fixes one and hands the same value to the pages via
+   * `?secret=`, which is exactly what a real client does with the one it generated.
+   */
+  const SECRET = "probestage14secretaaaaaa";
+  const post = async (path: string, body: unknown) => (await (await fetch(`${HOST}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(body as object), secret: SECRET }) })).json()) as { ok: boolean; reason?: string };
   const stats = async () => (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { run: { totalBanked: number; claims: number; carried: Record<string, number>; banked: Record<string, number>; credits: string[] } | null; clients: { name: string; kills: number }[] }>; logs: string[] };
   const newPage = async (viewport: { width: number; height: number }, tag: string): Promise<Page> => {
     const pg = await browser.newPage({ viewport });
@@ -106,9 +112,9 @@ async function main(): Promise<void> {
     const roomUrl = `ws://127.0.0.1:${HOST_PORT}/room/run-yard?mode=run&ai=0&level=drainage_yard`;
     const acct = "sandbox-run";
     const a = await newPage({ width: 960, height: 540 }, "A");
-    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&account=${acct}&name=ALPHA&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
+    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&account=${acct}&secret=${SECRET}&name=ALPHA&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
     const b = await newPage({ width: 640, height: 360 }, "B");
-    await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&account=fresh-runb&name=BRAVO&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
+    await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&account=fresh-runb&secret=${SECRET}&name=BRAVO&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
     for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 });
     await a.waitForFunction(() => !!window.__game.run(), null, { timeout: 20000, polling: 100 });
     const mode = await a.evaluate(() => window.__game.endgame().mode);
@@ -277,7 +283,7 @@ async function main(): Promise<void> {
 
     // ---- offline: the same sim, and the menu ----
     const c = await newPage({ width: 800, height: 450 }, "offline");
-    await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&ai=0&account=sandbox-off`, { waitUntil: "load" });
+    await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&ai=0&account=sandbox-off&secret=${SECRET}`, { waitUntil: "load" });
     await c.waitForFunction(() => window.__game?.ready === true && !!window.__game.run(), null, { timeout: 40000, polling: 100 });
     const off = await c.evaluate(() => window.__game.run()!);
     await c.evaluate((plan) => window.__game.setBot(plan), goto({ x: claims[0]!.pos.x, z: claims[0]!.pos.z }, 0.9));

@@ -87,7 +87,16 @@ async function main(): Promise<void> {
   const results: Record<string, unknown> = {};
   const info = async (): Promise<Info> => (await (await fetch(`${HOST}/counter`)).json()) as Info;
   const file = async (id: string): Promise<FileRec> => (await (await fetch(`${HOST}/file/${id}`)).json()) as FileRec;
-  const post = async (path: string, body: unknown) => (await (await fetch(`${HOST}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })).json()) as { ok: boolean; reason?: string };
+  /**
+   * A file's secret (Stage 26): the id names a file, this proves the caller owns it, and every
+   * mutating route wants it. The probe fixes one and hands the same value to the pages via
+   * `?secret=`, which is exactly what a real client does with the one it generated.
+   *
+   * Without it this probe went quietly wrong rather than red: the stamp voucher was refused, and
+   * the "a Depth-1 file gets no name voucher" check went on passing — on the wrong refusal.
+   */
+  const SECRET = "probestage11bsecretaaaaa";
+  const post = async (path: string, body: unknown) => (await (await fetch(`${HOST}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(body as object), secret: SECRET }) })).json()) as { ok: boolean; reason?: string };
   const stats = async () => (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { settlements: number; clients: { name: string; identity: { display: string }; file: { settlements: number } | null }[]; match: { phase: string } | null }>; logs: string[] };
   const newPage = async (viewport: { width: number; height: number }, tag: string): Promise<Page> => {
     const pg = await browser.newPage({ viewport });
@@ -97,6 +106,13 @@ async function main(): Promise<void> {
   };
   const player = privateKeyToAccount(DEV_KEYS.player);
   try {
+    /**
+     * Every contract the ledger deploys, by name. This was a bare `=== 7` until Stage 28, and the
+     * two sinks Stage 19 added made it wrong — a probe nobody had re-run reported that failure to
+     * nobody for four stages. Naming them means the next contract either lands in this list on
+     * purpose or turns this check red.
+     */
+    const CONTRACT_NAMES = ["capital", "ghostfile", "stamps", "names", "cosmetics", "market", "vault", "buyout", "rooms"];
     // ---------------- the devnet and the contracts ----------------
     const i0 = await info();
     const chain = defineChain({ id: i0.chainId, name: "devnet", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [i0.rpc] } } });
@@ -105,12 +121,12 @@ async function main(): Promise<void> {
     const code = await pub.getCode({ address: i0.contracts.ghostfile });
     const read = <T>(address: Hex, name: string, fn: string, args: unknown[] = []) => pub.readContract({ address, abi: ARTIFACTS[name]!.abi, functionName: fn, args }) as Promise<T>;
     const supply = await read<bigint>(i0.contracts.capital, "$CAPITAL", "totalSupply");
-    check("the ledger host runs an EVM devnet behind JSON-RPC with the seven contracts deployed, $CAPITAL at its fixed cap and the market seeded with every skin", rpcChain === i0.chainId && !!code && code.length > 100 && Object.keys(i0.contracts).length === 7 && supply === parseEther("1000000000") && i0.listings.length === SKINS.length && i0.listings.every((l) => SKINS.some((s) => s.token === l.token && s.capital === l.price)), `chain ${rpcChain} · ghostfile code ${code ? code.length / 2 - 1 : 0} B · listings ${i0.listings.map((l) => `#${l.token}@${l.price}`).join(" ")}`);
+    check("the ledger host runs an EVM devnet behind JSON-RPC with all nine contracts deployed, $CAPITAL at its fixed cap and the market seeded with every skin", rpcChain === i0.chainId && !!code && code.length > 100 && CONTRACT_NAMES.every((k) => /^0x[0-9a-fA-F]{40}$/.test((i0.contracts as Record<string, string>)[k] ?? "")) && Object.keys(i0.contracts).length === CONTRACT_NAMES.length && supply === parseEther("1000000000") && i0.listings.length === SKINS.length && i0.listings.every((l) => SKINS.some((s) => s.token === l.token && s.capital === l.price)), `chain ${rpcChain} · contracts ${Object.keys(i0.contracts).length}/${CONTRACT_NAMES.length} · ghostfile code ${code ? code.length / 2 - 1 : 0} B · listings ${i0.listings.map((l) => `#${l.token}@${l.price}`).join(" ")}`);
 
     // ---------------- the link ----------------
     const acct = "sandbox-cl";
     const a = await newPage({ width: 960, height: 560 }, "A");
-    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&shop=${HOST}&wallet=${DEV_KEYS.player}`, { waitUntil: "load" });
+    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}`, { waitUntil: "load" });
     await a.waitForFunction(() => window.__game?.ready === true && !!window.__game.counter().info, null, { timeout: 40000, polling: 100 });
     await a.evaluate(() => window.__game.toggleFile(true));
     await a.waitForTimeout(300);
@@ -130,7 +146,7 @@ async function main(): Promise<void> {
       soulbound = true;
     }
     const twice = await newPage({ width: 640, height: 360 }, "twice");
-    await twice.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl2&shop=${HOST}&wallet=${DEV_KEYS.player}`, { waitUntil: "load" });
+    await twice.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl2&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}`, { waitUntil: "load" });
     await twice.waitForFunction(() => window.__game?.ready === true && !!window.__game.counter().info, null, { timeout: 40000, polling: 100 });
     const link2 = await twice.evaluate(() => window.__game.link());
     await twice.close();
@@ -159,9 +175,9 @@ async function main(): Promise<void> {
     // ---------------- the match: the skin travels as an ID ----------------
     const roomUrl = (room: string) => `ws://127.0.0.1:${HOST_PORT}/room/${room}?warmup=0.5&round=6&ai=0&level=drainage_yard`;
     const b = await newPage({ width: 800, height: 450 }, "B");
-    await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl&name=BRAVO&net=${encodeURIComponent(roomUrl("cl"))}`, { waitUntil: "load" });
+    await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl&secret=${SECRET}&name=BRAVO&net=${encodeURIComponent(roomUrl("cl"))}`, { waitUntil: "load" });
     await a.evaluate(() => window.__game.toggleFile(false));
-    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&name=ALPHA&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl("cl"))}`, { waitUntil: "load" });
+    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&name=ALPHA&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl("cl"))}`, { waitUntil: "load" });
     for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined", null, { timeout: 40000, polling: 100 });
     await b.waitForFunction(() => window.__game.counter().remotes.length >= 1, null, { timeout: 20000, polling: 100 });
     await a.waitForFunction(() => window.__game.counter().remotes.length >= 1, null, { timeout: 20000, polling: 100 });
@@ -203,7 +219,10 @@ async function main(): Promise<void> {
     check("at Depth 50 the file writes its name: a game voucher, the player's own transaction, the fee burned by length (11 characters → 250 $CAPITAL), soulbound", named.ok && nameOnChain === "THE_AUDITOR" && burned3 - burned2 === parseEther(String(nameFee(11))) && v4.view?.name === "THE_AUDITOR", `name ${nameOnChain} · burned +${Number(burned3 - burned2) / 1e18} $CAPITAL · ${named.reason ?? ""}`);
     const fresh = await file("fresh-cl");
     const noVoucher = await post(`/file/fresh-cl/counter`, { op: "name", name: "someone" });
-    check("a Depth-1 file gets no name voucher", fresh.depth < 50 && !noVoucher.ok, `${noVoucher.reason}`);
+    // This reads as a Depth test and is a wallet test: the file has no wallet, so the refusal never
+    // reaches the Depth line. Named for what it does (Stage 28); the Depth gate itself is exercised
+    // in tests/counter.test.ts, against a linked file dropped below it.
+    check("a file with no wallet linked gets no name voucher, and refuses for the wallet", fresh.depth < 50 && !noVoucher.ok && /no wallet/i.test(noVoucher.reason ?? ""), `depth ${fresh.depth} · "${noVoucher.reason}"`);
 
     // ---------------- chain down, game up ----------------
     await post("/chain/outage", { on: true });
@@ -211,7 +230,7 @@ async function main(): Promise<void> {
     const off = await a.evaluate(() => window.__game.wearSkin(0));
     const on = await a.evaluate(() => window.__game.wearSkin(1));
     const c2 = await newPage({ width: 640, height: 360 }, "outage");
-    await c2.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl3&shop=${HOST}&wallet=${DEV_KEYS.player2}`, { waitUntil: "load" });
+    await c2.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl3&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player2}`, { waitUntil: "load" });
     await c2.waitForFunction(() => window.__game?.ready === true && !!window.__game.counter().info, null, { timeout: 90000, polling: 100 }).catch(async (e) => {
       console.log("outage page state:", JSON.stringify(await c2.evaluate(() => ({ ready: window.__game?.ready, counter: window.__game?.counter() }))).slice(0, 600), "errors:", errors.slice(-3).join(" | "));
       throw e;
@@ -221,8 +240,8 @@ async function main(): Promise<void> {
     const xpBefore = (await file(acct)).xp;
     // both files into a fresh room together (a late joiner would miss the round BRAVO alone would settle)
     await Promise.all([
-      b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl&name=BRAVO&net=${encodeURIComponent(roomUrl("cl2"))}`, { waitUntil: "load" }),
-      a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&name=ALPHA&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl("cl2"))}`, { waitUntil: "load" }),
+      b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl&secret=${SECRET}&name=BRAVO&net=${encodeURIComponent(roomUrl("cl2"))}`, { waitUntil: "load" }),
+      a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&name=ALPHA&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl("cl2"))}`, { waitUntil: "load" }),
     ]);
     for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined", null, { timeout: 40000, polling: 100 });
     await b.waitForFunction(() => window.__game.counter().remotes.length >= 1, null, { timeout: 20000, polling: 100 });

@@ -18,6 +18,8 @@ import { createPublicClient, defineChain, http, parseEther, type Hex } from "vie
 import { privateKeyToAccount } from "viem/accounts";
 import type { BotStep } from "../client/bot";
 import { ARTIFACTS } from "../server/chain/deploy";
+// the board publishes a label, not the id (Stage 26) — assert against the same projection
+import { publicLabel } from "../shared/progression/account";
 import { DEV_KEYS } from "../server/chain/boot";
 import { encodeJoin } from "../shared/net/protocol";
 import { MAX_PLAYERS_PER_ROOM } from "../shared/net/matchmaking";
@@ -69,8 +71,15 @@ async function main(): Promise<void> {
   const errors: string[] = [];
   const results: Record<string, unknown> = {};
   const get = async <T>(path: string): Promise<T> => (await (await fetch(`${HOST}${path}`)).json()) as T;
+  /**
+   * A file's secret (Stage 26): the id names a file, this proves the caller owns it, and every
+   * mutating route wants it. The probe fixes one and hands the same value to the pages via
+   * `?secret=`, which is exactly what a real client does with the one it generated. Routes that are
+   * not a file's — `/prizes/post`, `/match` — ignore the extra field.
+   */
+  const SECRET = "probestage15secretaaaaaa";
   const post = async <T = { ok: boolean; reason?: string }>(path: string, body: unknown): Promise<T & { status: number }> => {
-    const r = await fetch(`${HOST}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const r = await fetch(`${HOST}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(body as object), secret: SECRET }) });
     return { ...((await r.json()) as T), status: r.status };
   };
   const stats = async () => get<{ rooms: Record<string, { players: number; match: { phase: string } | null; audit: { week: number } | null }>; logs: string[] }>("/stats");
@@ -122,12 +131,15 @@ async function main(): Promise<void> {
     const loadout = { primary: au.weapons.length && !au.weapons.includes("lease_breaker") ? au.weapons[0] : "lease_breaker", secondary: "shock_baton", attested: [] };
     const acct = "sandbox-hard";
     await post(`/file/${acct}/campaign`, { op: "faction", faction: "cells" });
-    const roomUrl = `ws://127.0.0.1:${HOST_PORT}/room/audit-h?audit=1&ai=0&level=lease_row&warmup=0.5&round=25`;
+    // 25 s was not enough round for ALPHA to walk to B and hold it through a flip (4 s at
+    // WAKE.baseFlipSeconds for one Blank on a neutral node), so the Deep Wake check had never once
+    // seen a contributor — it read "ALPHA flips 0" from Stage 15 until Stage 28 went looking.
+    const roomUrl = `ws://127.0.0.1:${HOST_PORT}/room/audit-h?audit=1&ai=0&level=lease_row&warmup=0.5&round=60`;
     const a = await newPage({ width: 960, height: 540 }, "A");
-    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=lease_row&account=${acct}&name=ALPHA&shop=${HOST}&wallet=${DEV_KEYS.player}&loadout=${encodeURIComponent(JSON.stringify(loadout))}&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
+    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=lease_row&account=${acct}&secret=${SECRET}&name=ALPHA&shop=${HOST}&wallet=${DEV_KEYS.player}&loadout=${encodeURIComponent(JSON.stringify(loadout))}&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
     const b = await newPage({ width: 640, height: 360 }, "B");
     // BRAVO is a sandbox file too (a Depth-1 file cannot hold most playlists' weapons) with no wallet linked: the post skips it
-    await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=lease_row&account=sandbox-hardb&name=BRAVO&loadout=${encodeURIComponent(JSON.stringify(loadout))}&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
+    await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=lease_row&account=sandbox-hardb&secret=${SECRET}&name=BRAVO&loadout=${encodeURIComponent(JSON.stringify(loadout))}&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
     for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 }).catch(async (e) => {
       console.log("join state:", JSON.stringify(await p.evaluate(() => ({ status: window.__game.net()?.status, kick: window.__game.net()?.kickReason, synced: window.__game.net()?.synced, snapshots: window.__game.net()?.stats.snapshots, tick: window.__game.state().tick }))));
       console.log((await stats()).logs.slice(-12).join("\n"));
@@ -160,12 +172,12 @@ async function main(): Promise<void> {
     const after = await a.evaluate(() => window.__game.prizes());
     const ethA = await pub.getBalance({ address: player.address });
     const myLine = posted.lines.find((l) => l.account === acct);
-    check("the weekly job posts the Audit's prizes as a Merkle epoch to the PrizeVault: the placed file with a wallet gets a leaf, the file without one is skipped, a second post is refused; the file sees its prize and a sponsored claim moves the $CAPITAL to the wallet", phase === "results" && link.ok && posted.ok && !!posted.epoch && posted.epoch.leaves.length === 1 && posted.epoch.leaves[0]!.file === acct && !again.ok && listed.length === 1 && !listed[0]!.claimed && claim.ok && !!myLine && bal1 - bal0 === parseEther(String(myLine.amount)) && after[0]!.claimed && ethA === 0n, `epoch ${posted.epoch?.epoch} · leaves ${posted.epoch?.leaves.map((l) => `${l.file}:${l.amount.slice(0, 4)}…`).join(",")} · skipped ${posted.skipped.join(",")} · line ${myLine?.amount}/${AUDIT_POOL} · claim ${claim.ok} ${claim.reason ?? ""} · wallet +${Number(bal1 - bal0) / 1e18} · gas paid by wallet ${ethA > 0n}`);
+    check("the weekly job posts the Audit's prizes as a Merkle epoch to the PrizeVault: the placed file with a wallet gets a leaf, the file without one is skipped, a second post is refused; the file sees its prize and a sponsored claim moves the $CAPITAL to the wallet", phase === "results" && link.ok && posted.ok && !!posted.epoch && posted.epoch.leaves.length === 1 && posted.epoch.leaves[0]!.file === publicLabel(acct) && !again.ok && listed.length === 1 && !listed[0]!.claimed && claim.ok && !!myLine && bal1 - bal0 === parseEther(String(myLine.amount)) && after[0]!.claimed && ethA === 0n, `epoch ${posted.epoch?.epoch} · leaves ${posted.epoch?.leaves.map((l) => `${l.file}:${l.amount.slice(0, 4)}…`).join(",")} · skipped ${posted.skipped.join(",")} · line ${myLine?.amount}/${AUDIT_POOL} · claim ${claim.ok} ${claim.reason ?? ""} · wallet +${Number(bal1 - bal0) / 1e18} · gas paid by wallet ${ethA > 0n}`);
     // the Deep Wake epoch: ALPHA (Depth 50) flipped B this round
     const season = await post<{ ok: boolean; reason?: string; epoch: { leaves: { file: string; amount: string }[] } | null; lines: { account: string; amount: number }[] }>("/prizes/post", { kind: "season" });
     const seasonList = await a.evaluate(() => window.__game.prizes());
     const seasonPrize = seasonList.find((p) => p.kind === "season");
-    check("the Deep Wake epoch pays the round's contributor (a Depth-15+ file that flipped a node) and the file can claim it too", season.ok && !!season.epoch && season.epoch.leaves.some((l) => l.file === acct) && !!seasonPrize && !seasonPrize.claimed && /DEEP WAKE/.test(seasonPrize.reason), `ALPHA flips ${flipsA} · season lines ${season.lines.map((l) => `${l.account}:${l.amount}`).join(",")} · listed ${seasonPrize?.reason} ${seasonPrize?.amount}`);
+    check("the Deep Wake epoch pays the round's contributor (a Depth-15+ file that flipped a node) and the file can claim it too", season.ok && !!season.epoch && season.epoch.leaves.some((l) => l.file === publicLabel(acct)) && !!seasonPrize && !seasonPrize.claimed && /DEEP WAKE/.test(seasonPrize.reason), `ALPHA flips ${flipsA} · season lines ${season.lines.map((l) => `${l.account}:${l.amount}`).join(",")} · listed ${seasonPrize?.reason} ${seasonPrize?.amount}`);
     await a.evaluate(() => window.__game.toggleFile(true));
     await a.waitForTimeout(300);
     await a.evaluate(() => document.querySelector("#hud .file .cl")?.scrollIntoView());
@@ -190,7 +202,7 @@ async function main(): Promise<void> {
     const yard = levelById("drainage_yard");
     const gate = yard.zones![0]!;
     const k = await newPage({ width: 960, height: 540 }, "kiosk");
-    await k.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&ai=0&account=sandbox-kiosk&shop=${HOST}`, { waitUntil: "load" });
+    await k.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&ai=0&account=sandbox-kiosk&secret=${SECRET}&shop=${HOST}`, { waitUntil: "load" });
     await k.waitForFunction(() => window.__game?.ready === true && !!window.__game.run(), null, { timeout: 40000, polling: 100 });
     const pk = await k.evaluate(() => window.__game.state().pos);
     const ynav = buildNav(yard);

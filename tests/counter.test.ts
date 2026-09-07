@@ -9,7 +9,7 @@ import { ARTIFACTS } from "../server/chain/deploy";
 import { economyManifest, SKINS, skinByToken } from "../shared/economy/catalog";
 import { lintEconomy } from "../shared/economy/lint";
 import { counterRequest } from "../shared/economy/endpoint";
-import { SIWE_STATEMENT, LAUNCH_GRANT, nameFee, wearSkin } from "../shared/economy/counter";
+import { NAME_DEPTH, SIWE_STATEMENT, LAUNCH_GRANT, nameFee, wearSkin } from "../shared/economy/counter";
 import { devSeed, MemoryAccountStore } from "../server/accounts";
 import { identityTag, parseTag, publicIdentity } from "../shared/identity/identity";
 import { Room, type Conn } from "../server/room";
@@ -112,6 +112,16 @@ describe("the counter-ledger on the devnet", () => {
     expect(a.counter!.name).toBe("THE_AUDITOR");
     const fresh = store.load("fresh-name", "F");
     expect((await b.ledger.nameVoucher(fresh, "someone")).reason).toMatch(/no wallet/);
+    /**
+     * The Depth gate itself, which nothing tested until Stage 28: the case above refuses for the
+     * missing wallet and never reaches Depth, so it read like a Depth test and was a wallet test.
+     * A linked file dropped below the gate is the only shape that reaches the second line.
+     */
+    const wasDepth = a.depth;
+    a.depth = NAME_DEPTH - 1;
+    a.counter!.name = null;
+    expect((await b.ledger.nameVoucher(a, "second_try")).reason).toMatch(new RegExp(`Depth ${NAME_DEPTH}`));
+    a.depth = wasDepth;
   }, 60_000);
 
   it("chain down, game up: with the RPC dead, link and reconcile fail soft with a reason while wear, the join and the settlement still work", async () => {

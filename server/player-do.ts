@@ -6,7 +6,7 @@
 import { buyNode, createAccount, refundNode, upgradeAccount, type Account, recordGhost, validGhost } from "../shared/progression/account";
 import { claimContract, dailyView } from "../shared/endgame/contracts";
 import { buyCosmetic, rewrite, savePreset, setAlias, setTheme } from "../shared/endgame/rewrite";
-import { fileAuth } from "../shared/progression/account";
+import { fileAuth, publicFile } from "../shared/progression/account";
 
 /** The one refusal every mutating file route gives, so it reads the same wherever it comes from. */
 export const NOT_YOURS = "NOT YOUR FILE: this file has a secret and the request did not carry it";
@@ -92,7 +92,7 @@ export class PlayerFile implements DurableObject {
           await withSchema(db, () => saveRow(db, acc, fresh));
         }
       }
-      return Response.json({ ok: r.ok, reason: r.reason, account: a });
+      return Response.json({ ok: r.ok, reason: r.reason, account: publicFile(a) });
     }
     if (request.method === "POST" && ["/daily", "/claim", "/rewrite", "/cosmetic"].includes(url.pathname)) {
       const body = (await request.json()) as { id: string; op?: string; slot?: number; name?: string; loadout?: unknown; alias?: string; secret?: string };
@@ -120,7 +120,7 @@ export class PlayerFile implements DurableObject {
           await withSchema(db, () => saveRow(db, acc, fresh));
         }
       }
-      return Response.json(url.pathname === "/daily" ? dailyView(a) : { ...r, account: a, daily: dailyView(a) });
+      return Response.json(url.pathname === "/daily" ? dailyView(a) : { ...r, account: publicFile(a), daily: dailyView(a) });
     }
     if (request.method === "POST" && url.pathname === "/ghost") {
       const { id, run } = (await request.json()) as { id: string; run?: unknown };
@@ -148,6 +148,25 @@ export class PlayerFile implements DurableObject {
     if (url.pathname === "/file") {
       const a = (await this.state.storage.get<Account>(KEY)) ?? null;
       return Response.json(a ? upgradeAccount(a) : null);
+    }
+    /**
+     * The file as a client may read it (Stage 28).
+     *
+     * `/file` and `/load` above are the *internal* shape: the room and the two Workers load a file,
+     * check its secret against what the request carried, apply, and save. They need the secret, and
+     * they are reached over the DO binding, never from outside. `/public` is the shape that leaves
+     * the edge, and it is a separate route rather than a flag so that a caller has to say which one
+     * it wants — the previous arrangement had one route serving both, which is how the secret ended
+     * up in the answer to an unauthenticated `GET /file/<id>`.
+     */
+    if (request.method === "POST" && url.pathname === "/public") {
+      const { id, name } = (await request.json()) as { id: string; name: string };
+      let a = await this.state.storage.get<Account>(KEY);
+      if (!a && this.env.DB) {
+        const db = this.env.DB;
+        a = (await withSchema(db, () => loadRow(db, id))) ?? undefined;
+      }
+      return Response.json(publicFile(a ? upgradeAccount(a) : createAccount(id, name)));
     }
     if (request.method === "POST" && url.pathname === "/file") {
       const { id, name } = (await request.json()) as { id: string; name: string };

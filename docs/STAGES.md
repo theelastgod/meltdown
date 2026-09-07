@@ -1168,6 +1168,104 @@ wearing an unowned protocol still grants nothing; the dev flag is the only way t
 unless asked for; and the room's direct path still closes a contract and still pays. Removing the
 guard fails three cases.
 
+## Stage 28 — The credential was published by the thing it protected
+
+**Goal.** Stage 27 ended by noting that Stage 26's join gate had broken the campaign probe, and that
+only running it said so. That is a statement about *tests that cannot see routes*. Follow it.
+
+**What was found.** Three things, one cause.
+
+1. **`GET /file/<id>` returned the secret.** Stage 26 gave a file a secret so its id would be a name
+   rather than a bearer credential, and stored it in the file. Every read path answers with the
+   whole file, and that read is unauthenticated by design because a board has to be readable. So
+   the credential was published by the thing it protected, and every gate Stage 26 built was one
+   `curl` away from open. Verified against the running host, not reasoned about.
+
+2. **Neither Worker checked the secret at all.** Stage 26 gated what it had in hand — the dev host
+   and the PlayerFile Durable Object. The two Cloudflare Workers *are* production, and they loaded
+   a file, applied a change and saved it without ever looking. That covered the campaign save, the
+   permanent wallet link, and `POST /file/<id>/counter` — the money route, which banks the run and
+   asks for signed vouchers.
+
+3. **`POST /prizes/post` had no lock on it.** It runs the same settlement the cron runs, for a day
+   the *caller* chooses, and a settled day is refused a second time by design. An anonymous POST
+   naming today would mark today settled before anyone had finished banking, and every unit banked
+   afterwards would be stranded for good.
+
+**Fixed.** For (1), one rule instead of a checklist: the secret travels in on a request and never
+travels out on a response — a client cannot need it back, because the only client that holds it is
+the one that generated it. `publicFile()` is the single place that strips it. The Durable Object
+grew a `/public` route beside its internal `/file` so a caller has to say which shape it wants; one
+route serving both is how this happened. For (2), all four Worker routes now check. For (3), an
+`x-admin-key` against an `ADMIN_KEY` secret, closed rather than open when no key is configured.
+
+**Files.** `shared/progression/account.ts` (`publicFile`), `server/player-do.ts` (`/public`),
+`server/worker.ts`, `server/campaign-worker.ts`, `server/counter-worker.ts`, `server/node-host.ts`,
+`client/counter.ts`; `probe/stage11b.ts`; `tests/routes.test.ts` (new, 10),
+`tests/counter.test.ts`; `docs/SECURITY.md` §1.11, §1.12, §2.
+
+**Design decisions.**
+- **A rule, not a list of call sites.** "Redact at these nine places" is a thing that decays on the
+  tenth. "It goes in and never comes out" is checkable by reading one function and grepping for its
+  name, and it is why the fix needed no client change at all: nothing was reading the secret back.
+- **Two routes on the DO rather than one with a flag.** `/file` is the internal shape the room and
+  the Workers need; `/public` is the shape that leaves the edge. A caller has to say which. The
+  flag version would have the same bug waiting behind a default.
+- **The dev host keeps its unlocked `/prizes/post`.** The probes drive it, it is not the production
+  path, and `docs/SECURITY.md` §2 now lists the Node host's dev affordances as a trusted set rather
+  than leaving each one to be discovered.
+
+**What this says about the tests.** `tests/fileauth.test.ts` proved Stage 26's gates by calling
+`fileAuth` and the DO's helpers, and it passed — with an ungated production route sitting beside it.
+A test that calls the function cannot see a route that never calls the function.
+`tests/routes.test.ts` goes in through `fetch`, against the real Worker handlers and the real
+Durable Object, with only storage and D1 doubled. Removing any one of the five guards fails exactly
+one case.
+
+**And the probes nobody had re-run.** Stage 26 had quietly broken four of them, and one had been
+red since long before that. Every one was found by running them, not by reading anything.
+
+`npm run probe:endgame` 8/13 → **13/13**, `npm run probe:run` 11/12 → **12/12**,
+`npm run probe:counter` 9/11 → **11/11**, `npm run probe:harden` 5/7 → **7/7**. Each drove a file
+with bare POSTs and page URLs that named a file but proved nothing, so the join gate and the POST
+gate turned them into guests. They now fix a secret and hand it to every request and every page, as
+a real client does.
+
+`probe:counter` also carried two failures of its own:
+
+- `stamps on chain 0`: Stage 26 fallout, the same shape as the campaign probe's. The probe's POSTs
+  carried no secret, so the stamp voucher was refused.
+- `contracts === 7`: a bare count, wrong since **Stage 19** added the two sinks. Four stages of a
+  red check nobody saw. It now names all nine, so the next contract either lands in that list on
+  purpose or turns the check red.
+
+Fixing the first surfaced a third: **"a Depth-1 file gets no name voucher" was passing on the wrong
+refusal** — the file had no wallet, so the refusal never reached the Depth line, in the probe *and*
+in `tests/counter.test.ts`, which asserted `/no wallet/` under a Depth-gate name. The Depth gate had
+never been tested. It is now, against a linked file dropped below it; deleting the gate fails that
+case.
+
+`probe:harden` had two more. One was Stage 26's: the prize board publishes `publicLabel(id)` now
+rather than the raw id, and the epoch-leaf assertion still compared against the id. The other was
+**older than Stage 26 and had never once passed** — "the Deep Wake epoch pays the round's
+contributor" reported `ALPHA flips 0` from Stage 15 onward. It was not a bug in the payout: the
+probe gave ALPHA a 25-second round to walk across Lease Row to node B and hold it through a flip
+(4 s for one Blank on a neutral node at `WAKE.baseFlipSeconds`), and 25 seconds was not enough. At
+60 the epoch pays: `season lines sandbox-hard:1000`. The Deep Wake prize channel is now verified
+end to end for the first time — a payout path that has existed since Stage 15 and was never once
+seen to run.
+
+**Acceptance:** `npm test` 264 (10 new); `npm run typecheck` clean over both configs;
+`probe:endgame` 13/13, `probe:run` 12/12, `probe:counter` 11/11, `probe:harden` 7/7 — the last of
+those better than it has ever been, since its Deep Wake check had never passed. The secret's absence
+is verified against the running host, and each of the six guards is mutation-tested.
+
+**Left open.** `probe:harden` prints `ALPHA flips 0` on a round the server credited a flip for, so
+the *client's* `state().stats.flips` does not reflect what the room counted in a networked match.
+The money is unaffected — the epoch is built from the room's own tally, which is what the check now
+asserts on — but the HUD is showing the player a zero for something they did. It is a display bug
+in the snapshot, and it belongs to whoever next opens the wake HUD.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

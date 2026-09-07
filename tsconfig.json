@@ -21,5 +21,7 @@
       "@client/*": ["client/*"]
     }
   },
-  "include": ["shared", "client", "probe", "tests", "vite.config.ts"]
+  "include": ["shared", "client", "probe", "tests", "vite.config.ts"],
+  "//": "tests/routes.test.ts drives the two Workers, whose ambient types are Cloudflare's and clash with DOM's. It is type-checked by tsconfig.server.json, which has them.",
+  "exclude": ["tests/routes.test.ts"]
 }

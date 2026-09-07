@@ -193,6 +193,58 @@ the production path and not see that it does not have it.
 nothing paid out for the asking; the hub's own ops (house, worn protocols, state) still work; and
 the room's direct path still closes a contract and still pays. Removing the guard fails three cases.
 
+### 1.11 The credential was published by the thing it protected — HIGH
+
+Stage 26 gave every file a secret so its id would be a name rather than a bearer credential. It
+stored that secret *in the file*. Every read path answers with the whole file. So
+`GET /file/<id>` — unauthenticated, by design, because a board has to be readable — handed the
+secret to anyone who asked:
+
+```
+$ curl -s http://host/file/victim | jq .secret
+"the-owners-private-secret"
+```
+
+Read it, then use it. Every gate Stage 26 built was one GET away from open, which means the stage
+that closed §1.9 did not close it.
+
+**Fixed** by one rule rather than a checklist: **the secret travels in on a request and never
+travels out on a response.** A client cannot need it back, because the only client that ever holds
+it is the one that generated it. `publicFile()` in `shared/progression/account.ts` is the one place
+that strips it, and every payload bound for a client goes through it. The Durable Object grew a
+`/public` route beside its internal `/file`, so a caller has to say which shape it wants — the
+previous arrangement had one route serving both, which is how this happened.
+
+The host's own writes are the one path that must *not* be redacted: `PlayerFile`'s `/save`, the
+room's load, and the two Workers' load-apply-save. Those are server-to-server over a Durable Object
+binding, and redacting there would erase the secret rather than hide it.
+
+### 1.12 The production edge never asked for the secret at all — HIGH
+
+Worse, and found while fixing the above. Stage 26 gated the paths it had in hand: the dev host and
+the PlayerFile Durable Object. The two Cloudflare Workers — which *are* production — loaded a file,
+applied a change and saved it without ever looking at a secret:
+
+- `POST /file/<id>/campaign` (`server/campaign-worker.ts`): the campaign save, ungated.
+- `POST /file/<id>/counter` (`server/counter-worker.ts`): the **money route**. Link a wallet, bank
+  the run, ask for signed vouchers. Ungated.
+- `POST /link/verify`: binds a wallet to a file permanently. The SIWE signature proved the wallet
+  and nothing proved the file.
+- `POST /prizes/post`: runs the same settlement the cron runs, for a day the **caller** chooses. A
+  settled day is refused a second time by design, so an anonymous POST naming today would mark
+  today settled before anyone had finished banking, and every unit banked afterwards would be
+  stranded for good. No lock on it at all.
+
+**Fixed.** All four now check. `/prizes/post` takes an `x-admin-key` header against an `ADMIN_KEY`
+secret, and with no `ADMIN_KEY` configured the route is closed rather than open — a missing secret
+is the likeliest state of a fresh deploy, and the cron does not need the route.
+
+**Why the tests did not see it.** `tests/fileauth.test.ts` proved the gates by calling `fileAuth`
+and the DO's helpers, and it passed — while the route that never calls `fileAuth` sat beside it. A
+test that calls the function cannot see a route that does not. `tests/routes.test.ts` goes in
+through `fetch` against the real Worker handlers and the real Durable Object, with only storage and
+D1 doubled. Removing any one of the five guards fails exactly one case.
+
 ---
 
 ## 2. What is deliberately trusted
@@ -207,8 +259,8 @@ An auditor should know which of these are decisions rather than oversights.
 | The **minter** role (Cosmetics) | Can mint any id in any quantity. There is no supply cap; scarcity is a studio promise, not a contract one. If that promise matters, cap it per id at definition time. |
 | `Cosmetics` and `$CAPITAL` as **callback-free** | The market's safety argument in 1.6 no longer depends on this, but the ERC-1155 acceptance check is still not implemented, so a contract that cannot handle 1155s can still receive one. |
 | The **host** for game rules | Depth gates, the run's daily cap and the Audit playlists are server-side. The chain never checks them; a host compromise is a game-economy compromise. This is the right trade for a game, but it is the trade. |
-| The **Node host's** dev affordances | `/chain/faucet` and `campaignRequest`'s `trustCompletion` exist so probes can reach a state cheaply. They are on the dev host only; the Workers are the production path and have neither. A self-hoster running `node-host.ts` publicly is running a dev build. |
-| A file's **id** as a name, not a credential | Since §1.9 the id names a file and the file's secret proves ownership. An id on its own can read a file (see §1.9's residual) and can do nothing else. |
+| The **Node host's** dev affordances | `/chain/faucet`, `campaignRequest`'s `trustCompletion` and an unlocked `/prizes/post` exist so probes can reach a state cheaply. They are on the dev host only; the Workers are the production path and have neither. A self-hoster running `node-host.ts` publicly is running a dev build. |
+| A file's **id** as a name, not a credential | Since §1.9 the id names a file and the file's secret proves ownership; since §1.11 the secret is never in a response, so this is true rather than intended. An id on its own can read a file (see §1.9's residual) and can do nothing else. |
 | The client for **aim** | Yaw and pitch come from the client and are bounded but not judged. An aimbot is accepted by construction, as in every FPS; movement, fire rate and hit registration are not (§1.8). Detecting aim is a statistics problem for a later pass, not a protocol one. |
 
 ## 3. Open before mainnet
@@ -261,6 +313,7 @@ it now asserts each separately.
 ```sh
 npx vitest run tests/security.test.ts    # 13 cases, all against a real EVM
 npx vitest run tests/fileauth.test.ts    # 15 cases: the file id and the campaign contract
+npx vitest run tests/routes.test.ts      # 10 cases, through fetch: the routes, not the functions
 npx vitest run tests/speedhack.test.ts   # 3 cases, against the real room and sim
 ```
 

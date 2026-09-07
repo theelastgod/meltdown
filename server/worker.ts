@@ -54,7 +54,7 @@ export default {
         ? await stub.fetch(new Request("https://file/daily", { method: "POST", body: JSON.stringify({ id: f[1] }) }))
         : f[3] && request.method === "POST"
         ? await stub.fetch(new Request(`https://file/${f[3]}`, { method: "POST", body: JSON.stringify({ id: f[1], ...((await request.json().catch(() => ({}))) as object) }) }))
-        : await stub.fetch(new Request("https://file/file", { method: "POST", body: JSON.stringify({ id: f[1], name: "BLANK" }) }));
+        : await stub.fetch(new Request("https://file/public", { method: "POST", body: JSON.stringify({ id: f[1], name: "BLANK" }) }));
       return new Response(res.body, { status: res.status, headers: { ...cors, "content-type": "application/json" } });
     }
     if (url.pathname === "/health") return new Response("ok");

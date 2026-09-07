@@ -6,9 +6,10 @@
  */
 import { SERVER_TICK_MS, type Conn } from "./room";
 import { createCampaignRoom, type CampaignRoomHandle } from "./campaign-room";
-import { DoAccountStore } from "./player-do";
+import { DoAccountStore, NOT_YOURS } from "./player-do";
 import { campaignRequest } from "../shared/campaign/endpoint";
-import { upgradeAccount, type Account } from "../shared/progression/account";
+import { campaignOf } from "../shared/campaign/save";
+import { fileAuth, publicFile, upgradeAccount, type Account } from "../shared/progression/account";
 
 export interface Env {
   CAMPAIGN_ROOM: DurableObjectNamespace;
@@ -28,9 +29,13 @@ export default {
       const stub = env.PLAYER_FILE.get(env.PLAYER_FILE.idFromName(f[1]!));
       const loaded = await stub.fetch(new Request("https://file/file", { method: "POST", body: JSON.stringify({ id: f[1], name: "BLANK" }) }));
       const a = upgradeAccount((await loaded.json()) as Account);
-      const r = campaignRequest(a, await request.json().catch(() => ({})));
+      const body = (await request.json().catch(() => ({}))) as { secret?: string };
+      // the id names the file; the secret proves the caller owns it (Stage 26). This route is the
+      // production campaign save — a house, worn protocols — and it was never checking (Stage 28).
+      if (!fileAuth(a, body.secret).ok) return new Response(JSON.stringify({ ok: false, reason: NOT_YOURS, campaign: campaignOf(a) }), { status: 403, headers: { ...cors, "content-type": "application/json" } });
+      const r = campaignRequest(a, body);
       if (r.ok) await stub.fetch(new Request("https://file/save", { method: "POST", body: JSON.stringify(a) }));
-      return new Response(JSON.stringify({ ...r, account: a }), { headers: { ...cors, "content-type": "application/json" } });
+      return new Response(JSON.stringify({ ...r, account: publicFile(a) }), { headers: { ...cors, "content-type": "application/json" } });
     }
     if (url.pathname === "/health") return new Response("ok");
     return new Response("meltdown campaign worker", { status: 404 });

@@ -12,8 +12,9 @@ export interface Account {
   name: string;
   /**
    * The file's own secret (Stage 26). The id names the file; this proves the caller is its owner.
-   * Never leaves the host except to the client that owns it, and never appears in a public payload
-   * — the prize board and the room stats publish ids, which is what made the id alone dangerous.
+   * It travels in on a request and never travels out on a response: every payload bound for a
+   * client goes through `publicFile` (Stage 28). The client cannot need it back, because the only
+   * client that ever holds it is the one that generated it.
    */
   secret?: string;
   xp: number;
@@ -178,6 +179,33 @@ export function publicLabel(id: string): string {
     h = Math.imul(h, 0x01000193) >>> 0;
   }
   return `FILE-${h.toString(36).toUpperCase().padStart(7, "0").slice(-7)}`;
+}
+
+/** The file as everyone but the host may see it: everything except the one field that is a credential. */
+export type PublicAccount = Omit<Account, "secret">;
+
+/**
+ * The file on its way out of the host (Stage 28).
+ *
+ * Stage 26 gave a file a secret so that its id would be a name rather than a bearer credential. It
+ * then stored that secret *in the file*, and every read path answers with the whole file — so
+ * `GET /file/<id>` handed the secret to anyone who asked for it, and the gate it guarded could be
+ * walked through by reading it first. The credential was published by the thing it protected.
+ *
+ * The rule that closes it, and the reason this is a function rather than a checklist: **the secret
+ * travels in on a request and never travels out on a response.** A client cannot need it back,
+ * because a client can only ever be the one that generated it. So every payload that leaves for a
+ * client goes through here, and no reader has to be trusted to remember.
+ *
+ * The one path this must NOT be used on is the host's own writes — `PlayerFile`'s `/save` and the
+ * D1 row — because those are the host talking to its own storage, and redacting there would erase
+ * the secret rather than hide it. Those are server-to-server; nothing on that path reaches a
+ * client.
+ */
+export function publicFile<T extends Account | null | undefined>(a: T): T extends Account ? PublicAccount : null {
+  if (!a) return null as never;
+  const { secret: _secret, ...rest } = a;
+  return rest as never;
 }
 
 export function createAccount(id: string, name = "BLANK"): Account {
