@@ -165,7 +165,12 @@ async function main(): Promise<void> {
     // low health: the pulse follows the heartbeat under 30 while alive
     await a.evaluate(() => window.__game.setRealtime(true));
     await a.evaluate(() => window.__game.hurt(85));
-    await a.waitForTimeout(1500);
+    // The pulse is throttled to one per 620 ms and fires from the render loop, so "two beats" is a
+    // claim about the cue, not about the clock — and a flat 1.5 s wait for it is a bet on the frame
+    // rate. It came up one beat short on a CI runner. Wait for the second beat instead, bounded;
+    // the check still demands two, it just no longer presumes how long two heartbeats take on a box
+    // drawing three frames a second (Stage 33).
+    await a.waitForFunction(() => (window.__game.audioCues().pulse ?? 0) >= 2, null, { timeout: 20000, polling: 50 }).catch(() => null);
     const cues1 = await a.evaluate(() => window.__game.audioCues());
     const health = await a.evaluate(() => window.__game.state().health);
     check("the audio pass: master/sfx/bed buses under the settings, UI cues (move / select / back), the title-card sting, and a low-health pulse that beats while the file is under 30", (cues0.card ?? 0) >= 2 && (cues0.uiMove ?? 0) >= 2 && (cues0.uiSelect ?? 0) >= 1 && (cues0.uiBack ?? 0) >= 1 && (cues1.lowHealthOn ?? 0) >= 1 && (cues1.pulse ?? 0) >= 2, `card ${cues0.card} · move ${cues0.uiMove} · select ${cues0.uiSelect} · back ${cues0.uiBack} · health ${health} · pulses ${cues1.pulse}`);

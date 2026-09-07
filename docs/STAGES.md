@@ -1763,6 +1763,13 @@ other probe green with its artifacts now checked — `stage8-rite.png` is a pict
 reading CHAPTER I · LISTED, which it had never been before. `npm test` 295 (3 new); typecheck clean over both
 configs. Both lint arms and the tram latch are mutation-tested.
 
+**One more the CI run surfaced,** in the same family. `probe:ship`'s audio check wanted two beats
+of the low-health pulse after a flat 1.5 s wait. The pulse is throttled to one per 620 ms and fires
+from the render loop, so "two beats" is a claim about the cue and the 1.5 s was a bet on the frame
+rate — it came up one beat short on a runner. It waits for the second beat now, bounded at 20 s and
+reporting what it actually saw, so demanding two still fails when there are not two: raising the
+requirement to 99 fails the check rather than hanging.
+
 **Left open, named rather than fixed.** `probe:harden` is intermittent: green on CI run #41, red on
 #42, then red twice and green once here, with no relevant change between. The symptom is a client
 reporting `status: joined` with `snapshots: 0` — the room accepts the join and the page never
