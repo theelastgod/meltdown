@@ -19,7 +19,7 @@ import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
 import WebSocket from "ws";
 import type { BotStep } from "../client/bot";
-import { encodeInputs, encodeJoin, Msg } from "../shared/net/protocol";
+import { encodeInputs, encodeJoin, MAX_REWIND_TICKS, Msg } from "../shared/net/protocol";
 
 const VITE_PORT = 5183;
 const HOST_PORT = 8790;
@@ -139,6 +139,14 @@ async function main(): Promise<void> {
     console.log("server log:", JSON.stringify((await (await fetch(`http://127.0.0.1:${HOST_PORT}/stats`)).json()).logs.filter((l: string) => /death|respawn/.test(l))));
     if (E.netB.game.log.length) console.log("BRAVO correction log:", JSON.stringify(E.netB.game.log));
     if (E.netA.game.log.length) console.log("ALPHA correction log:", JSON.stringify(E.netA.game.log));
+    // Lag compensation has a ceiling (MAX_REWIND_TICKS), and a shot that asks to reach past it is
+    // not compensated at all — it resolves against a world newer than the one the shooter saw. That
+    // is silent: the shot simply misses. It is also the whole of this probe's slow-machine failure,
+    // and it went unexplained for four stages because nothing named it. Under load the collapse
+    // tracks the clamp count exactly: 0-2 clamped of 25 shots is 88% hit-reg, 7 of 34 is 50%, and
+    // 70 of 70 is 9% with misses averaging 0.93 m (Stage 34).
+    const clampRate = dg.shots ? dg.clamped / dg.shots : 0;
+    check("lag compensation is not being clamped away: the rewind a supported link asks for fits the budget", clampRate < 0.1, `${dg.clamped}/${dg.shots} shots asked to rewind past the ${MAX_REWIND_TICKS}-tick cap (${(clampRate * 100).toFixed(0)}%) · avg demand ${dg.avgRewind.toFixed(1)} ticks, and ${RTT} ms RTT alone costs ${((RTT / 2 / 1000) * 60 + 6).toFixed(1)}`);
     check("client-predicted movement identical to server (input-trace comparison)", cA.traceMaxErr < 1e-4 && cB.traceMaxErr < 1e-4 && cA.traceSamples > 200, `max error ALPHA ${cA.traceMaxErr.toExponential(2)} m / BRAVO ${cB.traceMaxErr.toExponential(2)} m over ${cA.traceSamples + cB.traceSamples} samples · gaps filled ${cA.gapFilled + cB.gapFilled}`);
     check("reconciliation corrections stay sub-centimetre", E.netA.game.maxCorrectionM < 0.02 && E.netB.game.maxCorrectionM < 0.02, `max ALPHA ${(E.netA.game.maxCorrectionM * 1000).toFixed(2)} mm, BRAVO ${(E.netB.game.maxCorrectionM * 1000).toFixed(2)} mm; replayed ${E.netA.game.replayedInputs + E.netB.game.replayedInputs} inputs`);
     check("delta snapshots decode under loss (no undecodable frames after warm-up)", E.netA.stats.undecodable <= 3 && E.netB.stats.undecodable <= 3, `undecodable ALPHA ${E.netA.stats.undecodable}, BRAVO ${E.netB.stats.undecodable}; ${E.netA.stats.snapshots} snapshots in`);

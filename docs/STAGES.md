@@ -1698,53 +1698,67 @@ and is withdrawn here rather than quietly dropped.
 throttle raises the failure rate — it does not reproduce the failure on demand, and the commit that
 introduced it said so more strongly than the evidence supports. Corrected here.
 
-**A per-shot diagnostic that did not work, and how that was established.** `scoreRewindOffsets`
-replayed each missed shot's ray against pose history either side of the reported tick and recorded
-which whole-tick offset held the target nearest the line. On failing runs it clustered hard at
-+9..+11 — suspiciously equal to the average rewind depth — with a second pile against the −12 edge.
+**The cause: lag compensation has a ceiling, and the supported link nearly fills it.**
 
-It survived three separate client-side changes unchanged, which is the tell. The check that settled
-it was running it where there is no bug: at `CPU=1`, with hit registration a healthy 88%, the
-histogram is `10:1 11:1` — **the same place**. A number identical whether the netcode is healthy or
-broken is measuring the scenario's geometry, not the fault. The diagnostic has been removed rather
-than left in with a warning, because it twice looked like an answer.
+`Room.rewindFor` refuses to reach further back than `MAX_REWIND_TICKS = 12` — 200 ms at 60 Hz. A
+shot's rewind demand is not a player's choice, it is arithmetic: the input takes half the round trip
+to reach the server, and the client was already rendering remotes `INTERP_DELAY_TICKS = 6` behind
+live. At the **150 ms RTT this probe advertises as supported** that is `4.5 + 6 = 10.5` ticks of a
+12-tick budget — 88% of the ceiling spent before anything goes wrong, leaving **25 ms** of headroom,
+which one dropped frame at 30 fps overruns.
 
-**Three hypotheses, all falsified by measurement.**
+Past the ceiling the shot is not compensated at all: it resolves against a world newer than the one
+the shooter was looking at, and it silently misses. Measured, the collapse tracks the clamp count
+exactly:
 
-1. *The sub-tick floor.* Real, fixed, unit-tested — and worth 15% → 17% with misses 0.12 → 0.13 m,
-   which is inside the noise.
-2. *A whole-tick skew.* The bias sweep was variance, not a curve.
-3. *The extrapolation branch.* On a starved client `remoteViews()` leaves interpolation for its
-   velocity-extrapolation path, which looked like a good candidate. Holding instead of extrapolating:
-   17%, misses 0.14 m, same cluster. No effect.
+```
+clamped  0-2 of 25   88% hit-reg   rewind avg 10.9   misses avg 0.10 m, all inside the capsule
+clamped  7   of 34   50% hit-reg   rewind avg 11.7   misses avg 0.23 m
+clamped 70   of 70    9% hit-reg   rewind avg 22.8   misses avg 0.93 m, none inside the capsule
+```
 
-**The correction that matters.** The "one tick of disagreement" reading in this entry's first draft
-rested on *0.00 m unstarved against 0.13 m starved*. With more runs that is wrong: near-miss is
-**~0.14 m in both**, and the 0.00 m was a single unrepresentative run. Fast and slow clients do not
-differ in how far their misses miss — only in how many there are (23/26 against 9/59; the starved
-client fires *more* shots and lands *fewer*).
+`tests/rewindbudget.test.ts` pins the arithmetic with no runtime noise in it, including the RTT at
+which a perfectly smooth client cannot be compensated at all: **~200 ms**, an ordinary
+transcontinental link.
 
-**Where that points, stated as a hypothesis and not as a finding.** `Bot.sample` fires when its
-angular error is under `0.015` rad. At the ~12 m of this engagement that is ~0.18 m of lateral
-tolerance, against a measured mean near-miss of 0.13–0.15 m — so the *size* of a miss looks set by
-the bot's own firing gate, not by lag compensation. And `botTargets()` reads `remoteViews()`, which
-is a function of `performance.now()`: a throttled client runs several sim steps per frame, all
-seeing the same frozen target sample, so the aim point goes stale for a whole frame while the bot
-keeps firing on every tick of the burst. That would make this check's absolute hit rate a
-measurement of frame rate.
+**What the misses turned out to be.** Every miss in every run measured — healthy or collapsed — is
+`blocked`: the ray struck level geometry before reaching the target, and `nearMiss` is not censored,
+so those numbers were always real. On a healthy run the ray passes *inside* the target's own 0.4 m
+capsule (0.10 m from its centre) and a kerb eats it. On a collapsed run it passes 0.93 m away,
+because it was aimed where the target had been. The mean near-miss was never a statement about aim,
+which is why four stages of reasoning from it went nowhere.
 
-If that is right, the property the check is named for is the one its *control* already asserts —
-lag compensation raises hit registration — and that holds in every run measured here: 88% against
-11% fast, 15% against 9% starved. Changing the absolute threshold is the obvious move and is exactly
-the move to be suspicious of, so it is not being made on a hypothesis. The experiment that would
-settle it: record, at fire time, the perpendicular distance from the bot's aim ray to *its own
-believed* target position. Near zero puts the fault after the client; of the order of the near-miss
-puts it in the firing gate.
+**A per-shot diagnostic that did not work, and how that was established.** An earlier attempt
+replayed each miss against pose history either side of the reported tick and recorded the best-fitting
+whole-tick offset. It clustered at +9..+11 on failing runs — suspiciously equal to the average rewind
+depth. Running it where there is no bug settled it: at `CPU=1` with 88% hit registration it reads
+`10:1 11:1`, **the same place**. A number identical whether the netcode is healthy or broken measures
+the scenario's geometry, not the fault. Removed rather than kept behind a caveat, because it twice
+looked like an answer.
 
-**What this stage leaves.** A throttle that makes the failure common enough to work against
-(4 of 6 runs), a real sub-tick defect closed and tested, a wrong diagnostic removed, three
-hypotheses eliminated with measurements rather than argument, and a named next experiment. Not a
-fix.
+**Three hypotheses eliminated by measurement, and two of my own readings withdrawn.**
+
+1. *The sub-tick floor* — real, fixed, unit-tested, and worth 15% → 17%, inside the noise. Shipped on
+   its own merits and labelled as not the fix.
+2. *A whole-tick skew* — the bias sweep was variance. An earlier reading of two of its rows as
+   "rewinding two ticks back nearly triples the hit rate" was a conclusion drawn from noise.
+3. *The extrapolation branch* — holding instead of extrapolating: 17%, same cluster, no effect.
+
+Also withdrawn: "`CPU=8` reproduces the CI failure". It failed 4 of 6 early runs and then 0 of 6 —
+the difference was how busy the machine was, not the throttle. The reliable reproduction is the
+throttle **plus** contention, which is what a shared CI runner is.
+
+**The check now names its own cause.** `probe:net` asserts that fewer than 10% of shots ask to
+rewind past the cap, and prints the demand against the budget. A probe reporting "15% hit-reg" with
+no explanation cost four stages; this one says `70/70 shots asked to rewind past the 12-tick cap ·
+avg demand 22.8 ticks, and 150 ms RTT alone costs 10.5`.
+
+**Not changed, and why.** Raising `MAX_REWIND_TICKS` is the obvious fix and I have not made it. The
+ceiling trades directly against how long after breaking line of sight a lagging shooter can still
+kill you, in a game whose PvP pays $CAPITAL and where a player could add latency deliberately. That
+is the same class of decision as Stage 32's aim assist: an economy call, not an engineering one, and
+it wants an owner. The arithmetic for it is in the test — covering the supported link twice over
+needs a cap of about 21 ticks.
 
 ## Stage 33 — A screenshot is a claim
 
