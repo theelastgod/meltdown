@@ -1708,7 +1708,7 @@ live. At the **150 ms RTT this probe advertises as supported** that is `4.5 + 6 
 which one dropped frame at 30 fps overruns.
 
 Past the ceiling the shot is not compensated at all: it resolves against a world newer than the one
-the shooter was looking at, and it silently misses. Measured, the collapse tracks the clamp count
+the shooter was looking at, and it silently misses. Under load the collapse tracks the clamp count
 exactly:
 
 ```
@@ -1720,6 +1720,13 @@ clamped 70   of 70    9% hit-reg   rewind avg 22.8   misses avg 0.93 m, none ins
 `tests/rewindbudget.test.ts` pins the arithmetic with no runtime noise in it, including the RTT at
 which a perfectly smooth client cannot be compensated at all: **~200 ms**, an ordinary
 transcontinental link.
+
+**Clamping is *a* cause and not the only one.** A later failing run came in at 20% hit registration
+with **`clamped 0`**, a healthy 10.7-tick average demand, and all 51 misses inside the target's
+capsule and blocked by level geometry. So there are at least two ways this check goes red: the
+rewind ceiling under load, and an engagement in which the bot ends up shooting through scenery.
+Saying "the cause" of the second, on the evidence of the first, would be the same mistake this stage
+has already made three times.
 
 **What the misses turned out to be.** Every miss in every run measured — healthy or collapsed — is
 `blocked`: the ray struck level geometry before reaching the target, and `nearMiss` is not censored,
@@ -1779,8 +1786,24 @@ reading of ~11 KB/s, both extrapolations land at or past the line: **+1.3 by inc
 by ratio (16.0)**. Either way the budget has no room for a full lobby, and the check that guards it
 has never been run against one.
 
-The honest fix is to measure it at the room cap rather than argue about the extrapolation — a probe
-change, named here rather than made on an estimate.
+**Then measured, rather than argued about.** `probe:net` now opens **eight real sockets** to the
+host — not browser pages, because downstream volume is a function of who is moving and eight
+SwiftShader contexts is how `probe:mastery` came to time out — joins them, drives them all moving,
+and meters what comes back:
+
+```
+2 clients (the old check)   10.49 KB/s per client
+8 clients (the room cap)    14.70 KB/s per client · 117.6 KB/s off the shard
+```
+
+**22% past its own budget at the size matchmaking fills.** The extrapolations bracketed it and the
+socket settled it.
+
+One correction worth keeping: the first version of that measurement read **21.01 KB/s** and was
+wrong. The raw clients passed `ackTick: 0`, and `rec.ackTick` is what selects a delta baseline
+server-side — so every snapshot came back *full*, and the number described a protocol the game does
+not ship. The harness echoes the newest snapshot tick now. A measurement that flatters the finding
+is still a bad measurement.
 
 **Not changed, and why.** Raising `MAX_REWIND_TICKS` is the obvious fix and I have not made it. The
 ceiling trades directly against how long after breaking line of sight a lagging shooter can still

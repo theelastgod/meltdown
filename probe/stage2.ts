@@ -20,6 +20,7 @@ import { shot } from "./shot";
 import WebSocket from "ws";
 import type { BotStep } from "../client/bot";
 import { encodeInputs, encodeJoin, MAX_REWIND_TICKS, Msg } from "../shared/net/protocol";
+import { Btn } from "../shared/sim/input";
 
 const VITE_PORT = 5183;
 const HOST_PORT = 8790;
@@ -151,6 +152,60 @@ async function main(): Promise<void> {
     check("reconciliation corrections stay sub-centimetre", E.netA.game.maxCorrectionM < 0.02 && E.netB.game.maxCorrectionM < 0.02, `max ALPHA ${(E.netA.game.maxCorrectionM * 1000).toFixed(2)} mm, BRAVO ${(E.netB.game.maxCorrectionM * 1000).toFixed(2)} mm; replayed ${E.netA.game.replayedInputs + E.netB.game.replayedInputs} inputs`);
     check("delta snapshots decode under loss (no undecodable frames after warm-up)", E.netA.stats.undecodable <= 3 && E.netB.stats.undecodable <= 3, `undecodable ALPHA ${E.netA.stats.undecodable}, BRAVO ${E.netB.stats.undecodable}; ${E.netA.stats.snapshots} snapshots in`);
     const secs = 14;
+    // A room of eight, on real sockets, because that is the size the product sells.
+    //
+    // The check below this one measures two clients and has always measured two, while matchmaking
+    // fills a public room to eight before opening the next shard. tests/bandwidth.test.ts drives the
+    // Room class directly and finds the per-client cost linear in the others being described — about
+    // +0.21 KB/s each, so a full lobby is ~1.46x a duo — which put the extrapolated figure at or over
+    // this budget. That was an estimate. This measures it (Stage 34).
+    //
+    // Raw WebSockets, not pages: downstream volume is a function of who is moving, not of anything a
+    // renderer does, and eight browsers under SwiftShader is how probe:mastery came to time out.
+    const bw = await (async () => {
+      const N = 8;
+      const SECONDS = 5;
+      const socks = Array.from({ length: N }, () => new WebSocket(`ws://127.0.0.1:${HOST_PORT}/room/bandwidth?ai=0%26level=drainage_yard`));
+      const got = new Array<number>(N).fill(0);
+      const seqs = new Array<number>(N).fill(0);
+      // Ack the newest snapshot each client has seen. `rec.ackTick` is what picks the delta baseline
+      // server-side, so a client that never acks is sent a FULL snapshot every time — measuring that
+      // would overstate the budget by about double and say nothing about the shipped protocol. The
+      // snapshot header is [u8 Msg.Snapshot][u32 tick], which is all this needs to read.
+      const acks = new Array<number>(N).fill(0);
+      await Promise.all(socks.map((w, i) => new Promise<void>((resolve) => {
+        w.binaryType = "arraybuffer";
+        w.on("message", (d: Buffer | ArrayBuffer) => {
+          const buf = d instanceof Buffer ? d : Buffer.from(new Uint8Array(d));
+          got[i]! += buf.byteLength;
+          if (buf.byteLength >= 5 && buf.readUInt8(0) === Msg.Snapshot) acks[i] = Math.max(acks[i]!, buf.readUInt32LE(1));
+        });
+        w.on("open", () => { w.send(encodeJoin(`BW${i}`, "")); resolve(); });
+        w.on("error", () => resolve());
+      })));
+      // let everyone join and take a first full snapshot before the meter starts
+      await new Promise((r) => setTimeout(r, 1500));
+      got.fill(0);
+      const t0 = Date.now();
+      const drive = setInterval(() => {
+        for (let i = 0; i < N; i++) {
+          const w = socks[i]!;
+          if (w.readyState !== 1) continue;
+          const seq = ++seqs[i]!;
+          // everyone moving and turning: the case a delta snapshot cannot shrink away
+          const buttons = Btn.Forward | Btn.Sprint | (Math.floor(seq / 20) % 2 ? Btn.Left : Btn.Right);
+          w.send(encodeInputs([{ seq, tick: seq, buttons, yaw: Math.sin(seq * 0.05 + i) * 2, pitch: 0, viewTick: acks[i]!, viewFrac: 0, px: 0, py: 0, pz: 0 }], acks[i]!));
+        }
+      }, 1000 / 60);
+      await new Promise((r) => setTimeout(r, SECONDS * 1000));
+      clearInterval(drive);
+      const secs = (Date.now() - t0) / 1000;
+      const joined = (await stats()).rooms["bandwidth"]?.players ?? 0;
+      for (const w of socks) w.close();
+      const perClient = got.reduce((a, b) => a + b, 0) / N / secs / 1000;
+      return { perClient, joined, room: (perClient * joined) };
+    })();
+    check("bandwidth at the room cap: eight clients, the size matchmaking actually fills", bw.joined >= 6 && bw.perClient < 12, `${bw.perClient.toFixed(2)} KB/s per client with ${bw.joined} in the room · ${bw.room.toFixed(1)} KB/s off the shard`);
     check("bandwidth: < 12 KB/s per client downstream", E.netA.stats.bytesIn / secs < 12000, `${(E.netA.stats.bytesIn / secs / 1000).toFixed(2)} KB/s in, ${(E.netA.stats.bytesOut / secs / 1000).toFixed(2)} KB/s out`);
 
     // ---------------- rejoin ----------------

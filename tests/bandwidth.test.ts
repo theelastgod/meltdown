@@ -102,8 +102,10 @@ describe("downstream bandwidth at the size the game actually runs", () => {
     const byRatio = probeMeasuredAtTwo * (p8 / p2);
     expect(byIncrement).toBeGreaterThan(BUDGET_KBS * 0.95);
     expect(byRatio).toBeGreaterThan(BUDGET_KBS);
-    // Recorded, not asserted as a defect: the honest fix is to measure the budget at the room cap
-    // rather than to argue about the extrapolation. That is a probe change, and it is named in
-    // docs/STAGES.md rather than made here on an estimate.
+    // Since settled by measurement rather than left as an extrapolation. `probe:net` now runs eight
+    // real sockets against the host, acking snapshots so the shipped delta path is what is measured,
+    // and reads **14.70 KB/s per client** against 10.49 for two — 22% past the budget, 117.6 KB/s off
+    // the shard. Both estimates above bracketed it (12.3 and 16.0), which is the most this harness
+    // can claim: it gets the shape right and the absolute level is the socket's to report.
   });
 });
