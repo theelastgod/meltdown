@@ -235,9 +235,19 @@ export class Room {
    *
    * Aggregate hit rate is too noisy to bisect a one-tick effect — a single engagement ends early
    * when a kill lands, and a sweep across offsets came back 49/17/17/88/57 per cent, which is
-   * variance and not a curve. This asks the question per shot instead, so one run yields hundreds of
-   * paired samples: a histogram centred on 0 means the rewind is aimed at the right instant and the
-   * misses are the shooter's; a histogram centred anywhere else names the skew and its direction.
+   * variance and not a curve. This asks the question per shot instead, so one run yields a paired
+   * sample per miss.
+   *
+   * **Read it knowing what it cannot tell you.** The probe's target is *strafing*, so its path is
+   * periodic with a ~50-tick period, and "the pose nearest this ray within ±12 ticks" can match the
+   * other side of a swing just as well as the near side. A real measurement showed exactly that
+   * shape — a cluster at +9..+11 and a second pile against the -12 edge of the window — which is
+   * consistent with an ambiguity rather than with a skew. Treat a two-sided histogram as evidence
+   * the metric has aliased, not as evidence of the offset it peaks at.
+   *
+   * `nearMiss` at offset 0 is the honest number and needs no window: it is by construction the
+   * perpendicular distance between the pose the server rewound to and the line the shooter aimed
+   * along, which is exactly the disagreement this stage is chasing.
    */
   readonly rewindOffsets = new Map<number, number>();
 

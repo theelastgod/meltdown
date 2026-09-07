@@ -1694,10 +1694,37 @@ which a kill ends the engagement early, cannot resolve a one-tick effect. An ear
 first two rows as "two ticks back nearly triples the hit rate" was a conclusion drawn from noise,
 and is withdrawn here rather than quietly dropped.
 
-**Still open.** What actually costs the slow client its shots. The next measurement is the one that
-does not depend on aggregate hit rate at all: record, per shot, the position the client aimed at
-against the position the server rewound to, and read the disagreement directly. Hundreds of paired
-samples from one run, instead of one noisy percentage.
+**The reproduction is a bias, not a switch.** A later `CPU=8` run passed outright at 90%. So the
+throttle raises the failure rate — it does not reproduce the failure on demand, and the commit that
+introduced it said so more strongly than the evidence supports. Corrected here.
+
+**A per-shot diagnostic, and what it is not good for.** `Room.scoreRewindOffsets` replays each
+missed shot's ray against the pose history either side of the tick the shooter reported and records
+which whole-tick offset holds the target nearest their line. On a failing run (50 misses) it gave:
+
+```
+0:1  2:1  5:1  8:1  9:3  10:17  11:12  12:1   |   -12:8  -11:1  -10:1  -8:1  -7:1  -6:1  -4:1
+```
+
+A cluster at +9..+11 and a second pile against the −12 edge. That is not a skew of +10; it is the
+metric aliasing. The probe's target is *strafing*, so its path is periodic at roughly a 50-tick
+period, and "nearest pose to this ray within ±12 ticks" can match the far side of a swing as
+readily as the near one. A two-sided histogram is evidence the window has wrapped, not evidence of
+the offset it peaks at. The diagnostic now says so in its own doc comment, because a metric that can
+mislead is worse than none unless it carries its own warning.
+
+**What is actually established about the disagreement.** `nearMiss` needs no window and has no
+ambiguity: it is by construction the perpendicular distance between the pose the server rewound to
+and the line the shooter aimed along. It reads ~0.13 m on a slow client and 0.00 m on a fast one,
+against ~12 cm of travel per tick at a sprinting strafe. So the client's aim and the server's rewind
+disagree by roughly one tick of target motion when the client is starved, and not at all when it is
+not.
+
+**Still open, and stated precisely.** Closing the sub-tick half of that disagreement did not move
+hit registration, which the one-tick figure above does not by itself explain. The next measurement
+must remove the last of the inference: have the client log the position it actually aimed at, keyed
+by input sequence, and the server log the pose it rewound to for that same input, then compare the
+pairs directly. Every reading so far has been of one side of that comparison.
 
 ## Stage 33 — A screenshot is a claim
 
