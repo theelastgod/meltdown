@@ -117,7 +117,7 @@ async function main(): Promise<void> {
     console.log("server log:", JSON.stringify((await (await fetch(`http://127.0.0.1:${HOST_PORT}/stats`)).json()).logs.filter((l: string) => /death|respawn/.test(l))));
     if (E.netB.game.log.length) console.log("BRAVO correction log:", JSON.stringify(E.netB.game.log));
     if (E.netA.game.log.length) console.log("ALPHA correction log:", JSON.stringify(E.netA.game.log));
-    check("client-predicted movement identical to server (input-trace comparison)", cA.traceMaxErr < 1e-4 && cB.traceMaxErr < 1e-4 && cA.traceSamples > 200, `max error ALPHA ${cA.traceMaxErr.toExponential(2)} m / BRAVO ${cB.traceMaxErr.toExponential(2)} m over ${cA.traceSamples + cB.traceSamples} samples`);
+    check("client-predicted movement identical to server (input-trace comparison)", cA.traceMaxErr < 1e-4 && cB.traceMaxErr < 1e-4 && cA.traceSamples > 200, `max error ALPHA ${cA.traceMaxErr.toExponential(2)} m / BRAVO ${cB.traceMaxErr.toExponential(2)} m over ${cA.traceSamples + cB.traceSamples} samples · gaps filled ${cA.gapFilled + cB.gapFilled}`);
     check("reconciliation corrections stay sub-centimetre", E.netA.game.maxCorrectionM < 0.02 && E.netB.game.maxCorrectionM < 0.02, `max ALPHA ${(E.netA.game.maxCorrectionM * 1000).toFixed(2)} mm, BRAVO ${(E.netB.game.maxCorrectionM * 1000).toFixed(2)} mm; replayed ${E.netA.game.replayedInputs + E.netB.game.replayedInputs} inputs`);
     check("delta snapshots decode under loss (no undecodable frames after warm-up)", E.netA.stats.undecodable <= 3 && E.netB.stats.undecodable <= 3, `undecodable ALPHA ${E.netA.stats.undecodable}, BRAVO ${E.netB.stats.undecodable}; ${E.netA.stats.snapshots} snapshots in`);
     const secs = 14;

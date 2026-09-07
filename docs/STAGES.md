@@ -1486,6 +1486,100 @@ never the trace, through thirty-nine runs. It now logs anything that would fail 
 guards are mutation-tested. The next push is the first one whose CI run will report all twenty-nine
 steps — including, honestly, the one that is still red.
 
+## Stage 31 — A lost input is a step the player took and the server did not
+
+**Goal.** Stage 30 opened the gate and named the step that had been holding it shut since Stage 2
+without fixing it, because I could not explain it. Explain it.
+
+**The candidate was wrong, and a twenty-line harness said so in a minute.** Stage 30's write-up
+guessed that the server advancing its world one tick per `step()` — however many of a client's
+inputs it applies in that tick — was pulling prediction apart. Two worlds, the same forty inputs,
+one consuming them in batches of 1/2/3/5/8 and the other one per tick:
+
+```
+batch 1: delta 0.000e+0 m     batch 3: delta 0.000e+0 m     batch 8: delta 0.000e+0 m
+```
+
+Bit-identical. Batching is not it. The batch correlation in the trace was a symptom of a slow
+client, not a cause. Writing the guess down and then testing it cost about as much as arguing about
+it would have.
+
+**What it actually is.** The next hypothesis took the same harness: give one world every input and
+the other all but one.
+
+```
+dropped seq [15]      → residue 1.200e-1 m   (both at rest)
+dropped seq [15,16]   → residue 2.400e-1 m   (both at rest)
+```
+
+Movement is a pure function of the inputs applied, so **an input lost in every redundant copy is a
+movement step the client took and the server did not — and the difference is permanent.** It does
+not decay, it does not wash out, and it is still exactly there when both sides have come to a dead
+stop. 12 cm per lost input at sprint. That is the CI failure exactly: `max error ALPHA 1.02e-1 m`
+is one lost input.
+
+The room had a branch for this, and the branch was empty:
+
+```ts
+if (i.seq !== rec.lastSeq + 1 && rec.lastSeq !== 0) {
+  // gap: the missing inputs were lost in all redundant copies; accept and let the trace flag it
+}
+```
+
+The trace did flag it, for thirty-nine CI runs. What the player felt was reconciliation dragging
+them back 12 cm — rubber-banding under loss, several times a second at the 5% the probe injects.
+
+**Fixed.** The missing ticks are filled by repeating the last input the client actually sent, which
+is the likeliest thing it was still doing: held keys are why input is heavily autocorrelated, and
+it is what keeps prediction and the server in step through ordinary loss. Two bounds, because a
+filled input is a guess made on a player's behalf:
+
+- **A filler carries movement, stance and look — never a discrete action.** Fire, alt-fire, reload,
+  grenades and weapon select are stripped, so a dropped packet can never hand out a shot nobody
+  took. Jump is edge-triggered against `prevButtons`, so a held bit repeats as held.
+- **At most four consecutive ticks (~67 ms).** Past that the client is not losing packets, it is
+  gone, and a correction is the honest answer. Fillers queue like any other input, so the per-tick
+  credit still bounds the sim time a client can spend.
+
+A filler's `px` is `NaN`, and the trace check skips those samples — there is no client prediction
+behind an input the client never sent, and scoring the server against its own invention would make
+the check green by making it meaningless.
+
+**Files.** `server/room.ts` (the fill, `MAX_GAP_FILL`, `GAP_FILL_BUTTONS`, `gapFilled` in `/stats`),
+`probe/stage2.ts` (reports gaps filled); `tests/gapfill.test.ts` (new, 8).
+
+**Acceptance, stated as it actually ran.** The load in these runs is four busy-loops on a shared
+box, which is a stand-in for a CI runner and not a controlled variable, so the honest report is what
+each run did rather than a single number.
+
+| run | load | the trace check | rest |
+|---|---|---|---|
+| before | lighter | **FAIL** 4.69e-3 m | 10/11 |
+| before | heavier | **FAIL** 5.25e-3 m | 10/11 |
+| after | lighter | **PASS** | **11/11** |
+| after | heavier | **PASS** 0.00e+0 m on both clients, 1334 samples, **5 gaps filled** | 9/11 |
+
+The fourth row is the one that matters and the one that complicates the story. The check this stage
+is about goes to *exactly zero* on both clients while the server fills five real gaps — that is the
+fix working, and the probe prints the fill count so a green run cannot be green merely because no
+packet happened to drop.
+
+But under that heavier load two other checks fail, and one of them is new:
+`reconciliation corrections stay sub-centimetre` at 58.89 mm. That is very likely the fill's own
+cost, and it is worth stating plainly rather than burying: **when the player changes input during a
+gap, the repeat is a wrong guess, and the client takes a correction for it.** That is the trade —
+an occasional correction that converges in place of a permanent residue that does not — and it is
+the right way round, but it is a trade and not a free win. The other failure (hit-reg at 22%, 55
+clamped rewinds) is lag compensation running out of history under a machine that cannot keep 60 Hz,
+which predates this change and belongs to whoever next opens the rewind buffer.
+
+`npm test` 292 (8 new); typecheck clean over both configs.
+
+Each of four mutations fails a case: not filling at all (the shipped behaviour, four failures),
+letting a filler carry discrete actions, removing the bound, and letting a filler pretend to carry
+a client prediction. One of the eight cases was vacuous when first written — it compared a run to
+itself — and is now the one that actually demonstrates the premise.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

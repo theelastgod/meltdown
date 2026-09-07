@@ -14,7 +14,7 @@ import { auditErrors, type AuditDef } from "../shared/endgame/audits";
 import { itemById } from "../shared/manifest/items";
 import type { EndgameStore } from "./endgame";
 import type { House } from "../shared/endgame/season";
-import { MAX_BUTTONS } from "../shared/sim/input";
+import { Btn, MAX_BUTTONS } from "../shared/sim/input";
 import { levelById } from "../shared/sim/level";
 import { World, type RewindPose, type SimEvent } from "../shared/sim/world";
 import type { PlayerState } from "../shared/sim/player";
@@ -72,6 +72,10 @@ interface ClientRec {
   strikeWindowStart: number;
   inputWindowStart: number;
   inputCount: number;
+  /** the last input the client actually sent, repeated to fill a loss gap (Stage 31) */
+  lastInput: NetInput | null;
+  /** inputs synthesised to cover loss, for /stats */
+  gapFilled: number;
   /** unspent input credits: one accrues per sim tick, capped at INPUT_BURST_CREDITS */
   credits: number;
   /** inputs held back this session because the client outran the sim */
@@ -169,7 +173,7 @@ export interface RoomStats {
   kicks: number;
   inputsRejected: number;
   bytesOut: number;
-  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; throttled: number; inputsApplied: number; inputsRejected: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number; stamps: number; ranks: Record<string, number> } | null; loadout: Loadout; identity: { display: string; chapter: number; moniker: string | null; debt: string | null; debtTarget: number; wakelight: number; chapters: number[] } }[];
+  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; throttled: number; inputsApplied: number; inputsRejected: number; gapFilled: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number; stamps: number; ranks: Record<string, number> } | null; loadout: Loadout; identity: { display: string; chapter: number; moniker: string | null; debt: string | null; debtTarget: number; wakelight: number; chapters: number[] } }[];
   settlements: number;
   /** social messages sent, by kind (dossier / debt / rite) */
   social: Record<string, number>;
@@ -185,6 +189,10 @@ export interface RoomStats {
 }
 
 const MAX_INPUTS_PER_TICK = 6;
+/** Consecutive lost inputs the server will fill by repeating the last one (Stage 31). ~67 ms. */
+const MAX_GAP_FILL = 4;
+/** What survives into a filled input: movement, stance and look. Never a discrete action. */
+const GAP_FILL_BUTTONS = Btn.Forward | Btn.Back | Btn.Left | Btn.Right | Btn.Jump | Btn.Sprint | Btn.Crouch;
 const MAX_INPUT_RATE_PER_SEC = 95;
 /**
  * A client may only ever spend as many inputs as the sim has ticked. Every input is a full
@@ -289,8 +297,38 @@ export class Room {
     }
     for (const i of msg.inputs) {
       if (i.seq <= rec.lastSeq) continue; // redundant resend, already have it
-      if (i.seq !== rec.lastSeq + 1 && rec.lastSeq !== 0) {
-        // gap: the missing inputs were lost in all redundant copies; accept and let the trace flag it
+      if (i.seq > rec.lastSeq + 1 && rec.lastSeq !== 0 && rec.lastInput) {
+        /**
+         * A gap: those inputs were lost in every redundant copy (Stage 31).
+         *
+         * The client has already predicted them. Skipping them costs the player exactly one tick of
+         * movement each, permanently — 12 cm at sprint, measured — because movement is a pure
+         * function of the inputs applied and the server would have applied one fewer. It does not
+         * decay: reconciliation drags the player back and the residue is gone, which is what
+         * rubber-banding under loss actually is. At the probe's 5% loss that is several corrections
+         * a second.
+         *
+         * So the missing ticks are filled by repeating the last input the client did send, which is
+         * the likeliest thing it was still doing — input is heavily autocorrelated — and is what
+         * lets prediction and the server stay in step through ordinary loss.
+         *
+         * Two bounds, because a filled input is a guess made on the player's behalf:
+         *  - only movement, stance and look survive into the filler. Fire, alt-fire, reload,
+         *    grenades and weapon select are stripped, so a dropped packet can never hand out a
+         *    discrete action nobody asked for. Jump is edge-triggered against `prevButtons`, so a
+         *    held bit repeats as held rather than re-firing.
+         *  - at most MAX_GAP_FILL consecutive ticks. Past that the client is not losing packets,
+         *    it is gone, and a correction is the honest answer. Fillers also queue like any other
+         *    input, so the per-tick credit still bounds the sim time a client can spend.
+         *
+         * `px` is NaN because there is no client prediction to compare a guess against; the trace
+         * check below skips those samples rather than scoring the server against its own invention.
+         */
+        const missing = Math.min(i.seq - rec.lastSeq - 1, MAX_GAP_FILL);
+        for (let k = missing; k >= 1; k--) {
+          rec.queue.push({ ...rec.lastInput, seq: i.seq - k, buttons: rec.lastInput.buttons & GAP_FILL_BUTTONS, px: NaN, py: NaN, pz: NaN });
+          rec.gapFilled++;
+        }
       }
       if (!this.validInput(i)) {
         rec.inputsRejected++;
@@ -310,6 +348,7 @@ export class Room {
         rec.inputsRejected++;
       }
       rec.lastSeq = i.seq;
+      rec.lastInput = i;
       rec.queue.push(i);
     }
   }
@@ -501,6 +540,8 @@ export class Room {
       inputWindowStart: this.opts.now(),
       inputCount: 0,
       credits: INPUT_BURST_CREDITS,
+      lastInput: null,
+      gapFilled: 0,
       throttled: 0,
       disconnectedAt: 0,
       pendingEvents: [],
@@ -915,7 +956,7 @@ export class Room {
       const last = list[list.length - 1]!;
       rec.lastAppliedSeq = last.seq;
       rec.inputsApplied += list.length;
-      if (p.alive && last.seq > rec.traceSkipUntilSeq) {
+      if (p.alive && last.seq > rec.traceSkipUntilSeq && Number.isFinite(last.px)) {
         const err = Math.hypot(p.pos.x - last.px, p.pos.y - last.py, p.pos.z - last.pz);
         rec.traceSamples++;
         if (err > rec.traceMaxErr) rec.traceMaxErr = err;
@@ -1145,6 +1186,7 @@ export class Room {
         throttled: c.throttled,
         inputsApplied: c.inputsApplied,
         inputsRejected: c.inputsRejected,
+        gapFilled: c.gapFilled,
         kills: p.stats.kills,
         deaths: p.stats.deaths,
         shots: p.stats.shots,
