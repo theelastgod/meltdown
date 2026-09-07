@@ -404,6 +404,16 @@ export function encodeKick(reason: string): ArrayBuffer {
 
 /** Per-remote-player field mask for delta encoding. */
 const F_POS = 1, F_VEL = 2, F_VIEW = 4, F_STATE = 8, F_NAME = 16;
+/**
+ * Entity and dummy delta flags (Stage 34).
+ *
+ * These two lists used to be written in full on every snapshot, under the comment
+ * "full each snapshot; small". Measured at the room cap that assumption cost real budget: a wake
+ * node is 15 bytes and its x/y/z do not change for the length of a match, and there are five of them
+ * thirty times a second. They carry a mask against the acked baseline now, exactly like players do.
+ */
+const E_POS = 1, E_STATE = 2;
+const D_POS = 1, D_STATE = 2;
 
 export function quantizeRemote(p: RemotePlayerQ): RemotePlayerQ {
   return {
@@ -476,27 +486,33 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     if (mask & F_STATE) { w.i16(p.health); w.u8(p.ammo); w.u8((p.alive ? 1 : 0) | (p.grounded ? 2 : 0) | (p.stance << 2) | (p.slot << 4)); w.i16(p.height * Q_POS); w.u8(p.team); w.u8(p.shield); }
     if (mask & F_NAME) { w.str(p.name); w.str(p.tag); }
   }
-  // dummies (full, small)
+  // dummies (delta against the baseline: they stand still until they are shot)
   w.u8(s.dummies.length);
   for (const d of s.dummies) {
+    const bd = baseline?.dummies.find((x) => x.id === d.id);
+    let mask = 0;
+    if (!bd || bd.x !== d.x || bd.y !== d.y || bd.z !== d.z) mask |= D_POS;
+    if (!bd || bd.alive !== d.alive || bd.health !== d.health) mask |= D_STATE;
     w.u8(d.id);
-    w.u8(d.alive ? 1 : 0);
-    w.i16(d.health);
-    w.i16(d.x * Q_POS);
-    w.i16(d.y * Q_POS);
-    w.i16(d.z * Q_POS);
+    w.u8(mask);
+    if (mask & D_POS) { w.i16(d.x * Q_POS); w.i16(d.y * Q_POS); w.i16(d.z * Q_POS); }
+    if (mask & D_STATE) { w.u8(d.alive ? 1 : 0); w.i16(d.health); }
   }
   // match header
   if (s.match) {
     w.u8(1);
     w.u8(s.match.phase); w.u16(Math.max(0, Math.round(s.match.timeLeft))); w.u16(Math.min(65535, Math.round(s.match.score1))); w.u16(Math.min(65535, Math.round(s.match.score2))); w.u8(s.match.winner); w.u8(s.match.round);
   } else w.u8(0);
-  // entities (full each snapshot; small)
+  // entities (delta against the baseline; a wake node's position never moves at all)
   w.u8(Math.min(255, s.entities.length));
   for (const e of s.entities.slice(0, 255)) {
-    w.u8(e.kind); w.u16(e.id);
-    w.i16(e.x * Q_POS); w.i16(e.y * Q_POS); w.i16(e.z * Q_POS);
-    w.u8(e.a); w.u8(e.b); w.i16(e.c); w.i16(e.d);
+    const be = baseline?.entities.find((x) => x.kind === e.kind && x.id === e.id);
+    let mask = 0;
+    if (!be || be.x !== e.x || be.y !== e.y || be.z !== e.z) mask |= E_POS;
+    if (!be || be.a !== e.a || be.b !== e.b || be.c !== e.c || be.d !== e.d) mask |= E_STATE;
+    w.u8(e.kind); w.u16(e.id); w.u8(mask);
+    if (mask & E_POS) { w.i16(e.x * Q_POS); w.i16(e.y * Q_POS); w.i16(e.z * Q_POS); }
+    if (mask & E_STATE) { w.u8(e.a); w.u8(e.b); w.i16(e.c); w.i16(e.d); }
   }
   // events
   w.u8(Math.min(255, s.events.length));
@@ -630,13 +646,29 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     }
     const nd = r.u8();
     const dummies: DummyQ[] = [];
-    for (let i = 0; i < nd; i++) dummies.push({ id: r.u8(), alive: r.u8() === 1, health: r.i16(), x: r.i16() / Q_POS, y: r.i16() / Q_POS, z: r.i16() / Q_POS });
+    for (let i = 0; i < nd; i++) {
+      const id = r.u8();
+      const mask = r.u8();
+      const bd = base?.dummies.find((x) => x.id === id);
+      const d: DummyQ = bd ? { ...bd } : { id, alive: true, health: 100, x: 0, y: 0, z: 0 };
+      d.id = id;
+      if (mask & D_POS) { d.x = r.i16() / Q_POS; d.y = r.i16() / Q_POS; d.z = r.i16() / Q_POS; }
+      if (mask & D_STATE) { d.alive = r.u8() === 1; d.health = r.i16(); }
+      dummies.push(d);
+    }
     let match: MatchQ | null = null;
     if (r.u8() === 1) match = { phase: r.u8(), timeLeft: r.u16(), score1: r.u16(), score2: r.u16(), winner: r.u8(), round: r.u8() };
     const nent = r.u8();
     const entities: NetEntity[] = [];
     for (let i = 0; i < nent; i++) {
-      entities.push({ kind: r.u8() as NetEntity["kind"], id: r.u16(), x: r.i16() / Q_POS, y: r.i16() / Q_POS, z: r.i16() / Q_POS, a: r.u8(), b: r.u8(), c: r.i16(), d: r.i16() });
+      const kind = r.u8() as NetEntity["kind"];
+      const id = r.u16();
+      const mask = r.u8();
+      const be = base?.entities.find((x) => x.kind === kind && x.id === id);
+      const e: NetEntity = be ? { ...be } : { kind, id, x: 0, y: 0, z: 0, a: 0, b: 0, c: 0, d: 0 };
+      if (mask & E_POS) { e.x = r.i16() / Q_POS; e.y = r.i16() / Q_POS; e.z = r.i16() / Q_POS; }
+      if (mask & E_STATE) { e.a = r.u8(); e.b = r.u8(); e.c = r.i16(); e.d = r.i16(); }
+      entities.push(e);
     }
     const ne = r.u8();
     const events: NetEvent[] = [];

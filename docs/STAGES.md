@@ -1791,6 +1791,30 @@ earlier extrapolations appeared to bracket 14.70; that was luck from two compens
 claim is withdrawn. The file is kept for the shape — per client linear in the others described, per
 room quadratic — and now says so.
 
+**The first cut, made and measured.** Entities and dummies now carry a mask against the acked
+baseline, exactly as players already did — `E_POS`/`E_STATE`, `D_POS`/`D_STATE`. On the socket at the
+room cap:
+
+```
+before   14.70 KB/s per client · 117.6 KB/s off the shard
+after    13.00 KB/s per client · 104.0 KB/s off the shard   (two clients: 10.49 → 8.82)
+```
+
+**1.70 KB/s recovered, and still 8% over the budget.** The estimate going in was ~3.0, and the
+shortfall is instructive: a wake node's *position* never moves, but its `hold` value changes every
+tick while anyone is pulling it, so `E_STATE` fires anyway and only the 6 position bytes are saved.
+Dummies are the same once they start taking damage. The saving is real and it is half what a static
+reading of the encoder suggested.
+
+`probe` 13/13 and `probe:wake` 14/14 confirm the nodes and dummies the delta touches still behave.
+
+**Where the remaining bytes are — not yet established.** 433 bytes a snapshot after the delta. Seven
+moving remotes account for ~126 of it and the headers ~25. The rest is unattributed: the `local`
+authoritative block is written as `f64` per field and goes out at 15 Hz, which is the obvious
+suspect, but converting it to `f32` would blunt the exact state the reconciliation trace compares
+against and that trade wants measuring rather than assuming. An attempt to instrument the encoder
+section-by-section this session produced zeros and was abandoned rather than trusted.
+
 **Where the bytes are, for whoever picks this up.** All snapshots, 489 B each at 8 players. The
 per-player delta is already tight (~18 B for a moving remote, so ~126 B for seven). The wake nodes
 are 5 × 15 B = 75 B **every snapshot with no delta at all** — the encoder comments them
