@@ -163,7 +163,7 @@ async function main(): Promise<void> {
      */
     const clash = await pg.evaluate(() => {
       const pads = [...document.querySelectorAll<HTMLElement>("#hud .tc .tc-b")].map((b) => ({ id: b.dataset.b ?? "", r: b.getBoundingClientRect() }));
-      const panels = [...document.querySelectorAll<HTMLElement>("#hud > *:not(.tc):not(.scan):not(.xh)")].flatMap((el) => {
+      const panels = [...document.querySelectorAll<HTMLElement>("#hud > *:not(.touch):not(.scan):not(.xh)")].flatMap((el) => {
         const r0 = el.getBoundingClientRect();
         // full-screen effect layers (the glitch tear, the EMP flash, the scanlines) cover the whole
         // viewport by design and cannot be "under" anything in a way a thumb cares about
@@ -236,7 +236,7 @@ async function main(): Promise<void> {
       r.calls < 180 && r.post,
       `${r.calls} draw calls · ${(r.triangles / 1000).toFixed(0)}k triangles · internal scale ${r.internalScale}`,
     );
-    await shotCheck(pg, "stage32-mobile.png", ".tc");
+    await shotCheck(pg, "stage32-mobile.png", "#hud .touch");
     results.layout = layout;
     results.render = r;
 

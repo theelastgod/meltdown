@@ -346,31 +346,31 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
    indicator will happily sit on top of a fire button, and the two thumbs own the bottom corners.
    The controls are the only part of the HUD that takes pointer events. */
 #hud.touch { font-size: 10px; }
-#hud .tc { position: absolute; inset: 0; pointer-events: none; }
-#hud .tc .tc-ring, #hud .tc .tc-knob { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); opacity: 0; transition: opacity 90ms linear; pointer-events: none; }
-#hud .tc .tc-ring { width: 92px; height: 92px; border: 1px solid var(--cy); box-shadow: 0 0 8px rgba(53,242,255,0.25), inset 0 0 12px rgba(53,242,255,0.08); }
-#hud .tc .tc-knob { width: 38px; height: 38px; background: rgba(53,242,255,0.14); border: 1px solid var(--cy); box-shadow: 0 0 6px rgba(53,242,255,0.4); }
-#hud .tc.stick-on .tc-ring, #hud .tc.stick-on .tc-knob { opacity: 0.85; }
+#hud .touch { position: absolute; inset: 0; pointer-events: none; }
+#hud .touch .tc-ring, #hud .touch .tc-knob { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); opacity: 0; transition: opacity 90ms linear; pointer-events: none; }
+#hud .touch .tc-ring { width: 92px; height: 92px; border: 1px solid var(--cy); box-shadow: 0 0 8px rgba(53,242,255,0.25), inset 0 0 12px rgba(53,242,255,0.08); }
+#hud .touch .tc-knob { width: 38px; height: 38px; background: rgba(53,242,255,0.14); border: 1px solid var(--cy); box-shadow: 0 0 6px rgba(53,242,255,0.4); }
+#hud .touch.stick-on .tc-ring, #hud .touch.stick-on .tc-knob { opacity: 0.85; }
 
-#hud .tc .tc-b {
+#hud .touch .tc-b {
   position: absolute; pointer-events: auto; -webkit-tap-highlight-color: transparent; touch-action: none;
   font-family: var(--mono); font-size: 9px; font-weight: bold; letter-spacing: 0.06em;
   color: var(--cy); background: rgba(3,5,9,0.5); border: 1px solid var(--cy); border-radius: 50%;
   text-shadow: 0 0 4px rgba(53,242,255,0.5); box-shadow: 0 0 8px rgba(53,242,255,0.12);
   display: grid; place-items: center; padding: 0;
 }
-#hud .tc .tc-b.on { background: rgba(53,242,255,0.22); box-shadow: 0 0 12px rgba(53,242,255,0.5); }
+#hud .touch .tc-b.on { background: rgba(53,242,255,0.22); box-shadow: 0 0 12px rgba(53,242,255,0.5); }
 /* Two arcs around where the right thumb pivots, at the bottom-right corner. The held buttons —
    fire and alt — take the inner arc because a thumb rests there; the tapped ones take the outer.
    The gaps are deliberate: probe:mobile fails the layout if any two boxes touch, because two
    controls a thumb can hit at once is a control the player does not have. */
-#hud .tc .tc-fire   { right: calc(16px + env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); width: 82px; height: 82px; font-size: 11px; }
-#hud .tc .tc-alt    { right: calc(106px + env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); width: 56px; height: 56px; }
-#hud .tc .tc-jump   { right: calc(16px + env(safe-area-inset-right)); bottom: calc(106px + env(safe-area-inset-bottom)); width: 56px; height: 56px; }
-#hud .tc .tc-crouch { right: calc(106px + env(safe-area-inset-right)); bottom: calc(82px + env(safe-area-inset-bottom)); width: 52px; height: 52px; }
-#hud .tc .tc-reload { right: calc(170px + env(safe-area-inset-right)); bottom: calc(30px + env(safe-area-inset-bottom)); width: 48px; height: 48px; }
-#hud .tc .tc-nade   { right: calc(84px + env(safe-area-inset-right)); bottom: calc(148px + env(safe-area-inset-bottom)); width: 46px; height: 46px; }
-#hud .tc .tc-slot   { left: calc(14px + env(safe-area-inset-left)); bottom: calc(16px + env(safe-area-inset-bottom)); width: 48px; height: 48px; }
+#hud .touch .tc-fire   { right: calc(16px + env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); width: 82px; height: 82px; font-size: 11px; }
+#hud .touch .tc-alt    { right: calc(106px + env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); width: 56px; height: 56px; }
+#hud .touch .tc-jump   { right: calc(16px + env(safe-area-inset-right)); bottom: calc(106px + env(safe-area-inset-bottom)); width: 56px; height: 56px; }
+#hud .touch .tc-crouch { right: calc(106px + env(safe-area-inset-right)); bottom: calc(82px + env(safe-area-inset-bottom)); width: 52px; height: 52px; }
+#hud .touch .tc-reload { right: calc(170px + env(safe-area-inset-right)); bottom: calc(30px + env(safe-area-inset-bottom)); width: 48px; height: 48px; }
+#hud .touch .tc-nade   { right: calc(84px + env(safe-area-inset-right)); bottom: calc(148px + env(safe-area-inset-bottom)); width: 46px; height: 46px; }
+#hud .touch .tc-slot   { left: calc(14px + env(safe-area-inset-left)); bottom: calc(16px + env(safe-area-inset-bottom)); width: 48px; height: 48px; }
 
 /* The terminal chrome was drawn for a 1080-tall desktop. On a phone the panels have to give up
    width and the ones that are reference rather than moment-to-moment move out of the thumbs' way. */

@@ -86,7 +86,9 @@ export class TouchControls {
 
   constructor(host: HTMLElement) {
     this.root = document.createElement("div");
-    this.root.className = "tc";
+    // Not "tc": the campaign terminal already owns `.tc` for its choice list, inside the same #hud
+    // subtree, and `#hud .tc { position: absolute; inset: 0 }` was landing on it too (Stage 33).
+    this.root.className = "touch";
     this.root.innerHTML = `
       <div class="tc-stick"><i class="tc-ring"></i><i class="tc-knob"></i></div>
       <div class="tc-pads">
