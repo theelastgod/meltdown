@@ -15,6 +15,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 import { levelById } from "../shared/sim/level";
 import { buildNav, findPath } from "../shared/sim/nav";
@@ -78,6 +79,12 @@ async function main(): Promise<void> {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
   };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
+  };
   const host = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "server/node-host.ts", String(HOST_PORT)], { stdio: ["ignore", "pipe", "pipe"] });
   await waitFor(host, /listening/, "node host");
   const vite = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", String(VITE_PORT), "--strictPort"], { stdio: ["ignore", "pipe", "pipe"] });
@@ -118,7 +125,7 @@ async function main(): Promise<void> {
     await pg.evaluate(() => window.__game.toggleFile(true));
     await pg.waitForTimeout(300);
     const f0 = await pg.evaluate(() => ({ eg: window.__game.endgame(), text: (document.querySelector("#hud .file .eg") as HTMLElement)?.textContent ?? "" }));
-    await pg.screenshot({ path: `${OUT}/stage11-file.png` });
+    await shotCheck(pg, `stage11-file.png`);
     const fRec = await file(acct);
     const prog = f0.eg.contracts.map((c) => ({ id: c.id, progress: c.progress, expect: Math.min(c.need, Math.max(0, (fRec.counters[c.counter] ?? 0) - 0)) }));
     check("the FILE panel shows the day's contracts with progress as the counter delta since the day began, the Audit, Rewrite and the Wakelight shop", /DAILY CONTRACTS/.test(f0.text) && /AUDIT/.test(f0.text) && /REWRITE/.test(f0.text) && /WAKELIGHT SHOP/.test(f0.text) && f0.eg.audit?.id === au.id && prog.every((p) => p.progress === 0), `contracts ${prog.map((p) => `${p.id}:${p.progress}`).join(" ")} · audit ${f0.eg.audit?.name}`);
@@ -193,7 +200,7 @@ async function main(): Promise<void> {
     await a.keyboard.press("KeyM");
     await a.waitForTimeout(400);
     const mapText = await a.evaluate(() => (document.querySelector("#hud .travel .season") as HTMLElement)?.textContent ?? "");
-    await a.screenshot({ path: `${OUT}/stage11-deepwake.png` });
+    await shotCheck(a, `stage11-deepwake.png`);
     check("the MAP tab shows the Deep Wake: the season, who holds each node, the pressure leader and the last lines", /DEEP WAKE · SEASON/.test(mapText) && /LEASE ROW/.test(mapText) && /CEL/.test(mapText), mapText.slice(0, 160));
     await a.close();
     await b.close();
@@ -215,7 +222,7 @@ async function main(): Promise<void> {
     await rw.evaluate(() => window.__game.toggleFile(true));
     await rw.waitForTimeout(400);
     const themed = await rw.evaluate(() => ({ cy: getComputedStyle(document.getElementById("hud")!).getPropertyValue("--cy").trim(), eg: window.__game.endgame() }));
-    await rw.screenshot({ path: `${OUT}/stage11-theme.png` });
+    await shotCheck(rw, `stage11-theme.png`);
     check("Wakelight buys a CRT theme and the HUD wears it (the palette variables change); never a stat", buy.ok && wear.ok && themed.eg.theme === "theme_amber" && themed.cy === "#ffd27a" && themed.eg.cosmetics.includes("theme_amber"), `--cy ${themed.cy} · theme ${themed.eg.theme} · wakelight ${themed.eg.wakelight}`);
     const slot3 = await rw.evaluate(() => window.__game.cosmetic({ op: "buy", id: "preset_3" }));
     const slot2 = await rw.evaluate(() => window.__game.cosmetic({ op: "buy", id: "preset_2" }));

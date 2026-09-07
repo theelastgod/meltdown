@@ -13,7 +13,8 @@
  */
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import { levelById } from "../shared/sim/level";
 import { CITY_HALF } from "../shared/sim/city";
 import { buildNav, findPath, reachableFrom } from "../shared/sim/nav";
@@ -52,6 +53,12 @@ async function main(): Promise<void> {
   const check = (name: string, pass: boolean, detail: string) => {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
+  };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
   };
   const ref = JSON.parse(readFileSync("docs/proof/stage3/reference-stats.json", "utf8")) as LookStats;
   const fmt = (s: LookStats) => `luma ${s.meanLuma.toFixed(3)} dark ${(s.darkFrac * 100).toFixed(0)}% neon ${(s.neonFrac * 100).toFixed(1)}% cy ${(s.hue.cyan * 100).toFixed(0)}% mg ${(s.hue.magenta * 100).toFixed(0)}%`;
@@ -95,7 +102,7 @@ async function main(): Promise<void> {
     // --- the city moves while the sim stands still: crowd, tram, ads, airship advance on render time ---
     const capture = async (name: string) => {
       await page.waitForTimeout(250);
-      const png = await page.screenshot({ path: `${OUT}/stage9b-${name}.png` });
+      const png = await shotCheck(page, `stage9b-${name}.png`);
       const s = await statsOf(png);
       console.log(`shot ${name}: ${fmt(s)}`);
       return s;
@@ -111,11 +118,21 @@ async function main(): Promise<void> {
     const moved = a0.life.sample.map((p, i) => Math.hypot(p.x - a1.life.sample[i]!.x, p.z - a1.life.sample[i]!.z));
     const meanMove = moved.reduce((a, b) => a + b, 0) / moved.length;
     const secs = (a1.now - a0.now) / 1000;
-    check("citizens walk the sidewalks (render time; the sim tick did not advance)", meanMove > 0.8 * secs && meanMove < 3 * secs && a1.tick === a0.tick, `mean ${meanMove.toFixed(2)} m over ${secs.toFixed(1)} s (${(meanMove / secs).toFixed(2)} m/s) · tick ${a0.tick} → ${a1.tick}`);
-    check("the monorail car advances along its beam", Math.abs((a1.life.tram ?? 0) - (a0.life.tram ?? 0)) > 10 * secs * 0.8, `car ${a0.life.tram?.toFixed(1)} → ${a1.life.tram?.toFixed(1)} m in ${secs.toFixed(1)} s`);
+    // Measure against the city's own clock, not the wall. The city only advances on a drawn frame,
+    // so at 3 fps under SwiftShader up to a third of a second of walking is still in the future when
+    // the wall stopwatch is read — enough to turn a 0.9 m/s walk into a 0.77 m/s reading and fail a
+    // 0.8 m/s floor. Dividing by city time gives the same number at 3 fps as at 120 (Stage 33).
+    const citySecs = a1.life.clock - a0.life.clock;
+    check("citizens walk the sidewalks (render time; the sim tick did not advance)", meanMove > 0.8 * citySecs && meanMove < 3 * citySecs && a1.tick === a0.tick, `mean ${meanMove.toFixed(2)} m over ${citySecs.toFixed(1)} s of city time (${(meanMove / citySecs).toFixed(2)} m/s) · wall ${secs.toFixed(1)} s · tick ${a0.tick} → ${a1.tick}`);
+    check("the monorail car advances along its beam", Math.abs((a1.life.tram ?? 0) - (a0.life.tram ?? 0)) > 10 * citySecs * 0.8, `car ${a0.life.tram?.toFixed(1)} → ${a1.life.tram?.toFixed(1)} m in ${citySecs.toFixed(1)} s of city time`);
     const frames = a1.frames - a0.frames;
     const redraws = a1.life.adRedraws - a0.life.adRedraws;
-    check("ad tickers redraw at 12 Hz (every drawn frame when frames are slower) and the airship drifts", redraws >= Math.min(8 * secs, frames - 1) && Math.hypot(a1.life.ship.x - a0.life.ship.x, a1.life.ship.z - a0.life.ship.z) > 0.3, `${redraws} redraws over ${frames} drawn frames in ${secs.toFixed(1)} s · airship moved ${Math.hypot(a1.life.ship.x - a0.life.ship.x, a1.life.ship.z - a0.life.ship.z).toFixed(1)} m`);
+    // A 12 Hz throttle cannot redraw more often than frames are drawn, so the claim is "12 Hz, or
+    // every frame, whichever is rarer". The two counters are read one evaluate apart, so allow the
+    // boundary frame either way rather than demanding they line up exactly.
+    const wantRedraws = Math.min(12 * citySecs, frames) - 2;
+    const shipDrift = Math.hypot(a1.life.ship.x - a0.life.ship.x, a1.life.ship.z - a0.life.ship.z);
+    check("ad tickers redraw at 12 Hz (every drawn frame when frames are slower) and the airship drifts", redraws >= wantRedraws && shipDrift > 0.3, `${redraws} redraws over ${frames} drawn frames in ${citySecs.toFixed(1)} s of city time (wanted ≥ ${wantRedraws.toFixed(1)}) · airship moved ${shipDrift.toFixed(1)} m`);
     // citizens stay on the sidewalks: every sampled position lies on a walk loop's edge band
     const onWalk = a1.life.sample.every((p) => (L.walks ?? []).some((w) => (Math.abs(p.x - w.x0) < 1.2 || Math.abs(p.x - w.x1) < 1.2) && p.z > w.z0 - 1.2 && p.z < w.z1 + 1.2) || (L.walks ?? []).some((w) => (Math.abs(p.z - w.z0) < 1.2 || Math.abs(p.z - w.z1) < 1.2) && p.x > w.x0 - 1.2 && p.x < w.x1 + 1.2));
     check("citizens keep to the sidewalk loops (never in the road, never in the sim)", onWalk, a1.life.sample.map((p) => `(${p.x.toFixed(0)},${p.z.toFixed(0)})`).join(" "));
@@ -151,21 +168,29 @@ async function main(): Promise<void> {
       if ((await page.evaluate(() => window.__game.botStatus()))?.done) break;
     }
     const tramBefore = await page.evaluate(() => window.__game.state().audio["tram"] ?? 0);
-    const primed = await page.evaluate(() => {
+    // Drive the car across the earshot radius on the tram's own clock and read the latch in the same
+    // evaluate, with no frame in between.
+    //
+    // The old version primed the car to 41.5 m — outside the 40 m radius the code actually uses —
+    // and then waited 700 ms of wall time for real frames to carry it in. That works at 60 fps and
+    // is a coin toss at 3, where one frame moves the car six metres and it can be through the band
+    // and receding by the time the check reads `near`. It also never tested what it claimed: a `+1`
+    // after a wait says the whoosh fired, not that it fired *once on the rising edge*. This steps
+    // the crossing itself and asserts the latch: true on the step that enters, false on the next
+    // step while still inside (Stage 33).
+    const edge = await page.evaluate(() => {
       const g = window.__game.game;
       const tram = g.renderer.life.tram!;
       const eye = { x: g.player.pos.x, y: g.player.pos.y + 1.6, z: g.player.pos.z };
-      // step the line forward until a car is far, then until it is just outside earshot (a frame later it is inside: the rising edge)
       let steps = 0;
-      while (tram.distanceTo(eye) < 60 && steps++ < 4000) tram.update(0.05, eye as never);
-      while (tram.distanceTo(eye) > 41.5 && steps++ < 8000) tram.update(0.05, eye as never);
-      return { steps, dist: tram.distanceTo(eye), near: tram.near };
+      while (tram.distanceTo(eye) < 60 && steps++ < 4000) tram.update(0.05, eye as never); // get a car well clear
+      while (tram.distanceTo(eye) >= 40 && steps++ < 8000) tram.update(0.02, eye as never); // creep in to the radius
+      const enter = { passing: tram.passing, near: tram.near, dist: tram.distanceTo(eye) };
+      tram.update(0.02, eye as never);
+      return { steps, enter, thenPassing: tram.passing, thenNear: tram.near };
     });
-    await page.waitForTimeout(700);
-    const tramShot = await capture("monorail");
-    const tramAfter = await page.evaluate(() => ({ audio: window.__game.state().audio["tram"] ?? 0, life: window.__game.state().life }));
-    check("the monorail passes overhead and the whoosh fires once on the rising edge of earshot", tramAfter.audio === tramBefore + 1 && tramAfter.life.tramNear, `primed at ${primed.dist.toFixed(1)} m (${primed.steps} steps) · tram cues ${tramBefore} → ${tramAfter.audio} · now ${tramAfter.life.tramDist.toFixed(1)} m`);
-    void tramShot;
+    check("the monorail's whoosh latches once on the rising edge of earshot, not every frame it is near", edge.enter.passing && edge.enter.near && !edge.thenPassing && edge.thenNear && tramBefore >= 1, `entered at ${edge.enter.dist.toFixed(1)} m (${edge.steps} steps): passing ${edge.enter.passing} · next step still near ${edge.thenNear}, passing ${edge.thenPassing} · whoosh cues in real play ${tramBefore}`);
+    await capture("monorail");
 
     // --- the soundscape: sirens and PA lines on the sim clock, the PA copy lands in the HUD log ---
     const cue0 = await page.evaluate(() => ({ audio: { ...window.__game.state().audio }, pa: window.__game.state().life.pa.length }));

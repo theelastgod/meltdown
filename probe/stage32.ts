@@ -12,6 +12,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, devices, type Page } from "playwright";
+import { shot } from "./shot";
 
 const VITE_PORT = 5212;
 const OUT = "probe/out";
@@ -98,6 +99,12 @@ async function main(): Promise<void> {
   const check = (name: string, pass: boolean, detail: string) => {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
+  };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
   };
   const vite = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", String(VITE_PORT), "--strictPort"], { stdio: ["ignore", "pipe", "pipe"] });
   await waitFor(vite, /127\.0\.0\.1/, "vite");
@@ -229,7 +236,7 @@ async function main(): Promise<void> {
       r.calls < 180 && r.post,
       `${r.calls} draw calls · ${(r.triangles / 1000).toFixed(0)}k triangles · internal scale ${r.internalScale}`,
     );
-    await pg.screenshot({ path: `${OUT}/stage32-mobile.png` });
+    await shotCheck(pg, "stage32-mobile.png", ".tc");
     results.layout = layout;
     results.render = r;
 

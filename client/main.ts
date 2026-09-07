@@ -55,7 +55,7 @@ export interface GameHook {
     debtTargetId: number;
     /** the Deadletter Office: renovation pieces built, trophies on the wall, the range ghost */
     hub: { renovations: number; trophies: number; ghost: { recording: boolean; playing: boolean; best: number | null; runs: number; last: number; pose: { x: number; z: number } | null }; fileLoaded: boolean } | null;
-    life: { crowd: number; sample: { x: number; z: number }[]; tram: number | null; tramNear: boolean; tramDist: number; pa: string[]; steam: boolean; ads: number; adRedraws: number; ship: { x: number; y: number; z: number }; blinkers: number; flicker: boolean };
+    life: { clock: number; crowd: number; sample: { x: number; z: number }[]; tram: number | null; tramNear: boolean; tramDist: number; pa: string[]; steam: boolean; ads: number; adRedraws: number; ship: { x: number; y: number; z: number }; blinkers: number; flicker: boolean };
   };
   /** Ghostfile view: account, Depth/XP/Scrip, loadout legality, ledger. */
   file: () => FileView;
@@ -206,7 +206,7 @@ window.__game = {
     life: (() => {
       const L = game.renderer.life;
       const eye = { x: game.player.pos.x, y: game.player.pos.y + 1.6, z: game.player.pos.z };
-      return { crowd: L.crowd?.count ?? 0, sample: L.crowd?.sample(8) ?? [], tram: L.tram ? L.tram.position : null, tramNear: !!L.tram?.near, tramDist: L.tram ? L.tram.distanceTo(eye) : Infinity, pa: game.cityLog.slice(), steam: !!L.steam, ads: L.ads?.group.children.length ?? 0, adRedraws: L.ads?.redraws ?? 0, ship: L.sky.shipPos, blinkers: L.sky.blinkers, flicker: !!game.renderer.signFlicker };
+      return { clock: L.clock, crowd: L.crowd?.count ?? 0, sample: L.crowd?.sample(8) ?? [], tram: L.tram ? L.tram.position : null, tramNear: !!L.tram?.near, tramDist: L.tram ? L.tram.distanceTo(eye) : Infinity, pa: game.cityLog.slice(), steam: !!L.steam, ads: L.ads?.group.children.length ?? 0, adRedraws: L.ads?.redraws ?? 0, ship: L.sky.shipPos, blinkers: L.sky.blinkers, flicker: !!game.renderer.signFlicker };
     })(),
   }),
   file: () => game.file.view(),

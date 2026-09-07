@@ -19,6 +19,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 import { levelById } from "../shared/sim/level";
 import { buildNav, findPath } from "../shared/sim/nav";
@@ -66,6 +67,12 @@ async function main(): Promise<void> {
   const check = (name: string, pass: boolean, detail: string) => {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
+  };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
   };
   const host = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "server/node-host.ts", String(HOST_PORT)], { stdio: ["ignore", "pipe", "pipe"] });
   await waitFor(host, /listening/, "node host");
@@ -161,7 +168,7 @@ async function main(): Promise<void> {
     const c1 = await hub.evaluate(() => window.__game.campaign());
     const f1 = await file(acct);
     check("picking a house at the terminal writes it to the file on the ledger host and the desk lists the arc, the fixers and the gigs", c1.faction === "cells" && f1.campaign?.faction === "cells" && c1.offers.includes("g_escrow_row") && c1.next === "m1_wake_unlisted" && c1.threat === 0, `script ${seen.join(" → ")} · faction ${c1.faction} · offers [${c1.offers.join(", ")}] · threat ${c1.threat}`);
-    await hub.screenshot({ path: `${OUT}/stage10-contracts.png` });
+    await shotCheck(hub, `stage10-contracts.png`);
     const launch = await hub.evaluate(() => window.__game.launch("m1_wake_unlisted"));
     await hub.waitForFunction(() => new URLSearchParams(location.search).get("mission") === "m1_wake_unlisted" && window.__game?.ready === true && window.__game.campaign().mode === "mission", null, { timeout: 40000, polling: 100 });
     await hub.evaluate(() => window.__game.resumeAudio());
@@ -169,7 +176,7 @@ async function main(): Promise<void> {
     const m0 = await hub.evaluate(() => ({ c: window.__game.campaign(), level: window.__game.state().level, wake: window.__game.state().wake, wasps: window.__game.game.world.wasps.length }));
     check("launching a contract travels to its district with the wake off and its VANTAGE presence placed; the first objective is the street", launch.ok && m0.level === "lease_row" && m0.wake === null && m0.c.mission?.title === "WAKE UNLISTED" && m0.c.mission.objective === "READ THE STREET" && m0.wasps >= 2 && m0.c.dialogue?.script === "m1_intro", `level ${m0.level} · wake ${m0.wake ? "on" : "off"} · ${m0.wasps} wasps · objective "${m0.c.mission?.objective}" · dialogue ${m0.c.dialogue?.script}`);
     await hub.waitForTimeout(600);
-    await hub.screenshot({ path: `${OUT}/stage10-terminal.png` });
+    await shotCheck(hub, `stage10-terminal.png`);
     await playTerminal(hub);
     await advance(hub, 2);
     const m1 = await hub.evaluate(() => window.__game.campaign().mission);
@@ -179,7 +186,7 @@ async function main(): Promise<void> {
     await advance(hub, 3);
     const m2 = await hub.evaluate(() => window.__game.campaign().mission);
     check("reaching B starts the hold: 20 s while the file decrypts", m2?.kind === "survive" && m2.need === 20, `objective "${m2?.objective}" (${m2?.kind}) ${m2?.progress}/${m2?.need}`);
-    await hub.screenshot({ path: `${OUT}/stage10-mission.png` });
+    await shotCheck(hub, `stage10-mission.png`);
     // hold at B: 21 s of sim; a wave lands halfway
     const waspsBefore = await hub.evaluate(() => window.__game.game.world.wasps.length);
     await hub.evaluate((b) => window.__game.setBot([{ kind: "goto", x: b.x, z: b.z, sprint: false, radius: 0.8, timeoutTicks: 60, stop: true }, { kind: "hold", ticks: 60 * 22 }]), B);
@@ -204,7 +211,7 @@ async function main(): Promise<void> {
     const done = await hub.evaluate(() => ({ c: window.__game.campaign(), card: !(document.querySelector("#hud .card") as HTMLElement).hidden, cardTitle: document.querySelector("#hud .card .ct")?.textContent ?? "", audio: window.__game.state().audio }));
     const f2 = await file(acct);
     check("out through the plaza: the contract closes, the card prints, and the ledger host settles it — testimony, Scrip, XP, Threat", done.c.mission?.status === "complete" && done.c.completion?.ok === true && done.card && /CONTRACT CLOSED/.test(done.cardTitle) && f2.campaign?.missionsDone.includes("m1_wake_unlisted") === true && f2.campaign.testimony["m1:lease"] === "burn" && f2.wallet.scrip === 300 && done.c.missionsDone.includes("m1_wake_unlisted"), `status ${done.c.mission?.status} · settled ${done.c.completion?.ok} · card "${done.cardTitle}" · file: missions [${f2.campaign?.missionsDone.join(",")}] testimony ${JSON.stringify(f2.campaign?.testimony)} scrip ${f2.wallet.scrip}`);
-    await hub.screenshot({ path: `${OUT}/stage10-closed.png` });
+    await shotCheck(hub, `stage10-closed.png`);
     await hub.close();
 
     // ---------------- Kernel Protocols + Threat in an explorable district ----------------
@@ -226,7 +233,7 @@ async function main(): Promise<void> {
       window.__game.advance(15);
     });
     await ex.waitForTimeout(500);
-    await ex.screenshot({ path: `${OUT}/stage10-filament.png` });
+    await shotCheck(ex, `stage10-filament.png`);
     await ex.close();
     // a NAMED file at high Threat: the PA calls it by name
     const named = "sandbox-cam";
@@ -361,7 +368,7 @@ async function main(): Promise<void> {
       window.__game.advance(15);
     });
     await wo.waitForTimeout(500);
-    await wo.screenshot({ path: `${OUT}/stage10-white.png` });
+    await shotCheck(wo, `stage10-white.png`);
     const w1 = await wo.evaluate(() => ({ c: window.__game.campaign(), wasps: window.__game.game.world.wasps.length, level: window.__game.state().level }));
     check("the white office: no guards, the desk is the objective, and the endings open follow the testimony", w1.level === "white_office" && w1.wasps === 0 && w1.c.mission?.kind === "reach" && w1.c.endingsOpen.join() === "wipe,chair", `wasps ${w1.wasps} · objective "${w1.c.mission?.objective}" · endings [${w1.c.endingsOpen.join(", ")}]`);
     const sp = await wo.evaluate(() => window.__game.state().pos);
@@ -374,7 +381,7 @@ async function main(): Promise<void> {
     await wo.waitForTimeout(800);
     const w3 = await wo.evaluate(() => ({ c: window.__game.campaign(), card: document.querySelector("#hud .card .ct")?.textContent ?? "", cardOpen: !(document.querySelector("#hud .card") as HTMLElement).hidden }));
     const fArc = await file(arc);
-    await wo.screenshot({ path: `${OUT}/stage10-ending.png` });
+    await shotCheck(wo, `stage10-ending.png`, "#hud .card");
     check("Wern's offer plays at the desk; the final input is a choice, the chair is taken, and the ending is written to the file", w2?.script === "m7_office" && seenW.length >= 3 && w3.c.ending === "chair" && w3.cardOpen && /TAKE THE CHAIR/.test(w3.card) && fArc.campaign?.ending === "chair" && fArc.campaign.missionsDone.length === 7, `dialogue ${seenW.join(" → ")} · ending ${w3.c.ending} · card "${w3.card}" · file ending ${fArc.campaign?.ending}, ${fArc.campaign?.missionsDone.length}/7`);
     await wo.close();
 

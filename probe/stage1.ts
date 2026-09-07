@@ -8,7 +8,8 @@
  */
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 
 const PORT = 5179;
@@ -54,6 +55,12 @@ async function main(): Promise<void> {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
   };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
+  };
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     const errors: string[] = [];
@@ -91,7 +98,7 @@ async function main(): Promise<void> {
         await page.evaluate((n) => window.__game.advance(n), 2);
         ticksRun += 2;
         await page.waitForTimeout(60);
-        await page.screenshot({ path: `${OUT}/stage1-action.png` });
+        await shotCheck(page, `stage1-action.png`);
         actionShot = true;
       }
       if (st?.done) break;
@@ -125,7 +132,7 @@ async function main(): Promise<void> {
 
     // --- Screenshot: bot on the deck, looking at the dummy ---
     await page.waitForTimeout(120);
-    await page.screenshot({ path: `${OUT}/stage1.png` });
+    await shotCheck(page, `stage1.png`);
 
     // --- 3. Real-time loop: fixed 60 Hz sim decoupled from render fps ---
     await page.setViewportSize({ width: 480, height: 270 });

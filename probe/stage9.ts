@@ -12,6 +12,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 import { levelById } from "../shared/sim/level";
 import { DISTRICT_SPECS } from "../shared/sim/city";
@@ -71,6 +72,12 @@ async function main(): Promise<void> {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
   };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
+  };
   const ref = JSON.parse(readFileSync("docs/proof/stage3/reference-stats.json", "utf8")) as LookStats;
   const fmt = (s: LookStats) => `luma ${s.meanLuma.toFixed(3)} dark ${(s.darkFrac * 100).toFixed(0)}% neon ${(s.neonFrac * 100).toFixed(1)}% cy ${(s.hue.cyan * 100).toFixed(0)}% mg ${(s.hue.magenta * 100).toFixed(0)}% ye ${(s.hue.yellow * 100).toFixed(0)}% red ${(s.hue.red * 100).toFixed(1)}%`;
 
@@ -100,7 +107,7 @@ async function main(): Promise<void> {
       const shots: Record<string, LookStats> = {};
       const capture = async (name: string) => {
         await page.waitForTimeout(300);
-        const png = await page.screenshot({ path: `${OUT}/stage9-${id}-${name}.png` });
+        const png = await shotCheck(page, `stage9-${id}-${name}.png`);
         const s = await statsOf(helper, png);
         shots[name] = s;
         console.log(`shot ${id}/${name}: ${fmt(s)}`);
@@ -202,7 +209,7 @@ async function main(): Promise<void> {
     await page.keyboard.press("KeyM");
     await page.waitForTimeout(300);
     const rows = await page.evaluate(() => [...document.querySelectorAll("#hud .travel .row")].map((r) => r.textContent?.trim() ?? ""));
-    await page.screenshot({ path: `${OUT}/stage9-map.png` });
+    await shotCheck(page, "stage9-map.png");
     check("MAP tab lists the range, the three districts of Neo-China and the Deadletter Office", rows.length === 5 && rows.some((r) => /LEASE ROW/.test(r)) && rows.some((r) => /DEADLETTER DOCKS/.test(r)) && rows.some((r) => /REPO DEPOT/.test(r)) && rows.some((r) => /DEADLETTER OFFICE/.test(r)), rows.join(" | "));
     check("no page errors across three districts", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     await page.close();
@@ -211,7 +218,7 @@ async function main(): Promise<void> {
     const room = `city?ai=0&level=deadletter_docks`;
     const open = async (name: string, level: string): Promise<Page> => {
       const pg = await browser.newPage({ viewport: { width: 480, height: 270 } });
-      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?norender=1&level=${level}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&name=${name}`, { waitUntil: "load" });
+      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&level=${level}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&name=${name}`, { waitUntil: "load" });
       await pg.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true && !new URLSearchParams(location.search).has("token"), null, { timeout: 40000, polling: 100 });
       return pg;
     };
@@ -221,7 +228,7 @@ async function main(): Promise<void> {
     check("online: a room built with ?level= plays that district", stats.rooms["city"]?.level === "deadletter_docks" && sa.level === "deadletter_docks", `room level ${stats.rooms["city"]?.level} · ALPHA client level ${sa.level}`);
     // BRAVO arrives for Lease Row: the Welcome names the docks, so the client travels there and rejoins by token
     const b = await browser.newPage({ viewport: { width: 480, height: 270 } });
-    await b.goto(`http://127.0.0.1:${VITE_PORT}/?norender=1&level=lease_row&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&name=BRAVO`, { waitUntil: "load" });
+    await b.goto(`http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&level=lease_row&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&name=BRAVO`, { waitUntil: "load" });
     await b.waitForFunction(() => window.__game?.ready === true && new URLSearchParams(location.search).get("level") === "deadletter_docks" && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 });
     const sb = await b.evaluate(() => ({ level: window.__game.state().level, url: location.search, id: window.__game.net()!.playerId }));
     const stats2 = (await (await fetch(`http://127.0.0.1:${HOST_PORT}/stats`)).json()) as { rooms: Record<string, { level: string; players: number; connected: number }> };

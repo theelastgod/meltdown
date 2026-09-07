@@ -17,6 +17,7 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 import { certifyFirmwares } from "../shared/sim/ttk";
 
@@ -51,9 +52,17 @@ const ARGS = ["--no-proxy-server", "--use-angle=swiftshader", "--use-gl=angle", 
 async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });
   const checks: Check[] = [];
+  /** how long each page took to construct, kept in the proof so a slow box is visible, not a mystery */
+  const openMs: string[] = [];
   const check = (name: string, pass: boolean, detail: string) => {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
+  };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
   };
 
   // ---------------- lint + certification ----------------
@@ -74,9 +83,25 @@ async function main(): Promise<void> {
   try {
     const open = async (name: string, account: string, loadout: unknown, render = false): Promise<Page> => {
       const pg = await browser.newPage({ viewport: render ? { width: 1280, height: 720 } : { width: 480, height: 270 } });
+      const errs: string[] = [];
+      pg.on("pageerror", (e) => errs.push(String(e)));
+      pg.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
       const lo = loadout === undefined ? "" : `&loadout=${encodeURIComponent(JSON.stringify(loadout))}`;
-      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?${render ? "" : "norender=1&"}level=drainage_yard&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&name=${name}&account=${account}${lo}`, { waitUntil: "load" });
-      await pg.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 });
+      const t0 = Date.now();
+      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?crawl=0&${render ? "" : "norender=1&"}level=drainage_yard&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&name=${name}&account=${account}${lo}`, { waitUntil: "load" });
+      try {
+        // `__game.ready` is set the moment the hook is assigned, so this is not a wait on the game
+        // reaching some state — it is module execution plus `new Game()`, a startup cost that scales
+        // with how busy the box is and not with anything under test. It was capped at 30 s and a
+        // second rendered page under SwiftShader was measured at 19 s on a four-core runner, which
+        // is how this probe came to fail on CI while passing by hand. The cap is now generous on
+        // purpose; a page that never comes up hits it and says why.
+        await pg.waitForFunction(() => window.__game?.ready === true, null, { timeout: 120000, polling: 100 });
+      } catch (e) {
+        const diag = await pg.evaluate(() => ({ game: typeof window.__game, ready: window.__game?.ready })).catch((x) => String(x));
+        throw new Error(`${name} never became ready (${Date.now() - t0}ms, render=${render}): ${JSON.stringify(diag)} · page errors ${JSON.stringify(errs.slice(0, 4))}`, { cause: e });
+      }
+      openMs.push(`${name} ${((Date.now() - t0) / 1000).toFixed(1)}s${render ? " (rendered)" : ""}`);
       await pg.waitForFunction(() => { const n = window.__game.net(); return !!n && (n.status === "kicked" || n.status === "closed" || (n.status === "joined" && n.synced)); }, null, { timeout: 15000, polling: 100 });
       return pg;
     };
@@ -110,7 +135,7 @@ async function main(): Promise<void> {
     // FILE panel with the kit
     await a.evaluate(() => { window.__game.setBot([{ kind: "slot", slot: 1 }, { kind: "hold", ticks: 5 }]); window.__game.advance(10); window.__game.toggleFile(true); });
     await a.waitForTimeout(400);
-    await a.screenshot({ path: `${OUT}/stage7-file.png` });
+    await shotCheck(a, "stage7-file.png", "#hud .file");
     const kitText = await a.evaluate(() => document.querySelector("#hud .file .kit")?.textContent ?? "");
     check("file: the FILE panel shows mastery ranks, sockets and firmware", /MASTERY 30\/30/.test(kitText) && /THREE-COUNT/.test(kitText), kitText.replace(/\s+/g, " ").slice(0, 100));
     await a.evaluate(() => window.__game.toggleFile(false));
@@ -118,15 +143,19 @@ async function main(): Promise<void> {
     // ---------------- ledger shop ----------------
     const poor = await fetch(`http://127.0.0.1:${HOST_PORT}/file/fresh-poor/buy`, { method: "POST", body: JSON.stringify({ node: "slipfile" }) }).then((r) => r.json()) as { ok: boolean; reason?: string };
     check("shop: a fresh Blank cannot afford a node", !poor.ok && /Scrip/.test(poor.reason ?? ""), poor.reason ?? "bought?!");
+    // ALPHA has taken its screenshot and is only holding a room slot from here on. Two 1280x720
+    // SwiftShader contexts on the same box put RICH's readiness at 19 s against ALPHA's 0.9 s, and
+    // on a CI runner that crossed the wait and failed the probe. Shrink ALPHA while RICH lives.
+    await a.setViewportSize({ width: 480, height: 270 });
     const r = await open("RICH", "rich-r", base, true);
     await r.evaluate(() => window.__game.toggleGraph(true));
     await r.waitForTimeout(300);
-    await r.screenshot({ path: `${OUT}/stage7-graph-before.png` });
+    await shotCheck(r, "stage7-graph-before.png", "#hud .graph");
     const before = await r.evaluate(() => ({ owned: window.__game.file().owned.length, scrip: window.__game.file().scrip, leased: document.querySelectorAll("#hud .graph g.lease").length, own: document.querySelectorAll("#hud .graph g.own").length }));
     const bought = await r.evaluate(() => window.__game.buy("slipfile"));
     await r.waitForTimeout(300);
     const after = await r.evaluate(() => ({ owned: window.__game.file().owned, scrip: window.__game.file().scrip, own: document.querySelectorAll("#hud .graph g.own").length, green: document.querySelector("#hud .graph g.own[data-id=slipfile]") !== null }));
-    await r.screenshot({ path: `${OUT}/stage7-graph-after.png` });
+    await shotCheck(r, "stage7-graph-after.png", "#hud .graph");
     check("shop: a Depth-10 file with Scrip buys SLIPFILE and the hex turns green on the graph", bought.ok && after.owned.includes("slipfile") && after.scrip === before.scrip - 400 && after.green && after.own === before.own + 1, `owned ${before.owned}→${after.owned.length} · scrip ${before.scrip}→${after.scrip} · green hexes ${before.own}→${after.own}`);
     const deep = await r.evaluate(() => window.__game.buy("black_swan"));
     check("shop: ring III is gated on Depth (BLACK SWAN needs 30)", !deep.ok && /Depth/.test(deep.reason ?? ""), deep.reason ?? "bought?!");
@@ -177,7 +206,7 @@ async function main(): Promise<void> {
     await b.close();
     await fresh.close();
 
-    writeFileSync(`${OUT}/stage7.json`, JSON.stringify({ lint: head, certs, rejections: (await stats()).rooms["ledger"]!.loadoutRejections, checks }, null, 2));
+    writeFileSync(`${OUT}/stage7.json`, JSON.stringify({ lint: head, certs, pageStartup: openMs, rejections: (await stats()).rooms["ledger"]!.loadoutRejections, checks }, null, 2));
     const failed = checks.filter((c) => !c.pass);
     console.log(`\n${checks.length - failed.length}/${checks.length} checks passed.`);
     if (failed.length) process.exitCode = 1;

@@ -9,7 +9,8 @@
  */
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 import { ttkTable } from "../shared/sim/ttk";
 import { TTK_BAND } from "../shared/weapons/manifest";
@@ -47,6 +48,12 @@ async function main(): Promise<void> {
   const check = (name: string, pass: boolean, detail: string) => {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
+  };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
   };
 
   // ---- TTK table (pure simulation) ----
@@ -112,7 +119,7 @@ async function main(): Promise<void> {
     await page.evaluate((p) => window.__game.setBot(p), plan);
     const shotAt = async (name: string) => {
       await page.waitForTimeout(80);
-      await page.screenshot({ path: `${OUT}/stage4-${name}.png` });
+      await shotCheck(page, `stage4-${name}.png`);
       captures[name] = `${OUT}/stage4-${name}.png`;
     };
     let captured = new Set<string>();

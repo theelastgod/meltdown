@@ -13,6 +13,7 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 
 const VITE_PORT = 5189;
@@ -55,6 +56,12 @@ async function main(): Promise<void> {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
   };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
+  };
 
   // ---------------- fairness lint ----------------
   const clean = lint([]);
@@ -76,7 +83,7 @@ async function main(): Promise<void> {
     const open = async (name: string, account: string, loadout: unknown, render = false): Promise<Page> => {
       const pg = await browser.newPage({ viewport: render ? { width: 1280, height: 720 } : { width: 480, height: 270 } });
       const lo = loadout === undefined ? "" : `&loadout=${encodeURIComponent(JSON.stringify(loadout))}`;
-      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?${render ? "" : "norender=1&"}net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&level=drainage_yard&name=${name}&account=${account}${lo}`, { waitUntil: "load" });
+      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?crawl=0&${render ? "" : "norender=1&"}net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&level=drainage_yard&name=${name}&account=${account}${lo}`, { waitUntil: "load" });
       await pg.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 });
       await pg.waitForFunction(() => { const n = window.__game.net(); return !!n && (n.status === "kicked" || n.status === "closed" || (n.status === "joined" && n.synced)); }, null, { timeout: 15000, polling: 100 });
       return pg;
@@ -140,7 +147,7 @@ async function main(): Promise<void> {
     // FILE panel screenshot
     await a.evaluate(() => window.__game.toggleFile(true));
     await a.waitForTimeout(400);
-    await a.screenshot({ path: `${OUT}/stage6-file.png` });
+    await shotCheck(a, "stage6-file.png", "#hud .file");
     const panel = await a.evaluate(() => (document.querySelector("#hud .file .ft")?.textContent ?? "").trim());
     check("file: the FILE panel shows the NET DELTA stamp", /NET DELTA: [+−]\d+\.\d{3} — RECONCILED/.test(panel), panel.slice(0, 90));
     await a.close();

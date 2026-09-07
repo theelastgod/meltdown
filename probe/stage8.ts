@@ -19,6 +19,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 import { mechanicalLeaks, IDENTITY_KEYS } from "../shared/identity/identity";
 import { levelById } from "../shared/sim/level";
@@ -78,6 +79,12 @@ async function main(): Promise<void> {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
   };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
+  };
   const host = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "server/node-host.ts", String(HOST_PORT)], { stdio: ["ignore", "pipe", "pipe"] });
   await waitFor(host, /listening/, "node host");
   const vite = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", String(VITE_PORT), "--strictPort"], { stdio: ["ignore", "pipe", "pipe"] });
@@ -93,7 +100,7 @@ async function main(): Promise<void> {
       const pg = await browser.newPage({ viewport: render ?? { width: 320, height: 180 } });
       pg.on("pageerror", (e) => errors.push(`${name}: ${String(e)}`));
       pg.on("console", (m) => m.type() === "error" && errors.push(`${name}: ${m.text()}`));
-      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?${render ? "" : "norender=1&"}level=drainage_yard&account=${account}&secret=${SECRET}${extra}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=drainage_yard&name=${name}`, { waitUntil: "load" });
+      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?crawl=0&${render ? "" : "norender=1&"}level=drainage_yard&account=${account}&secret=${SECRET}${extra}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=drainage_yard&name=${name}`, { waitUntil: "load" });
       await pg.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 });
       await pg.evaluate(() => window.__game.resumeAudio());
       return pg;
@@ -174,15 +181,16 @@ async function main(): Promise<void> {
     // ---- the dossier: 1.2 s, both cells, identity only ----
     let flash: { open: boolean; entries: number; t: number } | null = null;
     const t0 = Date.now();
-    while (Date.now() - t0 < 50000) {
-      const r = await a.evaluate(() => window.__game.state().rituals);
-      if (r.dossierOpen) {
-        flash = { open: true, entries: r.dossierEntries, t: Date.now() - t0 };
-        await a.waitForTimeout(450); // let the reveal animation paint; the flash holds for 1.2 s
-        await a.screenshot({ path: `${OUT}/stage8-dossier.png` });
-        break;
-      }
-      await a.waitForTimeout(60);
+    // The flash holds for 1.2 s. This used to poll with an `evaluate` every 60 ms and then wait a
+    // further 450 ms before shooting, which spends most of that 1.2 s on round trips and a
+    // deliberate pause — on a slow box the card was gone before the shutter. Wait for it *inside*
+    // the page instead, where a poll costs nothing, and shoot as soon as the state is read back
+    // (Stage 33).
+    await a.waitForFunction(() => window.__game.state().rituals.dossierOpen === true, null, { timeout: 50000, polling: 30 }).catch(() => null);
+    const flashState = await a.evaluate(() => window.__game.state().rituals);
+    if (flashState.dossierOpen) {
+      flash = { open: true, entries: flashState.dossierEntries, t: Date.now() - t0 };
+      await shotCheck(a, "stage8-dossier.png", "#hud .dossier");
     }
     await a.waitForFunction(() => !window.__game.state().rituals.dossierOpen, null, { timeout: 8000, polling: 50 }).catch(() => null);
     const after = await a.evaluate(() => ({ r: window.__game.state().rituals, social: window.__game.state().social, audio: window.__game.state().audio }));
@@ -223,7 +231,7 @@ async function main(): Promise<void> {
       stamped = r.stamped;
       if (!stamped) await a.waitForTimeout(150);
     }
-    await a.screenshot({ path: `${OUT}/stage8-receipt.png` });
+    await shotCheck(a, "stage8-receipt.png", "#hud .receipt");
     const rec = await a.evaluate(() => ({ r: window.__game.state().rituals.receipt, audio: window.__game.state().audio }));
     const grew = printed.some((p, i) => i > 0 && p > printed[i - 1]!);
     const signed = await a.evaluate(() => window.__game.sign());
@@ -235,8 +243,10 @@ async function main(): Promise<void> {
     const socA = await a.evaluate(() => ({ social: window.__game.state().social, debt: window.__game.state().debtTargetId, id: window.__game.state().identity }));
     const owed = socA.social.find((m) => m.kind === "debt" && m.event === "owed");
     check("a Debt: the enemy who closed your file most is written to your file at settlement and flagged to you", sa.identity.debt === "BLANK" && sa.identity.debtTarget === ids.b && !!owed && owed.kind === "debt" && owed.id === ids.b && owed.kills >= 2 && socA.debt === ids.b && socA.id.debt?.display === "BLANK", `ALPHA owes ${sa.identity.debt} (${owed?.kind === "debt" ? owed.kills : "?"} files) · target #${sa.identity.debtTarget} · client target #${socA.debt}`);
+    // the rite card holds for a beat only, so wait for it in the page and shoot on the same breath
+    await c.waitForFunction(() => window.__game.state().rituals.riteOpen === true, null, { timeout: 15000, polling: 30 }).catch(() => null);
     const rite = await c.evaluate(() => ({ social: window.__game.state().social, r: window.__game.state().rituals, audio: window.__game.state().audio, id: window.__game.state().identity }));
-    await c.screenshot({ path: `${OUT}/stage8-rite.png` });
+    await shotCheck(c, "stage8-rite.png", "#hud .rite");
     const riteMsg = rite.social.find((m) => m.kind === "rite");
     check("Chapter I: a file crossing Depth 10 at settlement performs the LISTED rite (card, chord, glyph layer)", sc.file!.depth >= 10 && sc.identity.chapter === 1 && sc.identity.chapters.join() === "1" && riteMsg?.kind === "rite" && riteMsg.title === "LISTED" && (rite.audio["rite_1"] ?? 0) >= 1 && rite.id.chapter === 1 && rite.id.chapters.join() === "1", `CHARLIE depth ${sc.file!.depth} · chapter ${sc.identity.chapter} · rite "${riteMsg?.kind === "rite" ? riteMsg.title : ""}" · card ${rite.r.riteOpen ? "open" : "closed"} "${rite.r.riteTitle}" · rite cues ${rite.audio["rite"] ?? 0}`);
 
@@ -263,7 +273,7 @@ async function main(): Promise<void> {
       if (m && m.kind === "debt") cleared = { credit: m.credit, capped: m.capped };
     }
     await a.waitForTimeout(200);
-    await a.screenshot({ path: `${OUT}/stage8-debt.png` });
+    await shotCheck(a, "stage8-debt.png", "#hud .debt");
     const dc = await a.evaluate(() => ({ r: window.__game.state().rituals, audio: window.__game.state().audio, debt: window.__game.state().debtTargetId }));
     const sa2 = (await stats()).rooms[room]!.clients.find((x) => x.name === "ALPHA")!;
     check("DEBT CLEARED: killing the file you owe fires the banner and sting, credits +5 Wakelight once, and clears the Debt on the file", !!cleared && cleared.credit === 5 && !cleared.capped && /DEBT CLEARED/.test(dc.r.debtText) && (dc.audio["debtCleared"] ?? 0) >= 1 && dc.debt === -1 && sa2.identity.debt === null && sa2.identity.wakelight === 5, `${cleared ? `credit ${cleared.credit} capped ${cleared.capped}` : "not cleared"} · banner "${dc.r.debtText}" · file debt ${sa2.identity.debt} · wakelight ${sa2.identity.wakelight}`);
@@ -309,7 +319,7 @@ async function main(): Promise<void> {
       window.__game.advance(20);
     });
     await h.waitForTimeout(400);
-    await h.screenshot({ path: `${OUT}/stage8-office.png` });
+    await shotCheck(h, "stage8-office.png");
     const hub0 = await h.evaluate(() => ({ hub: window.__game.state().hub!, id: window.__game.state().identity, level: window.__game.state().level, zone: document.querySelector("#hud .status .dim")?.textContent ?? "", ledger: window.__game.file().ledger.length }));
     check("the Deadletter Office loads ALPHA's real file from the ledger host: renovated to Chapter III, the trophy wall cut from the ledger (matches, Debts, stamps)", hub0.level === HUB_LEVEL_ID && /DEADLETTER OFFICE/.test(hub0.zone) && hub0.hub.renovations === 6 && hub0.hub.trophies >= 3 && hub0.id.display === "ALPHA" && hub0.id.chapter === 3, `${hub0.hub.renovations} renovation pieces · ${hub0.hub.trophies} trophies · file ${hub0.id.display} ch${hub0.id.chapter} · ${hub0.ledger} ledger lines`);
     // the range: sprint the course once (a first run, no ghost yet)
@@ -347,7 +357,7 @@ async function main(): Promise<void> {
             window.__game.advance(3);
           });
           await h2.waitForTimeout(1200);
-          await h2.screenshot({ path: `${OUT}/stage8-ghost.png` });
+          await shotCheck(h2, "stage8-ghost.png");
           ghostShot = true;
           await h2.evaluate((plan) => window.__game.setBot(plan.slice(2)), run(false));
         }

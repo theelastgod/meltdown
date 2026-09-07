@@ -402,6 +402,17 @@ export class CityLife {
   readonly steam: Steam | null;
   readonly ads: HoloAds | null;
   readonly sky: Sky;
+  /**
+   * Seconds of city time elapsed — the sum of the wall deltas the city was actually stepped with.
+   *
+   * The city runs on wall time, but it only advances when a frame is drawn, so on a slow machine
+   * the crowd's speed measured against the wall is short by up to one frame. Probes that check
+   * "citizens walk at a human pace" divide by this instead and get the same answer at 3 fps as at
+   * 120 (Stage 33).
+   */
+  get clock(): number {
+    return this.time;
+  }
   private time = 0;
   constructor(level: LevelDef, skyline: THREE.Group) {
     this.crowd = level.walks?.length && level.pedestrians ? new Crowd(level.walks, level.pedestrians, (level.skylineSeed ?? 1) + 7) : null;

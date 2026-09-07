@@ -13,6 +13,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import { WebSocket as WsClient } from "ws";
 import { createPublicClient, createWalletClient, defineChain, http, parseEther, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -69,6 +70,12 @@ async function main(): Promise<void> {
   const check = (name: string, pass: boolean, detail: string) => {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
+  };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
   };
   const host = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "server/node-host.ts", String(HOST_PORT)], { stdio: ["ignore", "pipe", "pipe"] });
   await waitFor(host, /listening/, "node host");
@@ -130,7 +137,7 @@ async function main(): Promise<void> {
     const picked = await a.waitForFunction(() => (window.__game.run()?.carried ?? 0) > 0, null, { timeout: 40000, polling: 100 }).then(() => true, () => false);
     const v1 = await a.evaluate(() => window.__game.run()!);
     const st1 = (await stats()).rooms["run-yard"]!;
-    await a.screenshot({ path: `${OUT}/stage14-carry.png` });
+    await shotCheck(a, `stage14-carry.png`);
     check("walking over a claim carries it: the strip counts it, the room counts it, the claim leaves the street until it respawns", picked && v1.carried === target.value && st1.run?.carried["ALPHA"] === target.value && v1.claims.length === claims.length - 1 && st1.run.claims === claims.length - 1, `carried ${v1.carried} (claim ${target.value}) · room ${JSON.stringify(st1.run?.carried)} · claims out ${v1.claims.length}`);
 
     // ---- BRAVO kills ALPHA in the PvP zone: the claim drops where ALPHA fell ----
@@ -164,7 +171,7 @@ async function main(): Promise<void> {
     const stripSafe = await b.evaluate(() => (document.querySelector("#hud .runstrip") as HTMLElement).textContent ?? "");
     const safeClass = await b.evaluate(() => document.getElementById("hud")!.classList.contains("safe"));
     const banked = await b.waitForFunction(() => (window.__game.run()?.banked ?? 0) > 0, null, { timeout: 30000, polling: 100 }).then(() => true, () => false);
-    await b.screenshot({ path: `${OUT}/stage14-gate.png` });
+    await shotCheck(b, `stage14-gate.png`);
     const fb = await file("fresh-runb");
     check("BRAVO takes the drop, walks it into the gate (the strip says SAFE ZONE, the edge glows), stands the dwell and banks it — a Depth-1 file is paid in Scrip, not $CAPITAL", took && /SAFE ZONE|BANKING/.test(stripSafe) && safeClass && banked && fb.depth < RUN_DEPTH && fb.wallet.scrip - scrip0 === target.value * RUN_SCRIP_PER_UNIT && (fb.counter?.run?.owed ?? 0) === 0 && fb.ledger.some((l) => /BANKED .* SCRIP/.test(l)), `took ${took} · strip "${stripSafe.slice(0, 50)}" · scrip +${fb.wallet.scrip - scrip0} · owed ${fb.counter?.run?.owed ?? 0}`);
 
@@ -200,7 +207,7 @@ async function main(): Promise<void> {
     await a.evaluate(() => window.__game.toggleFile(true));
     await a.waitForTimeout(300);
     await a.evaluate(() => document.querySelector("#hud .file .cl")?.scrollIntoView());
-    await a.screenshot({ path: `${OUT}/stage14-ledger.png` });
+    await shotCheck(a, `stage14-ledger.png`);
     await a.evaluate(() => window.__game.toggleFile(false));
     check("a Depth-50 file with a linked wallet banks for $CAPITAL owed (today against the day's cap) and WITHDRAW pays it from the treasury to the wallet on chain", link.ok && bankedA && va.owed === target2.value && va.today === target2.value && (fa.counter?.run?.owed ?? 0) === target2.value && pay.ok && bal1 - bal0 === parseEther(String(target2.value)) && (fa2.counter?.run?.owed ?? -1) === 0 && fa2.counter?.run?.paid === target2.value, `owed ${va.owed} today ${va.today}/${va.cap} · payout ${pay.ok} ${pay.reason ?? ""} · wallet +${Number(bal1 - bal0) / 1e18} $CAPITAL · paid ${fa2.counter?.run?.paid}`);
 
@@ -289,7 +296,7 @@ async function main(): Promise<void> {
     await c.evaluate((plan) => window.__game.setBot(plan), goto({ x: claims[0]!.pos.x, z: claims[0]!.pos.z }, 0.9));
     await c.evaluate(() => window.__game.setRealtime(true));
     const offPick = await c.waitForFunction(() => (window.__game.run()?.carried ?? 0) > 0, null, { timeout: 40000, polling: 100 }).then(() => true, () => false);
-    await c.screenshot({ path: `${OUT}/stage14-offline.png` });
+    await shotCheck(c, `stage14-offline.png`);
     await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&menu=1&crawl=0&nonav=1&menuspeed=8&level=drainage_yard`, { waitUntil: "load" });
     await c.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "main", null, { timeout: 40000, polling: 50 });
     const entries = await c.evaluate(() => window.__game.menu()!.entries);

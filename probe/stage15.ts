@@ -13,6 +13,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import WebSocket from "ws";
 import { createPublicClient, defineChain, http, parseEther, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -62,6 +63,12 @@ async function main(): Promise<void> {
   const check = (name: string, pass: boolean, detail: string) => {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
+  };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
   };
   const host = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "server/node-host.ts", String(HOST_PORT)], { stdio: ["ignore", "pipe", "pipe"] });
   await waitFor(host, /listening/, "node host");
@@ -181,7 +188,7 @@ async function main(): Promise<void> {
     await a.evaluate(() => window.__game.toggleFile(true));
     await a.waitForTimeout(300);
     await a.evaluate(() => document.querySelector("#hud .file .cl")?.scrollIntoView());
-    await a.screenshot({ path: `${OUT}/stage15-prizes.png` });
+    await shotCheck(a, `stage15-prizes.png`);
     await a.evaluate(() => window.__game.toggleFile(false));
     await b.close();
 
@@ -212,7 +219,7 @@ async function main(): Promise<void> {
     const inGate = await k.waitForFunction(() => window.__game.run()?.inSafe === true, null, { timeout: 40000, polling: 100 }).then(() => true, () => false);
     await k.waitForTimeout(400);
     const strip = await k.evaluate(() => (document.querySelector("#hud .runstrip") as HTMLElement).textContent ?? "");
-    await k.screenshot({ path: `${OUT}/stage15-kiosk.png` });
+    await shotCheck(k, `stage15-kiosk.png`);
     await k.keyboard.press("Tab");
     await k.waitForTimeout(400);
     const opened = await k.evaluate(() => {

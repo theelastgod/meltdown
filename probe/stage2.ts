@@ -16,6 +16,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import WebSocket from "ws";
 import type { BotStep } from "../client/bot";
 import { encodeInputs, encodeJoin, Msg } from "../shared/net/protocol";
@@ -56,7 +57,7 @@ async function stats(): Promise<any> {
 async function openClient(browser: Awaited<ReturnType<typeof chromium.launch>>, room: string, name: string, seed: number): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: 480, height: 270 } });
   page.on("pageerror", (e) => console.log(`[${name}] pageerror`, String(e)));
-  const url = `http://127.0.0.1:${VITE_PORT}/?norender=1&net=ws://127.0.0.1:${HOST_PORT}/room/${room}?ai=0%26level=drainage_yard&level=drainage_yard&name=${name}&lat=${RTT / 2}&jitter=8&loss=${LOSS}&seed=${seed}`;
+  const url = `http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&net=ws://127.0.0.1:${HOST_PORT}/room/${room}?ai=0%26level=drainage_yard&level=drainage_yard&name=${name}&lat=${RTT / 2}&jitter=8&loss=${LOSS}&seed=${seed}`;
   await page.goto(url, { waitUntil: "load" });
   await page.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 });
   return page;
@@ -101,6 +102,12 @@ async function main(): Promise<void> {
   const check = (name: string, pass: boolean, detail: string) => {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
+  };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
   };
   try {
     // ---------------- engagement with lag compensation ----------------
@@ -182,8 +189,8 @@ async function main(): Promise<void> {
     await E.b.evaluate(() => window.__game.setDrawing(true));
     await E.a.evaluate((id) => window.__game.setBot([{ kind: "killPlayer", targetId: id, ticks: 600 }]), E.idB);
     await E.a.waitForTimeout(1200);
-    await E.a.screenshot({ path: `${OUT}/stage2-alpha.png` });
-    await E.b.screenshot({ path: `${OUT}/stage2-bravo.png` });
+    await shotCheck(E.a, `stage2-alpha.png`, "#hud .ammo");
+    await shotCheck(E.b, `stage2-bravo.png`, "#hud .ammo");
     await E.a.close();
     await E.b.close();
 
@@ -191,7 +198,7 @@ async function main(): Promise<void> {
     const room2 = "probe-nolagcomp";
     // the host reads ?lagcomp=0 on the room's first connection
     const a2 = await browser.newPage({ viewport: { width: 480, height: 270 } });
-    await a2.goto(`http://127.0.0.1:${VITE_PORT}/?norender=1&net=ws://127.0.0.1:${HOST_PORT}/room/${room2}?lagcomp=0%26ai=0%26level=drainage_yard&level=drainage_yard&name=ALPHA&lat=${RTT / 2}&jitter=8&loss=${LOSS}&seed=11`, { waitUntil: "load" });
+    await a2.goto(`http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&net=ws://127.0.0.1:${HOST_PORT}/room/${room2}?lagcomp=0%26ai=0%26level=drainage_yard&level=drainage_yard&name=ALPHA&lat=${RTT / 2}&jitter=8&loss=${LOSS}&seed=11`, { waitUntil: "load" });
     await a2.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 });
     const b2 = await openClient(browser, room2, "BRAVO", 23);
     await waitJoined(a2);

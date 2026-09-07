@@ -15,6 +15,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import { createPublicClient, defineChain, http, parseEther, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { ARTIFACTS } from "../server/chain/deploy";
@@ -77,6 +78,12 @@ async function main(): Promise<void> {
   const check = (name: string, pass: boolean, detail: string) => {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
+  };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
   };
   const host = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "server/node-host.ts", String(HOST_PORT)], { stdio: ["ignore", "pipe", "pipe"] });
   await waitFor(host, /listening/, "node host");
@@ -167,7 +174,7 @@ async function main(): Promise<void> {
     await a.evaluate(() => window.__game.toggleFile(true));
     await a.waitForTimeout(300);
     await a.evaluate(() => document.querySelector("#hud .file .cl")?.scrollIntoView());
-    await a.screenshot({ path: `${OUT}/stage11b-file.png` });
+    await shotCheck(a, `stage11b-file.png`);
     const panel1 = await a.evaluate(() => (document.querySelector("#hud .file .cl") as HTMLElement)?.textContent ?? "");
     const price = parseEther(String(rust.price));
     check("a market buy is the player's own signed transactions: the 2% burn lands on chain, the skin lands in the wallet, the host reconciles it onto the rig, the file wears it and the local viewmodel takes the tint", !!buy.ok && burned1 - burned0 === (price * 200n) / 10_000n && bal === 1n && !!v2.view?.rig.some((r) => r.token === 1) && Number(v2.view.capital) === LAUNCH_GRANT - rust.price && wear.ok && v3.view?.worn === 1 && v3.tint === SKINS[0]!.tint && /WORN/.test(panel1), `buy ${buy.ok} ${buy.reason ?? ""} · burned +${(burned1 - burned0).toString()} wei · 1155 balance ${bal} · rig [${v2.view?.rig.map((r) => r.id).join(", ")}] · worn ${v3.view?.worn} tint ${v3.tint}`);
@@ -186,7 +193,7 @@ async function main(): Promise<void> {
     const seenByB = await b.evaluate(() => window.__game.counter().remotes);
     const seenByA = await a.evaluate(() => window.__game.counter().remotes);
     const rawRemote = await b.evaluate(() => JSON.stringify((window.__game.net()?.remotes ?? [])[0] ?? {}));
-    await b.screenshot({ path: `${OUT}/stage11b-rig.png` });
+    await shotCheck(b, `stage11b-rig.png`);
     const alphaSeen = seenByB.find((r) => r.name === "ALPHA" || r.skin === 1);
     const bravoSeen = seenByA[0];
     check("in the next match the other client's snapshot carries the worn skin as a token id in the tag and nothing else of the purchase; the file that wears nothing keeps the four-segment tag", !!alphaSeen && alphaSeen.skin === 1 && /^[0-9a-z]+\.\d\.-?\d+\.\d\.1$/.test(alphaSeen.tag) && !!bravoSeen && bravoSeen.skin === 0 && bravoSeen.tag.split(".").length === 4 && !/rust|#d86a2a|wake|price/i.test(rawRemote), `BRAVO sees ${alphaSeen?.name} [${alphaSeen?.tag}] skin ${alphaSeen?.skin} · ALPHA sees [${bravoSeen?.tag}] · remote keys ${Object.keys(JSON.parse(rawRemote)).join(",")}`);
@@ -214,7 +221,7 @@ async function main(): Promise<void> {
     await a.evaluate(() => window.__game.toggleFile(true));
     await a.waitForTimeout(300);
     await a.evaluate(() => document.querySelector("#hud .file .cl")?.scrollIntoView());
-    await a.screenshot({ path: `${OUT}/stage11b-name.png` });
+    await shotCheck(a, `stage11b-name.png`);
     await a.evaluate(() => window.__game.toggleFile(false));
     check("at Depth 50 the file writes its name: a game voucher, the player's own transaction, the fee burned by length (11 characters → 250 $CAPITAL), soulbound", named.ok && nameOnChain === "THE_AUDITOR" && burned3 - burned2 === parseEther(String(nameFee(11))) && v4.view?.name === "THE_AUDITOR", `name ${nameOnChain} · burned +${Number(burned3 - burned2) / 1e18} $CAPITAL · ${named.reason ?? ""}`);
     const fresh = await file("fresh-cl");

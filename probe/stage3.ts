@@ -10,6 +10,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 import { computeLookStatsSource, type LookStats } from "./look-metrics";
 
@@ -70,6 +71,12 @@ async function main(): Promise<void> {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
   };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
+  };
   const fmt = (s: LookStats) =>
     `luma ${s.meanLuma.toFixed(3)} dark ${(s.darkFrac * 100).toFixed(0)}% neon ${(s.neonFrac * 100).toFixed(1)}% cy ${(s.hue.cyan * 100).toFixed(0)}% mg ${(s.hue.magenta * 100).toFixed(0)}% ye ${(s.hue.yellow * 100).toFixed(0)}% gr ${(s.hue.green * 100).toFixed(0)}%`;
   try {
@@ -84,7 +91,7 @@ async function main(): Promise<void> {
     const shots: Record<string, LookStats> = {};
     const capture = async (name: string) => {
       await page.waitForTimeout(250);
-      const png = await page.screenshot({ path: `${OUT}/stage3-${name}.png` });
+      const png = await shotCheck(page, `stage3-${name}.png`);
       const s = await statsOf(helper, png);
       shots[name] = s;
       console.log(`shot ${name}: ${fmt(s)}`);

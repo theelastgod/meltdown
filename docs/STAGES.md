@@ -1641,6 +1641,96 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 33 — A screenshot is a claim
+
+**Goal.** Two probes were red. `probe:mastery` timed out on CI and here; `probe:cityLife` was 13/16.
+Neither had ever been visible before Stage 30 unblocked the gate. Chasing the first one turned up
+something larger than either.
+
+**The timeout.** `probe:mastery` died in `open()`, waiting on `window.__game.ready`. Instrumented,
+the two rendered pages read:
+
+```
+[open ALPHA] ready in   933ms   (render=true, first rendered context)
+[open RICH]  ready in 18812ms   (render=true, second — 20× ALPHA)
+```
+
+Same box, same size, same code path. `ready` is set the moment `window.__game` is assigned, so that
+wait is not the game reaching a state — it is module execution plus `new Game()`, a **startup cost**
+that scales with how busy the machine is and not with anything under test. Two 1280×720 SwiftShader
+contexts on four cores was enough to cross a 30 s cap. ALPHA has taken its screenshot by then and is
+only holding a room slot, so it is shrunk to 480×270 while RICH lives (18.8 s → 8.7 s, measured),
+the cap is now generous on purpose, and a page that never comes up says so with its diagnostics
+instead of throwing a bare `TimeoutError`. Every page's construction time goes into `stage7.json`,
+so a slow box is visible rather than a mystery.
+
+**What the diagnosis actually found.** Looking at `stage7-graph-after.png` to see where RICH had got
+to, it was not a picture of the Ledger Graph. It was a full-screen cyan overlay reading NEO-CHINA.
+FOUNDED AS A DRAINAGE CONCESSION, SOLD AS A CITY. So were `stage7-file.png` and
+`stage7-graph-before.png`. So were **nine proof artifacts across four probes** — the file panel, both
+graph shots, the two netcode engagement frames, the dossier flash, the receipt, the Chapter rite,
+the Debt banner.
+
+The opening crawl stands down for `?crawl=0` or `?headless`, and seven page-opening sites in the
+probes passed neither. It had been sitting on top of every frame those probes shot since Stage 12.
+
+The checks *beside* those screenshots all passed, and were right to: they read the DOM, and the DOM
+was correct — the graph really did have 48 hexes and a green owned node. Only the picture was wrong,
+because a picture was the one artifact in the project that nothing asserted anything about. The file
+sizes had been saying it for months, if anyone had looked: 4.9 KB for a netcode frame against
+800 KB for a district vista.
+
+**`probe/shot.ts`.** Every proof screenshot goes through it now — 41 call sites across 16 probes — and it
+proves the frame before it opens the shutter: nothing may cover the viewport (`#crawl`, `#menu`),
+and the thing the filename promises has to be on screen. It returns its verdict
+rather than throwing, so a bad artifact is one failed check among many instead of a stop that hides
+everything after it — Stage 30's lesson. `stage7-graph-after.png` is now 48 hexes and a green
+SLIPFILE node over the city; `stage6-file.png` went from 65 KB to 933 KB.
+
+**And a lint under it,** `tests/probeshot.test.ts`: every page a probe opens declares what it wants
+from the crawl, and no probe writes a screenshot outside the guard. Two exemptions, both principled
+— `stage12` and `stage13` are the probes whose *subject* is an overlay.
+
+**Two more the guard found on its first full run,** neither of them the crawl:
+`stage8-dossier.png` and `stage8-rite.png` are transient cards — 1.2 s and a beat — and both were
+being shot after their window had closed. The dossier was polled with an `evaluate` round trip every
+60 ms and then given a further deliberate 450 ms "to let the reveal paint", which on a slow box
+spends the whole hold before the shutter. Both now wait for the card *inside* the page, where a poll
+costs nothing, and shoot on the same breath as the state read.
+
+Worth recording: the first version of that lint only read URLs written inline in `.goto()`, and
+`probe/stage2.ts` builds its URL into a `const` first. The lint passed it. The runtime guard caught
+it on the next run — `stage2-alpha.png is a picture of #crawl, not of #hud .ammo` — which is the
+right order for the two to fail in, but the lint should not have needed rescuing. It matches the URL
+wherever it is written now.
+
+**`probe:cityLife`.** Three rate-dependent checks, all of them measuring the box rather than the
+game on a machine drawing ~3 frames a second.
+
+The city runs on wall time but only advances on a drawn frame, so a crowd measured against a wall
+stopwatch is short by up to one whole frame — enough to read a 0.86 m/s walk as 0.77 and fail a
+0.8 m/s floor. `CityLife` exposes its own accumulated clock now and the crowd, the tram and the ad
+tickers are measured against that: **the same answer at 3 fps as at 120**, rather than a looser
+bound.
+
+The monorail check was worse than rate-dependent, it was not testing its own claim. It primed a car
+to 41.5 m and waited 700 ms of wall time for real frames to carry it inside earshot — where earshot
+is 40 m, so the priming stopped *outside* the band and the check only ever worked because a fast
+machine's frames finished the job. And a `+1` cue count after a wait says the whoosh fired; it says
+nothing about *once, on the rising edge*, which is the actual claim in the name. It now steps the
+crossing on the tram's own clock and asserts the latch directly: `passing` true on the step that
+enters the radius, false on the next step while still inside. Reverting `passing = near && !lastPassing`
+to `passing = near` fails it, and shows the whoosh machine-gunning (1 cue → 5).
+
+**Files.** `probe/shot.ts` (new); `tests/probeshot.test.ts` (new, 3); `client/render/life.ts` and
+`client/main.ts` (the city clock); `probe/stage7.ts` (the readiness cap, the ALPHA shrink,
+diagnostics, startup times in the proof); `probe/stage9b.ts` (three checks rewritten); seven probes
+gained `?crawl=0`; sixteen probes route their screenshots through the guard.
+
+**Acceptance:** `probe:mastery` 23/23 (was a `TimeoutError`), `probe:cityLife` 19/19 (was 13/16),
+`probe:net` 13/13, and every other probe green with its artifacts now checked. `npm test` 295
+(3 new); typecheck clean over both configs. Both lint arms and the tram latch are mutation-tested.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

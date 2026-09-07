@@ -12,6 +12,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
+import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 
 const VITE_PORT = 5187;
@@ -49,6 +50,12 @@ async function main(): Promise<void> {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
   };
+  /** Take a proof screenshot and count "it shows what it is named for" as a check (Stage 33). */
+  const shotCheck = async (pg: Page, file: string, sel?: string): Promise<Buffer> => {
+    const s = await shot(pg, `${OUT}/${file}`, sel);
+    check(`artifact: ${file}`, s.ok, s.detail);
+    return s.png;
+  };
   const host = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "server/node-host.ts", String(HOST_PORT)], { stdio: ["ignore", "pipe", "pipe"] });
   await waitFor(host, /listening/, "node host");
   const vite = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", String(VITE_PORT), "--strictPort"], { stdio: ["ignore", "pipe", "pipe"] });
@@ -83,13 +90,13 @@ async function main(): Promise<void> {
       if (!shotA && a.puller === 1 && a.hold < 0.6 && a.owner === 0) {
         shotA = true;
         await page.waitForTimeout(150);
-        await page.screenshot({ path: `${OUT}/stage5-pull.png` });
+        await shotCheck(page, "stage5-pull.png");
       }
       const st = await page.evaluate(() => window.__game.botStatus());
       if (st?.done) break;
     }
     await page.waitForTimeout(150);
-    await page.screenshot({ path: `${OUT}/stage5-held.png` });
+    await shotCheck(page, "stage5-held.png");
     let state = await page.evaluate(() => window.__game.state());
     const D = state.wake!.nodes.find((n) => n.id === 4)!;
     const A = state.wake!.nodes.find((n) => n.id === 1)!;
@@ -137,7 +144,7 @@ async function main(): Promise<void> {
     // ---------------- online: contest ----------------
     const open = async (name: string, seed: number): Promise<Page> => {
       const pg = await browser.newPage({ viewport: { width: 480, height: 270 } });
-      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?norender=1&net=ws://127.0.0.1:${HOST_PORT}/room/wake?ai=0%26level=drainage_yard&level=drainage_yard&name=${name}&seed=${seed}`, { waitUntil: "load" });
+      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&net=ws://127.0.0.1:${HOST_PORT}/room/wake?ai=0%26level=drainage_yard&level=drainage_yard&name=${name}&seed=${seed}`, { waitUntil: "load" });
       await pg.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 });
       await pg.waitForFunction(() => window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 15000, polling: 100 });
       return pg;
