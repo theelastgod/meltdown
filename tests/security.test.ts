@@ -10,6 +10,9 @@ import { describe, expect, it, beforeAll } from "vitest";
 import { createWalletClient, defineChain, encodeDeployData, keccak256, parseEther, toHex, type Hex, type WalletClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { bootDevnetLedger, DEV_KEYS } from "../server/chain/boot";
+import { MemoryAccountStore, devSeed } from "../server/accounts";
+import { createSiweMessage } from "viem/siwe";
+import { SIWE_STATEMENT } from "../shared/economy/counter";
 import { ARTIFACTS } from "../server/chain/deploy";
 import { buildEpoch } from "../server/chain/merkle";
 import { fileIdOf } from "../server/chain/signer";
@@ -17,6 +20,8 @@ import { fileIdOf } from "../server/chain/signer";
 type Boot = Awaited<ReturnType<typeof bootDevnetLedger>>;
 
 const relayer = privateKeyToAccount(DEV_KEYS.relayer);
+/** the bank (Stage 23): a separate key from the hot one, so funding a test wallet comes from here */
+const treasury = privateKeyToAccount(DEV_KEYS.treasury);
 const player = privateKeyToAccount(DEV_KEYS.player);
 const player2 = privateKeyToAccount(DEV_KEYS.player2);
 const signer = privateKeyToAccount("0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba");
@@ -85,6 +90,7 @@ describe("the money paths, adversarially", () => {
     // 300 is money the vault genuinely holds (epoch 901 put it there), so nothing but the epoch's own
     // ceiling stands between this claim and another epoch's pot.
     const bad = buildEpoch(900, [{ account: player.address, amount: parseEther("300") }]);
+    await send(k.capital, "$CAPITAL", "transfer", [relayer.address, parseEther("100000")], treasury);
     await send(k.capital, "$CAPITAL", "approve", [k.vault, parseEther("100000")]);
     expect((await send(k.vault, "PrizeVault", "post", [900n, bad.root, parseEther("10")])).status).toBe("success");
     // epoch 901 is honest and holds real money in the same vault
@@ -130,7 +136,7 @@ describe("the money paths, adversarially", () => {
     const supply0 = await read<bigint>(k.capital, "$CAPITAL", "totalSupply");
     const burned0 = await read<bigint>(k.capital, "$CAPITAL", "burned");
     await expect(
-      b.pub.simulateContract({ address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: ["0x0000000000000000000000000000000000000000", parseEther("1")], account: relayer }),
+      b.pub.simulateContract({ address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: ["0x0000000000000000000000000000000000000000", parseEther("1")], account: treasury }),
     ).rejects.toThrow();
     expect(await read<bigint>(k.capital, "$CAPITAL", "totalSupply")).toBe(supply0);
     await send(k.capital, "$CAPITAL", "burn", [parseEther("7")]);
@@ -178,7 +184,7 @@ describe("the money paths, adversarially", () => {
     const good = "THE_AUDITOR";
     const fee = await read<bigint>(k.names, "Names", "priceOf", [BigInt(good.length)]);
     const gv = await b.ledger.signer.name(player.address, good);
-    await send(k.capital, "$CAPITAL", "transfer", [player.address, fee]);
+    await send(k.capital, "$CAPITAL", "transfer", [player.address, fee], treasury);
     await send(k.capital, "$CAPITAL", "approve", [k.names, fee], player);
     const burned0 = await read<bigint>(k.capital, "$CAPITAL", "burned");
     expect((await send(k.names, "Names", "register", [good, gv.message.nonce, gv.message.deadline, gv.signature], player)).status).toBe("success");
@@ -195,15 +201,20 @@ describe("the money paths, adversarially", () => {
     const price = parseEther("100");
     await send(k.market, "LedgerMarket", "list", [token, 4n, price]);
     const listing = (await read<bigint>(k.market, "LedgerMarket", "nextListing")) - 1n;
-    await send(k.capital, "$CAPITAL", "transfer", [player2.address, parseEther("300")]);
+    await send(k.capital, "$CAPITAL", "transfer", [player2.address, parseEther("300")], treasury);
     await send(k.capital, "$CAPITAL", "approve", [k.market, parseEther("300")], player2);
     const burned0 = await read<bigint>(k.capital, "$CAPITAL", "burned");
     const sellerBefore = await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [seller]);
+    const treasuryBefore = await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [treasury.address]);
     await send(k.market, "LedgerMarket", "buy", [listing, 2n], player2);
     const paid = price * 2n;
-    // 2% burned, 2% + 1% to the treasury (the creator here is the seller, who is also the treasury)
-    expect((await read<bigint>(k.capital, "$CAPITAL", "burned")) - burned0).toBe((paid * 200n) / 10_000n);
-    expect((await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [seller])) - sellerBefore).toBe(paid - (paid * 200n) / 10_000n);
+    const bps = (n: bigint) => (paid * n) / 10_000n;
+    // 5% fee: 2% burned, 2% to the treasury, 1% to the creator — who is the seller here, so the
+    // seller nets 96%. Since Stage 23 the treasury is its own address, so this is the first version
+    // of the test that can actually see the treasury's share arrive rather than folding it in.
+    expect((await read<bigint>(k.capital, "$CAPITAL", "burned")) - burned0).toBe(bps(200n));
+    expect((await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [treasury.address])) - treasuryBefore).toBe(bps(200n));
+    expect((await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [seller])) - sellerBefore).toBe(paid - bps(200n) - bps(200n));
     expect(await read<bigint>(k.cosmetics, "Cosmetics", "balanceOf", [token, player2.address])).toBe(2n);
     // the escrow still holds what was not sold, and the listing knows it
     const rest = (await read<[Hex, bigint, bigint, bigint]>(k.market, "LedgerMarket", "listings", [listing]))[2];
@@ -220,4 +231,87 @@ describe("the money paths, adversarially", () => {
     expect(await read<bigint>(cap, "$CAPITAL", "balanceOf", [relayer.address])).toBe(parseEther("1000000000"));
     expect(keccak256(toHex("sanity"))).toMatch(/^0x[0-9a-f]{64}$/);
   }, 90_000);
+});
+
+describe("the hot key is not the bank", () => {
+  /**
+   * `docs/SECURITY.md` §3.1 called this the top open item before mainnet, and it was: the relayer
+   * key signs on every sponsored transaction and lives in a Worker secret, and it also held the
+   * whole supply. A leak of a hot key should not be a leak of the treasury.
+   *
+   * Since Stage 23 the treasury is its own address and the relayer spends against an allowance.
+   * These cases are the property that buys: whatever the relayer key does, the loss is bounded by
+   * a number the treasury sets.
+   */
+  it("the relayer holds no supply, and what it can spend is an allowance the treasury set", async () => {
+    const b = await bootDevnetLedger({ onLog: () => {}, seedMarket: false, relayerAllowance: 5_000 });
+    const k = b.contracts;
+    const read = <T,>(address: Hex, artifact: string, fn: string, args: unknown[] = []) => b.pub.readContract({ address, abi: ARTIFACTS[artifact]!.abi, functionName: fn, args }) as Promise<T>;
+
+    const supply = await read<bigint>(k.capital, "$CAPITAL", "totalSupply");
+    expect(await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [b.treasury.address])).toBe(supply);
+    expect(await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [b.relayer.address])).toBe(0n);
+    expect(b.ledger.treasuryIsRelayer).toBe(false);
+    expect(await b.ledger.relayerAllowance()).toBe(parseEther("5000"));
+  }, 60_000);
+
+  it("a compromised relayer cannot take more than the allowance, however it asks", async () => {
+    const b = await bootDevnetLedger({ onLog: () => {}, seedMarket: false, relayerAllowance: 5_000 });
+    const k = b.contracts;
+    const thief = privateKeyToAccount(DEV_KEYS.player2);
+    const wal = createWalletClient({ chain: b.ledger.chain, transport: b.transport, account: b.relayer });
+    const read = <T,>(address: Hex, artifact: string, fn: string, args: unknown[] = []) => b.pub.readContract({ address, abi: ARTIFACTS[artifact]!.abi, functionName: fn, args }) as Promise<T>;
+    const grab = async (whole: string) => {
+      const hash = await wal.writeContract({ account: b.relayer, chain: b.ledger.chain, address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transferFrom", args: [b.treasury.address, thief.address, parseEther(whole)] });
+      return (await b.pub.waitForTransactionReceipt({ hash })).status;
+    };
+    // the whole supply, the allowance plus one, and the allowance itself
+    expect(await grab("1000000000")).toBe("reverted");
+    expect(await grab("5001")).toBe("reverted");
+    expect(await grab("5000")).toBe("success");
+    // and having spent it, nothing more — the allowance does not refill because the key is trusted
+    expect(await grab("1")).toBe("reverted");
+    expect(await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [thief.address])).toBe(parseEther("5000"));
+    // the treasury still holds everything else
+    const supply = await read<bigint>(k.capital, "$CAPITAL", "totalSupply");
+    expect(await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [b.treasury.address])).toBe(supply - parseEther("5000"));
+  }, 60_000);
+
+  it("the ordinary payouts still work, and they draw on that same allowance", async () => {
+    const b = await bootDevnetLedger({ onLog: () => {}, seedMarket: false, relayerAllowance: 5_000 });
+    const store = new MemoryAccountStore(devSeed);
+    const a = store.load("sandbox-treasury", "TREASURY");
+    const player = privateKeyToAccount(DEV_KEYS.player);
+    const nonce = await b.ledger.nonce(a.id);
+    const message = createSiweMessage({ address: player.address, chainId: b.devnet.chainId, domain: "127.0.0.1", nonce, uri: "http://127.0.0.1/", version: "1", statement: SIWE_STATEMENT });
+    // the link grants LAUNCH_GRANT on the devnet, which is a payment out of the treasury
+    expect((await b.ledger.link(a, message, await player.signMessage({ message }))).ok).toBe(true);
+    const before = await b.ledger.relayerAllowance();
+
+    a.counter!.run = { day: 900, banked: 9, owed: 9, paid: 0 };
+    const r = await b.ledger.payout(a);
+    expect(r.ok).toBe(true);
+    expect(r.paid).toBe(9);
+    // the payout came out of the allowance, not out of a relayer balance
+    expect(await b.ledger.relayerAllowance()).toBe(before - parseEther("9"));
+    expect((await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [b.relayer.address] })) as bigint).toBe(0n);
+  }, 60_000);
+
+  it("and an epoch larger than the allowance is refused rather than half-posted", async () => {
+    const b = await bootDevnetLedger({ onLog: () => {}, seedMarket: false, relayerAllowance: 100 });
+    const store = new MemoryAccountStore(devSeed);
+    const a = store.load("sandbox-epoch", "EPOCH");
+    const player = privateKeyToAccount(DEV_KEYS.player);
+    const nonce = await b.ledger.nonce(a.id);
+    const message = createSiweMessage({ address: player.address, chainId: b.devnet.chainId, domain: "127.0.0.1", nonce, uri: "http://127.0.0.1/", version: "1", statement: SIWE_STATEMENT });
+    await b.ledger.link(a, message, await player.signMessage({ message }));
+    const left = await b.ledger.relayerAllowance();
+    const tooBig = Number(left / 10n ** 18n) + 1000;
+
+    const r = await b.ledger.postEpoch("audit", 77, [{ account: a.id, amount: tooBig, reason: "AUDIT PLACEMENT #1" }]);
+    expect(r.ok).toBe(false);
+    expect(r.reason).toMatch(/allowance/);
+    // nothing was posted, so the epoch is still free for a correctly sized one later
+    expect(await b.ledger.epoch(1_000_000 + 77)).toBeNull();
+  }, 60_000);
 });

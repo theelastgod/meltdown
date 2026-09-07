@@ -39,8 +39,24 @@ export async function deployAll(pub: PublicClient, wal: WalletClient, signer: He
   const cosmetics = await deploy("Cosmetics", []);
   const market = await deploy("LedgerMarket", [capital, cosmetics, treasury]);
   const vault = await deploy("PrizeVault", [capital, treasury]);
-  // the sinks. Prices are the tokenomics doc's starting numbers (§4.4); the steward retunes them.
-  const buyout = await deploy("SeasonBuyout", [treasury, capital, parseEther(String(SEASON_PASS_PRICE))]);
-  const rooms = await deploy("RoomCredits", [treasury, capital, parseEther(String(ROOM_HOUR_PRICE))]);
+  // The sinks. Prices are the tokenomics doc's starting numbers (§4.4); the steward retunes them.
+  //
+  // Deployed with the deployer as steward so it can finish wiring them, then handed over — the same
+  // deploy → configure → hand-over the roles take on a real network (docs/SECURITY.md §3.2), where
+  // the treasury is a timelocked multisig that cannot conveniently sign a setup transaction.
+  const me = wal.account!.address;
+  const buyout = await deploy("SeasonBuyout", [me, capital, parseEther(String(SEASON_PASS_PRICE))]);
+  const rooms = await deploy("RoomCredits", [me, capital, parseEther(String(ROOM_HOUR_PRICE))]);
+  const call = async (address: Hex, artifact: string, functionName: string, args: unknown[]) => {
+    const hash = await wal.writeContract({ account: wal.account!, chain: wal.chain, address, abi: ARTIFACTS[artifact]!.abi, functionName, args });
+    const r = await pub.waitForTransactionReceipt({ hash });
+    if (r.status !== "success") throw new Error(`${artifact}.${functionName} reverted`);
+  };
+  // the host draws a player's room-hours down when it opens a private room; the treasury never does
+  await call(rooms, "RoomCredits", "setSpender", [me]);
+  if (treasury.toLowerCase() !== me.toLowerCase()) {
+    await call(buyout, "SeasonBuyout", "setSteward", [treasury]);
+    await call(rooms, "RoomCredits", "setSteward", [treasury]);
+  }
   return { capital, ghostfile, stamps, names, cosmetics, market, vault, buyout, rooms };
 }

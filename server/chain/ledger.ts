@@ -38,6 +38,13 @@ export interface LedgerOptions {
   prizes?: PrizeStore;
   /** the day's unspent banking; the direct payout spends here so the nightly settlement cannot pay for it again */
   runs?: RunStore;
+  /**
+   * The address holding the $CAPITAL supply. Separate from the relayer on any real network: the
+   * relayer key signs constantly and lives in a Worker secret, so what it can spend must be an
+   * allowance rather than a balance (docs/SECURITY.md §3.1). Defaults to the relayer, which is only
+   * correct on a devnet where there is nothing to lose.
+   */
+  treasury?: Hex;
   now?: () => number;
   onLog?: (line: string) => void;
 }
@@ -77,6 +84,32 @@ export class CounterLedger {
     this.relayerAccount = privateKeyToAccount(opts.relayerKey);
     this.relayer = createWalletClient({ chain: this.chain, transport: opts.transport, account: this.relayerAccount });
     this.signer = new GameSigner(opts.signerKey, opts.chainId, opts.contracts, opts.now ?? Date.now);
+  }
+
+  /** Where the supply lives. The relayer only ever spends against an allowance from it. */
+  get treasuryAddress(): Hex {
+    return this.opts.treasury ?? this.relayerAccount.address;
+  }
+  /** True when the hot key is also the bank, which is a devnet-only shape. */
+  get treasuryIsRelayer(): boolean {
+    return this.treasuryAddress.toLowerCase() === this.relayerAccount.address.toLowerCase();
+  }
+  /** What a compromised relayer could move at most: its standing allowance from the treasury. */
+  async relayerAllowance(): Promise<bigint> {
+    if (this.treasuryIsRelayer) return (await this.pub.readContract({ address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [this.treasuryAddress] })) as bigint;
+    return (await this.pub.readContract({ address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "allowance", args: [this.treasuryAddress, this.relayerAccount.address] })) as bigint;
+  }
+
+  /**
+   * Pay `to` out of the treasury. When the treasury is a separate address this is a `transferFrom`
+   * against the relayer's allowance, so the relayer never takes custody and the allowance is the
+   * hard cap on a hot-key compromise. When they are the same address (devnet) it is a `transfer`.
+   */
+  private async payFromTreasury(to: Hex, amount: bigint): Promise<Hex> {
+    const k = this.opts.contracts;
+    return this.treasuryIsRelayer
+      ? this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: [to, amount] })
+      : this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transferFrom", args: [this.treasuryAddress, to, amount] });
   }
 
   private now(): number {
@@ -185,7 +218,7 @@ export class CounterLedger {
     try {
       const bal = (await this.pub.readContract({ address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [c.address as Hex] })) as bigint;
       if (bal > 0n) return { ok: false, reason: "already funded" };
-      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: [c.address as Hex, parseEther(String(LAUNCH_GRANT))] });
+      const hash = await this.payFromTreasury(c.address as Hex, parseEther(String(LAUNCH_GRANT)));
       await this.pub.waitForTransactionReceipt({ hash });
       this.granted.add(a.id);
       this.log(`launch grant ${LAUNCH_GRANT} $CAPITAL → ${a.id}`);
@@ -244,6 +277,13 @@ export class CounterLedger {
     try {
       if (tree.total > 0n) {
         const k = this.opts.contracts;
+        // the vault pulls from the poster, so the epoch's funding passes through the relayer for one
+        // transaction — drawn against its allowance, which is still the cap on what it can take
+        if (!this.treasuryIsRelayer) {
+          const draw = await this.payFromTreasury(this.relayerAccount.address, tree.total);
+          const dr = await this.pub.waitForTransactionReceipt({ hash: draw });
+          if (dr.status !== "success") return { ok: false, reason: "treasury draw reverted: is the relayer's allowance set?" };
+        }
         const approve = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "approve", args: [k.vault, tree.total] });
         await this.pub.waitForTransactionReceipt({ hash: approve });
         const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "post", args: [BigInt(epoch), tree.root, tree.total] });
@@ -321,7 +361,7 @@ export class CounterLedger {
     if (await this.opts.prizes?.get(EPOCH_BASE.run + run.day)) return { ok: false, reason: `day ${run.day} is settled — claim the epoch` };
     try {
       const units = run.owed;
-      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: [c.address as Hex, parseEther(String(units * MAX_CAPITAL_PER_UNIT))] });
+      const hash = await this.payFromTreasury(c.address as Hex, parseEther(String(units * MAX_CAPITAL_PER_UNIT)));
       const r = await this.pub.waitForTransactionReceipt({ hash });
       if (r.status !== "success") return { ok: false, reason: "payout reverted" };
       a.counter = { ...c, run: { ...run, owed: 0, paid: run.paid + units } };
@@ -415,7 +455,16 @@ export class CounterLedger {
       this.pub.readContract({ address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "burned" }) as Promise<bigint>,
       this.pub.readContract({ address: k.market, abi: ARTIFACTS.LedgerMarket!.abi, functionName: "volume" }) as Promise<bigint>,
     ]);
-    return { supply: formatEther(supply), burned: formatEther(burned), volume: formatEther(volume) };
+    return {
+      supply: formatEther(supply),
+      burned: formatEther(burned),
+      volume: formatEther(volume),
+      // what a compromised relayer could move: its allowance, or the whole bank if they are one key
+      treasury: this.treasuryAddress,
+      relayer: this.relayerAccount.address,
+      hotKeyIsBank: this.treasuryIsRelayer,
+      relayerAllowance: formatEther(await this.relayerAllowance()),
+    };
   }
 
   /** devnet: the studio mints each skin to the treasury and lists it, so there is something to buy. */

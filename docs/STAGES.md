@@ -935,6 +935,51 @@ eleven vertical taps under a puddle mask — shape does not survive it, brightne
 `npm test` 223):** every district is inside its draw-call and triangle budget, and each check now
 reports the group composition behind its number.
 
+## Stage 23 — The hot key is not the bank
+
+**Goal.** `docs/SECURITY.md` §3 has had the same item at the top of it since Stage 16: the relayer
+key signs on every sponsored transaction and lives in a Worker secret, and it also held the whole
+$CAPITAL supply. A leak of a hot key was a leak of the treasury. Close it.
+
+**What changed.** The treasury is its own address. The relayer holds no $CAPITAL at all — every
+payment it makes (the launch grant, THE RUN's direct payout, funding a prize epoch) is a
+`transferFrom` against a standing allowance, so it never takes custody and **the allowance is the
+hard cap on a compromise**. The allowance is sized at a week of the emission schedule, which is the
+sizing the security doc had already asked for.
+
+The devnet is wired the same way rather than as a convenience shortcut. A production shape the
+tests never exercise is a production shape nobody has run, so `DEV_KEYS.treasury` is a real separate
+key and the whole suite now runs against the split.
+
+**Files.** `server/chain/ledger.ts` (`treasuryAddress`, `relayerAllowance`, `payFromTreasury`, the
+epoch draw), `server/chain/boot.ts` (the treasury key and its allowance), `server/chain/deploy.ts`
+(deploy → configure → hand over); `docs/SECURITY.md` §3.1; `tests/security.test.ts` (4 new),
+`tests/sinks.test.ts`.
+
+**Design decisions.**
+- **The property is a number, not a promise.** "The relayer is less trusted now" is not checkable.
+  "A compromised relayer can move at most `allowance(treasury, relayer)`" is, and a case asks for
+  the whole supply, for the allowance plus one, and for the allowance twice, and gets exactly the
+  allowance once.
+- **No custody, except where the contract forces it.** The grant and the payout pay the player
+  directly out of the treasury. Only the prize epoch passes through the relayer, because
+  `PrizeVault.post` pulls from `msg.sender` — one transaction, still bounded by the same allowance,
+  and if the draw fails the epoch is refused whole rather than half-posted.
+- **Roles follow deploy → configure → hand over.** The sinks are deployed with the deployer as
+  steward so it can set the room-credit spender, then the steward goes to the treasury. That is the
+  order a timelocked multisig forces on a real network, so it is the order the devnet uses.
+- **The split made an existing test sharper.** With the seller, the creator and the treasury as one
+  address, the market fee test could not tell the treasury's 2% from the seller's share; it asserted
+  98% and would have passed on a contract that paid the treasury nothing. It now asserts each share
+  separately.
+
+**Acceptance (`npm test`, 227 tests):** the relayer's $CAPITAL balance is zero and the treasury's is
+the whole supply; a compromised relayer is refused the supply, refused the allowance plus one,
+allowed the allowance once, and refused again after; the ordinary payouts work and visibly draw the
+allowance down while the relayer's balance stays at zero; and an oversized epoch is refused with a
+reason naming the allowance, leaving the epoch id free for a correctly sized one. Reverting the
+split fails six cases, which was checked by doing it.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

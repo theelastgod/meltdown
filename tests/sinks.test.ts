@@ -20,11 +20,14 @@ async function rig() {
   const b = await bootDevnetLedger({ onLog: () => {}, seedMarket: false });
   const player = privateKeyToAccount(DEV_KEYS.player);
   const relayer = privateKeyToAccount(DEV_KEYS.relayer);
+  // the bank is a separate key from the hot one (Stage 23), so funding comes from the treasury and
+  // the sinks' steward is the treasury too — the relayer only spends against an allowance
+  const treasuryAcct = privateKeyToAccount(DEV_KEYS.treasury);
   // gas for the player's own transactions; the sinks are bought by the player, not sponsored
   await b.devnet.fund(player.address);
   // the treasury funds the player so it has something to burn
   const fund = async (whole: number) => {
-    const hash = await b.ledger.relayer.writeContract({ account: relayer, chain: b.ledger.chain, address: b.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: [player.address, parseEther(String(whole))] });
+    const hash = await b.ledger.relayer.writeContract({ account: treasuryAcct, chain: b.ledger.chain, address: b.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "transfer", args: [player.address, parseEther(String(whole))] });
     await b.pub.waitForTransactionReceipt({ hash });
   };
   const send = async (address: Hex, artifact: string, fn: string, args: unknown[]) => {
@@ -38,8 +41,11 @@ async function rig() {
    * rather than throwing at send, so a bare `.rejects` would pass on a transaction that succeeded.
    */
   const reverts = async (p: Promise<{ status: string }>): Promise<boolean> => p.then((r) => r.status === "reverted", () => true);
-  const steward = async (address: Hex, artifact: string, fn: string, args: unknown[]) => b.pub.waitForTransactionReceipt({ hash: await b.ledger.relayer.writeContract({ account: relayer, chain: b.ledger.chain, address, abi: ARTIFACTS[artifact]!.abi, functionName: fn, args }) });
-  return { b, player, relayer, fund, send, read, reverts, steward };
+  /** the sinks' steward is the treasury after the deploy hands the role over */
+  const steward = async (address: Hex, artifact: string, fn: string, args: unknown[]) => b.pub.waitForTransactionReceipt({ hash: await b.ledger.relayer.writeContract({ account: treasuryAcct, chain: b.ledger.chain, address, abi: ARTIFACTS[artifact]!.abi, functionName: fn, args }) });
+  /** the host, which is the one address allowed to spend a player's room-hours */
+  const host = async (address: Hex, artifact: string, fn: string, args: unknown[]) => b.pub.waitForTransactionReceipt({ hash: await b.ledger.relayer.writeContract({ account: relayer, chain: b.ledger.chain, address, abi: ARTIFACTS[artifact]!.abi, functionName: fn, args }) });
+  return { b, player, relayer, treasuryAcct, fund, send, read, reverts, steward, host };
 }
 
 describe("SeasonBuyout — the Deep Wake pass", () => {
@@ -109,7 +115,7 @@ describe("RoomCredits — a server of your own, by the hour", () => {
 
     // the spender (the host; the treasury at deploy) draws an hour down when a room opens
     const room = `0x${"ab".repeat(32)}` as Hex;
-    expect((await r.steward(r.b.contracts.rooms, "RoomCredits", "spend", [r.player.address, 3n, room])).status).toBe("success");
+    expect((await r.host(r.b.contracts.rooms, "RoomCredits", "spend", [r.player.address, 3n, room])).status).toBe("success");
     expect(await r.read<bigint>(r.b.contracts.rooms, "RoomCredits", "hoursOf", [r.player.address])).toBe(7n);
   }, 60_000);
 
@@ -123,7 +129,7 @@ describe("RoomCredits — a server of your own, by the hour", () => {
     // the player cannot spend its own credit: only the host opens a room
     expect(await r.reverts(r.send(r.b.contracts.rooms, "RoomCredits", "spend", [r.player.address, 1n, room]))).toBe(true);
     // and the host cannot spend more than the player bought
-    expect(await r.reverts(r.steward(r.b.contracts.rooms, "RoomCredits", "spend", [r.player.address, 3n, room]))).toBe(true);
+    expect(await r.reverts(r.host(r.b.contracts.rooms, "RoomCredits", "spend", [r.player.address, 3n, room]))).toBe(true);
     expect(await r.read<bigint>(r.b.contracts.rooms, "RoomCredits", "hoursOf", [r.player.address])).toBe(2n);
   }, 60_000);
 

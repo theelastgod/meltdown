@@ -129,7 +129,7 @@ An auditor should know which of these are decisions rather than oversights.
 | --- | --- |
 | The **game signer** key | It decides who gets a Ghostfile, a stamp and a name. A leak mints identity, not money: it cannot move tokens, post a prize root, or mint a cosmetic. Rotatable by the steward. |
 | The **poster** key (PrizeVault) | It sets the roots and funds them. A leak can misdirect *the epochs it funds itself* and nothing more, since 1.2. |
-| The **relayer** key | Sponsors gas. In the current devnet wiring it is also the treasury, which is wrong for mainnet — see §3. |
+| The **relayer** key | Sponsors gas and submits sponsored transactions. Since Stage 23 it is **not** the treasury: it holds no supply and spends against a standing allowance, so a leak costs at most that allowance (§3.1). |
 | The **minter** role (Cosmetics) | Can mint any id in any quantity. There is no supply cap; scarcity is a studio promise, not a contract one. If that promise matters, cap it per id at definition time. |
 | `Cosmetics` and `$CAPITAL` as **callback-free** | The market's safety argument in 1.6 no longer depends on this, but the ERC-1155 acceptance check is still not implemented, so a contract that cannot handle 1155s can still receive one. |
 | The **host** for game rules | Depth gates, the run's daily cap and the Audit playlists are server-side. The chain never checks them; a host compromise is a game-economy compromise. This is the right trade for a game, but it is the trade. |
@@ -137,19 +137,45 @@ An auditor should know which of these are decisions rather than oversights.
 
 ## 3. Open before mainnet
 
-1. **Separate the treasury from the relayer.** They are the same address in the devnet boot. The
-   relayer key lives in a Worker secret and signs constantly; the treasury holds the whole
-   supply. A leak of a hot key should not be a leak of the treasury. The treasury should be a
-   timelocked multisig, with the relayer holding gas and an allowance sized to a week of prizes.
-2. **Hand the steward and poster roles to that multisig** after deployment (`setSteward`,
-   `setPoster`), so no single key can rotate a signer.
-3. **An external audit.** This review is one reader. The contracts are small and dependency-free,
+### 3.1 Separating the treasury from the relayer — done (Stage 23)
+
+This was the top item on this list, and it is closed. The relayer key signs on every sponsored
+transaction and lives in a Worker secret; it also held the whole supply, so a leak of a hot key was
+a leak of the bank.
+
+The treasury is now its own address. The relayer holds no $CAPITAL at all — every payment it makes
+(the launch grant, THE RUN's direct payout, funding a prize epoch) is a `transferFrom` against a
+standing allowance, so it never takes custody and **the allowance is the hard cap on a hot-key
+compromise**. The devnet is wired the same way rather than as a convenience shortcut, because a
+production shape the tests never exercise is a production shape nobody has run: `DEV_KEYS.treasury`
+is a separate key, and the allowance is sized at a week of the emission schedule
+(`shared/economy/model.ts`), which is the sizing this document already asked for.
+
+`tests/security.test.ts` holds it: the relayer's balance is zero and the treasury's is the whole
+supply; a compromised relayer asking for the supply, for the allowance plus one, and for the
+allowance twice is refused every time and takes exactly the allowance once; the ordinary payouts
+still work and visibly draw the allowance down; and an epoch larger than the allowance is refused
+whole rather than half-posted. Reverting the split fails six cases.
+
+Two smaller things fell out of it. The roles now follow **deploy → configure → hand over**: the
+sinks are deployed with the deployer as steward so it can set the room-credit spender, then the
+steward is handed to the treasury — the same order a timelocked multisig forces on a real network
+(§3.2). And the market's fee split is now genuinely observable: with the seller, the creator and the
+treasury as one address, the old test could not tell the treasury's 2% from the seller's share, and
+it now asserts each separately.
+
+### 3.2 Still open
+
+1. **Hand the steward and poster roles to a timelocked multisig** after deployment (`setSteward`,
+   `setPoster`). The deploy already hands the sinks' steward to the treasury address, so what is
+   left is making that address a multisig rather than a key.
+2. **An external audit.** This review is one reader. The contracts are small and dependency-free,
    which should make an audit cheap.
-4. **Sponsored claims through ERC-4337** rather than a relayer that submits transactions for
+3. **Sponsored claims through ERC-4337** rather than a relayer that submits transactions for
    players; the voucher shapes already suit it.
-5. **A cap per cosmetic id**, if scarcity is ever to be a promise rather than a policy.
-6. **Legal review** of the emission channels, as `docs/TOKENOMICS.md` §9 says.
-7. **The emission schedule is now enforced in code**, not only published — see `docs/ECONOMY.md`.
+4. **A cap per cosmetic id**, if scarcity is ever to be a promise rather than a policy.
+5. **Legal review** of the emission channels, as `docs/TOKENOMICS.md` §9 says.
+6. **The emission schedule is enforced in code**, not only published — see `docs/ECONOMY.md`.
    A day's emission is a PrizeVault epoch, so §1.2's per-epoch funding guard bounds it on chain as
    well as in the arithmetic. What is still trusted there is the *poster*: nothing on chain checks
    that a day's root was built from a real day's banking.
@@ -157,7 +183,7 @@ An auditor should know which of these are decisions rather than oversights.
 ## 4. Running the review's tests
 
 ```sh
-npx vitest run tests/security.test.ts    # 9 cases, all against a real EVM
+npx vitest run tests/security.test.ts    # 13 cases, all against a real EVM
 npx vitest run tests/speedhack.test.ts   # 3 cases, against the real room and sim
 ```
 
