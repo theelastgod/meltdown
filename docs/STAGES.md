@@ -980,6 +980,51 @@ allowance down while the relayer's balance stays at zero; and an oversized epoch
 reason naming the allowance, leaving the epoch id free for a correctly sized one. Reverting the
 split fails six cases, which was checked by doing it.
 
+## Stage 24 — Money the system knew about and nobody would collect
+
+**Goal.** Three items on `docs/ECONOMY.md`'s open list were the same kind of thing: value the
+system had recorded and had no path to hand over. Close them.
+
+**The drift.** A file's `counter.run.owed` and its `run_day` row are written by different paths and
+neither write can be made atomic with the other. Stage 18 logged both failures loudly and healed
+neither. They fail in opposite directions:
+
+- **Unrecorded** — the D1 write lost, so the file is owed units the banking table has never heard
+  of. Nothing will pay them: the settlement reads the table, not the file. The player has the
+  receipt in their own ledger and no money is coming.
+- **Stranded** — the settlement posted the epoch and could not clear the file. The units are still
+  owed *and* unpayable in both directions: the day is settled so the night will not pay them again,
+  and the direct withdrawal refuses a settled day. The money is sitting in a claimable epoch while
+  the file insists it is still waiting.
+
+**The sweep.** `PrizeVault.reclaim` has existed since Stage 15 and nothing ever called it.
+
+**Files.** `server/chain/reconcile-run.ts`, `server/chain/ledger.ts` (`reclaimEpoch`, `epochs`),
+`server/chain/wallets.ts` and `wallets-d1.ts` (`accounts()`), `server/counter-worker.ts` (both jobs
+on the nightly cron), `server/node-host.ts` (`{kind:"reconcile"}`, `{kind:"reclaim"}`),
+`client/file.ts` (the panel said prizes were weekly; the run settles nightly);
+`docs/ECONOMY.md` §5.2; `tests/settle.test.ts` (6 new).
+
+**Design decisions.**
+- **It walks the wallet index, not the banking table.** A file missing from the table is precisely
+  the drift worth finding, so the table cannot be the list of files to check. Only a linked file can
+  be owed $CAPITAL, so the wallet index is the complete set.
+- **It is a separate job from the settlement, and runs before it.** A repair that runs inside the
+  thing being repaired cannot be trusted to notice when that thing is what broke.
+- **Report by default, repair on request.** The pass returns the same report either way and only
+  writes under `fix`, so an operator can look before touching anything — and a test can assert that
+  looking changes nothing.
+- **The reclaim deadline lives in the contract, not the caller.** The cron walks the posted epochs
+  and asks; asking early simply fails. The job does not have to be right about the date, which is
+  the property that lets it run every night without a calendar.
+
+**Acceptance (`npm test`, 233 tests):** an unrecorded day is found, reported without being changed,
+then repaired — and the night pays the restored units; a stranded file is proved unpayable in both
+directions first, then freed, and its epoch still pays; a day that agrees with itself reports
+nothing; a linked file with no banking is walked and not reported; an epoch cannot be swept before
+the vault's deadline and is still claimable after the attempt; and a never-posted epoch is refused.
+Both guards were mutation-checked.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:

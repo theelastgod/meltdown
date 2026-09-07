@@ -244,6 +244,33 @@ export class CounterLedger {
   // ---- the PrizeVault (Stage 15): the emission channels as Merkle epochs ----
 
   /** Post an epoch: resolve each file's wallet, build the tree, fund the vault from the treasury (the relayer) and set the root. Files without a wallet are left out and named in the answer. */
+  /**
+   * Sweep an epoch nobody claimed back to the treasury. The vault refuses until `RECLAIM_AFTER` has
+   * passed, so this can be run over every posted epoch and it will only take the ones that are
+   * genuinely stale — the contract holds the deadline, not the caller.
+   */
+  async reclaimEpoch(id: number): Promise<Result & { swept?: string }> {
+    const stored = await this.opts.prizes?.get(id);
+    if (!stored) return { ok: false, reason: `no epoch ${id}` };
+    try {
+      const before = (await this.pub.readContract({ address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [this.treasuryAddress] })) as bigint;
+      const hash = await this.relayer.writeContract({ account: this.relayerAccount, chain: this.chain, address: this.opts.contracts.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "reclaim", args: [BigInt(id)] });
+      const r = await this.pub.waitForTransactionReceipt({ hash });
+      if (r.status !== "success") return { ok: false, reason: "too early, or already swept" };
+      const after = (await this.pub.readContract({ address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [this.treasuryAddress] })) as bigint;
+      const swept = formatEther(after - before);
+      this.log(`prizes · epoch ${id} reclaimed: ${swept} $CAPITAL to the treasury`);
+      return { ok: true, swept };
+    } catch (e) {
+      return soft(e);
+    }
+  }
+
+  /** Every posted epoch, oldest first. */
+  async epochs(): Promise<StoredEpoch[]> {
+    return (await this.opts.prizes?.list()) ?? [];
+  }
+
   /** A posted epoch by id, or null. The settlement job's second guard against paying a day twice. */
   async epoch(id: number): Promise<StoredEpoch | null> {
     return (await this.opts.prizes?.get(id)) ?? null;

@@ -12,6 +12,7 @@ import { D1WalletStore } from "./chain/wallets-d1";
 import { D1PrizeStore } from "./chain/prizes-d1";
 import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
 import { settleRunDay } from "./chain/settle-run";
+import { reconcileRunDay } from "./chain/reconcile-run";
 import { D1RunStore } from "./run-d1";
 import { dayIndex, seasonIndex, weekIndex } from "../shared/endgame/clock";
 import type { Contracts } from "./chain/deploy";
@@ -165,6 +166,25 @@ export default {
         if (!r.ok) console.log(`cron: run day ${day} not settled — ${r.reason}`);
       } catch (e) {
         console.log(`cron: run day ${day} threw — ${String((e as Error).message).slice(0, 200)}`);
+      }
+
+      // Reconcile yesterday before anything else reads it, and sweep anything nobody claimed. Both
+      // are cheap when there is nothing to do, which is the normal case.
+      try {
+        const rec = await reconcileRunDay(day, { ledger, runs: new D1RunStore(env.DB), wallets: new D1WalletStore(env.DB), load, save, log: (l) => console.log(l) }, { fix: true });
+        if (rec.drift.length) console.log(`cron: day ${day} drifted on ${rec.drift.length} file(s) — restored ${rec.restored}, cleared ${rec.cleared}`);
+      } catch (e) {
+        console.log(`cron: reconcile day ${day} threw — ${String((e as Error).message).slice(0, 200)}`);
+      }
+      try {
+        for (const e of await ledger.epochs()) {
+          // the vault holds the deadline; asking early simply fails and costs a reverted call
+          if (Number(e.total) <= 0 || at - e.postedAt < 90 * 86_400_000) continue;
+          const r = await ledger.reclaimEpoch(e.epoch);
+          if (r.ok) console.log(`cron: epoch ${e.epoch} swept ${r.swept} $CAPITAL to the treasury`);
+        }
+      } catch (e) {
+        console.log(`cron: reclaim threw — ${String((e as Error).message).slice(0, 200)}`);
       }
 
       if (!env.ENDGAME) return;

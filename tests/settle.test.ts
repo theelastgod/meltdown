@@ -13,6 +13,7 @@ import { createSiweMessage } from "viem/siwe";
 import { bootDevnetLedger, DEV_KEYS } from "../server/chain/boot";
 import { ARTIFACTS } from "../server/chain/deploy";
 import { settleRunDay } from "../server/chain/settle-run";
+import { reconcileRunDay } from "../server/chain/reconcile-run";
 import { MemoryRunStore } from "../server/run-store";
 import { EPOCH_BASE } from "../server/chain/prizes-store";
 import { MemoryAccountStore, devSeed } from "../server/accounts";
@@ -31,6 +32,7 @@ async function rig() {
   const store = new MemoryAccountStore(devSeed);
   const logs: string[] = [];
   const deps = { ledger: b.ledger, runs, load: (id: string) => store.load(id, "BLANK"), save: (a: Account) => store.save(a), log: (l: string) => logs.push(l) };
+  const recon = { ...deps, wallets: b.wallets };
   const link = async (id: string, key: `0x${string}`) => {
     const a = store.load(id, id.toUpperCase());
     const w = privateKeyToAccount(key);
@@ -44,7 +46,7 @@ async function rig() {
     store.save(a);
   };
   const balance = (addr: `0x${string}`) => b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [addr] }) as Promise<bigint>;
-  return { b, store, runs, deps, logs, link, bank, balance };
+  return { b, store, runs, deps, recon, logs, link, bank, balance };
 }
 
 describe("the nightly settlement", () => {
@@ -204,5 +206,95 @@ describe("the nightly settlement", () => {
     const pay = await r.b.ledger.payout(after);
     expect(pay.ok).toBe(false);
     expect(pay.reason).toMatch(/settled/);
+  }, 60_000);
+});
+
+describe("reconciling the two records", () => {
+  /**
+   * A file's `owed` and its `run_day` row are written by different paths and neither write can be
+   * made atomic with the other. Both failures are logged; neither is self-healing. These are the
+   * two shapes, and they fail in opposite directions.
+   */
+  it("finds units the banking table lost, and restores them so the night pays after all", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-r1", DEV_KEYS.player);
+    // the bank reached the file and the D1 write did not
+    a.counter = { ...a.counter!, run: { day: DAY, banked: 35, owed: 35, paid: 0 } };
+    r.store.save(a);
+
+    const report = await reconcileRunDay(DAY, r.recon);
+    expect(report.drift).toHaveLength(1);
+    expect(report.drift[0]).toMatchObject({ file: "sandbox-r1", kind: "unrecorded", units: 35, recorded: 0, fixed: false });
+    expect(report.restored).toBe(0); // a report changes nothing
+
+    const fixed = await reconcileRunDay(DAY, r.recon, { fix: true });
+    expect(fixed.restored).toBe(35);
+    expect(fixed.drift[0]!.fixed).toBe(true);
+    // and now the night pays them
+    const s = await settleRunDay(DAY, r.deps);
+    expect(s.units).toBe(35);
+    expect(r.store.accounts.get("sandbox-r1")!.counter!.run!.paid).toBe(35);
+  }, 60_000);
+
+  it("frees a file stranded by a settlement that posted but could not clear it", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-r2", DEV_KEYS.player);
+    r.bank(a, 20);
+    const s = await settleRunDay(DAY, r.deps);
+    expect(s.ok).toBe(true);
+    // the epoch was posted and the clear failed: the units are paid for and still owed on the file
+    const after = r.store.accounts.get("sandbox-r2")!;
+    after.counter = { ...after.counter!, run: { ...after.counter!.run!, owed: 20, paid: 0 } };
+    r.store.save(after);
+    // and now unpayable in both directions
+    expect((await r.b.ledger.payout(after)).reason).toMatch(/settled/);
+
+    const report = await reconcileRunDay(DAY, r.recon, { fix: true });
+    expect(report.settled).toBe(true);
+    expect(report.drift[0]).toMatchObject({ file: "sandbox-r2", kind: "stranded", units: 20, fixed: true });
+    expect(report.cleared).toBe(20);
+    const done = r.store.accounts.get("sandbox-r2")!;
+    expect(done.counter!.run!.owed).toBe(0);
+    expect(done.counter!.run!.paid).toBe(20);
+    // the money was always there: the epoch still pays it
+    expect((await r.b.ledger.claimPrize(done, s.epoch!)).ok).toBe(true);
+  }, 60_000);
+
+  it("says nothing about a day that agrees with itself", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-r3", DEV_KEYS.player);
+    r.bank(a, 12);
+    const report = await reconcileRunDay(DAY, r.recon, { fix: true });
+    expect(report.drift).toEqual([]);
+    expect(report.checked).toBeGreaterThan(0);
+    expect(report.settled).toBe(false);
+  }, 60_000);
+
+  it("walks every linked file, not only the ones the table happens to know about", async () => {
+    const r = await rig();
+    await r.link("sandbox-r4", DEV_KEYS.player);
+    // a file with no banking at all must not be reported, and must still be walked
+    const report = await reconcileRunDay(DAY, r.recon);
+    expect(report.checked).toBe(1);
+    expect(report.drift).toEqual([]);
+  }, 60_000);
+});
+
+describe("epochs nobody claimed", () => {
+  it("cannot be swept before the vault's own deadline", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-r5", DEV_KEYS.player);
+    r.bank(a, 15);
+    const s = await settleRunDay(DAY, r.deps);
+    const swept = await r.b.ledger.reclaimEpoch(s.epoch!);
+    expect(swept.ok).toBe(false);
+    expect(swept.reason).toMatch(/too early|reverted/i);
+    // the deadline is the contract's, not the caller's, so the epoch is still claimable
+    expect((await r.b.ledger.claimPrize(r.store.accounts.get("sandbox-r5")!, s.epoch!)).ok).toBe(true);
+  }, 60_000);
+
+  it("refuses an epoch that was never posted", async () => {
+    const r = await rig();
+    expect((await r.b.ledger.reclaimEpoch(123_456)).reason).toMatch(/no epoch/);
   }, 60_000);
 });

@@ -14,6 +14,10 @@ export class D1WalletStore implements WalletStore {
     await this.db.prepare("DELETE FROM siwe_nonce WHERE account = ?1").bind(account).run();
     return true;
   }
+  async accounts(): Promise<string[]> {
+    const rows = await this.db.prepare("SELECT account FROM wallet").all<{ account: string }>();
+    return (rows.results ?? []).map((r) => r.account);
+  }
   async accountOf(address: string): Promise<string | null> {
     const row = await this.db.prepare("SELECT account FROM wallet WHERE address = ?1").bind(address.toLowerCase()).first<{ account: string }>();
     return row?.account ?? null;

@@ -12,6 +12,13 @@ export interface WalletStore {
   /** bind 1:1; throws when either side is already bound elsewhere */
   bind(account: string, address: string, at: number): void | Promise<void>;
   unbind(account: string): void | Promise<void>;
+  /**
+   * Every linked file. The reconciliation pass needs to walk the files that could be owed
+   * $CAPITAL, and only a linked one can be — so this index is the complete set, which the
+   * banking table is not (a file whose bank never reached the database is missing from it, and
+   * that is precisely the drift worth finding).
+   */
+  accounts(): string[] | Promise<string[]>;
 }
 
 export class MemoryWalletStore implements WalletStore {
@@ -29,6 +36,9 @@ export class MemoryWalletStore implements WalletStore {
     if (!n || n.nonce !== nonce || this.now() - n.at > 600_000) return false;
     this.nonces.delete(account);
     return true;
+  }
+  accounts(): string[] {
+    return [...this.byAccount.keys()];
   }
   accountOf(address: string): string | null {
     return this.byAddress.get(address.toLowerCase()) ?? null;

@@ -231,35 +231,60 @@ whenever the spend reverts, and the hours are a real burn. The invite code is th
 control: the room name is derived from it, so a room cannot be guessed into, and the alphabet drops
 `0/O` and `1/I/L` so a code survives being read aloud.
 
+### 5.2 Reconciling the two records
+
+Stage 24. Two of the items this section used to list were the same problem seen from opposite
+sides, and both were money the system knew about that nobody would ever collect.
+
+A file's `counter.run.owed` and its `run_day` row are written by different paths — the match Worker
+writes the row on every bank, the settlement clears the field after posting an epoch — and neither
+write can be made atomic with the other. Stage 18 logged both failures loudly. Nothing healed them.
+
+**Unrecorded.** The D1 write lost. The file is owed units the banking table has never heard of, and
+nothing will ever pay them, because the settlement reads the table and not the file. The player has
+the receipt in their own ledger and no money is coming.
+
+**Stranded.** The settlement posted the epoch and could not clear the file. The units are still
+owed on the file, and now they are unpayable in *both* directions: the day is marked settled so the
+night will not pay them again, and the direct withdrawal refuses a settled day. The money is
+sitting in a claimable epoch while the file insists it is still waiting.
+
+`server/chain/reconcile-run.ts` walks every **linked** file — the wallet index, not the banking
+table, because a file missing from the table is exactly the drift worth finding — and reports both,
+repairing them under `fix`: the missing row is restored so the night pays it, and the paid-for units
+are cleared off the stranded file, where the epoch has been claimable all along.
+
+It is deliberately a separate job from the settlement, run before it on the nightly cron. A repair
+that runs inside the thing being repaired cannot be trusted to notice when that thing is what
+broke.
+
+**Unclaimed epochs** are swept the same night. `PrizeVault.reclaim` has always existed and nothing
+called it; the cron now walks the posted epochs and asks. The deadline lives in the contract rather
+than in the caller, so asking early simply fails — the job does not have to be right about the date.
+
 ## 6. Still open
 
-1. **Unclaimed epochs.** `PrizeVault.reclaim` sweeps them to the treasury, which is correct, but
-   nothing calls it on a schedule, and reclaimed emission should arguably return to the pot rather
-   than the treasury.
-2. **Two records that can drift.** A file's `owed` and its `run_day` row are written by different
-   paths, so a failed D1 write leaves a player owed units the night will never pay for, and a
-   failed clear after a posted epoch leaves units already paid for. Both are logged loudly (the
-   second as `stranded`), neither is reconciled automatically. A reconciliation pass comparing the
-   two is the next thing this needs.
-3. ~~Room-hours are bought but not yet spent.~~ Done in Stage 20 — see §5.1.
-4. **The Forge.** The last specified sink, and the only one needing infrastructure rather than a
+1. **The Forge.** The last specified sink, and the only one needing infrastructure rather than a
    contract: creator uploads, moderation, and an asset pipeline. Until it exists the model counts
    it at zero.
-5. **The ceiling is a game-design number, not a derived one.** 1 $CAPITAL a unit sets when
+2. **The ceiling is a game-design number, not a derived one.** 1 $CAPITAL a unit sets when
    dilution starts to be felt. It should be revisited against a real launch population, and it is
    the one constant here a designer should own rather than a model.
-6. **`capUse` and `runnerShare` are guesses.** Every projection in §1 rests on them. They are the
+3. **`capUse` and `runnerShare` are guesses.** Every projection in §1 rests on them. They are the
    first thing to replace with telemetry, and the model takes them as parameters for exactly that
    reason.
-7. **The client's WITHDRAW should claim epochs, not transfer.** In production the settlement is the
-   payment; the direct transfer is the devnet's convenience and the relayer is the treasury there.
+4. **Reclaimed emission goes to the treasury, not back to the pot.** That is what the contract
+   does and it is defensible, but a day whose prizes went unclaimed arguably under-emitted and
+   should be able to make it up.
+5. **The reconciliation only walks one day.** Running it over a backlog is a loop the caller has to
+   write; nothing walks the history looking for old drift.
 
 ## 7. Running it
 
 ```sh
 npm run lint:economy                     # the rules, including the schedule
 npx vitest run tests/model.test.ts       # 16 cases: the finding and the fix
-npx vitest run tests/settle.test.ts      # 10 cases: the nightly job, against a real EVM
+npx vitest run tests/settle.test.ts      # 16 cases: the nightly job and the reconciliation
 npx vitest run tests/sinks.test.ts       # 13 cases: the burn side, and what may be published
 npm run probe:economy                    # the projection as a table, with checks
 npx tsx -e "import('./shared/economy/model.ts').then(m=>m.summarise().forEach(l=>console.log(l)))"
