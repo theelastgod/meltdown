@@ -225,7 +225,7 @@ window.__game = {
   mobile: () => ({
     on: game.mobile,
     engaged: !!game.touch?.engaged,
-    buttons: [...document.querySelectorAll<HTMLElement>("#hud .tc .tc-b")].map((b) => {
+    buttons: [...document.querySelectorAll<HTMLElement>("#hud .thumbs .tc-b")].map((b) => {
       const r = b.getBoundingClientRect();
       return { id: b.dataset.b ?? "", x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
     }),

@@ -1693,10 +1693,18 @@ from the crawl, and no probe writes a screenshot outside the guard. Two exemptio
 
 **Two more the guard found on its first full run,** neither of them the crawl:
 `stage8-dossier.png` and `stage8-rite.png` are transient cards — 1.2 s and a beat — and both were
-being shot after their window had closed. The dossier was polled with an `evaluate` round trip every
-60 ms and then given a further deliberate 450 ms "to let the reveal paint", which on a slow box
-spends the whole hold before the shutter. Both now wait for the card *inside* the page, where a poll
-costs nothing, and shoot on the same breath as the state read.
+being shot after their window had closed. The dossier was polled for its open flag with an
+`evaluate` round trip every 60 ms and then given a flat 450 ms "to let the reveal paint"; between
+them that is most of the 1.2 s hold, so on a slow box the card was down before the shutter. Both
+wait *inside* the page now, where a poll costs nothing.
+
+The dossier's fix is worth stating precisely, because the first attempt at it was wrong. Dropping
+the 450 ms made the artifact fail a different way: the reveal is
+`animation: dossier 0.35s steps(5)` from `opacity: 0`, so shooting the instant the flag flips
+catches the frame where there is nothing to see, and the guard — correctly — refused it. The wait
+was there for a real reason; what was wrong with it was that it was a fixed guess. It waits on what
+the camera actually sees now: the panel unhidden **and** the reveal far enough along to have
+painted. That is exactly as long as the animation needs on any machine.
 
 Worth recording: the first version of that lint only read URLs written inline in `.goto()`, and
 `probe/stage2.ts` builds its URL into a `const` first. The lint passed it. The runtime guard caught

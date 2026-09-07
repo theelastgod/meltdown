@@ -149,6 +149,8 @@ async function main(): Promise<void> {
     await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=lease_row&account=sandbox-hardb&secret=${SECRET}&name=BRAVO&loadout=${encodeURIComponent(JSON.stringify(loadout))}&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
     for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 }).catch(async (e) => {
       console.log("join state:", JSON.stringify(await p.evaluate(() => ({ status: window.__game.net()?.status, kick: window.__game.net()?.kickReason, synced: window.__game.net()?.synced, snapshots: window.__game.net()?.stats.snapshots, tick: window.__game.state().tick }))));
+      // a page that fails to sync usually said why on its console first (Stage 33)
+      console.log("page errors:", errors.length ? errors.join(" | ") : "none");
       console.log((await stats()).logs.slice(-12).join("\n"));
       throw e;
     });

@@ -181,12 +181,17 @@ async function main(): Promise<void> {
     // ---- the dossier: 1.2 s, both cells, identity only ----
     let flash: { open: boolean; entries: number; t: number } | null = null;
     const t0 = Date.now();
-    // The flash holds for 1.2 s. This used to poll with an `evaluate` every 60 ms and then wait a
-    // further 450 ms before shooting, which spends most of that 1.2 s on round trips and a
-    // deliberate pause — on a slow box the card was gone before the shutter. Wait for it *inside*
-    // the page instead, where a poll costs nothing, and shoot as soon as the state is read back
-    // (Stage 33).
-    await a.waitForFunction(() => window.__game.state().rituals.dossierOpen === true, null, { timeout: 50000, polling: 30 }).catch(() => null);
+    // The flash holds for 1.2 s and reveals with `animation: dossier 0.35s steps(5)` from opacity 0.
+    // This used to poll for the open flag with an `evaluate` every 60 ms and then wait a flat 450 ms
+    // for that reveal — a fixed guess stacked on top of round trips, which together spend most of
+    // the hold, so on a slow box the card was gone before the shutter. Wait *inside* the page
+    // instead, where a poll costs nothing, and wait for the thing the camera actually sees: the
+    // panel unhidden and the reveal far enough along to have painted. That is exactly as long as
+    // the animation needs and not a millisecond of guesswork (Stage 33).
+    await a.waitForFunction(() => {
+      const el = document.querySelector("#hud .dossier") as HTMLElement | null;
+      return !!el && !el.hidden && Number(getComputedStyle(el).opacity) > 0.5;
+    }, null, { timeout: 50000, polling: 30 }).catch(() => null);
     const flashState = await a.evaluate(() => window.__game.state().rituals);
     if (flashState.dossierOpen) {
       flash = { open: true, entries: flashState.dossierEntries, t: Date.now() - t0 };

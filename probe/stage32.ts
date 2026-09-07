@@ -132,7 +132,7 @@ async function main(): Promise<void> {
     const layout = await pg.evaluate(() => {
       const vw = innerWidth;
       const vh = innerHeight;
-      const pads = [...document.querySelectorAll<HTMLElement>("#hud .tc .tc-b")].map((b) => ({ id: b.dataset.b ?? "", r: b.getBoundingClientRect() }));
+      const pads = [...document.querySelectorAll<HTMLElement>("#hud .thumbs .tc-b")].map((b) => ({ id: b.dataset.b ?? "", r: b.getBoundingClientRect() }));
       const inside = pads.every((p) => p.r.left >= 0 && p.r.top >= 0 && p.r.right <= vw && p.r.bottom <= vh);
       const smallest = Math.min(...pads.map((p) => Math.min(p.r.width, p.r.height)));
       // name the pairs, not just the count: a layout failure should say which two controls a thumb
@@ -162,8 +162,8 @@ async function main(): Promise<void> {
      * *each other* was true and beside the point. This is the check that catches it.
      */
     const clash = await pg.evaluate(() => {
-      const pads = [...document.querySelectorAll<HTMLElement>("#hud .tc .tc-b")].map((b) => ({ id: b.dataset.b ?? "", r: b.getBoundingClientRect() }));
-      const panels = [...document.querySelectorAll<HTMLElement>("#hud > *:not(.touch):not(.scan):not(.xh)")].flatMap((el) => {
+      const pads = [...document.querySelectorAll<HTMLElement>("#hud .thumbs .tc-b")].map((b) => ({ id: b.dataset.b ?? "", r: b.getBoundingClientRect() }));
+      const panels = [...document.querySelectorAll<HTMLElement>("#hud > *:not(.thumbs):not(.scan):not(.xh)")].flatMap((el) => {
         const r0 = el.getBoundingClientRect();
         // full-screen effect layers (the glitch tear, the EMP flash, the scanlines) cover the whole
         // viewport by design and cannot be "under" anything in a way a thumb cares about
@@ -236,7 +236,7 @@ async function main(): Promise<void> {
       r.calls < 180 && r.post,
       `${r.calls} draw calls · ${(r.triangles / 1000).toFixed(0)}k triangles · internal scale ${r.internalScale}`,
     );
-    await shotCheck(pg, "stage32-mobile.png", "#hud .touch");
+    await shotCheck(pg, "stage32-mobile.png", "#hud .thumbs");
     results.layout = layout;
     results.render = r;
 
