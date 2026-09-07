@@ -86,6 +86,8 @@ jobs:
         if: ${{ !cancelled() }}
       - run: npm run probe:frame
         if: ${{ !cancelled() }}
+      - run: npm run probe:mobile
+        if: ${{ !cancelled() }}
       - run: npm run build
         if: ${{ !cancelled() }}
       - run: npm run smoke

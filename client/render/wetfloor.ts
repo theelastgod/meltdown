@@ -104,3 +104,26 @@ export function makeWetFloor(width: number, depth: number, y: number, fogColor: 
     })(r.onBeforeRender);
   return r;
 }
+
+/**
+ * The wet floor without the second render pass (Stage 32).
+ *
+ * The `Reflector` above is the largest single line in the draw-call budget — Stage 22 measured it
+ * as larger than the dressing, the crowd and the skyline together, because everything it can see is
+ * drawn twice. A phone cannot afford that, and it is also the effect that survives being faked
+ * best: the reflection is smeared over eleven vertical taps under a puddle mask, so what the player
+ * reads is a wet sheen and the colour of the light above it, not a mirror image.
+ *
+ * So mobile gets the sheen and pays once: a dark plane tinted toward the district's fog, additive
+ * so the neon above still bleeds into it.
+ */
+export function makeFlatWetFloor(width: number, depth: number, y: number, fogColor: THREE.Color): THREE.Mesh {
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, depth),
+    new THREE.MeshBasicMaterial({ color: fogColor.clone().multiplyScalar(1.35), transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending }),
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = y;
+  m.name = "wetfloor-flat";
+  return m;
+}

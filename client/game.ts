@@ -13,6 +13,7 @@ import { Bot, type BotStep, type BotTarget } from "./bot";
 import { Hud } from "./hud/hud";
 import { GhostFile } from "./file";
 import { InputController } from "./input";
+import { TouchControls, wantsTouch } from "./touch";
 import { Renderer, type ViewState } from "./render/renderer";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
@@ -80,6 +81,9 @@ export class Game {
   synced = false;
   readonly netStats = { corrections: 0, maxCorrectionM: 0, replayedInputs: 0, serverHitsOnMe: 0, myHits: 0, myShotsConfirmed: 0, log: [] as { tick: number; corr: number; ack: number; pendingBefore: number; replayed: number; wasAlive: boolean; stance: string }[] };
   readonly input: InputController;
+  /** touch device: thumbs instead of pointer lock, and a frame a phone can hold (Stage 32) */
+  readonly mobile: boolean;
+  readonly touch: TouchControls | null = null;
   readonly renderer: Renderer;
   readonly hud: Hud;
   readonly file: GhostFile;
@@ -134,8 +138,18 @@ export class Game {
     this.player = this.world.addPlayer(1, "BLANK", 1, this.file.localLoadout());
     this.input = new InputController(canvas);
     this.input.yaw = this.player.yaw;
-    this.renderer = new Renderer(canvas, this.world.level);
+    // A phone has no pointer lock, no keyboard and no mouse, so it gets thumbs and a cheaper frame
+    // (Stage 32). Both decided once, here, from the same answer.
+    this.mobile = wantsTouch();
+    this.renderer = new Renderer(canvas, this.world.level, undefined, this.mobile);
     this.hud = new Hud(hudRoot);
+    if (this.mobile) {
+      hudRoot.classList.add("touch");
+      this.touch = new TouchControls(hudRoot);
+      if (new URLSearchParams(location.search).get("touch") === "1") this.touch.root.classList.add("forced");
+      this.input.touch = this.touch;
+      this.touch.onGesture = () => this.audio.resume();
+    }
     this.hud.setLevel(this.world.level, (id) => this.travel(id));
     this.file.mount(hudRoot);
     this.hud.setFile(this.file.view());
@@ -550,6 +564,7 @@ export class Game {
   applySettings(s: Settings): void {
     this.settings = s;
     this.input.sensitivity = 0.0022 * s.sensitivity;
+    if (this.touch) this.touch.sensitivity = s.sensitivity;
     this.renderer.setFov(s.fov);
     this.renderer.setCrt(s.crt);
     this.audio.setVolumes({ master: s.master, sfx: s.sfx, bed: s.bed });
@@ -985,6 +1000,7 @@ export class Game {
       stunned: p.weapon.stunTimer > 0,
     };
     this.input.currentSlot = p.weapon.slot;
+    if (this.touch) this.touch.currentSlot = p.weapon.slot;
     // Local view is not interpolated when the keyboard drives it: mouse look
     // must feel immediate, so use the live input angles.
     if (!this.bot && this.input.isLocked) {

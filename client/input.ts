@@ -1,4 +1,5 @@
 import { Btn, withSlot, type InputFrame } from "@shared/sim/input";
+import type { TouchControls } from "./touch";
 
 /** Pointer-lock mouse look + keyboard → InputFrame per simulation tick. */
 export class InputController {
@@ -15,6 +16,12 @@ export class InputController {
   private canvas: HTMLCanvasElement;
   onLockChange: ((locked: boolean) => void) | null = null;
   onGesture: (() => void) | null = null;
+  /**
+   * On a touch device the same controller is fed by thumbs instead of a keyboard and a locked
+   * pointer (Stage 32). It merges rather than replaces: a tablet with a keyboard attached should
+   * get both, and the probe drives touch in a desktop browser.
+   */
+  touch: TouchControls | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -61,8 +68,12 @@ export class InputController {
     });
   }
 
+  /**
+   * Is the game taking input? Pointer lock is the desktop answer and does not exist on a phone, so
+   * a touch session counts as engaged from the first thumb down.
+   */
   get isLocked(): boolean {
-    return this.locked;
+    return this.locked || !!this.touch?.engaged;
   }
 
   /** Mirrors the player's current slot so the wheel can cycle relative to it. */
@@ -85,10 +96,16 @@ export class InputController {
     if (this.grenadeNextTap) b |= Btn.GrenadeNext;
     this.grenadeTap = false;
     this.grenadeNextTap = false;
-    if (this.slotRequest) {
-      b = withSlot(b, this.slotRequest);
-      this.slotRequest = 0;
+    let slot = this.slotRequest;
+    this.slotRequest = 0;
+    if (this.touch) {
+      const t = this.touch.take();
+      b |= t.buttons;
+      this.yaw += t.yaw;
+      this.pitch = Math.max(-1.55, Math.min(1.55, this.pitch + t.pitch));
+      if (t.slot) slot = t.slot;
     }
+    if (slot) b = withSlot(b, slot);
     return { tick, buttons: b, yaw: this.yaw, pitch: this.pitch };
   }
 }

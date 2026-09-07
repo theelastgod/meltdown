@@ -5,7 +5,7 @@ import { MOVE } from "@shared/sim/constants";
 import type { Vec3 } from "@shared/math/vec3";
 import { PostChain } from "./post";
 import { Rain } from "./rain";
-import { makeWetFloor } from "./wetfloor";
+import { makeFlatWetFloor, makeWetFloor } from "./wetfloor";
 import { buildSkyline, dressLevel, PALETTE, Traffic } from "./city";
 import { VfxPool } from "./vfx";
 import { release } from "./dispose";
@@ -113,7 +113,11 @@ export class Renderer {
   private clock = 0;
   frames = 0;
 
-  constructor(canvas: HTMLCanvasElement, level: LevelDef, district: DistrictId = level.district ?? "magenta") {
+  /** Set on a touch device: the mirror is skipped and the post chain runs smaller (Stage 32). */
+  readonly mobile: boolean;
+
+  constructor(canvas: HTMLCanvasElement, level: LevelDef, district: DistrictId = level.district ?? "magenta", mobile = false) {
+    this.mobile = mobile;
     this.district = district;
     const cast = DISTRICTS[district];
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
@@ -166,7 +170,11 @@ export class Renderer {
     this.renderer.compile(this.scene, this.camera);
     this.camera.layers.enable(FAR_LAYER);
     const floor = level.boxes.find((b) => b.tag === "floor" || b.tag === "white_floor") ?? level.boxes[0]!;
-    this.scene.add(makeWetFloor(floor.max.x - floor.min.x, floor.max.z - floor.min.z, floor.max.y + 0.002, fogColor, fogDensity));
+    this.scene.add(
+      mobile
+        ? makeFlatWetFloor(floor.max.x - floor.min.x, floor.max.z - floor.min.z, floor.max.y + 0.002, fogColor)
+        : makeWetFloor(floor.max.x - floor.min.x, floor.max.z - floor.min.z, floor.max.y + 0.002, fogColor, fogDensity),
+    );
 
     this.muzzle = new THREE.PointLight(PALETTE.cyan, 0, 7, 2);
     this.camera.add(this.muzzle);
@@ -184,7 +192,9 @@ export class Renderer {
     this.wake = new WakeFx(this.scene);
     this.run = new RunFx(this.scene);
 
-    this.post = new PostChain(this.renderer, this.scene, this.camera, window.innerWidth, window.innerHeight, 0.6);
+    // a phone renders the post chain smaller again: it is already an offscreen 0.6 of the canvas,
+    // and the CRT look survives the drop because it is grain, scanlines and bloom rather than detail
+    this.post = new PostChain(this.renderer, this.scene, this.camera, window.innerWidth, window.innerHeight, mobile ? 0.45 : 0.6);
     window.addEventListener("resize", () => this.resize());
   }
 

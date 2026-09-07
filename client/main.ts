@@ -116,6 +116,8 @@ export interface GameHook {
   claimPrize: (epoch: number) => Promise<{ ok: boolean; reason?: string }>;
   /** Campaign (Stage 10): state, dialogue advance/choose, contracts desk, launch, faction, protocols. */
   campaign: () => ReturnType<Game["campaign"]["view"]>;
+  /** Stage 32: is this the touch build, and where are the controls actually sitting? */
+  mobile: () => { on: boolean; engaged: boolean; buttons: { id: string; x: number; y: number; w: number; h: number }[]; mirror: boolean; scale: number };
   dialogueAdvance: (choice?: number) => boolean;
   contracts: (on?: boolean) => void;
   launch: (id: string) => { ok: boolean; reason?: string };
@@ -220,6 +222,16 @@ window.__game = {
   cosmetic: (body) => game.file.postEndgame("cosmetic", body),
   loadPreset: (slot) => game.file.loadPreset(slot),
   joinAudit: () => game.joinAudit(),
+  mobile: () => ({
+    on: game.mobile,
+    engaged: !!game.touch?.engaged,
+    buttons: [...document.querySelectorAll<HTMLElement>("#hud .tc .tc-b")].map((b) => {
+      const r = b.getBoundingClientRect();
+      return { id: b.dataset.b ?? "", x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
+    }),
+    mirror: !game.renderer.mobile,
+    scale: game.renderer.post.scale,
+  }),
   counter: () => ({ view: game.file.counterState, wallet: game.file.counter?.address ?? null, last: game.file.counter?.last ?? "", info: game.file.counter?.info ?? null, tint: game.renderer.skinTint, remotes: (game.net?.remoteViews() ?? []).map((r) => ({ id: r.id, name: r.name ?? "", tag: r.tag ?? "", skin: parseTag(r.tag ?? "", "").skin })) }),
   link: () => game.file.counter?.link() ?? Promise.resolve({ ok: false, reason: "offline" }),
   buySkin: (listing) => game.file.counter?.buy(listing) ?? Promise.resolve({ ok: false, reason: "offline" }),

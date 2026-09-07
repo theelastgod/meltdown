@@ -1580,6 +1580,67 @@ letting a filler carry discrete actions, removing the bound, and letting a fille
 a client prediction. One of the eight cases was vacuous when first written — it compared a run to
 itself — and is now the one that actually demonstrates the premise.
 
+## Stage 32 — Mobile
+
+**Goal.** "There needs to be a mobile version." There was no touch handling anywhere in the client,
+so on a phone the game was not awkward — it was **unplayable**: pointer lock does not exist there,
+and without it nothing moved and nothing aimed.
+
+**The controls.** `client/touch.ts`. The left thumb owns a floating stick that appears wherever it
+lands, so it never has to find a spot it cannot see; the right thumb owns look-by-drag anywhere in
+its half, so aiming is not confined to a pad. Seven pads sit on two arcs around where the right
+thumb pivots — the two that are *held*, fire and alt, on the inner arc, the tapped ones outside it.
+
+**The stick is digital, deliberately.** `InputFrame` is a button bitfield and the sim is a
+deterministic function of those bits, shared by client and server. An analog axis would let a phone
+move at speeds a keyboard cannot reach, in a game whose PvP pays $CAPITAL. So a thumb pushes the
+same eight directions a keyboard does and pushing past the ring is the sprint key: **mobile gets a
+different input device, not a different sim.** It feeds the same `InputController`, so the room
+cannot tell which one sent a frame.
+
+**The frame.** Stage 22 measured the wet floor's `Reflector` as the largest single line in the
+draw-call budget — larger than the dressing, the crowd and the skyline together, because everything
+it can see is drawn twice. It is also the effect that fakes best: the reflection is smeared through
+eleven vertical taps under a puddle mask, so what a player reads is a wet sheen and the colour of
+the light above it. Mobile gets `makeFlatWetFloor` — the sheen for one pass — and the post chain
+drops from 0.6 of the canvas to 0.45. Measured on the probe's phone viewport: **53 draw calls**
+against the desktop budget of 180.
+
+**What the screenshot caught that the numbers did not.** The first touch build passed every check I
+had written — pads on screen, none overlapping another, no page overflow — and was unusable. The
+weapon rack, the grenade row, the tab dock and two lines of keyboard legend were all sitting
+underneath the thumb pads, and the prompt told a phone player to press **WASD**. "Pads do not
+overlap each other" was true and beside the point.
+
+So there are two more checks, and they are the ones with teeth: **no HUD panel may sit underneath a
+control** (naming the pairs, so a failure explains itself), and **the game may not tell a phone to
+press a key**. Both failed on the build that had just passed everything else. Full-screen effect
+layers — the glitch tear, the EMP flash, the scanlines — are excluded by covering ≥90% of the
+viewport, because they cannot be "under" anything in a way a thumb cares about.
+
+**Files.** `client/touch.ts` (new), `client/input.ts` (touch merges into the same controller),
+`client/game.ts`, `client/main.ts`, `client/render/renderer.ts`, `client/render/wetfloor.ts`
+(`makeFlatWetFloor`), `client/hud/hud.ts`, `client/hud/hud.css`, `index.html`
+(`viewport-fit=cover`, no user scaling); `probe/stage32.ts` (new, 13); `package.json` and
+`.github/workflows/verify.yml` (the gate runs it — `tests/verify.test.ts` would have failed if only
+one of the two had it).
+
+**Acceptance:** `npm run probe:mobile` 13/13 on an 844×390 phone viewport with a real touch context
+— the Blank walks 10.4 m on a stick push and stops within 3 mm of releasing it, a 140 px drag turns
+the view 0.45 rad, holding fire lands six shots, holding a tap-pad jumps exactly once, every control
+is ≥46 px and clear of every other control and every panel, 53 draw calls. A desktop still gets the
+mirror and no thumb controls. `npm test` 292; typecheck clean over both configs.
+
+**Two design questions this raises, not answered here.** Both are economy decisions rather than
+engineering ones, and both want an owner:
+
+1. **Aim assist.** Mobile shooters normally have it. This one pays $CAPITAL to the top 10% of an
+   Audit board, and `lint:fairness` exists precisely to keep advantages out of the sim. Shipping
+   without it is the conservative default and is what this stage did; it also means a thumb plays
+   against a mouse.
+2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
+   the answer changes matchmaking rather than the sim.
+
 ## Stage 3 — The look
 
 **Goal.** Make the game look like the place the reference clip was filmed:
