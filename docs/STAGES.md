@@ -1761,49 +1761,42 @@ no explanation cost four stages; this one says `70/70 shots asked to rewind past
 avg demand 22.8 ticks, and 150 ms RTT alone costs 10.5`.
 
 **The other budget, measured at the size the game sells.** `probe:net` asserts
-`< 12 KB/s per client downstream` and measures 10.5-12.2 in a room of **two**. Matchmaking fills a
-public room to **eight** before rolling to the next shard. Nobody had ever measured the number the
-budget is about at the size the product actually runs.
+`< 12 KB/s per client downstream` and measured it in a room of **two**. Matchmaking fills a public
+room to **eight** before rolling to the next shard. The number the budget is about had never been
+measured at the size the product runs.
 
-`tests/bandwidth.test.ts` drives the `Room` class directly — no browser, no wall clock — and counts
-the bytes it hands each connection, with every player moving and turning, which is the case delta
-compression cannot shrink away:
-
-```
-1 player   2.61 KB/s per client   room  2.6 KB/s
-2          2.82                   room  5.6
-4          3.24                   room 13.0
-6          3.67                   room 22.0
-8          4.10                   room 32.7
-```
-
-Per client it is linear in the others to describe, about **+0.21 KB/s each**; per room it is
-quadratic, because each of n clients is told about n−1 others. A shard's cost is the second number.
-
-The harness excludes the join burst, so its absolute level sits below what the probe reads over a
-live socket; the transferable quantity is the slope. Carried onto the probe's own two-player
-reading of ~11 KB/s, both extrapolations land at or past the line: **+1.3 by increment (12.3), ×1.46
-by ratio (16.0)**. Either way the budget has no room for a full lobby, and the check that guards it
-has never been run against one.
-
-**Then measured, rather than argued about.** `probe:net` now opens **eight real sockets** to the
-host — not browser pages, because downstream volume is a function of who is moving and eight
-SwiftShader contexts is how `probe:mastery` came to time out — joins them, drives them all moving,
-and meters what comes back:
+It is now, over **eight real sockets** to the host — not browser pages, because downstream volume is
+a function of who is moving and eight SwiftShader contexts is how `probe:mastery` came to time out:
 
 ```
 2 clients (the old check)   10.49 KB/s per client
 8 clients (the room cap)    14.70 KB/s per client · 117.6 KB/s off the shard
 ```
 
-**22% past its own budget at the size matchmaking fills.** The extrapolations bracketed it and the
-socket settled it.
+**22% past its own budget at the size matchmaking fills**, and all of it snapshots — 30 a second at
+489 bytes each. That check is the authority on this number.
 
-One correction worth keeping: the first version of that measurement read **21.01 KB/s** and was
-wrong. The raw clients passed `ackTick: 0`, and `rec.ackTick` is what selects a delta baseline
-server-side — so every snapshot came back *full*, and the number described a protocol the game does
-not ship. The harness echoes the newest snapshot tick now. A measurement that flatters the finding
-is still a bad measurement.
+**Two corrections to how it was arrived at, both worth keeping.**
+
+The first socket reading was **21.01 KB/s** and was wrong: the raw clients passed `ackTick: 0`, and
+`rec.ackTick` is what selects a delta baseline server-side, so every snapshot came back *full* and
+the figure described a protocol the game does not ship.
+
+The in-process harness in `tests/bandwidth.test.ts` had the same fault plus a second one pulling the
+other way — it drives a `Room` with `warmupSeconds: 0`, so the match never reaches its live phase and
+the snapshots carry no wake nodes, no dummies, none of the entity payload a real round sends. With
+both fixed it reads **3.16 KB/s** at eight players against the socket's 14.70, and its 2→8 ratio is
+1.175× against the socket's 1.40×. So it does not predict the socket's level *or* its slope. Its
+earlier extrapolations appeared to bracket 14.70; that was luck from two compensating errors and the
+claim is withdrawn. The file is kept for the shape — per client linear in the others described, per
+room quadratic — and now says so.
+
+**Where the bytes are, for whoever picks this up.** All snapshots, 489 B each at 8 players. The
+per-player delta is already tight (~18 B for a moving remote, so ~126 B for seven). The wake nodes
+are 5 × 15 B = 75 B **every snapshot with no delta at all** — the encoder comments them
+`entities (full each snapshot; small)`, and a node's x/y/z never change for the length of a match.
+That is 2.25 KB/s of the overrun available to an entity delta, with no gameplay tradeoff attached,
+and it is the first place to look.
 
 **Not changed, and why.** Raising `MAX_REWIND_TICKS` is the obvious fix and I have not made it. The
 ceiling trades directly against how long after breaking line of sight a lagging shooter can still
