@@ -319,7 +319,9 @@ export class Game {
       } else if (f.reason === "settle") {
         // the Ledger Entry ritual: the receipt prints line by line, the stamp thunks, the player signs
         this.hud.receipt(f.ledger);
-        this.hud.alert(`◆ LEDGER SETTLED — ${f.ledger[2] ?? ""}`, false, 5);
+        // the totals line by its prefix, not by its index: the receipt grew two lines in Stage 29
+        // and an index would have gone on working while showing the wrong one
+        this.hud.alert(`◆ LEDGER SETTLED — ${f.ledger.find((l) => l.startsWith("XP +")) ?? ""}`, false, 5);
       }
     };
     net.onStatus = (st) => {

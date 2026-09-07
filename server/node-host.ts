@@ -224,8 +224,17 @@ const http = createServer((req, res) => {
       res.setHeader("content-type", "application/json");
       const id = String(body.account ?? "");
       const a = id ? accounts.load(id, "BLANK") : null;
-      const wallet = a?.counter?.address;
-      if (!a || !wallet) return res.end(JSON.stringify({ ok: false, reason: "link a wallet first: a private room is bought, not requested" }));
+      // this spends the file's room-hours, which are a real on-chain burn, so it needs the file
+      // (Stage 29 — it is not under /file/, so the Stage 26 sweep never reached it). It is checked
+      // before anything else the route knows about the file: whether a wallet is linked is the
+      // file's own business, and answering that to a bare id is answering it to anyone.
+      if (!a || !fileAuth(a, String(body.secret ?? "")).ok) {
+        res.statusCode = 403;
+        return res.end(JSON.stringify({ ok: false, reason: NOT_YOURS }));
+      }
+      accounts.save(a); // an adopted secret is kept
+      const wallet = a.counter?.address;
+      if (!wallet) return res.end(JSON.stringify({ ok: false, reason: "link a wallet first: a private room is bought, not requested" }));
       const rules = sanitiseRules(body.rules as Partial<PrivateRules>);
       const hours = Math.max(1, Math.min(24, Math.round(Number(body.hours ?? 1)) || 1));
       const code = makeInviteCode();

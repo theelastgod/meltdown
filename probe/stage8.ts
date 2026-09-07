@@ -68,6 +68,12 @@ const ARGS = ["--no-proxy-server", "--use-angle=swiftshader", "--use-gl=angle", 
 async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });
   const checks: Check[] = [];
+  /**
+   * A file's secret (Stage 26): the id names a file, this proves the caller owns it, and every
+   * mutating route wants it — including the range-ghost POST, which was being refused with a 403
+   * that only turned up as a console error in the last check.
+   */
+  const SECRET = "probestage8secretaaaaaaa";
   const check = (name: string, pass: boolean, detail: string) => {
     checks.push({ name, pass, detail });
     console.log(`${pass ? "PASS" : "FAIL"}  ${name}  — ${detail}`);
@@ -87,7 +93,7 @@ async function main(): Promise<void> {
       const pg = await browser.newPage({ viewport: render ?? { width: 320, height: 180 } });
       pg.on("pageerror", (e) => errors.push(`${name}: ${String(e)}`));
       pg.on("console", (m) => m.type() === "error" && errors.push(`${name}: ${m.text()}`));
-      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?${render ? "" : "norender=1&"}level=drainage_yard&account=${account}${extra}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=drainage_yard&name=${name}`, { waitUntil: "load" });
+      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?${render ? "" : "norender=1&"}level=drainage_yard&account=${account}&secret=${SECRET}${extra}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=drainage_yard&name=${name}`, { waitUntil: "load" });
       await pg.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 });
       await pg.evaluate(() => window.__game.resumeAudio());
       return pg;
@@ -287,8 +293,12 @@ async function main(): Promise<void> {
     const openHub = async (): Promise<Page> => {
       const pg = await browser.newPage({ viewport: { width: 960, height: 540 } });
       pg.on("pageerror", (e) => errors.push(`hub: ${String(e)}`));
-      pg.on("console", (m) => m.type() === "error" && errors.push(`hub: ${m.text()}`));
-      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&ai=0&level=${HUB_LEVEL_ID}&account=sandbox-alpha&shop=http://127.0.0.1:${HOST_PORT}`, { waitUntil: "load" });
+      // name the request, not just the status: "403 (Forbidden)" on its own cost a stage's worth of
+      // guessing about which route the hub was being refused on
+      pg.on("response", (r) => r.status() >= 400 && errors.push(`hub: ${r.status()} ${r.request().method()} ${new URL(r.url()).pathname}`));
+      // "Failed to load resource" is the same event as the response above, with less in it
+      pg.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && errors.push(`hub: ${m.text()}`));
+      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&ai=0&level=${HUB_LEVEL_ID}&account=sandbox-alpha&secret=${SECRET}&shop=http://127.0.0.1:${HOST_PORT}`, { waitUntil: "load" });
       await pg.waitForFunction(() => window.__game?.ready === true && window.__game.state().hub?.fileLoaded === true, null, { timeout: 40000, polling: 100 });
       await pg.evaluate(() => window.__game.resumeAudio());
       return pg;

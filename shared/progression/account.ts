@@ -1,5 +1,5 @@
 /** The Ghostfile: a self-authored file. Hot state lives in the Player DO; durable rows in D1. */
-import { depthForXp, matchXp, type MatchContribution } from "./depth";
+import { depthForXp, matchXp, XP_UNITS, type MatchContribution } from "./depth";
 import { emptyWallet, scripForMatch, NODE_REFUND, type Wallet } from "./currency";
 import { craft, RECIPES, type CraftResult } from "./crafting";
 import { DEFAULT_LOADOUT, type Loadout } from "../manifest/loadout";
@@ -278,9 +278,28 @@ export function applyMatch(a: Account, c: MatchContribution): LedgerEntry {
   a.wallet.scrip += scrip;
   a.wallet.salvage += salvage;
   a.matches++;
+  /**
+   * The receipt (Stage 29).
+   *
+   * It used to print three lines: the match, the three XP buckets, and the total. The buckets did
+   * not add up to the total — `participation` and the win bonus are terms of `matchXp` and were
+   * named nowhere — so a player who read their own receipt found several hundred XP arriving from
+   * nothing. A receipt whose arithmetic does not close is not a receipt.
+   *
+   * It also never said what the player *did*. Objective play is the heaviest term in Depth
+   * (`XP_WEIGHTS.flips` is 0.4, the largest), and the counts behind it — flips, seconds on a node —
+   * were computed at settlement, converted to XP and thrown away. So the game scored you mostly on
+   * something it never showed you a number for.
+   *
+   * Every line below is now a term, each pairs what you did with what it paid, and they sum to the
+   * total. `tests/receipt.test.ts` reads the printed text back and checks that.
+   */
   const lines = [
     `MATCH ${String(a.matches).padStart(4, "0")} · ${c.won ? "WOKE" : "LEASED"}`,
-    `OBJECTIVE ${xp.objective} · COMBAT ${xp.combat} · SUPPORT ${xp.support}`,
+    `${c.flips} FLIPS · ${Math.round(c.nodeSeconds)} NODE SECONDS → OBJECTIVE ${xp.objective}`,
+    `${c.kills} CLOSED · ${c.assists} ASSISTS → COMBAT ${xp.combat}`,
+    `${Math.round(c.supportPoints)} SUPPORT → SUPPORT ${xp.support}`,
+    c.won ? `PARTICIPATION ${XP_UNITS.participation} · WOKE THE DISTRICT ${XP_UNITS.winBonus}` : `PARTICIPATION ${XP_UNITS.participation}`,
     `XP +${xp.total} · SCRIP +${scrip} · SALVAGE +${salvage}`,
   ];
   if (a.depth > depthBefore) lines.push(`DEPTH ${depthBefore} → ${a.depth}`);

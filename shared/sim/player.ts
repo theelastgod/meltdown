@@ -52,18 +52,38 @@ export function applySheet(p: PlayerState, sheet: StatSheet): void {
   p.weapon.grenades = GRENADE_LIST.map((g, i) => (i === 0 ? Math.max(0, g.count + Math.round(sheet.grenades)) : g.count));
 }
 
+/**
+ * A player's counters.
+ *
+ * **Only four of these are reconciled to a networked client** — `kills`, `deaths`, `shots` and
+ * `hits`, the set `World.exportLocal`/`importLocal` carry in `LocalAuth`. The rest are accurate on
+ * whoever runs the authoritative sim. Offline that is the client, so all of them are right; in a
+ * room it is the server, and the client's copies of the objective counters below sit at whatever
+ * its own prediction produced — which for `flips`, `nodeSeconds` and `support` is nothing, because
+ * the client takes wake state from snapshots rather than stepping it.
+ *
+ * Nothing player-facing reads the unreconciled ones today: the room settles from its own copy, and
+ * the Ledger Entry is written server-side. But the trap is real — a probe read `stats.flips` on a
+ * client in Stage 28 and got a zero for a flip the room had credited, which cost a stage's write-up
+ * a wrong diagnosis. `tests/receipt.test.ts` pins the reconciled set, so adding a counter here is a
+ * decision about whether the client is allowed to believe it rather than an accident.
+ */
 export interface PlayerStats {
   jumps: number;
   slides: number;
   slideJumps: number;
   mantles: number;
+  /** reconciled to the owning client (LocalAuth) */
   shots: number;
+  /** reconciled to the owning client (LocalAuth) */
   hits: number;
+  /** reconciled to the owning client (LocalAuth) */
   kills: number;
+  /** reconciled to the owning client (LocalAuth) */
   deaths: number;
   /** Peak horizontal speed reached (m/s). */
   topSpeed: number;
-  /** Match credit (the Ghostfile reads these at results): node flips you stood on, seconds pulling/holding, support points. */
+  /** Match credit (the Ghostfile reads these at results, server-side): node flips you stood on, seconds pulling/holding, support points. Not reconciled — see the note above. */
   flips: number;
   nodeSeconds: number;
   assists: number;

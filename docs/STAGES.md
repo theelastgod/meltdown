@@ -1263,8 +1263,131 @@ is verified against the running host, and each of the six guards is mutation-tes
 **Left open.** `probe:harden` prints `ALPHA flips 0` on a round the server credited a flip for, so
 the *client's* `state().stats.flips` does not reflect what the room counted in a networked match.
 The money is unaffected — the epoch is built from the room's own tally, which is what the check now
-asserts on — but the HUD is showing the player a zero for something they did. It is a display bug
-in the snapshot, and it belongs to whoever next opens the wake HUD.
+asserts on.
+
+*(Corrected in Stage 29: this note said "the HUD is showing the player a zero for something they
+did." It is not. Nothing in the client reads that counter — the one HUD reader of `stats` reads
+`kills`, which the wire does reconcile — so the client's copy is internal state that only the probe
+had ever looked at. The real problem was next door and worse: the game never showed the player that
+number **anywhere**.)*
+
+## Stage 29 — The client never sent the credential, and the receipt did not add up
+
+**Goal.** Stage 28's own closing note claimed a HUD bug. Check it before anyone acts on it.
+
+**What was found.** The note was wrong; checking it turned over three things that were not.
+
+### The client never sent the credential — CRITICAL, and mine
+
+Stage 26 gave every file a secret and gated the host's mutating routes. It gated them **from the
+server side only**, and never checked the other end of the wire. Three of the client's own POSTs
+did not carry the secret. From the moment a file adopts one — which is a player's first match, over
+the WebSocket join — the host refused them:
+
+| route | what it is | since |
+|---|---|---|
+| `/file/<id>/buy`, `/refund` | **every Ledger Graph purchase** — the whole progression spend | Stage 26 |
+| `/file/<id>/ghost` | range ghosts, a Stage 8 feature, dead in production | Stage 26 |
+| `/rooms/open` | not under `/file/`, so the sweep never reached it: **an id alone could burn another file's on-chain room-hours** | Stage 20 |
+
+Reproduced against the running host, not reasoned about:
+
+```
+$ curl -X POST .../file/<id>/campaign -d '{"secret":"...","op":"state"}'   # the first match
+$ curl -X POST .../file/<id>/buy      -d '{"node":"slipfile"}'             # what the client sent
+{"ok":false,"reason":"NOT YOUR FILE: this file has a secret and the request did not carry it"}
+```
+
+I shipped that in Stage 26 and it survived Stages 27 and 28, both of which were *about* this
+credential. Nothing saw it: the unit tests call `buyNode` directly rather than through a fetch, and
+the probes that buy nodes never join a room first, so their files stay anonymous and the gate never
+closes. `probe:identity` did fail — as a console error reading only `403 (Forbidden)`, with no route
+on it, which is why three stages of looking straight at it missed it.
+
+**Fixed.** All three POSTs carry the secret; `/rooms/open` checks it, and checks it *before* the
+wallet lookup, because whether a file has a wallet linked is the file's own business and answering
+that to a bare id is answering it to anyone.
+
+**`tests/clientauth.test.ts` reads the client's source.** The defect was a missing field in an
+object literal, and the cheapest true statement about a missing field is that it is missing. The
+lint finds every `fetch(..., method: "POST")` in `client/`, and fails if one targets a route that
+calls `fileAuth` without a `secret` in its body. Removing the secret from any of the three fails it.
+A case also asserts the scan finds POSTs at all, so an empty pass is not a pass.
+
+### The receipt did not add up
+
+The receipt printed three lines:
+
+```
+MATCH 0001 · WOKE
+OBJECTIVE 1145 · COMBAT 821 · SUPPORT 120
+XP +2836 · SCRIP +340 · SALVAGE +7
+```
+
+1145 + 821 + 120 is 2086. The other **750 XP is `XP_UNITS.participation` and the win bonus**, both
+real terms of `matchXp`, named nowhere. A player who read their own receipt watched several hundred
+XP arrive from nothing. A receipt whose arithmetic does not close is not a receipt.
+
+And it never said what the player *did*. `XP_WEIGHTS.flips` is 0.4 — objective play is the heaviest
+single weight in Depth, which is the Ledger Graph, which is everything the file spends. The counts
+behind it were computed at settlement, turned into XP and dropped. **The game scored you mostly on
+a number it never showed you, anywhere.** Not in the HUD, not on the receipt, not in the file.
+
+**Fixed.** Every line is a term, each pairs what you did with what it paid, and they sum:
+
+```
+MATCH 0001 · WOKE
+3 FLIPS · 84 NODE SECONDS → OBJECTIVE 1145
+5 CLOSED · 2 ASSISTS → COMBAT 821
+10 SUPPORT → SUPPORT 120
+PARTICIPATION 250 · WOKE THE DISTRICT 500
+XP +2836 · SCRIP +340 · SALVAGE +7
+DEPTH 1 → 2
+```
+
+### And the note itself was wrong
+
+It said the client shows a zero for a flip the room credited. It does not: the only HUD reader of
+`stats` reads `kills`, which `LocalAuth` reconciles. The client's `flips` is internal state that
+nothing but a probe had ever read — the probe read it, got a zero, and a stage's write-up carried a
+wrong diagnosis for it. Corrected in place, in the Stage 28 entry.
+
+**Files.** `client/file.ts`, `client/counter.ts`, `server/node-host.ts` (the credential);
+`shared/progression/account.ts` (`applyMatch`), `client/game.ts`, `shared/sim/player.ts`
+(`PlayerStats`); `probe/stage8.ts`; `tests/clientauth.test.ts` (new, 4), `tests/receipt.test.ts`
+(new, 11); `docs/STAGES.md` (the Stage 28 correction).
+
+**Design decisions.**
+- **The test parses the printed text.** Asking `matchXp` what it computed cannot see a receipt that
+  fails to print it, and failing to print it *was* the defect — the same lesson as Stage 28's
+  routes. So the cases read the lines back with a regex and check the parsed terms sum to the parsed
+  total. Restoring the original bug fails six of them.
+- **A bucket that paid nothing still prints its zero.** `0 FLIPS · 0 NODE SECONDS → OBJECTIVE 0` is
+  noise right up until the player wonders why a match paid so little, and then it is the answer.
+- **The win bonus is only a term when it was won**, so the sum closes in both cases rather than
+  printing a zero for something that was never on offer.
+- **The alert stopped reading by index.** `client/game.ts` showed `f.ledger[2]` — the totals line by
+  position. The receipt grew three lines, and an index would have gone on working while showing the
+  wrong one. It finds the line by its `XP +` prefix now.
+- **`trophiesFromLedger` matches by prefix**, and the receipt now contributes three more lines to a
+  ledger it reads. A case asserts only the `MATCH` line is still a trophy, so the Deadletter Office
+  does not fill up with XP arithmetic.
+
+**The trap, marked.** `PlayerStats` has thirteen counters and `LocalAuth` reconciles four. The other
+nine are right only on whoever runs the authoritative sim — the server, in a room — and nothing in
+the type said so, which is how Stage 28 read one and believed it. `PlayerStats` now marks the four,
+and a case pins the set: adding a counter fails it, so the next person decides whether the client
+may believe it rather than finding out later. Letting the client believe `flips` fails that case.
+
+**A probe that says only "403".** `probe/stage8.ts` reported the refusal as
+`Failed to load resource: 403 (Forbidden)` — the console message, which carries no URL. It now
+listens on `response` and records `403 POST /file/sandbox-alpha/ghost`, which named the bug in one
+run after three stages of not naming it. Cheap, and the reason this stage found anything at all.
+
+**Acceptance:** `npm test` 279 (15 new); `npm run typecheck` clean over both configs;
+`probe:identity` 17/17. Every guard is mutation-tested — the receipt invariants including
+reinstating the original arithmetic gap, and each of the three client POSTs including reinstating
+the shipped one.
 
 ## Stage 3 — The look
 

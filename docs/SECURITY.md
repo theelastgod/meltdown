@@ -245,6 +245,35 @@ test that calls the function cannot see a route that does not. `tests/routes.tes
 through `fetch` against the real Worker handlers and the real Durable Object, with only storage and
 D1 doubled. Removing any one of the five guards fails exactly one case.
 
+### 1.13 The client never sent the credential — CRITICAL
+
+Stage 26 gave every file a secret and gated the host's mutating routes. It gated them from the
+server side only. Three of the client's own POSTs did not carry the secret, so from the moment a
+file adopted one — a player's first match, over the WebSocket join — the host refused them:
+
+- `/file/<id>/buy` and `/refund`: **every Ledger Graph purchase**, the whole progression spend.
+- `/file/<id>/ghost`: range ghosts, dead in production since Stage 26.
+- `/rooms/open`: not under `/file/`, so the Stage 26 sweep never reached it and the server never
+  asked either — meaning an id alone could burn another file's on-chain room-hours. That one is a
+  spend of someone else's money by a published identifier, which is exactly what §1.9 was for.
+
+Two of these are availability, not theft: the gate refused the owner rather than admitting a
+stranger. `/rooms/open` is the reverse and is the security finding proper.
+
+**Fixed.** All three POSTs carry the secret. `/rooms/open` checks it, before the wallet lookup —
+whether a file has a wallet linked is the file's own business, and answering that to a bare id is
+answering it to anyone.
+
+**Why nothing saw it.** The unit tests call `buyNode` directly rather than through a fetch, and the
+probes that buy nodes never join a room first, so their files stay anonymous and the gate never
+closes. `probe:identity` did fail, as a console error reading only `403 (Forbidden)` with no route
+on it — through two stages that were themselves about this credential.
+
+`tests/clientauth.test.ts` reads the client's source: it finds every `fetch(..., method: "POST")` in
+`client/` and fails if one targets a route that calls `fileAuth` without a `secret` in its body. The
+defect was a missing field in an object literal, and that is the cheapest true statement about it.
+Removing the secret from any of the three fails it.
+
 ---
 
 ## 2. What is deliberately trusted
@@ -314,6 +343,7 @@ it now asserts each separately.
 npx vitest run tests/security.test.ts    # 13 cases, all against a real EVM
 npx vitest run tests/fileauth.test.ts    # 15 cases: the file id and the campaign contract
 npx vitest run tests/routes.test.ts      # 10 cases, through fetch: the routes, not the functions
+npx vitest run tests/clientauth.test.ts  # 4 cases: does the client send what the routes ask for
 npx vitest run tests/speedhack.test.ts   # 3 cases, against the real room and sim
 ```
 

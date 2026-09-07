@@ -265,7 +265,7 @@ export class GhostFile {
   async postGhost(run: GhostRun): Promise<boolean> {
     if (!this.shop) return false;
     try {
-      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/ghost`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ run }) });
+      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/ghost`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ run, secret: this.secret }) });
       const r = (await res.json()) as { ok: boolean };
       return r.ok;
     } catch {
@@ -352,7 +352,7 @@ export class GhostFile {
     this.busy = nodeId;
     this.renderGraph();
     try {
-      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/${refund ? "refund" : "buy"}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ node: nodeId }) });
+      const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/${refund ? "refund" : "buy"}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ node: nodeId, secret: this.secret }) });
       const r = (await res.json()) as { ok: boolean; reason?: string; account?: { owned: string[]; wallet: { scrip: number; wakelight: number; salvage: number }; depth: number; xp: number; ledger: string[] } };
       if (r.account) {
         this.owned = r.account.owned.slice();

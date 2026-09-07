@@ -216,7 +216,7 @@ export class CounterClient {
    */
   async openRoom(hours = 1, rules: Record<string, unknown> = {}): Promise<{ ok: boolean; reason?: string; code?: string; room?: string; join?: string }> {
     try {
-      const r = (await (await fetch(`${this.shop}/rooms/open`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: this.account, hours, rules }) })).json()) as { ok: boolean; reason?: string; code?: string; room?: string; join?: string };
+      const r = (await (await fetch(`${this.shop}/rooms/open`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: this.account, hours, rules, secret: this.secret }) })).json()) as { ok: boolean; reason?: string; code?: string; room?: string; join?: string };
       if (r.ok) await this.op("reconcile");
       this.say(r.ok ? `PRIVATE ROOM · CODE ${r.code} · ${hours}h` : `ROOM REFUSED: ${r.reason}`);
       return r;
