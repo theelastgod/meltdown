@@ -20,6 +20,8 @@ import { shot } from "./shot";
 import WebSocket from "ws";
 import type { BotStep } from "../client/bot";
 import { encodeInputs, encodeJoin, MAX_REWIND_TICKS, Msg } from "../shared/net/protocol";
+import { levelById } from "../shared/sim/level";
+import { buildNav, findPath } from "../shared/sim/nav";
 import { Btn } from "../shared/sim/input";
 
 const VITE_PORT = 5183;
@@ -86,23 +88,77 @@ async function waitJoined(page: Page, timeoutMs = 10000): Promise<number> {
   return page.evaluate(() => window.__game.net()!.joinMs);
 }
 
-async function engagement(browser: Awaited<ReturnType<typeof chromium.launch>>, room: string, seconds: number) {
+/**
+ * Run the engagement until it has a SAMPLE, not until a stopwatch runs out.
+ *
+ * A fixed twelve seconds used to be enough, and then Stage 34 stopped the driver firing into cover
+ * — correctly, since a shot the level eats measures geometry rather than hit registration — and the
+ * shot count came down with it. Four consecutive local runs then produced 26, 13, 20 and 26 shots
+ * against a floor of 20, and the 13 failed: 92% hit registration, nothing clamped, healthy netcode,
+ * red anyway. CI failed the same way on the same commit.
+ *
+ * A percentage is only worth reading over a sample big enough to mean something, so the harness now
+ * waits for that sample and reports how long it took. The cap is what keeps a genuine collapse from
+ * hanging: if the shots never arrive, the check fails on the count, which is a true statement about
+ * the run rather than a threshold that happened to fall the wrong side of a stopwatch.
+ */
+async function engagement(browser: Awaited<ReturnType<typeof chromium.launch>>, room: string, seconds: number, wantShots = 24, capSeconds = 40) {
   const a = await openClient(browser, room, "ALPHA", 11);
   const b = await openClient(browser, room, "BRAVO", 23);
   const joinA = await waitJoined(a);
   const joinB = await waitJoined(b);
   const idA = await a.evaluate(() => window.__game.net()!.playerId);
   const idB = await b.evaluate(() => window.__game.net()!.playerId);
-  // BRAVO: walk into the lane and strafe; ALPHA: turn to face and shoot BRAVO's interpolated silhouette
-  const planB: BotStep[] = [{ kind: "goto", x: 0, z: 8, sprint: true, radius: 1 }, { kind: "look", yaw: 0, ticks: 10 }, { kind: "strafe", ticks: 60 * seconds, period: 50 }];
-  const planA: BotStep[] = [{ kind: "goto", x: 0, z: 20, sprint: true, radius: 1 }, { kind: "killPlayer", targetId: idB, ticks: 60 * seconds }];
+  // BRAVO: walk into the lane and strafe; ALPHA: turn to face and shoot BRAVO's interpolated silhouette.
+  //
+  // BRAVO is walked back to the lane along the NAV MESH whenever it strays, because ALPHA kills it
+  // and the respawn is wherever the level puts it. `goto` is a straight line, not a path: from the
+  // north spawn at (0, -24) the line to the lane runs into the upper deck, so BRAVO wedged against
+  // it at about (0, -14.5) and stayed there — behind the deck, out of ALPHA's sight, for the rest of
+  // the run. The diagnostic below caught it holding exactly that position in both slow runs while
+  // ALPHA still had seventeen rounds in the magazine.
+  //
+  // The old harness had the same fault and could not see it. Before Stage 34 the driver fired at
+  // BRAVO's silhouette through whatever was in the way, so shots kept coming and every one came back
+  // a blocked miss — the "every miss was blocked" signature that stage kept running into. Holding
+  // fire made the stall visible; pathing around the deck is what fixes it.
+  const level = levelById("drainage_yard");
+  const nav = buildNav(level);
+  const LANE = { x: 0, z: 8 };
+  const laneRoute = (from: { x: number; z: number }): BotStep[] => [
+    ...(findPath(nav, { x: from.x, y: 0, z: from.z }, { x: LANE.x, y: 0, z: LANE.z }) ?? [{ x: from.x, y: 0, z: from.z }, { x: LANE.x, y: 0, z: LANE.z }])
+      .slice(1)
+      .map((p, i, arr) => ({ kind: "goto" as const, x: p.x, z: p.z, sprint: true, radius: i === arr.length - 1 ? 1.2 : 1.6, timeoutTicks: 400 })),
+    { kind: "look", yaw: 0, ticks: 6 },
+    { kind: "strafe", ticks: 60 * capSeconds, period: 50 },
+  ];
+  const planB: BotStep[] = laneRoute({ x: 0, z: 24 });
+  const planA: BotStep[] = [{ kind: "goto", x: 0, z: 20, sprint: true, radius: 1 }, { kind: "killPlayer", targetId: idB, ticks: 60 * capSeconds }];
   await b.evaluate((p) => window.__game.setBot(p), planB);
   await a.evaluate((p) => window.__game.setBot(p), planA);
+  const t0 = Date.now();
   await a.waitForTimeout(seconds * 1000 + 1500);
+  let shots = 0;
+  while (Date.now() - t0 < capSeconds * 1000) {
+    shots = (await stats()).rooms[room]?.clients.find((c: any) => c.id === idA)?.shots ?? 0;
+    if (shots >= wantShots) break;
+    await a.waitForTimeout(500);
+    // re-path BRAVO from wherever it actually is: a respawn puts it anywhere, and the lane is the
+    // only place the two of them can see each other
+    const at = await b.evaluate(() => ({ x: window.__game.state().pos.x, z: window.__game.state().pos.z }));
+    if (Math.hypot(at.x - LANE.x, at.z - LANE.z) > 4) await b.evaluate((p) => window.__game.setBot(p), laneRoute(at));
+  }
+  const engagedMs = Date.now() - t0;
   const netA = await a.evaluate(() => window.__game.net()!);
   const netB = await b.evaluate(() => window.__game.net()!);
+  // why the driver stopped, in the driver's own terms: it fires only at a target that is alive, in
+  // front and visible, so a short sample is one of those three going away and staying away
+  const why = {
+    alpha: await a.evaluate((id) => { const s = window.__game.state(); const r = window.__game.net()?.remotes.find((x) => x.id === id); return { alive: s.health > 0, health: s.health, ammo: s.ammo, mag: s.weaponDef.magSize, pos: { x: +s.pos.x.toFixed(1), z: +s.pos.z.toFixed(1) }, sees: r ? { alive: r.alive, health: r.health, x: +r.x.toFixed(1), z: +r.z.toFixed(1) } : null }; }, idB),
+    bravo: await b.evaluate(() => { const s = window.__game.state(); return { alive: s.health > 0, health: s.health, pos: { x: +s.pos.x.toFixed(1), z: +s.pos.z.toFixed(1) } }; }),
+  };
   const st = (await stats()).rooms[room];
-  return { a, b, idA, idB, joinA, joinB, netA, netB, st };
+  return { a, b, idA, idB, joinA, joinB, netA, netB, st, engagedMs, wantShots, why };
 }
 
 async function main(): Promise<void> {
@@ -135,7 +191,10 @@ async function main(): Promise<void> {
     check("measured RTT reflects the simulated link", E.netA.rttMs >= RTT * 0.8 && E.netA.rttMs <= RTT * 1.6, `ALPHA rtt ${E.netA.rttMs} ms`);
     const hitRate = cA.shots ? cA.hits / cA.shots : 0;
     const dg = E.st.shotDiag;
-    check("hit-reg at 150 ms RTT + 5% loss on a strafing target (lag comp)", cA.shots >= 20 && hitRate >= 0.6, `${cA.hits}/${cA.shots} server-confirmed hits (${(hitRate * 100).toFixed(0)}%), ${cA.kills} kills; rewind avg ${dg.avgRewind.toFixed(1)} max ${dg.rewindMax} ticks, clamped ${dg.clamped}; misses avg ${dg.avgNearMiss.toFixed(2)} m max ${dg.nearMissMax.toFixed(2)} m from the axis (${dg.missInsideHitbox} of ${dg.nearMissN} inside the 0.4 m capsule · ${dg.missBlocked} blocked, ${dg.missClean} clean)`);
+    // two checks, because they fail for unrelated reasons and used to be one: whether the harness
+    // got a sample, and what that sample says about hit registration
+    check("the engagement produced a sample worth a percentage", cA.shots >= 20, `${cA.shots} aimed shots in ${(E.engagedMs / 1000).toFixed(1)} s (wanted ${E.wantShots}, floor 20) · ALPHA ${JSON.stringify(E.why.alpha)} · BRAVO ${JSON.stringify(E.why.bravo)}`);
+    check("hit-reg at 150 ms RTT + 5% loss on a strafing target (lag comp)", hitRate >= 0.6, `${cA.hits}/${cA.shots} server-confirmed hits (${(hitRate * 100).toFixed(0)}%), ${cA.kills} kills; rewind avg ${dg.avgRewind.toFixed(1)} max ${dg.rewindMax} ticks, clamped ${dg.clamped}; misses avg ${dg.avgNearMiss.toFixed(2)} m max ${dg.nearMissMax.toFixed(2)} m from the axis (${dg.missInsideHitbox} of ${dg.nearMissN} inside the 0.4 m capsule · ${dg.missBlocked} blocked, ${dg.missClean} clean)`);
     if (E.st.traceLog.length) console.log("server trace log:", JSON.stringify(E.st.traceLog));
     console.log("server log:", JSON.stringify((await (await fetch(`http://127.0.0.1:${HOST_PORT}/stats`)).json()).logs.filter((l: string) => /death|respawn/.test(l))));
     if (E.netB.game.log.length) console.log("BRAVO correction log:", JSON.stringify(E.netB.game.log));

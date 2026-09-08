@@ -85,8 +85,28 @@ const readBody = (req: import("node:http").IncomingMessage): Promise<Record<stri
     });
   });
 
-/** fixed-rate loop with drift correction */
+/**
+ * How many live sockets each room has, so an empty one can stop simulating.
+ *
+ * The Worker host has stopped idle rooms since Stage 13; this one never did, and every room it had
+ * ever created kept stepping at 60 Hz for the life of the process. probe:harden fills a room to the
+ * cap of eight to test matchmaking and then closes those sockets — but the room went on simulating
+ * eight players, its wasps and its mechs for the rest of the probe. Its own host log gives it away:
+ * forty seconds after the sockets closed, `[neochina-lease_row]` is still logging wasp kills and
+ * respawns while the next check waits for a client to sync in a different room.
+ *
+ * On a CI runner sharing two cores with two software-GL browsers that is not free, and probe:harden
+ * timed out there twice — once with a socket that never finished connecting, once with a client that
+ * joined and never received a snapshot. Both are what starvation looks like from the outside.
+ */
+const roomSockets = new Map<Room, number>();
+const roomIdleSince = new Map<Room, number>();
+const IDLE_STOP_MS = 10_000;
+
+/** fixed-rate loop with drift correction; parks itself once a room has been empty for IDLE_STOP_MS */
 function startLoop(room: Room): void {
+  if (roomIdleSince.get(room) === -1) return; // already looping
+  roomIdleSince.set(room, -1);
   let next = performance.now();
   const loop = () => {
     const now = performance.now();
@@ -97,9 +117,29 @@ function startLoop(room: Room): void {
       n++;
     }
     if (n === 10) next = now; // fell far behind: resync rather than spiral
+    // park an empty room rather than tick it forever; its state stays for a rejoin, and the next
+    // connection starts the loop again from wherever the clock is now
+    if ((roomSockets.get(room) ?? 0) === 0) {
+      const since = roomIdleSince.get(room) ?? -1;
+      if (since === -1) roomIdleSince.set(room, now);
+      else if (now - since > IDLE_STOP_MS) {
+        roomIdleSince.delete(room);
+        return;
+      }
+    } else roomIdleSince.set(room, -1);
     setTimeout(loop, Math.max(0, next - performance.now()));
   };
   setTimeout(loop, 0);
+}
+
+/** A socket opened on a room: count it and make sure the room is stepping. */
+function roomAttach(room: Room): void {
+  roomSockets.set(room, (roomSockets.get(room) ?? 0) + 1);
+  if (!roomIdleSince.has(room)) startLoop(room); // it had parked itself
+}
+
+function roomDetach(room: Room): void {
+  roomSockets.set(room, Math.max(0, (roomSockets.get(room) ?? 0) - 1));
 }
 
 function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: number, roundSeconds?: number, level?: string, audit = false, run = false): Room {
@@ -471,13 +511,22 @@ wss.on("connection", (ws: WebSocket, req) => {
     },
     close: (code, reason) => ws.close(code, reason),
   };
+  roomAttach(room);
   room.onOpen(conn);
   ws.on("message", (data) => {
     const buf = data instanceof ArrayBuffer ? data : Array.isArray(data) ? Buffer.concat(data).buffer : new Uint8Array(data as Buffer).slice().buffer;
     room.onMessage(conn, buf as ArrayBuffer);
   });
-  ws.on("close", () => room.onClose(conn));
-  ws.on("error", () => room.onClose(conn));
+  // once per socket however it ends, so the room's count cannot drift below its real occupancy
+  let gone = false;
+  const closed = () => {
+    if (gone) return;
+    gone = true;
+    roomDetach(room);
+    room.onClose(conn);
+  };
+  ws.on("close", closed);
+  ws.on("error", closed);
 });
 
 http.listen(port, "127.0.0.1", () => console.log(`meltdown node host listening on ws://127.0.0.1:${port}/room/<name>`));

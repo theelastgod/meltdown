@@ -116,7 +116,11 @@ export class OpeningCrawl {
 
   private frame = (now: number): void => {
     if (!this.active) return;
-    const dt = Math.min(0.25, (now - this.last) / 1000);
+    // never negative: the first rAF timestamp is the START of the frame in progress, which can
+    // predate the performance.now() the constructor stored a moment earlier. seek() has clamped its
+    // clock since Stage 12; the frame loop had not, and one backwards step was enough to run the
+    // schedule off its front edge.
+    const dt = Math.max(0, Math.min(0.25, (now - this.last) / 1000));
     this.last = now;
     if (!this.paused) this.t += dt * this.speed;
     this.render();
@@ -151,6 +155,10 @@ export class OpeningCrawl {
       this.tear(true);
     } else if (prev.phase === "tear") this.tear(false);
     const titleUp = s.phase === "title";
+    // derived every frame rather than latched once: the branch below is edge-triggered and fires on
+    // BOTH transitions, so a hint hidden on the way into the title never came back on the way out.
+    const wantHint = this.seen && !titleUp;
+    if (this.skipHint.hidden === wantHint) this.skipHint.hidden = !wantHint;
     if (this.title.hidden === titleUp) {
       this.title.hidden = !titleUp;
       this.root.classList.toggle("cut", s.phase === "cut" || titleUp);
@@ -161,7 +169,6 @@ export class OpeningCrawl {
         } catch {
           /* no storage */
         }
-        this.skipHint.hidden = true;
         this.prompt.style.opacity = "0";
         setTimeout(() => (this.prompt.style.opacity = "1"), 900 / this.speed);
       }

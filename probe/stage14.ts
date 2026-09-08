@@ -92,7 +92,7 @@ async function main(): Promise<void> {
    */
   const SECRET = "probestage14secretaaaaaa";
   const post = async (path: string, body: unknown) => (await (await fetch(`${HOST}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(body as object), secret: SECRET }) })).json()) as { ok: boolean; reason?: string };
-  const stats = async () => (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { run: { totalBanked: number; claims: number; carried: Record<string, number>; banked: Record<string, number>; credits: string[] } | null; clients: { name: string; kills: number }[] }>; logs: string[] };
+  const stats = async () => (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { run: { totalBanked: number; claims: number; carried: Record<string, number>; banked: Record<string, number>; credits: string[] } | null; clients: { name: string; kills: number; deaths: number }[] }>; logs: string[] };
   const newPage = async (viewport: { width: number; height: number }, tag: string): Promise<Page> => {
     const pg = await browser.newPage({ viewport });
     pg.on("pageerror", (e) => errors.push(`${tag}: ${String(e)}`));
@@ -177,13 +177,26 @@ async function main(): Promise<void> {
 
     // ---- no shot lands inside the gate ----
     const hpB0 = await b.evaluate(() => window.__game.state().health);
-    const killsA0 = (await stats()).rooms["run-yard"]!.clients.find((c) => c.name === "ALPHA")?.kills ?? 0;
+    // BRAVO's own death count, not ALPHA's kill tally. The tally counts every kind the sim can
+    // kill, and drainage_yard's training dummies stand OUTSIDE the gate — dummy 3 sits 8.9 m from
+    // its centre, well inside a spray aimed past BRAVO. A round that clips one is ALPHA shooting a
+    // dummy in the street, which is the game working; asserting on the tally called that a safe
+    // zone leak, and it went red on CI reading "health 70 → 70 · ALPHA kills 0 → 1".
+    //
+    // The health half could not settle it either: BASE_HEALTH is 70, so "70 → 70" reads the same
+    // whether BRAVO was never touched or died and respawned at full. A death count can tell those
+    // apart, and tests/safezone.test.ts holds the rule itself at the sim layer.
+    const bravo = async () => (await stats()).rooms["run-yard"]!.clients.find((c) => c.name === "BRAVO");
+    const alpha = async () => (await stats()).rooms["run-yard"]!.clients.find((c) => c.name === "ALPHA");
+    const deathsB0 = (await bravo())?.deaths ?? 0;
+    const killsA0 = (await alpha())?.kills ?? 0;
     const idB = await b.evaluate(() => window.__game.net()!.playerId);
     await a.evaluate(({ to, id }) => window.__game.setBot([{ kind: "goto", x: to.x, z: to.z, sprint: true, radius: 9, timeoutTicks: 900 }, { kind: "killPlayer", targetId: id, ticks: 900 }]), { to: { x: gate.pos.x + 9, z: gate.pos.z }, id: idB });
     await a.waitForTimeout(9000);
     const hpB1 = await b.evaluate(() => window.__game.state().health);
-    const killsA1 = (await stats()).rooms["run-yard"]!.clients.find((c) => c.name === "ALPHA")?.kills ?? 0;
-    check("inside the safe zone no damage lands: ALPHA empties a magazine at BRAVO standing in the gate and BRAVO's health does not move", hpB1 === hpB0 && killsA1 === killsA0, `health ${hpB0} → ${hpB1} · ALPHA kills ${killsA0} → ${killsA1}`);
+    const deathsB1 = (await bravo())?.deaths ?? 0;
+    const killsA1 = (await alpha())?.kills ?? 0;
+    check("inside the safe zone no damage lands: ALPHA empties a magazine at BRAVO standing in the gate and BRAVO neither loses health nor dies", hpB1 === hpB0 && deathsB1 === deathsB0, `health ${hpB0} → ${hpB1} · BRAVO deaths ${deathsB0} → ${deathsB1} · (ALPHA's tally ${killsA0} → ${killsA1}, dummies in the street included)`);
 
     // ---- ALPHA links, banks for $CAPITAL owed, withdraws to the wallet ----
     await a.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 9000 }]));

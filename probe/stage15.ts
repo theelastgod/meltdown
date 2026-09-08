@@ -148,7 +148,14 @@ async function main(): Promise<void> {
     // BRAVO is a sandbox file too (a Depth-1 file cannot hold most playlists' weapons) with no wallet linked: the post skips it
     await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=lease_row&account=sandbox-hardb&secret=${SECRET}&name=BRAVO&loadout=${encodeURIComponent(JSON.stringify(loadout))}&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
     for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 }).catch(async (e) => {
-      console.log("join state:", JSON.stringify(await p.evaluate(() => ({ status: window.__game.net()?.status, kick: window.__game.net()?.kickReason, synced: window.__game.net()?.synced, snapshots: window.__game.net()?.stats.snapshots, tick: window.__game.state().tick }))));
+      // "connecting · 0 snapshots" says the socket never finished the handshake but not why, and the
+      // room this reaches is a devnet-backed one, so a join can be slow for reasons off this page.
+      // Carry the clock and the target out with it: how long the attempt has been running and which
+      // room it is asking for turn a recurrence into something readable rather than another guess.
+      console.log("join state:", JSON.stringify(await p.evaluate(() => {
+        const n = window.__game.net();
+        return { status: n?.status, kick: n?.kickReason, synced: n?.synced, snapshots: n?.stats.snapshots, tick: window.__game.state().tick, joinMs: n?.joinMs, connectingMs: n?.stats.connectStartMs ? Math.round(Date.now() - n.stats.connectStartMs) : -1, target: new URLSearchParams(location.search).get("net") };
+      })));
       // a page that fails to sync usually said why on its console first (Stage 33)
       console.log("page errors:", errors.length ? errors.join(" | ") : "none");
       console.log((await stats()).logs.slice(-12).join("\n"));

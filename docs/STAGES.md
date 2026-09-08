@@ -1641,14 +1641,103 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
-## Stage 34 — The slow client, made reproducible (in progress)
+## Stage 35 — The clock ran backwards, and the check watched the wrong player
+
+**Goal.** Run #62 was the first fully green CI run this branch has had. Runs #60, #61, #63 and #64
+each failed a *different* probe — `probe:crawl` and `probe:run`, then `probe:harden`, then
+`probe:net`, then `probe:net` and `probe:harden` together. Four probes failing one at a time across
+five runs is not four coincidences. All four passed locally, every time.
+
+**`probe:crawl`: a state the code could not produce.** CI read the skip hint hidden while the crawl
+was still typing and still skippable:
+
+```
+FAIL  after the first view the crawl is skippable
+      — seen true skippable true · hint false "[SPACE] SKIP"
+```
+
+The hint is hidden in exactly one place, the branch that raises the title, and that branch only runs
+at the title — where `done` is true and `skippable` is therefore false. Both at once is impossible,
+so the crawl had to have *been* at the title and left again. The only clock that runs backwards is
+one fed a negative `dt`, and `OpeningCrawl.frame` took its `dt` straight from the rAF timestamp,
+which is the start of the frame in progress and can predate the `performance.now()` the constructor
+stored a moment earlier. `seek()` had clamped its clock to zero since Stage 12; the frame loop never
+did.
+
+One negative frame put `t` below zero, and `crawlAt`'s fallback for "no segment matches" handed back
+the **last** segment — the title. The damage outlived the frame: the hint latched hidden, because the
+branch is edge-triggered and fires on both transitions but only ever sets the hint to hidden; and the
+title branch wrote the "seen" flag, marking a first-time player's opening as already watched.
+
+Three fixes, at three layers: `dt` is clamped to zero, a `t` before the first keystroke resolves to
+the beginning rather than the end, and the hint is derived every frame instead of latched.
+`tests/crawlclock.test.ts` (6) holds the schedule against any `t` a caller can produce, including
+that the far-edge fallback still works — the guard was added, not removed. Mutation-tested: reverting
+the schedule fix fails four of the six.
+
+**`probe:run`: the assertion was wider than the claim above it.** The check named
+`inside the safe zone no damage lands` also asserted that the shooter's whole kill tally did not
+move. drainage_yard's training dummies stand in the street — dummy 3 a little under 9 m from the
+gate — so a round from a spray aimed past BRAVO clipped one and the check called it a safe-zone leak:
+
+```
+FAIL  inside the safe zone no damage lands — health 70 → 70 · ALPHA kills 0 → 1
+```
+
+The detail line could not settle it either way, which is the worse half: `BASE_HEALTH` is 70, so
+"70 → 70" reads identically for a player who was never touched and one who died and respawned at
+full. It now watches BRAVO's own death count, which can tell those apart.
+
+`world.ts` carried the same overreach in a comment — "nothing inside one takes damage, and nothing
+inside one deals it". The code protects **players**, which is the rule the game means, and the wider
+one was never true: two levels route a wasp patrol straight through a gate. The comment now says what
+is guarded and why the hole is deliberate, and `tests/safezone.test.ts` (7) pins both.
+
+**`probe:harden`: a room nobody was in, simulating forever.** Two timeouts, two different stall
+points — a socket stuck at `connecting`, and a client that joined and never received a snapshot. The
+host's own log gave it away: forty seconds after the matchmaking check closed its eight sockets,
+`[neochina-lease_row]` was still logging wasp kills and respawns while the next check waited for a
+client to sync in a different room.
+
+The Worker host has parked idle rooms since Stage 13. The dev host — the one every probe runs
+against — never did, and stepped every room it had ever created at 60 Hz for the life of the process.
+On a CI runner sharing two cores with two software-GL browsers that is not free. It now parks a room
+ten seconds after its last socket leaves and restarts it on the next connection, matching production.
+
+**`probe:net`: the sample, not the netcode.** The failure was `12/13` and `11/12` — 92% hit
+registration with nothing clamped, and red because the check wanted 20 shots. Healthy netcode, red
+gate. It reproduced here at once: four runs gave 26, 13, 20 and 26 shots against that floor.
+
+The stall was Stage 34's own doing, and it is the more interesting half. That stage stopped the
+driver firing into cover, correctly — a shot the level eats measures geometry, not hit registration.
+But `goto` walks in a straight line, not a path, and from the north spawn the line to the lane runs
+into the upper deck. BRAVO wedged there at about (0, −14.5), out of sight, and ALPHA held fire for
+the rest of the run with seventeen rounds still in the magazine. The old harness had exactly the same
+fault and could not see it: it fired through the deck instead, and every one of those shots came back
+a blocked miss — which is the "every miss was blocked" signature Stage 34's investigation kept
+running into without ever explaining.
+
+The engagement now waits for a *sample* rather than a stopwatch, walks BRAVO back along the nav mesh
+from wherever it actually respawned, and reports why it stopped in the driver's own terms (alive, in
+front, visible — and the magazine). The floor and the hit-rate bar are two checks now, because they
+fail for unrelated reasons. Six consecutive runs: 24–30 shots, 16/16 each, against 4-of-6 with stalls
+at 13 before.
+
+**Acceptance.** `npm test` 342 (13 new); typecheck clean over both configs; all sixteen probes green
+in one sweep — `probe` 13/13, `look` 18/18, `net` 16/16, `arsenal` 19/19, `wake` 14/14, `file` 19/19,
+`run` 16/16, `harden` 9/9, `identity` 23/23, `campaign` 27/27, `counter` 14/14, `endgame` 16/16,
+`ship` 9/9, `crawl` 10/10, `mobile` 14/14, `frame` 6/6.
+
+## Stage 34 — The slow client, made reproducible
 
 **Goal.** `probe:net` has been green by hand and red on CI since Stage 2. Stages 30, 31 and 33 each
 touched it; it was red on CI runs #42, #43 and #45 and green on #41. Every previous attempt reasoned
 about the difference from a distance, because there was no way to produce it here.
 
 **The reproduction.** `CPU=<n>` throttles the browser's main thread through CDP
-(`Emulation.setCPUThrottlingRate`). `CPU=8` reproduces the CI failure on this machine:
+(`Emulation.setCPUThrottlingRate`). `CPU=8` looked at first like it reproduced the CI failure on this
+machine — the claim is withdrawn further down this entry, and the numbers below are kept only as the
+reading that prompted it:
 
 ```
 CI  (run #45):  12/60 hits (20%) · misses avg 0.12 m max 0.22 m

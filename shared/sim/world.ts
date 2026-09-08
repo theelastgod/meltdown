@@ -462,7 +462,20 @@ export class World {
   applyDamage(kind: TargetKind, id: number, damage: number, attacker: number, weapon: string, how: "shot" | "explosion" | "melee" | "beam", opts: StepOpts = {}, hit: { zone?: HitZone; distance?: number; alt?: boolean; through?: boolean; projKind?: string } = {}): void {
     if (damage <= 0) return;
     const shooter = attacker > 0 ? this.players.get(attacker) : undefined;
-    // THE RUN's safe zones: nothing inside one takes damage, and nothing inside one deals it
+    // THE RUN's safe zones are a rule about PLAYERS: you bank a claim and use the market without
+    // another file shooting you. So a player inside one neither takes damage nor deals it.
+    //
+    // It is deliberately not a bubble over everything in the circle. Dummies and the PvE cast are
+    // not covered on the receiving side, and that is reachable rather than theoretical: two levels
+    // route a wasp patrol straight through a gate (drainage_yard's GATE and deadletter_docks' WEST
+    // GATE). Making them invulnerable there would hand the AI a corner no one can answer, and the
+    // exchange stays symmetric as it is — a player outside can shoot the wasp, the wasp can shoot
+    // back, and the player standing in the gate is untouchable to both.
+    //
+    // The comment used to claim the wider rule, and probe:run asserted the wider rule by watching
+    // the shooter's whole kill tally. A stray round through a training dummy in the street then
+    // read as a safe zone leak on CI. The narrow rule is the one the game actually keeps, and
+    // tests/safezone.test.ts pins it from both sides along with the hole.
     if (this.run) {
       if (shooter && inSafeZone(this.run, shooter.pos)) return;
       if (kind === "player") {

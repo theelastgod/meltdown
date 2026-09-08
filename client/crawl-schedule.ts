@@ -62,10 +62,16 @@ export function crawlDuration(paragraphs: readonly string[]): number {
 }
 
 export function crawlAt(schedule: readonly Segment[], paragraphs: readonly string[], t: number): CrawlState {
-  const seg = schedule.find((s) => t >= s.start && t < s.end) ?? schedule[schedule.length - 1]!;
+  // A `t` before the first keystroke is the BEGINNING, not the end. The find below misses for any
+  // t < 0, and the old fallback handed back the last segment — the title — so a single negative
+  // frame reported the crawl as over and done. That is not hypothetical: OpeningCrawl.frame took
+  // its dt straight from the rAF timestamp, which can predate the constructor's performance.now(),
+  // and one such frame flashed the title, latched the skip hint hidden and burned the "seen" flag
+  // on a player's first view. Clamping here makes the whole class unreachable from any caller.
+  const seg = schedule.find((s) => t >= s.start && t < s.end) ?? (t < (schedule[0]?.start ?? 0) ? schedule[0]! : schedule[schedule.length - 1]!);
   const tears = schedule.filter((s) => s.kind === "tear" && s.end <= t).length;
   const text = paragraphs[seg.p] ?? "";
-  const typed = seg.kind === "type" ? Math.min(text.length, Math.floor((t - seg.start) * TYPE_CPS)) : seg.kind === "hold" || seg.kind === "tear" ? text.length : 0;
+  const typed = seg.kind === "type" ? Math.max(0, Math.min(text.length, Math.floor((t - seg.start) * TYPE_CPS))) : seg.kind === "hold" || seg.kind === "tear" ? text.length : 0;
   return { phase: seg.kind, paragraph: seg.p, typed, tears, t, done: seg.kind === "title" };
 }
 
