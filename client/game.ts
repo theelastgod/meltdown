@@ -5,7 +5,9 @@ import { skinByToken } from "@shared/economy/catalog";
 import { MAX_CATCHUP_TICKS, SIM_DT, SIM_HZ } from "@shared/sim/constants";
 import type { InputFrame } from "@shared/sim/input";
 import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS } from "@shared/sim/level";
-import { eyeHeight, type PlayerState } from "@shared/sim/player";
+import { eyeHeight, eyePos, type PlayerState } from "@shared/sim/player";
+import { canSee } from "@shared/sim/ai";
+import { aimAssistScale } from "./aimassist";
 import { hashWorld, World, type SimEvent } from "@shared/sim/world";
 import { lenXZ, wrapAngle } from "@shared/math/vec3";
 import { GameAudio } from "./audio";
@@ -148,6 +150,7 @@ export class Game {
       this.touch = new TouchControls(hudRoot);
       if (new URLSearchParams(location.search).get("touch") === "1") this.touch.root.classList.add("forced");
       this.input.touch = this.touch;
+      this.input.aimAssist = (yaw, pitch) => this.touchAimAssist(yaw, pitch);
       this.touch.onGesture = () => this.audio.resume();
     }
     this.hud.setLevel(this.world.level, (id) => this.travel(id));
@@ -551,6 +554,13 @@ export class Game {
         this.hud.push(`FILE #${ev.playerId} DROPPED OFF THE LEDGER`, "k");
         break;
     }
+  }
+
+  /** Touch aim assist (Stage 34). The rule and the reasoning live in `client/aimassist.ts`. */
+  private touchAimAssist(yaw: number, pitch: number): number {
+    const targets = this.botTargets();
+    if (targets.length === 0) return 1;
+    return aimAssistScale(eyePos(this.player), yaw, pitch, targets, (from, to) => canSee(from, to, this.world.level.boxes, this.world.clouds));
   }
 
   private botTargets(): BotTarget[] {

@@ -22,6 +22,14 @@ export class InputController {
    * get both, and the probe drives touch in a desktop browser.
    */
   touch: TouchControls | null = null;
+  /**
+   * Touch aim assist (Stage 34): returns a 0..1 multiplier for this frame's thumb rotation.
+   *
+   * Supplied by the game, which is the only thing that knows where the targets are. It may only
+   * *reduce* rotation — a slowdown as the crosshair crosses a silhouette, the thing that makes a
+   * thumb competitive with a mouse without ever aiming for the player. Null on desktop.
+   */
+  aimAssist: ((yaw: number, pitch: number) => number) | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -101,8 +109,13 @@ export class InputController {
     if (this.touch) {
       const t = this.touch.take();
       b |= t.buttons;
-      this.yaw += t.yaw;
-      this.pitch = Math.max(-1.55, Math.min(1.55, this.pitch + t.pitch));
+      // Aim assist, touch only (Stage 34). The game supplies a 0..1 factor that SLOWS the thumb's
+      // rotation near a target; it can never add rotation, snap, or lock. A thumb drag with assist
+      // is indistinguishable from the same player dragging more carefully, which is the whole point:
+      // the server receives an ordinary input frame and the sim never learns the difference.
+      const k = this.aimAssist ? this.aimAssist(this.yaw, this.pitch) : 1;
+      this.yaw += t.yaw * k;
+      this.pitch = Math.max(-1.55, Math.min(1.55, this.pitch + t.pitch * k));
       if (t.slot) slot = t.slot;
     }
     if (slot) b = withSlot(b, slot);
