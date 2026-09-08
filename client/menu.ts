@@ -12,6 +12,7 @@ import { HUB_LEVEL_ID } from "@shared/sim/hub";
 import { LEVEL_INFO } from "@shared/sim/level";
 import { HOSTS } from "./config";
 import { DEFAULT_SETTINGS, formatSetting, loadSettings, saveSettings, SETTING_LABELS, stepSetting, type Settings } from "./settings";
+import { wantsTouch } from "./touch";
 import type { GameAudio } from "./audio";
 
 export const TITLE_CARDS: readonly string[] = ["Every mind in Neo-China is leased.", "You woke free."];
@@ -374,7 +375,8 @@ export class Menu {
         if (!this.nonav) location.assign(url);
         return url;
       }
-      this.matched = fetch(`${ledger}/match?district=${level}&mode=${run ? "run" : "wake"}`)
+      // the input class rides along: a thumb and a mouse do not share a room that pays (Stage 34)
+      this.matched = fetch(`${ledger}/match?district=${level}&mode=${run ? "run" : "wake"}&input=${wantsTouch() ? "touch" : "desk"}`)
         .then((r) => r.json() as Promise<{ room: string; url: string }>)
         .then((m) => {
           const u2 = new URL(url);

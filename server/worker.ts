@@ -2,7 +2,7 @@
  * Cloudflare Workers host: one Durable Object per match room, WebSockets.
  * The Room class is identical to the Node host's.
  */
-import { MAX_PLAYERS_PER_ROOM, matchRoomName } from "../shared/net/matchmaking";
+import { MAX_PLAYERS_PER_ROOM, inputClassOf, matchRoomName } from "../shared/net/matchmaking";
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
 import { DoAccountStore, PlayerFile } from "./player-do";
 import { DoEndgameStore, Endgame } from "./endgame-do";
@@ -34,9 +34,12 @@ export default {
       const district = (url.searchParams.get("district") ?? "lease_row").replace(/[^a-z_]/g, "");
       const mode = url.searchParams.get("mode") === "run" ? "run" : "wake";
       const shard = Math.floor(Date.now() / 600_000) % 6;
-      const name = matchRoomName("neochina", district, mode, shard);
+      // a thumb and a mouse do not share a room that pays (Stage 34); MATCH_MIX_INPUTS="1" collapses
+      // the two pools for an operator running a population too thin to fill either
+      const input = inputClassOf(url.searchParams.get("input"));
+      const name = matchRoomName("neochina", district, mode, shard, input, (env as unknown as { MATCH_MIX_INPUTS?: string }).MATCH_MIX_INPUTS === "1");
       const wsHost = url.host;
-      return new Response(JSON.stringify({ room: name, district, mode, max: MAX_PLAYERS_PER_ROOM, url: `wss://${wsHost}/room/${name}?level=${district}${mode === "run" ? "&mode=run" : ""}` }), { headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
+      return new Response(JSON.stringify({ room: name, district, mode, input, max: MAX_PLAYERS_PER_ROOM, url: `wss://${wsHost}/room/${name}?level=${district}${mode === "run" ? "&mode=run" : ""}` }), { headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
     }
     if (url.pathname === "/endgame") {
       const store = new DoEndgameStore(env.ENDGAME);

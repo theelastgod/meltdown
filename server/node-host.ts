@@ -35,7 +35,7 @@ import { reconcileRunDay } from "./chain/reconcile-run";
 import { isPrivateRoom, makeInviteCode, privateRoomName, sanitiseRules, validInviteCode, type PrivateRules } from "../shared/net/private";
 import { MemoryRunStore } from "./run-store";
 
-import { MAX_PLAYERS_PER_ROOM, matchRoomName } from "../shared/net/matchmaking";
+import { MAX_PLAYERS_PER_ROOM, inputClassOf, matchRoomName } from "../shared/net/matchmaking";
 import type { Hex } from "viem";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 8787);
@@ -265,16 +265,19 @@ const http = createServer((req, res) => {
     const u = new URL(req.url, "http://x");
     const district = (u.searchParams.get("district") ?? "lease_row").replace(/[^a-z_]/g, "");
     const mode = u.searchParams.get("mode") === "run" ? "run" : "wake";
+    // a thumb and a mouse do not share a room that pays (Stage 34)
+    const input = inputClassOf(u.searchParams.get("input"));
+    const mix = process.env.MATCH_MIX_INPUTS === "1";
     let shard = 0;
     while (shard < 64) {
-      const name = matchRoomName("neochina", district, mode, shard);
+      const name = matchRoomName("neochina", district, mode, shard, input, mix);
       const r = rooms.get(name);
       if (!r || r.stats().players < MAX_PLAYERS_PER_ROOM) break;
       shard++;
     }
-    const name = matchRoomName("neochina", district, mode, shard);
+    const name = matchRoomName("neochina", district, mode, shard, input, mix);
     res.setHeader("content-type", "application/json");
-    res.end(JSON.stringify({ room: name, district, mode, players: rooms.get(name)?.stats().players ?? 0, max: MAX_PLAYERS_PER_ROOM, url: `ws://127.0.0.1:${port}/room/${name}?level=${district}${mode === "run" ? "&mode=run" : ""}` }));
+    res.end(JSON.stringify({ room: name, district, mode, input, players: rooms.get(name)?.stats().players ?? 0, max: MAX_PLAYERS_PER_ROOM, url: `ws://127.0.0.1:${port}/room/${name}?level=${district}${mode === "run" ? "&mode=run" : ""}` }));
     return;
   }
   if (req.url === "/counter") {
