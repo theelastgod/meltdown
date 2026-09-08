@@ -212,13 +212,33 @@ async function main(): Promise<void> {
     // ---- kills: tiers, Debts (all inside round one) ----
     const ph0 = await waitPhase("wake", 40000);
     console.log(`phase ${ph0} at +${((Date.now() - tRoom) / 1000).toFixed(1)}s`);
+    /**
+     * `duel` returns on the SERVER's kill count, so the client may not have processed the kill event
+     * yet (Stage 39). The stamp is a client-side sound played when that event arrives, so reading
+     * the counter in the next breath is a race — and one the server always wins. CI run #66 read
+     * `ALPHA kills 1 · kill_t3 0 · kill_t0 0`: the kill had happened and the sound had not landed.
+     *
+     * Bounded, so a stamp that genuinely never plays still fails, with the count it reached.
+     */
+    const waitAudio = async (pg: Page, key: string, want: number, ms = 10000): Promise<number> => {
+      const t = Date.now();
+      let v = 0;
+      while (Date.now() - t < ms) {
+        v = await pg.evaluate((k) => window.__game.state().audio[k] ?? 0, key);
+        if (v >= want) return v;
+        await pg.waitForTimeout(100);
+      }
+      return v;
+    };
     const bk = await duel(b, "BRAVO", a, ids.a, 2, 40000);
     await b.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 12000 }]));
+    await waitAudio(b, "kill_t0", 2);
     const audB = await b.evaluate(() => window.__game.state().audio);
     check("kill-confirm audio: a fresh file (rank 1) hears the tier-0 stamp", bk >= 2 && (audB["kill_t0"] ?? 0) >= 2 && !audB["kill_t3"], `BRAVO kills ${bk} · kill_t0 ${audB["kill_t0"] ?? 0} · kill_t3 ${audB["kill_t3"] ?? 0}`);
     // ALPHA answers once: the tier-3 stamp (mastery 30), then stands down until round two
     const ak = await duel(a, "ALPHA", b, ids.b, 1, 30000);
     await a.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 12000 }]));
+    await waitAudio(a, "kill_t3", 1);
     const audA = await a.evaluate(() => window.__game.state().audio);
     check("kill-confirm audio: a mastered file (rank 30) hears the tier-3 stamp — shooter-side only", ak >= 1 && (audA["kill_t3"] ?? 0) >= 1 && !audA["kill_t0"], `ALPHA kills ${ak} · kill_t3 ${audA["kill_t3"] ?? 0} · kill_t0 ${audA["kill_t0"] ?? 0}`);
 

@@ -1641,6 +1641,63 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 39 — Three checks that read the answer before it arrived
+
+**Goal.** CI run #66 failed three probes at once — `probe:mastery`, `probe:identity` and
+`probe:harden` — where the first two had been green the run before. None of them was a timeout this
+time. All three were checks reporting a fact about the game that was not true.
+
+```
+FAIL  sim: the firmware patches the held weapon (THREE-COUNT bursts)
+      — LB burst {"count":3,"rpm":900} range ×1.030 move ×1.015 · SMG burst [object Object] range ×1.03 move ×1.015
+FAIL  kill-confirm audio: a mastered file (rank 30) hears the tier-3 stamp
+      — ALPHA kills 1 · kill_t3 0 · kill_t0 0
+FAIL  the counter-ledger rate limit: past 30 requests a minute a file gets 429
+      — limited 0 of 34 · first at #0
+```
+
+They look unrelated. They are the same mistake three times: **the check sampled the system before the
+thing it asserts about had happened**, or measured a rate through a stopwatch it did not control.
+
+**The firmware check read the rifle's numbers and called them the SMG's.** Look at the two halves of
+that first line: `range ×1.030 move ×1.015` on the left, `range ×1.03 move ×1.015` on the right. They
+are the same numbers, which is the tell — nothing had switched weapons, so the check was comparing
+the rifle to itself. `advance(n)` is a deterministic loop of n ticks, which made a fixed forty look
+safe; it is not, because the page is joined to a room. The client predicts the slot change and a
+snapshot from a server that has not yet seen the input reconciles it away. It now steps until the
+swap has landed, bounded, and asserts that it did — so a swap that never happens fails saying so
+rather than blaming the chip mods for leaking across weapons.
+
+**The stamp had not been played yet.** `duel` returns on the *server's* kill count. The kill-confirm
+stamp is a client-side sound played when the kill event reaches the client, so reading the counter in
+the next breath is a race the server always wins. `ALPHA kills 1 · kill_t3 0` is exactly that: the
+kill had happened and the sound had not landed. Both stamps now wait for their own counter, bounded,
+before the check reads it.
+
+**The rate limit outlived its own window.** Thirty-four requests sent one awaited call at a time,
+against a limiter whose window is sixty seconds from the first of them. On a runner where a round
+trip takes two seconds the loop outlasts the window, the count resets, and nothing is ever refused —
+`limited 0 of 34`, on a limiter working perfectly. Sent together they cannot outrun it, whatever the
+machine is doing:
+
+```
+limited 4 of 34 in 0.1 s (window 60 s) · "RATE LIMITED: the counter-ledger takes 30 requests a minute per file"
+```
+
+The elapsed time is asserted alongside the count, so a burst that ever does exceed the window says
+so instead of quietly measuring something else.
+
+**The pattern is worth naming, because this is the fourth stage to hit it.** Stage 33 found nine
+screenshots taken before the thing they were named for was on screen. Stage 35 found a probe reading
+a DOM flag one frame after the state flipped, and another asserting on a counter that could not
+distinguish the two outcomes. Stage 36 found a join budget measured against two pages fighting for a
+core. Now three more. A check that samples on a fixed delay is not testing the game, it is testing
+the machine — and it only ever fails on the machine you are not sitting at.
+
+**Acceptance.** `npm test` 363; typecheck clean; `probe:mastery` 23/23, `probe:identity` 23/23,
+`probe:harden` 9/9, plus `probe` 13/13, `net` 16/16, `run` 17/17, `campaign` 27/27, `wake` 14/14,
+`file` 19/19 and `arsenal` 19/19.
+
 ## Stage 38 — The two numbers the whole projection rests on could not be measured
 
 **Goal.** `docs/ECONOMY.md` §6 has carried the same admission since Stage 19:

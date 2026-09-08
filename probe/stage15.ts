@@ -223,17 +223,30 @@ async function main(): Promise<void> {
     await a.evaluate(() => window.__game.toggleFile(false));
     await b.close();
 
-    // ---------------- the rate limit ----------------
-    let limited = 0;
-    let firstLimitedAt = -1;
-    for (let i = 0; i < 34; i++) {
-      const r = await post(`/file/${acct}/counter`, { op: "view" });
-      if (r.status === 429) {
-        limited++;
-        if (firstLimitedAt < 0) firstLimitedAt = i;
-      }
-    }
-    check("the counter-ledger rate limit: past 30 requests a minute a file gets 429 with the reason", limited >= 3 && firstLimitedAt >= 20 && firstLimitedAt <= 30, `limited ${limited} of 34 · first at #${firstLimitedAt + 1}`);
+    /**
+     * The rate limit, burst rather than trickled (Stage 39).
+     *
+     * This used to send the 34 requests one awaited call at a time and assert that the 31st came
+     * back 429. That is a claim about a limiter measured through a stopwatch: the window is sixty
+     * seconds from the first request, so on a runner where each round trip takes two seconds the
+     * loop outlives its own window, the count resets, and nothing is ever refused. CI run #66 read
+     * exactly that — `limited 0 of 34` — on a limiter that was working perfectly.
+     *
+     * Sent together they cannot outrun the window, whatever the machine is doing. The elapsed time
+     * is asserted too, so if some future change does push a burst past sixty seconds the check says
+     * that rather than quietly measuring something else.
+     */
+    const RATE_WINDOW_MS = 60_000;
+    const burstAt = Date.now();
+    const burst = await Promise.all(Array.from({ length: 34 }, () => post(`/file/${acct}/counter`, { op: "view" })));
+    const burstMs = Date.now() - burstAt;
+    const limited = burst.filter((r) => r.status === 429).length;
+    const refusedReason = burst.find((r) => r.status === 429)?.reason ?? "";
+    check(
+      "the counter-ledger rate limit: past 30 requests a minute a file gets 429 with the reason",
+      burstMs < RATE_WINDOW_MS && limited >= 3 && limited <= 12 && /rate|limit|slow/i.test(refusedReason),
+      `limited ${limited} of 34 in ${(burstMs / 1000).toFixed(1)} s (window ${RATE_WINDOW_MS / 1000} s) · "${refusedReason}"`,
+    );
     await a.close();
 
     // ---------------- the kiosk in the safe zone ----------------

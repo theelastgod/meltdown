@@ -125,11 +125,32 @@ async function main(): Promise<void> {
     const a = await open("ALPHA", "sandbox-alpha", kit, true);
     const na = await net(a);
     const st1 = await a.evaluate(() => { const s = window.__game.state(); return { def: s.weaponDef, range: s.mods.range ?? 1, move: s.mods.moveSpeed ?? 1 }; });
-    await a.evaluate(() => window.__game.setBot([{ kind: "slot", slot: 3 }, { kind: "hold", ticks: 30 }]));
-    await a.evaluate(() => window.__game.advance(40));
+    /**
+     * Step until the swap has actually landed, not for a fixed forty ticks (Stage 39).
+     *
+     * `advance(n)` is a deterministic loop of n ticks, which made a fixed count look safe. It is
+     * not, because this page is joined to a room: the client predicts the slot change and a snapshot
+     * from a server that has not yet seen the input reconciles it back. CI run #66 sampled inside
+     * that window and read the rifle's own numbers for the SMG — `SMG burst [object Object] range
+     * ×1.03 move ×1.015`, identical to the line above it, which is the tell that nothing had
+     * switched rather than that the mods had leaked across weapons.
+     *
+     * The loop is bounded and `swapped` is asserted, so a swap that genuinely never happens still
+     * fails — it just fails saying so instead of blaming the chip mods.
+     */
+    await a.evaluate(() => window.__game.setBot([{ kind: "slot", slot: 3 }, { kind: "hold", ticks: 900 }]));
+    let swapped = false;
+    for (let i = 0; i < 40 && !swapped; i++) {
+      swapped = await a.evaluate(() => {
+        window.__game.advance(20);
+        return window.__game.state().slot === 3;
+      });
+      if (!swapped) await a.waitForTimeout(50); // let a snapshot land between steps
+    }
+    await a.evaluate(() => window.__game.advance(20)); // and settle the mods behind it
     const st3 = await a.evaluate(() => { const s = window.__game.state(); return { def: s.weaponDef, range: s.mods.range ?? 1, move: s.mods.moveSpeed ?? 1 }; });
     check("spawn: a mastered file's three chips and firmware are admitted", na.status === "joined", `status ${na.status}`);
-    check("sim: the firmware patches the held weapon (THREE-COUNT bursts) and chip mods apply only while it is held", st1.def.burst?.count === 3 && st1.range > 1.02 && st1.move > 1.01 && st3.def.burst === null && st3.range === 1 && st3.move === 1, `LB burst ${JSON.stringify(st1.def.burst)} range ×${st1.range.toFixed(3)} move ×${st1.move.toFixed(3)} · SMG burst ${st3.def.burst} range ×${st3.range} move ×${st3.move}`);
+    check("sim: the firmware patches the held weapon (THREE-COUNT bursts) and chip mods apply only while it is held", swapped && st1.def.burst?.count === 3 && st1.range > 1.02 && st1.move > 1.01 && st3.def.burst === null && st3.range === 1 && st3.move === 1, `LB burst ${JSON.stringify(st1.def.burst)} range ×${st1.range.toFixed(3)} move ×${st1.move.toFixed(3)} · swapped ${swapped} · SMG burst ${JSON.stringify(st3.def.burst)} range ×${st3.range} move ×${st3.move}`);
     const srv = (await stats()).rooms["ledger"]!.clients.find((c) => c.name === "ALPHA")!;
     check("spawn: the server's admitted kit matches", srv.loadout.chips?.lease_breaker?.protocol === "lease_breaker:contagion_round" && srv.loadout.firmware?.lease_breaker === "lease_breaker:three_count", `server chips ${JSON.stringify(srv.loadout.chips?.lease_breaker)} firmware ${JSON.stringify(srv.loadout.firmware)}`);
     // FILE panel with the kit
