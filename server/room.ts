@@ -1161,7 +1161,16 @@ export class Room {
         tick: this.tick,
         serverTimeMs,
         // exact local state at 15 Hz is plenty for reconciliation and halves the snapshot
-        local: this.tick % (SNAPSHOT_EVERY * 2) === 0 ? this.world.exportLocal(me, rec.lastAppliedSeq) : null,
+        // Every snapshot, not every other one (Stage 34).
+        //
+        // The block is deltaed against the acked baseline now, and locals sent every *other*
+        // snapshot meant the snapshot immediately before one never carried a local — so a client on
+        // a fast link, which acks the immediately preceding snapshot, systematically had nothing to
+        // delta against. Measured: no saving at all over eight local sockets (13.08, 13.09 KB/s),
+        // against 19% on a 150 ms link where the ack lands further back. Sending one every time
+        // makes the baseline reliably carry one, and each is a mask plus only the fields that moved.
+        // Reconciliation gets exact authoritative state twice as often as a side effect.
+        local: this.world.exportLocal(me, rec.lastAppliedSeq),
         players,
         dummies,
         entities: this.entities(),

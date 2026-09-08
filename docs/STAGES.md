@@ -1808,7 +1808,36 @@ reading of the encoder suggested.
 
 `probe` 13/13 and `probe:wake` 14/14 confirm the nodes and dummies the delta touches still behave.
 
-**Where the remaining bytes are — not yet established.** 433 bytes a snapshot after the delta. Seven
+**And then under it.** Two more cuts, both measured on the socket at the room cap.
+
+*The local authoritative block.* `LOCAL_FLOAT_KEYS` is forty-two fields written as `f64` — 336 bytes
+at 15 Hz, about 5.0 KB/s of the 13.0 a client was receiving. Thirty-nine per cent of the budget in
+one block, most of it timers sitting at zero. It is **deltaed, not narrowed**: these are the values
+the client replays its prediction from, and Stage 31 spent a stage earning `0.00e+0 m` of trace
+error against them, so `f32` would have bought the same bytes and quietly spent that. A six-byte
+mask says which fields moved; the ones that did still arrive as exact doubles.
+
+*And the reason that alone did nothing.* On the real two-client link it was worth 19% (8.82 → 7.12).
+Over eight local sockets it was worth **nothing** — 13.08 and 13.09 KB/s across two runs, a
+deterministic null. The cause is structural, not a harness artifact: locals went out every *other*
+snapshot, so the snapshot immediately preceding one never carried a local, and a client on a fast
+link acks exactly that one. The baseline had nothing to delta against precisely when latency was
+lowest. Sending a local on **every** snapshot fixes it — each is far smaller deltaed, the acked
+baseline reliably carries one, and reconciliation gets exact state twice as often as a side effect.
+
+```
+21.01 KB/s   invalid — clients were not acking, so every snapshot came back full
+14.70        the honest baseline
+13.00        entity + dummy delta
+13.09        local delta alone (no effect at eight: the baseline miss above)
+10.64        locals on every snapshot · 85.1 KB/s off the shard
+```
+
+**Under the budget it had never been measured against.** The check `probe:net` gained for this now
+passes, and reconciliation improved rather than degraded on the way: 7,369 replayed inputs at
+`0.00 mm` against 3,763 before, with trace error still exactly zero.
+
+**Where the remaining bytes are — established, for the record.** 433 bytes a snapshot after the delta. Seven
 moving remotes account for ~126 of it and the headers ~25. The rest is unattributed: the `local`
 authoritative block is written as `f64` per field and goes out at 15 Hz, which is the obvious
 suspect, but converting it to `f32` would blunt the exact state the reconciliation trace compares
