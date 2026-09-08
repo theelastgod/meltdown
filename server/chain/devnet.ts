@@ -73,8 +73,23 @@ export class Devnet {
     return this.blocks[this.blocks.length - 1]!;
   }
 
+  /**
+   * Seconds added to every block's timestamp (Stage 41).
+   *
+   * The PrizeVault will not sweep an unclaimed epoch until ninety days after it was posted, and
+   * until now this chain had no way to reach that: block timestamps came straight from `Date.now()`.
+   * So the only two tests of `reclaim` were the ones that do NOT move money — "too early" and "no
+   * such epoch" — and the path where the treasury actually gets its emission back had never once
+   * been run. anvil and hardhat both expose `evm_increaseTime` for exactly this; so does this now.
+   */
+  private timeOffset = 0n;
+
+  private nowSeconds(): bigint {
+    return BigInt(Math.floor(Date.now() / 1000)) + this.timeOffset;
+  }
+
   private blockFor(n: bigint): Block {
-    return createBlock({ header: { number: n, timestamp: BigInt(Math.floor(Date.now() / 1000)), gasLimit: 30_000_000n, baseFeePerGas: 1n } }, { common: this.common });
+    return createBlock({ header: { number: n, timestamp: this.nowSeconds(), gasLimit: 30_000_000n, baseFeePerGas: 1n } }, { common: this.common });
   }
 
   private blockJson(b: (typeof this.blocks)[number], full = false) {
@@ -101,6 +116,17 @@ export class Devnet {
         return String(DEVNET_CHAIN_ID);
       case "eth_blockNumber":
         return bigIntToHex(this.head().number);
+      // dev-chain time travel, the same two calls anvil offers. Only reachable by a caller holding
+      // this object — the production hosts talk to a real RPC and have no such method.
+      case "evm_increaseTime": {
+        this.timeOffset += BigInt(Number(p[0] ?? 0));
+        return bigIntToHex(this.timeOffset);
+      }
+      case "evm_mine": {
+        const n = this.head().number + 1n;
+        this.blocks.push({ hash: keccak256(`0x${n.toString(16).padStart(64, "0")}`), number: n, timestamp: this.nowSeconds(), txs: [], parent: this.head().hash });
+        return "0x0";
+      }
       case "eth_gasPrice":
       case "eth_maxPriorityFeePerGas":
         return "0x1";

@@ -474,18 +474,23 @@ export class CounterLedger {
     return out;
   }
 
-  /** Treasury figures for the NET DELTA line: supply, burned, market volume. */
+  /** Treasury figures for the NET DELTA line: supply, burned, market volume, reclaimed emission. */
   async treasury() {
     const k = this.opts.contracts;
-    const [supply, burned, volume] = await Promise.all([
+    const [supply, burned, volume, reclaimed] = await Promise.all([
       this.pub.readContract({ address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "totalSupply" }) as Promise<bigint>,
       this.pub.readContract({ address: k.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "burned" }) as Promise<bigint>,
       this.pub.readContract({ address: k.market, abi: ARTIFACTS.LedgerMarket!.abi, functionName: "volume" }) as Promise<bigint>,
+      // emission that was posted, never claimed, and swept back (Stage 41). Not a burn — the tokens
+      // are in the treasury, not destroyed — and not re-emitted either, so it belongs on its own line
+      // rather than folded into either of the two above.
+      this.pub.readContract({ address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "reclaimed" }) as Promise<bigint>,
     ]);
     return {
       supply: formatEther(supply),
       burned: formatEther(burned),
       volume: formatEther(volume),
+      reclaimed: formatEther(reclaimed),
       // what a compromised relayer could move: its allowance, or the whole bank if they are one key
       treasury: this.treasuryAddress,
       relayer: this.relayerAccount.address,

@@ -8,6 +8,7 @@
  * player clicks for.
  */
 import { describe, expect, it } from "vitest";
+import { parseEther } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { createSiweMessage } from "viem/siwe";
 import { bootDevnetLedger, DEV_KEYS } from "../server/chain/boot";
@@ -19,6 +20,7 @@ import { EPOCH_BASE } from "../server/chain/prizes-store";
 import { MemoryAccountStore, devSeed } from "../server/accounts";
 import { SIWE_STATEMENT } from "../shared/economy/counter";
 import { runPot } from "../shared/economy/settlement";
+import { dailyEmissionBudget, RUN_EMISSION_SHARE } from "../shared/economy/model";
 import { MAX_CAPITAL_PER_UNIT, RUN_DAILY_CAP } from "../shared/sim/run";
 import type { Account } from "../shared/progression/account";
 
@@ -46,7 +48,8 @@ async function rig() {
     store.save(a);
   };
   const balance = (addr: `0x${string}`) => b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [addr] }) as Promise<bigint>;
-  return { b, store, runs, deps, recon, logs, link, bank, balance };
+  const reclaimedTotal = () => b.pub.readContract({ address: b.contracts.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "reclaimed" }) as Promise<bigint>;
+  return { b, store, runs, deps, recon, logs, link, bank, balance, reclaimedTotal };
 }
 
 describe("the nightly settlement", () => {
@@ -296,6 +299,95 @@ describe("epochs nobody claimed", () => {
   it("refuses an epoch that was never posted", async () => {
     const r = await rig();
     expect((await r.b.ledger.reclaimEpoch(123_456)).reason).toMatch(/no epoch/);
+  }, 60_000);
+
+  /**
+   * The sweep itself, which had never been run (Stage 41).
+   *
+   * The two cases above are the ones where nothing moves. Until this devnet could travel past the
+   * vault's ninety-day deadline there was no way to reach the branch that actually returns money,
+   * so the path the treasury depends on was covered only by the guards in front of it.
+   */
+  it("sweeps what nobody claimed back to the treasury after the deadline, once, and closes the epoch", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-r6", DEV_KEYS.player);
+    r.bank(a, 40);
+    const s = await settleRunDay(DAY, r.deps);
+    expect(s.ok).toBe(true);
+    const treasury = privateKeyToAccount(DEV_KEYS.treasury).address;
+    const before = await r.balance(treasury);
+    const reclaimedBefore = await r.reclaimedTotal();
+
+    await r.b.devnet.rpc("evm_increaseTime", [91 * 86_400]);
+    const swept = await r.b.ledger.reclaimEpoch(s.epoch!);
+    expect(swept.ok).toBe(true);
+
+    // the whole epoch came back: nobody had claimed any of it
+    const moved = (await r.balance(treasury)) - before;
+    expect(moved).toBe(parseEther(String(s.minted)));
+    expect((await r.reclaimedTotal()) - reclaimedBefore).toBe(moved);
+
+    // and the epoch is closed in both directions: no late claim, and a second sweep takes nothing
+    expect((await r.b.ledger.claimPrize(r.store.accounts.get("sandbox-r6")!, s.epoch!)).ok).toBe(false);
+    const again = await r.balance(treasury);
+    await r.b.ledger.reclaimEpoch(s.epoch!);
+    expect(await r.balance(treasury)).toBe(again);
+  }, 60_000);
+
+  it("only the unclaimed remainder comes back — a file that claimed keeps what it took", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-r7", DEV_KEYS.player);
+    r.bank(a, 25);
+    const s = await settleRunDay(DAY, r.deps);
+    expect((await r.b.ledger.claimPrize(r.store.accounts.get("sandbox-r7")!, s.epoch!)).ok).toBe(true);
+    const treasury = privateKeyToAccount(DEV_KEYS.treasury).address;
+    const before = await r.balance(treasury);
+
+    await r.b.devnet.rpc("evm_increaseTime", [91 * 86_400]);
+    await r.b.ledger.reclaimEpoch(s.epoch!);
+    // the only file in the epoch claimed all of it, so there is nothing left to sweep
+    expect((await r.balance(treasury)) - before).toBe(0n);
+  }, 60_000);
+
+  /**
+   * The decision behind docs/ECONOMY.md §6.4, made enforceable.
+   *
+   * A day whose prizes went unclaimed could be said to have under-emitted, and the money could be
+   * handed to a later day to make up. It is not, and it should not be: the schedule is a ceiling,
+   * and re-issuing what came back would make it stop being one. Worse, it would pay the players who
+   * are still here for the ones who left — the more files that walk away without claiming, the more
+   * the remainder earn, which makes churn a revenue source.
+   *
+   * The load-bearing case is the first one. Comparing a settlement before a reclaim with one after
+   * looks like the right test and is nearly vacuous: `runPot` is pure, so both sides of any such
+   * comparison move together, and at test scale the per-unit ceiling binds anyway and hides the pot
+   * entirely. What can actually fail is the pot's *definition* — that it is the schedule's daily
+   * allowance times THE RUN's share of it, with no other term in it at all.
+   */
+  it("a day's pot is the schedule and nothing else — no term for what came back", () => {
+    for (const day of [0, 1, DAY, DAY + 1, 400, 3650]) {
+      expect(runPot(day), `day ${day}`).toBe(dailyEmissionBudget(day) * RUN_EMISSION_SHARE);
+    }
+  });
+
+  it("and a reclaim leaves the next day's settlement untouched end to end", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-r8", DEV_KEYS.player);
+    r.bank(a, 40);
+    const first = await settleRunDay(DAY, r.deps);
+
+    await r.b.devnet.rpc("evm_increaseTime", [91 * 86_400]);
+    expect((await r.b.ledger.reclaimEpoch(first.epoch!)).ok).toBe(true);
+
+    // a whole day's emission has just returned to the treasury; the next day is not one coin richer
+    r.bank(a, 40, DAY + 1);
+    const second = await settleRunDay(DAY + 1, r.deps);
+    expect(second.pot).toBe(runPot(DAY + 1));
+    expect(second.rate).toBe(first.rate);
+    expect(second.minted).toBe(first.minted);
+    // stated rather than assumed: at this scale the per-unit ceiling is what sets the rate, so this
+    // case would not notice a change in the pot. The case above it is the one that would.
+    expect(second.rate).toBe(MAX_CAPITAL_PER_UNIT);
   }, 60_000);
 });
 

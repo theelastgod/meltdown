@@ -31,6 +31,11 @@ contract PrizeVault {
     event Claimed(uint256 indexed epoch, address indexed account, uint256 amount);
     event Reclaimed(uint256 indexed epoch, uint256 amount);
 
+    /// @notice Emission that was posted, never claimed, and swept back to the treasury.
+    ///         Reading it off the event log means indexing; a counter means an operator can ask.
+    ///         It is deliberately NOT re-emitted: see docs/ECONOMY.md §6.4.
+    uint256 public reclaimed;
+
     error NotPoster();
     error EpochExists();
     error NoEpoch();
@@ -88,6 +93,7 @@ contract PrizeVault {
         if (block.timestamp < e.postedAt + RECLAIM_AFTER) revert TooEarly();
         uint256 left = e.total - e.claimed;
         e.claimed = e.total;
+        reclaimed += left;
         capital.transfer(treasury, left);
         emit Reclaimed(epoch, left);
     }

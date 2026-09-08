@@ -1641,6 +1641,58 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 41 — The sweep that returns the money had never been run
+
+**Goal.** `docs/ECONOMY.md` §6 item 4, open since Stage 24:
+
+> **Reclaimed emission goes to the treasury, not back to the pot.** That is what the contract does
+> and it is defensible, but a day whose prizes went unclaimed arguably under-emitted and should be
+> able to make it up.
+
+That is a design question, so it wanted deciding rather than building. Going to answer it turned up
+something else first.
+
+**The `reclaim` path had no test at all.** Two cases existed — "too early" and "no such epoch" — and
+both of them are guards in *front* of the sweep. The branch where money actually moves back to the
+treasury had never executed in a test, because the dev chain could not reach the vault's ninety-day
+deadline: `server/chain/devnet.ts` took its block timestamps straight from `Date.now()`. anvil and
+hardhat both expose `evm_increaseTime` for exactly this; the devnet has it now, and the path the
+treasury depends on is covered — the full sweep, a partial one where the only file claimed first and
+nothing is left to take, no late claim afterwards, and a second sweep that takes nothing.
+
+**The decision: it stays retired.** Re-issuing reclaimed emission would stop the schedule being a
+ceiling, which is the whole point of Stages 17–19. And it would pay the players who are still here
+for the ones who left: the more files walk away without claiming, the more the remainder earn.
+Churn should not be a revenue source. A day that under-emits stays under-emitted.
+
+**Made enforceable, after a first attempt that was not.** The obvious test — settle a day, reclaim
+it, settle the next day, assert nothing changed — is close to vacuous, and the mutation test said
+so by not failing. `runPot` is pure, so a comparison of it with itself moves together under any
+change; and at test scale the per-unit ceiling sets the rate, which hides the pot entirely. What can
+actually fail is the pot's *definition*:
+
+```ts
+expect(runPot(day)).toBe(dailyEmissionBudget(day) * RUN_EMISSION_SHARE);
+```
+
+No other term, on any day. That is what fails if someone wires the reclaimed balance in. The
+end-to-end case is kept alongside it and now states what it does *not* show, rather than implying it
+shows more.
+
+**And a number, because "it went back to the treasury" was a log line.** `PrizeVault.reclaimed`
+counts what came back and `treasury()` reports it on its own line — not folded into `burned`, since
+the tokens are in the treasury rather than destroyed, and not into emission either.
+
+**Acceptance.** `npm test` 371 (4 new); typecheck clean; `lint:economy` 244 items 0 violations;
+`probe:counter` 14/14, `probe:run` 18/18, `probe:endgame` 16/16, `probe:harden` 9/9.
+Mutation-tested both ways: dropping the `reclaimed` counter fails the sweep case, and an extra term
+in the pot fails the definition case.
+
+**A near miss worth recording.** Rewriting the §6.4 block by slicing to the file's last `});`
+swallowed the four backlog tests Stage 40 had appended after it. The test count going 23 → 20 while
+the block under edit still listed all six of its own cases is what caught it. Restored from `HEAD`
+and verified at 24.
+
 ## Stage 40 — The backlog walk, and why the loop everyone imagined was the wrong shape
 
 **Goal.** `docs/ECONOMY.md` §6 has carried this since Stage 24:

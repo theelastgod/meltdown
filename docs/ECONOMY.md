@@ -283,9 +283,22 @@ than in the caller, so asking early simply fails — the job does not have to be
    What is still open here is only time: no population has played long enough to clear the floors,
    so the published projection is still running on the stated assumptions — but it now says so on
    its own last line.
-4. **Reclaimed emission goes to the treasury, not back to the pot.** That is what the contract
-   does and it is defensible, but a day whose prizes went unclaimed arguably under-emitted and
-   should be able to make it up.
+4. ~~**Reclaimed emission goes to the treasury, not back to the pot.**~~ **Decided, and kept that
+   way (Stage 41).** It stays retired. Re-issuing it would stop the schedule being a ceiling, which
+   is the whole point of Stages 17–19; and it would pay the players who are still here for the ones
+   who left, so the more files walk away without claiming, the more the remainder earn. Churn should
+   not be a revenue source.
+
+   A day that under-emits stays under-emitted. `tests/settle.test.ts` holds the pot to being the
+   schedule's daily allowance times THE RUN's share of it **and no other term** — that is the case
+   that fails if anyone wires the reclaimed balance back in.
+
+   What was missing was not a policy but a number and a test. `PrizeVault.reclaimed` now counts what
+   came back and `treasury()` reports it on its own line — not a burn, because the tokens are in the
+   treasury rather than destroyed, and not an emission either. And the sweep itself had never been
+   run: the dev chain could not reach the vault's ninety-day deadline, so the only two tests of
+   `reclaim` were the ones where nothing moves. The devnet has `evm_increaseTime` now, and the path
+   the treasury depends on is covered.
 5. ~~**The reconciliation only walks one day.**~~ **Closed (Stage 40).** `reconcileRunBacklog`
    walks it — and the loop the note imagined is the wrong shape. A file's counter carries exactly
    one run day, so a file can only ever be drifted on *that* day: walking thirty days re-loads every
