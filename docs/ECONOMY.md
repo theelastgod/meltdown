@@ -286,8 +286,17 @@ than in the caller, so asking early simply fails — the job does not have to be
 4. **Reclaimed emission goes to the treasury, not back to the pot.** That is what the contract
    does and it is defensible, but a day whose prizes went unclaimed arguably under-emitted and
    should be able to make it up.
-5. **The reconciliation only walks one day.** Running it over a backlog is a loop the caller has to
-   write; nothing walks the history looking for old drift.
+5. ~~**The reconciliation only walks one day.**~~ **Closed (Stage 40).** `reconcileRunBacklog`
+   walks it — and the loop the note imagined is the wrong shape. A file's counter carries exactly
+   one run day, so a file can only ever be drifted on *that* day: walking thirty days re-loads every
+   linked file thirty times to find drift that can only be in one place per file, and still misses
+   anything older than the window the caller chose. Driven off the files instead it is a single pass
+   with no window at all, each file naming its own day. The nightly cron runs it after the day it
+   settles, and `{ kind: "backlog" }` runs it by hand.
+
+   Today is skipped by default: an `unrecorded` repair adds units back to the banking table, and a
+   bank whose write is still in flight is indistinguishable from one that was lost, so repairing it
+   would pay twice. `includeToday` is there for a caller who knows better.
 
 ## 7. Running it
 

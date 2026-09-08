@@ -91,7 +91,7 @@ async function main(): Promise<void> {
    * `?secret=`, which is exactly what a real client does with the one it generated.
    */
   const SECRET = "probestage14secretaaaaaa";
-  const post = async (path: string, body: unknown) => (await (await fetch(`${HOST}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(body as object), secret: SECRET }) })).json()) as { ok: boolean; reason?: string };
+  const post = async <T = { ok: boolean; reason?: string }>(path: string, body: unknown): Promise<T> => (await (await fetch(`${HOST}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...(body as object), secret: SECRET }) })).json()) as T;
   const stats = async () => (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { run: { totalBanked: number; claims: number; carried: Record<string, number>; banked: Record<string, number>; credits: string[] } | null; clients: { name: string; kills: number; deaths: number }[] }>; logs: string[] };
   const newPage = async (viewport: { width: number; height: number }, tag: string): Promise<Page> => {
     const pg = await browser.newPage({ viewport });
@@ -282,6 +282,25 @@ async function main(): Promise<void> {
     const fs = await file(acct);
     const season = (await (await fetch(`${HOST}/counter`)).json() as { season: number }).season;
     const owed = parseEther(String(SEASON_PASS_PRICE + ROOM_HOUR_PRICE * 3));
+    /**
+     * The backlog walk, on a live host (Stage 40).
+     *
+     * The settlement above cleared every file it paid, so a healthy host has nothing to find — and
+     * that is worth asserting on its own, because a repair pass that reports drift where there is
+     * none is worse than no pass at all. What this cannot honestly do is manufacture drift: a lost
+     * D1 write has no player-facing path, and adding a "strand this file" op to the counter endpoint
+     * would put a test-only backdoor into the money. The repair itself is proved in
+     * tests/settle.test.ts against a real devnet ledger, four cases including a file stranded a
+     * fortnight back. What is proved here is that the walk runs on a live host, over real linked
+     * files, and stays quiet.
+     */
+    const walk = await post<{ days: number[]; checked: number; skippedToday: number; drift: unknown[]; restored: number; cleared: number }>("/prizes/post", { kind: "backlog", fix: true });
+    check(
+      "the backlog walk runs over every linked file on a live host and reports nothing on a healthy one",
+      walk.checked > 0 && walk.drift.length === 0 && walk.restored === 0 && walk.cleared === 0,
+      `${walk.checked} linked file(s) walked · ${walk.drift.length} drift · ${walk.days.length} day(s) with a balance · ${walk.skippedToday} left for today`,
+    );
+
     /**
      * The economy's own inputs, measured off this run (Stage 38).
      *

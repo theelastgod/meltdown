@@ -12,7 +12,7 @@ import { D1WalletStore } from "./chain/wallets-d1";
 import { D1PrizeStore } from "./chain/prizes-d1";
 import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
 import { settleRunDay } from "./chain/settle-run";
-import { reconcileRunDay } from "./chain/reconcile-run";
+import { reconcileRunBacklog, reconcileRunDay } from "./chain/reconcile-run";
 import { D1RunStore } from "./run-d1";
 import { dayIndex, seasonIndex, weekIndex } from "../shared/endgame/clock";
 import type { Contracts } from "./chain/deploy";
@@ -198,6 +198,24 @@ export default {
         if (rec.drift.length) console.log(`cron: day ${day} drifted on ${rec.drift.length} file(s) — restored ${rec.restored}, cleared ${rec.cleared}`);
       } catch (e) {
         console.log(`cron: reconcile day ${day} threw — ${String((e as Error).message).slice(0, 200)}`);
+      }
+      /**
+       * And then the backlog (Stage 40).
+       *
+       * The line above reconciles the day it just settled, which is the day drift is most likely to
+       * appear on and the only one anything had ever looked at. Drift older than that has no way of
+       * being noticed: the file still says it is owed, the night has moved on, and nothing walks
+       * back. This pass is driven off the files rather than the calendar — each file names its own
+       * run day — so it costs one walk however far back the oldest one goes.
+       */
+      try {
+        const back = await reconcileRunBacklog(
+          { ledger, runs: new D1RunStore(env.DB), wallets: new D1WalletStore(env.DB), load, save, log: (l) => console.log(l), today: dayIndex(at) },
+          { fix: true },
+        );
+        if (back.drift.length) console.log(`cron: backlog drifted on ${back.drift.length} file(s) across ${back.days.length} day(s) — restored ${back.restored}, cleared ${back.cleared}`);
+      } catch (e) {
+        console.log(`cron: backlog reconcile threw — ${String((e as Error).message).slice(0, 200)}`);
       }
       try {
         for (const e of await ledger.epochs()) {

@@ -33,7 +33,7 @@ import { bootDevnetLedger } from "./chain/boot";
 import { counterRequest } from "../shared/economy/endpoint";
 import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
 import { settleRunDay } from "./chain/settle-run";
-import { reconcileRunDay } from "./chain/reconcile-run";
+import { reconcileRunBacklog, reconcileRunDay } from "./chain/reconcile-run";
 import { isPrivateRoom, makeInviteCode, privateRoomName, sanitiseRules, validInviteCode, type PrivateRules } from "../shared/net/private";
 import { MemoryRunStore } from "./run-store";
 
@@ -220,10 +220,10 @@ const http = createServer((req, res) => {
   if (req.method === "POST" && req.url === "/prizes/post") {
     // the weekly / season-end / nightly job, callable by hand on the dev host:
     // { kind: "audit", week } | { kind: "season" } | { kind: "run", day }
-    // { kind: "reconcile", day, fix } | { kind: "reclaim", epoch }
+    // { kind: "reconcile", day, fix } | { kind: "backlog", fix, includeToday } | { kind: "reclaim", epoch }
     void readBody(req).then(async (body) => {
       res.setHeader("content-type", "application/json");
-      const kind = body.kind === "season" ? "season" : body.kind === "run" ? "run" : body.kind === "reconcile" ? "reconcile" : body.kind === "reclaim" ? "reclaim" : "audit";
+      const kind = body.kind === "season" ? "season" : body.kind === "run" ? "run" : body.kind === "reconcile" ? "reconcile" : body.kind === "backlog" ? "backlog" : body.kind === "reclaim" ? "reclaim" : "audit";
       // THE RUN settles a day: the units every file banked that day, priced pro rata out of the day's
       // slice of the emission schedule. Gathered from the dev host's account map; a production host
       // reads them from its counter-ledger index.
@@ -237,6 +237,15 @@ const http = createServer((req, res) => {
         // the two records THE RUN keeps, compared: `?fix=1` repairs, otherwise it only reports
         const day = Number(body.day ?? dayIndex(Date.now()) - 1);
         const r = await reconcileRunDay(day, { ledger: counter.ledger, runs, wallets: counter.wallets, load: (id) => accounts.load(id, "BLANK"), save: (a) => accounts.save(a), log }, { fix: body.fix === true });
+        res.end(JSON.stringify(r));
+        return;
+      }
+      if (kind === "backlog") {
+        // every day any linked file is still owed on, in one pass over the files (Stage 40)
+        const r = await reconcileRunBacklog(
+          { ledger: counter.ledger, runs, wallets: counter.wallets, load: (id) => accounts.load(id, "BLANK"), save: (a) => accounts.save(a), log, today: dayIndex(Date.now()) },
+          { fix: body.fix === true, includeToday: body.includeToday === true },
+        );
         res.end(JSON.stringify(r));
         return;
       }

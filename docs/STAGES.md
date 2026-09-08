@@ -1641,6 +1641,60 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 40 — The backlog walk, and why the loop everyone imagined was the wrong shape
+
+**Goal.** `docs/ECONOMY.md` §6 has carried this since Stage 24:
+
+> **The reconciliation only walks one day.** Running it over a backlog is a loop the caller has to
+> write; nothing walks the history looking for old drift.
+
+The nightly cron reconciles the day it just settled. Drift older than that has no way of being
+noticed: the file still says it is owed, the night has moved on, and nothing walks back.
+
+**The loop the note imagines does not work.** A file's counter carries exactly one run day —
+`counter.run.day` — so a file can only ever be drifted on *that* day. `for (day of last30)
+reconcileRunDay(day)` re-loads every linked file thirty times to find drift that can only be in one
+place per file, and it still misses anything older than whatever window the caller picked. The
+window is the bug, not the missing loop.
+
+**Driven off the files, it is one pass with no window at all.** Each file names its own day; days are
+read once each however many files share them; nothing older is out of reach because nothing is out of
+range. `reconcileRunBacklog` is O(linked files), not O(files × days).
+
+**Today is skipped by default,** and that is the part with money in it. An `unrecorded` repair adds
+the missing units back to the banking table, and a bank whose D1 write is still in flight is
+indistinguishable from one that was lost — repairing it would pay for the same units twice.
+Yesterday and earlier are finished; today is not. `includeToday` exists for a caller who knows
+better, and the case that holds the default is the one worth reading.
+
+**One definition of the rules.** `reconcileRunDay` and the backlog walk both need the unrecorded /
+stranded pair, and two copies would drift apart — which, in this file, would be a poor joke. They
+share `driftOf`, and the day-walk's four existing cases still pass unchanged, which is what says the
+extraction was behaviour-preserving.
+
+**A line removed because a mutation test did not fail.** The walk cached each day's banking rows and
+updated that cache after a repair, commented as keeping a second file on the same day from reading a
+stale row. Deleting the line broke nothing — correctly, because the cache is keyed by *file* and
+every file is visited once, so nothing in the pass ever reads that row again. The comment was wrong
+and the line was dead. Both are gone.
+
+**What the probe can honestly show.** `probe:run` runs the walk on a live host after its settlement
+and asserts it finds nothing — a repair pass that reports drift where there is none is worse than no
+pass at all:
+
+```
+the backlog walk runs over every linked file on a live host and reports nothing on a healthy one
+  — 1 linked file(s) walked · 0 drift · 0 day(s) with a balance · 0 left for today
+```
+
+What it deliberately does **not** do is manufacture drift. A lost D1 write has no player-facing path,
+and adding a "strand this file" op to the counter endpoint would put a test-only backdoor into the
+money. The repair itself is proved in `tests/settle.test.ts` against a real devnet ledger, including
+a file stranded a fortnight back and found without anyone naming the day.
+
+**Acceptance.** `npm test` 367 (4 new); typecheck clean; `probe:run` 18/18, `probe:counter` 14/14,
+`probe:endgame` 16/16. Mutation-tested: dropping the today guard fails the case named for it.
+
 ## Stage 39 — Three checks that read the answer before it arrived
 
 **Goal.** CI run #66 failed three probes at once — `probe:mastery`, `probe:identity` and

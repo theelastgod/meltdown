@@ -13,7 +13,7 @@ import { createSiweMessage } from "viem/siwe";
 import { bootDevnetLedger, DEV_KEYS } from "../server/chain/boot";
 import { ARTIFACTS } from "../server/chain/deploy";
 import { settleRunDay } from "../server/chain/settle-run";
-import { reconcileRunDay } from "../server/chain/reconcile-run";
+import { reconcileRunBacklog, reconcileRunDay } from "../server/chain/reconcile-run";
 import { MemoryRunStore } from "../server/run-store";
 import { EPOCH_BASE } from "../server/chain/prizes-store";
 import { MemoryAccountStore, devSeed } from "../server/accounts";
@@ -296,5 +296,83 @@ describe("epochs nobody claimed", () => {
   it("refuses an epoch that was never posted", async () => {
     const r = await rig();
     expect((await r.b.ledger.reclaimEpoch(123_456)).reason).toMatch(/no epoch/);
+  }, 60_000);
+});
+
+describe("walking the backlog, not one day at a time", () => {
+  /**
+   * docs/ECONOMY.md §6 has said since Stage 24 that the reconciliation only walks one day, and that
+   * running it over a backlog is a loop the caller has to write. The loop is the wrong shape: a
+   * file's counter carries exactly one run day, so a file can only ever be drifted on that day.
+   * Walking thirty days re-loads every linked file thirty times to find drift that can only be in
+   * one place per file — and still misses anything older than the window the caller chose.
+   */
+  it("finds drift on days nobody asked about, in one pass over the files", async () => {
+    const r = await rig();
+    const { a: old } = await r.link("sandbox-b1", DEV_KEYS.player);
+    const { a: recent } = await r.link("sandbox-b2", DEV_KEYS.player2);
+    // two files drifted on two different days, neither of them the one a caller would think to check
+    old.counter = { ...old.counter!, run: { day: DAY - 40, banked: 12, owed: 12, paid: 0 } };
+    recent.counter = { ...recent.counter!, run: { day: DAY - 3, banked: 7, owed: 7, paid: 0 } };
+    r.store.save(old);
+    r.store.save(recent);
+
+    const report = await reconcileRunBacklog({ ...r.recon, today: DAY });
+    expect(report.days).toEqual([DAY - 40, DAY - 3]);
+    expect(report.drift.map((x) => x.file).sort()).toEqual(["sandbox-b1", "sandbox-b2"]);
+    expect(report.drift.every((x) => x.kind === "unrecorded")).toBe(true);
+    expect(report.restored).toBe(0); // a report changes nothing
+
+    const fixed = await reconcileRunBacklog({ ...r.recon, today: DAY }, { fix: true });
+    expect(fixed.restored).toBe(19);
+    // and a day-at-a-time walk of the last week would have found only one of them
+    const week = await reconcileRunDay(DAY - 40, r.recon);
+    expect(week.drift).toHaveLength(0); // already repaired above — the point is the backlog found it first
+  }, 60_000);
+
+  it("leaves today alone: an in-flight write is indistinguishable from a lost one", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-b3", DEV_KEYS.player);
+    a.counter = { ...a.counter!, run: { day: DAY, banked: 20, owed: 20, paid: 0 } };
+    r.store.save(a);
+
+    const held = await reconcileRunBacklog({ ...r.recon, today: DAY }, { fix: true });
+    expect(held.skippedToday).toBe(1);
+    expect(held.drift).toHaveLength(0);
+    expect(held.restored).toBe(0);
+    // repairing it would credit units a bank may still be writing; a caller can ask for it anyway
+    const forced = await reconcileRunBacklog({ ...r.recon, today: DAY }, { fix: true, includeToday: true });
+    expect(forced.drift).toHaveLength(1);
+    expect(forced.restored).toBe(20);
+  }, 60_000);
+
+  it("reads each day once however many files share it, and never repairs a file twice", async () => {
+    const r = await rig();
+    const { a: one } = await r.link("sandbox-b4", DEV_KEYS.player);
+    one.counter = { ...one.counter!, run: { day: DAY - 2, banked: 9, owed: 9, paid: 0 } };
+    r.store.save(one);
+
+    const first = await reconcileRunBacklog({ ...r.recon, today: DAY }, { fix: true });
+    expect(first.restored).toBe(9);
+    // a second pass sees the table now holding what the file is owed and reports nothing
+    const second = await reconcileRunBacklog({ ...r.recon, today: DAY }, { fix: true });
+    expect(second.drift).toHaveLength(0);
+    expect(second.restored).toBe(0);
+  }, 60_000);
+
+  it("clears a stranded file whatever day it was stranded on", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-b5", DEV_KEYS.player);
+    r.bank(a, 30);
+    expect((await settleRunDay(DAY, r.deps)).ok).toBe(true);
+    // the epoch went out and the file was never cleared, and nobody looked for a fortnight
+    const stranded = r.store.accounts.get("sandbox-b5")!;
+    stranded.counter = { ...stranded.counter!, run: { ...stranded.counter!.run!, owed: 30 } };
+    r.store.save(stranded);
+
+    const fixed = await reconcileRunBacklog({ ...r.recon, today: DAY + 14 }, { fix: true });
+    expect(fixed.drift[0]).toMatchObject({ file: "sandbox-b5", kind: "stranded", units: 30, fixed: true });
+    expect(fixed.cleared).toBe(30);
+    expect(r.store.accounts.get("sandbox-b5")!.counter!.run!.owed).toBe(0);
   }, 60_000);
 });
