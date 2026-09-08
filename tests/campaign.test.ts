@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { FACTIONS, HANDLERS } from "../shared/campaign/factions";
-import { ENDINGS, endingsFor, gateOpen, handlersAlive } from "../shared/campaign/testimony";
+import { ENDINGS, endingsFor, gateOpen, handlersAlive, type Testimony } from "../shared/campaign/testimony";
 import { campaignErrors, lintCampaign, producibleTestimony, reachableNodes } from "../shared/campaign/lint";
 import { threatProfile, threatRating } from "../shared/campaign/threat";
 import { MAX_PROTOCOLS, PROTOCOLS, protocolMods } from "../shared/campaign/protocols";
@@ -41,7 +41,7 @@ describe("campaign data", () => {
     expect(endingsFor({ "m4:directive": "kept" }, "cells").map((e) => e.id)).toEqual(["wipe", "chair"]);
     expect(endingsFor({ "m4:directive": "kept", "m3:volatility": "hold" }, "clockeaters").map((e) => e.id)).toEqual(["wipe", "chair", "chair_clockeater"]);
     expect(endingsFor({ "m4:directive": "kept", "m4:vessel": "shield" }, "estate").map((e) => e.id)).toEqual(["wipe", "chair", "chair_estate"]);
-    expect(ENDINGS.filter((e) => e.hidden).length).toBe(2);
+    expect(ENDINGS.filter((e) => e.hidden).length).toBe(4);
   });
   it("threat rises with the file and shapes VANTAGE", () => {
     const fresh = createAccount("f", "F");
@@ -319,9 +319,81 @@ describe("the campaign can actually be finished", () => {
 
   it("reports a choice that changes nothing as a note, not a failure", () => {
     const notes = lintCampaign().filter((v) => v.severity === "note");
-    // three of the seven missions ask for a choice with no mechanical consequence. That may be
-    // characterisation and is a designer's call, so it is surfaced rather than enforced.
+    // the rule still reports rather than enforces — a choice that is only characterisation is a
+    // designer's call. There are none left to report, which is the point of the block below.
     expect(notes.every((n) => n.rule === "testimony-is-read")).toBe(true);
     expect(campaignErrors()).toEqual([]);
+  });
+
+  /**
+   * Every choice changes something (Stage 37).
+   *
+   * The lint had carried three notes since Stage 25: `m1:lease`, `m5:lattice` and `m6:broadcast`
+   * were written by a terminal and read by nothing. The arc could be played twice, answered
+   * differently at three of its seven terminals, and come out identical. That is the difference
+   * between a branching campaign and a campaign with branching-shaped dialogue.
+   *
+   * These cases hold each consequence directly rather than trusting the note count, so a later edit
+   * that quietly drops a gate fails here and not only in a line of lint output nobody reads.
+   */
+  describe("every terminal choice reaches something mechanical", () => {
+    it("the lint has no unread testimony left to report", () => {
+      expect(lintCampaign().filter((v) => v.rule === "testimony-is-read")).toEqual([]);
+    });
+
+    it("m1:lease — keeping the file is hunted for, and burning it is the quiet run", () => {
+      const m2 = missionById("m2_deadletter_run")!;
+      const extra = (t: Testimony) => (m2.variants ?? []).filter((v) => gateOpen(v.gate, t, null)).reduce((n, v) => n + (v.extraWasps ?? 0), 0);
+      expect(extra({ "m1:lease": "keep" })).toBeGreaterThan(0);
+      expect(extra({ "m1:lease": "burn" })).toBe(0);
+      expect(extra({})).toBe(0);
+    });
+
+    it("m1:lease — and the kept file is the proof that shortens the trial", () => {
+      const m6 = missionById("m6_trial_by_data")!;
+      const closing = (t: Testimony) => {
+        const v = (m6.variants ?? []).filter((x) => gateOpen(x.gate, t, null)).map((x) => x.objectives).filter(Boolean).pop();
+        const objs = v ?? m6.objectives;
+        const holds = objs.filter((o): o is Extract<typeof o, { kind: "hold" }> => o.kind === "hold");
+        return holds[holds.length - 1]!.seconds;
+      };
+      expect(closing({ "m1:lease": "keep" })).toBeLessThan(closing({ "m1:lease": "burn" }));
+    });
+
+    it("m5:lattice — blinding everything takes the docks sabotage gig off the board", () => {
+      const g = missionById("g_lattice_docks")!;
+      expect(gateOpen(g.requires?.gate, { "m5:lattice": "all" }, null)).toBe(false);
+      expect(gateOpen(g.requires?.gate, { "m5:lattice": "spare_docks" }, null)).toBe(true);
+      // and the gig it already had a reason to close for still closes for it
+      expect(gateOpen(g.requires?.gate, { "m4:vessel": "expose" }, null)).toBe(false);
+    });
+
+    it("m5:lattice — and sparing the docks leaves the model its eyes there", () => {
+      const g = missionById("g_rescue_docks")!;
+      const extra = (t: Testimony) => (g.variants ?? []).filter((v) => gateOpen(v.gate, t, null)).reduce((n, v) => n + (v.extraWasps ?? 0), 0);
+      expect(extra({ "m5:lattice": "spare_docks" })).toBeGreaterThan(0);
+      expect(extra({ "m5:lattice": "all" })).toBe(0);
+    });
+
+    it("m6:broadcast — the last choice decides which ending the arc can reach", () => {
+      const fire = endingsFor({ "m6:broadcast": "full" }, null).map((e) => e.id);
+      const quiet = endingsFor({ "m6:broadcast": "redacted" }, null).map((e) => e.id);
+      expect(fire).toContain("wipe_fire");
+      expect(fire).not.toContain("wipe_quiet");
+      expect(quiet).toContain("wipe_quiet");
+      expect(quiet).not.toContain("wipe_fire");
+      // neither is reachable without making the choice at all
+      const none = endingsFor({}, null).map((e) => e.id);
+      expect(none).toEqual(["wipe"]);
+    });
+
+    it("and the two are genuinely different endings, not one text in two colours", () => {
+      const fire = ENDINGS.find((e) => e.id === "wipe_fire")!;
+      const quiet = ENDINGS.find((e) => e.id === "wipe_quiet")!;
+      expect(fire.title).not.toBe(quiet.title);
+      expect(fire.lines).not.toEqual(quiet.lines);
+      expect(fire.lines.length).toBeGreaterThan(0);
+      expect(quiet.lines.length).toBeGreaterThan(0);
+    });
   });
 });

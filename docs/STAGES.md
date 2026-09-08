@@ -1641,6 +1641,62 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 37 — Three terminals asked a question and did not listen to the answer
+
+**Goal.** The campaign lint has printed the same three notes since Stage 25:
+
+```
+note  testimony m1:lease:     written by a choice and read by no gate
+note  testimony m5:lattice:   written by a choice and read by no gate
+note  testimony m6:broadcast: written by a choice and read by no gate
+```
+
+Three of the seven missions stop the player at a terminal, offer two answers with real weight to
+them — burn the evidence or keep it, blind the whole lattice or spare the docks, broadcast the fire
+or redact it — write the answer to the file, and then never read it again. The arc could be played
+twice, answered differently at three of its seven terminals, and come out identical. That is the
+difference between a branching campaign and a campaign with branching-shaped dialogue.
+
+The lint was right to report rather than enforce: a choice that is only characterisation is a
+designer's call. This stage makes the call.
+
+**`m1:lease` — burn it, or keep it as evidence.** Keeping it costs and pays, which is what makes it a
+choice rather than a reward. The model knows a copy walked out of Lease Row, so DEADLETTER RUN
+carries two more wasps hunting whoever is holding it. Then at TRIAL BY DATA that same file is the
+proof the broadcast can attach, and a city shown the paper believes faster than one only told: the
+closing hold drops from thirty seconds and two waves to fifteen and one. Burning it is the quiet run
+and the long trial.
+
+**`m5:lattice` — blind everything, or spare the docks.** Blind everything and SENSOR SABOTAGE · DOCKS
+leaves the board: those posts are already dark, and a gig to break them is a gig with nothing to
+break. Spare the docks and the model keeps its eyes there, so WAKE-CELL RESCUE · DOCKS is walked
+under two extra wasps. One branch costs work, the other costs contracts.
+
+**`m6:broadcast` — full, or redacted.** The last choice before the white office, so it lands where a
+last choice should: on how the arc can end. Two hidden endings, mutually exclusive by construction,
+one opened by each answer — THE CITY THAT READ THE FIRE, where they wake all at once and frightened
+and the ledger burns by morning; and THE QUIET WAKING, where they wake one lease at a time, it takes
+a decade instead of a night, and everyone lives through it.
+
+**Held by tests, not by the note count.** `tests/campaign.test.ts` gained a block that asserts each
+consequence directly — the extra patrol, the shorter hold, the gig that closes, the gig that hardens,
+and each ending opening for its own answer and not the other. Mutation-tested one at a time: removing
+any single consequence fails its own case, and removing all of them fails seven.
+
+`probe:campaign` now plays the arc through with the broadcast answered, so the white office proves it
+in the running game rather than in a unit:
+
+```
+the endings open follow the testimony — including the broadcast the arc chose
+  — wasps 0 · objective "APPROACH THE DESK" · endings [wipe, chair, wipe_fire]
+```
+
+That line read `[wipe, chair]` before, whichever way the question had been answered.
+
+**Acceptance.** `npm run lint:campaign` — 7 missions, 12 gigs, 6 endings, 9 testimony keys, **0
+errors and 0 notes**, the first time it has had nothing to report. `npm test` 349 (7 new); typecheck
+clean; `probe:campaign` 27/27.
+
 ## Stage 36 — The second page was the cost, and queueing made it worse
 
 **Goal.** `probe:harden` timed out on CI three runs running — #61, #64 and #65 — always at the same

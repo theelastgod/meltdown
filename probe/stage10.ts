@@ -358,7 +358,7 @@ async function main(): Promise<void> {
     // ---------------- the white office: the arc ends on a choice ----------------
     const arc = "arc-cam";
     await post(arc, { op: "faction", faction: "cells" });
-    for (const [id, t] of [["m1_wake_unlisted", {}], ["m2_deadletter_run", {}], ["m3_repo_volatility", { "m3:volatility": "hold" }], ["m4_the_leak", { "m4:directive": "kept", "m4:vessel": "shield" }], ["m5_blind_the_model", {}], ["m6_trial_by_data", {}]] as const) await post(arc, { op: "complete", id, testimony: t });
+    for (const [id, t] of [["m1_wake_unlisted", {}], ["m2_deadletter_run", {}], ["m3_repo_volatility", { "m3:volatility": "hold" }], ["m4_the_leak", { "m4:directive": "kept", "m4:vessel": "shield" }], ["m5_blind_the_model", {}], ["m6_trial_by_data", { "m6:broadcast": "full" }]] as const) await post(arc, { op: "complete", id, testimony: t });
     const wo = await newPage({ width: 960, height: 540 }, "white");
     await wo.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=white_office&mission=m7_white_office&account=${arc}&secret=${SECRET}&shop=${HOST}`, { waitUntil: "load" });
     await wo.waitForFunction(() => window.__game?.ready === true && window.__game.campaign().mode === "mission", null, { timeout: 40000, polling: 100 });
@@ -370,7 +370,10 @@ async function main(): Promise<void> {
     await wo.waitForTimeout(500);
     await shotCheck(wo, `stage10-white.png`);
     const w1 = await wo.evaluate(() => ({ c: window.__game.campaign(), wasps: window.__game.game.world.wasps.length, level: window.__game.state().level }));
-    check("the white office: no guards, the desk is the objective, and the endings open follow the testimony", w1.level === "white_office" && w1.wasps === 0 && w1.c.mission?.kind === "reach" && w1.c.endingsOpen.join() === "wipe,chair", `wasps ${w1.wasps} · objective "${w1.c.mission?.objective}" · endings [${w1.c.endingsOpen.join(", ")}]`);
+    // this run kept the directive (m4) and broadcast in full (m6), so the office should offer the
+    // chair AND the ending the broadcast opens. Until Stage 37 that last choice was written to the
+    // file and read by nothing, and this line read "wipe,chair" whichever way it had been answered.
+    check("the white office: no guards, the desk is the objective, and the endings open follow the testimony — including the broadcast the arc chose", w1.level === "white_office" && w1.wasps === 0 && w1.c.mission?.kind === "reach" && w1.c.endingsOpen.join() === "wipe,chair,wipe_fire", `wasps ${w1.wasps} · objective "${w1.c.mission?.objective}" · endings [${w1.c.endingsOpen.join(", ")}]`);
     const sp = await wo.evaluate(() => window.__game.state().pos);
     await runBot(wo, [{ kind: "goto", x: 0, z: -4, sprint: false, radius: 1.5, timeoutTicks: 600, stop: true }]);
     void sp;
