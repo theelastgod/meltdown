@@ -445,7 +445,23 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     w.u8(1);
     const l = s.local;
     w.u32(l.seq);
-    for (const v of localFloats(l)) w.f64(v);
+    /*
+     * Forty-two f64s is 336 bytes, and at 15 Hz that was 5.0 KB/s — 39% of what a client at the room
+     * cap receives, for one block (Stage 34).
+     *
+     * It is deltaed rather than narrowed. These are the authoritative values the client replays its
+     * prediction from, and Stage 31 spent a whole stage earning `0.00e+0 m` of trace error against
+     * them; f32 would buy the same bytes and quietly spend that. A mask costs six bytes and every
+     * field that *did* change still arrives as the exact double. Most of them are timers sitting at
+     * zero.
+     */
+    const bl = baseline?.local ?? null;
+    const cur = localFloats(l);
+    const prev = bl ? localFloats(bl) : null;
+    const mask = new Uint8Array(6);
+    for (let i = 0; i < cur.length; i++) if (!prev || prev[i] !== cur[i]) mask[i >> 3]! |= 1 << (i & 7);
+    for (const byte of mask) w.u8(byte);
+    for (let i = 0; i < cur.length; i++) if (mask[i >> 3]! & (1 << (i & 7))) w.f64(cur[i]!);
     w.u8(l.stance);
     w.u8(l.grounded);
     w.u8(l.alive);
@@ -618,7 +634,12 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     if (r.u8() === 1) {
       const seq = r.u32();
       const l: Record<string, number> = { seq };
-      for (const k of LOCAL_FLOAT_KEYS) l[k] = r.f64();
+      const bl = base?.local ?? null;
+      const mask = [r.u8(), r.u8(), r.u8(), r.u8(), r.u8(), r.u8()];
+      LOCAL_FLOAT_KEYS.forEach((k, i) => {
+        if (mask[i >> 3]! & (1 << (i & 7))) l[k] = r.f64();
+        else l[k] = bl ? (bl as unknown as Record<string, number>)[k]! : 0;
+      });
       l.stance = r.u8(); l.grounded = r.u8(); l.alive = r.u8(); l.health = r.i16(); l.prevButtons = r.u16(); l.kills = r.u16(); l.deaths = r.u16(); l.shots = r.u32(); l.hits = r.u32();
       l.team = r.u8();
       l.slot = r.u8();
