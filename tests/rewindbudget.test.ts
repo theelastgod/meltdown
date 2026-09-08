@@ -43,30 +43,32 @@ describe("what an honest shot needs from the rewind budget", () => {
     expect(rewindDemand(200)).toBeCloseTo(6 + 6, 6); // 100 ms each way at 60 Hz
   });
 
-  it("at the supported RTT it is already most of the cap", () => {
+  it("at the supported RTT it leaves room for jitter and a hitch, which is what a ceiling is for", () => {
     const need = rewindDemand(SUPPORTED_RTT_MS);
     expect(need).toBeCloseTo(10.5, 6);
-    expect(need).toBeLessThan(MAX_REWIND_TICKS); // it does fit — that is why a quiet machine passes
-    expect(need / MAX_REWIND_TICKS).toBeGreaterThan(0.85); // …with 1.5 ticks, 25 ms, to spare
+    expect(need).toBeLessThan(MAX_REWIND_TICKS);
+    // the ceiling covers the supported link about twice over, against the 1.14x it used to
+    expect(MAX_REWIND_TICKS / need).toBeGreaterThan(1.8);
   });
 
-  it("so the headroom for jitter and a slow frame is a fraction of one frame at 30 fps", () => {
+  it("headroom is several dropped frames now, not a fraction of one", () => {
     const headroomMs = ((MAX_REWIND_TICKS - rewindDemand(SUPPORTED_RTT_MS)) / SIM_HZ) * 1000;
-    expect(headroomMs).toBeCloseTo(25, 0);
-    expect(headroomMs).toBeLessThan(1000 / 30); // one dropped frame at 30 fps is 33 ms and overruns it
+    expect(headroomMs).toBeGreaterThan(4 * (1000 / 30));
+    // at the old ceiling of 12 it was 25 ms, which a single dropped frame at 30 fps overran
+    expect(((12 - rewindDemand(SUPPORTED_RTT_MS)) / SIM_HZ) * 1000).toBeLessThan(1000 / 30);
   });
 
-  it("names the RTT at which an unhitched client cannot be compensated at all", () => {
-    // beyond this the demand exceeds the cap with a perfectly smooth client and no jitter
+  it("names the RTT at which an unhitched client can no longer be compensated", () => {
     let rtt = 0;
     while (rewindDemand(rtt) <= MAX_REWIND_TICKS) rtt += 1;
-    expect(rtt).toBe(201); // ~200 ms RTT, which is an ordinary transcontinental link
+    expect(rtt).toBeGreaterThan(460); // was 201: an ordinary transcontinental link no longer falls off
   });
 
-  it("a budget that covered the supported link twice over would need roughly twice the cap", () => {
-    // stated as arithmetic, not applied: raising the ceiling trades against how long after breaking
-    // line of sight a laggy shooter can still kill you, which is an economy decision in a game whose
-    // PvP pays $CAPITAL and is not one to make from a probe's hit rate
-    expect(Math.ceil(rewindDemand(SUPPORTED_RTT_MS) * 2)).toBe(21);
+  it("stays bounded, because an unbounded rewind is what a lag switch wants", () => {
+    // the cost of the ceiling is how long after breaking line of sight a lagging shooter can still
+    // kill you. 333 ms is deliberate and paid, not an oversight.
+    const ceilingMs = (MAX_REWIND_TICKS / SIM_HZ) * 1000;
+    expect(ceilingMs).toBeCloseTo(333, 0);
+    expect(ceilingMs).toBeLessThan(500);
   });
 });

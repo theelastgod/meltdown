@@ -1860,12 +1860,22 @@ are 5 × 15 B = 75 B **every snapshot with no delta at all** — the encoder com
 That is 2.25 KB/s of the overrun available to an entity delta, with no gameplay tradeoff attached,
 and it is the first place to look.
 
-**Not changed, and why.** Raising `MAX_REWIND_TICKS` is the obvious fix and I have not made it. The
-ceiling trades directly against how long after breaking line of sight a lagging shooter can still
-kill you, in a game whose PvP pays $CAPITAL and where a player could add latency deliberately. That
-is the same class of decision as Stage 32's aim assist: an economy call, not an engineering one, and
-it wants an owner. The arithmetic for it is in the test — covering the supported link twice over
-needs a cap of about 21 ticks.
+**Decided: the ceiling goes to 20 ticks.** The owner's call came back as "decide for a game that
+pulls an audience", and with the bot's line-of-sight fault removed the evidence is unambiguous —
+89% hit registration with two shots clamped, **4% with all sixty-nine clamped**, and nothing else
+between them. At the 150 ms link this game advertises, demand is 10.5 ticks; a ceiling of 12 left
+25 ms of headroom, less than one dropped frame at 30 fps.
+
+Twenty covers the supported link about twice over — 333 ms. The cost is real and is paid on purpose:
+a lagging shooter can now kill you further after you break line of sight. The alternative is players
+on ordinary transcontinental connections silently missing shots they aimed correctly, in a game
+whose PvP pays $CAPITAL, and those are the players who leave and say why. 333 ms is ordinary for the
+genre and still a ceiling — an unbounded rewind is what a lag switch wants, and this is nowhere near
+it.
+
+**Two things deliberately not changed with it.** No wagering or staking, and nothing purchasable that
+the sim reads. Those are the project's own rules; "make it more attractive" is not a reason to drop
+them, and they are what keeps this an economy rather than a casino.
 
 ## Stage 33 — A screenshot is a claim
 

@@ -9,7 +9,24 @@ export const PROTOCOL_VERSION = 9;
 /** Server snapshot cadence in sim ticks (60 Hz sim → 30 Hz snapshots). */
 export const SNAPSHOT_EVERY = 2;
 /** Lag compensation rewind cap in ticks (200 ms at 60 Hz). */
-export const MAX_REWIND_TICKS = 12;
+/**
+ * How far back lag compensation will reconstruct the world, in ticks (Stage 34).
+ *
+ * Twenty, not twelve. A shot's rewind demand is arithmetic and not a player's choice — half the
+ * round trip for the input to reach the server, plus the `INTERP_DELAY_TICKS` the client was already
+ * rendering behind live — so at the 150 ms link this game claims to support it is 10.5 ticks. At a
+ * ceiling of 12 that left 25 ms of headroom, less than one dropped frame at 30 fps, and past the
+ * ceiling a shot is not compensated at all: it resolves against a world newer than the one the
+ * shooter saw, and silently misses. Measured with nothing else wrong: 89% hit registration with two
+ * shots clamped, 4% with all sixty-nine clamped.
+ *
+ * Twenty covers the supported link about twice over (333 ms). The cost is the other side of every
+ * lag-compensation budget — how long after breaking line of sight a lagging shooter can still kill
+ * you — and it is paid deliberately. A game whose PvP pays $CAPITAL cannot have players on an
+ * ordinary transcontinental connection quietly missing shots they aimed correctly. 333 ms is
+ * generous but ordinary for the genre, and far short of what a deliberate lag switch wants.
+ */
+export const MAX_REWIND_TICKS = 20;
 /** Inputs re-sent per packet for loss tolerance. */
 export const INPUT_REDUNDANCY = 3;
 /** Max inputs a client may have queued server-side before extras are dropped. */
