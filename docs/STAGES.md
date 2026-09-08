@@ -1641,6 +1641,67 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 36 — The second page was the cost, and queueing made it worse
+
+**Goal.** `probe:harden` timed out on CI three runs running — #61, #64 and #65 — always at the same
+step, always with a different symptom: a socket stuck at `connecting`, then a client joined and
+silent, then joined and silent again. It passed locally every time. Stage 35 guessed at it twice.
+
+**What the diagnostic finally said.** Stage 35 added the clock to that timeout's dump, and run #65
+paid it back immediately:
+
+```
+join state: {"status":"joined","synced":false,"snapshots":0,"joinMs":46451,
+             "target":"ws://127.0.0.1:8814/room/audit-h?audit=1&ai=0&level=lease_row"}
+[audit-h] player 1 (ALPHA) joined ...   17:11:12
+[audit-h] player 2 (BRAVO) joined ...   17:11:57
+```
+
+Forty-six seconds from opening the socket to processing the welcome, against a forty-second budget —
+while the host had logged that same join forty-five seconds earlier. Nothing was broken anywhere. The
+page's main thread was not being scheduled, on a two-core runner carrying two software-GL contexts.
+
+**The obvious fix is the wrong one, and a measurement said so.** Booting the two pages one at a time
+looks like the answer to contention. It is twice as bad:
+
+```
+both booted together:      ALPHA joins in 4.3 s   BRAVO in 7.1 s    (wall 11.1 s)
+BRAVO booted after ALPHA:  ALPHA joins in 1.1 s   BRAVO in 40.1 s   (wall 50.2 s)
+```
+
+A page that has finished booting and is rendering the district every frame is a far heavier
+neighbour than one that is still starting. Queueing them does not remove the contention, it points
+it at whichever page goes second. That change was written, measured, and reverted before it shipped.
+
+**So the saving comes from drawing less.** Only ALPHA is ever screenshotted here
+(`stage15-prizes.png`); BRAVO exists to occupy the room. `norender=1` gives it the whole simulation
+and none of the software GL — the trade `probe:net` already makes for both of its clients:
+
+```
+both drawn        CPU=1  ALPHA 4.4–5.1 s  BRAVO 6.8–8.3 s      CPU=6  ALPHA 5.1–5.9 s  BRAVO ~5.9 s
+only ALPHA drawn  CPU=1  ALPHA 0.8–0.9 s  BRAVO 0.04 s         CPU=6  ALPHA 1.6–1.7 s  BRAVO ~0.2 s
+```
+
+ALPHA's own join is about four times faster once nothing is competing with it, which is the whole
+margin the forty-second budget was missing.
+
+**Checked before generalising, and there was nothing to generalise.** Four probes boot two clients
+the same way. `probe:run` and `probe:counter` screenshot *both* of their pages; `probe:endgame` and
+`probe:identity` already give their non-photographed pages a 320×180 viewport. `probe:harden` was the
+only one carrying a full-size rendered page that no check ever looks at.
+
+**A correction to Stage 35.** That stage found the dev host stepping every room it had ever created
+at 60 Hz for the life of the process, and stopped it — the Worker host has parked idle rooms since
+Stage 13, and the log showing `[neochina-lease_row]` still running wasp kills forty seconds after its
+sockets closed is real. It is recorded here as a genuine leak that was **not** the cause of this
+timeout: run #65 carried that fix and `probe:harden` timed out anyway. The cost was in the page, not
+the host.
+
+**Acceptance.** `npm test` 342; typecheck clean; `probe:harden` 9/9 with the audit round, the Deep
+Wake contributor, the rate limit and the kiosk all still passing, plus `probe` 13/13, `net` 16/16,
+`run` 16/16, `endgame` 16/16, `counter` 14/14, `identity` 23/23, `campaign` 27/27, `crawl` 10/10 and
+`ship` 9/9.
+
 ## Stage 35 — The clock ran backwards, and the check watched the wrong player
 
 **Goal.** Run #62 was the first fully green CI run this branch has had. Runs #60, #61, #63 and #64
