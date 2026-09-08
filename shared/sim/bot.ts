@@ -3,6 +3,7 @@ import type { PlayerState } from "./player";
 import type { World } from "./world";
 import { eyePos } from "./player";
 import { wrapAngle, yawTo, pitchTo, type Vec3 } from "../math/vec3";
+import { canSee } from "./ai";
 
 export type BotStep =
   | { kind: "goto"; x: number; z: number; sprint?: boolean; radius?: number; timeoutTicks?: number; /** ease off the sprint for the last metres so the stop lands on the target */ stop?: boolean }
@@ -183,7 +184,17 @@ export class Bot {
           const wantPitch = pitchTo(e, target) - (p.weapon.kickPitch + p.weapon.patY);
           this.turnToward(wantYaw, wantPitch, 0.6);
           const err = Math.abs(wrapAngle(wantYaw - this.yaw)) + Math.abs(wantPitch - this.pitch);
-          if (err < 0.015 && p.alive) {
+          /*
+           * Do not fire into cover (Stage 34).
+           *
+           * This used to shoot whenever the crosshair was near the target, and `canSee` has existed
+           * for the wasp AI the whole time. A player does not pull the trigger at a silhouette behind
+           * a kerb, and in probe:net every single miss — in a healthy 88% run and a collapsed 20% one
+           * alike — was a shot the server found blocked by level geometry before it reached anyone.
+           * A driver that shoots through scenery measures where the bots happened to stand, not
+           * whether hit registration works.
+           */
+          if (err < 0.015 && p.alive && canSee(e, target, world.level.boxes, world.clouds)) {
             buttons |= Btn.Fire;
             this.aimedShots++;
           }

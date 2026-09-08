@@ -1721,6 +1721,15 @@ clamped 70   of 70    9% hit-reg   rewind avg 22.8   misses avg 0.93 m, none ins
 which a perfectly smooth client cannot be compensated at all: **~200 ms**, an ordinary
 transcontinental link.
 
+**The second cause, and it was the bot.** `Bot.sample` fired whenever its crosshair was within
+0.015 rad of the target — with no line-of-sight test, though `canSee` has existed in `shared/sim/ai.ts`
+for the wasp AI the whole time. So the driver would happily shoot a silhouette standing behind a
+kerb, and the server would record exactly what it should: a miss, blocked by level geometry. That is
+why **every** miss in every run measured — the healthy 88% ones and the collapsed 20% ones alike —
+came back `blocked`, and why the check's result depended on where the two bots happened to be
+standing. Requiring line of sight before firing makes the run repeatable: two consecutive runs at
+23/26 (88%) against a previous spread of 20, 50, 54, 88 and 90 per cent.
+
 **Clamping is *a* cause and not the only one.** A later failing run came in at 20% hit registration
 with **`clamped 0`**, a healthy 10.7-tick average demand, and all 51 misses inside the target's
 capsule and blocked by level geometry. So there are at least two ways this check goes red: the
