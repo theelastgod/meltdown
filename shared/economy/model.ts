@@ -9,6 +9,7 @@
  *
  * Nothing here runs in a match. It is arithmetic over the manifest.
  */
+import { describe, type Observed } from "./telemetry";
 import { CAPITAL, ALLOCATION } from "./manifest";
 import { AUDIT_POOL, SEASON_POOL } from "./prizes";
 import { isBuilt, ROOM_HOUR_PRICE, SEASON_PASS_PRICE, SINKS } from "./sinks";
@@ -182,8 +183,20 @@ export function unitValue(day: number, unitsBanked: number, runShare = RUN_EMISS
 }
 
 
-/** A few lines for the CLI and the docs. */
-export function summarise(p: Population = DOC_POPULATION): string[] {
+/**
+ * Replace the guessed parameters with measured ones, and only the ones actually measured (Stage 38).
+ *
+ * `capUse` and `runnerShare` have been documented as guesses since Stage 19. Where telemetry has
+ * enough behind it to be worth more than the guess, it wins; where it does not, the stated
+ * assumption stands and `summarise` says which is which. A projection that quietly presented an
+ * estimate off nine runner-days as a measurement would be worse than one that admits to guessing.
+ */
+export function observedPopulation(base: Population, o: Observed): Population {
+  return { ...base, capUse: o.capUse ?? base.capUse, runnerShare: o.runnerShare ?? base.runnerShare };
+}
+
+/** A few lines for the CLI and the docs. `o` labels the two parameters that can be measured. */
+export function summarise(p: Population = DOC_POPULATION, o?: Observed): string[] {
   const r = project(p);
   const n = (x: number) => Math.round(x).toLocaleString("en-US");
   return [
@@ -194,5 +207,6 @@ export function summarise(p: Population = DOC_POPULATION): string[] {
     `sinks:      names ${n(r.sinks.names)} + market ${n(r.sinks.market)} + buyout ${n(r.sinks.buyout)} + rooms ${n(r.sinks.rooms)} = ${n(r.sinks.total)} a month, all built`,
     `burn ratio: ${(r.burnRatio * 100).toFixed(1)}% of settled emissions (target 60% by month 12, 100% by month 24)`,
     `unbuilt:    ${n(r.sinks.specified)} a month more once the Forge ships — ${(r.burnRatioSpecified * 100).toFixed(1)}%, which is not the number to publish yet`,
+    `inputs:     ${o ? describe(o) : "capUse assumed · runnerShare assumed — no telemetry supplied"}`,
   ];
 }

@@ -282,6 +282,22 @@ async function main(): Promise<void> {
     const fs = await file(acct);
     const season = (await (await fetch(`${HOST}/counter`)).json() as { season: number }).season;
     const owed = parseEther(String(SEASON_PASS_PRICE + ROOM_HOUR_PRICE * 3));
+    /**
+     * The economy's own inputs, measured off this run (Stage 38).
+     *
+     * docs/ECONOMY.md has called `capUse` and `runnerShare` guesses since Stage 19 and named them
+     * the first thing to replace with telemetry. Nothing was collecting it, and nothing could have:
+     * the day's gross banking existed nowhere, because `run_day` is spent down as files are paid.
+     * This checks both halves of the fix on a live host — that the banking this probe just did is
+     * recorded gross, and that a sample this small is refused rather than dressed up as a number.
+     */
+    const econ = (await (await fetch(`${HOST}/economy`)).json()) as { observed: { days: number; runnerDays: number; grossUnits: number; capUse: number | null; runnerShare: number | null; why: string[] }; note: string; projection: string[] };
+    check(
+      "the day's banking is recorded gross for the economy, and a sample of one day is declined rather than published as a measurement",
+      econ.observed.grossUnits > 0 && econ.observed.runnerDays > 0 && econ.observed.capUse === null && econ.observed.runnerShare === null && /capUse assumed/.test(econ.note) && econ.projection.some((l) => /^inputs:/.test(l)),
+      `gross ${econ.observed.grossUnits} units over ${econ.observed.runnerDays} runner-days · ${econ.note}`,
+    );
+
     check("the sinks burn: the Deep Wake pass and three room-hours leave the supply for good, the pass grants cosmetics and nothing the sim reads", buyS.ok && buyR.ok && supply0 - supply1 === owed && burn1 - burn0 === owed && (fs.counter?.seasons ?? []).includes(season) && fs.counter?.roomHours === 3 && SEASON_PASS_GRANTS.every((g) => fs.owned.includes(g)), `pass ${buyS.ok} ${buyS.reason ?? ""} · hours ${buyR.ok} ${buyR.reason ?? ""} · supply -${Number(supply0 - supply1) / 1e18} · burned +${Number(burn1 - burn0) / 1e18} · seasons [${(fs.counter?.seasons ?? []).join(",")}] · hours ${fs.counter?.roomHours} · granted ${SEASON_PASS_GRANTS.filter((g) => fs.owned.includes(g)).length}/${SEASON_PASS_GRANTS.length}`);
 
     // ---- private rooms (Stage 20): the hours open a room, the code is the door, it mints nothing ----

@@ -26,6 +26,27 @@ export interface RunSettledRow {
   settledAt: number;
 }
 
+/**
+ * What a day looked like, for the economy's own parameters (Stage 38).
+ *
+ * `run_day.units` is spent down as files are paid, and `run_settled.units` is only the part the
+ * night settled — neither is the day's gross. So neither could answer the two questions every
+ * projection in docs/ECONOMY.md rests on: how much of the daily cap a runner actually banks, and
+ * what share of eligible players run at all. This is the record that can, and nothing subtracts
+ * from it.
+ */
+export interface RunDayStat {
+  day: number;
+  /** units banked that day, gross — never reduced by a payout */
+  grossUnits: number;
+  /** distinct files that banked at least one unit */
+  runners: number;
+  /** distinct files that finished a match at all */
+  active: number;
+  /** of those, the ones past the run's Depth gate — the population that COULD have run */
+  eligible: number;
+}
+
 export interface RunStore {
   /** Add units to a file's day. Called on every bank, so it must be cheap and idempotent-ish under retry. */
   add(day: number, file: string, units: number): void | Promise<void>;
@@ -39,16 +60,45 @@ export interface RunStore {
   spend(day: number, file: string, units: number): void | Promise<void>;
   settled(day: number): RunSettledRow | null | Promise<RunSettledRow | null>;
   markSettled(row: RunSettledRow): void | Promise<void>;
+  /**
+   * A file finished a match today. Idempotent per (day, file): the denominator is *people*, not
+   * matches, so a file that played nine rounds counts once.
+   */
+  seen(day: number, file: string, eligible: boolean): void | Promise<void>;
+  /** The day as the economy needs to read it. */
+  stat(day: number): RunDayStat | Promise<RunDayStat>;
 }
 
 export class MemoryRunStore implements RunStore {
   readonly days = new Map<number, Map<string, number>>();
   readonly settlements = new Map<number, RunSettledRow>();
+  /** day → file → { gross units banked, eligible to bank } — written alongside, never spent */
+  readonly stats = new Map<number, Map<string, { gross: number; eligible: boolean }>>();
+  private statRow(day: number, file: string): { gross: number; eligible: boolean } {
+    let d = this.stats.get(day);
+    if (!d) this.stats.set(day, (d = new Map()));
+    let r = d.get(file);
+    if (!r) d.set(file, (r = { gross: 0, eligible: false }));
+    return r;
+  }
   add(day: number, file: string, units: number): void {
     if (!(units > 0)) return;
     let d = this.days.get(day);
     if (!d) this.days.set(day, (d = new Map()));
     d.set(file, (d.get(file) ?? 0) + units);
+    const st = this.statRow(day, file);
+    st.gross += units;
+    // banking a unit is proof of eligibility: the room only calls this past the Depth gate
+    st.eligible = true;
+  }
+  seen(day: number, file: string, eligible: boolean): void {
+    const st = this.statRow(day, file);
+    if (eligible) st.eligible = true;
+  }
+  stat(day: number): RunDayStat {
+    const d = this.stats.get(day) ?? new Map<string, { gross: number; eligible: boolean }>();
+    const rows = [...d.values()];
+    return { day, grossUnits: rows.reduce((n, r) => n + r.gross, 0), runners: rows.filter((r) => r.gross > 0).length, active: rows.length, eligible: rows.filter((r) => r.eligible).length };
   }
   day(day: number): RunDayLine[] {
     return [...(this.days.get(day) ?? new Map<string, number>())].map(([file, units]) => ({ file, units })).filter((r) => r.units > 0);

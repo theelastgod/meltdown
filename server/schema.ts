@@ -48,6 +48,13 @@ export const SCHEMA = [
   units   INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (day, file)
 )`,
+  `CREATE TABLE IF NOT EXISTS run_day_stat (
+  day      INTEGER NOT NULL,
+  file     TEXT NOT NULL,
+  gross    INTEGER NOT NULL DEFAULT 0,
+  eligible INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, file)
+)`,
   `CREATE TABLE IF NOT EXISTS run_settled (
   day       INTEGER PRIMARY KEY,
   epoch     INTEGER NOT NULL,

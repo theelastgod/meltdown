@@ -270,9 +270,19 @@ than in the caller, so asking early simply fails — the job does not have to be
 2. **The ceiling is a game-design number, not a derived one.** 1 $CAPITAL a unit sets when
    dilution starts to be felt. It should be revisited against a real launch population, and it is
    the one constant here a designer should own rather than a model.
-3. **`capUse` and `runnerShare` are guesses.** Every projection in §1 rests on them. They are the
-   first thing to replace with telemetry, and the model takes them as parameters for exactly that
-   reason.
+3. ~~**`capUse` and `runnerShare` are guesses.**~~ **The telemetry exists now (Stage 38).** They
+   were guesses, and — worse than that — the game had no way of measuring them: `run_day.units` is
+   spent down as files are paid and `run_settled.units` is only the part the night settled, so the
+   day's gross banking was recorded nowhere. `run_day_stat` is now written alongside every bank and
+   every settled match, and nothing subtracts from it; `shared/economy/telemetry.ts` turns it into
+   the two parameters, pooled over runner-days rather than averaged over days, and **declines** when
+   the sample is thinner than `MIN_RUNNER_DAYS` / `MIN_ELIGIBLE_DAYS` / `MIN_DAYS`. Where it
+   declines the documented assumption stands and `summarise` labels it `assumed` rather than
+   presenting an estimate off nine runner-days as a measurement. `GET /economy` reports both.
+
+   What is still open here is only time: no population has played long enough to clear the floors,
+   so the published projection is still running on the stated assumptions — but it now says so on
+   its own last line.
 4. **Reclaimed emission goes to the treasury, not back to the pot.** That is what the contract
    does and it is defensible, but a day whose prizes went unclaimed arguably under-emitted and
    should be able to make it up.
@@ -287,5 +297,7 @@ npx vitest run tests/model.test.ts       # 16 cases: the finding and the fix
 npx vitest run tests/settle.test.ts      # 16 cases: the nightly job and the reconciliation
 npx vitest run tests/sinks.test.ts       # 13 cases: the burn side, and what may be published
 npm run probe:economy                    # the projection as a table, with checks
+npx vitest run tests/telemetry.test.ts   # 14 cases: the gross record, the estimators, the refusal
+curl localhost:8787/economy              # capUse and runnerShare as measured, or why they are not
 npx tsx -e "import('./shared/economy/model.ts').then(m=>m.summarise().forEach(l=>console.log(l)))"
 ```

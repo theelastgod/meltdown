@@ -48,6 +48,16 @@ CREATE TABLE IF NOT EXISTS run_day (
   units   INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (day, file)
 );
+-- The day as the economy reads it (Stage 38). run_day.units is spent down as files are paid and
+-- run_settled.units is only what the night settled, so neither is the day's gross. Nothing ever
+-- subtracts from this table: it is what capUse and runnerShare are measured from.
+CREATE TABLE IF NOT EXISTS run_day_stat (
+  day      INTEGER NOT NULL,
+  file     TEXT NOT NULL,
+  gross    INTEGER NOT NULL DEFAULT 0,  -- units banked, never reduced
+  eligible INTEGER NOT NULL DEFAULT 0,  -- 1 once the file is past the run's Depth gate
+  PRIMARY KEY (day, file)
+);
 CREATE TABLE IF NOT EXISTS run_settled (
   day       INTEGER PRIMARY KEY,
   epoch     INTEGER NOT NULL,

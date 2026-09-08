@@ -13,6 +13,8 @@
  *   GET  /counter            → chain id, contract addresses, the market's listings, treasury figures
  *   POST /link/nonce | /link/verify | /file/<id>/counter → the counter-ledger (SIWE link, vouchers, rig)
  */
+import { describe, observe } from "../shared/economy/telemetry";
+import { DOC_POPULATION, observedPopulation, summarise } from "../shared/economy/model";
 import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { Room, SERVER_TICK_MS, type Conn } from "./room";
@@ -149,7 +151,7 @@ function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: nu
     const priv = isPrivateRoom(name) ? privateRooms.get(name.slice(5).toUpperCase()) : undefined;
     r = priv
       ? new Room({ lagComp, ai: priv.rules.ai, seed: 7, accounts, warmupSeconds: priv.rules.warmupSeconds, roundSeconds: priv.rules.roundSeconds, level: priv.rules.district, endgame, audit: null, run: priv.rules.mode === "run", private: true, onLog: (l) => log(`[${name}] ${l}`) })
-      : new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, endgame, audit: audit ? { week: currentAudit().week, def: currentAudit().audit } : null, run, onRunBank: (day, file, units) => void runs.add(day, file, units), onLog: (l) => log(`[${name}] ${l}`) });
+      : new Room({ lagComp, ai, seed: 7, accounts, warmupSeconds, roundSeconds, level, endgame, audit: audit ? { week: currentAudit().week, def: currentAudit().audit } : null, run, onRunBank: (day, file, units) => void runs.add(day, file, units), onActive: (day, file, eligible) => void runs.seen(day, file, eligible), onLog: (l) => log(`[${name}] ${l}`) });
     rooms.set(name, r);
     startLoop(r);
   }
@@ -362,6 +364,23 @@ const http = createServer((req, res) => {
       log(`[counter] link ${id}: ${r.ok ? "ok" : r.reason}${r.ok && r.reason ? " (" + r.reason + ")" : ""}`);
       res.end(JSON.stringify({ ok: r.ok, reason: r.reason, counter: a.counter ?? null }));
     });
+    return;
+  }
+  if (req.url?.startsWith("/economy")) {
+    /**
+     * What the projection is actually standing on (Stage 38).
+     *
+     * `capUse` and `runnerShare` have been documented as guesses since Stage 19. This reads them
+     * back off the recorded days and says, in the same breath, which of the two the sample is big
+     * enough to have measured — an operator should never have to guess whether a number in the
+     * projection came from the game or from a spreadsheet.
+     */
+    const today = dayIndex();
+    const window = Number(new URL(req.url, "http://x").searchParams.get("days") ?? 30);
+    const stats = Array.from({ length: Math.max(1, Math.min(365, window)) }, (_, i) => runs.stat(today - i));
+    const o = observe(stats);
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ observed: o, note: describe(o), projection: summarise(observedPopulation(DOC_POPULATION, o), o) }));
     return;
   }
   if (req.url?.startsWith("/endgame")) {

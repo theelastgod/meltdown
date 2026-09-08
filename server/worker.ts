@@ -91,6 +91,13 @@ export class MatchRoom implements DurableObject {
           if (!this.env.DB) return;
           void new D1RunStore(this.env.DB).add(day, file, units).catch((e: unknown) => console.error(`run bank lost: day ${day} ${file} ${units} units — ${String((e as Error).message).slice(0, 200)}`));
         },
+        // the economy's own denominator (Stage 38): who played, and who could have run. A lost row
+        // costs an estimate a little accuracy and costs nobody any money, so it is logged and dropped
+        // rather than retried against the match loop.
+        onActive: (day, file, eligible) => {
+          if (!this.env.DB) return;
+          void new D1RunStore(this.env.DB).seen(day, file, eligible).catch((e: unknown) => console.error(`run stat lost: day ${day} ${file} — ${String((e as Error).message).slice(0, 200)}`));
+        },
         audit, run: url.searchParams.get("mode") === "run", level: url.searchParams.get("level") ?? undefined, ai: url.searchParams.get("ai") !== "0" });
     }
     return this.room;

@@ -148,6 +148,12 @@ export interface RoomOptions {
    * economy — what the units are worth is not the sim's business (`shared/sim/run.ts`).
    */
   onRunBank?: (day: number, file: string, units: number) => void;
+  /**
+   * A file finished a match (Stage 38). This is the denominator the economy's `runnerShare` needs —
+   * the population that COULD have run — and nothing was recording it. Idempotent per file per day
+   * in the store, so a file that plays nine rounds counts once.
+   */
+  onActive?: (day: number, file: string, eligible: boolean) => void;
   warmupSeconds?: number;
   roundSeconds?: number;
   /** Level id (shared/sim/level.ts registry); unknown ids fall back to the default district. */
@@ -237,6 +243,7 @@ export class Room {
       onLog: opts.onLog ?? (() => {}),
       accounts: opts.accounts ?? null,
       onRunBank: opts.onRunBank ?? (() => {}),
+      onActive: opts.onActive ?? (() => {}),
       warmupSeconds: opts.warmupSeconds ?? 20,
       roundSeconds: opts.roundSeconds ?? 360,
       level: opts.level ?? "",
@@ -786,6 +793,8 @@ export class Room {
       this.settlements++;
       if (!rec.account) continue;
       const entry = applyMatch(rec.account, contribution);
+      // counted here rather than at join: a file that connects and leaves has not played a day
+      this.opts.onActive(dayIndex(this.opts.now()), rec.account.id, rec.account.depth >= RUN_DEPTH);
       rec.lastSettleXp = entry.xp.total;
       const note = rec.progress.onRoundEnd(p, contribution.won, contribution.seconds, p.stats.kills === top, this.world.level.name);
       for (const id of note.stamps) entry.lines.push(`STAMP · ${id.toUpperCase().replace(/[:_]/g, " ")}`);

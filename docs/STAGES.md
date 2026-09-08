@@ -1641,6 +1641,69 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 38 — The two numbers the whole projection rests on could not be measured
+
+**Goal.** `docs/ECONOMY.md` §6 has carried the same admission since Stage 19:
+
+> **`capUse` and `runnerShare` are guesses.** Every projection in §1 rests on them. They are the
+> first thing to replace with telemetry, and the model takes them as parameters for exactly that
+> reason.
+
+Nothing was collecting the telemetry. That much was known. What was not: **nothing could have.**
+
+**The day's gross banking was recorded nowhere.** `run_day.units` is decremented by `spend` every
+time a file takes the direct withdrawal, and `run_settled.units` is only the part the night
+actually settled. Between them they record what is owed and what was paid, which is what the money
+needs — and neither is the day's gross, which is what `capUse` is a fraction *of*. There was also no
+record at all of the denominator `runnerShare` needs: how many eligible files played and did not
+run. Two parameters that every published figure rests on, and the game had no way of answering
+either.
+
+**`run_day_stat`, which nothing subtracts from.** One row per file per day: units banked gross, and
+whether that file was past the run's Depth gate. `add` increments it alongside `run_day`; a new
+`seen(day, file, eligible)` marks a file that finished a match, idempotent per day, so a file that
+plays nine rounds counts once. The Room calls it where it already calls `applyMatch` — at
+settlement, not at join, because a file that connects and leaves has not played a day.
+
+**Pooled, not a mean of daily ratios.** The model multiplies `runners × cap × capUse`, so the
+estimator it needs is total units over total runner-days. Averaging per-day ratios weights a day
+with four runners the same as a day with four thousand, which is not the quantity the projection is
+about — `tests/telemetry.test.ts` holds that with a two-day sample where the two disagree by 3×.
+
+**And it refuses.** This is the part that matters. An estimate off nine runner-days is not worth
+more than the documented guess it would replace, and it is worth considerably *less* if it carries
+the authority of a measurement. Below `MIN_DAYS` / `MIN_RUNNER_DAYS` / `MIN_ELIGIBLE_DAYS` the
+parameter comes back `null`, the stated assumption stands, and `summarise` prints which is which:
+
+```
+inputs:     capUse assumed · runnerShare assumed — no telemetry supplied
+```
+
+A `capUse` above 1 is likewise reported rather than clamped: the room refuses to bank past
+`RUN_DAILY_CAP`, so a figure above it is a broken record and clamping would hide it.
+
+Two things the arithmetic turned up on the way. Runners are a subset of the eligible, so
+eligible-days can never be the smaller number and the two floors are not independent — any sample
+rich enough for `capUse` already clears `runnerShare`'s denominator. And days with no play are
+dropped rather than counted as zeros, or a quiet fortnight would drag the estimate down as if
+nobody had banked when in fact nobody had played.
+
+**Proved on a live host, both halves.** `probe:run` banks real units through a real room and then
+reads `GET /economy` back:
+
+```
+the day's banking is recorded gross for the economy, and a sample of one day is declined
+rather than published as a measurement
+  — gross 2 units over 1 runner-days · capUse assumed · runnerShare assumed
+    (1 of 7 days; 1 of 200 runner-days; 1 of 200 eligible-days)
+```
+
+**Acceptance.** `npm test` 363 (14 new); typecheck clean; `lint:economy` 244 items 0 violations;
+`probe:run` 17/17. Mutation-tested both ways — removing the sample floors fails six cases, and
+letting `spend` touch the gross record fails the one named for it. `tests/room.test.ts`'s
+schema-parity check caught the new table missing from the Durable Object's self-healing copy, which
+is exactly what it is for.
+
 ## Stage 37 — Three terminals asked a question and did not listen to the answer
 
 **Goal.** The campaign lint has printed the same three notes since Stage 25:
