@@ -1641,6 +1641,53 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 42 — The check accused the game of something the game cannot do
+
+**Goal.** `probe:mastery` failed on CI run #70 — the probe Stage 39 had just fixed — with a line that
+should not exist:
+
+```
+FAIL  sim: the firmware patches the held weapon and chip mods apply only while it is held
+  — LB burst {"count":3,"rpm":900} … · swapped true · SMG burst {"count":3,"rpm":900} range ×1.03
+```
+
+`swapped true`, and the SMG carrying the rifle's burst and the rifle's chip mods. Read plainly, that
+is a firmware leaking onto a weapon it was never fitted to — a fairness bug, in a game whose PvP pays
+$CAPITAL.
+
+**It is not, and the sim can prove it.** Both accessors are pure functions of the held slot:
+
+```ts
+export const weaponDefOf = (p, slot = p.weapon.slot) => p.kit.defs[slot] ?? stockDefOf(slot);
+export function modsFor(p, slot = p.weapon.slot) { const chip = p.kit.mods[slot]; … }
+```
+
+There is no cache between the slot and either of them, so "slot is 3 but the numbers are slot 1's" is
+not a state the game can be in. A failure with that shape has only ever had one possible cause: the
+slot was not 3 when the numbers were read.
+
+**Stage 39 fixed half of it and left the other half open.** It stepped until the swap landed instead
+of assuming a fixed forty ticks — correct — and then advanced twenty more ticks and sampled in a
+*second* `page.evaluate`. The page is joined to a room, so a snapshot from a server that has not yet
+seen the input can reconcile the slot back inside that gap. Confirming a precondition and then
+sampling later is the same mistake as never confirming it, just harder to see. One evaluate now, with
+the slot asserted beside the numbers it governs, so a rollback fails saying the slot went back.
+
+**And the property moved to where it belongs.** A rifle firmware not reaching another weapon is a
+fact about the sim, not about a networked browser page: it needs no client, no server and no clock.
+`tests/mastery.test.ts` now holds it directly — the rifle's slot carries the burst and the mods,
+*every other weapon's slot* carries neither (not just the one the probe happens to switch to), and
+moving the held slot moves which numbers apply with nothing left over. Mutation-tested by making the
+accessors fall back to the first fitted kit instead of the held slot — the actual leak the check is
+named for — which fails three cases including the one Stage 7 wrote.
+
+The probe check stays. It is worth knowing the whole stack agrees. But it is no longer the only thing
+standing between a fairness bug and the build, and it no longer fails on a two-core runner for a
+reason that has nothing to do with weapons.
+
+**Acceptance.** `npm test` 374 (3 new); typecheck clean; `probe:mastery` 23/23 three times running,
+now reporting `holding slot 3 · SMG burst null range ×1 move ×1`.
+
 ## Stage 41 — The sweep that returns the money had never been run
 
 **Goal.** `docs/ECONOMY.md` §6 item 4, open since Stage 24:

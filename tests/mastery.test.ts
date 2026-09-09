@@ -17,7 +17,7 @@ import { Btn, withSlot } from "../shared/sim/input";
 import { Room, type Conn } from "../server/room";
 import { devSeed, MemoryAccountStore } from "../server/accounts";
 import { decodeServerMessage, encodeJoin } from "../shared/net/protocol";
-import { WEAPON_LIST } from "../shared/weapons/manifest";
+import { WEAPON_LIST, WEAPONS, type WeaponDef } from "../shared/weapons/manifest";
 import { modsFor, weaponDefOf } from "../shared/sim/player";
 
 const owned = ALL_ITEMS.map((i) => i.id);
@@ -160,5 +160,64 @@ describe("the server verifies firsts", () => {
     const stampMsgs = a.msgs.filter((m) => m?.type === "file" && m.file.reason === "stamp");
     expect(stampMsgs.length).toBeGreaterThan(0);
     expect((stampMsgs[0] as { file: { newStamps: string[] } }).file.newStamps).toContain("first_kill:lease_breaker");
+  });
+});
+
+/**
+ * A rifle's firmware and chips belong to the rifle (Stage 42).
+ *
+ * probe:mastery asserts this end to end and has failed twice on CI reporting a leak the sim cannot
+ * produce — both times because the networked page had reconciled the held slot back between the
+ * probe confirming the swap and reading the numbers. `weaponDefOf` and `modsFor` are pure functions
+ * of `p.weapon.slot`, so a mismatch between the two is not a thing the game can do; it is only ever
+ * a thing a probe can observe.
+ *
+ * These cases hold the property where it actually lives, with no client, no server and no clock. If
+ * the firmware ever really does reach another weapon, this is what fails — and it fails the same way
+ * on every machine.
+ */
+describe("a firmware patches the weapon it was fitted to, and nothing else", () => {
+  const kitted = () => {
+    const world = new World(drainageYard(), { ai: false, seed: 5 });
+    return world.addPlayer(1, "A", 1, {
+      ...DEFAULT_LOADOUT,
+      chips: { lease_breaker: { muzzle: "lease_breaker:long_barrel", kinetic: "lease_breaker:sling" } },
+      firmware: { lease_breaker: "lease_breaker:three_count" },
+    });
+  };
+
+  it("the rifle's slot carries the burst and the chip mods", () => {
+    const p = kitted();
+    const rifle = WEAPONS.lease_breaker!.slot;
+    expect(weaponDefOf(p, rifle).burst?.count).toBe(3);
+    expect(modsFor(p, rifle).range).toBeGreaterThan(1.02);
+    expect(modsFor(p, rifle).moveSpeed).toBeGreaterThan(1.01);
+  });
+
+  it("and no other slot does — checked across every weapon, not just the one the probe switches to", () => {
+    const p = kitted();
+    const rifle = WEAPONS.lease_breaker!.slot;
+    const base = p.mods;
+    for (const w of Object.values(WEAPONS) as WeaponDef[]) {
+      if (w.slot === rifle) continue;
+      expect(weaponDefOf(p, w.slot).burst ?? null, `${w.id} burst`).toBe(w.burst ?? null);
+      expect(modsFor(p, w.slot).range, `${w.id} range`).toBe(base.range);
+      expect(modsFor(p, w.slot).moveSpeed, `${w.id} move`).toBe(base.moveSpeed);
+    }
+  });
+
+  it("switching the held slot switches which numbers apply, with nothing left over", () => {
+    const p = kitted();
+    const rifle = WEAPONS.lease_breaker!.slot;
+    const other = (Object.values(WEAPONS) as WeaponDef[]).find((w) => w.slot !== rifle)!.slot;
+    p.weapon.slot = rifle;
+    expect(weaponDefOf(p).burst?.count).toBe(3);
+    expect(modsFor(p).range).toBeGreaterThan(1.02);
+    // the accessors read the slot directly, so the change is complete the instant the slot moves —
+    // there is no tick in which the SMG is holding the rifle's numbers
+    p.weapon.slot = other;
+    expect(weaponDefOf(p).burst ?? null).toBe((Object.values(WEAPONS) as WeaponDef[]).find((w) => w.slot === other)!.burst ?? null);
+    expect(modsFor(p).range).toBe(p.mods.range);
+    expect(modsFor(p).moveSpeed).toBe(p.mods.moveSpeed);
   });
 });
