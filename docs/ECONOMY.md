@@ -267,6 +267,14 @@ than in the caller, so asking early simply fails — the job does not have to be
 1. **The Forge.** The last specified sink, and the only one needing infrastructure rather than a
    contract: creator uploads, moderation, and an asset pipeline. Until it exists the model counts
    it at zero.
+
+   **The asset pipeline half is built (Stage 43).** `shared/assets/manifest.ts` declares an asset
+   and nothing mechanical; `lint:assets` holds the manifest to the files on disk (bytes, sha256,
+   square power of two, per-asset and total budgets); `tools/asset-add.ts` conditions a source image
+   into a game-ready one and prints its manifest line, so those numbers are never typed by hand; and
+   `tests/assets.test.ts` walks the import graph to keep the whole thing unreachable from the sim.
+   RUST LEASE carries the first one end to end. What the Forge still needs is the part this cannot
+   supply: **uploads and moderation** — who may add an asset, and who says yes.
 2. **The ceiling is a game-design number, not a derived one.** 1 $CAPITAL a unit sets when
    dilution starts to be felt. It should be revisited against a real launch population, and it is
    the one constant here a designer should own rather than a model.

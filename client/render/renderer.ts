@@ -1,3 +1,4 @@
+import { texture as assetTexture } from "./assets";
 import * as THREE from "three";
 import type { LevelDef } from "@shared/sim/level";
 import type { Dummy } from "@shared/sim/world";
@@ -262,13 +263,38 @@ export class Renderer {
   /** the local rig's worn skin tint (null: stock) */
   skinTint: string | null = null;
 
-  /** Wear a skin on the local rig: the viewmodel strips take the tint. Cosmetic; nothing in the sim reads it. */
-  setSkin(tint: string | null): void {
+  /** the worn skin's plate texture once it has loaded, or null (Stage 43) */
+  skinMap: THREE.Texture | null = null;
+  private skinMapId: string | null = null;
+
+  /**
+   * Wear a skin on the local rig: the viewmodel strips take the tint. Cosmetic; nothing in the sim
+   * reads it.
+   *
+   * The optional plate texture (Stage 43) is applied the same way and with the same standing: it
+   * arrives asynchronously, a failure leaves `skinMap` null, and the strips keep the tint they
+   * already have. A cosmetic that cannot load is a cosmetic that does not appear — never an error
+   * a player sees, and never anything the simulation is told about.
+   */
+  setSkin(tint: string | null, textureId?: string | null): void {
     this.skinTint = tint;
     for (const vm of this.viewmodels.values()) {
       const strip = vm.userData.strip as THREE.MeshBasicMaterial | undefined;
       if (strip) strip.color.set(tint ?? (vm.userData.tracer as string));
     }
+    const want = textureId ?? null;
+    if (want === this.skinMapId) return;
+    this.skinMapId = want;
+    this.skinMap = null;
+    if (!want) return;
+    void assetTexture(want).then((tex) => {
+      // a slower load that lands after the player changed skin again must not overwrite the new one
+      if (this.skinMapId !== want) {
+        tex?.dispose();
+        return;
+      }
+      this.skinMap = tex;
+    });
   }
 
   /** Other players: hooded silhouettes with cyan Blank trim. Zero mechanical data touches this. */

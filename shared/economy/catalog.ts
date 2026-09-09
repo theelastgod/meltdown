@@ -24,12 +24,18 @@ export interface SkinDef {
   wearSeed: number;
   /** tint for the rig: remote body emissive + the local viewmodel strip */
   tint: string;
+  /**
+   * An optional asset id for the rig's plate (Stage 43). Cosmetic like the tint beside it: the
+   * renderer looks it up, the sim never sees it, and a skin with no texture — or one whose file
+   * fails to load — falls back to the tint alone, which is what every skin did before this existed.
+   */
+  texture?: string;
 }
 
-const skin = (token: number, id: string, name: string, line: string, capital: number, wearSeed: number, tint: string): SkinDef => ({ token, id, name, line, capital, wearSeed, tint });
+const skin = (token: number, id: string, name: string, line: string, capital: number, wearSeed: number, tint: string, texture?: string): SkinDef => ({ token, id, name, line, capital, wearSeed, tint, ...(texture ? { texture } : {}) });
 
 export const SKINS: readonly SkinDef[] = [
-  skin(1, "skin_rust", "RUST LEASE", "a rig that has been rained on since the Estate stopped counting", 40, 0x5a17, "#d86a2a"),
+  skin(1, "skin_rust", "RUST LEASE", "a rig that has been rained on since the Estate stopped counting", 40, 0x5a17, "#d86a2a", "skin_rust_plate"),
   skin(2, "skin_phosphor", "PHOSPHOR TRIM", "the first CRT's green on every edge", 60, 0x1b3f, "#5cff9a"),
   skin(3, "skin_kernel", "KERNEL PLATE", "red filament without the filament", 120, 0x77e1, "#ff2a4a"),
   skin(4, "skin_deadletter", "DEADLETTER WHITE", "the office's own paint, cut from a sealed door", 200, 0x0c02, "#f2f4ff"),

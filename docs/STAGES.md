@@ -1641,6 +1641,65 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 43 — Somewhere to put a picture
+
+**Goal.** Forty-two stages in, MELTDOWN had **no source art at all**. Every texture is a
+`CanvasTexture` drawn at runtime, the audio is synthesised, the geometry is Three.js primitives —
+seventy image files in the repo and all seventy of them proof screenshots under `docs/proof/`. That
+is why Stages 21–22 could measure the frame budget so exactly, and it is why `docs/ECONOMY.md` §6.1
+has counted the Forge at zero since Stage 19. The blocker was never the pictures. It was that there
+was nowhere to put one, and no rule about what putting one there would be allowed to change.
+
+**The rule first, because it is the one with teeth.** `AssetDef` has an id, a file, a size, a byte
+count, a hash and a line of provenance. No damage, no speed, no cooldown, and no room to add one:
+`tests/assets.test.ts` pins the key set and then walks the static import graph — the same walk
+`tests/quarantine.test.ts` uses for the Kernel Protocols — to prove that `shared/sim/world.ts`,
+`server/room.ts` and `server/worker.ts` cannot reach the registry at all. An asset that the
+simulation cannot see cannot change a shot, a hitbox or a hash, whoever authored it.
+
+**Everything is optional.** The loader returns `null` on a miss, a 404 or a decode failure, and every
+caller keeps the procedural path it had before. Delete the whole manifest and the game runs exactly
+as it did at Stage 42. An art pipeline that can take the build down would be a downgrade.
+
+**The budget is declared, not discovered** — and it bit immediately, which is the point. The texture
+this was built around came back from the generator at **2048² and 8.7 MB**: sixteen times the
+per-asset ceiling, twice the edge limit, and on its own over the whole-project budget. The lint
+reported all three:
+
+```
+✗ raw_probe [per-asset-budget] 8734868 bytes over the 524288 ceiling
+✗ raw_probe [texture-edge]     2048 over the 1024 edge, which is GPU memory rather than download
+✗ (all)     [total-budget]     8899876 bytes over the 4194304 budget
+```
+
+So something has to do the reducing, and doing it by hand is how a manifest drifts from the files it
+describes. `tools/asset-add.ts` centre-crops, resizes to a power of two and re-encodes — in the
+Chromium Playwright already installs for the probes, rather than adding an image dependency — then
+prints the `bytes` and `sha256` for the manifest. At 512² the result was 636 KB, still over the
+ceiling; **the asset moved to 256², not the budget to 636 KB.** 161 KB, inside both limits.
+
+**Proved end to end, not just declared.** RUST LEASE is the first cosmetic to name a texture, and
+`probe:counter` buys it on chain, wears it, and waits for the plate to arrive:
+
+```
+the worn skin's plate texture loads from the asset pipeline: requested, loaded, none failed
+  — skinMap true · requested 1 loaded 1 failed 0
+```
+
+That check exists because fail-soft is exactly the behaviour that lets a broken pipeline look fine:
+`skinMap` stays null, the tint still applies, and nothing complains. Waiting for the texture and
+asserting it is the difference between a pipeline and a promise.
+
+**What this does and does not unblock.** §6.1 needed three things — uploads, moderation, and an
+asset pipeline. This is the third. The first two are the part no amount of code here supplies: who
+may add an asset, and who says yes.
+
+**Acceptance.** `npm test` 389 (15 new); typecheck clean; `lint:assets` 1 asset, 161.1 KB of
+4096.0 KB, 0 violations, and wired into `verify` and CI; `probe:counter` 15/15, `probe:frame` 6/6,
+`probe:mobile` 14/14, `probe:file` 19/19, `probe` 13/13, `probe:net` 16/16, `smoke` 3/3; the asset
+ships in `dist/assets/`. The lint was mutation-tested against a drifted byte count, a changed file,
+a wrong declared size and the raw generator output.
+
 ## Stage 42 — The check accused the game of something the game cannot do
 
 **Goal.** `probe:mastery` failed on CI run #70 — the probe Stage 39 had just fixed — with a line that

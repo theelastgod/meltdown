@@ -1,3 +1,4 @@
+import { assetStats } from "./render/assets";
 import { Menu, menuWanted, type MenuView } from "./menu";
 import { clampSettings, saveSettings, type Settings } from "./settings";
 import { crawlWanted, OpeningCrawl, type CrawlView } from "./crawl";
@@ -76,7 +77,7 @@ export interface GameHook {
   loadPreset: (slot: number) => boolean;
   joinAudit: () => void;
   /** The counter-ledger (Stage 11b): the panel's view, the wallet link, a market buy, wear, the name, reconcile; the skins others wear as the snapshot carries them. */
-  counter: () => { view: ReturnType<typeof counterView> | null; wallet: string | null; last: string; info: unknown; tint: string | null; remotes: { id: number; name: string; tag: string; skin: number }[] };
+  counter: () => { view: ReturnType<typeof counterView> | null; wallet: string | null; last: string; info: unknown; tint: string | null; skinMap: boolean; assets: { requested: number; loaded: number; failed: number }; remotes: { id: number; name: string; tag: string; skin: number }[] };
   link: () => Promise<{ ok: boolean; reason?: string }>;
   buySkin: (listing: number) => Promise<{ ok: boolean; reason?: string }>;
   /** the sinks (Stage 19): the Deep Wake pass and private room-hours, both 100% burned */
@@ -232,7 +233,7 @@ window.__game = {
     mirror: !game.renderer.mobile,
     scale: game.renderer.post.scale,
   }),
-  counter: () => ({ view: game.file.counterState, wallet: game.file.counter?.address ?? null, last: game.file.counter?.last ?? "", info: game.file.counter?.info ?? null, tint: game.renderer.skinTint, remotes: (game.net?.remoteViews() ?? []).map((r) => ({ id: r.id, name: r.name ?? "", tag: r.tag ?? "", skin: parseTag(r.tag ?? "", "").skin })) }),
+  counter: () => ({ view: game.file.counterState, wallet: game.file.counter?.address ?? null, last: game.file.counter?.last ?? "", info: game.file.counter?.info ?? null, tint: game.renderer.skinTint, skinMap: !!game.renderer.skinMap, assets: { ...assetStats }, remotes: (game.net?.remoteViews() ?? []).map((r) => ({ id: r.id, name: r.name ?? "", tag: r.tag ?? "", skin: parseTag(r.tag ?? "", "").skin })) }),
   link: () => game.file.counter?.link() ?? Promise.resolve({ ok: false, reason: "offline" }),
   buySkin: (listing) => game.file.counter?.buy(listing) ?? Promise.resolve({ ok: false, reason: "offline" }),
   buySeason: () => game.file.counter?.buySeason() ?? Promise.resolve({ ok: false, reason: "offline" }),

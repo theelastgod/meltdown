@@ -233,7 +233,8 @@ export class Game {
 
   private applyIdentity(v: ReturnType<GhostFile["identityView"]>): void {
     this.hud.setIdentity(v.glyphSvg, v.display, v.monikerText, v.chapter);
-    this.renderer.setSkin(skinByToken(this.file.accountRecord?.counter?.worn ?? 0)?.tint ?? null);
+    const worn = skinByToken(this.file.accountRecord?.counter?.worn ?? 0);
+    this.renderer.setSkin(worn?.tint ?? null, worn?.texture ?? null);
     this.refreshHub();
   }
 

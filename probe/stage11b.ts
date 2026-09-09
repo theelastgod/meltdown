@@ -177,6 +177,23 @@ async function main(): Promise<void> {
     await shotCheck(a, `stage11b-file.png`);
     const panel1 = await a.evaluate(() => (document.querySelector("#hud .file .cl") as HTMLElement)?.textContent ?? "");
     const price = parseEther(String(rust.price));
+    /**
+     * And the worn skin's plate texture actually arrives (Stage 43).
+     *
+     * RUST LEASE is the first cosmetic to name an art asset. The load is asynchronous and fails
+     * soft, which is the right behaviour and also the behaviour that would let a broken pipeline
+     * look fine — `skinMap` stays null, the tint still applies, and nothing complains. So the check
+     * waits for the texture and asserts it, rather than trusting that a silent failure is a pass.
+     */
+    const mapped = await a
+      .waitForFunction(() => window.__game.counter().skinMap === true, null, { timeout: 15000, polling: 100 })
+      .then(() => true, () => false);
+    const av = await a.evaluate(() => window.__game.counter().assets);
+    check(
+      "the worn skin's plate texture loads from the asset pipeline: requested, loaded, none failed — and the sim never saw it",
+      mapped && av.loaded >= 1 && av.failed === 0 && av.requested >= 1,
+      `skinMap ${mapped} · requested ${av.requested} loaded ${av.loaded} failed ${av.failed}`,
+    );
     check("a market buy is the player's own signed transactions: the 2% burn lands on chain, the skin lands in the wallet, the host reconciles it onto the rig, the file wears it and the local viewmodel takes the tint", !!buy.ok && burned1 - burned0 === (price * 200n) / 10_000n && bal === 1n && !!v2.view?.rig.some((r) => r.token === 1) && Number(v2.view.capital) === LAUNCH_GRANT - rust.price && wear.ok && v3.view?.worn === 1 && v3.tint === SKINS[0]!.tint && /WORN/.test(panel1), `buy ${buy.ok} ${buy.reason ?? ""} · burned +${(burned1 - burned0).toString()} wei · 1155 balance ${bal} · rig [${v2.view?.rig.map((r) => r.id).join(", ")}] · worn ${v3.view?.worn} tint ${v3.tint}`);
 
     // ---------------- the match: the skin travels as an ID ----------------
