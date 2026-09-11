@@ -36,6 +36,7 @@
     "deploy:workers": "npx wrangler deploy && npx wrangler deploy -c wrangler.campaign.toml && npx wrangler deploy -c wrangler.counter.toml",
     "deploy:pages": "npm run build && npm run smoke && npx wrangler pages deploy dist --project-name meltdown",
     "assets:add": "tsx tools/asset-add.ts",
+    "icons:make": "tsx tools/icon-make.ts",
     "lint:assets": "tsx shared/assets/cli.ts",
     "lint:economy": "tsx shared/economy/cli.ts",
     "contracts:build": "tsx server/chain/compile.ts",

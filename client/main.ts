@@ -1,3 +1,4 @@
+import { pwaState, registerServiceWorker } from "./pwa";
 import { assetStats, texture as assetTexture } from "./render/assets";
 import { Menu, menuWanted, type MenuView } from "./menu";
 import { clampSettings, saveSettings, type Settings } from "./settings";
@@ -92,6 +93,8 @@ export interface GameHook {
   /** The opening crawl (Stage 12): its live state, a skip, and the title's click. */
   /** Load a declared asset through the pipeline and say whether it decoded (Stage 44). */
   loadAsset: (id: string) => Promise<boolean>;
+  /** installability: is the service worker registered and controlling this page (Stage 45) */
+  pwa: () => Promise<{ supported: boolean; registered: boolean; controlled: boolean; scope: string | null }>;
   crawl: () => CrawlView | null;
   crawlSkip: () => boolean;
   crawlFinish: () => void;
@@ -246,6 +249,7 @@ window.__game = {
   registerName: (name) => game.file.counter?.registerName(name) ?? Promise.resolve({ ok: false, reason: "offline" }),
   reconcile: () => game.file.counter?.op("reconcile") ?? Promise.resolve({ ok: false, reason: "offline" }),
   loadAsset: (id) => assetTexture(id).then((t) => !!t),
+  pwa: () => pwaState(),
   crawl: () => crawl?.view() ?? null,
   crawlSkip: () => crawl?.skip() ?? false,
   crawlFinish: () => crawl?.finish(true),
@@ -318,6 +322,9 @@ window.__game = {
         }
       : null,
 };
+
+// Stage 45: PROD-only; a no-op in dev and in the headless probes.
+registerServiceWorker();
 
 // URL-driven connect: ?net=ws://host/room/name&name=ALPHA&lat=75&jitter=8&loss=0.05
 {

@@ -1,0 +1,6 @@
+# The worker must never be cached by the browser, or an update could not reach a player who has
+# the old one; the manifest needs its own type so Chromium reads it as one.
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Content-Type: application/manifest+json

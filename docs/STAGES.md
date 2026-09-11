@@ -1641,6 +1641,67 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 45 — Installable: a phone can put MELTDOWN on its home screen
+
+**Goal.** Stage 32 made the game playable on a phone and Stage 34 kept it fair there; a phone
+still had to reach it through a browser tab, with the address bar taking a strip of a screen that
+Stage 32 measured to the pixel. This makes the built site a Progressive Web App: a manifest the
+browser will offer to install, a service worker so the shell opens offline, and a standalone
+landscape window with no chrome. Nothing about the game changes; this is the wrapper the phone
+needs to treat it as one.
+
+**What the worker is allowed to touch, and the test that says so.** A service worker sits between
+the page and the network, and this game's network carries money. So `public/sw.js` is hand-written
+rather than generated, and it is short enough to read: it returns before doing anything for a
+request that is not a same-origin GET, or that is a websocket upgrade, so the room sockets, the
+ledger host and the chain RPC never pass through it. Navigations are network-first with the cached
+shell as the fallback, so a connected player always gets the newest build; only `/assets/` and
+`/icons/` are served stale-while-revalidate. `tests/pwa.test.ts` pins each of those rules and one
+more: the worker's *code* names none of the hosts the money or the match lives on.
+
+That last test was mutation-tested and the first version did not fail. The check strips comments
+before matching, because the worker's header comment says in words what it avoids; the stripper
+treated the `//` in `https://` as a line comment and deleted the very URL the mutation had planted.
+A comment now opens only at the start of a line or after whitespace, and the same mutation fails
+the test. A check that cannot fail is not a check, and the only way to know is to make it fail.
+
+**Registered in production only.** `client/pwa.ts` registers the worker under `import.meta.env.PROD`
+and nothing else, so the dev server and every headless probe run exactly as before, with no cache
+between them and the code they measure. `window.__game.pwa()` reports whether the worker is
+supported, registered and controlling the page, which is how the smoke probe reads it.
+
+**Proved on the built site, not the source.** `npm run smoke` serves `dist/` and now asserts the
+whole chain end to end: the manifest is served with status 200 and names the app; both icons
+exist; `navigator.serviceWorker.ready` resolves, the page is controlled, and the shell cache is
+populated:
+
+```
+manifest 200 "MELTDOWN" standalone 2 icons · sw ready true registered true controlled true
+· caches [meltdown-shell-v1, meltdown-runtime-v1]
+```
+
+Cloudflare Pages reads `public/_headers`: the worker is sent `Cache-Control: no-cache`, because a
+browser-cached worker is one an update cannot reach, and the manifest gets its own content type.
+
+**Icons for nothing.** The two PNGs the manifest requires are drawn procedurally by
+`tools/icon-make.ts` in the Chromium that Playwright already installs (`npm run icons:make`): black
+ground, the cyan M with a melt, the magenta rule, scanlines. 4.2 KB and 14.8 KB, zero credits, and
+`tests/pwa.test.ts` reads each PNG header to check the file on disk is the size the manifest claims.
+
+**A note on the first typecheck.** The registration call was inserted by a script that looked for
+the `window.__game =` object and the next `};`, and the next `};` closes an arrow function *inside*
+that object. The call landed mid-literal and the typecheck caught it before anything ran. The
+lesson is the one from Stage 44 with a shorter loop: run the check after the last edit, every time.
+
+**Acceptance.** `npm test` 396 (7 new); typecheck clean; `smoke` 4/4 on the built site with the
+worker controlling the page; `probe:mobile` 14/14, `probe:frame` 6/6, `probe:counter` 16/16,
+`probe:net` 16/16; `dist/` carries `manifest.webmanifest`, `sw.js`, `_headers` and both icons. The
+host-name test was mutation-tested with a `workers.dev/rpc` URL planted in worker code.
+
+**Still open for mobile.** Frame times on real phone silicon: every number above comes from
+software GL on a runner, which says whether the frame allocates, not how long it takes on a
+mid-range Android. That measurement needs a device.
+
 ## Stage 44 — Four skins, four plates, and a check that the lint cannot make
 
 **Goal.** Stage 43 built the pipeline and ran one texture through it. This runs the other three, so

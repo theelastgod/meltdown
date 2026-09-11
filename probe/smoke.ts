@@ -69,6 +69,24 @@ async function main(): Promise<void> {
     await pg.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "cards" && !!window.__game.menu()?.cardText, null, { timeout: 40000, polling: 50 });
     const card = await pg.evaluate(() => window.__game.menu()!.cardText);
     check("the menu flow runs from the built bundle: a title card is up", /leased|woke free/.test(card), `card "${card}"`);
+    /**
+     * Installable (Stage 45). Only the built site registers the worker, so this is the one place it
+     * can be asserted. `ready` resolving proves the worker installed and activated; the shell cache
+     * key proves install actually precached the page; `controlled` proves clients.claim() took this
+     * page over, which is what makes the very next load offline-capable.
+     */
+    const man = await pg.evaluate(async () => {
+      const r = await fetch("/manifest.webmanifest");
+      const j = (await r.json()) as { name?: string; display?: string; icons?: { src: string }[] };
+      return { status: r.status, name: j.name, display: j.display, icons: j.icons?.length ?? 0 };
+    });
+    const sw = await pg.evaluate(async () => {
+      const ready = await Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise<boolean>((res) => setTimeout(() => res(false), 15000))]);
+      for (let i = 0; i < 50 && !navigator.serviceWorker.controller; i++) await new Promise((r) => setTimeout(r, 100));
+      const keys = await caches.keys();
+      return { ready, ...(await window.__game.pwa()), keys };
+    });
+    check("the built site is installable: the manifest is served and names the app, its icons exist, and the service worker installs, precaches the shell and takes the page", man.status === 200 && man.name === "MELTDOWN" && man.display === "standalone" && man.icons >= 2 && sw.ready && sw.registered && sw.controlled && sw.keys.includes("meltdown-shell-v1"), `manifest ${man.status} "${man.name}" ${man.display} ${man.icons} icons · sw ready ${sw.ready} registered ${sw.registered} controlled ${sw.controlled} scope ${sw.scope} · caches [${sw.keys.join(", ")}]`);
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     await pg.close();
   } finally {
