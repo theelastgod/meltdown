@@ -1641,6 +1641,63 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 48 — The phone's first download carried the chain client
+
+**Goal.** Stage 45 made the site installable and Stage 46 made it boot offline, so the question
+became what a phone actually downloads before it can draw a frame. The answer was one 1.3 MB
+script, and the build had been warning about it since Stage 11b. This stage measured what was in
+it and moved the part a player does not need to wake, walk and shoot out of the way.
+
+**The measurement first.** No new dependency: the production source map already says which
+source went into the bundle, and a forty-line script grouped its `sourcesContent` by package:
+
+| share | source | what |
+| --- | --- | --- |
+| 51.4% | 2049 KB | three |
+| 18.0% | 717 KB | viem |
+| 5.5% | 218 KB | ox |
+| 4.5% | 180 KB | `shared/sim` |
+| 3.6% | 145 KB | `client/render` |
+| 2.8% | 111 KB | @noble/curves |
+| 1.2% | 48 KB | @noble/hashes |
+| 0.9% | 37 KB | abitype |
+
+Three is the renderer and stays. viem, ox, the noble curve and hash libraries and abitype are the
+chain client — a quarter of the source — and every byte of it was there for one file,
+`client/counter.ts`, which links a wallet, buys a skin and writes a name. The sim never touches it;
+the room never touches it; a player who never opens the ledger never calls it.
+
+**One static import became a dynamic one.** `client/file.ts` built the counter client in its
+constructor. It now builds it in `ensureCounter()`, behind `import("./counter")`, the first time the
+ledger is opened, asked about through the game hook, or acted on — and a file with no shop
+(offline) never loads it at all. Every panel action and every `window.__game` counter hook goes
+through that one gate, so nothing changed for the probes that drive the ledger: `probe:counter`
+16/16, `probe:run` 18/18, `probe:harden` 9/9, untouched.
+
+**The numbers.** Vite emitted the chain client as its own chunk:
+
+| | before | after |
+| --- | --- | --- |
+| first script, raw | 1,318,366 B | 932,196 B |
+| first script, gzip | 372,496 B | 265,078 B |
+| chain client chunk, raw / gzip | in the above | 386,632 B / 107,647 B, on demand |
+
+The first download is 29% smaller by either measure, and the part that moved is fetched by the
+players who use it, when they use it. The service worker's install-time precache (Stage 46) reads
+the shell's references, so the offline boot still carries exactly what booting needs and nothing
+it does not.
+
+**Pinned twice.** `tests/bundle.test.ts` walks the static *value*-import graph from the client
+entry — `import type` lines skipped, since they are erased at build time and `file.ts` keeps one
+for the client's type — and asserts it never reaches a module that imports viem, ox, abitype or
+noble, while the dynamic edge is really there and the walk really reaches the sim and the renderer.
+Mutation-tested by restoring the static import: the graph test fails. And `smoke` proves the same
+fact on the built site, as a phone would see it: booting and joining a room requested no counter
+chunk; asking for the ledger requested exactly one.
+
+**Acceptance.** `npm test` 400 (3 new); typecheck clean; `smoke` 6/6 on the built site;
+`probe:counter` 16/16, `probe:run` 18/18, `probe:harden` 9/9.
+
 ## Stage 47 — The probe walked past the room: probe:campaign failed CI at Stage 44
 
 **Goal.** CI run #74 (Stage 44) was red on one step, `probe:campaign`, and the failure reproduced

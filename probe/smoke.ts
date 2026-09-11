@@ -48,6 +48,8 @@ async function main(): Promise<void> {
   };
   try {
     const pg = await browser.newPage({ viewport: { width: 640, height: 360 } });
+    const requested: string[] = [];
+    pg.on("request", (r) => requested.push(new URL(r.url()).pathname));
     pg.on("pageerror", (e) => errors.push(String(e)));
     pg.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     const net = `ws://127.0.0.1:${HOST_PORT}/room/smoke?level=drainage_yard`;
@@ -63,6 +65,18 @@ async function main(): Promise<void> {
     });
     await pg.screenshot({ path: "probe/out/smoke.png" });
     check("the built bundle boots, joins a room on the host, the sim advances and the canvas has a size", joined && st.tick > 30 && px.w > 0 && px.h > 0, `joined ${joined} · tick ${st.tick} · level ${st.level} · canvas ${px.w}×${px.h}`);
+    /**
+     * The chain client is not in the first download (Stage 48). Booting and joining a room fetched
+     * no counter chunk; asking for the ledger fetches exactly it. The unit test pins the import
+     * graph; this is the same fact on the built site, as a phone would see it.
+     */
+    const isCounter = (p: string) => /^\/assets\/counter-[^/]+\.js$/.test(p);
+    const beforeAsk = requested.filter(isCounter).length;
+    const scripts = requested.filter((p) => p.endsWith(".js")).length;
+    await pg.evaluate(() => window.__game.counter());
+    await pg.waitForFunction(() => !!window.__game.counter().info, null, { timeout: 15000, polling: 100 }).catch(() => {});
+    const afterAsk = requested.filter(isCounter).length;
+    check("the chain client is not in the first download: booting and joining fetched no counter chunk, and asking for the ledger fetched exactly one", beforeAsk === 0 && afterAsk === 1 && scripts >= 1, `scripts at boot ${scripts} · counter chunk requests before asking ${beforeAsk}, after ${afterAsk} · ${requested.filter(isCounter)[0] ?? "none"}`);
     await pg.goto(`http://127.0.0.1:${PREVIEW_PORT}/?headless=1&menu=1&crawl=0&nonav=1`, { waitUntil: "load" });
     // wait for a card to be *up*, not merely for the cards screen: between cards, and for a frame
     // as the screen opens, `cardText` is empty, and the check is about which card it is

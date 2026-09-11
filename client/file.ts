@@ -23,7 +23,7 @@ import { redact, STAMPS } from "@shared/progression/stamps";
 import { glyphFor, glyphSvg } from "@shared/identity/glyph";
 import { counterView, MAX_CAPITAL_PER_UNIT, nameFee, NAME_DEPTH, RUN_DAILY_CAP, RUN_DEPTH } from "@shared/economy/counter";
 import { newFileSecret } from "@shared/progression/account";
-import { CounterClient, type CounterView } from "./counter";
+import type { CounterClient, CounterView } from "./counter";
 import { COUNTER_URL } from "./config";
 import { CHAPTERS, chapterFor, MONIKERS, monikerById, unlockedMonikers, wornMoniker } from "@shared/identity/monikers";
 
@@ -134,19 +134,46 @@ export class GhostFile {
       this.shop = shop;
       void this.load().then(() => this.loadEndgame());
     } else if (this.shop) void this.loadEndgame();
-    if (this.shop) {
-      // in production the counter-ledger is its own Worker (VITE_COUNTER_URL); in development it is the same host
-      this.counter = new CounterClient(COUNTER_URL ?? this.shop, this.account, (c, view) => {
-        if (this.accountRecord) this.accountRecord.counter = c;
-        this.counterState = view;
-        this.render();
-        this.onIdentity?.(this);
-      });
-      this.counter.secret = this.secret;
-      this.counter.onChange = () => this.render();
-      void this.counter.load();
-    }
+    // the counter-ledger client is not built here: see ensureCounter() (Stage 48)
     this.persist();
+  }
+
+  private counterLoading: Promise<CounterClient | null> | null = null;
+  /**
+   * The chain client is its own chunk (Stage 48): viem and the contract ABIs are a quarter of the
+   * bundle's source and a player needs none of it to wake, walk and shoot. It loads the first time
+   * the ledger is opened, asked about or acted on — never on the way to the first frame — and a
+   * file with no shop (offline) never loads it at all.
+   */
+  ensureCounter(): Promise<CounterClient | null> {
+    if (this.counter) return Promise.resolve(this.counter);
+    if (!this.shop) return Promise.resolve(null);
+    if (!this.counterLoading) {
+      const shop = this.shop;
+      this.counterLoading = import("./counter")
+        .then(({ CounterClient }) => {
+          // in production the counter-ledger is its own Worker (VITE_COUNTER_URL); in development it is the same host
+          const c = new CounterClient(COUNTER_URL ?? shop, this.account, (rec, view) => {
+            if (this.accountRecord) this.accountRecord.counter = rec;
+            this.counterState = view;
+            this.render();
+            this.onIdentity?.(this);
+          });
+          c.secret = this.secret;
+          c.onChange = () => this.render();
+          this.counter = c;
+          void c.load();
+          this.render();
+          return c;
+        })
+        .catch(() => null);
+    }
+    return this.counterLoading;
+  }
+
+  /** run an action against the counter once its chunk is in; a file with no shop does nothing */
+  private withCounter(fn: (c: CounterClient) => unknown): void {
+    void this.ensureCounter().then((c) => c && fn(c));
   }
 
   /** the file's range ghosts as last loaded from the host */
@@ -484,29 +511,31 @@ export class GhostFile {
         const input = el.querySelector<HTMLInputElement>(`input[data-alias="${id}"]`);
         void this.postEndgame("cosmetic", { op: "alias", slot: Number(id), alias: input?.value ?? "" });
       } else if (act === "joinAudit") this.onJoinAudit?.();
-      else if (act === "link") void this.counter?.link();
-      else if (act === "buyListing") void this.counter?.buy(Number(id));
-      else if (act === "wear") void this.counter?.op("wear", { token: Number(id) });
-      else if (act === "reconcile") void this.counter?.op("reconcile");
-      else if (act === "payout") void this.counter?.op("payout");
-      else if (act === "buyseason") void this.counter?.buySeason();
-      else if (act === "buyroom") void this.counter?.buyRoomHours(1);
+      else if (act === "link") this.withCounter((c) => c.link());
+      else if (act === "buyListing") this.withCounter((c) => c.buy(Number(id)));
+      else if (act === "wear") this.withCounter((c) => c.op("wear", { token: Number(id) }));
+      else if (act === "reconcile") this.withCounter((c) => c.op("reconcile"));
+      else if (act === "payout") this.withCounter((c) => c.op("payout"));
+      else if (act === "buyseason") this.withCounter((c) => c.buySeason());
+      else if (act === "buyroom") this.withCounter((c) => c.buyRoomHours(1));
       else if (act === "openroom") {
-        void this.counter?.openRoom(1).then((r) => {
-          if (r.ok && r.code) this.privateCode = r.code;
-          this.render();
-        });
+        this.withCounter((c) =>
+          c.openRoom(1).then((r) => {
+            if (r.ok && r.code) this.privateCode = r.code;
+            this.render();
+          }),
+        );
       }
-      else if (act === "prizes") void this.counter?.op("prizes");
-      else if (act === "claimPrize") void this.counter?.op("claimPrize", { epoch: Number(id) });
+      else if (act === "prizes") this.withCounter((c) => c.op("prizes"));
+      else if (act === "claimPrize") this.withCounter((c) => c.op("claimPrize", { epoch: Number(id) }));
       else if (act === "sell") {
         const price = Number(window.prompt("List for how much $CAPITAL?", "50") ?? 0);
-        if (price > 0) void this.counter?.sell(Number(id), price);
+        if (price > 0) this.withCounter((c) => c.sell(Number(id), price));
       }
-      else if (act === "attestStamps") void this.counter?.op("stamps");
+      else if (act === "attestStamps") this.withCounter((c) => c.op("stamps"));
       else if (act === "registerName") {
         const input = el.querySelector<HTMLInputElement>("input[data-name]");
-        void this.counter?.registerName(input?.value ?? "");
+        this.withCounter((c) => c.registerName(input?.value ?? ""));
       }
     });
     el.addEventListener("change", (e) => {
@@ -548,7 +577,7 @@ export class GhostFile {
   /** COUNTER-LEDGER // $CAPITAL: the wallet link, the Ghostfile, the stamps on chain, the name, the rig and the market. Identity and ownership only. */
   counterHtml(): string {
     const c = this.counter;
-    if (!c) return "";
+    if (!c) return this.shop ? `<div class="dim">COUNTER-LEDGER // fetching the chain client…</div>` : "";
     const v = this.counterState;
     const info = c.info;
     const wallet = c.address ? `WALLET <b>${c.short()}</b>` : `<span class="btn" data-act="link">[LINK A WALLET]</span> <span class="dim">Robinhood Wallet · WalletConnect · injected</span>`;
@@ -695,6 +724,7 @@ export class GhostFile {
 
   toggle(on = !this.open, section: "top" | "market" = "top"): void {
     this.open = on;
+    if (on) void this.ensureCounter(); // opening the ledger is the first moment the chain client is wanted
     if (this.panel) this.panel.hidden = !on;
     if (on) document.exitPointerLock?.();
     if (on) this.render();

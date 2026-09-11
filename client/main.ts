@@ -238,16 +238,19 @@ window.__game = {
     mirror: !game.renderer.mobile,
     scale: game.renderer.post.scale,
   }),
-  counter: () => ({ view: game.file.counterState, wallet: game.file.counter?.address ?? null, last: game.file.counter?.last ?? "", info: game.file.counter?.info ?? null, tint: game.renderer.skinTint, skinMap: !!game.renderer.skinMap, assets: { ...assetStats }, remotes: (game.net?.remoteViews() ?? []).map((r) => ({ id: r.id, name: r.name ?? "", tag: r.tag ?? "", skin: parseTag(r.tag ?? "", "").skin })) }),
-  link: () => game.file.counter?.link() ?? Promise.resolve({ ok: false, reason: "offline" }),
-  buySkin: (listing) => game.file.counter?.buy(listing) ?? Promise.resolve({ ok: false, reason: "offline" }),
-  buySeason: () => game.file.counter?.buySeason() ?? Promise.resolve({ ok: false, reason: "offline" }),
-  buyRoomHours: (hours) => game.file.counter?.buyRoomHours(hours) ?? Promise.resolve({ ok: false, reason: "offline" }),
-  openRoom: (hours = 1, rules = {}) => game.file.counter?.openRoom(hours, rules) ?? Promise.resolve({ ok: false, reason: "offline" }),
-  lookupRoom: (code) => game.file.counter?.lookupRoom(code) ?? Promise.resolve({ ok: false, reason: "offline" }),
-  wearSkin: (token) => game.file.counter?.op("wear", { token }) ?? Promise.resolve({ ok: false, reason: "offline" }),
-  registerName: (name) => game.file.counter?.registerName(name) ?? Promise.resolve({ ok: false, reason: "offline" }),
-  reconcile: () => game.file.counter?.op("reconcile") ?? Promise.resolve({ ok: false, reason: "offline" }),
+  counter: () => {
+    void game.file.ensureCounter(); // asking about the ledger is wanting it (Stage 48)
+    return { view: game.file.counterState, wallet: game.file.counter?.address ?? null, last: game.file.counter?.last ?? "", info: game.file.counter?.info ?? null, tint: game.renderer.skinTint, skinMap: !!game.renderer.skinMap, assets: { ...assetStats }, remotes: (game.net?.remoteViews() ?? []).map((r) => ({ id: r.id, name: r.name ?? "", tag: r.tag ?? "", skin: parseTag(r.tag ?? "", "").skin })) };
+  },
+  link: () => game.file.ensureCounter().then((c) => c?.link() ?? { ok: false, reason: "offline" }),
+  buySkin: (listing) => game.file.ensureCounter().then((c) => c?.buy(listing) ?? { ok: false, reason: "offline" }),
+  buySeason: () => game.file.ensureCounter().then((c) => c?.buySeason() ?? { ok: false, reason: "offline" }),
+  buyRoomHours: (hours) => game.file.ensureCounter().then((c) => c?.buyRoomHours(hours) ?? { ok: false, reason: "offline" }),
+  openRoom: (hours = 1, rules = {}) => game.file.ensureCounter().then((c) => c?.openRoom(hours, rules) ?? { ok: false, reason: "offline" }),
+  lookupRoom: (code) => game.file.ensureCounter().then((c) => c?.lookupRoom(code) ?? { ok: false, reason: "offline" }),
+  wearSkin: (token) => game.file.ensureCounter().then((c) => c?.op("wear", { token }) ?? { ok: false, reason: "offline" }),
+  registerName: (name) => game.file.ensureCounter().then((c) => c?.registerName(name) ?? { ok: false, reason: "offline" }),
+  reconcile: () => game.file.ensureCounter().then((c) => c?.op("reconcile") ?? { ok: false, reason: "offline" }),
   loadAsset: (id) => assetTexture(id).then((t) => !!t),
   pwa: () => pwaState(),
   crawl: () => crawl?.view() ?? null,
@@ -274,13 +277,14 @@ window.__game = {
   audioCues: () => ({ ...game.audio.fired }),
   run: () => game.runView,
   renderBreakdown: () => game.renderer.breakdown(),
-  payout: () => game.file.counter?.op("payout") ?? Promise.resolve({ ok: false, reason: "offline" }),
-  sellSkin: (token, price) => game.file.counter?.sell(token, price) ?? Promise.resolve({ ok: false, reason: "offline" }),
+  payout: () => game.file.ensureCounter().then((c) => c?.op("payout") ?? { ok: false, reason: "offline" }),
+  sellSkin: (token, price) => game.file.ensureCounter().then((c) => c?.sell(token, price) ?? { ok: false, reason: "offline" }),
   prizes: async () => {
-    await game.file.counter?.op("prizes");
-    return game.file.counter?.prizes ?? [];
+    const c = await game.file.ensureCounter();
+    await c?.op("prizes");
+    return c?.prizes ?? [];
   },
-  claimPrize: (epoch) => game.file.counter?.op("claimPrize", { epoch }) ?? Promise.resolve({ ok: false, reason: "offline" }),
+  claimPrize: (epoch) => game.file.ensureCounter().then((c) => c?.op("claimPrize", { epoch }) ?? { ok: false, reason: "offline" }),
   hurt: (dmg) => {
     game.player.health = Math.max(1, game.player.health - dmg);
     return game.player.health;
