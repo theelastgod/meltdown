@@ -21,6 +21,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { ARTIFACTS } from "../server/chain/deploy";
 import { DEV_KEYS } from "../server/chain/boot";
 import { stampIdOf } from "../server/chain/signer";
+import { ASSETS } from "../shared/assets/manifest";
 import { economyManifest, SKINS } from "../shared/economy/catalog";
 import { lintEconomy } from "../shared/economy/lint";
 import { LAUNCH_GRANT, nameFee } from "../shared/economy/counter";
@@ -194,6 +195,19 @@ async function main(): Promise<void> {
       mapped && av.loaded >= 1 && av.failed === 0 && av.requested >= 1,
       `skinMap ${mapped} · requested ${av.requested} loaded ${av.loaded} failed ${av.failed}`,
     );
+    /**
+     * Every declared asset decodes in a real browser, not just the one a skin happened to wear
+     * (Stage 44). `lint:assets` reads the PNG header and the hash; a file that is corrupt past the
+     * header, or that the GPU path rejects, passes the lint and fails here — and this is the only
+     * place that would ever notice, because the loader fails soft by design.
+     */
+    const decoded = await a.evaluate(async (ids) => {
+      const out: Record<string, boolean> = {};
+      for (const id of ids) out[id] = await window.__game.loadAsset(id);
+      return out;
+    }, ASSETS.map((x) => x.id));
+    const bad = Object.entries(decoded).filter(([, ok]) => !ok).map(([id]) => id);
+    check(`every declared asset decodes in the browser (${ASSETS.length} in the manifest)`, ASSETS.length >= 4 && bad.length === 0, bad.length ? `failed: ${bad.join(", ")}` : `${Object.keys(decoded).length}/${ASSETS.length} decoded`);
     check("a market buy is the player's own signed transactions: the 2% burn lands on chain, the skin lands in the wallet, the host reconciles it onto the rig, the file wears it and the local viewmodel takes the tint", !!buy.ok && burned1 - burned0 === (price * 200n) / 10_000n && bal === 1n && !!v2.view?.rig.some((r) => r.token === 1) && Number(v2.view.capital) === LAUNCH_GRANT - rust.price && wear.ok && v3.view?.worn === 1 && v3.tint === SKINS[0]!.tint && /WORN/.test(panel1), `buy ${buy.ok} ${buy.reason ?? ""} · burned +${(burned1 - burned0).toString()} wei · 1155 balance ${bal} · rig [${v2.view?.rig.map((r) => r.id).join(", ")}] · worn ${v3.view?.worn} tint ${v3.tint}`);
 
     // ---------------- the match: the skin travels as an ID ----------------

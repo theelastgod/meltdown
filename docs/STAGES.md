@@ -1641,6 +1641,49 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 44 — Four skins, four plates, and a check that the lint cannot make
+
+**Goal.** Stage 43 built the pipeline and ran one texture through it. This runs the other three, so
+every on-chain cosmetic the game sells has a plate rather than one having a plate and three having
+a tint — and adds the one check a disk-side lint cannot make.
+
+**Six credits, priced before spending.** PHOSPHOR TRIM, KERNEL PLATE and DEADLETTER WHITE, one batch
+on `nano_banana_pro` at the 2-credits-a-still rate preflighted in Stage 43. The ledger shows exactly
+three −2 entries for it. Each came back at roughly 6 MB, each went through `tools/asset-add.ts` to
+256², and each landed between 107 and 140 KB: the manifest is now four assets at 542.7 KB of the
+4 MB budget, and the bytes and hashes in it were printed by the tool rather than typed.
+
+**The check the lint cannot make.** `lint:assets` reads the PNG header and the hash. A file that is
+corrupt past the header, or that the GPU path rejects, passes the lint — and because the loader
+fails soft by design, nothing downstream would complain either. The rig would just show a tint.
+`probe:counter` now loads every declared asset through the real pipeline in a real browser and
+asserts each one decoded:
+
+```
+every declared asset decodes in the browser (4 in the manifest) — 4/4 decoded
+```
+
+Stage 43 had proved this for the one plate a skin happened to wear. That is a fact about one file;
+this is a fact about the manifest.
+
+**A correction to Stage 43, and the test that made it.** Stage 43's CI run (#73) failed. Its
+`npm run test` step went red on `tests/verify.test.ts › no step can skip the ones after it` — the
+check Stage 30 wrote after thirty-nine runs skipped eighteen steps — and it was right. The
+`lint:assets` line had been inserted *between* `lint:campaign` and its `if: !cancelled()` guard, so
+the new step took the guard and `lint:campaign` was left without one. Exactly as Stage 30 predicted,
+the red test step then caused GitHub to **skip `lint:campaign` entirely**: a check quietly not run,
+which is the one outcome that gate exists to prevent.
+
+Stage 43's entry reported "`npm test` 389; typecheck clean" and that was true of the tree it was
+measured on — the suite was run *before* the workflow file was edited, and not again after. A
+verification that does not cover the last edit is not a verification of the commit. The guard is
+restored here, the verify test is green, and the whole suite was run after the final edit this time.
+
+**Acceptance.** `lint:assets` 4 assets, 542.7 KB, 0 violations; `lint:economy` 0 violations;
+`npm test` 389 with `tests/verify.test.ts` 5/5; typecheck clean; `probe:counter` 16/16,
+`probe:mobile` 14/14, `probe:frame` 6/6, `probe:file` 19/19, `probe:net` 16/16, `smoke` 3/3; the
+four plates ship in `dist/assets/`.
+
 ## Stage 43 — Somewhere to put a picture
 
 **Goal.** Forty-two stages in, MELTDOWN had **no source art at all**. Every texture is a

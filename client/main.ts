@@ -1,4 +1,4 @@
-import { assetStats } from "./render/assets";
+import { assetStats, texture as assetTexture } from "./render/assets";
 import { Menu, menuWanted, type MenuView } from "./menu";
 import { clampSettings, saveSettings, type Settings } from "./settings";
 import { crawlWanted, OpeningCrawl, type CrawlView } from "./crawl";
@@ -90,6 +90,8 @@ export interface GameHook {
   registerName: (name: string) => Promise<{ ok: boolean; reason?: string }>;
   reconcile: () => Promise<{ ok: boolean; reason?: string }>;
   /** The opening crawl (Stage 12): its live state, a skip, and the title's click. */
+  /** Load a declared asset through the pipeline and say whether it decoded (Stage 44). */
+  loadAsset: (id: string) => Promise<boolean>;
   crawl: () => CrawlView | null;
   crawlSkip: () => boolean;
   crawlFinish: () => void;
@@ -243,6 +245,7 @@ window.__game = {
   wearSkin: (token) => game.file.counter?.op("wear", { token }) ?? Promise.resolve({ ok: false, reason: "offline" }),
   registerName: (name) => game.file.counter?.registerName(name) ?? Promise.resolve({ ok: false, reason: "offline" }),
   reconcile: () => game.file.counter?.op("reconcile") ?? Promise.resolve({ ok: false, reason: "offline" }),
+  loadAsset: (id) => assetTexture(id).then((t) => !!t),
   crawl: () => crawl?.view() ?? null,
   crawlSkip: () => crawl?.skip() ?? false,
   crawlFinish: () => crawl?.finish(true),

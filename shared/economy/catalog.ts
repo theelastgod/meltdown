@@ -36,9 +36,9 @@ const skin = (token: number, id: string, name: string, line: string, capital: nu
 
 export const SKINS: readonly SkinDef[] = [
   skin(1, "skin_rust", "RUST LEASE", "a rig that has been rained on since the Estate stopped counting", 40, 0x5a17, "#d86a2a", "skin_rust_plate"),
-  skin(2, "skin_phosphor", "PHOSPHOR TRIM", "the first CRT's green on every edge", 60, 0x1b3f, "#5cff9a"),
-  skin(3, "skin_kernel", "KERNEL PLATE", "red filament without the filament", 120, 0x77e1, "#ff2a4a"),
-  skin(4, "skin_deadletter", "DEADLETTER WHITE", "the office's own paint, cut from a sealed door", 200, 0x0c02, "#f2f4ff"),
+  skin(2, "skin_phosphor", "PHOSPHOR TRIM", "the first CRT's green on every edge", 60, 0x1b3f, "#5cff9a", "skin_phosphor_plate"),
+  skin(3, "skin_kernel", "KERNEL PLATE", "red filament without the filament", 120, 0x77e1, "#ff2a4a", "skin_kernel_plate"),
+  skin(4, "skin_deadletter", "DEADLETTER WHITE", "the office's own paint, cut from a sealed door", 200, 0x0c02, "#f2f4ff", "skin_deadletter_plate"),
 ];
 
 /**

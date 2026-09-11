@@ -63,6 +63,33 @@ export const ASSETS: readonly AssetDef[] = [
     sha256: "770917fbef63d4baf123fdabe84d5908fdba2e0ca992c53da60d490a0454ffa4",
     provenance: "generated (Higgsfield nano_banana_pro, 2026-09-09), conditioned by tools/asset-add.ts",
   },
+  {
+    id: "skin_phosphor_plate",
+    kind: "texture",
+    file: "skin_phosphor_plate.png",
+    size: 256,
+    bytes: 109719,
+    sha256: "f88f2def9d350da6c0c25dd620506e948b440fd5c58e57eb69b44fe2d844f5b1",
+    provenance: "generated (Higgsfield nano_banana_pro, 2026-09-11), conditioned by tools/asset-add.ts",
+  },
+  {
+    id: "skin_kernel_plate",
+    kind: "texture",
+    file: "skin_kernel_plate.png",
+    size: 256,
+    bytes: 143472,
+    sha256: "06cd6e038192cbe29b8e1f304395db61223fb5cb55ea8ce677c1eeaddd7038e3",
+    provenance: "generated (Higgsfield nano_banana_pro, 2026-09-11), conditioned by tools/asset-add.ts",
+  },
+  {
+    id: "skin_deadletter_plate",
+    kind: "texture",
+    file: "skin_deadletter_plate.png",
+    size: 256,
+    bytes: 137503,
+    sha256: "d5cab717b2cc4e9abcd758457cf457c5c7ace38ce30bc8a47fad78d67376ccbf",
+    provenance: "generated (Higgsfield nano_banana_pro, 2026-09-11), conditioned by tools/asset-add.ts",
+  },
 ];
 
 export const assetById = (id: string): AssetDef | undefined => ASSETS.find((a) => a.id === id);
