@@ -22,6 +22,7 @@ import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 import { levelById } from "../shared/sim/level";
+import { MISSIONS } from "../shared/campaign/missions";
 import { buildNav, findPath } from "../shared/sim/nav";
 import { HUB_LEVEL_ID } from "../shared/sim/hub";
 
@@ -297,61 +298,80 @@ async function main(): Promise<void> {
     await ca.waitForTimeout(600);
     const co1 = (await stats()).rooms["campaign:duo"]!.campaign!;
     check("the host's choice reaches the room's runtime and the contract moves on", co1.choices === 1 && co1.view?.kind === "reach", `room: choices ${co1.choices} · objective "${co1.view?.objective}" (${co1.view?.kind})`);
-    // both walk to B, hold, to E (the host chooses again), out through A — sim runs on the room; bots run realtime
-    const coopWalk = async (to: { x: number; z: number }, radius: number) => {
-      for (const pg of [ca, cb]) {
-        const from = await pg.evaluate(() => window.__game.state().pos);
-        await pg.evaluate((p) => window.__game.setBot(p), [...route("lease_row", from, to, radius), { kind: "hold", ticks: 9000 }] as BotStep[]);
-      }
+    /**
+     * Drive the room's contract to completion by following its objective, not a script of legs
+     * (Stage 47). The old version walked B → hold → E → A with a fixed 30 s window per leg and
+     * moved on when a window closed whether or not the room had; on a slow machine a long walk
+     * overran its window and the last check found the room still "running" at an objective the
+     * bots had been sent past. Now: read the room's objective, send both Blanks to its spot, play
+     * the terminal when it is a dialogue, re-route a Blank that is done, re-leased or stalled, and
+     * stop only when the room says complete or one overall deadline passes. Each leg's time is
+     * printed so the number says how close to the edge it ran.
+     */
+    const m1def = MISSIONS.find((m) => m.id === "m1_wake_unlisted")!;
+    const spotOf = (objective: string): { x: number; z: number } | null => {
+      const o = m1def.objectives.find((x) => x.text === objective);
+      const at = o && "at" in o ? o.at : undefined;
+      if (!at) return null;
+      return "node" in at ? nodePos("lease_row", at.node) : { x: at.x, z: at.z };
     };
-    const waitKind = async (want: (k: string) => boolean, ms: number) => {
-      const t = Date.now();
-      let v = (await stats()).rooms["campaign:duo"]!.campaign!.view;
-      while (Date.now() - t < ms && !(v && want(v.kind))) {
-        await ca.waitForTimeout(500);
-        v = (await stats()).rooms["campaign:duo"]!.campaign!.view;
-        // a re-leased Blank walks back
-        for (const pg of [ca, cb]) {
-          const s = await pg.evaluate(() => ({ alive: window.__game.state().health > 0, done: window.__game.botStatus()?.done ?? true }));
-          if (s.alive && s.done) await coopWalk(B2, 1.5);
+    const coopWalk = async (pg: Page, to: { x: number; z: number }, radius: number) => {
+      const from = await pg.evaluate(() => window.__game.state().pos);
+      // a short hold after the route so `done` comes back quickly and a Blank left short of the spot is re-routed
+      await pg.evaluate((p) => window.__game.setBot(p), [...route("lease_row", from, to, radius), { kind: "hold", ticks: 60 }] as BotStep[]);
+    };
+    const pages = [ca, cb];
+    const track = pages.map(() => ({ pos: { x: NaN, z: NaN }, movedAt: Date.now(), dead: false }));
+    const legs: string[] = [];
+    let lastObjective = "";
+    let legStart = Date.now();
+    let target: { x: number; z: number } | null = null;
+    const deadline = Date.now() + 180000;
+    let cs = (await stats()).rooms["campaign:duo"]!.campaign!;
+    while (Date.now() < deadline && cs.view?.status === "running") {
+      const v = cs.view;
+      if (v.objective !== lastObjective) {
+        if (lastObjective) legs.push(`${lastObjective.toLowerCase().split(" ").slice(0, 3).join(" ")} ${((Date.now() - legStart) / 1000).toFixed(1)}s`);
+        lastObjective = v.objective;
+        legStart = Date.now();
+        target = spotOf(v.objective);
+        if (target) for (const pg of pages) await coopWalk(pg, target, 1.5);
+      }
+      if (v.kind === "dialogue") {
+        const dl = await ca.evaluate(() => window.__game.campaign().dialogue?.script ?? null);
+        if (dl) await playTerminal(ca, v.objective === "THE FILE" ? [1] : []); // keep the file
+      } else if (target) {
+        for (let i = 0; i < pages.length; i++) {
+          const pg = pages[i]!;
+          const t = track[i]!;
+          const s = await pg.evaluate(() => ({ pos: window.__game.state().pos, alive: window.__game.state().health > 0, done: window.__game.botStatus()?.done ?? true }));
+          const moved = Math.hypot(s.pos.x - t.pos.x, s.pos.z - t.pos.z) > 0.5;
+          if (moved || Number.isNaN(t.pos.x)) t.movedAt = Date.now();
+          t.pos = { x: s.pos.x, z: s.pos.z };
+          const revived = t.dead && s.alive;
+          t.dead = !s.alive;
+          const far = Math.hypot(s.pos.x - target.x, s.pos.z - target.z) > 1.5;
+          const stalled = Date.now() - t.movedAt > 4000;
+          if (s.alive && far && (s.done || revived || stalled)) {
+            await coopWalk(pg, target, 1.5);
+            t.movedAt = Date.now();
+          }
         }
       }
-      return v;
-    };
-    const B2 = nodePos("lease_row", "B");
-    await coopWalk(B2, 1.5);
-    const vB = await waitKind((k) => k === "survive", 30000);
-    void vB;
-    await waitKind((k) => k === "reach", 30000);
-    await coopWalk(nodePos("lease_row", "E"), 1.5);
-    const t2 = Date.now();
-    let dl: string | null = null;
-    while (Date.now() - t2 < 30000 && !dl) {
-      await ca.waitForTimeout(500);
-      dl = (await ca.evaluate(() => window.__game.campaign().dialogue?.script ?? null)) as string | null;
-      for (const pg of [ca, cb]) {
-        const s = await pg.evaluate(() => ({ alive: window.__game.state().health > 0, done: window.__game.botStatus()?.done ?? true }));
-        if (s.alive && s.done) await coopWalk(nodePos("lease_row", "E"), 1.5);
-      }
-    }
-    if (dl) await playTerminal(ca, [1]); // keep it
-    await coopWalk(nodePos("lease_row", "A"), 2.5);
-    const t3 = Date.now();
-    let cs = (await stats()).rooms["campaign:duo"]!.campaign!;
-    while (Date.now() - t3 < 30000 && cs.view?.status !== "complete") {
-      await ca.waitForTimeout(500);
+      await ca.waitForTimeout(400);
       cs = (await stats()).rooms["campaign:duo"]!.campaign!;
-      for (const pg of [ca, cb]) {
-        const s = await pg.evaluate(() => ({ alive: window.__game.state().health > 0, done: window.__game.botStatus()?.done ?? true }));
-        if (s.alive && s.done) await coopWalk(nodePos("lease_row", "A"), 2.5);
-      }
     }
+    if (lastObjective) legs.push(`${lastObjective.toLowerCase().split(" ").slice(0, 3).join(" ")} ${((Date.now() - legStart) / 1000).toFixed(1)}s`);
     await ca.waitForTimeout(800);
+    // where the two Blanks actually are when the drive ends, against the spot the last objective wanted
+    const goal = target ?? nodePos("lease_row", "A");
+    const where = await Promise.all(pages.map((pg) => pg.evaluate(() => ({ pos: window.__game.state().pos, health: window.__game.state().health, done: window.__game.botStatus()?.done ?? null }))));
+    const whereText = where.map((w, i) => `${i ? "B" : "A"} at (${w.pos.x.toFixed(1)},${w.pos.z.toFixed(1)}) d ${Math.hypot(w.pos.x - goal.x, w.pos.z - goal.z).toFixed(1)} hp ${w.health} bot done ${w.done}`).join(" · ");
     const fa = await file("coop-a");
     const fb = await file("coop-b");
     const coA = await ca.evaluate(() => window.__game.campaign());
     const coB = await cb.evaluate(() => window.__game.campaign());
-    check("co-op: the contract completes on the room and settles on both files with the host's testimony", cs.view?.status === "complete" && cs.settled.length === 2 && cs.settled.every((s) => s.ok) && fa.campaign?.missionsDone.includes("m1_wake_unlisted") === true && fb.campaign?.missionsDone.includes("m1_wake_unlisted") === true && fa.campaign.testimony["m1:lease"] === "keep" && coA.completion?.ok === true && coB.completion?.ok === true, `room ${cs.view?.status} · settled ${cs.settled.map((s) => `${s.ok}`).join(",")} · files [${fa.campaign?.missionsDone.join()}] [${fb.campaign?.missionsDone.join()}] · testimony ${fa.campaign?.testimony["m1:lease"]}`);
+    check("co-op: the contract completes on the room and settles on both files with the host's testimony", cs.view?.status === "complete" && cs.settled.length === 2 && cs.settled.every((s) => s.ok) && fa.campaign?.missionsDone.includes("m1_wake_unlisted") === true && fb.campaign?.missionsDone.includes("m1_wake_unlisted") === true && fa.campaign.testimony["m1:lease"] === "keep" && coA.completion?.ok === true && coB.completion?.ok === true, `room ${cs.view?.status} at "${cs.view?.objective}" (${cs.view?.kind}) · settled ${cs.settled.map((s) => `${s.ok}`).join(",")} · files [${fa.campaign?.missionsDone.join()}] [${fb.campaign?.missionsDone.join()}] · testimony ${fa.campaign?.testimony["m1:lease"]} · legs [${legs.join(", ")}] · ${whereText}`);
     await ca.close();
     await cb.close();
 

@@ -1641,6 +1641,54 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 47 — The probe walked past the room: probe:campaign failed CI at Stage 44
+
+**Goal.** CI run #74 (Stage 44) was red on one step, `probe:campaign`, and the failure reproduced
+locally at once: "co-op: the contract completes on the room and settles on both files" reported the
+room still *running*. Stage 44 touched nothing in the campaign, the room or the sim, and the same
+commit passed 27/27 in a clean worktree, as did Stage 42 and Stage 43. Eight runs of the same code
+gave three failures. That is not a root cause, so this stage found one.
+
+**What the failures looked like.** The check's detail was made to print the room's objective and
+where both Blanks stood when the window closed. The failures were not one thing:
+
+```
+room running at "TAKE THE FILE FROM THE CABINET AT E" (reach)
+room running at "GET OUT THROUGH THE PLAZA" (reach)
+  · A at (33.7,-9.1) hp 70 bot done false · B at (-27.9,27.9) hp 70 bot done false
+```
+
+Both alive, both mid-walk, both far from the plaza, the room one objective from done. Nothing in the
+game had failed. The co-op leg was a *script*: walk to B, wait up to 30 s for the hold, wait up to
+30 s for the reach, walk to E, wait up to 30 s for the terminal, walk to A, wait up to 30 s for
+complete. Every window closed on its own clock and the script moved to the next leg whether or not
+the room had. A walk that overran its window — a re-leased Blank respawns at a spawn point and has
+to be walked back; a slow machine walks slower — left the bots being sent to A while the room was
+still waiting at E, and the final window found exactly that. The same shape as Stages 33, 35, 36,
+39 and 42: a check that stopped waiting before the thing it asserts about had happened.
+
+**The fix is to follow the room, not a script.** The leg now reads the room's current objective
+from the host's stats, looks its spot up in the mission definition, sends both Blanks there, plays
+the terminal when the objective is a dialogue, and re-routes a Blank that is done, was re-leased,
+or has not moved in four seconds. It stops when the room says *complete* or one overall deadline
+passes. There is no leg the probe can be at that the room is not.
+
+**And the number that says how close it runs.** Each leg's duration is printed:
+
+```
+legs [reach the escrow 4.5s, hold the terminal 20.1s, take the file 6.1s, the file 0.7s, get out through 3.7s]
+legs [reach the escrow 4.5s, hold the terminal 20.1s, take the file 19.1s, the file 0.7s, get out through 4.1s]
+```
+
+The walk to E ran from 6 s to 19 s across three clean runs on the same machine — a re-lease during
+the wave at B is the difference — against a window that used to be 30 s and was shared with the
+terminal. The old check was one bad wave from failing on any machine, and did.
+
+**Acceptance.** `probe:campaign` 27/27 three times running, and once more under three busy loops
+on a four-core box, where the E leg ran 13.6 s and the plaza leg 10.7 s; typecheck clean. Run #74
+was red on this step alone; runs #75 (Stage 45) and #76 (Stage 46) were green throughout, this
+step included, which is what an intermittent failure looks like from CI.
+
 ## Stage 46 — "The shell opens offline" was a sentence; a first visit could not boot
 
 **Goal.** Stage 45's entry says the service worker is there "so the shell opens offline", and its
