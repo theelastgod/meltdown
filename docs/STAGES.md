@@ -1641,6 +1641,57 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 46 — "The shell opens offline" was a sentence; a first visit could not boot
+
+**Goal.** Stage 45's entry says the service worker is there "so the shell opens offline", and its
+smoke check proved the shell was *cached*. Those are different claims. This stage makes the smoke
+probe test the one that matters — a player's actual first visit, then no network — and the first
+run of that check failed.
+
+**The measurement before the fix.** A fresh browser context with no worker in it, one online load,
+the worker seen to install and take the page, then the preview server *killed* — not emulated
+away, so nothing but the worker's caches can answer — and a navigation to the game:
+
+```
+installed on first visit true · origin down · page loaded true · game ready false · tick 0
+· 2 failed: net::ERR_FAILED /assets/index-Dkjj_Csx.js | net::ERR_FAILED /assets/index-D2tVcnYE.css
+```
+
+The shell came from the cache. Every bundle under it failed, and the game never booted. The cause
+is the order of a first visit: `index.html`'s `<script>` and stylesheet are requested before the
+worker controls anything, so they were never routed through it, and install had cached `/` alone.
+An installed app with nothing in it but its front door.
+
+**An earlier draft of the check passed, and was wrong.** The first version ran the offline
+navigation in the *same* context the earlier checks had used. It passed at once — because those
+checks' own page loads, made after the worker took control, had pulled the bundles through the
+stale-while-revalidate path on their way past. That proved the *second* visit could boot offline,
+which no player installing from a first visit gets. The check moved to a fresh context with exactly
+one online load before the origin goes down.
+
+**Fix one: install precaches what the shell references.** The install step now fetches `/`, reads
+every `/assets/` and `/icons/` reference out of the HTML, and `addAll`s them into the runtime cache
+before install completes. `sw.js` stays a static file that knows nothing about Vite's hashed names;
+it reads them from the page it just cached.
+
+**Fix two, found only because fix one was measured.** With the cache demonstrably full — a
+diagnostic dumped the runtime cache after one visit and both bundles were in it — the bundles still
+failed. The origin answers with `Vary: Origin`, and a module `<script>` request carries an `Origin`
+header that the install-time fetch did not, so the Cache API refused to match the entry the install
+step had just stored. The lookup now passes `ignoreVary: true`: the bundles are content-hashed and
+no request header changes their bytes. Had the first fix been declared done on the strength of the
+cache being populated, the shipped worker would have been exactly as broken as before.
+
+```
+installed on first visit true · origin down · page loaded true · game ready true · tick 57
+· 0 failed: none
+```
+
+**Acceptance.** `smoke` 5/5 on the built site, the fifth being the first-visit-then-offline boot;
+`npm test` 397 (1 new, pinning the precache step and the `ignoreVary` lookups); typecheck clean.
+The before/after above is the mutation test: the same check red on the Stage 45 worker and green
+on this one.
+
 ## Stage 45 — Installable: a phone can put MELTDOWN on its home screen
 
 **Goal.** Stage 32 made the game playable on a phone and Stage 34 kept it fair there; a phone

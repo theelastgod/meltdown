@@ -87,8 +87,44 @@ async function main(): Promise<void> {
       return { ready, ...(await window.__game.pwa()), keys };
     });
     check("the built site is installable: the manifest is served and names the app, its icons exist, and the service worker installs, precaches the shell and takes the page", man.status === 200 && man.name === "MELTDOWN" && man.display === "standalone" && man.icons >= 2 && sw.ready && sw.registered && sw.controlled && sw.keys.includes("meltdown-shell-v1"), `manifest ${man.status} "${man.name}" ${man.display} ${man.icons} icons · sw ready ${sw.ready} registered ${sw.registered} controlled ${sw.controlled} scope ${sw.scope} · caches [${sw.keys.join(", ")}]`);
-    check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
+    /**
+     * Offline (Stage 46). Stage 45 wrote "the shell opens offline" and proved only that the shell
+     * was cached. This is a player's actual first visit: a fresh browser context with no worker in
+     * it, one online load, and nothing else — the loads above would have pulled the bundles through
+     * the worker's cache on their way past and proved only the second visit. Then the origin is
+     * taken down for real (the preview server is killed, not emulated away, so nothing but the
+     * worker's caches can answer) and the game has to boot from them: index.html, every bundle it
+     * references, and the sim advancing with no server at all.
+     */
     await pg.close();
+    const fresh = await browser.newContext({ viewport: { width: 640, height: 360 } });
+    const first = await fresh.newPage();
+    const offlineErrors: string[] = [];
+    first.on("pageerror", (e) => offlineErrors.push(String(e)));
+    first.on("requestfailed", (r) => offlineErrors.push(`${r.failure()?.errorText ?? "failed"} ${new URL(r.url()).pathname}`));
+    await first.goto(`http://127.0.0.1:${PREVIEW_PORT}/?headless=1&level=drainage_yard&account=offline&name=OFFLINE&nonav=1`, { waitUntil: "load" });
+    const installed = await first.evaluate(async () => {
+      await Promise.race([navigator.serviceWorker.ready, new Promise((res) => setTimeout(res, 15000))]);
+      for (let i = 0; i < 50 && !navigator.serviceWorker.controller; i++) await new Promise((r) => setTimeout(r, 100));
+      return !!navigator.serviceWorker.controller;
+    });
+    preview.kill();
+    await new Promise((r) => preview.once("exit", r));
+    const offlineOrigin = await first.evaluate(() => fetch("/sw.js", { cache: "no-store" }).then(() => "up", () => "down"));
+    offlineErrors.length = 0; // the origin probe above is meant to fail; everything after it is not
+    const offline = await first
+      .goto(`http://127.0.0.1:${PREVIEW_PORT}/?headless=1&level=drainage_yard&account=offline&name=OFFLINE&nonav=1`, { waitUntil: "load", timeout: 20000 })
+      .then(async () => {
+        const ready = await first.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 }).then(() => true, () => false);
+        if (!ready) return { loaded: true, ready, tick: 0 };
+        await first.evaluate(() => window.__game.setRealtime(true));
+        await first.waitForTimeout(1000);
+        return { loaded: true, ready, tick: await first.evaluate(() => window.__game.state().tick) };
+      })
+      .catch(() => ({ loaded: false, ready: false, tick: 0 }));
+    check("a first visit, then the origin down: the game boots from the worker's caches alone — the shell, its bundles and the sim advancing with no server", installed && offlineOrigin === "down" && offline.loaded && offline.ready && offline.tick > 30 && offlineErrors.length === 0, `installed on first visit ${installed} · origin ${offlineOrigin} · page loaded ${offline.loaded} · game ready ${offline.ready} · tick ${offline.tick} · ${offlineErrors.length} failed: ${offlineErrors.slice(0, 3).join(" | ") || "none"}`);
+    await fresh.close();
+    check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
   } finally {
     await browser.close();
     host.kill();

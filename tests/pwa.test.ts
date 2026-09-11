@@ -73,8 +73,25 @@ describe("the service worker cannot reach the game", () => {
     expect(sw).toMatch(/skipWaiting\(\)/);
   });
 
+  it("install precaches what the shell references, not just the shell: a first visit is enough to boot offline", () => {
+    // Stage 46: the bundles are requested before the worker controls the page, so "/" alone in the
+    // cache is an installed app that cannot start. The install step reads the shell's /assets and
+    // /icons references out of the HTML and caches them all before it completes.
+    const install = sw.slice(sw.indexOf("async function precache"), sw.indexOf('addEventListener("install"'));
+    expect(install).toMatch(/fetch\("\/"/);
+    expect(install).toMatch(/assets\|icons/);
+    expect(install).toMatch(/addAll\(refs\)/);
+    expect(sw).toMatch(/waitUntil\(precache\(\)/);
+    // and the lookup must ignore Vary: with "Vary: Origin" from the origin, a module script's request
+    // (which carries Origin) would never match the precached entry (fetched without one) — the exact
+    // miss the smoke probe found with the cache full and the bundles still failing
+    expect(sw).toMatch(/c\.match\(req, \{ ignoreVary: true \}\)/);
+    expect(sw).toMatch(/caches\.match\("\/", \{ ignoreVary: true \}\)/);
+  });
+
   it("navigations are network-first, so a connected player always gets the newest build", () => {
     const nav = sw.slice(sw.indexOf('mode === "navigate"'));
-    expect(nav.indexOf("fetch(req)")).toBeLessThan(nav.indexOf('caches.match("/")'));
+    expect(nav.indexOf('caches.match("/"')).toBeGreaterThan(-1);
+    expect(nav.indexOf("fetch(req)")).toBeLessThan(nav.indexOf('caches.match("/"'));
   });
 });
