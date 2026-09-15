@@ -12,6 +12,7 @@ import { fileAuth, publicFile } from "../shared/progression/account";
 export const NOT_YOURS = "NOT YOUR FILE: this file has a secret and the request did not carry it";
 import type { AccountStore } from "./accounts";
 import { MIGRATIONS, SCHEMA } from "./schema";
+import { extrasOf } from "./file-row";
 
 export interface PlayerEnv {
   DB?: D1Database;
@@ -252,7 +253,11 @@ async function saveRow(db: D1Database, a: Account, freshLines: readonly string[]
            wakelight = excluded.wakelight, salvage = excluded.salvage, owned = excluded.owned, loadout = excluded.loadout,
            wears = excluded.wears, crafts = excluded.crafts, matches = excluded.matches, updated_at = excluded.updated_at, extras = excluded.extras`,
       )
-      .bind(a.id, a.name, a.xp, a.depth, a.wallet.scrip, a.wallet.wakelight, a.wallet.salvage, JSON.stringify(a.owned), JSON.stringify(a.loadout), JSON.stringify(a.wears), a.crafts, a.matches, Date.now(), JSON.stringify({ mastery: a.mastery, stamps: a.stamps, counters: a.counters })),
+      // `extras` is the whole account minus the ledger (Stage 51). It used to be three fields — mastery,
+      // stamps, counters — which meant a cold load from D1 (a file whose Durable Object storage was
+      // gone) came back without its secret, its campaign, its wallet link or its cosmetics. The
+      // column fields are written twice, which is cheap; a field that only exists in memory is not.
+      .bind(a.id, a.name, a.xp, a.depth, a.wallet.scrip, a.wallet.wakelight, a.wallet.salvage, JSON.stringify(a.owned), JSON.stringify(a.loadout), JSON.stringify(a.wears), a.crafts, a.matches, Date.now(), extrasOf(a)),
   ];
   for (const line of freshLines) stmts.push(db.prepare("INSERT INTO ledger (account, line, at) VALUES (?, ?, ?)").bind(a.id, line, Date.now()));
   await db.batch(stmts);

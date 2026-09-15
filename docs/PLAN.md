@@ -74,6 +74,8 @@ frame loop and read by nothing in `shared/sim`; `tests/bundle.test.ts`'s walker 
 
 ## Stage 51 — One server that remembers
 
+*Shipped.*
+
 **Missing.** The single-process host you asked about, with persistence. Today a restart wipes
 every file.
 

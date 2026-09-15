@@ -1641,6 +1641,73 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 51 — One server that remembers
+
+**Goal.** You asked whether all of this could run on one server. `server/node-host.ts` has been
+the whole stack in one process since Stage 2 — rooms, co-op, files, the endgame, the
+counter-ledger — and every store behind it was a Map, so a restart wiped every file. This is
+`docs/PLAN.md`'s third item: the same host with a memory.
+
+**Five stores on the schema that already existed.** `server/sqlite.ts` implements the account,
+endgame, run, wallet and prize store interfaces on Node's built-in SQLite (`node:sqlite`, no
+dependency) against `server/schema.sql`, the schema the Workers' D1 already uses — the run, wallet
+and prize stores are the D1 ports' SQL made synchronous, and the file row is the Durable Object's
+row. Two tables are new, for the endgame the Workers keep in a Durable Object: `audit_entry` and
+`season`, in both schema files so the parity test holds. `MELTDOWN_DB=meltdown.sqlite` (or
+`--db`) puts the host on them; without it, it is the memory-only dev host it always was, and the
+boot banner says which.
+
+**The hot copy.** A room holds the Account object it loaded and mutates it; a route loads the same
+id and mutates it too. The memory store handed both the same object, so nothing was ever lost
+between them. The SQLite account store does the same — one object per id, written through on
+save, the ledger appended from where the last save left it — which is exactly the PlayerFile
+Durable Object's model, and the reason a "load from disk every time" store would have been wrong.
+
+**A real chain, on one box.** With `CHAIN_RPC`, `CHAIN_ID`, `CONTRACTS`, `SIGNER_KEY` and
+`RELAYER_KEY` set, the host builds its counter-ledger exactly as the counter Worker does and the
+devnet-only routes (the JSON-RPC proxy, the faucet, the outage drill) say so. It refuses to start
+on a real chain without all four, and refuses without a database: wallet bindings and posted
+epochs must outlive the process, and a ledger the host would forget is worse than no ledger.
+
+**What the D1 path was losing.** Reading the Durable Object's row mapping to mirror it turned up
+that its `extras` column carried three fields — mastery, stamps, counters. The file's secret, its
+campaign save, its wallet link and its cosmetics were only ever in Durable Object storage; a cold
+load from D1 would have come back without them. `extras` is now the whole account minus the
+ledger, on both hosts, from one function. `tests/filerow.test.ts` drives the real Durable Object
+against a D1 shaped over Node's SQLite: save from one object, load from a fresh one with no
+storage, compare — mutation-tested by putting the three fields back.
+
+**And what the memory store was doing that D1 does not.** Driving the run store with one script
+against both implementations found one answer that differed: a second `markSettled` for a day
+already settled *replaced* the row in memory and was refused on D1 (`ON CONFLICT DO NOTHING`).
+The interface says a settled row exists "so a second settlement of the same day is refused rather
+than paid"; the settlement itself checks `settled(day)` first, so the overwrite was only reachable
+from a test that cleared the map by hand — but a record of what a day paid must not be one a later
+write can change, and the memory store now refuses as the durable ones do.
+
+**Proof.** `probe:persist` (`probe/stage51.ts`), in the verify chain and CI: a file is made and
+changed over HTTP — a node bought, a house chosen, a secret adopted — the host is killed, a new
+process opens the same database, and the file is what it was, with the secret still refusing a
+request that lacks it. Then the control: the same host with no database forgets the same file,
+which is what makes the first result mean something. And a real chain without a database is
+refused at boot, by name.
+
+```
+bought slipfile (ok) · scrip 5000 → 4600 · after restart: owned has it true · faction cells · scrip 4600
+the control: after restart: owned has it false · faction null · scrip 5000 (was 5000)
+```
+
+`tests/sqlite.test.ts` drives each store with the same script as its memory twin, requires the
+same answer, closes the database, reopens it from disk and requires the answer again — the case
+the memory store cannot pass.
+
+**What one box gives up.** Durable Object scaling, and the process boundary between the match
+host and the money keys that the three-Worker deployment keeps. `docs/DEPLOY.md` §6 says how to
+run it and says that.
+
+**Acceptance.** `probe:persist` 5/5; `npm test` 422 (8 new); typecheck clean on both configs;
+`probe:counter` 16/16 and `probe:run` 18/18 still on the memory host, unchanged.
+
 ## Stage 50 — The phone measures itself
 
 **Goal.** Every frame-time number in this document comes from software GL on a CI runner. That

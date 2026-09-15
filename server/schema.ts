@@ -84,6 +84,16 @@ export const SCHEMA = [
   max       REAL NOT NULL,
   fps       REAL NOT NULL
 )`,
+  `CREATE TABLE IF NOT EXISTS audit_entry (
+  seq  INTEGER PRIMARY KEY AUTOINCREMENT,
+  week INTEGER NOT NULL,
+  json TEXT NOT NULL
+)`,
+  `CREATE INDEX IF NOT EXISTS audit_entry_week ON audit_entry (week, seq)`,
+  `CREATE TABLE IF NOT EXISTS season (
+  id   INTEGER PRIMARY KEY CHECK (id = 1),
+  json TEXT NOT NULL
+)`,
 ];
 
 /** Column additions for databases created before a column existed (each is ignored when the column is already there). */

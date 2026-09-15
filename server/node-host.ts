@@ -37,12 +37,26 @@ import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
 import { settleRunDay } from "./chain/settle-run";
 import { reconcileRunBacklog, reconcileRunDay } from "./chain/reconcile-run";
 import { isPrivateRoom, makeInviteCode, privateRoomName, sanitiseRules, validInviteCode, type PrivateRules } from "../shared/net/private";
-import { MemoryRunStore } from "./run-store";
+import { MemoryRunStore, type RunStore } from "./run-store";
+import { openDatabase, SqliteAccountStore, SqliteEndgameStore, SqlitePrizeStore, SqliteRunStore, SqliteWalletStore } from "./sqlite";
+import { MemoryWalletStore, type WalletStore } from "./chain/wallets";
+import { MemoryPrizeStore, type PrizeStore } from "./chain/prizes-store";
+import { CounterLedger } from "./chain/ledger";
+import type { Contracts } from "./chain/deploy";
+import type { Devnet } from "./chain/devnet";
+import { http as httpTransport } from "viem";
 
 import { MAX_PLAYERS_PER_ROOM, inputClassOf, matchRoomName } from "../shared/net/matchmaking";
 import type { Hex } from "viem";
 
-const port = Number(process.argv[2] ?? process.env.PORT ?? 8787);
+const argv = process.argv.slice(2);
+const port = Number(argv.find((a) => /^\d+$/.test(a)) ?? process.env.PORT ?? 8787);
+/**
+ * One server that remembers (Stage 51). `MELTDOWN_DB=<file>` (or `--db <file>`) puts every store
+ * on SQLite; without it the host is the memory-only dev host it always was, and forgets on exit.
+ */
+const dbPath = process.env.MELTDOWN_DB ?? (argv.includes("--db") ? argv[argv.indexOf("--db") + 1] : undefined) ?? null;
+const db = dbPath ? openDatabase(dbPath) : null;
 const rooms = new Map<string, Room>();
 /**
  * Private rooms bought with a room-hour (Stage 20), by invite code. The code is the whole access
@@ -51,9 +65,9 @@ const rooms = new Map<string, Room>();
  */
 const privateRooms = new Map<string, { rules: PrivateRules; owner: string; wallet: string; openedAt: number; expiresAt: number }>();
 /** One Ghostfile store for the whole host: "sandbox*" ids own every node, anything else starts Blank. */
-const accounts = new MemoryAccountStore(devSeed);
-/** Audit boards and the Deep Wake season, in memory */
-const endgame = new MemoryEndgameStore();
+const accounts = db ? new SqliteAccountStore(db, devSeed) : new MemoryAccountStore(devSeed);
+/** Audit boards and the Deep Wake season */
+const endgame = db ? new SqliteEndgameStore(db) : new MemoryEndgameStore();
 const logs: string[] = [];
 const log = (line: string) => {
   logs.push(`${new Date().toISOString()} ${line}`);
@@ -74,8 +88,38 @@ function rateOk(id: string, now = Date.now()): boolean {
 }
 /** The counter-ledger on an in-process devnet: a real EVM with the contracts deployed at boot and the market seeded. */
 /** the day's banking, for the nightly settlement (the Workers keep it in D1) */
-const runs = new MemoryRunStore();
-const counter = await bootDevnetLedger({ runs, onLog: (l) => log(`[counter] ${l}`) });
+const runs: RunStore = db ? new SqliteRunStore(db) : new MemoryRunStore();
+const wallets: WalletStore = db ? new SqliteWalletStore(db) : new MemoryWalletStore();
+const prizes: PrizeStore = db ? new SqlitePrizeStore(db) : new MemoryPrizeStore();
+/**
+ * The chain. With CHAIN_RPC set this host is the counter-ledger on a real chain, built exactly as
+ * the counter Worker builds it; the devnet-only routes (/chain, the faucet, the outage drill) then
+ * answer that they are devnet-only. A real chain needs the keys and needs a database — wallet
+ * bindings and posted epochs must outlive the process — and the host refuses to start without
+ * either rather than run a ledger it would forget.
+ */
+const CHAIN = { rpc: process.env.CHAIN_RPC, id: Number(process.env.CHAIN_ID ?? 0), contracts: process.env.CONTRACTS, signer: process.env.SIGNER_KEY, relayer: process.env.RELAYER_KEY, treasury: process.env.TREASURY, domains: process.env.SIWE_DOMAINS };
+if (CHAIN.rpc) {
+  const missing = (["CHAIN_ID", "CONTRACTS", "SIGNER_KEY", "RELAYER_KEY"] as const).filter((k) => (k === "CHAIN_ID" ? !CHAIN.id : !process.env[k]));
+  if (missing.length) {
+    console.error(`CHAIN_RPC is set but ${missing.join(", ")} ${missing.length > 1 ? "are" : "is"} not: a real chain needs all of CHAIN_ID, CONTRACTS, SIGNER_KEY, RELAYER_KEY`);
+    process.exit(2);
+  }
+  if (!db) {
+    console.error("CHAIN_RPC is set but MELTDOWN_DB is not: on a real chain the wallet bindings and the posted epochs must outlive the process");
+    process.exit(2);
+  }
+}
+const counter: { devnet: Devnet | null; ledger: CounterLedger; wallets: WalletStore; prizes: PrizeStore; runs: RunStore } = CHAIN.rpc
+  ? {
+      devnet: null,
+      wallets,
+      prizes,
+      runs,
+      ledger: new CounterLedger({ chainId: CHAIN.id, transport: httpTransport(CHAIN.rpc), signerKey: CHAIN.signer as Hex, relayerKey: CHAIN.relayer as Hex, contracts: JSON.parse(CHAIN.contracts!) as Contracts, wallets, prizes, runs, devnet: false, treasury: (CHAIN.treasury as Hex | undefined) ?? undefined, domains: CHAIN.domains ? CHAIN.domains.split(",") : [], onLog: (l) => log(`[counter] ${l}`) }),
+    }
+  : await bootDevnetLedger({ runs, wallets, prizes, onLog: (l) => log(`[counter] ${l}`) });
+const DEVNET_ONLY = "devnet only: this host is on a real chain";
 const readBody = (req: import("node:http").IncomingMessage): Promise<Record<string, unknown>> =>
   new Promise((resolve) => {
     let body = "";
@@ -182,11 +226,16 @@ const http = createServer((req, res) => {
     res.end();
     return;
   }
+  if (req.method === "POST" && (req.url === "/chain" || req.url === "/chain/faucet" || req.url === "/chain/outage") && !counter.devnet) {
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ ok: false, reason: DEVNET_ONLY }));
+    return;
+  }
   if (req.method === "POST" && req.url === "/chain") {
     // the devnet's JSON-RPC: the panel's own transactions (market buys, name registration) go here
     void readBody(req).then(async (body) => {
       res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify(await counter.devnet.handle(Array.isArray(body) ? body : Object.keys(body).length ? body : [])));
+      res.end(JSON.stringify(await counter.devnet!.handle(Array.isArray(body) ? body : Object.keys(body).length ? body : [])));
     });
     return;
   }
@@ -199,7 +248,7 @@ const http = createServer((req, res) => {
         res.end(JSON.stringify({ ok: false, reason: "bad address" }));
         return;
       }
-      await counter.devnet.fund(address as Hex);
+      await counter.devnet!.fund(address as Hex);
       res.end(JSON.stringify({ ok: true }));
     });
     return;
@@ -207,10 +256,10 @@ const http = createServer((req, res) => {
   if (req.method === "POST" && req.url === "/chain/outage") {
     // the "chain unreachable" drill: every RPC fails until it is switched back
     void readBody(req).then((body) => {
-      counter.devnet.outage = !!body.on;
-      log(`[counter] outage drill ${counter.devnet.outage ? "ON" : "OFF"}`);
+      counter.devnet!.outage = !!body.on;
+      log(`[counter] outage drill ${counter.devnet!.outage ? "ON" : "OFF"}`);
       res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify({ ok: true, outage: counter.devnet.outage }));
+      res.end(JSON.stringify({ ok: true, outage: counter.devnet!.outage }));
     });
     return;
   }
@@ -218,7 +267,7 @@ const http = createServer((req, res) => {
     // every posted epoch (the leaves name files, not wallets, so the board can read it)
     void (async () => {
       res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify({ epochs: counter.prizes.list().map((e) => ({ epoch: e.epoch, kind: e.kind, period: e.period, total: e.total, postedAt: e.postedAt, leaves: e.leaves.map((l) => ({ file: publicLabel(l.file), amount: l.amount, reason: l.reason })) })) }));
+      res.end(JSON.stringify({ epochs: (await counter.prizes.list()).map((e) => ({ epoch: e.epoch, kind: e.kind, period: e.period, total: e.total, postedAt: e.postedAt, leaves: e.leaves.map((l) => ({ file: publicLabel(l.file), amount: l.amount, reason: l.reason })) })) }));
     })();
     return;
   }
@@ -417,10 +466,12 @@ const http = createServer((req, res) => {
      */
     const today = dayIndex();
     const window = Number(new URL(req.url, "http://x").searchParams.get("days") ?? 30);
-    const stats = Array.from({ length: Math.max(1, Math.min(365, window)) }, (_, i) => runs.stat(today - i));
-    const o = observe(stats);
-    res.setHeader("content-type", "application/json");
-    res.end(JSON.stringify({ observed: o, note: describe(o), projection: summarise(observedPopulation(DOC_POPULATION, o), o) }));
+    void (async () => {
+      const stats = await Promise.all(Array.from({ length: Math.max(1, Math.min(365, window)) }, (_, i) => runs.stat(today - i)));
+      const o = observe(stats);
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ observed: o, note: describe(o), projection: summarise(observedPopulation(DOC_POPULATION, o), o) }));
+    })();
     return;
   }
   if (req.url?.startsWith("/endgame")) {
@@ -588,4 +639,10 @@ wss.on("connection", (ws: WebSocket, req) => {
   ws.on("error", closed);
 });
 
-http.listen(port, "127.0.0.1", () => console.log(`meltdown node host listening on ws://127.0.0.1:${port}/room/<name>`));
+http.listen(port, "127.0.0.1", () => console.log(`meltdown node host listening on ws://127.0.0.1:${port}/room/<name> · ${db ? `db ${dbPath} (${accounts instanceof SqliteAccountStore ? accounts.count() : 0} files)` : "memory only, forgets on exit"} · chain ${counter.devnet ? "in-process devnet" : `rpc ${CHAIN.rpc} id ${CHAIN.id}`}`));
+for (const sig of ["SIGTERM", "SIGINT"] as const) {
+  process.on(sig, () => {
+    db?.close();
+    process.exit(0);
+  });
+}

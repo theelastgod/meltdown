@@ -78,3 +78,28 @@ GPU string, viewport, pixel ratio, internal scale, draw calls and the frame-time
 `verify.yml` runs the typecheck, the unit suite, every stage probe, the Fairness Lint and the
 economy lint, then builds the client and runs the smoke test against the built bundle.
 `deploy.yml` deploys the Workers, then builds, smoke-tests and deploys Pages.
+
+## 6. One server instead (Stage 51)
+
+The Node host is the whole backend in one process. On a database it keeps everything:
+
+```sh
+MELTDOWN_DB=/var/lib/meltdown/meltdown.sqlite npx tsx server/node-host.ts 8787
+```
+
+Rooms, co-op crews, files, the endgame and the counter-ledger all run in that process; files,
+boards, the season, the run's days, wallet bindings and posted epochs survive a restart (the
+`probe:persist` check kills and restarts it). Put a reverse proxy with TLS in front of `8787`
+(WebSocket upgrades on `/room/` and `/campaign/`), and build the client with every `VITE_*` host
+pointing at it.
+
+For a real chain, set the same variables the counter Worker takes — `CHAIN_RPC`, `CHAIN_ID`,
+`CONTRACTS`, `SIGNER_KEY`, `RELAYER_KEY`, optionally `TREASURY` and `SIWE_DOMAINS` — and the host
+runs the ledger against it; the devnet-only routes answer that they are devnet-only. It refuses to
+start with a chain and no database, or with a chain and any key missing.
+
+What you give up by choosing this over the Workers: Durable Object scaling (one process, one box),
+and the process boundary between the match host and the money keys, which the three-Worker
+deployment keeps and `docs/SECURITY.md` §3.1 relies on. The campaign module is still the only
+importer of Kernel Protocols and the quarantine tests still say so; the keys are still environment
+variables and never in the repo.

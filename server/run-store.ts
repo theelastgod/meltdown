@@ -112,6 +112,9 @@ export class MemoryRunStore implements RunStore {
     return this.settlements.get(day) ?? null;
   }
   markSettled(row: RunSettledRow): void {
-    this.settlements.set(row.day, row);
+    // first settlement wins, as on D1 (ON CONFLICT DO NOTHING): the row is the record that a day was
+    // paid, and a second write must not be able to change what it says it paid (Stage 51 found the
+    // memory store overwriting where the durable stores refuse)
+    if (!this.settlements.has(row.day)) this.settlements.set(row.day, row);
   }
 }

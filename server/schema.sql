@@ -88,3 +88,14 @@ CREATE TABLE IF NOT EXISTS perf_report (
   max       REAL NOT NULL,
   fps       REAL NOT NULL
 );
+-- the endgame on one server (Stage 51): the Workers keep these in the Endgame Durable Object
+CREATE TABLE IF NOT EXISTS audit_entry (
+  seq  INTEGER PRIMARY KEY AUTOINCREMENT,
+  week INTEGER NOT NULL,
+  json TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS audit_entry_week ON audit_entry (week, seq);
+CREATE TABLE IF NOT EXISTS season (
+  id   INTEGER PRIMARY KEY CHECK (id = 1),
+  json TEXT NOT NULL
+);

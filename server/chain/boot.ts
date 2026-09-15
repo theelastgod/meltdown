@@ -5,9 +5,9 @@ import { createPublicClient, createWalletClient, defineChain } from "viem";
 import { Devnet } from "./devnet";
 import { ARTIFACTS, deployAll } from "./deploy";
 import { CounterLedger } from "./ledger";
-import { MemoryWalletStore } from "./wallets";
-import { MemoryPrizeStore } from "./prizes-store";
-import { MemoryRunStore } from "../run-store";
+import { MemoryWalletStore, type WalletStore } from "./wallets";
+import { MemoryPrizeStore, type PrizeStore } from "./prizes-store";
+import { MemoryRunStore, type RunStore } from "../run-store";
 import { dailyEmissionBudget } from "../../shared/economy/model";
 
 /** A week of the emission schedule: what the relayer is trusted with at a time. */
@@ -29,7 +29,9 @@ export const DEV_KEYS = {
   player2: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6" as Hex,
 };
 
-export async function bootDevnetLedger(opts: { now?: () => number; onLog?: (l: string) => void; seedMarket?: boolean; runs?: MemoryRunStore; relayerAllowance?: number } = {}) {
+export async function bootDevnetLedger<R extends RunStore = MemoryRunStore, W extends WalletStore = MemoryWalletStore, P extends PrizeStore = MemoryPrizeStore>(
+  opts: { now?: () => number; onLog?: (l: string) => void; seedMarket?: boolean; runs?: R; wallets?: W; prizes?: P; relayerAllowance?: number } = {},
+) {
   const relayer = privateKeyToAccount(DEV_KEYS.relayer);
   const treasury = privateKeyToAccount(DEV_KEYS.treasury);
   const devnet = await Devnet.create([relayer.address, treasury.address]);
@@ -40,9 +42,10 @@ export async function bootDevnetLedger(opts: { now?: () => number; onLog?: (l: s
   // deployed by the relayer (so it is the poster and the steward, as on a real network before the
   // roles are handed to a multisig), but the supply is minted to the treasury
   const contracts = await deployAll(pub, wal, privateKeyToAccount(DEV_KEYS.signer).address, treasury.address);
-  const wallets = new MemoryWalletStore(opts.now);
-  const prizes = new MemoryPrizeStore();
-  const runs = opts.runs ?? new MemoryRunStore();
+  // the stores are the host's when it has durable ones (Stage 51); memory otherwise
+  const wallets = (opts.wallets ?? new MemoryWalletStore(opts.now)) as W;
+  const prizes = (opts.prizes ?? new MemoryPrizeStore()) as P;
+  const runs = (opts.runs ?? new MemoryRunStore()) as R;
   const ledger = new CounterLedger({ chainId: devnet.chainId, transport, signerKey: DEV_KEYS.signer, relayerKey: DEV_KEYS.relayer, contracts, wallets, devnet: true, now: opts.now, onLog: opts.onLog, prizes, runs, treasury: treasury.address });
   // The treasury's standing allowance to the relayer: a week of emissions, which is the doc's own
   // sizing. It is the whole security property — a leaked relayer key cannot take more than this.
