@@ -275,6 +275,10 @@ than in the caller, so asking early simply fails — the job does not have to be
    `tests/assets.test.ts` walks the import graph to keep the whole thing unreachable from the sim.
    RUST LEASE carries the first one end to end. What the Forge still needs is the part this cannot
    supply: **uploads and moderation** — who may add an asset, and who says yes.
+
+   **Decided (Stage 53, `docs/DECISIONS.md` §1): closed.** No player uploads; the pipeline stays
+   the studio's. The Forge is no longer carried in the projection as a specified-but-unbuilt sink:
+   `shared/economy/sinks.ts` lists only built sinks and the model's "unbuilt" line reads *none*.
 2. **The ceiling is a game-design number, not a derived one.** 1 $CAPITAL a unit sets when
    dilution starts to be felt. It should be revisited against a real launch population, and it is
    the one constant here a designer should own rather than a model.

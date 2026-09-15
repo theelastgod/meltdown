@@ -11,6 +11,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { ALL_ITEMS } from "../shared/manifest/items";
+import { DEV_KEYS } from "../server/chain/dev-keys";
 
 const PORT = 8831;
 const DB = "probe/out/stage51.sqlite";
@@ -115,6 +116,19 @@ async function main(): Promise<void> {
     }, 30000);
   });
   check("a real chain without a database is refused at boot, by name", refused.code === 2 && /MELTDOWN_DB/.test(refused.err), `exit ${refused.code} · ${refused.err.trim().slice(0, 140)}`);
+
+  // ---- and a published dev key on a real chain is refused even with everything else in place (Stage 53)
+  const devKeyed = await new Promise<{ code: number | null; err: string }>((res) => {
+    const p = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "server/node-host.ts", String(PORT)], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, MELTDOWN_DB: DB, CHAIN_RPC: "http://127.0.0.1:1/rpc", CHAIN_ID: "31911", CONTRACTS: "{}", SIGNER_KEY: DEV_KEYS.signer, RELAYER_KEY: "0x1111111111111111111111111111111111111111111111111111111111111111" } });
+    let err = "";
+    p.stderr?.on("data", (x: Buffer) => (err += x.toString()));
+    p.on("exit", (code) => res({ code, err: err.split("\n").filter((l) => !/ExperimentalWarning|--trace-warnings/.test(l)).join("\n") }));
+    setTimeout(() => {
+      p.kill();
+      res({ code: null, err: err + " (timed out)" });
+    }, 30000);
+  });
+  check("a published dev key on a real chain is refused at boot: the placeholder cannot be the key", devKeyed.code === 2 && /DEV KEY ON A REAL CHAIN/.test(devKeyed.err), `exit ${devKeyed.code} · ${devKeyed.err.trim().slice(0, 120)}`);
 
   console.log(`\n${pass}/${pass + fail} checks passed.`);
   if (fail) process.exitCode = 1;

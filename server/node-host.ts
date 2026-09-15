@@ -44,6 +44,7 @@ import { MemoryPrizeStore, type PrizeStore } from "./chain/prizes-store";
 import { CounterLedger } from "./chain/ledger";
 import type { Contracts } from "./chain/deploy";
 import type { Devnet } from "./chain/devnet";
+import { DEV_KEY_ON_CHAIN, isDevKey } from "./chain/dev-keys";
 import { http as httpTransport } from "viem";
 
 import { MAX_PLAYERS_PER_ROOM, inputClassOf, matchRoomName } from "../shared/net/matchmaking";
@@ -107,6 +108,10 @@ if (CHAIN.rpc) {
   }
   if (!db) {
     console.error("CHAIN_RPC is set but MELTDOWN_DB is not: on a real chain the wallet bindings and the posted epochs must outlive the process");
+    process.exit(2);
+  }
+  if (isDevKey(CHAIN.signer) || isDevKey(CHAIN.relayer)) {
+    console.error(DEV_KEY_ON_CHAIN);
     process.exit(2);
   }
 }

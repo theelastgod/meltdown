@@ -169,15 +169,16 @@ describe("what the pass may grant", () => {
 });
 
 describe("the published burn ratio counts only what exists", () => {
-  it("the model's total is built sinks; the rest is reported separately", () => {
+  it("the model's total is built sinks, and since Stage 53 every sink it carries is built: the Forge was struck, not folded in", () => {
     const r = project(DOC_POPULATION);
     const built = SINKS.filter((s) => s.built).map((s) => s.id);
     const unbuilt = SINKS.filter((s) => !s.built).map((s) => s.id);
-    expect(built).toContain("buyout"); // built in this stage — the reason the ratio is now honest
-    expect(unbuilt).toContain("forge");
+    expect(built).toContain("buyout"); // built in Stage 19 — the reason the ratio became honest
+    expect(unbuilt).toEqual([]); // the Forge is closed (docs/DECISIONS.md): a sink with no path to being built is not a projection line
+    expect(SINKS.map((s) => s.id)).not.toContain("forge");
     expect(r.sinks.total).toBe(r.sinks.names + r.sinks.market + r.sinks.buyout + r.sinks.rooms);
-    expect(r.sinks.specified).toBe(r.sinks.forge);
-    expect(r.burnRatioSpecified).toBeGreaterThan(r.burnRatio);
+    expect(r.sinks.specified).toBe(0);
+    expect(r.burnRatioSpecified).toBe(r.burnRatio); // nothing unbuilt is left to inflate the published number
   });
 
   it("meets the doc's month-12 target on built sinks alone", () => {

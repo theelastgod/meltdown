@@ -113,6 +113,9 @@ matches the host's script and node, and offers no choices.
 
 ## After that, decisions that are yours, not stages
 
+*Decided in Stage 53 — see `docs/DECISIONS.md` for each one, its reason, what changed, and what
+remains yours to execute (the key rotation and the multisig).*
+
 - **Forge uploads and moderation** (`docs/ECONOMY.md` §6.1): the pipeline exists; who may add an
   asset and who says yes is policy.
 - **A cap per cosmetic id** (`docs/SECURITY.md` §3.2.4): a contract change, only worth making if

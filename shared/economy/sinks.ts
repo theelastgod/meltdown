@@ -36,7 +36,9 @@ export const SINKS: readonly Sink[] = [
   { id: "names", label: "Name registry", built: true, burnBps: 10_000, note: "Names.sol — length-priced, Depth 50" },
   { id: "market", label: "Ledger Market fees", built: true, burnBps: 200, note: "LedgerMarket.sol — 2% of volume of the 5% fee" },
   { id: "rooms", label: "Private room-hours", built: true, burnBps: 10_000, note: "RoomCredits.sol — sells a server, never a stat" },
-  { id: "forge", label: "Forge listing bonds and primary burns", built: false, burnBps: 1_000, note: "specified in docs/TOKENOMICS.md §7; needs a creator asset pipeline first" },
+  // the Forge (docs/TOKENOMICS.md §3.5) is not here: it was a specified-but-unbuilt sink from Stage 19
+  // to Stage 52, and Stage 53 decided it closed — no player uploads, the asset pipeline stays the
+  // studio's — so the projection stops carrying a number for it (docs/DECISIONS.md)
 ] as const;
 
 export const sinkById = (id: string): Sink | undefined => SINKS.find((s) => s.id === id);

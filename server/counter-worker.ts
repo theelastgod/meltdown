@@ -14,6 +14,7 @@ import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
 import { settleRunDay } from "./chain/settle-run";
 import { reconcileRunBacklog, reconcileRunDay } from "./chain/reconcile-run";
 import { D1RunStore } from "./run-d1";
+import { DEV_KEY_ON_CHAIN, isDevKey } from "./chain/dev-keys";
 import { dayIndex, seasonIndex, weekIndex } from "../shared/endgame/clock";
 import type { Contracts } from "./chain/deploy";
 import { counterRequest } from "../shared/economy/endpoint";
@@ -86,16 +87,19 @@ function filesOf(env: Env) {
 const unconfigured = (env: Env): boolean => !env.CHAIN_RPC || !Number(env.CHAIN_ID) || !env.SIGNER_KEY || !env.RELAYER_KEY;
 const NOT_ADMIN = "NOT AN OPERATOR: /prizes/post runs the settlement for a day of the caller's choosing and needs the x-admin-key header";
 const NOT_CONFIGURED = "CHAIN NOT CONFIGURED: the counter-ledger waits for Robinhood Chain's testnet parameters (CHAIN_ID, CHAIN_RPC, CONTRACTS)";
+/** A configured chain with a published dev key in it is refused the same way (Stage 53): the placeholder must not be the key. */
+const devKeyed = (env: Env): boolean => isDevKey(env.SIGNER_KEY) || isDevKey(env.RELAYER_KEY);
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     if (url.pathname === "/health") return new Response("ok");
-    if (unconfigured(env)) {
-      if (url.pathname === "/counter") return json({ chainId: Number(env.CHAIN_ID) || 0, devnet: false, contracts: {}, signer: null, statement: "", listings: [], treasury: null, reason: NOT_CONFIGURED });
-      if (url.pathname === "/link/nonce") return json({ ok: false, reason: NOT_CONFIGURED }, 503);
-      return json({ ok: false, reason: NOT_CONFIGURED, counter: null }, 503);
+    if (unconfigured(env) || devKeyed(env)) {
+      const reason = unconfigured(env) ? NOT_CONFIGURED : DEV_KEY_ON_CHAIN;
+      if (url.pathname === "/counter") return json({ chainId: Number(env.CHAIN_ID) || 0, devnet: false, contracts: {}, signer: null, statement: "", listings: [], treasury: null, reason });
+      if (url.pathname === "/link/nonce") return json({ ok: false, reason }, 503);
+      return json({ ok: false, reason, counter: null }, 503);
     }
     const { load, save } = filesOf(env);
     if (url.pathname === "/counter") {
@@ -179,7 +183,7 @@ export default {
   async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil((async () => {
       const at = event.scheduledTime ?? Date.now();
-      if (unconfigured(env)) return console.log(`cron ${new Date(at).toISOString()}: skipped — ${NOT_CONFIGURED}`);
+      if (unconfigured(env) || devKeyed(env)) return console.log(`cron ${new Date(at).toISOString()}: skipped — ${unconfigured(env) ? NOT_CONFIGURED : DEV_KEY_ON_CHAIN}`);
       const { load, save } = filesOf(env);
       const ledger = ledgerOf(env);
 

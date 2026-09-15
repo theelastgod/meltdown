@@ -14,5 +14,5 @@
     "noEmit": true,
     "types": ["@cloudflare/workers-types", "node"]
   },
-  "include": ["server", "shared", "tests/routes.test.ts", "tests/crew.test.ts", "tests/filerow.test.ts"]
+  "include": ["server", "shared", "tests/routes.test.ts", "tests/crew.test.ts", "tests/filerow.test.ts", "tests/keys.test.ts"]
 }

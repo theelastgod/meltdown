@@ -13,21 +13,8 @@ import { dailyEmissionBudget } from "../../shared/economy/model";
 /** A week of the emission schedule: what the relayer is trusted with at a time. */
 const WEEK_OF_EMISSIONS = dailyEmissionBudget(0) * 7;
 
-/** dev keys (the classic anvil set); never used on a real network */
-export const DEV_KEYS = {
-  relayer: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d" as Hex,
-  signer: "0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba" as Hex,
-  /**
-   * The bank. A separate key from the relayer on purpose, even here: the relayer signs constantly
-   * and the treasury holds the whole supply, so if the devnet ran them as one address the tests
-   * would never exercise the shape production has to run in (docs/SECURITY.md §3.1). On a real
-   * network this is a timelocked multisig and there is no key at all.
-   */
-  treasury: "0x8166f546bab6da521a8369cab06c5d2b9e46670292d85c875ee9ec20e84ffb61" as Hex,
-  /** the probe's and the tests' player wallets */
-  player: "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a" as Hex,
-  player2: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6" as Hex,
-};
+import { DEV_KEYS } from "./dev-keys";
+export { DEV_KEYS };
 
 export async function bootDevnetLedger<R extends RunStore = MemoryRunStore, W extends WalletStore = MemoryWalletStore, P extends PrizeStore = MemoryPrizeStore>(
   opts: { now?: () => number; onLog?: (l: string) => void; seedMarket?: boolean; runs?: R; wallets?: W; prizes?: P; relayerAllowance?: number } = {},

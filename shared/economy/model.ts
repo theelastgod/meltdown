@@ -61,8 +61,6 @@ export interface Population {
   /** room-hours a month, and the burn per hour */
   roomHours: number;
   roomHourPrice: number;
-  /** Forge primary volume a month, in whole $CAPITAL (unbuilt: counted separately) */
-  forgeVolume: number;
 }
 
 /** docs/TOKENOMICS.md §4.4's illustrative month-12 population. */
@@ -78,7 +76,6 @@ export const DOC_POPULATION: Population = {
   buyoutPrice: SEASON_PASS_PRICE,
   roomHours: 20_000,
   roomHourPrice: ROOM_HOUR_PRICE,
-  forgeVolume: 1_500_000,
 };
 
 /**
@@ -99,7 +96,7 @@ export interface Projection {
    * unwritten contract is a wish, and this table used to be 79% one (see docs/ECONOMY.md §3).
    * `specified` is what the rest of `docs/TOKENOMICS.md` §7 would add once it exists.
    */
-  sinks: { names: number; market: number; buyout: number; rooms: number; forge: number; total: number; specified: number };
+  sinks: { names: number; market: number; buyout: number; rooms: number; total: number; specified: number };
   /** built sinks as a share of settled emissions: the number the doc is allowed to publish */
   burnRatio: number;
   /** what the ratio becomes once the specified sinks ship */
@@ -131,14 +128,14 @@ export function project(p: Population = DOC_POPULATION): Projection {
   const runSettled = unitsPerDay * unitRate * DAYS_PER_MONTH;
   const settledTotal = runSettled + audit + season;
 
-  // sinks: 100% burns except the market, which burns 2% of volume, and the Forge's 10% of primaries
+  // sinks: 100% burns except the market, which burns 2% of volume
   const names = p.namesPerMonth * p.nameFee;
   const market = (p.marketVolume * CAPITAL.marketFeeSplit.burnBps) / 10_000;
   const buyout = p.mau * p.buyoutShare * p.buyoutPrice;
   const rooms = p.roomHours * p.roomHourPrice;
-  const forge = (p.forgeVolume * (SINKS.find((x) => x.id === "forge")?.burnBps ?? 0)) / 10_000;
-  // only what exists counts toward the published ratio
-  const channels: [string, number][] = [["names", names], ["market", market], ["buyout", buyout], ["rooms", rooms], ["forge", forge]];
+  // only what exists counts toward the published ratio; since Stage 53 every sink in SINKS exists,
+  // and `specified` is kept so the next unbuilt sink anyone adds is reported apart, not folded in
+  const channels: [string, number][] = [["names", names], ["market", market], ["buyout", buyout], ["rooms", rooms]];
   const sinksTotal = channels.filter(([id]) => isBuilt(id)).reduce((a, [, v]) => a + v, 0);
   const specified = channels.filter(([id]) => !isBuilt(id)).reduce((a, [, v]) => a + v, 0);
 
@@ -148,7 +145,7 @@ export function project(p: Population = DOC_POPULATION): Projection {
     emissions: { run, audit, season, total: emissionsTotal },
     settled: { run: runSettled, audit, season, total: settledTotal },
     unitRate,
-    sinks: { names, market, buyout, rooms, forge, total: sinksTotal, specified },
+    sinks: { names, market, buyout, rooms, total: sinksTotal, specified },
     burnRatio: settledTotal === 0 ? 0 : sinksTotal / settledTotal,
     burnRatioSpecified: settledTotal === 0 ? 0 : (sinksTotal + specified) / settledTotal,
     monthlyBudget,
@@ -206,7 +203,7 @@ export function summarise(p: Population = DOC_POPULATION, o?: Observed): string[
     `settled:    ${n(r.settled.total)} a month at ${r.unitRate.toFixed(4)} $CAPITAL a unit — ${(r.settled.total / r.monthlyBudget).toFixed(2)}× the budget`,
     `sinks:      names ${n(r.sinks.names)} + market ${n(r.sinks.market)} + buyout ${n(r.sinks.buyout)} + rooms ${n(r.sinks.rooms)} = ${n(r.sinks.total)} a month, all built`,
     `burn ratio: ${(r.burnRatio * 100).toFixed(1)}% of settled emissions (target 60% by month 12, 100% by month 24)`,
-    `unbuilt:    ${n(r.sinks.specified)} a month more once the Forge ships — ${(r.burnRatioSpecified * 100).toFixed(1)}%, which is not the number to publish yet`,
+    `unbuilt:    ${r.sinks.specified > 0 ? `${n(r.sinks.specified)} a month more once the specified sinks ship — ${(r.burnRatioSpecified * 100).toFixed(1)}%, which is not the number to publish yet` : "none — every sink in the projection is built (the Forge was struck from it, docs/DECISIONS.md)"}`,
     `inputs:     ${o ? describe(o) : "capUse assumed · runnerShare assumed — no telemetry supplied"}`,
   ];
 }

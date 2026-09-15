@@ -323,6 +323,11 @@ it now asserts each separately.
 
 ### 3.2 Still open
 
+Stage 53 decided what could be decided here (`docs/DECISIONS.md`): item 4 is closed as *no cap*;
+item 3 as *not now*; for item 1 the deploy CLI now refuses a treasury that is the relayer and the
+dev keys are refused on any real chain, so the hand-over cannot be skipped by accident — the
+multisig itself, the audit (2) and the legal review (5) remain the owner's engagements.
+
 1. **Hand the steward and poster roles to a timelocked multisig** after deployment (`setSteward`,
    `setPoster`). The deploy already hands the sinks' steward to the treasury address, so what is
    left is making that address a multisig rather than a key.

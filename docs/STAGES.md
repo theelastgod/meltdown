@@ -1641,6 +1641,51 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 53 — The decisions
+
+**Goal.** `docs/PLAN.md` ended with a list of things that were the owner's to decide rather than
+stages to build. The owner asked for them decided. `docs/DECISIONS.md` records each one — what was
+decided, why, what changed, and what only the owner can still do — and this entry is the part
+that changed code, because a decision that changed nothing checkable is a preference.
+
+**The Forge: closed, and struck from the projection.** No player uploads; the pipeline stays the
+studio's, as `docs/TOKENOMICS.md` §3.5 already said. The projection had carried the Forge as a
+specified-but-unbuilt sink worth 150,000 $CAPITAL a month since Stage 19, printed on every run of
+`probe:economy` under "specified but unwritten". A sink with no path to being built is not a
+projection line; it is a wish with a number on it — the very thing Stage 19 removed the season
+buyout for. It is gone from `SINKS` and from the model's inputs; the "unbuilt" line now reads
+*none* and names the decision. The published burn ratio never counted it, so no published number
+moved. `tests/sinks.test.ts` pins that every sink the model carries is built.
+
+**No cap per cosmetic id.** Scarcity stays a policy, never a promise the contract makes: a cosmetic
+worth holding because nobody else can get one is the softest form of what the no-wagering rule
+keeps out, and a cap once promised cannot be withdrawn. Nothing to change; closed as *no*.
+
+**The placeholder cannot be the key.** The rotation — real signer and relayer keys, the Cloudflare
+token, the multisig — is the owner's and no code here can do it. What code can do is make the
+published dev keys unable to run anywhere real, so a forgotten rotation is a refusal at boot rather
+than a live ledger on a key anyone can read in the repository:
+
+- `server/chain/dev-keys.ts` holds the dev keys (out of the devnet boot, so the Workers can import
+  it) and `isDevKey`.
+- The counter Worker answers `DEV KEY ON A REAL CHAIN` on every chain route and skips its cron with
+  either key a dev key — told apart from `CHAIN NOT CONFIGURED`, so an operator knows which state
+  they are in. Mutation-tested by letting the Worker stop checking: the case fails.
+- The Node host on a real chain refuses a dev key at boot, exit 2, by name.
+- The deploy CLI requires the treasury address — it used to default to the relayer, which on a
+  real network would have minted the whole supply to the hot key — refuses a treasury that *is* the
+  relayer, and refuses a dev relayer key, all before any gas is spent.
+
+**No further credits on art.** Every cosmetic sold has a plate; nothing else the renderer draws has
+a surface for a generated image yet. Spend resumes when a surface exists. Zero credits.
+
+**Proof.** `tests/keys.test.ts`: every dev key in any casing; the Worker's two refusals told apart;
+the deploy guard's five cases. `probe:persist` starts the host on a real chain with a dev signer
+and reads the refusal. `probe:economy` runs with the projection's unbuilt line at none.
+
+**Acceptance.** `npm test` 428 (4 new, 1 rewritten); typecheck clean on both configs;
+`probe:persist` 6/6; `probe:economy` 15/15; `lint:economy` 0 violations.
+
 ## Stage 52 — The guest is not a spectator
 
 **Goal.** In a crew the guest saw "THE HOST IS AT THE TERMINAL" and waited. Co-op dialogue was a
