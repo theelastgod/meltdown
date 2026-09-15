@@ -98,6 +98,8 @@ tests already say so and keep saying so.
 
 ## Stage 52 — The guest is not a spectator
 
+*Shipped.*
+
 **Missing.** In a crew the guest sees "THE HOST IS AT THE TERMINAL" and waits. Co-op dialogue is a
 solo experience with company.
 

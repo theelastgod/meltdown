@@ -1641,6 +1641,45 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 52 — The guest is not a spectator
+
+**Goal.** In a crew the guest saw "THE HOST IS AT THE TERMINAL" and waited. Co-op dialogue was a
+solo experience with company: the host read the script, chose, and the guest learned the outcome
+from the objective line. `docs/PLAN.md`'s fourth item: the terminal mirrors to every crew member as
+it plays. Choices stay the host's — one testimony per contract, and the settlement already keys on
+it — but the guest reads the same screen and sees which line the host took.
+
+**One message, text only.** The host sends where its terminal is, node by node: the script, the
+node, the choice texts on its screen and the text of the pick that led there. The co-op room takes
+it from the host only, injects it into the mission's event stream — the same stream the objective
+and wave events already ride, so nothing new is broadcast — and the guest renders the node's lines
+from its own copy of the script with the host's choices under them and a footer that says whose
+turn it is: THE HOST IS CHOOSING, or THE HOST READS ON. A pick flashes as an alert. The guest's
+own dialogue state stays null, so no key of its own does anything. The message carries text and
+never a resolution; a resolution is still the choice message, still the host's.
+
+**A late joiner.** The first run of the probe failed: the guest's mirror was empty at the host's
+first terminal. The host had joined, the room had put it at the terminal, and the terminal event
+had gone out — before the guest's socket existed. The room now keeps the host's open terminal and
+hands it to a joiner with its first mission message; a closed terminal is handed to nobody.
+Mutation-tested by taking the resend out: the late-joiner case fails.
+
+**Proof.** `probe:campaign`: while the host is at the first terminal, the guest's mirror is waited
+for and then compared — the same script and node, the same choices, the terminal shown, the footer
+naming the host, no dialogue of the guest's own; at the end of the contract the guest's log holds
+the text of the line the host took at the file, and its terminal closed when the host's did.
+`tests/terminal.test.ts` pins the wire bounds and drives the real co-op room with three
+connections: the host's terminal reaches everyone, a guest's goes nowhere, a late joiner gets an
+open terminal and not a closed one.
+
+```
+mirror m1_intro:a vs host m1_intro:a · choices [] · terminal shown true · footer "THE HOST READS ON"
+host's picks as the guest saw them ["KEEP IT. Evidence is a weapon."] · mirror null · terminal shown false
+```
+
+**Acceptance.** `probe:campaign` 30/30 (2 new); `npm test` 424 (2 new); typecheck clean on both
+configs.
+
 ## Stage 51 — One server that remembers
 
 **Goal.** You asked whether all of this could run on one server. `server/node-host.ts` has been

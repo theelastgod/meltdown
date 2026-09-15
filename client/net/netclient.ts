@@ -9,7 +9,7 @@ import {
   type NetInput,
   type RemotePlayerQ,
   type Snapshot,
-  type FileMsg, type SocialMsg, type MissionMsg, type RunMsg, encodeChoice,
+  type FileMsg, type SocialMsg, type MissionMsg, type RunMsg, encodeChoice, encodeTerminal, type TerminalMsg,
 } from "@shared/net/protocol";
 import type { Transport } from "./transport";
 
@@ -88,6 +88,12 @@ export class NetClient {
   /** Co-op: resolve a dialogue on the room (host only; the room ignores others). */
   sendChoice(script: string, testimony: Record<string, string>): void {
     this.transport.send(encodeChoice(script, testimony));
+    this.stats.bytesOut += 8;
+  }
+
+  /** the host's terminal, node by node, for the crew to read (Stage 52) */
+  sendTerminal(m: TerminalMsg): void {
+    this.transport.send(encodeTerminal(m));
     this.stats.bytesOut += 8;
   }
 

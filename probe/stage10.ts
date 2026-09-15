@@ -27,6 +27,7 @@ import { crewRoomName } from "../shared/net/crew";
 import { validInviteCode } from "../shared/net/private";
 import { buildNav, findPath } from "../shared/sim/nav";
 import { HUB_LEVEL_ID } from "../shared/sim/hub";
+import { scriptById } from "../shared/campaign/script";
 
 const VITE_PORT = 5203;
 const HOST_PORT = 8806;
@@ -314,6 +315,15 @@ async function main(): Promise<void> {
     await ca.waitForTimeout(800);
     const co0 = await ca.evaluate(() => window.__game.campaign());
     const co0b = await cb.evaluate(() => window.__game.campaign());
+    /**
+     * The guest is not a spectator (Stage 52). The host's terminal mirrors to the crew node by node:
+     * the guest reads the same lines and the same choices and is told whose turn it is, with no keys
+     * of its own. Waited for, not assumed: the mirror is one room tick behind the host's screen.
+     */
+    const mirrored = await cb.waitForFunction(() => window.__game.campaign().terminalMirror?.script === "m1_intro", null, { timeout: 10000, polling: 100 }).then(() => true, () => false);
+    const gm = await cb.evaluate(() => ({ mirror: window.__game.campaign().terminalMirror, own: window.__game.campaign().dialogue, footer: (document.querySelector("#hud .terminal .tf") as HTMLElement | null)?.textContent ?? "", shown: !(document.querySelector("#hud .terminal") as HTMLElement | null)?.hidden }));
+    const hm = await ca.evaluate(() => window.__game.campaign().dialogue);
+    check("the guest reads the host's terminal: the same script and node, the same choices, told whose turn it is, and no keys of its own", mirrored && gm.mirror?.script === hm?.script && gm.mirror?.node === hm?.node && JSON.stringify(gm.mirror?.choices) === JSON.stringify(hm?.choices ?? []) && gm.own === null && gm.shown && /THE HOST/.test(gm.footer), `mirror ${gm.mirror?.script}:${gm.mirror?.node} vs host ${hm?.script}:${hm?.node} · choices ${JSON.stringify(gm.mirror?.choices)} · guest's own dialogue ${gm.own} · terminal shown ${gm.shown} · footer "${gm.footer}"`);
     check("co-op: both files see the room's contract and their crew's code; the first to join is the host and holds the terminal", co0.mode === "coop" && co0b.mode === "coop" && co0.crew === crewCode && co0b.crew === crewCode && co0.mission?.title === "WAKE UNLISTED" && co0.host === true && co0b.host === false && co0.dialogue?.script === "m1_intro" && co0b.dialogue === null, `crew ${co0.crew}/${co0b.crew} · A host ${co0.host} dialogue ${co0.dialogue?.script} · B host ${co0b.host} dialogue ${co0b.dialogue?.script} · objective "${co0.mission?.objective}"`);
     await playTerminal(ca);
     await ca.waitForTimeout(600);
@@ -390,6 +400,9 @@ async function main(): Promise<void> {
     const whereText = where.map((w, i) => `${i ? "B" : "A"} at (${w.pos.x.toFixed(1)},${w.pos.z.toFixed(1)}) d ${Math.hypot(w.pos.x - goal.x, w.pos.z - goal.z).toFixed(1)} hp ${w.health} bot done ${w.done}`).join(" · ");
     const fa = await file("coop-a");
     const fb = await file("coop-b");
+    const guestLog = await cb.evaluate(() => ({ log: window.__game.campaign().mirrorLog, mirror: window.__game.campaign().terminalMirror, shown: !(document.querySelector("#hud .terminal") as HTMLElement | null)?.hidden }));
+    const keepText = scriptById("m1_file")!.nodes.flatMap((n) => n.choices ?? []).find((c) => c.set?.["m1:lease"] === "keep")!.text;
+    check("and saw which line the host took at the file: the pick reached the guest by text, and the guest's terminal closed when the host's did", guestLog.log.includes(keepText) && guestLog.mirror === null && !guestLog.shown, `host's picks as the guest saw them ${JSON.stringify(guestLog.log)} · mirror ${JSON.stringify(guestLog.mirror)} · terminal shown ${guestLog.shown}`);
     const coA = await ca.evaluate(() => window.__game.campaign());
     const coB = await cb.evaluate(() => window.__game.campaign());
     check("co-op: the contract completes on the room and settles on both files with the host's testimony", cs.view?.status === "complete" && cs.settled.length === 2 && cs.settled.every((s) => s.ok) && fa.campaign?.missionsDone.includes("m1_wake_unlisted") === true && fb.campaign?.missionsDone.includes("m1_wake_unlisted") === true && fa.campaign.testimony["m1:lease"] === "keep" && coA.completion?.ok === true && coB.completion?.ok === true, `room ${cs.view?.status} at "${cs.view?.objective}" (${cs.view?.kind}) · settled ${cs.settled.map((s) => `${s.ok}`).join(",")} · files [${fa.campaign?.missionsDone.join()}] [${fb.campaign?.missionsDone.join()}] · testimony ${fa.campaign?.testimony["m1:lease"]} · legs [${legs.join(", ")}] · ${whereText}`);

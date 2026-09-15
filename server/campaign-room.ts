@@ -30,6 +30,8 @@ export function createCampaignRoom(opts: CampaignRoomOptions): CampaignRoomHandl
   let st: MissionState | null = null;
   let hostId = -1;
   let choices = 0;
+  /** where the host's terminal is right now, so a crew member who joins mid-terminal sees it too (Stage 52) */
+  let terminal: { type: "terminal"; script: string; node: string; choices: string[]; picked: string | null } | null = null;
   const settled: { id: string; ok: boolean; reason?: string }[] = [];
   let ticks = 0;
   const hooks: RoomHooks = {
@@ -42,7 +44,8 @@ export function createCampaignRoom(opts: CampaignRoomOptions): CampaignRoomHandl
         room.world.setLoadout(p, account.loadout, protocolMods(c.worn));
         if (!st && def) st = createMission(def.id, room.world, c.testimony, c.faction as FactionId | null, threatRating({ depth: account.depth, counters: account.counters, campaign: c }));
       } else if (!st && def) st = createMission(def.id, room.world, {}, null, 0);
-      if (st) room.send(encodeMission({ view: missionView(st), events: [], hostId, settled }), playerId);
+      // a late joiner gets the host's open terminal with its first mission message: the event was broadcast before it arrived
+      if (st) room.send(encodeMission({ view: missionView(st), events: terminal ? [terminal] : [], hostId, settled }), playerId);
     },
     afterStep(room, events) {
       if (!st) return;
@@ -62,7 +65,14 @@ export function createCampaignRoom(opts: CampaignRoomOptions): CampaignRoomHandl
       if (evs.length || ticks % 30 === 0) room.send(encodeMission({ view: missionView(st), events: evs, hostId, settled }));
     },
     onClientMessage(_room, playerId, msg) {
-      if (!st || msg.type !== "choice" || playerId !== hostId) return;
+      if (!st || playerId !== hostId) return;
+      // the host's screen, node by node, for the crew to read (Stage 52); a guest's is ignored
+      if (msg.type === "terminal") {
+        const ev = { type: "terminal" as const, script: msg.script, node: msg.node, choices: msg.choices, picked: msg.picked };
+        terminal = msg.node ? ev : null;
+        st.events.push(ev);
+        return;
+      }
       if (resolveDialogue(st, msg.testimony)) choices++;
     },
   };

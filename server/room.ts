@@ -118,7 +118,7 @@ export interface RoomHooks {
   /** a client was admitted (its player exists) */
   onAdmit?: (room: Room, playerId: number, account: Account | null) => void;
   /** a client message the room does not handle itself */
-  onClientMessage?: (room: Room, playerId: number, msg: { type: "choice"; script: string; testimony: Record<string, string> }) => void;
+  onClientMessage?: (room: Room, playerId: number, msg: { type: "choice"; script: string; testimony: Record<string, string> } | { type: "terminal"; script: string; node: string; choices: string[]; picked: string | null }) => void;
 }
 
 export interface RoomOptions {
@@ -287,7 +287,7 @@ export class Room {
       return;
     }
     if (!rec) return this.kickConn(conn, "message before join");
-    if (msg.type === "choice") {
+    if (msg.type === "choice" || msg.type === "terminal") {
       this.opts.hooks?.onClientMessage?.(this, rec.playerId, msg);
       return;
     }

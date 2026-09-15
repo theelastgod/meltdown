@@ -50,6 +50,8 @@ export const Msg = {
   Run: 18,
   /** Campaign co-op: a dialogue resolution from the host player (JSON). */
   Choice: 4,
+  /** Campaign co-op: where the host's terminal is, so a crew reads the same screen (JSON; Stage 52). */
+  Terminal: 19,
 } as const;
 
 /** Co-op mission traffic (the campaign room only; the PvP room never sends this). */
@@ -405,6 +407,27 @@ export function encodeChoice(script: string, testimony: Record<string, string>):
   return w.done();
 }
 
+/**
+ * Client → room: the host's terminal, node by node (Stage 52). The guest sees the same lines and
+ * the same choices the host sees, and which one the host took to get here. Choices stay the
+ * host's: this carries text, never a resolution — that is still `encodeChoice`.
+ */
+export interface TerminalMsg {
+  script: string;
+  /** "" when the host's terminal closed */
+  node: string;
+  /** the choice texts the host is looking at (empty: a node with none) */
+  choices: string[];
+  /** the text of the choice the host took to reach this node, if any */
+  picked: string | null;
+}
+export function encodeTerminal(m: TerminalMsg): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.Terminal);
+  w.str(JSON.stringify(m));
+  return w.done();
+}
+
 export function encodeSocial(m: SocialMsg): ArrayBuffer {
   const w = new W();
   w.u8(Msg.Social);
@@ -573,6 +596,7 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
 export type ClientMessage =
   | { type: "join"; version: number; name: string; token: string; account: string; loadout: string; identity: string; secret: string }
   | { type: "choice"; script: string; testimony: Record<string, string> }
+  | { type: "terminal"; script: string; node: string; choices: string[]; picked: string | null }
   | { type: "input"; ackTick: number; inputs: NetInput[] }
   | { type: "ping"; clientTime: number };
 
@@ -597,6 +621,12 @@ export function decodeClientMessage(buf: ArrayBuffer): ClientMessage | null {
       const testimony: Record<string, string> = {};
       if (c.testimony && typeof c.testimony === "object") for (const [k, v] of Object.entries(c.testimony as Record<string, unknown>)) if (typeof v === "string" && /^[a-z0-9:_]{1,32}$/.test(k) && /^[a-z0-9_]{1,32}$/.test(v)) testimony[k] = v;
       return { type: "choice", script: String(c.script ?? "").slice(0, 48), testimony };
+    }
+    if (t === Msg.Terminal) {
+      const m = JSON.parse(r.str()) as { script?: unknown; node?: unknown; choices?: unknown; picked?: unknown };
+      const text = (v: unknown, max: number) => String(typeof v === "string" ? v : "").slice(0, max);
+      const choices = Array.isArray(m.choices) ? m.choices.slice(0, 4).map((c) => text(c, 160)) : [];
+      return { type: "terminal", script: text(m.script, 48), node: text(m.node, 48), choices, picked: typeof m.picked === "string" ? text(m.picked, 160) : null };
     }
     if (t === Msg.Input) {
       const ackTick = r.u32();

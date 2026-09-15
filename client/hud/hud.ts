@@ -266,6 +266,11 @@ export class Hud {
     this.q(".terminal .tf").textContent = choices ? "[1–4] CHOOSE" : "[ENTER] CONTINUE";
   }
 
+  /** the mirror's footer (Stage 52): a guest's terminal says whose turn it is instead of offering keys */
+  terminalFooter(text: string): void {
+    this.q(".terminal .tf").textContent = text;
+  }
+
   /** show everything now (a second Enter) */
   terminalSkip(): void {
     const t = this.term;

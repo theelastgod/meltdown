@@ -53,6 +53,11 @@ export class Campaign {
   readonly crew: string | null;
   /** the last crew this desk started or joined: what the page would travel to (the probe reads it under `?nonav=1`) */
   crewTarget: { code: string; url: string } | null = null;
+  /** the host's terminal as this guest sees it (Stage 52): script, node, the choices on the host's screen, the pick that led here */
+  mirror: { script: string; node: string; choices: string[]; picked: string | null } | null = null;
+  /** every choice the host was seen to take, in order */
+  readonly mirrorLog: string[] = [];
+  private lastPick: string | null = null;
 
   constructor(private game: Game) {
     const q = new URLSearchParams(location.search);
@@ -222,6 +227,27 @@ export class Campaign {
     const all = { ...this.save.testimony, ...p.testimony };
     const choices = (n.choices ?? []).filter((c) => gateOpen(c.gate, all, this.save.faction)).map((c) => c.text);
     this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, n.lines, choices.length ? choices : null);
+    // the crew reads the same screen (Stage 52): the host sends where it is; the room mirrors it to everyone
+    if (this.mode === "coop" && this.host && this.game.net) this.game.net.sendTerminal({ script: p.script, node: n.id, choices, picked: this.lastPick });
+    this.lastPick = null;
+  }
+
+  /** a guest's view of the host's terminal (Stage 52): the same lines and choices, no keys */
+  private onMirror(ev: { script: string; node: string; choices: string[]; picked: string | null }): void {
+    if (ev.picked) this.mirrorLog.push(ev.picked);
+    if (!ev.node) {
+      this.mirror = null;
+      this.game.hud.terminalClose();
+      return;
+    }
+    const s = scriptById(ev.script);
+    const n = s?.nodes.find((x) => x.id === ev.node);
+    if (!n) return;
+    const speaker = n.speaker === "you" ? { name: "THE HOST", sigil: "▸", color: "gr" } : n.speaker === "terminal" ? { name: "TERMINAL", sigil: "▮", color: "cy" } : { name: HANDLERS[n.speaker as HandlerId].name, sigil: HANDLERS[n.speaker as HandlerId].sigil, color: HANDLERS[n.speaker as HandlerId].color };
+    this.mirror = { script: ev.script, node: ev.node, choices: ev.choices.slice(), picked: ev.picked };
+    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, n.lines, ev.choices.length ? ev.choices : null);
+    this.game.hud.terminalFooter(ev.choices.length ? "THE HOST IS CHOOSING" : "THE HOST READS ON");
+    if (ev.picked) this.game.hud.alert(`◆ THE HOST CHOSE · ${ev.picked}`, false, 2.5);
   }
 
   /** Enter / Space: continue a node without choices; 1–4: pick a choice. */
@@ -241,6 +267,7 @@ export class Campaign {
       if (!c) return false;
       for (const [k, v] of Object.entries(c.set ?? {})) p.testimony[k] = v;
       nextId = c.next;
+      this.lastPick = c.text;
       this.game.audio.sign();
     } else {
       nextId = p.node.next ?? null;
@@ -252,6 +279,8 @@ export class Campaign {
     } else {
       this.playing = null;
       this.game.hud.terminalClose();
+      if (this.mode === "coop" && this.host && this.game.net) this.game.net.sendTerminal({ script: p.script, node: "", choices: [], picked: this.lastPick });
+      this.lastPick = null;
       p.onDone(p.testimony);
     }
     return true;
@@ -324,6 +353,8 @@ export class Campaign {
       if (ev.type === "dialogue") {
         if (this.host) this.onMissionEvent(ev);
         else this.game.hud.alert("◆ THE HOST IS AT THE TERMINAL", true, 3);
+      } else if (ev.type === "terminal") {
+        if (!this.host) this.onMirror(ev);
       } else if (ev.type === "complete") {
         const s = m.settled?.find((x) => x.id === ev.id);
         this.completion = { id: ev.id, ok: s?.ok ?? false, reason: s?.reason };
@@ -535,6 +566,8 @@ export class Campaign {
       host: this.host,
       crew: this.crew,
       crewTarget: this.crewTarget,
+      terminalMirror: this.mirror,
+      mirrorLog: this.mirrorLog.slice(),
       log: this.log.slice(-8),
     };
   }

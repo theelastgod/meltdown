@@ -21,6 +21,8 @@ export type MissionEvent =
   | { type: "wave"; count: number }
   | { type: "escort"; text: string }
   | { type: "dialogue"; script: string }
+  /** the host's terminal, mirrored to the crew (Stage 52); injected by the co-op room, never by the runtime */
+  | { type: "terminal"; script: string; node: string; choices: string[]; picked: string | null }
   | { type: "complete"; id: string }
   | { type: "failed"; reason: string };
 
