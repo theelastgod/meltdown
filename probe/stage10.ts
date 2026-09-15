@@ -23,6 +23,8 @@ import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 import { levelById } from "../shared/sim/level";
 import { MISSIONS } from "../shared/campaign/missions";
+import { crewRoomName } from "../shared/net/crew";
+import { validInviteCode } from "../shared/net/private";
 import { buildNav, findPath } from "../shared/sim/nav";
 import { HUB_LEVEL_ID } from "../shared/sim/hub";
 
@@ -282,21 +284,40 @@ async function main(): Promise<void> {
 
     // ---------------- co-op: two files, the campaign room, the host at the terminal ----------------
     for (const id of ["coop-a", "coop-b"]) await post(id, { op: "faction", faction: "clockeaters" });
-    const coopUrl = (name: string, account: string) => `http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&level=lease_row&mode=campaign&account=${account}&secret=${SECRET}&net=ws://127.0.0.1:${HOST_PORT}/campaign/${encodeURIComponent("duo?mission=m1_wake_unlisted")}%26level=lease_row&name=${name}`;
+    /**
+     * The crew's door (Stage 49). The co-op leg used to start from a hand-typed URL, which is what
+     * no player has. Now the host starts the contract from the desk with RUN WITH A CREW, the guest
+     * looks the code up and joins, and everything below runs against the room the code named.
+     */
+    const deskUrl = (name: string, account: string) => `http://127.0.0.1:${VITE_PORT}/?headless=1&norender=1&nonav=1&level=drainage_yard&ai=0&account=${account}&secret=${SECRET}&shop=${HOST}&name=${name}`;
     const ca = await newPage({ width: 320, height: 180 }, "coop-a");
-    await ca.goto(coopUrl("HOSTA", "coop-a"), { waitUntil: "load" });
+    await ca.goto(deskUrl("HOSTA", "coop-a"), { waitUntil: "load" });
+    await ca.waitForFunction(() => window.__game?.ready === true, null, { timeout: 40000, polling: 100 });
+    const started = await ca.evaluate(() => window.__game.crewStart("m1_wake_unlisted"));
+    const crewCode = started.code ?? "";
+    const crewRoom = `campaign:${crewRoomName(crewCode)}`;
+    // the host travels; the room comes into being when its socket opens
+    await ca.goto(started.url ?? "about:blank", { waitUntil: "load" });
     await ca.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true && window.__game.campaign().mission !== null, null, { timeout: 40000, polling: 100 });
+    const lookedUp = (await (await fetch(`${HOST}/crew/${crewCode}`)).json()) as { ok: boolean; mission?: string; level?: string; players?: number; status?: string; reason?: string };
+    const badCode = (await (await fetch(`${HOST}/crew/NOTACODE`)).json()) as { ok: boolean; reason?: string };
     const cb = await newPage({ width: 320, height: 180 }, "coop-b");
-    await cb.goto(coopUrl("GUESTB", "coop-b"), { waitUntil: "load" });
+    await cb.goto(deskUrl("GUESTB", "coop-b"), { waitUntil: "load" });
+    await cb.waitForFunction(() => window.__game?.ready === true, null, { timeout: 40000, polling: 100 });
+    const typo = await cb.evaluate(() => window.__game.crewJoin("ABCDEFG0"));
+    const unknown = await cb.evaluate(() => window.__game.crewJoin("ABCDEFGH"));
+    const joined = await cb.evaluate((c) => window.__game.crewJoin(c.toLowerCase()), crewCode);
+    check("a crew starts from the desk: RUN WITH A CREW makes a code and a room the guest's lookup finds — the contract, its district, one file waiting; a code the alphabet cannot make and a code nobody opened are refused with a reason", started.ok && validInviteCode(crewCode) && new URL(started.url!).searchParams.get("mode") === "campaign" && lookedUp.ok && lookedUp.mission === "m1_wake_unlisted" && lookedUp.level === "lease_row" && lookedUp.players === 1 && lookedUp.status === "running" && !badCode.ok && !typo.ok && /not a crew code/.test(typo.reason ?? "") && !unknown.ok && /no such crew/.test(unknown.reason ?? "") && joined.ok && joined.url === new URL(joined.url!).toString() && new URL(joined.url!).searchParams.get("net") === new URL(started.url!).searchParams.get("net"), `code ${crewCode} · lookup ${JSON.stringify(lookedUp)} · bad code "${badCode.reason}" · typo "${typo.reason}" · unknown "${unknown.reason}" · guest joins the same socket ${new URL(joined.url ?? "http://x").searchParams.get("net") === new URL(started.url ?? "http://y").searchParams.get("net")}`);
+    await cb.goto(joined.url ?? "about:blank", { waitUntil: "load" });
     await cb.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true && window.__game.campaign().mission !== null, null, { timeout: 40000, polling: 100 });
     for (const pg of [ca, cb]) await pg.evaluate(() => window.__game.setRealtime(true));
     await ca.waitForTimeout(800);
     const co0 = await ca.evaluate(() => window.__game.campaign());
     const co0b = await cb.evaluate(() => window.__game.campaign());
-    check("co-op: both files see the room's contract; the first to join is the host and holds the terminal", co0.mode === "coop" && co0b.mode === "coop" && co0.mission?.title === "WAKE UNLISTED" && co0.host === true && co0b.host === false && co0.dialogue?.script === "m1_intro" && co0b.dialogue === null, `A host ${co0.host} dialogue ${co0.dialogue?.script} · B host ${co0b.host} dialogue ${co0b.dialogue?.script} · objective "${co0.mission?.objective}"`);
+    check("co-op: both files see the room's contract and their crew's code; the first to join is the host and holds the terminal", co0.mode === "coop" && co0b.mode === "coop" && co0.crew === crewCode && co0b.crew === crewCode && co0.mission?.title === "WAKE UNLISTED" && co0.host === true && co0b.host === false && co0.dialogue?.script === "m1_intro" && co0b.dialogue === null, `crew ${co0.crew}/${co0b.crew} · A host ${co0.host} dialogue ${co0.dialogue?.script} · B host ${co0b.host} dialogue ${co0b.dialogue?.script} · objective "${co0.mission?.objective}"`);
     await playTerminal(ca);
     await ca.waitForTimeout(600);
-    const co1 = (await stats()).rooms["campaign:duo"]!.campaign!;
+    const co1 = (await stats()).rooms[crewRoom]!.campaign!;
     check("the host's choice reaches the room's runtime and the contract moves on", co1.choices === 1 && co1.view?.kind === "reach", `room: choices ${co1.choices} · objective "${co1.view?.objective}" (${co1.view?.kind})`);
     /**
      * Drive the room's contract to completion by following its objective, not a script of legs
@@ -327,7 +348,7 @@ async function main(): Promise<void> {
     let legStart = Date.now();
     let target: { x: number; z: number } | null = null;
     const deadline = Date.now() + 180000;
-    let cs = (await stats()).rooms["campaign:duo"]!.campaign!;
+    let cs = (await stats()).rooms[crewRoom]!.campaign!;
     while (Date.now() < deadline && cs.view?.status === "running") {
       const v = cs.view;
       if (v.objective !== lastObjective) {
@@ -359,7 +380,7 @@ async function main(): Promise<void> {
         }
       }
       await ca.waitForTimeout(400);
-      cs = (await stats()).rooms["campaign:duo"]!.campaign!;
+      cs = (await stats()).rooms[crewRoom]!.campaign!;
     }
     if (lastObjective) legs.push(`${lastObjective.toLowerCase().split(" ").slice(0, 3).join(" ")} ${((Date.now() - legStart) / 1000).toFixed(1)}s`);
     await ca.waitForTimeout(800);

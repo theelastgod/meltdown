@@ -13,6 +13,7 @@ import { protocolMods } from "../shared/campaign/protocols";
 import { threatRating } from "../shared/campaign/threat";
 import { createMission, drainMissionEvents, missionView, resolveDialogue, stepMission, type MissionState } from "../shared/campaign/runtime";
 import type { FactionId } from "../shared/campaign/factions";
+import type { CrewInfo } from "../shared/net/crew";
 
 export interface CampaignRoomOptions extends RoomOptions {
   mission: string;
@@ -67,4 +68,11 @@ export function createCampaignRoom(opts: CampaignRoomOptions): CampaignRoomHandl
   };
   const room = new Room({ ...opts, hooks, level: def?.level ?? opts.level, ai: true, wakePhase: "off", dummyRespawn: false });
   return { room, state: () => ({ mission: opts.mission, hostId, view: st ? missionView(st) : null, settled: settled.slice(), choices }) };
+}
+
+/** What a host answers to `GET /crew/<code>` (Stage 49): the contract, its district, who is in, and where it stands. */
+export function crewInfo(h: CampaignRoomHandle, code: string): CrewInfo {
+  const st = h.state();
+  const def = missionById(st.mission);
+  return { ok: true, code, mission: st.mission, level: def?.level ?? h.room.stats().level, players: h.room.stats().clients.length, status: st.view?.status ?? "waiting" };
 }

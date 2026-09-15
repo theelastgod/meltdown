@@ -5,7 +5,8 @@
  * DO, reached through a cross-script binding (load → apply → save).
  */
 import { SERVER_TICK_MS, type Conn } from "./room";
-import { createCampaignRoom, type CampaignRoomHandle } from "./campaign-room";
+import { createCampaignRoom, crewInfo, type CampaignRoomHandle } from "./campaign-room";
+import { crewRoomName, normaliseCrewCode, NO_SUCH_CREW } from "../shared/net/crew";
 import { DoAccountStore, NOT_YOURS } from "./player-do";
 import { campaignRequest } from "../shared/campaign/endpoint";
 import { campaignOf } from "../shared/campaign/save";
@@ -22,6 +23,15 @@ export default {
     const url = new URL(request.url);
     const m = url.pathname.match(/^\/campaign\/([a-zA-Z0-9_-]{1,32})$/);
     if (m) return env.CAMPAIGN_ROOM.get(env.CAMPAIGN_ROOM.idFromName(m[1]!)).fetch(request);
+    // a crew's door (Stage 49): look a code up before travelling; a room nobody has opened says so
+    const crew = url.pathname.match(/^\/crew\/([^/]+)$/);
+    if (crew) {
+      const cors = { "access-control-allow-origin": "*", "content-type": "application/json" };
+      const code = normaliseCrewCode(decodeURIComponent(crew[1]!));
+      if (!code) return new Response(JSON.stringify({ ok: false, reason: NO_SUCH_CREW }), { headers: cors });
+      const r = await env.CAMPAIGN_ROOM.get(env.CAMPAIGN_ROOM.idFromName(crewRoomName(code))).fetch(new Request(`https://crew/info?code=${code}`));
+      return new Response(await r.text(), { headers: cors });
+    }
     const f = decodeURIComponent(url.pathname).match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})\/campaign$/);
     if (f) {
       const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" };
@@ -84,6 +94,8 @@ export class CampaignRoom implements DurableObject {
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    // asking about a crew must not create one: an unopened room answers "no such crew"
+    if (url.pathname === "/info") return Response.json(this.handle ? crewInfo(this.handle, url.searchParams.get("code") ?? "") : { ok: false, reason: NO_SUCH_CREW });
     const h = this.roomFor(url);
     if (url.pathname.endsWith("/stats")) return Response.json({ ...h.room.stats(), campaign: h.state() });
     if (request.headers.get("Upgrade") !== "websocket") return new Response("expected websocket", { status: 426 });

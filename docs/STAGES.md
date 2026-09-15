@@ -1641,6 +1641,69 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 49 — A crew: the co-op campaign gets a door
+
+**Goal.** The co-op campaign has been playable on the server since Stage 10 — the mission runtime
+steps on the room, the first file in is the host, completion settles on every file — and no player
+could reach it. The client entered co-op only from a hand-typed URL. This is the first item of
+`docs/PLAN.md`: a way to start a contract with a friend and a way for the friend to find it.
+
+**A crew is an invite code naming a co-op room.** `shared/net/crew.ts` makes the code with the
+private rooms' alphabet (Stage 20), names the room `crew-<CODE>`, and builds the page a crew member
+travels to: the contract's district, co-op mode, the mission, and the room's socket on the campaign
+host. The code is the access control, as it is for a private room. A crew nobody is in for a while
+stops existing on either host, which is what a Durable Object and the Node host's room map already
+do.
+
+**On the desk.** Every launchable contract gets **RUN WITH A CREW** beside launch: the same
+`canLaunch` gate as solo, then a code, then travel. A **CREW** section takes a typed code, looks it
+up on the campaign host (`GET /crew/<code>` answers with the contract, its district, who is in it
+and where it stands) and travels to it; a code the alphabet could not have made is refused before
+any network, a code nobody opened is refused by the host, and a crew whose contract is already
+closed says so. In a crew, the desk and the HUD's objective line both carry the code, so the host
+can read it out.
+
+**Asking about a crew must not create one.** The campaign Worker's room is a Durable Object that
+comes into being when fetched. The lookup route reaches it with `/info`, and the object answers
+"no such crew" without building a room when it has none — mutation-tested by letting the lookup
+build the room first, which fails the case.
+
+**Proof.** `probe:campaign`'s co-op leg no longer starts from a URL. The host starts the contract
+from the desk, the guest looks the code up and joins with it typed in lower case, and every check
+that followed — both see the contract and their crew's code, the host holds the terminal, the
+room completes and settles on both files with the host's testimony — runs against the room the
+code named:
+
+```
+code GHZ9NKGF · lookup {"ok":true,"mission":"m1_wake_unlisted","level":"lease_row","players":1,"status":"running"}
+· bad code "no such crew" · typo "that is not a crew code" · unknown "no such crew"
+· guest joins the same socket true
+```
+
+`tests/crew.test.ts` pins the pure parts (naming round-trips, the travel URL carries what the page
+needs and drops what would fight it, a typed code is normalised or refused) and the two hosts'
+answers against a real campaign room and a real in-process Durable Object.
+
+**What a guest can and cannot get.** A guest may join a contract their own file has not reached.
+That was already the room's business: settlement refuses out-of-arc completion per file, so the
+guest plays and earns nothing until their own arc is there. Kernel Protocols in a crew are each
+file's own, as the co-op room has applied them since Stage 10.
+
+**A test the calendar decided.** Running the suite after the last edit turned up three failures
+in `tests/private.test.ts` that had nothing to do with a crew: the public-room cases read a room
+with nobody in it. They failed on the previous commit too. The fixture built its public room with
+`currentAudit()` — the real week's playlist — and on Monday the rotation reached STACK & PHAGE,
+which admits three weapons and not the fixture's kit, so the join was refused at the door and
+`Math.max()` over no players quietly produced a player id that matched nothing. The suite was green
+on 11 September under HEAVY AIR and red on the 15th with no change to the code: a test whose answer
+depends on the day it is run measures the calendar. The playlist is pinned to one that admits the
+kit, that fact is asserted so the pin cannot drift, and the fixture now throws on a refused join
+rather than returning an empty room. Mutation-tested by pinning this week's playlist instead: the
+guard case fails and says why.
+
+**Acceptance.** `probe:campaign` 28/28 (1 new) twice running; `probe:endgame` 16/16 this week;
+`npm test` 406 (6 new); typecheck clean on both configs.
+
 ## Stage 48 — The phone's first download carried the chain client
 
 **Goal.** Stage 45 made the site installable and Stage 46 made it boot offline, so the question

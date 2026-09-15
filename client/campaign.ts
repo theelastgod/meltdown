@@ -19,6 +19,8 @@ import { sandboxAccount, type Account } from "@shared/progression/account";
 import type { SimEvent } from "@shared/sim/world";
 import type { MissionMsg } from "@shared/net/protocol";
 import { HUB_LEVEL_ID } from "@shared/sim/hub";
+import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
+import { HOSTS } from "./config";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop";
 
@@ -47,10 +49,15 @@ export class Campaign {
   private missionId: string | null;
   private explore: boolean;
   private host = false;
+  /** the crew this page is in (Stage 49): the invite code its co-op room is named after, or null */
+  readonly crew: string | null;
+  /** the last crew this desk started or joined: what the page would travel to (the probe reads it under `?nonav=1`) */
+  crewTarget: { code: string; url: string } | null = null;
 
   constructor(private game: Game) {
     const q = new URLSearchParams(location.search);
     this.missionId = q.get("mission");
+    this.crew = crewCodeFromSocket(q.get("net"));
     this.explore = q.get("explore") === "1";
     this.local = sandboxAccount(game.file.account);
     try {
@@ -310,7 +317,7 @@ export class Campaign {
     this.host = m.hostId === me;
     const v = m.view as ReturnType<typeof missionView>;
     const prog = v.kind === "kill" || v.kind === "destroy" ? `${v.progress}/${v.need}` : v.kind === "survive" || v.kind === "hold" ? `${Math.floor(v.progress)}s / ${v.need}s` : null;
-    this.game.hud.setObjective(`◈ ${v.title}${this.host ? " · HOST" : ""}`, v.objective || (v.status === "complete" ? "CONTRACT CLOSED" : v.status === "failed" ? "CONTRACT FAILED" : ""), prog);
+    this.game.hud.setObjective(`◈ ${v.title}${this.crew ? ` · CREW ${this.crew}` : ""}${this.host ? " · HOST" : ""}`, v.objective || (v.status === "complete" ? "CONTRACT CLOSED" : v.status === "failed" ? "CONTRACT FAILED" : ""), prog);
     const fx = this.game.renderer.campaignFx;
     fx.setEscort(v.escort ? { x: v.escort.x, z: v.escort.z } : null, v.escort?.waiting ?? false);
     for (const ev of m.events as ReturnType<typeof drainMissionEvents>) {
@@ -389,6 +396,57 @@ export class Campaign {
     return { ok: true };
   }
 
+  /**
+   * The campaign host a crew lives on (Stage 49). In production it is the campaign Worker; in
+   * development the page's `?shop=` host serves everything, so a crew is looked up and joined there.
+   */
+  private crewHosts(): { http: string; ws: string } | null {
+    const shop = new URLSearchParams(location.search).get("shop") ?? this.game.file.shop;
+    if (HOSTS.build !== "dev") return { http: HOSTS.campaign, ws: HOSTS.campaignWs };
+    if (!shop) return null;
+    return { http: shop, ws: shop.replace(/^http/, "ws") };
+  }
+
+  private travel(url: string): void {
+    this.game.renderer.post.kick(1);
+    if (new URLSearchParams(location.search).get("nonav") === "1") return;
+    setTimeout(() => location.replace(url), 120);
+  }
+
+  /** RUN WITH A CREW (Stage 49): the same launch gate as solo, then a code, the co-op room it names, and travel. */
+  launchCrew(id: string): { ok: boolean; reason?: string; code?: string; url?: string } {
+    const r = canLaunch(this.account(), this.save, id);
+    if (!r.ok) return r;
+    const hosts = this.crewHosts();
+    if (!hosts) return { ok: false, reason: "no campaign host: a crew needs the ledger" };
+    const def = missionById(id)!;
+    const code = newCrewCode();
+    const url = crewPageUrl(location.href, { wsBase: hosts.ws, code, mission: id, level: def.level, shop: new URLSearchParams(location.search).get("shop") });
+    this.crewTarget = { code, url };
+    this.travel(url);
+    return { ok: true, code, url };
+  }
+
+  /** JOIN A CREW (Stage 49): a code the alphabet could have made is looked up on the host; a good one is travelled to. */
+  async joinCrew(raw: string): Promise<{ ok: boolean; reason?: string; code?: string; url?: string; info?: CrewInfo }> {
+    const code = normaliseCrewCode(raw);
+    if (!code) return { ok: false, reason: "that is not a crew code" };
+    const hosts = this.crewHosts();
+    if (!hosts) return { ok: false, reason: "no campaign host: a crew needs the ledger" };
+    let info: CrewInfo;
+    try {
+      info = (await (await fetch(`${hosts.http}/crew/${code}`)).json()) as CrewInfo;
+    } catch {
+      return { ok: false, reason: "the campaign host did not answer", code };
+    }
+    if (!info.ok) return { ok: false, reason: info.reason, code, info };
+    if (info.status === "complete" || info.status === "failed") return { ok: false, reason: `that crew's contract is ${info.status}`, code, info };
+    const url = crewPageUrl(location.href, { wsBase: hosts.ws, code, mission: info.mission, level: info.level, shop: new URLSearchParams(location.search).get("shop") });
+    this.crewTarget = { code, url };
+    this.travel(url);
+    return { ok: true, code, url, info };
+  }
+
   private renderContracts(): void {
     if (this.contractsOpen) this.game.hud.contracts(true, this.contractsHtml());
   }
@@ -401,7 +459,7 @@ export class Campaign {
     const next = nextMission(c);
     const offers = gigsOnOffer(a, c);
     const alive = { vessel: c.testimony["m4:vessel"] !== "expose", marrow: c.testimony["m2:informant"] !== "turn", deacon: true };
-    const row = (m: MissionDef, on: boolean, why = "") => `<div class="ct ${on ? "on" : "off"}" data-launch="${on ? m.id : ""}"><div class="nm">${m.kind === "mission" ? `◈ ${String(m.order).padStart(2, "0")} · ` : "▸ "}${m.title} <span class="lv">${m.level.replace(/_/g, " ").toUpperCase()}</span></div><div class="br">${m.brief}</div><div class="rw">${[m.reward.scrip ? `+${m.reward.scrip}¢` : "", m.reward.xp ? `+${m.reward.xp} XP` : "", m.reward.protocol ? `PROTOCOL` : "", m.reward.weapon ? `WEAPON ${m.reward.weapon.toUpperCase()}` : "", m.requires?.threat ? `THREAT ≥ ${m.requires.threat}` : ""].filter(Boolean).join(" · ")}${why ? ` · <i>${why}</i>` : ""}</div></div>`;
+    const row = (m: MissionDef, on: boolean, why = "") => `<div class="ct ${on ? "on" : "off"}" data-launch="${on ? m.id : ""}"><div class="nm">${m.kind === "mission" ? `◈ ${String(m.order).padStart(2, "0")} · ` : "▸ "}${m.title} <span class="lv">${m.level.replace(/_/g, " ").toUpperCase()}</span></div><div class="br">${m.brief}</div><div class="rw">${[m.reward.scrip ? `+${m.reward.scrip}¢` : "", m.reward.xp ? `+${m.reward.xp} XP` : "", m.reward.protocol ? `PROTOCOL` : "", m.reward.weapon ? `WEAPON ${m.reward.weapon.toUpperCase()}` : "", m.requires?.threat ? `THREAT ≥ ${m.requires.threat}` : ""].filter(Boolean).join(" · ")}${why ? ` · <i>${why}</i>` : ""}${on ? ` · <span class="cy" data-crew="${m.id}">[RUN WITH A CREW]</span>` : ""}</div></div>`;
     const fixers = (["deacon", "marrow", "vessel"] as const).map((h) => {
       const H = HANDLERS[h];
       const mine = offers.filter((g) => g.fixer === h);
@@ -421,6 +479,7 @@ export class Campaign {
       <div class="cols"><div><div class="sh">THE ARC · ${c.missionsDone.length}/${MAIN_ARC.length}</div>${arc}<div class="sh">FIXERS · GIGS ${c.gigsDone.length}/${GIGS.length}</div>${fixers}</div>
       <div><div class="sh">KERNEL PROTOCOLS · ${c.worn.length}/${MAX_PROTOCOLS} WORN <span class="red">· CAMPAIGN ONLY · STRIPPED AT PVP JOIN</span></div>${protos}
       <div class="sh">CAMPAIGN WEAPONS</div><div class="ln">${["directive", "clockeater"].map((w) => `${c.weapons.includes(w as "directive") ? "▣" : "▢"} ${w.toUpperCase()}`).join(" · ")}</div>
+      <div class="sh">CREW</div><div class="ln">${this.crew ? `IN CREW <b class="ye">${this.crew}</b> · ${this.host ? "you hold the terminals" : "the host holds the terminals"} · tell a friend the code` : `<input data-crewcode="1" maxlength="8" placeholder="INVITE CODE" style="text-transform:uppercase"> <span class="cy" data-act="joinCrew">[JOIN A CREW]</span> <span class="dim">or RUN WITH A CREW on a contract above and read the code out</span>`}</div>
       <div class="sh">EXPLORE</div><div class="ln dim">travel to a district from the MAP with the Threat live: <span class="cy" data-explore="1">[EXPLORE THIS DISTRICT]</span></div></div></div>`;
   }
 
@@ -430,6 +489,14 @@ export class Campaign {
     else if (el.dataset.launch) {
       const r = this.launch(el.dataset.launch);
       if (!r.ok) this.game.hud.alert(`◆ ${r.reason?.toUpperCase()}`, true, 3);
+    } else if (el.dataset.crew) {
+      const r = this.launchCrew(el.dataset.crew);
+      if (!r.ok) this.game.hud.alert(`◆ ${r.reason?.toUpperCase()}`, true, 3);
+    } else if (el.dataset.act === "joinCrew") {
+      const input = document.querySelector<HTMLInputElement>("#hud .contracts input[data-crewcode]");
+      void this.joinCrew(input?.value ?? "").then((r) => {
+        if (!r.ok) this.game.hud.alert(`◆ ${r.reason?.toUpperCase()}`, true, 3);
+      });
     } else if (el.dataset.wear !== undefined) {
       const boxes = [...document.querySelectorAll<HTMLInputElement>("#hud .contracts input[data-wear]")];
       void this.wear(boxes.filter((b) => b.checked).map((b) => b.dataset.wear!));
@@ -466,6 +533,8 @@ export class Campaign {
       endingsOpen: endingsFor(this.save.testimony, this.save.faction).map((e) => e.id),
       filament: this.game.renderer.campaignFx.filamentVisible,
       host: this.host,
+      crew: this.crew,
+      crewTarget: this.crewTarget,
       log: this.log.slice(-8),
     };
   }

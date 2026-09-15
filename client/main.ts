@@ -127,6 +127,9 @@ export interface GameHook {
   dialogueAdvance: (choice?: number) => boolean;
   contracts: (on?: boolean) => void;
   launch: (id: string) => { ok: boolean; reason?: string };
+  /** a crew (Stage 49): start one from a contract, or join one by code; under `?nonav=1` neither travels, and campaign().crewTarget says where it would */
+  crewStart: (id: string) => { ok: boolean; reason?: string; code?: string; url?: string };
+  crewJoin: (code: string) => Promise<{ ok: boolean; reason?: string; code?: string; url?: string }>;
   pickFaction: (f: "estate" | "clockeaters" | "cells") => Promise<boolean>;
   wear: (ids: string[]) => Promise<string[]>;
   playScript: (id: string) => void;
@@ -293,6 +296,8 @@ window.__game = {
   dialogueAdvance: (choice) => game.campaign.advance(choice ?? -1),
   contracts: (on) => game.campaign.toggleContracts(on),
   launch: (id) => game.campaign.launch(id),
+  crewStart: (id) => game.campaign.launchCrew(id),
+  crewJoin: (code) => game.campaign.joinCrew(code),
   pickFaction: (f) => game.campaign.chooseFaction(f),
   wear: (ids) => game.campaign.wear(ids),
   playScript: (id) => game.campaign.playScript(id, () => {}),

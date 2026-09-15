@@ -22,7 +22,8 @@ import { devSeed, MemoryAccountStore } from "./accounts";
 import { buyNode, fileAuth, publicFile, publicLabel, recordGhost, refundNode, validGhost } from "../shared/progression/account";
 import { NOT_YOURS } from "./player-do";
 import { campaignRequest } from "../shared/campaign/endpoint";
-import { createCampaignRoom, type CampaignRoomHandle } from "./campaign-room";
+import { createCampaignRoom, crewInfo, type CampaignRoomHandle } from "./campaign-room";
+import { crewRoomName, normaliseCrewCode, NO_SUCH_CREW } from "../shared/net/crew";
 import { MemoryEndgameStore, seasonView } from "./endgame";
 import { currentAudit } from "../shared/endgame/audits";
 import { contractsFor } from "../shared/endgame/contracts";
@@ -297,6 +298,15 @@ const http = createServer((req, res) => {
       log(`[rooms] ${a.id} opened ${name} for ${hours}h · ${rules.mode} ${rules.district} ${rules.roundSeconds}s`);
       res.end(JSON.stringify({ ok: true, code, room: name, hours, rules, expiresAt: now + hours * 3_600_000, url: `ws://127.0.0.1:${port}/room/${name}?code=${code}`, join: `?net=${encodeURIComponent(`ws://127.0.0.1:${port}/room/${name}?code=${code}`)}` }));
     });
+    return;
+  }
+  // a crew's door (Stage 49): the code names a co-op room; a friend looks it up before travelling
+  const crew = req.url?.match(/^\/crew\/([^/?]+)$/);
+  if (crew && req.method === "GET") {
+    const code = normaliseCrewCode(decodeURIComponent(crew[1]!));
+    const h = code ? campaigns.get(crewRoomName(code)) : undefined;
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify(h && code ? crewInfo(h, code) : { ok: false, reason: NO_SUCH_CREW }));
     return;
   }
   if (req.url?.startsWith("/rooms/")) {

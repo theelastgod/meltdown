@@ -14,11 +14,22 @@ import { Room, type Conn } from "../server/room";
 import { devSeed, MemoryAccountStore } from "../server/accounts";
 import { MemoryEndgameStore } from "../server/endgame";
 import { encodeJoin } from "../shared/net/protocol";
-import { currentAudit } from "../shared/endgame/audits";
+import { AUDITS, auditErrors } from "../shared/endgame/audits";
 import { CODE_SPACE, DEFAULT_RULES, isPrivateRoom, makeInviteCode, privateRoomName, ROUND_SECONDS, sanitiseRules, validInviteCode, WARMUP_SECONDS } from "../shared/net/private";
 import { RUN_DAILY_CAP, RUN_SCRIP_PER_UNIT } from "../shared/sim/run";
 
 const KIT = JSON.stringify({ primary: "lease_breaker", secondary: "shock_baton", attested: [] });
+
+/**
+ * A public room is an Audit room, and the week's playlist can refuse a kit. The calendar must not
+ * decide this test — and it did (Stage 49): this fixture used to take `currentAudit()`, the week
+ * STACK & PHAGE came round, the kit was refused at join, and three public-room cases read an
+ * empty room and failed on a Monday with no change to the code. The playlist is pinned to one that
+ * admits the kit, that fact is asserted below, and a refused join throws instead of returning a
+ * room nobody is in.
+ */
+const WEEK = 7;
+const PLAYLIST = AUDITS[1]!; // GLASS: a sheet mutator, no weapon list
 
 /** A room and one joined Depth-50 file, public or private. */
 function room(opts: { private: boolean; run?: boolean; level?: string }) {
@@ -29,17 +40,25 @@ function room(opts: { private: boolean; run?: boolean; level?: string }) {
     ai: false, seed: 5, level: opts.level ?? "drainage_yard", accounts: store, endgame,
     warmupSeconds: 0, roundSeconds: 600, run: opts.run ?? false,
     // a caller that tries to make a paid room a prize channel; the room must ignore it
-    audit: { week: currentAudit().week, def: currentAudit().audit },
+    audit: { week: WEEK, def: PLAYLIST },
     private: opts.private,
     onRunBank: (day, file, units) => banked.push({ day, file, units }),
   });
   const conn: Conn = { send: () => {}, close: () => {} };
   r.onOpen(conn);
   r.onMessage(conn, encodeJoin("ALPHA", "", "sandbox-priv", KIT, ""));
+  if (r.world.players.size !== 1) throw new Error(`the join did not land (${r.world.players.size} players): a refused kit is not a private-room rule`);
   const playerId = Math.max(...r.world.players.keys());
   const account = store.accounts.get("sandbox-priv")!;
   return { r, store, endgame, banked, playerId, account };
 }
+
+describe("the fixture cannot be decided by the calendar", () => {
+  it("the pinned playlist admits the kit, so a refused join can never masquerade as a private-room rule", () => {
+    expect(auditErrors(JSON.parse(KIT) as Parameters<typeof auditErrors>[0], PLAYLIST, () => undefined)).toEqual([]);
+    expect(room({ private: false }).r.world.players.size).toBe(1);
+  });
+});
 
 describe("a room you paid for cannot be a room that pays you", () => {
   it("banks Scrip instead of $CAPITAL units, and tells the file why", () => {
@@ -82,14 +101,14 @@ describe("a room you paid for cannot be a room that pays you", () => {
     // a Deep Wake district: the season only records flips in one, so the yard would prove nothing
     const priv = room({ private: true, level: "lease_row" });
     flip(priv);
-    expect(priv.endgame.audit(currentAudit().week)).toEqual([]);
+    expect(priv.endgame.audit(WEEK)).toEqual([]);
     expect(priv.endgame.season().contributors ?? {}).toEqual({});
 
     // the same settlement in a public room does feed it, which is what makes the refusal mean something
     const pub = room({ private: false, level: "lease_row" });
     flip(pub);
     expect(Object.keys(pub.endgame.season().contributors ?? {})).toContain("sandbox-priv");
-    expect(pub.endgame.audit(currentAudit().week).length).toBeGreaterThan(0);
+    expect(pub.endgame.audit(WEEK).length).toBeGreaterThan(0);
   });
 
   it("tells the client, so nobody plays an hour before finding out", () => {
