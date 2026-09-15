@@ -7,6 +7,7 @@ import { Room, SERVER_TICK_MS, type Conn } from "./room";
 import { DoAccountStore, PlayerFile } from "./player-do";
 import { DoEndgameStore, Endgame } from "./endgame-do";
 import { D1RunStore } from "./run-d1";
+import { checkReport, type StoredReport } from "../shared/perf/report";
 import { seasonView } from "./endgame";
 import { currentAudit } from "../shared/endgame/audits";
 import { contractsFor } from "../shared/endgame/contracts";
@@ -59,6 +60,24 @@ export default {
         ? await stub.fetch(new Request(`https://file/${f[3]}`, { method: "POST", body: JSON.stringify({ id: f[1], ...((await request.json().catch(() => ({}))) as object) }) }))
         : await stub.fetch(new Request("https://file/public", { method: "POST", body: JSON.stringify({ id: f[1], name: "BLANK" }) }));
       return new Response(res.body, { status: res.status, headers: { ...cors, "content-type": "application/json" } });
+    }
+    if (url.pathname === "/perf") {
+      // a device's frame report (Stage 50): one bounded row in, the newest rows out; D1 keeps them
+      const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type", "content-type": "application/json" };
+      if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+      if (!env.DB) return new Response(JSON.stringify({ ok: false, reason: "no database bound" }), { headers: cors });
+      if (request.method === "POST") {
+        const c = checkReport(await request.json().catch(() => null));
+        if (!c.ok) return new Response(JSON.stringify({ ok: false, reason: `not a frame report: ${c.problem}` }), { headers: cors });
+        const r = c.report;
+        const at = Date.now();
+        await env.DB.prepare("INSERT INTO perf_report (at, build, ua, gpu, viewport, dpr, touch, scale, calls, triangles, level, frames, seconds, p50, p95, p99, max, fps) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)")
+          .bind(at, r.build, r.ua, r.gpu, r.viewport, r.dpr, r.touch ? 1 : 0, r.scale, r.calls, r.triangles, r.level, r.frames, r.seconds, r.p50, r.p95, r.p99, r.max, r.fps)
+          .run();
+        return new Response(JSON.stringify({ ok: true, at }), { headers: cors });
+      }
+      const rows = await env.DB.prepare("SELECT at, build, ua, gpu, viewport, dpr, touch, scale, calls, triangles, level, frames, seconds, p50, p95, p99, max, fps FROM perf_report ORDER BY at DESC LIMIT 50").all<Omit<StoredReport, "touch"> & { touch: number }>();
+      return new Response(JSON.stringify({ ok: true, reports: (rows.results ?? []).map((x) => ({ ...x, touch: x.touch === 1 })) }), { headers: cors });
     }
     if (url.pathname === "/health") return new Response("ok");
     return new Response("meltdown worker", { status: 404 });

@@ -24,6 +24,7 @@ import { NOT_YOURS } from "./player-do";
 import { campaignRequest } from "../shared/campaign/endpoint";
 import { createCampaignRoom, crewInfo, type CampaignRoomHandle } from "./campaign-room";
 import { crewRoomName, normaliseCrewCode, NO_SUCH_CREW } from "../shared/net/crew";
+import { checkReport, ReportRing } from "../shared/perf/report";
 import { MemoryEndgameStore, seasonView } from "./endgame";
 import { currentAudit } from "../shared/endgame/audits";
 import { contractsFor } from "../shared/endgame/contracts";
@@ -158,6 +159,9 @@ function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: nu
   }
   return r;
 }
+
+/** frame reports from real devices (Stage 50); memory here, D1 on the Worker */
+const perfReports = new ReportRing();
 
 const campaigns = new Map<string, CampaignRoomHandle>();
 function getCampaignRoom(name: string, mission: string): CampaignRoomHandle {
@@ -298,6 +302,23 @@ const http = createServer((req, res) => {
       log(`[rooms] ${a.id} opened ${name} for ${hours}h · ${rules.mode} ${rules.district} ${rules.roundSeconds}s`);
       res.end(JSON.stringify({ ok: true, code, room: name, hours, rules, expiresAt: now + hours * 3_600_000, url: `ws://127.0.0.1:${port}/room/${name}?code=${code}`, join: `?net=${encodeURIComponent(`ws://127.0.0.1:${port}/room/${name}?code=${code}`)}` }));
     });
+    return;
+  }
+  // a device's frame report (Stage 50): one bounded row in, the newest rows out
+  if (req.url === "/perf") {
+    res.setHeader("content-type", "application/json");
+    if (req.method === "POST") {
+      void readBody(req).then((body) => {
+        const c = checkReport(body);
+        if (!c.ok) return res.end(JSON.stringify({ ok: false, reason: `not a frame report: ${c.problem}` }));
+        const r = c.report;
+        const row = perfReports.add(r);
+        log(`[perf] ${r.gpu.slice(0, 40)} · ${r.viewport}@${r.dpr} · p50 ${r.p50.toFixed(1)} p95 ${r.p95.toFixed(1)} ms · ${r.fps.toFixed(0)} fps · scale ${r.scale}`);
+        res.end(JSON.stringify({ ok: true, at: row.at }));
+      });
+      return;
+    }
+    res.end(JSON.stringify({ ok: true, reports: perfReports.list() }));
     return;
   }
   // a crew's door (Stage 49): the code names a co-op room; a friend looks it up before travelling

@@ -26,6 +26,8 @@ at least once.
 
 ## Stage 49 — A crew: the co-op campaign gets a door
 
+*Shipped.*
+
 **Missing.** A way to start a contract with a friend and a way for the friend to find it.
 
 **Build.** On the contracts desk, every launchable contract gets **RUN WITH A CREW** beside
@@ -49,6 +51,8 @@ Kernel Protocols in the crew room — already the room's business, the co-op roo
 file's own.
 
 ## Stage 50 — The phone measures itself
+
+*Shipped; the reading from a real phone is still yours to take.*
 
 **Missing.** A frame-time number from real phone silicon. Every one so far is SwiftShader.
 

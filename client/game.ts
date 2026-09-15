@@ -16,6 +16,7 @@ import { Hud } from "./hud/hud";
 import { GhostFile } from "./file";
 import { InputController } from "./input";
 import { TouchControls, wantsTouch } from "./touch";
+import { PerfMonitor } from "./perf";
 import { Renderer, type ViewState } from "./render/renderer";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
@@ -86,6 +87,8 @@ export class Game {
   /** touch device: thumbs instead of pointer lock, and a frame a phone can hold (Stage 32) */
   readonly mobile: boolean;
   readonly touch: TouchControls | null = null;
+  /** the frame monitor (Stage 50): only with `?perf=1`; null costs nothing */
+  readonly perf: PerfMonitor | null = null;
   readonly renderer: Renderer;
   readonly hud: Hud;
   readonly file: GhostFile;
@@ -152,6 +155,10 @@ export class Game {
       this.input.touch = this.touch;
       this.input.aimAssist = (yaw, pitch) => this.touchAimAssist(yaw, pitch);
       this.touch.onGesture = () => this.audio.resume();
+    }
+    {
+      const q = new URLSearchParams(location.search);
+      if (q.get("perf") === "1") this.perf = new PerfMonitor(this, hudRoot, Number(q.get("perfAfter") ?? 30) || 30);
     }
     this.hud.setLevel(this.world.level, (id) => this.travel(id));
     this.file.mount(hudRoot);
@@ -963,6 +970,7 @@ export class Game {
 
   private frame(now: number, render: boolean): void {
     this.lastFrameAt = now;
+    this.perf?.sample(now, render);
     if (this.last < 0) this.last = now;
     let dt = (now - this.last) / 1000;
     this.last = now;

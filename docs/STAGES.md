@@ -1641,6 +1641,62 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 50 — The phone measures itself
+
+**Goal.** Every frame-time number in this document comes from software GL on a CI runner. That
+measures whether a frame allocates, not how long it takes on a mid-range Android, and a device can
+only be measured by the device. This is `docs/PLAN.md`'s second item: the instrument, so that a
+phone opened on the deployed site produces a row I can read without holding the phone.
+
+**The instrument.** A page opened with `?perf=1` builds a frame monitor; any other page never
+constructs it and pays nothing. On, it costs one subtraction per rendered frame — hidden-tab timer
+ticks are not frames and are not counted — and draws the percentiles on the HUD twice a second:
+fps, p50 / p95 / p99 / max, draw calls, triangles, the post chain's internal scale, the GPU's
+unmasked renderer string when the browser gives it, the viewport and pixel ratio. After
+`?perfAfter=` seconds (default 30) with at least sixty frames it posts one report to the ledger
+host and says REPORTED, or says why not. `GET /perf` lists the newest fifty: memory on the Node
+host, a `perf_report` table on the Worker, in both schema files so the parity test holds.
+
+**What a host will store.** The route is open, so `validReport` bounds every field: string lengths,
+numeric ranges, at least `MIN_FRAMES`, percentiles in order, and `touch` read as a strict boolean.
+A frame longer than 500 ms is a tab switch or a debugger, not a frame, and is left out of the
+statistics rather than averaged in as a slow one — the same excess the game loop already drops.
+Mutation-tested by counting it: the tab-switch case fails.
+
+**Out of the simulation's reach.** The report module imports nothing; nothing under `shared/` or
+`server/` imports the client, so the sim cannot see the monitor, the HUD, or anything else the page
+owns. Both are pinned.
+
+**Proof.** `smoke` opens the built site with `?perf=1&perfAfter=3`, waits for the report to post,
+reads it back from the host by user agent and viewport, and posts garbage to see it refused:
+
+```
+posted true after 3 s · frames 61 · p50 … p95 … ms · listed 1 · mine SwiftShader… 640x360 · garbage refused "not a frame report"
+```
+
+**The reading is yours to take.** Open the deployed site on the phone with `?perf=1`, play for
+thirty seconds, and the row appears at the match Worker's `/perf`. The stage ships the instrument,
+not the number, and the number is the one that decides whether Stage 32's internal scale and
+mirror cut were enough.
+
+**A check that read the flag too early.** The first smoke run reported `posted true · listed 0`:
+the monitor set `posted` the moment the request *left*, the probe read it, asked the host, and
+found nothing there yet. The same mistake as Stages 33, 35 and 47, one function long. `posted`
+now means the host said yes, with a separate in-flight guard, and a probe that reads it and then
+asks the host finds the row.
+
+**And a refusal that had to say why.** With that fixed the check failed one run in three with the
+host answering only "not a frame report". The validator now names the field, both hosts pass the
+name through, and the next failure read `frames: 59 outside 60..`: the monitor decided to post
+when it had sixty *samples*, but the statistics drop any sample over 500 ms, so one long load
+frame under SwiftShader left the kept count a frame short and the host was right to refuse. The
+gate now counts the frames the statistics will keep. An instrument that refuses without saying
+what it refused is a second instrument to debug.
+
+**Acceptance.** `npm test` 414 (8 new); typecheck clean; `smoke` 7/7 on the built site twice running after the gate fix;
+`probe:mobile` 14/14; `probe:frame` 6/6 run alone — a first run with the unit suite on the same
+cores tripped its hitch ratio at 4.1×, which is the probe measuring the machine, not the change.
+
 ## Stage 49 — A crew: the co-op campaign gets a door
 
 **Goal.** The co-op campaign has been playable on the server since Stage 10 — the mission runtime

@@ -67,6 +67,12 @@ devnet for the counter-ledger.
 | meltdown-campaign | https://meltdown-campaign.wendellphillips.workers.dev |
 | meltdown-counter | https://meltdown-counter.wendellphillips.workers.dev |
 
+### Measuring a phone
+
+Open the deployed site on the device with `?perf=1` (Stage 50), play for thirty seconds, and the
+HUD's PERF panel says REPORTED. The row is at the match Worker's `/perf` (newest fifty), with the
+GPU string, viewport, pixel ratio, internal scale, draw calls and the frame-time percentiles.
+
 ## 5. What CI checks
 
 `verify.yml` runs the typecheck, the unit suite, every stage probe, the Fairness Lint and the

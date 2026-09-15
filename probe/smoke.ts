@@ -77,6 +77,20 @@ async function main(): Promise<void> {
     await pg.waitForFunction(() => !!window.__game.counter().info, null, { timeout: 15000, polling: 100 }).catch(() => {});
     const afterAsk = requested.filter(isCounter).length;
     check("the chain client is not in the first download: booting and joining fetched no counter chunk, and asking for the ledger fetched exactly one", beforeAsk === 0 && afterAsk === 1 && scripts >= 1, `scripts at boot ${scripts} · counter chunk requests before asking ${beforeAsk}, after ${afterAsk} · ${requested.filter(isCounter)[0] ?? "none"}`);
+    /**
+     * The phone measures itself (Stage 50). The instrument is proved here on the built site: a page
+     * opened with ?perf=1 samples its own frames, posts one bounded report to the ledger host after
+     * perfAfter seconds, and the host lists it. The number a phone produces is the owner's to make
+     * by opening the deployed site the same way; this proves the row arrives.
+     */
+    await pg.goto(`http://127.0.0.1:${PREVIEW_PORT}/?headless=1&level=drainage_yard&account=smoke&name=SMOKE&perf=1&perfAfter=3&net=${encodeURIComponent(net)}`, { waitUntil: "load" });
+    await pg.waitForFunction(() => window.__game?.ready === true, null, { timeout: 40000, polling: 100 });
+    await pg.evaluate(() => window.__game.setRealtime(true));
+    const perf = await pg.waitForFunction(() => { const p = window.__game.perf(); return p && (p.posted || p.error) ? p : null; }, null, { timeout: 30000, polling: 200 }).then((h) => h.jsonValue() as Promise<NonNullable<ReturnType<typeof window.__game.perf>>>, () => null);
+    const listed = (await (await fetch(`http://127.0.0.1:${HOST_PORT}/perf`)).json()) as { ok: boolean; reports: { ua: string; gpu: string; p95: number; frames: number; viewport: string }[] };
+    const mine = listed.reports.find((r) => r.ua === perf?.report?.ua && r.viewport === perf?.report?.viewport);
+    const garbage = (await (await fetch(`http://127.0.0.1:${HOST_PORT}/perf`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ua: "x".repeat(5000), p50: 1, p95: 0 }) })).json()) as { ok: boolean; reason?: string };
+    check("the phone measures itself: with ?perf=1 the built site samples its frames, posts one report to the ledger host, and the host lists it — and refuses a report that is not one", !!perf?.posted && !perf.error && (perf.frames ?? 0) >= 60 && listed.ok && !!mine && mine.p95 > 0 && mine.gpu.length > 0 && !garbage.ok, `posted ${perf?.posted}${perf?.error ? ` (error: ${perf.error})` : ""} host ${perf?.host} after ${perf?.after} s · frames ${perf?.frames} · p50 ${perf?.p50?.toFixed(1)} p95 ${perf?.p95?.toFixed(1)} ms · listed ${listed.reports.length} · mine ${mine ? `${mine.gpu.slice(0, 40)} ${mine.viewport}` : "missing"} · garbage refused "${garbage.reason}"`);
     await pg.goto(`http://127.0.0.1:${PREVIEW_PORT}/?headless=1&menu=1&crawl=0&nonav=1`, { waitUntil: "load" });
     // wait for a card to be *up*, not merely for the cards screen: between cards, and for a frame
     // as the screen opens, `cardText` is empty, and the check is about which card it is

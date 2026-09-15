@@ -407,3 +407,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 /* the dock keeps the left edge and stops well short of the right thumb's arc */
 #hud.touch .bottom { max-width: calc(100vw - 270px); flex-wrap: wrap; gap: 4px; }
 #hud.touch .bottom .tabs { font-size: 9px; }
+
+/* the frame monitor (Stage 50): only with ?perf=1 */
+#hud .perf { right: 14px; bottom: 14px; max-width: 420px; line-height: 1.5; }
+#hud .perf .dim { color: rgba(53,242,255,0.65); font-weight: normal; }

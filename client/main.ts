@@ -94,6 +94,8 @@ export interface GameHook {
   /** Load a declared asset through the pipeline and say whether it decoded (Stage 44). */
   loadAsset: (id: string) => Promise<boolean>;
   /** installability: is the service worker registered and controlling this page (Stage 45) */
+  /** the frame monitor (Stage 50): null unless the page was opened with ?perf=1 */
+  perf: () => ReturnType<NonNullable<Game["perf"]>["state"]> | null;
   pwa: () => Promise<{ supported: boolean; registered: boolean; controlled: boolean; scope: string | null }>;
   crawl: () => CrawlView | null;
   crawlSkip: () => boolean;
@@ -255,6 +257,7 @@ window.__game = {
   registerName: (name) => game.file.ensureCounter().then((c) => c?.registerName(name) ?? { ok: false, reason: "offline" }),
   reconcile: () => game.file.ensureCounter().then((c) => c?.op("reconcile") ?? { ok: false, reason: "offline" }),
   loadAsset: (id) => assetTexture(id).then((t) => !!t),
+  perf: () => game.perf?.state() ?? null,
   pwa: () => pwaState(),
   crawl: () => crawl?.view() ?? null,
   crawlSkip: () => crawl?.skip() ?? false,

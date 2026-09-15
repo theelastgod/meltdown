@@ -66,3 +66,25 @@ CREATE TABLE IF NOT EXISTS run_settled (
   rate      TEXT NOT NULL,
   settled_at INTEGER NOT NULL
 );
+-- a device's frame report (Stage 50): one row per ?perf=1 session, read back by GET /perf
+CREATE TABLE IF NOT EXISTS perf_report (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  at        INTEGER NOT NULL,
+  build     TEXT NOT NULL,
+  ua        TEXT NOT NULL,
+  gpu       TEXT NOT NULL,
+  viewport  TEXT NOT NULL,
+  dpr       REAL NOT NULL,
+  touch     INTEGER NOT NULL,
+  scale     REAL NOT NULL,
+  calls     INTEGER NOT NULL,
+  triangles INTEGER NOT NULL,
+  level     TEXT NOT NULL,
+  frames    INTEGER NOT NULL,
+  seconds   REAL NOT NULL,
+  p50       REAL NOT NULL,
+  p95       REAL NOT NULL,
+  p99       REAL NOT NULL,
+  max       REAL NOT NULL,
+  fps       REAL NOT NULL
+);
