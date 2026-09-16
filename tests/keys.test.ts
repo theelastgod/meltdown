@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { privateKeyToAccount } from "viem/accounts";
-import { DEV_KEY_ON_CHAIN, DEV_KEYS, deployGuard, isDevKey } from "../server/chain/dev-keys";
+import { DEV_KEY_ON_CHAIN, DEV_KEYS, deployGuard, isDevAddress, isDevKey } from "../server/chain/dev-keys";
 import counterWorker from "../server/counter-worker";
 
 const REAL = "0x1111111111111111111111111111111111111111111111111111111111111111";
@@ -44,11 +44,17 @@ describe("the counter Worker on a real chain", () => {
 
 describe("the deploy guard", () => {
   const relayer = privateKeyToAccount(REAL as `0x${string}`);
-  it("refuses a dev relayer key, a missing treasury, a malformed one, and a treasury that is the relayer; accepts a real, separate bank", () => {
-    expect(deployGuard({ relayerKey: DEV_KEYS.relayer, relayerAddress: relayer.address, treasury: "0x000000000000000000000000000000000000dEaD" })).toMatchObject({ ok: false, reason: /dev key/ });
-    expect(deployGuard({ relayerKey: REAL, relayerAddress: relayer.address, treasury: undefined })).toMatchObject({ ok: false, reason: /required/ });
-    expect(deployGuard({ relayerKey: REAL, relayerAddress: relayer.address, treasury: "not-an-address" })).toMatchObject({ ok: false, reason: /not an address/ });
-    expect(deployGuard({ relayerKey: REAL, relayerAddress: relayer.address, treasury: relayer.address.toUpperCase() })).toMatchObject({ ok: false, reason: /is the relayer/ });
-    expect(deployGuard({ relayerKey: REAL, relayerAddress: relayer.address, treasury: "0x000000000000000000000000000000000000dEaD" })).toEqual({ ok: true });
+  const SIGNER = privateKeyToAccount("0x2222222222222222222222222222222222222222222222222222222222222222").address;
+  const BANK = "0x000000000000000000000000000000000000dEaD";
+  it("refuses a dev relayer key, a dev signer address, a dev treasury address, a missing treasury, a malformed one, and a treasury that is the relayer; accepts a real, separate bank", () => {
+    expect(deployGuard({ relayerKey: DEV_KEYS.relayer, relayerAddress: relayer.address, signer: SIGNER, treasury: BANK })).toMatchObject({ ok: false, reason: /dev key/ });
+    expect(deployGuard({ relayerKey: REAL, relayerAddress: relayer.address, signer: privateKeyToAccount(DEV_KEYS.signer).address, treasury: BANK })).toMatchObject({ ok: false, reason: /signer is a published dev key/ });
+    expect(deployGuard({ relayerKey: REAL, relayerAddress: relayer.address, signer: SIGNER, treasury: privateKeyToAccount(DEV_KEYS.treasury).address })).toMatchObject({ ok: false, reason: /treasury is a published dev key/ });
+    expect(deployGuard({ relayerKey: REAL, relayerAddress: relayer.address, signer: SIGNER, treasury: undefined })).toMatchObject({ ok: false, reason: /required/ });
+    expect(deployGuard({ relayerKey: REAL, relayerAddress: relayer.address, signer: SIGNER, treasury: "not-an-address" })).toMatchObject({ ok: false, reason: /not an address/ });
+    expect(deployGuard({ relayerKey: REAL, relayerAddress: relayer.address, signer: SIGNER, treasury: relayer.address.toUpperCase() })).toMatchObject({ ok: false, reason: /is the relayer/ });
+    expect(deployGuard({ relayerKey: REAL, relayerAddress: relayer.address, signer: SIGNER, treasury: BANK })).toEqual({ ok: true });
+    expect(isDevAddress(privateKeyToAccount(DEV_KEYS.player).address.toUpperCase())).toBe(true);
+    expect(isDevAddress(SIGNER)).toBe(false);
   });
 });

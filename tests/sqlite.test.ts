@@ -98,6 +98,26 @@ describe("files", () => {
 
 const entry = (account: string, score: number): AuditEntry => ({ account, display: account.toUpperCase(), score, at: score });
 
+describe("a full file keeps banking", () => {
+  it("after the room trims a 200-line ledger, the new line is still written and comes back on reopen", () => {
+    const path = file("full.sqlite");
+    const db1 = openDatabase(path);
+    const s1 = new SqliteAccountStore(db1, devSeed);
+    const a = s1.load("full", "FULL");
+    a.ledger = Array.from({ length: 200 }, (_, i) => `LINE ${i}`);
+    s1.save(a);
+    a.ledger.push("BANKED 40 AT GATE");
+    if (a.ledger.length > 200) a.ledger.splice(0, a.ledger.length - 200); // server/room.ts's cap
+    s1.save(a);
+    db1.close();
+    const db2 = openDatabase(path);
+    const b = new SqliteAccountStore(db2, devSeed).load("full", "X");
+    expect(b.ledger).toHaveLength(201);
+    expect(b.ledger[200]).toBe("BANKED 40 AT GATE");
+    db2.close();
+  });
+});
+
 describe("the endgame", () => {
   it("keeps the week's board and the season across a reopen, and answers like the memory store", () => {
     const path = file("endgame.sqlite");

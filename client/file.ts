@@ -166,7 +166,11 @@ export class GhostFile {
           this.render();
           return c;
         })
-        .catch(() => null);
+        .catch(() => {
+          // a transient failure must not become a session-long "no ledger": forget the attempt so the next open retries
+          this.counterLoading = null;
+          return null;
+        });
     }
     return this.counterLoading;
   }

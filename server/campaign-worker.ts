@@ -27,7 +27,7 @@ export default {
     const crew = url.pathname.match(/^\/crew\/([^/]+)$/);
     if (crew) {
       const cors = { "access-control-allow-origin": "*", "content-type": "application/json" };
-      const code = normaliseCrewCode(decodeURIComponent(crew[1]!));
+      const code = normaliseCrewCode(crew[1]!); // no decoding: a code is plain, and a bad escape must be a bad code, not a thrown request
       if (!code) return new Response(JSON.stringify({ ok: false, reason: NO_SUCH_CREW }), { headers: cors });
       const r = await env.CAMPAIGN_ROOM.get(env.CAMPAIGN_ROOM.idFromName(crewRoomName(code))).fetch(new Request(`https://crew/info?code=${code}`));
       return new Response(await r.text(), { headers: cors });

@@ -12,7 +12,7 @@ import { fileAuth, publicFile } from "../shared/progression/account";
 export const NOT_YOURS = "NOT YOUR FILE: this file has a secret and the request did not carry it";
 import type { AccountStore } from "./accounts";
 import { MIGRATIONS, SCHEMA } from "./schema";
-import { extrasOf } from "./file-row";
+import { extrasOf, freshLedgerLines } from "./file-row";
 
 export interface PlayerEnv {
   DB?: D1Database;
@@ -66,7 +66,7 @@ export class PlayerFile implements DurableObject {
       await this.state.storage.put(KEY, a);
       if (this.env.DB) {
         const db = this.env.DB;
-        const fresh = a.ledger.slice(prev?.ledger.length ?? 0);
+        const fresh = freshLedgerLines(prev?.ledger ?? [], a.ledger);
         await withSchema(db, () => saveRow(db, a, fresh));
       }
       return Response.json({ ok: true });
@@ -89,7 +89,7 @@ export class PlayerFile implements DurableObject {
         if (this.env.DB) {
           const db = this.env.DB;
           const acc = a;
-          const fresh = acc.ledger.slice(prev?.ledger.length ?? 0);
+          const fresh = freshLedgerLines(prev?.ledger ?? [], acc.ledger);
           await withSchema(db, () => saveRow(db, acc, fresh));
         }
       }
@@ -117,7 +117,7 @@ export class PlayerFile implements DurableObject {
         if (this.env.DB) {
           const db = this.env.DB;
           const acc = a;
-          const fresh = acc.ledger.slice(prev?.ledger.length ?? 0);
+          const fresh = freshLedgerLines(prev?.ledger ?? [], acc.ledger);
           await withSchema(db, () => saveRow(db, acc, fresh));
         }
       }
@@ -140,7 +140,7 @@ export class PlayerFile implements DurableObject {
         if (this.env.DB) {
           const db = this.env.DB;
           const acc = a;
-          const fresh = acc.ledger.slice(prev?.ledger.length ?? 0);
+          const fresh = freshLedgerLines(prev?.ledger ?? [], acc.ledger);
           await withSchema(db, () => saveRow(db, acc, fresh));
         }
       }

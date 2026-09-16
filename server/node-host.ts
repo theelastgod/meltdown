@@ -378,7 +378,8 @@ const http = createServer((req, res) => {
   // a crew's door (Stage 49): the code names a co-op room; a friend looks it up before travelling
   const crew = req.url?.match(/^\/crew\/([^/?]+)$/);
   if (crew && req.method === "GET") {
-    const code = normaliseCrewCode(decodeURIComponent(crew[1]!));
+    // no decoding: a code is plain [2-9A-Z]{8}, and decodeURIComponent throws on a bad escape — inside this listener that was the whole host down (Stage 54)
+    const code = normaliseCrewCode(crew[1]!);
     const h = code ? campaigns.get(crewRoomName(code)) : undefined;
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify(h && code ? crewInfo(h, code) : { ok: false, reason: NO_SUCH_CREW }));

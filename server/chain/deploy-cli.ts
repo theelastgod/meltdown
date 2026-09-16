@@ -17,7 +17,7 @@ if (!rpc || !chainIdRaw || !relayerKey || !signer) {
   process.exit(2);
 }
 const relayer = privateKeyToAccount(relayerKey as Hex);
-const guard = deployGuard({ relayerKey, relayerAddress: relayer.address, treasury: treasuryRaw });
+const guard = deployGuard({ relayerKey, relayerAddress: relayer.address, signer, treasury: treasuryRaw });
 if (!guard.ok) {
   console.error(`refused: ${guard.reason}`);
   process.exit(2);

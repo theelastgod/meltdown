@@ -11,7 +11,7 @@ import { CREW_PREFIX, crewCodeFromSocket, crewCodeOf, crewPageUrl, crewRoomName,
 import { CODE_LENGTH, validInviteCode } from "../shared/net/private";
 import { createCampaignRoom, crewInfo } from "../server/campaign-room";
 import { MemoryAccountStore } from "../server/accounts";
-import { CampaignRoom } from "../server/campaign-worker";
+import campaignWorker, { CampaignRoom } from "../server/campaign-worker";
 
 describe("a crew code names a co-op room", () => {
   it("is made from the private rooms' alphabet, at their length, and round-trips through the room name", () => {
@@ -54,6 +54,13 @@ describe("a host answers for a crew", () => {
     const h = createCampaignRoom({ accounts: new MemoryAccountStore(), mission: "m1_wake_unlisted" });
     const info = crewInfo(h, "ABCDEFGH");
     expect(info).toEqual({ ok: true, code: "ABCDEFGH", mission: "m1_wake_unlisted", level: "lease_row", players: 0, status: "waiting" });
+  });
+
+  it("a malformed escape in the code is a bad code, not a thrown request (Stage 54)", async () => {
+    const r = await campaignWorker.fetch(new Request("https://campaign/crew/%E0%A4%A"), {} as never);
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({ ok: false, reason: NO_SUCH_CREW });
+    expect(normaliseCrewCode("%E0")).toBeNull();
   });
 
   it("the campaign Worker's room does not come into being because someone asked about it", async () => {

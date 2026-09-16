@@ -16,6 +16,8 @@
 export const MAX_FRAME_MS = 500;
 /** how many reports a host keeps; a phone is a row, not a stream */
 export const MAX_REPORTS = 200;
+/** the most frames the monitor keeps: a minute at 60 fps, so a page left open does not sort its whole history twice a second */
+export const MAX_SAMPLES = 3600;
 /** the fewest frames a report may summarise; below this a percentile is a guess */
 export const MIN_FRAMES = 60;
 

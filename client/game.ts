@@ -191,7 +191,8 @@ export class Game {
     this.file.onJoinAudit = () => this.joinAudit();
     // the contracts panel's clicks
     hudRoot.querySelector(".contracts")?.addEventListener("click", (e) => {
-      const t = (e.target as HTMLElement).closest("[data-act],[data-launch],[data-wear],[data-explore]") as HTMLElement | null;
+      // [data-crew] before [data-launch]: the crew span sits inside the launch row, and closest() stops at the first match on the way up
+      const t = (e.target as HTMLElement).closest("[data-crew],[data-act],[data-launch],[data-wear],[data-explore]") as HTMLElement | null;
       if (t) this.campaign.onPanelAction(t);
     });
     hudRoot.querySelector(".contracts")?.addEventListener("change", (e) => {

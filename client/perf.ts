@@ -3,7 +3,7 @@
  * the game never constructs it. On, it costs one subtraction a frame. After `?perfAfter=` seconds
  * (default 30) with enough frames it posts one report to the ledger host and stops posting.
  */
-import { MIN_FRAMES, summariseFrames, type FrameSummary, type PerfReport } from "@shared/perf/report";
+import { MAX_SAMPLES, MIN_FRAMES, summariseFrames, type FrameSummary, type PerfReport } from "@shared/perf/report";
 import { HOSTS } from "./config";
 import type { Game } from "./game";
 
@@ -54,7 +54,10 @@ export class PerfMonitor {
       return;
     }
     if (this.startedAt < 0) this.startedAt = now;
-    if (this.last >= 0) this.deltas.push(now - this.last);
+    if (this.last >= 0) {
+      this.deltas.push(now - this.last);
+      if (this.deltas.length > MAX_SAMPLES) this.deltas.splice(0, this.deltas.length - MAX_SAMPLES);
+    }
     this.last = now;
     if (now >= this.nextDraw) {
       this.nextDraw = now + 500;

@@ -16,7 +16,7 @@
  */
 import { DatabaseSync } from "node:sqlite";
 import { MIGRATIONS, SCHEMA } from "./schema";
-import { extrasOf } from "./file-row";
+import { extrasOf, freshLedgerLines } from "./file-row";
 import type { AccountStore } from "./accounts";
 import type { EndgameStore } from "./endgame";
 import type { RunDayLine, RunDayStat, RunSettledRow, RunStore } from "./run-store";
@@ -85,7 +85,8 @@ export function accountOfRow(row: FileRow, ledger: string[]): Account {
 export class SqliteAccountStore implements AccountStore {
   /** the hot copies: one object per id, so every holder of a file mutates the same one */
   private cache = new Map<string, Account>();
-  private ledgerSaved = new Map<string, number>();
+  /** the ledger as it was at the last save, so the next save can tell new lines from a trimmed list */
+  private ledgerSaved = new Map<string, string[]>();
   saves = 0;
   constructor(private db: DatabaseSync, private seed: (id: string, name: string) => Account = createAccount) {}
 
@@ -107,10 +108,10 @@ export class SqliteAccountStore implements AccountStore {
     if (row) {
       const lines = (this.db.prepare("SELECT line FROM ledger WHERE account = ? ORDER BY seq ASC").all(id) as { line: string }[]).map((r) => r.line);
       a = accountOfRow(row, lines);
-      this.ledgerSaved.set(id, lines.length);
+      this.ledgerSaved.set(id, lines.slice());
     } else {
       a = upgradeAccount(this.seed(id, name));
-      this.ledgerSaved.set(id, 0);
+      this.ledgerSaved.set(id, []);
       this.cache.set(id, a);
       this.save(a);
       return a;
@@ -122,8 +123,7 @@ export class SqliteAccountStore implements AccountStore {
   save(a: Account): void {
     this.saves++;
     this.cache.set(a.id, a);
-    const saved = this.ledgerSaved.get(a.id) ?? 0;
-    const fresh = a.ledger.slice(saved);
+    const fresh = freshLedgerLines(this.ledgerSaved.get(a.id) ?? [], a.ledger);
     const now = Date.now();
     const upsert = this.db.prepare(
       `INSERT INTO ghostfile (id, name, xp, depth, scrip, wakelight, salvage, owned, loadout, wears, crafts, matches, updated_at, extras)
@@ -142,8 +142,7 @@ export class SqliteAccountStore implements AccountStore {
       this.db.exec("ROLLBACK");
       throw err;
     }
-    // the ledger is capped in memory (the room trims it to 200), so a trimmed list is shorter than what was saved: count from its current length
-    this.ledgerSaved.set(a.id, a.ledger.length);
+    this.ledgerSaved.set(a.id, a.ledger.slice());
   }
 }
 

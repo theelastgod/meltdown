@@ -294,7 +294,18 @@ async function main(): Promise<void> {
     const ca = await newPage({ width: 320, height: 180 }, "coop-a");
     await ca.goto(deskUrl("HOSTA", "coop-a"), { waitUntil: "load" });
     await ca.waitForFunction(() => window.__game?.ready === true, null, { timeout: 40000, polling: 100 });
-    const started = await ca.evaluate(() => window.__game.crewStart("m1_wake_unlisted"));
+    // through the desk itself, not the hook (Stage 54): the crew span sits inside the launch row, and
+    // the panel's click dispatcher used to resolve the click to the row and launch solo
+    const clicked = await ca.evaluate(() => {
+      window.__game.contracts(true);
+      const span = document.querySelector("#hud .contracts [data-crew]") as HTMLElement | null;
+      span?.click();
+      const t = window.__game.campaign().crewTarget;
+      window.__game.contracts(false);
+      return { found: !!span, target: t };
+    });
+    check("RUN WITH A CREW on the desk, clicked as a player clicks it, starts a crew rather than a solo contract", clicked.found && !!clicked.target && validInviteCode(clicked.target.code) && new URL(clicked.target.url).searchParams.get("mode") === "campaign", `span found ${clicked.found} · target ${clicked.target ? `${clicked.target.code} mode=${new URL(clicked.target.url).searchParams.get("mode")}` : "none"}`);
+    const started = clicked.target ? { ok: true, code: clicked.target.code, url: clicked.target.url } : await ca.evaluate(() => window.__game.crewStart("m1_wake_unlisted"));
     const crewCode = started.code ?? "";
     const crewRoom = `campaign:${crewRoomName(crewCode)}`;
     // the host travels; the room comes into being when its socket opens

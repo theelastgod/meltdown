@@ -89,6 +89,11 @@ describe("the service worker cannot reach the game", () => {
     expect(sw).toMatch(/caches\.match\("\/", \{ ignoreVary: true \}\)/);
   });
 
+  it("only a good page may become the offline shell: the navigate branch checks res.ok before caching", () => {
+    const nav = sw.slice(sw.indexOf('mode === "navigate"'), sw.indexOf("/assets/"));
+    expect(nav).toMatch(/if \(res\.ok\)[^\n]*caches\.open\(SHELL\)/);
+  });
+
   it("navigations are network-first, so a connected player always gets the newest build", () => {
     const nav = sw.slice(sw.indexOf('mode === "navigate"'));
     expect(nav.indexOf('caches.match("/"')).toBeGreaterThan(-1);

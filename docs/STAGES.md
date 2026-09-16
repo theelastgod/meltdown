@@ -1641,6 +1641,55 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 54 — The review: seven findings in nine stages of new code
+
+**Goal.** With the plan and the decisions shipped, the most valuable next thing was not another
+feature but an adversarial read of what Stages 45–53 added. A code review over that commit range
+returned seven findings. All seven were real. Each is fixed here with a test or a probe check that
+fails on the old code.
+
+1. **RUN WITH A CREW launched solo when clicked.** The desk's click dispatcher resolved a click to
+   the nearest `[data-act],[data-launch],…` ancestor, and the crew span sits *inside* the launch
+   row — so the click reached the row and launched the contract alone. The probe had driven the
+   hook, never the DOM. The selector now lists `[data-crew]` first, and `probe:campaign` starts its
+   crew by clicking the span as a player would: "span found true · target R3H5YM67 mode=campaign".
+2. **A full file stopped persisting its ledger.** The room caps a file's ledger at 200 lines by
+   dropping the oldest; both hosts computed the lines to write as "everything past the count saved
+   last time", which is empty forever once the file is full — every BANKED line after the
+   two-hundredth was lost on restart, on D1 and on SQLite alike. `freshLedgerLines` now finds the
+   new lines as what remains after the longest prefix of the current ledger that is a suffix of the
+   saved one; the trim only removes from the front, so that overlap is exact. Pinned against the
+   real Durable Object and the SQLite store; mutation-tested by restoring the slice-by-count, which
+   fails three cases.
+3. **An edge error page could become the offline shell.** The service worker cached every
+   navigation response as the shell; a 502 or a challenge page would have been what an installed app
+   opened to until the worker itself changed. Only `res.ok` is cached now, inside `waitUntil`.
+4. **One GET could take the whole host down.** The crew lookup decoded its path segment with
+   `decodeURIComponent`, which throws on a malformed escape; thrown inside Node's request listener
+   with nothing to catch it, that was the process, every room and the ledger gone from one
+   unauthenticated request. A code is plain `[2-9A-Z]{8}` and needs no decoding; `probe:persist`
+   now sends the bad escape and checks the host is still up to refuse it, and the Worker's route is
+   pinned the same way.
+5. **A failed chunk load was a session-long "no ledger".** One transient failure of the dynamic
+   import left the counter permanently null; every LINK and BUY silently did nothing afterwards.
+   The failed attempt is forgotten so the next open retries.
+6. **The frame monitor kept every frame forever** and sorted the whole history twice a second, on
+   the very device it was measuring. It keeps a minute at 60 fps now.
+7. **The deploy guard checked the relayer and the bank but not the signer.** A deploy naming the
+   published dev signer's address passed the guard and spent gas on contracts that trust an
+   attestor the Worker refuses to run with. The guard now derives the dev addresses and refuses the
+   signer and the treasury from that set too.
+
+**What the review says about the method.** Every stage here shipped with its own tests and
+probes, and every one of these seven still got through — because each test proved the path it
+was written for and not the path a player takes (1), or the state a long session reaches (2, 6),
+or the input nobody sends on purpose (3, 4, 5, 7). A check that passes on the code as written is
+one instrument; a reader trying to break the code is another, and the second found what the first
+was not built to see.
+
+**Acceptance.** `npm test` 433 (5 new); typecheck clean on both configs; `smoke` 7/7;
+`probe:persist` 7/7 (1 new); `probe:campaign` 31/31 (1 new).
+
 ## Stage 53 — The decisions
 
 **Goal.** `docs/PLAN.md` ended with a list of things that were the owner's to decide rather than

@@ -93,6 +93,10 @@ async function main(): Promise<void> {
   );
   check("and the secret survived with it: after the restart a request without it is refused, not adopted afresh", !wrongSecret.ok && status === 403 && /NOT YOUR FILE/.test(wrongSecret.reason ?? ""), `status ${status} · "${wrongSecret.reason}"`);
   check("the host says what it remembered at boot", /db probe\/out\/stage51\.sqlite \(1 files\)/.test(b.banner), b.banner.replace(/^.*listening on /, ""));
+  // a malformed escape in a crew code used to throw inside the request listener and take the whole host down (Stage 54)
+  const badEscape = await fetch(`${HOST}/crew/%E0%A4%A`).then((r) => r.json() as Promise<{ ok: boolean }>, (e) => ({ ok: true, error: String(e) }));
+  const stillUp = await fetch(`${HOST}/stats`).then((r) => r.ok, () => false);
+  check("a malformed escape in a crew code is a bad code, and the host is still up to say so", badEscape.ok === false && stillUp, `bad escape → ${JSON.stringify(badEscape)} · host answered afterwards ${stillUp}`);
   await stop(b.proc);
 
   // ---- the control: the same host with no database forgets, so the check above can fail

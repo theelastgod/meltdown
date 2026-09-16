@@ -56,8 +56,9 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(SHELL).then((c) => c.put("/", copy));
+          // only a good page may become the offline shell: an edge error page cached here would be
+          // what an installed app opens to, until the worker itself changed (Stage 54)
+          if (res.ok) e.waitUntil(caches.open(SHELL).then((c) => c.put("/", res.clone())));
           return res;
         })
         .catch(() => caches.match("/", { ignoreVary: true })),

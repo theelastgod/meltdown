@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 import { DatabaseSync } from "node:sqlite";
 import { PlayerFile, type PlayerEnv } from "../server/player-do";
 import { createAccount, type Account } from "../shared/progression/account";
-import { extrasOf } from "../server/file-row";
+import { extrasOf, freshLedgerLines } from "../server/file-row";
 
 /** D1's surface — prepare/bind/first/all/run/batch — over a synchronous SQLite. */
 function fakeD1(db: DatabaseSync): D1Database {
@@ -58,5 +58,36 @@ describe("a cold load from D1 is the whole file", () => {
     // the rule itself: every field but the ledger is in extras
     const extras = JSON.parse(extrasOf(a)) as Record<string, unknown>;
     expect(Object.keys(extras).sort()).toEqual(Object.keys(a).filter((k) => k !== "ledger").sort());
+  });
+});
+
+describe("the ledger lines written since the last save survive the room's trim", () => {
+  const lines = (n: number, from = 0) => Array.from({ length: n }, (_, i) => `LINE ${from + i}`);
+  it("with no trim it is everything past the saved count; with the list full it is exactly the lines pushed since, however many the trim dropped", () => {
+    expect(freshLedgerLines([], ["A", "B"])).toEqual(["A", "B"]);
+    expect(freshLedgerLines(["A"], ["A", "B"])).toEqual(["B"]);
+    expect(freshLedgerLines(["A", "B"], ["A", "B"])).toEqual([]);
+    // a full file: 200 saved, one banked, the oldest dropped — the old slice-by-count found nothing here
+    const saved = lines(200);
+    const after = [...saved.slice(1), "BANKED 40 AT GATE"];
+    expect(freshLedgerLines(saved, after)).toEqual(["BANKED 40 AT GATE"]);
+    // three pushed between saves
+    const three = [...saved.slice(3), "X", "Y", "Z"];
+    expect(freshLedgerLines(saved, three)).toEqual(["X", "Y", "Z"]);
+    // repeated text: the overlap is by position, so a bank that reads like the last one is still new
+    expect(freshLedgerLines(["BANKED 40 AT GATE"], ["BANKED 40 AT GATE", "BANKED 40 AT GATE"])).toEqual(["BANKED 40 AT GATE"]);
+  });
+  it("the Durable Object persists the line a full file banks", async () => {
+    const db = new DatabaseSync(":memory:");
+    const env: PlayerEnv = { DB: fakeD1(db) };
+    const a: Account = createAccount("full", "FULL");
+    a.ledger = lines(200);
+    const file = new PlayerFile(fakeState(), env);
+    await file.fetch(new Request("https://file/save", { method: "POST", body: JSON.stringify(a) }));
+    a.ledger = [...a.ledger.slice(1), "BANKED 40 AT GATE"]; // what the room does at the cap
+    await file.fetch(new Request("https://file/save", { method: "POST", body: JSON.stringify(a) }));
+    const stored = (db.prepare("SELECT line FROM ledger WHERE account = 'full' ORDER BY seq").all() as { line: string }[]).map((r) => r.line);
+    expect(stored).toHaveLength(201);
+    expect(stored[200]).toBe("BANKED 40 AT GATE");
   });
 });
