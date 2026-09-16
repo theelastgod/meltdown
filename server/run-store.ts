@@ -50,6 +50,13 @@ export interface RunDayStat {
 export interface RunStore {
   /** Add units to a file's day. Called on every bank, so it must be cheap and idempotent-ish under retry. */
   add(day: number, file: string, units: number): void | Promise<void>;
+  /**
+   * Put units back that the ledger lost and the file still says it is owed (the reconciliation's
+   * repair, Stage 24). Ledger only: the gross record is what was banked, and a repair banked
+   * nothing — before Stage 55 the repair went through `add` and inflated the telemetry the
+   * economy measures capUse from.
+   */
+  restore(day: number, file: string, units: number): void | Promise<void>;
   /** Every file that banked that day. */
   day(day: number): RunDayLine[] | Promise<RunDayLine[]>;
   /**
@@ -90,6 +97,12 @@ export class MemoryRunStore implements RunStore {
     st.gross += units;
     // banking a unit is proof of eligibility: the room only calls this past the Depth gate
     st.eligible = true;
+  }
+  restore(day: number, file: string, units: number): void {
+    if (!(units > 0)) return;
+    let d = this.days.get(day);
+    if (!d) this.days.set(day, (d = new Map()));
+    d.set(file, (d.get(file) ?? 0) + units);
   }
   seen(day: number, file: string, eligible: boolean): void {
     const st = this.statRow(day, file);

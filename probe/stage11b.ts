@@ -187,13 +187,14 @@ async function main(): Promise<void> {
      * waits for the texture and asserts it, rather than trusting that a silent failure is a pass.
      */
     const mapped = await a
-      .waitForFunction(() => window.__game.counter().skinMap === true, null, { timeout: 15000, polling: 100 })
+      // bound, not merely loaded (Stage 55): the material must be drawing it
+      .waitForFunction(() => window.__game.counter().skinBound === true, null, { timeout: 15000, polling: 100 })
       .then(() => true, () => false);
     const av = await a.evaluate(() => window.__game.counter().assets);
     check(
       "the worn skin's plate texture loads from the asset pipeline: requested, loaded, none failed — and the sim never saw it",
       mapped && av.loaded >= 1 && av.failed === 0 && av.requested >= 1,
-      `skinMap ${mapped} · requested ${av.requested} loaded ${av.loaded} failed ${av.failed}`,
+      `skin plate bound to the strips ${mapped} · requested ${av.requested} loaded ${av.loaded} failed ${av.failed}`,
     );
     /**
      * Every declared asset decodes in a real browser, not just the one a skin happened to wear

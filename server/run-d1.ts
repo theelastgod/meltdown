@@ -11,10 +11,19 @@ export class D1RunStore implements RunStore {
   constructor(private db: D1Database) {}
   async add(day: number, file: string, units: number): Promise<void> {
     if (!(units > 0)) return;
+    // one batch (Stage 55): the ledger row and the gross record land together or not at all, so a
+    // failure between them cannot leave the two disagreeing and a retry cannot credit the bank twice
+    await this.db.batch([
+      this.db.prepare("INSERT INTO run_day (day, file, units) VALUES (?1, ?2, ?3) ON CONFLICT(day, file) DO UPDATE SET units = units + ?3").bind(day, file, units),
+      // the gross record the economy reads: `run_day.units` is spent down as files are paid, so it
+      // cannot answer how much of the cap a runner used. Nothing ever subtracts from this row.
+      this.db.prepare("INSERT INTO run_day_stat (day, file, gross, eligible) VALUES (?1, ?2, ?3, 1) ON CONFLICT(day, file) DO UPDATE SET gross = gross + ?3, eligible = 1").bind(day, file, units),
+    ]);
+  }
+  async restore(day: number, file: string, units: number): Promise<void> {
+    if (!(units > 0)) return;
+    // a repair puts units back into the ledger and nowhere else: the gross record is what was banked, and a repair banked nothing
     await this.db.prepare("INSERT INTO run_day (day, file, units) VALUES (?1, ?2, ?3) ON CONFLICT(day, file) DO UPDATE SET units = units + ?3").bind(day, file, units).run();
-    // the gross record the economy reads: `run_day.units` is spent down as files are paid, so it
-    // cannot answer how much of the cap a runner used. Nothing ever subtracts from this row.
-    await this.db.prepare("INSERT INTO run_day_stat (day, file, gross, eligible) VALUES (?1, ?2, ?3, 1) ON CONFLICT(day, file) DO UPDATE SET gross = gross + ?3, eligible = 1").bind(day, file, units).run();
   }
   async seen(day: number, file: string, eligible: boolean): Promise<void> {
     await this.db.prepare("INSERT INTO run_day_stat (day, file, gross, eligible) VALUES (?1, ?2, 0, ?3) ON CONFLICT(day, file) DO UPDATE SET eligible = MAX(eligible, ?3)").bind(day, file, eligible ? 1 : 0).run();

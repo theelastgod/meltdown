@@ -286,15 +286,39 @@ export class Renderer {
     if (want === this.skinMapId) return;
     this.skinMapId = want;
     this.skinMap = null;
+    this.bindSkinMap(null);
     if (!want) return;
     void assetTexture(want).then((tex) => {
       // a slower load that lands after the player changed skin again must not overwrite the new one
-      if (this.skinMapId !== want) {
-        tex?.dispose();
-        return;
-      }
+      if (this.skinMapId !== want) return; // the cache owns the texture; nothing to dispose here
       this.skinMap = tex;
+      this.bindSkinMap(tex);
     });
+  }
+
+  /**
+   * The plate on the strips (Stage 55). From Stage 43 to Stage 54 the texture was downloaded, held
+   * in `skinMap`, and never assigned to a material: the probe asserted it had loaded, not that
+   * anything drew it, and the four plates the game sells were invisible. It is bound here, on the
+   * strip material every viewmodel carries, and `skinBound()` answers whether it is.
+   */
+  private bindSkinMap(tex: THREE.Texture | null): void {
+    for (const vm of this.viewmodels.values()) {
+      const strip = vm.userData.strip as THREE.MeshBasicMaterial | undefined;
+      if (!strip) continue;
+      strip.map = tex;
+      strip.needsUpdate = true;
+    }
+  }
+
+  /** true when a plate is loaded and every viewmodel's strip material is drawing it */
+  skinBound(): boolean {
+    if (!this.skinMap) return false;
+    for (const vm of this.viewmodels.values()) {
+      const strip = vm.userData.strip as THREE.MeshBasicMaterial | undefined;
+      if (!strip || strip.map !== this.skinMap) return false;
+    }
+    return this.viewmodels.size > 0;
   }
 
   /** Other players: hooded silhouettes with cyan Blank trim. Zero mechanical data touches this. */

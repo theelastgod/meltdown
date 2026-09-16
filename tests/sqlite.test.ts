@@ -151,6 +151,7 @@ describe("the run's day", () => {
     st.seen(20000, "f4", true);
     st.seen(20000, "f5", false);
     st.spend(20000, "f1", 30);
+    st.restore(20000, "f1", 10); // the reconciliation's repair: ledger only, the gross record untouched
     st.markSettled({ day: 19999, epoch: 3, units: 100, minted: 12.5, rate: 0.125, settledAt: 1 });
     st.markSettled({ day: 19999, epoch: 4, units: 1, minted: 1, rate: 1, settledAt: 2 }); // a second settlement of the same day is refused
   };
@@ -164,8 +165,8 @@ describe("the run's day", () => {
     script(s1);
     const want = await read(mem);
     expect(await read(s1)).toEqual(want);
-    expect(want.day).toEqual([{ file: "f1", units: 20 }, { file: "f2", units: 5 }]);
-    expect(want.stat).toEqual({ day: 20000, grossUnits: 55, runners: 2, active: 4, eligible: 3 });
+    expect(want.day).toEqual([{ file: "f1", units: 30 }, { file: "f2", units: 5 }]); // 50 banked − 30 paid + 10 restored
+    expect(want.stat).toEqual({ day: 20000, grossUnits: 55, runners: 2, active: 4, eligible: 3 }); // the restore did not touch gross
     expect(want.settled?.epoch).toBe(3);
     expect(want.unsettled).toBeNull();
     db1.close();

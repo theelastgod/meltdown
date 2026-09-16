@@ -3,7 +3,7 @@
  * The Room class is identical to the Node host's.
  */
 import { MAX_PLAYERS_PER_ROOM, inputClassOf, matchRoomName } from "../shared/net/matchmaking";
-import { Room, SERVER_TICK_MS, type Conn } from "./room";
+import { Room, IDLE_PARK_MS, SERVER_TICK_MS, type Conn } from "./room";
 import { DoAccountStore, PlayerFile } from "./player-do";
 import { DoEndgameStore, Endgame } from "./endgame-do";
 import { D1RunStore } from "./run-d1";
@@ -138,7 +138,7 @@ export class MatchRoom implements DurableObject {
       // stop ticking once no socket has been open for 10 s (the room state stays for rejoin)
       if (this.sockets === 0) {
         if (!this.idleSince) this.idleSince = now;
-        else if (now - this.idleSince > 10000 && this.timer) {
+        else if (now - this.idleSince > IDLE_PARK_MS && this.timer) {
           clearInterval(this.timer);
           this.timer = null;
         }

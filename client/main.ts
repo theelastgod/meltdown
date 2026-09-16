@@ -78,7 +78,7 @@ export interface GameHook {
   loadPreset: (slot: number) => boolean;
   joinAudit: () => void;
   /** The counter-ledger (Stage 11b): the panel's view, the wallet link, a market buy, wear, the name, reconcile; the skins others wear as the snapshot carries them. */
-  counter: () => { view: ReturnType<typeof counterView> | null; wallet: string | null; last: string; info: unknown; tint: string | null; skinMap: boolean; assets: { requested: number; loaded: number; failed: number }; remotes: { id: number; name: string; tag: string; skin: number }[] };
+  counter: () => { view: ReturnType<typeof counterView> | null; wallet: string | null; last: string; info: unknown; tint: string | null; skinMap: boolean; skinBound: boolean; assets: { requested: number; loaded: number; failed: number }; remotes: { id: number; name: string; tag: string; skin: number }[] };
   link: () => Promise<{ ok: boolean; reason?: string }>;
   buySkin: (listing: number) => Promise<{ ok: boolean; reason?: string }>;
   /** the sinks (Stage 19): the Deep Wake pass and private room-hours, both 100% burned */
@@ -245,7 +245,7 @@ window.__game = {
   }),
   counter: () => {
     void game.file.ensureCounter(); // asking about the ledger is wanting it (Stage 48)
-    return { view: game.file.counterState, wallet: game.file.counter?.address ?? null, last: game.file.counter?.last ?? "", info: game.file.counter?.info ?? null, tint: game.renderer.skinTint, skinMap: !!game.renderer.skinMap, assets: { ...assetStats }, remotes: (game.net?.remoteViews() ?? []).map((r) => ({ id: r.id, name: r.name ?? "", tag: r.tag ?? "", skin: parseTag(r.tag ?? "", "").skin })) };
+    return { view: game.file.counterState, wallet: game.file.counter?.address ?? null, last: game.file.counter?.last ?? "", info: game.file.counter?.info ?? null, tint: game.renderer.skinTint, skinMap: !!game.renderer.skinMap, skinBound: game.renderer.skinBound(), assets: { ...assetStats }, remotes: (game.net?.remoteViews() ?? []).map((r) => ({ id: r.id, name: r.name ?? "", tag: r.tag ?? "", skin: parseTag(r.tag ?? "", "").skin })) };
   },
   link: () => game.file.ensureCounter().then((c) => c?.link() ?? { ok: false, reason: "offline" }),
   buySkin: (listing) => game.file.ensureCounter().then((c) => c?.buy(listing) ?? { ok: false, reason: "offline" }),

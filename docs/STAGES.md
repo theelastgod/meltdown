@@ -1641,6 +1641,44 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 55 — The review, part two: Stages 35–44
+
+**Goal.** Stage 54's review of this session's code found seven real defects, so the same review
+ran over the previous session's — Stages 35 to 44. Six findings, all real; the first is the kind
+this whole document exists to catch.
+
+1. **The skin plates were never drawn.** Stage 43 built the asset pipeline and Stage 44 ran all
+   four plates through it; `probe:counter` waited for the plate to *load* — `skinMap true` — and
+   nothing ever assigned the texture to a material. Every wear paid the download and the rig
+   looked exactly as it had before Stage 43: tint only. The claim "the file wears it" was proved
+   for a texture in memory, not a texture on screen. The plate is now bound to every viewmodel's
+   strip material, `skinBound()` answers whether every strip is drawing it, and the probe waits for
+   that instead. Mutation-tested by loading and not binding: the probe fails.
+2. **A bank on D1 was two statements.** The ledger row and the gross record were written one
+   after the other; a failure between them logged the bank as lost while the units were in the
+   ledger, left the telemetry short for good, and a retry would have credited the ledger twice. One
+   batch now, and one transaction on SQLite. Pinned through the real store over a D1 shaped on
+   Node's SQLite: a bank is one batch and zero standalone runs.
+3. **The nightly cron loaded every linked file twice.** A standalone pass over yesterday ran
+   first, then the backlog walk, which already covers yesterday. The standalone pass is gone.
+4. **A repair inflated the economy's telemetry.** The reconciliation's repair restored lost units
+   through `add`, which since Stage 38 also increments the gross record the economy measures
+   `capUse` from — a repaired file read as having banked twice what it banked. `restore` now exists
+   on every store and writes the ledger only; the settle test asserts the gross record is unchanged
+   across a repair. Mutation-tested by sending the repair back through `add`.
+5. **Three import-graph walkers with three sets of rules.** The bundle, asset and Kernel Protocol
+   quarantines each carried a copy, and an import form one understood could slip past another.
+   One walker in `tests/helpers/imports.ts` now, with the one real difference (type imports count
+   or do not) as an option; the fake D1 the Durable Object tests use moved to a helper the same way.
+6. **A parked room was never let go.** The Node host's parking bookkeeping held every room it had
+   ever ticked, so an expired private room kept its whole simulation alive for the life of the
+   process. A room nothing names any more is dropped when it parks, and the idle-park interval is
+   one shared constant on both hosts instead of a literal on each.
+
+**Acceptance.** `npm test` 435 (2 new); typecheck clean on both configs; `probe:counter` 16/16
+now asserting the plate is bound; `probe:run` 18/18; `probe:harden` 9/9; `probe:persist` 7/7;
+`smoke` 7/7.
+
 ## Stage 54 — The review: seven findings in nine stages of new code
 
 **Goal.** With the plan and the decisions shipped, the most valuable next thing was not another

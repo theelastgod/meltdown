@@ -17,7 +17,7 @@ import { describe, observe } from "../shared/economy/telemetry";
 import { DOC_POPULATION, observedPopulation, summarise } from "../shared/economy/model";
 import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
-import { Room, SERVER_TICK_MS, type Conn } from "./room";
+import { IDLE_PARK_MS, Room, SERVER_TICK_MS, type Conn } from "./room";
 import { devSeed, MemoryAccountStore } from "./accounts";
 import { buyNode, fileAuth, publicFile, publicLabel, recordGhost, refundNode, validGhost } from "../shared/progression/account";
 import { NOT_YOURS } from "./player-do";
@@ -154,7 +154,7 @@ const readBody = (req: import("node:http").IncomingMessage): Promise<Record<stri
  */
 const roomSockets = new Map<Room, number>();
 const roomIdleSince = new Map<Room, number>();
-const IDLE_STOP_MS = 10_000;
+const IDLE_STOP_MS = IDLE_PARK_MS;
 
 /** fixed-rate loop with drift correction; parks itself once a room has been empty for IDLE_STOP_MS */
 function startLoop(room: Room): void {
@@ -177,6 +177,10 @@ function startLoop(room: Room): void {
       if (since === -1) roomIdleSince.set(room, now);
       else if (now - since > IDLE_STOP_MS) {
         roomIdleSince.delete(room);
+        // a room nothing names any more (an expired private room) is let go with its loop; the
+        // bookkeeping held every parked simulation for the life of the process (Stage 55)
+        const named = [...rooms.values()].includes(room) || [...campaigns.values()].some((h) => h.room === room);
+        if (!named) roomSockets.delete(room);
         return;
       }
     } else roomIdleSince.set(room, -1);

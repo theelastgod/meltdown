@@ -10,36 +10,10 @@
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
+import { reachable as walk } from "./helpers/imports";
 
-/**
- * Static VALUE-import graph. `import type` lines are skipped on purpose: a type import is erased
- * at build time and pulls nothing into the bundle, and file.ts keeps one for CounterClient's type.
- */
-function reachable(entry: string): Set<string> {
-  const seen = new Set<string>();
-  const stack = [resolve(entry)];
-  while (stack.length) {
-    const f = stack.pop()!;
-    if (seen.has(f)) continue;
-    seen.add(f);
-    let src: string;
-    try {
-      src = readFileSync(f, "utf8");
-    } catch {
-      continue;
-    }
-    const re = /^\s*(?:import|export)\s+(?!type\s)[^;]*?\bfrom\s+["']([^"']+)["']/gm;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(src))) {
-      const spec = m[1]!;
-      if (spec.startsWith(".")) stack.push(resolve(dirname(f), /\.(ts|json)$/.test(spec) ? spec : spec + ".ts"));
-      else if (spec.startsWith("@shared/")) stack.push(resolve("shared", spec.slice(8) + ".ts"));
-      else if (spec.startsWith("@client/")) stack.push(resolve("client", spec.slice(8) + ".ts"));
-    }
-  }
-  return seen;
-}
+const reachable = (entry: string) => walk(entry, { valueOnly: true }); // type imports are erased at build time; file.ts keeps one for CounterClient's type
 
 const importsChain = (f: string): boolean => {
   if (!f.endsWith(".ts")) return false;

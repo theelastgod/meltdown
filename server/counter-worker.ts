@@ -12,7 +12,7 @@ import { D1WalletStore } from "./chain/wallets-d1";
 import { D1PrizeStore } from "./chain/prizes-d1";
 import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
 import { settleRunDay } from "./chain/settle-run";
-import { reconcileRunBacklog, reconcileRunDay } from "./chain/reconcile-run";
+import { reconcileRunBacklog } from "./chain/reconcile-run";
 import { D1RunStore } from "./run-d1";
 import { DEV_KEY_ON_CHAIN, isDevKey } from "./chain/dev-keys";
 import { dayIndex, seasonIndex, weekIndex } from "../shared/endgame/clock";
@@ -195,14 +195,9 @@ export default {
         console.log(`cron: run day ${day} threw — ${String((e as Error).message).slice(0, 200)}`);
       }
 
-      // Reconcile yesterday before anything else reads it, and sweep anything nobody claimed. Both
-      // are cheap when there is nothing to do, which is the normal case.
-      try {
-        const rec = await reconcileRunDay(day, { ledger, runs: new D1RunStore(env.DB), wallets: new D1WalletStore(env.DB), load, save, log: (l) => console.log(l) }, { fix: true });
-        if (rec.drift.length) console.log(`cron: day ${day} drifted on ${rec.drift.length} file(s) — restored ${rec.restored}, cleared ${rec.cleared}`);
-      } catch (e) {
-        console.log(`cron: reconcile day ${day} threw — ${String((e as Error).message).slice(0, 200)}`);
-      }
+      // Reconcile yesterday and every day still owed in one walk (Stage 40). Until Stage 55 a
+      // standalone pass over yesterday ran first and the backlog walked it again: every linked
+      // file loaded from D1 twice a night for nothing the backlog would not have found.
       /**
        * And then the backlog (Stage 40).
        *

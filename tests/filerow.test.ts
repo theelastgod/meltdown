@@ -12,25 +12,7 @@ import { DatabaseSync } from "node:sqlite";
 import { PlayerFile, type PlayerEnv } from "../server/player-do";
 import { createAccount, type Account } from "../shared/progression/account";
 import { extrasOf, freshLedgerLines } from "../server/file-row";
-
-/** D1's surface — prepare/bind/first/all/run/batch — over a synchronous SQLite. */
-function fakeD1(db: DatabaseSync): D1Database {
-  const stmt = (sql: string, args: unknown[] = []) => ({
-    bind: (...a: unknown[]) => stmt(sql, a),
-    first: async <T>() => (db.prepare(sql).get(...(args as never[])) as T | undefined) ?? null,
-    all: async <T>() => ({ results: db.prepare(sql).all(...(args as never[])) as T[] }),
-    run: async () => {
-      db.prepare(sql).run(...(args as never[]));
-      return { success: true };
-    },
-  });
-  return { prepare: (sql: string) => stmt(sql), batch: async (stmts: { run: () => Promise<unknown> }[]) => Promise.all(stmts.map((s) => s.run())) } as unknown as D1Database;
-}
-
-function fakeState(): DurableObjectState {
-  const m = new Map<string, unknown>();
-  return { storage: { get: async (k: string) => m.get(k), put: async (k: string, v: unknown) => void m.set(k, v) } } as unknown as DurableObjectState;
-}
+import { fakeD1, fakeState } from "./helpers/d1";
 
 describe("a cold load from D1 is the whole file", () => {
   it("what one Durable Object saved, a fresh one with no storage loads back: secret, campaign, wallet link, cosmetics, mastery", async () => {

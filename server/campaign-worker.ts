@@ -4,7 +4,7 @@
  * and the campaign file route; files live in the PvP worker's PlayerFile
  * DO, reached through a cross-script binding (load → apply → save).
  */
-import { SERVER_TICK_MS, type Conn } from "./room";
+import { IDLE_PARK_MS, SERVER_TICK_MS, type Conn } from "./room";
 import { createCampaignRoom, crewInfo, type CampaignRoomHandle } from "./campaign-room";
 import { crewRoomName, normaliseCrewCode, NO_SUCH_CREW } from "../shared/net/crew";
 import { DoAccountStore, NOT_YOURS } from "./player-do";
@@ -84,7 +84,7 @@ export class CampaignRoom implements DurableObject {
       if (n === 10) this.next = now;
       if (this.sockets === 0) {
         if (!this.idleSince) this.idleSince = now;
-        else if (now - this.idleSince > 10000 && this.timer) {
+        else if (now - this.idleSince > IDLE_PARK_MS && this.timer) {
           clearInterval(this.timer);
           this.timer = null;
         }

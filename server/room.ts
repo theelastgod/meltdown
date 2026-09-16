@@ -1280,4 +1280,6 @@ export class Room {
   }
 }
 
+/** how long an empty room keeps ticking before its host parks it; both hosts use this one number (Stage 55) */
+export const IDLE_PARK_MS = 10_000;
 export const SERVER_TICK_MS = 1000 / SIM_HZ;

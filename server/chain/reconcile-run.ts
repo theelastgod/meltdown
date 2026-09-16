@@ -107,7 +107,7 @@ export async function reconcileRunDay(day: number, d: ReconcileDeps, opts: { fix
         cleared += entry.units;
         entry.fixed = true;
       } else if (entry.kind === "unrecorded") {
-        await d.runs.add(day, id, entry.units);
+        await d.runs.restore(day, id, entry.units); // ledger only: a repair banked nothing (Stage 55)
         restored += entry.units;
         entry.fixed = true;
       }
@@ -189,7 +189,7 @@ export async function reconcileRunBacklog(d: ReconcileDeps & { today: number }, 
       } else if (entry.kind === "unrecorded") {
         // no need to update the cached view: it is keyed by file and every file is visited once, so
         // nothing in this pass reads this row again
-        await d.runs.add(day, id, entry.units);
+        await d.runs.restore(day, id, entry.units); // ledger only: a repair banked nothing (Stage 55)
         restored += entry.units;
         entry.fixed = true;
       }

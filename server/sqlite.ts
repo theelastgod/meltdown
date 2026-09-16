@@ -181,8 +181,19 @@ export class SqliteRunStore implements RunStore {
   constructor(private db: DatabaseSync) {}
   add(day: number, file: string, units: number): void {
     if (!(units > 0)) return;
+    this.db.exec("BEGIN");
+    try {
+      this.db.prepare("INSERT INTO run_day (day, file, units) VALUES (?1, ?2, ?3) ON CONFLICT(day, file) DO UPDATE SET units = units + ?3").run(day, file, units);
+      this.db.prepare("INSERT INTO run_day_stat (day, file, gross, eligible) VALUES (?1, ?2, ?3, 1) ON CONFLICT(day, file) DO UPDATE SET gross = gross + ?3, eligible = 1").run(day, file, units);
+      this.db.exec("COMMIT");
+    } catch (err) {
+      this.db.exec("ROLLBACK");
+      throw err;
+    }
+  }
+  restore(day: number, file: string, units: number): void {
+    if (!(units > 0)) return;
     this.db.prepare("INSERT INTO run_day (day, file, units) VALUES (?1, ?2, ?3) ON CONFLICT(day, file) DO UPDATE SET units = units + ?3").run(day, file, units);
-    this.db.prepare("INSERT INTO run_day_stat (day, file, gross, eligible) VALUES (?1, ?2, ?3, 1) ON CONFLICT(day, file) DO UPDATE SET gross = gross + ?3, eligible = 1").run(day, file, units);
   }
   seen(day: number, file: string, eligible: boolean): void {
     this.db.prepare("INSERT INTO run_day_stat (day, file, gross, eligible) VALUES (?1, ?2, 0, ?3) ON CONFLICT(day, file) DO UPDATE SET eligible = MAX(eligible, ?3)").run(day, file, eligible ? 1 : 0);

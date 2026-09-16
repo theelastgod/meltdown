@@ -230,8 +230,11 @@ describe("reconciling the two records", () => {
     expect(report.drift[0]).toMatchObject({ file: "sandbox-r1", kind: "unrecorded", units: 35, recorded: 0, fixed: false });
     expect(report.restored).toBe(0); // a report changes nothing
 
+    const grossBefore = (await r.runs.stat(DAY)).grossUnits;
     const fixed = await reconcileRunDay(DAY, r.recon, { fix: true });
     expect(fixed.restored).toBe(35);
+    // the repair put 35 units back into the ledger and none into the gross record: a repair banked nothing (Stage 55)
+    expect((await r.runs.stat(DAY)).grossUnits).toBe(grossBefore);
     expect(fixed.drift[0]!.fixed).toBe(true);
     // and now the night pays them
     const s = await settleRunDay(DAY, r.deps);

@@ -14,35 +14,10 @@
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { reachable } from "./helpers/imports";
 import { ASSETS, ASSET_BUDGET_BYTES, MAX_ASSET_BYTES, MAX_TEXTURE_EDGE, assetById, assetUrl, totalAssetBytes, type AssetDef } from "../shared/assets/manifest";
 import { lintAssets, pngSize } from "../shared/assets/lint";
 import { SKINS } from "../shared/economy/catalog";
-
-/** Static import graph, the same walk tests/quarantine.test.ts uses. */
-function reachable(entry: string): Set<string> {
-  const seen = new Set<string>();
-  const stack = [resolve(entry)];
-  while (stack.length) {
-    const f = stack.pop()!;
-    if (seen.has(f)) continue;
-    seen.add(f);
-    let src: string;
-    try {
-      src = readFileSync(f, "utf8");
-    } catch {
-      continue;
-    }
-    const re = /from\s+["']([^"']+)["']/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(src))) {
-      const spec = m[1]!;
-      if (spec.startsWith(".")) stack.push(resolve(dirname(f), spec.endsWith(".ts") ? spec : spec + ".ts"));
-      else if (spec.startsWith("@shared/")) stack.push(resolve("shared", spec.slice(8) + ".ts"));
-    }
-  }
-  return seen;
-}
 
 const isAssetModule = (f: string) => /shared[\\/]assets[\\/](manifest|lint)\.ts$/.test(f) || /client[\\/]render[\\/]assets\.ts$/.test(f);
 
