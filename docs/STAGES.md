@@ -1641,6 +1641,47 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 58 — The review, part five: Stages 1–14
+
+**Goal.** The last pass, over the fourteen stages that built the game before the money: the sim,
+the netcode, the file, the campaign, the endgame and the first counter-ledger. Ten findings against
+that snapshot. Five were closed by later stages (the file secret of 26–29 and 56, the input credits
+of 56, the room-closed contract of 27, the whole-file row of 54) and are noted here so the next
+reader does not re-find them. Five were live.
+
+1. **A match overwrote every write made to the file meanwhile.** The room holds a copy of the file
+   from join to leave and saved it whole on every bank, settlement and stamp. On the Workers host
+   that copy is a snapshot, so a payout from the FILE panel, a node bought at the desk, a contract
+   claimed or a Rewrite during a match was replaced by the room's next save — and a payout undone
+   that way was paid again. The Durable Object's header promised that two rooms could never race a
+   write; it serialised the writes and the last one won. A save now carries the copy the writer
+   started from (`server/merge.ts`): what the writer did not touch keeps the stored value, numbers
+   it moved are moved by the same amount, sets keep both sides' additions and removals, the ledger
+   appends, and a field it replaced is replaced. The room measures each save from the last one.
+   Pinned on the merge, through the real Durable Object, and on the room's saves.
+2. **Two payouts in flight both read the same "owed".** The money route loads, asks the chain and
+   saves, with nothing between two concurrent requests for one file. On the Workers host the file's
+   Durable Object now hands out a lease (one at a time by construction; it expires if the holder
+   dies) and the counter Worker holds it across the link and counter routes, answering 409 to a
+   second caller. The Node host takes a per-file lock in process for the same routes.
+3. **An EMP and a baton stun ignored the safe zone.** The zone gated damage and nothing else: a
+   grenade from the street zeroed the shield and the weapon of a file in the market, and a lunge
+   from the street stunned it. Both keep the damage rule now, in both directions.
+4. **A cold load re-inserted the whole ledger.** A file whose Durable Object storage was gone
+   loaded from its D1 row and was not written back, so the next save compared its ledger against
+   nothing and inserted every line again. The row is written back on load, and every save reads
+   its "previous" the same way. Pinned through the real object over a D1 shaped on SQLite.
+5. **The day's contracts were measured from the wrong base.** The daily view rolled the day in
+   memory and dropped it, and the room never rolled it at all, so a file's first claim after a
+   match snapshotted the base from the post-match counters and the match counted for nothing.
+   The room rolls the day at join, before the match moves anything, and the view's roll is kept.
+
+**Not changed.** The reconciliation walks every linked file rather than the day's table, by
+design: the table is the record being checked, so it cannot also be the index into it.
+
+**Count.** 479 tests. Every new guard fails its case when reverted (the cold-load case needs both
+of its two guards removed, which is the point of having two).
+
 ## Stage 57 — The review, part four: Stages 15–24
 
 **Goal.** The fourth pass, over the ten stages that built the money: the prize vault, the binding

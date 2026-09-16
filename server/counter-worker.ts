@@ -22,7 +22,7 @@ import { dayIndex, seasonIndex, weekIndex } from "../shared/endgame/clock";
 import type { Contracts } from "./chain/deploy";
 import { counterRequest } from "../shared/economy/endpoint";
 import { fileAuth, upgradeAccount, type Account } from "../shared/progression/account";
-import { NOT_YOURS } from "./player-do";
+import { NOT_YOURS, withLease } from "./player-do";
 
 export interface Env {
   PLAYER_FILE: DurableObjectNamespace;
@@ -61,6 +61,7 @@ const rateOk = (id: string, now = Date.now()): boolean => {
 };
 const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type", "content-type": "application/json" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: cors });
+const busy = (reason: string) => json({ ok: false, reason }, 409);
 
 function ledgerOf(env: Env): CounterLedger {
   return new CounterLedger({
@@ -120,29 +121,35 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/link/verify") {
       const { account, message, signature, secret } = (await request.json()) as { account: string; message: string; signature: Hex; secret?: string };
-      const a = await load(account);
-      // linking binds a wallet to a file for good; the SIWE signature proves the wallet, and this
-      // proves the file (Stage 28)
-      const auth = fileAuth(a, secret);
-      if (!auth.ok) return json({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }, 403);
-      const r = await ledgerOf(env).link(a, message, signature);
-      if (r.ok || auth.adopted) await save(a); // an adopted secret is kept even when the link fails (Stage 56)
-      return json({ ok: r.ok, reason: r.reason, counter: a.counter ?? null });
+      // one request at a time per file on the routes that move money (Stage 58)
+      return withLease(env.PLAYER_FILE, account, busy, async () => {
+        const a = await load(account);
+        // linking binds a wallet to a file for good; the SIWE signature proves the wallet, and this
+        // proves the file (Stage 28)
+        const auth = fileAuth(a, secret);
+        if (!auth.ok) return json({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }, 403);
+        const r = await ledgerOf(env).link(a, message, signature);
+        if (r.ok || auth.adopted) await save(a); // an adopted secret is kept even when the link fails (Stage 56)
+        return json({ ok: r.ok, reason: r.reason, counter: a.counter ?? null });
+      });
     }
     const f = decodePath(url.pathname)?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})\/counter$/);
     if (f && request.method === "POST") {
       if (!rateOk(f[1]!)) return json({ ok: false, reason: "RATE LIMITED: the counter-ledger takes 30 requests a minute per file" }, 429);
-      const a = await load(f[1]!);
       const body = (await request.json().catch(() => ({}))) as { secret?: string };
-      // the id names the file; the secret proves the caller owns it (Stage 26). This is the money
-      // route — it links a wallet, banks the run and asks for signed vouchers — and it was never
-      // checking (Stage 28).
-      const auth = fileAuth(a, body.secret);
-      if (!auth.ok) return json({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }, 403);
-      const ledger = ledgerOf(env);
-      const r = await counterRequest(a, body, ledger);
-      if (r.ok || auth.adopted) await save(a);
-      return json(r);
+      // one request at a time per file (Stage 58): load → chain → save with nothing else between
+      return withLease(env.PLAYER_FILE, f[1]!, busy, async () => {
+        const a = await load(f[1]!);
+        // the id names the file; the secret proves the caller owns it (Stage 26). This is the money
+        // route — it links a wallet, banks the run and asks for signed vouchers — and it was never
+        // checking (Stage 28).
+        const auth = fileAuth(a, body.secret);
+        if (!auth.ok) return json({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }, 403);
+        const ledger = ledgerOf(env);
+        const r = await counterRequest(a, body, ledger);
+        if (r.ok || auth.adopted) await save(a);
+        return json(r);
+      });
     }
     if (request.method === "POST" && url.pathname === "/prizes/post") {
       if (!env.ADMIN_KEY || request.headers.get("x-admin-key") !== env.ADMIN_KEY) return json({ ok: false, reason: NOT_ADMIN }, 403);

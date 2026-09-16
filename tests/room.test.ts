@@ -6,6 +6,9 @@
 import { describe, expect, it } from "vitest";
 import { Room, type Conn } from "../server/room";
 import { devSeed, MemoryAccountStore } from "../server/accounts";
+import type { Account } from "../shared/progression/account";
+import { contractsFor } from "../shared/endgame/contracts";
+import { dayIndex } from "../shared/endgame/clock";
 import { decodeServerMessage, encodeJoin, PROTOCOL_VERSION } from "../shared/net/protocol";
 import { SIM_HZ } from "../shared/sim/constants";
 import { readFileSync } from "node:fs";
@@ -156,5 +159,50 @@ describe("player DO — D1 schema", () => {
     const norm = (q: string) => q.replace(/--[^\n]*/g, "").replace(/\s+/g, " ").trim().replace(/;$/, "");
     const file = readFileSync("server/schema.sql", "utf8").split(";").map(norm).filter(Boolean);
     expect(SCHEMA.map(norm)).toEqual(file);
+  });
+});
+
+/**
+ * The fifth review (Stage 58): the file behind the match.
+ */
+describe("room — the file's day and its base", () => {
+  it("a join rolls the day's contracts before the match moves the counters", () => {
+    const store = new MemoryAccountStore(devSeed);
+    const a = store.load("sandbox-day", "DAY");
+    const counter = contractsFor(dayIndex())[0]!.counter; // the day's base holds the counters its contracts read
+    a.counters[counter] = 3;
+    a.daily = { day: 1, base: { [counter]: 0 }, claimed: [] };
+    const room = new Room({ ai: false, seed: 3, level: "drainage_yard", accounts: store, warmupSeconds: 1, roundSeconds: 5 });
+    const c = join(room, "DAY", "sandbox-day", legal);
+    expect(c.kick()).toBeUndefined();
+    expect(a.daily.day).toBe(dayIndex());
+    expect(a.daily.base[counter]).toBe(3);
+  });
+
+  it("every save carries the copy the room loaded, measured afresh from the last save", () => {
+    const saves: { id: string; base?: string }[] = [];
+    const inner = new MemoryAccountStore(devSeed);
+    const store = {
+      load: (id: string, name: string) => inner.load(id, name),
+      save: (a: Account, base?: Account) => {
+        saves.push({ id: a.id, base: base && JSON.stringify(base) });
+        inner.save(a);
+      },
+    };
+    const room = new Room({ ai: false, seed: 3, level: "drainage_yard", accounts: store, warmupSeconds: 1, roundSeconds: 5 });
+    const a = inner.load("sandbox-base", "BASE");
+    a.daily = { day: 1, base: {}, claimed: [] };
+    const loaded = JSON.stringify(a);
+    const c = join(room, "BASE", "sandbox-base", legal);
+    expect(c.kick()).toBeUndefined();
+    room.saveAccount(a);
+    expect(saves).toHaveLength(1);
+    expect(saves[0]!.base).toBeDefined();
+    // the base is the file as loaded — before the join rolled its day, so the roll is a change of the room's
+    expect(JSON.parse(saves[0]!.base!).daily).toEqual(JSON.parse(loaded).daily);
+    a.xp += 10;
+    room.saveAccount(a);
+    expect(JSON.parse(saves[1]!.base!).xp).toBe(JSON.parse(saves[0]!.base!).xp); // the base moved to the first save's state
+    expect(JSON.parse(saves[1]!.base!).daily.day).toBe(a.daily!.day);
   });
 });

@@ -9,6 +9,7 @@ import { SEASON_DEPTH } from "../shared/endgame/season";
 import { encodeRun, type RunMsg } from "../shared/net/protocol";
 import { RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT, runView } from "../shared/sim/run";
 import { dayIndex } from "../shared/endgame/clock";
+import { dailyOf } from "../shared/endgame/contracts";
 import { MOVE, SIM_HZ } from "../shared/sim/constants";
 import { auditErrors, type AuditDef } from "../shared/endgame/audits";
 import { itemById } from "../shared/manifest/items";
@@ -214,6 +215,12 @@ export class Room {
   readonly world: World;
   readonly opts: Required<RoomOptions>;
   private clients = new Map<number, ClientRec>();
+  /**
+   * The copy of each file as it was loaded (Stage 58), by account id. A save carries it so the
+   * store can fold the room's changes into whatever was written to the file meanwhile — a payout,
+   * a purchase, a claim from the desk — instead of overwriting it with the room's snapshot.
+   */
+  private bases = new Map<string, Account>();
   private byConn = new Map<Conn, ClientRec>();
   private history = new Map<number, Map<number, RewindPose>>();
   private nextId = 1;
@@ -422,6 +429,8 @@ export class Room {
 
   private removePlayer(rec: ClientRec): void {
     this.clients.delete(rec.playerId);
+    const id = rec.account?.id;
+    if (id && ![...this.clients.values()].some((c) => c.account?.id === id)) this.bases.delete(id);
     this.world.removePlayer(rec.playerId);
     for (const other of this.clients.values()) other.pendingEvents.push({ type: "leave", playerId: rec.playerId });
   }
@@ -482,6 +491,7 @@ export class Room {
       } else this.admit(conn, safeName, g, loadoutJson, identityJson);
     };
     const gated = (acc: Account): void => {
+      this.track(acc);
       const auth = fileAuth(acc, secret);
       if (!auth.ok) {
         this.opts.onLog(`join refused the file ${acc.id}: wrong secret — playing a guest`);
@@ -509,6 +519,11 @@ export class Room {
 
   /** Validate the claimed loadout against the file, then spawn. Illegal loadouts are refused, never stripped. */
   private admit(conn: Conn, safeName: string, account: Account | null, loadoutJson: string, identityJson = ""): void {
+    if (account && !this.bases.has(account.id)) this.track(account);
+    // the day's contracts roll here, before the match moves the counters (Stage 58): a file that
+    // had not been touched since yesterday used to have its base snapshot taken by the first claim
+    // after the match, from the post-match counters, and the match counted for nothing
+    if (account) dailyOf(account, this.opts.now());
     // a file first touched by a ledger endpoint (the FILE panel loads before the join) is a placeholder BLANK: the join names it
     if (account && (!account.name || account.name === "BLANK") && safeName !== "BLANK") account.name = safeName;
     // identity: an equipped moniker is worn only if earned; anything else is ignored, never a kick
@@ -619,9 +634,17 @@ export class Room {
     return [...this.clients.keys()];
   }
 
-  saveAccount(a: Account): void {
-    const saved = this.opts.accounts?.save(a);
-    if (saved instanceof Promise) saved.catch(() => {});
+  saveAccount(a: Account, onError: (err: unknown) => void = () => {}): void {
+    if (!this.opts.accounts) return;
+    const saved = this.opts.accounts.save(a, this.bases.get(a.id));
+    // the next save's changes are measured from this one
+    this.bases.set(a.id, structuredClone(a));
+    if (saved instanceof Promise) saved.catch(onError);
+  }
+
+  /** Remember the file as loaded, before the room touches it. */
+  private track(a: Account): void {
+    this.bases.set(a.id, structuredClone(a));
   }
 
   private rejectLoadout(conn: Conn, why: string): void {
@@ -724,8 +747,7 @@ export class Room {
     const kills = a.debt.kills;
     a.debt = null;
     killer.debtTargetId = -1;
-    const saved = this.opts.accounts?.save(a);
-    if (saved instanceof Promise) saved.catch(() => {});
+    this.saveAccount(a);
     this.sendSocial(killer, { kind: "debt", event: "cleared", id: victimId, display, glyph, kills, credit: wakelight, capped });
     this.opts.onLog(`debt cleared: ${a.id} settled ${display}${capped ? " (capped)" : ""}`);
   }
@@ -821,8 +843,7 @@ export class Room {
       for (const id of note.stamps) entry.lines.push(`STAMP · ${id.toUpperCase().replace(/[:_]/g, " ")}`);
       this.rituals(rec, entry.depthBefore, entry.depthAfter);
       if (rec.account.debt) entry.lines.push(`DEBT · ${rec.account.debt.display} · ${rec.account.debt.kills} FILES ON YOU`);
-      const saved = this.opts.accounts?.save(rec.account);
-      if (saved instanceof Promise) saved.catch((err) => this.opts.onLog(`file save failed for ${rec.account?.id}: ${String(err)}`));
+      this.saveAccount(rec.account, (err) => this.opts.onLog(`file save failed for ${rec.account?.id}: ${String(err)}`));
       this.opts.onLog(`settled ${rec.account.id}: xp +${entry.xp.total} (obj ${entry.xp.objective} / combat ${entry.xp.combat} / support ${entry.xp.support}) scrip +${entry.scrip} depth ${entry.depthBefore}→${entry.depthAfter}`);
       rec.conn?.send(encodeFile(this.fileMsg(rec, entry.lines, "settle", note)));
     }
@@ -1006,8 +1027,7 @@ export class Room {
       if (!p || !rec.account) continue;
       const note = rec.progress.onEvents(tickEvents, p, rec.playerId, this.tick, this.world.wasps);
       if (note) {
-        const saved = this.opts.accounts?.save(rec.account);
-        if (saved instanceof Promise) saved.catch(() => {});
+        this.saveAccount(rec.account);
         rec.conn?.send(encodeFile(this.fileMsg(rec, note.stamps.map((id) => `STAMP · ${id}`), "stamp", note)));
       }
     }

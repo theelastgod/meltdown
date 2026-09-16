@@ -10,8 +10,10 @@
  * The Durable Object is real code here; only its storage and D1 are doubles.
  */
 import { describe, expect, it } from "vitest";
-import { PlayerFile, NOT_YOURS, type PlayerEnv } from "../server/player-do";
+import { PlayerFile, NOT_YOURS, FILE_BUSY, DoAccountStore, type PlayerEnv } from "../server/player-do";
 import counterWorker from "../server/counter-worker";
+import { contractsFor } from "../shared/endgame/contracts";
+import { dayIndex } from "../shared/endgame/clock";
 import campaignWorker from "../server/campaign-worker";
 import matchWorker from "../server/worker";
 import { createAccount, publicFile, type Account } from "../shared/progression/account";
@@ -25,6 +27,7 @@ function fakeState(): DurableObjectState {
     storage: {
       get: async (k: string) => m.get(k),
       put: async (k: string, v: unknown) => void m.set(k, v),
+      delete: async (k: string) => m.delete(k),
     },
   } as unknown as DurableObjectState;
 }
@@ -204,5 +207,80 @@ describe("the fourth review (Stage 57): a malformed path", () => {
     expect(campaign.status).toBe(404);
     const match = await matchWorker.fetch(new Request(`https://w${bad.replace("counter", "daily")}`), { PLAYER_FILE: ns } as unknown as Parameters<typeof matchWorker.fetch>[1]);
     expect(match.status).toBe(404);
+  });
+});
+
+describe("the fifth review (Stage 58): the file behind the match", () => {
+  it("a save that carries its base is folded into the stored file: a payout made meanwhile is not undone", async () => {
+    const ns = fakeNamespace();
+    await seed(ns, "banker", (a) => {
+      a.counter = { address: "0xabc", linkedAt: 1, ghostfile: 1, stamps: [], name: null, rig: [], worn: 0, capital: "0", run: { day: 100, banked: 40, owed: 40, paid: 0 } };
+    });
+    const store = new DoAccountStore(ns);
+    const room = await store.load("banker", "BANKER"); // the room's copy
+    const base = structuredClone(room);
+    // the desk pays out
+    const desk = await store.load("banker", "BANKER");
+    desk.counter!.run = { day: 100, banked: 40, owed: 0, paid: 40 };
+    await store.save(desk);
+    // the room banks 10 and saves with its base
+    room.counter!.run = { day: 100, banked: 50, owed: 50, paid: 0 };
+    room.xp += 300;
+    await store.save(room, base);
+    const after = await store.load("banker", "BANKER");
+    expect(after.counter!.run).toEqual({ day: 100, banked: 50, owed: 10, paid: 40 });
+    expect(after.xp).toBe(300);
+    // a bare save still replaces, as the desk's own writes do
+    room.xp = 7;
+    await store.save(room);
+    expect((await store.load("banker", "BANKER")).xp).toBe(7);
+  });
+
+  it("the lease: a second holder is refused until the first lets go, and a stale lease expires", async () => {
+    const ns = fakeNamespace();
+    const stub = ns.get(ns.idFromName("leased"));
+    const lease = (key: string, ttl?: number) => stub.fetch(post("https://file/lease", { id: "leased", key, ttl }));
+    expect((await lease("one")).status).toBe(200);
+    const second = await lease("two");
+    expect(second.status).toBe(409);
+    expect(((await second.json()) as { reason: string }).reason).toBe(FILE_BUSY);
+    expect((await lease("one")).status).toBe(200); // the holder may renew
+    await stub.fetch(post("https://file/release", { id: "leased", key: "two" })); // not the holder: no effect
+    expect((await lease("two")).status).toBe(409);
+    await stub.fetch(post("https://file/release", { id: "leased", key: "one" }));
+    expect((await lease("two")).status).toBe(200);
+    // a lease that expired holds nobody
+    expect((await lease("two", 0)).status).toBe(200);
+    expect((await lease("three")).status).toBe(200);
+  });
+
+  it("the counter Worker refuses the money route while the file is leased, and lets go after its own request", async () => {
+    const ns = fakeNamespace();
+    await seed(ns, "busy", (a) => void (a.secret = SECRET));
+    const env = { PLAYER_FILE: ns, DB: {}, CHAIN_ID: "1", CHAIN_RPC: "https://rpc.invalid", CONTRACTS: "{}", SIGNER_KEY: "0x1", RELAYER_KEY: "0x1" } as unknown as Parameters<typeof counterWorker.fetch>[1];
+    const stub = ns.get(ns.idFromName("busy"));
+    expect((await stub.fetch(post("https://file/lease", { id: "busy", key: "held" }))).status).toBe(200);
+    const refused = await counterWorker.fetch(post("https://k/file/busy/counter", { op: "view", secret: SECRET }), env);
+    expect(refused.status).toBe(409);
+    expect(((await refused.json()) as { reason: string }).reason).toBe(FILE_BUSY);
+    await stub.fetch(post("https://file/release", { id: "busy", key: "held" }));
+    // a request of its own takes and releases the lease: the file is free afterwards
+    const wrong = await counterWorker.fetch(post("https://k/file/busy/counter", { op: "view", secret: "nope" }), env);
+    expect(wrong.status).toBe(403);
+    expect((await stub.fetch(post("https://file/lease", { id: "busy", key: "after" }))).status).toBe(200);
+  });
+
+  it("the daily view's roll is kept: the next claim measures from the counters before the match", async () => {
+    const ns = fakeNamespace();
+    const counter = contractsFor(dayIndex())[0]!.counter; // the day's base holds the counters its contracts read
+    await seed(ns, "daily", (a) => {
+      a.counters = { [counter]: 3 };
+      a.daily = { day: 1, base: { [counter]: 0 }, claimed: [] };
+    });
+    const stub = ns.get(ns.idFromName("daily"));
+    const view = (await (await stub.fetch(post("https://file/daily", { id: "daily" }))).json()) as { day: number };
+    const stored = (await (await stub.fetch(post("https://file/file", { id: "daily", name: "X" }))).json()) as Account;
+    expect(stored.daily?.day).toBe(view.day);
+    expect(stored.daily?.base).toMatchObject({ [counter]: 3 });
   });
 });

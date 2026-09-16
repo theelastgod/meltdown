@@ -10,7 +10,12 @@ import { totalXpToReach } from "../shared/progression/depth";
 
 export interface AccountStore {
   load(id: string, name: string): Account | Promise<Account>;
-  save(account: Account): void | Promise<void>;
+  /**
+   * `base` is the copy the writer loaded (Stage 58). A store that hands out copies folds the
+   * writer's changes into what it holds now (see server/merge.ts) rather than overwriting it; a
+   * store that hands out the one hot object has nothing to fold and may ignore it.
+   */
+  save(account: Account, base?: Account): void | Promise<void>;
 }
 
 /**

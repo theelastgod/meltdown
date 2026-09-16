@@ -1,6 +1,9 @@
 /**
  * PlayerFile Durable Object: the hot copy of one Ghostfile. One DO per account
- * id; the match room settles through it so two rooms can never race a write.
+ * id; every write to the file passes through it, one at a time. A save carries
+ * the copy the writer started from and is folded into what is stored (Stage 58,
+ * server/merge.ts) — before that the object serialised the writes and the last
+ * one won, so a match's copy overwrote a payout or a purchase made meanwhile.
  * Durable rows go to D1 (schema.sql) on every save; DO storage is the cache.
  */
 import { buyNode, createAccount, refundNode, upgradeAccount, type Account, recordGhost, validGhost } from "../shared/progression/account";
@@ -13,6 +16,13 @@ export const NOT_YOURS = "NOT YOUR FILE: this file has a secret and the request 
 import type { AccountStore } from "./accounts";
 import { MIGRATIONS, SCHEMA } from "./schema";
 import { extrasOf, freshLedgerLines } from "./file-row";
+import { mergeAccount } from "./merge";
+
+/** The refusal the money route gives while another request holds the file (Stage 58). */
+export const FILE_BUSY = "FILE BUSY: another request is moving this file; try again in a moment";
+const LEASE = "lease";
+/** a lease outlives any one chain round-trip; a Worker that died mid-request lets go this much later */
+export const LEASE_MS = 60_000;
 
 export interface PlayerEnv {
   DB?: D1Database;
@@ -45,15 +55,37 @@ async function withSchema<T>(db: D1Database, op: () => Promise<T>): Promise<T> {
 export class PlayerFile implements DurableObject {
   constructor(private state: DurableObjectState, private env: PlayerEnv) {}
 
+  /**
+   * The file from storage, or from its D1 row when storage has none — and then written back to
+   * storage (Stage 58): a cold load that stayed out of storage left the next save with nothing to
+   * compare its ledger against, so every line the row already held was inserted again.
+   */
+  private async loadAccount(id: string): Promise<Account | undefined> {
+    let a = await this.state.storage.get<Account>(KEY);
+    if (!a && this.env.DB) {
+      const db = this.env.DB;
+      a = (await withSchema(db, () => loadRow(db, id))) ?? undefined;
+      if (a) await this.state.storage.put(KEY, a);
+    }
+    return a;
+  }
+
+  /** Store the file and write the row, appending the ledger lines `prev` did not have. */
+  private async persist(a: Account, prev?: Account): Promise<void> {
+    const before = prev ?? (await this.state.storage.get<Account>(KEY));
+    await this.state.storage.put(KEY, a);
+    if (this.env.DB) {
+      const db = this.env.DB;
+      const fresh = freshLedgerLines(before?.ledger ?? [], a.ledger);
+      await withSchema(db, () => saveRow(db, a, fresh));
+    }
+  }
+
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     if (request.method === "POST" && url.pathname === "/load") {
       const { id, name } = (await request.json()) as { id: string; name: string };
-      let a = await this.state.storage.get<Account>(KEY);
-      if (!a && this.env.DB) {
-        const db = this.env.DB;
-        a = (await withSchema(db, () => loadRow(db, id))) ?? undefined;
-      }
+      let a = await this.loadAccount(id);
       if (!a) {
         a = createAccount(id, name);
         await this.state.storage.put(KEY, a);
@@ -61,39 +93,43 @@ export class PlayerFile implements DurableObject {
       return Response.json(upgradeAccount(a));
     }
     if (request.method === "POST" && url.pathname === "/save") {
-      const a = (await request.json()) as Account;
-      const prev = await this.state.storage.get<Account>(KEY);
-      await this.state.storage.put(KEY, a);
-      if (this.env.DB) {
-        const db = this.env.DB;
-        const fresh = freshLedgerLines(prev?.ledger ?? [], a.ledger);
-        await withSchema(db, () => saveRow(db, a, fresh));
-      }
+      const body = (await request.json()) as Account | { account: Account; base?: Account };
+      const carried = "account" in body && body.account && typeof body.account === "object" ? body : { account: body as Account, base: undefined };
+      const prev = await this.loadAccount(carried.account.id);
+      // a save that says where it started from is folded into what is stored; a bare save replaces it
+      const a = carried.base && prev ? mergeAccount(prev, carried.base, carried.account) : carried.account;
+      await this.persist(a, prev);
+      return Response.json({ ok: true });
+    }
+    /**
+     * A lease on the file for the money route (Stage 58). The counter Worker loads a file, asks
+     * the chain, and saves; two of those in flight for one file both read the same "owed" and
+     * both move it. Requests to one Durable Object run one at a time, so the check and the set
+     * here cannot interleave; the Worker holds the lease across its chain calls and lets go after
+     * its save, and a lease a dead Worker never released expires on its own.
+     */
+    if (request.method === "POST" && url.pathname === "/lease") {
+      const { key, ttl } = (await request.json()) as { key: string; ttl?: number };
+      const cur = await this.state.storage.get<{ key: string; until: number }>(LEASE);
+      if (cur && cur.key !== key && cur.until > Date.now()) return Response.json({ ok: false, reason: FILE_BUSY }, { status: 409 });
+      await this.state.storage.put(LEASE, { key, until: Date.now() + (typeof ttl === "number" ? ttl : LEASE_MS) });
+      return Response.json({ ok: true });
+    }
+    if (request.method === "POST" && url.pathname === "/release") {
+      const { key } = (await request.json()) as { key: string };
+      const cur = await this.state.storage.get<{ key: string; until: number }>(LEASE);
+      if (cur && cur.key === key) await this.state.storage.delete(LEASE);
       return Response.json({ ok: true });
     }
     if (request.method === "POST" && (url.pathname === "/buy" || url.pathname === "/refund")) {
       const { id, node, secret } = (await request.json()) as { id: string; node?: string; secret?: string };
-      let a = await this.state.storage.get<Account>(KEY);
-      if (!a && this.env.DB) {
-        const db = this.env.DB;
-        a = (await withSchema(db, () => loadRow(db, id))) ?? undefined;
-      }
-      if (!a) a = createAccount(id, "BLANK");
-      a = upgradeAccount(a);
+      const prev = await this.loadAccount(id);
+      const a = upgradeAccount(prev ?? createAccount(id, "BLANK"));
       // the id names the file; the secret proves the caller owns it (Stage 26)
       const auth = fileAuth(a, secret);
       if (!auth.ok) return Response.json({ ok: false, reason: NOT_YOURS }, { status: 403 });
       const r = url.pathname === "/buy" ? buyNode(a, String(node ?? "")) : refundNode(a, String(node ?? ""));
-      if (r.ok || auth.adopted) {
-        const prev = await this.state.storage.get<Account>(KEY);
-        await this.state.storage.put(KEY, a);
-        if (this.env.DB) {
-          const db = this.env.DB;
-          const acc = a;
-          const fresh = freshLedgerLines(prev?.ledger ?? [], acc.ledger);
-          await withSchema(db, () => saveRow(db, acc, fresh));
-        }
-      }
+      if (r.ok || auth.adopted) await this.persist(a, prev);
       return Response.json({ ok: r.ok, reason: r.reason, account: publicFile(a) });
     }
     if (request.method === "POST" && url.pathname === "/daily") {
@@ -101,22 +137,20 @@ export class PlayerFile implements DurableObject {
       // Stage 56, so every file with a secret got NOT YOUR FILE on the endgame panel in production
       // — the Worker forwards a plain GET here with only the id, and the dev host never gated it.
       const { id } = (await request.json()) as { id: string };
-      let a = await this.state.storage.get<Account>(KEY);
-      if (!a && this.env.DB) {
-        const db = this.env.DB;
-        a = (await withSchema(db, () => loadRow(db, id))) ?? undefined;
-      }
-      return Response.json(dailyView(upgradeAccount(a ?? createAccount(id, "BLANK"))));
+      const prev = await this.loadAccount(id);
+      const a = upgradeAccount(prev ?? createAccount(id, "BLANK"));
+      const day = a.daily?.day;
+      const view = dailyView(a);
+      // the view rolls the day: a new base snapshot of the counters. Kept (Stage 58) — a roll that
+      // was dropped here was taken again by the first claim after a match, from the post-match
+      // counters, and the match's progress with it
+      if (prev && a.daily?.day !== day) await this.persist(a, prev);
+      return Response.json(view);
     }
     if (request.method === "POST" && ["/claim", "/rewrite", "/cosmetic"].includes(url.pathname)) {
       const body = (await request.json()) as { id: string; op?: string; slot?: number; name?: string; loadout?: unknown; alias?: string; secret?: string };
-      let a = await this.state.storage.get<Account>(KEY);
-      if (!a && this.env.DB) {
-        const db = this.env.DB;
-        a = (await withSchema(db, () => loadRow(db, body.id))) ?? undefined;
-      }
-      if (!a) a = createAccount(body.id, "BLANK");
-      a = upgradeAccount(a);
+      const prev = await this.loadAccount(body.id);
+      const a = upgradeAccount(prev ?? createAccount(body.id, "BLANK"));
       // a Rewrite resets a Depth-50 file to Depth 1: the one call that must never take a bare id
       const auth = fileAuth(a, body.secret);
       if (!auth.ok) return Response.json({ ok: false, reason: NOT_YOURS }, { status: 403 });
@@ -127,16 +161,7 @@ export class PlayerFile implements DurableObject {
       dailyView(a); // rolls the day
       // an adopted secret is kept whether or not the operation succeeded: a failed first request
       // must not leave the file still unowned (Stage 56)
-      if (r.ok || auth.adopted) {
-        const prev = await this.state.storage.get<Account>(KEY);
-        await this.state.storage.put(KEY, a);
-        if (this.env.DB) {
-          const db = this.env.DB;
-          const acc = a;
-          const fresh = freshLedgerLines(prev?.ledger ?? [], acc.ledger);
-          await withSchema(db, () => saveRow(db, acc, fresh));
-        }
-      }
+      if (r.ok || auth.adopted) await this.persist(a, prev);
       return Response.json({ ...r, account: publicFile(a), daily: dailyView(a) });
     }
     if (request.method === "POST" && url.pathname === "/ghost") {
@@ -182,20 +207,12 @@ export class PlayerFile implements DurableObject {
      */
     if (request.method === "POST" && url.pathname === "/public") {
       const { id, name } = (await request.json()) as { id: string; name: string };
-      let a = await this.state.storage.get<Account>(KEY);
-      if (!a && this.env.DB) {
-        const db = this.env.DB;
-        a = (await withSchema(db, () => loadRow(db, id))) ?? undefined;
-      }
+      const a = await this.loadAccount(id);
       return Response.json(publicFile(a ? upgradeAccount(a) : createAccount(id, name)));
     }
     if (request.method === "POST" && url.pathname === "/file") {
       const { id, name } = (await request.json()) as { id: string; name: string };
-      let a = await this.state.storage.get<Account>(KEY);
-      if (!a && this.env.DB) {
-        const db = this.env.DB;
-        a = (await withSchema(db, () => loadRow(db, id))) ?? undefined;
-      }
+      const a = await this.loadAccount(id);
       return Response.json(a ? upgradeAccount(a) : createAccount(id, name));
     }
     return new Response("player file", { status: 404 });
@@ -212,9 +229,25 @@ export class DoAccountStore implements AccountStore {
     return (await res.json()) as Account;
   }
 
-  async save(a: Account): Promise<void> {
+  async save(a: Account, base?: Account): Promise<void> {
     const stub = this.ns.get(this.ns.idFromName(a.id));
-    await stub.fetch("https://file/save", { method: "POST", body: JSON.stringify(a) });
+    await stub.fetch("https://file/save", { method: "POST", body: JSON.stringify(base ? { account: a, base } : a) });
+  }
+}
+
+/**
+ * Run `fn` holding the file's lease (Stage 58); `busy` answers when another request holds it.
+ * The lease is released whatever `fn` does.
+ */
+export async function withLease(ns: DurableObjectNamespace, id: string, busy: (reason: string) => Response, fn: () => Promise<Response>): Promise<Response> {
+  const stub = ns.get(ns.idFromName(id));
+  const key = crypto.randomUUID();
+  const got = (await (await stub.fetch("https://file/lease", { method: "POST", body: JSON.stringify({ id, key }) })).json()) as { ok: boolean; reason?: string };
+  if (!got.ok) return busy(got.reason ?? FILE_BUSY);
+  try {
+    return await fn();
+  } finally {
+    await stub.fetch("https://file/release", { method: "POST", body: JSON.stringify({ id, key }) });
   }
 }
 

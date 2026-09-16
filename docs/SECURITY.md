@@ -279,6 +279,22 @@ on it — through two stages that were themselves about this credential.
 defect was a missing field in an object literal, and that is the cheapest true statement about it.
 Removing the secret from any of the three fails it.
 
+### 1.14 A match's save overwrote the file, and the money route had no lock — HIGH
+
+The Durable Object's header said the match room settled through it "so two rooms can never race a
+write". The object serialised the writes; it did not reconcile them. The room saved its whole copy
+of the file after every bank, settlement and stamp, so any write made to the file during a match —
+a payout, a purchase, a claim, a Rewrite — was replaced by the room's next save, and a payout
+undone that way was paid again by the next one. Separately, the counter Worker's money route did
+load → chain → save with no lock: two requests in flight for one file both read the same "owed".
+
+**Fixed (Stage 58).** A save carries the copy the writer loaded, and the object folds the writer's
+changes into what it holds (`server/merge.ts`): numbers move by the writer's delta, sets keep both
+sides, the ledger appends, a replaced field is replaced. The money route takes a lease on the file's
+Durable Object for the length of the request and answers 409 to a second caller; the Node host
+holds a per-file lock in process. `tests/merge.test.ts`, the Stage 58 cases in
+`tests/routes.test.ts` and `tests/lease.test.ts` pin both; reverting either guard fails a case.
+
 ---
 
 ## 2. What is deliberately trusted

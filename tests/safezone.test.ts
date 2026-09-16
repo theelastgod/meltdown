@@ -110,3 +110,47 @@ describe("levels place the cast against that rule, not by accident", () => {
     }
   });
 });
+
+/**
+ * The rule reaches the things that are not damage (Stage 58): an EMP zeroed the shield and the
+ * weapon of a file standing in the gate, and a baton lunge from the street stunned it.
+ */
+describe("what else the zone keeps out", () => {
+  it("an EMP from the street does not black out or strip a player in the gate", () => {
+    const { w, b } = world(STREET, GATE);
+    b.shield = 30;
+    (w as unknown as { detonate: (p: unknown, pos: unknown, direct: null, opts: object) => void }).detonate({ kind: "emp", owner: 1, radius: 8 }, { ...GATE, y: 0.9 }, null, {});
+    expect(b.shield).toBe(30);
+    expect(b.weapon.empTimer).toBe(0);
+    expect(w.drainEvents().some((e) => e.type === "emp")).toBe(true); // the blast still happened, for the street
+  });
+
+  it("and an EMP thrown from the gate blacks out nobody in the street", () => {
+    const { w, a } = world(STREET, GATE);
+    a.shield = 30;
+    (w as unknown as { detonate: (p: unknown, pos: unknown, direct: null, opts: object) => void }).detonate({ kind: "emp", owner: 2, radius: 8 }, { ...STREET, y: 0.9 }, null, {});
+    expect(a.shield).toBe(30);
+    expect(a.weapon.empTimer).toBe(0);
+  });
+
+  it("outside the zone the same EMP lands", () => {
+    const { w, a } = world(STREET, { x: -8, y: 0, z: 0 });
+    a.shield = 30;
+    (w as unknown as { detonate: (p: unknown, pos: unknown, direct: null, opts: object) => void }).detonate({ kind: "emp", owner: 2, radius: 8 }, { ...STREET, y: 0.9 }, null, {});
+    expect(a.shield).toBe(0);
+    expect(a.weapon.empTimer).toBeGreaterThan(0);
+  });
+
+  it("a stun from the street does not land on a player in the gate, nor one from the gate on the street", () => {
+    const { w, a, b } = world(STREET, GATE);
+    const stun = (w as unknown as { stunPlayer: (id: number, s: number, by: number, opts: object) => void }).stunPlayer.bind(w);
+    stun(2, 1.5, 1, {});
+    expect(b.weapon.stunTimer).toBe(0);
+    stun(1, 1.5, 2, {});
+    expect(a.weapon.stunTimer).toBe(0);
+    // and between two players in the street it does
+    b.pos = { x: -8, y: 0, z: 0 };
+    stun(2, 1.5, 1, {});
+    expect(b.weapon.stunTimer).toBe(1.5);
+  });
+});

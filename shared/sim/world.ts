@@ -452,6 +452,11 @@ export class World {
   private stunPlayer(id: number, seconds: number, by: number, opts: StepOpts): void {
     const v = this.players.get(id);
     if (!v || !v.alive) return;
+    // the same rule as damage (Stage 58): a baton lunge from the street used to stun a file in the gate
+    if (this.run) {
+      const attacker = this.players.get(by);
+      if (inSafeZone(this.run, v.pos) || (attacker && inSafeZone(this.run, attacker.pos))) return;
+    }
     v.weapon.stunTimer = Math.max(v.weapon.stunTimer, seconds);
     v.weapon.charging = false;
     v.weapon.charge = 0;
@@ -612,16 +617,24 @@ export class World {
       return;
     }
     if (p.kind === "emp") {
-      for (const o of this.players.values()) {
-        if (!o.alive) continue;
-        if (dist(v3(o.pos.x, o.pos.y + 0.9, o.pos.z), pos) <= p.radius) {
-          o.weapon.empTimer = Math.max(o.weapon.empTimer, GRENADES.emp.duration);
-          o.shield = 0;
-          o.sinceDamage = 0;
+      // the safe zone keeps the rule it keeps for damage (Stage 58): a player inside is not blacked
+      // out or stripped of shield, and a grenade thrown from inside blacks out nothing — the EMP
+      // used to take 30 of a file's 100 effective HP in the market, and its weapon with it
+      const owner = this.players.get(p.owner);
+      const fromSafe = !!(this.run && owner && inSafeZone(this.run, owner.pos));
+      if (!fromSafe) {
+        for (const o of this.players.values()) {
+          if (!o.alive) continue;
+          if (this.run && inSafeZone(this.run, o.pos)) continue;
+          if (dist(v3(o.pos.x, o.pos.y + 0.9, o.pos.z), pos) <= p.radius) {
+            o.weapon.empTimer = Math.max(o.weapon.empTimer, GRENADES.emp.duration);
+            o.shield = 0;
+            o.sinceDamage = 0;
+          }
         }
+        for (const w of this.wasps) if (w.alive && dist(w.pos, pos) <= p.radius + 1) w.disabledTimer = Math.max(w.disabledTimer, GRENADES.emp.duration);
+        for (const m of this.mechs) if (m.alive && dist(v3(m.pos.x, m.pos.y + 1.7, m.pos.z), pos) <= p.radius + 1.5) m.disabledTimer = Math.max(m.disabledTimer, GRENADES.emp.duration);
       }
-      for (const w of this.wasps) if (w.alive && dist(w.pos, pos) <= p.radius + 1) w.disabledTimer = Math.max(w.disabledTimer, GRENADES.emp.duration);
-      for (const m of this.mechs) if (m.alive && dist(v3(m.pos.x, m.pos.y + 1.7, m.pos.z), pos) <= p.radius + 1.5) m.disabledTimer = Math.max(m.disabledTimer, GRENADES.emp.duration);
       this.emit({ tick: this.tick, playerId: p.owner, type: "emp", pos: clone(pos), radius: p.radius }, opts);
       return;
     }

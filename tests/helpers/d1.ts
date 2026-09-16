@@ -33,5 +33,5 @@ export function fakeD1(db: DatabaseSync, spy?: { batches: number; runs: number }
 
 export function fakeState(): DurableObjectState {
   const m = new Map<string, unknown>();
-  return { storage: { get: async (k: string) => m.get(k), put: async (k: string, v: unknown) => void m.set(k, v) } } as unknown as DurableObjectState;
+  return { storage: { get: async (k: string) => m.get(k), put: async (k: string, v: unknown) => void m.set(k, v), delete: async (k: string) => m.delete(k) } } as unknown as DurableObjectState;
 }

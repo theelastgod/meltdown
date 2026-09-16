@@ -26,6 +26,7 @@ import { createCampaignRoom, crewInfo, type CampaignRoomHandle } from "./campaig
 import { crewRoomName, normaliseCrewCode, NO_SUCH_CREW } from "../shared/net/crew";
 import { checkReport, ReportRing } from "../shared/perf/report";
 import { seasonToPost } from "./chain/cron";
+import { withFileLock } from "./file-lock";
 import { MemoryEndgameStore, seasonView } from "./endgame";
 import { currentAudit } from "../shared/endgame/audits";
 import { contractsFor } from "../shared/endgame/contracts";
@@ -462,7 +463,7 @@ const http = createServer((req, res) => {
         return;
       }
       accounts.save(a); // an adopted secret is kept
-      const r = await counter.ledger.link(a, String(body.message ?? ""), String(body.signature ?? "") as Hex);
+      const r = await withFileLock(id, () => counter.ledger.link(a, String(body.message ?? ""), String(body.signature ?? "") as Hex));
       if (r.ok) accounts.save(a);
       log(`[counter] link ${id}: ${r.ok ? "ok" : r.reason}${r.ok && r.reason ? " (" + r.reason + ")" : ""}`);
       res.end(JSON.stringify({ ok: r.ok, reason: r.reason, counter: a.counter ?? null }));
@@ -539,7 +540,8 @@ const http = createServer((req, res) => {
             return;
           }
           // the counter-ledger: wear is cache-only; reconcile / stamps / name go to the chain and fail soft
-          void counterRequest(a, parsed, counter.ledger).then((r) => {
+          // one request at a time per file (Stage 58): two payouts in flight both read the same "owed"
+          void withFileLock(id, () => counterRequest(a, parsed, counter.ledger)).then((r) => {
             if (r.ok) accounts.save(a);
             log(`[counter] ${id} ${String((parsed as { op?: string }).op)}: ${r.ok ? "ok" : r.reason}`);
             res.setHeader("content-type", "application/json");

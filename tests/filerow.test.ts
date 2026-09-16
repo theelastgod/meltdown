@@ -73,3 +73,20 @@ describe("the ledger lines written since the last save survive the room's trim",
     expect(stored[200]).toBe("BANKED 40 AT GATE");
   });
 });
+
+describe("a cold load is written back to storage (Stage 58)", () => {
+  it("so the save after it appends only the new line, instead of every line the row already held", async () => {
+    const db = new DatabaseSync(":memory:");
+    const env: PlayerEnv = { DB: fakeD1(db) };
+    const a: Account = createAccount("cold2", "COLD");
+    a.ledger = ["ONE", "TWO", "THREE"];
+    await new PlayerFile(fakeState(), env).fetch(new Request("https://file/save", { method: "POST", body: JSON.stringify(a) }));
+    // a fresh object with empty storage: the load comes from the row
+    const cold = new PlayerFile(fakeState(), env);
+    const b = (await (await cold.fetch(new Request("https://file/load", { method: "POST", body: JSON.stringify({ id: "cold2", name: "BLANK" }) }))).json()) as Account;
+    b.ledger.push("FOUR");
+    await cold.fetch(new Request("https://file/save", { method: "POST", body: JSON.stringify(b) }));
+    const stored = (db.prepare("SELECT line FROM ledger WHERE account = 'cold2' ORDER BY seq").all() as { line: string }[]).map((r) => r.line);
+    expect(stored).toEqual(["ONE", "TWO", "THREE", "FOUR"]);
+  });
+});
