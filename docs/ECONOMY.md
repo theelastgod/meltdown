@@ -162,6 +162,12 @@ and **both** paths spend from it: a withdrawal refuses a day the night has settl
 does pay it removes the units so the night cannot find them. Tested in both orders; removing either
 guard fails a case.
 
+Since Stage 57 the direct withdrawal is **devnet-only**. It paid at the per-unit ceiling before the
+day's pot was known, which is the bound the settlement exists to enforce, and it paid units the
+room carried from an earlier day against only the current day's row. On a real chain THE RUN pays
+once, at the night's settlement; on the devnet the button remains so the probes can move money on
+demand, and it pays only what the current day's row still holds.
+
 Until then the counter Worker's cron had no `scheduled` handler at all — `wrangler.counter.toml`
 declared a weekly trigger firing into a Worker that only exported `fetch`. The Audit prize job had
 never run.

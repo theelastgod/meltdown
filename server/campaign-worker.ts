@@ -5,6 +5,7 @@
  * DO, reached through a cross-script binding (load → apply → save).
  */
 import { IDLE_PARK_MS, SERVER_TICK_MS, type Conn } from "./room";
+import { decodePath } from "./path";
 import { createCampaignRoom, crewInfo, type CampaignRoomHandle } from "./campaign-room";
 import { crewRoomName, normaliseCrewCode, NO_SUCH_CREW } from "../shared/net/crew";
 import { DoAccountStore, NOT_YOURS } from "./player-do";
@@ -32,7 +33,7 @@ export default {
       const r = await env.CAMPAIGN_ROOM.get(env.CAMPAIGN_ROOM.idFromName(crewRoomName(code))).fetch(new Request(`https://crew/info?code=${code}`));
       return new Response(await r.text(), { headers: cors });
     }
-    const f = decodeURIComponent(url.pathname).match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})\/campaign$/);
+    const f = decodePath(url.pathname)?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})\/campaign$/);
     if (f) {
       const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" };
       if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });

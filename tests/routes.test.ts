@@ -192,3 +192,17 @@ describe("the third review (Stage 56): the Workers' file routes", () => {
     expect(again.status).toBe(200);
   });
 });
+
+describe("the fourth review (Stage 57): a malformed path", () => {
+  const bad = "/file/%E0%A4%A/counter";
+  it("is a 404 from every Worker, not a thrown request", async () => {
+    const ns = fakeNamespace();
+    const counterEnv = { PLAYER_FILE: ns, DB: {}, CHAIN_ID: "1", CHAIN_RPC: "https://rpc.invalid", CONTRACTS: "{}", SIGNER_KEY: "0x1", RELAYER_KEY: "0x1" } as unknown as Parameters<typeof counterWorker.fetch>[1];
+    const counter = await counterWorker.fetch(post(`https://k${bad}`, { op: "view" }), counterEnv);
+    expect(counter.status).toBe(404);
+    const campaign = await campaignWorker.fetch(post(`https://c${bad.replace("counter", "campaign")}`, { op: "faction" }), { PLAYER_FILE: ns } as unknown as Parameters<typeof campaignWorker.fetch>[1]);
+    expect(campaign.status).toBe(404);
+    const match = await matchWorker.fetch(new Request(`https://w${bad.replace("counter", "daily")}`), { PLAYER_FILE: ns } as unknown as Parameters<typeof matchWorker.fetch>[1]);
+    expect(match.status).toBe(404);
+  });
+});

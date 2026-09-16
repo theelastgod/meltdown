@@ -258,6 +258,8 @@ export class CounterLedger {
       const r = await this.pub.waitForTransactionReceipt({ hash });
       if (r.status !== "success") return { ok: false, reason: "too early, or already swept" };
       const after = (await this.pub.readContract({ address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [this.treasuryAddress] })) as bigint;
+      // recorded, so the nightly sweep does not ask again (Stage 57): the vault's reclaim never reverts once the deadline has passed
+      await this.opts.prizes?.put({ ...stored, sweptAt: this.now() });
       const swept = formatEther(after - before);
       this.log(`prizes · epoch ${id} reclaimed: ${swept} $CAPITAL to the treasury`);
       return { ok: true, swept };
@@ -304,6 +306,11 @@ export class CounterLedger {
     try {
       if (tree.total > 0n) {
         const k = this.opts.contracts;
+        // the chain is asked before anything is drawn (Stage 57): an epoch that is posted on chain
+        // and missing from the store is a store to repair, not a day to fund again — the draw used
+        // to land in the relayer's own balance on every retry while the post reverted EpochExists
+        const onChain = (await this.pub.readContract({ address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "epochs", args: [BigInt(epoch)] })) as readonly [Hex, bigint, bigint, bigint];
+        if (onChain[1] > 0n) return { ok: false, reason: `epoch ${epoch} is on the chain but not in the store: repair the store, do not post it again`, skipped };
         // the vault pulls from the poster, so the epoch's funding passes through the relayer for one
         // transaction — drawn against its allowance, which is still the cap on what it can take
         if (!this.treasuryIsRelayer) {
@@ -317,7 +324,7 @@ export class CounterLedger {
         const r = await this.pub.waitForTransactionReceipt({ hash });
         if (r.status !== "success") return { ok: false, reason: "post reverted" };
       }
-      const stored: StoredEpoch = { epoch, kind, period, root: tree.root, total: tree.total.toString(), postedAt: this.now(), leaves: tree.leaves.map((l) => ({ account: l.account, file: merged.find((m) => m.account.toLowerCase() === l.account.toLowerCase())!.file, amount: l.amount.toString(), reason: merged.find((m) => m.account.toLowerCase() === l.account.toLowerCase())!.reason, proof: l.proof })) };
+      const stored: StoredEpoch = { epoch, kind, period, root: tree.root, total: tree.total.toString(), postedAt: this.now(), leaves: tree.leaves.map((l) => { const m = byWallet.get(l.account.toLowerCase())!; return { account: l.account, file: m.file, amount: l.amount.toString(), reason: m.reason, proof: l.proof }; }) };
       await store.put(stored);
       this.log(`prizes · ${kind} ${period} posted as epoch ${epoch}: ${stored.leaves.length} leaves, ${formatEther(tree.total)} $CAPITAL`);
       return { ok: true, epoch: stored, skipped };
@@ -385,13 +392,28 @@ export class CounterLedger {
     if (!c?.address) return { ok: false, reason: "no wallet linked" };
     const run = c.run ?? { day: 0, banked: 0, owed: 0, paid: 0 };
     if (run.owed <= 0) return { ok: false, reason: "nothing owed" };
+    /**
+     * Devnet only (Stage 57). This path pays at the ceiling before the day's pot is known, which
+     * is the schedule bound Stage 17 built the settlement to enforce, bypassed by a button; and it
+     * paid everything the file said it was owed, which the room carries over from earlier days,
+     * against only the current day's row — so an earlier day's units were paid here and again by
+     * that day's epoch. On a real chain THE RUN pays once, at the night's settlement.
+     */
+    if (!this.opts.devnet) return { ok: false, reason: "THE RUN pays at the night's settlement: today's units become a prize once the day settles" };
     if (await this.opts.prizes?.get(EPOCH_BASE.run + run.day)) return { ok: false, reason: `day ${run.day} is settled — claim the epoch` };
+    // only what this day's row still holds for the file: units the file carried from another day
+    // are that day's business (its epoch, or the reconciliation), never paid twice from here
+    // a store that has no row for the file holds nothing for it (every store drops spent rows from
+    // the day's view): only a ledger with no store at all takes the file's word for it
+    const rows = await this.opts.runs?.day(run.day);
+    const recorded = rows ? (rows.find((r) => r.file === a.id)?.units ?? 0) : run.owed;
+    const units = Math.min(run.owed, recorded);
+    if (units <= 0) return { ok: false, reason: `nothing of day ${run.day}'s is unpaid on the table: what the file is owed belongs to an earlier day` };
     try {
-      const units = run.owed;
       const hash = await this.payFromTreasury(c.address as Hex, parseEther(String(units * MAX_CAPITAL_PER_UNIT)));
       const r = await this.pub.waitForTransactionReceipt({ hash });
       if (r.status !== "success") return { ok: false, reason: "payout reverted" };
-      a.counter = { ...c, run: { ...run, owed: 0, paid: run.paid + units } };
+      a.counter = { ...c, run: { ...run, owed: run.owed - units, paid: run.paid + units } };
       // spent, so tonight's settlement does not pay for them a second time
       await this.opts.runs?.spend(run.day, a.id, units);
       this.log(`payout ${units} $CAPITAL → ${a.id}`);

@@ -3,6 +3,7 @@
  * The Room class is identical to the Node host's.
  */
 import { MAX_PLAYERS_PER_ROOM, inputClassOf, matchRoomName } from "../shared/net/matchmaking";
+import { decodePath } from "./path";
 import { Room, IDLE_PARK_MS, SERVER_TICK_MS, type Conn } from "./room";
 import { DoAccountStore, PlayerFile } from "./player-do";
 import { DoEndgameStore, Endgame } from "./endgame-do";
@@ -48,7 +49,7 @@ export default {
       const body = { day: dayIndex(), contracts: contractsFor(dayIndex()), audit: { week, ...audit }, board: await store.audit(week), season: seasonView(await store.season()) };
       return new Response(JSON.stringify(body), { headers: { "access-control-allow-origin": "*", "content-type": "application/json" } });
     }
-    const f = decodeURIComponent(url.pathname).match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|daily|claim|rewrite|cosmetic))?$/);
+    const f = decodePath(url.pathname)?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})(\/(buy|refund|ghost|daily|claim|rewrite|cosmetic))?$/);
     if (f) {
       const id = env.PLAYER_FILE.idFromName(f[1]!);
       const stub = env.PLAYER_FILE.get(id);

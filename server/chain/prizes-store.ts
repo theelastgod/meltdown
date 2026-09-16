@@ -14,6 +14,8 @@ export interface StoredEpoch {
   root: Hex;
   total: string;
   postedAt: number;
+  /** when the unclaimed remainder was swept back to the treasury (Stage 57); a swept epoch is not asked again */
+  sweptAt?: number;
   leaves: { account: Hex; file: string; amount: string; reason: string; proof: Hex[] }[];
 }
 

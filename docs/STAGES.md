@@ -1641,6 +1641,54 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 57 — The review, part four: Stages 15–24
+
+**Goal.** The fourth pass, over the ten stages that built the money: the prize vault, the binding
+emission schedule, the nightly settlement, the sinks, the treasury split and the reconciliation.
+Ten findings. One (the unauthenticated `/prizes/post`) was already closed by Stage 28's admin key;
+one (the reconciliation walks every linked file rather than the day's table) is the design, and
+stays — the table is the record being checked, so it cannot also be the index into it. The other
+eight are fixed here, and four of them are the kind that pay someone twice.
+
+1. **The direct withdrawal paid twice.** THE RUN's withdrawal paid everything the file said it was
+   owed, and the room carries unpaid units from one day onto the next file — so units banked on
+   Monday, carried to Tuesday, were paid on Tuesday's button and again by Monday's epoch. The
+   withdrawal now pays only what the day's own row still holds, and a store with no row holds
+   nothing (every store drops spent rows from the day's view — the first draft of the fix fell back
+   to the file's word, and the test caught it paying the carried units on a second press).
+2. **And it paid at the ceiling, before the pot was known.** The schedule Stage 17 built the
+   settlement around was bypassed by a button that paid at the per-unit maximum. On a real chain
+   the withdrawal is now refused: THE RUN pays once, at the night's settlement. The devnet keeps it
+   so the probes can move money on demand. Both pinned; removing either guard fails a case.
+3. **A missing store row funded an epoch every night.** `postEpoch` drew the epoch's total into the
+   relayer before posting, and refused only on the store's say-so. Restore the store from a backup
+   that lost an epoch row and every retry drew the money, posted, reverted with `EpochExists`, and
+   left the draw in the hot key. The chain is asked first: an epoch that is on the chain and not in
+   the store is refused as a store to repair. Pinned: the relayer's balance does not move.
+4. **The reconciliation erased a real debt.** A file that banked but had no wallet when its day
+   settled is skipped by the epoch and keeps what it is owed — until the reconciliation ran with
+   `fix`, read the day as settled, called the debt "stranded" and cleared it as paid. Stranded now
+   means the epoch has a leaf for the file; a settled day with no leaf is a new drift kind,
+   `unpaid`, reported and never cleared. Pinned on the day walk and the backlog walk.
+5. **The season prize was never postable.** The roll reset the contributors in place, and every
+   read rolls first, so the cron that posts the season's prizes read a fresh season with an empty
+   map and an index equal to its own. The roll now keeps the closed season and its contributors
+   until the next roll; the cron posts that, guarded by the epoch it would create.
+6. **A settlement the RPC failed was never retried.** The cron settled yesterday and nothing else.
+   The nightly decisions are now pure functions (`server/chain/cron.ts`): yesterday always, and any
+   unsettled day in the past week that has units; epochs old enough, worth something, and not yet
+   swept; the closed season. All three are unit-tested off the clock.
+7. **The sweep was sent for every old epoch every night, forever.** A reclaim records `sweptAt` on
+   the stored epoch and the selector skips it.
+8. **A bad percent-escape threw out of all three Workers.** `decodeURIComponent` on the request
+   path, uncaught: a 500 for a malformed URL. Decoded through one helper that answers null, and a
+   null is a 404. Pinned on all three Workers.
+
+**Also.** Two older payout tests set what a file was owed without banking it on the day's table,
+which the room always does; they now bank it, because under the new rule the table is the record.
+
+**Count.** 457 tests. Every new guard fails its case when reverted.
+
 ## Stage 56 — The review, part three: Stages 25–34
 
 **Goal.** The third pass of the same review, over Stages 25 to 34. Ten findings, all real, and

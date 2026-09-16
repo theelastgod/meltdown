@@ -160,6 +160,7 @@ describe("THE RUN — the room and the payout", () => {
     expect((await b.ledger.link(a, message, await player.signMessage({ message }))).ok).toBe(true);
     expect((await b.ledger.payout(a)).reason).toMatch(/nothing owed/);
     a.counter!.run = { day: 0, banked: 7, owed: 7, paid: 0 };
+    b.runs.add(0, a.id, 7); // what the room writes on bank: the table is the record of what is unpaid (Stage 57)
     const before = (await b.pub.readContract({ address: b.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [player.address] })) as bigint;
     const r = await b.ledger.payout(a);
     expect(r.ok).toBe(true);

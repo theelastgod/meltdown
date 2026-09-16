@@ -7,12 +7,15 @@
  * Secrets (wrangler secret put): SIGNER_KEY, RELAYER_KEY. Vars: CHAIN_ID, CHAIN_RPC, CONTRACTS (JSON).
  */
 import { http, type Hex } from "viem";
+import { decodePath } from "./path";
 import { CounterLedger } from "./chain/ledger";
 import { D1WalletStore } from "./chain/wallets-d1";
 import { D1PrizeStore } from "./chain/prizes-d1";
 import { auditPrizes, seasonPrizes } from "../shared/economy/prizes";
 import { settleRunDay } from "./chain/settle-run";
 import { reconcileRunBacklog } from "./chain/reconcile-run";
+import { daysToSettle, epochsToReclaim, seasonToPost } from "./chain/cron";
+import { EPOCH_BASE } from "./chain/prizes-store";
 import { D1RunStore } from "./run-d1";
 import { DEV_KEY_ON_CHAIN, isDevKey } from "./chain/dev-keys";
 import { dayIndex, seasonIndex, weekIndex } from "../shared/endgame/clock";
@@ -126,7 +129,7 @@ export default {
       if (r.ok || auth.adopted) await save(a); // an adopted secret is kept even when the link fails (Stage 56)
       return json({ ok: r.ok, reason: r.reason, counter: a.counter ?? null });
     }
-    const f = decodeURIComponent(url.pathname).match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})\/counter$/);
+    const f = decodePath(url.pathname)?.match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})\/counter$/);
     if (f && request.method === "POST") {
       if (!rateOk(f[1]!)) return json({ ok: false, reason: "RATE LIMITED: the counter-ledger takes 30 requests a minute per file" }, 429);
       const a = await load(f[1]!);
@@ -189,12 +192,17 @@ export default {
       const { load, save } = filesOf(env);
       const ledger = ledgerOf(env);
 
-      const day = dayIndex(at) - 1; // yesterday: today is not over
-      try {
-        const r = await settleRunDay(day, { ledger, runs: new D1RunStore(env.DB), load, save, now: () => at, log: (l) => console.log(l) });
-        if (!r.ok) console.log(`cron: run day ${day} not settled — ${r.reason}`);
-      } catch (e) {
-        console.log(`cron: run day ${day} threw — ${String((e as Error).message).slice(0, 200)}`);
+      // yesterday, and any day in the window before it that a failed run left unsettled (Stage 57):
+      // an RPC outage at 01:00 used to leave that day's units unpaid until an operator noticed
+      const runs = new D1RunStore(env.DB);
+      const days = await daysToSettle(dayIndex(at), async (d) => !!(await runs.settled(d)), async (d) => (await runs.day(d)).length > 0);
+      for (const day of days) {
+        try {
+          const r = await settleRunDay(day, { ledger, runs, load, save, now: () => at, log: (l) => console.log(l) });
+          if (!r.ok) console.log(`cron: run day ${day} not settled — ${r.reason}`);
+        } catch (e) {
+          console.log(`cron: run day ${day} threw — ${String((e as Error).message).slice(0, 200)}`);
+        }
       }
 
       // Reconcile yesterday and every day still owed in one walk (Stage 40). Until Stage 55 a
@@ -219,9 +227,10 @@ export default {
         console.log(`cron: backlog reconcile threw — ${String((e as Error).message).slice(0, 200)}`);
       }
       try {
-        for (const e of await ledger.epochs()) {
-          // the vault holds the deadline; asking early simply fails and costs a reverted call
-          if (Number(e.total) <= 0 || at - e.postedAt < 90 * 86_400_000) continue;
+        // old enough, worth something, and not already swept (Stage 57): the vault's reclaim never
+        // reverts once the deadline has passed, so before the sweep was recorded every old epoch
+        // was asked again every night, forever
+        for (const e of epochsToReclaim(await ledger.epochs(), at)) {
           const r = await ledger.reclaimEpoch(e.epoch);
           if (r.ok) console.log(`cron: epoch ${e.epoch} swept ${r.swept} $CAPITAL to the treasury`);
         }
@@ -240,10 +249,14 @@ export default {
           const r = await ledger.postEpoch("audit", week, auditPrizes(board));
           console.log(`cron: audit week ${week} — ${r.ok ? `${r.epoch?.leaves.length} leaves` : r.reason}`);
         }
-        const season = (await (await stub.fetch(new Request("https://endgame/season"))).json()) as { season: number; contributors?: Record<string, number> };
-        if (seasonIndex(at) > season.season) {
-          const r = await ledger.postEpoch("season", season.season, seasonPrizes(season.contributors ?? {}));
-          console.log(`cron: season ${season.season} — ${r.ok ? `${r.epoch?.leaves.length} leaves` : r.reason}`);
+        // the season the roll just closed, with the contributors it kept (Stage 57): reading the
+        // state rolls it first, so the current season's index never exceeded ours and the closed
+        // season's contributors were gone — no season prize had ever been postable
+        const season = (await (await stub.fetch(new Request("https://endgame/season"))).json()) as { season: number; closed?: { season: number; contributors: Record<string, number> } };
+        const closed = seasonToPost(season);
+        if (closed && !(await ledger.epoch(EPOCH_BASE.season + closed.season))) {
+          const r = await ledger.postEpoch("season", closed.season, seasonPrizes(closed.contributors));
+          console.log(`cron: season ${closed.season} — ${r.ok ? `${r.epoch?.leaves.length} leaves` : r.reason}`);
         }
       } catch (e) {
         console.log(`cron: prize job threw — ${String((e as Error).message).slice(0, 200)}`);

@@ -17,6 +17,7 @@ import { settleRunDay } from "../server/chain/settle-run";
 import { reconcileRunBacklog, reconcileRunDay } from "../server/chain/reconcile-run";
 import { MemoryRunStore } from "../server/run-store";
 import { EPOCH_BASE } from "../server/chain/prizes-store";
+import { epochsToReclaim } from "../server/chain/cron";
 import { MemoryAccountStore, devSeed } from "../server/accounts";
 import { SIWE_STATEMENT } from "../shared/economy/counter";
 import { runPot } from "../shared/economy/settlement";
@@ -469,5 +470,97 @@ describe("walking the backlog, not one day at a time", () => {
     expect(fixed.drift[0]).toMatchObject({ file: "sandbox-b5", kind: "stranded", units: 30, fixed: true });
     expect(fixed.cleared).toBe(30);
     expect(r.store.accounts.get("sandbox-b5")!.counter!.run!.owed).toBe(0);
+  }, 60_000);
+});
+
+/**
+ * The fourth review (Stage 57): the money paths that ran for nineteen stages without these cases.
+ */
+describe("the fourth review (Stage 57): what the settlement pays, and what the withdrawal may", () => {
+  it("the direct withdrawal is devnet-only: a real chain pays once, at the night's settlement", async () => {
+    const r = await rig();
+    const { a, w } = await r.link("sandbox-v1", DEV_KEYS.player);
+    r.bank(a, 50);
+    const real = new (r.b.ledger.constructor as new (o: typeof r.b.ledger.opts) => typeof r.b.ledger)({ ...r.b.ledger.opts, devnet: false });
+    const before = await r.balance(w.address);
+    const pay = await real.payout(a);
+    expect(pay.ok).toBe(false);
+    expect(pay.reason).toMatch(/night's settlement/);
+    expect(await r.balance(w.address)).toBe(before);
+    expect(a.counter!.run!.owed).toBe(50); // nothing spent
+    expect(r.runs.day(DAY).find((l) => l.file === "sandbox-v1")!.units).toBe(50);
+  }, 60_000);
+
+  it("pays only what the day's row holds, not units the file carried over from another day", async () => {
+    const r = await rig();
+    const { a, w } = await r.link("sandbox-v2", DEV_KEYS.player);
+    r.bank(a, 30);
+    // the room carries yesterday's unpaid 50 onto today's file; only today's 30 are on today's row
+    a.counter = { ...a.counter!, run: { ...a.counter!.run!, owed: 80 } };
+    r.store.save(a);
+    const before = await r.balance(w.address);
+    const pay = await r.b.ledger.payout(a);
+    expect(pay.ok).toBe(true);
+    expect((await r.balance(w.address)) - before).toBe(30n * 10n ** 18n);
+    expect(a.counter!.run!.owed).toBe(50);
+    expect(a.counter!.run!.paid).toBe(30);
+    // and a second press finds nothing of today's left on the table
+    const again = await r.b.ledger.payout(a);
+    expect(again.ok).toBe(false);
+    expect(again.reason).toMatch(/earlier day/);
+    expect(a.counter!.run!.owed).toBe(50);
+  }, 60_000);
+
+  it("the reconciliation reports a file the settlement could not pay as unpaid, and never clears it as stranded", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-v3", DEV_KEYS.player);
+    r.bank(a, 30);
+    const orphan = r.store.load("sandbox-v3-orphan", "ORPHAN");
+    orphan.counter = { address: null, linkedAt: 0, ghostfile: 0, stamps: [], name: null, rig: [], worn: 0, capital: "0", run: { day: DAY, banked: 20, owed: 20, paid: 0 } };
+    r.store.save(orphan);
+    r.runs.add(DAY, orphan.id, 20);
+    expect((await settleRunDay(DAY, r.deps)).skipped).toContain("sandbox-v3-orphan");
+    // the orphan links a wallet the next morning, so the reconciliation now walks it
+    await r.link("sandbox-v3-orphan", DEV_KEYS.treasury);
+
+    const report = await reconcileRunDay(DAY, r.recon, { fix: true });
+    expect(report.settled).toBe(true);
+    const entry = report.drift.find((d) => d.file === "sandbox-v3-orphan");
+    expect(entry).toMatchObject({ kind: "unpaid", units: 20, fixed: false });
+    expect(report.cleared).toBe(0);
+    expect(r.store.accounts.get("sandbox-v3-orphan")!.counter!.run!.owed).toBe(20);
+    // the backlog walk says the same thing
+    const back = await reconcileRunBacklog({ ...r.recon, today: DAY + 1 }, { fix: true });
+    expect(back.drift.find((d) => d.file === "sandbox-v3-orphan")).toMatchObject({ kind: "unpaid", fixed: false });
+    expect(r.store.accounts.get("sandbox-v3-orphan")!.counter!.run!.owed).toBe(20);
+  }, 60_000);
+
+  it("refuses to post an epoch the chain already has when the store forgot it, before drawing anything", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-v4", DEV_KEYS.player);
+    r.bank(a, 40);
+    const s = await settleRunDay(DAY, r.deps);
+    expect(s.ok).toBe(true);
+    r.b.prizes.epochs.delete(s.epoch!);
+    r.runs.settlements.clear();
+    const relayer = privateKeyToAccount(DEV_KEYS.relayer).address;
+    const before = await r.balance(relayer);
+    const again = await r.b.ledger.postEpoch("run", DAY, [{ account: a.id, amount: 40, reason: "run" }]);
+    expect(again.ok).toBe(false);
+    expect(again.reason).toMatch(/on the chain but not in the store/);
+    expect(await r.balance(relayer)).toBe(before);
+  }, 60_000);
+
+  it("a reclaimed epoch is marked swept, so the night does not send the sweep again", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-v5", DEV_KEYS.player);
+    r.bank(a, 40);
+    const s = await settleRunDay(DAY, r.deps);
+    const at = Date.now() + 91 * 86_400_000;
+    expect(epochsToReclaim(r.b.prizes.list(), at).map((e) => e.epoch)).toEqual([s.epoch]);
+    await r.b.devnet.rpc("evm_increaseTime", [91 * 86_400]);
+    expect((await r.b.ledger.reclaimEpoch(s.epoch!)).ok).toBe(true);
+    expect(r.b.prizes.get(s.epoch!)!.sweptAt).toBeGreaterThan(0);
+    expect(epochsToReclaim(r.b.prizes.list(), at)).toEqual([]);
   }, 60_000);
 });

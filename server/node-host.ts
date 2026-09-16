@@ -25,6 +25,7 @@ import { campaignRequest } from "../shared/campaign/endpoint";
 import { createCampaignRoom, crewInfo, type CampaignRoomHandle } from "./campaign-room";
 import { crewRoomName, normaliseCrewCode, NO_SUCH_CREW } from "../shared/net/crew";
 import { checkReport, ReportRing } from "../shared/perf/report";
+import { seasonToPost } from "./chain/cron";
 import { MemoryEndgameStore, seasonView } from "./endgame";
 import { currentAudit } from "../shared/endgame/audits";
 import { contractsFor } from "../shared/endgame/contracts";
@@ -318,8 +319,11 @@ const http = createServer((req, res) => {
         res.end(JSON.stringify(await counter.ledger.reclaimEpoch(id)));
         return;
       }
-      const period = kind === "audit" ? Number(body.week ?? currentAudit().week) : endgame.season().season;
-      const lines = kind === "audit" ? auditPrizes(endgame.audit(period)) : seasonPrizes(endgame.season().contributors ?? {});
+      // a season: the one the roll closed when there is one (Stage 57), else the current one (the dev host's tests post mid-season)
+      const st = kind === "season" ? await endgame.season() : null;
+      const closed = st ? seasonToPost(st) : null;
+      const period = kind === "audit" ? Number(body.week ?? currentAudit().week) : closed ? closed.season : st!.season;
+      const lines = kind === "audit" ? auditPrizes(await endgame.audit(period)) : seasonPrizes(closed ? closed.contributors : (st!.contributors ?? {}));
       const r = await counter.ledger.postEpoch(kind, period, lines);
       log(`[prizes] post ${kind} ${period}: ${r.ok ? `${r.epoch?.leaves.length} leaves` : r.reason}${r.skipped?.length ? ` · no wallet: ${r.skipped.join(", ")}` : ""}`);
       res.end(JSON.stringify({ ok: r.ok, reason: r.reason, epoch: r.epoch ? { epoch: r.epoch.epoch, root: r.epoch.root, total: r.epoch.total, leaves: r.epoch.leaves.map((l) => ({ file: publicLabel(l.file), amount: l.amount, reason: l.reason })) } : null, skipped: r.skipped ?? [], lines }));

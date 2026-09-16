@@ -289,6 +289,7 @@ describe("the hot key is not the bank", () => {
     const before = await b.ledger.relayerAllowance();
 
     a.counter!.run = { day: 900, banked: 9, owed: 9, paid: 0 };
+    b.runs.add(900, a.id, 9); // banked on the table too, as the room does (Stage 57)
     const r = await b.ledger.payout(a);
     expect(r.ok).toBe(true);
     expect(r.paid).toBe(9);

@@ -34,6 +34,13 @@ export interface SeasonState {
   last: string | null;
   /** flips this season per file (Depth ≥ SEASON_DEPTH only; the room decides): the Deep Wake's prize channel */
   contributors: Record<string, number>;
+  /**
+   * The season the last roll closed, with its contributors (Stage 57). The roll used to reset the
+   * contributors in place, and since every read rolls first, the nightly job that posts the
+   * season's prizes found an empty map for a season index equal to its own: no season prize was
+   * ever postable. Kept until the next roll; the epoch guard makes posting it idempotent.
+   */
+  closed?: { season: number; contributors: Record<string, number> };
 }
 
 const emptyNode = (): NodeState => ({ house: "unaligned", pressure: { estate: 0, clockeaters: 0, cells: 0, unaligned: 0 }, turns: 0 });
@@ -79,6 +86,7 @@ export function rollSeason(st: SeasonState, now = Date.now()): boolean {
   // holdings carry into the new season; pressure and turns reset
   for (const d of DISTRICTS) for (const n of NODE_LABELS) fresh.districts[d]![n]!.house = st.districts[d]?.[n]?.house ?? "unaligned";
   fresh.history = st.history;
+  fresh.closed = { season: st.season, contributors: { ...st.contributors } };
   Object.assign(st, fresh);
   return true;
 }

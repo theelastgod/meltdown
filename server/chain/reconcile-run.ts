@@ -31,7 +31,7 @@ import type { WalletStore } from "./wallets";
 export interface Drift {
   file: string;
   day: number;
-  kind: "unrecorded" | "stranded";
+  kind: "unrecorded" | "stranded" | "unpaid";
   /** units the two records disagree about */
   units: number;
   /** what the file says it is owed, and what the banking table holds for that day */
@@ -68,10 +68,13 @@ export interface ReconcileDeps {
  * `reconcileRunDay` and `reconcileRunBacklog` both need them and two copies would drift apart —
  * which, given what this file is for, would be a poor joke.
  */
-function driftOf(id: string, day: number, owed: number, have: number, settled: boolean): Drift | null {
+function driftOf(id: string, day: number, owed: number, have: number, settled: boolean, inEpoch: boolean): Drift | null {
   if (owed <= 0) return null;
-  // the day is paid; anything still owed on the file went out in the epoch and was never cleared
-  if (settled) return { file: id, day, kind: "stranded", units: owed, owed, recorded: have, fixed: false, note: "paid by the day's epoch, never cleared off the file" };
+  // the day is paid and the epoch has a leaf for this file: what is still owed went out in it and was never cleared
+  if (settled && inEpoch) return { file: id, day, kind: "stranded", units: owed, owed, recorded: have, fixed: false, note: "paid by the day's epoch, never cleared off the file" };
+  // the day is paid and the epoch has no leaf for this file (no wallet when it settled): a real debt
+  // the epoch cannot pay. Reported, never cleared — until Stage 57 the repair erased it as stranded
+  if (settled) return { file: id, day, kind: "unpaid", units: owed, owed, recorded: have, fixed: false, note: "the day settled without this file; still owed, and no epoch can pay it" };
   // not settled: the table must hold at least what the file is owed, or the night will underpay
   if (have >= owed) return null;
   return { file: id, day, kind: "unrecorded", units: owed - have, owed, recorded: have, fixed: false, note: "banked on the file but missing from the day's table" };
@@ -80,7 +83,9 @@ function driftOf(id: string, day: number, owed: number, have: number, settled: b
 export async function reconcileRunDay(day: number, d: ReconcileDeps, opts: { fix?: boolean } = {}): Promise<ReconcileResult> {
   const log = d.log ?? (() => {});
   const fix = opts.fix === true;
-  const settled = !!(await d.runs.settled(day)) || !!(await d.ledger.epoch(EPOCH_BASE.run + day));
+  const epoch = await d.ledger.epoch(EPOCH_BASE.run + day);
+  const settled = !!(await d.runs.settled(day)) || !!epoch;
+  const inEpoch = new Set((epoch?.leaves ?? []).map((l) => l.file));
   const recorded = new Map((await d.runs.day(day)).map((r) => [r.file, r.units]));
   const files = await d.wallets.accounts();
 
@@ -98,7 +103,7 @@ export async function reconcileRunDay(day: number, d: ReconcileDeps, opts: { fix
     }
     const run = a.counter?.run;
     if (!run || run.day !== day) continue;
-    const entry = driftOf(id, day, run.owed, recorded.get(id) ?? 0, settled);
+    const entry = driftOf(id, day, run.owed, recorded.get(id) ?? 0, settled, inEpoch.has(id));
     if (!entry) continue;
     if (fix) {
       if (entry.kind === "stranded" && a.counter) {
@@ -153,6 +158,7 @@ export async function reconcileRunBacklog(d: ReconcileDeps & { today: number }, 
   const fix = opts.fix === true;
   const files = await d.wallets.accounts();
   const settledCache = new Map<number, boolean>();
+  const leavesCache = new Map<number, Set<string>>();
   const recordedCache = new Map<number, Map<string, number>>();
   const seenDays = new Set<number>();
   const drift: Drift[] = [];
@@ -175,10 +181,14 @@ export async function reconcileRunBacklog(d: ReconcileDeps & { today: number }, 
       skippedToday++;
       continue;
     }
-    if (!settledCache.has(day)) settledCache.set(day, !!(await d.runs.settled(day)) || !!(await d.ledger.epoch(EPOCH_BASE.run + day)));
+    if (!settledCache.has(day)) {
+      const epoch = await d.ledger.epoch(EPOCH_BASE.run + day);
+      settledCache.set(day, !!(await d.runs.settled(day)) || !!epoch);
+      leavesCache.set(day, new Set((epoch?.leaves ?? []).map((l) => l.file)));
+    }
     if (!recordedCache.has(day)) recordedCache.set(day, new Map((await d.runs.day(day)).map((r) => [r.file, r.units])));
     seenDays.add(day);
-    const entry = driftOf(id, day, run.owed, recordedCache.get(day)!.get(id) ?? 0, settledCache.get(day)!);
+    const entry = driftOf(id, day, run.owed, recordedCache.get(day)!.get(id) ?? 0, settledCache.get(day)!, leavesCache.get(day)?.has(id) ?? false);
     if (!entry) continue;
     if (fix) {
       if (entry.kind === "stranded" && a.counter) {
