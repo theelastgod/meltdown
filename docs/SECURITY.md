@@ -159,6 +159,11 @@ is the point — the damage is real), a join with the wrong secret or no secret 
 leaves the file at Depth 50 with its own secret intact, and the owner's join still gets the owner's
 file. Removing the check fails two cases.
 
+**Stage 56.** The third review found the Durable Object's `/ghost` route still taking a bare id on
+the Workers (the dev host gated it), and the Workers' routes keeping an adopted secret only when
+the request succeeded, so a failed first request left a file adoptable by the next caller. Both
+are closed and pinned in `tests/routes.test.ts`.
+
 **Still open, and named rather than fixed.** Reading a file — `GET /file/<id>` — is still
 unauthenticated, so someone with an id can see progression, the linked wallet address and the
 ledger. That is a disclosure, not a destruction, and gating it means threading the secret through

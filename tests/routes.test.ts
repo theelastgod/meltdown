@@ -13,6 +13,7 @@ import { describe, expect, it } from "vitest";
 import { PlayerFile, NOT_YOURS, type PlayerEnv } from "../server/player-do";
 import counterWorker from "../server/counter-worker";
 import campaignWorker from "../server/campaign-worker";
+import matchWorker from "../server/worker";
 import { createAccount, publicFile, type Account } from "../shared/progression/account";
 
 const SECRET = "a-files-own-private-secret";
@@ -153,5 +154,41 @@ describe("the production edge asks for the secret too", () => {
     await ns.get(ns.idFromName("anon")).fetch(post("https://file/save", a));
     const res = await campaignWorker.fetch(post("https://c/file/anon/campaign", { op: "faction", faction: "cells" }), campaignEnv(ns));
     expect(res.status).toBe(200);
+  });
+});
+
+describe("the third review (Stage 56): the Workers' file routes", () => {
+  it("the daily view is read-only and needs no secret, through the Durable Object and through the match Worker's GET", async () => {
+    const ns = fakeNamespace();
+    await seed(ns, "keeper", (a) => void (a.secret = SECRET));
+    const direct = await ns.get(ns.idFromName("keeper")).fetch(post("https://file/daily", { id: "keeper" }));
+    expect(direct.status).toBe(200);
+    expect((await direct.json()) as { contracts: unknown[] }).toHaveProperty("contracts");
+    const env = { PLAYER_FILE: ns } as unknown as Parameters<typeof matchWorker.fetch>[1];
+    const viaWorker = await matchWorker.fetch(new Request("https://w/file/keeper/daily"), env);
+    expect(viaWorker.status).toBe(200);
+    expect((await viaWorker.json()) as { contracts: unknown[] }).toHaveProperty("contracts");
+  });
+
+  it("a ghost is a write, so it takes the file's secret", async () => {
+    const ns = fakeNamespace();
+    await seed(ns, "runner", (a) => void (a.secret = SECRET));
+    const stub = ns.get(ns.idFromName("runner"));
+    const bare = await stub.fetch(post("https://file/ghost", { id: "runner", run: {} }));
+    expect(bare.status).toBe(403);
+    expect(((await bare.json()) as { reason: string }).reason).toBe(NOT_YOURS);
+    const owned = await stub.fetch(post("https://file/ghost", { id: "runner", run: {}, secret: SECRET }));
+    expect(owned.status).toBe(200); // refused as not a ghost, not as not the owner
+  });
+
+  it("an adopted secret is kept even when the first request fails, so the file cannot be adopted again by someone else", async () => {
+    const ns = fakeNamespace();
+    const stub = ns.get(ns.idFromName("newbie"));
+    const first = (await (await stub.fetch(post("https://file/buy", { id: "newbie", node: "no-such-node", secret: "mine" }))).json()) as { ok: boolean };
+    expect(first.ok).toBe(false); // the buy failed; the secret was adopted on the way in
+    const other = await stub.fetch(post("https://file/buy", { id: "newbie", node: "slipfile", secret: "theirs" }));
+    expect(other.status).toBe(403);
+    const again = await stub.fetch(post("https://file/buy", { id: "newbie", node: "no-such-node", secret: "mine" }));
+    expect(again.status).toBe(200);
   });
 });

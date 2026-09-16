@@ -5,7 +5,13 @@
 import type { InputFrame } from "../sim/input";
 import type { HitZone } from "../sim/world";
 
-export const PROTOCOL_VERSION = 9;
+/**
+ * Bumped whenever the wire changes shape. Stage 34 changed the input record (viewFrac) and the
+ * snapshot (local, dummy and entity masks) and left this at 9, so a stale bundle would have passed
+ * the version gate and been kicked for "malformed message" instead; tests/wire.test.ts holds a
+ * fingerprint of the encoders against this number so that cannot happen quietly again (Stage 56).
+ */
+export const PROTOCOL_VERSION = 10;
 /** Server snapshot cadence in sim ticks (60 Hz sim → 30 Hz snapshots). */
 export const SNAPSHOT_EVERY = 2;
 /** Lag compensation rewind cap in ticks (200 ms at 60 Hz). */
@@ -524,10 +530,14 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     for (let i = 0; i < 3; i++) w.u8(l.grenades[i] ?? 0);
     w.u8(l.grenadeSel);
   } else w.u8(0);
-  // remote players (delta vs baseline)
+  // remote players (delta vs baseline). The baseline is indexed once: a find per element made the
+  // encode quadratic in the entity count, once per client per snapshot on the room's hot path (Stage 56)
+  const bPlayers = new Map(baseline?.players.map((x) => [x.id, x]) ?? []);
+  const bDummies = new Map(baseline?.dummies.map((x) => [x.id, x]) ?? []);
+  const bEntities = new Map(baseline?.entities.map((x) => [(x.kind << 16) | x.id, x]) ?? []);
   w.u8(s.players.length);
   for (const p of s.players) {
-    const b = baseline?.players.find((x) => x.id === p.id);
+    const b = bPlayers.get(p.id);
     let mask = 0;
     if (!b || b.x !== p.x || b.y !== p.y || b.z !== p.z) mask |= F_POS;
     if (!b || b.vx !== p.vx || b.vy !== p.vy || b.vz !== p.vz) mask |= F_VEL;
@@ -545,7 +555,7 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
   // dummies (delta against the baseline: they stand still until they are shot)
   w.u8(s.dummies.length);
   for (const d of s.dummies) {
-    const bd = baseline?.dummies.find((x) => x.id === d.id);
+    const bd = bDummies.get(d.id);
     let mask = 0;
     if (!bd || bd.x !== d.x || bd.y !== d.y || bd.z !== d.z) mask |= D_POS;
     if (!bd || bd.alive !== d.alive || bd.health !== d.health) mask |= D_STATE;
@@ -562,7 +572,7 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
   // entities (delta against the baseline; a wake node's position never moves at all)
   w.u8(Math.min(255, s.entities.length));
   for (const e of s.entities.slice(0, 255)) {
-    const be = baseline?.entities.find((x) => x.kind === e.kind && x.id === e.id);
+    const be = bEntities.get((e.kind << 16) | e.id);
     let mask = 0;
     if (!be || be.x !== e.x || be.y !== e.y || be.z !== e.z) mask |= E_POS;
     if (!be || be.a !== e.a || be.b !== e.b || be.c !== e.c || be.d !== e.d) mask |= E_STATE;
@@ -677,6 +687,9 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     const serverTimeMs = r.u32();
     const base = baselineTick ? baselines(baselineTick) : null;
     if (baselineTick && !base) return null; // can't apply this delta; the server will send a full one once it sees our ack
+    const basePlayers = new Map(base?.players.map((x) => [x.id, x]) ?? []);
+    const baseDummies = new Map(base?.dummies.map((x) => [x.id, x]) ?? []);
+    const baseEntities = new Map(base?.entities.map((x) => [(x.kind << 16) | x.id, x]) ?? []);
     let local: LocalAuth | null = null;
     if (r.u8() === 1) {
       const seq = r.u32();
@@ -703,7 +716,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     for (let i = 0; i < n; i++) {
       const id = r.u8();
       const mask = r.u8();
-      const b = base?.players.find((x) => x.id === id);
+      const b = basePlayers.get(id);
       const p: RemotePlayerQ = b ? { ...b } : { id, slot: 1, team: 0, shield: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, health: 100, ammo: 0, alive: true, grounded: true, stance: 0, height: 1.8, name: "BLANK", tag: "" };
       if (mask & F_POS) { p.x = r.i16() / Q_POS; p.y = r.i16() / Q_POS; p.z = r.i16() / Q_POS; }
       if (mask & F_VEL) { p.vx = r.i16() / Q_VEL; p.vy = r.i16() / Q_VEL; p.vz = r.i16() / Q_VEL; }
@@ -717,7 +730,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     for (let i = 0; i < nd; i++) {
       const id = r.u8();
       const mask = r.u8();
-      const bd = base?.dummies.find((x) => x.id === id);
+      const bd = baseDummies.get(id);
       const d: DummyQ = bd ? { ...bd } : { id, alive: true, health: 100, x: 0, y: 0, z: 0 };
       d.id = id;
       if (mask & D_POS) { d.x = r.i16() / Q_POS; d.y = r.i16() / Q_POS; d.z = r.i16() / Q_POS; }
@@ -732,7 +745,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
       const kind = r.u8() as NetEntity["kind"];
       const id = r.u16();
       const mask = r.u8();
-      const be = base?.entities.find((x) => x.kind === kind && x.id === id);
+      const be = baseEntities.get((kind << 16) | id);
       const e: NetEntity = be ? { ...be } : { kind, id, x: 0, y: 0, z: 0, a: 0, b: 0, c: 0, d: 0 };
       if (mask & E_POS) { e.x = r.i16() / Q_POS; e.y = r.i16() / Q_POS; e.z = r.i16() / Q_POS; }
       if (mask & E_STATE) { e.a = r.u8(); e.b = r.u8(); e.c = r.i16(); e.d = r.i16(); }

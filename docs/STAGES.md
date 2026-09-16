@@ -1641,6 +1641,52 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 56 — The review, part three: Stages 25–34
+
+**Goal.** The third pass of the same review, over Stages 25 to 34. Ten findings, all real, and
+four of them break only the production host — the Workers — while the Node host the probes run
+on hides them. That is its own lesson: every probe drives the dev host, and the dev host answers
+synchronously, gates every file route the same way, and never sees a stale bundle.
+
+1. **A wrong secret admitted a Promise as the player's file.** The room's guest fallback cast the
+   store's answer to an account. On the Durable Object store that answer is a promise, so on the
+   production host a join with a wrong or stale secret played a `Promise` as its file — no name, no
+   wallet, and a throw at the first settlement. The fallback now takes the same asynchronous path
+   the ordinary join does. Pinned with an asynchronous store: the guest is a real file.
+2. **The daily contracts view returned NOT YOUR FILE in production.** The Durable Object listed
+   `/daily` among the secret-gated routes; the Worker forwards a plain GET with only the id, and the
+   dev host never gated it. Every file with a secret — every file after its first mutation — got a
+   403 on the endgame panel. `/daily` is read-only and is its own route now, pinned through the
+   Worker's GET.
+3. **The protocol version had not moved with the wire.** Stage 34 changed the input record and the
+   snapshot layout at version 9. A stale bundle would have passed the gate and been kicked for
+   "malformed message". The version is 10 and `tests/wire.test.ts` holds a fingerprint of the
+   encoders' bytes against it: change the wire and the test fails until the version moves too.
+4. **A ghost could be written to any file from its published id.** The Durable Object's `/ghost`
+   route took a bare id; the dev host gated it. It takes the secret now.
+5. **A rejected input filled its gap twice.** The gap fillers were queued before the input was
+   validated; a rejected input left the last sequence behind, so the next accepted one filled the
+   same ticks again — extra sprint ticks the client never predicted, the residue Stage 31 removed,
+   in the other direction. The gap is filled on the accepted path only: a rejected input followed
+   by an accepted one fills four ticks once, and the queue holds nothing twice.
+6. **The campaign lint crashed on the mistake it exists to report.** A `requires.after` naming no
+   mission was recorded and then dereferenced on the next line. The order check is its own function
+   now and can be handed a broken arc; it reports both violations and throws nothing.
+7. **An adopted secret was kept only when the request succeeded** on the Workers' routes. A file's
+   first request being a purchase it could not afford left the file still unowned, for anyone with
+   the published id to adopt next. The Durable Object, the counter Worker and the campaign Worker
+   save on adoption whether or not the operation succeeded, as the dev host already did.
+8. **The delta encoder was quadratic in the entity count**, once per client per snapshot on the
+   room's hot path: a linear search of the baseline per element. The baseline is indexed once per
+   encode and once per decode.
+9. **Every authenticated join wrote the file** whether or not it had changed. A join writes only
+   when it adopted a secret.
+10. A dead discriminator on the lint's gate list, never produced and never read, is gone.
+
+**Acceptance.** `npm test` 443 (8 new); typecheck clean on both configs; `probe:net` 16/16,
+`probe:harden` 9/9, `probe:counter` 16/16, `probe:run` 18/18, `probe:campaign` 31/31, `smoke`
+7/7 on the built site at protocol 10.
+
 ## Stage 55 — The review, part two: Stages 35–44
 
 **Goal.** Stage 54's review of this session's code found seven real defects, so the same review

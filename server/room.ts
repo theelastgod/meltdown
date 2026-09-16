@@ -304,6 +304,26 @@ export class Room {
     }
     for (const i of msg.inputs) {
       if (i.seq <= rec.lastSeq) continue; // redundant resend, already have it
+      if (!this.validInput(i)) {
+        rec.inputsRejected++;
+        this.strike(rec, "invalid input");
+        continue;
+      }
+      rec.inputCount++;
+      if (rec.inputCount > MAX_INPUT_RATE_PER_SEC) {
+        rec.inputsRejected++;
+        this.strike(rec, "input rate");
+        continue;
+      }
+      if (rec.queue.length >= MAX_INPUT_QUEUE) {
+        // A hitching client (long frame → burst of inputs) is not a cheater: keep the newest,
+        // drop the oldest; the sustained-rate check above catches real flooding.
+        rec.queue.shift();
+        rec.inputsRejected++;
+      }
+      // the gap before an ACCEPTED input is filled (Stage 31); filling before validation meant a
+      // rejected input left lastSeq behind and the next accepted one filled the same ticks again,
+      // applying them twice — the residue Stage 31 removed, in the other direction (Stage 56)
       if (i.seq > rec.lastSeq + 1 && rec.lastSeq !== 0 && rec.lastInput) {
         /**
          * A gap: those inputs were lost in every redundant copy (Stage 31).
@@ -336,23 +356,6 @@ export class Room {
           rec.queue.push({ ...rec.lastInput, seq: i.seq - k, buttons: rec.lastInput.buttons & GAP_FILL_BUTTONS, px: NaN, py: NaN, pz: NaN });
           rec.gapFilled++;
         }
-      }
-      if (!this.validInput(i)) {
-        rec.inputsRejected++;
-        this.strike(rec, "invalid input");
-        continue;
-      }
-      rec.inputCount++;
-      if (rec.inputCount > MAX_INPUT_RATE_PER_SEC) {
-        rec.inputsRejected++;
-        this.strike(rec, "input rate");
-        continue;
-      }
-      if (rec.queue.length >= MAX_INPUT_QUEUE) {
-        // A hitching client (long frame → burst of inputs) is not a cheater: keep the newest,
-        // drop the oldest; the sustained-rate check above catches real flooding.
-        rec.queue.shift();
-        rec.inputsRejected++;
       }
       rec.lastSeq = i.seq;
       rec.lastInput = i;
@@ -460,14 +463,32 @@ export class Room {
      * right answer is the same: play, but as nobody. Locking the connection out would turn a
      * published id into a way to deny someone a game as well as a way to wreck their file.
      */
-    const asGuest = (): void => this.admit(conn, safeName, this.opts.accounts!.load(`guest:${this.nextId}:${Math.random().toString(36).slice(2, 8)}`, safeName) as Account, loadoutJson, identityJson);
+    const asGuest = (): void => {
+      // the store may answer asynchronously (the Workers' Durable Object does); until Stage 56 this
+      // cast a Promise to an Account and admitted it as the player's file on the production host
+      const g = this.opts.accounts!.load(`guest:${this.nextId}:${Math.random().toString(36).slice(2, 8)}`, safeName);
+      if (g instanceof Promise) {
+        this.pendingJoins.add(conn);
+        g.then(
+          (acc) => {
+            if (!this.pendingJoins.delete(conn)) return; // closed while loading
+            this.admit(conn, safeName, acc, loadoutJson, identityJson);
+          },
+          (err) => {
+            this.pendingJoins.delete(conn);
+            this.kickConn(conn, `FILE UNAVAILABLE: ${String(err)}`);
+          },
+        );
+      } else this.admit(conn, safeName, g, loadoutJson, identityJson);
+    };
     const gated = (acc: Account): void => {
-      if (!fileAuth(acc, secret).ok) {
+      const auth = fileAuth(acc, secret);
+      if (!auth.ok) {
         this.opts.onLog(`join refused the file ${acc.id}: wrong secret — playing a guest`);
         asGuest();
         return;
       }
-      this.saveAccount(acc); // an adopted secret is kept
+      if (auth.adopted) this.saveAccount(acc); // an adopted secret is kept; a file that adopted nothing has nothing to write yet
       this.admit(conn, safeName, acc, loadoutJson, identityJson);
     };
     const loaded = this.opts.accounts.load(id, safeName);

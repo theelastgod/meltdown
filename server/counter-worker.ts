@@ -120,9 +120,10 @@ export default {
       const a = await load(account);
       // linking binds a wallet to a file for good; the SIWE signature proves the wallet, and this
       // proves the file (Stage 28)
-      if (!fileAuth(a, secret).ok) return json({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }, 403);
+      const auth = fileAuth(a, secret);
+      if (!auth.ok) return json({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }, 403);
       const r = await ledgerOf(env).link(a, message, signature);
-      if (r.ok) await save(a);
+      if (r.ok || auth.adopted) await save(a); // an adopted secret is kept even when the link fails (Stage 56)
       return json({ ok: r.ok, reason: r.reason, counter: a.counter ?? null });
     }
     const f = decodeURIComponent(url.pathname).match(/^\/file\/([a-zA-Z0-9_:.-]{1,64})\/counter$/);
@@ -133,10 +134,11 @@ export default {
       // the id names the file; the secret proves the caller owns it (Stage 26). This is the money
       // route — it links a wallet, banks the run and asks for signed vouchers — and it was never
       // checking (Stage 28).
-      if (!fileAuth(a, body.secret).ok) return json({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }, 403);
+      const auth = fileAuth(a, body.secret);
+      if (!auth.ok) return json({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }, 403);
       const ledger = ledgerOf(env);
       const r = await counterRequest(a, body, ledger);
-      if (r.ok) await save(a);
+      if (r.ok || auth.adopted) await save(a);
       return json(r);
     }
     if (request.method === "POST" && url.pathname === "/prizes/post") {

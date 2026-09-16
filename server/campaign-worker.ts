@@ -42,9 +42,10 @@ export default {
       const body = (await request.json().catch(() => ({}))) as { secret?: string };
       // the id names the file; the secret proves the caller owns it (Stage 26). This route is the
       // production campaign save — a house, worn protocols — and it was never checking (Stage 28).
-      if (!fileAuth(a, body.secret).ok) return new Response(JSON.stringify({ ok: false, reason: NOT_YOURS, campaign: campaignOf(a) }), { status: 403, headers: { ...cors, "content-type": "application/json" } });
+      const auth = fileAuth(a, body.secret);
+      if (!auth.ok) return new Response(JSON.stringify({ ok: false, reason: NOT_YOURS, campaign: campaignOf(a) }), { status: 403, headers: { ...cors, "content-type": "application/json" } });
       const r = campaignRequest(a, body);
-      if (r.ok) await stub.fetch(new Request("https://file/save", { method: "POST", body: JSON.stringify(a) }));
+      if (r.ok || auth.adopted) await stub.fetch(new Request("https://file/save", { method: "POST", body: JSON.stringify(a) }));
       return new Response(JSON.stringify({ ...r, account: publicFile(a) }), { headers: { ...cors, "content-type": "application/json" } });
     }
     if (url.pathname === "/health") return new Response("ok");

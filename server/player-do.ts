@@ -81,9 +81,10 @@ export class PlayerFile implements DurableObject {
       if (!a) a = createAccount(id, "BLANK");
       a = upgradeAccount(a);
       // the id names the file; the secret proves the caller owns it (Stage 26)
-      if (!fileAuth(a, secret).ok) return Response.json({ ok: false, reason: NOT_YOURS }, { status: 403 });
+      const auth = fileAuth(a, secret);
+      if (!auth.ok) return Response.json({ ok: false, reason: NOT_YOURS }, { status: 403 });
       const r = url.pathname === "/buy" ? buyNode(a, String(node ?? "")) : refundNode(a, String(node ?? ""));
-      if (r.ok) {
+      if (r.ok || auth.adopted) {
         const prev = await this.state.storage.get<Account>(KEY);
         await this.state.storage.put(KEY, a);
         if (this.env.DB) {
@@ -95,7 +96,19 @@ export class PlayerFile implements DurableObject {
       }
       return Response.json({ ok: r.ok, reason: r.reason, account: publicFile(a) });
     }
-    if (request.method === "POST" && ["/daily", "/claim", "/rewrite", "/cosmetic"].includes(url.pathname)) {
+    if (request.method === "POST" && url.pathname === "/daily") {
+      // read-only: the day's contracts as the file sees them. It sat in the gated list below until
+      // Stage 56, so every file with a secret got NOT YOUR FILE on the endgame panel in production
+      // — the Worker forwards a plain GET here with only the id, and the dev host never gated it.
+      const { id } = (await request.json()) as { id: string };
+      let a = await this.state.storage.get<Account>(KEY);
+      if (!a && this.env.DB) {
+        const db = this.env.DB;
+        a = (await withSchema(db, () => loadRow(db, id))) ?? undefined;
+      }
+      return Response.json(dailyView(upgradeAccount(a ?? createAccount(id, "BLANK"))));
+    }
+    if (request.method === "POST" && ["/claim", "/rewrite", "/cosmetic"].includes(url.pathname)) {
       const body = (await request.json()) as { id: string; op?: string; slot?: number; name?: string; loadout?: unknown; alias?: string; secret?: string };
       let a = await this.state.storage.get<Account>(KEY);
       if (!a && this.env.DB) {
@@ -105,13 +118,16 @@ export class PlayerFile implements DurableObject {
       if (!a) a = createAccount(body.id, "BLANK");
       a = upgradeAccount(a);
       // a Rewrite resets a Depth-50 file to Depth 1: the one call that must never take a bare id
-      if (!fileAuth(a, body.secret).ok) return Response.json({ ok: false, reason: NOT_YOURS }, { status: 403 });
+      const auth = fileAuth(a, body.secret);
+      if (!auth.ok) return Response.json({ ok: false, reason: NOT_YOURS }, { status: 403 });
       let r: { ok: boolean; reason?: string } = { ok: true };
       if (url.pathname === "/claim") r = claimContract(a, String((body as { id?: unknown }).id ?? ""));
       else if (url.pathname === "/rewrite") r = rewrite(a);
       else if (url.pathname === "/cosmetic") r = body.op === "buy" ? buyCosmetic(a, String((body as { cosmetic?: unknown }).cosmetic ?? body.id)) : body.op === "theme" ? { ok: setTheme(a, (body as { theme?: string | null }).theme ?? null), reason: "not owned" } : body.op === "preset" ? savePreset(a, Number(body.slot ?? 0), String(body.name ?? ""), body.loadout) : body.op === "alias" ? setAlias(a, Number(body.slot ?? 0), String(body.alias ?? "")) : { ok: false, reason: "unknown op" };
-      if (url.pathname !== "/daily") dailyView(a); // rolls the day
-      if (r.ok && url.pathname !== "/daily") {
+      dailyView(a); // rolls the day
+      // an adopted secret is kept whether or not the operation succeeded: a failed first request
+      // must not leave the file still unowned (Stage 56)
+      if (r.ok || auth.adopted) {
         const prev = await this.state.storage.get<Account>(KEY);
         await this.state.storage.put(KEY, a);
         if (this.env.DB) {
@@ -121,10 +137,10 @@ export class PlayerFile implements DurableObject {
           await withSchema(db, () => saveRow(db, acc, fresh));
         }
       }
-      return Response.json(url.pathname === "/daily" ? dailyView(a) : { ...r, account: publicFile(a), daily: dailyView(a) });
+      return Response.json({ ...r, account: publicFile(a), daily: dailyView(a) });
     }
     if (request.method === "POST" && url.pathname === "/ghost") {
-      const { id, run } = (await request.json()) as { id: string; run?: unknown };
+      const { id, run, secret } = (await request.json()) as { id: string; run?: unknown; secret?: string };
       let a = await this.state.storage.get<Account>(KEY);
       if (!a && this.env.DB) {
         const db = this.env.DB;
@@ -132,9 +148,13 @@ export class PlayerFile implements DurableObject {
       }
       if (!a) a = createAccount(id, "BLANK");
       a = upgradeAccount(a);
+      // a ghost is written to the file, so the file's secret is asked for (Stage 56): this was the
+      // one mutating route on the Workers that still took a bare id, contrary to docs/SECURITY.md
+      const auth = fileAuth(a, secret);
+      if (!auth.ok) return Response.json({ ok: false, reason: NOT_YOURS }, { status: 403 });
       const g = validGhost(run);
       const ok = g ? recordGhost(a, g) : false;
-      if (ok) {
+      if (ok || auth.adopted) {
         const prev = await this.state.storage.get<Account>(KEY);
         await this.state.storage.put(KEY, a);
         if (this.env.DB) {

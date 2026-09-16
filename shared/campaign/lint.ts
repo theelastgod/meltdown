@@ -18,7 +18,7 @@
  * `tests/campaign.test.ts` fails the build on any violation.
  */
 import { FACTIONS, type FactionId } from "./factions";
-import { MISSIONS } from "./missions";
+import { MISSIONS, type MissionDef } from "./missions";
 import { SCRIPTS, type ScriptDef } from "./script";
 import { ENDINGS, type Gate } from "./testimony";
 
@@ -76,24 +76,44 @@ const gatePairs = (g: Gate | undefined): [string, string][] => [...Object.entrie
  * game nobody can see; a `not` gate whose value is unproducible is the opposite — harmless, but it
  * means the condition is decorative, and a decorative condition is usually a typo.
  */
-function allGates(): { where: string; gate: Gate | undefined; kind: "gate" | "not-only" }[] {
-  const out: { where: string; gate: Gate | undefined; kind: "gate" | "not-only" }[] = [];
+function allGates(): { where: string; gate: Gate | undefined }[] {
+  const out: { where: string; gate: Gate | undefined }[] = [];
   for (const m of MISSIONS) {
-    if (m.requires?.gate) out.push({ where: `${m.kind} ${m.id}`, gate: m.requires.gate, kind: "gate" });
-    for (const v of m.variants ?? []) out.push({ where: `${m.id} variant`, gate: v.gate, kind: "gate" });
+    if (m.requires?.gate) out.push({ where: `${m.kind} ${m.id}`, gate: m.requires.gate });
+    for (const v of m.variants ?? []) out.push({ where: `${m.id} variant`, gate: v.gate });
   }
-  for (const e of ENDINGS) out.push({ where: `ending ${e.id}`, gate: e.gate, kind: "gate" });
-  for (const s of SCRIPTS) for (const n of s.nodes) for (const c of n.choices ?? []) if (c.gate) out.push({ where: `${s.id}/${n.id} choice`, gate: c.gate, kind: "gate" });
+  for (const e of ENDINGS) out.push({ where: `ending ${e.id}`, gate: e.gate });
+  for (const s of SCRIPTS) for (const n of s.nodes) for (const c of n.choices ?? []) if (c.gate) out.push({ where: `${s.id}/${n.id} choice`, gate: c.gate });
   return out;
 }
 
 /** Only the violations that mean a piece of the game cannot be reached. */
 export const campaignErrors = (): CampaignViolation[] => lintCampaign().filter((v) => v.severity === "error");
 
+/**
+ * The arc's order and its `requires.after` references. Separate so it can be handed a broken list:
+ * until Stage 56 a `requires.after` naming a non-mission was reported and then dereferenced on the
+ * next line, so the lint died with a stack trace instead of printing the violation it had found.
+ */
+export function lintMissionOrder(missions: readonly MissionDef[]): CampaignViolation[] {
+  const out: CampaignViolation[] = [];
+  const byId = new Map(missions.map((m) => [m.id, m]));
+  for (const m of missions) {
+    const after = m.requires?.after;
+    if (!after) continue;
+    const prev = byId.get(after);
+    if (!prev) {
+      out.push({ where: `${m.kind} ${m.id}`, rule: "after-names-a-mission", detail: `requires.after "${after}" is not a mission`, severity: "error" });
+      continue;
+    }
+    if (m.kind === "mission" && prev.order >= m.order) out.push({ where: `mission ${m.id}`, rule: "arc-is-ordered", detail: `comes after ${after} (order ${prev.order}) but is order ${m.order}`, severity: "error" });
+  }
+  return out;
+}
+
 export function lintCampaign(): CampaignViolation[] {
   const out: CampaignViolation[] = [];
   const producible = producibleTestimony();
-  const missionIds = new Set(MISSIONS.map((m) => m.id));
   const scriptIds = new Set(SCRIPTS.map((s) => s.id));
 
   // ---- every gate reads testimony something can write ----
@@ -113,13 +133,8 @@ export function lintCampaign(): CampaignViolation[] {
   }
 
   // ---- missions and gigs: the arc is ordered and nothing depends on what does not exist ----
+  out.push(...lintMissionOrder(MISSIONS));
   for (const m of MISSIONS) {
-    const after = m.requires?.after;
-    if (after && !missionIds.has(after)) out.push({ where: `${m.kind} ${m.id}`, rule: "after-names-a-mission", detail: `requires.after "${after}" is not a mission`, severity: "error" });
-    if (after) {
-      const prev = MISSIONS.find((x) => x.id === after)!;
-      if (m.kind === "mission" && prev.order >= m.order) out.push({ where: `mission ${m.id}`, rule: "arc-is-ordered", detail: `comes after ${after} (order ${prev.order}) but is order ${m.order}`, severity: "error" });
-    }
     for (const o of m.objectives) if (o.kind === "dialogue" && !scriptIds.has(o.script)) out.push({ where: `${m.kind} ${m.id}`, rule: "dialogue-names-a-script", detail: `no script "${o.script}"`, severity: "error" });
     for (const v of m.variants ?? []) for (const o of v.objectives ?? []) if (o.kind === "dialogue" && !scriptIds.has(o.script)) out.push({ where: `${m.id} variant`, rule: "dialogue-names-a-script", detail: `no script "${o.script}"`, severity: "error" });
   }
