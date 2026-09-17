@@ -1641,6 +1641,15 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 61 — The settings probe counts the settings
+
+**Goal.** CI run #90 was red on one step: `probe:ship` asserted that the SETTINGS screen lists
+exactly eight entries, and Stage 60 added a ninth (FIRST-PERSON VIEW). A literal count is a claim
+about a table it does not read; the check now takes the count from `DEFAULT_SETTINGS` itself, so
+the next setting will not fail it and a missing entry still will. `probe:ship` was not in the set
+of probes Stage 60 ran before its push — the menu flow did not look like a thing a camera could
+break, and the settings list is where it did. 9/9.
+
 ## Stage 60 — Third person, like the trailer
 
 **Goal.** The owner asked for the game to be a third-person shooter, as the trailer shows it. Until
