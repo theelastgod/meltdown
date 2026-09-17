@@ -171,8 +171,13 @@ The game is third person: the camera sits 3.0 m behind the eye, 0.78 m over the 
 and 0.36 m above it, and casts that segment against the level's boxes so nothing stands between it
 and the body (`client/render/tps.ts`). The eye is still what the sim fires from, so the reticle is
 drawn where the eye's ray lands on screen rather than at the centre. The local body is the same
-hooded silhouette the remotes wear (`client/render/body.ts`), with the weapon in its hand: one mesh
-per material, drawn once (the mirror does not see it), five calls. The camera itself costs about
+hooded silhouette the remotes wear, with the weapon in its hand: one mesh per material, drawn once
+(the mirror does not see it), five calls. Since Stage 63 that silhouette is skinned — two
+`SkinnedMesh`es on a ten-bone skeleton (`client/render/rig.ts`), posed by pure maths
+(`client/render/pose.ts`), with the cloak's hem dragged in the vertex shader so the motion costs
+neither a draw call nor a per-vertex pass on the CPU. The warm-up compiles against the post
+chain's buffer rather than the canvas, because a program's cache key carries the output it was
+built for: a remote joining mid-match compiles nothing. The camera itself costs about
 ten more — it sees more street from three metres back — and the city budget moved 180 → 190 by that
 measurement. First person is a setting and the old rig entire.
 

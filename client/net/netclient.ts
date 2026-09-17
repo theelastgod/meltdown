@@ -30,6 +30,12 @@ export interface RemoteView {
   alive: boolean;
   stance: "stand" | "crouch" | "slide" | "mantle";
   health: number;
+  /** the newest sample's velocity, footing and weapon slot (Stage 63): the body's pose reads them; the wire carried them already */
+  vx: number;
+  vy: number;
+  vz: number;
+  grounded: boolean;
+  slot: number;
 }
 
 interface RemoteSample {
@@ -260,6 +266,11 @@ export class NetClient {
         yaw: a.q.yaw + dy * k,
         pitch: a.q.pitch + (b.q.pitch - a.q.pitch) * k,
         height: b.q.height,
+        vx: b.q.vx,
+        vy: b.q.vy,
+        vz: b.q.vz,
+        grounded: b.q.grounded,
+        slot: b.q.slot,
         alive: b.q.alive,
         stance: numToStance(b.q.stance),
         health: b.q.health,

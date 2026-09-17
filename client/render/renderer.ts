@@ -20,7 +20,10 @@ import { ArsenalFx, buildViewmodel } from "./weapons";
 import { RunFx } from "./run";
 import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
-import { buildBody, mergeByMaterial, type Body } from "./body";
+import { mergeByMaterial } from "./body";
+import { applyPose, buildRig, disposeRig, rigReport, setRigSlot, WEAPON_IN_SOCKET, weaponStripGeometry, type Rig, type RigReport } from "./rig";
+import { poseBody, type PoseInput, type Stance } from "./pose";
+import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { aimPoint, thirdPersonCamera, TPS_ADS, TPS_DEFAULT } from "./tps";
 import type { Box } from "../../shared/sim/box";
 
@@ -45,6 +48,31 @@ export interface ViewState {
   stunned: boolean;
   /** the body is drawn only while the file is alive (third person) */
   alive: boolean;
+  /** the direction of travel (yaw), for the legs; the aim's yaw when still (Stage 63) */
+  moveYaw: number;
+  /** the sim's capsule height, so the crouched body fits under the capsule the shots test */
+  height: number;
+}
+
+/** A remote player as the body needs it: the wire's fields, straight through (Stage 63). */
+export interface RemoteBodyView {
+  id: number;
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+  pitch?: number;
+  height: number;
+  alive: boolean;
+  stance: string;
+  name?: string;
+  tag?: string;
+  debt?: boolean;
+  vx?: number;
+  vy?: number;
+  vz?: number;
+  grounded?: boolean;
+  slot?: number;
 }
 
 /** What the third-person camera did this frame, for the HUD's reticle and the probes. */
@@ -111,8 +139,11 @@ export class Renderer {
    * behind it. Its hand holds one weapon per slot, built like the viewmodels so a worn skin's tint
    * and plate reach it the same way.
    */
-  private local: Body;
+  private local: Rig;
   private localWeapons = new Map<WeaponId, THREE.Group>();
+  /** the previous frame's height and yaw, for the body's vertical speed and turn rate */
+  private lastViewY = NaN;
+  private lastViewYaw = NaN;
   private localWeapon: THREE.Group;
   private handMuzzle: THREE.PointLight;
   /** third person is the game's view (the trailer's); first person is a setting */
@@ -161,6 +192,8 @@ export class Renderer {
   private fovNow = 80;
   private vmKick = 0;
   private eyeSmooth = MOVE.eyeStand;
+  /** the warm-up sprite's material, kept alive so its program stays in the cache (Stage 63) */
+  private readonly warmed: THREE.SpriteMaterial;
   private bobPhase = 0;
   private clock = 0;
   frames = 0;
@@ -219,15 +252,6 @@ export class Renderer {
     this.vfxPool.sparks.name = "sparks";
     this.vfxPool.tracers.visible = true;
     this.vfxPool.sparks.visible = true;
-    this.renderer.compile(this.scene, this.camera);
-    this.camera.layers.enable(FAR_LAYER);
-    const floor = level.boxes.find((b) => b.tag === "floor" || b.tag === "white_floor") ?? level.boxes[0]!;
-    this.scene.add(
-      mobile
-        ? makeFlatWetFloor(floor.max.x - floor.min.x, floor.max.z - floor.min.z, floor.max.y + 0.002, fogColor)
-        : makeWetFloor(floor.max.x - floor.min.x, floor.max.z - floor.min.z, floor.max.y + 0.002, fogColor, fogDensity),
-    );
-
     this.muzzle = new THREE.PointLight(PALETTE.cyan, 0, 7, 2);
     this.camera.add(this.muzzle);
     this.muzzle.position.set(0.25, -0.2, -0.8);
@@ -241,14 +265,15 @@ export class Renderer {
     this.viewmodel = this.viewmodels.get("lease_breaker")!;
     this.viewmodel.visible = true;
     this.boxes = level.boxes;
-    this.local = buildBody();
+    // the body (Stage 63): a hooded cloak on ten bones, its weapon in the socket bone
+    this.local = buildRig(null);
     this.local.group.name = "rig";
     this.scene.add(this.local.group);
     for (const w of WEAPON_LIST) {
       const held = buildViewmodel(w.id);
-      // the viewmodel's pose is the camera's; in the hand the weapon sits on the socket and points where the body points
-      held.position.set(0, 0, -0.26);
-      held.rotation.set(0, 0, 0);
+      // the viewmodel's pose is the camera's; in the socket the weapon sits a little across the body so the support hand reaches the fore-end
+      held.position.set(...WEAPON_IN_SOCKET.position);
+      held.rotation.set(0, WEAPON_IN_SOCKET.rotationY, 0);
       mergeByMaterial(held); // one mesh per material: a held weapon costs what its materials count, not its parts
       held.visible = false;
       this.local.hand.add(held);
@@ -262,6 +287,20 @@ export class Renderer {
     this.handMuzzle = new THREE.PointLight(PALETTE.cyan, 0, 7, 2);
     this.handMuzzle.position.set(0, 0.03, -0.7);
     this.local.hand.add(this.handMuzzle);
+    const warmCanvas = document.createElement("canvas");
+    warmCanvas.width = warmCanvas.height = 1;
+    const warmTex = new THREE.CanvasTexture(warmCanvas);
+    warmTex.colorSpace = THREE.SRGBColorSpace; // the tag's texture is sRGB, and the decode is in the program's cache key
+    const warm = new THREE.Sprite(new THREE.SpriteMaterial({ map: warmTex, transparent: true, depthTest: false, depthWrite: false }));
+    this.warmed = warm.material;
+    this.camera.layers.enable(FAR_LAYER);
+    const floor = level.boxes.find((b) => b.tag === "floor" || b.tag === "white_floor") ?? level.boxes[0]!;
+    this.scene.add(
+      mobile
+        ? makeFlatWetFloor(floor.max.x - floor.min.x, floor.max.z - floor.min.z, floor.max.y + 0.002, fogColor)
+        : makeWetFloor(floor.max.x - floor.min.x, floor.max.z - floor.min.z, floor.max.y + 0.002, fogColor, fogDensity),
+    );
+
     this.fx = new ArsenalFx(this.scene);
     this.wake = new WakeFx(this.scene);
     this.run = new RunFx(this.scene);
@@ -269,6 +308,19 @@ export class Renderer {
     // a phone renders the post chain smaller again: it is already an offscreen 0.6 of the canvas,
     // and the CRT look survives the drop because it is grain, scanlines and bloom rather than detail
     this.post = new PostChain(this.renderer, this.scene, this.camera, window.innerWidth, window.innerHeight, mobile ? 0.45 : 0.6);
+
+    // The cloak's two sway programs and the name tag's compile here, not on the frame a remote
+    // arrives. A program's cache key carries the output it was compiled for, and the scene is drawn
+    // into the post chain's buffer, not the canvas: compiling against the canvas builds programs
+    // (sRGB output, tone mapping on) that the frame then cannot use and compiles again. So the
+    // warm-up binds the buffer the scene is actually drawn into, and the sprite's material is kept
+    // alive afterwards — disposing a material releases its program, which is the thing being warmed.
+    const target = this.renderer.getRenderTarget();
+    this.renderer.setRenderTarget(this.post.composer.renderTarget1);
+    this.scene.add(warm);
+    this.renderer.compile(this.scene, this.camera);
+    warm.removeFromParent();
+    this.renderer.setRenderTarget(target);
     window.addEventListener("resize", () => this.resize());
   }
 
@@ -336,7 +388,7 @@ export class Renderer {
     if (e) e.flash = 1;
   }
 
-  private remoteMeshes = new Map<number, { group: THREE.Group; mat: THREE.MeshStandardMaterial; trim: THREE.MeshBasicMaterial; skin: number; tag: THREE.Sprite; tagKey: string; canvas: HTMLCanvasElement }>();
+  private remoteMeshes = new Map<number, { group: THREE.Group; rig: Rig; strip: THREE.Mesh; stripMat: THREE.MeshBasicMaterial; slot: number; skin: number; tint: string | null; tag: THREE.Sprite; tagKey: string; canvas: HTMLCanvasElement; view: RemoteBodyView | null; prev: { x: number; y: number; z: number; yaw: number } | null; speedEst: number; phase: number; kick: number }>();
   /** the local rig's worn skin tint (null: stock) */
   skinTint: string | null = null;
 
@@ -359,9 +411,10 @@ export class Renderer {
       const strip = vm.userData.strip as THREE.MeshBasicMaterial | undefined;
       if (strip) strip.color.set(tint ?? (vm.userData.tracer as string));
     }
-    // the cloak wears it too, as the city sees it on everyone else
+    // the cloak wears it too, as the city sees it on everyone else; the trim's colour is written each
+    // frame from this tint and the strip-light's life
     this.local.mat.emissive.set(tint ?? PALETTE.cyan);
-    this.local.trim.color.set(tint ?? PALETTE.cyan);
+    this.local.tint.set(tint ?? PALETTE.cyan);
     const want = textureId ?? null;
     if (want === this.skinMapId) return;
     this.skinMapId = want;
@@ -429,16 +482,28 @@ export class Renderer {
     (e.tag.material as THREE.SpriteMaterial).map!.needsUpdate = true;
   }
 
-  syncRemotes(views: readonly { id: number; x: number; y: number; z: number; yaw: number; height: number; alive: boolean; stance: string; name?: string; tag?: string; debt?: boolean }[]): void {
+  /** the weapon id a wire slot names, or null when the slot is not one of the rack */
+  private static slotId(slot: number | undefined): WeaponId | null {
+    return slot !== undefined && slot >= 1 && slot <= WEAPON_LIST.length ? WEAPON_LIST[slot - 1]!.id : null;
+  }
+
+  /**
+   * Other players: the same cloak on the same bones, holding the weapon of their slot (baked into the
+   * cloak, plus its strip in the tracer colour), posed each frame in render() from what the wire
+   * carries — position, velocity, footing, pitch, stance. Zero mechanical data touches this.
+   */
+  syncRemotes(views: readonly RemoteBodyView[]): void {
     const seen = new Set<number>();
     for (const v of views) {
       seen.add(v.id);
       let e = this.remoteMeshes.get(v.id);
       if (!e) {
-        const { group, mat, trim: trimMat, hand } = buildBody();
-        const gun = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.6), new THREE.MeshStandardMaterial({ color: 0x151a22, roughness: 0.5, metalness: 0.6 }));
-        gun.position.set(0, 0.05, -0.25);
-        hand.add(gun);
+        const slotId = Renderer.slotId(v.slot);
+        const rig = buildRig(slotId);
+        const stripMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan });
+        const strip = new THREE.Mesh(slotId ? weaponStripGeometry(slotId) : new THREE.BufferGeometry(), stripMat);
+        strip.visible = !!slotId;
+        rig.hand.add(strip);
         const canvas = document.createElement("canvas");
         canvas.width = 256;
         canvas.height = 56;
@@ -448,32 +513,81 @@ export class Renderer {
         tag.scale.set(1.6, 0.35, 1);
         tag.position.y = MOVE.standHeight + 0.45;
         tag.center.set(0.1, 0.5);
-        group.add(tag);
-        this.scene.add(group);
-        e = { group, mat, trim: trimMat, skin: -1, tag, tagKey: "", canvas };
+        rig.group.add(tag);
+        this.scene.add(rig.group);
+        e = { group: rig.group, rig, strip, stripMat, slot: v.slot ?? 0, skin: -1, tint: null, tag, tagKey: "", canvas, view: null, prev: null, speedEst: 0, phase: 0, kick: 0 };
         this.remoteMeshes.set(v.id, e);
       }
       this.drawTag(e, v.name ?? "BLANK", v.tag ?? "", !!v.debt);
       // the worn skin travels as a token id in the tag; the palette it names is the client's catalog
       const skin = v.tag ? parseTag(v.tag, "").skin : 0;
-      if (skin !== e.skin) {
+      const slot = v.slot ?? e.slot;
+      if (skin !== e.skin || slot !== e.slot) {
         e.skin = skin;
-        const tint = skinByToken(skin)?.tint;
-        e.mat.emissive.set(tint ?? PALETTE.cyan);
-        e.trim.color.set(tint ?? PALETTE.cyan);
+        e.slot = slot;
+        const tint = skinByToken(skin)?.tint ?? null;
+        e.tint = tint;
+        e.rig.mat.emissive.set(tint ?? PALETTE.cyan);
+        e.rig.tint.set(tint ?? PALETTE.cyan);
+        const slotId = Renderer.slotId(slot);
+        setRigSlot(e.rig, slotId, e.strip);
+        e.stripMat.color.set(tint ?? (slotId ? WEAPON_LIST[slot - 1]!.tracer : PALETTE.cyan));
       }
-      e.group.visible = v.alive;
       e.group.position.set(v.x, v.y, v.z);
       e.group.rotation.y = v.yaw;
-      const crouch = v.stance === "slide" || v.stance === "crouch";
-      e.group.scale.y = crouch ? 0.65 : 1;
+      e.view = v;
     }
     for (const [id, e] of this.remoteMeshes) {
       if (!seen.has(id)) {
-        release(e.group);
+        disposeRig(e.rig);
         this.remoteMeshes.delete(id);
       }
     }
+  }
+
+  /** a remote fired: its weapon shoves back (the wire carries the shot, not the recoil) */
+  kickRemote(id: number): void {
+    const e = this.remoteMeshes.get(id);
+    if (e) e.kick = 1;
+  }
+
+  /** pose every remote from its last view and what it did since the previous frame */
+  private poseRemotes(dt: number): void {
+    for (const e of this.remoteMeshes.values()) {
+      const v = e.view;
+      if (!v) continue;
+      const prev = e.prev ?? { x: v.x, y: v.y, z: v.z, yaw: v.yaw };
+      const dx = v.x - prev.x, dz = v.z - prev.z;
+      const seen = Math.min(12, Math.hypot(dx, dz) / dt);
+      e.speedEst += (seen - e.speedEst) * Math.min(1, 12 * dt);
+      // the lesser of what the wire says and what the position did: a held extrapolation sample
+      // with a stale velocity can stop the feet but never start them on a body that is not moving
+      const wire = v.vx !== undefined && v.vz !== undefined ? Math.hypot(v.vx, v.vz) : e.speedEst;
+      const speed = Math.min(wire, e.speedEst);
+      const grounded = v.grounded ?? true;
+      if (grounded && speed >= 0.5 && v.stance !== "slide") e.phase += dt * (6 + speed * 0.9);
+      e.kick = Math.max(0, e.kick - dt * 14);
+      e.prev = { x: v.x, y: v.y, z: v.z, yaw: v.yaw };
+      // far from the camera the pose holds: the read is the silhouette, not the stride
+      const far = Math.hypot(v.x - this.camera.position.x, v.z - this.camera.position.z) > 40;
+      if (far && e.rig.last) continue;
+      const inp: PoseInput = { speed, moveYaw: speed > 0.5 ? Math.atan2(-dx, -dz) : v.yaw, yaw: v.yaw, pitch: v.pitch ?? 0, vy: clamp((v.y - prev.y) / dt, -12, 12), turnRate: clamp(wrapAngle(v.yaw - prev.yaw) / dt, -20, 20), grounded, stance: v.stance as Stance, height: v.height, reloading: 0, ads: 0, kick: e.kick, alive: v.alive, stunned: false, clock: this.clock, phase: e.phase };
+      const out = poseBody(inp, e.rig.state, dt);
+      applyPose(e.rig, out, v.yaw);
+      e.group.visible = out.visible;
+    }
+  }
+
+  /** the probe's read of a body: the local rig, or a remote's by id */
+  rig(id?: number): RigReport {
+    if (id === undefined) return { ...rigReport(this.local), calls: this.breakdown()["rig"] ?? 0 };
+    const e = this.remoteMeshes.get(id);
+    if (!e) throw new Error(`no remote ${id}`);
+    let calls = 0;
+    e.group.traverse((o) => {
+      if (o.visible && (o.type === "Mesh" || o.type === "SkinnedMesh" || o.type === "Sprite")) calls++;
+    });
+    return { ...rigReport(e.rig), slot: e.slot, stripColor: e.strip.visible ? e.stripMat.color.getHex() : null, calls };
   }
 
   /** Cyan tracer from the muzzle (or a world-space origin for other players) to the impact point, plus a muzzle flash. */
@@ -540,14 +654,17 @@ export class Renderer {
     // the body
     const g = this.local.group;
     const close = this.camSmooth.d < 0.9;
-    g.visible = v.alive && !close && !this.bodyHidden;
     g.position.set(v.x, v.y, v.z);
     g.rotation.y = v.yaw;
-    const crouch = v.stance === "slide" || v.stance === "crouch";
-    g.scale.y = crouch ? 0.65 : 1;
-    g.rotation.x = v.stance === "slide" ? -0.25 : Math.min(0.12, v.speed * 0.015);
-    this.local.hand.rotation.x = v.pitch;
-    this.local.hand.position.z = -0.2 - this.vmKick * 0.05;
+    // the pose (Stage 63): everything the body does comes from pose.ts, from what this frame knows
+    const vy = Number.isNaN(this.lastViewY) ? 0 : clamp((v.y - this.lastViewY) / dt, -12, 12);
+    const turnRate = Number.isNaN(this.lastViewYaw) ? 0 : clamp(wrapAngle(v.yaw - this.lastViewYaw) / dt, -20, 20);
+    this.lastViewY = v.y;
+    this.lastViewYaw = v.yaw;
+    const inp: PoseInput = { speed: v.speed, moveYaw: v.moveYaw, yaw: v.yaw, pitch: v.pitch, vy, turnRate, grounded: v.grounded, stance: v.stance as Stance, height: v.height, reloading: v.reloading, ads: v.zoom > 1 ? 1 : 0, kick: this.vmKick, alive: v.alive, stunned: v.stunned, clock: this.clock, phase: this.bobPhase };
+    const out = poseBody(inp, this.local.state, dt);
+    applyPose(this.local, out, v.yaw);
+    g.visible = out.visible && !close && !this.bodyHidden;
     // the reticle: the eye's ray, projected
     const aim = aimPoint({ x: v.x, y: v.y + v.eye, z: v.z }, v.yaw, v.pitch, this.boxes);
     this.camera.updateMatrixWorld(true);
@@ -615,6 +732,7 @@ export class Renderer {
       this.camera.fov = this.fovNow;
       this.camera.updateProjectionMatrix();
     }
+    this.poseRemotes(dt);
     this.fx.update(dt);
     this.wake.update(dt);
     this.run.update(dt);

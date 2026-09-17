@@ -45,7 +45,7 @@ Market / Quests). Everything typed, nothing rounded, no icons except glyphs.
 | Wet | Ground is a mirror in the distance and a diffuse smear up close. Rain is volumetric streaks lit by the nearest neon. |
 | Fog | Exponential, colour-cast per district, never grey. |
 | Post | Film grain + chromatic aberration + faint scanlines + anamorphic bloom, as one full-screen pass. |
-| Characters | Hooded silhouettes; faces never lit. Faction trim is a strip-light on the body. |
+| Characters | Hooded silhouettes; faces never lit. Faction trim is a strip-light on the body. The cloak is skinned to ten bones and its hem is dragged by the vertex shader, so a figure reads as a person walking before any face could be seen. |
 | UI | CRT ledger chrome: monospace, 1-px frames, typed-then-held text, glitch/tear transitions, stamp and receipt-printer sounds. No generic game UI anywhere. |
 | Clean light | Blown-out white is reserved. It is what the Kernel's office looks like. |
 

@@ -1641,6 +1641,72 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 63 — The silhouette walks
+
+**Goal.** Stage 60 put the camera behind the player and found a capsule there: the body was the
+rigid hooded shell the remotes had worn since Stage 2, sliding over the ground with its feet
+still. A third-person game is judged on what that body does, every frame, in the middle of the
+screen. This stage gives it a skeleton and a pose.
+
+**What changed.**
+
+- **A pose is a pure function.** `client/render/pose.ts` takes what the renderer already knows —
+  speed, the direction of travel against the facing, footing, stance, the capsule's height, pitch,
+  the reload, the ADS, the recoil kick, whether the file is alive — and returns where every bone
+  goes. It is three-free and holds nothing but its own eased values, so idle, walk, sprint, crouch,
+  slide, air and corpse are arithmetic a unit test can read rather than something only a screenshot
+  can judge. `twoBoneIK` in the same file is the arm solver.
+- **Ten bones, two meshes, five draw calls.** `client/render/rig.ts` builds the cloak and its trim
+  as two `SkinnedMesh`es on one ten-bone skeleton, with `skinIndex`, `skinWeight` and a `sway`
+  weight baked per vertex. The hem's drag and flap are a vertex-shader patch with its own program
+  cache key, so the cloak moves for no CPU per vertex and no extra call. The weapon hangs on a
+  root-level socket bone that takes the aim's pitch exactly — the Stage 60 reticle contract, kept —
+  and both arms are solved to the grip and the fore-end by IK, so the hands are *on* the weapon at
+  any pitch rather than near it.
+- **Remotes get the same body from the wire.** `RemoteBodyView` carries fields the wire already
+  sends — position, velocity, footing, stance, pitch, weapon slot — and every remote is posed by
+  the same `poseBody`. A held sample (a stale packet repeating a velocity) is caught by taking the
+  lesser of the wire's speed and what the position actually did, so a frozen remote's feet stop
+  instead of running on the spot. Bodies past 40 m stop posing; one leaving takes its skeleton,
+  its geometry and its tag texture with it.
+- **The crouch is the sim's capsule, not the eye.** The local view now carries the sim's capsule
+  height and the crouch is driven by it, so the hood comes down under the low capsule a shot tests
+  instead of 5 cm above it — what a crouching player looks like and what a shot at them hits are
+  the same volume again.
+- **The lead boot stays on the ground through a slide.** The hips drop half a metre while the lead
+  leg swings out; eased apart, the two put the boot 10 cm through the floor halfway into the entry
+  whatever their end points are. The leg's angle is taken from the hips' height instead, so the
+  boot is planted at every frame of the blend rather than only at its end.
+- **The warm-up compiles the programs the frame can use.** A program's cache key carries the output
+  it was compiled for, and the scene is drawn into the post chain's buffer, not the canvas.
+  Compiling against the canvas built programs (sRGB out, tone mapping on) that the first frame
+  could not use and compiled again. The warm-up now binds the buffer the scene is actually drawn
+  into, and keeps the sprite material alive afterwards, because disposing a material releases the
+  very program being warmed. A remote joining now compiles nothing, and booting a level compiles
+  29 programs where it used to compile 41.
+
+**Proof.** `probe/stage63.ts` (`probe:body`, in the verify chain and CI) drives the real game and
+reads the live skeleton: the body is skinned, on ten bones, and costs five draw calls (81 with it,
+76 with it hidden); a remote joining compiles no shader program; a remote walks from the wire's
+fields alone — legs alternating, socket at its pitch, its slot's weapon in its hand, four
+drawables — and a stale packet stops its feet; a remote leaving leaks no geometry or texture; the
+socket takes the aim's pitch exactly and both wrists reach the weapon within a millimetre looking
+up and looking down; walking alternates the legs at the stride with the boots on the ground and
+the chest ahead of the hips; standing again, the legs hang; sprinting drags and flaps the hem in
+the shader, with the cloak and trim on one set of uniforms; a crouch fits the hood under the
+1.15 m capsule; a slide leans back with the lead boot flat; a jump splits the legs and lifts the
+hem; a shot shoves the socket back; a death lays the file down and dims its strip-light, takes the
+body after a second and a fifth, and a respawn stands it up. Both proof frames freeze the sim in
+the state they are named for, so the picture labelled "slide" is a slide. 19/19.
+
+**Acceptance.** `probe:body` 19/19; `npm test` 520 (24 across the pose and the rig, 3 new);
+typecheck clean on both configs; `probe:tps` 11/11, `probe:net` 16/16, `probe:city` 45/45,
+`probe:cityLife` 19/19, `probe:frame` 6/6, `probe:mobile` 14/14, `probe:look` 18/18,
+`probe:counter` 16/16, `probe:ship` 9/9, `probe:campaign` 31/31, `probe` 13/13, build and smoke
+pass. Every new guard fails when its rule is reverted: the crouch depth, the leg fold, the walk's
+lean, and the slide's planted boot each have a mutant that reproduces the exact number the test
+now forbids.
+
 ## Stage 61 — The settings probe counts the settings
 
 **Goal.** CI run #90 was red on one step: `probe:ship` asserted that the SETTINGS screen lists

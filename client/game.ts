@@ -460,7 +460,10 @@ export class Game {
           }
         } else {
           if (ev.weapon === 4) this.renderer.fx.beam({ x: ev.fx, y: ev.fy, z: ev.fz }, { x: ev.tx, y: ev.ty, z: ev.tz }, color, 0.05, 0.6);
-          else this.renderer.tracer({ x: ev.fx, y: ev.fy, z: ev.fz }, { x: ev.tx, y: ev.ty, z: ev.tz }, ev.hitKind === 1, true, color);
+          else {
+            this.renderer.tracer({ x: ev.fx, y: ev.fy, z: ev.fz }, { x: ev.tx, y: ev.ty, z: ev.tz }, ev.hitKind === 1, true, color);
+            this.renderer.kickRemote(ev.playerId);
+          }
           if (ev.weapon === 0) this.audio.shot("wasp");
           else if (def) this.audio.shot(def.id);
           if (ev.hitKind === 3 && ev.victimId === me) {
@@ -1022,6 +1025,8 @@ export class Game {
       charge: p.weapon.charging ? p.weapon.charge : 0,
       stunned: p.weapon.stunTimer > 0,
       alive: p.alive,
+      moveYaw: lenXZ(p.vel) > 0.5 ? Math.atan2(-p.vel.x, -p.vel.z) : p.yaw,
+      height: p.height,
     };
     this.input.currentSlot = p.weapon.slot;
     if (this.touch) this.touch.currentSlot = p.weapon.slot;

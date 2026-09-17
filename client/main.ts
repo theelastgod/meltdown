@@ -1,4 +1,6 @@
 import { pwaState, registerServiceWorker } from "./pwa";
+import type { RigReport } from "./render/rig";
+import type { RemoteBodyView } from "./render/renderer";
 import { assetStats, texture as assetTexture } from "./render/assets";
 import { Menu, menuWanted, type MenuView } from "./menu";
 import { clampSettings, saveSettings, type Settings } from "./settings";
@@ -101,6 +103,11 @@ export interface GameHook {
   setView: (third: boolean) => void;
   /** the probe's ruler: the body off with the camera where it is */
   hideBody: (on: boolean) => void;
+  /** the body's bones and pose (Stage 63): the local rig, or a remote's by id */
+  rig: (id?: number) => RigReport;
+  kickRemote: (id: number) => void;
+  /** offline: put remotes on screen from the wire's fields, or take them away with null */
+  injectRemote: (views: RemoteBodyView[] | null) => void;
   pwa: () => Promise<{ supported: boolean; registered: boolean; controlled: boolean; scope: string | null }>;
   crawl: () => CrawlView | null;
   crawlSkip: () => boolean;
@@ -268,6 +275,10 @@ window.__game = {
   hideBody: (on) => {
     game.renderer.bodyHidden = on;
   },
+  rig: (id) => game.renderer.rig(id),
+  kickRemote: (id) => game.renderer.kickRemote(id),
+  // offline the frame loop never syncs remotes, so an injected one stays until injected away
+  injectRemote: (views) => game.renderer.syncRemotes(views ?? []),
   pwa: () => pwaState(),
   crawl: () => crawl?.view() ?? null,
   crawlSkip: () => crawl?.skip() ?? false,
