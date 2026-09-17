@@ -586,6 +586,9 @@ export class Game {
     if (this.touch) this.touch.sensitivity = s.sensitivity;
     this.renderer.setFov(s.fov);
     this.renderer.setCrt(s.crt);
+    // the view is the trailer's — third person — unless the setting or the URL says first (Stage 60)
+    const q = new URLSearchParams(location.search).get("view");
+    this.renderer.setView(q === "first" ? false : q === "third" ? true : !s.firstPerson);
     this.audio.setVolumes({ master: s.master, sfx: s.sfx, bed: s.bed });
   }
 
@@ -1018,6 +1021,7 @@ export class Game {
       zoom: p.weapon.altActive && weaponDefOf(p).alt.kind === "ads" ? weaponDefOf(p).alt.zoom ?? 1 : 1,
       charge: p.weapon.charging ? p.weapon.charge : 0,
       stunned: p.weapon.stunTimer > 0,
+      alive: p.alive,
     };
     this.input.currentSlot = p.weapon.slot;
     if (this.touch) this.touch.currentSlot = p.weapon.slot;
@@ -1038,6 +1042,7 @@ export class Game {
       this.renderer.hub.setGhost(this.ghostPose);
     }
     this.renderer.render(view, rdt);
+    this.hud.setReticle(this.renderer.view().reticle);
     if (this.renderer.life.tram?.passing) this.audio.tram();
     this.stats.frames++;
     this.fpsWindow.frames++;

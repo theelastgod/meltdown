@@ -15,6 +15,12 @@
  * platform-independent: resource counts, draw calls, triangles, and the *ratio* of the worst frame
  * to the median, which is a hitch whatever the renderer.
  *
+ * Measured in first person (Stage 60): the stage's claims are about the renderer's pools and the
+ * frame-time tail, not the camera, and the third-person body's own cost has its own probe
+ * (`probe:tps`). The before/after calls delta below assumes a still scene; behind the body the
+ * camera stands three metres back and higher, and a dummy patrolling into that wider frame read as
+ * eight calls of "leaked effects".
+ *
  *   npm run probe:frame
  */
 import { spawn, type ChildProcess } from "node:child_process";
@@ -52,8 +58,14 @@ const check = (label: string, pass: boolean, detail: string) => {
   console.log(`${pass ? "PASS" : "FAIL"}  ${label}  — ${detail}`);
 };
 
-type Render = { calls: number; triangles: number; geometries: number; textures: number; programs: number; tracers: number };
-const render = (pg: Page): Promise<Render> => pg.evaluate(() => window.__game.state().render);
+type Render = { calls: number; triangles: number; geometries: number; textures: number; programs: number; tracers: number; /** the local body's drawables (Stage 60): shown and hidden by where the camera is, so taken out of a calls delta */ rig: number; breakdown: Record<string, number> };
+const render = (pg: Page): Promise<Render> => pg.evaluate(() => ({ ...window.__game.state().render, rig: window.__game.view().breakdown["rig"] ?? 0, breakdown: window.__game.view().breakdown }));
+/** which scene groups changed between two reads — the thing a calls delta needs to say to be actionable */
+const grew = (a: Render, b: Render): string =>
+  [...new Set([...Object.keys(a.breakdown), ...Object.keys(b.breakdown)])]
+    .filter((k) => (a.breakdown[k] ?? 0) !== (b.breakdown[k] ?? 0))
+    .map((k) => `${k} ${a.breakdown[k] ?? 0}→${b.breakdown[k] ?? 0}`)
+    .join(", ") || "no group changed";
 
 /**
  * Frame-to-frame deltas over a window, as percentiles. A hitch is the tail, not the mean.
@@ -91,7 +103,7 @@ async function main(): Promise<void> {
     pg.on("pageerror", (e) => errors.push(String(e.message)));
     // no bots: a VANTAGE that walks into view registers a body and its own name-tag texture, which
     // would be counted as growth by a check that is about tracers and sparks
-    await pg.goto(`http://127.0.0.1:${PORT}/?headless=1&nonav=1&crawl=0&ai=0&level=drainage_yard&account=sandbox-frame`, { waitUntil: "load" });
+    await pg.goto(`http://127.0.0.1:${PORT}/?headless=1&nonav=1&crawl=0&ai=0&level=drainage_yard&account=sandbox-frame&view=first`, { waitUntil: "load" });
     await pg.waitForFunction(() => window.__game?.ready === true, null, { timeout: 40000, polling: 100 });
     await pg.evaluate(() => window.__game.setRealtime(true));
     await pg.waitForTimeout(2500); // the city spins up: crowds, tram, signage, rain
@@ -134,8 +146,10 @@ async function main(): Promise<void> {
     // ---- 3. and the effects do not cost a draw call each ----
     // Pre-fix every live tracer and spark was its own `Line` or `Mesh`: one draw call apiece. Now
     // the whole pool is one call, hidden entirely when nothing is in flight.
-    const callsAdded = fire1.calls - fire0.calls;
-    check("the effects cost two draw calls in total, not one each", callsAdded <= 4, `${fire0.calls} → ${fire1.calls} calls (+${callsAdded}) with ${fire1.tracers} effects live · ${(fire1.triangles / 1000).toFixed(0)}k triangles`);
+    // the body is hidden while the camera is pulled in against it and shown when it is not, so its
+    // drawables are taken out of the delta: this measures the effects, not where the camera stood
+    const callsAdded = fire1.calls - fire1.rig - (fire0.calls - fire0.rig);
+    check("the effects cost two draw calls in total, not one each", callsAdded <= 4, `${fire0.calls} → ${fire1.calls} calls (+${callsAdded}, rig ${fire0.rig}→${fire1.rig}) with ${fire1.tracers} effects live · ${(fire1.triangles / 1000).toFixed(0)}k triangles · ${grew(fire0, fire1)}`);
 
     // ---- 4. the frame-time tail, which is what a hitch actually is ----
     await pg.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 60_000 }]));

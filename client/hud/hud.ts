@@ -26,6 +26,21 @@ export class Hud {
   private bounds = 32;
   private zone = "DRAINAGE YARD";
 
+  private reticleAt = { x: -1, y: -1 };
+
+  /**
+   * The reticle goes where the renderer says the eye's ray lands (Stage 60): the screen's centre in
+   * first person, and in third person wherever the shot would go — off-centre near a wall, on it at range.
+   */
+  setReticle(r: { x: number; y: number; visible: boolean }): void {
+    const xh = this.q(".xh");
+    if (Math.abs(r.x - this.reticleAt.x) < 0.5 && Math.abs(r.y - this.reticleAt.y) < 0.5) return;
+    this.reticleAt = { x: r.x, y: r.y };
+    xh.style.left = `${r.x}px`;
+    xh.style.top = `${r.y}px`;
+    xh.style.opacity = r.visible ? "1" : "0";
+  }
+
   constructor(root: HTMLElement) {
     root.innerHTML = `
       <div class="scan"></div>

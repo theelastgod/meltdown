@@ -92,6 +92,8 @@ jobs:
         if: ${{ !cancelled() }}
       - run: npm run probe:persist
         if: ${{ !cancelled() }}
+      - run: npm run probe:tps
+        if: ${{ !cancelled() }}
       - run: npm run build
         if: ${{ !cancelled() }}
       - run: npm run smoke

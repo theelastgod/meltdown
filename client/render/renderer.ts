@@ -20,6 +20,9 @@ import { ArsenalFx, buildViewmodel } from "./weapons";
 import { RunFx } from "./run";
 import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
+import { buildBody, mergeByMaterial, type Body } from "./body";
+import { aimPoint, thirdPersonCamera, TPS_ADS, TPS_DEFAULT } from "./tps";
+import type { Box } from "../../shared/sim/box";
 
 /** Interpolated view state handed to the renderer each frame. */
 export interface ViewState {
@@ -40,6 +43,22 @@ export interface ViewState {
   zoom: number;
   charge: number;
   stunned: boolean;
+  /** the body is drawn only while the file is alive (third person) */
+  alive: boolean;
+}
+
+/** What the third-person camera did this frame, for the HUD's reticle and the probes. */
+export interface CameraView {
+  third: boolean;
+  camera: { x: number; y: number; z: number };
+  /** distance from the pivot after whatever the camera backed into */
+  distance: number;
+  blocked: boolean;
+  bodyVisible: boolean;
+  /** where the eye's ray lands on screen (CSS px); the screen's centre in first person */
+  reticle: { x: number; y: number; visible: boolean };
+  /** how far along the eye's ray the reticle is, and whether it is on a wall */
+  aim: { distance: number; hit: boolean };
 }
 
 /** Layer for things the wet-floor mirror must not see (rain, far skyline): cheaper and no blown-out sky. */
@@ -87,6 +106,23 @@ export class Renderer {
   private muzzleT = 0;
   private viewmodel: THREE.Group;
   private viewmodels = new Map<WeaponId, THREE.Group>();
+  /**
+   * The local body (Stage 60): the same silhouette the city sees, drawn when the camera stands
+   * behind it. Its hand holds one weapon per slot, built like the viewmodels so a worn skin's tint
+   * and plate reach it the same way.
+   */
+  private local: Body;
+  private localWeapons = new Map<WeaponId, THREE.Group>();
+  private localWeapon: THREE.Group;
+  private handMuzzle: THREE.PointLight;
+  /** third person is the game's view (the trailer's); first person is a setting */
+  thirdPerson = true;
+  /** the probe's ruler: hide the body and keep the camera, so the body's cost is the difference and nothing else is */
+  bodyHidden = false;
+  private boxes: readonly Box[];
+  private camSmooth = { d: TPS_DEFAULT.distance, x: 0, y: 0, z: 0, set: false };
+  private lastView: CameraView = { third: true, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false } };
+  private tmpProj = new THREE.Vector3();
   private vmSlot = 1;
   private vmSwap = 0;
   readonly fx: ArsenalFx;
@@ -106,6 +142,21 @@ export class Renderer {
   }
   crtLevel() {
     return this.post.crtLevel();
+  }
+  /** Third person (the trailer's view) or first; a setting, never the sim's business. */
+  setView(third: boolean): void {
+    this.thirdPerson = third;
+    this.camSmooth.set = false;
+  }
+  /** A world point on screen (CSS px), by this frame's camera — the probe's ruler for the reticle. */
+  project(p: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
+    this.camera.updateMatrixWorld(true);
+    const v = this.tmpProj.set(p.x, p.y, p.z).project(this.camera);
+    return { x: (v.x + 1) * 0.5 * window.innerWidth, y: (1 - v.y) * 0.5 * window.innerHeight, z: v.z };
+  }
+  /** What the camera did last frame (the HUD's reticle, the probes). */
+  view(): CameraView {
+    return this.lastView;
   }
   private fovNow = 80;
   private vmKick = 0;
@@ -189,6 +240,28 @@ export class Renderer {
     }
     this.viewmodel = this.viewmodels.get("lease_breaker")!;
     this.viewmodel.visible = true;
+    this.boxes = level.boxes;
+    this.local = buildBody();
+    this.local.group.name = "rig";
+    this.scene.add(this.local.group);
+    for (const w of WEAPON_LIST) {
+      const held = buildViewmodel(w.id);
+      // the viewmodel's pose is the camera's; in the hand the weapon sits on the socket and points where the body points
+      held.position.set(0, 0, -0.26);
+      held.rotation.set(0, 0, 0);
+      mergeByMaterial(held); // one mesh per material: a held weapon costs what its materials count, not its parts
+      held.visible = false;
+      this.local.hand.add(held);
+      this.localWeapons.set(w.id, held);
+    }
+    this.localWeapon = this.localWeapons.get("lease_breaker")!;
+    this.localWeapon.visible = true;
+    // drawn once: the mirror does not see the rig (FAR_LAYER), which keeps the body's eight drawables
+    // from costing sixteen calls — lease_row sat at 181 of the 180 budget with the reflection in
+    this.local.group.traverse((o) => o.layers.set(FAR_LAYER));
+    this.handMuzzle = new THREE.PointLight(PALETTE.cyan, 0, 7, 2);
+    this.handMuzzle.position.set(0, 0.03, -0.7);
+    this.local.hand.add(this.handMuzzle);
     this.fx = new ArsenalFx(this.scene);
     this.wake = new WakeFx(this.scene);
     this.run = new RunFx(this.scene);
@@ -233,16 +306,20 @@ export class Renderer {
         cap.position.y = MOVE.standHeight / 2;
         const group = new THREE.Group();
         group.add(cap);
-        const hood = new THREE.Mesh(new THREE.ConeGeometry(MOVE.capsuleRadius + 0.08, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0x0a0806, roughness: 0.9 }));
+        // the hood wears the cloak's material and the band and servo share one amber, so a unit is two
+        // meshes rather than four (Stage 60) — drawn twice, once in the mirror, that is four calls back each
+        const hood = new THREE.Mesh(new THREE.ConeGeometry(MOVE.capsuleRadius + 0.08, 0.5, 8), mat);
         hood.position.y = MOVE.standHeight - 0.05;
         group.add(hood);
-        const band = new THREE.Mesh(new THREE.TorusGeometry(MOVE.capsuleRadius + 0.02, 0.02, 6, 24), new THREE.MeshBasicMaterial({ color: PALETTE.amber }));
+        const amber = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
+        const band = new THREE.Mesh(new THREE.TorusGeometry(MOVE.capsuleRadius + 0.02, 0.02, 6, 24), amber);
         band.rotation.x = Math.PI / 2;
         band.position.y = MOVE.standHeight * 0.82;
         group.add(band);
-        const servo = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.06), new THREE.MeshBasicMaterial({ color: PALETTE.amber }));
+        const servo = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.06), amber);
         servo.position.set(0, 1.0, -MOVE.capsuleRadius);
         group.add(servo);
+        mergeByMaterial(group);
         this.scene.add(group);
         e = { group, mat, flash: 0 };
         this.dummyMeshes.set(d.id, e);
@@ -278,10 +355,13 @@ export class Renderer {
    */
   setSkin(tint: string | null, textureId?: string | null): void {
     this.skinTint = tint;
-    for (const vm of this.viewmodels.values()) {
+    for (const vm of [...this.viewmodels.values(), ...this.localWeapons.values()]) {
       const strip = vm.userData.strip as THREE.MeshBasicMaterial | undefined;
       if (strip) strip.color.set(tint ?? (vm.userData.tracer as string));
     }
+    // the cloak wears it too, as the city sees it on everyone else
+    this.local.mat.emissive.set(tint ?? PALETTE.cyan);
+    this.local.trim.color.set(tint ?? PALETTE.cyan);
     const want = textureId ?? null;
     if (want === this.skinMapId) return;
     this.skinMapId = want;
@@ -303,7 +383,7 @@ export class Renderer {
    * strip material every viewmodel carries, and `skinBound()` answers whether it is.
    */
   private bindSkinMap(tex: THREE.Texture | null): void {
-    for (const vm of this.viewmodels.values()) {
+    for (const vm of [...this.viewmodels.values(), ...this.localWeapons.values()]) {
       const strip = vm.userData.strip as THREE.MeshBasicMaterial | undefined;
       if (!strip) continue;
       strip.map = tex;
@@ -314,11 +394,11 @@ export class Renderer {
   /** true when a plate is loaded and every viewmodel's strip material is drawing it */
   skinBound(): boolean {
     if (!this.skinMap) return false;
-    for (const vm of this.viewmodels.values()) {
+    for (const vm of [...this.viewmodels.values(), ...this.localWeapons.values()]) {
       const strip = vm.userData.strip as THREE.MeshBasicMaterial | undefined;
       if (!strip || strip.map !== this.skinMap) return false;
     }
-    return this.viewmodels.size > 0;
+    return this.viewmodels.size > 0 && this.localWeapons.size > 0;
   }
 
   /** Other players: hooded silhouettes with cyan Blank trim. Zero mechanical data touches this. */
@@ -355,21 +435,10 @@ export class Renderer {
       seen.add(v.id);
       let e = this.remoteMeshes.get(v.id);
       if (!e) {
-        const mat = new THREE.MeshStandardMaterial({ color: 0x0a0c12, emissive: PALETTE.cyan, emissiveIntensity: 0.08, roughness: 0.8 });
-        const group = new THREE.Group();
-        const body = new THREE.Mesh(new THREE.CapsuleGeometry(MOVE.capsuleRadius - 0.02, MOVE.standHeight - MOVE.capsuleRadius * 2, 4, 10), mat);
-        body.position.y = MOVE.standHeight / 2;
-        group.add(body);
-        const hood = new THREE.Mesh(new THREE.ConeGeometry(MOVE.capsuleRadius + 0.06, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0x07080c, roughness: 0.9 }));
-        hood.position.y = MOVE.standHeight - 0.05;
-        group.add(hood);
-        const trimMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan });
-        const trim = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.6, 0.05), trimMat);
-        trim.position.set(MOVE.capsuleRadius - 0.02, 1.05, 0);
-        group.add(trim);
+        const { group, mat, trim: trimMat, hand } = buildBody();
         const gun = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.6), new THREE.MeshStandardMaterial({ color: 0x151a22, roughness: 0.5, metalness: 0.6 }));
-        gun.position.set(0.25, 1.35, -0.35);
-        group.add(gun);
+        gun.position.set(0, 0.05, -0.25);
+        hand.add(gun);
         const canvas = document.createElement("canvas");
         canvas.width = 256;
         canvas.height = 56;
@@ -410,7 +479,9 @@ export class Renderer {
   /** Cyan tracer from the muzzle (or a world-space origin for other players) to the impact point, plus a muzzle flash. */
   tracer(from: Vec3, to: Vec3, hitWorld: boolean, worldOrigin = false, color: number = PALETTE.cyan): void {
     if (worldOrigin) this.tmpStart.set(from.x, from.y, from.z);
-    else {
+    else if (this.thirdPerson) {
+      this.handMuzzle.getWorldPosition(this.tmpStart);
+    } else {
       this.viewmodel.getWorldPosition(this.tmpStart);
       this.tmpStart.y += 0.03;
     }
@@ -447,6 +518,46 @@ export class Renderer {
     return out;
   }
 
+  /**
+   * The camera behind the body (Stage 60). The pivot is the eye the sim fires from; the camera sits
+   * behind it over the right shoulder, backs off any box in its way (tps.ts), and eases distance
+   * changes so a doorway does not snap it. The body stands on the player's feet, faces the aim, and
+   * its hand turns with the pitch; it is hidden when the camera is pulled in against it. The
+   * reticle goes where the eye's ray lands on screen, so what it covers is what a shot hits.
+   */
+  private placeThirdPerson(v: ViewState, dt: number, bobY: number): void {
+    const pivot = { x: v.x, y: v.y + this.eyeSmooth, z: v.z };
+    const opts = v.zoom > 1 ? TPS_ADS : TPS_DEFAULT;
+    const cam = thirdPersonCamera(pivot, v.yaw, v.pitch, this.boxes, opts);
+    // ease the distance only: pulling in against a wall is immediate (the wall is there now), letting back out is eased
+    const k = Math.min(1, dt * 10);
+    this.camSmooth.d = !this.camSmooth.set || cam.distance < this.camSmooth.d ? cam.distance : this.camSmooth.d + (cam.distance - this.camSmooth.d) * k;
+    this.camSmooth.set = true;
+    const t = cam.distance > 1e-6 ? this.camSmooth.d / cam.distance : 1;
+    const ax = pivot.x + (cam.pos.x - pivot.x) * t, ay = pivot.y + (cam.pos.y - pivot.y) * t + bobY * 0.4, az = pivot.z + (cam.pos.z - pivot.z) * t;
+    this.camera.position.set(ax, ay, az);
+    this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, 0);
+    // the body
+    const g = this.local.group;
+    const close = this.camSmooth.d < 0.9;
+    g.visible = v.alive && !close && !this.bodyHidden;
+    g.position.set(v.x, v.y, v.z);
+    g.rotation.y = v.yaw;
+    const crouch = v.stance === "slide" || v.stance === "crouch";
+    g.scale.y = crouch ? 0.65 : 1;
+    g.rotation.x = v.stance === "slide" ? -0.25 : Math.min(0.12, v.speed * 0.015);
+    this.local.hand.rotation.x = v.pitch;
+    this.local.hand.position.z = -0.2 - this.vmKick * 0.05;
+    // the reticle: the eye's ray, projected
+    const aim = aimPoint({ x: v.x, y: v.y + v.eye, z: v.z }, v.yaw, v.pitch, this.boxes);
+    this.camera.updateMatrixWorld(true);
+    this.tmpProj.set(aim.point.x, aim.point.y, aim.point.z).project(this.camera);
+    const visible = this.tmpProj.z < 1 && Math.abs(this.tmpProj.x) <= 1.2 && Math.abs(this.tmpProj.y) <= 1.2;
+    const rx = (this.tmpProj.x + 1) * 0.5 * window.innerWidth;
+    const ry = (1 - this.tmpProj.y) * 0.5 * window.innerHeight;
+    this.lastView = { third: true, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit } };
+  }
+
   render(v: ViewState, rawDt: number): void {
     // VFX age on a hitch-capped clock so tracers and sparks never vanish between two slow frames.
     const dt = Math.min(rawDt, 1 / 30);
@@ -456,25 +567,39 @@ export class Renderer {
     if (v.grounded && v.speed > 0.5 && v.stance !== "slide") this.bobPhase += dt * (6 + v.speed * 0.9);
     const bobY = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase * 2) * 0.012 * Math.min(1, v.speed / 5) : 0;
     const bobX = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase) * 0.008 * Math.min(1, v.speed / 5) : 0;
-    this.camera.position.set(v.x, v.y + this.eyeSmooth + bobY, v.z);
-    this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, v.stance === "slide" ? 0.03 : bobX * 0.6);
-
     this.vmKick = Math.max(0, this.vmKick - dt * 14);
+    if (this.thirdPerson) this.placeThirdPerson(v, dt, bobY);
+    else {
+      this.camera.position.set(v.x, v.y + this.eyeSmooth + bobY, v.z);
+      this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, v.stance === "slide" ? 0.03 : bobX * 0.6);
+      this.local.group.visible = false;
+      this.lastView = { third: false, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: window.innerWidth / 2, y: window.innerHeight / 2, visible: true }, aim: { distance: 0, hit: false } };
+    }
+    // the viewmodel is the first-person weapon; behind the body the hand holds it instead
+    this.viewmodel.visible = !this.thirdPerson;
+
     const dip = v.reloading > 0 ? Math.sin(v.reloading * Math.PI) * 0.18 : 0;
     this.viewmodel.position.set(0.28 + bobX * 0.5, -0.26 - dip + bobY * 0.5, -0.55 + this.vmKick * 0.06);
     this.viewmodel.rotation.x = this.vmKick * 0.08 - dip * 0.8;
     this.muzzleT = Math.max(0, this.muzzleT - dt * 18);
-    this.muzzle.intensity = this.muzzleT * 8;
+    this.muzzle.intensity = this.thirdPerson ? 0 : this.muzzleT * 8;
+    this.handMuzzle.intensity = this.thirdPerson ? this.muzzleT * 8 : 0;
     // weapon swap: hide/show viewmodels with a quick dip
     const wantId = WEAPON_LIST[v.slot - 1]?.id ?? "lease_breaker";
     const want = this.viewmodels.get(wantId)!;
     if (want !== this.viewmodel) {
       this.viewmodel.visible = false;
       this.viewmodel = want;
-      this.viewmodel.visible = true;
+      this.viewmodel.visible = !this.thirdPerson;
       this.vmSwap = 1;
       this.muzzle.color.set(WEAPON_LIST[v.slot - 1]?.tracer ?? PALETTE.cyan);
+      this.handMuzzle.color.set(WEAPON_LIST[v.slot - 1]?.tracer ?? PALETTE.cyan);
+      const held = this.localWeapons.get(wantId)!;
+      this.localWeapon.visible = false;
+      this.localWeapon = held;
+      this.localWeapon.visible = true;
     }
+    this.vmSlot = v.slot;
     this.vmSwap = Math.max(0, this.vmSwap - dt * 4);
     this.viewmodel.position.y -= this.vmSwap * 0.25;
     this.viewmodel.rotation.x -= this.vmSwap * 0.5;

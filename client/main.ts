@@ -96,6 +96,11 @@ export interface GameHook {
   /** installability: is the service worker registered and controlling this page (Stage 45) */
   /** the frame monitor (Stage 50): null unless the page was opened with ?perf=1 */
   perf: () => ReturnType<NonNullable<Game["perf"]>["state"]> | null;
+  /** the camera (Stage 60): third or first person, where it is, the reticle, and the frame's draw calls */
+  view: () => ReturnType<Game["renderer"]["view"]> & { calls: number; breakdown: Record<string, number>; eye: { x: number; y: number; z: number } };
+  setView: (third: boolean) => void;
+  /** the probe's ruler: the body off with the camera where it is */
+  hideBody: (on: boolean) => void;
   pwa: () => Promise<{ supported: boolean; registered: boolean; controlled: boolean; scope: string | null }>;
   crawl: () => CrawlView | null;
   crawlSkip: () => boolean;
@@ -258,6 +263,11 @@ window.__game = {
   reconcile: () => game.file.ensureCounter().then((c) => c?.op("reconcile") ?? { ok: false, reason: "offline" }),
   loadAsset: (id) => assetTexture(id).then((t) => !!t),
   perf: () => game.perf?.state() ?? null,
+  view: () => ({ ...game.renderer.view(), calls: game.renderer.renderer.info.render.calls, breakdown: game.renderer.breakdown(), eye: { x: game.player.pos.x, y: game.player.pos.y + 1.62, z: game.player.pos.z } }),
+  setView: (third) => game.renderer.setView(third),
+  hideBody: (on) => {
+    game.renderer.bodyHidden = on;
+  },
   pwa: () => pwaState(),
   crawl: () => crawl?.view() ?? null,
   crawlSkip: () => crawl?.skip() ?? false,

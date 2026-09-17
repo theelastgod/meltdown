@@ -1641,6 +1641,63 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 60 — Third person, like the trailer
+
+**Goal.** The owner asked for the game to be a third-person shooter, as the trailer shows it. Until
+now the camera sat in the head and the only body the player ever saw was everyone else's.
+
+**What changed.**
+
+- **The camera stands behind the body.** `client/render/tps.ts` is the rule, pure and three-free:
+  the pivot is the eye the sim fires from; the camera sits behind it over the right shoulder, and
+  the segment from the shoulder to the wanted position is cast against the level's boxes so a wall
+  behind the player pulls the camera in (with a gap kept from the wall) rather than putting the wall
+  between camera and player. Pulling in is immediate; letting back out is eased. Aiming down sights
+  is the same rule with the camera closer and tighter. `tests/tps.test.ts` pins the framing, the
+  wall, the minimum distance and the ADS opts.
+- **The body is the city's silhouette.** `client/render/body.ts` builds the hooded shape remote
+  players have worn since Stage 2 — cloak, hood, a strip of trim, and a hand — and both the remotes
+  and the local rig use it now. The hand holds one weapon per slot, built by the same
+  `buildViewmodel` the first-person rig uses, so a worn skin's tint and plate reach it the same way
+  (`skinBound` counts the held weapons too). The cloak went near-black in the same stage: up close
+  and under the rig lights the remotes' emissive read as a lit pillar, which the trailer's
+  silhouettes never are. The body faces the aim, its hand turns with the pitch, it crouches and
+  slides as the remotes do, and it is hidden when the camera is pulled in against it.
+- **The reticle marks what the shot hits.** The sim is untouched: a shot leaves the eye along the
+  aim's yaw and pitch, as it always did. In third person the camera is offset from that ray, so the
+  reticle is drawn where the eye's ray lands on screen — on the first box it reaches, or a point
+  far along it — rather than at the screen's centre. What the reticle covers is what a shot hits,
+  at any range; near a wall it moves, at range it settles. Tracers leave the held weapon's muzzle.
+- **First person is a setting** (`FIRST-PERSON VIEW`, and `?view=first` for the probes): the
+  viewmodel comes back, the body goes, the reticle returns to the centre.
+
+**The probe.** `probe/stage60.ts` (`npm run probe:tps`, in the verify chain and CI): the body is
+drawn and the camera is 3.0 m behind the eye along the aim; backed against the yard's south wall
+the camera pulls in to 0.48 m with the wall still behind it; aiming down sights pulls it in; the
+reticle is the eye's ray on screen to within a pixel and a half, off the centre because the camera
+is over the shoulder, and sits on a street dummy's chest at 12.7 m within the bot's own aim
+tolerance; a burst through it takes the dummy from 100 to 36; first person restores the viewmodel
+and drops the rig's drawables to zero; the body costs five draw calls, read as the same frame with
+the body hidden. Two proof frames. The probe reads the view only after a rendered frame — the
+first draft read the previous frame's camera after teleporting the player, and every "wall" and
+"first person" check reported the old frame.
+
+**The budget.** The body is one mesh per material (`mergeByMaterial`: the parts' transforms baked
+into their geometry, the parts that share a material one mesh), drawn once — the wet floor's mirror
+does not see the rig — so it costs five calls, and the training dummies went the same way, four
+meshes to two. What could not be merged away is the camera: three metres behind the eye it takes in
+about ten more calls of street than the eye did (lease_row, north from the spawn: 202 first person,
+207 third with the body hidden, 212 with it). The city probe's line moves from 180 to 190 by that
+measured cost and no more; lease_row reads 182 on it. `probe:frame` is measured in first person,
+because its claims are about the renderer's pools and the frame-time tail, and a dummy patrolling
+into the wider frame read as eight calls of leaked effects; the city probe's clip-comparison frames
+are taken from the eye too, since the clip is eye-level footage and a walkway's near rail was
+filling the foreground.
+
+**What it is not yet.** A capsule in a hood. The trailer's silhouettes have limbs; this one has a
+strip. The framing, the camera's manners and the reticle are the stage; a body with arms is art,
+and art waits for a surface it can hang on (`docs/DECISIONS.md` §4).
+
 ## Stage 59 — The schedule on the chain
 
 **Goal.** The last open item in the security review that was code rather than an engagement:

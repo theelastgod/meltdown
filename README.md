@@ -1,6 +1,6 @@
 # MELTDOWN
 
-A browser-based multiplayer first-person shooter with a deep RPG progression
+A browser-based multiplayer third-person shooter (first person is a setting) with a deep RPG progression
 layer and a branching campaign, set in **Neo-China, the city that forgets you**.
 
 > Every mind in Neo-China is leased. You woke free.

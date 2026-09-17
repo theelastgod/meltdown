@@ -17,9 +17,11 @@ export interface Settings {
   crt: number;
   /** show the opening crawl on every visit (else only until seen; it stays skippable) */
   crawlEveryTime: boolean;
+  /** the view: third person is the game's (the trailer's); this puts the camera in the head (Stage 60) */
+  firstPerson: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { sensitivity: 1, fov: 80, master: 0.7, sfx: 1, bed: 1, crt: 1, crawlEveryTime: false };
+export const DEFAULT_SETTINGS: Settings = { sensitivity: 1, fov: 80, master: 0.7, sfx: 1, bed: 1, crt: 1, crawlEveryTime: false, firstPerson: false };
 
 export const SETTING_RANGES: Record<keyof Settings, { min: number; max: number; step: number } | null> = {
   sensitivity: { min: 0.25, max: 3, step: 0.05 },
@@ -29,6 +31,7 @@ export const SETTING_RANGES: Record<keyof Settings, { min: number; max: number; 
   bed: { min: 0, max: 1, step: 0.05 },
   crt: { min: 0, max: 1.5, step: 0.1 },
   crawlEveryTime: null,
+  firstPerson: null,
 };
 
 export const SETTINGS_KEY = "meltdown.settings";
@@ -78,6 +81,7 @@ export const SETTING_LABELS: Record<keyof Settings, string> = {
   bed: "CITY BED",
   crt: "CRT",
   crawlEveryTime: "OPENING CRAWL EVERY VISIT",
+  firstPerson: "FIRST-PERSON VIEW",
 };
 
 export function formatSetting(s: Settings, key: keyof Settings): string {
