@@ -1641,6 +1641,54 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 64 — What a check measures when the machine is faster
+
+**Goal.** CI run #92 was red on three steps that pass here: `probe:cityLife`, `probe:body` and
+`smoke`. None of them was the product. All three were checks that timed something in wall
+milliseconds or counted frames, on a machine that draws frames several times faster than the
+software renderer here does — so the same code gives different numbers and the assertions fell off
+their thresholds. A check that only holds at one frame rate is not a check. While pulling them
+apart, two real defects in the Stage 63 body turned up and are fixed here too.
+
+**The checks.**
+
+- **`smoke`: the sim advances.** The first frames of a level pay the graphics driver's shader link
+  — over a second under SwiftShader, with the JavaScript thread idle and the simulation's catch-up
+  timer unable to run through it. Timing the sim from the moment of joining measured that link, not
+  the simulation, and where the stall fell inside the window was luck: 118 ticks one commit, 28 the
+  next, with the same loop. The window now opens once the level is drawing and requires 30 ticks of
+  progress from there (it gets 94).
+- **`probe:body`: the slide and the jump.** Both counted on a rendered frame landing inside a short
+  physical state. A slide lasts a quarter of a second; at 6 frames a second that is five frames and
+  at 60 it is fifteen, and the eased pose is still moving through all of them. Both now freeze the
+  simulation as soon as it is in the state, let the pose settle, and read that — the same trick the
+  proof frames already use, and it makes the reading independent of the frame rate rather than
+  merely likelier to work.
+- **`probe:cityLife`: the monorail's whoosh.** Whether a car crossed earshot during the phases
+  before the check was a lottery the frame rate decided, since the city runs on the render clock.
+  The check now primes a car just outside the radius and waits for real frames to carry it in,
+  however many that takes.
+
+**The defects.** An adversarial review of the Stage 63 diff (six lenses, three skeptics each)
+converged from four directions on the first of these:
+
+- **A body past the pose hold never died.** Beyond 40 m the pose holds — the read at that range is
+  the silhouette, not the stride — but the hold skipped the line that sets visibility too. A player
+  who died out there stayed standing, with their name tag over them, until they came close enough
+  to be posed again. The hold now covers the stride only: a body whose last pose no longer matches
+  what the wire says is posed at any range.
+- **A player leaving disposed every other player's name tag.** three gives every `Sprite` the same
+  module-level geometry, and releasing a departing body walked into it. The probe's leak check read
+  the resulting fall in the geometry count as proof of a clean exit, which is exactly backwards; the
+  geometry is marked shared, and the check now requires that count to hold steady.
+
+**Proof.** `probe:body` 20/20 (one new check: a body at 85 m dies, is taken, and stands again on
+respawn), `probe:cityLife` 19/19, `smoke` 7/7, `probe:tps` 11/11, `probe:net` 16/16,
+`probe:city` 45/45, `probe:frame` 6/6, 520 tests, typecheck clean on both configs. Both new guards
+were mutation-checked together: restoring the old hold leaves the far body standing after death,
+and dropping the shared mark drops the geometry count by one — the exact numbers the checks now
+forbid.
+
 ## Stage 63 — The silhouette walks
 
 **Goal.** Stage 60 put the camera behind the player and found a capsule there: the body was the

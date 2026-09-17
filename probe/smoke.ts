@@ -57,14 +57,21 @@ async function main(): Promise<void> {
     await pg.waitForFunction(() => window.__game?.ready === true, null, { timeout: 40000, polling: 100 });
     const joined = await pg.waitForFunction(() => window.__game.net()?.status === "joined", null, { timeout: 30000, polling: 100 }).then(() => true, () => false);
     await pg.evaluate(() => window.__game.setRealtime(true));
+    // The first frames of a level pay the driver's shader link — over a second under SwiftShader,
+    // with the JS thread idle and the sim's catch-up timer unable to run through it. Timing the sim
+    // from the moment of joining therefore measures the graphics driver, not the simulation: wait
+    // until the level is drawing, then time the ticks from there (Stage 64).
+    await pg.waitForFunction(() => window.__game.game.renderer.frames >= 6, null, { timeout: 40000, polling: 50 });
+    const tick0 = await pg.evaluate(() => window.__game.state().tick);
     await pg.waitForTimeout(1500);
-    const st = await pg.evaluate(() => ({ tick: window.__game.state().tick, level: window.__game.state().level }));
+    const st = await pg.evaluate(() => ({ tick: window.__game.state().tick, level: window.__game.state().level, fps: window.__game.state().loop?.fps ?? -1, frames: window.__game.game.renderer.frames, calls: window.__game.state().render?.calls ?? -1 }));
+    const advanced = st.tick - tick0;
     const px = await pg.evaluate(() => {
       const c = document.getElementById("view") as HTMLCanvasElement;
       return { w: c.width, h: c.height };
     });
     await pg.screenshot({ path: "probe/out/smoke.png" });
-    check("the built bundle boots, joins a room on the host, the sim advances and the canvas has a size", joined && st.tick > 30 && px.w > 0 && px.h > 0, `joined ${joined} · tick ${st.tick} · level ${st.level} · canvas ${px.w}×${px.h}`);
+    check("the built bundle boots, joins a room on the host, the sim advances and the canvas has a size", joined && advanced > 30 && px.w > 0 && px.h > 0, `joined ${joined} · ${advanced} ticks in 1.5 s once the level was drawing (tick ${tick0} → ${st.tick}) · level ${st.level} · canvas ${px.w}×${px.h} · ${st.frames} frames · ${st.calls} calls`);
     /**
      * The chain client is not in the first download (Stage 48). Booting and joining a room fetched
      * no counter chunk; asking for the ledger fetches exactly it. The unit test pins the import

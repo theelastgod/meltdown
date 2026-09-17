@@ -47,6 +47,7 @@ interface Check {
   detail: string;
 }
 type Rig = ReturnType<typeof window.__game.rig>;
+interface RemoteBodyViewLike { id: number; name: string; tag: string; x: number; y: number; z: number; yaw: number; pitch: number; height: number; stance: string; vx: number; vy: number; vz: number; grounded: boolean; slot: number }
 
 async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });
@@ -161,7 +162,36 @@ async function main(): Promise<void> {
     await pg.evaluate(() => window.__game.injectRemote(null));
     await nextFrame(pg, 2);
     const geoAfter = await pg.evaluate(() => ({ g: window.__game.state().render.geometries, t: window.__game.state().render.textures }));
-    check("a remote leaving takes its skeleton and tag with it: no geometry or texture left behind", geoAfter.t <= geoBefore.t - 1 && geoAfter.g <= geoBefore.g, `textures ${geoBefore.t} → ${geoAfter.t} · geometries ${geoBefore.g} → ${geoAfter.g}`);
+    // the cloak, the trim and the weapon strips are shared caches, and a Sprite's geometry belongs to
+    // three itself and is the same object for every name tag: a body's own texture is the only thing
+    // a leaver should take, and a geometry count that FALLS is the bug rather than the proof
+    check("a remote leaving takes its own texture and nothing that is shared", geoAfter.t <= geoBefore.t - 1 && geoAfter.g === geoBefore.g, `textures ${geoBefore.t} → ${geoAfter.t} · geometries ${geoBefore.g} → ${geoAfter.g} (shared: must not fall)`);
+
+    // a body past the pose-hold range still has to die: the hold is the stride, not its existence
+    const FAR_VIEW = { id: 42, name: "FAR", tag: "", x: 60, y: 0, z: -60, yaw: 0, pitch: 0, height: 1.8, stance: "stand", vx: 0, vy: 0, vz: 0, grounded: true, slot: 1 };
+    const farDeath = await pg.evaluate(async (base) => {
+      const v = base as unknown as RemoteBodyViewLike;
+      for (let i = 0; i < 6; i++) {
+        window.__game.injectRemote([{ ...v, alive: true }] as never);
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      }
+      const alive = window.__game.rig(42).out?.visible === true;
+      for (let i = 0; i < 120; i++) {
+        window.__game.injectRemote([{ ...v, alive: false }] as never);
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        if (window.__game.rig(42).out?.visible === false) break;
+      }
+      const gone = window.__game.rig(42).out?.visible === false;
+      for (let i = 0; i < 20; i++) {
+        window.__game.injectRemote([{ ...v, alive: true }] as never);
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      }
+      const back = window.__game.rig(42).out?.visible === true;
+      window.__game.injectRemote(null);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return { alive, gone, back };
+    }, FAR_VIEW as unknown as never);
+    check("a body past the 40 m pose hold still dies and still comes back: the hold is the stride, not its existence", farDeath.alive && farDeath.gone && farDeath.back, `standing ${farDeath.alive} · taken after death ${farDeath.gone} · standing again on respawn ${farDeath.back}`);
 
     // ---------------- 4. the aim and the hands ----------------
     const aim = async (pitch: number) => {
@@ -237,16 +267,18 @@ async function main(): Promise<void> {
         await new Promise((r) => requestAnimationFrame(r));
         const st = window.__game.state();
         out.push({ rig: window.__game.rig(), stance: st.stance, speed: Math.hypot(st.vel.x, st.vel.z) });
-        if (out.filter((s) => s.stance === "slide").length >= 6) {
-          window.__game.setRealtime(false); // freeze the sim mid-slide: the picture below is the state the checks read
+        if (out.filter((s) => s.stance === "slide").length >= 2) {
+          window.__game.setRealtime(false); // freeze the sim mid-slide: the pose settles while the stance holds
           break;
         }
         if (out.length > 8 && out.some((s) => s.stance === "slide") && st.stance !== "slide") break;
       }
       return out;
     });
+    // how many frames a slide spans depends on the frame rate, and the eased pose is still moving
+    // through all of them: the sim is frozen in the slide above, so read the pose once it settles
     const sliding = slideRun.filter((r) => r.rig.out?.state === "slide").map((r) => r.rig);
-    const slid = sliding[sliding.length - 1];
+    const slid = sliding.length ? await settled(pg) : undefined;
     const slideTrace = `stances seen: ${[...new Set(slideRun.map((r) => r.stance))].join(",")} · top speed ${Math.max(0, ...slideRun.map((r) => r.speed)).toFixed(1)} · ${slideRun.length} frames`;
     check("a slide leans back, lays the lead boot flat ahead and flares the hem", !!slid && (slid.out?.hips.rx ?? 0) >= 0.25 && (slid.out?.legR.rx ?? 0) + (slid.out?.hips.rx ?? 0) >= 1.2 && slid.bootBottom.r >= -0.05 && slid.bootBottom.r <= 0.15 && (slid.uniforms?.flare ?? 0) >= 0.1, slid ? `${sliding.length} slide frames · hips lean ${slid.out?.hips.rx.toFixed(2)} · lead boot ${(slid.out!.legR.rx + slid.out!.hips.rx).toFixed(2)} rad, bottom ${slid.bootBottom.r.toFixed(2)} · flare ${slid.uniforms?.flare.toFixed(2)}` : `no slide frame sampled — ${slideTrace}`);
     await nextFrame(pg, 3);
@@ -256,14 +288,30 @@ async function main(): Promise<void> {
     await pg.evaluate(() => window.__game.setRealtime(true));
     await pg.waitForFunction(() => (window.__game.botStatus()?.current as { kind?: string } | null)?.kind === "hold" && window.__game.state().stance === "stand", null, { timeout: 30000, polling: 100 });
     await pg.evaluate((b) => window.__game.setBot([{ kind: "hold", ticks: 2, buttons: b as number }, { kind: "hold", ticks: 6000 }]), Btn.Jump);
-    const airborne = (await sample(pg, 14)).filter((r) => r.out?.state === "air");
+    // the same rule as the slide: freeze the sim off the ground rather than hope a frame lands there
+    const airFrames = await pg.evaluate(async () => {
+      let n = 0;
+      for (let i = 0; i < 240; i++) {
+        await new Promise((r) => requestAnimationFrame(r));
+        if (!window.__game.state().grounded) n++;
+        if (n >= 2) {
+          window.__game.setRealtime(false);
+          return n;
+        }
+      }
+      return n;
+    });
+    const air = airFrames >= 2 ? await settled(pg) : null;
+    const airborne = air && air.out?.state === "air" ? [air] : [];
     const airPeakFlare = Math.max(0, ...airborne.map((r) => r.uniforms?.flare ?? 0));
     // the split is measured at its widest, not on every frame: the first frame off the ground is a
     // third of the way through the ease and asserting the settled pose there is asserting the ease
     const split = Math.max(0, ...airborne.map((r) => (r.out?.legL.rx ?? 0) - (r.out?.legR.rx ?? 0)));
-    check("a jump splits the legs and flares the hem", airborne.length >= 2 && split >= 0.55 && airPeakFlare >= 0.12, `${airborne.length} air frames · widest split ${split.toFixed(2)} rad (last ${airborne[airborne.length - 1]?.out?.legL.rx.toFixed(2)} / ${airborne[airborne.length - 1]?.out?.legR.rx.toFixed(2)}) · flare ${airPeakFlare.toFixed(2)}`);
+    check("a jump splits the legs and flares the hem", airborne.length >= 1 && split >= 0.55 && airPeakFlare >= 0.12, `${airFrames} air frames · widest split ${split.toFixed(2)} rad (last ${airborne[airborne.length - 1]?.out?.legL.rx.toFixed(2)} / ${airborne[airborne.length - 1]?.out?.legR.rx.toFixed(2)}) · flare ${airPeakFlare.toFixed(2)}`);
 
     // ---------------- 8. recoil ----------------
+    await pg.evaluate(() => window.__game.setRealtime(true));
+    await pg.waitForFunction(() => window.__game.state().grounded === true, null, { timeout: 30000, polling: 50 });
     await pg.waitForTimeout(600);
     await pg.evaluate(() => window.__game.setBot([{ kind: "fire", ticks: 40 }, { kind: "hold", ticks: 6000 }]));
     const firing = await sample(pg, 10);

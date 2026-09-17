@@ -168,6 +168,26 @@ async function main(): Promise<void> {
       if ((await page.evaluate(() => window.__game.botStatus()))?.done) break;
     }
     const tramBefore = await page.evaluate(() => window.__game.state().audio["tram"] ?? 0);
+    // Whether a car happened to cross earshot during the phases above is a lottery the frame rate
+    // decides — CI draws frames several times faster than SwiftShader here, so the city clock runs
+    // faster and the car can be past before this point (it was: the cue count came back 0 twice).
+    // Prime a car just outside the radius and wait for real frames to carry it in, however many
+    // that takes at whatever rate the machine draws (Stage 64).
+    await page.evaluate(() => {
+      const g = window.__game.game;
+      const tram = g.renderer.life.tram!;
+      const eye = { x: g.player.pos.x, y: g.player.pos.y + 1.6, z: g.player.pos.z };
+      let steps = 0;
+      while (tram.distanceTo(eye) < 60 && steps++ < 4000) tram.update(0.05, eye as never);
+      while (tram.distanceTo(eye) >= 41 && steps++ < 8000) tram.update(0.02, eye as never);
+    });
+    const tramFired = await page.evaluate(async (before) => {
+      for (let i = 0; i < 180; i++) {
+        await new Promise((r) => requestAnimationFrame(r));
+        if ((window.__game.state().audio["tram"] ?? 0) > (before as number)) return true;
+      }
+      return false;
+    }, tramBefore);
     // Drive the car across the earshot radius on the tram's own clock and read the latch in the same
     // evaluate, with no frame in between.
     //
@@ -189,7 +209,7 @@ async function main(): Promise<void> {
       tram.update(0.02, eye as never);
       return { steps, enter, thenPassing: tram.passing, thenNear: tram.near };
     });
-    check("the monorail's whoosh latches once on the rising edge of earshot, not every frame it is near", edge.enter.passing && edge.enter.near && !edge.thenPassing && edge.thenNear && tramBefore >= 1, `entered at ${edge.enter.dist.toFixed(1)} m (${edge.steps} steps): passing ${edge.enter.passing} · next step still near ${edge.thenNear}, passing ${edge.thenPassing} · whoosh cues in real play ${tramBefore}`);
+    check("the monorail's whoosh latches once on the rising edge of earshot, not every frame it is near", edge.enter.passing && edge.enter.near && !edge.thenPassing && edge.thenNear && tramFired, `entered at ${edge.enter.dist.toFixed(1)} m (${edge.steps} steps): passing ${edge.enter.passing} · next step still near ${edge.thenNear}, passing ${edge.thenPassing} · a car carried into earshot by real frames fired the whoosh: ${tramFired}`);
     await capture("monorail");
 
     // --- the soundscape: sirens and PA lines on the sim clock, the PA copy lands in the HUD log ---

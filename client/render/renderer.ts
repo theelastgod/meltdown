@@ -9,7 +9,7 @@ import { Rain } from "./rain";
 import { makeFlatWetFloor, makeWetFloor } from "./wetfloor";
 import { buildSkyline, dressLevel, PALETTE, Traffic } from "./city";
 import { VfxPool } from "./vfx";
-import { release } from "./dispose";
+import { markShared, release } from "./dispose";
 import { CityLife, flickerMaterial } from "./life";
 import { HubDressing } from "./hub";
 import { CampaignFx } from "./campaign";
@@ -510,6 +510,9 @@ export class Renderer {
         const tex = new THREE.CanvasTexture(canvas);
         tex.colorSpace = THREE.SRGBColorSpace;
         const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false }));
+        // three gives every Sprite the same module-level geometry: releasing this one with the
+        // player who left would take every other player's tag with it (Stage 64)
+        markShared(tag.geometry);
         tag.scale.set(1.6, 0.35, 1);
         tag.position.y = MOVE.standHeight + 0.45;
         tag.center.set(0.1, 0.5);
@@ -568,9 +571,15 @@ export class Renderer {
       if (grounded && speed >= 0.5 && v.stance !== "slide") e.phase += dt * (6 + speed * 0.9);
       e.kick = Math.max(0, e.kick - dt * 14);
       e.prev = { x: v.x, y: v.y, z: v.z, yaw: v.yaw };
-      // far from the camera the pose holds: the read is the silhouette, not the stride
+      // Far from the camera the pose holds: at that range the read is the silhouette, not the stride.
+      // The hold covers the stride only — a file that dies or respawns out there still has to fall
+      // down and stand up, so a body whose last pose no longer matches what the wire says is posed
+      // whatever the range (Stage 64: four reviewers found a dead player left standing at 40 m).
       const far = Math.hypot(v.x - this.camera.position.x, v.z - this.camera.position.z) > 40;
-      if (far && e.rig.last) continue;
+      if (far && e.rig.last && v.alive && e.rig.last.visible) {
+        e.group.visible = true;
+        continue;
+      }
       const inp: PoseInput = { speed, moveYaw: speed > 0.5 ? Math.atan2(-dx, -dz) : v.yaw, yaw: v.yaw, pitch: v.pitch ?? 0, vy: clamp((v.y - prev.y) / dt, -12, 12), turnRate: clamp(wrapAngle(v.yaw - prev.yaw) / dt, -20, 20), grounded, stance: v.stance as Stance, height: v.height, reloading: 0, ads: 0, kick: e.kick, alive: v.alive, stunned: false, clock: this.clock, phase: e.phase };
       const out = poseBody(inp, e.rig.state, dt);
       applyPose(e.rig, out, v.yaw);
