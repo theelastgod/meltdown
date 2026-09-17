@@ -153,6 +153,20 @@ async function main(): Promise<void> {
         await page.evaluate(() => window.__game.advance(20));
         if ((await page.evaluate(() => window.__game.botStatus()))?.done) break;
       }
+      // stand the camera on the exact spot before the shutter opens. The goto lands anywhere inside
+      // its 0.8 m radius, and how much of a lit node that puts in frame moves the whole frame's
+      // brightness: this check reads 0.22 from one arrival and 0.24 from another, and its threshold
+      // is 0.24 (Stage 70). A clip comparison is a claim about a view, so fix the view.
+      await page.evaluate((b) => {
+        const p = window.__game.game.player;
+        p.pos.x = b.x;
+        p.pos.z = b.z;
+        p.vel.x = p.vel.y = p.vel.z = 0;
+        p.yaw = b.yaw;
+        p.pitch = 0.04;
+        window.__game.setBot([{ kind: "look", yaw: b.yaw, pitch: 0.04, ticks: 8 }, { kind: "hold", ticks: 600 }]);
+        window.__game.advance(12);
+      }, { ...back, yaw: spec.walkway === "x" ? 0 : Math.PI / 2 });
       await capture("node");
 
       // the walkway, by its stairs (steps only): routed on a nav that treats the walkway as ground

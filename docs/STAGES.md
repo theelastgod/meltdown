@@ -1641,6 +1641,24 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 71 — A clip comparison is a claim about a view
+
+**Goal.** The `deadletter_docks/node` frame in the city probe sat a hundredth of a unit under its
+brightness threshold and moved between runs, flagged in Stage 66 and left alone. This is the reason
+and the fix.
+
+**What changed.** The frame is taken after the bot walks back down the street to look at the node it
+just flipped, and the walk ends anywhere inside its 0.8 m radius. How much of a lit node that puts
+in frame moves the brightness of the whole picture: the same build read 0.207 from one arrival and
+0.243 from another, against a threshold of 0.24. The camera now stands on the exact spot, facing
+the exact way, before the shutter opens — a clip comparison is a claim about a view, so the view is
+fixed rather than approximately arranged.
+
+**Proof.** `probe:city` 45/45 twice, reading 0.217 and 0.207 where it used to range 0.207 to 0.243:
+the spread halved and the margin to the threshold doubled. `probe:cityLife` 19/19, `probe:wake`
+14/14. The residue is the rain and the node's own pulse, which are the picture rather than the
+aim.
+
 ## Stage 70 — Two shutters and a threshold
 
 **Goal.** Runs #97 and #98 each failed on one check, in two probes this series had not reached.
