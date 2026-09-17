@@ -160,10 +160,24 @@ export function project(p: Population = DOC_POPULATION): Projection {
  * many people play, which a fixed rate per unit cannot promise at any constant (see
  * `docs/ECONOMY.md`).
  */
+/**
+ * The schedule's day zero, as a day index (days since the Unix epoch): 2026-09-17. Until Stage 59
+ * the schedule's year was counted from 1970, so every real date fell in "year 56", clamped to the
+ * last year of the schedule — a live settlement would have paid the final year's budget from the
+ * first day, 7.5× under what the schedule said. The vault carries the same day (see
+ * shared/economy/schedule.ts), so the chain and the arithmetic agree on which year it is.
+ * Set it to the mainnet launch date at deploy; it is the one date the economy is measured from.
+ */
+export const LAUNCH_DAY = 20_713;
+
+/** which year of the schedule a day index falls in: 0 before launch and in the first year, clamped to the last */
+export function scheduleYear(day: number, years = emissionSchedule().length): number {
+  return Math.min(years - 1, Math.max(0, Math.floor((day - LAUNCH_DAY) / 365)));
+}
+
 export function dailyEmissionBudget(day: number): number {
   const schedule = emissionSchedule();
-  const year = Math.min(schedule.length - 1, Math.max(0, Math.floor(day / 365)));
-  return schedule[year]! / 365;
+  return schedule[scheduleYear(day, schedule.length)]! / 365;
 }
 
 /** The share of the daily emission budget THE RUN pays out; the rest funds the Audit and season pools. */

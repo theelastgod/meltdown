@@ -11,7 +11,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { parseEther } from "viem";
-import { DOC_POPULATION, STRESS_POPULATION, dailyEmissionBudget, emissionSchedule, emissionsAllocation, project, RUN_EMISSION_SHARE } from "../shared/economy/model";
+import { DOC_POPULATION, STRESS_POPULATION, dailyEmissionBudget, emissionSchedule, emissionsAllocation, LAUNCH_DAY, project, RUN_EMISSION_SHARE, scheduleYear } from "../shared/economy/model";
+import { dayIndex } from "../shared/endgame/clock";
 import { dilutionThreshold, runPot, settleRun } from "../shared/economy/settlement";
 import { lintTokenConstants } from "../shared/economy/lint";
 import { MAX_CAPITAL_PER_UNIT, RUN_DAILY_CAP } from "../shared/sim/run";
@@ -25,10 +26,20 @@ describe("the emission schedule", () => {
   });
 
   it("spreads a year evenly across its days, and holds the last year's rate afterwards", () => {
-    expect(dailyEmissionBudget(0) * 365).toBeCloseTo(emissionSchedule()[0]!, 6);
-    expect(dailyEmissionBudget(400)).toBeCloseTo(emissionSchedule()[1]! / 365, 9);
+    expect(dailyEmissionBudget(LAUNCH_DAY) * 365).toBeCloseTo(emissionSchedule()[0]!, 6);
+    expect(dailyEmissionBudget(LAUNCH_DAY + 400)).toBeCloseTo(emissionSchedule()[1]! / 365, 9);
     // past the schedule the rate does not fall off a cliff and does not restart
-    expect(dailyEmissionBudget(99_999)).toBeCloseTo(emissionSchedule()[7]! / 365, 9);
+    expect(dailyEmissionBudget(LAUNCH_DAY + 99_999)).toBeCloseTo(emissionSchedule()[7]! / 365, 9);
+  });
+
+  it("counts the schedule's years from the launch day, not from 1970 (Stage 59)", () => {
+    // today is in year one. Until Stage 59 every real date fell in "year 56", clamped to the last
+    // year of the schedule, so a live settlement would have paid the final year's budget from day one
+    expect(scheduleYear(dayIndex())).toBe(0);
+    expect(dailyEmissionBudget(dayIndex())).toBeCloseTo(emissionSchedule()[0]! / 365, 9);
+    expect(scheduleYear(LAUNCH_DAY - 1)).toBe(0); // before launch there is no earlier year to fall into
+    expect(scheduleYear(LAUNCH_DAY + 365)).toBe(1);
+    expect(scheduleYear(LAUNCH_DAY + 8 * 365 + 1000)).toBe(7);
   });
 });
 

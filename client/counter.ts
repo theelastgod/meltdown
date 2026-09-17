@@ -118,7 +118,8 @@ export class CounterClient {
     }
     this.busy = true;
     try {
-      const n = (await (await fetch(`${this.shop}/link/nonce`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: this.account }) })).json()) as { nonce: string; statement: string; chainId: number };
+      const n = (await (await fetch(`${this.shop}/link/nonce`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: this.account, secret: this.secret }) })).json()) as { nonce?: string; statement: string; chainId: number; ok?: boolean; reason?: string };
+      if (!n.nonce) return { ok: false, reason: n.reason ?? "no nonce" };
       const message = createSiweMessage({ address: this.address!, chainId: n.chainId, domain: location.host || "127.0.0.1", nonce: n.nonce, uri: location.origin && location.origin !== "null" ? location.origin : "http://127.0.0.1/", version: "1", statement: n.statement });
       const signature = await this.wallet!.signMessage({ account: this.wallet!.account!, message });
       const r = (await (await fetch(`${this.shop}/link/verify`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: this.account, message, signature, secret: this.secret }) })).json()) as { ok: boolean; reason?: string; counter: CounterRecord | null };

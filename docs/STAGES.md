@@ -1641,6 +1641,51 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 59 — The schedule on the chain
+
+**Goal.** The last open item in the security review that was code rather than an engagement:
+"the emission schedule is enforced in code, not only published — what is still trusted there is
+the poster." The settlement's arithmetic bounds a day; nothing on the chain bounded what the poster
+key could fund. Building the bound found that the arithmetic was wrong first.
+
+1. **The schedule's year was counted from 1970.** `dailyEmissionBudget(day)` took a day index —
+   days since the Unix epoch — and divided by 365, so every real date fell in "year 56", clamped to
+   the last year of the eight. A live settlement on any date would have paid the final year's
+   budget from the first day: 35,474 $CAPITAL a day where the schedule says 265,753. The model's
+   own test pinned day zero of 1970 as year one, and `probe:economy` projects from `runPot(0)`, so
+   nothing measured the day the settlement actually runs on. `LAUNCH_DAY` is the schedule's day
+   zero (2026-09-17 as a day index; set it to the launch date at mainnet deploy), `scheduleYear`
+   counts from it, and the model test now asserts that today is year one.
+2. **The vault holds the poster to the schedule.** `PrizeVault` carries a channel per epoch kind
+   (Audit, season, THE RUN — an epoch id is `kind × 1,000,000 + period`, as it always was) with a
+   cap per schedule year, and `post` refuses `OverSchedule` before a token is drawn. THE RUN's caps
+   are the day's pot per year, rounded up; the boards' are their pools. A kind with no channel
+   cannot be posted at all, and only the treasury — the steward, a multisig on a real network — can
+   move a channel; the poster never can. `shared/economy/schedule.ts` computes the same numbers,
+   the deploy passes them to the constructor, and `tests/schedule.test.ts` holds the contract's
+   `capOf` to the model's `epochCap` for run days across the years and before launch, for Audit
+   weeks and for seasons. The ledger reads the cap before posting, so an over-schedule total is a
+   named refusal in the cron's log rather than a reverted transaction paid for. What a leaked
+   poster key can now do is fund one period's schedule per period; whether a day's root was built
+   from real banking remains its word (`docs/SECURITY.md` §3.2).
+3. **The nonce is the file's.** Issuing a SIWE nonce replaced the file's in-flight one, and the
+   ask took a bare id, so anyone could keep a victim from ever finishing a link. The ask now takes
+   the file's secret on both hosts (the client already held it); an anonymous file adopts nothing
+   on the ask.
+4. **A shadowed route made the Workers throw on any file that had not joined.** The Durable Object
+   had a bare `/file` route from Stage 6 that matched any method and answered `null` for a file not
+   in its storage, never reading D1; the POST `/file` route Stage 28 added below it — the one the
+   counter and campaign Workers load through — was never reached. Any request on the money route or
+   the campaign route for a file not yet in that object's storage threw a 500, and a file whose
+   storage was cold read as absent. The shadow is gone; the read reaches the row and a file nowhere
+   is a placeholder with its id. Found by the nonce test, which asked for a file that had never
+   joined.
+
+**Tests.** `tests/schedule.test.ts` (7), the model's day-zero case, the nonce route, the cold read;
+the security suite's raw posts moved onto run-day epochs (a bare id has no schedule now) and its
+allowance case onto a run day, where the allowance is the guard that speaks. 489 tests. Each new
+guard fails its case when reverted, the contract's with a recompile.
+
 ## Stage 58 — The review, part five: Stages 1–14
 
 **Goal.** The last pass, over the fourteen stages that built the game before the money: the sim,

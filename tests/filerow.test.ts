@@ -90,3 +90,19 @@ describe("a cold load is written back to storage (Stage 58)", () => {
     expect(stored).toEqual(["ONE", "TWO", "THREE", "FOUR"]);
   });
 });
+
+describe("the Workers' internal read reaches the row (Stage 59)", () => {
+  it("a file in D1 but not in storage is the row, and a file nowhere is a placeholder with its id, never null", async () => {
+    const db = new DatabaseSync(":memory:");
+    const env: PlayerEnv = { DB: fakeD1(db) };
+    const a: Account = createAccount("cold3", "COLD");
+    a.xp = 4321;
+    await new PlayerFile(fakeState(), env).fetch(new Request("https://file/save", { method: "POST", body: JSON.stringify(a) }));
+    const cold = new PlayerFile(fakeState(), env);
+    const read = (id: string) => cold.fetch(new Request("https://file/file", { method: "POST", body: JSON.stringify({ id, name: "BLANK" }) })).then((r) => r.json() as Promise<Account | null>);
+    expect((await read("cold3"))?.xp).toBe(4321);
+    const fresh = await new PlayerFile(fakeState(), env).fetch(new Request("https://file/file", { method: "POST", body: JSON.stringify({ id: "never", name: "BLANK" }) })).then((r) => r.json() as Promise<Account | null>);
+    expect(fresh?.id).toBe("never");
+    expect(fresh?.xp).toBe(0);
+  });
+});

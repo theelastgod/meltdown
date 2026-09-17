@@ -6,6 +6,8 @@
  * supply destroyed without being counted as burned, and a name priced per byte bought with
  * multi-byte characters. See docs/SECURITY.md.
  */
+import { EPOCH_BASE } from "../server/chain/prizes-store";
+import { LAUNCH_DAY } from "../shared/economy/model";
 import { describe, expect, it, beforeAll } from "vitest";
 import { createWalletClient, defineChain, encodeDeployData, keccak256, parseEther, toHex, type Hex, type WalletClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -18,6 +20,8 @@ import { buildEpoch } from "../server/chain/merkle";
 import { fileIdOf } from "../server/chain/signer";
 
 type Boot = Awaited<ReturnType<typeof bootDevnetLedger>>;
+/** epochs are namespaced by channel (Stage 59): a bare id has no schedule and the vault refuses it */
+const RUN = BigInt(EPOCH_BASE.run);
 
 const relayer = privateKeyToAccount(DEV_KEYS.relayer);
 /** the bank (Stage 23): a separate key from the hot one, so funding a test wallet comes from here */
@@ -89,45 +93,45 @@ describe("the money paths, adversarially", () => {
     // Epoch 900 is funded with 10 but its root promises 300 — an off-chain tree bug, or a bad poster.
     // 300 is money the vault genuinely holds (epoch 901 put it there), so nothing but the epoch's own
     // ceiling stands between this claim and another epoch's pot.
-    const bad = buildEpoch(900, [{ account: player.address, amount: parseEther("300") }]);
+    const bad = buildEpoch(Number(RUN) + 900, [{ account: player.address, amount: parseEther("300") }]);
     await send(k.capital, "$CAPITAL", "transfer", [relayer.address, parseEther("100000")], treasury);
     await send(k.capital, "$CAPITAL", "approve", [k.vault, parseEther("100000")]);
-    expect((await send(k.vault, "PrizeVault", "post", [900n, bad.root, parseEther("10")])).status).toBe("success");
+    expect((await send(k.vault, "PrizeVault", "post", [RUN + 900n, bad.root, parseEther("10")])).status).toBe("success");
     // epoch 901 is honest and holds real money in the same vault
-    const good = buildEpoch(901, [{ account: player2.address, amount: parseEther("500") }]);
-    expect((await send(k.vault, "PrizeVault", "post", [901n, good.root, parseEther("500")])).status).toBe("success");
+    const good = buildEpoch(Number(RUN) + 901, [{ account: player2.address, amount: parseEther("500") }]);
+    expect((await send(k.vault, "PrizeVault", "post", [RUN + 901n, good.root, parseEther("500")])).status).toBe("success");
     const vaultHeld = await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [k.vault]);
     expect(vaultHeld).toBe(parseEther("510"));
     // the overclaim is refused, and the honest epoch is untouched
     await expect(
-      b.pub.simulateContract({ address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "claim", args: [900n, player.address, parseEther("300"), bad.leaves[0]!.proof], account: relayer }),
+      b.pub.simulateContract({ address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "claim", args: [RUN + 900n, player.address, parseEther("300"), bad.leaves[0]!.proof], account: relayer }),
     ).rejects.toThrow();
     expect(await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [k.vault])).toBe(vaultHeld);
     const before = await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [player2.address]);
-    expect((await send(k.vault, "PrizeVault", "claim", [901n, player2.address, parseEther("500"), good.leaves[0]!.proof])).status).toBe("success");
+    expect((await send(k.vault, "PrizeVault", "claim", [RUN + 901n, player2.address, parseEther("500"), good.leaves[0]!.proof])).status).toBe("success");
     expect((await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [player2.address])) - before).toBe(parseEther("500"));
   }, 90_000);
 
   it("a prize is claimed once, by anyone, for the account in the leaf, and a forged amount fails the proof", async () => {
     const k = b.contracts;
-    const tree = buildEpoch(902, [
+    const tree = buildEpoch(Number(RUN) + 902, [
       { account: player.address, amount: parseEther("40") },
       { account: player2.address, amount: parseEther("60") },
     ]);
-    await send(k.vault, "PrizeVault", "post", [902n, tree.root, parseEther("100")]);
+    await send(k.vault, "PrizeVault", "post", [RUN + 902n, tree.root, parseEther("100")]);
     const leaf = tree.leaves.find((l) => l.account.toLowerCase() === player.address.toLowerCase())!;
     // the same proof with a bigger number is a different leaf: the root does not know it
     await expect(
-      b.pub.simulateContract({ address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "claim", args: [902n, player.address, parseEther("100"), leaf.proof], account: relayer }),
+      b.pub.simulateContract({ address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "claim", args: [RUN + 902n, player.address, parseEther("100"), leaf.proof], account: relayer }),
     ).rejects.toThrow();
     // the relayer submits for the player: the tokens go to the leaf's account, not the sender
     const relayerBefore = await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [relayer.address]);
     const playerBefore = await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [player.address]);
-    await send(k.vault, "PrizeVault", "claim", [902n, player.address, leaf.amount, leaf.proof]);
+    await send(k.vault, "PrizeVault", "claim", [RUN + 902n, player.address, leaf.amount, leaf.proof]);
     expect((await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [player.address])) - playerBefore).toBe(parseEther("40"));
     expect(await read<bigint>(k.capital, "$CAPITAL", "balanceOf", [relayer.address])).toBe(relayerBefore);
     await expect(
-      b.pub.simulateContract({ address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "claim", args: [902n, player.address, leaf.amount, leaf.proof], account: relayer }),
+      b.pub.simulateContract({ address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "claim", args: [RUN + 902n, player.address, leaf.amount, leaf.proof], account: relayer }),
     ).rejects.toThrow();
   }, 90_000);
 
@@ -309,10 +313,12 @@ describe("the hot key is not the bank", () => {
     const left = await b.ledger.relayerAllowance();
     const tooBig = Number(left / 10n ** 18n) + 1000;
 
-    const r = await b.ledger.postEpoch("audit", 77, [{ account: a.id, amount: tooBig, reason: "AUDIT PLACEMENT #1" }]);
+    // a run day: its schedule cap is the day's pot, far above this allowance, so the allowance is the
+    // guard that speaks (the Audit's cap is its pool, which Stage 59 checks first — tests/schedule.test.ts)
+    const r = await b.ledger.postEpoch("run", LAUNCH_DAY + 77, [{ account: a.id, amount: tooBig, reason: "RUN" }]);
     expect(r.ok).toBe(false);
     expect(r.reason).toMatch(/allowance/);
     // nothing was posted, so the epoch is still free for a correctly sized one later
-    expect(await b.ledger.epoch(1_000_000 + 77)).toBeNull();
+    expect(await b.ledger.epoch(EPOCH_BASE.run + LAUNCH_DAY + 77)).toBeNull();
   }, 60_000);
 });

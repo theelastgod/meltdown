@@ -446,6 +446,12 @@ const http = createServer((req, res) => {
         return;
       }
       if (req.url === "/link/nonce") {
+        // the nonce is the file's (Stage 59): a bare id could otherwise replace a victim's in-flight nonce forever
+        if (!fileAuth(accounts.load(id, "BLANK"), String(body.secret ?? "")).ok) {
+          res.statusCode = 403;
+          res.end(JSON.stringify({ ok: false, reason: NOT_YOURS }));
+          return;
+        }
         res.end(JSON.stringify({ nonce: counter.ledger.nonce(id), statement: counter.ledger.info().statement, chainId: counter.ledger.info().chainId }));
         return;
       }

@@ -71,10 +71,9 @@ describe("the client sends the credential on every route that asks for one", () 
     expect(carries("/rooms/open")).toBe(true);
   });
 
-  it("a POST to an ungated route is not required to carry one", () => {
-    // /link/nonce takes only an account and returns a nonce; it mutates nothing
+  it("the nonce ask carries it too (Stage 59): issuing a nonce replaces the file's in-flight one", () => {
     const nonce = posts.find((p) => p.text.includes("/link/nonce"));
     expect(nonce).toBeDefined();
-    expect(GATED.some((re) => re.test(nonce!.text))).toBe(false);
+    expect(/secret/.test(nonce!.text)).toBe(true);
   });
 });

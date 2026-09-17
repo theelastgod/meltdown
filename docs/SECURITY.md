@@ -304,7 +304,7 @@ An auditor should know which of these are decisions rather than oversights.
 | Trusted | Why, and what it costs if broken |
 | --- | --- |
 | The **game signer** key | It decides who gets a Ghostfile, a stamp and a name. A leak mints identity, not money: it cannot move tokens, post a prize root, or mint a cosmetic. Rotatable by the steward. |
-| The **poster** key (PrizeVault) | It sets the roots and funds them. A leak can misdirect *the epochs it funds itself* and nothing more, since 1.2. |
+| The **poster** key (PrizeVault) | It sets the roots and funds them. A leak can misdirect *the epochs it funds itself* and nothing more, since 1.2 — and since Stage 59 no more than the schedule's cap per epoch, one epoch per period, because the vault carries the schedule and only the treasury can move it. What it still decides alone is whether a day's root was built from real banking. |
 | The **relayer** key | Sponsors gas and submits sponsored transactions. Since Stage 23 it is **not** the treasury: it holds no supply and spends against a standing allowance, so a leak costs at most that allowance (§3.1). |
 | The **minter** role (Cosmetics) | Can mint any id in any quantity. There is no supply cap; scarcity is a studio promise, not a contract one. If that promise matters, cap it per id at definition time. |
 | `Cosmetics` and `$CAPITAL` as **callback-free** | The market's safety argument in 1.6 no longer depends on this, but the ERC-1155 acceptance check is still not implemented, so a contract that cannot handle 1155s can still receive one. |
@@ -358,10 +358,13 @@ multisig itself, the audit (2) and the legal review (5) remain the owner's engag
    players; the voucher shapes already suit it.
 4. **A cap per cosmetic id**, if scarcity is ever to be a promise rather than a policy.
 5. **Legal review** of the emission channels, as `docs/TOKENOMICS.md` §9 says.
-6. **The emission schedule is enforced in code**, not only published — see `docs/ECONOMY.md`.
-   A day's emission is a PrizeVault epoch, so §1.2's per-epoch funding guard bounds it on chain as
-   well as in the arithmetic. What is still trusted there is the *poster*: nothing on chain checks
-   that a day's root was built from a real day's banking.
+6. ~~**The emission schedule is enforced in code**, not only published.~~ **On the chain now
+   (Stage 59).** The vault carries the schedule — a cap per channel per year, counted from the
+   launch day — and refuses a post over it before a token is drawn; only the treasury can move a
+   channel. What is still the poster's word is whether a day's root was built from a real day's
+   banking; the amount is no longer. Building it found the arithmetic's year was counted from
+   1970, so a live settlement would have paid the last year's budget from day one — fixed in the
+   same stage, with `LAUNCH_DAY` as the one date the economy is measured from.
 
 ## 4. Running the review's tests
 

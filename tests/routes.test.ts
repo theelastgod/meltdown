@@ -284,3 +284,18 @@ describe("the fifth review (Stage 58): the file behind the match", () => {
     expect(stored.daily?.base).toMatchObject({ [counter]: 3 });
   });
 });
+
+describe("the nonce is the file's (Stage 59)", () => {
+  it("a file with a secret gives a nonce only to its holder; an anonymous file gives one to anyone and adopts nothing", async () => {
+    const ns = fakeNamespace();
+    await seed(ns, "linker", (a) => void (a.secret = SECRET));
+    const env = { PLAYER_FILE: ns, DB: {}, CHAIN_ID: "1", CHAIN_RPC: "https://rpc.invalid", CONTRACTS: "{}", SIGNER_KEY: "0x1", RELAYER_KEY: "0x1" } as unknown as Parameters<typeof counterWorker.fetch>[1];
+    const bare = await counterWorker.fetch(post("https://k/link/nonce", { account: "linker" }), env);
+    expect(bare.status).toBe(403);
+    expect(((await bare.json()) as { reason: string }).reason).toBe(NOT_YOURS);
+    // the anonymous ask passes the gate: what fails after it is this test's fake chain (a one-byte key), not the file
+    await expect(counterWorker.fetch(post("https://k/link/nonce", { account: "nobody-yet", secret: "mine" }), env)).rejects.toThrow(/private key/);
+    const stored = (await (await ns.get(ns.idFromName("nobody-yet")).fetch(post("https://file/file", { id: "nobody-yet", name: "X" }))).json()) as Account | null;
+    expect(stored?.secret).toBeUndefined(); // the ask adopts nothing: adoption is the verify's
+  });
+});

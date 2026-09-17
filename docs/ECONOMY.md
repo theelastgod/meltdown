@@ -285,6 +285,12 @@ than in the caller, so asking early simply fails — the job does not have to be
    **Decided (Stage 53, `docs/DECISIONS.md` §1): closed.** No player uploads; the pipeline stays
    the studio's. The Forge is no longer carried in the projection as a specified-but-unbuilt sink:
    `shared/economy/sinks.ts` lists only built sinks and the model's "unbuilt" line reads *none*.
+   **The schedule is on the chain (Stage 59).** `PrizeVault` holds a cap per channel per schedule
+   year — THE RUN's is the day's pot, the boards' their pools — and refuses a post over it; only the
+   treasury can move a channel. `shared/economy/schedule.ts` is where the caps are computed and
+   `tests/schedule.test.ts` holds the contract to it. The same stage found the schedule's year
+   counted from 1970: `LAUNCH_DAY` (`shared/economy/model.ts`) is the day the schedule starts, and
+   it must be set to the launch date at mainnet deploy, because the vault is deployed with it.
 2. **The ceiling is a game-design number, not a derived one.** 1 $CAPITAL a unit sets when
    dilution starts to be felt. It should be revisited against a real launch population, and it is
    the one constant here a designer should own rather than a model.

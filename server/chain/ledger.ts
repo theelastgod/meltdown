@@ -311,6 +311,10 @@ export class CounterLedger {
         // to land in the relayer's own balance on every retry while the post reverted EpochExists
         const onChain = (await this.pub.readContract({ address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "epochs", args: [BigInt(epoch)] })) as readonly [Hex, bigint, bigint, bigint];
         if (onChain[1] > 0n) return { ok: false, reason: `epoch ${epoch} is on the chain but not in the store: repair the store, do not post it again`, skipped };
+        // and the schedule's cap (Stage 59), so an over-schedule total is a named refusal in the
+        // cron's log rather than a reverted transaction paid for
+        const cap = (await this.pub.readContract({ address: k.vault, abi: ARTIFACTS.PrizeVault!.abi, functionName: "capOf", args: [BigInt(epoch)] })) as bigint;
+        if (tree.total > cap) return { ok: false, reason: `${kind} ${period} totals ${formatEther(tree.total)} $CAPITAL, over the schedule's cap of ${formatEther(cap)} for its year: the vault would refuse it`, skipped };
         // the vault pulls from the poster, so the epoch's funding passes through the relayer for one
         // transaction — drawn against its allowance, which is still the cap on what it can take
         if (!this.treasuryIsRelayer) {

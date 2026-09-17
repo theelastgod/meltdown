@@ -43,7 +43,9 @@ npm run contracts:build
 npm run contracts:deploy -- <rpcUrl> <chainId> <relayerKey> <signerAddress> [treasury]
 ```
 
-prints the `CONTRACTS` JSON.
+prints the `CONTRACTS` JSON. Before this on a real network, set `LAUNCH_DAY` in
+`shared/economy/model.ts` to the launch date (`docs/DECISIONS.md` §6): the vault is deployed with
+the schedule counted from it, and only the treasury can retune a channel afterwards.
 
 ## 3. Pages
 

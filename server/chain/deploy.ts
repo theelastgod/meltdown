@@ -6,6 +6,7 @@
 import { encodeDeployData, parseEther, type Abi, type Hex, type PublicClient, type WalletClient } from "viem";
 import { ROOM_HOUR_PRICE, SEASON_PASS_PRICE } from "../../shared/economy/sinks";
 import artifactsJson from "../../contracts/out/artifacts.json";
+import { channelParams } from "../../shared/economy/schedule";
 
 export const ARTIFACTS = artifactsJson as Record<string, { abi: Abi; bytecode: Hex }>;
 
@@ -38,7 +39,9 @@ export async function deployAll(pub: PublicClient, wal: WalletClient, signer: He
   const names = await deploy("Names", [signer, capital]);
   const cosmetics = await deploy("Cosmetics", []);
   const market = await deploy("LedgerMarket", [capital, cosmetics, treasury]);
-  const vault = await deploy("PrizeVault", [capital, treasury]);
+  // the schedule the vault holds the poster to (Stage 59): the same numbers the settlement uses
+  const ch = channelParams();
+  const vault = await deploy("PrizeVault", [capital, treasury, ch.launchDay, ch.kinds, ch.periodDays, ch.caps]);
   // The sinks. Prices are the tokenomics doc's starting numbers (§4.4); the steward retunes them.
   //
   // Deployed with the deployer as steward so it can finish wiring them, then handed over — the same

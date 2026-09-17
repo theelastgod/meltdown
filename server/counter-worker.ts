@@ -115,7 +115,12 @@ export default {
       }
     }
     if (request.method === "POST" && url.pathname === "/link/nonce") {
-      const { account } = (await request.json()) as { account: string };
+      const { account, secret } = (await request.json()) as { account: string; secret?: string };
+      // issuing a nonce replaces the file's in-flight one, so a bare id could keep a victim from ever
+      // finishing a link (Stage 59): the nonce is the file's, and the file's secret asks for it.
+      // Nothing is saved here — an anonymous file adopts its secret on the verify, not on the ask.
+      const a = await load(account);
+      if (!fileAuth(a, secret).ok) return json({ ok: false, reason: NOT_YOURS }, 403);
       const ledger = ledgerOf(env);
       return json({ nonce: await ledger.nonce(account), statement: ledger.info().statement, chainId: ledger.info().chainId });
     }

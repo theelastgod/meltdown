@@ -21,7 +21,7 @@ import { epochsToReclaim } from "../server/chain/cron";
 import { MemoryAccountStore, devSeed } from "../server/accounts";
 import { SIWE_STATEMENT } from "../shared/economy/counter";
 import { runPot } from "../shared/economy/settlement";
-import { dailyEmissionBudget, RUN_EMISSION_SHARE } from "../shared/economy/model";
+import { dailyEmissionBudget, LAUNCH_DAY, RUN_EMISSION_SHARE } from "../shared/economy/model";
 import { MAX_CAPITAL_PER_UNIT, RUN_DAILY_CAP } from "../shared/sim/run";
 import type { Account } from "../shared/progression/account";
 
@@ -148,13 +148,15 @@ describe("the nightly settlement", () => {
   it("splits a day that outgrows its pot pro rata, and never mints past it", async () => {
     const r = await rig();
     const { a } = await r.link("sandbox-s7", DEV_KEYS.player);
-    r.bank(a, 200);
+    // a day in the schedule's last year, where the pot is smallest and outgrowing it takes the fewest files
+    const LATE = LAUNCH_DAY + 8 * 365;
+    r.bank(a, 200, LATE);
     // the rest of the population. Each file is held to the day's cap by the settlement itself, so
     // outgrowing the pot takes files, not one huge number — which is the anti-bot cap working.
-    const files = Math.ceil((runPot(DAY) / RUN_DAILY_CAP) * 2);
-    for (let i = 0; i < files; i++) r.runs.add(DAY, `crowd-${i}`, RUN_DAILY_CAP);
+    const files = Math.ceil((runPot(LATE) / RUN_DAILY_CAP) * 2);
+    for (let i = 0; i < files; i++) r.runs.add(LATE, `crowd-${i}`, RUN_DAILY_CAP);
 
-    const s = await settleRunDay(DAY, r.deps);
+    const s = await settleRunDay(LATE, r.deps);
     expect(s.ok).toBe(true);
     expect(s.rate).toBeLessThan(MAX_CAPITAL_PER_UNIT);
     expect(s.minted).toBeLessThanOrEqual(s.pot);

@@ -191,10 +191,6 @@ export class PlayerFile implements DurableObject {
       }
       return Response.json({ ok, reason: g ? undefined : "malformed run", ghost: g ? a.ghosts[g.level] ?? null : null });
     }
-    if (url.pathname === "/file") {
-      const a = (await this.state.storage.get<Account>(KEY)) ?? null;
-      return Response.json(a ? upgradeAccount(a) : null);
-    }
     /**
      * The file as a client may read it (Stage 28).
      *
@@ -211,6 +207,9 @@ export class PlayerFile implements DurableObject {
       return Response.json(publicFile(a ? upgradeAccount(a) : createAccount(id, name)));
     }
     if (request.method === "POST" && url.pathname === "/file") {
+      // Until Stage 59 a bare `/file` route above this one (Stage 6) matched first and answered
+      // `null` for a file not in storage, never reading D1: the counter and campaign Workers, which
+      // load through here, threw on any file that had not joined a match on this object yet.
       const { id, name } = (await request.json()) as { id: string; name: string };
       const a = await this.loadAccount(id);
       return Response.json(a ? upgradeAccount(a) : createAccount(id, name));

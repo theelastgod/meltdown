@@ -81,3 +81,12 @@ credits were spent by this decision.
 - **Sponsored claims through ERC-4337** (security review item 3): not now. The relayer with a
   standing allowance is the security property the review tested; a second payment path is a second
   thing to get wrong before the first has run on a real chain.
+
+## 6. The schedule's day zero (Stage 59)
+
+**Decided.** `LAUNCH_DAY` in `shared/economy/model.ts` is 20,713 — 2026-09-17 as a day index —
+the day the emission schedule's first year begins. Until this the schedule was measured from 1970
+and every real date fell in its last year. The vault is deployed with the same day, so it is set
+once, before the mainnet deploy, to the real launch date; the devnet and the tests use the value as
+committed. Changing it after deploy means a new vault, which is the point: the year the economy is
+in is not a thing the host decides at runtime.
