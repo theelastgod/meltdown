@@ -195,4 +195,27 @@ describe("the arm", () => {
     const q = nearestOnSegment(v3(0, 0, -9), v3(0, -0.07, -0.3), v3(0, -0.07, -0.5));
     expect(q.z).toBeCloseTo(-0.5, 6);
   });
+
+  it("a travel direction dithering around the back does not swing the legs from side to side", () => {
+    // +pi and -pi are the same direction; clamping them sends the legs to opposite sides
+    const st = createPoseState();
+    let out = poseBody(base({ speed: 5, yaw: 0, moveYaw: Math.PI - 0.05 }), st, 1 / 60);
+    for (let i = 0; i < 60; i++) out = poseBody(base({ speed: 5, yaw: 0, moveYaw: Math.PI - 0.05, clock: i / 60 }), st, 1 / 60);
+    const side = Math.sign(out.legL.ry);
+    expect(Math.abs(out.legL.ry)).toBeGreaterThan(1.0);
+    for (let i = 0; i < 60; i++) {
+      // the direction wobbles across the back, a tenth of a radian either side
+      const moveYaw = Math.PI + (i % 2 === 0 ? 0.05 : -0.05);
+      out = poseBody(base({ speed: 5, yaw: 0, moveYaw, clock: i / 60 }), st, 1 / 60);
+      expect(Math.sign(out.legL.ry)).toBe(side);
+    }
+  });
+
+  it("a held sample is not a direction: a body whose position repeats faces where it aims", () => {
+    // the renderer takes the travel direction from the frame-to-frame displacement; when that is
+    // exactly zero, atan2(-0, -0) is -pi and the legs would face backwards
+    const st = createPoseState();
+    const out = poseBody(base({ speed: 5, yaw: 1.1, moveYaw: 1.1 }), st, 1 / 60);
+    expect(Math.abs(out.legL.ry)).toBeLessThan(0.01);
+  });
 });

@@ -120,7 +120,22 @@ describe("the rig", () => {
     expect(rig.trim.color.getHex()).toBe(rig.tint.getHex());
   });
 
-  it("a half-crouch keeps the boots on the ground: the legs fold as fast as the hips drop", () => {
+  it("the boots stay on the ground through a whole crouch, not merely once it has settled", () => {
+    // the claim is about the transient — the hips drop and the legs fold together — so read every
+    // frame of the blend, at several depths, rather than the one frame where everything has eased
+    for (const height of [MOVE.lowHeight, 1.3, 1.5]) {
+      const rig = buildRig();
+      const st = createPoseState();
+      let worst = 1;
+      for (let i = 0; i < 120; i++) {
+        applyPose(rig, poseBody(base({ stance: "crouch", height, clock: i / 60 }), st, 1 / 60), 0);
+        worst = Math.min(worst, rigReport(rig).bootBottom.l, rigReport(rig).bootBottom.r);
+      }
+      expect(worst).toBeGreaterThan(-0.03);
+    }
+  });
+
+  it("a settled crouch at every depth fits under its capsule", () => {
     // the pose's crouch is driven by the sim's capsule height, so what a crouching player looks
     // like and what a shot at them tests are the same volume: the hood must clear MOVE.lowHeight
     for (const height of [MOVE.lowHeight, 1.3, 1.5]) {
@@ -161,5 +176,39 @@ describe("the rig", () => {
       worst = Math.min(worst, rigReport(rig).bootBottom.r);
     }
     expect(worst).toBeGreaterThan(-0.03);
+  });
+
+  it("a file laid down rests on the ground for the whole death, not only at the end of it", () => {
+    // the hips drop half a metre and the legs swing out as the body falls; eased apart they put the
+    // left boot 41 cm under the floor for the whole second the corpse is on screen (Stage 65)
+    const rig = buildRig();
+    const st = createPoseState();
+    poseBody(base(), st, 1 / 60);
+    let worst = 1;
+    let laid = 0;
+    for (let i = 0; i < 80; i++) {
+      const out = poseBody(base({ alive: false, clock: i / 60 }), st, 1 / 60);
+      applyPose(rig, out, 0);
+      const rep = rigReport(rig);
+      worst = Math.min(worst, rep.bootBottom.l, rep.bootBottom.r);
+      laid = Math.max(laid, out.hips.rx);
+    }
+    expect(worst).toBeGreaterThan(-0.03);
+    expect(laid).toBeGreaterThan(1.0); // and it is still lying down, not standing politely
+  });
+
+  it("both wrists reach the weapon as the bones were written, measured from the forearm's end", () => {
+    // measured through the skeleton rather than from the solver's own return value, so writing the
+    // solution to the wrong bone fails the check instead of passing it
+    const rig = buildRig();
+    const st = createPoseState();
+    for (const pitch of [0, 0.6, -0.7]) {
+      let out = poseBody(base({ pitch }), st, 1 / 60);
+      for (let i = 0; i < 60; i++) out = poseBody(base({ pitch, clock: i / 60 }), st, 1 / 60);
+      applyPose(rig, out, 0);
+      const rep = rigReport(rig);
+      expect(rep.wristErr.r ?? 9).toBeLessThan(0.03);
+      expect(rep.wristErr.l ?? 9).toBeLessThan(0.03);
+    }
   });
 });

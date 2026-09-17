@@ -1641,6 +1641,54 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 65 — The rest of what the review found
+
+**Goal.** The adversarial review of the Stage 63 body (five lenses finding, three skeptics per
+finding, 84 agents) raised 26 defects and 13 survived verification. Two were fixed in Stage 64 — the
+body that never died past 40 m, and the departing player who disposed every other player's name
+tag. This is the rest of them.
+
+**What changed.**
+
+- **A file laid down rested 41 cm under the floor.** The death drops the hips half a metre and
+  swings the legs out; eased apart, the left boot went through the ground and stayed there for the
+  whole second the corpse is on screen. Both legs are now planted by the same rule the slide uses,
+  generalised to account for the hips' lean: the leg's angle is taken from where the hips actually
+  are this frame, so the boots rest on the floor at every frame of the fall rather than at the end
+  of it. The legs splay about the vertical instead, which does not lift them.
+- **A held position is not a direction.** The renderer takes a remote's travel direction from its
+  frame-to-frame displacement. When the interpolator repeats a sample that displacement is exactly
+  zero, and `atan2(-0, -0)` is not zero but −π: the legs faced backwards for as long as the sample
+  repeated. The direction is now only taken when the body actually moved.
+- **Running directly backwards swung the legs across the body.** +π and −π are the same direction,
+  and clamping them puts the legs on opposite sides: a travel angle dithering around the back swung
+  them over and back. Near the back the legs now keep the side they are already on.
+- **One frame with no time in it poisoned a remote's speed forever.** Two frames can share a
+  timestamp; the speed estimate divided a displacement by that zero, and an Infinity there never
+  washes out of the smoothing. The interval is floored.
+- **The headline check on the hands could not fail.** `wristErr` compared the arm solver's answer
+  to the arm solver's own target, which says the arithmetic closed and nothing about the skeleton.
+  It is now measured through the written bones — the end of the forearm in world space — so writing
+  a solution to the wrong bone fails it. It does: the mutation that swaps the left arm's target
+  fails both wrist checks, where before it failed neither.
+- **A claim about a transient was tested at rest.** The crouch guard said the legs fold as fast as
+  the hips drop, which is a statement about the blend, and then read the settled frame. It reads
+  every frame of the blend now, at three depths.
+
+**Proof.** 525 tests (5 new); `probe:body` 20/20, `probe:tps` 11/11, `probe:net` 16/16, `smoke`
+7/7, build clean, typecheck clean on both configs. Every new guard was mutation-checked: restoring
+the old corpse legs puts a boot 36 cm under the floor, removing the hysteresis flips the leg side,
+and mis-writing the arm fails the wrist checks — each the exact number or sign its test now
+forbids.
+
+**Not taken.** Thirteen of the 26 findings were refuted by two or more skeptics and are not fixed:
+among them a claimed leak of the per-slot cloak geometry (the caches are marked shared), a mantle
+whose hands cannot reach (they can), and several complaints about check names rather than checks.
+One refuted finding was fixed anyway — the shared sprite geometry in Stage 64 — because the
+mutation test disagreed with the skeptics: dropping the mark drops the geometry count, which is
+three's own sprite geometry going out from under every other tag. A verdict from reading loses to a
+number from running.
+
 ## Stage 64 — What a check measures when the machine is faster
 
 **Goal.** CI run #92 was red on three steps that pass here: `probe:cityLife`, `probe:body` and

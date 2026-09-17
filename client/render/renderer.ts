@@ -555,7 +555,10 @@ export class Renderer {
   }
 
   /** pose every remote from its last view and what it did since the previous frame */
-  private poseRemotes(dt: number): void {
+  private poseRemotes(rawDt: number): void {
+    // two frames can share a timestamp: dividing a displacement by zero puts Infinity into the
+    // speed estimate, and one NaN there is permanent (Stage 65)
+    const dt = Math.max(1e-4, rawDt);
     for (const e of this.remoteMeshes.values()) {
       const v = e.view;
       if (!v) continue;
@@ -580,7 +583,10 @@ export class Renderer {
         e.group.visible = true;
         continue;
       }
-      const inp: PoseInput = { speed, moveYaw: speed > 0.5 ? Math.atan2(-dx, -dz) : v.yaw, yaw: v.yaw, pitch: v.pitch ?? 0, vy: clamp((v.y - prev.y) / dt, -12, 12), turnRate: clamp(wrapAngle(v.yaw - prev.yaw) / dt, -20, 20), grounded, stance: v.stance as Stance, height: v.height, reloading: 0, ads: 0, kick: e.kick, alive: v.alive, stunned: false, clock: this.clock, phase: e.phase };
+      // a held position is not a direction: atan2(-0, -0) is -pi, which would face the legs
+      // backwards for as long as the interpolator repeats a sample (Stage 65)
+      const moved = Math.hypot(dx, dz) > 1e-4;
+      const inp: PoseInput = { speed, moveYaw: moved && speed > 0.5 ? Math.atan2(-dx, -dz) : v.yaw, yaw: v.yaw, pitch: v.pitch ?? 0, vy: clamp((v.y - prev.y) / dt, -12, 12), turnRate: clamp(wrapAngle(v.yaw - prev.yaw) / dt, -20, 20), grounded, stance: v.stance as Stance, height: v.height, reloading: 0, ads: 0, kick: e.kick, alive: v.alive, stunned: false, clock: this.clock, phase: e.phase };
       const out = poseBody(inp, e.rig.state, dt);
       applyPose(e.rig, out, v.yaw);
       e.group.visible = out.visible;

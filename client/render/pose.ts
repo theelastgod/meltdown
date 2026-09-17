@@ -107,6 +107,16 @@ export const CORPSE_SECONDS = 1.2;
 /** the leg bone hangs this far under the hips and the boot this far under it (rig.ts's rest table) */
 const LEG_UNDER_HIPS = 0.37;
 const LEG_LEN = 0.58;
+/**
+ * The leg angle that rests the boot on the ground, for the hips' height and lean as they are on
+ * this frame. Poses that drop the hips and swing a leg out at the same time (a slide, a death)
+ * ease the two apart and put the boot through the floor halfway in, whatever their end points are;
+ * taking the angle from the hips instead plants the boot at every frame of the blend.
+ */
+const plantLeg = (hipsY: number, hipsRx: number, sy: number): number => {
+  const root = hipsY - LEG_UNDER_HIPS * Math.cos(hipsRx);
+  return Math.acos(clamp(root / Math.max(1e-3, LEG_LEN * Math.max(0.05, sy)), -1, 1)) - hipsRx;
+};
 
 export function createPoseState(): PoseState {
   return { hipsY: REST.hipsY, hipsRx: 0, chestRx: 0, chestRy: 0, headRx: 0, legLRx: 0, legRRx: 0, legRy: 0, legSyL: 1, legSyR: 1, stride: 0, socketX: REST.socket.x, socketY: REST.socket.y, socketZ: REST.socket.z, socketCarry: 0, flare: 0, swayX: 0, swayY: 0, swayZ: 0, flap: 0, lagYaw: 0, crouch: 0, adsT: 0, corpseT: 0, landT: 0, wasGrounded: true, wasAlive: true };
@@ -161,7 +171,11 @@ export function poseBody(inp: PoseInput, st: PoseState, rawDt: number): PoseOut 
   if (moving) {
     state = inp.speed > 6 && inp.stance === "stand" ? "sprint" : "walk";
     stride = 0.7 * s * (1 - 0.5 * c);
-    legRy = clamp(rel, -1.2, 1.2);
+    // Running directly backwards, +pi and -pi are the same direction and the clamp sends the legs
+    // to opposite sides of the body, so a travel angle that dithers around the back swings them
+    // across and back. Near the back the legs keep the side they are already on (Stage 65).
+    const relLeg = Math.abs(rel) > 2.4 && Math.abs(st.legRy) > 0.05 ? Math.sign(st.legRy) * Math.abs(rel) : rel;
+    legRy = clamp(relLeg, -1.2, 1.2);
     st.lagYaw = inp.yaw;
     hipsRx = -Math.min(0.12, inp.speed * 0.015); // forward: negative tilts the top toward -z
     swayX = 0.08 * s * Math.sin(rel) - 0.1 * clamp(inp.turnRate / 8, -1, 1);
@@ -246,10 +260,10 @@ export function poseBody(inp: PoseInput, st: PoseState, rawDt: number): PoseOut 
   if (!inp.alive) {
     state = "corpse";
     const u = Math.min(1, st.corpseT / 0.45) ** 2;
-    hipsY = REST.hipsY + (0.25 - REST.hipsY) * u;
+    hipsY = REST.hipsY + (0.30 - REST.hipsY) * u;
     hipsRx = 1.35 * u;
-    legLBase = -1.3 * u;
-    legRBase = 1.3 * u;
+    legLBase = 0.15 * u;
+    legRBase = 0.55 * u;
     legSyL = legSyR = 1;
     headRx = 0.4 * u;
     chestRx = 0;
@@ -297,15 +311,26 @@ export function poseBody(inp: PoseInput, st: PoseState, rawDt: number): PoseOut 
   // put the boot a hand's width through the floor halfway into the entry, whatever their ends are:
   // the leg's angle is taken from the hips' height instead, so the boot is planted at every point
   // of the blend rather than only at its end.
-  if (inp.stance === "slide") legRrx = Math.acos(clamp((hipsOut - LEG_UNDER_HIPS) / Math.max(1e-3, LEG_LEN * st.legSyR), -1, 1)) - st.hipsRx;
+  let legLrxOut = legLrx;
+  if (inp.stance === "slide") legRrx = plantLeg(hipsOut, st.hipsRx, st.legSyR);
+  // a file laid down rests on the ground too: both boots are planted and the legs splay about the
+  // vertical, which does not lift them (Stage 65 — the left boot used to lie 41 cm under the floor)
+  let legRyR = st.legRy;
+  let legRyL = st.legRy;
+  if (!inp.alive) {
+    legRrx = plantLeg(hipsOut, st.hipsRx, st.legSyR);
+    legLrxOut = plantLeg(hipsOut, st.hipsRx, st.legSyL);
+    legRyR = 0.22;
+    legRyL = -0.3;
+  }
   // the recoil: unblended, the weapon shoves back and the chest takes it
   const kick = clamp(inp.kick, 0, 1);
   return {
     hips: { y: hipsOut, rx: st.hipsRx },
     chest: { rx: st.chestRx + 0.02 * kick, ry: st.chestRy },
     head: { rx: st.headRx },
-    legL: { rx: legLrx, ry: st.legRy, sy: st.legSyL * (1 - 0.1 * land) },
-    legR: { rx: legRrx, ry: st.legRy, sy: st.legSyR * (1 - 0.1 * land) },
+    legL: { rx: legLrxOut, ry: legRyL, sy: st.legSyL * (1 - 0.1 * land) },
+    legR: { rx: legRrx, ry: legRyR, sy: st.legSyR * (1 - 0.1 * land) },
     socket: { x: st.socketX, y: st.socketY, z: st.socketZ + 0.05 * kick, rx: inp.pitch + st.socketCarry },
     armTargetR,
     armTargetL,

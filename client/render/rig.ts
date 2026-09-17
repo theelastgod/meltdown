@@ -382,6 +382,11 @@ export function rigReport(rig: Rig): RigReport {
     return { x: q.x, y: q.y, z: q.z };
   };
   const wrists = (rig as Rig & { wrists?: { r: Vec3; l: Vec3; tR: Vec3; tL: Vec3 } }).wrists;
+  // the wrist as the WRITTEN BONES put it — the end of the forearm in world space — rather than the
+  // point the solver returned. Comparing the solver's answer to the solver's own target says only
+  // that the arithmetic closed; it cannot fail if applyPose writes the result to the wrong bone
+  // (Stage 65: two reviewers found the headline "both hands reach the weapon" check unfalsifiable)
+  const wristOf = (fore: THREE.Bone) => world(fore, v3(0, -FORE_ARM, 0));
   const socketFwd = world(b.socket, v3(0, 0, -1));
   const socketAt = world(b.socket, v3(0, 0, 0));
   const fwd = sub(socketFwd, socketAt);
@@ -395,7 +400,7 @@ export function rigReport(rig: Rig): RigReport {
   const dist = (a: Vec3 | undefined, c: Vec3 | undefined) => (a && c ? Math.hypot(a.x - c.x, a.y - c.y, a.z - c.z) : null);
   return {
     bones: Object.fromEntries((Object.keys(b) as BoneName[]).map((n) => [n, w(b[n])])),
-    wristErr: { r: dist(wrists?.r, wrists?.tR), l: dist(wrists?.l, wrists?.tL) },
+    wristErr: { r: dist(wristOf(b.foreR), wrists?.tR), l: dist(wristOf(b.foreL), wrists?.tL) },
     socketPitch: Math.asin(Math.max(-1, Math.min(1, fwd.y / Math.hypot(fwd.x, fwd.y, fwd.z)))),
     headPitch: Math.asin(Math.max(-1, Math.min(1, headFwd.y / Math.hypot(headFwd.x, headFwd.y, headFwd.z)))),
     chestAhead,
