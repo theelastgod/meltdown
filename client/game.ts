@@ -2,13 +2,13 @@ import { runView, type RunView } from "@shared/sim/run";
 import type { RunMsg } from "@shared/net/protocol";
 import { loadSettings, type Settings } from "./settings";
 import { skinByToken } from "@shared/economy/catalog";
-import { MAX_CATCHUP_TICKS, SIM_DT, SIM_HZ } from "@shared/sim/constants";
+import { MAX_CATCHUP_TICKS, MOVE, SIM_DT, SIM_HZ } from "@shared/sim/constants";
 import type { InputFrame } from "@shared/sim/input";
 import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS } from "@shared/sim/level";
 import { eyeHeight, eyePos, type PlayerState } from "@shared/sim/player";
 import { canSee } from "@shared/sim/ai";
 import { aimAssistScale } from "./aimassist";
-import { hashWorld, World, type SimEvent } from "@shared/sim/world";
+import { DUMMY_HEIGHT, DUMMY_RADIUS, hashWorld, MECH_HEIGHT, MECH_RADIUS, WASP_HEIGHT, WASP_RADIUS, World, type SimEvent } from "@shared/sim/world";
 import { lenXZ, wrapAngle } from "@shared/math/vec3";
 import { GameAudio } from "./audio";
 import { Bot, type BotStep, type BotTarget } from "./bot";
@@ -18,6 +18,7 @@ import { InputController } from "./input";
 import { TouchControls, wantsTouch } from "./touch";
 import { PerfMonitor } from "./perf";
 import { Renderer, type ViewState } from "./render/renderer";
+import type { AimTarget } from "./render/tps";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
 import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
@@ -738,6 +739,30 @@ export class Game {
     this.hud.setRun(v ? { carried: v.carried, banked: v.banked, banking: v.banking, inSafe: v.inSafe, zone: v.zone, today: v.today, cap: v.cap, owed: v.owed, claims: v.claims.length } : null);
   }
 
+  /**
+   * The bodies a shot from here could hit, in the terms the sim's hitscan tests them: the reticle
+   * is cast against these as well as the level, so what it covers is what the shot hits rather than
+   * the wall behind it (Stage 66). Same radii and heights as `castRay`, or the reticle would be
+   * marking a volume that does not exist.
+   */
+  private aimTargets(): AimTarget[] {
+    const out: AimTarget[] = [];
+    const w = this.world;
+    for (const d of w.dummies) if (d.alive) out.push({ pos: d.pos, radius: DUMMY_RADIUS, height: DUMMY_HEIGHT });
+    if (this.net) {
+      for (const r of this.net.remoteViews()) if (r.alive) out.push({ pos: { x: r.x, y: r.y, z: r.z }, radius: MOVE.capsuleRadius, height: r.height });
+      for (const e of this.netEntities) {
+        if (e.kind === ENT_WASP && e.a === 1) out.push({ pos: { x: e.x, y: e.y - WASP_HEIGHT / 2, z: e.z }, radius: WASP_RADIUS, height: WASP_HEIGHT });
+        if (e.kind === ENT_MECH && e.a === 1) out.push({ pos: { x: e.x, y: e.y, z: e.z }, radius: MECH_RADIUS, height: MECH_HEIGHT });
+      }
+    } else {
+      for (const o of w.players.values()) if (o.alive && o.id !== this.player.id) out.push({ pos: o.pos, radius: MOVE.capsuleRadius, height: o.height });
+      for (const x of w.wasps) if (x.alive) out.push({ pos: { x: x.pos.x, y: x.pos.y - WASP_HEIGHT / 2, z: x.pos.z }, radius: WASP_RADIUS, height: WASP_HEIGHT });
+      for (const m of w.mechs) if (m.alive) out.push({ pos: m.pos, radius: MECH_RADIUS, height: MECH_HEIGHT });
+    }
+    return out;
+  }
+
   private syncOfflineEntities(): void {
     const w = this.world;
     if (w.run) {
@@ -1027,6 +1052,11 @@ export class Game {
       alive: p.alive,
       moveYaw: lenXZ(p.vel) > 0.5 ? Math.atan2(-p.vel.x, -p.vel.z) : p.yaw,
       height: p.height,
+      // what a shot would do from here: the sim fires along the aim plus the recoil it is carrying
+      // (shotDirs in shared/sim/weapons.ts), against the bodies its hitscan tests (Stage 66)
+      aimYaw: p.yaw + p.weapon.kickYaw + p.weapon.patX,
+      aimPitch: p.pitch + p.weapon.kickPitch + p.weapon.patY,
+      targets: this.aimTargets(),
     };
     this.input.currentSlot = p.weapon.slot;
     if (this.touch) this.touch.currentSlot = p.weapon.slot;

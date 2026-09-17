@@ -39,11 +39,25 @@ describe("where the camera goes", () => {
     expect(thirdPersonCamera(eye, 0, 0, [ahead]).blocked).toBe(false);
   });
 
-  it("backed right up against a wall the camera still keeps its minimum distance, never inside the head", () => {
+  it("backed right up against a wall the camera stops on the player's side of it, not behind its face", () => {
+    // the minimum distance keeps the camera out of the player's head; it is not a licence to stand
+    // inside the wall the camera backed into, which is what the clamp used to do (Stage 66)
     const flush = box(-10, 0, 0.3, 10, 4, 1, "wall");
     const c = thirdPersonCamera(eye, 0, 0, [flush]);
-    expect(c.distance).toBeCloseTo(TPS_DEFAULT.minDistance, 6);
-    expect(dist(c.pos, eye)).toBeGreaterThan(0.4);
+    expect(c.pos.z).toBeLessThan(0.3);
+    expect(c.distance).toBeLessThanOrEqual(TPS_DEFAULT.minDistance);
+    expect(c.blocked).toBe(true);
+  });
+
+  it("a wall beside the player moves the shoulder in rather than putting the camera inside it", () => {
+    // the shoulder sits 0.78 m to the side of a 0.4 m capsule, so it is outside the player's own
+    // column: with a wall on the right, the anchor itself was in the masonry and the cast from it
+    // returned nothing (Stage 66)
+    const rightWall = box(0.5, 0, -10, 3, 4, 10, "wall");
+    const c = thirdPersonCamera(eye, 0, 0, [rightWall]);
+    expect(c.anchor.x).toBeLessThan(0.5);
+    expect(c.pos.x).toBeLessThan(0.5);
+    expect(dist(c.pos, eye)).toBeGreaterThan(1);
   });
 
   it("aiming down sights is the same rule with the camera closer and tighter", () => {
@@ -72,5 +86,27 @@ describe("where the reticle goes", () => {
     const rel = sub(a.point, eye);
     expect(rel.x / rel.z).toBeCloseTo(along.x / along.z, 6);
     expect(rel.y / rel.z).toBeCloseTo(along.y / along.z, 6);
+  });
+
+  it("the aim lands on the body a shot would hit, not the wall behind it", () => {
+    // a reticle cast only against the level sits on the wall metres past an enemy, and with the
+    // camera over the shoulder that parallax puts the mark off the body entirely (Stage 66)
+    const wall = box(-10, 0, -20, 10, 6, -19, "wall");
+    const target = { pos: { x: 0, y: 0, z: -8 }, radius: 0.4, height: 1.8 };
+    const bare = aimPoint(eye, 0, 0, [wall]);
+    expect(bare.distance).toBeGreaterThan(18);
+    expect(bare.onTarget).toBe(false);
+    const withBody = aimPoint(eye, 0, 0, [wall], [target]);
+    expect(withBody.onTarget).toBe(true);
+    expect(withBody.distance).toBeGreaterThan(7);
+    expect(withBody.distance).toBeLessThan(8);
+  });
+
+  it("a body behind a wall does not take the aim: the nearest thing along the ray wins", () => {
+    const wall = box(-10, 0, -5, 10, 6, -4, "wall");
+    const behind = { pos: { x: 0, y: 0, z: -8 }, radius: 0.4, height: 1.8 };
+    const a = aimPoint(eye, 0, 0, [wall], [behind]);
+    expect(a.onTarget).toBe(false);
+    expect(a.distance).toBeLessThan(5);
   });
 });

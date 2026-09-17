@@ -8,8 +8,8 @@
  * reticle is drawn where the eye's ray lands on screen rather than at the screen's centre, so what
  * the reticle covers is what the shot hits, at any range.
  */
-import { addScaled, clamp, normalize, sub, v3, viewDir, yawRight, type Vec3 } from "../../shared/math/vec3";
-import { rayBox } from "../../shared/sim/collision";
+import { addScaled, clamp, len, normalize, sub, v3, viewDir, yawRight, type Vec3 } from "../../shared/math/vec3";
+import { rayBox, rayCapsule } from "../../shared/sim/collision";
 import type { Box } from "../../shared/sim/box";
 
 export interface TpsOpts {
@@ -36,6 +36,10 @@ export interface TpsCamera {
   distance: number;
   /** true when a box between the pivot and the wanted position pulled the camera in */
   blocked: boolean;
+  /** the point the camera's segment starts from: the shoulder, itself pulled in by a wall beside the player */
+  anchor: Vec3;
+  /** the direction the segment runs, so a caller easing the distance stays on the line that was cast */
+  dir: Vec3;
 }
 
 /**
@@ -48,8 +52,27 @@ export interface TpsCamera {
 export function thirdPersonCamera(pivot: Vec3, yaw: number, pitch: number, boxes: readonly Box[], opts: TpsOpts = TPS_DEFAULT): TpsCamera {
   const fwd = viewDir(yaw, pitch);
   const right = yawRight(yaw);
-  // the shoulder point: beside and above the pivot, still inside the player's own capsule column
-  const anchor = addScaled(addScaled(pivot, right, opts.shoulder), v3(0, 1, 0), opts.lift);
+  // The shoulder point is 0.78 m to the side of a capsule 0.4 m wide, so it is outside the player's
+  // own column and a wall on the right is a wall the shoulder is standing in. Cast that segment
+  // too and stop the anchor short of what it hits, or the back cast starts inside the wall and
+  // returns zero — putting the camera in the masonry (Stage 66).
+  const wantAnchor = addScaled(addScaled(pivot, right, opts.shoulder), v3(0, 1, 0), opts.lift);
+  const aVec = sub(wantAnchor, pivot);
+  const aLen = len(aVec);
+  let aT = aLen;
+  if (aLen > 1e-6) {
+    const aDir = normalize(aVec);
+    let aHit = false;
+    for (const b of boxes) {
+      const hit = rayBox(pivot, aDir, b, aT);
+      if (hit !== null && hit < aT) {
+        aT = hit;
+        aHit = true;
+      }
+    }
+    if (aHit) aT = Math.max(0, aT - 0.05); // a gap from the wall the shoulder found, and only then
+  }
+  const anchor = aLen > 1e-6 ? addScaled(pivot, normalize(aVec), aT) : pivot;
   const want = addScaled(anchor, fwd, -opts.distance);
   const dir = normalize(sub(want, anchor));
   let t = opts.distance;
@@ -61,15 +84,30 @@ export function thirdPersonCamera(pivot: Vec3, yaw: number, pitch: number, boxes
       blocked = true;
     }
   }
-  const distance = clamp(blocked ? t - opts.wallPad : t, opts.minDistance, opts.distance);
-  return { pos: addScaled(anchor, dir, distance), distance, blocked: blocked && distance < opts.distance };
+  // the minimum distance keeps the camera out of the player's head, but it is not a licence to sit
+  // behind the wall the camera backed into: a hit closer than the minimum wins (Stage 66)
+  const distance = blocked ? Math.max(Math.min(t - opts.wallPad, opts.distance), Math.min(opts.minDistance, Math.max(0, t - 0.06))) : clamp(t, opts.minDistance, opts.distance);
+  return { pos: addScaled(anchor, dir, distance), distance, blocked: blocked && distance < opts.distance, anchor, dir };
 }
 
 /** how far the reticle is projected when the eye's ray hits nothing */
 export const AIM_FAR = 80;
 
-/** Where the eye's ray lands: the first box along it, or a point far along it. The reticle is drawn where this projects. */
-export function aimPoint(eye: Vec3, yaw: number, pitch: number, boxes: readonly Box[], far = AIM_FAR): { point: Vec3; distance: number; hit: boolean } {
+/** A capsule a shot can hit, in the same terms the sim's hitscan tests it with. */
+export interface AimTarget {
+  /** the feet, as the sim stores them */
+  pos: Vec3;
+  radius: number;
+  height: number;
+}
+
+/**
+ * Where the shot's ray lands: the nearest of the level's boxes and the bodies in it, or a point far
+ * along it. The reticle is drawn where this projects, so it must test what a shot tests — a reticle
+ * that only knows about walls sits on the wall behind an enemy rather than on the enemy, and with
+ * the camera over the shoulder that parallax is metres wide at close range (Stage 66).
+ */
+export function aimPoint(eye: Vec3, yaw: number, pitch: number, boxes: readonly Box[], targets: readonly AimTarget[] = [], far = AIM_FAR): { point: Vec3; distance: number; hit: boolean; onTarget: boolean } {
   const dir = viewDir(yaw, pitch);
   let t = far;
   let hit = false;
@@ -80,5 +118,14 @@ export function aimPoint(eye: Vec3, yaw: number, pitch: number, boxes: readonly 
       hit = true;
     }
   }
-  return { point: addScaled(eye, dir, t), distance: t, hit };
+  let onTarget = false;
+  for (const c of targets) {
+    const h = rayCapsule(eye, dir, c.pos, c.radius, c.height, t);
+    if (h !== null && h < t) {
+      t = h;
+      hit = true;
+      onTarget = true;
+    }
+  }
+  return { point: addScaled(eye, dir, t), distance: t, hit, onTarget };
 }

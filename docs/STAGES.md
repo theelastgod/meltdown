@@ -1641,6 +1641,51 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 66 — What the camera stands in, and what the reticle points at
+
+**Goal.** The adversarial review of Stage 60 (six lenses, three skeptics each) confirmed fifteen
+findings about the third-person camera and its reticle. Two were the loudest, and both are about a
+claim the stage made and did not keep: that the camera never has anything between it and the
+player, and that what the reticle covers is what a shot hits.
+
+**What changed.**
+
+- **The shoulder is a segment, and it is cast now.** The camera anchor sits 0.78 m to the side of a
+  capsule 0.4 m wide, so it is outside the player's own column: with a wall on the right, the
+  anchor was already inside the masonry and the cast that runs from it returned nothing. The
+  offset is cast from the eye like any other segment, and the anchor stops short of what it finds.
+- **A wall the camera backs into beats the minimum distance.** The minimum keeps the camera out of
+  the player's head; it was also overriding the wall behind, placing the camera past the face of
+  the box that pulled it in. A hit closer than the minimum now wins.
+- **The eased distance runs along the line that was cast.** Letting the camera back out scaled the
+  whole offset toward the eye, sweeping it along a line nobody had cast — through the edge of the
+  very box that pulled it in. It now eases along the segment from the shoulder.
+- **The reticle marks the shot, recoil and all.** The sim fires along the aim plus the recoil it is
+  carrying (`shotDirs` in `shared/sim/weapons.ts`). The reticle was cast from the bare aim, so
+  through a burst it sat still while the shots climbed away from it. It now carries the same
+  recoil.
+- **The reticle tests bodies, not just walls.** It was cast against the level's boxes alone, so
+  aiming at an enemy put the mark on the wall metres behind them — and with the camera over the
+  shoulder, that parallax is metres wide at close range. `aimPoint` now also tests the capsules the
+  hitscan tests, with the same radii and heights, and reports whether the ray ends on a body.
+- **The lens moves before the frame is drawn.** The ADS zoom eased the field of view after the
+  frame was placed and the reticle projected, so for the half second of a zoom the reticle was
+  drawn through the previous frame's projection.
+
+**Proof.** `tests/tps.test.ts` 10 (4 new); `probe:tps` 14/14 (3 new: the shoulder moved in by a
+wall beside the player, the ray stopping on the body rather than the wall behind it, and the
+reticle carrying the recoil mid-burst); `probe:body` 20/20, `probe:net` 16/16, `probe:arsenal`
+19/19, `probe:city` 45/45, `probe:frame` 6/6, `probe:mobile` 14/14, `probe:ship` 9/9, `smoke` 7/7,
+528 tests, build and typecheck clean. Four guards mutation-checked: not casting the shoulder leaves
+the anchor 0.78 m out and inside the wall, restoring the old clamp puts the camera 15 cm behind the
+wall face, dropping the bodies from the cast makes the aim miss them, and casting the reticle from
+the bare aim fails the mid-burst check.
+
+**Noted, not fixed.** One city clip-comparison frame (`deadletter_docks/node`) sits close to its
+luma threshold and failed once in five runs here, passing on the re-run with the same colours. It
+is the Stage 64 pattern — a measurement taken at whatever moment the capture landed on — and it is
+a candidate for the same treatment.
+
 ## Stage 65 — The rest of what the review found
 
 **Goal.** The adversarial review of the Stage 63 body (five lenses finding, three skeptics per

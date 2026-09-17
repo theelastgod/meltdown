@@ -103,6 +103,24 @@ async function main(): Promise<void> {
     check("backed against a wall the camera pulls in, keeping the wall behind the camera rather than between it and the player", wall.blocked && wall.distance < 1.2 && wall.camera.z < 32 - 0.15, `blocked ${wall.blocked} · distance ${wall.distance.toFixed(2)} · camera z ${wall.camera.z.toFixed(2)} (wall at 32)`);
     results["wall"] = wall;
 
+    // ---------------- a wall beside the player ----------------
+    await pg.evaluate(() => {
+      // the same south wall at z = 32, now on the player's right: at yaw -pi/2 the right vector is +z,
+      // and the shoulder wants 0.78 m of it from a capsule only 0.4 m wide
+      const p = window.__game.game.player;
+      p.pos.x = 0;
+      p.pos.z = 31.3;
+      p.vel.x = p.vel.z = 0;
+      window.__game.setBot([{ kind: "look", yaw: -Math.PI / 2, pitch: 0, ticks: 5 }, { kind: "hold", ticks: 6000 }]);
+      window.__game.advance(20);
+    });
+    await nextFrame(pg);
+    const beside = await pg.evaluate(() => window.__game.view());
+    // what is behind the camera at that spot is the yard's business; what matters is that neither the
+    // shoulder nor the camera ends up on the far side of the wall face
+    check("a wall beside the player moves the shoulder in rather than standing the camera inside it", beside.anchor.z < 32 - 0.03 && beside.camera.z < 32, `camera (${beside.camera.x.toFixed(2)}, ${beside.camera.z.toFixed(2)}) · shoulder at z ${beside.anchor.z.toFixed(2)} (wall at 32) · distance ${beside.distance.toFixed(2)} m back · blocked ${beside.blocked}`);
+    results["beside"] = beside;
+
     // ---------------- aiming down sights pulls it in on purpose ----------------
     await pg.evaluate(() => {
       const p = window.__game.game.player;
@@ -141,19 +159,23 @@ async function main(): Promise<void> {
       const s = window.__game.state();
       // where the eye's ray, at the distance the reticle was drawn for, lands by the same camera: the
       // reticle must be exactly that, whatever the bot's aim settled on
-      const c = Math.cos(s.pitch);
-      const along = { x: -Math.sin(s.yaw) * c, y: Math.sin(s.pitch), z: -Math.cos(s.yaw) * c };
+      // the direction the sim fires along: the aim plus the recoil it is carrying (Stage 66)
+      const w = window.__game.game.player.weapon;
+      const ay = s.yaw + w.kickYaw + w.patX, ap = s.pitch + w.kickPitch + w.patY;
+      const c = Math.cos(ap);
+      const along = { x: -Math.sin(ay) * c, y: Math.sin(ap), z: -Math.cos(ay) * c };
       const eye = { x: s.pos.x, y: s.pos.y + 1.62, z: s.pos.z };
       const expected = window.__game.game.renderer.project({ x: eye.x + along.x * v.aim.distance, y: eye.y + along.y * v.aim.distance, z: eye.z + along.z * v.aim.distance });
       // and where the dummy's chest is on screen
       const proj = window.__game.game.renderer.project(t as { x: number; y: number; z: number });
-      return { reticle: v.reticle, expected, proj, hit: v.aim.hit, dist: v.aim.distance, centre: { x: window.innerWidth / 2, y: window.innerHeight / 2 } };
+      return { reticle: v.reticle, expected, proj, hit: v.aim.hit, onTarget: v.aim.onTarget, dist: v.aim.distance, centre: { x: window.innerWidth / 2, y: window.innerHeight / 2 } };
     }, dummy.target);
     const exact = Math.hypot(aim.reticle.x - aim.expected.x, aim.reticle.y - aim.expected.y);
     const fromCentre = Math.hypot(aim.reticle.x - aim.centre.x, aim.reticle.y - aim.centre.y);
     const off = Math.hypot(aim.reticle.x - aim.proj.x, aim.reticle.y - aim.proj.y);
     check("the reticle is the eye's ray on screen — exactly where it lands, and off the screen's centre, because the camera is over the shoulder", aim.reticle.visible && exact < 1.5 && fromCentre > 4, `reticle (${aim.reticle.x.toFixed(0)}, ${aim.reticle.y.toFixed(0)}) · the eye's ray lands at (${aim.expected.x.toFixed(1)}, ${aim.expected.y.toFixed(1)}), ${exact.toFixed(2)} px away · ${fromCentre.toFixed(1)} px from the centre · the ray reaches ${aim.dist.toFixed(1)} m`);
     check("and it sits on the dummy the bot aimed at, within the bot's own aim tolerance", off < 25, `dummy ${dummy.id} chest at (${aim.proj.x.toFixed(0)}, ${aim.proj.y.toFixed(0)}), ${dummy.range.toFixed(1)} m away · ${off.toFixed(1)} px from the reticle`);
+    check("the ray stops on the body rather than carrying on to the wall behind it", aim.onTarget && Math.abs(aim.dist - dummy.range) < 1.2, `the ray stops at ${aim.dist.toFixed(1)} m on a body ${dummy.range.toFixed(1)} m away · on a target: ${aim.onTarget}`);
     const shotRes = await pg.evaluate(async (id) => {
       const before = window.__game.state().dummies.find((x) => x.id === id)!.health;
       // the bot lets the last 12 ticks of a fire step go for a charged shot to release, so a step shorter than that never fires
@@ -163,6 +185,37 @@ async function main(): Promise<void> {
       return { before, after: after.health, alive: after.alive };
     }, dummy.id);
     check("a shot through the reticle lands on that dummy", shotRes.after < shotRes.before, `dummy ${dummy.id} health ${shotRes.before} → ${shotRes.after}`);
+    // and with the recoil still on the weapon the reticle is where the NEXT shot goes, not where the
+    // aim points: a reticle cast from the bare aim would sit still through a burst (Stage 66)
+    // fire again and stop mid-burst, while the recoil is still on the weapon: 60 ticks after a burst
+    // it has recovered to a fifth of a degree, which is a pixel or two and proves nothing
+    const kickUp = await pg.evaluate((id) => {
+      window.__game.setBot([{ kind: "fire", ticks: 200, dummyId: id }, { kind: "hold", ticks: 6000 }]);
+      let kick = 0;
+      for (let i = 0; i < 24 && kick < 0.02; i++) {
+        window.__game.advance(4);
+        const w = window.__game.game.player.weapon;
+        kick = Math.hypot(w.kickPitch + w.patY, w.kickYaw + w.patX);
+      }
+      return kick;
+    }, dummy.id);
+    await nextFrame(pg);
+    const kicked = await pg.evaluate(() => {
+      const s = window.__game.state();
+      const w = window.__game.game.player.weapon;
+      const v = window.__game.view();
+      const r = window.__game.game.renderer;
+      const eye = { x: s.pos.x, y: s.pos.y + 1.62, z: s.pos.z };
+      const d = v.aim.distance;
+      const ky = s.yaw + w.kickYaw + w.patX, kp = s.pitch + w.kickPitch + w.patY;
+      const kc = Math.cos(kp), bc = Math.cos(s.pitch);
+      const withKick = r.project({ x: eye.x - Math.sin(ky) * kc * d, y: eye.y + Math.sin(kp) * d, z: eye.z - Math.cos(ky) * kc * d });
+      const bare = r.project({ x: eye.x - Math.sin(s.yaw) * bc * d, y: eye.y + Math.sin(s.pitch) * d, z: eye.z - Math.cos(s.yaw) * bc * d });
+      return { kick: Math.hypot(w.kickPitch + w.patY, w.kickYaw + w.patX), reticle: v.reticle, withKick, bare };
+    });
+    const toKicked = Math.hypot(kicked.reticle.x - kicked.withKick.x, kicked.reticle.y - kicked.withKick.y);
+    const toBare = Math.hypot(kicked.reticle.x - kicked.bare.x, kicked.reticle.y - kicked.bare.y);
+    check("the reticle carries the recoil the sim fires with, so it marks the next shot and not the bare aim", kicked.kick > 0.015 && toKicked < 3 && toBare > 6, `recoil ${kicked.kick.toFixed(4)} rad (peak ${kickUp.toFixed(4)}) · reticle is ${toKicked.toFixed(1)} px from the recoiled ray and ${toBare.toFixed(1)} px from the bare aim`);
     results["aim"] = { ...aim, dummy, off, shot: shotRes };
     await shotCheck(pg, "stage60-reticle.png");
 

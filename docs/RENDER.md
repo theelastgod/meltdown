@@ -169,8 +169,13 @@ above is what corrected that, and the honest next win is the mirror, not the mes
 
 The game is third person: the camera sits 3.0 m behind the eye, 0.78 m over the right shoulder
 and 0.36 m above it, and casts that segment against the level's boxes so nothing stands between it
-and the body (`client/render/tps.ts`). The eye is still what the sim fires from, so the reticle is
-drawn where the eye's ray lands on screen rather than at the centre. The local body is the same
+and the body (`client/render/tps.ts`). Since Stage 66 the shoulder offset is cast too — 0.78 m to
+the side of a 0.4 m capsule is outside the player's own column, so a wall on the right is a wall the
+shoulder stands in — and a hit closer than the minimum distance wins over it, because the minimum
+keeps the camera out of the player's head and is not a licence to sit behind a wall. The eye is
+still what the sim fires from, so the reticle is drawn where the shot's ray lands on screen rather
+than at the centre: along the aim plus the recoil the sim is carrying, and against the bodies the
+hitscan tests as well as the level, so it marks the enemy rather than the wall behind them. The local body is the same
 hooded silhouette the remotes wear, with the weapon in its hand: one mesh per material, drawn once
 (the mirror does not see it), five calls. Since Stage 63 that silhouette is skinned — two
 `SkinnedMesh`es on a ten-bone skeleton (`client/render/rig.ts`), posed by pure maths
