@@ -1641,6 +1641,26 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 68 — The last two fixed windows
+
+**Goal.** CI run #96 was green everywhere Stage 67 had reached, and red on one check it had not:
+the cloak's sway. The same two lines of reasoning apply, and this closes the last of them in the
+body probe.
+
+**What changed.**
+
+- **The sprint check sprints first.** It sampled sixteen frames and kept those above 6 m/s. On a
+  fast machine those frames are the acceleration, not the run: one frame qualified, and the hem had
+  not had time to drag. The bot now sprints a round trip and the probe samples until it has eight
+  frames of real sprinting or six hundred frames have passed.
+- **The recoil check watches for the shove.** It took ten frames after a burst began and kept the
+  highest socket position. The shove decays in about a fifth of a second, so which frames land
+  inside it is the frame rate's business. It now watches until the shove lands, with a cap.
+
+**Proof.** `probe:body` 20/20, `probe:tps` 14/14, `smoke` 7/7, 528 tests, build and typecheck
+clean. Every check in the body probe now waits for the state it measures; none of them counts
+frames.
+
 ## Stage 67 — Counting strides instead of frames
 
 **Goal.** CI run #93 was red on two more checks of the same kind Stage 64 dealt with, in places

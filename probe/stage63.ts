@@ -283,12 +283,27 @@ async function main(): Promise<void> {
     check("standing again the legs hang and the hips settle", Math.abs(still.out?.legL.rx ?? 1) < 0.06 && Math.abs(still.out?.legR.rx ?? 1) < 0.06 && Math.abs((still.out?.hips.y ?? 0) - 0.95) < 0.03, `legs ${still.out?.legL.rx.toFixed(3)} / ${still.out?.legR.rx.toFixed(3)} · hips ${still.out?.hips.y.toFixed(3)}`);
 
     // ---------------- 6. sway in the shader ----------------
-    await pg.evaluate((z) => window.__game.setBot([{ kind: "goto", x: 0, z: (z as number) - 14, sprint: true, radius: 1, timeoutTicks: 900, stop: false }, { kind: "hold", ticks: 6000 }]), s0.pos.z);
-    const sprint = await sample(pg, 16);
-    const fast = sprint.filter((r) => (r.out?.speed ?? 0) > 6);
-    const swayPeak = Math.max(0, ...fast.map((r) => Math.hypot(r.uniforms?.swayX ?? 0, r.uniforms?.swayZ ?? 0)));
-    const flapPeak = Math.max(0, ...fast.map((r) => r.uniforms?.flap ?? 0));
-    check("the cloak sways in the vertex shader: sprinting drags the hem and flaps it; the cloak and the trim share one set of uniforms", fast.length >= 4 && swayPeak >= 0.06 && flapPeak >= 0.04 && !!still.uniforms && still.sameUniforms && Math.hypot(still.uniforms.swayX, still.uniforms.swayZ) < 0.02, `${fast.length} sprint frames · sway ${swayPeak.toFixed(3)} · flap ${flapPeak.toFixed(3)} · standing sway ${still.uniforms ? Math.hypot(still.uniforms.swayX, still.uniforms.swayZ).toFixed(3) : "null"} · shared ${still.sameUniforms}`);
+    await pg.evaluate((z) => window.__game.setBot([
+      { kind: "goto", x: 0, z: (z as number) - 14, sprint: true, radius: 1, timeoutTicks: 900, stop: false },
+      { kind: "goto", x: 0, z: z as number, sprint: true, radius: 1, timeoutTicks: 900, stop: false },
+      { kind: "hold", ticks: 6000 },
+    ]), s0.pos.z);
+    // sprint until it is actually sprinting and the hem has had time to drag: a fixed window of
+    // frames catches the acceleration on a fast machine and the whole run on a slow one (Stage 68)
+    const sprint = await pg.evaluate(async () => {
+      const out: { speed: number; swayX: number; swayZ: number; flap: number }[] = [];
+      for (let i = 0; i < 600; i++) {
+        await new Promise((r) => requestAnimationFrame(r));
+        const r0 = window.__game.rig();
+        out.push({ speed: r0.out?.speed ?? 0, swayX: r0.uniforms?.swayX ?? 0, swayZ: r0.uniforms?.swayZ ?? 0, flap: r0.uniforms?.flap ?? 0 });
+        if (out.filter((x) => x.speed > 6).length >= 8) break;
+      }
+      return out;
+    });
+    const fast = sprint.filter((r) => r.speed > 6);
+    const swayPeak = Math.max(0, ...fast.map((r) => Math.hypot(r.swayX, r.swayZ)));
+    const flapPeak = Math.max(0, ...fast.map((r) => r.flap));
+    check("the cloak sways in the vertex shader: sprinting drags the hem and flaps it; the cloak and the trim share one set of uniforms", fast.length >= 4 && swayPeak >= 0.06 && flapPeak >= 0.04 && !!still.uniforms && still.sameUniforms && Math.hypot(still.uniforms.swayX, still.uniforms.swayZ) < 0.02, `${fast.length} of ${sprint.length} frames sprinting · sway ${swayPeak.toFixed(3)} · flap ${flapPeak.toFixed(3)} · standing sway ${still.uniforms ? Math.hypot(still.uniforms.swayX, still.uniforms.swayZ).toFixed(3) : "null"} · shared ${still.sameUniforms}`);
     await pg.waitForFunction(() => (window.__game.botStatus()?.current as { kind?: string } | null)?.kind === "hold", null, { timeout: 30000, polling: 100 });
 
     // ---------------- 7. crouch, slide, jump ----------------
@@ -354,9 +369,18 @@ async function main(): Promise<void> {
     await pg.evaluate(() => window.__game.setRealtime(true));
     await pg.waitForFunction(() => window.__game.state().grounded === true, null, { timeout: 30000, polling: 50 });
     await pg.waitForTimeout(600);
-    await pg.evaluate(() => window.__game.setBot([{ kind: "fire", ticks: 40 }, { kind: "hold", ticks: 6000 }]));
-    const firing = await sample(pg, 10);
-    const kickPeak = Math.max(...firing.map((r) => r.out?.socket.z ?? -1));
+    await pg.evaluate(() => window.__game.setBot([{ kind: "fire", ticks: 120 }, { kind: "hold", ticks: 6000 }]));
+    // watch until a shot's shove actually lands rather than for a fixed count of frames: the recoil
+    // decays in a fifth of a second and which frames fall inside that is the frame rate's (Stage 68)
+    const kickPeak = await pg.evaluate(async () => {
+      let peak = -1;
+      for (let i = 0; i < 300; i++) {
+        await new Promise((r) => requestAnimationFrame(r));
+        peak = Math.max(peak, window.__game.rig().out?.socket.z ?? -1);
+        if (peak >= -0.135) break;
+      }
+      return peak;
+    });
     check("recoil shoves the socket back on the frame the shot lands", kickPeak >= -0.16 + 0.025, `socket z peak ${kickPeak.toFixed(3)} (rest −0.16)`);
 
     // ---------------- 9. death and respawn ----------------
