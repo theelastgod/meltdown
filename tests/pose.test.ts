@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { CORPSE_SECONDS, createPoseState, GRIP_R, nearestOnSegment, poseBody, REST, twoBoneIK, type PoseInput } from "../client/render/pose";
 import { dist, len, sub, v3 } from "../shared/math/vec3";
 
-const base = (over: Partial<PoseInput> = {}): PoseInput => ({ speed: 0, moveYaw: 0, yaw: 0, pitch: 0, vy: 0, turnRate: 0, grounded: true, stance: "stand", height: 1.8, reloading: 0, ads: 0, kick: 0, alive: true, stunned: false, clock: 0, phase: 0, ...over });
+const base = (over: Partial<PoseInput> = {}): PoseInput => ({ speed: 0, moveYaw: 0, yaw: 0, pitch: 0, vy: 0, turnRate: 0, grounded: true, stance: "stand", height: 1.8, reloading: 0, ads: 0, kick: 0, swap: 0, charge: 0, alive: true, stunned: false, clock: 0, phase: 0, ...over });
 /** run the pose to rest on an input: enough frames for every ease to settle */
 const settle = (inp: PoseInput, frames = 120, st = createPoseState()) => {
   let out = poseBody(inp, st, 1 / 60);
@@ -217,5 +217,27 @@ describe("the arm", () => {
     const st = createPoseState();
     const out = poseBody(base({ speed: 5, yaw: 1.1, moveYaw: 1.1 }), st, 1 / 60);
     expect(Math.abs(out.legL.ry)).toBeLessThan(0.01);
+  });
+
+  it("a weapon swap dips the held weapon and a charge shakes it — on the body, not only on the hidden viewmodel", () => {
+    const st = createPoseState();
+    let rest = poseBody(base(), st, 1 / 60);
+    for (let i = 0; i < 60; i++) rest = poseBody(base({ clock: i / 60 }), st, 1 / 60);
+    const restY = rest.socket.y;
+    // through a swap the weapon is down and pitched away, and it comes back up when it is over
+    let swapped = rest;
+    for (let i = 0; i < 12; i++) swapped = poseBody(base({ swap: 1, clock: 1 + i / 60 }), st, 1 / 60);
+    expect(swapped.socket.y).toBeLessThan(restY - 0.1);
+    expect(swapped.socket.rx).toBeLessThan(rest.socket.rx - 0.2);
+    let back = swapped;
+    for (let i = 0; i < 60; i++) back = poseBody(base({ clock: 2 + i / 60 }), st, 1 / 60);
+    expect(back.socket.y).toBeCloseTo(restY, 2);
+    // a charge shakes it: two moments of the same charge do not sit in the same place
+    const a = poseBody(base({ charge: 1, clock: 4 }), st, 1 / 60);
+    const b = poseBody(base({ charge: 1, clock: 4 + 0.026 }), st, 1 / 60);
+    expect(Math.abs(a.socket.z - b.socket.z)).toBeGreaterThan(0.004);
+    const still1 = poseBody(base({ charge: 0, clock: 5 }), st, 1 / 60);
+    const still2 = poseBody(base({ charge: 0, clock: 5 + 0.026 }), st, 1 / 60);
+    expect(Math.abs(still1.socket.z - still2.socket.z)).toBeLessThan(0.0005);
   });
 });

@@ -1,6 +1,6 @@
 import { pwaState, registerServiceWorker } from "./pwa";
 import type { RigReport } from "./render/rig";
-import type { RemoteBodyView } from "./render/renderer";
+import type { RemoteBodyView, Renderer } from "./render/renderer";
 import { assetStats, texture as assetTexture } from "./render/assets";
 import { Menu, menuWanted, type MenuView } from "./menu";
 import { clampSettings, saveSettings, type Settings } from "./settings";
@@ -105,6 +105,8 @@ export interface GameHook {
   hideBody: (on: boolean) => void;
   /** the body's bones and pose (Stage 63): the local rig, or a remote's by id */
   rig: (id?: number) => RigReport;
+  /** the third-person presentation: which muzzle light is lit and where the Kernel's filament hangs */
+  presentation: () => ReturnType<Renderer["presentation"]>;
   kickRemote: (id: number) => void;
   /** offline: put remotes on screen from the wire's fields, or take them away with null */
   injectRemote: (views: RemoteBodyView[] | null) => void;
@@ -276,6 +278,7 @@ window.__game = {
     game.renderer.bodyHidden = on;
   },
   rig: (id) => game.renderer.rig(id),
+      presentation: () => game.renderer.presentation(),
   kickRemote: (id) => game.renderer.kickRemote(id),
   // offline the frame loop never syncs remotes, so an injected one stays until injected away
   injectRemote: (views) => game.renderer.syncRemotes(views ?? []),

@@ -32,6 +32,10 @@ export interface PoseInput {
   ads: 0 | 1;
   /** recoil 0..1, decayed by the caller */
   kick: number;
+  /** 0..1 just after a weapon swap, decayed by the caller: the held weapon dips as it comes up */
+  swap: number;
+  /** 0..1 while a charged shot builds: the weapon shakes with it */
+  charge: number;
   alive: boolean;
   stunned: boolean;
   /** seconds */
@@ -252,6 +256,13 @@ export function poseBody(inp: PoseInput, st: PoseState, rawDt: number): PoseOut 
   const d = Math.sin(Math.PI * clamp(inp.reloading, 0, 1));
   carry -= 0.3 * d;
   const leftReloadMix = d;
+  // the swap dip and the charge shake used to be written to the first-person viewmodel alone, which
+  // is hidden behind the body: in third person a new weapon appeared in the hand with no motion at
+  // all, and a charging one sat dead still (Stage 69)
+  const swap = clamp(inp.swap, 0, 1);
+  socketY -= 0.22 * swap;
+  carry -= 0.45 * swap;
+  const charge = clamp(inp.charge, 0, 1);
   if (inp.stunned) chestRy += 0.05 * Math.sin(25 * inp.clock);
 
   // death: the file falls back, the strip-light dies with it, the body goes after a moment
@@ -323,15 +334,18 @@ export function poseBody(inp: PoseInput, st: PoseState, rawDt: number): PoseOut 
     legRyR = 0.22;
     legRyL = -0.3;
   }
-  // the recoil: unblended, the weapon shoves back and the chest takes it
+  // the recoil and the charge shake: unblended, like the recoil — a 60 rad/s tremor written to an
+  // eased target is filtered away to nothing before it reaches a bone (Stage 69)
   const kick = clamp(inp.kick, 0, 1);
+  const shakeZ = Math.sin(inp.clock * 60) * 0.012 * charge;
+  const shakeX = Math.cos(inp.clock * 47) * 0.006 * charge;
   return {
     hips: { y: hipsOut, rx: st.hipsRx },
     chest: { rx: st.chestRx + 0.02 * kick, ry: st.chestRy },
     head: { rx: st.headRx },
     legL: { rx: legLrxOut, ry: legRyL, sy: st.legSyL * (1 - 0.1 * land) },
     legR: { rx: legRrx, ry: legRyR, sy: st.legSyR * (1 - 0.1 * land) },
-    socket: { x: st.socketX, y: st.socketY, z: st.socketZ + 0.05 * kick, rx: inp.pitch + st.socketCarry },
+    socket: { x: st.socketX + shakeX, y: st.socketY, z: st.socketZ + 0.05 * kick + shakeZ, rx: inp.pitch + st.socketCarry },
     armTargetR,
     armTargetL,
     armsOnWeapon,

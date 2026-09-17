@@ -1641,6 +1641,45 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 69 — The weapon in the hand is the weapon that fires
+
+**Goal.** The remaining confirmed findings from the Stage 60 review are all the same oversight from
+a different angle: the first-person weapon kept its effects when the camera moved behind the body,
+and the body's weapon got none of them. What the player watches now is a weapon that does not flash
+when it fires, does not dip when it is swapped, and does not shake while it charges — while all of
+that happens to a viewmodel nobody can see.
+
+**What changed.**
+
+- **The muzzle flash follows the weapon being drawn.** The hand's light is a child of the body, and
+  three skips a hidden subtree entirely — so with the camera pulled in against the body there was no
+  flash at all, which is exactly the moment (a doorway, a corner) when a player most needs to see
+  they are firing. The flash now falls back to the camera's light whenever the body is not drawn.
+- **So does the charge glow**, which was lighting the camera while the held weapon charged in the
+  dark.
+- **The Kernel's filament hangs on the weapon.** Its strands were written in the camera's space,
+  over the first-person weapon; behind the body they hung in mid-air between the camera and the
+  player. It is parented to the hand in third person and to the camera in first.
+- **The swap dip and the charge shake are in the pose.** Both were written to the hidden viewmodel,
+  so a new weapon appeared in the body's hand with no motion and a charging one sat dead still. They
+  are pose inputs now. The shake is applied after the easing, like the recoil: a 60 rad/s tremor
+  written to an eased target is filtered away to nothing before it reaches a bone.
+
+**Proof.** `probe:tps` 16/16 (2 new: the flash is on the body's weapon with the filament on it and
+the camera's light dark, and with the body hidden the flash falls back to the camera), `probe:body`
+20/20, `probe:net` 16/16, `probe:campaign` 31/31, `probe:arsenal` 19/19, `probe:mobile` 14/14,
+`smoke` 7/7, 529 tests, build and typecheck clean. Guards mutation-checked: leaving the filament on
+the camera puts it 3 m from the hand, and tying the flash to third person rather than to the body
+being drawn puts it out when the camera is pulled in — and on the pose side, dropping the swap dip
+leaves the socket at rest, and moving the shake back before the easing filters it to a third of a
+millimetre.
+
+**A measurement that measured the wrong thing.** The body's draw-call cost is a difference between
+two frames, and the burst the new checks fire leaves tracers and sparks alive that expire between
+them — the body read as nine calls instead of five. The check now waits for the effects to go out
+before it measures. It is the Stage 64 lesson once more: a difference of two counts is only about
+the thing that changed if nothing else did.
+
 ## Stage 68 — The last two fixed windows
 
 **Goal.** CI run #96 was green everywhere Stage 67 had reached, and red on one check it had not:

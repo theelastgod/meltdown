@@ -183,9 +183,16 @@ export class Renderer {
     return this.post.crtLevel();
   }
   /** Third person (the trailer's view) or first; a setting, never the sim's business. */
+  /** the Kernel's filament belongs to the weapon being drawn, not to the camera (Stage 69) */
+  private hostFilament(): void {
+    const onHand = this.thirdPerson;
+    this.campaignFx.setFilamentHost(onHand ? this.local.hand : this.camera, onHand);
+  }
+
   setView(third: boolean): void {
     this.thirdPerson = third;
     this.camSmooth.set = false;
+    this.hostFilament();
   }
   /** A world point on screen (CSS px), by this frame's camera — the probe's ruler for the reticle. */
   project(p: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
@@ -329,6 +336,7 @@ export class Renderer {
     this.renderer.compile(this.scene, this.camera);
     warm.removeFromParent();
     this.renderer.setRenderTarget(target);
+    this.hostFilament();
     window.addEventListener("resize", () => this.resize());
   }
 
@@ -556,6 +564,20 @@ export class Renderer {
     }
   }
 
+  /** the probe's read of the third-person presentation: what is lit, and where the filament hangs */
+  presentation(): { onBody: boolean; muzzle: number; handMuzzle: number; filament: { x: number; y: number; z: number }; hand: { x: number; y: number; z: number }; camera: { x: number; y: number; z: number } } {
+    const hand = this.local.hand.getWorldPosition(new THREE.Vector3());
+    const cam = this.camera.getWorldPosition(new THREE.Vector3());
+    return {
+      onBody: this.thirdPerson && this.local.group.visible,
+      muzzle: this.muzzle.intensity,
+      handMuzzle: this.handMuzzle.intensity,
+      filament: this.campaignFx.filamentAt(),
+      hand: { x: hand.x, y: hand.y, z: hand.z },
+      camera: { x: cam.x, y: cam.y, z: cam.z },
+    };
+  }
+
   /** a remote fired: its weapon shoves back (the wire carries the shot, not the recoil) */
   kickRemote(id: number): void {
     const e = this.remoteMeshes.get(id);
@@ -594,7 +616,7 @@ export class Renderer {
       // a held position is not a direction: atan2(-0, -0) is -pi, which would face the legs
       // backwards for as long as the interpolator repeats a sample (Stage 65)
       const moved = Math.hypot(dx, dz) > 1e-4;
-      const inp: PoseInput = { speed, moveYaw: moved && speed > 0.5 ? Math.atan2(-dx, -dz) : v.yaw, yaw: v.yaw, pitch: v.pitch ?? 0, vy: clamp((v.y - prev.y) / dt, -12, 12), turnRate: clamp(wrapAngle(v.yaw - prev.yaw) / dt, -20, 20), grounded, stance: v.stance as Stance, height: v.height, reloading: 0, ads: 0, kick: e.kick, alive: v.alive, stunned: false, clock: this.clock, phase: e.phase };
+      const inp: PoseInput = { speed, moveYaw: moved && speed > 0.5 ? Math.atan2(-dx, -dz) : v.yaw, yaw: v.yaw, pitch: v.pitch ?? 0, vy: clamp((v.y - prev.y) / dt, -12, 12), turnRate: clamp(wrapAngle(v.yaw - prev.yaw) / dt, -20, 20), grounded, stance: v.stance as Stance, height: v.height, reloading: 0, ads: 0, kick: e.kick, swap: 0, charge: 0, alive: v.alive, stunned: false, clock: this.clock, phase: e.phase };
       const out = poseBody(inp, e.rig.state, dt);
       applyPose(e.rig, out, v.yaw);
       e.group.visible = out.visible;
@@ -686,7 +708,7 @@ export class Renderer {
     const turnRate = Number.isNaN(this.lastViewYaw) ? 0 : clamp(wrapAngle(v.yaw - this.lastViewYaw) / dt, -20, 20);
     this.lastViewY = v.y;
     this.lastViewYaw = v.yaw;
-    const inp: PoseInput = { speed: v.speed, moveYaw: v.moveYaw, yaw: v.yaw, pitch: v.pitch, vy, turnRate, grounded: v.grounded, stance: v.stance as Stance, height: v.height, reloading: v.reloading, ads: v.zoom > 1 ? 1 : 0, kick: this.vmKick, alive: v.alive, stunned: v.stunned, clock: this.clock, phase: this.bobPhase };
+    const inp: PoseInput = { speed: v.speed, moveYaw: v.moveYaw, yaw: v.yaw, pitch: v.pitch, vy, turnRate, grounded: v.grounded, stance: v.stance as Stance, height: v.height, reloading: v.reloading, ads: v.zoom > 1 ? 1 : 0, kick: this.vmKick, swap: this.vmSwap, charge: clamp(v.charge, 0, 1), alive: v.alive, stunned: v.stunned, clock: this.clock, phase: this.bobPhase };
     const out = poseBody(inp, this.local.state, dt);
     applyPose(this.local, out, v.yaw);
     g.visible = out.visible && !close && !this.bodyHidden;
@@ -733,8 +755,12 @@ export class Renderer {
     this.viewmodel.position.set(0.28 + bobX * 0.5, -0.26 - dip + bobY * 0.5, -0.55 + this.vmKick * 0.06);
     this.viewmodel.rotation.x = this.vmKick * 0.08 - dip * 0.8;
     this.muzzleT = Math.max(0, this.muzzleT - dt * 18);
-    this.muzzle.intensity = this.thirdPerson ? 0 : this.muzzleT * 8;
-    this.handMuzzle.intensity = this.thirdPerson ? this.muzzleT * 8 : 0;
+    // the hand's light is a child of the body, and three skips a hidden subtree entirely: with the
+    // camera pulled in against the body there was no muzzle flash at all, which is exactly when the
+    // player is in a doorway and needs to see they are firing. Fall back to the camera's (Stage 69).
+    const onBody = this.thirdPerson && this.local.group.visible;
+    this.muzzle.intensity = onBody ? 0 : this.muzzleT * 8;
+    this.handMuzzle.intensity = onBody ? this.muzzleT * 8 : 0;
     // weapon swap: hide/show viewmodels with a quick dip
     const wantId = WEAPON_LIST[v.slot - 1]?.id ?? "lease_breaker";
     const want = this.viewmodels.get(wantId)!;
@@ -756,7 +782,10 @@ export class Renderer {
     this.viewmodel.rotation.x -= this.vmSwap * 0.5;
     if (v.charge > 0) {
       this.viewmodel.position.z += Math.sin(this.clock * 60) * 0.004 * v.charge;
-      this.muzzle.intensity = Math.max(this.muzzle.intensity, v.charge * 5);
+      // the glow belongs to whichever weapon is being drawn: on the body's, it was lighting the
+      // camera instead and the held weapon stayed dark while it charged (Stage 69)
+      const glow = onBody ? this.handMuzzle : this.muzzle;
+      glow.intensity = Math.max(glow.intensity, v.charge * 5);
     }
     if (v.stunned) this.camera.rotation.z += Math.sin(this.clock * 25) * 0.02;
     this.poseRemotes(dt);

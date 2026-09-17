@@ -81,6 +81,17 @@ export class CampaignFx {
     camera.add(this.filament);
   }
 
+  /**
+   * Hang the Kernel's filament on whatever weapon is being drawn. Its strands were written in the
+   * camera's space, over the first-person weapon; in third person that weapon is hidden behind the
+   * body and the strands were left hanging in mid-air between the camera and the player (Stage 69).
+   */
+  setFilamentHost(host: THREE.Object3D, onHand: boolean): void {
+    if (this.filament.parent !== host) host.add(this.filament);
+    // on the hand the weapon runs down the socket's own -z, so the camera-space offsets come off
+    this.filament.position.set(onHand ? -0.28 : 0, onHand ? 0.26 : 0, onHand ? -0.02 : 0);
+  }
+
   setMarker(pos: { x: number; y: number; z: number } | null): void {
     this.marker.visible = pos !== null;
     if (pos) this.marker.position.set(pos.x, pos.y, pos.z);
@@ -122,6 +133,13 @@ export class CampaignFx {
 
   get filamentVisible(): boolean {
     return this.filamentOn;
+  }
+
+  /** where the filament's strands actually are, for the probe: on the weapon, or hanging in the air */
+  filamentAt(): { x: number; y: number; z: number } {
+    const v = new THREE.Vector3();
+    this.filament.getWorldPosition(v);
+    return { x: v.x, y: v.y, z: v.z };
   }
 
   update(dt: number): void {

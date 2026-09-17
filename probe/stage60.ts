@@ -219,11 +219,66 @@ async function main(): Promise<void> {
     results["aim"] = { ...aim, dummy, off, shot: shotRes };
     await shotCheck(pg, "stage60-reticle.png");
 
+    // ---------------- what is lit, and where the filament hangs ----------------
+    await pg.evaluate(() => {
+      const p = window.__game.game.player;
+      p.pos.x = 0;
+      p.pos.z = 0;
+      window.__game.game.renderer.campaignFx.setFilament(true);
+      window.__game.setBot([{ kind: "look", yaw: 0, pitch: 0, ticks: 5 }, { kind: "fire", ticks: 120 }, { kind: "hold", ticks: 6000 }]);
+      window.__game.advance(20);
+    });
+    await nextFrame(pg);
+    const lit = await pg.evaluate(async () => {
+      let best = { onBody: false, muzzle: 0, handMuzzle: 0, filament: { x: 0, y: 0, z: 0 }, hand: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 } };
+      for (let i = 0; i < 300; i++) {
+        window.__game.advance(2); // this probe drives the sim by hand: no ticks, no shots, no flash
+        await new Promise((r) => requestAnimationFrame(r));
+        const p = window.__game.presentation();
+        if (p.handMuzzle > best.handMuzzle) best = p;
+        if (best.handMuzzle > 1) break;
+      }
+      return best;
+    });
+    const toHand = Math.hypot(lit.filament.x - lit.hand.x, lit.filament.y - lit.hand.y, lit.filament.z - lit.hand.z);
+    const toCam = Math.hypot(lit.filament.x - lit.camera.x, lit.filament.y - lit.camera.y, lit.filament.z - lit.camera.z);
+    check("the muzzle flash is on the weapon the body is holding, and the Kernel's filament hangs on it rather than in the air in front of the camera", lit.onBody && lit.handMuzzle > 1 && lit.muzzle === 0 && toHand < 0.5 && toCam > 1.5, `body lit ${lit.onBody} · hand light ${lit.handMuzzle.toFixed(1)}, camera light ${lit.muzzle.toFixed(1)} · filament ${toHand.toFixed(2)} m from the hand and ${toCam.toFixed(2)} m from the camera`);
+    // and with the body hidden — the camera pulled in against it — the flash falls back to the camera
+    await pg.evaluate(() => window.__game.hideBody(true));
+    await nextFrame(pg);
+    const hidden = await pg.evaluate(async () => {
+      let best = { onBody: true, muzzle: 0, handMuzzle: 0 };
+      for (let i = 0; i < 300; i++) {
+        window.__game.advance(2);
+        await new Promise((r) => requestAnimationFrame(r));
+        const p = window.__game.presentation();
+        best = { onBody: p.onBody, muzzle: Math.max(best.muzzle, p.muzzle), handMuzzle: p.handMuzzle };
+        if (best.muzzle > 1) break;
+      }
+      return best;
+    });
+    check("with the body hidden there is still a muzzle flash: it falls back to the camera's light rather than going out", !hidden.onBody && hidden.muzzle > 1, `body lit ${hidden.onBody} · camera light ${hidden.muzzle.toFixed(1)} · hand light ${hidden.handMuzzle.toFixed(1)}`);
+    await pg.evaluate(async () => {
+      window.__game.hideBody(false);
+      window.__game.game.renderer.campaignFx.setFilament(false);
+      window.__game.setBot([{ kind: "hold", ticks: 6000 }]);
+      // the burst above leaves tracers and sparks alive, and they expire between two frames: the
+      // body's cost is measured as a difference of two counts, so let the effects go first
+      for (let i = 0; i < 300; i++) {
+        window.__game.advance(2);
+        await new Promise((r) => requestAnimationFrame(r));
+        const b = window.__game.view().breakdown;
+        if (!b["tracers"] && !b["sparks"]) return;
+      }
+    });
+    await nextFrame(pg);
+
     // ---------------- first person is a setting ----------------
     // the body's own cost: the same camera with the body hidden, so the difference is the body and
     // not what a camera three metres further back happens to see (a third-person frame takes in more
     // of the street than the eye did, and that is the view's cost, held by the city probe's budget)
     const withBody = await pg.evaluate(() => window.__game.view().calls);
+    const bodyParts = await pg.evaluate(() => ({ breakdown: window.__game.view().breakdown, filament: window.__game.game.renderer.campaignFx.filamentVisible }));
     await pg.evaluate(() => window.__game.hideBody(true));
     await nextFrame(pg);
     const withoutBody = await pg.evaluate(() => window.__game.view().calls);
@@ -240,7 +295,7 @@ async function main(): Promise<void> {
     check("first person is a setting: the body goes, the viewmodel comes back, the reticle returns to the centre, and third person comes back the same way", !first.v.third && !first.v.bodyVisible && first.rigDrawn === 0 && Math.abs(first.v.reticle.x - 480) < 1 && Math.abs(first.v.reticle.y - 270) < 1 && first.back.third && first.back.bodyVisible, `first: third ${first.v.third} · body ${first.v.bodyVisible} · rig ${first.rigDrawn} drawables · reticle (${first.v.reticle.x.toFixed(0)}, ${first.v.reticle.y.toFixed(0)}) · back: third ${first.back.third} body ${first.back.bodyVisible}`);
     // the body and its weapon are one mesh per material, drawn once (the wet floor's mirror does not
     // see the rig): what third person costs over first is the difference between them
-    check("the body costs its five meshes and no more — one per material, drawn once — inside the frame budget", rigCalls <= 5 && rigCalls >= 1 && first.thirdCalls <= 180, `${withBody} calls with the body, ${withoutBody} without (the body: ${rigCalls}); first person ${first.v.calls}`);
+    check("the body costs its five meshes and no more — one per material, drawn once — inside the frame budget", rigCalls <= 5 && rigCalls >= 1 && first.thirdCalls <= 180, `${withBody} calls with the body, ${withoutBody} without (the body: ${rigCalls}); first person ${first.v.calls} · filament ${bodyParts.filament} · ${Object.entries(bodyParts.breakdown).map(([k, n]) => `${k} ${n}`).join(", ")}`);
     results["first"] = first;
 
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
