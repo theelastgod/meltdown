@@ -101,8 +101,18 @@ async function main(): Promise<void> {
     await pg.goto(`http://127.0.0.1:${PREVIEW_PORT}/?headless=1&menu=1&crawl=0&nonav=1`, { waitUntil: "load" });
     // wait for a card to be *up*, not merely for the cards screen: between cards, and for a frame
     // as the screen opens, `cardText` is empty, and the check is about which card it is
-    await pg.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "cards" && !!window.__game.menu()?.cardText, null, { timeout: 40000, polling: 50 });
-    const card = await pg.evaluate(() => window.__game.menu()!.cardText);
+    // read the text in the same evaluate that finds it: cards come and go, and a second round trip
+    // lands between them often enough that CI caught it (Stage 67)
+    const card = await pg
+      .waitForFunction(
+        () => {
+          const m = window.__game?.menu();
+          return window.__game?.ready === true && m?.screen === "cards" && m.cardText ? m.cardText : null;
+        },
+        null,
+        { timeout: 40000, polling: 50 },
+      )
+      .then((h) => h.jsonValue() as Promise<string>);
     check("the menu flow runs from the built bundle: a title card is up", /leased|woke free/.test(card), `card "${card}"`);
     /**
      * Installable (Stage 45). Only the built site registers the worker, so this is the one place it

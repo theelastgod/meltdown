@@ -133,13 +133,23 @@ async function main(): Promise<void> {
     // ---------------- 3. a remote from the wire's fields ----------------
     const remoteRun = await pg.evaluate(async () => {
       const samples: Rig[] = [];
-      for (let i = 0; i < 40; i++) {
+      // walk it until its legs have alternated, not for a fixed count: how much stride a frame
+      // carries depends on the frame rate (Stage 67)
+      for (let i = 0; i < 300; i++) {
         window.__game.injectRemote([{ id: 99, name: "REMOTE", tag: "", x: 3 + (i * 5.2) / 60, y: 0, z: -4, yaw: 0, pitch: 0.4, height: 1.8, alive: true, stance: "stand", vx: 5.2, vy: 0, vz: 0, grounded: true, slot: 3 }]);
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
         samples.push(window.__game.rig(99));
+        let flips = 0, last = 0;
+        for (const r of samples.slice(6)) {
+          const sgn = Math.sign((r.out?.legL.rx ?? 0) - (r.out?.legR.rx ?? 0));
+          if (last !== 0 && sgn !== 0 && sgn !== last) flips++;
+          last = sgn || last;
+        }
+        if (flips >= 3 && samples.length > 12) break;
       }
+      const hold = samples.length - 1;
       for (let i = 0; i < 20; i++) {
-        window.__game.injectRemote([{ id: 99, name: "REMOTE", tag: "", x: 3 + (39 * 5.2) / 60, y: 0, z: -4, yaw: 0, pitch: 0.4, height: 1.8, alive: true, stance: "stand", vx: 5.2, vy: 0, vz: 0, grounded: true, slot: 3 }]);
+        window.__game.injectRemote([{ id: 99, name: "REMOTE", tag: "", x: 3 + (hold * 5.2) / 60, y: 0, z: -4, yaw: 0, pitch: 0.4, height: 1.8, alive: true, stance: "stand", vx: 5.2, vy: 0, vz: 0, grounded: true, slot: 3 }]);
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       }
       const held = window.__game.rig(99);
@@ -154,7 +164,7 @@ async function main(): Promise<void> {
       }
       return flips;
     };
-    const rs = remoteRun.samples.slice(10);
+    const rs = remoteRun.samples.slice(6);
     const last = rs[rs.length - 1]!;
     check("a remote walks from what the wire carries — position, velocity, footing, pitch, slot: its legs alternate, its socket takes its pitch, it holds the weapon of its slot, at four draw calls", flipsOf(rs) >= 2 && Math.abs(last.socketPitch - 0.4) < 0.02 && last.stripColor === WEAPON_LIST[2]!.tracer && (last.calls ?? 0) <= 4 && (last.calls ?? 0) >= 3, `flips ${flipsOf(rs)} · socket pitch ${last.socketPitch.toFixed(3)} · strip ${last.stripColor?.toString(16)} (slot 3 = ${WEAPON_LIST[2]!.id} ${WEAPON_LIST[2]!.tracer.toString(16)}) · ${last.calls} drawables`);
     check("and a held sample with a stale velocity stops its feet: speed is the lesser of the wire's and what the position actually did", (remoteRun.held.out?.speed ?? 9) <= 0.3, `speed ${remoteRun.held.out?.speed.toFixed(2)} after 20 frames at the same position with vx 5.2 on the wire`);
@@ -208,14 +218,45 @@ async function main(): Promise<void> {
     // ---------------- 5. walk, lean, stand ----------------
     await pg.evaluate(() => window.__game.setRealtime(true));
     const s0 = await pg.evaluate(() => window.__game.state());
-    await pg.evaluate((z) => window.__game.setBot([{ kind: "goto", x: 0, z: (z as number) - 12, sprint: false, radius: 1, timeoutTicks: 900, stop: false }, { kind: "goto", x: 0, z: z as number, sprint: false, radius: 1, timeoutTicks: 900, stop: true }, { kind: "hold", ticks: 6000 }]), s0.pos.z);
-    const walk = await sample(pg, 60);
-    const moving = walk.filter((r) => (r.out?.speed ?? 0) > 3);
-    const peak = Math.max(0, ...moving.map((r) => Math.abs(r.out?.legL.rx ?? 0)));
-    const boots = moving.every((r) => r.bootBottom.l > -0.05 && r.bootBottom.l < 0.16 && r.bootBottom.r > -0.05 && r.bootBottom.r < 0.16);
+    await pg.evaluate((z) => window.__game.setBot([
+      { kind: "goto", x: 0, z: (z as number) - 12, sprint: false, radius: 1, timeoutTicks: 900, stop: false },
+      { kind: "goto", x: 0, z: z as number, sprint: false, radius: 1, timeoutTicks: 900, stop: false },
+      { kind: "goto", x: 0, z: (z as number) - 12, sprint: false, radius: 1, timeoutTicks: 900, stop: false },
+      { kind: "goto", x: 0, z: z as number, sprint: false, radius: 1, timeoutTicks: 900, stop: true },
+      { kind: "hold", ticks: 6000 },
+    ]), s0.pos.z);
+    // walk until the stride has actually cycled twice rather than for a fixed number of frames: how
+    // much of a stride a frame covers is the frame rate's business, and CI draws several times
+    // faster than SwiftShader does here (Stage 67)
+    const walk = await pg.evaluate(async () => {
+      const out: { speed: number; legL: number; legR: number; bootL: number; bootR: number; chestAhead: number }[] = [];
+      let flips = 0, last = 0;
+      for (let i = 0; i < 900; i++) {
+        await new Promise((r) => requestAnimationFrame(r));
+        const r0 = window.__game.rig();
+        const speed = r0.out?.speed ?? 0;
+        out.push({ speed, legL: r0.out?.legL.rx ?? 0, legR: r0.out?.legR.rx ?? 0, bootL: r0.bootBottom.l, bootR: r0.bootBottom.r, chestAhead: r0.chestAhead });
+        if (speed > 3) {
+          const sgn = Math.sign((r0.out?.legL.rx ?? 0) - (r0.out?.legR.rx ?? 0));
+          if (last !== 0 && sgn !== 0 && sgn !== last) flips++;
+          last = sgn || last;
+        }
+        if (flips >= 3) break;
+      }
+      return out;
+    });
+    const moving = walk.filter((r) => r.speed > 3);
+    const peak = Math.max(0, ...moving.map((r) => Math.abs(r.legL)));
+    const boots = moving.every((r) => r.bootL > -0.05 && r.bootL < 0.16 && r.bootR > -0.05 && r.bootR < 0.16);
     // leaning into the walk puts the chest ahead of the hips along the facing
     const leanMin = Math.min(1, ...moving.map((r) => r.chestAhead));
-    check("walking: the legs alternate at the stride's amplitude, the boots stay on the ground, and the body leans into the walk", moving.length >= 8 && flipsOf(moving) >= 2 && peak >= 0.3 && boots && leanMin >= 0.008, `${moving.length} moving frames · flips ${flipsOf(moving)} · peak ${peak.toFixed(2)} rad · boots on the ground ${boots} · chest ahead of the hips by at least ${leanMin.toFixed(3)} m`);
+    let walkFlips = 0, lastSign = 0;
+    for (const r of moving) {
+      const sgn = Math.sign(r.legL - r.legR);
+      if (lastSign !== 0 && sgn !== 0 && sgn !== lastSign) walkFlips++;
+      lastSign = sgn || lastSign;
+    }
+    check("walking: the legs alternate at the stride's amplitude, the boots stay on the ground, and the body leans into the walk", moving.length >= 8 && walkFlips >= 2 && peak >= 0.3 && boots && leanMin >= 0.008, `${moving.length} of ${walk.length} frames moving · flips ${walkFlips} · peak ${peak.toFixed(2)} rad · boots on the ground ${boots} · chest ahead of the hips by at least ${leanMin.toFixed(3)} m`);
     // a frame labelled "walk" has to show the body walking: send it off again and freeze the sim on a
     // stride (the renderer keeps drawing, so the pose in the picture is the pose the checks measured)
     await pg.evaluate((z) => window.__game.setBot([{ kind: "goto", x: 0, z: (z as number) - 12, sprint: false, radius: 1, timeoutTicks: 900, stop: false }, { kind: "hold", ticks: 6000 }]), s0.pos.z);

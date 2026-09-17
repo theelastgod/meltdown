@@ -1641,6 +1641,29 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 67 — Counting strides instead of frames
+
+**Goal.** CI run #93 was red on two more checks of the same kind Stage 64 dealt with, in places
+Stage 64 had not looked: a walk check that counted frames, and a menu check that read a value one
+round trip after finding it.
+
+**What changed.**
+
+- **The walk counts strides, not frames.** The check sampled sixty frames and asked for two swaps
+  of the leading leg. How much of a stride a frame carries is the frame rate's business, and CI
+  draws several times faster than the software renderer here, so the same walk gave one swap
+  instead of three. The bot now walks a longer round trip and the probe samples until the legs have
+  alternated three times or nine hundred frames have passed, which is the thing the check is about.
+  The same treatment went to the remote's walk, whose stride advances per frame for the same
+  reason.
+- **The card is read where it is found.** The menu check waited for a title card to be up and then
+  read it in a second call. Cards come and go, and that second call landed between two of them
+  often enough for CI to catch it. The text now comes back from the wait itself.
+
+**Proof.** `probe:body` 20/20, `smoke` 7/7 (the card reads "You woke free."), 528 tests, typecheck
+clean. The walk check now stops after 28 frames here and will take more on a faster machine, which
+is the point.
+
 ## Stage 66 — What the camera stands in, and what the reticle points at
 
 **Goal.** The adversarial review of Stage 60 (six lenses, three skeptics each) confirmed fifteen
