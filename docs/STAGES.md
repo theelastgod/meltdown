@@ -1641,6 +1641,30 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 70 — Two shutters and a threshold
+
+**Goal.** Runs #97 and #98 each failed on one check, in two probes this series had not reached.
+Both are the same two lessons: a picture taken when the thing it is named for has gone, and a
+number that was a guess about one machine.
+
+**What changed.**
+
+- **The Debt banner is photographed while it is up.** The banner shows for three and a half seconds
+  of the HUD's own clock — which on a machine that draws quickly is three and a half seconds of wall
+  time, and on the software renderer here is closer to twenty. The probe waited for the social
+  message announcing the clear, then took the picture; on CI the banner had gone. The duel that
+  clears the Debt now carries a watch, and the picture is taken on the first tick where the panel is
+  actually up, with a second chance after the duel if the kill landed between two ticks.
+- **Aiming down sights is compared, not measured against a guess.** The check asked for a camera
+  between 0.9 m and 1.6 m back. Where the ground is behind the camera at that pitch is the yard's
+  business, and a floor that pulls the camera in further is the camera doing its job: CI read 0.75
+  where this machine read 0.92. It now measures the hip-fired framing from the same spot and the
+  same aim, and asks that sights bring the camera at least 0.8 m closer than that.
+
+**Proof.** `probe:identity` 23/23, `probe:tps` 16/16, `probe:body` 20/20, 529 tests, typecheck
+clean. The ADS check now reads 0.92 m aiming against 2.59 m from the hip, which is a comparison
+rather than a constant.
+
 ## Stage 69 — The weapon in the hand is the weapon that fires
 
 **Goal.** The remaining confirmed findings from the Stage 60 review are all the same oversight from

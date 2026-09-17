@@ -136,7 +136,7 @@ async function main(): Promise<void> {
      * The kill step aims and fires at a live target in view — it never navigates — so a duel keeps the
      * hunter at the post and the victim in the lane, re-issuing plans as either is re-leased elsewhere.
      */
-    const duel = async (hunter: Page, hunterName: string, victim: Page, victimId: number, want: number, ms: number): Promise<number> => {
+    const duel = async (hunter: Page, hunterName: string, victim: Page, victimId: number, want: number, ms: number, onTick?: () => Promise<void>): Promise<number> => {
       const t = Date.now();
       let lastPlanH = 0;
       let lastPlanV = 0;
@@ -144,6 +144,7 @@ async function main(): Promise<void> {
       let lastTrace = 0;
       let k = await killsOf(hunterName);
       while (Date.now() - t < ms && k < want) {
+        if (onTick) await onTick();
         const [sh, sv] = await Promise.all([hunter.evaluate(() => ({ pos: window.__game.state().pos, alive: window.__game.state().health > 0, done: window.__game.botStatus()?.done ?? true })), victim.evaluate(() => ({ pos: window.__game.state().pos, alive: window.__game.state().health > 0, done: window.__game.botStatus()?.done ?? true }))]);
         const now = Date.now();
         if (sv.alive && Math.hypot(sv.pos.x - LANE.x, sv.pos.z - LANE.z) > 3 && now - lastPlanV > 5000) {
@@ -299,7 +300,17 @@ async function main(): Promise<void> {
     check("round two's dossier flags the Debt for the file that owes it", !!dossier2 && dossier2.entries.find((e) => e.id === ids.b)?.debt === true && dossier2.entries.filter((e) => e.debt).length === 1, dossier2 ? dossier2.entries.map((e) => `#${e.id}${e.debt ? " DEBT" : ""}`).join(" ") : "no second dossier");
     // ALPHA settles it: the same duel, one kill of the file he owes
     const before = await killsOf("ALPHA");
-    const ak2 = await duel(a, "ALPHA", b, ids.b, before + 1, 45000);
+    // The banner is up for three and a half seconds of the HUD's own clock, which on a machine that
+    // draws quickly is three and a half seconds of wall time. Waiting for the social message and
+    // then taking the picture missed it there: watch for the panel through the duel itself and take
+    // the picture the moment it comes up (Stage 70).
+    let debtShot = false;
+    const panelUp = () => a.evaluate(() => { const el = document.querySelector("#hud .debt"); return !!el && el.classList.contains("on") && (el.textContent ?? "").trim().length > 0; });
+    const ak2 = await duel(a, "ALPHA", b, ids.b, before + 1, 45000, async () => {
+      if (debtShot || !(await panelUp())) return;
+      await shotCheck(a, "stage8-debt.png", "#hud .debt");
+      debtShot = true;
+    });
     console.log(`round two: ALPHA kills ${before} → ${ak2}`);
     const t6 = Date.now();
     let cleared: { credit: number; capped: boolean } | null = null;
@@ -309,8 +320,11 @@ async function main(): Promise<void> {
       const m = soc.find((x) => x.kind === "debt" && x.event === "cleared");
       if (m && m.kind === "debt") cleared = { credit: m.credit, capped: m.capped };
     }
-    await a.waitForTimeout(200);
-    await shotCheck(a, "stage8-debt.png", "#hud .debt");
+    if (!debtShot) {
+      // the kill landed between two ticks of the watch above: give the banner one more chance
+      for (let i = 0; i < 60 && !(await panelUp()); i++) await a.waitForTimeout(50);
+      await shotCheck(a, "stage8-debt.png", "#hud .debt");
+    }
     const dc = await a.evaluate(() => ({ r: window.__game.state().rituals, audio: window.__game.state().audio, debt: window.__game.state().debtTargetId }));
     const sa2 = (await stats()).rooms[room]!.clients.find((x) => x.name === "ALPHA")!;
     check("DEBT CLEARED: killing the file you owe fires the banner and sting, credits +5 Wakelight once, and clears the Debt on the file", !!cleared && cleared.credit === 5 && !cleared.capped && /DEBT CLEARED/.test(dc.r.debtText) && (dc.audio["debtCleared"] ?? 0) >= 1 && dc.debt === -1 && sa2.identity.debt === null && sa2.identity.wakelight === 5, `${cleared ? `credit ${cleared.credit} capped ${cleared.capped}` : "not cleared"} · banner "${dc.r.debtText}" · file debt ${sa2.identity.debt} · wakelight ${sa2.identity.wakelight}`);

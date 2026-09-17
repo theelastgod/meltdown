@@ -131,8 +131,23 @@ async function main(): Promise<void> {
     });
     await nextFrame(pg);
     const ads = await pg.evaluate(() => window.__game.view());
-    check("aiming down sights brings the camera in over the shoulder", ads.third && ads.distance < 1.6 && ads.distance > 0.9, `distance ${ads.distance.toFixed(2)} while aiming`);
-    results["ads"] = ads;
+    // compared with the hip-fired framing from the same spot and the same aim, not against a number:
+    // where the ground is behind the camera at that pitch is the yard's business, and a floor that
+    // pulls it in further is the camera doing its job (CI read 0.75 where this machine read 0.92)
+    await pg.evaluate(() => {
+      window.__game.setBot([{ kind: "hold", ticks: 6000 }]);
+      window.__game.advance(60);
+    });
+    await pg.evaluate(async () => {
+      for (let i = 0; i < 120; i++) {
+        window.__game.advance(1);
+        await new Promise((r) => requestAnimationFrame(r));
+        if (window.__game.view().distance > 2.4) return;
+      }
+    });
+    const hip = await pg.evaluate(() => window.__game.view());
+    check("aiming down sights brings the camera in over the shoulder", ads.third && ads.distance >= 0.45 && hip.distance - ads.distance > 0.8, `${ads.distance.toFixed(2)} m back while aiming, ${hip.distance.toFixed(2)} m from the hip at the same spot`);
+    results["ads"] = { ads, hip };
 
     // ---------------- the reticle marks what the shot hits ----------------
     await pg.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 6000 }]));
