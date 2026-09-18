@@ -6,6 +6,7 @@ import type { Dummy } from "@shared/sim/world";
 import type { FileView } from "../file";
 import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
+import { ammoRead } from "./ammo";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
 import { alertTop, rightBandWidth } from "./layout";
@@ -35,6 +36,7 @@ export class Hud {
 
   private reticleAt = { x: -1, y: -1 };
   private reticleArc = false;
+  private ammoState = "";
 
   /**
    * The reticle goes where the renderer says the eye's ray lands (Stage 60): the screen's centre in
@@ -105,7 +107,7 @@ export class Hud {
     this.root = root;
     root.innerHTML = `
       <div class="scan"></div>
-      <div class="xh"><i></i></div>
+      <div class="xh"><i></i><b class="rl"></b></div>
       <div class="hit"></div>
       <div class="dmg">${"<i></i>".repeat(HIT_MAX)}</div>
       <div class="thr">${"<i></i>".repeat(THREAT_MAX)}</div>
@@ -141,7 +143,7 @@ export class Hud {
       <div class="p mg prompt">▲ CLICK TO WAKE · <span style="color:var(--cy)">WASD</span> MOVE · <span style="color:var(--cy)">SHIFT</span> SPRINT · <span style="color:var(--cy)">CTRL</span> SLIDE · <span style="color:var(--cy)">SPACE</span> JUMP</div>
       <div class="p mg prompt-touch">▲ TAP TO WAKE · <span style="color:var(--cy)">LEFT</span> STICK MOVES · PUSH TO <span style="color:var(--cy)">SPRINT</span> · <span style="color:var(--cy)">RIGHT</span> DRAG AIMS</div>
 
-      <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="rack"></div><div class="nades"></div></div>
+      <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="hint">▼ RELOAD [R]</div><div class="rack"></div><div class="nades"></div></div>
       <div class="overlay flag">▲ FLAGGED — VANTAGE SEARCHLIGHT</div>
       <div class="overlay stun">STUNNED</div>
       <div class="emp"></div>
@@ -517,6 +519,22 @@ export class Hud {
     this.q(".ammobar").style.width = def.magSize ? `${(100 * ammo) / def.magSize}%` : "100%";
     this.q(".ammon").textContent = def.magSize === 0 ? "∞" : p.weapon.reloadTimer > 0 ? (p.weapon.reloadSeated ? String(ammo) : "--") : String(ammo);
     this.q(".mag").textContent = def.magSize === 0 ? "∞" : String(def.magSize);
+    // the magazine says where it is (Stage 100): amber on the last quarter, magenta and a prompt
+    // when it is empty, and the reload as a ring on the reticle rather than a dash in the corner
+    const read = ammoRead(ammo, def.magSize, p.weapon.reloadTimer, p.weapon.reloadTotal, p.weapon.reloadSeated);
+    if (read.state !== this.ammoState) {
+      this.ammoState = read.state;
+      const box = this.q(".ammo");
+      box.classList.toggle("low", read.state === "low");
+      box.classList.toggle("empty", read.state === "empty");
+      box.classList.toggle("reloading", read.state === "reloading");
+      this.q(".xh").classList.toggle("reloading", read.state === "reloading");
+    }
+    if (read.state === "reloading") {
+      const ring = this.q(".xh .rl");
+      ring.style.setProperty("--p", read.reloadFrac.toFixed(3));
+      ring.classList.toggle("seated", read.seated);
+    }
     this.q(".wname").textContent = def.name + (p.weapon.altActive ? (def.alt.kind === "slug" ? " · CHOKED" : def.alt.kind === "ads" ? " · OPTIC" : " · BRACED") : "") + (p.weapon.charging ? ` · CHARGE ${Math.round(p.weapon.charge * 100)}%` : "");
     if (this.rackKey !== p.weapon.slot + ":" + p.weapon.ammo.join(",")) {
       this.rackKey = p.weapon.slot + ":" + p.weapon.ammo.join(",");

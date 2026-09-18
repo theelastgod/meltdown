@@ -30,6 +30,7 @@ import { lookYawPitch } from "./render/feel";
 import { stepCues, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
 import { shotPass } from "./nearmiss";
+import { lastRoundsEdge } from "./hud/ammo";
 import { kernelIn, nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
@@ -1037,6 +1038,7 @@ export class Game {
   readonly heardShot = { n: 0, pan: 0, gain: 0, delay: 0, distance: 0 };
   /** the last round heard going past (Stage 99), for the probe: how many, which side, how close */
   readonly heardSnap = { n: 0, pan: 0, distance: 0 };
+  private ammoWatch = { slot: -1, ammo: 0 };
 
   /**
    * A shot somebody else fired, from `from` to `to`, that did not land on this file: if it came
@@ -1398,6 +1400,14 @@ export class Game {
       this.fpsWindow = { t: 0, frames: 0, ticks: this.stats.ticks };
     }
     this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt);
+    // the last quarter of the magazine is heard, once, on the round that crosses into it (Stage
+    // 100); a swap starts the count over on the new weapon rather than comparing across guns
+    {
+      const slot = p.weapon.slot;
+      const ammoNow = p.weapon.ammo[slot] ?? 0;
+      if (slot === this.ammoWatch.slot && lastRoundsEdge(this.ammoWatch.ammo, ammoNow, weaponDefOf(p).magSize)) this.audio.lowAmmo();
+      this.ammoWatch = { slot, ammo: ammoNow };
+    }
     // low health: the pulse until the shield is back (a real cue, not a HUD colour)
     const low = p.alive && p.health > 0 && p.health < 30;
     if (low || this.lowHealthOn) this.audio.lowHealth(low);

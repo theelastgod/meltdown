@@ -1641,6 +1641,43 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 100 — The magazine that ran out without a word
+
+**Goal.** The ammo count is a number in the bottom-right corner, and in a fight nobody is looking
+there. The first anyone knew of an empty magazine was the dry click, and the reload after it
+showed `--` in the corner for a second and a half with nothing to say how long was left — on a
+game whose reload has a seat point you can cancel from, which the count never showed either. The
+simulation keeps all of it: the round count, the reload timer and its total, whether the magazine
+is in. The HUD read one of the four.
+
+**What changed.**
+
+- **The corner says where the magazine is.** Amber on the last quarter, magenta with a blinking
+  `▼ RELOAD [R]` when it is empty and nothing is in flight; the bar goes amber with it.
+- **The reload is a ring on the reticle**, where the eyes are: it fills clockwise as the magazine
+  goes in, amber until the seat and cyan once the rest can be cancelled — the same seat the Stage 4
+  reload-cancel has always had, now visible. No canvas: a conic gradient under a ring mask, driven
+  by one custom property.
+- **The last quarter is heard, once**, on the round that crosses into it: two small ticks. Not on
+  every round under the line, not on a reload coming back up through it, and not on the empty
+  click, which is the dry fire's own. A magazine of one has no last quarter to warn about.
+- `client/hud/ammo.ts` is the rule — the low line, the four states, the reload fraction, the one
+  edge — pure and unit-tested; the HUD draws what it says and the game plays it.
+
+**Proof.** `probe:arsenal` 26/26, two new, read from the HUD's own classes and computed styles on
+drawn frames: an empty magazine with nothing in flight reads `ammo empty` with the prompt shown;
+nine rounds fired down to eight read `ammo low` with the cue heard once; firing the rest into the
+held-trigger reload, the ring is displayed at 0.00 and at 0.13 fifteen ticks later with the corner
+reading `--` under `ammo reloading`; two hundred and forty ticks on the ring is gone, the corner
+reads plain `ammo` at 30 rounds, and the cue is still at one. `tests/ammo.test.ts` 8. 674
+tests, build and typecheck clean.
+
+Two mutations, each failing only what it breaks. With the last quarter never read as low the
+corner stays plain `ammo` at eight rounds while the cue is still heard once and the ring check
+passes untouched — 25/26 — and one of the eight unit tests goes with it. With the crossing silenced
+the corner still goes `ammo low` and the ring still fills, and both checks fail on their cue
+clause alone, `cue ×0` — 24/26 — because both of them assert that the cue was heard exactly once.
+
 ## Stage 99 — The round that missed you
 
 **Goal.** The simulation has always known how close every shot came: `castRay` measures each

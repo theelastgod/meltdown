@@ -338,6 +338,54 @@ async function main(): Promise<void> {
     });
     check("a round past the right ear snaps once, on the right; one four metres wide and one that landed do not", pass.ear.n - pass.before === 1 && pass.ear.pan > 0.5 && pass.ear.distance < 0.6 && pass.wide === pass.ear.n && pass.landed === pass.ear.n && pass.guns === 3, `snaps ${pass.before} → ${pass.ear.n} past the ear (pan ${pass.ear.pan.toFixed(2)}, ${pass.ear.distance.toFixed(2)} m) → ${pass.wide} wide → ${pass.landed} landed · ${pass.guns} guns heard · yaw ${pass.yaw.toFixed(2)}`);
 
+    // Stage 100: the magazine that ran out without a word. The count is a number in the corner
+    // nobody looks at in a fight; the first tell of an empty magazine was the dry click, and the
+    // reload after it was a dash. Read on drawn frames, from the HUD's own classes and styles.
+    const mag = await page.evaluate(async () => {
+      const g = window.__game.game;
+      const p = g.player;
+      p.pos.x = 0; p.pos.y = 1.2; p.pos.z = -4.5;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      const box = document.querySelector("#hud .ammo") as HTMLElement;
+      const xh = document.querySelector("#hud .xh") as HTMLElement;
+      const ring = document.querySelector("#hud .xh .rl") as HTMLElement;
+      const hint = document.querySelector("#hud .ammo .hint") as HTMLElement;
+      // an empty magazine, nothing in flight, the trigger not held: the corner says so
+      window.__game.setBot([{ kind: "slot", slot: 1 }, { kind: "hold", ticks: 20 }]);
+      window.__game.advance(5);
+      p.weapon.ammo[1] = 0;
+      p.weapon.reloadTimer = 0;
+      p.weapon.reloadSeated = false;
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const empty = { cls: box.className, hint: getComputedStyle(hint).display, ammo: p.weapon.ammo[1] };
+      // nine rounds: one over the line. Fire a few, into the street ahead
+      const cues0 = window.__game.state().audio["lowAmmo"] ?? 0;
+      p.weapon.ammo[1] = 9;
+      // let a frame see the nine: the edge is read frame to frame, and the watch last saw the
+      // empty magazine above — a jump from 0 to 8 is a reload's direction, not a crossing
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      window.__game.setBot([{ kind: "fire", ticks: 36, aimAt: { x: p.pos.x, y: 1.4, z: p.pos.z - 12 } }, { kind: "hold", ticks: 600 }]);
+      window.__game.advance(40);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const low = { cls: box.className, ammo: p.weapon.ammo[1], cues: (window.__game.state().audio["lowAmmo"] ?? 0) - cues0 };
+      // and the rest, into the dry click and the reload the held trigger starts: the ring on the
+      // reticle, read twice fifteen ticks apart
+      window.__game.setBot([{ kind: "fire", ticks: 90, aimAt: { x: p.pos.x, y: 1.4, z: p.pos.z - 12 } }, { kind: "hold", ticks: 600 }]);
+      let t = 0;
+      while (p.weapon.reloadTimer <= 0 && t < 200) { window.__game.advance(1); t++; }
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const r0 = { on: xh.classList.contains("reloading"), disp: getComputedStyle(ring).display, p: parseFloat(getComputedStyle(ring).getPropertyValue("--p")) || 0, cls: box.className, text: (document.querySelector("#hud .ammon") as HTMLElement).textContent ?? "" };
+      window.__game.advance(15);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const r1 = { on: xh.classList.contains("reloading"), p: parseFloat(getComputedStyle(ring).getPropertyValue("--p")) || 0 };
+      window.__game.advance(240);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const done = { on: xh.classList.contains("reloading"), disp: getComputedStyle(ring).display, cls: box.className, ammo: p.weapon.ammo[1], cues: (window.__game.state().audio["lowAmmo"] ?? 0) - cues0 };
+      return { empty, low, ticksToReload: t, r0, r1, done };
+    });
+    check("an empty magazine says so in the corner, and the last quarter turns it amber with one cue on the round that crossed the line", /\bempty\b/.test(mag.empty.cls) && mag.empty.hint !== "none" && /\blow\b/.test(mag.low.cls) && mag.low.ammo > 0 && mag.low.ammo <= 8 && mag.low.cues === 1, `empty: "${mag.empty.cls}" · prompt ${mag.empty.hint} · after firing from 9: ${mag.low.ammo} rounds, "${mag.low.cls}", cue ×${mag.low.cues}`);
+    check("and the reload is a ring on the reticle that fills, then goes: the corner reads whole again and the cue stayed at one", mag.r0.on && mag.r0.disp !== "none" && mag.r1.on && mag.r1.p > mag.r0.p && /\breloading\b/.test(mag.r0.cls) && !mag.done.on && mag.done.disp === "none" && !/\b(low|empty|reloading)\b/.test(mag.done.cls) && mag.done.ammo === 30 && mag.done.cues === 1, `reload began ${mag.ticksToReload} ticks in · ring ${mag.r0.disp} at ${mag.r0.p.toFixed(2)} → ${mag.r1.p.toFixed(2)} fifteen ticks later ("${mag.r0.text}", "${mag.r0.cls}") · after: ring ${mag.done.disp}, "${mag.done.cls}", ${mag.done.ammo} rounds, cue ×${mag.done.cues}`);
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
 
     writeFileSync(`${OUT}/stage4.json`, JSON.stringify({ ttk: table, shots, hits, kills, explosions: explosions.length, captures, audio: state.audio, checks }, null, 2));
