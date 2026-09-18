@@ -4,6 +4,7 @@ import { GRENADE_LIST, WEAPON_LIST } from "@shared/weapons/manifest";
 import type { Dummy } from "@shared/sim/world";
 import type { FileView } from "../file";
 import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
+import { HIT_MAX, type HitMark } from "./damage";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
 export class Hud {
@@ -41,11 +42,35 @@ export class Hud {
     xh.style.opacity = r.visible ? "1" : "0";
   }
 
+  /**
+   * The wedges that say where a hit came from (Stage 74). Third person widened what is visible and
+   * did nothing for what is not: half the street is still behind the camera, and a shot from it used
+   * to be a sound and a number on a bar. Each wedge is rotated to its bearing and faded by its age;
+   * the maths is `client/hud/damage.ts` and this only draws it.
+   */
+  setDamage(marks: readonly HitMark[]): void {
+    const wedges = this.dmgWedges;
+    for (let i = 0; i < wedges.length; i++) {
+      const m = marks[i];
+      const w = wedges[i]!;
+      if (!m) {
+        if (w.style.opacity !== "0") w.style.opacity = "0";
+        continue;
+      }
+      // a heavier hit is a wider, brighter wedge; the rotation is the bearing, clockwise from ahead
+      w.style.transform = `rotate(${m.angle}rad)`;
+      w.style.opacity = String(Math.min(1, m.alpha * 0.9));
+      w.style.setProperty("--w", `${Math.min(34, 12 + m.damage * 0.5)}deg`);
+    }
+  }
+  private readonly dmgWedges: HTMLElement[] = [];
+
   constructor(root: HTMLElement) {
     root.innerHTML = `
       <div class="scan"></div>
       <div class="xh"><i></i></div>
       <div class="hit"></div>
+      <div class="dmg">${"<i></i>".repeat(HIT_MAX)}</div>
       <div class="stamp">KILL CONFIRMED</div>
       <div class="tear"></div>
 
@@ -91,6 +116,7 @@ export class Hud {
     `;
     this.q = (s) => root.querySelector(s) as HTMLElement;
     this.radar = (root.querySelector(".map canvas") as HTMLCanvasElement).getContext("2d")!;
+    this.dmgWedges.push(...Array.from(root.querySelectorAll<HTMLElement>(".dmg i")));
   }
 
   /** Zone label, mission title, radar scale, and the MAP tab's district list. */

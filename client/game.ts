@@ -19,6 +19,7 @@ import { TouchControls, wantsTouch } from "./touch";
 import { PerfMonitor } from "./perf";
 import { Renderer, type ViewState } from "./render/renderer";
 import type { AimTarget } from "./render/tps";
+import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
 import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
@@ -506,6 +507,9 @@ export class Game {
             if (ev.playerId === me) {
               this.audio.hurt();
               this.hud.alert(`▲ INTEGRITY −${ev.a}`, true, 0.8);
+              // the hurt effect carries the attacker's position (Stage 74); all zeros means the room
+              // could not name one — a fall, a hazard — and there is no direction to point at
+              if (ev.x !== 0 || ev.y !== 0 || ev.z !== 0) this.tookHit(ev.x, ev.z, ev.a);
             }
             break;
           case FX.waspDeath:
@@ -739,6 +743,35 @@ export class Game {
     this.hud.setRun(v ? { carried: v.carried, banked: v.banked, banking: v.banking, inSafe: v.inSafe, zone: v.zone, today: v.today, cap: v.cap, owed: v.owed, claims: v.claims.length } : null);
   }
 
+  /** the hits taken lately, for the HUD's bearings (Stage 74) */
+  private hits: HitSource[] = [];
+
+  /** where whatever hurt us was standing: a player, a dummy, a wasp, a mech */
+  private attackerAt(by: number): { x: number; z: number } | null {
+    if (by === this.player.id) return null;
+    const w = this.world;
+    const p = w.players.get(by);
+    if (p) return { x: p.pos.x, z: p.pos.z };
+    const d = w.dummies.find((x) => x.id === by);
+    if (d) return { x: d.pos.x, z: d.pos.z };
+    const wasp = w.wasps.find((x) => x.id === -by || x.id === by);
+    if (wasp) return { x: wasp.pos.x, z: wasp.pos.z };
+    const m = w.mechs.find((x) => x.id === -by || x.id === by);
+    if (m) return { x: m.pos.x, z: m.pos.z };
+    return null;
+  }
+
+  /**
+   * A hit landed: remember where it came from, so the HUD can point at it, and shove the body away
+   * from it. The bearing here is the sim's yaw of the direction back toward the attacker; the HUD's
+   * own screen bearing is `damage.ts`'s, which is the negation.
+   */
+  private tookHit(x: number, z: number, damage: number): void {
+    this.hits.push({ x, z, at: this.renderer.clockNow, damage });
+    this.hits = pruneHits(this.hits, this.renderer.clockNow);
+    this.renderer.takeHit(Math.atan2(-(x - this.player.pos.x), -(z - this.player.pos.z)), Math.min(1, 0.35 + damage / 60));
+  }
+
   /**
    * The bodies a shot from here could hit, in the terms the sim's hitscan tests them: the reticle
    * is cast against these as well as the level, so what it covers is what the shot hits rather than
@@ -890,6 +923,8 @@ export class Game {
         if (ev.playerId === this.player.id) {
           this.audio.hurt();
           this.hud.alert(`▲ INTEGRITY −${ev.damage}`, true, 0.8);
+          const from = this.attackerAt(ev.by);
+          if (from) this.tookHit(from.x, from.z, ev.damage);
         }
         break;
       case "swap":
@@ -1088,6 +1123,8 @@ export class Game {
     }
     this.renderer.render(view, rdt);
     this.hud.setReticle(this.renderer.view().reticle);
+    // and where the last hits came from, relative to where the camera is looking now
+    this.hud.setDamage(hitMarks(this.hits, p.pos.x, p.pos.z, view.yaw, this.renderer.clockNow));
     if (this.renderer.life.tram?.passing) this.audio.tram();
     this.stats.frames++;
     this.fpsWindow.frames++;

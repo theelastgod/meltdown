@@ -9,7 +9,7 @@ import { applyPose, BONE, buildRig, cloakGeometry, REST_BONES, rigReport, trimGe
 import { createPoseState, poseBody, type PoseInput } from "../client/render/pose";
 import { MOVE } from "../shared/sim/constants";
 
-const base = (over: Partial<PoseInput> = {}): PoseInput => ({ speed: 0, moveYaw: 0, yaw: 0, pitch: 0, vy: 0, turnRate: 0, grounded: true, stance: "stand", height: 1.8, reloading: 0, ads: 0, kick: 0, swap: 0, charge: 0, alive: true, stunned: false, clock: 0, phase: 0, ...over });
+const base = (over: Partial<PoseInput> = {}): PoseInput => ({ speed: 0, moveYaw: 0, yaw: 0, pitch: 0, vy: 0, turnRate: 0, grounded: true, stance: "stand", height: 1.8, reloading: 0, ads: 0, kick: 0, swap: 0, charge: 0, hurt: 0, hurtFrom: 0, alive: true, stunned: false, clock: 0, phase: 0, ...over });
 
 describe("the rig", () => {
   it("has ten bones at the rest table, in index order, with the socket at the root", () => {

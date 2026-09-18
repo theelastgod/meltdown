@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { CORPSE_SECONDS, createPoseState, GRIP_R, nearestOnSegment, poseBody, REST, twoBoneIK, type PoseInput } from "../client/render/pose";
 import { dist, len, sub, v3 } from "../shared/math/vec3";
 
-const base = (over: Partial<PoseInput> = {}): PoseInput => ({ speed: 0, moveYaw: 0, yaw: 0, pitch: 0, vy: 0, turnRate: 0, grounded: true, stance: "stand", height: 1.8, reloading: 0, ads: 0, kick: 0, swap: 0, charge: 0, alive: true, stunned: false, clock: 0, phase: 0, ...over });
+const base = (over: Partial<PoseInput> = {}): PoseInput => ({ speed: 0, moveYaw: 0, yaw: 0, pitch: 0, vy: 0, turnRate: 0, grounded: true, stance: "stand", height: 1.8, reloading: 0, ads: 0, kick: 0, swap: 0, charge: 0, hurt: 0, hurtFrom: 0, alive: true, stunned: false, clock: 0, phase: 0, ...over });
 /** run the pose to rest on an input: enough frames for every ease to settle */
 const settle = (inp: PoseInput, frames = 120, st = createPoseState()) => {
   let out = poseBody(inp, st, 1 / 60);
@@ -239,5 +239,24 @@ describe("the arm", () => {
     const still1 = poseBody(base({ charge: 0, clock: 5 }), st, 1 / 60);
     const still2 = poseBody(base({ charge: 0, clock: 5 + 0.026 }), st, 1 / 60);
     expect(Math.abs(still1.socket.z - still2.socket.z)).toBeLessThan(0.0005);
+  });
+
+  it("a hit throws the chest away from whatever landed it, and the body recovers", () => {
+    const st = createPoseState();
+    let rest = poseBody(base(), st, 1 / 60);
+    for (let i = 0; i < 60; i++) rest = poseBody(base({ clock: i / 60 }), st, 1 / 60);
+    // from straight ahead: the chest goes back
+    const front = poseBody(base({ hurt: 1, hurtFrom: 0, clock: 2 }), st, 1 / 60);
+    expect(front.chest.rx).toBeGreaterThan(rest.chest.rx + 0.15);
+    expect(Math.abs(front.chest.ry - rest.chest.ry)).toBeLessThan(0.02);
+    // from the right: the shoulder swings, and the other way for a hit from the left
+    const right = poseBody(base({ hurt: 1, hurtFrom: Math.PI / 2, clock: 2 }), st, 1 / 60);
+    const left = poseBody(base({ hurt: 1, hurtFrom: -Math.PI / 2, clock: 2 }), st, 1 / 60);
+    expect(Math.sign(right.chest.ry - rest.chest.ry)).toBe(-Math.sign(left.chest.ry - rest.chest.ry));
+    expect(Math.abs(right.chest.ry - rest.chest.ry)).toBeGreaterThan(0.2);
+    // and with the flinch spent the body is where it was
+    const done = poseBody(base({ hurt: 0, clock: 3 }), st, 1 / 60);
+    expect(done.chest.rx).toBeCloseTo(rest.chest.rx, 3);
+    expect(done.chest.ry).toBeCloseTo(rest.chest.ry, 3);
   });
 });

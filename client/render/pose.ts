@@ -36,6 +36,10 @@ export interface PoseInput {
   swap: number;
   /** 0..1 while a charged shot builds: the weapon shakes with it */
   charge: number;
+  /** 0..1, a hit just landed: the body takes it and recovers */
+  hurt: number;
+  /** where the hit came from, as a bearing relative to the body's facing (radians) */
+  hurtFrom: number;
   alive: boolean;
   stunned: boolean;
   /** seconds */
@@ -339,10 +343,15 @@ export function poseBody(inp: PoseInput, st: PoseState, rawDt: number): PoseOut 
   const kick = clamp(inp.kick, 0, 1);
   const shakeZ = Math.sin(inp.clock * 60) * 0.012 * charge;
   const shakeX = Math.cos(inp.clock * 47) * 0.006 * charge;
+  // a hit shoves the chest away from whatever landed it, unblended: a flinch that eases in is not a
+  // flinch. The bearing is relative to the facing, so a shot from the left throws the shoulder right
+  const hurt = clamp(inp.hurt, 0, 1);
+  const hurtRx = Math.cos(inp.hurtFrom) * 0.22 * hurt;
+  const hurtRy = -Math.sin(inp.hurtFrom) * 0.3 * hurt;
   return {
     hips: { y: hipsOut, rx: st.hipsRx },
-    chest: { rx: st.chestRx + 0.02 * kick, ry: st.chestRy },
-    head: { rx: st.headRx },
+    chest: { rx: st.chestRx + 0.02 * kick + hurtRx, ry: st.chestRy + hurtRy },
+    head: { rx: st.headRx + hurtRx * 0.5 },
     legL: { rx: legLrxOut, ry: legRyL, sy: st.legSyL * (1 - 0.1 * land) },
     legR: { rx: legRrx, ry: legRyR, sy: st.legSyR * (1 - 0.1 * land) },
     socket: { x: st.socketX + shakeX, y: st.socketY, z: st.socketZ + 0.05 * kick + shakeZ, rx: inp.pitch + st.socketCarry },

@@ -1160,7 +1160,12 @@ export class Room {
       case "mechBeam":
         return { type: "fx", kind: FX.mechBeam, playerId: ev.playerId, x: ev.to.x, y: ev.to.y, z: ev.to.z, a: ev.mechId, b: ev.damage };
       case "hurt":
-        return { type: "fx", kind: FX.hurt, playerId: ev.playerId, x: 0, y: 0, z: 0, a: Math.min(255, ev.damage), b: ev.kind === "shot" ? 0 : ev.kind === "explosion" ? 1 : ev.kind === "melee" ? 2 : 3 };
+        {
+          // the hurt effect's position fields were zeros on the wire; they carry the attacker now, so
+          // a client can say which way a shot came from without a new message (Stage 74)
+          const src = this.world.players.get(ev.by)?.pos ?? this.world.dummies.find((d) => d.id === ev.by)?.pos ?? this.world.wasps.find((w) => w.id === -ev.by || w.id === ev.by)?.pos ?? this.world.mechs.find((m) => m.id === -ev.by || m.id === ev.by)?.pos ?? null;
+          return { type: "fx", kind: FX.hurt, playerId: ev.playerId, x: src?.x ?? 0, y: src?.y ?? 0, z: src?.z ?? 0, a: Math.min(255, ev.damage), b: ev.kind === "shot" ? 0 : ev.kind === "explosion" ? 1 : ev.kind === "melee" ? 2 : 3 };
+        }
       case "waspDeath":
         return { type: "fx", kind: FX.waspDeath, playerId: pid(ev.playerId), x: 0, y: 0, z: 0, a: ev.waspId, b: 0 };
       case "mechDeath":

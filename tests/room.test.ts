@@ -9,7 +9,7 @@ import { devSeed, MemoryAccountStore } from "../server/accounts";
 import type { Account } from "../shared/progression/account";
 import { contractsFor } from "../shared/endgame/contracts";
 import { dayIndex } from "../shared/endgame/clock";
-import { decodeServerMessage, encodeJoin, PROTOCOL_VERSION } from "../shared/net/protocol";
+import { decodeServerMessage, encodeJoin, FX, PROTOCOL_VERSION } from "../shared/net/protocol";
 import { SIM_HZ } from "../shared/sim/constants";
 import { readFileSync } from "node:fs";
 import { SCHEMA } from "../server/schema";
@@ -151,6 +151,34 @@ describe("room — settlement", () => {
     expect(settle.xp).toBe(alpha.xp);
     const settleB = b.file().find((f) => f.file.reason === "settle")!.file;
     expect(settleB.ledger[0]).toMatch(/LEASED/);
+  });
+});
+
+describe("room — a hit says where it came from", () => {
+  it("the hurt effect carries the attacker's position on the wire, so a client can point at it", () => {
+    const room = new Room({ ai: false, seed: 5, level: "drainage_yard", warmupSeconds: 0, roundSeconds: 60 });
+    join(room, "ALPHA", "fresh-alpha", { primary: "lease_breaker", secondary: "shock_baton", attested: [] });
+    const b = join(room, "BRAVO", "fresh-bravo", { primary: "lease_breaker", secondary: "shock_baton", attested: [] });
+    const pa = room.world.players.get(1)!;
+    const pb = room.world.players.get(2)!;
+    pa.pos.x = -12.5;
+    pa.pos.z = 8.25;
+    pb.pos.x = 4;
+    pb.pos.z = -3;
+    for (let t = 0; t < 4; t++) room.step(); // past warmup, so damage lands
+    const before = pb.health + pb.shield; // the shield takes a hit before the health does
+    room.world.applyDamage("player", pb.id, 20, pa.id, "lease_breaker", "shot");
+    expect(pb.health + pb.shield).toBe(before - 20);
+    for (let t = 0; t < 6; t++) room.step(); // snapshots do not go out every tick
+    const hurt = b.msgs
+      .filter((m) => m?.type === "snapshot")
+      .flatMap((m) => (m as { snapshot: { events: { type: string; kind?: number; playerId: number; x: number; z: number; a: number }[] } }).snapshot.events)
+      .find((e) => e.type === "fx" && e.kind === FX.hurt && e.playerId === pb.id)!;
+    expect(hurt).toBeTruthy();
+    // 1 cm quantisation on the wire, which is far finer than a bearing needs
+    expect(hurt.x).toBeCloseTo(pa.pos.x, 1);
+    expect(hurt.z).toBeCloseTo(pa.pos.z, 1);
+    expect(hurt.a).toBe(20);
   });
 });
 

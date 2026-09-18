@@ -1641,6 +1641,39 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 74 — Getting shot has a direction
+
+**Goal.** Look at the real frames rather than the checks. Taking a hit produced a sound, a red
+number on the integrity bar and nothing else: no way to know which way to turn. Third person widened
+what is visible and did nothing at all for what is not — half the street is still behind the camera,
+and being shot from it was a guess.
+
+**What changed.**
+
+- **A hit is a bearing, and the HUD draws it.** Four wedges on a ring around the reticle, each
+  rotated to where the shot came from relative to where the camera is looking, faded over 1.4 s and
+  widened by how hard the hit landed. They are CSS arcs — a conic gradient through a radial mask —
+  so the indicator costs no draw call and nothing in the frame budget. The maths is
+  `client/hud/damage.ts`, pure and three-free; the HUD only draws the answer, and the bearing is
+  recomputed every frame against the live look, so turning toward a shooter walks the wedge to the
+  top of the ring.
+- **The wire carries the attacker.** The hurt effect's position fields had been three zeros since
+  the protocol was written. They carry the attacker's position now — a player, a dummy, a wasp, a
+  mech — with no change to the message's shape or size. All zeros still means the room could not
+  name a source, a fall or a hazard, and there is no direction to point at.
+- **The body flinches away from it.** The pose takes `hurt` and `hurtFrom` and shoves the chest and
+  head back, unblended, swinging the shoulder away from the bearing: a flinch that eases in is not a
+  flinch. It decays over about a third of a second, and the rest pose is exactly where it was.
+
+**Proof.** `probe:tps` 19/19 (one new: a wedge points at whatever hit the player, from behind and
+from the right, at two different facings, with `stage60-hit.png` as its artifact), `probe:body`
+20/20, `probe:net` 16/16, `probe:identity` 25/25, `probe:mobile` 14/14, `probe:frame` 6/6,
+`probe:look` 18/18, `smoke` 7/7, 540 tests, build and typecheck clean. Six guards mutation-checked:
+the bearing negated (the screen and the sim run opposite ways round), the fade removed, the cap
+removed, the flinch's swing removed, the flinch left permanently on, and the wire's attacker
+position put back to zeros — each fails the check that claims it. The HUD wiring is mutation-checked
+through the probe: with `setDamage` unwired, the wedge check reports none.
+
 ## Stage 73 — The reticle the mouse is holding
 
 **Goal.** A fresh adversarial review of the camera and presentation work (five lenses, three

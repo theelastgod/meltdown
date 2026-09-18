@@ -348,6 +348,50 @@ async function main(): Promise<void> {
     const toStale = Math.hypot(flick.reticle.x - flick.stale.x, flick.reticle.y - flick.stale.y);
     check("with the pointer locked the reticle follows the live look, not the tick the sim last ran", flick.drift > 0.1 && toLive < 3 && toStale > 20, `the sim is ${flick.drift.toFixed(2)} rad behind the mouse · reticle ${toLive.toFixed(1)} px from the live ray, ${toStale.toFixed(1)} px from the sim's`);
 
+    // ---------------- a hit has a direction ----------------
+    // Third person widened what is visible and did nothing for what is not: half the street is still
+    // behind the camera. A shot from it used to be a sound and a number on a bar (Stage 74).
+    const shots = await pg.evaluate(async () => {
+      const g = window.__game.game;
+      const p = g.player;
+      window.__game.setRealtime(false);
+      window.__game.setBot([{ kind: "look", yaw: 0, pitch: 0, ticks: 5 }, { kind: "hold", ticks: 6000 }]);
+      window.__game.advance(20);
+      const d = g.world.dummies.find((x) => x.id !== p.id)!;
+      const out: { op: number; rot: number }[][] = [];
+      const wants: number[] = [];
+      // the dummies patrol, so the player moves rather than the attacker: stand so that the dummy is
+      // squarely behind, then squarely to the right, and let it shoot from where it actually is
+      for (const spot of [{ x: d.pos.x, z: d.pos.z - 9 }, { x: d.pos.x - 9, z: d.pos.z }]) {
+        p.pos.x = spot.x;
+        p.pos.z = spot.z;
+        p.vel.x = p.vel.y = p.vel.z = 0;
+        window.__game.advance(2);
+        g.world.applyDamage("player", p.id, 20, d.id, "lease_breaker", "shot");
+        window.__game.advance(1);
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const marks: { op: number; rot: number }[] = [];
+        for (const el of Array.from(document.querySelectorAll<HTMLElement>("#hud .dmg i"))) {
+          const op = Number(el.style.opacity || "0");
+          const m = /rotate\(([-0-9.]+)rad\)/.exec(el.style.transform);
+          if (op > 0.05 && m) marks.push({ op, rot: Number(m[1]) });
+        }
+        // the bearing the wedge should carry: from where the attacker is now, at the yaw held now
+        const yaw = window.__game.state().yaw;
+        let want = yaw - Math.atan2(-(d.pos.x - p.pos.x), -(d.pos.z - p.pos.z));
+        while (want > Math.PI) want -= Math.PI * 2;
+        while (want < -Math.PI) want += Math.PI * 2;
+        out.push(marks);
+        wants.push(want);
+      }
+      return { behind: out[0]!, right: out[1]!, wantBehind: wants[0]!, wantRight: wants[1]!, yaw: window.__game.state().yaw };
+    });
+    const behindA = shots.behind[0]?.rot ?? 0;
+    const rightA = shots.right[0]?.rot ?? 0;
+    const angleGap = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+    check("a wedge points at whatever hit the player, from behind and from the right, whichever way the file is facing", shots.behind.length >= 1 && angleGap(behindA, shots.wantBehind) < 0.15 && shots.right.length >= 2 && angleGap(rightA, shots.wantRight) < 0.15, `facing ${shots.yaw.toFixed(2)} rad · from behind: ${shots.behind.length} wedge(s), newest at ${behindA.toFixed(2)} for a bearing of ${shots.wantBehind.toFixed(2)} · from the right: ${shots.right.length} wedge(s), newest at ${rightA.toFixed(2)} for ${shots.wantRight.toFixed(2)}`);
+    await shotCheck(pg, "stage60-hit.png");
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     writeFileSync(`${OUT}/stage60.json`, JSON.stringify({ results, checks }, null, 2));
     const failed = checks.filter((c) => !c.pass);
