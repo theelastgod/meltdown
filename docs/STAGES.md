@@ -1641,6 +1641,36 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 79 — The camera has a body
+
+**Goal.** Keep looking at the frames. The legs have compressed on landing since Stage 63 and the
+camera took none of it: a drop off the gantry ended with the view perfectly level, which reads as the
+ground arriving rather than the file arriving. And the slide — which rolls the first-person view by a
+fixed amount the moment it starts, and snaps it back the moment it ends — rolled the camera behind
+the body not at all.
+
+**What changed.**
+
+- **A landing lands.** `client/render/feel.ts` is the rule: how hard the touchdown was, from the
+  downward speed on the frame *before* it (on the frame itself the simulation has already stopped
+  the file), and the shape of the dip — twenty per cent of it down, the rest standing back up, zero
+  at both ends, twenty-two centimetres at the hardest. A jump on the flat is worth about a third of
+  that; a step off a kerb is worth nothing, which is the point: a camera that lurched every time the
+  file left a kerb would be worse than one that never moved.
+- **Both views take it**, and the camera behind the body leans into a slide the way the eye always
+  did — eased in and out now, rather than snapping on with the stance.
+- The reticle is projected through the camera *after* all of it, so the mark stays on the ray it
+  claims through the whole dip.
+
+**Proof.** `probe:tps` 29/29 — three new: a nine-metre drop puts 0.149 m in the camera (0.059 m
+below the anchor the shoulder cast put it on) and is level again ten frames later; a 0.35 m step puts
+0.000 m in it; a slide leans the view 0.050 rad across ninety frames and comes back level.
+`tests/feel.test.ts` 6 on the rules themselves. `probe:body` 20/20, `probe:look` 18/18, `probe:city`
+45/45, `probe:cityLife` 19/19, `probe:frame` 6/6, `probe:mobile` 14/14, `probe:crawl` 10/10, `smoke`
+7/7, 558 tests, build and typecheck clean. Three guards mutation-checked: the dip removed (0.000 m
+on the drop), the lean removed (0.000 rad through ninety frames of sliding), and the floor dropped to
+zero — which makes the kerb a landing and fails the check that says it is not.
+
 ## Stage 78 — The round that falls
 
 **Goal.** The last item from the camera review's deferred list, and the one a player meets every time

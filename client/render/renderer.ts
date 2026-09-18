@@ -26,6 +26,7 @@ import { poseBody, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import { arcPoint, type ArcSpec } from "./ballistic";
+import { landDip, landHardness, LAND_TIME, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
 
 /** Interpolated view state handed to the renderer each frame. */
@@ -102,6 +103,9 @@ export interface CameraView {
   anchor: { x: number; y: number; z: number };
   /** the lens this frame was drawn with, in degrees: speed widens it (Stage 77) */
   fov: number;
+  /** how far the landing has the camera down, in metres, and the lean of a slide (Stage 79) */
+  dip: number;
+  roll: number;
 }
 
 /** Layer for things the wet-floor mirror must not see (rain, far skyline): cheaper and no blown-out sky. */
@@ -169,7 +173,7 @@ export class Renderer {
   private camSmooth = { d: TPS_DEFAULT.distance, x: 0, y: 0, z: 0, set: false };
   /** the eased shoulder offset: pulling in against a wall beside the player is immediate, sliding back out is not */
   private shoulderSmooth = 0;
-  private lastView: CameraView = { third: true, fov: 80, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false, arc: false, point: { x: 0, y: 0, z: 0 } } };
+  private lastView: CameraView = { third: true, fov: 80, dip: 0, roll: 0, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false, arc: false, point: { x: 0, y: 0, z: 0 } } };
   private tmpProj = new THREE.Vector3();
   private vmSlot = 1;
   private vmSwap = 0;
@@ -227,6 +231,14 @@ export class Renderer {
   private fovNow = 80;
   /** the speed the lens is carrying, in degrees (Stage 77) */
   private fovPush = 0;
+  /** the landing the camera is still taking, and the lean of a slide (Stage 79) */
+  private landT = 0;
+  private landHard = 0;
+  private fallSpeed = 0;
+  private wasAir = false;
+  private lastY: number | null = null;
+  private rollNow = 0;
+  private dipNow = 0;
   private vmKick = 0;
   private eyeSmooth = MOVE.eyeStand;
   /** the warm-up sprite's material, kept alive so its program stays in the cache (Stage 63) */
@@ -739,7 +751,7 @@ export class Renderer {
     const anchor = { x: pivot.x + (cam.anchor.x - pivot.x) * s, y: pivot.y + (cam.anchor.y - pivot.y) * s, z: pivot.z + (cam.anchor.z - pivot.z) * s };
     const ax = anchor.x + cam.dir.x * this.camSmooth.d, ay = anchor.y + cam.dir.y * this.camSmooth.d + bobY * 0.4, az = anchor.z + cam.dir.z * this.camSmooth.d;
     this.camera.position.set(ax, ay, az);
-    this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, v.stunned ? Math.sin(this.clock * 25) * 0.02 : 0);
+    this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, this.rollNow + (v.stunned ? Math.sin(this.clock * 25) * 0.02 : 0));
     // the body
     const g = this.local.group;
     const close = this.camSmooth.d < 0.9;
@@ -763,7 +775,7 @@ export class Renderer {
     const visible = this.tmpProj.z < 1 && Math.abs(this.tmpProj.x) <= 1.2 && Math.abs(this.tmpProj.y) <= 1.2;
     const rx = (this.tmpProj.x + 1) * 0.5 * window.innerWidth;
     const ry = (1 - this.tmpProj.y) * 0.5 * window.innerHeight;
-    this.lastView = { third: true, fov: this.camera.fov, anchor: { x: anchor.x, y: anchor.y, z: anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget, arc: !!v.arc, point: { x: aim.point.x, y: aim.point.y, z: aim.point.z } } };
+    this.lastView = { third: true, fov: this.camera.fov, dip: this.dipNow, roll: this.rollNow, anchor: { x: anchor.x, y: anchor.y, z: anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget, arc: !!v.arc, point: { x: aim.point.x, y: aim.point.y, z: aim.point.z } } };
   }
 
   render(v: ViewState, rawDt: number): void {
@@ -777,6 +789,24 @@ export class Renderer {
     const bobX = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase) * 0.008 * Math.min(1, v.speed / 5) : 0;
     this.vmKick = Math.max(0, this.vmKick - dt * 14);
     this.hurtT = Math.max(0, this.hurtT - dt * 3.5);
+    // the camera takes the landing the legs have been taking since Stage 63. The fall speed is the
+    // frame before touchdown, because on the frame itself the sim has already stopped the file
+    // (Stage 79)
+    const fell = this.lastY === null ? 0 : (v.y - this.lastY) / Math.max(1e-4, dt);
+    if (v.grounded && this.wasAir && v.alive) {
+      this.landHard = landHardness(this.fallSpeed);
+      this.landT = this.landHard > 0 ? LAND_TIME : 0;
+    }
+    if (!v.grounded) this.fallSpeed = fell;
+    this.wasAir = !v.grounded;
+    this.lastY = v.y;
+    this.landT = Math.max(0, this.landT - dt);
+    const dip = this.landT > 0 ? landDip(this.landHard, LAND_TIME - this.landT) : 0;
+    this.dipNow = dip;
+    // and it leans into a slide in both views: the first-person one always did, by a fixed amount
+    // that snapped on and off; it eases now, and the camera behind the body does it too
+    const wantRoll = stanceRoll(v.stance);
+    this.rollNow += (wantRoll - this.rollNow) * Math.min(1, dt * (wantRoll > this.rollNow ? 12 : 7));
     // the ADS ease changes the projection, and the reticle is projected through it: move the lens
     // before the frame is placed, or for the half second of the zoom the reticle is drawn with the
     // previous frame's field of view and sits off the ray it claims to mark (Stage 66)
@@ -791,10 +821,10 @@ export class Renderer {
       this.camera.fov = this.fovNow;
       this.camera.updateProjectionMatrix();
     }
-    if (this.thirdPerson) this.placeThirdPerson(v, dt, bobY);
+    if (this.thirdPerson) this.placeThirdPerson(v, dt, bobY - dip);
     else {
-      this.camera.position.set(v.x, v.y + this.eyeSmooth + bobY, v.z);
-      this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, (v.stance === "slide" ? 0.03 : bobX * 0.6) + (v.stunned ? Math.sin(this.clock * 25) * 0.02 : 0));
+      this.camera.position.set(v.x, v.y + this.eyeSmooth + bobY - dip, v.z);
+      this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, this.rollNow + (this.rollNow > 0.005 ? 0 : bobX * 0.6) + (v.stunned ? Math.sin(this.clock * 25) * 0.02 : 0));
       this.local.group.visible = false;
       // the crosshair is the screen's centre in this view because the eye's ray is — but a
       // launcher's round falls here too, and leaving the mark at the centre would tell in one view
@@ -808,14 +838,14 @@ export class Renderer {
         mark = { x: (this.tmpProj.x + 1) * 0.5 * window.innerWidth, y: (1 - this.tmpProj.y) * 0.5 * window.innerHeight, visible: this.tmpProj.z < 1 && Math.abs(this.tmpProj.x) <= 1.2 && Math.abs(this.tmpProj.y) <= 1.2 };
         fired = { distance: a.distance, hit: a.hit, onTarget: a.onTarget, arc: true, point: { x: a.point.x, y: a.point.y, z: a.point.z } };
       }
-      this.lastView = { third: false, fov: this.camera.fov, anchor: { x: 0, y: 0, z: 0 }, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: mark, aim: fired };
+      this.lastView = { third: false, fov: this.camera.fov, dip: this.dipNow, roll: this.rollNow, anchor: { x: 0, y: 0, z: 0 }, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: mark, aim: fired };
     }
     // the viewmodel is the first-person weapon; behind the body the hand holds it instead
     this.viewmodel.visible = !this.thirdPerson;
 
-    const dip = v.reloading > 0 ? Math.sin(v.reloading * Math.PI) * 0.18 : 0;
-    this.viewmodel.position.set(0.28 + bobX * 0.5, -0.26 - dip + bobY * 0.5, -0.55 + this.vmKick * 0.06);
-    this.viewmodel.rotation.x = this.vmKick * 0.08 - dip * 0.8;
+    const reloadDip = v.reloading > 0 ? Math.sin(v.reloading * Math.PI) * 0.18 : 0;
+    this.viewmodel.position.set(0.28 + bobX * 0.5, -0.26 - reloadDip + bobY * 0.5, -0.55 + this.vmKick * 0.06);
+    this.viewmodel.rotation.x = this.vmKick * 0.08 - reloadDip * 0.8;
     this.muzzleT = Math.max(0, this.muzzleT - dt * 18);
     // the hand's light is a child of the body, and three skips a hidden subtree entirely: with the
     // camera pulled in against the body there was no muzzle flash at all, which is exactly when the

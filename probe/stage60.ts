@@ -334,6 +334,87 @@ async function main(): Promise<void> {
     results["aim"] = { ...aim, dummy, off, shot: shotRes };
     await shotCheck(pg, "stage60-reticle.png");
 
+    // ---------------- the camera takes the landing ----------------
+    // The legs have compressed on landing since Stage 63 and the camera took none of it: a drop off
+    // the gantry ended with the view perfectly level, which reads as the ground arriving rather
+    // than the file arriving (Stage 79).
+    const fall = await pg.evaluate(async () => {
+      const p = window.__game.game.player;
+      window.__game.setBot([{ kind: "slot", slot: 1 }, { kind: "look", yaw: 0, pitch: 0, ticks: 5 }, { kind: "hold", ticks: 6000 }]);
+      p.pos.x = 0;
+      p.pos.z = 6;
+      p.pos.y = 9;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      let peak = 0;
+      let peakDrop = 0;
+      let landedAt = -1;
+      let after = 0;
+      for (let i = 0; i < 400; i++) {
+        window.__game.advance(1);
+        await new Promise((r) => requestAnimationFrame(r));
+        const v = window.__game.view();
+        const s = window.__game.state();
+        if (s.grounded && landedAt < 0) landedAt = i;
+        if (v.dip > peak) {
+          peak = v.dip;
+          // and the dip is applied, not merely reported: the camera is that much lower than the
+          // anchor the shoulder cast put it on
+          peakDrop = v.anchor.y - v.camera.y;
+        }
+        if (landedAt >= 0 && peak > 0 && v.dip === 0) {
+          after = i - landedAt;
+          break;
+        }
+      }
+      return { peak, peakDrop, landedAt, after, y: window.__game.state().pos.y };
+    });
+    check("a drop puts the landing in the camera, and the camera stands back up", fall.landedAt > 0 && fall.peak > 0.1 && fall.peakDrop > 0.05 && fall.after > 0 && fall.after < 120, `landed on frame ${fall.landedAt} at y ${fall.y.toFixed(2)} · the camera went ${fall.peak.toFixed(3)} m down (${fall.peakDrop.toFixed(3)} m below its anchor) and was level again ${fall.after} frames later`);
+    // and a step down is not a landing: the camera does not lurch every time the file leaves a kerb
+    const kerb = await pg.evaluate(async () => {
+      const p = window.__game.game.player;
+      p.pos.y = 0.35;
+      p.vel.y = 0;
+      let peak = 0;
+      for (let i = 0; i < 90; i++) {
+        window.__game.advance(1);
+        await new Promise((r) => requestAnimationFrame(r));
+        peak = Math.max(peak, window.__game.view().dip);
+      }
+      return peak;
+    });
+    check("and a step off a kerb is not a landing", kerb < 0.02, `a 0.35 m step put ${kerb.toFixed(3)} m in the camera`);
+    // the slide leans the view — in this one it never did at all
+    const slid = await pg.evaluate(async () => {
+      const p = window.__game.game.player;
+      // back to the open stretch the sprint check uses: a slide needs a run-up, and the run-up
+      // needs somewhere to run
+      p.pos.x = 0;
+      p.pos.y = 0;
+      p.pos.z = 26;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      // the long clear stretch from the south wall: the barricade across the yard sits near z = -1,
+      // and a slide needs a run-up rather than a wall to hit halfway through it
+      window.__game.setBot([{ kind: "goto", x: 0, z: 8, sprint: true, radius: 1.5, timeoutTicks: 600, stop: false }, { kind: "slide", ticks: 90 }, { kind: "hold", ticks: 6000 }]);
+      let peak = 0;
+      let sliding = 0;
+      let settled = -1;
+      for (let i = 0; i < 700; i++) {
+        window.__game.advance(1);
+        await new Promise((r) => requestAnimationFrame(r));
+        const v = window.__game.view();
+        const st = window.__game.state();
+        if (st.stance === "slide") sliding++;
+        peak = Math.max(peak, Math.abs(v.roll));
+        if (sliding > 0 && st.stance !== "slide" && peak > 0.02 && Math.abs(v.roll) < 0.005) {
+          settled = i;
+          break;
+        }
+      }
+      const st2 = window.__game.state();
+      return { peak, sliding, settled, roll: window.__game.view().roll, stance: st2.stance, z: st2.pos.z };
+    });
+    check("a slide leans the camera behind the body, and it comes back level", slid.sliding > 5 && slid.peak > 0.03 && slid.settled > 0 && Math.abs(slid.roll) < 0.005, `${slid.sliding} frames sliding · the view leaned ${slid.peak.toFixed(3)} rad and was level again by frame ${slid.settled} · ${slid.stance} at z ${slid.z.toFixed(1)}`);
+
     // ---------------- a round that falls ----------------
     // The reticle marked the end of a straight ray for every weapon, which is the truth for a bullet
     // and a lie for a launcher: the phage's round leaves at forty metres a second under twelve of
