@@ -1641,6 +1641,37 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 92 — The map did not know where you were going
+
+**Goal.** The campaign has put its objective in the world since Stage 10 — the place to reach, the
+body to escort, the things to destroy — and the map in the corner has never drawn a single one of
+them. Stage 88 taught that map the wake's nodes and fixed the rotation it had been getting wrong
+since Stage 1; the contract was still invisible on it. Seven missions and a dozen gigs in which the
+game says REACH THE ESCROW TERMINAL AT B and the player finds out which way that is by turning on
+the spot.
+
+**What changed.**
+
+- **The contract is on the map**: the goal as a ring in the terminal's cyan, the escort in amber,
+  each destroy target in magenta — through the same placement the nodes use, so one past the edge is
+  pinned to the rim along its own bearing rather than clamped round a corner onto the wrong street.
+- **And the objective line says how far**: `⌖ ESCROW TERMINAL AT B  33 M`. A distance is the
+  difference between "go to the substation" and knowing whether to sprint there or take the long way
+  round.
+- **A closed contract comes off the map.** The marks are cleared when the mission completes or
+  fails, so a finished goal does not hang there through the results card and into whatever is next.
+
+**Proof.** `probe:campaign` 33/33, two new, asked of the map itself rather than of the code that
+draws it: with the file looking straight at B the goal's mark sits 15.8 px above the middle and
+within a pixel of the centre line, and after a quarter turn it swings 14.8 px to the right — which
+is where a thing you were facing ends up when you turn left of it. And the objective line reads
+`33 M` against a goal 33.0 m away. `tests/radar.test.ts` 11, four new on placement, rim pinning at a
+heading that is not due north, and the kinds. 623 tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone: with the goal withheld from the map the check finds
+zero pixels of it at both headings; with the range dropped from the objective line only the distance
+check goes red.
+
 ## Stage 91 — Every kill read the same
 
 **Goal.** A headshot at forty metres with the last round in the magazine put up the same four words

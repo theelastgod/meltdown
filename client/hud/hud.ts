@@ -7,7 +7,7 @@ import type { FileView } from "../file";
 import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
 import type { NodeReadout } from "./node";
-import { nodeColour, nodeMarks, toMap, type RadarNode } from "./radar";
+import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot } from "./radar";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
 export class Hud {
@@ -545,6 +545,15 @@ export class Hud {
   }
   private radarNodes: readonly RadarNode[] = [];
 
+  /**
+   * Where the contract wants you (Stage 92). The campaign has put its marker, its escort and its
+   * targets in the world since Stage 10 and the map has never drawn any of them.
+   */
+  setRadarSpots(spots: readonly RadarSpot[]): void {
+    this.radarSpots = spots;
+  }
+  private radarSpots: readonly RadarSpot[] = [];
+
   private drawRadar(p: PlayerState, dummies: readonly Dummy[]): void {
     const g = this.radar;
     const w = g.canvas.width;
@@ -587,6 +596,24 @@ export class Hud {
       if (m.x < 1 || m.x >= w - 1 || m.y < 1 || m.y >= h - 1) continue;
       g.fillStyle = "#ffb02e";
       g.fillRect(Math.round(m.x) - 1, Math.round(m.y) - 1, 2, 2);
+    }
+    // the contract over the top of everything, because it is the one thing the player is being told
+    // to go to: a ring for the goal, a dot for the escort and each target, and an arrowless rim mark
+    // for whatever is off the map (Stage 92)
+    for (const m of spotMarks(this.radarSpots, p.pos, p.yaw, scale, w, h)) {
+      g.strokeStyle = SPOT_COLOURS[m.kind];
+      g.fillStyle = SPOT_COLOURS[m.kind];
+      if (m.kind === "goal") {
+        g.lineWidth = 1.5;
+        g.beginPath();
+        g.arc(m.x, m.y, m.edge ? 2.5 : 4.5, 0, Math.PI * 2);
+        g.stroke();
+        if (!m.edge) g.fillRect(m.x - 1, m.y - 1, 2, 2);
+      } else {
+        g.beginPath();
+        g.arc(m.x, m.y, m.edge ? 1.5 : 2.5, 0, Math.PI * 2);
+        g.fill();
+      }
     }
     g.fillStyle = "#37ff8b";
     g.fillRect(cx - 1, cy - 1, 3, 3);

@@ -186,6 +186,52 @@ async function main(): Promise<void> {
     const m1 = await hub.evaluate(() => window.__game.campaign().mission);
     check("the terminal resolves and the runtime moves to the escrow terminal at B (marker up)", m1?.kind === "reach" && /ESCROW TERMINAL AT B/.test(m1.objective), `objective "${m1?.objective}" (${m1?.kind})`);
     const B = nodePos("lease_row", "B");
+
+    // Stage 92: the contract has put a marker in the world since Stage 10 and nothing on the map,
+    // so a goal behind you was a goal you found by turning on the spot. This asks the map itself:
+    // look straight at B and the mark is above the middle; turn a quarter turn and it swings to the
+    // right, which is where a thing you were facing ends up when you turn left of it.
+    const aim = await hub.evaluate((b) => {
+      const p = window.__game.state().pos;
+      return { yaw: Math.atan2(-(b.x - p.x), -(b.z - p.z)), away: Math.hypot(b.x - p.x, b.z - p.z) };
+    }, B);
+    const onMap = await hub.evaluate(async (yaw0) => {
+      const canvas = document.querySelector("#hud .map canvas") as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d")!;
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const out: { yaw: number; x: number; y: number; n: number }[] = [];
+      for (const yaw of [yaw0, yaw0 + Math.PI / 2]) {
+        window.__game.setBot([{ kind: "look", yaw, pitch: 0, ticks: 10 }, { kind: "hold", ticks: 600 }]);
+        window.__game.advance(30);
+        await new Promise((r) => requestAnimationFrame(r));
+        await new Promise((r) => requestAnimationFrame(r));
+        // the goal's cyan ring, and nothing else on this map: the wake is off during a contract so
+        // there are no node discs, the dummies are amber and the file itself is green. No named
+        // helpers in here — the probe's build injects a __name the page does not have
+        const img = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let sx = 0, sy = 0, n = 0;
+        for (let y = 0; y < canvas.height; y++) {
+          for (let x = 0; x < canvas.width; x++) {
+            const i = (y * canvas.width + x) * 4;
+            if (img[3 + i]! > 200 && img[i]! < 120 && img[1 + i]! > 200 && img[2 + i]! > 200) {
+              sx += x;
+              sy += y;
+              n++;
+            }
+          }
+        }
+        out.push({ yaw, x: n ? sx / n - cx : 0, y: n ? sy / n - cy : 0, n });
+      }
+      return out;
+    }, aim.yaw);
+    const facing = onMap[0]!;
+    const turned = onMap[1]!;
+    check("the map draws where the contract wants you: looking at the goal puts it above the middle, and a quarter turn swings it to the right", facing.n > 0 && turned.n > 0 && facing.y < -3 && Math.abs(facing.x) < 3 && turned.x > 3 && Math.abs(turned.y) < 3, `facing it: ${facing.n} px at (${facing.x.toFixed(1)}, ${facing.y.toFixed(1)}) from the middle · after a quarter turn: ${turned.n} px at (${turned.x.toFixed(1)}, ${turned.y.toFixed(1)})`);
+    const said = await hub.evaluate(() => document.querySelector("#hud .mline .prog")?.textContent ?? "");
+    const saidM = Number(/([\d.]+)\s*M/.exec(said)?.[1] ?? NaN);
+    check("and the objective line says how far it is", /^\d+ M$/.test(said.trim()) && Math.abs(saidM - aim.away) <= 1.5, `"${said}" · the goal is ${aim.away.toFixed(1)} m away`);
+
     await goTo(hub, "lease_row", B, 2.5);
     await advance(hub, 3);
     const m2 = await hub.evaluate(() => window.__game.campaign().mission);

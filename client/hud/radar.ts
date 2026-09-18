@@ -64,28 +64,75 @@ export function toMap(dx: number, dz: number, yaw: number, scale: number, w: num
  * to the rim on the same bearing, and says so, so the caller can draw it smaller.
  */
 export function nodeMarks(nodes: readonly RadarNode[], at: { x: number; z: number }, yaw: number, scale: number, w: number, h: number, pad = 3): RadarMark[] {
-  const cx = w / 2;
-  const cy = h / 2;
   const out: RadarMark[] = [];
   for (const n of nodes) {
-    const m = toMap(n.pos.x - at.x, n.pos.z - at.z, yaw, scale, w, h);
-    let px = m.x;
-    let py = m.y;
-    const dx = n.pos.x - at.x;
-    const dz = n.pos.z - at.z;
-    let edge = false;
-    if (px < pad || px > w - pad || py < pad || py > h - pad) {
-      edge = true;
-      // pin it to the rim along its own bearing rather than clamping each axis, which would slide a
-      // node round the corner of the map and point at the wrong street
-      const vx = px - cx;
-      const vy = py - cy;
-      const len = Math.hypot(vx, vy) || 1;
-      const limit = Math.min((cx - pad) / (Math.abs(vx) / len || 1e-6), (cy - pad) / (Math.abs(vy) / len || 1e-6));
-      px = cx + (vx / len) * limit;
-      py = cy + (vy / len) * limit;
-    }
-    out.push({ id: n.id, label: n.label, x: px, y: py, edge, distance: Math.hypot(dx, dz), owner: n.owner, contested: n.contested, puller: n.puller });
+    const m = place(n.pos, at, yaw, scale, w, h, pad);
+    out.push({ id: n.id, label: n.label, x: m.x, y: m.y, edge: m.edge, distance: m.distance, owner: n.owner, contested: n.contested, puller: n.puller });
   }
   return out;
+}
+
+/**
+ * A world point on the map, pinned to the rim when it is past the edge — along its own bearing
+ * rather than clamped per axis, which would slide a mark round the corner of the map and point at a
+ * street the thing is not on.
+ */
+export function place(pos: { x: number; z: number }, at: { x: number; z: number }, yaw: number, scale: number, w: number, h: number, pad = 3): { x: number; y: number; edge: boolean; distance: number } {
+  const cx = w / 2;
+  const cy = h / 2;
+  const dx = pos.x - at.x;
+  const dz = pos.z - at.z;
+  const m = toMap(dx, dz, yaw, scale, w, h);
+  let px = m.x;
+  let py = m.y;
+  let edge = false;
+  if (px < pad || px > w - pad || py < pad || py > h - pad) {
+    edge = true;
+    const vx = px - cx;
+    const vy = py - cy;
+    const len = Math.hypot(vx, vy) || 1;
+    const limit = Math.min((cx - pad) / (Math.abs(vx) / len || 1e-6), (cy - pad) / (Math.abs(vy) / len || 1e-6));
+    px = cx + (vx / len) * limit;
+    py = cy + (vy / len) * limit;
+  }
+  return { x: px, y: py, edge, distance: Math.hypot(dx, dz) };
+}
+
+/**
+ * Where the contract wants you (Stage 92).
+ *
+ * The campaign has put a marker in the world since Stage 10 — the place to reach, the body to
+ * escort, the things to destroy — and the map in the corner has never drawn any of it. A contract
+ * that says REACH THE SUBSTATION and leaves the player turning on the spot to find which way that
+ * is has told them nothing. These go through the same placement as the nodes, so an objective past
+ * the edge of the map is pinned to the rim on its own bearing: the one you cannot see is the one
+ * you most need pointing at.
+ */
+export type SpotKind = "goal" | "escort" | "target";
+
+export interface RadarSpot {
+  kind: SpotKind;
+  x: number;
+  z: number;
+}
+
+export interface SpotMark {
+  kind: SpotKind;
+  /** canvas pixels */
+  x: number;
+  y: number;
+  /** true when it is off the map and this mark is pinned to the rim */
+  edge: boolean;
+  /** how far away it is, in metres */
+  distance: number;
+}
+
+/** the colours the map draws a contract in: the goal in the terminal's cyan, the escort amber, a target magenta */
+export const SPOT_COLOURS: Record<SpotKind, string> = { goal: "#35f2ff", escort: "#ffb02e", target: "#ff3ec9" };
+
+export function spotMarks(spots: readonly RadarSpot[], at: { x: number; z: number }, yaw: number, scale: number, w: number, h: number, pad = 3): SpotMark[] {
+  return spots.map((s) => {
+    const m = place(s, at, yaw, scale, w, h, pad);
+    return { kind: s.kind, x: m.x, y: m.y, edge: m.edge, distance: m.distance };
+  });
 }

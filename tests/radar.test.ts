@@ -3,7 +3,7 @@
  * what happens to one further out than the map reaches.
  */
 import { describe, expect, it } from "vitest";
-import { nodeColour, NODE_COLOURS, nodeMarks, type RadarNode } from "../client/hud/radar";
+import { nodeColour, NODE_COLOURS, nodeMarks, place, spotMarks, SPOT_COLOURS, type RadarNode } from "../client/hud/radar";
 
 const W = 108;
 const H = 84;
@@ -76,5 +76,47 @@ describe("what colour it is", () => {
     // a contest beats ownership: it is the thing worth knowing about
     expect(nodeColour({ owner: 1, contested: true })).toBe(NODE_COLOURS.contested);
     expect(nodeColour({ owner: 0, contested: true })).toBe(NODE_COLOURS.contested);
+  });
+});
+
+describe("where the contract wants you (Stage 92)", () => {
+  const me = { x: 4, z: 9 };
+
+  it("puts the goal where the geometry says, at a heading that is not due north", () => {
+    // facing east (yaw -pi/2 looks toward +x): something to the east is ahead, so it is above the middle
+    const east = spotMarks([{ kind: "goal", x: me.x + 12, z: me.z }], me, -Math.PI / 2, SCALE, W, H)[0]!;
+    expect(east.x).toBeCloseTo(W / 2, 6);
+    expect(east.y).toBeCloseTo(H / 2 - 12 * SCALE, 6);
+    expect(east.distance).toBeCloseTo(12, 6);
+    expect(east.edge).toBe(false);
+    // and something to the north, at that heading, is off to the left
+    const north = spotMarks([{ kind: "goal", x: me.x, z: me.z - 12 }], me, -Math.PI / 2, SCALE, W, H)[0]!;
+    expect(north.x).toBeCloseTo(W / 2 - 12 * SCALE, 6);
+    expect(north.y).toBeCloseTo(H / 2, 6);
+  });
+
+  it("pins a goal past the edge to the rim, on its own bearing, and still says how far", () => {
+    const far = spotMarks([{ kind: "goal", x: me.x + 400, z: me.z - 400 }], me, 0, SCALE, W, H)[0]!;
+    expect(far.edge).toBe(true);
+    expect(far.distance).toBeCloseTo(Math.hypot(400, 400), 6);
+    expect(far.x).toBeLessThanOrEqual(W - 3 + 1e-9);
+    expect(far.y).toBeGreaterThanOrEqual(3 - 1e-9);
+    // up and to the right, which is where it is: the rim mark keeps the bearing of the real one
+    const on = place({ x: me.x + 400, z: me.z - 400 }, me, 0, SCALE, W, H);
+    expect(Math.atan2(-(far.y - H / 2), far.x - W / 2)).toBeCloseTo(Math.atan2(-(on.y - H / 2), on.x - W / 2), 6);
+  });
+
+  it("keeps the kinds apart and gives each its own colour", () => {
+    const marks = spotMarks([{ kind: "goal", x: 4, z: 9 }, { kind: "escort", x: 5, z: 9 }, { kind: "target", x: 6, z: 9 }], me, 0, SCALE, W, H);
+    expect(marks.map((m) => m.kind)).toEqual(["goal", "escort", "target"]);
+    expect(new Set(Object.values(SPOT_COLOURS)).size).toBe(3);
+  });
+
+  it("a spot under your feet sits at the middle and is not an edge mark", () => {
+    const here = spotMarks([{ kind: "goal", x: me.x, z: me.z }], me, 1.1, SCALE, W, H)[0]!;
+    expect(here.x).toBeCloseTo(W / 2, 6);
+    expect(here.y).toBeCloseTo(H / 2, 6);
+    expect(here.distance).toBe(0);
+    expect(here.edge).toBe(false);
   });
 });

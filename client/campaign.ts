@@ -183,6 +183,7 @@ export class Campaign {
         void this.complete(ev.id);
         break;
       case "failed":
+        hud.setRadarSpots([]);
         hud.card("CONTRACT FAILED", [ev.reason, "THE FILE RE-LEASES. THE CONTRACT STAYS OPEN.", "[C] CONTRACTS · [R] RUN IT AGAIN"], "mg", 0);
         this.note(`CONTRACT FAILED · ${ev.reason}`);
         this.game.audio.debtOwed();
@@ -204,9 +205,23 @@ export class Campaign {
     }
     fx.setMarker(marker);
     fx.setEscort(v.escort ? { x: v.escort.x, z: v.escort.z } : null, v.escort?.waiting ?? false);
-    fx.setTargets(o?.kind === "destroy" ? st.targets.map((id) => this.game.world.dummies.find((d) => d.id === id)).filter((d) => d && d.alive).map((d) => ({ x: d!.pos.x, y: d!.pos.y, z: d!.pos.z })) : []);
+    const targets = o?.kind === "destroy" ? st.targets.map((id) => this.game.world.dummies.find((d) => d.id === id)).filter((d) => d && d.alive).map((d) => ({ x: d!.pos.x, y: d!.pos.y, z: d!.pos.z })) : [];
+    fx.setTargets(targets);
+    // and the map gets the same three things (Stage 92): the contract has been a marker in the world
+    // since Stage 10 and nothing in the corner of the screen, so a goal behind you was a goal you
+    // had to find by turning on the spot
+    this.game.hud.setRadarSpots([
+      ...(marker ? [{ kind: "goal" as const, x: marker.x, z: marker.z }] : []),
+      ...(v.escort ? [{ kind: "escort" as const, x: v.escort.x, z: v.escort.z }] : []),
+      ...targets.map((t) => ({ kind: "target" as const, x: t.x, z: t.z })),
+    ]);
     const prog = o ? (o.kind === "kill" || o.kind === "destroy" ? `${v.progress}/${v.need}` : o.kind === "survive" || o.kind === "hold" ? `${Math.floor(v.progress)}s / ${v.need}s` : o.kind === "escort" ? `${Math.round(v.progress * 100)}%` : null) : null;
-    this.game.hud.setObjective(`◈ ${st.def.title}`, v.objective || (st.status === "complete" ? "CONTRACT CLOSED" : st.status === "failed" ? "CONTRACT FAILED" : ""), prog);
+    // …and how far it is, when the contract has a place it wants you (Stage 92): a distance is the
+    // difference between "go to the substation" and knowing whether to sprint or to take the long
+    // way round
+    const goal = marker ?? (v.escort ? { x: v.escort.x, y: 0, z: v.escort.z } : null);
+    const away = goal ? Math.hypot(goal.x - this.game.player.pos.x, goal.z - this.game.player.pos.z) : null;
+    this.game.hud.setObjective(`◈ ${st.def.title}`, v.objective || (st.status === "complete" ? "CONTRACT CLOSED" : st.status === "failed" ? "CONTRACT FAILED" : ""), prog ?? (away !== null ? `${Math.round(away)} M` : null));
   }
 
   // ---- dialogue ----
@@ -306,6 +321,9 @@ export class Campaign {
   // ---- completion ----
 
   private async complete(id: string): Promise<void> {
+    // the contract is closed: take it off the map, or the goal of a finished mission hangs there
+    // through the results card and into whatever comes next (Stage 92)
+    this.game.hud.setRadarSpots([]);
     const t = this.mission?.testimony ?? {};
     const f = this.game.file;
     let ok = false;
