@@ -35,6 +35,7 @@ import { momentLine, runMoments } from "./runcue";
 import { shieldLine, shieldMoments } from "./shieldcue";
 import { freshestVantage, targetRead } from "./hud/target";
 import { prunePings, rememberPing, type Ping } from "./hud/ping";
+import { coneNow, coneRadiusPx } from "./hud/spread";
 import { kernelIn, nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
@@ -48,7 +49,7 @@ import { trophiesFromLedger } from "./render/hub";
 import { monikerById } from "@shared/identity/monikers";
 import type { NodeView } from "./render/wake";
 import { WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
-import { weaponDefOf } from "@shared/sim/player";
+import { modsFor, weaponDefOf } from "@shared/sim/player";
 
 export interface NetConfig {
   url: string;
@@ -1423,6 +1424,9 @@ export class Game {
     this.renderer.render(view, rdt);
     const shown = this.renderer.view();
     this.hud.setReticle({ ...shown.reticle, arc: shown.aim.arc });
+    // and the cone the next round leaves in, at the reticle (Stage 108): the sim's own spread rule
+    // for this weapon and alt, projected through this frame's camera
+    this.hud.setSpread(coneRadiusPx(coneNow(weaponDefOf(p), p.weapon.altActive, modsFor(p).spread), shown.fov, this.hud.viewHeight));
     // and what my last round did to a VANTAGE body (Stage 103), read from the health the sim or
     // the wire already carries, for two seconds after the round landed
     {

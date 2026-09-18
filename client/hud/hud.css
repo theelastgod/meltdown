@@ -30,6 +30,10 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
   background: conic-gradient(var(--am) calc(var(--p, 0) * 1turn), rgba(255,176,46,0.12) 0);
   -webkit-mask: radial-gradient(circle, transparent 11px, #000 12px, #000 14px, transparent 15px); mask: radial-gradient(circle, transparent 11px, #000 12px, #000 14px, transparent 15px); }
 #hud .xh.reloading .rl { display: block; }
+/* the cone the next round leaves in (Stage 108): a faint ring the size of the spread at the reticle */
+#hud .xh .sp { display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; border: 1px solid rgba(53,242,255,0.5); border-radius: 50%; box-shadow: 0 0 3px rgba(53,242,255,0.35), inset 0 0 3px rgba(53,242,255,0.2); pointer-events: none; }
+#hud .xh.cone .sp { display: block; }
+#hud .xh.arc .sp { border-color: rgba(255,176,46,0.5); }
 /* what my last round did to a VANTAGE body (Stage 103): under the reticle, for two seconds */
 #hud .xh .tg { display: none; position: absolute; left: 50%; top: 22px; transform: translateX(-50%); white-space: nowrap; font-size: 10px; letter-spacing: 0.12em; color: var(--am); text-shadow: 0 0 4px rgba(0,0,0,0.9); }
 #hud .xh .tg.on { display: block; }

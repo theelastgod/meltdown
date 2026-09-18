@@ -1641,6 +1641,38 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 108 — The reticle did not know the cone
+
+**Goal.** The REPO HAMMER throws eight pellets in a cone 0.055 rad wide; choked, one slug in
+0.008. The STACK SMG's cone halves when braced. The reticle drew the same four-armed cross for all
+of it — a point, for a gun that fires an area — so the one thing a shotgun player needs to see,
+how much of the file in front of them the cone covers, was nowhere on the screen; and racking the
+choke changed a word in the corner (Stage 94 gave it a sound) and nothing at the reticle. Stage 78
+had already made the case that a reticle must say what the round does.
+
+**What changed.**
+
+- **The cone is a ring at the reticle**, the size of the spread the next round actually leaves
+  in, projected through this frame's camera: the sim's own rule — the weapon's spread, times the
+  alt's multiplier when an optic, a brace or a choke is on, times the firmware's spread stat —
+  and the screen's own scale, the tangent of the half-angle against the tangent of half the field
+  of view. Zooming an optic draws the same cone larger, as it should.
+- **A cone too small to draw is not drawn.** Under three pixels of radius the ring would claim a
+  precision the eye cannot use; the LEASE-BREAKER's 0.004 rad is a pixel and shows nothing.
+- `client/hud/spread.ts` is the rule, pure and unit-tested against the weapon manifest.
+
+**Proof.** `probe:arsenal` 32/32, one new, the ring measured against the number computed from
+the sim's own definition inside the same frame: with the REPO HAMMER in hand the ring is 47.0 px
+wide against 2 × 23.6 from spread 0.055 at 80.0° in a 720 px view; choked it is 7.0 px against
+2 × 3.5 (the slug's cone, just over the floor at this height); with the LEASE-BREAKER the ring is
+off. The first run measured 49.0: the ring's own border sat outside its width, so it is drawn
+border-box now. `tests/spread.test.ts` 7. 711 tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone. With no cone ever read the ring is `none` at
+0.0 px for the HAMMER, 31/32, and three of the seven unit tests go with it. With the choke ignored
+the open HAMMER still reads 47.0 px and the rifle still nothing, but choked it reads 47.0 where the
+slug's 7.0 belongs — 31/32, with the two unit tests that ask for the alt's multiplier.
+
 ## Stage 107 — The mission panel sat on the file's name
 
 **Goal.** A real frame at 960 px wide, read after Stage 106: the file's own header — `▲ BLANK ·

@@ -534,6 +534,41 @@ async function main(): Promise<void> {
     });
     check("holding the LONGWAVE fills the ring on the reticle, lights it whole at the top, and the shot takes it away", chg.began < 120 && chg.mid.on && chg.mid.disp !== "none" && chg.mid.p > 0.15 && chg.mid.p < 0.6 && !chg.mid.full && Math.abs(chg.mid.p - chg.mid.charge) < 0.02 && chg.top.on && chg.top.full && chg.top.p >= 0.999 && !chg.gone.on && chg.gone.disp === "none" && !chg.gone.charging && chg.gone.ammo === 4, `charging after ${chg.began} ticks · 18 ticks in: ring ${chg.mid.disp} at ${chg.mid.p.toFixed(2)} (sim ${chg.mid.charge.toFixed(2)}), full ${chg.mid.full} · 63 in: ${chg.top.p.toFixed(2)} full ${chg.top.full} (sim ${chg.top.charge.toFixed(2)}) · released: ring ${chg.gone.disp}, charging ${chg.gone.charging}, ${chg.gone.ammo} rounds left`);
 
+    // Stage 108: the reticle did not know the cone. The REPO HAMMER's ring is the size of its
+    // spread through this frame's camera — the sim's own number, projected — the choke takes it
+    // under the drawing floor, and the LEASE-BREAKER's cone was never wide enough to draw.
+    const cone = await page.evaluate(async () => {
+      const g = window.__game.game;
+      const p = g.player;
+      const xh = document.querySelector("#hud .xh") as HTMLElement;
+      const ring = document.querySelector("#hud .xh .sp") as HTMLElement;
+      const hud = document.getElementById("hud")!;
+      p.weapon.altActive = false;
+      p.weapon.charging = false;
+      p.weapon.reloadTimer = 0;
+      window.__game.setBot([{ kind: "slot", slot: 2 }, { kind: "hold", ticks: 600 }]);
+      window.__game.advance(30);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const fov = window.__game.view().fov;
+      const h = hud.clientHeight;
+      // the expected radius from the sim's own definition, spelled out: tan(spread) on the screen's scale
+      const expect = Math.tan(0.055) * (h / 2 / Math.tan((fov * Math.PI) / 360));
+      const hammer = { slot: p.weapon.slot, on: xh.classList.contains("cone"), disp: getComputedStyle(ring).display, w: ring.getBoundingClientRect().width, expect, fov, h };
+      p.weapon.altActive = true;
+      window.__game.advance(1);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      // the slug's cone is 0.15 of the pellets': at this height that may sit either side of the
+      // three-pixel drawing floor, so the claim is the number, not the floor
+      const choked = { alt: p.weapon.altActive, on: xh.classList.contains("cone"), disp: getComputedStyle(ring).display, w: ring.getBoundingClientRect().width, expect: expect * 0.15 };
+      p.weapon.altActive = false;
+      window.__game.setBot([{ kind: "slot", slot: 1 }, { kind: "hold", ticks: 600 }]);
+      window.__game.advance(30);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const rifle = { slot: p.weapon.slot, on: xh.classList.contains("cone"), disp: getComputedStyle(ring).display };
+      return { hammer, choked, rifle };
+    });
+    check("the REPO HAMMER's cone is a ring at the reticle the size of its spread through the camera; choked it is the slug's cone or nothing, and the LEASE-BREAKER's is nothing", cone.hammer.slot === 2 && cone.hammer.on && cone.hammer.disp !== "none" && Math.abs(cone.hammer.w - cone.hammer.expect * 2) <= 2 && cone.choked.alt && (cone.choked.expect >= 3 ? cone.choked.on && Math.abs(cone.choked.w - cone.choked.expect * 2) <= 2 : !cone.choked.on && cone.choked.disp === "none") && cone.rifle.slot === 1 && !cone.rifle.on, `HAMMER: ring ${cone.hammer.disp}, ${cone.hammer.w.toFixed(1)} px wide against 2 × ${cone.hammer.expect.toFixed(1)} from spread 0.055 at fov ${cone.hammer.fov.toFixed(1)}° in ${cone.hammer.h} px · choked: ring ${cone.choked.disp}, ${cone.choked.w.toFixed(1)} px against 2 × ${cone.choked.expect.toFixed(1)} (floor 3) · LEASE-BREAKER: ring ${cone.rifle.on ? "on" : "off"}`);
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
 
     writeFileSync(`${OUT}/stage4.json`, JSON.stringify({ ttk: table, shots, hits, kills, explosions: explosions.length, captures, audio: state.audio, checks }, null, 2));

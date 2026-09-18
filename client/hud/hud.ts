@@ -7,6 +7,7 @@ import type { FileView } from "../file";
 import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead } from "./ammo";
+import { CONE_MIN_PX } from "./spread";
 import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
@@ -110,7 +111,7 @@ export class Hud {
     this.root = root;
     root.innerHTML = `
       <div class="scan"></div>
-      <div class="xh"><i></i><b class="rl"></b><div class="tg"></div></div>
+      <div class="xh"><i></i><b class="rl"></b><u class="sp"></u><div class="tg"></div></div>
       <div class="hit"></div>
       <div class="dmg">${"<i></i>".repeat(HIT_MAX)}</div>
       <div class="thr">${"<i></i>".repeat(THREAT_MAX)}</div>
@@ -340,6 +341,28 @@ export class Hud {
     el.innerHTML = r ? `<b>${r.label}</b> <s>${r.blocks}</s> <em>${Math.round(r.frac * 100)}%</em>` : "";
   }
   private targetKey = "";
+
+  /**
+   * The cone the next round leaves in, as a ring around the reticle (Stage 108): `radiusPx` from
+   * the pure rule, or anything under the drawing floor to take it down.
+   */
+  setSpread(radiusPx: number): void {
+    const on = radiusPx >= CONE_MIN_PX;
+    const r = on ? Math.round(radiusPx * 2) / 2 : 0;
+    if (on === this.coneOn && r === this.coneR) return;
+    this.coneOn = on;
+    this.coneR = r;
+    this.q(".xh").classList.toggle("cone", on);
+    const ring = this.q(".xh .sp");
+    ring.style.width = `${r * 2}px`;
+    ring.style.height = `${r * 2}px`;
+  }
+  private coneOn = false;
+  private coneR = 0;
+  /** the HUD's own height in CSS px, for anything that projects an angle onto the screen */
+  get viewHeight(): number {
+    return this.root.clientHeight;
+  }
 
   /** The shield bar says it is broken (Stage 102): a magenta frame on the bar until the shield is back. */
   setShieldBroken(broken: boolean): void {
