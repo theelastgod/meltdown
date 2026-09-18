@@ -265,6 +265,30 @@ async function main(): Promise<void> {
     });
     const kErr = kernel.said >= 0 ? Math.abs(kernel.said - kernel.actual) : 99;
     check("the strip counts down to the next KERNEL pulse, and the pulse lands when it says", kernel.fired === 1 && kernel.said > 5 && kErr < 1.5, `it said ${kernel.said}s, the pulse came ${kernel.actual.toFixed(1)}s later (${kErr.toFixed(2)}s out) · "${kernel.strip.trim()}"`);
+    // Stage 121: the round ended with a line. Put the wake into its results phase by hand and read
+    // the drawn frame: the card, its lines, the chrome silenced; then the warm-up, and the card gone
+    const roundOver = await page.evaluate(async () => {
+      const w = window.__game.game.world.wake!;
+      const p = window.__game.game.player;
+      p.stats.kills = 3; p.stats.deaths = 1; p.stats.flips = 2; p.stats.nodeSeconds = 41.4;
+      w.phase = "results"; w.timeLeft = 12.4; w.winner = 1; w.score[1] = 40; w.score[2] = 12;
+      window.__game.advance(1);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const hud = document.getElementById("hud")!;
+      const card = hud.querySelector(".card") as HTMLElement;
+      const open = !card.hidden;
+      const title = card.querySelector(".ct")!.textContent ?? "";
+      const lines = [...card.querySelectorAll(".cl div")].map((d) => d.textContent ?? "");
+      const color = card.className;
+      const quiet = [...hud.classList].filter((c) => c.startsWith("q-"));
+      w.phase = "warmup"; w.timeLeft = 20; w.winner = 0;
+      window.__game.advance(1);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const after = !card.hidden;
+      const quietAfter = [...hud.classList].filter((c) => c.startsWith("q-"));
+      return { open, title, lines, color, quiet, after, quietAfter, team: p.team };
+    });
+    check("the round's end is a card: who woke the yard, the score, your own line and the next round's countdown, with the chrome silenced — and the warm-up takes it down", roundOver.open && roundOver.title === "ROUND OVER" && roundOver.lines[0] === "CELL ONE WOKE DRAINAGE YARD" && roundOver.lines[1] === "CELL ONE 40 · CELL TWO 12" && /^YOU · CELL (ONE|TWO) · 3 KILLS · 1 DEATHS · 2 PULLS · 41 s ON NODES$/.test(roundOver.lines[2] ?? "") && /^NEXT ROUND IN 1[23]s$/.test(roundOver.lines[3] ?? "") && roundOver.quiet.includes("q-ammo") && roundOver.quiet.includes("q-reticle") && !roundOver.after && roundOver.quietAfter.length === 0, `card open ${roundOver.open} · "${roundOver.title}" (${roundOver.color}) · ${roundOver.lines.join(" / ")} · silenced ${roundOver.quiet.length} groups · team ${roundOver.team} · after the warm-up: open ${roundOver.after}, silenced ${roundOver.quietAfter.length}`);
     check("offline: no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     await page.close();
 

@@ -10,6 +10,7 @@ import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
 import { rackLabel } from "./rack";
 import { motionWord } from "./stance";
+import { roundCard, type RoundStats } from "./round";
 import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
@@ -694,7 +695,24 @@ export class Hud {
   private nodeKey = "";
 
   /** Wake strip under the mission title: phase, timer, scores, and a hex per node. */
-  wake(w: { phase: string; timeLeft: number; score: [number, number, number]; kernelIn: number | null; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number }[] }, myTeam: number): void {
+  private roundCardKey = "";
+  private roundCardShown = false;
+
+  wake(w: { phase: string; timeLeft: number; score: [number, number, number]; winner: number; kernelIn: number | null; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number }[] }, myTeam: number, stats: RoundStats): void {
+    // the results phase is a card (Stage 121): shown while the phase lasts, re-rendered as the
+    // countdown ticks, taken down by the warm-up
+    const round = roundCard(w, myTeam, this.zone, stats);
+    if (round) {
+      if (round.key !== this.roundCardKey) {
+        this.roundCardKey = round.key;
+        this.roundCardShown = true;
+        this.card(round.title, round.lines, round.color, 0);
+      }
+    } else if (this.roundCardShown) {
+      this.roundCardShown = false;
+      this.roundCardKey = "";
+      this.cardClose();
+    }
     const mm = Math.floor(Math.max(0, w.timeLeft) / 60);
     const ss = Math.floor(Math.max(0, w.timeLeft) % 60);
     const t = `${mm}:${String(ss).padStart(2, "0")}`;

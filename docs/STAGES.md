@@ -1641,6 +1641,43 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 121 — The round ended with a line
+
+**Goal.** A wake ends — a cell holds all eight nodes for fifteen seconds, or the clock runs out —
+and the game has fifteen seconds of results phase to say so. It said `◈ ROUND OVER — CELL ONE
+WOKE DRAINAGE YARD` in the mission panel's title and `◆ ROUND OVER — CELL ONE WOKE THE YARD` in
+the alert, for four seconds, and went on drawing the reticle and the ammo count over a round that
+was over. No score laid out, nothing about what you did in it, no word on when the next one
+starts: the campaign's contracts close on a card, and the wake's rounds closed on a line.
+
+**What changed.**
+- `client/hud/round.ts` — `roundWinner(w)`: the full wake's winner, else the cell ahead on the
+  score, else nobody; `roundCard(w, myTeam, zone, stats)`: nothing outside the results phase,
+  otherwise the card — `ROUND OVER`, who woke the district (or no one), the score, your own line
+  (cell, kills, deaths, pulls, seconds on nodes) when you are on a cell, and `NEXT ROUND IN Ns`;
+  cyan when your cell woke it, magenta when the other did, amber otherwise. Its key changes as the
+  countdown ticks so the HUD re-renders only then.
+- `client/hud/hud.ts` — the wake pass shows the card while the phase is `results` (the card the
+  campaign already had, with its quiet rule: a card silences the chrome), re-renders it on its
+  key, and takes it down when the phase moves on. The wake state now carries the winner, and the
+  file's stats come with it.
+- `client/game.ts` — the winner is read from the sim offline and from the match record online.
+- `tests/round.test.ts` — the winner, the lines, the colours, the key, a clock past zero.
+- `probe/stage5.ts` — the wake put into results by hand and read from the drawn frame: the card,
+  each line, the chrome silenced; then the warm-up, and the card gone with nothing silenced.
+
+**Proof.** `npm test` 752 tests (seven new); `npm run probe:wake` 20/20 — with the wake put into
+results the card is up in cyan: `ROUND OVER` / `CELL ONE WOKE DRAINAGE YARD` / `CELL ONE 40 ·
+CELL TWO 12` / `YOU · CELL ONE · 3 KILLS · 1 DEATHS · 2 PULLS · 41 s ON NODES` / `NEXT ROUND IN
+13s`, twelve chrome groups silenced, and after the warm-up the card is gone with nothing
+silenced; `npm run probe:tps` still 45/45; `npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** Two, each failing its own guard alone. The results phase is no card (`roundCard`
+returns nothing): four unit tests fail and the wake probe fails, 19/20 (`card open false`). The
+warm-up never takes the card down (the close branch dead): the probe fails, 19/20 — the card
+still up after the warm-up with twelve groups silenced, a round card over the next round. Every
+other check passes under each.
+
 ## Stage 120 — The alert printed through the node line
 
 **Goal.** The arsenal probe's fourth-slot frame, a wake with the node hexes in the mission panel:

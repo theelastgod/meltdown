@@ -773,7 +773,7 @@ export class Game {
   /** what each node's hold was doing last frame, for the readout's clock (Stage 85) */
   private nodeBook = new Map<number, TrackedNode>();
   private nodeBookTick = 0;
-  private wakeHud: { phase: string; timeLeft: number; score: [number, number, number]; nodes: { id: number; label: string; pos: { x: number; y: number; z: number }; owner: number; hold: number; contested: boolean; puller: number }[] } | null = null;
+  private wakeHud: { phase: string; timeLeft: number; score: [number, number, number]; winner: number; nodes: { id: number; label: string; pos: { x: number; y: number; z: number }; owner: number; hold: number; contested: boolean; puller: number }[] } | null = null;
   private lastNodeOwners = new Map<number, number>();
 
   private nodeViewsOffline(): NodeView[] {
@@ -984,7 +984,7 @@ export class Game {
     if (w.wake) {
       const views = this.nodeViewsOffline();
       this.renderer.wake.sync(views);
-      this.wakeHud = { phase: w.wake.phase, timeLeft: w.wake.timeLeft, score: w.wake.score, nodes: views };
+      this.wakeHud = { phase: w.wake.phase, timeLeft: w.wake.timeLeft, score: w.wake.score, winner: w.wake.winner, nodes: views };
     }
     this.renderer.fx.syncProjectiles(w.projectiles.map((p) => ({ id: p.id, kind: p.kind, pos: p.pos, stuck: p.stuck })));
     this.renderer.fx.syncClouds(w.clouds.map((c) => ({ id: c.id, pos: c.pos, radius: c.radius })));
@@ -1007,7 +1007,7 @@ export class Game {
     if (nodes.length) {
       this.renderer.wake.sync(nodes);
       const m = this.netMatch;
-      this.wakeHud = { phase: m ? (m.phase === 0 ? "warmup" : m.phase === 1 ? "wake" : "results") : "wake", timeLeft: m?.timeLeft ?? 0, score: [0, m?.score1 ?? 0, m?.score2 ?? 0], nodes };
+      this.wakeHud = { phase: m ? (m.phase === 0 ? "warmup" : m.phase === 1 ? "wake" : "results") : "wake", timeLeft: m?.timeLeft ?? 0, score: [0, m?.score1 ?? 0, m?.score2 ?? 0], winner: m?.winner ?? 0, nodes };
     }
     this.renderer.fx.syncProjectiles(ents.filter((e) => e.kind === ENT_PROJECTILE).map((e) => ({ id: e.id, kind: PROJ_KINDS[e.a] ?? "phage", pos: { x: e.x, y: e.y, z: e.z }, stuck: e.b === 1 })));
     this.renderer.fx.syncClouds(ents.filter((e) => e.kind === ENT_CLOUD).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, radius: e.c / 100 })));
@@ -1478,7 +1478,7 @@ export class Game {
     this.lowHealthOn = low;
     if (this.wakeHud) {
       this.hud.setRadarNodes(this.wakeHud.nodes);
-      this.hud.wake({ ...this.wakeHud, kernelIn: this.wakeHud.phase === "wake" ? kernelIn(this.wakeHud.timeLeft, this.kernelMark, WAKE.kernelPulseSeconds) : null }, p.team);
+      this.hud.wake({ ...this.wakeHud, kernelIn: this.wakeHud.phase === "wake" ? kernelIn(this.wakeHud.timeLeft, this.kernelMark, WAKE.kernelPulseSeconds) : null }, p.team, p.stats);
       // and the one under your feet (Stage 85): the strip says who holds all eight, this says what
       // is happening to the one you are standing on. The rate is measured from the hold the server
       // is publishing, so the seconds are the simulation's own.
