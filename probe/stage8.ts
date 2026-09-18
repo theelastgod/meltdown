@@ -189,6 +189,11 @@ async function main(): Promise<void> {
     // instead, where a poll costs nothing, and wait for the thing the camera actually sees: the
     // panel unhidden and the reveal far enough along to have painted. That is exactly as long as
     // the animation needs and not a millisecond of guesswork (Stage 33).
+    // and hold the flash panels open while we do it: the dossier is up for 1.2 s of the HUD's own
+    // clock, which on a machine that draws quickly is 1.2 s of wall time, and the round trip that
+    // reads the state after the wait can land after it has closed. Held, it waits for the shutter;
+    // the panel and its entries are the real ones (Stage 72).
+    await a.evaluate(() => window.__game.holdFlash(true));
     await a.waitForFunction(() => {
       const el = document.querySelector("#hud .dossier") as HTMLElement | null;
       return !!el && !el.hidden && Number(getComputedStyle(el).opacity) > 0.5;
@@ -198,6 +203,21 @@ async function main(): Promise<void> {
       flash = { open: true, entries: flashState.dossierEntries, t: Date.now() - t0 };
       await shotCheck(a, "stage8-dossier.png", "#hud .dossier");
     }
+    check("the dossier was raised, whatever the shutter caught", flashState.raised.dossier >= 1, `raised ${flashState.raised.dossier} time(s)`);
+    // and the hold is real: the panel lives 1.2 s of the HUD's clock, so run well past that while
+    // held and it must still be up — that is what makes the shutter above something other than luck
+    const held = await a.evaluate(async () => {
+      for (let i = 0; i < 90; i++) await new Promise((r) => requestAnimationFrame(r));
+      const still = window.__game.state().rituals.dossierOpen;
+      window.__game.holdFlash(false);
+      let closed = false;
+      for (let i = 0; i < 400 && !closed; i++) {
+        await new Promise((r) => requestAnimationFrame(r));
+        closed = !window.__game.state().rituals.dossierOpen;
+      }
+      return { still, closed };
+    });
+    check("holding the HUD's flash panels keeps the dossier up past its own life, and letting go closes it", held.still && held.closed, `still up after 90 frames held: ${held.still} · closed once released: ${held.closed}`);
     await a.waitForFunction(() => !window.__game.state().rituals.dossierOpen, null, { timeout: 8000, polling: 50 }).catch(() => null);
     const after = await a.evaluate(() => ({ r: window.__game.state().rituals, social: window.__game.state().social, audio: window.__game.state().audio }));
     const dossier = after.social.find((m) => m.kind === "dossier");
@@ -305,7 +325,10 @@ async function main(): Promise<void> {
     // then taking the picture missed it there: watch for the panel through the duel itself and take
     // the picture the moment it comes up (Stage 70).
     let debtShot = false;
-    const panelUp = () => a.evaluate(() => { const el = document.querySelector("#hud .debt"); return !!el && el.classList.contains("on") && (el.textContent ?? "").trim().length > 0; });
+    // held open the same way, and the picture must be of the banner it is named for: CLEARED, not
+    // the OWED banner from the round before (Stage 72)
+    await a.evaluate(() => window.__game.holdFlash(true));
+    const panelUp = () => a.evaluate(() => { const el = document.querySelector("#hud .debt"); return !!el && el.classList.contains("on") && /DEBT CLEARED/.test(el.textContent ?? ""); });
     const ak2 = await duel(a, "ALPHA", b, ids.b, before + 1, 45000, async () => {
       if (debtShot || !(await panelUp())) return;
       await shotCheck(a, "stage8-debt.png", "#hud .debt");
@@ -321,10 +344,11 @@ async function main(): Promise<void> {
       if (m && m.kind === "debt") cleared = { credit: m.credit, capped: m.capped };
     }
     if (!debtShot) {
-      // the kill landed between two ticks of the watch above: give the banner one more chance
-      for (let i = 0; i < 60 && !(await panelUp()); i++) await a.waitForTimeout(50);
+      // the kill landed between two ticks of the watch above: the banner is held open, so it waits
+      for (let i = 0; i < 100 && !(await panelUp()); i++) await a.waitForTimeout(100);
       await shotCheck(a, "stage8-debt.png", "#hud .debt");
     }
+    await a.evaluate(() => window.__game.holdFlash(false));
     const dc = await a.evaluate(() => ({ r: window.__game.state().rituals, audio: window.__game.state().audio, debt: window.__game.state().debtTargetId }));
     const sa2 = (await stats()).rooms[room]!.clients.find((x) => x.name === "ALPHA")!;
     check("DEBT CLEARED: killing the file you owe fires the banner and sting, credits +5 Wakelight once, and clears the Debt on the file", !!cleared && cleared.credit === 5 && !cleared.capped && /DEBT CLEARED/.test(dc.r.debtText) && (dc.audio["debtCleared"] ?? 0) >= 1 && dc.debt === -1 && sa2.identity.debt === null && sa2.identity.wakelight === 5, `${cleared ? `credit ${cleared.credit} capped ${cleared.capped}` : "not cleared"} · banner "${dc.r.debtText}" · file debt ${sa2.identity.debt} · wakelight ${sa2.identity.wakelight}`);

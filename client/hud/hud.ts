@@ -190,6 +190,7 @@ export class Hud {
     void d.offsetWidth;
     d.classList.add("on");
     this.dossierTimer = seconds;
+    this.raised.dossier++;
   }
 
   /** DEBT OWED (someone has your number) / DEBT CLEARED (you settled it). */
@@ -201,6 +202,7 @@ export class Hud {
     void el.offsetWidth;
     el.classList.add("on");
     this.debtTimer = event === "cleared" ? 3.5 : 4;
+    this.raised.debt++;
   }
 
   /** The post-match Ledger Entry: the receipt prints line by line, the stamp thunks, the player signs. */
@@ -238,6 +240,7 @@ export class Hud {
     void el.offsetWidth;
     el.classList.add("on");
     this.riteTimer = seconds;
+    this.raised.rite++;
   }
 
   // ---- campaign: objective, terminal, contracts, cards ----
@@ -349,8 +352,24 @@ export class Hud {
     return !this.q(".card").hidden;
   }
 
-  private tickRituals(dt: number): void {
-    this.tickTerminal(dt);
+  /**
+   * Hold the flash panels open. The dossier shows for 1.2 s, the Debt banner for 3.5 — of the HUD's
+   * own clock, which on a machine that draws quickly is that many seconds of wall time. A probe
+   * reaching in from outside spends 50 to 200 ms per round trip, so photographing one of them is a
+   * race it keeps losing. Held, the panel stays up until the probe lets go: the panel and its text
+   * are the real ones, only their expiry waits (Stage 72).
+   */
+  setFlashHold(on: boolean): void {
+    this.flashHold = on;
+  }
+
+  private flashHold = false;
+  /** how many times each flash panel has been raised, so a check cannot miss one between polls */
+  readonly raised = { dossier: 0, debt: 0, rite: 0, card: 0 };
+
+  private tickRituals(rawDt: number): void {
+    const dt = this.flashHold ? 0 : rawDt;
+    this.tickTerminal(rawDt);
     if (this.cardTimer > 0) {
       this.cardTimer -= dt;
       if (this.cardTimer <= 0) this.cardClose();

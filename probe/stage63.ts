@@ -296,7 +296,15 @@ async function main(): Promise<void> {
         await new Promise((r) => requestAnimationFrame(r));
         const r0 = window.__game.rig();
         out.push({ speed: r0.out?.speed ?? 0, swayX: r0.uniforms?.swayX ?? 0, swayZ: r0.uniforms?.swayZ ?? 0, flap: r0.uniforms?.flap ?? 0 });
-        if (out.filter((x) => x.speed > 6).length >= 8) break;
+        // the hem's drag is eased at 10/s, so eight frames is a tenth of a second on a machine that
+        // draws quickly and more than a second here: wait for the sway to stop rising, not for a
+        // count of frames (CI read 0.053 of the 0.06 it wants — the ease, caught mid-way, Stage 72)
+        const fast = out.filter((x) => x.speed > 6);
+        if (fast.length >= 8) {
+          const peak = Math.max(...fast.map((x) => Math.hypot(x.swayX, x.swayZ)));
+          const recent = Math.max(...fast.slice(-4).map((x) => Math.hypot(x.swayX, x.swayZ)));
+          if (recent <= peak + 1e-4 && fast.length >= 12) break;
+        }
       }
       return out;
     });

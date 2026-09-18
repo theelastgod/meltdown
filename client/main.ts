@@ -54,7 +54,7 @@ export interface GameHook {
     /** City life (render-only): crowd size and a sample of positions, the tram's coordinate along its line, PA lines spoken. */
     /** identity & rituals (Stage 8): the file's identity, HUD ritual state, social messages received, the Debt target */
     identity: FileView["identity"];
-    rituals: { receipt: { open: boolean; lines: string[]; printed: number; stamped: boolean; signed: number }; dossierOpen: boolean; dossierEntries: number; debtText: string; riteOpen: boolean; riteTitle: string };
+    rituals: { receipt: { open: boolean; lines: string[]; printed: number; stamped: boolean; signed: number }; dossierOpen: boolean; dossierEntries: number; debtText: string; riteOpen: boolean; riteTitle: string; raised: { dossier: number; debt: number; rite: number; card: number } };
     social: SocialMsg[];
     debtTargetId: number;
     /** the Deadletter Office: renovation pieces built, trophies on the wall, the range ghost */
@@ -107,6 +107,8 @@ export interface GameHook {
   rig: (id?: number) => RigReport;
   /** the third-person presentation: which muzzle light is lit and where the Kernel's filament hangs */
   presentation: () => ReturnType<Renderer["presentation"]>;
+  /** hold the HUD's flash panels open so a probe can photograph one (Stage 72) */
+  holdFlash: (on: boolean) => void;
   kickRemote: (id: number) => void;
   /** offline: put remotes on screen from the wire's fields, or take them away with null */
   injectRemote: (views: RemoteBodyView[] | null) => void;
@@ -223,7 +225,7 @@ window.__game = {
     rituals: (() => {
       const r = game.hud.receiptState;
       const q = (sel: string) => document.querySelector("#hud " + sel) as HTMLElement | null;
-      return { receipt: { open: r.open, lines: r.lines.slice(), printed: r.printed, stamped: r.stamped, signed: r.signed }, dossierOpen: !(q(".dossier")?.hidden ?? true), dossierEntries: document.querySelectorAll("#hud .dossier .ent:not(.dim)").length, debtText: q(".debt")?.classList.contains("on") ? (q(".debt")?.textContent ?? "") : "", riteOpen: !(q(".rite")?.hidden ?? true), riteTitle: q(".rite .rt")?.textContent ?? "" };
+      return { receipt: { open: r.open, lines: r.lines.slice(), printed: r.printed, stamped: r.stamped, signed: r.signed }, dossierOpen: !(q(".dossier")?.hidden ?? true), dossierEntries: document.querySelectorAll("#hud .dossier .ent:not(.dim)").length, debtText: q(".debt")?.classList.contains("on") ? (q(".debt")?.textContent ?? "") : "", riteOpen: !(q(".rite")?.hidden ?? true), riteTitle: q(".rite .rt")?.textContent ?? "", raised: { ...game.hud.raised } };
     })(),
     social: game.socialLog.slice(),
     debtTargetId: game.debtTargetId,
@@ -279,6 +281,7 @@ window.__game = {
   },
   rig: (id) => game.renderer.rig(id),
       presentation: () => game.renderer.presentation(),
+      holdFlash: (on: boolean) => game.hud.setFlashHold(on),
   kickRemote: (id) => game.renderer.kickRemote(id),
   // offline the frame loop never syncs remotes, so an injected one stays until injected away
   injectRemote: (views) => game.renderer.syncRemotes(views ?? []),

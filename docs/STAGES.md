@@ -1641,6 +1641,38 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 72 — The HUD holds still for the photograph
+
+**Goal.** Runs #99 and #100 were red on three checks between them, all of the same shape: a panel
+that lives for a second or two of the HUD's own clock, and a probe reaching in from outside that
+spends fifty to two hundred milliseconds per round trip. Polling faster does not fix a race whose
+window is shorter than the poll.
+
+**What changed.**
+
+- **The HUD's flash panels can be held open.** `setFlashHold` stops the three flash timers — the
+  pre-match dossier, the Debt banner, the Chapter rite — from expiring. The panel and its text are
+  the real ones, raised by the real event; only the expiry waits for the shutter. The probe holds
+  the panels before the round starts, photographs the dossier and the Debt banner when they come up,
+  and lets go.
+- **The panels count their raisings.** A check that polls can miss a panel; a counter cannot. The
+  dossier's check now also asserts it was raised, whatever the shutter caught.
+- **The Debt picture must be the banner it is named for.** The watch matched any Debt banner, so the
+  artifact could have been the OWED banner from the round before. It matches the cleared text now.
+- **The sway check waits for the hem to settle.** It sampled eight sprinting frames, which on a
+  machine that draws quickly is a tenth of a second — a quarter of the way through an ease at 10/s.
+  CI read 0.053 of the 0.06 it asks for. It now waits for the sway to stop rising.
+
+**Proof.** `probe:identity` 25/25 (two new: the dossier was raised, and holding the panels keeps the
+dossier up past its own life and lets go cleanly), `probe:body` 20/20, `probe:ship` 9/9,
+`probe:mobile` 14/14, `probe:crawl` 10/10, `smoke` 7/7, 529 tests, build and typecheck clean.
+
+**What the mutation test could and could not say.** Removing the hold does not fail the two picture
+checks here, because this machine's HUD clock runs at a fifth of wall time and the panels linger
+anyway — the very asymmetry that made CI red and this box green. So the hold has a check of its own
+that does fail without it: held, the dossier is still up ninety frames later, and it closes once
+released. That one is local and mutation-sensitive; the pictures' safety is CI's to confirm.
+
 ## Stage 71 — A clip comparison is a claim about a view
 
 **Goal.** The `deadletter_docks/node` frame in the city probe sat a hundredth of a unit under its
