@@ -1641,6 +1641,44 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 110 — The run strip pushed the panel onto the name
+
+**Goal.** THE RUN's own frame at 960 px, read after Stage 109: the mission panel carries the run
+strip — `◆ CARRYING 1 · BANKED 0 · TODAY 0/200 · OWED 0 UNITS · PVP ZONE · 4 CLAIMS OUT` — on
+one unwrapping line, which made the centred panel 630 px wide, from 165 to 795. Stage 107 lets
+the status panel give way to the panel, but not below its 180 px floor, and the floor ends at
+214: the file's header ran under the strip's panel by fifty pixels, the same fault Stage 107
+closed for the wake's panel, opened again by a wider one.
+
+**What changed.**
+
+- **The mission panel has a ceiling.** Centred, it may grow until it would meet the status panel
+  at its floor on the left or the map on the right, whichever is nearer, and no further — at 960
+  px that is 516 px. Past it, its lines wrap: the run strip is two lines now, and says the same.
+- **The status rule then holds**: with the panel at its ceiling the status panel sits at its
+  floor beside it, gap kept, and the alert (Stage 97) follows the taller panel down.
+- `missionMaxWidth` joins `client/hud/layout.ts`, pure and unit-tested with `statusWidth` against
+  it; the layout pass caps the panel before it measures it for the status and the alert.
+
+**Proof.** `probe:run` 20/20, one new, measured on the carry frame with the strip up: the status
+panel ends at 232, the mission panel spans 240–720 (its lines wrapped to 480 px, under the 516
+ceiling), the map begins at 820, and the strip is 41 px tall — two lines — where it had been one
+line and 630 px. And the same band at 800 px wide, where the ceiling is what holds: the status
+panel at its floor ends at 214, the mission panel spans 222–578 — the ceiling's 356 px with the
+8 px gap — and the map begins at 660. `tests/layout.test.ts` 12. 719 tests, build and typecheck
+clean.
+
+A note on which rule did what. An absolutely placed panel at `left: 50%` shrinks to fit the half
+of the view its left edge leaves it, so at 960 the wrap alone held the panel to 480 px and the
+ceiling of 516 never bound; the first mutation run passed for exactly that reason. The ceiling
+binds only where the status floor plus its gap is more than a quarter of the width — under about
+890 px — which is why the check now measures at 800 as well.
+
+One mutation for the one rule, with the panel given no ceiling: at 960 the band reads exactly as
+before — the wrap alone holds it there — and at 800 the panel grows to the half-view, 200–600,
+over a status panel that ends at 214; the check fails on the 800 clause alone, 19/20, and three
+of the twelve layout tests go with it.
+
 ## Stage 109 — The rack called the DIRECTIVE "THE"
 
 **Goal.** Two real frames read after Stage 108, and both carried `7 THE 12` on the weapon rack.

@@ -59,3 +59,15 @@ export function statusWidth(missionLeft: number | null, inset: number, frame: nu
   const room = Math.floor(missionLeft - STATUS_GAP - inset - frame);
   return Math.max(STATUS_MIN, Math.min(STATUS_WIDTH, room));
 }
+
+/**
+ * The most the centred mission panel may be wide (px), given the view's width, where the status
+ * panel would end at its narrowest, and where the map begins (Stage 110). The panel is centred, so
+ * its half-width is bounded on each side by the nearer of the two: the status panel's floor plus
+ * the gap on the left, the map plus the gap on the right. THE RUN's strip made the panel 630 px
+ * wide at 960, and the status panel, already at its floor, was run over.
+ */
+export function missionMaxWidth(viewWidth: number, statusFloorRight: number, mapLeft: number): number {
+  const half = Math.min(viewWidth / 2 - statusFloorRight - STATUS_GAP, mapLeft - STATUS_GAP - viewWidth / 2);
+  return Math.max(0, Math.floor(half * 2));
+}

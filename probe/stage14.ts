@@ -137,6 +137,38 @@ async function main(): Promise<void> {
     const picked = await a.waitForFunction(() => (window.__game.run()?.carried ?? 0) > 0, null, { timeout: 40000, polling: 100 }).then(() => true, () => false);
     const v1 = await a.evaluate(() => window.__game.run()!);
     const st1 = (await stats()).rooms["run-yard"]!;
+    // Stage 110: the run strip pushed the panel onto the name. Measured on this frame, with the
+    // strip up: the mission panel's edges against the status panel's and the map's
+    const band = await a.evaluate(() => {
+      const hud = document.getElementById("hud")!;
+      const H = hud.getBoundingClientRect();
+      // four rects, spelled out: a named helper in here trips esbuild's keep-names shim
+      const out: Record<string, { left: number; right: number; top: number; bottom: number }> = {};
+      for (const sel of [".mission", ".status", ".map", ".runstrip"]) {
+        const b = hud.querySelector(sel)!.getBoundingClientRect();
+        out[sel.slice(1)] = { left: b.left - H.left, right: b.right - H.left, top: b.top - H.top, bottom: b.bottom - H.top };
+      }
+      return { width: H.width, mission: out["mission"]!, status: out["status"]!, map: out["map"]!, strip: out["runstrip"]!, stripText: hud.querySelector(".runstrip")!.textContent ?? "" };
+    });
+    console.log(`band: status ${band.status.left.toFixed(0)}–${band.status.right.toFixed(0)} · mission ${band.mission.left.toFixed(0)}–${band.mission.right.toFixed(0)} · map ${band.map.left.toFixed(0)}–${band.map.right.toFixed(0)} · strip ${(band.strip.bottom - band.strip.top).toFixed(0)} px tall`);
+    // and the same band at 800 px wide: a centred panel shrinks to the half-view its left edge
+    // leaves it, which at 960 already holds it to 480, so the ceiling only binds on a narrower
+    // view — at 800 the status floor plus its gap is more than a quarter of the width, and a panel
+    // let grow to the half-view (400) would run over the header at 232
+    await a.setViewportSize({ width: 800, height: 450 });
+    const narrow = await a.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const hud = document.getElementById("hud")!;
+      const H = hud.getBoundingClientRect();
+      const out: Record<string, { left: number; right: number }> = {};
+      for (const sel of [".mission", ".status", ".map"]) {
+        const b = hud.querySelector(sel)!.getBoundingClientRect();
+        out[sel.slice(1)] = { left: b.left - H.left, right: b.right - H.left };
+      }
+      return { width: H.width, mission: out["mission"]!, status: out["status"]!, map: out["map"]! };
+    });
+    await a.setViewportSize({ width: 960, height: 540 });
+    check("with the run strip up the mission panel keeps clear of the file's header and of the map, and the strip wraps inside it — at 960 px and at 800", band.mission.left >= band.status.right + 4 && band.mission.right + 4 <= band.map.left && band.strip.bottom - band.strip.top > 20 && /CARRYING/.test(band.stripText) && narrow.width === 800 && narrow.mission.left >= narrow.status.right + 4 && narrow.mission.right + 4 <= narrow.map.left, `at ${band.width.toFixed(0)}: status ends ${band.status.right.toFixed(0)} · mission ${band.mission.left.toFixed(0)}–${band.mission.right.toFixed(0)} · map begins ${band.map.left.toFixed(0)} · strip ${(band.strip.bottom - band.strip.top).toFixed(0)} px tall · at ${narrow.width.toFixed(0)}: status ends ${narrow.status.right.toFixed(0)} · mission ${narrow.mission.left.toFixed(0)}–${narrow.mission.right.toFixed(0)} · map begins ${narrow.map.left.toFixed(0)}`);
     await shotCheck(a, `stage14-carry.png`);
     check("walking over a claim carries it: the strip counts it, the room counts it, the claim leaves the street until it respawns", picked && v1.carried === target.value && st1.run?.carried["ALPHA"] === target.value && v1.claims.length === claims.length - 1 && st1.run.claims === claims.length - 1, `carried ${v1.carried} (claim ${target.value}) · room ${JSON.stringify(st1.run?.carried)} · claims out ${v1.claims.length}`);
 

@@ -13,7 +13,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, rightBandWidth, statusWidth } from "./layout";
+import { alertTop, missionMaxWidth, rightBandWidth, STATUS_MIN, statusWidth } from "./layout";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot } from "./radar";
 
@@ -468,6 +468,15 @@ export class Hud {
     const rootBox = this.root.getBoundingClientRect();
     const rootTop = rootBox.top;
     const mission = this.q(".mission");
+    // the mission panel has a ceiling (Stage 110): centred, it may grow until it would meet the
+    // status panel at its floor on the left or the map on the right; past that its lines wrap
+    if (w > 0) {
+      const status0 = this.q(".status");
+      const frame0 = status0.offsetWidth - status0.clientWidth + (status0.clientWidth - (parseFloat(getComputedStyle(status0).width) || status0.clientWidth));
+      const map = this.q(".map").getBoundingClientRect();
+      const cap = `${missionMaxWidth(w, status0.offsetLeft + STATUS_MIN + frame0, map.left - rootBox.left)}px`;
+      if (mission.style.maxWidth !== cap) mission.style.maxWidth = cap;
+    }
     const panel = mission.getBoundingClientRect();
     this.q(".alert").style.top = `${alertTop(panel.bottom - rootTop)}px`;
     // and the status panel ends before the mission panel begins (Stage 107): its content width
