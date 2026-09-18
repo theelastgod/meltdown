@@ -127,12 +127,45 @@ async function main(): Promise<void> {
     check("the monorail car advances along its beam", Math.abs((a1.life.tram ?? 0) - (a0.life.tram ?? 0)) > 10 * citySecs * 0.8, `car ${a0.life.tram?.toFixed(1)} → ${a1.life.tram?.toFixed(1)} m in ${citySecs.toFixed(1)} s of city time`);
     const frames = a1.frames - a0.frames;
     const redraws = a1.life.adRedraws - a0.life.adRedraws;
-    // A 12 Hz throttle cannot redraw more often than frames are drawn, so the claim is "12 Hz, or
-    // every frame, whichever is rarer". The two counters are read one evaluate apart, so allow the
-    // boundary frame either way rather than demanding they line up exactly.
-    const wantRedraws = Math.min(12 * citySecs, frames) - 2;
+    // The tickers are throttled to 12 Hz, and a throttle cannot redraw more often than frames are
+    // drawn — but frames are not evenly spaced: a 3.7 fps CI runner draws a 1.2 s stall and then a
+    // burst of 30 ms frames, and "min(12 Hz, every frame)" over-counts what a 12 Hz throttle can do
+    // with that (run #139). So the oracle is the throttle itself, run here over the frame times the
+    // tickers were actually fed: a period of 1/12 s, the remainder carried, the carry capped below
+    // one period so a stall is one redraw plus one rather than a burst (Stage 114). From the same
+    // frames and the same starting carry the count must match exactly.
+    const fedFrames = a1.life.adFed - a0.life.adFed;
+    const fedDts = a1.life.adFrames.slice(a1.life.adFrames.length - fedFrames);
+    const PERIOD = 1 / 12;
+    let carry = a0.life.adCarry;
+    let wantRedraws = 0;
+    for (const dt of fedDts) {
+      const a = carry + Math.max(0, dt);
+      if (a < PERIOD) { carry = a; continue; }
+      carry = Math.min(a - PERIOD, PERIOD * 0.999);
+      wantRedraws++;
+    }
+    const fedSecs = fedDts.reduce((a, b) => a + b, 0);
+    const ringHeld = fedFrames <= a1.life.adFrames.length && fedFrames === fedDts.length;
+    check("ad tickers redraw exactly as a 12 Hz throttle of the frames actually drawn would: the remainder carried, a stall not followed by a burst", ringHeld && fedFrames > 0 && redraws === wantRedraws && redraws >= 1, `${redraws} redraws over ${fedFrames} fed frames (${frames} drawn) in ${fedSecs.toFixed(2)} s of city time · a 12 Hz throttle over those frame times: ${wantRedraws} · ring held ${ringHeld} · longest frame ${(Math.max(0, ...fedDts) * 1000).toFixed(0)} ms`);
     const shipDrift = Math.hypot(a1.life.ship.x - a0.life.ship.x, a1.life.ship.z - a0.life.ship.z);
-    check("ad tickers redraw at 12 Hz (every drawn frame when frames are slower) and the airship drifts", redraws >= wantRedraws && shipDrift > 0.3, `${redraws} redraws over ${frames} drawn frames in ${citySecs.toFixed(1)} s of city time (wanted ≥ ${wantRedraws.toFixed(1)}) · airship moved ${shipDrift.toFixed(1)} m`);
+    // The drawn frames here are slow enough that every one of them redraws whatever the period, so
+    // the rate itself is checked by feeding the same panels a hundred 20 ms frames by hand: a 12 Hz
+    // throttle that carries its remainder redraws 24 times (the dropped remainder gave 20; 6 Hz 12).
+    const handFed = await page.evaluate(() => {
+      const ads = window.__game.game.renderer.life.ads;
+      if (!ads) return null;
+      const before = ads.redraws;
+      const carry0 = ads.carry;
+      const t0 = window.__game.state().life.clock;
+      for (let i = 0; i < 100; i++) ads.update(0.02, t0 + 0.02 * (i + 1));
+      return { redraws: ads.redraws - before, carry0, carry: ads.carry };
+    });
+    // the carry left by the last drawn frame (anything under a period) may or may not round up to
+    // a 25th redraw, so the expectation is read from it rather than assumed
+    const handWant = handFed ? Math.floor((handFed.carry0 + 2) / PERIOD + 1e-9) : 0;
+    check("fed a hundred 20 ms frames by hand, the panels redraw 24 times (or 25 on the carry left by the last drawn frame): 12 Hz on the average, the remainder carried", !!handFed && handFed.redraws === handWant && handWant >= 24 && handWant <= 25, `${handFed?.redraws ?? "no panels"} redraws over 100 × 20 ms · carry in ${handFed?.carry0.toFixed(4) ?? "-"} s, want ${handWant} · carry out ${handFed?.carry.toFixed(4) ?? "-"} s`);
+    check("and the airship drifts", shipDrift > 0.3, `airship moved ${shipDrift.toFixed(1)} m in ${citySecs.toFixed(1)} s of city time`);
     // citizens stay on the sidewalks: every sampled position lies on a walk loop's edge band
     const onWalk = a1.life.sample.every((p) => (L.walks ?? []).some((w) => (Math.abs(p.x - w.x0) < 1.2 || Math.abs(p.x - w.x1) < 1.2) && p.z > w.z0 - 1.2 && p.z < w.z1 + 1.2) || (L.walks ?? []).some((w) => (Math.abs(p.z - w.z0) < 1.2 || Math.abs(p.z - w.z1) < 1.2) && p.x > w.x0 - 1.2 && p.x < w.x1 + 1.2));
     check("citizens keep to the sidewalk loops (never in the road, never in the sim)", onWalk, a1.life.sample.map((p) => `(${p.x.toFixed(0)},${p.z.toFixed(0)})`).join(" "));

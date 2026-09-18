@@ -9,6 +9,7 @@
 import * as THREE from "three";
 import type { LevelDef, TramLine, WalkLoop } from "@shared/sim/level";
 import { PALETTE } from "./city";
+import { tickerStep } from "./ticker";
 import { FAR_LAYER } from "./renderer";
 
 function lcg(seed: number): () => number {
@@ -259,8 +260,13 @@ export class HoloAds {
   readonly group = new THREE.Group();
   private panels: { mesh: THREE.Mesh; canvas: HTMLCanvasElement; tex: THREE.CanvasTexture; mat: THREE.MeshBasicMaterial; offset: number; line: number }[] = [];
   private acc = 0;
+  private lastRedraw = 0;
   /** ticker redraws so far (probes) */
   redraws = 0;
+  /** frames fed to the throttle so far, and a ring of their frame times (probes) */
+  fed = 0;
+  static readonly RING = 600;
+  private readonly ring = new Float64Array(HoloAds.RING);
   static readonly COPY = ["LEASE RENEWAL IS AUTOMATIC", "COMPLY · COMPLY · COMPLY", "VANTAGE INTEGRITY SYSTEMS", "YOUR FUTURE HAS BEEN PRICED", "STABILITY IS A SERVICE", "REPORT UNLISTED FILES", "SLEEP IS COLLATERAL", "THE KERNEL SEES THE CITY WHOLE"];
   constructor(ads: readonly { x: number; y: number; z: number; rotY: number; w: number; h: number }[]) {
     ads.forEach((a, i) => {
@@ -304,14 +310,27 @@ export class HoloAds {
       p.tex.needsUpdate = true;
     }
   }
+  /** the throttle's accumulator (probes) */
+  get carry(): number {
+    return this.acc;
+  }
+  /** the last `n` frame times fed to the throttle, oldest first (probes) */
+  recent(n: number): number[] {
+    const count = Math.min(n, this.fed, HoloAds.RING);
+    const out: number[] = [];
+    for (let i = this.fed - count; i < this.fed; i++) out.push(this.ring[i % HoloAds.RING]!);
+    return out;
+  }
   update(dt: number, time: number): void {
-    this.acc += dt;
-    if (this.acc >= 1 / 12) {
-      this.acc = 0;
-      this.redraws++;
-      this.redraw(time);
-      for (const p of this.panels) if (Math.floor(time / 11 + p.offset) !== Math.floor((time - 1 / 12) / 11 + p.offset)) p.line = (p.line + 1) % HoloAds.COPY.length;
-    }
+    this.ring[this.fed % HoloAds.RING] = dt;
+    this.fed++;
+    const step = tickerStep(this.acc, dt);
+    this.acc = step.acc;
+    if (!step.redraw) return;
+    this.redraws++;
+    this.redraw(time);
+    for (const p of this.panels) if (Math.floor(time / 11 + p.offset) !== Math.floor(this.lastRedraw / 11 + p.offset)) p.line = (p.line + 1) % HoloAds.COPY.length;
+    this.lastRedraw = time;
   }
 }
 

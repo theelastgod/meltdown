@@ -1641,6 +1641,50 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 114 — The ticker's clock assumed even frames
+
+**Goal.** CI run #139, red on the city-life probe: `4 redraws over 7 drawn frames in 1.9 s
+(wanted ≥ 5.0)`. The ad tickers are throttled to 12 Hz, and the check said "12 Hz, or every drawn
+frame, whichever is rarer" — true when frames are evenly spaced, and a 3.7 fps runner does not
+space them: it draws a stall of most of a second and then a burst of 30 ms frames, and a 12 Hz
+throttle fed that burst redraws once for the stall and then waits. The check was measuring a
+pacing the runner never had. Reading the throttle itself turned up the thing a player would
+notice on an ordinary machine: it dropped the remainder on every redraw, so at 20 ms frames the
+tickers ran at 10 Hz and at 33 ms at 10 Hz — "12 Hz" only at exactly 60 fps.
+
+**What changed.**
+- `client/render/ticker.ts` — the throttle as a pure step: `TICKER_HZ` 12, `tickerStep(acc, dt)`
+  carries the remainder forward and caps the carry just under one period, so the average is 12 Hz
+  at any frame rate and a hitch is one redraw plus one, never a burst at frame rate;
+  `tickerRedraws(dts, acc0)` folds a sequence of frame times.
+- `client/render/life.ts` — `HoloAds.update` steps that throttle; the copy line advances against
+  the time of the last redraw rather than an assumed period; the panel keeps a ring of the last 600
+  frame times it was fed, `fed`, and `carry` (probes).
+- `client/main.ts` — `state().life` carries `adFed`, `adCarry`, `adFrames`.
+- `probe/stage9b.ts` — the oracle is the throttle run over the frame times the tickers were
+  actually fed, from the same starting carry: the count must match exactly, whatever the pacing.
+  The airship's drift is its own check.
+- `tests/ticker.test.ts` — the step, the carry, the cap, 24 redraws in 2 s of 20 ms frames (the
+  dropped remainder gave 20), every frame when frames are slower, the stall.
+
+**Proof.** `npm test` 734 tests (nine new); `npm run probe:cityLife` 21/21 — on this machine's
+headless frames (six to eight in 2.4 s, the longest capped at 500 ms) the count matches the
+throttle run over those frame times exactly, and fed a hundred 20 ms frames by hand the panels
+redraw 24 times (25 when the carry left by the last drawn frame rounds up), where the dropped
+remainder gave 20; the airship drifts; `npm run build` and `npm run smoke` 7/7. The old check would
+have wanted ≥ 5 of 6 and been satisfied by a ticker that skipped every third frame; the new one
+wants the exact count.
+
+**Mutation.** Three, each on `client/render/ticker.ts` alone. The remainder dropped again
+(`acc: 0` on redraw): five unit tests fail and the probe's hand-fed check fails, 20 redraws over
+100 × 20 ms; on the drawn frames alone it also failed once by a frame (7 of 8) and would pass on a
+run where every frame was slower than a period — which is why the hand-fed check exists. The
+ticker at 6 Hz: four unit tests fail and the hand-fed check fails at 12 redraws. The tickers never
+redraw: eight unit tests fail and the drawn-frame check fails, 0 redraws against an oracle of 8.
+Every other check passes under each mutation. One correction along the way: the hand-fed check
+first assumed the throttle started empty and read 24 with the carry at a full period by luck;
+it now reads the carry it starts from and derives the count.
+
 ## Stage 113 — The alert had no place in a frame
 
 **Goal.** The campaign's closed-file frame, read after Stage 112: the card up, the chrome silenced
