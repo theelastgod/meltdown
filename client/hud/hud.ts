@@ -11,7 +11,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, rightBandWidth } from "./layout";
+import { alertTop, rightBandWidth, statusWidth } from "./layout";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot } from "./radar";
 
@@ -441,9 +441,19 @@ export class Hud {
   private layout(): void {
     const w = this.root.clientWidth;
     if (w > 0) this.q(".ammo").style.maxWidth = `${rightBandWidth(w, 14)}px`;
-    const rootTop = this.root.getBoundingClientRect().top;
-    const panel = this.q(".mission").getBoundingClientRect();
+    const rootBox = this.root.getBoundingClientRect();
+    const rootTop = rootBox.top;
+    const mission = this.q(".mission");
+    const panel = mission.getBoundingClientRect();
     this.q(".alert").style.top = `${alertTop(panel.bottom - rootTop)}px`;
+    // and the status panel ends before the mission panel begins (Stage 107): its content width
+    // follows the panel's measured left edge; a hidden panel is nothing to keep clear of
+    const status = this.q(".status");
+    const frame = status.offsetWidth - status.clientWidth + (status.clientWidth - (parseFloat(getComputedStyle(status).width) || status.clientWidth));
+    const inPlay = mission.offsetParent !== null && panel.width > 0;
+    const want = statusWidth(inPlay ? panel.left - rootBox.left : null, status.offsetLeft, frame);
+    const px = `${want}px`;
+    if (status.style.width !== px) status.style.width = px;
   }
 
   /**

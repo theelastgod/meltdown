@@ -409,17 +409,24 @@ async function main(): Promise<void> {
       const H = hud.getBoundingClientRect();
       // no named helpers in here: the probe's build injects a __name the page does not have
       const out: Record<string, { left: number; right: number; top: number; bottom: number }> = {};
-      for (const sel of [".rack", ".nades", ".alert", ".mission"]) {
+      for (const sel of [".rack", ".nades", ".alert", ".mission", ".status", ".status .bar.ye"]) {
         const r = hud.querySelector(sel)!.getBoundingClientRect();
         out[sel.slice(1)] = { left: r.left - H.left, right: r.right - H.left, top: r.top - H.top, bottom: r.bottom - H.top };
       }
-      return { width: H.width, rack: out["rack"]!, nades: out["nades"]!, alert: out["alert"]!, mission: out["mission"]!, alertText: hud.querySelector(".alert")!.textContent };
+      // the file's header line (Stage 107): whether its text is wider than the box that shows it
+      const line = hud.querySelector(".status .line") as HTMLElement;
+      return { width: H.width, rack: out["rack"]!, nades: out["nades"]!, alert: out["alert"]!, mission: out["mission"]!, status: out["status"]!, ammobar: out["status .bar.ye"]!, alertText: hud.querySelector(".alert")!.textContent, line: { scroll: line.scrollWidth, client: line.clientWidth, text: line.textContent ?? "", overflow: getComputedStyle(line).textOverflow } };
     });
     const overlap = chrome.alert.top < chrome.mission.bottom && chrome.alert.bottom > chrome.mission.top && chrome.alert.left < chrome.mission.right && chrome.alert.right > chrome.mission.left;
     check("the rack keeps to the right of the play: its left edge is past the middle of the screen with room to spare, at this width and in rows", chrome.rack.left > chrome.width * 0.5 + 30 && chrome.nades.left > chrome.width * 0.5 + 30 && chrome.rack.right <= chrome.width - 10, `rack ${chrome.rack.left.toFixed(0)}–${chrome.rack.right.toFixed(0)} px of ${chrome.width.toFixed(0)} (middle ${(chrome.width / 2).toFixed(0)}) · ${(chrome.rack.bottom - chrome.rack.top).toFixed(0)} px tall`);
     // "under" is a visible gap, not a touch: the old fixed 58 px cleared this scene's panel by one
     // pixel and passed the first version of this check, which is not the claim being made
     check("and the alert sits under the mission panel rather than behind it, with a visible gap", !!chrome.alertText && !overlap && chrome.alert.top >= chrome.mission.bottom + 4 && chrome.alert.top < 130, `alert top ${chrome.alert.top.toFixed(0)} px · mission panel ends at ${chrome.mission.bottom.toFixed(0)} px · gap ${(chrome.alert.top - chrome.mission.bottom).toFixed(0)} px`);
+    // Stage 107: the mission panel sat on the file's name. Measured, not eyeballed: where the
+    // status panel ends, where the mission panel begins, and whether the header line is cut
+    console.log(`status ${chrome.status.left.toFixed(0)}–${chrome.status.right.toFixed(0)} px (top ${chrome.status.top.toFixed(0)}–${chrome.status.bottom.toFixed(0)}) · ammo bar to ${chrome.ammobar.right.toFixed(0)} · mission ${chrome.mission.left.toFixed(0)}–${chrome.mission.right.toFixed(0)} (top ${chrome.mission.top.toFixed(0)}–${chrome.mission.bottom.toFixed(0)}) · header line ${chrome.line.scroll} of ${chrome.line.client} px: "${chrome.line.text.trim()}"`);
+    check("the file's header keeps clear of the mission panel: the status panel ends before the panel begins, with a gap", chrome.status.right + 4 <= chrome.mission.left && chrome.ammobar.right < chrome.mission.left, `status panel ends at ${chrome.status.right.toFixed(0)} px (its bars at ${chrome.ammobar.right.toFixed(0)}) · mission panel begins at ${chrome.mission.left.toFixed(0)} px · gap ${(chrome.mission.left - chrome.status.right).toFixed(0)} px`);
+    check("and where the header line does not fit, the cut is an ellipsis rather than a hard edge", chrome.line.scroll > chrome.line.client && chrome.line.overflow === "ellipsis", `header line ${chrome.line.scroll} px of text in ${chrome.line.client} px · text-overflow ${chrome.line.overflow}`);
     await shotCheck(pg, "stage60-closed.png");
     // and coming back alive gives the camera back
     const relet = await pg.evaluate(async () => {

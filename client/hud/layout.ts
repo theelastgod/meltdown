@@ -39,3 +39,23 @@ export function crossesPlay(left: number, right: number, viewWidth: number): boo
   const band = viewWidth - Math.floor(viewWidth * RIGHT_BAND);
   return left < band && right > viewWidth * 0.5;
 }
+
+/** the status panel's content width at rest (px), the stylesheet's own number */
+export const STATUS_WIDTH = 330;
+/** the status panel keeps this far from the mission panel (px) */
+export const STATUS_GAP = 8;
+/** and never narrower than this (px): below it the name is not a name */
+export const STATUS_MIN = 180;
+
+/**
+ * The status panel's content width, given where the mission panel begins (Stage 107). The status
+ * panel is anchored at `inset` from the left with `frame` px of padding and border around its
+ * content; the mission panel is centred and as wide as its text, so at 960 px the two met — the
+ * file's own name ran under the objective and was cut at its edge. Null means no panel to keep
+ * clear of.
+ */
+export function statusWidth(missionLeft: number | null, inset: number, frame: number): number {
+  if (missionLeft === null) return STATUS_WIDTH;
+  const room = Math.floor(missionLeft - STATUS_GAP - inset - frame);
+  return Math.max(STATUS_MIN, Math.min(STATUS_WIDTH, room));
+}

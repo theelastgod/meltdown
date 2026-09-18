@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, RIGHT_BAND, rightBandWidth } from "../client/hud/layout";
+import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, RIGHT_BAND, rightBandWidth, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -36,5 +36,21 @@ describe("the alert's seat", () => {
 
   it("but never drops out of the top band", () => {
     expect(alertTop(400)).toBe(ALERT_FLOOR);
+  });
+});
+
+describe("statusWidth (Stage 107)", () => {
+  it("rests at the stylesheet's width when nothing is in the way", () => {
+    expect(statusWidth(null, 14, 20)).toBe(STATUS_WIDTH);
+    expect(statusWidth(900, 14, 20)).toBe(STATUS_WIDTH);
+  });
+  it("gives way to the mission panel with the gap kept", () => {
+    // at 960 px the panel begins at 345: the box must end at 337
+    const w = statusWidth(345, 14, 20);
+    expect(14 + w + 20 + STATUS_GAP).toBeLessThanOrEqual(345);
+    expect(w).toBe(345 - STATUS_GAP - 14 - 20);
+  });
+  it("never narrower than a name", () => {
+    expect(statusWidth(100, 14, 20)).toBe(STATUS_MIN);
   });
 });

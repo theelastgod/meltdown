@@ -1641,6 +1641,36 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 107 — The mission panel sat on the file's name
+
+**Goal.** A real frame at 960 px wide, read after Stage 106: the file's own header — `▲ BLANK ·
+DRAINAGE YARD (MAGENTA) · 1 online` — ran under the mission panel and was cut at its edge, and the
+panel's bars ran on beneath it. Measured rather than eyeballed: the status panel spanned 14–364 px,
+the mission panel began at 345, nineteen pixels of one chrome on top of another, and the header
+line was 337 px of text in a 330 px box with a hard clip. Stage 97 kept the rack out of the play
+and the alert out from behind the panel; nobody had kept the panel off the name.
+
+**What changed.**
+
+- **The status panel gives way to the mission panel**: its content width follows the panel's
+  measured left edge, eight pixels short of it, and never narrower than a name. The bars go with
+  it, since they are inside it. A hidden panel is nothing to keep clear of.
+- **Where the header does not fit, the cut is an ellipsis**, not a hard edge — the line says it is
+  longer than the room.
+- `statusWidth` joins `client/hud/layout.ts`, pure and unit-tested; the HUD's layout pass measures
+  and applies it every frame beside the alert's placement.
+
+**Proof.** `probe:tps` 38/38, two new, measured on the frame: the status panel now ends at 337 px
+with its bars at 327, the mission panel begins at 345, gap 8; the header line is 337 px of text in
+303 px with `text-overflow: ellipsis`. `stage60-closed.png` is the frame: `· 1 …` where the cut
+is, the bars inside the panel, the alert under the panel. `tests/layout.test.ts` 8. 704 tests,
+build and typecheck clean.
+
+Two mutations, each failing its own guard alone. With the status panel never giving way it ends
+at 364 px against a panel beginning at 345, gap −19, and the ellipsis check still passes — 37/38,
+with two of the eight layout tests going with it. With the ellipsis dropped the panel still ends at
+337 with its gap and only the second check fails, `text-overflow clip` — 37/38.
+
 ## Stage 106 — The charge was a number in the corner
 
 **Goal.** The LONGWAVE charges: hold the trigger for nine tenths of a second and the round that

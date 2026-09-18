@@ -44,7 +44,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .p.mg { border-color: var(--mg); color: var(--mg); text-shadow: 0 0 4px rgba(255,62,201,0.5); box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 0 8px rgba(255,62,201,0.2); }
 #hud .p.cy { border-color: var(--cy); color: var(--cy); text-shadow: 0 0 4px rgba(53,242,255,0.5); }
 #hud .status { left: 14px; top: 14px; width: 330px; }
-#hud .status .line { white-space: nowrap; overflow: hidden; }
+#hud .status .line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #hud .status .dim { color: rgba(55,255,139,0.7); }
 #hud .bars { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 6px; }
 #hud .bar { height: 5px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); position: relative; }
