@@ -265,6 +265,24 @@ async function main(): Promise<void> {
     });
     const kErr = kernel.said >= 0 ? Math.abs(kernel.said - kernel.actual) : 99;
     check("the strip counts down to the next KERNEL pulse, and the pulse lands when it says", kernel.fired === 1 && kernel.said > 5 && kErr < 1.5, `it said ${kernel.said}s, the pulse came ${kernel.actual.toFixed(1)}s later (${kErr.toFixed(2)}s out) · "${kernel.strip.trim()}"`);
+    // Stage 124: the round ended with the KERNEL's pulse. Let the clock run out for real, and the
+    // warm-up after it, and count what was heard: the round's own end, the wake's own start, and
+    // no pulse for either
+    const phaseCues = await page.evaluate(async () => {
+      const w = window.__game.game.world.wake!;
+      const before = { ...window.__game.state().audio };
+      w.phase = "wake"; w.timeLeft = 0.01; w.score[1] = 40; w.score[2] = 12;
+      window.__game.advance(2);
+      const afterEnd = { ...window.__game.state().audio };
+      const endedIn = (w as { phase: string }).phase; // the sim moved it; TS still holds the literal just assigned
+      w.phase = "warmup"; w.timeLeft = 0.01;
+      window.__game.advance(2);
+      const afterBegin = { ...window.__game.state().audio };
+      const beganIn = (w as { phase: string }).phase;
+      // no named helpers in here: the probe's build injects a __name the page does not have
+      return { endedIn, beganIn, roundOver: (afterEnd["roundOver"] ?? 0) - (before["roundOver"] ?? 0), pulseAtEnd: (afterEnd["kernelPulse"] ?? 0) - (before["kernelPulse"] ?? 0), wakeBegins: (afterBegin["wakeBegins"] ?? 0) - (afterEnd["wakeBegins"] ?? 0), pulseAtBegin: (afterBegin["kernelPulse"] ?? 0) - (afterEnd["kernelPulse"] ?? 0) };
+    });
+    check("the round's end and the wake's start are heard in their own voices, not as the KERNEL's pulse", phaseCues.endedIn === "results" && phaseCues.roundOver === 1 && phaseCues.pulseAtEnd === 0 && phaseCues.beganIn === "wake" && phaseCues.wakeBegins === 1 && phaseCues.pulseAtBegin === 0, `clock out → ${phaseCues.endedIn}: roundOver ${phaseCues.roundOver}, pulse ${phaseCues.pulseAtEnd} · warm-up out → ${phaseCues.beganIn}: wakeBegins ${phaseCues.wakeBegins}, pulse ${phaseCues.pulseAtBegin}`);
     // Stage 121: the round ended with a line. Put the wake into its results phase by hand and read
     // the drawn frame: the card, its lines, the chrome silenced; then the warm-up, and the card gone
     const roundOver = await page.evaluate(async () => {

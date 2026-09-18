@@ -590,6 +590,10 @@ export class Game {
           case FX.phase:
             this.kernelMark = ev.a === 1 ? (this.netMatch?.timeLeft ?? null) : null;
             this.hud.alert(ev.a === 1 ? "◆ THE WAKE BEGINS" : ev.a === 2 ? `◆ ROUND OVER — ${ev.b ? `CELL ${ev.b === 1 ? "ONE" : "TWO"} WOKE THE YARD` : "NO ONE WOKE"}` : "◆ WARM-UP", false, 4);
+            // online the phase had been silent (Stage 124): the same voices as offline
+            if (ev.a === 1) this.audio.wakeBegins();
+            else if (ev.a === 2) this.audio.roundOver(ev.b === 0 ? "none" : ev.b === this.player.team ? "won" : "lost");
+            else this.audio.kernelPulse();
             this.renderer.post.kick(1);
             break;
           case FX.fullWake:
@@ -1255,7 +1259,11 @@ export class Game {
         // the cadence runs from the round's start, so that is a mark too (Stage 87)
         this.kernelMark = ev.phase === "wake" ? (this.world.wake?.timeLeft ?? null) : null;
         this.hud.alert(ev.phase === "wake" ? "◆ THE WAKE BEGINS — PULL THE NODES OFF THE MODEL" : ev.phase === "results" ? `◆ ROUND OVER — ${ev.winner ? `CELL ${ev.winner === 1 ? "ONE" : "TWO"} WOKE THE YARD` : "NO ONE WOKE"}` : "◆ WARM-UP", false, 4);
-        this.audio.kernelPulse();
+        // the round's start and its end have their own voices (Stage 124); the KERNEL's pulse is
+        // the warm-up's, the model taking the district back
+        if (ev.phase === "wake") this.audio.wakeBegins();
+        else if (ev.phase === "results") this.audio.roundOver(ev.winner === 0 ? "none" : ev.winner === this.player.team ? "won" : "lost");
+        else this.audio.kernelPulse();
         this.renderer.post.kick(1);
         break;
       case "fullWake":

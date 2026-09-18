@@ -423,6 +423,22 @@ export class GameAudio {
     for (const [i, f] of [523, 659, 784].entries()) this.tone({ dur: 0.16, from: f, gain: 0.07, type: "triangle", delay: 0.11 * i });
   }
 
+  /** the wake begins (Stage 124): a rising four-note figure, the round's own start, not the KERNEL's pulse */
+  wakeBegins(): void {
+    this.count("wakeBegins");
+    if (!this.ctx) return;
+    for (const [i, f] of [330, 415, 494, 660].entries()) this.tone({ dur: 0.22, from: f, gain: 0.08, type: "triangle", delay: 0.09 * i });
+  }
+
+  /** the round is over (Stage 124): a resolving figure when your cell woke the district, a falling one when the other did, a level one when no one did */
+  roundOver(outcome: "won" | "lost" | "none"): void {
+    this.count("roundOver");
+    if (!this.ctx) return;
+    const notes = outcome === "won" ? [392, 494, 587, 784] : outcome === "lost" ? [523, 440, 349, 262] : [440, 440, 440];
+    for (const [i, f] of notes.entries()) this.tone({ dur: 0.34, from: f, gain: 0.09, type: "triangle", delay: 0.16 * i });
+    this.tone({ dur: 1.4, from: 55, to: 40, gain: 0.35 });
+  }
+
   kernelPulse(): void {
     this.count("kernelPulse");
     if (!this.ctx) return;

@@ -1641,6 +1641,31 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 124 — The round ended with the KERNEL's pulse
+
+**Goal.** Every phase change of the wake — the warm-up ending, the round beginning, the round
+ending — played the same sound offline: the KERNEL's pulse, the low throb that means VANTAGE has
+just drained a node. The biggest moment of a match sounded like the thing that happens every 75
+seconds of it. Online, the same events played nothing at all.
+
+**What changed.**
+- `client/audio.ts` — `wakeBegins()`: a rising four-note figure; `roundOver(outcome)`: a resolving
+  figure over a long low tone when your cell woke the district, a falling one when the other cell
+  did, a level one when no one did.
+- `client/game.ts` — the phase event, offline and online, plays the wake's start and the round's
+  end in their own voices; the KERNEL's pulse is the warm-up's, the model taking the district back.
+- `probe/stage5.ts` — the clock run out for real and the warm-up after it: one round-over cue
+  and no pulse at the end, one wake-begins cue and no pulse at the start.
+
+**Proof.** `npm test` 754 tests; `npm run probe:wake` 21/21 — the clock run out lands in
+`results` with one round-over cue and no pulse, the warm-up run out lands in `wake` with one
+wake-begins cue and no pulse, and the round card of Stage 121 still reads as before; `npm run
+build` and `npm run smoke` 7/7.
+
+**Mutation.** The round's end plays the KERNEL's pulse again: the wake probe fails its new
+check, 20/21 (`clock out → results: roundOver 0, pulse 1`); every other check passes. The
+online path has no probe of its own and carries the same three lines as the offline one.
+
 ## Stage 123 — The log called the gun by its id
 
 **Goal.** The tps probe's closed frame, in the log: `» BLANK → DUMMY-04 · LEASE_BREAKER · TTK
