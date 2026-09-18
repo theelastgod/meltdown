@@ -7,7 +7,7 @@ import { WAKE } from "@shared/sim/wake";
 import type { InputFrame } from "@shared/sim/input";
 import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS } from "@shared/sim/level";
 import { eyeHeight, eyePos, type PlayerState } from "@shared/sim/player";
-import { canSee } from "@shared/sim/ai";
+import { canSee, MECH, WASP } from "@shared/sim/ai";
 import { aimAssistScale } from "./aimassist";
 import { DUMMY_HEIGHT, DUMMY_RADIUS, hashWorld, MECH_HEIGHT, MECH_RADIUS, WASP_HEIGHT, WASP_RADIUS, World, type SimEvent } from "@shared/sim/world";
 import { lenXZ, wrapAngle } from "@shared/math/vec3";
@@ -33,6 +33,7 @@ import { shotPass } from "./nearmiss";
 import { lastRoundsEdge } from "./hud/ammo";
 import { momentLine, runMoments } from "./runcue";
 import { shieldLine, shieldMoments } from "./shieldcue";
+import { freshestVantage, targetRead } from "./hud/target";
 import { kernelIn, nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
@@ -888,6 +889,24 @@ export class Game {
     forgetOldHits(this.closeBook, hit.at);
   }
 
+  /**
+   * A VANTAGE body's health and its maximum, from the sim offline or the wire online (a wasp's
+   * comes whole, a mech's halved to fit the byte), or null when the body is not known.
+   */
+  private vantageHealth(kind: "wasp" | "mech", id: number): { health: number; max: number } | null {
+    if (!this.net) {
+      if (kind === "wasp") {
+        const w = this.world.wasps.find((x) => x.id === id);
+        return w ? { health: w.alive ? w.health : 0, max: WASP.health } : null;
+      }
+      const m = this.world.mechs.find((x) => x.id === id);
+      return m ? { health: m.alive ? m.health : 0, max: MECH.health } : null;
+    }
+    const e = this.netEntities.find((x) => x.kind === (kind === "wasp" ? ENT_WASP : ENT_MECH) && x.id === id);
+    if (!e) return null;
+    return kind === "wasp" ? { health: e.a === 1 ? e.b : 0, max: WASP.health } : { health: e.a === 1 ? e.b * 2 : 0, max: MECH.health };
+  }
+
   /** last frame's state by wasp, and the clock at each wasp's last cue (Stage 98) */
   private waspPrev = new Map<number, number>();
   private waspCued = new Map<number, number>();
@@ -1397,6 +1416,13 @@ export class Game {
     this.renderer.render(view, rdt);
     const shown = this.renderer.view();
     this.hud.setReticle({ ...shown.reticle, arc: shown.aim.arc });
+    // and what my last round did to a VANTAGE body (Stage 103), read from the health the sim or
+    // the wire already carries, for two seconds after the round landed
+    {
+      const fresh = freshestVantage(this.closeBook, this.renderer.clockNow);
+      const hp = fresh ? this.vantageHealth(fresh.kind, fresh.id) : null;
+      this.hud.setTarget(fresh && hp ? targetRead(fresh.kind, fresh.id, hp.health, hp.max, fresh.at, this.renderer.clockNow) : null);
+    }
     // and where the last hits came from, relative to where the camera is looking now
     this.hud.setDamage(hitMarks(this.hits, p.pos.x, p.pos.z, view.yaw, this.renderer.clockNow));
     // a live charge near the file (Stage 93): until now a frag landing behind you was drawn in the

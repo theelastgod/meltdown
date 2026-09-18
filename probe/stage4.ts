@@ -422,6 +422,49 @@ async function main(): Promise<void> {
     check("the shield breaking is heard once and the bar says so, a second hit on the bare file is not a second break", shield.broke.shield <= 0 && shield.broke.health === 60 && /\bbroken\b/.test(shield.broke.cls) && shield.broke.brk === 1 && /SHIELD DOWN/.test(shield.broke.line) && shield.again.brk === 1 && shield.again.back === 0 && /\bbroken\b/.test(shield.again.cls) && shield.again.health === 55, `40 into a ${shield.max}-point shield: shield ${shield.broke.shield}, integrity ${shield.broke.health}, bar "${shield.broke.cls}", break ×${shield.broke.brk}, "${shield.broke.line.trim()}" · 5 more: integrity ${shield.again.health}, break ×${shield.again.brk}, back ×${shield.again.back}, bar "${shield.again.cls}"`);
     check("and it is heard coming back, once, when it is whole again — the bar's frame clears with it", shield.back.shield >= shield.max && shield.back.back === 1 && shield.back.brk === 1 && !/\bbroken\b/.test(shield.back.cls) && /SHIELD BACK/.test(shield.back.line), `whole after ${shield.back.ticks} ticks (gate 240 + regen 120): shield ${shield.back.shield}/${shield.max}, back ×${shield.back.back}, break ×${shield.back.brk}, bar "${shield.back.cls}", "${shield.back.line.trim()}"`);
 
+    // Stage 103: what you put into the mech. A round on a VANTAGE body used to be a spark and
+    // nothing else; now the body's health reads under the reticle for two seconds. Stage a wasp,
+    // EMP-sagged so it sits still and does not shoot back, one round in the magazine, and read the
+    // reticle's own text against the sim's own number.
+    const tread = await page.evaluate(async () => {
+      const g = window.__game.game;
+      const p = g.player;
+      const w = g.world.wasps[0];
+      if (!w) return { staged: false, before: "", on: false, text: "", health: 0, max: 0, pct: -1, gone: true, alive: false, ticks: -1, trace: "", aim: "", waited: 0 };
+      p.pos.x = 0; p.pos.y = 1.2; p.pos.z = -4.5;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      p.alive = true; p.health = 70; p.shield = p.maxShield;
+      w.alive = true; w.health = 40; w.respawnTimer = 0; w.disabledTimer = 60; w.state = "patrol"; w.targetId = -1;
+      // three metres out at head height: the range floor in front of the file is crates (the first
+      // stagings put the wasp at 0.6 m and the round ended in them at y 1.2 and 1.6); a disabled
+      // wasp sags at 2 m/s, so the shot four ticks in is led by that
+      w.pos.x = p.pos.x; w.pos.y = 2.8; w.pos.z = p.pos.z - 3;
+      w.vel.x = w.vel.y = w.vel.z = 0;
+      p.weapon.ammo[1] = 1;
+      p.weapon.reloadTimer = 0;
+      p.weapon.reloadSeated = false;
+      const tg = document.querySelector("#hud .xh .tg") as HTMLElement;
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const before = tg.className;
+      // aim at the body's centre: the wasp's capsule runs from 0.45 under its position to 0.45 over
+      window.__game.setBot([{ kind: "slot", slot: 1 }, { kind: "fire", ticks: 70, aimAt: { x: w.pos.x, y: w.pos.y - 0.13, z: w.pos.z } }, { kind: "hold", ticks: 600 }]);
+      let t = 0;
+      while (w.health >= 40 && t < 120) { window.__game.advance(1); t++; }
+      window.__game.advance(1);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const tick0 = g.world.tick - t - 1;
+      const trace = window.__game.events().filter((e) => e.tick >= tick0 && (e.type === "fire" || e.type === "shot" || e.type === "dryFire" || e.type === "reloadStart" || e.type === "swap")).map((e) => `${e.tick - tick0}:${e.type}${e.type === "shot" ? `→${e.hit.kind} from (${e.from.x.toFixed(1)},${e.from.y.toFixed(1)},${e.from.z.toFixed(1)}) to (${e.to.x.toFixed(1)},${e.to.y.toFixed(1)},${e.to.z.toFixed(1)})` : ""}`).join(" ");
+      const hit = { on: tg.classList.contains("on"), text: tg.textContent ?? "", health: w.health, alive: w.alive, ticks: t, trace, aim: `yaw ${p.yaw.toFixed(2)} pitch ${p.pitch.toFixed(2)} ammo ${p.weapon.ammo[p.weapon.slot]} slot ${p.weapon.slot} wasp at (${w.pos.x.toFixed(1)},${w.pos.y.toFixed(2)},${w.pos.z.toFixed(1)}) disabled ${w.disabledTimer.toFixed(1)}` };
+      // and two and a half seconds later it is gone. The hold runs on the render clock — the
+      // close-book's stamps are on it too — so this waits on drawn frames, which is the clock a
+      // player's two seconds run on, not on the sim's ticks alone
+      const t0 = g.renderer.clockNow;
+      for (let i = 0; i < 400 && g.renderer.clockNow - t0 < 2.6; i++) { window.__game.advance(1); await new Promise((r) => requestAnimationFrame(r)); }
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return { staged: true, before, ...hit, max: 40, pct: Math.round((100 * Math.max(0, w.health)) / 40), gone: !tg.classList.contains("on"), waited: g.renderer.clockNow - t0 };
+    });
+    check("a round on a wasp reads its health under the reticle — name, blocks, the sim's own fraction — and the read is gone two seconds on", tread.staged && !/\bon\b/.test(tread.before) && tread.on && /^WASP-01/.test(tread.text) && tread.health < tread.max && tread.health > 0 && new RegExp(`${tread.pct}%$`).test(tread.text) && tread.gone, `${tread.staged ? `before the round: "${tread.before}" · hit after ${tread.ticks} ticks: wasp ${tread.health}/${tread.max} alive ${tread.alive} · read "${tread.text}" (sim says ${tread.pct}%) · gone after ${tread.waited.toFixed(1)} s of frames: ${tread.gone} · ${tread.aim} · [${tread.trace}]` : "no wasp to stage"}`);
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
 
     writeFileSync(`${OUT}/stage4.json`, JSON.stringify({ ttk: table, shots, hits, kills, explosions: explosions.length, captures, audio: state.audio, checks }, null, 2));

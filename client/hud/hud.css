@@ -30,6 +30,11 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
   background: conic-gradient(var(--am) calc(var(--p, 0) * 1turn), rgba(255,176,46,0.12) 0);
   -webkit-mask: radial-gradient(circle, transparent 11px, #000 12px, #000 14px, transparent 15px); mask: radial-gradient(circle, transparent 11px, #000 12px, #000 14px, transparent 15px); }
 #hud .xh.reloading .rl { display: block; }
+/* what my last round did to a VANTAGE body (Stage 103): under the reticle, for two seconds */
+#hud .xh .tg { display: none; position: absolute; left: 50%; top: 22px; transform: translateX(-50%); white-space: nowrap; font-size: 10px; letter-spacing: 0.12em; color: var(--am); text-shadow: 0 0 4px rgba(0,0,0,0.9); }
+#hud .xh .tg.on { display: block; }
+#hud .xh .tg s { text-decoration: none; letter-spacing: 0; }
+#hud .xh .tg em { font-style: normal; color: var(--cy); }
 #hud .xh .rl.seated { background: conic-gradient(var(--cy) calc(var(--p, 0) * 1turn), rgba(53,242,255,0.12) 0); }
 #hud .p { position: absolute; padding: 6px 9px; background: var(--pan); border: 1px solid var(--gr); box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 0 8px rgba(55,255,139,0.15); }
 #hud .p.mg { border-color: var(--mg); color: var(--mg); text-shadow: 0 0 4px rgba(255,62,201,0.5); box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 0 8px rgba(255,62,201,0.2); }

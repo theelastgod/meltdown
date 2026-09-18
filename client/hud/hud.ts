@@ -7,6 +7,7 @@ import type { FileView } from "../file";
 import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead } from "./ammo";
+import type { TargetRead } from "./target";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
 import { alertTop, rightBandWidth } from "./layout";
@@ -107,7 +108,7 @@ export class Hud {
     this.root = root;
     root.innerHTML = `
       <div class="scan"></div>
-      <div class="xh"><i></i><b class="rl"></b></div>
+      <div class="xh"><i></i><b class="rl"></b><div class="tg"></div></div>
       <div class="hit"></div>
       <div class="dmg">${"<i></i>".repeat(HIT_MAX)}</div>
       <div class="thr">${"<i></i>".repeat(THREAT_MAX)}</div>
@@ -323,6 +324,20 @@ export class Hud {
     const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? `SAFE ZONE · <span class="zone">[TAB] MARKET</span>` : `<span class="pvp">PVP ZONE</span>`;
     el.innerHTML = `◈ CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · OWED <b>${v.owed}</b> UNITS · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${v.claims} CLAIMS OUT`;
   }
+
+  /**
+   * What my last round did to a VANTAGE body (Stage 103): its name, its health as blocks and a
+   * fraction, under the reticle while the read holds. Null takes it down.
+   */
+  setTarget(r: TargetRead | null): void {
+    const el = this.q(".xh .tg");
+    const key = r ? `${r.label}|${r.blocks}|${Math.round(r.frac * 100)}` : "";
+    if (key === this.targetKey) return;
+    this.targetKey = key;
+    el.classList.toggle("on", !!r);
+    el.innerHTML = r ? `<b>${r.label}</b> <s>${r.blocks}</s> <em>${Math.round(r.frac * 100)}%</em>` : "";
+  }
+  private targetKey = "";
 
   /** The shield bar says it is broken (Stage 102): a magenta frame on the bar until the shield is back. */
   setShieldBroken(broken: boolean): void {

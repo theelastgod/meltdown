@@ -1641,6 +1641,41 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 103 — What you put into the mech
+
+**Goal.** A VANTAGE mech is four hundred points of health and the client showed nothing of what a
+round did to it: a spark (Stage 89) and the same spark on the next one, with no way to tell a mech
+at ninety percent from one at nine. A wasp is forty and dies in two, but a mech is a decision —
+keep pouring rounds in, or go — and the number that decides it was on the wire the whole time: the
+room has sent every wasp's health and every mech's (halved to fit the byte) since Stage 4, and
+offline the sim has them in hand. Nothing read them.
+
+**What changed.**
+
+- **The body my last round landed on reads under the reticle**: `WASP-01 ▮▮▮▮▮▯▯▯ 60%` — its
+  name, eight blocks, the fraction — for two seconds after the round, then gone. It follows the
+  reticle and goes quiet with it.
+- **VANTAGE only.** Not a bar over every enemy, and not for files: another player's integrity is
+  theirs, and the close-book (Stage 91) already says what a kill was.
+- **From the sim's own number.** Offline the wasp's or mech's health; online the entity record's
+  — a wasp's whole, a mech's doubled back — and a dead body reads empty.
+- `client/hud/target.ts` is the rule, pure and unit-tested: which body (the freshest VANTAGE hit
+  in the close-book, files and dummies passed over), for how long, and what the read says.
+
+**Proof.** `probe:arsenal` 29/29, one new: a wasp staged three metres out at head height and
+EMP-sagged so it sits still and does not shoot back, one round in the magazine — the round lands
+at tick 2, the wasp reads 24/40, and the reticle's own text reads `WASP-01 ▮▮▮▮▮▯▯▯ 60%` against
+the sim's 60%; 2.7 s of drawn frames later the read is gone. The staging took three tries, and the
+shot's own endpoints settled each: at six metres the round ended in a wall at (0, 1.6, −8); at
+three metres and 0.6 m up it ended in the crates on the range floor at y 1.2; at head height it
+landed. `tests/target.test.ts` 6. 692 tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone. With no body ever read the round still lands
+and the wasp still reads 24/40 in the sim, but the reticle's text is `""`; 28/29, and two of the
+six unit tests go with it. With the hold never expiring the read comes up exactly as before —
+`WASP-01 ▮▮▮▮▮▯▯▯ 60%` — and is still up after 2.7 s of frames, so only the "gone" clause fails;
+28/29, and the one unit test that times the hold goes with it.
+
 ## Stage 102 — The shield broke in silence
 
 **Goal.** Every file carries thirty points of shield over seventy of integrity: the shield soaks
