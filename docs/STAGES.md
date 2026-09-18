@@ -1641,6 +1641,44 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 81 — The loudest thing in the street
+
+**Goal.** Stage 80 gave the street footsteps, which raised the question of what the street already
+did with the loudest sound in it. Two answers, both wrong. Online, every shot in the room arrived at
+the same volume from nowhere in particular: a rail fired sixty metres away sounded exactly like one
+at your shoulder, which is worse than silence for working out where the danger is. Offline, against
+VANTAGE, another file's gun made no sound at all — only your own and a wasp's did.
+
+**What changed.**
+
+- **`client/gunfire.ts` is the rule**, pure and unit-tested: how loud a shot is from where you are
+  standing (falling off more slowly than a footstep — a gunshot is still worth hearing at the far
+  end of a district, and nothing past a hundred and twenty metres), which side it is on, and two
+  things that are not volume at all. **Sound takes time**: a shot from ninety metres arrives a
+  quarter of a second after its flash. And **distance eats the top of a crack** long before it eats
+  the body of it, so a far shot is a dull thump where a near one is a snap.
+- **A muzzle at arm's length is not a hard-left sound.** Under four metres the pan eases back toward
+  the middle, because a gun that close is all around you.
+- **Both paths go through it** — the wire's events and the offline simulation's — so the campaign's
+  AI files are as audible as a player, and the wasp's own shot gets a position too.
+- The bearing is `hud/damage.ts`'s, as the wedges' and the footsteps' are: one answer in this client
+  to "where is that, relative to where I am looking", and it reads the live mouse angle when the
+  pointer is locked, for the reason Stage 73 gives.
+
+**Proof.** `probe:net` 19/19 — one new, on two real clients over a lossy 150 ms link: BRAVO stands
+eleven metres to ALPHA's right and fires past it, and ALPHA hears four shots at pan 1.00, arriving
+33 ms behind the flash, which is what sound covers 11.3 m in. `tests/gunfire.test.ts` 6 on the rule.
+`probe:tps` 29/29, `probe:arsenal` 19/19, `probe:campaign` 31/31, `probe:wake` 14/14, `smoke` 7/7,
+572 tests, build and typecheck clean. Five guards mutation-checked: the pan negated, the travel time
+removed, the range removed, the near-pan ease removed, and the wiring reverted to the old
+everywhere-at-once shot (the check reads zero).
+
+**And a check that was measuring the wrong thing, again.** Stage 80's earshot check required the
+walking file's *slowest* sampled speed to clear a floor. It paces between waypoints and slows for a
+tick at each turn, so the check was really asking where the turn landed — it went red on a correct
+tree one run later. It counts the samples in which the file was walking now, and asks for all but
+four of them.
+
 ## Stage 80 — The street has other footsteps
 
 **Goal.** The file has heard its own boots since the first stage and nobody else's. Another player

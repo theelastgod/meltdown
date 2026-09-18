@@ -22,6 +22,7 @@ import type { AimTarget } from "./render/tps";
 import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { stepCues, type Walker } from "./steps";
+import { gunCue } from "./gunfire";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
 import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
@@ -468,8 +469,19 @@ export class Game {
             this.renderer.tracer({ x: ev.fx, y: ev.fy, z: ev.fz }, { x: ev.tx, y: ev.ty, z: ev.tz }, ev.hitKind === 1, true, color);
             this.renderer.kickRemote(ev.playerId);
           }
-          if (ev.weapon === 0) this.audio.shot("wasp");
-          else if (def) this.audio.shot(def.id);
+          // and it is heard from where it was fired (Stage 81). Every shot in the room used to
+          // arrive at the same volume from nowhere in particular: a rail two districts wide of you
+          // sounded exactly like one at your shoulder, which is worse than silence for working out
+          // where the danger is.
+          const cue = gunCue(ev.fx, ev.fz, this.listenPoint());
+          if (cue) {
+            this.audio.otherShot(ev.weapon === 0 ? "wasp" : (def?.id ?? "lease_breaker"), cue);
+            this.heardShot.n++;
+            this.heardShot.pan = cue.pan;
+            this.heardShot.gain = cue.gain;
+            this.heardShot.delay = cue.delay;
+            this.heardShot.distance = cue.distance;
+          }
           if (ev.hitKind === 3 && ev.victimId === me) {
             this.netStats.serverHitsOnMe++;
             this.audio.hurt();
@@ -889,7 +901,7 @@ export class Game {
     }
     if (w.length === 0) return;
     const p = this.player;
-    for (const cue of stepCues(w, { x: p.pos.x, z: p.pos.z, yaw: this.input.isLocked && !this.bot ? this.input.yaw : p.yaw }, this.stepBook, SIM_DT)) {
+    for (const cue of stepCues(w, this.listenPoint(), this.stepBook, SIM_DT)) {
       this.audio.otherStep(cue.speed, cue.pan, cue.gain);
       this.heard.n++;
       this.heard.pan = cue.pan;
@@ -901,6 +913,18 @@ export class Game {
   private stepBook = new Map<number, number>();
   /** the last step this file heard from somebody else: what the check reads, and nothing else */
   readonly heard = { n: 0, pan: 0, gain: 0, distance: 0 };
+  /** and the last shot, the same way (Stage 81) */
+  readonly heardShot = { n: 0, pan: 0, gain: 0, delay: 0, distance: 0 };
+
+  /**
+   * Where the file is listening from, and which way it is facing while it does. The look is the
+   * live mouse angle when the pointer is locked, for the same reason the reticle is (Stage 73):
+   * everything else on screen has already turned by the time the tick lands.
+   */
+  private listenPoint(): { x: number; z: number; yaw: number } {
+    const p = this.player;
+    return { x: p.pos.x, z: p.pos.z, yaw: this.input.isLocked && !this.bot ? this.input.yaw : p.yaw };
+  }
 
   private onEvent(ev: SimEvent): void {
     this.recentEvents.push(ev);
@@ -911,7 +935,21 @@ export class Game {
         const def = ev.weapon === "wasp" ? null : WEAPONS[ev.weapon];
         const color = def?.tracer ?? 0xffb02e;
         if (mine) this.audio.shot(ev.weapon);
-        else if (ev.weapon === "wasp") this.audio.shot("wasp");
+        else {
+          // somebody else's gun (Stage 81): until now a file could empty a magazine at you from
+          // across the street in silence, and the first you knew of it was the integrity bar. The
+          // muzzle is where the shot came from, so this is the flash's own position, not the
+          // shooter's body a tick later
+          const cue = gunCue(ev.from.x, ev.from.z, this.listenPoint());
+          if (cue) {
+            this.audio.otherShot(ev.weapon, cue);
+            this.heardShot.n++;
+            this.heardShot.pan = cue.pan;
+            this.heardShot.gain = cue.gain;
+            this.heardShot.delay = cue.delay;
+            this.heardShot.distance = cue.distance;
+          }
+        }
         if (ev.weapon === "longwave") this.renderer.fx.beam(ev.from, ev.to, color, 0.05, 0.6);
         else this.renderer.tracer(ev.from, ev.to, ev.hit.kind === "world", !mine, color);
         if (!this.net && mine && ev.hits.length) {

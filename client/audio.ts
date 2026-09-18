@@ -243,7 +243,7 @@ export class GameAudio {
     src.stop(t + opts.dur + 0.02);
   }
 
-  private tone(opts: { dur: number; from: number; to?: number; gain: number; type?: OscillatorType; delay?: number }): void {
+  private tone(opts: { dur: number; from: number; to?: number; gain: number; type?: OscillatorType; delay?: number; pan?: number }): void {
     const ctx = this.ctx!;
     const o = ctx.createOscillator();
     o.type = opts.type ?? "sine";
@@ -253,7 +253,11 @@ export class GameAudio {
     const g = ctx.createGain();
     g.gain.setValueAtTime(opts.gain, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + opts.dur);
-    o.connect(g).connect(this.sfx!);
+    if (opts.pan) {
+      const p = ctx.createStereoPanner();
+      p.pan.value = opts.pan;
+      o.connect(g).connect(p).connect(this.sfx!);
+    } else o.connect(g).connect(this.sfx!);
     o.start(t);
     o.stop(t + opts.dur + 0.02);
   }
@@ -594,6 +598,27 @@ export class GameAudio {
     if (!this.ctx) return;
     const g = 0.05 + Math.min(0.12, speed * 0.012);
     this.burst({ dur: 0.06, freq: 260 + speed * 10, q: 0.7, gain: g, type: "lowpass", pan });
+  }
+
+  /**
+   * Somebody else's gun (Stage 81). Not your own shot turned down: a shot heard across a street is
+   * a crack with its top end eaten by the air, a body that carries much further, and — past twenty
+   * or thirty metres — a slap off the buildings a moment behind it. The whole thing is delayed by
+   * the time the sound takes to arrive, so the flash comes first.
+   */
+  otherShot(weapon: string, cue: { gain: number; pan: number; delay: number; muffle: number; distance: number }): void {
+    this.count("shot_other");
+    if (!this.ctx) return;
+    const g = Math.max(0, Math.min(1, cue.gain));
+    if (g < 0.01) return;
+    const wasp = weapon === "wasp";
+    const heavy = weapon === "repo_hammer" || weapon === "longwave" || weapon === "directive";
+    // the crack: bright up close, gone dull at the far end of the district
+    this.burst({ dur: 0.04 + cue.muffle * 0.05, freq: (wasp ? 2400 : 3000) - cue.muffle * 2200, q: 0.7, gain: (wasp ? 0.1 : 0.3) * g, pan: cue.pan, delay: cue.delay });
+    // the body of it, which distance barely touches
+    this.tone({ dur: 0.12 + cue.muffle * 0.25, from: wasp ? 700 : heavy ? 120 : 165, to: wasp ? 400 : 38, gain: (wasp ? 0.06 : heavy ? 0.3 : 0.22) * g, type: "sine", delay: cue.delay, pan: cue.pan * 0.5 });
+    // and off the street, from the other side, once there is street enough for it
+    if (cue.distance > 22 && !wasp) this.burst({ dur: 0.26, freq: 480, q: 0.5, gain: 0.09 * g, type: "lowpass", pan: -cue.pan * 0.6, delay: cue.delay + 0.055 });
   }
 
   /**

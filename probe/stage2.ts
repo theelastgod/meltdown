@@ -384,6 +384,26 @@ async function main(): Promise<void> {
     }
     const rightSide = pans.filter((p) => p > 0.3).length;
     check("a file walking past is heard, from the side it is walking on", heard > quiet + 4 && pans.length >= 6 && rightSide >= pans.length - 1, `${heard - quiet} steps heard from BRAVO · pans ${pans.map((p) => p.toFixed(2)).join(" ")} (${rightSide} of ${pans.length} to the right, where it is walking)`);
+    // and its gun, which until now was silent: a file could empty a magazine at you from across the
+    // street and the first you knew of it was the integrity bar (Stage 81). BRAVO stands off to
+    // ALPHA's right and fires past it, so nothing about this is ALPHA taking damage.
+    const alphaAt = await a3.evaluate(() => ({ x: window.__game.state().pos.x, z: window.__game.state().pos.z }));
+    await b3.evaluate((at) => {
+      const p = at as { x: number; z: number };
+      window.__game.setBot([
+        { kind: "goto", x: p.x + 11, z: p.z, sprint: true, radius: 1.2 },
+        { kind: "fire", ticks: 240, aimAt: { x: p.x + 11, y: 1.3, z: p.z - 40 } },
+        { kind: "hold", ticks: 2000 },
+      ]);
+    }, alphaAt);
+    let shots = await a3.evaluate(() => window.__game.state().heardShot);
+    const quietShots = shots.n;
+    for (let i = 0; i < 160 && shots.n < quietShots + 4; i++) {
+      await a3.waitForTimeout(150);
+      shots = await a3.evaluate(() => window.__game.state().heardShot);
+    }
+    check("a file firing across the street is heard, from the side it is firing on, a beat after the flash", shots.n >= quietShots + 4 && shots.pan > 0.3 && shots.distance > 6 && Math.abs(shots.delay - shots.distance / 340) < 0.005, `${shots.n - quietShots} shots heard · pan ${shots.pan.toFixed(2)} · ${shots.distance.toFixed(1)} m away, arriving ${(shots.delay * 1000).toFixed(0)} ms behind the flash (sound covers that in ${((shots.distance / 340) * 1000).toFixed(0)} ms)`);
+
     // and out at the far end of the yard it is out of earshot — while it is still walking, which is
     // the whole point: a body that has stopped is silent at any distance, so a check that let it
     // arrive and stand still would pass with no earshot rule at all (it did, until this line)
@@ -406,20 +426,24 @@ async function main(): Promise<void> {
     });
     // sample while it paces, and record the slowest it was seen going: if that is above a walk, the
     // silence is the range and not the legs
-    let slowest = 99;
+    let walking = 0;
     let nearest = 999;
-    for (let i = 0; i < 18; i++) {
+    const samples = 18;
+    for (let i = 0; i < samples; i++) {
       await a3.waitForTimeout(140);
       const r = await a3.evaluate(() => {
         const rv = window.__game.net()!.remotes[0];
         const me = window.__game.state().pos;
         return rv ? { sp: Math.hypot(rv.vx, rv.vz), d: Math.hypot(rv.x - me.x, rv.z - me.z) } : { sp: 0, d: 0 };
       });
-      slowest = Math.min(slowest, r.sp);
+      // count the samples where it was walking rather than demanding a floor on every one: it paces
+      // between waypoints and slows for a tick at each turn, and a threshold on the minimum makes
+      // this check a question about where the turn landed
+      if (r.sp > 1.5) walking++;
       nearest = Math.min(nearest, r.d);
     }
     const stillFar = await a3.evaluate(() => window.__game.state().heard.n);
-    check("and at the far end of the yard it is out of earshot, while it is still walking", far.d > 30 && nearest > 28 && slowest > 2 && stillFar === far.n, `BRAVO pacing ${nearest.toFixed(1)}–${far.d.toFixed(1)} m away at no less than ${slowest.toFixed(1)} m/s · ${stillFar - far.n} steps heard in the two and a half seconds it took`);
+    check("and at the far end of the yard it is out of earshot, while it is still walking", far.d > 30 && nearest > 28 && walking >= samples - 4 && stillFar === far.n, `BRAVO pacing ${nearest.toFixed(1)}–${far.d.toFixed(1)} m away, walking in ${walking} of ${samples} samples · ${stillFar - far.n} steps heard in the two and a half seconds it took`);
     await a3.close();
     await b3.close();
 
