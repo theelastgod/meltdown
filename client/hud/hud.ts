@@ -9,6 +9,7 @@ import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
 import { rackLabel } from "./rack";
+import { motionWord } from "./stance";
 import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
@@ -653,7 +654,7 @@ export class Hud {
     emp.classList.toggle("on", p.weapon.empTimer > 0);
     if (p.weapon.empTimer > 0) emp.style.opacity = String(Math.min(1, p.weapon.empTimer));
     this.q(".vel").textContent = `${speed.toFixed(1)} m/s`;
-    this.q(".stance").textContent = p.stance.toUpperCase();
+    this.q(".stance").textContent = motionWord(p.stance, p.grounded, speed);
     const kills = document.querySelector("#hud .kills");
     if (kills) kills.textContent = String(Math.min(5, p.stats.kills)); // the strip is replaced by a contract's objective line
     this.q(".perf").textContent = `${fps.toFixed(0)} FPS · SIM ${tickHz.toFixed(0)} Hz`;

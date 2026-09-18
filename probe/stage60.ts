@@ -195,6 +195,12 @@ async function main(): Promise<void> {
     // the picture is taken while it is still running: the probe drives the sim by hand, so between
     // two advances the file is frozen mid-sprint and the lens is the one the check just measured
     await shotCheck(pg, "stage60-sprint.png");
+    // Stage 117: the foot line said STAND at a sprint. Read mid-run, from the drawn frame
+    const runWord = await pg.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const st = window.__game.state();
+      return { word: document.querySelector("#hud .stance")!.textContent, speed: Math.hypot(st.vel.x, st.vel.z), stance: st.stance };
+    });
     const stopped = await pg.evaluate(async () => {
       window.__game.setBot([{ kind: "hold", ticks: 6000 }]);
       let v = window.__game.view();
@@ -207,8 +213,10 @@ async function main(): Promise<void> {
         sp = Math.hypot(st.vel.x, st.vel.z);
         if (sp < 0.4 && v.fov < window.__game.game.renderer.fov + 0.2) break;
       }
-      return { fov: v.fov, distance: v.distance, speed: sp };
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return { fov: v.fov, distance: v.distance, speed: sp, word: document.querySelector("#hud .stance")!.textContent };
     });
+    check("the word under the file's name reads the run: SPRINT at a sprint, STAND once it has stopped", runWord.word === "SPRINT" && runWord.speed > 6.2 && stopped.word === "STAND" && stopped.speed < 0.5, `running at ${runWord.speed.toFixed(1)} m/s (stance ${runWord.stance}): "${runWord.word}" · stopped at ${stopped.speed.toFixed(1)} m/s: "${stopped.word}"`);
     check("sprinting widens the lens and drifts the camera back, and stopping closes it again", ran.speed > 6.8 && ran.fov - still.fov > 5 && ran.distance - still.distance > 0.15 && Math.abs(stopped.fov - still.fov) < 0.4, `still ${still.fov.toFixed(1)}° (base ${still.base.toFixed(0)}) at ${still.distance.toFixed(2)} m · sprinting ${ran.fov.toFixed(1)}° at ${ran.distance.toFixed(2)} m (${ran.speed.toFixed(1)} m/s, blocked ${ran.blocked}) · stopped ${stopped.fov.toFixed(1)}° at ${stopped.distance.toFixed(2)} m`);
     results["speed"] = { still, ran, stopped };
 

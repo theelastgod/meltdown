@@ -1641,6 +1641,31 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 117 — The foot line said STAND at a sprint
+
+**Goal.** The tps probe's sprint frame: `1 · BLANK · 7.2 m/s · STAND`. The line under the file's
+name printed the sim's stance, and the sim's stances are stand, crouch, slide and mantle — it has
+no word for running or for being in the air, so a file at a full sprint, or a metre off the
+ground, read STAND. The speed beside it said otherwise.
+
+**What changed.**
+- `client/hud/stance.ts` — `motionWord(stance, grounded, speed)`: the sim's own stances first
+  (MANTLE, SLIDE, CROUCH), then AIR for a standing file off the ground, then SPRINT at or above
+  `SPRINT_READ` (6.2 m/s, midway between the walk and the sprint), WALK above `WALK_READ`
+  (0.5 m/s), STAND below it.
+- `client/hud/hud.ts` — the foot line reads that word.
+- `tests/stance.test.ts` — every branch and both thresholds.
+- `probe/stage60.ts` — read from the drawn frame mid-run and again once stopped: SPRINT at the
+  sprint, STAND at rest.
+
+**Proof.** `npm test` 740 tests (three new); `npm run probe:tps` 43/43 — mid-run at 7.2 m/s
+with the sim's stance still `stand` the line reads SPRINT, and at 0.1 m/s once stopped it reads
+STAND; `npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** The foot line prints the sim's stance again: the tps probe fails its new check,
+42/43 (`running at 7.2 m/s (stance stand): "STAND"`); every other check passes. The unit tests
+read the pure function and cannot see this one, which is why the probe reads the drawn frame.
+
 ## Stage 116 — The searchlight warning printed over the node line
 
 **Goal.** The arsenal probe's aftermath frame, read closely: `NODE E · FLAGGED — VANTAGE
