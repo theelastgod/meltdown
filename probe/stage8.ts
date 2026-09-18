@@ -328,7 +328,12 @@ async function main(): Promise<void> {
     // held open the same way, and the picture must be of the banner it is named for: CLEARED, not
     // the OWED banner from the round before (Stage 72)
     await a.evaluate(() => window.__game.holdFlash(true));
-    const panelUp = () => a.evaluate(() => { const el = document.querySelector("#hud .debt"); return !!el && el.classList.contains("on") && /DEBT CLEARED/.test(el.textContent ?? ""); });
+    // and the watch must test what the picture tests. `.on` is set the instant the banner is raised,
+    // but the class runs a 0.5 s four-step reveal that holds opacity at 0 for its first 125 ms, and
+    // the shutter checks computed opacity. On a machine that round-trips in 20 ms the class was true
+    // and the panel invisible; here a round trip is longer than the first step, so it passed. Wait
+    // for the paint, the way the dossier and the rite watches already do (Stage 75).
+    const panelUp = () => a.evaluate(() => { const el = document.querySelector("#hud .debt") as HTMLElement | null; return !!el && Number(getComputedStyle(el).opacity) > 0.5 && /DEBT CLEARED/.test(el.textContent ?? ""); });
     const ak2 = await duel(a, "ALPHA", b, ids.b, before + 1, 45000, async () => {
       if (debtShot || !(await panelUp())) return;
       await shotCheck(a, "stage8-debt.png", "#hud .debt");

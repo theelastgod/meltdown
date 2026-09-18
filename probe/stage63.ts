@@ -312,7 +312,13 @@ async function main(): Promise<void> {
     const swayPeak = Math.max(0, ...fast.map((r) => Math.hypot(r.swayX, r.swayZ)));
     const flapPeak = Math.max(0, ...fast.map((r) => r.flap));
     check("the cloak sways in the vertex shader: sprinting drags the hem and flaps it; the cloak and the trim share one set of uniforms", fast.length >= 4 && swayPeak >= 0.06 && flapPeak >= 0.04 && !!still.uniforms && still.sameUniforms && Math.hypot(still.uniforms.swayX, still.uniforms.swayZ) < 0.02, `${fast.length} of ${sprint.length} frames sprinting · sway ${swayPeak.toFixed(3)} · flap ${flapPeak.toFixed(3)} · standing sway ${still.uniforms ? Math.hypot(still.uniforms.swayX, still.uniforms.swayZ).toFixed(3) : "null"} · shared ${still.sameUniforms}`);
-    await pg.waitForFunction(() => (window.__game.botStatus()?.current as { kind?: string } | null)?.kind === "hold", null, { timeout: 30000, polling: 100 });
+    // The sprint above stops sampling the moment the hem settles, which on a machine that draws
+    // quickly is a fraction of a second into a script whose two gotos can each run 900 ticks — so
+    // waiting for that script to reach its hold is waiting up to thirty seconds for something this
+    // check does not need, and thirty seconds is exactly what the wait allowed. End the run instead
+    // and wait for the body to be standing, which is the state the next section measures from.
+    await pg.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 6000 }]));
+    await pg.waitForFunction(() => (window.__game.rig().out?.speed ?? 9) < 0.5, null, { timeout: 30000, polling: 100 });
 
     // ---------------- 7. crouch, slide, jump ----------------
     await pg.evaluate(() => window.__game.setRealtime(false));

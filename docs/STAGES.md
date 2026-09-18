@@ -1641,6 +1641,30 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 75 — Two waits that measured the machine
+
+**Goal.** Run #102 was red on two checks, in two probes, for the same reason each time: a wait whose
+length is set by how fast the machine draws rather than by the state it is waiting for. Both had
+survived on this box precisely because it is slow.
+
+**What changed.**
+
+- **The Debt picture waits for the paint, not for the class.** `.debt.on` is set the instant the
+  banner is raised, and the class runs a half-second four-step reveal whose first step holds opacity
+  at zero for 125 ms. The watch tested the class; the shutter tests computed opacity. On a runner
+  that round-trips in twenty milliseconds the class was true and the panel still invisible, so the
+  picture was of nothing; here a round trip is longer than the first step, so it passed. The watch
+  now tests opacity, the way the dossier's and the rite's watches already did.
+- **The body probe stops the run it is finished with.** The sprint sampling ends as soon as the hem
+  settles — Stage 68's fix for the opposite failure — which on a fast machine is a fraction of a
+  second into a bot script whose two `goto` steps can run 900 ticks each. Waiting for that script to
+  reach its `hold` is waiting up to thirty seconds, and thirty seconds is exactly what the wait
+  allowed. It sets the bot to hold and waits for the body to actually be standing, which is the
+  state the next section measures from.
+
+**Proof.** `probe:identity` 25/25 and `probe:body` 20/20 with the fixes, 540 tests and typecheck
+clean. No game code changed: both are checks that were measuring the runner.
+
 ## Stage 74 — Getting shot has a direction
 
 **Goal.** Look at the real frames rather than the checks. Taking a hit produced a sound, a red
