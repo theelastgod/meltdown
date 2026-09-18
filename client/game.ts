@@ -23,6 +23,7 @@ import type { AimTarget } from "./render/tps";
 import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { impactRead, landedDamage, WASP_SHOT } from "./hit";
+import { bodyKey, closeLine, closeRead, forgetOldHits, rememberHit, type LandedHit } from "./hud/kill";
 import { lookYawPitch } from "./render/feel";
 import { stepCues, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
@@ -123,6 +124,8 @@ export class Game {
   /** When false, the loop simulates but skips drawing (probes on software GL). */
   drawing = !new URLSearchParams(location.search).has("norender");
   hitmarkers = false;
+  /** the last round this client landed on each body, so a close can name what closed it (Stage 91) */
+  private closeBook = new Map<string, LandedHit>();
   readonly recentEvents: SimEvent[] = [];
   readonly stats = { ticks: 0, frames: 0, droppedTime: 0, fps: 0, simHz: 0, wallStart: 0, realtimeWall: 0, realtimeTicks: 0, maxFrameDt: 0, catchupHits: 0 };
   private stepDist = 0;
@@ -469,6 +472,8 @@ export class Game {
           const zone = kind === "dummy" || kind === "player" ? (ev.zone ?? "body") : "body";
           const damage = landedDamage(def ?? WASP_SHOT, zone, distance, kind === "mech" ? 0.5 : 1);
           this.renderer.hitBody(kind, ev.victimId, { x: ev.tx, y: ev.ty, z: ev.tz }, impactRead(damage), lookYawPitch({ x: ev.tx, y: ev.ty, z: ev.tz }, { x: ev.fx, y: ev.fy, z: ev.fz }).yaw, color);
+          // and if it was mine, it is a candidate for having closed that body (Stage 91)
+          if (ev.playerId === me) this.landed(bodyKey(kind, ev.victimId), { at: this.renderer.clockNow, zone, distance, weapon: def?.id ?? "wasp" });
         }
         if (ev.playerId === me) {
           this.netStats.myShotsConfirmed++;
@@ -582,7 +587,8 @@ export class Game {
         if (ev.playerId === me) {
           // shooter-side: the tier follows the weapon in hand at the confirm (the file's own mastery; nothing leaves the client)
           this.audio.kill(this.killTier(weaponDefOf(this.player).id));
-          this.hud.killStamp();
+          const kind = ["dummy", "player", "wasp", "mech"][ev.victimKind] ?? "player";
+          this.hud.killStamp(kind, closeLine(closeRead(this.closeBook, bodyKey(kind, ev.victimId), this.renderer.clockNow)));
           this.renderer.post.kick(1);
           const vk = ["DUMMY", "FILE", "WASP", "MECH"][ev.victimKind] ?? "?";
           this.hud.push(`FILE #${me} ⟶ ${vk}-${String(ev.victimId).padStart(2, "0")}${ev.ttkTicks ? ` · TTK ${(ev.ttkTicks / SIM_HZ).toFixed(2)}s` : ""}`, "mg");
@@ -850,6 +856,15 @@ export class Game {
    * from it. The bearing here is the sim's yaw of the direction back toward the attacker; the HUD's
    * own screen bearing is `damage.ts`'s, which is the negation.
    */
+  /**
+   * A round of mine landed on a body (Stage 91). The book is pruned on the way in rather than per
+   * frame: it only ever grows when something is hit, so that is the only moment it can need it.
+   */
+  private landed(key: string, hit: LandedHit): void {
+    rememberHit(this.closeBook, key, hit);
+    forgetOldHits(this.closeBook, hit.at);
+  }
+
   private tookHit(x: number, z: number, damage: number): void {
     this.hits.push({ x, z, at: this.renderer.clockNow, damage });
     this.hits = pruneHits(this.hits, this.renderer.clockNow);
@@ -1023,6 +1038,7 @@ export class Game {
             const h = ev.hits[0]!;
             this.audio.hit(h.zone ?? "body");
             if (this.hitmarkers) this.hud.flashHit();
+            for (const x of ev.hits) if (x.kind !== "world" && x.kind !== "none") this.landed(bodyKey(x.kind, x.id), { at: this.renderer.clockNow, zone: x.zone ?? "body", distance: Math.hypot(ev.to.x - ev.from.x, ev.to.y - ev.from.y, ev.to.z - ev.from.z), weapon: ev.weapon });
           }
         }
         break;
@@ -1144,7 +1160,7 @@ export class Game {
         break;
       case "kill":
         this.audio.kill(this.killTier(ev.weapon));
-        this.hud.killStamp();
+        this.hud.killStamp(ev.victimKind, closeLine(closeRead(this.closeBook, bodyKey(ev.victimKind, ev.victimId), this.renderer.clockNow)));
         this.renderer.post.kick(1);
         this.hud.push(`BLANK ⟶ ${ev.victimKind.toUpperCase()}-${String(ev.victimId).padStart(2, "0")} · ${ev.weapon.toUpperCase()}${ev.ttkTicks ? ` · TTK ${ev.ttkSeconds.toFixed(2)}s` : ""}`, "mg");
         break;

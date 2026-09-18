@@ -120,6 +120,20 @@ async function main(): Promise<void> {
     check("tracers + zone-pitched hit audio fired for every hit", dummyHits > 0 && (state.audio["shot"] ?? 0) >= shots.length && (state.audio["hit_body"] ?? 0) + (state.audio["hit_head"] ?? 0) + (state.audio["hit_legs"] ?? 0) >= dummyHits, `shots=${shots.length} hits=${dummyHits} audio=${JSON.stringify(state.audio)}`);
     check("kill-confirm stamp audio fired", (state.audio["kill"] ?? 0) >= 1, `kill cues=${state.audio["kill"] ?? 0}`);
 
+    // Stage 91: the receipt used to read KILL CONFIRMED // LINE 0001 for everything — a target in
+    // the range exactly like a file in a live match, and a headshot at forty metres exactly like a
+    // baton swing. The distance is checked against the killing shot's own geometry rather than
+    // against a number typed in here.
+    const stamp = await page.evaluate(() => {
+      const st = document.querySelector("#hud .stamp");
+      return { title: (st?.firstChild?.textContent ?? "").trim(), detail: (st?.querySelector("i")?.textContent ?? "").trim(), range: !!st?.classList.contains("range") };
+    });
+    const lastDummyShot = [...shots].reverse().find((e) => e.type === "shot" && e.hits.some((h) => h.kind === "dummy"));
+    const flew = lastDummyShot && lastDummyShot.type === "shot" ? Math.hypot(lastDummyShot.to.x - lastDummyShot.from.x, lastDummyShot.to.y - lastDummyShot.from.y, lastDummyShot.to.z - lastDummyShot.from.z) : -1;
+    const said = Number(/·\s*([\d.]+)\s*M/.exec(stamp.detail)?.[1] ?? NaN);
+    check("the receipt says what closed it: the zone, the range and the weapon of the round that did", /^BODY · [\d.]+ M · LEASE-BREAKER$/.test(stamp.detail) && Math.abs(said - flew) <= 0.6, `"${stamp.detail}" · the killing round flew ${flew.toFixed(1)} m`);
+    check("and a target in the range is not a closed file: it says so and does not take a ledger line", stamp.title === "TARGET DOWN" && stamp.range && !/LINE/.test(stamp.title), `"${stamp.title}" (range styling ${stamp.range})`);
+
     // --- 2. Determinism: same plan on a fresh page, identical hash after the same tick count ---
     const page2 = await browser.newPage({ viewport: { width: 640, height: 360 } });
     await page2.goto(URL + "?headless=1&ai=0&norender=1&level=drainage_yard", { waitUntil: "load" });

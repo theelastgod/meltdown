@@ -1,4 +1,5 @@
 import type { PlayerState } from "@shared/sim/player";
+import { ledgered, stampTitle } from "./kill";
 import { weaponDefOf } from "@shared/sim/player";
 import { GRENADE_LIST, WEAPON_LIST } from "@shared/weapons/manifest";
 import type { Dummy } from "@shared/sim/world";
@@ -608,10 +609,21 @@ export class Hud {
     el.classList.add("on");
   }
 
-  killStamp(): void {
-    this.ledgerLine++;
+  /**
+   * The receipt for a close (Stage 91). `kind` decides what it is called and whether it goes on the
+   * ledger at all — a target in the range is not a closed file and never was — and `detail` is what
+   * closed it, when this client can honestly say.
+   */
+  killStamp(kind = "player", detail = ""): void {
     const st = this.q(".stamp");
-    st.textContent = `KILL CONFIRMED // LINE ${String(this.ledgerLine).padStart(4, "0")}`;
+    const title = stampTitle(kind);
+    if (ledgered(kind)) {
+      this.ledgerLine++;
+      st.innerHTML = `${title} // LINE ${String(this.ledgerLine).padStart(4, "0")}${detail ? `<i>${detail}</i>` : ""}`;
+    } else {
+      st.innerHTML = `${title}${detail ? `<i>${detail}</i>` : ""}`;
+    }
+    st.classList.toggle("range", !ledgered(kind));
     st.classList.remove("on");
     void st.offsetWidth;
     st.classList.add("on");

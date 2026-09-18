@@ -69,6 +69,10 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .ammo .w { font-size: 10px; color: rgba(53,242,255,0.7); }
 #hud .stamp { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%) rotate(-4deg); padding: 6px 14px; border: 2px solid var(--cy); color: var(--cy); font-size: 20px; letter-spacing: 0.2em; opacity: 0; background: rgba(0,0,0,0.35); }
 #hud .stamp.on { animation: stamp 0.9s steps(6, end) forwards; }
+/* what closed it, under the stamp (Stage 91) */
+#hud .stamp i { display: block; margin-top: 4px; font-style: normal; font-size: 10px; letter-spacing: 0.28em; opacity: 0.75; }
+/* the range is not the ledger */
+#hud .stamp.range { border-color: var(--am); color: var(--am); }
 @keyframes stamp { 0% { opacity: 0; transform: translate(-50%,-50%) rotate(-4deg) scale(1.6); } 12% { opacity: 1; transform: translate(-50%,-50%) rotate(-4deg) scale(1); } 70% { opacity: 1; } 100% { opacity: 0; } }
 /* where a hit came from (Stage 74): a wedge on a ring around the reticle, rotated to the bearing.
    Each is a clipped arc — no canvas, no draw call, and it reads at a glance in the corner of the eye. */

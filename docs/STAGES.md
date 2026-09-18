@@ -1641,6 +1641,37 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 91 — Every kill read the same
+
+**Goal.** A headshot at forty metres with the last round in the magazine put up the same four words
+as a point-blank baton swing. A training dummy in the range put up those same four words as another
+file in a live match — KILL CONFIRMED, and a ledger line either way. The game knew better on both
+counts the whole time: it has the zone, the range and the weapon of every round that lands, and it
+has always known a dummy from a file.
+
+**What changed.**
+
+- **The receipt says what closed it**: under the stamp, the zone, the range and the weapon of the
+  round that did it — `HEAD · 41 M · LEASE-BREAKER`.
+- **And the range is not the ledger.** A target says TARGET DOWN in amber and takes no ledger line;
+  a file says FILE CLOSED and does.
+- **It only claims what it can know.** The server credits the kill without saying which round closed
+  the file, so the client keeps the last round it actually landed on each body and names it only if
+  it landed in the moment that body went down. A grenade that finishes someone shot ten seconds ago
+  must not put a headshot on the receipt — there the line is simply absent, which is the honest
+  answer. The book is keyed by kind *and* id, because a dummy's id and a file's id are the same
+  small numbers in this simulation.
+
+**Proof.** `probe` 15/15, two new: the receipt reads `BODY · 5.2 M · LEASE-BREAKER` and the range it
+claims is checked against the killing round's own geometry — the shot event's `from` and `to` — to
+within 0.6 m, not against a number typed into the check; and the dummy's receipt says TARGET DOWN
+with no ledger line. `tests/kill.test.ts` 13 on the attribution, including the stale-hit case and the
+dummy-versus-file collision. 619 tests, build and typecheck clean.
+
+Three mutations, each failing its own guard alone: attributing a hit regardless of age fails three
+unit tests; making every kill read KILL CONFIRMED again fails only the range check; dropping the
+detail line fails only the receipt check.
+
 ## Stage 90 — The check waited for a stopwatch and assumed a hit
 
 **Goal.** Run #118 went red on both of Stage 89's new checks. They were right to fail: nothing had
