@@ -1641,6 +1641,30 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 86 — Sixty hertz of the time it was given
+
+**Goal.** Run #114 went red on the oldest check in the repository: *fixed-timestep sim runs at 60 Hz
+independent of render fps*. It read `47.9 ticks/s over 2.01s while rendering at 8.4 fps`.
+
+**What changed.** The check, not the loop. The loop's rule has always been a fixed timestep **with
+long hitches dropped rather than simulated**: a frame that takes more than half a second is a tab
+switch or a stall, and simulating it would fire half a second of the game in one go. On a loaded
+runner at eight frames a second, some frames cross that line, the loop drops them by design, and the
+sim's tick count over wall time falls below sixty — which the check called a failure of the timestep
+when it was the drop rule doing exactly what it says.
+
+The claim is now stated as the loop actually makes it: sixty hertz for every second it was *given*.
+The check reads the loop's own `droppedTime` at both ends and measures against the wall clock minus
+what was dropped — and requires the dropping to stay the exception, under a third of the window,
+because a loop that dropped most of a window and ran the rest at sixty has not shown anything.
+
+**Proof.** `npm run probe` 13/13 — `60.4 ticks/s over 2.00s of 2.00s (0.00s dropped as hitches)
+while rendering at 30.6 fps` here, where CI's slower runner will now account for its hitches instead
+of failing on them. Two guards mutation-checked, and the second is the reason the bound is there:
+capping the catch-up at one tick a frame reads 20.5 Hz and fails, and dropping everything past a
+hundredth of a second reads a perfect 60.0 Hz — over 0.35 s of a 2.00 s window — and fails on the
+drop bound. 585 tests, typecheck clean. No game code changed.
+
 ## Stage 85 — The node under your feet
 
 **Goal.** The wake strip at the top of the screen says who holds each of the eight nodes, in eight

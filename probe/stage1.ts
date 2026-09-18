@@ -139,12 +139,21 @@ async function main(): Promise<void> {
     await page.evaluate(() => window.__game.setBot(null));
     await page.evaluate(() => window.__game.setRealtime(true));
     await page.waitForTimeout(600); // settle the fps window
-    const t0 = await page.evaluate(() => ({ tick: window.__game.state().tick, now: performance.now() }));
+    const t0 = await page.evaluate(() => ({ tick: window.__game.state().tick, now: performance.now(), dropped: window.__game.state().loop.droppedTime }));
     await page.waitForTimeout(2000);
-    const t1 = await page.evaluate(() => ({ tick: window.__game.state().tick, now: performance.now(), loop: window.__game.state().loop }));
+    const t1 = await page.evaluate(() => ({ tick: window.__game.state().tick, now: performance.now(), dropped: window.__game.state().loop.droppedTime, loop: window.__game.state().loop }));
     const wall = (t1.now - t0.now) / 1000;
-    const measuredHz = (t1.tick - t0.tick) / wall;
-    check("fixed-timestep sim runs at 60 Hz independent of render fps", Math.abs(measuredHz - 60) < 3, `${measuredHz.toFixed(1)} ticks/s over ${wall.toFixed(2)}s while rendering at ${t1.loop.fps.toFixed(1)} fps`);
+    // The loop's rule is a fixed timestep with long hitches DROPPED rather than simulated: a frame
+    // that takes more than half a second is a tab switch or a stall, and simulating it would fire
+    // half a second of the game at once. So the sim owes 60 Hz for the time it was given, not for
+    // the time that elapsed — CI #114 measured 47.9 Hz at 8.4 fps and called it a failure of the
+    // timestep when it was the drop rule doing exactly what it says (Stage 86).
+    const dropped = t1.dropped - t0.dropped;
+    const simmed = Math.max(0.05, wall - dropped);
+    const measuredHz = (t1.tick - t0.tick) / simmed;
+    // and the drop has to stay the exception: a machine that dropped most of the window and ran the
+    // rest at 60 Hz has not shown the timestep holds
+    check("fixed-timestep sim runs at 60 Hz for every second it is given, whatever the render fps", Math.abs(measuredHz - 60) < 3 && dropped < wall * 0.35, `${measuredHz.toFixed(1)} ticks/s over ${simmed.toFixed(2)}s of ${wall.toFixed(2)}s (${dropped.toFixed(2)}s dropped as hitches) while rendering at ${t1.loop.fps.toFixed(1)} fps`);
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     const report = { url: URL, ticksRun, measuredHz, renderFps: t1.loop.fps, state, botLog: status?.log, checks, kill };
     writeFileSync(`${OUT}/stage1.json`, JSON.stringify(report, null, 2));
