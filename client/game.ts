@@ -128,6 +128,8 @@ export class Game {
   /** When false, the loop simulates but skips drawing (probes on software GL). */
   drawing = !new URLSearchParams(location.search).has("norender");
   hitmarkers = false;
+  /** the trigger pull that produced this tick's shots, and whether it was the alt (Stage 94) */
+  private altFire = { tick: -1, alt: false };
   /** the last round this client landed on each body, so a close can name what closed it (Stage 91) */
   private closeBook = new Map<string, LandedHit>();
   readonly recentEvents: SimEvent[] = [];
@@ -1023,7 +1025,7 @@ export class Game {
         const mine = ev.playerId === this.player.id;
         const def = ev.weapon === "wasp" ? null : WEAPONS[ev.weapon];
         const color = def?.tracer ?? 0xffb02e;
-        if (mine) this.audio.shot(ev.weapon);
+        if (mine) this.audio.shot(ev.weapon, this.altFire.tick === ev.tick && this.altFire.alt);
         else {
           // somebody else's gun (Stage 81): until now a file could empty a magazine at you from
           // across the street in silence, and the first you knew of it was the integrity bar. The
@@ -1116,8 +1118,17 @@ export class Game {
         break;
       case "chargeStart":
       case "chargeCancel":
+        break;
       case "altToggle":
+        // the choke racking on or off (Stage 94): the simulation has said so since Stage 4 and the
+        // client dropped it on the floor
+        if (ev.playerId === this.player.id) this.audio.altToggle(ev.on);
+        break;
       case "fire":
+        // the trigger pull that names the round: it arrives in the same tick as the shot events it
+        // produced, ahead of them, so the shot handler reads it back by tick rather than by guessing
+        // from the weapon's state a frame later
+        if (ev.playerId === this.player.id) this.altFire = { tick: ev.tick, alt: ev.alt };
         break;
       case "chargeFull":
         if (ev.playerId === this.player.id) this.audio.charge(1);

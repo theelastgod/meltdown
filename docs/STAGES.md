@@ -1641,6 +1641,43 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 94 — The alt-fire sounded like the primary
+
+**Goal.** Every alt-fire in the arsenal has sounded exactly like its primary. A choked slug barked
+like the eight-pellet spread it replaced, a rail quickshot like the charged shot it is not, a sticky
+like the phage round it is not — and choking the REPO HAMMER, which changes what the next trigger
+pull does entirely, made no sound at all. The simulation has said which round it was since Stage 4:
+the `fire` event carries `alt`, and the choke emits `altToggle`. The client dropped both on the
+floor with a bare `break`.
+
+**What changed.**
+
+- **The slug, the quickshot and the sticky have voices of their own**: one deep round with a ring
+  off the choke where the spread was eight; a snap where the charged shot is a howl; a thunk and a
+  metallic tick as the charge leaves the tube armed.
+- **The choke is heard racking on and off**, a two-part click pitched by which way it went.
+- **An optic and a brace keep the primary's bark**: they change where the round goes, not what the
+  gun is. `client/voice.ts` is the naming rule, pure and checked against the manifest so a new alt
+  kind cannot slip through unnamed.
+- The trigger pull names the round by *tick*, not by reading the weapon's state a frame later: the
+  `fire` event arrives ahead of the shot events it produced, in the same tick, and the shot handler
+  reads it back from there.
+
+**Proof.** `probe:arsenal` 22/22, one new, heard through the audio's own cue counts: rack the choke
+on, fire, rack it off, fire — `alt_on` and `alt_off` each once, the slug voice on the choked shots
+and not on the spread's. `tests/voice.test.ts` 4, agreeing with the manifest about which alts are a
+different round. 636 tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone: with the alt flag dropped from the shot the slug
+voice goes to 0 of 9 while both racks are still heard; with the rack made silent again the slug
+voice stays and the racks go to 0 and 0.
+
+The check took three tries to drive, all of them the harness and none the game: a fire step presses
+nothing in its last twelve ticks, so a three-tick rack never pressed; and a fire step presses nothing
+until its view has settled on its target, so a rack that was also asked to aim never pressed either.
+The event trace — `swap, altToggle/on, fire/alt, altToggle/off, fire` — is what settled it, not a
+fourth guess.
+
 ## Stage 93 — The charge at your feet
 
 **Goal.** A frag lands beside you while you are looking the other way and the game says nothing at

@@ -214,6 +214,52 @@ async function main(): Promise<void> {
     check("a live charge near the file is pointed at: thrown straight ahead the arrow is up, and turning right puts it off the left shoulder", !!a0 && !!a1 && Math.abs(a0!.rot) < 0.4 && Math.abs(a1!.rot + Math.PI / 2) < 0.4, `${ahead.charges} charges live · facing it: ${a0 ? `${a0.rot.toFixed(2)} rad at ${a0.op.toFixed(2)} opacity` : "no arrow"} · after the quarter turn (view yaw ${yawNow.toFixed(2)}): ${a1 ? `${a1.rot.toFixed(2)} rad` : "no arrow"}`);
     check("and standing inside the blast says so", !!a0?.inside && (a0?.op ?? 0) > 0.9, `inside ${a0?.inside} at ${a0?.op.toFixed(2)} opacity (a frag's blast is ${GRENADES.frag.radius} m and it was thrown 4 m away)`);
 
+    // Stage 94: every alt-fire sounded exactly like its primary, and choking the REPO HAMMER made
+    // no sound at all. The simulation has said which round it was since Stage 4 — the `fire` event
+    // carries `alt`, the choke emits `altToggle` — and the client dropped both. Heard through the
+    // audio's own cue counts: rack the choke on, fire, rack it off, fire.
+    const before = await page.evaluate(() => ({ ...window.__game.state().audio }));
+    await page.evaluate(() => {
+      const p = window.__game.game.player;
+      p.pos.x = 0; p.pos.y = 1.2; p.pos.z = -4.5;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      // the cycle above ran the magazine down, and an Alt press during a reload is a reload cancel,
+      // not a rack of the choke: stage a full tube, no reload in flight, choke off
+      p.weapon.ammo[2] = 6;
+      p.weapon.reloadTimer = 0;
+      p.weapon.reloadSeated = false;
+      p.weapon.altActive = false;
+    });
+    await page.evaluate((t) => window.__game.setBot([
+      { kind: "slot", slot: 2 },
+      // the swap costs 0.35 s — twenty-one ticks — and a press inside it is swallowed: the first
+      // version of this held twenty and racked the choke on the second press instead of the first
+      { kind: "hold", ticks: 40 },
+      // a fire step holds nothing in its last twelve ticks (charged shots need to release), so a
+      // three-tick alt step never touches the button: sixteen ticks presses Alt once, which is one
+      // rack of the choke
+      // and no aim on the rack itself: a fire step presses nothing until the view has settled on
+      // its target, and three ticks of press is not enough turning for the first one to land
+      { kind: "fire", ticks: 16, alt: true },
+      { kind: "hold", ticks: 6 },
+      { kind: "fire", ticks: 40, aimAt: t },
+      { kind: "hold", ticks: 20 },
+      { kind: "fire", ticks: 16, alt: true },
+      { kind: "hold", ticks: 6 },
+      { kind: "fire", ticks: 40, aimAt: t },
+      { kind: "hold", ticks: 10 },
+    ]), target);
+    await page.evaluate(() => window.__game.clearEvents());
+    for (let i = 0; i < 30; i++) {
+      await page.evaluate(() => window.__game.advance(10));
+      await page.waitForTimeout(12);
+    }
+    const after = await page.evaluate(() => ({ ...window.__game.state().audio }));
+    const trace = await page.evaluate(() => window.__game.events().filter((e) => e.type === "altToggle" || e.type === "fire" || e.type === "reloadStart" || e.type === "swap").map((e) => `${e.tick}:${e.type}${"alt" in e ? (e.alt ? "/alt" : "") : ""}${"on" in e ? (e.on ? "/on" : "/off") : ""}`));
+    console.log("choke trace:", trace.join(" "));
+    const gained = (k: string) => (after[k] ?? 0) - (before[k] ?? 0);
+    check("choking the REPO HAMMER is heard racking on and off, and the slug has a voice of its own where the spread keeps the gun's", gained("alt_on") >= 1 && gained("alt_off") >= 1 && gained("shot_repo_hammer_slug") >= 1 && gained("shot_repo_hammer") > gained("shot_repo_hammer_slug"), `alt on ${gained("alt_on")} · off ${gained("alt_off")} · slug voices ${gained("shot_repo_hammer_slug")} of ${gained("shot_repo_hammer")} REPO HAMMER shots`);
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
 
     writeFileSync(`${OUT}/stage4.json`, JSON.stringify({ ttk: table, shots, hits, kills, explosions: explosions.length, captures, audio: state.audio, checks }, null, 2));

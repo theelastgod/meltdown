@@ -4,6 +4,7 @@
  * these synths in the polish pass without changing the call sites.
  */
 import type { HitZone } from "@shared/sim/world";
+import { shotVoice, toggleCue } from "./voice";
 
 export class GameAudio {
   private ctx: AudioContext | null = null;
@@ -263,11 +264,38 @@ export class GameAudio {
   }
 
   /** Weapon shot silhouettes: each has a distinct low end and crack so they read blind. */
-  shot(weapon = "lease_breaker"): void {
+  /**
+   * `alt` is the trigger pull that fired something other than the primary (Stage 94): a choked
+   * slug, a rail quickshot, a sticky. Those get a voice of their own; an optic or a brace does not
+   * change what the gun is, so its shots keep the primary's bark. Counted under the voice as well as
+   * the weapon, so a probe can hear the difference.
+   */
+  shot(weapon = "lease_breaker", alt = false): void {
     this.count("shot");
     this.count("shot_" + weapon);
+    const voice = shotVoice(weapon, alt);
+    if (voice !== weapon) this.count("shot_" + voice);
     if (!this.ctx) return;
-    switch (weapon) {
+    switch (voice) {
+      case "repo_hammer_slug":
+        // one round, not eight: deeper, no pump, and a ring off the choke
+        this.tone({ dur: 0.3, from: 95, to: 24, gain: 0.95, type: "sine" });
+        this.burst({ dur: 0.1, freq: 700, q: 0.5, gain: 0.45 });
+        this.burst({ dur: 0.45, freq: 160, q: 0.8, gain: 0.4, type: "lowpass" });
+        this.tone({ dur: 0.18, from: 1400, to: 1100, gain: 0.06, type: "triangle", delay: 0.02 });
+        break;
+      case "longwave_quickshot":
+        // a snap where the charged shot is a howl
+        this.tone({ dur: 0.12, from: 180, to: 40, gain: 0.6, type: "sine" });
+        this.tone({ dur: 0.08, from: 3000, to: 900, gain: 0.18, type: "sawtooth" });
+        this.burst({ dur: 0.08, freq: 2600, q: 0.7, gain: 0.3 });
+        break;
+      case "phage_sticky":
+        // a thunk and a metallic tick as the charge leaves the tube armed
+        this.tone({ dur: 0.14, from: 120, to: 60, gain: 0.45, type: "sine" });
+        this.burst({ dur: 0.1, freq: 500, q: 0.6, gain: 0.25, type: "lowpass" });
+        this.burst({ dur: 0.03, freq: 4200, q: 3, gain: 0.14, delay: 0.06 });
+        break;
       case "repo_hammer":
         this.tone({ dur: 0.22, from: 120, to: 30, gain: 0.8, type: "sine" });
         this.burst({ dur: 0.16, freq: 900, q: 0.4, gain: 0.5 });
@@ -399,6 +427,14 @@ export class GameAudio {
     this.count("hurt");
     if (!this.ctx) return;
     this.burst({ dur: 0.08, freq: 500, q: 0.6, gain: 0.25, type: "lowpass" });
+  }
+
+  /** the choke racking on or off (Stage 94): a two-part mechanical click, pitched by which way it went */
+  altToggle(on: boolean): void {
+    this.count(toggleCue(on));
+    if (!this.ctx) return;
+    this.burst({ dur: 0.03, freq: on ? 1800 : 1300, q: 2.5, gain: 0.12 });
+    this.burst({ dur: 0.05, freq: on ? 900 : 650, q: 1.2, gain: 0.1, type: "lowpass", delay: 0.05 });
   }
 
   dryFire(): void {
