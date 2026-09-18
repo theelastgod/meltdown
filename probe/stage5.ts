@@ -103,6 +103,52 @@ async function main(): Promise<void> {
     check("offline: node D flips violet → green under one Blank", D.owner === 1 && flips.some((f) => f.node === 4), `owner ${D.owner}, hold ${D.hold.toFixed(2)}`);
     check("offline: node A (adjacent to held D) flips too", A.owner === 1 && flips.some((f) => f.node === 1), `owner ${A.owner}, hold ${A.hold.toFixed(2)}`);
     check("offline: score accrues for held nodes", state.wake!.score[1]! > 3, `cell one ${state.wake!.score[1]!.toFixed(1)} pts, timer ${state.wake!.timeLeft.toFixed(0)} s`);
+    // ---------------- the node under your feet (Stage 85) ----------------
+    // The readout's clock is measured from the hold the server is publishing, so its seconds have to
+    // be the simulation's seconds: read the countdown, then let the round run and time the flip.
+    const foot = await page.evaluate(async () => {
+      const g = window.__game.game;
+      const w = g.world.wake!;
+      const p = g.player;
+      // a fresh node, leased to VANTAGE, with the file standing on it and nothing else in the round
+      const n = w.nodes.find((x) => x.id === 2)!;
+      n.owner = 0;
+      n.hold = 1;
+      n.puller = 0;
+      n.contested = false;
+      n.boost = 0;
+      p.pos.x = n.pos.x;
+      p.pos.z = n.pos.z;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      p.team = 1;
+      window.__game.setBot([{ kind: "hold", ticks: 60 * 60 }]);
+      // let the pull start and the measured rate settle, then read what the HUD is saying
+      for (let i = 0; i < 300 && n.hold > 0.72; i++) {
+        window.__game.advance(1);
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      const panel = document.querySelector("#hud .nodefoot") as HTMLElement | null;
+      const said = panel && !panel.hidden ? (panel.textContent ?? "") : "";
+      const m = /FLIP IN ([0-9.]+)s/.exec(said);
+      const predicted = m ? Number(m[1]) : -1;
+      return { said, predicted, holdAt: n.hold, label: n.label };
+    });
+    // the picture is of the countdown, not of what came after it: the probe drives the simulation by
+    // hand, so between two evaluates the node is frozen mid-pull with the readout up
+    await shotCheck(page, "stage5-nodefoot.png");
+    const flipTook = await page.evaluate(async () => {
+      const n = window.__game.game.world.wake!.nodes.find((x) => x.id === 2)!;
+      let ticks = 0;
+      while (ticks < 60 * 40 && n.owner !== 1) {
+        window.__game.advance(1);
+        ticks++;
+        if (ticks % 12 === 0) await new Promise((r) => requestAnimationFrame(r));
+      }
+      return { actual: ticks / 60, owner: n.owner };
+    });
+    const err = foot.predicted > 0 ? Math.abs(foot.predicted - flipTook.actual) : 99;
+    check("the node readout's countdown is the simulation's own: it says how long the flip takes and the flip takes that long", flipTook.owner === 1 && foot.predicted > 0.5 && err < 0.4 && /NODE B/.test(foot.said) && /PULLING/.test(foot.said), `at ${foot.holdAt.toFixed(2)} hold it said ${foot.predicted.toFixed(1)}s, the flip took ${flipTook.actual.toFixed(1)}s (${err.toFixed(2)}s out) · "${foot.said.trim()}"`);
+
     // spread: measure A's flip time precisely in a fresh simulation via the hook: put the player on A with D held vs not
     const measureFlip = (pre: boolean) =>
       page.evaluate((withNeighbour) => {

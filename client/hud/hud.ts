@@ -5,6 +5,7 @@ import type { Dummy } from "@shared/sim/world";
 import type { FileView } from "../file";
 import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
+import type { NodeReadout } from "./node";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
 export class Hud {
@@ -91,6 +92,7 @@ export class Hud {
         </div>
       </div>
 
+      <div class="p nodefoot" hidden></div>
       <div class="p mg mission"><span class="mtitle">◈ THE WAKE — DRAINAGE YARD</span><div class="sub"><span class="mline">⌖ CONTRACT — DUMMIES <span class="kills">0</span>/5</span></div><div class="runstrip" hidden></div><div class="sub mscore"></div><div class="nodes"></div></div>
       <div class="alert"></div>
       <div class="debt"></div>
@@ -499,6 +501,31 @@ export class Hud {
         .join("");
     }
   }
+
+  /**
+   * The node under your feet (Stage 85): the wake strip says who holds all eight; this says what is
+   * happening to the one you are standing on, and how long it has left at the rate it is moving.
+   */
+  nodeFoot(r: NodeReadout | null, myTeam: number): void {
+    const el = this.q(".nodefoot");
+    if (!r) {
+      if (!el.hidden) el.hidden = true;
+      this.nodeFootKey = "";
+      return;
+    }
+    const key = `${r.id}${r.owner}${r.puller}${r.contested ? "c" : ""}${r.on ? "o" : ""}${r.toward}${Math.round(r.hold * 50)}${Math.round(r.seconds * 2)}`;
+    if (key === this.nodeFootKey) return;
+    this.nodeFootKey = key;
+    el.hidden = false;
+    const cell = (t: number) => (t === 1 ? "CELL ONE" : t === 2 ? "CELL TWO" : "VANTAGE");
+    const mine = r.puller && r.puller === myTeam;
+    const who = r.contested ? "CONTESTED" : r.toward === "still" ? (r.on ? "PULL IT" : "NOBODY IS PULLING") : `${cell(r.puller || r.owner)} ${r.toward === "flip" ? "PULLING" : "SETTLING"}`;
+    const clock = r.toward === "flip" || r.toward === "hold" ? ` · ${r.toward === "flip" ? "FLIP" : "LOCK"} IN ${r.seconds.toFixed(1)}s` : "";
+    const tone = r.contested ? "am" : mine ? "gr" : r.puller ? "mg" : "cy";
+    el.className = `p nodefoot ${tone}`;
+    el.innerHTML = `<b>NODE ${r.label}</b> · ${cell(r.owner)} <span class="hold"><i style="width:${Math.round(r.hold * 100)}%"></i></span> ${who}${clock}${r.on ? "" : ` · ${r.distance.toFixed(0)} m`}`;
+  }
+  private nodeFootKey = "";
 
   /** The repo mech has you in its light. */
   flagged(): void {

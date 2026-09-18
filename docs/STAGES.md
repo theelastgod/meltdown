@@ -1641,6 +1641,38 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 85 — The node under your feet
+
+**Goal.** The wake strip at the top of the screen says who holds each of the eight nodes, in eight
+hexes the size of a word. Standing on one, a player needs the other question answered — is this going
+my way, and how long until it turns — and nothing said. The hold moved a hex's colour at the top of
+the screen and that was the whole readout, in the mode the game is named for.
+
+**What changed.**
+
+- **A line under the strip for the node you are on**, or walking up to: which node, who holds it, how
+  far the pull has got, and the countdown — `NODE B · VANTAGE ▮▮▮▮▯ CELL ONE PULLING · FLIP IN 1.7s`.
+  It colours itself by whose way it is going and says `CONTESTED` when both cells are on it, which in
+  this simulation means nothing is moving at all.
+- **The countdown is measured, not modelled.** `client/hud/node.ts` watches the hold the server is
+  publishing and measures how fast it is moving. That is exact whatever the reason — extra files on
+  it, the spread bonus from the nodes next door, a phage burst, a mastery multiplier — and needs
+  nothing new on the wire, which matters because the wire does not carry other files' cells at all.
+- **Measured against the simulation's clock, not the frame's.** A hold moves per tick; dividing by
+  the frame time reads ten times too slow on a machine that draws several frames per tick, which is
+  exactly what the first version did (the check caught it: 17.0 s for a flip that took 1.7 s).
+- **A node changing hands starts the measurement again**, or the first moment of a new owner's hold
+  carries the old owner's rate and the line reads `FLIP IN 0.0s` on a node that has just flipped.
+- The simulation's flip rate is now one exported function, `flipRate`, which `stepWake` calls. The
+  readout does not use it — it measures instead — but the formula having one home is the point.
+
+**Proof.** `probe:wake` 16/16 — one new, and it is the claim itself: with a file pulling node B, the
+HUD says `FLIP IN 1.7s` at 0.72 hold, and the flip then takes 1.7 s — **0.00 s out** —
+with `stage5-nodefoot.png` taken while the countdown is live rather than after it. `tests/node.test.ts`
+10. `probe:tps` 32/32, `probe:net` 19/19, `probe:run` 18/18, `probe:campaign` 31/31, `probe:mobile`
+14/14, `smoke` 7/7, 585 tests, build and typecheck clean. Two guards mutation-checked: the frame
+clock put back (18.2 s against 1.7 s) and the panel never fed (no line at all).
+
 ## Stage 84 — Two checks that started somewhere else
 
 **Goal.** Runs #110 and #111 were red on two different probes, and one of them is a regression I

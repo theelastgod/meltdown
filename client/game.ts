@@ -3,6 +3,7 @@ import type { RunMsg } from "@shared/net/protocol";
 import { loadSettings, type Settings } from "./settings";
 import { skinByToken } from "@shared/economy/catalog";
 import { MAX_CATCHUP_TICKS, MOVE, SIM_DT, SIM_HZ } from "@shared/sim/constants";
+import { WAKE } from "@shared/sim/wake";
 import type { InputFrame } from "@shared/sim/input";
 import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS } from "@shared/sim/level";
 import { eyeHeight, eyePos, type PlayerState } from "@shared/sim/player";
@@ -23,6 +24,7 @@ import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { stepCues, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
+import { nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
 import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
@@ -725,7 +727,10 @@ export class Game {
   private chargeTick = 0;
 
   /** Latest wake state for the HUD (offline: the world's; online: the snapshot's). */
-  private wakeHud: { phase: string; timeLeft: number; score: [number, number, number]; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number }[] } | null = null;
+  /** what each node's hold was doing last frame, for the readout's clock (Stage 85) */
+  private nodeBook = new Map<number, TrackedNode>();
+  private nodeBookTick = 0;
+  private wakeHud: { phase: string; timeLeft: number; score: [number, number, number]; nodes: { id: number; label: string; pos: { x: number; y: number; z: number }; owner: number; hold: number; contested: boolean; puller: number }[] } | null = null;
   private lastNodeOwners = new Map<number, number>();
 
   private nodeViewsOffline(): NodeView[] {
@@ -1271,6 +1276,17 @@ export class Game {
     const low = p.alive && p.health > 0 && p.health < 30;
     if (low || this.lowHealthOn) this.audio.lowHealth(low);
     this.lowHealthOn = low;
-    if (this.wakeHud) this.hud.wake(this.wakeHud, p.team);
+    if (this.wakeHud) {
+      this.hud.wake(this.wakeHud, p.team);
+      // and the one under your feet (Stage 85): the strip says who holds all eight, this says what
+      // is happening to the one you are standing on. The rate is measured from the hold the server
+      // is publishing, so the seconds are the simulation's own.
+      // against the simulation's clock, not the frame's: a hold moves per tick
+      const simDt = (this.stats.ticks - this.nodeBookTick) * SIM_DT;
+      this.nodeBookTick = this.stats.ticks;
+      trackHolds(this.nodeBook, this.wakeHud.nodes, simDt);
+      const near = this.wakeHud.phase === "wake" ? nearestNode(this.wakeHud.nodes, p.pos, WAKE.nodeRadius * 2) : null;
+      this.hud.nodeFoot(near ? nodeReadout(near.node, this.nodeBook.get(near.node.id), near.distance, WAKE.nodeRadius) : null, p.team);
+    }
   }
 }

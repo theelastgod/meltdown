@@ -125,6 +125,19 @@ export function resetRound(w: WakeState, phase: Phase): void {
   }
 }
 
+/**
+ * How fast a node's hold moves, per second, for a cell standing on it: the base rate, plus what
+ * every extra file on it is worth, plus what holding the nodes next door is worth, times the
+ * mastery multiplier and whatever boost is burning on it.
+ *
+ * Exported because the HUD reads it too (Stage 85). A readout that says "four seconds" has to be
+ * four seconds of this simulation, so it is this formula or it is a decoration.
+ */
+export function flipRate(count: number, adjacent: number, mult = 1, boostMult = 1): number {
+  if (count <= 0) return 0;
+  return (2 / WAKE.baseFlipSeconds) * (1 + WAKE.extraPlayerBonus * (count - 1)) * (1 + WAKE.spreadBonus * adjacent) * mult * boostMult;
+}
+
 /** Phage burst: nodes within radius flip faster for a few seconds. */
 export function boostNodes(w: WakeState, center: Vec3, radius: number): number {
   let n = 0;
@@ -237,7 +250,7 @@ export function stepWake(w: WakeState, occupants: readonly WakeOccupant[], playe
       const other = w.nodes.find((x) => x.id === l);
       if (other && other.owner === team) adjacent++;
     }
-    const rate = ((2 / WAKE.baseFlipSeconds) * (1 + WAKE.extraPlayerBonus * (count - 1)) * (1 + WAKE.spreadBonus * adjacent) * mult * (n.boost > 0 ? n.boostMult : 1)) * dt;
+    const rate = flipRate(count, adjacent, mult, n.boost > 0 ? n.boostMult : 1) * dt;
     if (n.owner === team) {
       n.hold = Math.min(1, n.hold + rate);
     } else {
