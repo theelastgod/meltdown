@@ -1641,6 +1641,43 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 102 — The shield broke in silence
+
+**Goal.** Every file carries thirty points of shield over seventy of integrity: the shield soaks
+damage first and grows back four seconds after the last hit, fifteen points a second. The moment it
+breaks is the moment the fight changes — the next round is integrity — and the client marked it
+with nothing: the cyan bar in the corner went to zero and the `▲ INTEGRITY` alert read the same as
+any other hit. The moment it is whole again is when the file can push, and that was silent too.
+The low-health pulse has said "until the shield is back" in a comment since Stage 13; nothing
+ever said it to the player.
+
+**What changed.**
+
+- **The break is heard**: an electrical crack and the hum dropping out from under it, and
+  `◇ SHIELD DOWN` in magenta. Once — a second hit on the bare file is a hit, not a second break.
+- **The bar says which state it is in**: its frame goes magenta and blinks while the shield is
+  down, and clears when it is back.
+- **The return is heard**: a rising hum settling into a tick, and `◇ SHIELD BACK`, on the frame
+  the shield reaches full from below. Not on a respawn, which is a spawn and has its own voice.
+- `client/shieldcue.ts` is the rule, pure and unit-tested — two views of the file and the edges
+  between them — read frame to frame the way the run's money (Stage 101) and the magazine's last
+  quarter (Stage 100) are.
+
+**Proof.** `probe:arsenal` 28/28, two new, read from the cue counts, the bar's own class and the
+log on drawn frames, with the Stage 98 wasp stood down so its rounds stop resetting the regen
+gate: forty points into a thirty-point shield leaves shield 0 and integrity 60, the bar reading
+`bar cy shield broken`, one break and `◇ SHIELD DOWN`; five more points leave integrity 55, still
+one break and no return; and the shield is whole again after exactly 360 ticks — the 240-tick gate
+and 120 ticks of regen — with one return, `◇ SHIELD BACK`, and the bar's frame clear.
+`tests/shieldcue.test.ts` 6. 686 tests, build and typecheck clean.
+
+Two mutations, each failing only what it breaks. With `shieldMoments` reading nothing both new
+checks lose their cues and lines (`break ×0`, `back ×0`, `""`) while the bar — driven from the
+state, not from the moment — still reads `broken` and then clear; 26/28, and two of the six unit
+tests go with it. With the bar never told, the break is still heard once with its line and only
+the bar clause fails (`bar cy shield` where `broken` should be), 27/28 — the return check, which
+asserts the frame is clear, passes on a bar that never marked itself.
+
 ## Stage 101 — The claims fell without a sound
 
 **Goal.** THE RUN has three money moments and the client borrowed or skipped every one of them.

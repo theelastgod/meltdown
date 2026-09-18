@@ -455,6 +455,23 @@ export class GameAudio {
     this.burst({ dur: 0.06, freq: 2600, q: 1.2, gain: 0.06 * cue.gain, pan: cue.pan, delay: 0.16 });
   }
 
+  /** the shield breaking (Stage 102): an electrical crack and the hum dropping out from under it */
+  shieldBreak(): void {
+    this.count("shieldBreak");
+    if (!this.ctx) return;
+    this.burst({ dur: 0.05, freq: 3200, q: 1.1, gain: 0.3 });
+    this.burst({ dur: 0.12, freq: 900, q: 0.6, gain: 0.18, type: "bandpass", delay: 0.02 });
+    this.tone({ dur: 0.3, from: 520, to: 90, gain: 0.22, type: "sawtooth" });
+  }
+
+  /** the shield back to full (Stage 102): a rising hum settling into a tick */
+  shieldBack(): void {
+    this.count("shieldBack");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.35, from: 220, to: 660, gain: 0.12, type: "triangle" });
+    this.burst({ dur: 0.03, freq: 2400, q: 1.4, gain: 0.08, delay: 0.32 });
+  }
+
   /** the last quarter of the magazine (Stage 100): two small ticks, once, on the round that crosses into it */
   lowAmmo(): void {
     this.count("lowAmmo");

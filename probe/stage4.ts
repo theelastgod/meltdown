@@ -386,6 +386,42 @@ async function main(): Promise<void> {
     check("an empty magazine says so in the corner, and the last quarter turns it amber with one cue on the round that crossed the line", /\bempty\b/.test(mag.empty.cls) && mag.empty.hint !== "none" && /\blow\b/.test(mag.low.cls) && mag.low.ammo > 0 && mag.low.ammo <= 8 && mag.low.cues === 1, `empty: "${mag.empty.cls}" · prompt ${mag.empty.hint} · after firing from 9: ${mag.low.ammo} rounds, "${mag.low.cls}", cue ×${mag.low.cues}`);
     check("and the reload is a ring on the reticle that fills, then goes: the corner reads whole again and the cue stayed at one", mag.r0.on && mag.r0.disp !== "none" && mag.r1.on && mag.r1.p > mag.r0.p && /\breloading\b/.test(mag.r0.cls) && !mag.done.on && mag.done.disp === "none" && !/\b(low|empty|reloading)\b/.test(mag.done.cls) && mag.done.ammo === 30 && mag.done.cues === 1, `reload began ${mag.ticksToReload} ticks in · ring ${mag.r0.disp} at ${mag.r0.p.toFixed(2)} → ${mag.r1.p.toFixed(2)} fifteen ticks later ("${mag.r0.text}", "${mag.r0.cls}") · after: ring ${mag.done.disp}, "${mag.done.cls}", ${mag.done.ammo} rounds, cue ×${mag.done.cues}`);
 
+    // Stage 102: the shield broke in silence. A hit that takes the last of the shield, a second hit
+    // on the bare file, and the six seconds until it is back — read from the cue counts, the bar's
+    // own class and the log, on drawn frames.
+    const shield = await page.evaluate(async () => {
+      const g = window.__game.game;
+      const p = g.player;
+      // the Stage 98 wasp is still hunting this file: stand it down, or its rounds keep resetting
+      // the regen gate and the shield never comes back
+      for (const w of g.world.wasps) { w.alive = false; w.respawnTimer = 99999; w.state = "patrol"; w.targetId = -1; }
+      window.__game.setBot([{ kind: "hold", ticks: 1200 }]);
+      p.alive = true; p.health = 70; p.shield = p.maxShield; p.sinceDamage = 10;
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const bar = document.querySelector("#hud .bar.shield") as HTMLElement;
+      const a0 = { ...window.__game.state().audio };
+      // the cue deltas are spelled out at each read: a named arrow inside evaluate trips esbuild's
+      // keep-names shim
+      // forty points into a thirty-point shield
+      g.world.applyDamage("player", p.id, 40, -1, "wasp", "shot");
+      window.__game.advance(2);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const broke = { shield: p.shield, health: p.health, cls: bar.className, brk: ((window.__game.state().audio["shieldBreak"] ?? 0) - (a0["shieldBreak"] ?? 0)), line: [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "").find((l) => /SHIELD DOWN/.test(l)) ?? "" };
+      // another five on the bare file: still one break
+      g.world.applyDamage("player", p.id, 5, -1, "wasp", "shot");
+      window.__game.advance(2);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const again = { health: p.health, brk: ((window.__game.state().audio["shieldBreak"] ?? 0) - (a0["shieldBreak"] ?? 0)), back: ((window.__game.state().audio["shieldBack"] ?? 0) - (a0["shieldBack"] ?? 0)), cls: bar.className };
+      // the four-second gate and the two seconds of regen, with frames between
+      let t = 0;
+      while (p.shield < p.maxShield && t < 600) { window.__game.advance(10); t += 10; await new Promise((r) => requestAnimationFrame(r)); }
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const back = { ticks: t, shield: p.shield, cls: bar.className, brk: ((window.__game.state().audio["shieldBreak"] ?? 0) - (a0["shieldBreak"] ?? 0)), back: ((window.__game.state().audio["shieldBack"] ?? 0) - (a0["shieldBack"] ?? 0)), line: [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "").find((l) => /SHIELD BACK/.test(l)) ?? "" };
+      return { broke, again, back, max: p.maxShield };
+    });
+    check("the shield breaking is heard once and the bar says so, a second hit on the bare file is not a second break", shield.broke.shield <= 0 && shield.broke.health === 60 && /\bbroken\b/.test(shield.broke.cls) && shield.broke.brk === 1 && /SHIELD DOWN/.test(shield.broke.line) && shield.again.brk === 1 && shield.again.back === 0 && /\bbroken\b/.test(shield.again.cls) && shield.again.health === 55, `40 into a ${shield.max}-point shield: shield ${shield.broke.shield}, integrity ${shield.broke.health}, bar "${shield.broke.cls}", break ×${shield.broke.brk}, "${shield.broke.line.trim()}" · 5 more: integrity ${shield.again.health}, break ×${shield.again.brk}, back ×${shield.again.back}, bar "${shield.again.cls}"`);
+    check("and it is heard coming back, once, when it is whole again — the bar's frame clears with it", shield.back.shield >= shield.max && shield.back.back === 1 && shield.back.brk === 1 && !/\bbroken\b/.test(shield.back.cls) && /SHIELD BACK/.test(shield.back.line), `whole after ${shield.back.ticks} ticks (gate 240 + regen 120): shield ${shield.back.shield}/${shield.max}, back ×${shield.back.back}, break ×${shield.back.brk}, bar "${shield.back.cls}", "${shield.back.line.trim()}"`);
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
 
     writeFileSync(`${OUT}/stage4.json`, JSON.stringify({ ttk: table, shots, hits, kills, explosions: explosions.length, captures, audio: state.audio, checks }, null, 2));

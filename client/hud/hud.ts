@@ -118,7 +118,7 @@ export class Hud {
         <div class="line"><span class="glyph"></span>▲ <span class="handle">BLANK</span><span class="moniker"></span> · <span class="dim">DRAINAGE YARD (MAGENTA)</span> · <span class="online">1 online</span></div>
         <div class="line dim">LV <span class="depth">01</span> · XP <span class="xp">0/100</span> · ¢ <span class="scrip">0</span> · ◆ <span class="wake">0</span></div>
         <div class="bars">
-          <div class="bar cy"><i class="shbar" style="width:100%"></i></div>
+          <div class="bar cy shield"><i class="shbar" style="width:100%"></i></div>
           <div class="bar gr"><i class="hpbar" style="width:100%"></i></div>
           <div class="bar ye"><i class="ammobar" style="width:100%"></i></div>
         </div>
@@ -323,6 +323,14 @@ export class Hud {
     const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? `SAFE ZONE · <span class="zone">[TAB] MARKET</span>` : `<span class="pvp">PVP ZONE</span>`;
     el.innerHTML = `◈ CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · OWED <b>${v.owed}</b> UNITS · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${v.claims} CLAIMS OUT`;
   }
+
+  /** The shield bar says it is broken (Stage 102): a magenta frame on the bar until the shield is back. */
+  setShieldBroken(broken: boolean): void {
+    if (broken === this.shieldBroken) return;
+    this.shieldBroken = broken;
+    this.q(".bar.shield").classList.toggle("broken", broken);
+  }
+  private shieldBroken = false;
 
   /** Mission title and the current objective under it (replaces the wake strip while a contract runs). */
   setObjective(title: string, text: string, progress: string | null): void {

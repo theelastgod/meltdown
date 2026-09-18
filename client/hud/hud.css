@@ -43,6 +43,8 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .bar.cy > i { background: var(--cy); box-shadow: 0 0 5px var(--cy); }
 #hud .bar.gr > i { background: var(--gr); box-shadow: 0 0 5px var(--gr); }
 #hud .bar.ye > i { background: var(--ye); box-shadow: 0 0 5px var(--ye); }
+/* the shield is down (Stage 102): the bar's frame goes magenta and blinks until it is back */
+#hud .bar.shield.broken { border-color: var(--mg); box-shadow: 0 0 6px rgba(255,62,201,0.55); animation: ammoblink 0.7s steps(2, end) infinite; }
 #hud .mission { left: 50%; top: 14px; transform: translateX(-50%); text-align: center; min-width: 240px; padding: 5px 14px; }
 #hud .mission .sub { font-size: 10px; opacity: 0.85; margin-top: 2px; }
 #hud .alert { position: absolute; left: 50%; top: 58px; transform: translateX(-50%); color: var(--gr); font-size: 11px; white-space: nowrap; opacity: 0; transition: opacity 0.2s; }
