@@ -21,6 +21,9 @@ import WebSocket from "ws";
 import type { BotStep } from "../client/bot";
 import { encodeInputs, encodeJoin, MAX_REWIND_TICKS, Msg } from "../shared/net/protocol";
 import { levelById } from "../shared/sim/level";
+import { FLASH_MIN, HIT_GLOW } from "../client/hit";
+import { RIG_EMISSIVE } from "../client/render/rig";
+import { wrapAngle } from "../shared/math/vec3";
 import { buildNav, findPath } from "../shared/sim/nav";
 import { Btn } from "../shared/sim/input";
 
@@ -67,6 +70,18 @@ async function stats(): Promise<any> {
  * meet. `CPU=1` (the default) is the machine's own speed and changes nothing.
  */
 const CPU = Number(process.env.CPU ?? 1);
+
+/** what the Stage 89 sampler reads off ALPHA's own view of BRAVO, inside the page */
+interface Impact {
+  /** the brightest the cloak got */
+  peak: number;
+  /** samples back at its resting glow after it had been lit */
+  after: number;
+  samples: number;
+  peakHurt: number;
+  /** where the body was bending from at the hardest flinch, and where the two of them were */
+  best: { hurtFrom: number; bx: number; bz: number; ax: number; az: number } | null;
+}
 
 async function openClient(browser: Awaited<ReturnType<typeof chromium.launch>>, room: string, name: string, seed: number): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: 480, height: 270 } });
@@ -332,7 +347,55 @@ async function main(): Promise<void> {
     await E.a.evaluate(() => window.__game.setDrawing(true));
     await E.b.evaluate(() => window.__game.setDrawing(true));
     await E.a.evaluate((id) => window.__game.setBot([{ kind: "killPlayer", targetId: id, ticks: 600 }]), E.idB);
-    await E.a.waitForTimeout(1200);
+
+    // ---------------- Stage 89: a hit is visible on the body it landed on ----------------
+    //
+    // This is the one place in this harness where a client is actually drawing: the engagement runs
+    // with `norender=1` so the netcode is measured and not the renderer, and a body that is never
+    // drawn has no rig to light. So the read happens here, with ALPHA rendering and still firing.
+    //
+    // Sampled inside the page rather than from out here: a hit's flash lives about a fifth of a
+    // second, and this process comes back every quarter of one.
+    await E.a.evaluate((id) => {
+      const w = window as unknown as { __impact: Impact; __impactTimer: number };
+      w.__impact = { peak: 0, after: 0, samples: 0, peakHurt: 0, best: null };
+      w.__impactTimer = window.setInterval(() => {
+        try {
+          const r = window.__game.rig(id);
+          const i = w.__impact;
+          i.samples++;
+          if (r.emissive > i.peak) i.peak = r.emissive;
+          // at rest again, having been lit: the proof that the light dies away rather than sticking
+          if (i.peak > 0.1 && r.emissive <= 0.03) i.after++;
+          if ((r.hurt ?? 0) > i.peakHurt) {
+            const them = window.__game.net()?.remotes.find((x) => x.id === id);
+            const me = window.__game.state().pos;
+            i.peakHurt = r.hurt ?? 0;
+            if (them) i.best = { hurtFrom: r.hurtFrom ?? 0, bx: them.x, bz: them.z, ax: me.x, az: me.z };
+          }
+        } catch {
+          // BRAVO's body is not on this client yet: nothing to sample this tick
+        }
+      }, 8);
+    }, E.idB);
+    const lit = RIG_EMISSIVE + FLASH_MIN * HIT_GLOW * 0.95;
+    const impactT0 = Date.now();
+    let im: Impact = { peak: 0, after: 0, samples: 0, peakHurt: 0, best: null };
+    // wait for the thing to happen rather than for a stopwatch: how long a hit takes depends on
+    // where BRAVO respawned and how much of the magazine ALPHA has left
+    while (Date.now() - impactT0 < 12000) {
+      await E.a.waitForTimeout(250);
+      im = await E.a.evaluate(() => (window as unknown as { __impact: Impact }).__impact);
+      if (im.peak >= lit && im.peakHurt > 0 && im.after > 0) break;
+    }
+    await E.a.evaluate(() => clearInterval((window as unknown as { __impactTimer: number }).__impactTimer));
+    // Before this stage a round into a body ended in mid-air: the spark was drawn for world hits
+    // only, the body never lit, and the flinch the pose rig has had since Stage 74 had never once
+    // been handed to anybody but the local file.
+    check("a round that lands lights the body it landed on, and the light dies away again", im.peak >= lit && im.after > 0 && im.samples > 50, `peak emissive ${im.peak.toFixed(3)} (at rest ${RIG_EMISSIVE}, a hit wants ≥ ${lit.toFixed(3)}) · back at rest in ${im.after} of ${im.samples} samples`);
+    const bearErr = im.best ? Math.abs(wrapAngle(im.best.hurtFrom - Math.atan2(-(im.best.ax - im.best.bx), -(im.best.az - im.best.bz)))) : Math.PI;
+    check("and the body bends away from the muzzle, not some other way", im.peakHurt > 0 && bearErr < 0.6, `flinch ${im.peakHurt.toFixed(2)} · it bends from ${(im.best?.hurtFrom ?? 0).toFixed(2)} rad, and ALPHA was ${bearErr.toFixed(2)} rad off that bearing, ${im.best ? Math.hypot(im.best.ax - im.best.bx, im.best.az - im.best.bz).toFixed(1) : "?"} m away`);
+
     await shotCheck(E.a, `stage2-alpha.png`, "#hud .ammo");
     await shotCheck(E.b, `stage2-bravo.png`, "#hud .ammo");
     await E.a.close();

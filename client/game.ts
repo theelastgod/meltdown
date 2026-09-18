@@ -22,6 +22,8 @@ import { Renderer, type ViewState } from "./render/renderer";
 import type { AimTarget } from "./render/tps";
 import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
+import { impactRead, landedDamage, WASP_SHOT } from "./hit";
+import { lookYawPitch } from "./render/feel";
 import { stepCues, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
 import { kernelIn, nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
@@ -457,12 +459,22 @@ export class Game {
         const hit = ev.hitKind >= 2;
         const def = WEAPON_LIST[ev.weapon - 1];
         const color = def?.tracer ?? 0xffb02e;
+        // every shot in the room, not only mine (Stage 89): a round into a body used to end in
+        // mid-air for everyone watching. The wire does not carry the damage, so it is worked out
+        // here from the weapon, the zone and the distance the shot actually flew — the simulation's
+        // own arithmetic, in `client/hit.ts`
+        if (hit) {
+          const kind = ev.hitKind === 2 ? "dummy" : ev.hitKind === 3 ? "player" : ev.hitKind === 4 ? "wasp" : "mech";
+          const distance = Math.hypot(ev.tx - ev.fx, ev.ty - ev.fy, ev.tz - ev.fz);
+          const zone = kind === "dummy" || kind === "player" ? (ev.zone ?? "body") : "body";
+          const damage = landedDamage(def ?? WASP_SHOT, zone, distance, kind === "mech" ? 0.5 : 1);
+          this.renderer.hitBody(kind, ev.victimId, { x: ev.tx, y: ev.ty, z: ev.tz }, impactRead(damage), lookYawPitch({ x: ev.tx, y: ev.ty, z: ev.tz }, { x: ev.fx, y: ev.fy, z: ev.fz }).yaw, color);
+        }
         if (ev.playerId === me) {
           this.netStats.myShotsConfirmed++;
           if (hit) {
             this.netStats.myHits++;
             this.audio.hit(ev.zone ?? "body");
-            if (ev.hitKind === 2) this.renderer.flashDummy(ev.victimId);
             if (this.hitmarkers) this.hud.flashHit();
           }
         } else {
@@ -1001,11 +1013,17 @@ export class Game {
         }
         if (ev.weapon === "longwave") this.renderer.fx.beam(ev.from, ev.to, color, 0.05, 0.6);
         else this.renderer.tracer(ev.from, ev.to, ev.hit.kind === "world", !mine, color);
-        if (!this.net && mine && ev.hits.length) {
-          const h = ev.hits[0]!;
-          this.audio.hit(h.zone ?? "body");
-          if (h.kind === "dummy") this.renderer.flashDummy(h.id);
-          if (this.hitmarkers) this.hud.flashHit();
+        if (!this.net && ev.hits.length) {
+          // offline the event carries the exact damage the simulation applied, so nothing has to be
+          // re-derived. The impact point is the ray's end, which is the first body it found unless
+          // the round pierced — and then a spark on the front one is the honest read anyway.
+          const fromYaw = lookYawPitch(ev.to, ev.from).yaw;
+          for (const h of ev.hits) if (h.kind !== "world" && h.kind !== "none") this.renderer.hitBody(h.kind, h.id, ev.to, impactRead(h.damage), fromYaw, color);
+          if (mine) {
+            const h = ev.hits[0]!;
+            this.audio.hit(h.zone ?? "body");
+            if (this.hitmarkers) this.hud.flashHit();
+          }
         }
         break;
       }

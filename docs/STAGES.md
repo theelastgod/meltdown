@@ -1641,6 +1641,47 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 89 — Nothing happened when you hit them
+
+**Goal.** A shot that hit a body looked exactly like a shot that hit nothing. The impact spark was
+drawn for world hits only, so a round into another file's chest ended in mid-air; the body did not
+light, did not flinch, and over the wire did not so much as blink. The one exception was a training
+dummy, which flashed. In the mode the whole game is built around, the entire confirmation that a
+round landed on a player was a sound on the shooter's own client — and every bystander watching a
+firefight across the street saw two people pointing lights at each other.
+
+The pose rig has been able to take a hit since Stage 74: `hurt` and `hurtFrom` bend the chest and
+turn the head away from whatever arrived. Only the local file was ever given them. Every remote body
+in the game's history has been posed with `hurt: 0` on every frame of its life.
+
+**What changed.**
+
+- **A hit lands on the body it hit**: a spark at the impact point, sized by what the round was worth,
+  and the body lit above its resting glow — on another file, on a dummy, on a wasp or a mech.
+- **And the body bends away from the muzzle**, at last using the flinch the rig has carried unused
+  for fifteen stages, by the same bearing rule `takeHit` uses for the local file.
+- **Every client runs it, for every shot in the room**, not only for its own: a firefight across the
+  street reads as rounds landing rather than as lights going off.
+- The read is the simulation's own arithmetic — `client/hit.ts` shares the server's `falloff` curve
+  and the weapon's own zone multipliers — so it cannot drift from the shot. It is what the round was
+  *worth*, never a claim about what the victim has left: the client is not told anyone else's
+  integrity and this does not guess at it.
+- The fade is by elapsed time. The dummies' flash had been stepped by a fixed amount **per frame**
+  since Stage 1, which makes a hit linger four times as long on a phone as on a desktop — the same
+  mistake Stage 85 found in the node clock, in the other direction.
+
+**Proof.** `probe:net` 21/21, two new, read off ALPHA's own view of BRAVO while ALPHA is drawing and
+still firing: the cloak peaks at 1.056 against a resting 0.025 and comes back to rest afterwards, and
+at the hardest flinch the body bends from a bearing **0.01 rad** off the one ALPHA was standing on,
+twenty metres away. `tests/hit.test.ts` 11 — the damage half checked against the simulation's own
+expression over every weapon at five distances and three zones, not against numbers typed into the
+test. `probe:body` 20/20, `probe:tps` 32/32, `probe:wake` 19/19, `probe` 13/13, `smoke` 7/7, 606
+tests, build and typecheck clean.
+
+Both guards mutation-checked, and they fail for their own separate reasons: with the player branch
+taken out the body stays at 0.025 over 1166 samples and both checks go red; with the impact bearing
+reversed the light still peaks at 1.056 and only the direction check fails, at 3.13 rad out.
+
 ## Stage 88 — The map was turning the wrong way
 
 **Goal.** The map in the corner has drawn two things since the first stage: the dummies, and the file

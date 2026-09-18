@@ -96,10 +96,13 @@ export class VfxPool {
     this.tracerBorn[i] = clock;
   }
 
-  addSpark(x: number, y: number, z: number, color: number, clock: number): void {
+  /** `scale` sizes the spark: a heavier hit throws more of it (Stage 89). */
+  addSpark(x: number, y: number, z: number, color: number, clock: number, scale = 1): void {
     const i = this.sparkNext;
     this.sparkNext = (this.sparkNext + 1) % MAX_SPARKS;
-    this.sparks.setMatrixAt(i, this.m.makeTranslation(x, y, z));
+    this.m.makeScale(scale, scale, scale);
+    this.m.setPosition(x, y, z);
+    this.sparks.setMatrixAt(i, this.m);
     this.c.set(color);
     this.sparks.setColorAt(i, this.c);
     this.sparkBorn[i] = clock;

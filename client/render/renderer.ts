@@ -21,9 +21,10 @@ import { RunFx } from "./run";
 import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import { mergeByMaterial } from "./body";
-import { applyPose, buildRig, disposeRig, rigReport, setRigSlot, WEAPON_IN_SOCKET, weaponStripGeometry, type Rig, type RigReport } from "./rig";
+import { applyPose, buildRig, disposeRig, rigReport, setRigSlot, WEAPON_IN_SOCKET, weaponStripGeometry, type Rig, type RigReport, RIG_EMISSIVE } from "./rig";
 import { poseBody, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
+import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import { arcPoint, type ArcSpec } from "./ballistic";
 import { DEATH_TURN, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
@@ -430,8 +431,6 @@ export class Renderer {
       }
       e.group.visible = d.alive;
       e.group.position.set(d.pos.x, d.pos.y, d.pos.z);
-      e.flash = Math.max(0, e.flash - 0.08);
-      e.mat.emissiveIntensity = 0.12 + e.flash * 0.9;
     }
   }
 
@@ -440,7 +439,51 @@ export class Renderer {
     if (e) e.flash = 1;
   }
 
-  private remoteMeshes = new Map<number, { group: THREE.Group; rig: Rig; strip: THREE.Mesh; stripMat: THREE.MeshBasicMaterial; slot: number; skin: number; tint: string | null; tag: THREE.Sprite; tagKey: string; canvas: HTMLCanvasElement; view: RemoteBodyView | null; prev: { x: number; y: number; z: number; yaw: number } | null; speedEst: number; phase: number; kick: number }>();
+  /**
+   * A shot landed on a body (Stage 89): a spark at the impact point sized by what it was worth, the
+   * body lit, and — on another file — the flinch the pose rig has had since Stage 74 and has never
+   * once been given. `fromYaw` is the world bearing back toward the muzzle, the same convention
+   * `takeHit` uses. Every client runs this for every shot in the room, its own and everybody
+   * else's, so a firefight across the street reads as hits landing rather than as lights going off.
+   */
+  hitBody(kind: "dummy" | "player" | "wasp" | "mech", id: number, at: Vec3, read: ImpactRead, fromYaw: number, color: number = PALETTE.amber): void {
+    this.vfxPool.addSpark(at.x, at.y, at.z, color, this.clock, read.spark);
+    if (kind === "dummy") {
+      const d = this.dummyMeshes.get(id);
+      if (d) d.flash = Math.max(d.flash, read.flash);
+      return;
+    }
+    if (kind !== "player") return;
+    const e = this.remoteMeshes.get(id);
+    if (!e) return;
+    e.flash = Math.max(e.flash, read.flash);
+    // a graze never overrides the bend a heavier round is still in the middle of
+    if (read.flinch > e.hurt) {
+      e.hurt = read.flinch;
+      e.hurtFrom = fromYaw;
+    }
+  }
+
+  /**
+   * Fade what a hit left behind, by elapsed time. The dummies' flash had been stepped by a fixed
+   * amount per frame since Stage 1, which makes a hit linger four times as long on a phone as on a
+   * desktop.
+   */
+  private decayHits(dt: number): void {
+    for (const e of this.dummyMeshes.values()) {
+      e.flash = decay(e.flash, dt, FLASH_LIFE);
+      e.mat.emissiveIntensity = 0.12 + e.flash * 0.9;
+    }
+    for (const e of this.remoteMeshes.values()) {
+      e.flash = decay(e.flash, dt, FLASH_LIFE);
+      e.hurt = decay(e.hurt, dt, FLINCH_LIFE);
+      // lit above its resting glow, whatever the range: a body too far away to pose still shows
+      // that the round landed
+      e.rig.mat.emissiveIntensity = RIG_EMISSIVE + e.flash * HIT_GLOW;
+    }
+  }
+
+  private remoteMeshes = new Map<number, { group: THREE.Group; rig: Rig; strip: THREE.Mesh; stripMat: THREE.MeshBasicMaterial; slot: number; skin: number; tint: string | null; tag: THREE.Sprite; tagKey: string; canvas: HTMLCanvasElement; view: RemoteBodyView | null; prev: { x: number; y: number; z: number; yaw: number } | null; speedEst: number; phase: number; kick: number; flash: number; hurt: number; hurtFrom: number }>();
   /** the local rig's worn skin tint (null: stock) */
   skinTint: string | null = null;
 
@@ -570,7 +613,7 @@ export class Renderer {
         tag.center.set(0.1, 0.5);
         rig.group.add(tag);
         this.scene.add(rig.group);
-        e = { group: rig.group, rig, strip, stripMat, slot: v.slot ?? 0, skin: -1, tint: null, tag, tagKey: "", canvas, view: null, prev: null, speedEst: 0, phase: 0, kick: 0 };
+        e = { group: rig.group, rig, strip, stripMat, slot: v.slot ?? 0, skin: -1, tint: null, tag, tagKey: "", canvas, view: null, prev: null, speedEst: 0, phase: 0, kick: 0, flash: 0, hurt: 0, hurtFrom: 0 };
         this.remoteMeshes.set(v.id, e);
       }
       this.drawTag(e, v.name ?? "BLANK", v.tag ?? "", !!v.debt);
@@ -673,7 +716,7 @@ export class Renderer {
       // a held position is not a direction: atan2(-0, -0) is -pi, which would face the legs
       // backwards for as long as the interpolator repeats a sample (Stage 65)
       const moved = Math.hypot(dx, dz) > 1e-4;
-      const inp: PoseInput = { speed, moveYaw: moved && speed > 0.5 ? Math.atan2(-dx, -dz) : v.yaw, yaw: v.yaw, pitch: v.pitch ?? 0, vy: clamp((v.y - prev.y) / dt, -12, 12), turnRate: clamp(wrapAngle(v.yaw - prev.yaw) / dt, -20, 20), grounded, stance: v.stance as Stance, height: v.height, reloading: 0, ads: 0, kick: e.kick, swap: 0, charge: 0, hurt: 0, hurtFrom: 0, alive: v.alive, stunned: false, clock: this.clock, phase: e.phase };
+      const inp: PoseInput = { speed, moveYaw: moved && speed > 0.5 ? Math.atan2(-dx, -dz) : v.yaw, yaw: v.yaw, pitch: v.pitch ?? 0, vy: clamp((v.y - prev.y) / dt, -12, 12), turnRate: clamp(wrapAngle(v.yaw - prev.yaw) / dt, -20, 20), grounded, stance: v.stance as Stance, height: v.height, reloading: 0, ads: 0, kick: e.kick, swap: 0, charge: 0, hurt: e.hurt, hurtFrom: wrapAngle(e.hurtFrom - v.yaw), alive: v.alive, stunned: false, clock: this.clock, phase: e.phase };
       const out = poseBody(inp, e.rig.state, dt);
       applyPose(e.rig, out, v.yaw);
       e.group.visible = out.visible;
@@ -689,7 +732,7 @@ export class Renderer {
     e.group.traverse((o) => {
       if (o.visible && (o.type === "Mesh" || o.type === "SkinnedMesh" || o.type === "Sprite")) calls++;
     });
-    return { ...rigReport(e.rig), slot: e.slot, stripColor: e.strip.visible ? e.stripMat.color.getHex() : null, calls };
+    return { ...rigReport(e.rig), hurt: e.hurt, hurtFrom: e.hurtFrom, slot: e.slot, stripColor: e.strip.visible ? e.stripMat.color.getHex() : null, calls };
   }
 
   /** Cyan tracer from the muzzle (or a world-space origin for other players) to the impact point, plus a muzzle flash. */
@@ -913,6 +956,7 @@ export class Renderer {
       glow.intensity = Math.max(glow.intensity, v.charge * 5);
     }
     // (the stun roll is applied in placeThirdPerson, before the reticle is projected through it)
+    this.decayHits(dt);
     this.poseRemotes(dt);
     this.fx.update(dt);
     this.wake.update(dt);

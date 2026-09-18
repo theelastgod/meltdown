@@ -226,6 +226,9 @@ function swayPatch(material: THREE.Material, uniforms: SwayUniforms): void {
 
 // ---- the rig ----
 
+/** the cloak's resting emissive: a hit lights it above this and it falls back here (Stage 89) */
+export const RIG_EMISSIVE = 0.025;
+
 export function buildRig(slot: WeaponId | null = null): Rig {
   const group = new THREE.Group();
   const bones = {} as Record<BoneName, THREE.Bone>;
@@ -251,7 +254,7 @@ export function buildRig(slot: WeaponId | null = null): Rig {
   const skeleton = new THREE.Skeleton(ordered);
   const uniforms: SwayUniforms = { uSway: { value: new THREE.Vector3() }, uFlap: { value: 0 }, uPhase: { value: 0 }, uFlare: { value: 0 } };
   // the cloak is near-black: a silhouette the strip-lights barely find, with the faintest cast of the worn tint
-  const mat = new THREE.MeshStandardMaterial({ color: 0x05060a, emissive: PALETTE.cyan, emissiveIntensity: 0.025, roughness: 1 });
+  const mat = new THREE.MeshStandardMaterial({ color: 0x05060a, emissive: PALETTE.cyan, emissiveIntensity: RIG_EMISSIVE, roughness: 1 });
   const trim = new THREE.MeshBasicMaterial({ color: PALETTE.cyan });
   swayPatch(mat, uniforms);
   swayPatch(trim, uniforms);
@@ -367,6 +370,11 @@ export interface RigReport {
   trim: string;
   bones10: number;
   skinned: boolean;
+  /** the cloak's emissive: at rest `RIG_EMISSIVE`, lit above it by a hit that landed (Stage 89) */
+  emissive: number;
+  /** a remote's flinch and the world bearing back toward whatever hit it (Stage 89) */
+  hurt?: number;
+  hurtFrom?: number;
   /** a remote's slot and its weapon strip's colour; the group's drawables */
   slot?: number;
   stripColor?: number | null;
@@ -412,6 +420,7 @@ export function rigReport(rig: Rig): RigReport {
     trim: "#" + rig.trim.color.getHexString(),
     bones10: rig.skeleton.bones.length,
     skinned: rig.cloak.isSkinnedMesh && rig.trimMesh.isSkinnedMesh,
+    emissive: rig.mat.emissiveIntensity,
   };
 }
 
