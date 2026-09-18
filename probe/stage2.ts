@@ -352,6 +352,77 @@ async function main(): Promise<void> {
     await a2.close();
     await b2.close();
 
+    // ---------------- you can hear the other file (Stage 80) ----------------
+    // The file has heard its own boots since the first stage and nobody else's: another player
+    // could cross the street behind it at seven metres a second in silence. Two clients, one
+    // standing still, the other walking a line down its right-hand side.
+    const room3 = "probe-steps";
+    const a3 = await openClient(browser, room3, "ALPHA", 11);
+    const b3 = await openClient(browser, room3, "BRAVO", 23);
+    await waitJoined(a3);
+    await waitJoined(b3);
+    // ALPHA stands at the yard's middle looking down -z, so its right hand is +x
+    await a3.evaluate(() => window.__game.setBot([{ kind: "goto", x: 0, z: 10, sprint: true, radius: 1 }, { kind: "look", yaw: 0, ticks: 20 }, { kind: "hold", ticks: 3000 }]));
+    await a3.waitForFunction(() => Math.hypot(window.__game.state().pos.x - 0, window.__game.state().pos.z - 10) < 2.5, null, { timeout: 30000, polling: 100 });
+    const quiet = await a3.evaluate(() => window.__game.state().heard.n);
+    // BRAVO walks the length of ALPHA's right-hand side, eight metres out
+    await b3.evaluate(() => window.__game.setBot([
+      { kind: "goto", x: 8, z: 18, sprint: true, radius: 1.2 },
+      { kind: "goto", x: 8, z: 2, sprint: true, radius: 1.2, stop: false },
+      { kind: "goto", x: 8, z: 18, sprint: true, radius: 1.2, stop: false },
+      { kind: "hold", ticks: 3000 },
+    ]));
+    const pans: number[] = [];
+    let heard = quiet;
+    for (let i = 0; i < 200 && pans.length < 6; i++) {
+      await a3.waitForTimeout(150);
+      const h = await a3.evaluate(() => window.__game.state().heard);
+      if (h.n > heard) {
+        heard = h.n;
+        pans.push(h.pan);
+      }
+    }
+    const rightSide = pans.filter((p) => p > 0.3).length;
+    check("a file walking past is heard, from the side it is walking on", heard > quiet + 4 && pans.length >= 6 && rightSide >= pans.length - 1, `${heard - quiet} steps heard from BRAVO · pans ${pans.map((p) => p.toFixed(2)).join(" ")} (${rightSide} of ${pans.length} to the right, where it is walking)`);
+    // and out at the far end of the yard it is out of earshot — while it is still walking, which is
+    // the whole point: a body that has stopped is silent at any distance, so a check that let it
+    // arrive and stand still would pass with no earshot rule at all (it did, until this line)
+    await b3.evaluate(() => window.__game.setBot([
+      { kind: "goto", x: 0, z: -24, sprint: true, radius: 1.5, stop: false },
+      { kind: "goto", x: 14, z: -24, sprint: true, radius: 1.5, stop: false },
+      { kind: "goto", x: 0, z: -24, sprint: true, radius: 1.5, stop: false },
+      { kind: "goto", x: 14, z: -24, sprint: true, radius: 1.5, stop: false },
+      { kind: "hold", ticks: 3000 },
+    ]));
+    await a3.waitForFunction(() => {
+      const r = window.__game.net()!.remotes[0];
+      const me = window.__game.state().pos;
+      return !!r && Math.hypot(r.x - me.x, r.z - me.z) > 30 && Math.hypot(r.vx, r.vz) > 3;
+    }, null, { timeout: 40000, polling: 100 }).catch(() => null);
+    const far = await a3.evaluate(() => {
+      const r = window.__game.net()!.remotes[0];
+      const me = window.__game.state().pos;
+      return { n: window.__game.state().heard.n, d: r ? Math.hypot(r.x - me.x, r.z - me.z) : -1 };
+    });
+    // sample while it paces, and record the slowest it was seen going: if that is above a walk, the
+    // silence is the range and not the legs
+    let slowest = 99;
+    let nearest = 999;
+    for (let i = 0; i < 18; i++) {
+      await a3.waitForTimeout(140);
+      const r = await a3.evaluate(() => {
+        const rv = window.__game.net()!.remotes[0];
+        const me = window.__game.state().pos;
+        return rv ? { sp: Math.hypot(rv.vx, rv.vz), d: Math.hypot(rv.x - me.x, rv.z - me.z) } : { sp: 0, d: 0 };
+      });
+      slowest = Math.min(slowest, r.sp);
+      nearest = Math.min(nearest, r.d);
+    }
+    const stillFar = await a3.evaluate(() => window.__game.state().heard.n);
+    check("and at the far end of the yard it is out of earshot, while it is still walking", far.d > 30 && nearest > 28 && slowest > 2 && stillFar === far.n, `BRAVO pacing ${nearest.toFixed(1)}–${far.d.toFixed(1)} m away at no less than ${slowest.toFixed(1)} m/s · ${stillFar - far.n} steps heard in the two and a half seconds it took`);
+    await a3.close();
+    await b3.close();
+
     const report = { rtt: RTT, loss: LOSS, engagement: { joinA: E.joinA, joinB: E.joinB, server: E.st, netA: E.netA, netB: E.netB }, control: stN, cheaterKick: kicked, checks };
     writeFileSync(`${OUT}/stage2.json`, JSON.stringify(report, null, 2));
     const failed = checks.filter((c) => !c.pass);

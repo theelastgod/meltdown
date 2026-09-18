@@ -596,6 +596,18 @@ export class GameAudio {
     this.burst({ dur: 0.06, freq: 260 + speed * 10, q: 0.7, gain: g, type: "lowpass", pan });
   }
 
+  /**
+   * Somebody else's boot (Stage 80): the same impact, further away and duller with it, panned to
+   * the side they are on. Quieter than your own by design — your own steps are under you, theirs
+   * are information.
+   */
+  otherStep(speed: number, pan: number, gain: number): void {
+    this.count("step_other");
+    if (!this.ctx || gain <= 0.001) return;
+    const g = (0.035 + Math.min(0.09, speed * 0.008)) * Math.max(0, Math.min(1, gain));
+    this.burst({ dur: 0.07, freq: 190 + speed * 8, q: 0.8, gain: g, type: "lowpass", pan });
+  }
+
   slide(): void {
     this.count("slide");
     if (!this.ctx) return;

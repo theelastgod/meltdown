@@ -21,6 +21,7 @@ import { Renderer, type ViewState } from "./render/renderer";
 import type { AimTarget } from "./render/tps";
 import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
+import { stepCues, type Walker } from "./steps";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
 import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
@@ -865,7 +866,41 @@ export class Game {
         this.audio.footstep(sp, this.stepSide * 0.25);
       }
     } else this.stepDist = Math.min(this.stepDist, 0.5);
+    this.otherSteps();
   }
+
+  /**
+   * And everyone else's (Stage 80). The file has heard its own boots since the first stage and
+   * nobody else's: another player could cross the street behind it at seven metres a second in
+   * silence. The rule is `client/steps.ts`; this hands it the bodies the wire (or the offline
+   * world) already carries and plays what it returns.
+   */
+  private otherSteps(): void {
+    const w: Walker[] = [];
+    if (this.net) {
+      for (const r of this.net.remoteViews()) w.push({ id: r.id, x: r.x, z: r.z, speed: Math.hypot(r.vx, r.vz), stance: r.stance, grounded: r.grounded, alive: r.alive });
+    } else {
+      for (const o of this.world.players.values()) {
+        if (o.id === this.player.id) continue;
+        w.push({ id: o.id, x: o.pos.x, z: o.pos.z, speed: lenXZ(o.vel), stance: o.stance, grounded: o.grounded, alive: o.alive });
+      }
+      // the dummies are drones on a rail and carry no velocity to read; the cast that walks is the
+      // players, whether a person is driving them or VANTAGE is
+    }
+    if (w.length === 0) return;
+    const p = this.player;
+    for (const cue of stepCues(w, { x: p.pos.x, z: p.pos.z, yaw: this.input.isLocked && !this.bot ? this.input.yaw : p.yaw }, this.stepBook, SIM_DT)) {
+      this.audio.otherStep(cue.speed, cue.pan, cue.gain);
+      this.heard.n++;
+      this.heard.pan = cue.pan;
+      this.heard.gain = cue.gain;
+      this.heard.distance = cue.distance;
+    }
+  }
+  /** metres each other body has walked since its last step */
+  private stepBook = new Map<number, number>();
+  /** the last step this file heard from somebody else: what the check reads, and nothing else */
+  readonly heard = { n: 0, pan: 0, gain: 0, distance: 0 };
 
   private onEvent(ev: SimEvent): void {
     this.recentEvents.push(ev);

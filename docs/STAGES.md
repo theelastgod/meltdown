@@ -1641,6 +1641,42 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 80 — The street has other footsteps
+
+**Goal.** The file has heard its own boots since the first stage and nobody else's. Another player
+could cross the street behind it at seven metres a second in silence. Stage 74 gave being shot a
+direction; this is the half that comes before it — the sound that says someone is there at all, and
+roughly where, while there is still time to turn around.
+
+**What changed.**
+
+- **`client/steps.ts` is the rule**, pure and audio-free: which steps land this tick (on a stride
+  the body walks, not on a timer), how loud (falling off with the square of the distance, nothing
+  past twenty-six metres), and which side they are on. A body that is standing, airborne, sliding,
+  mantling or dead makes none, and one that stops mid-stride does not bank a step to fire the
+  moment it moves again.
+- **Crouching is quiet** — thirty per cent, on a shorter stride — so moving slowly is a real choice
+  rather than a slower way to arrive.
+- **The bearing is `hud/damage.ts`'s**, the same rule the damage wedges use: one answer in this
+  client to "where is that, relative to where I am looking". The listener's look is the live mouse
+  angle when the pointer is locked, for the same reason the reticle is (Stage 73).
+- The wire already carried everything this needs — position, velocity, footing, stance — so nothing
+  new is sent, and the simulation is untouched.
+
+**Proof.** `probe:net` 18/18 — two new, on two real clients over a lossy 150 ms link: a file walking
+the length of ALPHA's right-hand side is heard six times out of six *from the right* (pans 0.85 down
+to 0.61 as it passes), and the same file pacing thirty metres out at no less than 2.1 m/s is heard
+zero times. `tests/steps.test.ts` 8 on the rule. `probe:tps` 29/29, `probe:body` 20/20,
+`probe:arsenal` 19/19, `probe:campaign` 31/31, `probe:identity` 25/25, `probe:mobile` 14/14,
+`probe:frame` 6/6, `smoke` 7/7, 566 tests, build and typecheck clean.
+
+Five guards mutation-checked — and one of them mattered: the earshot check as first written let
+BRAVO walk out to thirty metres and *stop*, so it passed with the range rule removed entirely. A
+body that has stopped is silent at any distance. It now measures while BRAVO paces, and records the
+slowest it was seen moving, so the silence is the range and not the legs. The others: the pan
+negated (six of six on the wrong side), the crouch made as loud as a walk, the crouch's stride made
+as long as a walk's, and a stop made to bank its stride.
+
 ## Stage 79 — The camera has a body
 
 **Goal.** Keep looking at the frames. The legs have compressed on landing since Stage 63 and the
