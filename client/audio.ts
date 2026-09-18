@@ -676,6 +676,22 @@ export class GameAudio {
   }
 
   /**
+   * A round going past (Stage 99): the snap of it, at the ear it went past, louder the closer it
+   * came. Not the shooter's gun — that is `otherShot`, and it is heard from the muzzle as before —
+   * but the thing the gun sent, heard where it was nearest. Short and bright: a crack with no body,
+   * because a passing round has none.
+   */
+  snap(cue: { gain: number; pan: number; distance: number }): void {
+    this.count("snap");
+    if (!this.ctx) return;
+    const g = Math.max(0, Math.min(1, cue.gain));
+    if (g < 0.01) return;
+    this.burst({ dur: 0.025, freq: 4200, q: 0.9, gain: 0.22 * g, pan: cue.pan });
+    // the air closing behind it
+    this.burst({ dur: 0.06, freq: 1900, q: 0.5, gain: 0.08 * g, type: "bandpass", pan: cue.pan, delay: 0.012 });
+  }
+
+  /**
    * Somebody else's boot (Stage 80): the same impact, further away and duller with it, panned to
    * the side they are on. Quieter than your own by design — your own steps are under you, theirs
    * are information.

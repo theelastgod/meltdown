@@ -1641,6 +1641,47 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 99 — The round that missed you
+
+**Goal.** The simulation has always known how close every shot came: `castRay` measures each
+ray's closest approach to every other file and calls it `nearMiss`, and the netcode probe has been
+reporting it in metres since Stage 2. Nobody in the game ever heard it. Stage 81 gave every gun in
+the street a voice from its muzzle, so a round passing a hand's width from your ear sounded exactly
+like one aimed thirty degrees wide of you from the same doorway: the same crack from the same
+place. In any shooter the difference between those two is the loudest thing in the fight — the
+snap of a round going past is how you know you are the one being shot at, before anything lands.
+
+**What changed.**
+
+- **A round going past is heard where it was nearest**, at the ear it went past: a short bright
+  crack with no body, louder the closer it came, panned by the side, and on you rather than to a
+  side when it all but parted your hair.
+- **Nothing new crosses the wire.** The shot event already carries where the round started and
+  where it stopped; the client takes the closest point on that flight to its own head. A round that
+  stopped in a wall three metres short of you did not pass you; one into the wall beside your head
+  did.
+- **A hit is a hit.** A round that landed on this file is heard as the hurt it was, never as a
+  miss as well; and your own shots are your own.
+- `client/nearmiss.ts` is the rule, pure and unit-tested: the closest approach on the segment, the
+  reach, the side (the damage wedges' own bearing), the near zone. `passedBy` in `game.ts` feeds it
+  from both shot paths, offline and net, so a wasp's round and a remote file's round are heard the
+  same way.
+
+**Proof.** `probe:arsenal` 24/24, one new, driven through the client's own event handler (the
+path every wasp and remote shot takes): a round half a metre right of the head snaps once at pan
+1.00 and 0.50 m; one four metres wide and one that landed on the file leave the count where it was;
+all three are still heard as guns. The count read 1 before the staged shots: the Stage 98 wasp had
+already put a real round past the head during its chase. `tests/nearmiss.test.ts` 7. 666
+tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone. With `shotPass` never hearing anything the check
+reads `snaps 0 → 0 → 0 → 0 · 3 guns heard` — the guns from the muzzle are untouched, the round is
+silent — and six of the seven unit tests go with it. With the landed round no longer excluded the
+ear and the wide shot read as before and the third moves the count (`177 → 177 → 178`), so only
+that clause fails; and its baseline of 176 against the real run's 1 is the mutation in play — every
+wasp round that landed on the file through the earlier sections had been heard as a miss as well.
+Both leave the probe at 23/24 with the other 23 unmoved.
+
 ## Stage 98 — The wasp that found you
 
 **Goal.** A VANTAGE wasp on patrol sees a file and turns to chase it. Its light goes from amber to

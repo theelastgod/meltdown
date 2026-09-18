@@ -309,6 +309,35 @@ async function main(): Promise<void> {
     });
     check("a wasp that turns to chase is heard going live, once, and the log says so", lock.staged && lock.state === "chase" && lock.cuesLock - lock.cues0 === 1 && lock.cuesLater === lock.cuesLock && /WASP LIVE/.test(lock.line), `${lock.staged ? `acquired after ${lock.ticks} ticks · state ${lock.state}` : "no wasp to stage"} · cues ${lock.cues0} → ${lock.cuesLock} at the lock → ${lock.cuesLater} two seconds on · "${lock.line.trim()}"`);
 
+    // Stage 99: the round that missed you. The sim measures every shot's closest approach to every
+    // file and the client never heard it: a round past the ear sounded like one thirty degrees wide.
+    // Three shots through the client's own event handler — the path every wasp and remote shot
+    // takes — past the right ear, wide of it, and into the file: one snap, on the right.
+    const pass = await page.evaluate(async () => {
+      const g = window.__game.game;
+      const p = g.player;
+      const inner = g as unknown as { onEvent: (ev: unknown) => void };
+      // three hand-built shots, spelled out in full: a named arrow inside evaluate trips esbuild's
+      // keep-names shim (__name is not defined)
+      const y = p.pos.y + 1.6;
+      const none = { kind: "none", id: -1, damage: 0 };
+      const before = window.__game.state().heardSnap.n;
+      const others0 = window.__game.state().audio["shot_other"] ?? 0;
+      // half a metre right of the head, flying past from ahead to behind
+      inner.onEvent({ tick: g.world.tick, playerId: -1, type: "shot", weapon: "wasp", from: { x: p.pos.x + 0.5, y, z: p.pos.z - 12 }, to: { x: p.pos.x + 0.5, y, z: p.pos.z + 12 }, hit: none, hits: [], nearMiss: -1, rewindTicks: 0, pierce: false });
+      const ear = { ...window.__game.state().heardSnap };
+      // four metres wide: somebody's gun, not a round past you
+      inner.onEvent({ tick: g.world.tick, playerId: -1, type: "shot", weapon: "wasp", from: { x: p.pos.x + 4, y, z: p.pos.z - 12 }, to: { x: p.pos.x + 4, y, z: p.pos.z + 12 }, hit: none, hits: [], nearMiss: -1, rewindTicks: 0, pierce: false });
+      const wide = window.__game.state().heardSnap.n;
+      // and one that landed: heard as the hit, not as a miss
+      const onMe = { kind: "player", id: p.id, zone: "body", damage: 5 };
+      inner.onEvent({ tick: g.world.tick, playerId: -1, type: "shot", weapon: "wasp", from: { x: p.pos.x, y, z: p.pos.z - 12 }, to: { x: p.pos.x, y, z: p.pos.z }, hit: onMe, hits: [onMe], nearMiss: -1, rewindTicks: 0, pierce: false });
+      const landed = window.__game.state().heardSnap.n;
+      const others1 = window.__game.state().audio["shot_other"] ?? 0;
+      return { before, ear, wide, landed, guns: others1 - others0, yaw: p.yaw };
+    });
+    check("a round past the right ear snaps once, on the right; one four metres wide and one that landed do not", pass.ear.n - pass.before === 1 && pass.ear.pan > 0.5 && pass.ear.distance < 0.6 && pass.wide === pass.ear.n && pass.landed === pass.ear.n && pass.guns === 3, `snaps ${pass.before} → ${pass.ear.n} past the ear (pan ${pass.ear.pan.toFixed(2)}, ${pass.ear.distance.toFixed(2)} m) → ${pass.wide} wide → ${pass.landed} landed · ${pass.guns} guns heard · yaw ${pass.yaw.toFixed(2)}`);
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
 
     writeFileSync(`${OUT}/stage4.json`, JSON.stringify({ ttk: table, shots, hits, kills, explosions: explosions.length, captures, audio: state.audio, checks }, null, 2));

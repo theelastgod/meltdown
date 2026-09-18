@@ -29,6 +29,7 @@ import { waspLocks, type WaspSeen } from "./vantage";
 import { lookYawPitch } from "./render/feel";
 import { stepCues, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
+import { shotPass } from "./nearmiss";
 import { kernelIn, nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
@@ -508,6 +509,8 @@ export class Game {
             this.heardShot.delay = cue.delay;
             this.heardShot.distance = cue.distance;
           }
+          // and if it went past the head, the round itself is heard where it was nearest (Stage 99)
+          this.passedBy({ x: ev.fx, y: ev.fy, z: ev.fz }, { x: ev.tx, y: ev.ty, z: ev.tz }, ev.hitKind === 3 && ev.victimId === me);
           if (ev.hitKind === 3 && ev.victimId === me) {
             this.netStats.serverHitsOnMe++;
             this.audio.hurt();
@@ -1032,6 +1035,24 @@ export class Game {
   readonly heard = { n: 0, pan: 0, gain: 0, distance: 0 };
   /** and the last shot, the same way (Stage 81) */
   readonly heardShot = { n: 0, pan: 0, gain: 0, delay: 0, distance: 0 };
+  /** the last round heard going past (Stage 99), for the probe: how many, which side, how close */
+  readonly heardSnap = { n: 0, pan: 0, distance: 0 };
+
+  /**
+   * A shot somebody else fired, from `from` to `to`, that did not land on this file: if it came
+   * within reach of the head it is heard going past, at the ear it passed (Stage 99). A round that
+   * landed is heard as the hit it was, not as a miss.
+   */
+  private passedBy(from: { x: number; y: number; z: number }, to: { x: number; y: number; z: number }, landedOnMe: boolean): void {
+    if (landedOnMe) return;
+    const at = this.listenPoint();
+    const cue = shotPass(from, to, { x: at.x, y: this.player.pos.y + 1.6, z: at.z, yaw: at.yaw });
+    if (!cue) return;
+    this.audio.snap(cue);
+    this.heardSnap.n++;
+    this.heardSnap.pan = cue.pan;
+    this.heardSnap.distance = cue.distance;
+  }
 
   /**
    * Where the file is listening from, and which way it is facing while it does. The look is the
@@ -1066,6 +1087,8 @@ export class Game {
             this.heardShot.delay = cue.delay;
             this.heardShot.distance = cue.distance;
           }
+          // and if it went past the head, the round itself is heard where it was nearest (Stage 99)
+          this.passedBy(ev.from, ev.to, ev.hits.some((h) => h.kind === "player" && h.id === this.player.id));
         }
         if (ev.weapon === "longwave") this.renderer.fx.beam(ev.from, ev.to, color, 0.05, 0.6);
         else this.renderer.tracer(ev.from, ev.to, ev.hit.kind === "world", !mine, color);
