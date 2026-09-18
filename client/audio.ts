@@ -416,6 +416,13 @@ export class GameAudio {
     this.tone({ dur: 0.1, from: 700, gain: 0.08, type: "square", delay: 0.15 });
   }
 
+  /** an objective ticking over (Stage 115): a rising three-note figure in the campaign's register, not the wake's contest */
+  objective(): void {
+    this.count("objective");
+    if (!this.ctx) return;
+    for (const [i, f] of [523, 659, 784].entries()) this.tone({ dur: 0.16, from: f, gain: 0.07, type: "triangle", delay: 0.11 * i });
+  }
+
   kernelPulse(): void {
     this.count("kernelPulse");
     if (!this.ctx) return;

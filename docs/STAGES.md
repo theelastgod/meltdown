@@ -1641,6 +1641,24 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 115 — The objective sounded like a contest
+
+**Goal.** In the campaign an objective completing raises its line and plays `contest` — the wake's
+two-note square that means a hex is being pulled from under you. The same sound, in the same
+game, for "you did the thing" and "someone is taking your node". Stage 94 gave the alt-fires their
+own voices and Stage 101 the run's money moments; the campaign's own beat was still borrowed.
+
+**What changed.** An objective ticking over has its own voice — a rising three-note figure in
+the campaign's register, not the wake's — and the contest cue is the wake's again. The line and
+the log entry are as they were.
+
+**Proof.** `npm test` 734 tests; `npm run probe:campaign` 38/38 — the first fixer's terminal
+resolving advances the objective, and the audio ledger reads the objective cue up by one and the
+contest cue unmoved (`objective 1 → 2 · contest 0 → 0`); `npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** The objective plays `contest()` again: the campaign probe fails its new check,
+37/38 (`objective 0 → 0 · contest 1 → 2`); every other check passes.
+
 ## Stage 114 — The ticker's clock assumed even frames
 
 **Goal.** CI run #139, red on the city-life probe: `4 redraws over 7 drawn frames in 1.9 s

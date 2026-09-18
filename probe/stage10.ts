@@ -208,8 +208,14 @@ async function main(): Promise<void> {
     await shotCheck(hub, `stage10-terminal.png`);
     const termOpen = await overlapOf(hub, ".terminal");
     check("and so is a fixer's terminal: the gun and the tutorial go, the objective stays", termOpen.open && termOpen.hits.length === 0 && termOpen.quiet.includes("rack") && !termOpen.quiet.includes("mission") && !termOpen.quiet.includes("alert"), `overlapping: [${termOpen.hits.join(", ")}] · silenced: ${termOpen.quiet.join(",")}`);
+    // Stage 115: the objective sounded like a contest. The terminal resolving advances the first
+    // objective; the cue that plays for it must be the objective's own, and the wake's contest cue
+    // must not move
+    const cues0 = await hub.evaluate(() => ({ ...window.__game.state().audio }));
     await playTerminal(hub);
     await advance(hub, 2);
+    const cues1 = await hub.evaluate(() => ({ ...window.__game.state().audio }));
+    check("an objective ticking over is heard in its own voice, not as the wake's contest", (cues1["objective"] ?? 0) - (cues0["objective"] ?? 0) === 1 && (cues1["contest"] ?? 0) === (cues0["contest"] ?? 0), `objective cue ${cues0["objective"] ?? 0} → ${cues1["objective"] ?? 0} · contest ${cues0["contest"] ?? 0} → ${cues1["contest"] ?? 0}`);
     // and the frame going is the gun coming back: nothing silenced once the terminal has resolved
     const afterTerm = await hub.evaluate(() => ({ quiet: [...document.getElementById("hud")!.classList].filter((c) => c.startsWith("q-")), ammo: getComputedStyle(document.querySelector("#hud .ammo")!).display }));
     check("and the gun comes back the moment the frame goes", afterTerm.quiet.length === 0 && afterTerm.ammo !== "none", `silenced after the terminal: [${afterTerm.quiet.join(",")}] · ammo display ${afterTerm.ammo}`);

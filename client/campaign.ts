@@ -164,7 +164,7 @@ export class Campaign {
       case "objective":
         hud.alert(`◆ ${ev.text}`, false, 4);
         this.note(`OBJECTIVE ${ev.index + 1} · ${ev.text}`);
-        this.game.audio.contest();
+        this.game.audio.objective();
         break;
       case "wave":
         hud.alert(`◆ VANTAGE RESPONDS — ${ev.count} WASPS`, true, 3);
