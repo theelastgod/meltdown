@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth } from "../client/hud/layout";
+import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -36,6 +36,19 @@ describe("the alert's seat", () => {
 
   it("but never drops out of the top band", () => {
     expect(alertTop(400)).toBe(ALERT_FLOOR);
+  });
+});
+
+describe("the searchlight warning's seat (Stage 116)", () => {
+  it("keeps its old seat with no node line up", () => {
+    expect(flagTop(null)).toBe(FLAG_TOP);
+  });
+  it("hangs a gap under the node line's measured bottom", () => {
+    expect(flagTop(114)).toBe(114 + FLAG_GAP);
+    expect(flagTop(114.2)).toBe(115 + FLAG_GAP);
+  });
+  it("never rises above its seat for a node line that ends higher", () => {
+    expect(flagTop(40)).toBe(FLAG_TOP);
   });
 });
 

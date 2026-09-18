@@ -422,6 +422,33 @@ async function main(): Promise<void> {
     // "under" is a visible gap, not a touch: the old fixed 58 px cleared this scene's panel by one
     // pixel and passed the first version of this check, which is not the claim being made
     check("and the alert sits under the mission panel rather than behind it, with a visible gap", !!chrome.alertText && !overlap && chrome.alert.top >= chrome.mission.bottom + 4 && chrome.alert.top < 130, `alert top ${chrome.alert.top.toFixed(0)} px · mission panel ends at ${chrome.mission.bottom.toFixed(0)} px · gap ${(chrome.alert.top - chrome.mission.bottom).toFixed(0)} px`);
+    // Stage 116: the searchlight warning printed over the node line. Both sat at 92 px from the
+    // top; the mech lighting you at a node put "▲ FLAGGED — VANTAGE SEARCHLIGHT" through
+    // "NODE E · …". Raised here directly and judged as geometry: with the line up the warning
+    // hangs under it with a gap; with the line gone it goes back to its seat.
+    const flagSeat = await pg.evaluate(async () => {
+      const hud = window.__game.game.hud;
+      const root = document.getElementById("hud")!;
+      // no named helpers in here (the probe's build injects a __name the page does not have)
+      const H = root.getBoundingClientRect();
+      hud.nodeFoot({ id: 4, label: "E", owner: 0, puller: 0, hold: 0.3, contested: false, distance: 7, on: false, seconds: 0, toward: "still" }, 1);
+      hud.flagged();
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const fr = root.querySelector(".nodefoot")!.getBoundingClientRect();
+      const foot = { top: fr.top - H.top, bottom: fr.bottom - H.top, left: fr.left - H.left, right: fr.right - H.left };
+      const gr = root.querySelector(".flag")!.getBoundingClientRect();
+      const flag = { top: gr.top - H.top, bottom: gr.bottom - H.top, left: gr.left - H.left, right: gr.right - H.left };
+      const flagOn = root.querySelector(".flag")!.classList.contains("on");
+      const footShown = !(root.querySelector(".nodefoot") as HTMLElement).hidden;
+      hud.nodeFoot(null, 1);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const ar = root.querySelector(".flag")!.getBoundingClientRect();
+      const flagAfter = { top: ar.top - H.top, bottom: ar.bottom - H.top, left: ar.left - H.left, right: ar.right - H.left };
+      const footAfter = !(root.querySelector(".nodefoot") as HTMLElement).hidden;
+      return { foot, flag, flagOn, footShown, flagAfter, footAfter };
+    });
+    const flagCrosses = flagSeat.flag.top < flagSeat.foot.bottom && flagSeat.flag.bottom > flagSeat.foot.top && flagSeat.flag.left < flagSeat.foot.right && flagSeat.flag.right > flagSeat.foot.left;
+    check("the searchlight warning hangs under the node line with a gap rather than printing over it, and takes its seat back when the line goes", flagSeat.footShown && flagSeat.flagOn && !flagCrosses && flagSeat.flag.top >= flagSeat.foot.bottom + 4 && !flagSeat.footAfter && Math.round(flagSeat.flagAfter.top) === 92, `node line ${flagSeat.foot.top.toFixed(0)}–${flagSeat.foot.bottom.toFixed(0)} px · warning ${flagSeat.flag.top.toFixed(0)}–${flagSeat.flag.bottom.toFixed(0)} px (on ${flagSeat.flagOn}) · crosses ${flagCrosses} · line gone: warning at ${flagSeat.flagAfter.top.toFixed(0)} px`);
     // Stage 107: the mission panel sat on the file's name. Measured, not eyeballed: where the
     // status panel ends, where the mission panel begins, and whether the header line is cut
     console.log(`status ${chrome.status.left.toFixed(0)}–${chrome.status.right.toFixed(0)} px (top ${chrome.status.top.toFixed(0)}–${chrome.status.bottom.toFixed(0)}) · ammo bar to ${chrome.ammobar.right.toFixed(0)} · mission ${chrome.mission.left.toFixed(0)}–${chrome.mission.right.toFixed(0)} (top ${chrome.mission.top.toFixed(0)}–${chrome.mission.bottom.toFixed(0)}) · header line ${chrome.line.scroll} of ${chrome.line.client} px: "${chrome.line.text.trim()}"`);

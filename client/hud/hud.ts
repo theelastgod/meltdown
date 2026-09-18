@@ -13,7 +13,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusWidth } from "./layout";
+import { alertTop, flagTop, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusWidth } from "./layout";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot } from "./radar";
 
@@ -486,6 +486,7 @@ export class Hud {
     }
     const panel = mission.getBoundingClientRect();
     this.q(".alert").style.top = `${alertTop(panel.bottom - rootTop)}px`;
+    this.placeFlag();
     // and the status panel ends before the mission panel begins (Stage 107): its content width
     // follows the panel's measured left edge; a hidden panel is nothing to keep clear of
     const status = this.q(".status");
@@ -701,7 +702,10 @@ export class Hud {
   nodeFoot(r: NodeReadout | null, myTeam: number): void {
     const el = this.q(".nodefoot");
     if (!r) {
-      if (!el.hidden) el.hidden = true;
+      if (!el.hidden) {
+        el.hidden = true;
+        this.placeFlag();
+      }
       this.nodeFootKey = "";
       return;
     }
@@ -716,8 +720,19 @@ export class Hud {
     const tone = r.contested ? "am" : mine ? "gr" : r.puller ? "mg" : "cy";
     el.className = `p nodefoot ${tone}`;
     el.innerHTML = `<b>NODE ${r.label}</b> · ${cell(r.owner)} <span class="hold"><i style="width:${Math.round(r.hold * 100)}%"></i></span> ${who}${clock}${r.on ? "" : ` · ${r.distance.toFixed(0)} m`}`;
+    this.placeFlag();
   }
   private nodeFootKey = "";
+
+  /** the searchlight warning under the node line, or at its seat when the line is hidden (Stage 116) */
+  private placeFlag(): void {
+    const foot = this.q(".nodefoot");
+    const rootTop = this.root.getBoundingClientRect().top;
+    const bottom = foot.hidden ? null : foot.getBoundingClientRect().bottom - rootTop;
+    const top = `${flagTop(bottom)}px`;
+    const flag = this.q(".flag");
+    if (flag.style.top !== top) flag.style.top = top;
+  }
 
   /** The repo mech has you in its light. */
   flagged(): void {

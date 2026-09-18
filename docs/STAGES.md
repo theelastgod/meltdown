@@ -1641,6 +1641,32 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 116 — The searchlight warning printed over the node line
+
+**Goal.** The arsenal probe's aftermath frame, read closely: `NODE E · FLAGGED — VANTAGE
+SEARCHLIGHT · 7 m`, two strings through each other. The node line (Stage 92's readout of the node
+you are near) and the searchlight warning (the repo mech has you in its light) both sat at 92 px
+from the top of the HUD, centred, and a mech lighting you at a node is the ordinary case, not a
+corner. Neither could be read.
+
+**What changed.**
+- `client/hud/layout.ts` — `FLAG_TOP` 92, `FLAG_GAP` 6, `flagTop(nodeFootBottom | null)`: with
+  the node line up the warning hangs a gap under its measured bottom, never above its own seat;
+  with the line hidden it keeps the seat.
+- `client/hud/hud.ts` — `placeFlag()` runs in the layout pass and whenever the node line is shown
+  or hidden, so the warning moves with the line in the same frame.
+- `tests/layout.test.ts` — the seat, the gap, the floor.
+- `probe/stage60.ts` — raises the node line and the warning directly and judges the rectangles:
+  no overlap, a gap of at least 4 px, and the warning back at 92 px once the line goes.
+
+**Proof.** `npm test` 737 tests (three new); `npm run probe:tps` 42/42 — with the node line up
+at 92–114 px the warning sits at 120–144 px, no overlap, and with the line gone it is back at
+92 px; `npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** `flagTop` returns its seat whatever is under it: the layout test fails (1 of 17)
+and the tps probe fails its new check, 41/42 — `node line 92–114 px · warning 92–116 px · crosses
+true`, the frame from the aftermath picture; every other check passes.
+
 ## Stage 115 — The objective sounded like a contest
 
 **Goal.** In the campaign an objective completing raises its line and plays `contest` — the wake's

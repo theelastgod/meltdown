@@ -29,6 +29,20 @@ export function alertTop(missionBottom: number): number {
   return Math.min(ALERT_FLOOR, Math.ceil(missionBottom) + ALERT_GAP);
 }
 
+/** where the searchlight warning sits when nothing is under it (px from the HUD's top) */
+export const FLAG_TOP = 92;
+/** the gap it keeps under the node line */
+export const FLAG_GAP = 6;
+
+/**
+ * The searchlight warning's seat (Stage 116): it shared the node line's 92 px and printed over it
+ * whenever the mech lit you at a node. With the node line up it hangs a gap under the line's
+ * measured bottom; with the line hidden it keeps its old seat.
+ */
+export function flagTop(nodeFootBottom: number | null): number {
+  return nodeFootBottom === null ? FLAG_TOP : Math.max(FLAG_TOP, Math.ceil(nodeFootBottom) + FLAG_GAP);
+}
+
 /**
  * Whether a box that spans [left, right] crosses the play: the middle band of the screen, where the
  * reticle and the file's body are. The rack must never; the check reads this rule.
