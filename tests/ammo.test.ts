@@ -3,7 +3,7 @@
  * fraction, and the one edge that is heard.
  */
 import { describe, expect, it } from "vitest";
-import { ammoRead, lastRoundsEdge, LOW_FRAC, lowLine } from "../client/hud/ammo";
+import { ammoRead, chargeRead, lastRoundsEdge, LOW_FRAC, lowLine } from "../client/hud/ammo";
 
 describe("lowLine", () => {
   it("is the last quarter, rounded up, and never under a round", () => {
@@ -54,5 +54,20 @@ describe("lastRoundsEdge", () => {
     expect(lastRoundsEdge(2, 8, 30)).toBe(false);
     expect(lastRoundsEdge(1, 0, 30)).toBe(false);
     expect(lastRoundsEdge(1, 0, 1)).toBe(false);
+  });
+});
+
+describe("chargeRead (Stage 106)", () => {
+  it("is off when nothing is charging, whatever the last value was", () => {
+    expect(chargeRead(false, 0.7)).toEqual({ on: false, frac: 0, full: false });
+  });
+  it("reads the fraction while charging and is full only at the top", () => {
+    expect(chargeRead(true, 0.33)).toEqual({ on: true, frac: 0.33, full: false });
+    expect(chargeRead(true, 0.999)).toEqual({ on: true, frac: 0.999, full: false });
+    expect(chargeRead(true, 1)).toEqual({ on: true, frac: 1, full: true });
+  });
+  it("clamps a value the sim would never send", () => {
+    expect(chargeRead(true, 1.3).frac).toBe(1);
+    expect(chargeRead(true, -0.2).frac).toBe(0);
   });
 });

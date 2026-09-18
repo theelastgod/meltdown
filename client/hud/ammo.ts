@@ -50,3 +50,23 @@ export function lastRoundsEdge(prevAmmo: number, ammo: number, magSize: number):
   const line = lowLine(magSize);
   return line > 0 && prevAmmo > line && ammo <= line && ammo > 0;
 }
+
+/** A charge held (Stage 106): whether the ring is up, how full, and whether it has reached the top. */
+export interface ChargeRead {
+  on: boolean;
+  /** 0..1 */
+  frac: number;
+  full: boolean;
+}
+
+/**
+ * The LONGWAVE's charge, for the reticle. The corner has said `CHARGE 64%` since Stage 4, in the
+ * place nobody looks while holding a shot on a moving file; the ring under the reticle is where
+ * the eyes are, and it is the same ring the reload uses, in the charge's own colour, snapping to
+ * a full mark the frame the charge tops out.
+ */
+export function chargeRead(charging: boolean, charge: number): ChargeRead {
+  if (!charging) return { on: false, frac: 0, full: false };
+  const frac = Math.min(1, Math.max(0, charge));
+  return { on: true, frac, full: frac >= 1 };
+}

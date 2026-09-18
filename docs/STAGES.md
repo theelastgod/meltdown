@@ -1641,6 +1641,34 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 106 — The charge was a number in the corner
+
+**Goal.** The LONGWAVE charges: hold the trigger for nine tenths of a second and the round that
+leaves is the one that pierces. The client has said `CHARGE 64%` in the weapon's name line since
+Stage 4 — in the corner, where nobody is looking while they hold a shot on a moving file — with a
+rising ping every six ticks and a full-charge cue. The reticle, where the eyes are, said nothing;
+the same argument Stage 100 made for the magazine and the reload.
+
+**What changed.**
+
+- **The charge is the ring on the reticle**: the reload's own ring (Stage 100) in the charge's
+  magenta, filling as the charge does, and the whole ring lit yellow the frame it tops out.
+- **It goes with the shot.** The sim never charges and reloads at once, so the ring is one or the
+  other; the release fires and the ring is gone.
+- `chargeRead` joins `client/hud/ammo.ts`, pure and unit-tested: off when nothing is charging,
+  the fraction while it is, full only at the top, clamped.
+
+**Proof.** `probe:arsenal` 31/31, one new, from the reticle's own classes and style on drawn
+frames: with the LONGWAVE in hand the trigger is held for 140 ticks; the charge begins 23 ticks in
+(the swap), 18 ticks later the ring is displayed at 0.35 against the sim's 0.35 and not full, 45
+ticks after that it reads 1.00 and full against the sim's 1.00, and after the release it is gone
+with the magazine one round lighter. `tests/ammo.test.ts` 11. 701 tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone. With the ring never coming up the check reads
+`ring none` at both reads while the sim charges 0.35 → 1.00 underneath, 30/31, and two of the
+eleven unit tests go with it. With the top never marked the ring fills to 1.00 exactly as before
+and only `full false` at the top fails, 30/31, with the one unit test that asks for the top.
+
 ## Stage 105 — The shutter opened on the flip
 
 **Goal.** Run #129 (Stage 100) was red on one check, `lease_row/node: reads like the clip`: mean

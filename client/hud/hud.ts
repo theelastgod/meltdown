@@ -6,7 +6,7 @@ import type { Dummy } from "@shared/sim/world";
 import type { FileView } from "../file";
 import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
-import { ammoRead } from "./ammo";
+import { ammoRead, chargeRead } from "./ammo";
 import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
@@ -39,6 +39,7 @@ export class Hud {
   private reticleAt = { x: -1, y: -1 };
   private reticleArc = false;
   private ammoState = "";
+  private chargeOn = false;
 
   /**
    * The reticle goes where the renderer says the eye's ray lands (Stage 60): the screen's centre in
@@ -559,6 +560,18 @@ export class Hud {
       const ring = this.q(".xh .rl");
       ring.style.setProperty("--p", read.reloadFrac.toFixed(3));
       ring.classList.toggle("seated", read.seated);
+    }
+    // and the LONGWAVE's charge on the same ring (Stage 106): the sim never charges and reloads at
+    // once, so the ring is one or the other
+    const ch = chargeRead(p.weapon.charging, p.weapon.charge);
+    if (ch.on !== this.chargeOn) {
+      this.chargeOn = ch.on;
+      this.q(".xh").classList.toggle("charging", ch.on);
+    }
+    if (ch.on) {
+      const ring = this.q(".xh .rl");
+      ring.style.setProperty("--p", ch.frac.toFixed(3));
+      ring.classList.toggle("full", ch.full);
     }
     this.q(".wname").textContent = def.name + (p.weapon.altActive ? (def.alt.kind === "slug" ? " · CHOKED" : def.alt.kind === "ads" ? " · OPTIC" : " · BRACED") : "") + (p.weapon.charging ? ` · CHARGE ${Math.round(p.weapon.charge * 100)}%` : "");
     if (this.rackKey !== p.weapon.slot + ":" + p.weapon.ammo.join(",")) {

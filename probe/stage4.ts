@@ -502,6 +502,38 @@ async function main(): Promise<void> {
     });
     check("a gun going off to the right puts a magenta mark on the right of the map, which fades within two seconds", ping.n0 === 0 && ping.n1 >= 4 && ping.atX > ping.cx + 4 && ping.n2 === 0, `magenta on the map: ${ping.n0} before · ${ping.n1} px after the shot, centred at x ${ping.atX.toFixed(1)} of ${ping.cx * 2} (middle ${ping.cx}) · ${ping.n2} after ${ping.waited.toFixed(1)} s of the map's clock · yaw ${ping.yaw.toFixed(2)}`);
 
+    // Stage 106: the LONGWAVE's charge was a number in the corner. Hold the trigger: the ring on
+    // the reticle fills in magenta, lights whole in yellow the frame it tops out, and goes with the
+    // shot. Read from the reticle's own classes and style on drawn frames.
+    const chg = await page.evaluate(async () => {
+      const g = window.__game.game;
+      const p = g.player;
+      p.pos.x = 0; p.pos.y = 1.2; p.pos.z = -4.5;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      p.alive = true; p.health = 70; p.shield = p.maxShield;
+      p.weapon.ammo[4] = 5;
+      p.weapon.reloadTimer = 0; p.weapon.reloadSeated = false; p.weapon.charging = false; p.weapon.charge = 0;
+      const xh = document.querySelector("#hud .xh") as HTMLElement;
+      const ring = document.querySelector("#hud .xh .rl") as HTMLElement;
+      // the step holds the trigger until its last twelve ticks: the swap takes twenty-one, the
+      // charge fifty-four, so a hold of 140 keeps it full for a while before the release
+      window.__game.setBot([{ kind: "slot", slot: 4 }, { kind: "fire", ticks: 140, aimAt: { x: p.pos.x, y: 2.6, z: p.pos.z - 3 } }, { kind: "hold", ticks: 600 }]);
+      let t = 0;
+      while (!p.weapon.charging && t < 120) { window.__game.advance(1); t++; }
+      window.__game.advance(18);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const mid = { on: xh.classList.contains("charging"), disp: getComputedStyle(ring).display, p: parseFloat(getComputedStyle(ring).getPropertyValue("--p")) || 0, full: ring.classList.contains("full"), charge: p.weapon.charge };
+      window.__game.advance(45);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const top = { on: xh.classList.contains("charging"), p: parseFloat(getComputedStyle(ring).getPropertyValue("--p")) || 0, full: ring.classList.contains("full"), charge: p.weapon.charge, cue: window.__game.state().audio["charge"] ?? 0 };
+      // the step releases in its last twelve ticks: the shot goes, and the ring with it
+      window.__game.advance(90);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const gone = { on: xh.classList.contains("charging"), disp: getComputedStyle(ring).display, charging: p.weapon.charging, ammo: p.weapon.ammo[4] };
+      return { began: t, mid, top, gone };
+    });
+    check("holding the LONGWAVE fills the ring on the reticle, lights it whole at the top, and the shot takes it away", chg.began < 120 && chg.mid.on && chg.mid.disp !== "none" && chg.mid.p > 0.15 && chg.mid.p < 0.6 && !chg.mid.full && Math.abs(chg.mid.p - chg.mid.charge) < 0.02 && chg.top.on && chg.top.full && chg.top.p >= 0.999 && !chg.gone.on && chg.gone.disp === "none" && !chg.gone.charging && chg.gone.ammo === 4, `charging after ${chg.began} ticks · 18 ticks in: ring ${chg.mid.disp} at ${chg.mid.p.toFixed(2)} (sim ${chg.mid.charge.toFixed(2)}), full ${chg.mid.full} · 63 in: ${chg.top.p.toFixed(2)} full ${chg.top.full} (sim ${chg.top.charge.toFixed(2)}) · released: ring ${chg.gone.disp}, charging ${chg.gone.charging}, ${chg.gone.ammo} rounds left`);
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
 
     writeFileSync(`${OUT}/stage4.json`, JSON.stringify({ ttk: table, shots, hits, kills, explosions: explosions.length, captures, audio: state.audio, checks }, null, 2));
