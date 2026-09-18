@@ -1641,6 +1641,42 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 101 — The claims fell without a sound
+
+**Goal.** THE RUN has three money moments and the client borrowed or skipped every one of them.
+Picking a claim up played the wake's node-flip — the sound that means a hex changed hands in a
+different mode — and said nothing in the log. Banking was a stamp and a line online, and a stamp
+with no line offline, where the same sim runs. And the drop — a death in the PvP zone with claims
+carried, everything you had falling to the street for anyone to take — was silent everywhere,
+offline and online. That is the loudest moment in the mode: the one the player most needs to hear,
+and the one the street's other files are listening for.
+
+**What changed.**
+
+- **A claim taken has its own voice** — a bright double tick going up — and a line:
+  `◈ CLAIM +3 · CARRYING 5`. The node flip is the wake's again.
+- **The drop is heard as the fall it is**: a tone dropping away and the units scattering left and
+  right, and `◈ 5 UNITS DROPPED WHERE YOU FELL` in magenta. It plays on the death that emptied
+  your hands, offline and online alike.
+- **Banking says so in both worlds.** The stamp stays; the line the online path had is now the
+  offline path's too.
+- `client/runcue.ts` is the rule, pure and unit-tested: the wire carries the run's state rather
+  than its events, so the moments are read from two consecutive views — a rise in carried is a
+  pickup, a rise in banked is a bank, and a fall in carried is a drop only for the part the bank
+  does not account for. Both sync paths call the one function.
+
+**Proof.** `probe:run` 19/19, one new, on the offline yard where the same sim runs: the bot walks
+onto a claim and the client counts one claim cue and no node flip, with `◈ CLAIM +1 · CARRYING 1`
+in the log; then the file is killed where it stands and the client counts one fall, logs
+`◈ 1 UNITS DROPPED WHERE YOU FELL`, carries nothing, and the run's view shows a dropped claim lying
+on the street. `tests/runcue.test.ts` 6. 680 tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone. With `runMoments` reading nothing the check
+reads `claim cue ×0 … fall ×0` with no line for either, 18/19, and four of the six unit tests go
+with it — and, with no cue to wait on, the file has respawned by the time the check reads it. With
+the drop heard as the bank's stamp the pickup and its line, the drop's own line, the empty hands
+and the claim on the street all read as before and only the fall is missing, `fall ×0`, 18/19.
+
 ## Stage 100 — The magazine that ran out without a word
 
 **Goal.** The ammo count is a number in the bottom-right corner, and in a fight nobody is looking

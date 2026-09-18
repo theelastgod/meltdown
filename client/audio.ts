@@ -614,6 +614,22 @@ export class GameAudio {
   }
 
   /** The stamp at the bottom of the receipt, and the player's signature. */
+  /** a claim taken (Stage 101): its own voice — a bright double tick going up — not the wake's node flip */
+  claim(): void {
+    this.count("claim");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.07, from: 1320, gain: 0.12, type: "triangle" });
+    this.tone({ dur: 0.12, from: 1980, gain: 0.1, type: "triangle", delay: 0.07 });
+  }
+
+  /** the carried claims falling to the street (Stage 101): a drop, then the units scattering */
+  dropClaims(): void {
+    this.count("dropClaims");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.35, from: 660, to: 110, gain: 0.3, type: "triangle" });
+    for (let i = 0; i < 4; i++) this.burst({ dur: 0.03, freq: 1800 - i * 250, q: 1.6, gain: 0.08, delay: 0.18 + i * 0.06, pan: (i % 2 ? 1 : -1) * 0.4 });
+  }
+
   sign(): void {
     this.count("sign");
     if (!this.ctx) return;

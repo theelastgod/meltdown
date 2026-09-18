@@ -345,6 +345,26 @@ async function main(): Promise<void> {
     await c.evaluate(() => window.__game.setRealtime(true));
     const offPick = await c.waitForFunction(() => (window.__game.run()?.carried ?? 0) > 0, null, { timeout: 40000, polling: 100 }).then(() => true, () => false);
     await shotCheck(c, `stage14-offline.png`);
+    // Stage 101: the money moments. The pickup above was heard as the wake's node flip and said
+    // nothing; the drop — a death in the PvP zone with the claim carried — was silent. Both read
+    // from the same offline sim: the pickup's cue and line, then a death and the fall.
+    const moments = await c.evaluate(async () => {
+      const g = window.__game.game;
+      const p = g.player;
+      const audio0 = { ...window.__game.state().audio };
+      const carried = window.__game.run()?.carried ?? 0;
+      // the log is read twice, spelled out both times: a named arrow inside evaluate trips
+      // esbuild's keep-names shim
+      const pickLine = [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "").find((l) => /CLAIM \+/.test(l)) ?? "";
+      g.world.applyDamage("player", p.id, 100000, -1, "wasp", "shot");
+      // the page runs in real time here: wait on the cue itself, not a stopwatch
+      for (let i = 0; i < 240 && !((window.__game.state().audio["dropClaims"] ?? 0) > (audio0["dropClaims"] ?? 0)); i++) await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => requestAnimationFrame(r));
+      const audio1 = { ...window.__game.state().audio };
+      const run = window.__game.run();
+      return { carried, pickLine, claim: audio0["claim"] ?? 0, flips: audio0["nodeFlip"] ?? 0, drops: (audio1["dropClaims"] ?? 0) - (audio0["dropClaims"] ?? 0), dropLine: [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "").find((l) => /UNITS DROPPED/.test(l)) ?? "", after: run?.carried ?? -1, onStreet: run?.claims.some((cl) => cl.dropped) ?? false, alive: p.alive };
+    });
+    check("the money moments are heard offline: the claim in its own voice with a line, and a death with it carried drops it to the street — one fall, a line, nothing carried, the claim lying where the file fell", moments.carried > 0 && moments.claim >= 1 && moments.flips === 0 && /CLAIM \+/.test(moments.pickLine) && moments.drops === 1 && /UNITS DROPPED/.test(moments.dropLine) && moments.after === 0 && moments.onStreet && !moments.alive, `carried ${moments.carried} · claim cue ×${moments.claim}, node flips ×${moments.flips}, "${moments.pickLine.trim()}" · after the death: fall ×${moments.drops}, "${moments.dropLine.trim()}", carrying ${moments.after}, dropped claim on the street ${moments.onStreet}, alive ${moments.alive}`);
     await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&menu=1&crawl=0&nonav=1&menuspeed=8&level=drainage_yard`, { waitUntil: "load" });
     await c.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "main", null, { timeout: 40000, polling: 50 });
     const entries = await c.evaluate(() => window.__game.menu()!.entries);

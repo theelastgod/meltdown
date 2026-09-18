@@ -31,6 +31,7 @@ import { stepCues, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
 import { shotPass } from "./nearmiss";
 import { lastRoundsEdge } from "./hud/ammo";
+import { momentLine, runMoments } from "./runcue";
 import { kernelIn, nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
@@ -779,13 +780,23 @@ export class Game {
   private onRunMsg(m: RunMsg): void {
     const prev = this.runView;
     this.runView = { carried: m.carried, banked: m.banked, banking: m.banking, inSafe: m.inSafe, zone: m.zone, claims: m.claims, zones: m.zones, today: m.today, cap: m.cap, owed: m.owed };
-    if (prev && m.carried > prev.carried) this.audio.nodeFlip(true);
-    if (prev && m.banked > prev.banked) {
-      this.audio.sign();
-      this.hud.push(`BANKED ${m.banked - prev.banked} ◈ AT ${m.zone ?? "THE GATE"}`, "am");
-    }
+    this.runMoments(prev, this.runView);
     if (prev && !prev.inSafe && m.inSafe) this.hud.push(`SAFE ZONE · ${m.zone}`, "cy");
     this.applyRunView();
+  }
+
+  /**
+   * The run's money moments (Stage 101), read from two views of it and heard the same way offline
+   * and online: a claim taken in its own voice, a bank as the stamp it always was, and the drop —
+   * a death in the PvP zone with something carried — as the fall it is, with a line for each.
+   */
+  private runMoments(prev: { carried: number; banked: number } | null, next: { carried: number; banked: number; zone: string | null }): void {
+    for (const m of runMoments(prev, next)) {
+      if (m.kind === "pickup") this.audio.claim();
+      else if (m.kind === "bank") this.audio.sign();
+      else this.audio.dropClaims();
+      this.hud.push(momentLine(m, next.zone), m.kind === "drop" ? "mg" : "am");
+    }
   }
 
   private applyRunView(): void {
@@ -943,8 +954,7 @@ export class Game {
       const v = runView(w.run, this.player.id, this.player.pos);
       const prev = this.runView;
       this.runView = { ...v, today: 0, cap: 0, owed: 0 };
-      if (prev && v.carried > prev.carried) this.audio.nodeFlip(true);
-      if (prev && v.banked > prev.banked) this.audio.sign();
+      this.runMoments(prev, this.runView);
       this.applyRunView();
     }
     if (w.wake) {
