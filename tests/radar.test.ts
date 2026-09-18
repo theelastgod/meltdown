@@ -129,4 +129,8 @@ describe("the map's footer (Stage 129)", () => {
   it("promises nothing the map does not do", () => {
     expect(mapFooter(86).toLowerCase()).not.toMatch(/tap|click|walk/);
   });
+  it("has a compact form for the phone's narrow box, still heading-up and still the metres (Stage 132)", () => {
+    expect(mapFooter(70, true)).toBe("▲ 70 M WIDE");
+    expect(mapFooter(70, true).length).toBeLessThan(mapFooter(70).length - 6);
+  });
 });

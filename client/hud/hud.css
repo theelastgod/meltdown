@@ -66,7 +66,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .map { right: 14px; top: 14px; width: 116px; padding: 4px; }
 #hud .map .t { color: var(--cy); text-align: center; font-size: 10px; margin-bottom: 3px; letter-spacing: 0.12em; }
 #hud .map canvas { display: block; width: 108px; height: 84px; image-rendering: pixelated; background: rgba(0, 12, 18, 0.7); border: 1px solid rgba(53,242,255,0.35); }
-#hud .map .f { color: rgba(53,242,255,0.6); text-align: center; font-size: 9px; margin-top: 3px; }
+#hud .map .f { color: rgba(53,242,255,0.6); text-align: center; font-size: 9px; margin-top: 3px; white-space: nowrap; }
 #hud .side { position: absolute; right: 14px; top: 135px; width: 220px; text-align: right; font-size: 10px; color: rgba(55,255,139,0.75); }
 #hud .side .k { color: rgba(53,242,255,0.7); }
 #hud .log { position: absolute; left: 14px; bottom: 88px; width: 380px; font-size: 10.5px; color: rgba(55,255,139,0.85); }

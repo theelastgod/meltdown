@@ -142,6 +142,7 @@ export function spotMarks(spots: readonly RadarSpot[], at: { x: number; z: numbe
  * and nothing anywhere handled a tap or a click on the map. What the map is: heading-up — the
  * file's view is up the screen — and this many metres across, from the same scale it is drawn at.
  */
-export function mapFooter(acrossMetres: number): string {
-  return `▲ AHEAD · ${Math.round(acrossMetres)} M ACROSS`;
+export function mapFooter(acrossMetres: number, compact = false): string {
+  // the phone's map box is 78 px wide at 8 px type (Stage 132): the arrow alone says heading-up
+  return compact ? `▲ ${Math.round(acrossMetres)} M WIDE` : `▲ AHEAD · ${Math.round(acrossMetres)} M ACROSS`;
 }

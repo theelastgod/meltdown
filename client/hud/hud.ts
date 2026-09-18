@@ -493,10 +493,12 @@ export class Hud {
     this.placeFlag();
     // the foot line between the slots and the tab strip, or above the row when they leave it no
     // room (Stage 118): the room is measured with the line out of the row so it cannot change it
+    // the phone lays that row out itself, at the top left and wrapping, and seats the line in it
+    // (Stage 132): the rule is the desktop's
     const center = this.q(".center");
     const slots = this.q(".slots").getBoundingClientRect();
     const tabs = this.q(".tabs").getBoundingClientRect();
-    const above = footRow(tabs.left - slots.right, center.scrollWidth) === "above";
+    const above = !this.root.classList.contains("touch") && footRow(tabs.left - slots.right, center.scrollWidth) === "above";
     if (center.classList.contains("above") !== above) center.classList.toggle("above", above);
     // the reader frames — the ledger book, its graph, the contracts desk — begin under the file's
     // header rather than over it (Stage 119)
@@ -859,7 +861,7 @@ export class Hud {
     const across = this.bounds * 2 + 6;
     const scale = w / across;
     // the footer from the same scale (Stage 129): what the map is, not a tap it never handled
-    const foot = mapFooter(across);
+    const foot = mapFooter(across, this.root.classList.contains("touch"));
     if (foot !== this.mapFoot) {
       this.mapFoot = foot;
       this.q(".map .f").textContent = foot;

@@ -1641,6 +1641,40 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 132 — The phone paid for the desktop's fixes
+
+**Goal.** The mobile probe's frame after Stages 118 and 129: `1 · BLANK · 0.0 m/s · STAND`
+printed across the file's header, over its bars, and the map's footer wrapped, `▲ AHEAD · 70 M
+/ ACROSS`, in a box 78 px wide. Stage 118 lifted the foot line above the bottom row when the
+slots and the tab strip leave it no room — a rule about the desktop's row, and the phone lays
+that row out at the top left, wrapping, so "above" was into the header. Stage 129 wrote a
+footer for a 108 px box; the phone's is 78.
+
+**What changed.**
+- `client/hud/hud.ts` — the foot line's row rule is the desktop's: on the touch HUD the line
+  stays where the phone seats it.
+- `client/hud/radar.ts` — `mapFooter(across, compact)`: the phone's form is `▲ 70 M WIDE`, the
+  arrow alone saying heading-up; the desktop keeps `▲ AHEAD · 70 M ACROSS`.
+- `client/hud/hud.css` — the footer never wraps.
+- `tests/radar.test.ts` — the compact form.
+- `probe/stage32.ts` — on the phone the foot line's text box keeps clear of the header and sits
+  below it; the map's footer is one line, inside the map, with no overflow.
+
+**Proof.** vitest 767/767 (the compact form in `tests/radar.test.ts`). `npm run probe:mobile`
+16/16: the foot line's text box sits at 93–104 px, below the header's end at 63, crossing nothing,
+reading `1 · BLANK · 0.0 m/s · AIR`; the map's footer is `▲ 70 M WIDE`, one line box, 0 px
+overflow, inside the map. Regressions `probe:run` 22/22, `probe:tps` 48/48 (the desktop's footer
+still `▲ AHEAD · 70 M ACROSS`), build, smoke 7/7. The first run of the new footer check read
+`NaN line(s)`: it had divided the box height by a computed `line-height` of `normal`; the check
+now counts the text range's client rects, one per line box, which is what the eye counts.
+
+Mutation A, the row rule applied on the phone too (the `touch` test removed from the foot-row
+toggle): `probe:mobile` 15/16, the line back at 47–58 px over the header ending at 63, crosses
+true. Mutation B, no compact form (`compact && false` in `mapFooter`): `tests/radar.test.ts`
+1 failed | 13 passed, and `probe:mobile` 15/16 with `▲ AHEAD · 70 M ACROSS` overflowing its box
+by 25 px, held to one line by the CSS. Both restored by copy; the tree diffs clean against the
+saved files.
+
 ## Stage 131 — Every district was the yard
 
 **Goal.** The first wake was the drainage yard, and the wake's lines were written for it: `◆

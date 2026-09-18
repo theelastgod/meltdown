@@ -183,6 +183,25 @@ async function main(): Promise<void> {
     });
     check("no HUD panel sits underneath a thumb control", clash.hits.length === 0, clash.hits.length ? clash.hits.join(", ") : `${layout.vw}×${layout.vh}, nothing under the pads`);
     check("and the game does not tell a phone to press WASD", !clash.saysKeyboard, clash.saysKeyboard ? "keyboard legend still on screen" : "touch prompts only");
+    // Stage 132: the phone paid for the desktop's fixes. The foot line's seat (Stage 118) and the
+    // map's footer (Stage 129) were written for the desktop's boxes; on the phone the line had gone
+    // over the file's header and the footer onto two lines. Read from the drawn frame
+    const phoneFit = await pg.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const hud = document.getElementById("hud")!;
+      const status = hud.querySelector(".status")!.getBoundingClientRect();
+      const center = hud.querySelector(".center")!;
+      const range = document.createRange();
+      range.selectNodeContents(center);
+      const foot = range.getBoundingClientRect();
+      const f = hud.querySelector(".map .f") as HTMLElement;
+      const fr = f.getBoundingClientRect();
+      const mapBox = hud.querySelector(".map")!.getBoundingClientRect();
+      const crossesStatus = foot.left < status.right && foot.right > status.left && foot.top < status.bottom && foot.bottom > status.top;
+      return { footTop: foot.top, footBottom: foot.bottom, statusBottom: status.bottom, crossesStatus, footText: center.textContent ?? "", footerText: f.textContent ?? "", footerLines: (() => { const tr = document.createRange(); tr.selectNodeContents(f); return tr.getClientRects().length; })(), footerOverflow: f.scrollWidth - f.clientWidth, footerInsideMap: fr.left >= mapBox.left - 0.5 && fr.right <= mapBox.right + 0.5 };
+    });
+    check("the foot line keeps clear of the file's header on the phone, seated below it where the phone puts it", !phoneFit.crossesStatus && phoneFit.footTop >= phoneFit.statusBottom && /STAND|WALK|SPRINT|AIR/.test(phoneFit.footText), `line ${phoneFit.footTop.toFixed(0)}–${phoneFit.footBottom.toFixed(0)} px · header ends ${phoneFit.statusBottom.toFixed(0)} · crosses ${phoneFit.crossesStatus} · "${phoneFit.footText}"`);
+    check("and the map's footer fits its box on one line", phoneFit.footerLines === 1 && phoneFit.footerOverflow <= 0 && phoneFit.footerInsideMap && /^▲ \d+ M WIDE$/.test(phoneFit.footerText), `"${phoneFit.footerText}" · ${phoneFit.footerLines} line(s) · overflow ${phoneFit.footerOverflow} px · inside the map ${phoneFit.footerInsideMap}`);
 
     // ---------------- the left thumb walks ----------------
     const before = await pg.evaluate(() => ({ ...window.__game.state().pos }));
