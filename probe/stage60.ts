@@ -262,17 +262,23 @@ async function main(): Promise<void> {
     await pg.evaluate(() => window.__game.hideBody(true));
     await nextFrame(pg);
     const hidden = await pg.evaluate(async () => {
-      let best = { onBody: true, muzzle: 0, handMuzzle: 0 };
+      let best = { onBody: true, muzzle: 0, handMuzzle: 0, toCam: 99, toHand: 0 };
       for (let i = 0; i < 300; i++) {
         window.__game.advance(2);
         await new Promise((r) => requestAnimationFrame(r));
         const p = window.__game.presentation();
-        best = { onBody: p.onBody, muzzle: Math.max(best.muzzle, p.muzzle), handMuzzle: p.handMuzzle };
+        best = {
+          onBody: p.onBody,
+          muzzle: Math.max(best.muzzle, p.muzzle),
+          handMuzzle: p.handMuzzle,
+          toCam: Math.hypot(p.filament.x - p.camera.x, p.filament.y - p.camera.y, p.filament.z - p.camera.z),
+          toHand: Math.hypot(p.filament.x - p.hand.x, p.filament.y - p.hand.y, p.filament.z - p.hand.z),
+        };
         if (best.muzzle > 1) break;
       }
       return best;
     });
-    check("with the body hidden there is still a muzzle flash: it falls back to the camera's light rather than going out", !hidden.onBody && hidden.muzzle > 1, `body lit ${hidden.onBody} · camera light ${hidden.muzzle.toFixed(1)} · hand light ${hidden.handMuzzle.toFixed(1)}`);
+    check("with the body hidden the flash and the filament both fall back to the camera rather than going out with the body", !hidden.onBody && hidden.muzzle > 1 && hidden.toCam < 0.5 && hidden.toHand > 1.5, `body lit ${hidden.onBody} · camera light ${hidden.muzzle.toFixed(1)} · hand light ${hidden.handMuzzle.toFixed(1)} · filament ${hidden.toCam.toFixed(2)} m from the camera and ${hidden.toHand.toFixed(2)} m from the hand`);
     await pg.evaluate(async () => {
       window.__game.hideBody(false);
       window.__game.game.renderer.campaignFx.setFilament(false);
@@ -312,6 +318,35 @@ async function main(): Promise<void> {
     // see the rig): what third person costs over first is the difference between them
     check("the body costs its five meshes and no more — one per material, drawn once — inside the frame budget", rigCalls <= 5 && rigCalls >= 1 && first.thirdCalls <= 180, `${withBody} calls with the body, ${withoutBody} without (the body: ${rigCalls}); first person ${first.v.calls} · filament ${bodyParts.filament} · ${Object.entries(bodyParts.breakdown).map(([k, n]) => `${k} ${n}`).join(", ")}`);
     results["first"] = first;
+
+    // ---------------- the mouse path: the one a bot never drives ----------------
+    // With the pointer locked the camera is drawn along the live input angles rather than the sim's
+    // last tick, because mouse look has to feel immediate. The reticle was left on the sim's angles,
+    // so it trailed the camera through every flick — and no check saw it, because a bot never locks
+    // the pointer and this branch is the only place the two can disagree (Stage 73).
+    const flick = await pg.evaluate(async () => {
+      const g = window.__game.game;
+      window.__game.setBot(null);
+      (g.input as unknown as { locked: boolean }).locked = true;
+      g.input.yaw = g.player.yaw + 0.4;
+      g.input.pitch = g.player.pitch - 0.12;
+      for (let i = 0; i < 4; i++) await new Promise((r) => requestAnimationFrame(r));
+      const v = window.__game.view();
+      const s = window.__game.state();
+      const w = g.player.weapon;
+      const eye = { x: s.pos.x, y: s.pos.y + 1.62, z: s.pos.z };
+      const d = v.aim.distance;
+      const ly = g.input.yaw + w.kickYaw + w.patX, lp = g.input.pitch + w.kickPitch + w.patY;
+      const sy = s.yaw + w.kickYaw + w.patX, sp = s.pitch + w.kickPitch + w.patY;
+      const lc = Math.cos(lp), sc2 = Math.cos(sp);
+      const live = g.renderer.project({ x: eye.x - Math.sin(ly) * lc * d, y: eye.y + Math.sin(lp) * d, z: eye.z - Math.cos(ly) * lc * d });
+      const stale = g.renderer.project({ x: eye.x - Math.sin(sy) * sc2 * d, y: eye.y + Math.sin(sp) * d, z: eye.z - Math.cos(sy) * sc2 * d });
+      (g.input as unknown as { locked: boolean }).locked = false;
+      return { reticle: v.reticle, live, stale, drift: Math.hypot(s.yaw - g.input.yaw, s.pitch - g.input.pitch) };
+    });
+    const toLive = Math.hypot(flick.reticle.x - flick.live.x, flick.reticle.y - flick.live.y);
+    const toStale = Math.hypot(flick.reticle.x - flick.stale.x, flick.reticle.y - flick.stale.y);
+    check("with the pointer locked the reticle follows the live look, not the tick the sim last ran", flick.drift > 0.1 && toLive < 3 && toStale > 20, `the sim is ${flick.drift.toFixed(2)} rad behind the mouse · reticle ${toLive.toFixed(1)} px from the live ray, ${toStale.toFixed(1)} px from the sim's`);
 
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     writeFileSync(`${OUT}/stage60.json`, JSON.stringify({ results, checks }, null, 2));

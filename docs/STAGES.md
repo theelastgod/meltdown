@@ -1641,6 +1641,46 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 73 — The reticle the mouse is holding
+
+**Goal.** A fresh adversarial review of the camera and presentation work (five lenses, three
+skeptics each) found something no check in this repository could have caught, because no check ever
+drives the path it lives on: a bot never locks the pointer.
+
+**What changed.**
+
+- **The reticle follows the live look.** With the pointer locked the camera is drawn along the live
+  mouse angles rather than the simulation's last tick, because mouse look has to feel immediate.
+  The reticle was left on the simulation's angles, so through every flick it trailed the camera —
+  eighty-two pixels at a quarter-turn, on the only path where the two can disagree. A bot drives the
+  other branch, so every probe in the suite passed while a player would have seen it in the first
+  second of play. The check for it locks the pointer itself.
+- **The reticle reaches as far as the weapon does.** It cast a fixed eighty metres for everything.
+  The stack SMG's rounds die at thirty, so it marked bodies twice as far as the shot could travel;
+  the rail reaches two hundred and sixty, so it stopped short of what the shot would hit; a melee
+  weapon reaches 1.6 m and the mark was down the street. The cast now ends at the weapon's own
+  range.
+- **The filament falls back with the light.** Stage 69 moved the muzzle flash to the camera when the
+  body is not drawn and left the Kernel's strands hosted on the body's hand, so they went out with
+  it. Both follow the weapon being drawn now.
+- **The shoulder eases.** The anchor is a cast result, and a wall it clears returns it 0.78 m
+  sideways in a single frame. It eases back out the way the distance does: immediate when a wall
+  takes it, smooth when the wall is gone.
+- **The stun roll is part of the camera the reticle is projected through**, rather than applied
+  after the projection.
+
+**Proof.** `probe:tps` 17/17 (one new: with the pointer locked the reticle is on the live ray and
+eighty-two pixels from the simulation's), `tests/tps.test.ts` 11 (one new: the aim reaches as far as
+the weapon and no further, for an SMG, a rail and a fist), `probe:body` 20/20, `probe:net` 16/16,
+`probe:arsenal` 19/19, `probe:city` 45/45, `probe:frame` 6/6, `probe:mobile` 14/14, `smoke` 7/7, 530
+tests, build and typecheck clean. Both wiring guards mutation-checked: the reticle left on the
+simulation's tick lands 99 px away, and the filament hosted on the view rather than on the body
+being drawn stays on the hand while the body is hidden.
+
+**Open.** A projectile weapon's round arcs under gravity and the reticle marks a straight ray, so
+for the launcher the mark is where the round is pointed rather than where it lands. That is a
+ballistic trace and a stage of its own.
+
 ## Stage 72 — The HUD holds still for the photograph
 
 **Goal.** Runs #99 and #100 were red on three checks between them, all of the same shape: a panel

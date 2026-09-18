@@ -56,6 +56,8 @@ export interface ViewState {
   aimYaw: number;
   /** the pitch the next shot leaves along */
   aimPitch: number;
+  /** how far the held weapon's shot reaches (m) */
+  aimRange: number;
   /** the bodies a shot can hit, as the sim's hitscan tests them */
   targets: readonly AimTarget[];
 }
@@ -160,6 +162,8 @@ export class Renderer {
   bodyHidden = false;
   private boxes: readonly Box[];
   private camSmooth = { d: TPS_DEFAULT.distance, x: 0, y: 0, z: 0, set: false };
+  /** the eased shoulder offset: pulling in against a wall beside the player is immediate, sliding back out is not */
+  private shoulderSmooth = 0;
   private lastView: CameraView = { third: true, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false } };
   private tmpProj = new THREE.Vector3();
   private vmSlot = 1;
@@ -185,9 +189,15 @@ export class Renderer {
   /** Third person (the trailer's view) or first; a setting, never the sim's business. */
   /** the Kernel's filament belongs to the weapon being drawn, not to the camera (Stage 69) */
   private hostFilament(): void {
-    const onHand = this.thirdPerson;
+    // whichever weapon is drawn — and when the camera is pulled in against the body, that is the
+    // camera's, exactly as the muzzle light falls back. Hosted on `thirdPerson` alone, the strands
+    // went out with the body (Stage 73).
+    const onHand = this.thirdPerson && this.local.group.visible;
+    if (onHand === this.filamentOnHand) return;
+    this.filamentOnHand = onHand;
     this.campaignFx.setFilamentHost(onHand ? this.local.hand : this.camera, onHand);
   }
+  private filamentOnHand: boolean | null = null;
 
   setView(third: boolean): void {
     this.thirdPerson = third;
@@ -695,9 +705,17 @@ export class Renderer {
     // the eased distance runs along the segment that was cast — from the shoulder, not from the eye.
     // Scaling the whole offset toward the pivot instead swept the camera along a line nobody cast,
     // which can pass through the edge of the very box that pulled it in (Stage 66).
-    const ax = cam.anchor.x + cam.dir.x * this.camSmooth.d, ay = cam.anchor.y + cam.dir.y * this.camSmooth.d + bobY * 0.4, az = cam.anchor.z + cam.dir.z * this.camSmooth.d;
+    // the shoulder itself is a cast result, and a wall it clears returns it 0.78 m sideways in one
+    // frame: ease the offset the same way the distance is eased, so clearing a corner slides the
+    // camera back over the shoulder rather than snapping it (Stage 73)
+    const wantOff = cam.anchor.x - pivot.x === 0 && cam.anchor.z - pivot.z === 0 ? 0 : Math.hypot(cam.anchor.x - pivot.x, cam.anchor.z - pivot.z, cam.anchor.y - pivot.y);
+    this.shoulderSmooth = !this.camSmooth.set || wantOff < this.shoulderSmooth ? wantOff : this.shoulderSmooth + (wantOff - this.shoulderSmooth) * k;
+    const full = Math.hypot(cam.anchor.x - pivot.x, cam.anchor.y - pivot.y, cam.anchor.z - pivot.z);
+    const s = full > 1e-6 ? this.shoulderSmooth / full : 0;
+    const anchor = { x: pivot.x + (cam.anchor.x - pivot.x) * s, y: pivot.y + (cam.anchor.y - pivot.y) * s, z: pivot.z + (cam.anchor.z - pivot.z) * s };
+    const ax = anchor.x + cam.dir.x * this.camSmooth.d, ay = anchor.y + cam.dir.y * this.camSmooth.d + bobY * 0.4, az = anchor.z + cam.dir.z * this.camSmooth.d;
     this.camera.position.set(ax, ay, az);
-    this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, 0);
+    this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, v.stunned ? Math.sin(this.clock * 25) * 0.02 : 0);
     // the body
     const g = this.local.group;
     const close = this.camSmooth.d < 0.9;
@@ -713,13 +731,13 @@ export class Renderer {
     applyPose(this.local, out, v.yaw);
     g.visible = out.visible && !close && !this.bodyHidden;
     // the reticle: the eye's ray, projected
-    const aim = aimPoint({ x: v.x, y: v.y + v.eye, z: v.z }, v.aimYaw, v.aimPitch, this.boxes, v.targets);
+    const aim = aimPoint({ x: v.x, y: v.y + v.eye, z: v.z }, v.aimYaw, v.aimPitch, this.boxes, v.targets, v.aimRange);
     this.camera.updateMatrixWorld(true);
     this.tmpProj.set(aim.point.x, aim.point.y, aim.point.z).project(this.camera);
     const visible = this.tmpProj.z < 1 && Math.abs(this.tmpProj.x) <= 1.2 && Math.abs(this.tmpProj.y) <= 1.2;
     const rx = (this.tmpProj.x + 1) * 0.5 * window.innerWidth;
     const ry = (1 - this.tmpProj.y) * 0.5 * window.innerHeight;
-    this.lastView = { third: true, anchor: { x: cam.anchor.x, y: cam.anchor.y, z: cam.anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget } };
+    this.lastView = { third: true, anchor: { x: anchor.x, y: anchor.y, z: anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget } };
   }
 
   render(v: ViewState, rawDt: number): void {
@@ -744,7 +762,7 @@ export class Renderer {
     if (this.thirdPerson) this.placeThirdPerson(v, dt, bobY);
     else {
       this.camera.position.set(v.x, v.y + this.eyeSmooth + bobY, v.z);
-      this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, v.stance === "slide" ? 0.03 : bobX * 0.6);
+      this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, (v.stance === "slide" ? 0.03 : bobX * 0.6) + (v.stunned ? Math.sin(this.clock * 25) * 0.02 : 0));
       this.local.group.visible = false;
       this.lastView = { third: false, anchor: { x: 0, y: 0, z: 0 }, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: window.innerWidth / 2, y: window.innerHeight / 2, visible: true }, aim: { distance: 0, hit: false, onTarget: false } };
     }
@@ -759,6 +777,7 @@ export class Renderer {
     // camera pulled in against the body there was no muzzle flash at all, which is exactly when the
     // player is in a doorway and needs to see they are firing. Fall back to the camera's (Stage 69).
     const onBody = this.thirdPerson && this.local.group.visible;
+    this.hostFilament();
     this.muzzle.intensity = onBody ? 0 : this.muzzleT * 8;
     this.handMuzzle.intensity = onBody ? this.muzzleT * 8 : 0;
     // weapon swap: hide/show viewmodels with a quick dip
@@ -787,7 +806,7 @@ export class Renderer {
       const glow = onBody ? this.handMuzzle : this.muzzle;
       glow.intensity = Math.max(glow.intensity, v.charge * 5);
     }
-    if (v.stunned) this.camera.rotation.z += Math.sin(this.clock * 25) * 0.02;
+    // (the stun roll is applied in placeThirdPerson, before the reticle is projected through it)
     this.poseRemotes(dt);
     this.fx.update(dt);
     this.wake.update(dt);

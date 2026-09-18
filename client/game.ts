@@ -1056,6 +1056,9 @@ export class Game {
       // (shotDirs in shared/sim/weapons.ts), against the bodies its hitscan tests (Stage 66)
       aimYaw: p.yaw + p.weapon.kickYaw + p.weapon.patX,
       aimPitch: p.pitch + p.weapon.kickPitch + p.weapon.patY,
+      // how far a shot from this weapon reaches: the reticle stops where the shot does, so it
+      // cannot mark a body at sixty metres for a weapon whose rounds die at thirty (Stage 73)
+      aimRange: weaponDefOf(p).range.max,
       targets: this.aimTargets(),
     };
     this.input.currentSlot = p.weapon.slot;
@@ -1065,6 +1068,13 @@ export class Game {
     if (!this.bot && this.input.isLocked) {
       view.yaw = this.input.yaw;
       view.pitch = this.input.pitch;
+      // and the shot's direction with it. The camera is drawn along the live mouse angles because
+      // mouse look must feel immediate; leaving the reticle on the sim's last tick left it trailing
+      // the camera through every flick, on exactly the path no probe drives — a bot never locks the
+      // pointer, so this is the one path the checks could not see (Stage 73).
+      view.aimYaw = this.input.yaw + p.weapon.kickYaw + p.weapon.patX;
+      view.aimPitch = this.input.pitch + p.weapon.kickPitch + p.weapon.patY;
+      if (lenXZ(p.vel) <= 0.5) view.moveYaw = this.input.yaw;
     }
     if (!render || !this.drawing) return;
     if (this.net) this.renderer.syncRemotes(this.net.remoteViews().map((r) => ({ ...r, debt: r.id === this.debtTargetId })));

@@ -109,4 +109,20 @@ describe("where the reticle goes", () => {
     expect(a.onTarget).toBe(false);
     expect(a.distance).toBeLessThan(5);
   });
+
+  it("the aim reaches as far as the weapon does and no further", () => {
+    // the reticle used to cast a fixed 80 m for every weapon: it marked bodies at sixty metres for
+    // rounds that die at thirty, and stopped short of a rail shot that reaches two hundred (Stage 73)
+    const far = { pos: { x: 0, y: 0, z: -60 }, radius: 0.4, height: 1.8 };
+    const smg = aimPoint(eye, 0, 0, [], [far], 30);
+    expect(smg.onTarget).toBe(false);
+    expect(smg.distance).toBe(30);
+    const rail = aimPoint(eye, 0, 0, [], [far], 260);
+    expect(rail.onTarget).toBe(true);
+    expect(rail.distance).toBeGreaterThan(59);
+    // and a melee weapon's reach is its own: the mark is in front of the face, not down the street
+    const fist = aimPoint(eye, 0, 0, [], [far], 1.6);
+    expect(fist.distance).toBe(1.6);
+    expect(fist.onTarget).toBe(false);
+  });
 });
