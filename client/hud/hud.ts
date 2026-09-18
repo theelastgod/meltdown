@@ -6,6 +6,7 @@ import type { FileView } from "../file";
 import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
 import type { NodeReadout } from "./node";
+import { nodeColour, nodeMarks, toMap, type RadarNode } from "./radar";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
 export class Hud {
@@ -537,6 +538,12 @@ export class Hud {
     this.flagTimer = 0.4;
   }
 
+  /** the nodes the map draws, handed in by the game while a wake round is on (Stage 88) */
+  setRadarNodes(nodes: readonly RadarNode[]): void {
+    this.radarNodes = nodes;
+  }
+  private radarNodes: readonly RadarNode[] = [];
+
   private drawRadar(p: PlayerState, dummies: readonly Dummy[]): void {
     const g = this.radar;
     const w = g.canvas.width;
@@ -548,19 +555,37 @@ export class Hud {
     const scale = w / (this.bounds * 2 + 6);
     const cx = w / 2;
     const cy = h / 2;
-    const c = Math.cos(-p.yaw);
-    const s = Math.sin(-p.yaw);
+    // the nodes first, under everything else: the mode's whole geography, which the map has never
+    // drawn (Stage 88). A node off the map is pinned to the rim, because that is the one you need
+    for (const m of nodeMarks(this.radarNodes, p.pos, p.yaw, scale, w, h)) {
+      g.fillStyle = nodeColour(m);
+      const r = m.edge ? 1.5 : 3;
+      g.beginPath();
+      g.arc(m.x, m.y, r, 0, Math.PI * 2);
+      g.fill();
+      if (!m.edge) {
+        g.fillStyle = "rgba(4,6,10,0.85)";
+        g.fillRect(m.x - 2, m.y - 2, 4, 4);
+        g.fillStyle = nodeColour(m);
+        g.font = "7px monospace";
+        g.textAlign = "center";
+        g.textBaseline = "middle";
+        g.fillText(m.label, m.x, m.y + 0.5);
+      }
+      if (m.puller && !m.contested) {
+        g.strokeStyle = nodeColour(m);
+        g.lineWidth = 1;
+        g.beginPath();
+        g.arc(m.x, m.y, r + 2.5, 0, Math.PI * 2);
+        g.stroke();
+      }
+    }
     for (const d of dummies) {
       if (!d.alive) continue;
-      const dx = d.pos.x - p.pos.x;
-      const dz = d.pos.z - p.pos.z;
-      const rx = dx * c - dz * s;
-      const rz = dx * s + dz * c;
-      const px = cx + rx * scale;
-      const py = cy + rz * scale;
-      if (px < 1 || px >= w - 1 || py < 1 || py >= h - 1) continue;
+      const m = toMap(d.pos.x - p.pos.x, d.pos.z - p.pos.z, p.yaw, scale, w, h);
+      if (m.x < 1 || m.x >= w - 1 || m.y < 1 || m.y >= h - 1) continue;
       g.fillStyle = "#ffb02e";
-      g.fillRect(Math.round(px) - 1, Math.round(py) - 1, 2, 2);
+      g.fillRect(Math.round(m.x) - 1, Math.round(m.y) - 1, 2, 2);
     }
     g.fillStyle = "#37ff8b";
     g.fillRect(cx - 1, cy - 1, 3, 3);

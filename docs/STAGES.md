@@ -1641,6 +1641,43 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 88 — The map was turning the wrong way
+
+**Goal.** The map in the corner has drawn two things since the first stage: the dummies, and the file
+at its middle. In THE WAKE — the mode the game is named for — it has never drawn the nodes. The strip
+at the top says who holds each of the eight and says nothing about where they are, so a player
+crossing the yard with a node coming free has no way to know which way to run.
+
+Building that turned up something worse.
+
+**What changed.**
+
+- **The map draws the nodes**: a disc per node in its owner's colour — VANTAGE's violet, each cell's,
+  amber while contested — with its label, a ring around the one being pulled, and anything past the
+  edge pinned to the rim *along its own bearing* rather than clamped per axis, which would slide it
+  round the corner and point at a street the node is not on.
+- **And the map turns the right way now.** It had been rotating by `+yaw` where the file's own basis
+  is `−yaw`, so at every heading but due north and due south the marks were mirrored through the
+  forward axis: facing west put what was behind you at the top of the map. That has been wrong since
+  Stage 1 and nothing caught it, because the only thing the map drew was dummies and no check ever
+  asked where a dummy appeared. Both the nodes and the dummies go through `toMap` now, which is the
+  file's own `yawRight` and `viewDir`.
+
+**Proof.** `probe:wake` 19/19 — one new, reading the map's own pixels: a node ten metres east of the
+file is 6 px to the right of the middle while the file looks north, and 6 px *above* the middle when
+it turns to look east, in the cell's green rather than the dummies' amber. `tests/radar.test.ts` 7 on
+the placement rule. `probe:look` 18/18, `probe:city` 45/45, `probe:tps` 32/32, `probe:identity`
+25/25, `probe:campaign` 31/31, `probe:mobile` 14/14, `smoke` 7/7, 595 tests, build and typecheck
+clean.
+
+**And the check needed sharpening before it was worth anything.** The first version of it stood the
+file due south of a node, looked north, then turned round to look south — the two headings at which
+the old transform and the right one agree exactly. It passed with the rotation reverted *and* with
+the nodes not drawn at all, because the pixel it found was a dummy's amber. It now looks north and
+then east, where a map turning the wrong way puts the node below instead of above, and it will only
+accept the cell's green. Both mutations fail it: the old rotation finds nothing above the middle
+looking east, and drawing no nodes finds nothing at all.
+
 ## Stage 87 — The KERNEL is coming
 
 **Goal.** VANTAGE brakes the wake on a fixed cadence: every seventy-five seconds of the round it

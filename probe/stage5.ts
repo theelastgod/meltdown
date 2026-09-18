@@ -149,6 +149,68 @@ async function main(): Promise<void> {
     const err = foot.predicted > 0 ? Math.abs(foot.predicted - flipTook.actual) : 99;
     check("the node readout's countdown is the simulation's own: it says how long the flip takes and the flip takes that long", flipTook.owner === 1 && foot.predicted > 0.5 && err < 0.4 && /NODE B/.test(foot.said) && /PULLING/.test(foot.said), `at ${foot.holdAt.toFixed(2)} hold it said ${foot.predicted.toFixed(1)}s, the flip took ${flipTook.actual.toFixed(1)}s (${err.toFixed(2)}s out) · "${foot.said.trim()}"`);
 
+    // ---------------- the map draws the nodes (Stage 88) ----------------
+    // The map in the corner has drawn the dummies and the file at its middle since the first stage,
+    // and never the nodes — in the mode the game is named for. And it was turning the wrong way.
+    const map = await page.evaluate(async () => {
+      const g = window.__game.game;
+      const w = g.world.wake!;
+      const p = g.player;
+      const n = w.nodes.find((x) => x.id === 4)!;
+      // ten metres due WEST of node D, so the node is to the east. The headings matter: due north
+      // and due south are the two the old transform got right by accident, so this looks north and
+      // then east, where turning the map the wrong way mirrors it.
+      p.pos.x = n.pos.x - 10;
+      p.pos.z = n.pos.z;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      n.owner = 1;
+      n.contested = false;
+      n.hold = 1;
+      const canvas = document.querySelector("#hud .map canvas") as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d")!;
+      const cx = Math.round(canvas.width / 2);
+      const cy = Math.round(canvas.height / 2);
+      const out: { yaw: number; right: number; up: number }[] = [];
+      for (const yaw of [0, -Math.PI / 2]) {
+        window.__game.setBot([{ kind: "look", yaw, pitch: 0, ticks: 10 }, { kind: "hold", ticks: 600 }]);
+        window.__game.advance(30);
+        await new Promise((r) => requestAnimationFrame(r));
+        await new Promise((r) => requestAnimationFrame(r));
+        // find the cell's green — not the dummies' amber, which is what an earlier version of this
+        // check kept finding. No named helpers in here: the probe's build injects a __name the page
+        // does not have.
+        // a band either side of the centre line rather than one pixel of it: the mark is a disc
+        // with a dark label box in its middle, and a single row can thread the gap
+        let right = -1;
+        for (let x = cx + 2; x < canvas.width - 1 && right < 0; x++) {
+          for (const y of [cy - 1, cy, cy + 1]) {
+            const d = ctx.getImageData(x, y, 1, 1).data;
+            if (d[3]! > 200 && d[1]! > 200 && d[0]! < 120) {
+              right = x - cx;
+              break;
+            }
+          }
+        }
+        let up = -1;
+        for (let y = cy - 2; y > 1 && up < 0; y--) {
+          for (const x of [cx - 1, cx, cx + 1]) {
+            const d = ctx.getImageData(x, y, 1, 1).data;
+            if (d[3]! > 200 && d[1]! > 200 && d[0]! < 120) {
+              up = cy - y;
+              break;
+            }
+          }
+        }
+        out.push({ yaw, right, up });
+      }
+      return { north: out[0]!, east: out[1]!, size: `${canvas.width}x${canvas.height}` };
+    });
+    // looking north, a node to the east is to the right of the middle and not above it; looking
+    // east, the same node is straight ahead — above the middle, not to the right. The map that
+    // turned the wrong way puts it below instead, which is why the headings are these two.
+    check("the map draws the nodes in the file's own frame: a node to the east is to the right looking north, and straight ahead looking east", map.north.right > 2 && map.north.up < 0 && map.east.up > 2 && map.east.right < 0, `looking north: ${map.north.right} px right, ${map.north.up} up · looking east: ${map.east.right} px right, ${map.east.up} up · map ${map.size}`);
+    await shotCheck(page, "stage5-map.png");
+
     // spread: measure A's flip time precisely in a fresh simulation via the hook: put the player on A with D held vs not
     const measureFlip = (pre: boolean) =>
       page.evaluate((withNeighbour) => {

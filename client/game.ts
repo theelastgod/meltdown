@@ -1287,6 +1287,7 @@ export class Game {
     if (low || this.lowHealthOn) this.audio.lowHealth(low);
     this.lowHealthOn = low;
     if (this.wakeHud) {
+      this.hud.setRadarNodes(this.wakeHud.nodes);
       this.hud.wake({ ...this.wakeHud, kernelIn: this.wakeHud.phase === "wake" ? kernelIn(this.wakeHud.timeLeft, this.kernelMark, WAKE.kernelPulseSeconds) : null }, p.team);
       // and the one under your feet (Stage 85): the strip says who holds all eight, this says what
       // is happening to the one you are standing on. The rate is measured from the hold the server
