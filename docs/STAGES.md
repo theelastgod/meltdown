@@ -1641,6 +1641,42 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 90 — The check waited for a stopwatch and assumed a hit
+
+**Goal.** Run #118 went red on both of Stage 89's new checks. They were right to fail: nothing had
+lit. But nothing had been *shot*, either — ALPHA spent the whole twelve-second window firing at a
+file that had died twice since the engagement ended and respawned at (15.0, 19.7), across the yard
+and out of the only lane in the level where the two of them can see each other. The checks measured
+a feature that was never exercised.
+
+This is the sixth time this session a check has waited for one thing and assumed another, and the
+first time it has cost a red run on work that was correct.
+
+**What changed.**
+
+- **The window waits for a round to land, not for a stopwatch.** It puts BRAVO back in the lane the
+  way the engagement loop does — along the nav mesh, re-pathed whenever it strays — and closes as
+  soon as the shooter's own tally of server-confirmed hits has moved.
+- **The sample is its own check.** "Rounds landed on BRAVO while ALPHA was rendering" passes or
+  fails separately from what the body did, so a run where nothing was fired can no longer read as
+  the feature being broken. Under the reverted feature it now reads: 34 of 49 rounds landed, and
+  only the two body checks go red.
+- **The count comes from the shooter, not the room.** Under a 3× CPU throttle the room's per-client
+  record went missing from a single `/stats` reply and the delta came back **−29** while the body
+  was lighting perfectly. The client's own `myHits` only ever goes up.
+- **Only ALPHA renders during the window.** Both pages drawing SwiftShader for half a minute on a
+  throttled box dropped BRAVO's socket out of the room in two of five runs at CPU=2 — ALPHA left
+  online, synced, drawing, with `remotes: 0` and nothing to shoot at. BRAVO now stays dark until its
+  own screenshot.
+- **And the failure says which of the two it was.** The check prints what ALPHA could see when the
+  window closed — online, synced, its draw calls, and where it had BRAVO — because this check can
+  only fail through the link or through the driver, and a bare count says neither.
+
+**Proof.** `probe:net` 22/22 (one new), and 22/22 on all three runs at `CPU=3`, closing the window in 3.2–5.7 s
+where it used to burn the full thirty. The Stage 89 mutation re-run against the repaired harness now
+separates cleanly: the sample check passes at 34 of 49 rounds landed while both body checks fail. No
+game code changed in this stage.
+
 ## Stage 89 — Nothing happened when you hit them
 
 **Goal.** A shot that hit a body looked exactly like a shot that hit nothing. The impact spark was

@@ -117,6 +117,26 @@ async function waitJoined(page: Page, timeoutMs = 10000): Promise<number> {
  * hanging: if the shots never arrive, the check fails on the count, which is a true statement about
  * the run rather than a threshold that happened to fall the wrong side of a stopwatch.
  */
+/** the room the main engagement runs in */
+const ROOM = "probe";
+const LANE = { x: 0, z: 8 };
+const NAV = buildNav(levelById("drainage_yard"));
+
+/**
+ * Walk BRAVO back to the lane along the nav mesh and strafe there. `goto` is a straight line, not a
+ * path: from the north spawn at (0, -24) the line to the lane runs into the upper deck, so BRAVO
+ * wedged against it at about (0, -14.5) and stayed there — behind the deck, out of ALPHA's sight,
+ * for the rest of the run. This is the only place in the level the two of them can see each other,
+ * so anything that needs a round to land has to put BRAVO back here first.
+ */
+const laneRoute = (from: { x: number; z: number }, seconds: number): BotStep[] => [
+  ...(findPath(NAV, { x: from.x, y: 0, z: from.z }, { x: LANE.x, y: 0, z: LANE.z }) ?? [{ x: from.x, y: 0, z: from.z }, { x: LANE.x, y: 0, z: LANE.z }])
+    .slice(1)
+    .map((p, i, arr) => ({ kind: "goto" as const, x: p.x, z: p.z, sprint: true, radius: i === arr.length - 1 ? 1.2 : 1.6, timeoutTicks: 400 })),
+  { kind: "look", yaw: 0, ticks: 6 },
+  { kind: "strafe", ticks: 60 * seconds, period: 50 },
+];
+
 async function engagement(browser: Awaited<ReturnType<typeof chromium.launch>>, room: string, seconds: number, wantShots = 24, capSeconds = 40) {
   const a = await openClient(browser, room, "ALPHA", 11);
   const b = await openClient(browser, room, "BRAVO", 23);
@@ -137,17 +157,7 @@ async function engagement(browser: Awaited<ReturnType<typeof chromium.launch>>, 
   // BRAVO's silhouette through whatever was in the way, so shots kept coming and every one came back
   // a blocked miss — the "every miss was blocked" signature that stage kept running into. Holding
   // fire made the stall visible; pathing around the deck is what fixes it.
-  const level = levelById("drainage_yard");
-  const nav = buildNav(level);
-  const LANE = { x: 0, z: 8 };
-  const laneRoute = (from: { x: number; z: number }): BotStep[] => [
-    ...(findPath(nav, { x: from.x, y: 0, z: from.z }, { x: LANE.x, y: 0, z: LANE.z }) ?? [{ x: from.x, y: 0, z: from.z }, { x: LANE.x, y: 0, z: LANE.z }])
-      .slice(1)
-      .map((p, i, arr) => ({ kind: "goto" as const, x: p.x, z: p.z, sprint: true, radius: i === arr.length - 1 ? 1.2 : 1.6, timeoutTicks: 400 })),
-    { kind: "look", yaw: 0, ticks: 6 },
-    { kind: "strafe", ticks: 60 * capSeconds, period: 50 },
-  ];
-  const planB: BotStep[] = laneRoute({ x: 0, z: 24 });
+  const planB: BotStep[] = laneRoute({ x: 0, z: 24 }, capSeconds);
   const planA: BotStep[] = [{ kind: "goto", x: 0, z: 20, sprint: true, radius: 1 }, { kind: "killPlayer", targetId: idB, ticks: 60 * capSeconds }];
   await b.evaluate((p) => window.__game.setBot(p), planB);
   await a.evaluate((p) => window.__game.setBot(p), planA);
@@ -161,7 +171,7 @@ async function engagement(browser: Awaited<ReturnType<typeof chromium.launch>>, 
     // re-path BRAVO from wherever it actually is: a respawn puts it anywhere, and the lane is the
     // only place the two of them can see each other
     const at = await b.evaluate(() => ({ x: window.__game.state().pos.x, z: window.__game.state().pos.z }));
-    if (Math.hypot(at.x - LANE.x, at.z - LANE.z) > 4) await b.evaluate((p) => window.__game.setBot(p), laneRoute(at));
+    if (Math.hypot(at.x - LANE.x, at.z - LANE.z) > 4) await b.evaluate((p) => window.__game.setBot(p), laneRoute(at, capSeconds));
   }
   const engagedMs = Date.now() - t0;
   const netA = await a.evaluate(() => window.__game.net()!);
@@ -198,7 +208,7 @@ async function main(): Promise<void> {
   };
   try {
     // ---------------- engagement with lag compensation ----------------
-    const E = await engagement(browser, "probe", 12);
+    const E = await engagement(browser, ROOM, 12);
     const cA = E.st.clients.find((c: any) => c.id === E.idA);
     const cB = E.st.clients.find((c: any) => c.id === E.idB);
     check("matchmaking: both clients joined in < 5 s", E.joinA < 5000 && E.joinB < 5000, `ALPHA ${E.joinA.toFixed(0)} ms, BRAVO ${E.joinB.toFixed(0)} ms (through ${RTT} ms RTT)`);
@@ -344,9 +354,12 @@ async function main(): Promise<void> {
     } catch {
       /* closed */
     }
+    // ALPHA draws for the Stage 89 read below; BRAVO stays dark until its own screenshot. Both
+    // pages rendering SwiftShader for half a minute on a throttled box is what dropped BRAVO's
+    // socket out of the room in two of five runs at CPU=2 — ALPHA stayed online, synced and
+    // drawing with `remotes: 0` and nothing to shoot at.
     await E.a.evaluate(() => window.__game.setDrawing(true));
-    await E.b.evaluate(() => window.__game.setDrawing(true));
-    await E.a.evaluate((id) => window.__game.setBot([{ kind: "killPlayer", targetId: id, ticks: 600 }]), E.idB);
+    await E.a.evaluate((id) => window.__game.setBot([{ kind: "killPlayer", targetId: id, ticks: 60 * 32 }]), E.idB);
 
     // ---------------- Stage 89: a hit is visible on the body it landed on ----------------
     //
@@ -381,14 +394,38 @@ async function main(): Promise<void> {
     const lit = RIG_EMISSIVE + FLASH_MIN * HIT_GLOW * 0.95;
     const impactT0 = Date.now();
     let im: Impact = { peak: 0, after: 0, samples: 0, peakHurt: 0, best: null };
-    // wait for the thing to happen rather than for a stopwatch: how long a hit takes depends on
-    // where BRAVO respawned and how much of the magazine ALPHA has left
-    while (Date.now() - impactT0 < 12000) {
-      await E.a.waitForTimeout(250);
+    // BRAVO has had no plan since the engagement ended, and by now it has died twice and respawned
+    // wherever the level put it — in run #118 that was (15.0, 19.7), across the yard and out of the
+    // lane, and ALPHA spent the whole window firing at nothing. So this section puts BRAVO back and
+    // keeps it there, exactly as the engagement loop does.
+    // and it waits for a round to land rather than for a stopwatch. The count is ALPHA's own tally
+    // of the hits the server confirmed to it, not the room's per-client record: under a 3x CPU
+    // throttle that record went missing from one `/stats` reply and the delta came back −29 while
+    // the body was lighting perfectly. This counter only ever goes up, and it is checked separately
+    // below, so a run where nothing was ever fired at BRAVO cannot read as the feature being broken.
+    const hitsOf = async (): Promise<{ hits: number; shots: number }> => E.a.evaluate(() => ({ hits: window.__game.net()?.game.myHits ?? 0, shots: window.__game.net()?.game.myShotsConfirmed ?? 0 }));
+    const hits0 = await hitsOf();
+    let landed = 0;
+    let fired = 0;
+    while (Date.now() - impactT0 < 30000) {
+      const at = await E.b.evaluate(() => ({ x: window.__game.state().pos.x, z: window.__game.state().pos.z }));
+      if (Math.hypot(at.x - LANE.x, at.z - LANE.z) > 4) await E.b.evaluate((p) => window.__game.setBot(p), laneRoute(at, 30));
+      await E.a.waitForTimeout(500);
       im = await E.a.evaluate(() => (window as unknown as { __impact: Impact }).__impact);
-      if (im.peak >= lit && im.peakHurt > 0 && im.after > 0) break;
+      const now = await hitsOf();
+      landed = now.hits - hits0.hits;
+      fired = now.shots - hits0.shots;
+      if (landed >= 3 && im.peak >= lit && im.peakHurt > 0 && im.after > 0) break;
     }
     await E.a.evaluate(() => clearInterval((window as unknown as { __impactTimer: number }).__impactTimer));
+    // what ALPHA could see when the window closed, in ALPHA's own terms: this check can only fail
+    // two ways — the link, or the driver — and a bare count says which one it was not
+    const sight = await E.a.evaluate((id) => {
+      const n = window.__game.net();
+      const r = n?.remotes.find((x) => x.id === id);
+      return { online: !!n?.online, synced: !!n?.synced, remotes: n?.remotes.length ?? 0, calls: window.__game.view().calls, sees: r ? { alive: r.alive, x: +r.x.toFixed(1), z: +r.z.toFixed(1) } : null };
+    }, E.idB);
+    check("the drawing client got a sample: rounds landed on BRAVO while ALPHA was rendering", landed >= 3, `${landed} of ${fired} rounds landed, server-confirmed, in ${((Date.now() - impactT0) / 1000).toFixed(1)} s · the body sampled ${im.samples} times · ALPHA ${JSON.stringify(sight)}`);
     // Before this stage a round into a body ended in mid-air: the spark was drawn for world hits
     // only, the body never lit, and the flinch the pose rig has had since Stage 74 had never once
     // been handed to anybody but the local file.
@@ -396,6 +433,8 @@ async function main(): Promise<void> {
     const bearErr = im.best ? Math.abs(wrapAngle(im.best.hurtFrom - Math.atan2(-(im.best.ax - im.best.bx), -(im.best.az - im.best.bz)))) : Math.PI;
     check("and the body bends away from the muzzle, not some other way", im.peakHurt > 0 && bearErr < 0.6, `flinch ${im.peakHurt.toFixed(2)} · it bends from ${(im.best?.hurtFrom ?? 0).toFixed(2)} rad, and ALPHA was ${bearErr.toFixed(2)} rad off that bearing, ${im.best ? Math.hypot(im.best.ax - im.best.bx, im.best.az - im.best.bz).toFixed(1) : "?"} m away`);
 
+    await E.b.evaluate(() => window.__game.setDrawing(true));
+    await E.a.waitForTimeout(1200);
     await shotCheck(E.a, `stage2-alpha.png`, "#hud .ammo");
     await shotCheck(E.b, `stage2-bravo.png`, "#hud .ammo");
     await E.a.close();
