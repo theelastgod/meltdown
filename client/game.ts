@@ -25,6 +25,7 @@ import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { impactRead, landedDamage, WASP_SHOT } from "./hit";
 import { bodyKey, closeLine, closeRead, forgetOldHits, rememberHit, type LandedHit } from "./hud/kill";
 import { threatMarks, type LiveProjectile } from "./hud/threat";
+import { waspLocks, type WaspSeen } from "./vantage";
 import { lookYawPitch } from "./render/feel";
 import { stepCues, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
@@ -871,6 +872,27 @@ export class Game {
     forgetOldHits(this.closeBook, hit.at);
   }
 
+  /** last frame's state by wasp, and the clock at each wasp's last cue (Stage 98) */
+  private waspPrev = new Map<number, number>();
+  private waspCued = new Map<number, number>();
+
+  /**
+   * The wasp that found you (Stage 98): a patrolling wasp turning to chase announced itself with a
+   * point light and nothing else. Runs on the same per-frame list the renderer receives, offline
+   * and online, and says only what the client knows — a wasp gone live near you, not whose.
+   */
+  private waspAlarm(wasps: readonly { id: number; pos: { x: number; y: number; z: number }; alive: boolean; state: number }[]): void {
+    const seen: WaspSeen[] = wasps.filter((x) => x.alive).map((x) => ({ id: x.id, state: x.state, x: x.pos.x, y: x.pos.y, z: x.pos.z }));
+    const at = this.listenPoint();
+    // the cooldown runs on the simulation's clock, not the frame's (Stage 85): a probe that drives
+    // the simulation by hand renders a few frames per section, and on the render clock a cue from
+    // a whole section ago is still "five seconds ago"
+    for (const cue of waspLocks(this.waspPrev, this.waspCued, seen, { x: at.x, y: this.player.pos.y + 1.6, z: at.z, yaw: at.yaw }, this.stats.ticks * SIM_DT)) {
+      this.audio.waspLock(cue);
+      this.hud.push(`◆ WASP LIVE · ${Math.round(cue.distance)} M ${cue.pan > 0.3 ? "RIGHT" : cue.pan < -0.3 ? "LEFT" : Math.abs(cue.bearing) > Math.PI / 2 ? "BEHIND" : "AHEAD"}`, "am");
+    }
+  }
+
   /**
    * Every live charge the client knows about, from whichever source is driving the world: the
    * simulation's own list offline, and the room's entity list online, where a projectile carries its
@@ -928,7 +950,9 @@ export class Game {
     }
     this.renderer.fx.syncProjectiles(w.projectiles.map((p) => ({ id: p.id, kind: p.kind, pos: p.pos, stuck: p.stuck })));
     this.renderer.fx.syncClouds(w.clouds.map((c) => ({ id: c.id, pos: c.pos, radius: c.radius })));
-    this.renderer.fx.syncWasps(w.wasps.map((x) => ({ id: x.id, pos: x.pos, yaw: x.yaw, alive: x.alive, state: x.disabledTimer > 0 ? 2 : x.state === "chase" ? 1 : 0 })));
+    const wasps = w.wasps.map((x) => ({ id: x.id, pos: x.pos, yaw: x.yaw, alive: x.alive, state: x.disabledTimer > 0 ? 2 : x.state === "chase" ? 1 : 0 }));
+    this.renderer.fx.syncWasps(wasps);
+    this.waspAlarm(wasps);
     this.renderer.fx.syncMechs(w.mechs.map((m) => ({ id: m.id, pos: m.pos, yaw: m.yaw, lightYaw: m.face + m.lightYaw, alive: m.alive, locked: m.targetId >= 0 })));
   }
 
@@ -949,7 +973,9 @@ export class Game {
     }
     this.renderer.fx.syncProjectiles(ents.filter((e) => e.kind === ENT_PROJECTILE).map((e) => ({ id: e.id, kind: PROJ_KINDS[e.a] ?? "phage", pos: { x: e.x, y: e.y, z: e.z }, stuck: e.b === 1 })));
     this.renderer.fx.syncClouds(ents.filter((e) => e.kind === ENT_CLOUD).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, radius: e.c / 100 })));
-    this.renderer.fx.syncWasps(ents.filter((e) => e.kind === ENT_WASP).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, yaw: e.c / 1000, alive: e.a === 1, state: e.d })));
+    const wasps = ents.filter((e) => e.kind === ENT_WASP).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, yaw: e.c / 1000, alive: e.a === 1, state: e.d }));
+    this.renderer.fx.syncWasps(wasps);
+    this.waspAlarm(wasps);
     this.renderer.fx.syncMechs(ents.filter((e) => e.kind === ENT_MECH).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, yaw: e.c / 1000, lightYaw: e.d / 1000, alive: e.a === 1, locked: false })));
   }
 

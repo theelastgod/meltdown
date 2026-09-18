@@ -260,6 +260,55 @@ async function main(): Promise<void> {
     const gained = (k: string) => (after[k] ?? 0) - (before[k] ?? 0);
     check("choking the REPO HAMMER is heard racking on and off, and the slug has a voice of its own where the spread keeps the gun's", gained("alt_on") >= 1 && gained("alt_off") >= 1 && gained("shot_repo_hammer_slug") >= 1 && gained("shot_repo_hammer") > gained("shot_repo_hammer_slug"), `alt on ${gained("alt_on")} · off ${gained("alt_off")} · slug voices ${gained("shot_repo_hammer_slug")} of ${gained("shot_repo_hammer")} REPO HAMMER shots`);
 
+    // Stage 98: the wasp that found you. A patrolling wasp that turns to chase has announced itself
+    // with a point light on a drone half a metre long, very often behind you — and nothing else.
+    // Stage a wasp on patrol with a clear line to the file, let the real AI acquire, and listen.
+    const lock = await page.evaluate(async () => {
+      const g = window.__game.game;
+      const p = g.player;
+      p.pos.x = 0; p.pos.y = 1.2; p.pos.z = -4.5;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      window.__game.setBot([{ kind: "look", yaw: 0, pitch: 0, ticks: 10 }, { kind: "hold", ticks: 900 }]);
+      const w = g.world.wasps[0];
+      if (!w) return { staged: false, cues0: 0, cuesLock: 0, cuesLater: 0, ticks: -1, state: "none", line: "" };
+      // the baseline before the wasp is staged: it can acquire on the very next tick, and the first
+      // version of this read the count after two settling ticks and found the cue already in it
+      const cues0 = window.__game.state().audio["waspLock"] ?? 0;
+      w.alive = true;
+      w.disabledTimer = 0;
+      w.state = "patrol";
+      w.targetId = -1;
+      w.lostTimer = 0;
+      w.pos.x = p.pos.x + 5; w.pos.y = 3.2; w.pos.z = p.pos.z - 7;
+      w.vel.x = w.vel.y = w.vel.z = 0;
+      // let the client SEE the wasp on patrol: the alarm is an edge on the state the client observed
+      // last frame, and a state that changes and changes back between two rendered frames is not a
+      // lock anyone could have heard. The first version advanced straight into the chase without a
+      // frame in between and the client saw chase → chase
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      let ticks = 0;
+      // read the state through a widened type: TypeScript narrowed it to "patrol" at the assignment
+      // above and would call this comparison unintentional, when it is the whole point
+      const ws = w as unknown as { state: string };
+      while (ws.state !== "chase" && ticks < 240) {
+        window.__game.advance(1);
+        ticks++;
+      }
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const cuesLock = window.__game.state().audio["waspLock"] ?? 0;
+      // the log is read at the lock: it keeps five lines, and two seconds of dummy re-leases push
+      // anything older off the bottom of it
+      const log = [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "");
+      // and it keeps chasing for a while: one wasp, one cue
+      for (let i = 0; i < 12; i++) {
+        window.__game.advance(10);
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      const cuesLater = window.__game.state().audio["waspLock"] ?? 0;
+      return { staged: true, cues0, cuesLock, cuesLater, ticks, state: ws.state, line: log.find((l) => /WASP LIVE/.test(l)) ?? "" };
+    });
+    check("a wasp that turns to chase is heard going live, once, and the log says so", lock.staged && lock.state === "chase" && lock.cuesLock - lock.cues0 === 1 && lock.cuesLater === lock.cuesLock && /WASP LIVE/.test(lock.line), `${lock.staged ? `acquired after ${lock.ticks} ticks · state ${lock.state}` : "no wasp to stage"} · cues ${lock.cues0} → ${lock.cuesLock} at the lock → ${lock.cuesLater} two seconds on · "${lock.line.trim()}"`);
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
 
     writeFileSync(`${OUT}/stage4.json`, JSON.stringify({ ttk: table, shots, hits, kills, explosions: explosions.length, captures, audio: state.audio, checks }, null, 2));

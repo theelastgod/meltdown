@@ -446,6 +446,15 @@ export class GameAudio {
     this.burst({ dur: 0.35, freq: 1800, q: 0.4, gain: 0.08, type: "highpass" });
   }
 
+  /** a wasp gone live near the file (Stage 98): a rising blip in the wasp's own register, from its side */
+  waspLock(cue: { pan: number; gain: number }): void {
+    this.count("waspLock");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.07, from: 900, to: 1300, gain: 0.14 * cue.gain, type: "square", pan: cue.pan });
+    this.tone({ dur: 0.09, from: 1300, to: 1700, gain: 0.12 * cue.gain, type: "square", pan: cue.pan, delay: 0.08 });
+    this.burst({ dur: 0.06, freq: 2600, q: 1.2, gain: 0.06 * cue.gain, pan: cue.pan, delay: 0.16 });
+  }
+
   dryFire(): void {
     this.count("dry");
     if (!this.ctx) return;

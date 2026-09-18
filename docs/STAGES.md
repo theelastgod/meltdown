@@ -1641,6 +1641,44 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 98 — The wasp that found you
+
+**Goal.** A VANTAGE wasp on patrol sees a file and turns to chase it. Its light goes from amber to
+a hot orange — a point light on a drone half a metre long, very often behind you, in the rain — and
+that is the whole announcement. The first thing most players hear of it is its gun. A mech that
+flags you gets a two-tone and a HUD flag; a wasp that acquires you gets nothing, and it is the one
+that shoots first.
+
+**What changed.**
+
+- **A wasp going live is heard**, from the side it is on: a rising blip in the wasp's own register,
+  louder the closer it is, and `◆ WASP LIVE` in the log.
+- **Once per acquisition.** A wasp loses its target after three seconds and finds it again a moment
+  later, so a wasp that has cued in the last five seconds does not cue again — the room can be loud
+  without becoming a klaxon.
+- **It claims a wasp gone live near you, not on you**: the wire carries each wasp's state and not
+  whose target it has, and the line says exactly what the client knows.
+- `client/vantage.ts` is the edge rule, pure and unit-tested — the edge into chase, a wasp first
+  seen already chasing, the reach, the cooldown, the bearing (the damage wedges' own) — and it
+  reads the same per-frame wasp list the renderer already receives, offline and online.
+
+**Proof.** `probe:arsenal` 23/23, one new, staged on a live wasp: a VANTAGE unit set to patrol nine
+metres off the player's right shoulder turns to chase two ticks after release; the cue count reads 2
+before the acquisition, 3 on the frame after it and 3 two seconds of chasing later; and the log's
+latest line is `» ◆ WASP LIVE · 9 M RIGHT`. `tests/vantage.test.ts` 8. 659 tests, build and
+typecheck clean.
+
+Two mutations, each failing its own guard alone. With `waspLocks` returning nothing the check
+reads `cues 0 → 0 at the lock → 0` and five of the eight unit tests go with it; with the log line
+dropped the cue still lands (`2 → 3 → 3`) and only the line part fails, `""` where the WASP LIVE
+line should be — the same probe stays 22/23 either way and the other 22 do not move.
+
+The first three runs of the check failed with the cue count flat at 2, and each was the harness:
+the baseline read after the acquisition; no drawn frame between staging the patrol and the chase,
+so the client saw chase → chase and no edge; and the cooldown on the render clock, which in a
+hand-driven probe barely moves, so an earlier hunt's cue was still "five seconds ago". The
+cooldown now runs on the sim clock, which is the clock the wasp's own state changes on.
+
 ## Stage 97 — The chrome crossed the play
 
 **Goal.** Two things in a real third-person frame at 960 px wide, both the HUD reaching into the
