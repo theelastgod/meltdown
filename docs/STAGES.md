@@ -1641,6 +1641,27 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 129 — The map said tap to walk
+
+**Goal.** Under the area map, in every frame since the first HUD, on a desktop and on a phone:
+`tap to walk`. Nothing handles a tap or a click on the map; there is no walking to a point. A
+player who tries it gets nothing, and learns that the chrome says things that are not so.
+
+**What changed.**
+- `client/hud/radar.ts` — `mapFooter(acrossMetres)`: what the map is — heading-up, the file's view
+  up the screen, and how many metres it spans.
+- `client/hud/hud.ts` — the footer is written from the same scale the radar is drawn at (the
+  level's bounds plus the margin), so it cannot drift from the picture; `mapAcross` for the probe.
+- `tests/radar.test.ts` — the wording, and that it promises no tap, click or walk.
+- `probe/stage60.ts` — the footer read from the frame names the metres the map spans and carries
+  no such promise.
+
+**Proof.** `npm test` 761 tests (two new); `npm run probe:tps` 48/48 — the footer reads
+`▲ AHEAD · 70 M ACROSS` on a map that spans 70.0 m; `npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** The footer says `tap to walk` again: both radar tests fail and the tps probe
+fails its new check, 47/48 (`footer "tap to walk"`); every other check passes.
+
 ## Stage 128 — The dead file kept its gun
 
 **Goal.** A file is closed: the camera swings onto whatever closed it (Stage 96), the line says

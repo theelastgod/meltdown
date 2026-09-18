@@ -3,7 +3,7 @@
  * what happens to one further out than the map reaches.
  */
 import { describe, expect, it } from "vitest";
-import { nodeColour, NODE_COLOURS, nodeMarks, place, spotMarks, SPOT_COLOURS, type RadarNode } from "../client/hud/radar";
+import { mapFooter, nodeColour, NODE_COLOURS, nodeMarks, place, spotMarks, SPOT_COLOURS, type RadarNode } from "../client/hud/radar";
 
 const W = 108;
 const H = 84;
@@ -118,5 +118,15 @@ describe("where the contract wants you (Stage 92)", () => {
     expect(here.y).toBeCloseTo(H / 2, 6);
     expect(here.distance).toBe(0);
     expect(here.edge).toBe(false);
+  });
+});
+
+describe("the map's footer (Stage 129)", () => {
+  it("says what the map is: heading-up, and how far across, from the scale it is drawn at", () => {
+    expect(mapFooter(86)).toBe("▲ AHEAD · 86 M ACROSS");
+    expect(mapFooter(85.6)).toBe("▲ AHEAD · 86 M ACROSS");
+  });
+  it("promises nothing the map does not do", () => {
+    expect(mapFooter(86).toLowerCase()).not.toMatch(/tap|click|walk/);
   });
 });

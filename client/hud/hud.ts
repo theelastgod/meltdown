@@ -17,7 +17,7 @@ import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
 import { alertTop, flagTop, footRow, frameSeat, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusWidth } from "./layout";
 import type { NodeReadout } from "./node";
-import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot } from "./radar";
+import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter } from "./radar";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
 export class Hud {
@@ -142,7 +142,7 @@ export class Hud {
       <div class="contracts" hidden></div>
       <div class="card" hidden><div class="ct"></div><div class="cl"></div></div>
 
-      <div class="p cy map"><div class="t">AREA MAP</div><canvas width="54" height="42"></canvas><div class="f">tap to walk</div></div>
+      <div class="p cy map"><div class="t">AREA MAP</div><canvas width="54" height="42"></canvas><div class="f"></div></div>
       <div class="side"><div><span class="k">▸</span> ONLINE (1)</div><div class="perf"></div></div>
 
       <div class="log"></div>
@@ -830,6 +830,11 @@ export class Hud {
   }
   private radarSpots: readonly RadarSpot[] = [];
 
+  private mapFoot = "";
+  /** the metres the map spans, for the probe */
+  get mapAcross(): number {
+    return this.bounds * 2 + 6;
+  }
   private drawRadar(p: PlayerState, dummies: readonly Dummy[]): void {
     const g = this.radar;
     const w = g.canvas.width;
@@ -838,7 +843,14 @@ export class Hud {
     g.fillStyle = "rgba(53,242,255,0.08)";
     for (let x = 0; x < w; x += 9) g.fillRect(x, 0, 1, h);
     for (let y = 0; y < h; y += 9) g.fillRect(0, y, w, 1);
-    const scale = w / (this.bounds * 2 + 6);
+    const across = this.bounds * 2 + 6;
+    const scale = w / across;
+    // the footer from the same scale (Stage 129): what the map is, not a tap it never handled
+    const foot = mapFooter(across);
+    if (foot !== this.mapFoot) {
+      this.mapFoot = foot;
+      this.q(".map .f").textContent = foot;
+    }
     const cx = w / 2;
     const cy = h / 2;
     // the nodes first, under everything else: the mode's whole geography, which the map has never

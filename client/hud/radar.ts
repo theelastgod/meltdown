@@ -136,3 +136,12 @@ export function spotMarks(spots: readonly RadarSpot[], at: { x: number; z: numbe
     return { kind: s.kind, x: m.x, y: m.y, edge: m.edge, distance: m.distance };
   });
 }
+
+/**
+ * The map's footer (Stage 129). It had said "tap to walk" since the first HUD, on every platform,
+ * and nothing anywhere handled a tap or a click on the map. What the map is: heading-up — the
+ * file's view is up the screen — and this many metres across, from the same scale it is drawn at.
+ */
+export function mapFooter(acrossMetres: number): string {
+  return `▲ AHEAD · ${Math.round(acrossMetres)} M ACROSS`;
+}
