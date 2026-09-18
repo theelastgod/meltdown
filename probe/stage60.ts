@@ -454,6 +454,17 @@ async function main(): Promise<void> {
       const xr = root.querySelector(".alert")!.getBoundingClientRect();
       const alertBox = { top: xr.top - H.top, bottom: xr.bottom - H.top, left: xr.left - H.left, right: xr.right - H.left };
       const alertOn = root.querySelector(".alert")!.classList.contains("on");
+      // whether the warning was still lit when the alert's seat above was read: on a slow runner
+      // its 0.4 s can be gone by now (runs #151, #154), and then the alert is right to sit under
+      // the node line alone
+      const flagLitAtRead = root.querySelector(".flag")!.classList.contains("on");
+      // and the other state, reached deterministically: wait for the warning to go out, and read
+      // the alert's seat again — under the node line alone
+      for (let i = 0; i < 400 && root.querySelector(".flag")!.classList.contains("on"); i++) await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const flagOutLater = !root.querySelector(".flag")!.classList.contains("on");
+      const zr = root.querySelector(".alert")!.getBoundingClientRect();
+      const alertUnlit = { top: zr.top - H.top, bottom: zr.bottom - H.top };
       const footShown = !(root.querySelector(".nodefoot") as HTMLElement).hidden;
       hud.nodeFoot(null, 1);
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -464,12 +475,15 @@ async function main(): Promise<void> {
       const alertAfter = { top: yr.top - H.top, bottom: yr.bottom - H.top, left: yr.left - H.left, right: yr.right - H.left };
       // the warning lasts 0.4 s of HUD time; on slow headless frames it may have gone by now
       const flagOnAfter = root.querySelector(".flag")!.classList.contains("on");
-      return { foot, flag, flagOn, footShown, flagAfter, footAfter, alertBox, alertOn, alertAfter, flagOnAfter };
+      return { foot, flag, flagOn, footShown, flagAfter, footAfter, alertBox, alertOn, alertAfter, flagOnAfter, flagLitAtRead, flagOutLater, alertUnlit };
     });
     const alertCrossesFoot = flagSeat.alertBox.top < flagSeat.foot.bottom && flagSeat.alertBox.bottom > flagSeat.foot.top && flagSeat.alertBox.left < flagSeat.foot.right && flagSeat.alertBox.right > flagSeat.foot.left;
-    const alertCrossesFlag = flagSeat.alertBox.top < flagSeat.flag.bottom && flagSeat.alertBox.bottom > flagSeat.flag.top && flagSeat.alertBox.left < flagSeat.flag.right && flagSeat.alertBox.right > flagSeat.flag.left;
-    const alertUnderAll = flagSeat.alertBox.top >= Math.max(flagSeat.foot.bottom, flagSeat.flag.bottom) + 4;
-    check("the alert stacks under the node line and the searchlight warning rather than printing through them, and moves up when the line goes", flagSeat.alertOn && !alertCrossesFoot && !alertCrossesFlag && alertUnderAll && (!flagSeat.flagOnAfter || flagSeat.alertAfter.top >= flagSeat.flagAfter.bottom + 4) && flagSeat.alertAfter.top < flagSeat.alertBox.top, `alert ${flagSeat.alertBox.top.toFixed(0)}–${flagSeat.alertBox.bottom.toFixed(0)} px (on ${flagSeat.alertOn}) under line ending ${flagSeat.foot.bottom.toFixed(0)} and warning ending ${flagSeat.flag.bottom.toFixed(0)} · crosses line ${alertCrossesFoot}, warning ${alertCrossesFlag} · line gone: alert at ${flagSeat.alertAfter.top.toFixed(0)}, warning ${flagSeat.flagOnAfter ? `still on, ending ${flagSeat.flagAfter.bottom.toFixed(0)}` : "gone"}`);
+    // the warning's rectangle only counts while it is lit (Stage 127): its box stays where it was
+    // once it has gone out, and the alert is right to move up over it then
+    const alertCrossesFlag = flagSeat.flagLitAtRead && flagSeat.alertBox.top < flagSeat.flag.bottom && flagSeat.alertBox.bottom > flagSeat.flag.top && flagSeat.alertBox.left < flagSeat.flag.right && flagSeat.alertBox.right > flagSeat.flag.left;
+    const alertUnderAll = flagSeat.alertBox.top >= Math.max(flagSeat.foot.bottom, flagSeat.flagLitAtRead ? flagSeat.flag.bottom : 0) + 4;
+    const unlitSeatRight = flagSeat.flagOutLater && flagSeat.alertUnlit.top >= flagSeat.foot.bottom + 4 && flagSeat.alertUnlit.top < flagSeat.flag.bottom;
+    check("the alert stacks under the node line and the searchlight warning rather than printing through them, moves up over the warning once it goes out, and moves up again when the line goes", flagSeat.alertOn && !alertCrossesFoot && !alertCrossesFlag && alertUnderAll && unlitSeatRight && (!flagSeat.flagOnAfter || flagSeat.alertAfter.top >= flagSeat.flagAfter.bottom + 4) && flagSeat.alertAfter.top < flagSeat.alertUnlit.top, `alert ${flagSeat.alertBox.top.toFixed(0)}–${flagSeat.alertBox.bottom.toFixed(0)} px (on ${flagSeat.alertOn}) under line ending ${flagSeat.foot.bottom.toFixed(0)} and warning ending ${flagSeat.flag.bottom.toFixed(0)} (${flagSeat.flagLitAtRead ? "lit" : "already out"}) · crosses line ${alertCrossesFoot}, lit warning ${alertCrossesFlag} · warning out: alert at ${flagSeat.alertUnlit.top.toFixed(0)} (out ${flagSeat.flagOutLater}) · line gone: alert at ${flagSeat.alertAfter.top.toFixed(0)}, warning ${flagSeat.flagOnAfter ? `still on, ending ${flagSeat.flagAfter.bottom.toFixed(0)}` : "gone"}`);
     const flagCrosses = flagSeat.flag.top < flagSeat.foot.bottom && flagSeat.flag.bottom > flagSeat.foot.top && flagSeat.flag.left < flagSeat.foot.right && flagSeat.flag.right > flagSeat.foot.left;
     check("the searchlight warning hangs under the node line with a gap rather than printing over it, and takes its seat back when the line goes", flagSeat.footShown && flagSeat.flagOn && !flagCrosses && flagSeat.flag.top >= flagSeat.foot.bottom + 4 && !flagSeat.footAfter && Math.round(flagSeat.flagAfter.top) === 92, `node line ${flagSeat.foot.top.toFixed(0)}–${flagSeat.foot.bottom.toFixed(0)} px · warning ${flagSeat.flag.top.toFixed(0)}–${flagSeat.flag.bottom.toFixed(0)} px (on ${flagSeat.flagOn}) · crosses ${flagCrosses} · line gone: warning at ${flagSeat.flagAfter.top.toFixed(0)} px`);
     // Stage 107: the mission panel sat on the file's name. Measured, not eyeballed: where the

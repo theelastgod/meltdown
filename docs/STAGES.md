@@ -1641,6 +1641,31 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 127 — The warning had gone out before the alert was read
+
+**Goal.** CI runs #151 and #154, red on Stage 120's check with the geometry right: `alert 120–133
+px under line ending 114 and warning ending 144 · crosses warning true`. The searchlight warning
+is lit for 0.4 s of HUD time. On the runner's frames it had gone out between the check raising it
+and the check reading the alert's seat, so the alert was right to sit under the node line alone —
+and the check measured it against the box of a warning that was no longer there. Runs #152 and
+#153 passed the same check by timing. A check that passes by timing is not a check.
+
+**What changed.**
+- `probe/stage60.ts` — the check reads whether the warning is lit at the instant the alert's seat
+  is read, and counts the warning's box only then; and it then waits for the warning to go out and
+  reads the alert's seat again, so both states are judged on every machine: lit, the alert under
+  the warning; out, the alert up under the node line, above where the warning was.
+
+**Proof.** `npm run probe:tps` 45/45 — with the warning lit the alert sits at 150–163 under it
+(ending 144); once the warning goes out the alert is at 120, under the node line ending 114 and
+above where the warning was; with the line gone it is at 63. Both states are read on this
+machine as they would be on the runner.
+
+**Mutation.** Stage 120's rule with the stack ignored (`seat = ceil(missionBottom)`): the
+hardened check fails, 44/45 — `alert 63–76 px … (lit) · warning out: alert at 63`, above the
+line in both states; every other check passes. The guard is the same one either way the frames
+fall.
+
 ## Stage 126 — The round was over and the guns were not
 
 **Goal.** Stage 121 gave the results phase a card that silences the chrome — the reticle, the
