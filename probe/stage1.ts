@@ -84,6 +84,8 @@ async function main(): Promise<void> {
       { kind: "look", yaw: -1.8, pitch: -0.06, ticks: 24 }, // turn to face the east arena for the proof frame
     ];
     await page.evaluate(() => window.__game.clearEvents());
+    // Stage 130: the tutorial never left. Read the line before the file has done anything
+    const keysBefore = await page.evaluate(() => (document.querySelector("#hud .keys") as HTMLElement).textContent ?? "");
     await page.evaluate((p) => window.__game.setBot(p), plan);
     const CHUNK = 30;
     let ticksRun = 0;
@@ -121,6 +123,11 @@ async function main(): Promise<void> {
     // name the weapon as the rack and the receipt do, with no id's underscore anywhere in the log
     const killLine = await page.evaluate(() => [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "").find((l) => /⟶/.test(l)) ?? "");
     check("the kill line names the weapon, not its id: LEASE-BREAKER, and no underscored id anywhere in the log", /· LEASE-BREAKER · TTK/.test(killLine) && !/[A-Z]_[A-Z]/.test(killLine), `kill line: "${killLine}"`);
+    // Stage 130: after the plan — sprint, slide, slide-jump, mantle, a kill — the line teaches only
+    // what the file has not done; the bot did not reload, so R reload is what is left (or nothing,
+    // if the magazine ran out and it did)
+    const keysAfter = await page.evaluate(() => { const k = document.querySelector("#hud .keys") as HTMLElement; return { text: k.textContent ?? "", hidden: k.hidden }; });
+    check("the tutorial line teaches everything to a file that has done nothing, and after the run only what it has not done", keysBefore === "WASD · HOLD CLICK fire · R reload · SPACE jump · CTRL slide · SHIFT sprint" && !/WASD|HOLD CLICK|SPACE|CTRL|SHIFT/.test(keysAfter.text) && (keysAfter.text === "R reload" || (keysAfter.text === "" && keysAfter.hidden)), `before: "${keysBefore}" · after: "${keysAfter.text}" (hidden ${keysAfter.hidden})`);
     check("bot killed dummy 1 with hitscan", !!kill && state.stats.kills >= 1, kill && kill.type === "kill" ? `victim ${kill.victimId} after ${kill.ttkTicks} ticks` : "no kill event");
     check("TTK inside the 0.6–1.0 s band", !!kill && kill.type === "kill" && kill.ttkSeconds >= 0.6 && kill.ttkSeconds <= 1.0, kill && kill.type === "kill" ? `${kill.ttkSeconds.toFixed(3)} s` : "n/a");
     const shots = events.filter((e) => e.type === "shot");

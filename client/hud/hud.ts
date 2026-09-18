@@ -10,6 +10,8 @@ import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
 import { rackLabel } from "./rack";
 import { motionWord } from "./stance";
+import { keysLine, learn, NOTHING_SEEN, type Seen } from "./keys";
+import { SPRINT_READ } from "./stance";
 import { roundCard, type RoundStats } from "./round";
 import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
@@ -533,6 +535,8 @@ export class Hud {
 
   /** the file is closed and waiting to be re-leased (Stage 128) */
   private dead = false;
+  /** what the tutorial line has seen the file do (Stage 130) */
+  private seen: Seen = NOTHING_SEEN;
 
   private applyQuiet(): void {
     const open = { desk: !this.q(".contracts").hidden, terminal: !this.q(".terminal").hidden, card: !this.q(".card").hidden, ledger: this.ledgerOpen(), dead: this.dead };
@@ -618,6 +622,15 @@ export class Hud {
   }
 
   update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60): void {
+    // the tutorial teaches only what the file has not yet done (Stage 130)
+    const seen = learn(this.seen, { speed, sprintSpeed: SPRINT_READ, shots: p.stats.shots, reloading: p.weapon.reloadTimer > 0, jumps: p.stats.jumps, slides: p.stats.slides });
+    if (seen.moved !== this.seen.moved || seen.fired !== this.seen.fired || seen.reloaded !== this.seen.reloaded || seen.jumped !== this.seen.jumped || seen.slid !== this.seen.slid || seen.sprinted !== this.seen.sprinted) {
+      this.seen = seen;
+      const line = keysLine(seen);
+      const keys = this.q(".keys");
+      keys.textContent = line;
+      keys.hidden = line === "";
+    }
     // a dead file has no gun (Stage 128): the gun's chrome goes with the file and comes back with it
     if (this.dead !== !p.alive) {
       this.dead = !p.alive;

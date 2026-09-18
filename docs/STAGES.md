@@ -1641,6 +1641,31 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 130 — The tutorial never left
+
+**Goal.** At the foot of every desktop frame since the first HUD: `WASD · HOLD CLICK fire · R
+reload · SPACE jump · CTRL slide · SHIFT sprint`. For a file on its first minute it is the right
+line. For a file that has just slide-jumped onto a gantry and closed two files it is a line about
+which key is which, drawn under the kill it just made, and it was never going to go.
+
+**What changed.**
+- `client/hud/keys.ts` — `learn(seen, read)`: what this frame teaches, from the file's own state
+  (speed, shots, a reload in progress, jumps, slides, a sprint), and a lesson once seen stays
+  seen; `keysLine(seen)`: the line for what is still to learn, empty once everything has been done.
+- `client/hud/hud.ts` — the update learns from the file each frame and rewrites the line only when
+  a lesson lands; the line is hidden once it is empty.
+- `tests/keys.test.ts` — the full line, the drops in order, the empty line, the reads, no
+  forgetting.
+- `probe/stage1.ts` — before the bot's plan the line teaches everything; after the plan (sprint,
+  slide, slide-jump, mantle, a kill) only `R reload` is left, or nothing if a reload happened.
+
+**Proof.** `npm test` 762 tests (five new); `npm run probe` 18/18 — before the plan the line
+reads `WASD · HOLD CLICK fire · R reload · SPACE jump · CTRL slide · SHIFT sprint`, after it
+`R reload`; `npm run probe:tps` still 48/48; `npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** The line teaches everything forever: two unit tests fail and the first probe fails
+its new check, 17/18 — the full line after the run; every other check passes.
+
 ## Stage 129 — The map said tap to walk
 
 **Goal.** Under the area map, in every frame since the first HUD, on a desktop and on a phone:
