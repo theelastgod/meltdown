@@ -101,3 +101,25 @@ export function nodeReadout(node: NodeLike, tracked: TrackedNode | undefined, di
   if (rate > MOVING) return { ...base, seconds: (1 - node.hold) / rate, toward: node.owner ? "hold" : "flip" };
   return { ...base, seconds: 0, toward: "still" };
 }
+
+/**
+ * When the KERNEL comes for the weakest hold (Stage 87).
+ *
+ * VANTAGE brakes the wake on a fixed cadence: every `kernelPulseSeconds` of the round it takes half
+ * the hold off whichever node is held most weakly, and re-leases it outright if that empties it. The
+ * game announced this only after it happened. A player who can see it coming can go and stand on the
+ * node that is about to be taken, which is the whole point of a scheduled threat.
+ *
+ * Nothing new is sent for this. The round clock is already on the wire, and the cadence is fixed, so
+ * one mark — the clock reading at the round's start, or at the last pulse the client actually saw —
+ * is enough to place every pulse after it exactly.
+ */
+export function kernelIn(timeLeft: number, markAt: number | null, pulseSeconds: number): number | null {
+  if (markAt === null || pulseSeconds <= 0) return null;
+  // the clock counts down, so the next pulse falls at a *lower* reading than the mark
+  const left = timeLeft - (markAt - pulseSeconds);
+  // a mark that is more than a pulse stale means one went by unseen — say nothing rather than
+  // count down to a moment that has passed
+  if (left < -1.5 || left > pulseSeconds + 1.5) return null;
+  return Math.max(0, left);
+}

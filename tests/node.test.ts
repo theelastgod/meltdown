@@ -3,7 +3,7 @@
  * so the seconds it prints are the simulation's seconds and not a guess about who is standing where.
  */
 import { describe, expect, it } from "vitest";
-import { MOVING, nearestNode, nodeReadout, trackHolds, type NodeLike, type TrackedNode } from "../client/hud/node";
+import { kernelIn, MOVING, nearestNode, nodeReadout, trackHolds, type NodeLike, type TrackedNode } from "../client/hud/node";
 import { WAKE } from "../shared/sim/wake";
 
 const node = (over: Partial<NodeLike> = {}): NodeLike => ({ id: 3, label: "C", pos: { x: 10, z: -4 }, owner: 0, hold: 1, contested: false, puller: 0, ...over });
@@ -123,5 +123,33 @@ describe("which node is yours to worry about", () => {
     expect(nearestNode(nodes, { x: 10, z: 0 }, 8)).toBeNull();
     expect(nearestNode([], { x: 0, z: 0 }, 8)).toBeNull();
     expect(nearestNode(nodes, { x: 2, z: 0 }, 8)!.distance).toBeCloseTo(2, 6);
+  });
+});
+
+describe("when the KERNEL comes", () => {
+  const P = WAKE.kernelPulseSeconds;
+
+  it("counts down from the mark to the next pulse, on a clock that runs backwards", () => {
+    // the round started at 360 s left; a pulse falls every 75 s of round time
+    expect(kernelIn(360, 360, P)).toBe(P);
+    expect(kernelIn(320, 360, P)).toBeCloseTo(35, 6);
+    expect(kernelIn(285, 360, P)).toBeCloseTo(0, 6);
+    // and after that pulse the mark moves with it
+    expect(kernelIn(285, 285, P)).toBe(P);
+    expect(kernelIn(250, 285, P)).toBeCloseTo(40, 6);
+  });
+
+  it("says nothing before it has a mark, and nothing on a mark that is stale", () => {
+    expect(kernelIn(300, null, P)).toBeNull();
+    // the pulse should have fallen five seconds ago and no event arrived: the mark is wrong
+    expect(kernelIn(280, 360, P)).toBeNull();
+    // a mark from a different round, further away than a whole cadence
+    expect(kernelIn(360, 200, P)).toBeNull();
+  });
+
+  it("holds at zero through the moment itself rather than going negative", () => {
+    expect(kernelIn(285.5, 360, P)).toBeCloseTo(0.5, 6);
+    expect(kernelIn(284.5, 360, P)).toBe(0);
+    expect(kernelIn(284.0, 360, P)).toBe(0);
   });
 });

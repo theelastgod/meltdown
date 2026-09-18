@@ -482,13 +482,17 @@ export class Hud {
   private nodeKey = "";
 
   /** Wake strip under the mission title: phase, timer, scores, and a hex per node. */
-  wake(w: { phase: string; timeLeft: number; score: [number, number, number]; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number }[] }, myTeam: number): void {
+  wake(w: { phase: string; timeLeft: number; score: [number, number, number]; kernelIn: number | null; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number }[] }, myTeam: number): void {
     const mm = Math.floor(Math.max(0, w.timeLeft) / 60);
     const ss = Math.floor(Math.max(0, w.timeLeft) % 60);
     const t = `${mm}:${String(ss).padStart(2, "0")}`;
     const title = w.phase === "warmup" ? `◈ WARM-UP — WAKE IN ${t}` : w.phase === "results" ? `◈ ROUND OVER — ${w.score[1] > w.score[2] ? "CELL ONE" : w.score[2] > w.score[1] ? "CELL TWO" : "NO ONE"} WOKE ${this.zone}` : `◈ THE WAKE — ${t}`;
     this.q(".mtitle").textContent = title;
-    this.q(".mscore").innerHTML = `<span style="color:var(--gr)">CELL ONE ${Math.floor(w.score[1])}</span> · <span style="color:var(--cy)">CELL TWO ${Math.floor(w.score[2])}</span>${myTeam ? ` · YOU: ${myTeam === 1 ? "ONE" : "TWO"}` : ""}`;
+    // and when VANTAGE next brakes the wake (Stage 87): it takes half the hold off the weakest node
+    // on a fixed cadence, and until now the game only said so afterwards
+    const k = w.kernelIn;
+    const kernel = k === null ? "" : ` · <span style="color:${k <= 10 ? "var(--am)" : "var(--violet, #8f4dff)"}">KERNEL ${Math.floor(k / 60)}:${String(Math.floor(k % 60)).padStart(2, "0")}${k <= 10 ? " ▲" : ""}</span>`;
+    this.q(".mscore").innerHTML = `<span style="color:var(--gr)">CELL ONE ${Math.floor(w.score[1])}</span> · <span style="color:var(--cy)">CELL TWO ${Math.floor(w.score[2])}</span>${myTeam ? ` · YOU: ${myTeam === 1 ? "ONE" : "TWO"}` : ""}${kernel}`;
     const key = w.nodes.map((n) => `${n.owner}${n.contested ? "c" : ""}${n.puller}${Math.round(n.hold * 10)}`).join("");
     if (key !== this.nodeKey) {
       this.nodeKey = key;

@@ -184,6 +184,25 @@ async function main(): Promise<void> {
       return { pulses: w.pulses - before, ev: ev.length, holds: w.nodes.map((n) => `${n.label}:${n.owner}/${n.hold.toFixed(2)}`) };
     });
     check("offline: the KERNEL pulses on schedule and drains the weakest hold", pulse.pulses >= 1 && pulse.ev >= 1, `${pulse.pulses} pulse(s); ${pulse.holds.join(" ")}`);
+    // and the strip says when the next one is coming (Stage 87). The cadence is fixed and the round
+    // clock is on the wire, so one mark — the pulse that just went by — places the next exactly.
+    const kernel = await page.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(r));
+      const strip = (document.querySelector("#hud .mscore") as HTMLElement | null)?.textContent ?? "";
+      const m = /KERNEL (\d+):(\d\d)/.exec(strip);
+      const said = m ? Number(m[1]) * 60 + Number(m[2]) : -1;
+      const w = window.__game.game.world.wake!;
+      const before = w.pulses;
+      let ticks = 0;
+      while (ticks < 60 * 95 && w.pulses === before) {
+        window.__game.advance(1);
+        ticks++;
+        if (ticks % 30 === 0) await new Promise((r) => requestAnimationFrame(r));
+      }
+      return { said, strip, actual: ticks / 60, fired: w.pulses - before };
+    });
+    const kErr = kernel.said >= 0 ? Math.abs(kernel.said - kernel.actual) : 99;
+    check("the strip counts down to the next KERNEL pulse, and the pulse lands when it says", kernel.fired === 1 && kernel.said > 5 && kErr < 1.5, `it said ${kernel.said}s, the pulse came ${kernel.actual.toFixed(1)}s later (${kErr.toFixed(2)}s out) · "${kernel.strip.trim()}"`);
     check("offline: no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     await page.close();
 

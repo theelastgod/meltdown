@@ -1641,6 +1641,32 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 87 — The KERNEL is coming
+
+**Goal.** VANTAGE brakes the wake on a fixed cadence: every seventy-five seconds of the round it
+takes half the hold off whichever node is held most weakly, and re-leases it outright if that empties
+it. The game announced this *after* it happened — a banner, a sting, a node already gone. A scheduled
+threat you cannot see coming is not a threat, it is weather.
+
+**What changed.**
+
+- **The strip counts down to it**, beside the score: `KERNEL 0:47`, in VANTAGE's violet, turning
+  amber with a mark under ten seconds. A player can now be standing on the weak node when it lands.
+- **Nothing new goes on the wire.** The cadence is fixed and the round clock is already sent, so one
+  mark — the clock reading at the round's start, or at the last pulse the client actually saw — places
+  every pulse after it exactly. `kernelIn` in `client/hud/node.ts` is that arithmetic, on a clock that
+  runs backwards.
+- **A stale mark says nothing rather than lying.** If a pulse goes by unseen (a dropped event, a
+  join mid-round), the countdown would be counting to a moment that has passed, so it hides until the
+  next pulse re-marks it.
+
+**Proof.** `probe:wake` 17/17 — one new: after a pulse lands, the strip reads `KERNEL 0:47`, and the
+next pulse comes **47.2 s later** — 0.18 s out, which is the second the readout truncates.
+`tests/node.test.ts` 13 (three new on the countdown, including the stale mark and the moment itself).
+`probe:net` 19/19, `probe:campaign` 31/31, `probe:run` 18/18, `probe:mobile` 14/14, `smoke` 7/7, 588
+tests, build and typecheck clean. Two guards mutation-checked: the pulse leaving no mark (no countdown
+at all) and the cadence set wrong (17 s against 47.2 s).
+
 ## Stage 86 — Sixty hertz of the time it was given
 
 **Goal.** Run #114 went red on the oldest check in the repository: *fixed-timestep sim runs at 60 Hz

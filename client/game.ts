@@ -24,7 +24,7 @@ import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { stepCues, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
-import { nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
+import { kernelIn, nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
 import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
@@ -547,11 +547,13 @@ export class Game {
             this.audio.contest();
             break;
           case FX.kernelPulse:
+            this.kernelMark = this.netMatch?.timeLeft ?? null;
             this.hud.alert(`◆ KERNEL PULSE — NODE ${["", "A", "B", "C", "D", "E"][ev.a] ?? ev.a} ${ev.b ? "RE-LEASED" : "DRAINED"}`, true, 2.5);
             this.audio.kernelPulse();
             this.renderer.post.kick(0.8);
             break;
           case FX.phase:
+            this.kernelMark = ev.a === 1 ? (this.netMatch?.timeLeft ?? null) : null;
             this.hud.alert(ev.a === 1 ? "◆ THE WAKE BEGINS" : ev.a === 2 ? `◆ ROUND OVER — ${ev.b ? `CELL ${ev.b === 1 ? "ONE" : "TWO"} WOKE THE YARD` : "NO ONE WOKE"}` : "◆ WARM-UP", false, 4);
             this.renderer.post.kick(1);
             break;
@@ -727,6 +729,11 @@ export class Game {
   private chargeTick = 0;
 
   /** Latest wake state for the HUD (offline: the world's; online: the snapshot's). */
+  /**
+   * The round clock when the KERNEL last pulsed, or when this round's wake began (Stage 87). The
+   * cadence is fixed, so one mark places every pulse after it — and nothing new goes on the wire.
+   */
+  private kernelMark: number | null = null;
   /** what each node's hold was doing last frame, for the readout's clock (Stage 85) */
   private nodeBook = new Map<number, TrackedNode>();
   private nodeBookTick = 0;
@@ -1089,6 +1096,7 @@ export class Game {
         break;
       }
       case "kernelPulse": {
+        this.kernelMark = this.world.wake?.timeLeft ?? null;
         const n = this.world.wake?.nodes.find((x) => x.id === ev.node);
         this.hud.alert(`◆ KERNEL PULSE — NODE ${n?.label ?? ev.node} ${ev.released ? "RE-LEASED" : "DRAINED"}`, true, 2.5);
         this.audio.kernelPulse();
@@ -1096,6 +1104,8 @@ export class Game {
         break;
       }
       case "phase":
+        // the cadence runs from the round's start, so that is a mark too (Stage 87)
+        this.kernelMark = ev.phase === "wake" ? (this.world.wake?.timeLeft ?? null) : null;
         this.hud.alert(ev.phase === "wake" ? "◆ THE WAKE BEGINS — PULL THE NODES OFF THE MODEL" : ev.phase === "results" ? `◆ ROUND OVER — ${ev.winner ? `CELL ${ev.winner === 1 ? "ONE" : "TWO"} WOKE THE YARD` : "NO ONE WOKE"}` : "◆ WARM-UP", false, 4);
         this.audio.kernelPulse();
         this.renderer.post.kick(1);
@@ -1277,7 +1287,7 @@ export class Game {
     if (low || this.lowHealthOn) this.audio.lowHealth(low);
     this.lowHealthOn = low;
     if (this.wakeHud) {
-      this.hud.wake(this.wakeHud, p.team);
+      this.hud.wake({ ...this.wakeHud, kernelIn: this.wakeHud.phase === "wake" ? kernelIn(this.wakeHud.timeLeft, this.kernelMark, WAKE.kernelPulseSeconds) : null }, p.team);
       // and the one under your feet (Stage 85): the strip says who holds all eight, this says what
       // is happening to the one you are standing on. The rate is measured from the hold the server
       // is publishing, so the seconds are the simulation's own.
