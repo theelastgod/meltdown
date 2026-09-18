@@ -8,6 +8,7 @@ import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
+import { rackLabel } from "./rack";
 import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
@@ -609,7 +610,7 @@ export class Hud {
     this.q(".wname").textContent = def.name + (p.weapon.altActive ? (def.alt.kind === "slug" ? " · CHOKED" : def.alt.kind === "ads" ? " · OPTIC" : " · BRACED") : "") + (p.weapon.charging ? ` · CHARGE ${Math.round(p.weapon.charge * 100)}%` : "");
     if (this.rackKey !== p.weapon.slot + ":" + p.weapon.ammo.join(",")) {
       this.rackKey = p.weapon.slot + ":" + p.weapon.ammo.join(",");
-      this.q(".rack").innerHTML = WEAPON_LIST.map((w) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${w.name.split(" ")[0]}<i>${w.magSize ? p.weapon.ammo[w.slot] : "∞"}</i></span>`).join("");
+      this.q(".rack").innerHTML = WEAPON_LIST.map((w) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}<i>${w.magSize ? p.weapon.ammo[w.slot] : "∞"}</i></span>`).join("");
     }
     const nk = p.weapon.grenadeSel + ":" + p.weapon.grenades.join(",");
     if (this.nadeKey !== nk) {

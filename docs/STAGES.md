@@ -1641,6 +1641,24 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 109 — The rack called the DIRECTIVE "THE"
+
+**Goal.** Two real frames read after Stage 108, and both carried `7 THE 12` on the weapon rack.
+The rack labels each slot with the first word of the weapon's name, which names seven of the
+eight — LEASE-BREAKER, REPO, STACK, LONGWAVE, PHAGE, SHOCK, CLOCKEATER — and for THE DIRECTIVE,
+in every frame since the campaign weapons arrived in Stage 10, gave the article and kept the
+name. A label is the word that names the thing.
+
+**What changed.** `client/hud/rack.ts`: the rack's one-word label is the first word that is not
+an article, pure and unit-tested against the whole manifest; the rack uses it.
+
+**Proof.** `probe:tps` 39/39, one new, read from the rack's own text: `1 LEASE-BREAKER | 2 REPO |
+3 STACK | 4 LONGWAVE | 5 PHAGE | 6 SHOCK∞ | 7 DIRECTIVE | 8 CLOCKEATER`, no slot labelled by an
+article. `tests/rack.test.ts` 4. 715 tests, build and typecheck clean.
+
+One mutation for the one rule: with the first word taken whatever it is, the rack reads `7 THE`
+again and only that check fails, 38/39, with two of the four unit tests going with it.
+
 ## Stage 108 — The reticle did not know the cone
 
 **Goal.** The REPO HAMMER throws eight pellets in a cone 0.055 rad wide; choked, one slug in
