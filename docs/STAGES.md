@@ -1641,6 +1641,30 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 111 — The band was too narrow for three
+
+**Goal.** BRAVO's frame from the run probe, 640 px wide, read after Stage 110: the status panel
+at its 180 px floor ends at 214, the map takes the last 138, and the mission panel's narrowest
+useful width is 240 — 214 + 240 + 138 and the gaps is more than 640, and the panel ran over the
+file's header a third time. Stage 107 let the status give way, Stage 110 gave the panel a ceiling;
+neither can make three things fit where two do.
+
+**What changed.** Where the band cannot hold the panel beside the status panel at its minimum,
+the panel takes a second row: under the status panel, gap kept, centred, bounded by the map alone.
+The status panel then keeps its full width, and the alert (Stage 97) follows the panel down as it
+always has. `missionRow` joins `client/hud/layout.ts`, pure and unit-tested; the layout pass
+decides the row before it measures anything.
+
+**Proof.** `probe:run` 21/21, one new, measured at 640 px on the carry frame: the status panel
+keeps its full width, 14–364, and ends 76 px down; the mission panel spans 160–480 from 84 px down
+— the second row, gap kept — and the map begins at 500. The 960 and 800 bands read exactly as
+Stage 110 left them. `tests/layout.test.ts` 14. 721 tests, build and typecheck clean.
+
+One mutation for the one rule, with the panel never taking the second row: at 640 it stays in
+the band at 200–440 from 14 px down, the status panel squeezed to its floor at 214 and run over
+by fourteen pixels; the check fails on that alone, 20/21, with the one layout test that asks for
+the second row. The 960 and 800 checks read as before.
+
 ## Stage 110 — The run strip pushed the panel onto the name
 
 **Goal.** THE RUN's own frame at 960 px, read after Stage 109: the mission panel carries the run

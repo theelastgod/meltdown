@@ -13,7 +13,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, missionMaxWidth, rightBandWidth, STATUS_MIN, statusWidth } from "./layout";
+import { alertTop, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusWidth } from "./layout";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot } from "./radar";
 
@@ -470,12 +470,19 @@ export class Hud {
     const mission = this.q(".mission");
     // the mission panel has a ceiling (Stage 110): centred, it may grow until it would meet the
     // status panel at its floor on the left or the map on the right; past that its lines wrap
+    let below = false;
     if (w > 0) {
       const status0 = this.q(".status");
       const frame0 = status0.offsetWidth - status0.clientWidth + (status0.clientWidth - (parseFloat(getComputedStyle(status0).width) || status0.clientWidth));
       const map = this.q(".map").getBoundingClientRect();
-      const cap = `${missionMaxWidth(w, status0.offsetLeft + STATUS_MIN + frame0, map.left - rootBox.left)}px`;
+      // and where the band cannot hold it beside the status panel at all (Stage 111), the panel
+      // takes a second row under the status panel, bounded by the map alone
+      const row = missionRow(w, status0.offsetLeft + STATUS_MIN + frame0, map.left - rootBox.left, status0.offsetLeft);
+      below = row.row === "below";
+      const cap = `${row.maxWidth}px`;
       if (mission.style.maxWidth !== cap) mission.style.maxWidth = cap;
+      const top = below ? `${Math.ceil(status0.getBoundingClientRect().bottom - rootTop) + STATUS_GAP}px` : "";
+      if (mission.style.top !== top) mission.style.top = top;
     }
     const panel = mission.getBoundingClientRect();
     this.q(".alert").style.top = `${alertTop(panel.bottom - rootTop)}px`;
@@ -483,7 +490,7 @@ export class Hud {
     // follows the panel's measured left edge; a hidden panel is nothing to keep clear of
     const status = this.q(".status");
     const frame = status.offsetWidth - status.clientWidth + (status.clientWidth - (parseFloat(getComputedStyle(status).width) || status.clientWidth));
-    const inPlay = mission.offsetParent !== null && panel.width > 0;
+    const inPlay = mission.offsetParent !== null && panel.width > 0 && !below;
     const want = statusWidth(inPlay ? panel.left - rootBox.left : null, status.offsetLeft, frame);
     const px = `${want}px`;
     if (status.style.width !== px) status.style.width = px;

@@ -71,3 +71,18 @@ export function missionMaxWidth(viewWidth: number, statusFloorRight: number, map
   const half = Math.min(viewWidth / 2 - statusFloorRight - STATUS_GAP, mapLeft - STATUS_GAP - viewWidth / 2);
   return Math.max(0, Math.floor(half * 2));
 }
+
+/** the mission panel's narrowest useful width (px), the stylesheet's own min-width */
+export const MISSION_MIN = 240;
+
+/**
+ * Where the mission panel goes (Stage 111): beside the status panel in the top band when the band
+ * can hold it at its narrowest useful width, otherwise on a second row under the status panel,
+ * where only the map bounds it. At 640 px the band is 214 of status floor, 240 of panel and 138 of
+ * map with gaps — more than the width — and the panel ran over the header a third time.
+ */
+export function missionRow(viewWidth: number, statusFloorRight: number, mapLeft: number, inset: number): { row: "beside" | "below"; maxWidth: number } {
+  const beside = missionMaxWidth(viewWidth, statusFloorRight, mapLeft);
+  if (beside >= MISSION_MIN) return { row: "beside", maxWidth: beside };
+  return { row: "below", maxWidth: missionMaxWidth(viewWidth, inset, mapLeft) };
+}

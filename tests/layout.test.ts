@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, RIGHT_BAND, rightBandWidth, missionMaxWidth, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth } from "../client/hud/layout";
+import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -72,5 +72,20 @@ describe("missionMaxWidth (Stage 110)", () => {
   });
   it("never negative", () => {
     expect(missionMaxWidth(300, 214, 200)).toBe(0);
+  });
+});
+
+describe("missionRow (Stage 111)", () => {
+  it("stays beside the status panel where the band can hold it", () => {
+    expect(missionRow(960, 214, 820, 14)).toEqual({ row: "beside", maxWidth: missionMaxWidth(960, 214, 820) });
+    expect(missionRow(800, 214, 660, 14).row).toBe("beside");
+  });
+  it("drops to the second row where it cannot, bounded by the map alone", () => {
+    // at 640: the map begins at 502; beside, the panel could be 196 wide, under its 240 minimum
+    expect(missionMaxWidth(640, 214, 502)).toBeLessThan(MISSION_MIN);
+    const r = missionRow(640, 214, 502, 14);
+    expect(r.row).toBe("below");
+    expect(r.maxWidth).toBe(missionMaxWidth(640, 14, 502));
+    expect(r.maxWidth).toBeGreaterThanOrEqual(MISSION_MIN);
   });
 });
