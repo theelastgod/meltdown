@@ -3,7 +3,7 @@
  * end at nothing, and be worth seeing in between, or it reads as a glitch rather than as weight.
  */
 import { describe, expect, it } from "vitest";
-import { landDip, landHardness, LAND_CEIL, LAND_DIP, LAND_FLOOR, LAND_TIME, SLIDE_ROLL, stanceRoll } from "../client/render/feel";
+import { landDip, landHardness, LAND_CEIL, LAND_DIP, LAND_FLOOR, LAND_TIME, lookYawPitch, SLIDE_ROLL, stanceRoll } from "../client/render/feel";
 
 describe("how hard a landing was", () => {
   it("is nothing for a step off a kerb and everything for a drop", () => {
@@ -57,5 +57,28 @@ describe("the roll of a slide", () => {
   it("leans in a slide and nowhere else", () => {
     expect(stanceRoll("slide")).toBeCloseTo(SLIDE_ROLL, 6);
     for (const s of ["stand", "crouch", "mantle", "air", ""]) expect(stanceRoll(s)).toBe(0);
+  });
+});
+
+describe("the look that finds what closed the file", () => {
+  const at = { x: 4, y: 1.6, z: -2 };
+
+  it("points along the simulation's own convention: -z is yaw zero and +x is the right hand", () => {
+    expect(lookYawPitch(at, { x: at.x, y: at.y, z: at.z - 10 }).yaw).toBeCloseTo(0, 6);
+    expect(lookYawPitch(at, { x: at.x + 10, y: at.y, z: at.z }).yaw).toBeCloseTo(-Math.PI / 2, 6);
+    expect(lookYawPitch(at, { x: at.x - 10, y: at.y, z: at.z }).yaw).toBeCloseTo(Math.PI / 2, 6);
+    expect(Math.abs(lookYawPitch(at, { x: at.x, y: at.y, z: at.z + 10 }).yaw)).toBeCloseTo(Math.PI, 6);
+  });
+
+  it("tilts up for something above and down for something below, and is level across flat ground", () => {
+    expect(lookYawPitch(at, { x: at.x, y: at.y + 10, z: at.z - 10 }).pitch).toBeGreaterThan(0.7);
+    expect(lookYawPitch(at, { x: at.x, y: at.y - 10, z: at.z - 10 }).pitch).toBeLessThan(-0.7);
+    expect(lookYawPitch(at, { x: at.x, y: at.y, z: at.z - 10 }).pitch).toBeCloseTo(0, 6);
+    // straight up is straight up, not a division by nothing
+    expect(lookYawPitch(at, { x: at.x, y: at.y + 5, z: at.z }).pitch).toBeGreaterThan(1.5);
+  });
+
+  it("a killer standing exactly where you fell is not a direction: the look you had is kept", () => {
+    expect(lookYawPitch(at, at, 1.25, -0.3)).toEqual({ yaw: 1.25, pitch: -0.3 });
   });
 });

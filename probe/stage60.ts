@@ -334,6 +334,68 @@ async function main(): Promise<void> {
     results["aim"] = { ...aim, dummy, off, shot: shotRes };
     await shotCheck(pg, "stage60-reticle.png");
 
+    // ---------------- the file that closed you ----------------
+    // Dying used to be one line that named nobody: the camera went on looking wherever the hand had
+    // left it, and who did it was a question for the kill feed (Stage 83).
+    const closed = await pg.evaluate(async () => {
+      const g = window.__game.game;
+      const p = g.player;
+      // another file closes this one, which is the case the camera is for. A dummy would do as a
+      // source of damage but not as a name: the attacker id on a hurt is the same number space for
+      // both, so a dummy that happened to share the local file's id would read as a self-inflicted
+      // death — which, for the cast that never shoots back, is a distinction without a difference.
+      const killerId = 91;
+      const k = g.world.players.get(killerId) ?? g.world.addPlayer(killerId, "VANTAGE-04");
+      k.pos.x = p.pos.x;
+      k.pos.z = p.pos.z - 12;
+      k.alive = true;
+      const d = { id: killerId, pos: k.pos };
+      p.pos.x = d.pos.x;
+      p.pos.z = d.pos.z + 12;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      window.__game.setBot([{ kind: "look", yaw: Math.PI, pitch: 0, ticks: 10 }, { kind: "hold", ticks: 6000 }]);
+      window.__game.advance(40);
+      await new Promise((r) => requestAnimationFrame(r));
+      const before = window.__game.view().look.yaw;
+      const killer = { x: d.pos.x, z: d.pos.z };
+      g.world.applyDamage("player", p.id, 500, d.id, "lease_breaker", "shot");
+      window.__game.advance(1);
+      // the swing is on the render clock: wait for it to settle rather than counting frames
+      let look = before;
+      let last = before;
+      for (let i = 0; i < 300; i++) {
+        await new Promise((r) => requestAnimationFrame(r));
+        look = window.__game.view().look.yaw;
+        if (i > 4 && Math.abs(look - last) < 1e-4) break;
+        last = look;
+      }
+      const me = window.__game.state().pos;
+      const want = Math.atan2(-(killer.x - me.x), -(killer.z - me.z));
+      const alertText = (document.querySelector("#hud .alert") as HTMLElement | null)?.textContent ?? "";
+      return { before, look, want, alive: g.player.alive, closedBy: window.__game.state().closedBy, alertText, dummy: d.id };
+    });
+    const swung = Math.abs(Math.atan2(Math.sin(closed.look - closed.want), Math.cos(closed.look - closed.want)));
+    const wasOff = Math.abs(Math.atan2(Math.sin(closed.before - closed.want), Math.cos(closed.before - closed.want)));
+    check("the camera turns onto whatever closed the file, and the line says which file it was", !closed.alive && closed.closedBy.known && wasOff > 2.5 && swung < 0.08 && /FILE CLOSED BY VANTAGE-04/.test(closed.alertText), `looking ${wasOff.toFixed(2)} rad away when it landed, ${swung.toFixed(3)} rad off the killer when the swing settled · "${closed.alertText.trim()}"`);
+    await shotCheck(pg, "stage60-closed.png");
+    // and coming back alive gives the camera back
+    const relet = await pg.evaluate(async () => {
+      const g = window.__game.game;
+      for (let i = 0; i < 400; i++) {
+        window.__game.advance(6);
+        await new Promise((r) => requestAnimationFrame(r));
+        if (g.player.alive) break;
+      }
+      window.__game.setBot([{ kind: "look", yaw: 0.9, pitch: 0, ticks: 20 }, { kind: "hold", ticks: 6000 }]);
+      for (let i = 0; i < 200; i++) {
+        window.__game.advance(2);
+        await new Promise((r) => requestAnimationFrame(r));
+        if (Math.abs(window.__game.view().look.yaw - 0.9) < 0.02) break;
+      }
+      return { alive: g.player.alive, look: window.__game.view().look.yaw, yaw: window.__game.state().yaw };
+    });
+    check("and a file back on the ledger has its camera back", relet.alive && Math.abs(relet.look - relet.yaw) < 0.02, `alive ${relet.alive} · the camera is at ${relet.look.toFixed(2)} and the aim at ${relet.yaw.toFixed(2)}`);
+
     // ---------------- the camera takes the landing ----------------
     // The legs have compressed on landing since Stage 63 and the camera took none of it: a drop off
     // the gantry ended with the view perfectly level, which reads as the ground arriving rather

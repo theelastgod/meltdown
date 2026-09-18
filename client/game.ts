@@ -573,10 +573,7 @@ export class Game {
         } else this.hud.push(`FILE #${ev.playerId} ⟶ ${["DUMMY", "FILE", "WASP", "MECH"][ev.victimKind] ?? "?"}-${String(ev.victimId).padStart(2, "0")}`, "k");
         break;
       case "death":
-        if (ev.playerId === me) {
-          this.hud.alert("◆ FILE CLOSED — RE-LEASING IN 3s", true, 3);
-          this.renderer.post.kick(1);
-        }
+        if (ev.playerId === me) this.fileClosed(ev.killerId);
         break;
       case "join":
         this.hud.push(`FILE #${ev.playerId} (${ev.name}) ENTERED THE YARD`, "cy");
@@ -768,6 +765,46 @@ export class Game {
 
   /** the hits taken lately, for the HUD's bearings (Stage 74) */
   private hits: HitSource[] = [];
+
+  /**
+   * The file closed (Stage 83). Until now this was one line that named nobody — you died, the
+   * camera went on looking wherever your hand had left it, and who did it was a question for the
+   * kill feed. The camera turns onto whatever closed the file and the line says who it was.
+   */
+  private fileClosed(killerId: number): void {
+    const who = this.closedBy(killerId);
+    const d = who.at ? Math.hypot(who.at.x - this.player.pos.x, who.at.z - this.player.pos.z) : 0;
+    this.hud.alert(who.name ? `◆ FILE CLOSED BY ${who.name}${who.at ? ` · ${d.toFixed(0)} m` : ""} — RE-LEASING IN 3s` : "◆ FILE CLOSED — RE-LEASING IN 3s", true, 3);
+    this.renderer.post.kick(1);
+    this.renderer.die(who.at);
+    this.closedByLast.name = who.name;
+    this.closedByLast.x = who.at?.x ?? 0;
+    this.closedByLast.z = who.at?.z ?? 0;
+    this.closedByLast.known = !!who.at;
+  }
+  /** what closed the file last, for the check that the camera found it */
+  readonly closedByLast = { name: "", x: 0, z: 0, known: false };
+
+  /** who closed it: a name to print, and a place to look, if either can be known from here */
+  private closedBy(id: number): { name: string; at: { x: number; y: number; z: number } | null } {
+    if (!id || id === this.player.id) return { name: "", at: null };
+    if (this.net) {
+      const r = this.net.remoteViews().find((x) => x.id === id);
+      if (r) return { name: r.name || `FILE #${id}`, at: { x: r.x, y: r.y + r.height * 0.6, z: r.z } };
+      // the wire folds the PvE cast into ids above two hundred, which names them without placing them
+      return { name: id >= 200 ? "VANTAGE" : `FILE #${id}`, at: null };
+    }
+    const w = this.world;
+    const p = w.players.get(id);
+    if (p) return { name: p.name || `FILE #${id}`, at: { x: p.pos.x, y: p.pos.y + p.height * 0.6, z: p.pos.z } };
+    const d = w.dummies.find((x) => x.id === id);
+    if (d) return { name: `DUMMY-${String(d.id).padStart(2, "0")}`, at: { x: d.pos.x, y: d.pos.y + 1, z: d.pos.z } };
+    const wasp = w.wasps.find((x) => x.id === -id || x.id === id);
+    if (wasp) return { name: "WASP", at: { x: wasp.pos.x, y: wasp.pos.y, z: wasp.pos.z } };
+    const m = w.mechs.find((x) => x.id === -id || x.id === id);
+    if (m) return { name: "MECH", at: { x: m.pos.x, y: m.pos.y + 2, z: m.pos.z } };
+    return { name: "", at: null };
+  }
 
   /** where whatever hurt us was standing: a player, a dummy, a wasp, a mech */
   private attackerAt(by: number): { x: number; z: number } | null {
@@ -1108,9 +1145,11 @@ export class Game {
         this.hud.push(`DUMMY-${String(ev.dummyId).padStart(2, "0")} RE-LEASED`, "am");
         this.hud.alert(`◆ VANTAGE RE-LEASE — DUMMY-${String(ev.dummyId).padStart(2, "0")} back on the ledger`, true);
         break;
+      case "death":
+        if (ev.playerId === this.player.id) this.fileClosed(ev.killerId);
+        break;
       case "mantleEnd":
       case "slideEnd":
-      case "death":
       case "respawn":
         break;
       default:

@@ -49,3 +49,20 @@ export function landDip(hardness: number, t: number, time = LAND_TIME): number {
 export function stanceRoll(stance: string): number {
   return stance === "slide" ? SLIDE_ROLL : 0;
 }
+
+/** how fast the death camera swings onto whatever closed the file (per second, as an ease rate) */
+export const DEATH_TURN = 2.6;
+
+/**
+ * The yaw and pitch that look from one point at another, in the simulation's own convention: yaw 0
+ * looks toward -z and the right hand is +x, which is what `viewDir` and `yawRight` use. Two points
+ * in the same place are not a direction, so that answer is the look you already had.
+ */
+export function lookYawPitch(from: { x: number; y: number; z: number }, to: { x: number; y: number; z: number }, fallbackYaw = 0, fallbackPitch = 0): { yaw: number; pitch: number } {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const dz = to.z - from.z;
+  const flat = Math.hypot(dx, dz);
+  if (flat < 1e-6 && Math.abs(dy) < 1e-6) return { yaw: fallbackYaw, pitch: fallbackPitch };
+  return { yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(dy, Math.max(1e-6, flat)) };
+}

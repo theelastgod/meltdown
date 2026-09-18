@@ -26,7 +26,7 @@ import { poseBody, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import { arcPoint, type ArcSpec } from "./ballistic";
-import { landDip, landHardness, LAND_TIME, stanceRoll } from "./feel";
+import { DEATH_TURN, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
 
 /** Interpolated view state handed to the renderer each frame. */
@@ -106,6 +106,8 @@ export interface CameraView {
   /** how far the landing has the camera down, in metres, and the lean of a slide (Stage 79) */
   dip: number;
   roll: number;
+  /** where the camera is looking, which is the player's aim until the file is closed (Stage 83) */
+  look: { yaw: number; pitch: number };
 }
 
 /** Layer for things the wet-floor mirror must not see (rain, far skyline): cheaper and no blown-out sky. */
@@ -173,7 +175,7 @@ export class Renderer {
   private camSmooth = { d: TPS_DEFAULT.distance, x: 0, y: 0, z: 0, set: false };
   /** the eased shoulder offset: pulling in against a wall beside the player is immediate, sliding back out is not */
   private shoulderSmooth = 0;
-  private lastView: CameraView = { third: true, fov: 80, dip: 0, roll: 0, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false, arc: false, point: { x: 0, y: 0, z: 0 } } };
+  private lastView: CameraView = { third: true, fov: 80, dip: 0, roll: 0, look: { yaw: 0, pitch: 0 }, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false, arc: false, point: { x: 0, y: 0, z: 0 } } };
   private tmpProj = new THREE.Vector3();
   private vmSlot = 1;
   private vmSwap = 0;
@@ -613,6 +615,18 @@ export class Renderer {
     };
   }
 
+  /**
+   * The file closed (Stage 83): the camera stops taking the mouse and turns onto whatever did it,
+   * over about a second. A death with no killer to name — a fall, a hazard — holds the look it had.
+   */
+  die(killer: { x: number; y: number; z: number } | null): void {
+    this.deathAt = killer;
+    this.deathBlend = 0;
+  }
+
+  private deathAt: { x: number; y: number; z: number } | null = null;
+  private deathBlend = 0;
+
   /** a hit landed on the local file: the body takes it, from the bearing given (Stage 74) */
   takeHit(fromYaw: number, amount: number): void {
     this.hurtT = Math.max(this.hurtT, clamp(amount, 0, 1));
@@ -729,11 +743,14 @@ export class Renderer {
    */
   private placeThirdPerson(v: ViewState, dt: number, bobY: number): void {
     const pivot = { x: v.x, y: v.y + this.eyeSmooth, z: v.z };
+    // the death camera: the body's own yaw still belongs to the file (it is a corpse, it keeps the
+    // facing it fell with), but the camera turns onto whatever closed it (Stage 83)
+    const look = this.deathLook(v, pivot, dt);
     const base = v.zoom > 1 ? TPS_ADS : TPS_DEFAULT;
     // the camera drifts back as the file runs, the other half of the speed cue: the distance is
     // eased below anyway, so this arrives over a few frames rather than on one (Stage 77)
     const opts = this.fovPush > 0.01 ? { ...base, distance: base.distance + SPRINT_PULL * (this.fovPush / SPRINT_FOV) } : base;
-    const cam = thirdPersonCamera(pivot, v.yaw, v.pitch, this.boxes, opts);
+    const cam = thirdPersonCamera(pivot, look.yaw, look.pitch, this.boxes, opts);
     // ease the distance only: pulling in against a wall is immediate (the wall is there now), letting back out is eased
     const k = Math.min(1, dt * 10);
     this.camSmooth.d = !this.camSmooth.set || cam.distance < this.camSmooth.d ? cam.distance : this.camSmooth.d + (cam.distance - this.camSmooth.d) * k;
@@ -751,7 +768,7 @@ export class Renderer {
     const anchor = { x: pivot.x + (cam.anchor.x - pivot.x) * s, y: pivot.y + (cam.anchor.y - pivot.y) * s, z: pivot.z + (cam.anchor.z - pivot.z) * s };
     const ax = anchor.x + cam.dir.x * this.camSmooth.d, ay = anchor.y + cam.dir.y * this.camSmooth.d + bobY * 0.4, az = anchor.z + cam.dir.z * this.camSmooth.d;
     this.camera.position.set(ax, ay, az);
-    this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, this.rollNow + (v.stunned ? Math.sin(this.clock * 25) * 0.02 : 0));
+    this.camera.rotation.set(look.pitch + v.kickPitch, look.yaw + v.kickYaw, this.rollNow + (v.stunned ? Math.sin(this.clock * 25) * 0.02 : 0));
     // the body
     const g = this.local.group;
     const close = this.camSmooth.d < 0.9;
@@ -775,7 +792,22 @@ export class Renderer {
     const visible = this.tmpProj.z < 1 && Math.abs(this.tmpProj.x) <= 1.2 && Math.abs(this.tmpProj.y) <= 1.2;
     const rx = (this.tmpProj.x + 1) * 0.5 * window.innerWidth;
     const ry = (1 - this.tmpProj.y) * 0.5 * window.innerHeight;
-    this.lastView = { third: true, fov: this.camera.fov, dip: this.dipNow, roll: this.rollNow, anchor: { x: anchor.x, y: anchor.y, z: anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget, arc: !!v.arc, point: { x: aim.point.x, y: aim.point.y, z: aim.point.z } } };
+    this.lastView = { third: true, fov: this.camera.fov, dip: this.dipNow, roll: this.rollNow, look: { yaw: look.yaw, pitch: look.pitch }, anchor: { x: anchor.x, y: anchor.y, z: anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget, arc: !!v.arc, point: { x: aim.point.x, y: aim.point.y, z: aim.point.z } } };
+  }
+
+  /**
+   * Where the camera is looking this frame: the player's own aim, or — once the file is closed and
+   * there is something to name — an eased turn onto it. The blend is on the render clock, so it
+   * takes the same second wherever it runs.
+   */
+  private deathLook(v: ViewState, pivot: { x: number; y: number; z: number }, dt: number): { yaw: number; pitch: number } {
+    // a file back on the ledger has its camera back, and the next death arms the swing again from
+    // wherever it is looking then: `die` is the only place that sets this up
+    if (v.alive || !this.deathAt) return { yaw: v.yaw, pitch: v.pitch };
+    this.deathBlend = Math.min(1, this.deathBlend + dt * DEATH_TURN);
+    const want = lookYawPitch(pivot, this.deathAt, v.yaw, v.pitch);
+    const k = this.deathBlend * this.deathBlend * (3 - 2 * this.deathBlend); // smoothstep, so it starts and ends still
+    return { yaw: v.yaw + wrapAngle(want.yaw - v.yaw) * k, pitch: v.pitch + (want.pitch - v.pitch) * k };
   }
 
   render(v: ViewState, rawDt: number): void {
@@ -838,7 +870,7 @@ export class Renderer {
         mark = { x: (this.tmpProj.x + 1) * 0.5 * window.innerWidth, y: (1 - this.tmpProj.y) * 0.5 * window.innerHeight, visible: this.tmpProj.z < 1 && Math.abs(this.tmpProj.x) <= 1.2 && Math.abs(this.tmpProj.y) <= 1.2 };
         fired = { distance: a.distance, hit: a.hit, onTarget: a.onTarget, arc: true, point: { x: a.point.x, y: a.point.y, z: a.point.z } };
       }
-      this.lastView = { third: false, fov: this.camera.fov, dip: this.dipNow, roll: this.rollNow, anchor: { x: 0, y: 0, z: 0 }, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: mark, aim: fired };
+      this.lastView = { third: false, fov: this.camera.fov, dip: this.dipNow, roll: this.rollNow, look: { yaw: v.yaw, pitch: v.pitch }, anchor: { x: 0, y: 0, z: 0 }, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: mark, aim: fired };
     }
     // the viewmodel is the first-person weapon; behind the body the hand holds it instead
     this.viewmodel.visible = !this.thirdPerson;

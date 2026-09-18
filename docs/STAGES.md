@@ -1641,6 +1641,42 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 83 — The file that closed you
+
+**Goal.** Dying was one line that named nobody. The camera went on looking wherever your hand had
+left it — often at the wall you were backing into — and who did it, and from where, was a question
+for the kill feed. Stage 74 gave being shot a direction; a death is the shot that mattered most and
+had none.
+
+**What changed.**
+
+- **The camera turns onto whatever closed the file.** `lookYawPitch` in `client/render/feel.ts` is
+  the rule — the yaw and pitch that look from one point at another, in the simulation's own
+  convention — and the renderer eases onto it with a smoothstep over about a second, so it starts
+  and ends still. The body keeps the facing it fell with; this is the camera's turn, not the
+  corpse's.
+- **The line says who.** `◆ FILE CLOSED BY VANTAGE-04 · 12 m — RE-LEASING IN 3s`, resolved from the
+  wire's remote views online and the world's own cast offline, with the distance.
+- **A death with nobody to name holds the look it had** — a fall, a hazard, your own grenade — and
+  a file back on the ledger has its camera back on the next frame.
+- The offline path had no death line at all: `case "death"` was a no-op in the simulation's own
+  event handler, so a campaign death printed nothing. Both paths go through one place now.
+
+**Proof.** `probe:tps` 32/32 — two new: another file closes this one from twelve metres behind it,
+the camera is 3.14 rad from the killer when the shot lands and 0.000 rad off it when the swing
+settles, with the line naming VANTAGE-04 and `stage60-closed.png` as the picture; and a re-leased
+file's camera follows its aim again within a fiftieth of a radian. `tests/feel.test.ts` 9 (three new
+on the look itself). `probe:body` 20/20, `probe:net` 19/19, `probe:campaign` 31/31,
+`probe:identity` 25/25, `probe:wake` 14/14, `probe:mobile` 14/14, `smoke` 7/7, 575 tests, build and
+typecheck clean. Three guards mutation-checked: the swing unwired (3.139 rad off), the killer never
+named (the line loses the name and the camera never turns), and the alive test dropped from the
+camera's early return, which leaves a re-leased file staring at where it died.
+
+A note on the picture: the killer in it is a file the probe added to the offline world to be the
+attacker, and the offline renderer draws only the local body — so the street the camera turns to
+look down is empty. The angle is the claim; the emptiness is the probe's construction, not the
+game's.
+
 ## Stage 82 — A rejoin is not a pause
 
 **Goal.** Run #108 went red on `probe:net`, on a check nothing in Stage 79 touched: *rejoin restores

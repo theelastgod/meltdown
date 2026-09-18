@@ -44,6 +44,8 @@ export interface GameHook {
     heard: { n: number; pan: number; gain: number; distance: number };
     /** and the last shot (Stage 81) */
     heardShot: { n: number; pan: number; gain: number; delay: number; distance: number };
+    /** what closed the file last (Stage 83) */
+    closedBy: { name: string; x: number; z: number; known: boolean };
     render: { post: boolean; district: string; frames: number; internalScale: number; levelCalls: number; calls: number; triangles: number; geometries: number; textures: number; programs: number; tracers: number };
     level: string;
     wake: { phase: string; timeLeft: number; score: number[]; pulses: number; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number; boost: number; flips: number }[] } | null;
@@ -218,6 +220,7 @@ window.__game = {
     audio: { ...game.audio.fired },
     heard: { ...game.heard },
     heardShot: { ...game.heardShot },
+    closedBy: { ...game.closedByLast },
     render: { post: !!game.renderer.post, district: game.renderer.district, frames: game.renderer.frames, internalScale: game.renderer.post.scale, levelCalls: game.renderer.levelCalls, calls: game.renderer.renderer.info.render.calls, triangles: game.renderer.renderer.info.render.triangles, geometries: game.renderer.renderer.info.memory.geometries, textures: game.renderer.renderer.info.memory.textures, programs: game.renderer.renderer.info.programs?.length ?? 0, tracers: game.renderer.liveVfx },
     level: game.levelId,
     wake: game.world.wake ? { phase: game.world.wake.phase, timeLeft: game.world.wake.timeLeft, score: [...game.world.wake.score], pulses: game.world.wake.pulses, nodes: game.world.wake.nodes.map((n) => ({ id: n.id, label: n.label, owner: n.owner, hold: n.hold, contested: n.contested, puller: n.puller, boost: n.boost, flips: n.flips })) } : null,
