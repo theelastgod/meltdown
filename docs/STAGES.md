@@ -1641,6 +1641,48 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 104 — The map never heard the shot
+
+**Goal.** Stage 81 gave every gun in the street a voice from its muzzle, panned and delayed by
+where it was fired from; the map in the corner drew none of it. A shooter in every game leaves a
+mark on the minimap where the gun went off — the one read that turns "somewhere to the left" into
+a place to go or a place to leave — and this map drew the nodes, the range's dummies and the
+contract's spots, and nothing that moved. The position was already in hand: both shot paths
+compute the gun cue from the muzzle, so the ping is the same point the ear was given.
+
+**What changed.**
+
+- **A gun heard going off is a mark on the map where it went off**: magenta for a file's, amber
+  for a wasp's, fading over a second and a half as the sound does. Off the map, it is pinned to
+  the rim on its bearing — the same placement the contract's spots use (Stage 92).
+- **Twelve at most**, oldest first out: a street full of guns is a street full of guns, not a wall
+  of dots.
+- **On the map's own clock.** The HUD sums the frame times it is given and the pings fade on
+  that, so the fade is the player's second and a half, not the simulation's tick count and not a
+  stopwatch.
+- `client/hud/ping.ts` is the rule, pure and unit-tested: what is remembered, for how long, and
+  where it lands.
+
+**Proof.** `probe:arsenal` 30/30, one new, read from the map's own pixels — magenta is a file's
+ping and nothing else on this map is magenta: 0 such pixels before; a file's shot injected
+fifteen metres to the right through the client's own shot handler puts 16 on the next drawn
+frame, centred at x 38 of 54 (the middle is 27); and 2.4 s of the map's clock later there are 0.
+`tests/ping.test.ts` 6. 698 tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone. With no ping ever drawn the map reads 0 magenta
+pixels after the shot, 29/30, and four of the six unit tests go with it. With the ping placed at
+the listener instead of the muzzle it lands under the file's own green mark at the centre and the
+map again reads 0, 29/30, with three unit tests — the ones that place a shot ahead, to the right
+and on the rim — going with it.
+
+A third mutation was tried first and passed the probe: pruning and the marks' own age gate both
+removed, so a ping was remembered for ever. Its two unit tests caught it and the pixel read did
+not, because the draw had a 5 % alpha floor — a ping past its life was still drawn, as a ghost
+too faint to read as magenta and not too faint for a player. The floor is gone: a faded ping draws
+nothing. The two gates are deliberately redundant (the game prunes, the marks filter again), so a
+mutation of either alone is masked by the other; the fade is guarded by the unit tests on each and
+by the probe's read after the map's clock has run.
+
 ## Stage 103 — What you put into the mech
 
 **Goal.** A VANTAGE mech is four hundred points of health and the client showed nothing of what a

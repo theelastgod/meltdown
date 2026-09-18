@@ -34,6 +34,7 @@ import { lastRoundsEdge } from "./hud/ammo";
 import { momentLine, runMoments } from "./runcue";
 import { shieldLine, shieldMoments } from "./shieldcue";
 import { freshestVantage, targetRead } from "./hud/target";
+import { prunePings, rememberPing, type Ping } from "./hud/ping";
 import { kernelIn, nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
@@ -512,6 +513,8 @@ export class Game {
             this.heardShot.gain = cue.gain;
             this.heardShot.delay = cue.delay;
             this.heardShot.distance = cue.distance;
+            // and the map marks where it went off (Stage 104)
+            this.pings = rememberPing(this.pings, { x: ev.fx, z: ev.fz, at: this.hud.mapClock, kind: ev.weapon === 0 ? "wasp" : "file" });
           }
           // and if it went past the head, the round itself is heard where it was nearest (Stage 99)
           this.passedBy({ x: ev.fx, y: ev.fy, z: ev.fz }, { x: ev.tx, y: ev.ty, z: ev.tz }, ev.hitKind === 3 && ev.victimId === me);
@@ -1069,6 +1072,8 @@ export class Game {
   /** the last round heard going past (Stage 99), for the probe: how many, which side, how close */
   readonly heardSnap = { n: 0, pan: 0, distance: 0 };
   private ammoWatch = { slot: -1, ammo: 0 };
+  /** the shots the map has heard (Stage 104) */
+  private pings: Ping[] = [];
   private shieldWatch: { shield: number; maxShield: number; alive: boolean } | null = null;
 
   /**
@@ -1119,6 +1124,8 @@ export class Game {
             this.heardShot.gain = cue.gain;
             this.heardShot.delay = cue.delay;
             this.heardShot.distance = cue.distance;
+            // and the map marks where it went off (Stage 104)
+            this.pings = rememberPing(this.pings, { x: ev.from.x, z: ev.from.z, at: this.hud.mapClock, kind: ev.weapon === "wasp" ? "wasp" : "file" });
           }
           // and if it went past the head, the round itself is heard where it was nearest (Stage 99)
           this.passedBy(ev.from, ev.to, ev.hits.some((h) => h.kind === "player" && h.id === this.player.id));
@@ -1437,6 +1444,9 @@ export class Game {
       this.stats.simHz = (this.stats.ticks - this.fpsWindow.ticks) / this.fpsWindow.t;
       this.fpsWindow = { t: 0, frames: 0, ticks: this.stats.ticks };
     }
+    // the shots the map heard (Stage 104), pruned on the map's own clock
+    this.pings = prunePings(this.pings, this.hud.mapClock);
+    this.hud.setRadarPings(this.pings);
     this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt);
     // the last quarter of the magazine is heard, once, on the round that crosses into it (Stage
     // 100); a swap starts the count over on the new weapon rather than comparing across guns

@@ -465,6 +465,43 @@ async function main(): Promise<void> {
     });
     check("a round on a wasp reads its health under the reticle — name, blocks, the sim's own fraction — and the read is gone two seconds on", tread.staged && !/\bon\b/.test(tread.before) && tread.on && /^WASP-01/.test(tread.text) && tread.health < tread.max && tread.health > 0 && new RegExp(`${tread.pct}%$`).test(tread.text) && tread.gone, `${tread.staged ? `before the round: "${tread.before}" · hit after ${tread.ticks} ticks: wasp ${tread.health}/${tread.max} alive ${tread.alive} · read "${tread.text}" (sim says ${tread.pct}%) · gone after ${tread.waited.toFixed(1)} s of frames: ${tread.gone} · ${tread.aim} · [${tread.trace}]` : "no wasp to stage"}`);
 
+    // Stage 104: the map never heard the shot. A file's gun fifteen metres to the right, through
+    // the client's own shot handler; the map is read as pixels — magenta is a file's ping and
+    // nothing else on this map — before, on the next drawn frame, and after the fade.
+    const ping = await page.evaluate(async () => {
+      const g = window.__game.game;
+      const p = g.player;
+      const hud = (g as unknown as { hud: { mapClock: number } }).hud;
+      const inner = g as unknown as { onEvent: (ev: unknown) => void };
+      const canvas = document.querySelector("#hud .map canvas") as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d")!;
+      window.__game.setBot([{ kind: "look", yaw: 0, pitch: 0, ticks: 10 }, { kind: "hold", ticks: 600 }]);
+      window.__game.advance(12);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      // magenta pixels on the map and their centroid, spelled out three times: a named helper in
+      // here trips esbuild's keep-names shim
+      let img = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let n0 = 0;
+      for (let i = 0; i < img.length; i += 4) if (img[i + 3]! > 100 && img[i]! > 200 && img[i + 1]! < 120 && img[i + 2]! > 150) n0++;
+      const y = p.pos.y + 1.6;
+      inner.onEvent({ tick: g.world.tick, playerId: 7, type: "shot", weapon: "lease_breaker", from: { x: p.pos.x + 15, y, z: p.pos.z }, to: { x: p.pos.x + 15, y, z: p.pos.z - 30 }, hit: { kind: "none", id: -1, damage: 0 }, hits: [], nearMiss: -1, rewindTicks: 0, pierce: false });
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      img = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let n1 = 0, sx = 0;
+      for (let i = 0; i < img.length; i += 4) if (img[i + 3]! > 100 && img[i]! > 200 && img[i + 1]! < 120 && img[i + 2]! > 150) { n1++; sx += (i / 4) % canvas.width; }
+      const cx = canvas.width / 2;
+      const atX = n1 ? sx / n1 : -1;
+      // and it fades on the map's own clock
+      const c0 = hud.mapClock;
+      for (let i = 0; i < 400 && hud.mapClock - c0 < 1.7; i++) { window.__game.advance(1); await new Promise((r) => requestAnimationFrame(r)); }
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      img = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let n2 = 0;
+      for (let i = 0; i < img.length; i += 4) if (img[i + 3]! > 100 && img[i]! > 200 && img[i + 1]! < 120 && img[i + 2]! > 150) n2++;
+      return { n0, n1, atX, cx, n2, waited: hud.mapClock - c0, yaw: p.yaw };
+    });
+    check("a gun going off to the right puts a magenta mark on the right of the map, which fades within two seconds", ping.n0 === 0 && ping.n1 >= 4 && ping.atX > ping.cx + 4 && ping.n2 === 0, `magenta on the map: ${ping.n0} before · ${ping.n1} px after the shot, centred at x ${ping.atX.toFixed(1)} of ${ping.cx * 2} (middle ${ping.cx}) · ${ping.n2} after ${ping.waited.toFixed(1)} s of the map's clock · yaw ${ping.yaw.toFixed(2)}`);
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
 
     writeFileSync(`${OUT}/stage4.json`, JSON.stringify({ ttk: table, shots, hits, kills, explosions: explosions.length, captures, audio: state.audio, checks }, null, 2));

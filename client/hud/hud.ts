@@ -8,6 +8,7 @@ import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead } from "./ammo";
 import type { TargetRead } from "./target";
+import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
 import { alertTop, rightBandWidth } from "./layout";
@@ -534,6 +535,7 @@ export class Hud {
 
   update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60): void {
     this.tickRituals(dt);
+    this.radarClock += dt;
     this.layout();
     this.q(".hpbar").style.width = `${(100 * Math.max(0, p.health)) / Math.max(1, p.maxHealth)}%`;
     this.q(".shbar").style.width = p.maxShield > 0 ? `${(100 * Math.max(0, p.shield)) / p.maxShield}%` : "0%";
@@ -656,6 +658,17 @@ export class Hud {
    * Where the contract wants you (Stage 92). The campaign has put its marker, its escort and its
    * targets in the world since Stage 10 and the map has never drawn any of them.
    */
+  /** Shots heard, for the map (Stage 104): the muzzle positions, fading over a second and a half. */
+  setRadarPings(pings: readonly Ping[]): void {
+    this.radarPings = pings;
+  }
+  private radarPings: readonly Ping[] = [];
+  /** the map's own clock for fading pings: the frame times the HUD is given, summed */
+  private radarClock = 0;
+  get mapClock(): number {
+    return this.radarClock;
+  }
+
   setRadarSpots(spots: readonly RadarSpot[]): void {
     this.radarSpots = spots;
   }
@@ -703,6 +716,19 @@ export class Hud {
       if (m.x < 1 || m.x >= w - 1 || m.y < 1 || m.y >= h - 1) continue;
       g.fillStyle = "#ffb02e";
       g.fillRect(Math.round(m.x) - 1, Math.round(m.y) - 1, 2, 2);
+    }
+    // every gun heard going off, where it went off (Stage 104): magenta for a file's, amber for a
+    // wasp's, fading as the sound does, pinned to the rim when it was off the map
+    for (const m of pingMarks(this.radarPings, p.pos, p.yaw, scale, w, h, this.radarClock)) {
+      // a faded ping draws nothing: a floor here would leave a ghost dot for as long as the ping
+      // was remembered, too faint for the probe's pixel read and not too faint for a player
+      if (m.alpha <= 0) continue;
+      g.globalAlpha = Math.min(1, m.alpha);
+      g.fillStyle = m.kind === "wasp" ? "#ffb02e" : "#ff3ec9";
+      g.beginPath();
+      g.arc(m.x, m.y, m.edge ? 1.5 : 2.5, 0, Math.PI * 2);
+      g.fill();
+      g.globalAlpha = 1;
     }
     // the contract over the top of everything, because it is the one thing the player is being told
     // to go to: a ring for the goal, a dot for the escort and each target, and an arrowless rim mark
