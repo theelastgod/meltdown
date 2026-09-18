@@ -329,6 +329,19 @@ async function main(): Promise<void> {
     await pg.evaluate(() => window.__game.advance(60));
     const risen = await settled(pg);
     check("crouching drops the hood under the low capsule and pools the cloak; standing raises it again", crouched.hoodApex <= MOVE.lowHeight && (crouched.out?.hips.y ?? 1) <= 0.5 && crouched.bootBottom.l >= -0.03 && risen.hoodApex >= 1.76, `crouched: hood ${crouched.hoodApex.toFixed(2)} under the ${MOVE.lowHeight} m capsule · hips ${crouched.out?.hips.y.toFixed(2)} · boot ${crouched.bootBottom.l.toFixed(2)} · risen: hood ${risen.hoodApex.toFixed(2)}`);
+    // Put the file back where the walk started before the run-up. Stage 75 stopped the sway section
+    // as soon as the hem settled instead of waiting for its script to finish, which leaves the file
+    // wherever that happened — and when that is within the goto's radius of the slide's target, the
+    // goto completes instantly, the slide fires from a standstill, and there is no slide at all.
+    // CI #110 and #111 read "top speed 2.6" — crouch pace — for exactly that reason.
+    await pg.evaluate((at) => {
+      const p = window.__game.game.player;
+      const s = at as { x: number; z: number };
+      p.pos.x = s.x;
+      p.pos.z = s.z;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      window.__game.advance(10);
+    }, { x: s0.pos.x, z: s0.pos.z });
     await pg.evaluate(() => window.__game.setRealtime(true));
     await pg.evaluate((z) => window.__game.setBot([{ kind: "goto", x: 0, z: (z as number) - 10, sprint: true, radius: 1.5, timeoutTicks: 600, stop: false }, { kind: "slide", ticks: 60 }, { kind: "hold", ticks: 6000 }]), s0.pos.z);
     const slideRun = await pg.evaluate(async () => {

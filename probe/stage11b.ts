@@ -286,13 +286,18 @@ async function main(): Promise<void> {
     await b.waitForFunction(() => window.__game.counter().remotes.length >= 1, null, { timeout: 20000, polling: 100 });
     for (const p of [a, b]) await p.evaluate(() => window.__game.setRealtime(true));
     const seenDown = await b.evaluate(() => window.__game.counter().remotes);
+    // Wait for BOTH files to settle rather than for ALPHA and then a fixed pause. The check asks for
+    // two settlements in the room; on a fast machine the second one lands after that pause, and the
+    // check read one and failed on a room that was working perfectly (CI #110).
     const t1 = Date.now();
     let alphaSettled = 0;
-    while (Date.now() - t1 < 60000 && alphaSettled < 1) {
+    let roomSettled = 0;
+    while (Date.now() - t1 < 60000 && (alphaSettled < 1 || roomSettled < 2)) {
       await a.waitForTimeout(500);
-      alphaSettled = (await stats()).rooms["cl2"]?.clients.find((c) => c.name === "ALPHA")?.file?.settlements ?? 0;
+      const room = (await stats()).rooms["cl2"];
+      alphaSettled = room?.clients.find((c) => c.name === "ALPHA")?.file?.settlements ?? 0;
+      roomSettled = room?.settlements ?? 0;
     }
-    await a.waitForTimeout(400);
     const phase2 = alphaSettled >= 1 ? "results" : "";
     const xpAfter = (await file(acct)).xp;
     const s2 = (await stats()).rooms["cl2"]!;

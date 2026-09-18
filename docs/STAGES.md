@@ -1641,6 +1641,34 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 84 — Two checks that started somewhere else
+
+**Goal.** Runs #110 and #111 were red on two different probes, and one of them is a regression I
+wrote in Stage 75.
+
+**What changed.**
+
+- **The slide gets its run-up back.** Stage 75 stopped the body probe's sway section as soon as the
+  hem settled instead of waiting for its bot script to finish — which fixed a thirty-second wait and
+  left the file standing wherever that happened rather than back where the walk started. When that
+  spot falls inside the slide section's own `goto` radius, the goto completes instantly, the slide
+  fires from a standstill, and there is no slide: CI read `no slide frame sampled — stances seen:
+  crouch,stand · top speed 2.6` (crouch pace) twice. The section puts the file back at the start
+  before the run-up now. The failure reproduces exactly by dropping the file on the slide's target
+  first — same message, to the word — and the fix passes from that same adversarial start.
+- **The chain-down check waits for both files.** It asks for two settlements in the room, and waited
+  for ALPHA's and then four hundred milliseconds. On a fast machine the second lands after that
+  pause, so the check read one settlement and failed a room that was working perfectly. It waits for
+  the count it is checking.
+
+**Proof.** `probe:body` 20/20 (and 20/20 from the start position that used to break it, against
+18/20 without the fix), `probe:counter` 16/16 with `settlements 2`, 575 tests, both typechecks
+clean. No game code changed.
+
+Both are the same mistake in different clothes, and it is the one this series keeps meeting: a check
+that waits for one thing and then assumes another. The first waited for the hem and assumed the
+position; the second waited for one file and assumed the other.
+
 ## Stage 83 — The file that closed you
 
 **Goal.** Dying was one line that named nobody. The camera went on looking wherever your hand had
