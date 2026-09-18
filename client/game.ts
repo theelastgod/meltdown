@@ -1283,7 +1283,6 @@ export class Game {
         break;
       case "slideJump":
         this.audio.jump();
-        this.hud.push("SLIDE-JUMP", "k");
         break;
       case "jump":
         this.audio.jump();
@@ -1292,8 +1291,9 @@ export class Game {
         this.audio.land(ev.speed);
         break;
       case "mantle":
+        // the cue says it; the log is for what happened on the ledger, not every ledge climbed or
+        // slide-jump landed (Stage 122: MANTLE and SLIDE-JUMP lines had pushed the kills off it)
         this.audio.mantle();
-        this.hud.push("MANTLE", "k");
         break;
       case "reloadStart":
         this.audio.reload("start");

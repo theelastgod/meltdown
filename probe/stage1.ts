@@ -112,6 +112,10 @@ async function main(): Promise<void> {
     check("slide + slide-jump performed", state.stats.slides >= 1 && state.stats.slideJumps >= 1, `slides=${state.stats.slides} slideJumps=${state.stats.slideJumps} topSpeed=${state.stats.topSpeed.toFixed(2)} m/s`);
     check("momentum preserved: top speed above sprint speed, below the slide cap", state.stats.topSpeed > 7.2 + 1.0 && state.stats.topSpeed <= 10.5 + 0.01, `top ${state.stats.topSpeed.toFixed(2)} m/s vs sprint 7.20 / slide cap 10.50`);
     check("mantle performed onto the 1.2 m deck", state.stats.mantles >= 1 && state.pos.y > 1.1, `mantles=${state.stats.mantles} y=${state.pos.y.toFixed(2)}`);
+    // Stage 122: the log said MANTLE. Every ledge climbed had pushed a bare word into the five-line
+    // event log, and the lines that matter off it. The cue stays; the log is read from the frame
+    const logRead = await page.evaluate(() => ({ lines: [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? ""), mantleCues: window.__game.state().audio["mantle"] ?? 0 }));
+    check("a mantle and a slide-jump are heard and not logged: the event log holds no MANTLE or SLIDE-JUMP line after them", state.stats.mantles >= 1 && state.stats.slideJumps >= 1 && logRead.mantleCues >= 1 && !logRead.lines.some((l) => /\b(MANTLE|SLIDE-JUMP)\b/.test(l)), `mantles ${state.stats.mantles} · slide-jumps ${state.stats.slideJumps} · cues ${logRead.mantleCues} · log: ${logRead.lines.join(" / ") || "(empty)"}`);
     const kill = events.find((e) => e.type === "kill");
     check("bot killed dummy 1 with hitscan", !!kill && state.stats.kills >= 1, kill && kill.type === "kill" ? `victim ${kill.victimId} after ${kill.ttkTicks} ticks` : "no kill event");
     check("TTK inside the 0.6–1.0 s band", !!kill && kill.type === "kill" && kill.ttkSeconds >= 0.6 && kill.ttkSeconds <= 1.0, kill && kill.type === "kill" ? `${kill.ttkSeconds.toFixed(3)} s` : "n/a");

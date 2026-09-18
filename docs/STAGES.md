@@ -1641,6 +1641,28 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 122 — The log said MANTLE
+
+**Goal.** The wake probe's frames, read down the left: `» NODE D PULLED OFF THE MODEL — CELL
+ONE`, `» VANTAGE PA · …`, `» MANTLE`, `» NODE A PULLED OFF THE MODEL — CELL ONE`. The event log
+holds five lines — kills, nodes taken, the PA, a wasp live, the ledger — and since Stage 1 every
+ledge climbed had pushed a bare `MANTLE` into it, and every slide-jump a bare `SLIDE-JUMP`, and
+a line that mattered off the bottom each time. A file that moves well moves through a lot of
+ledges. Both moves already have their cues.
+
+**What changed.**
+- `client/game.ts` — the mantle and the slide-jump play their cues and write nothing to the log.
+- `probe/stage1.ts` — after the bot's slide-jump and its climb onto the deck: at least one of
+  each, at least one mantle cue, and neither word in the log read from the frame.
+
+**Proof.** `npm test` 752 tests; `npm run probe` 16/16 — after the bot's slide-jump and its climb
+the log reads `» VANTAGE PA · …` and `» BLANK ⟶ DUMMY-01 · LEASE_BREAKER · TTK 0.80s` and nothing
+else, with one mantle cue heard; `npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** Both pushes put back: the probe fails its new check, 15/16 — the log reads
+`» SLIDE-JUMP / » MANTLE / » VANTAGE PA · … / » BLANK ⟶ DUMMY-01 …`, the two words ahead of the
+lines that matter; every other check passes.
+
 ## Stage 121 — The round ended with a line
 
 **Goal.** A wake ends — a cell holds all eight nodes for fifteen seconds, or the clock runs out —
