@@ -486,7 +486,7 @@ export class Hud {
       if (mission.style.top !== top) mission.style.top = top;
     }
     const panel = mission.getBoundingClientRect();
-    this.q(".alert").style.top = `${alertTop(panel.bottom - rootTop)}px`;
+    this.missionBottom = panel.bottom - rootTop;
     this.placeFlag();
     // the foot line between the slots and the tab strip, or above the row when they leave it no
     // room (Stage 118): the room is measured with the line out of the row so it cannot change it
@@ -684,7 +684,10 @@ export class Hud {
     }
     if (this.flagTimer > 0) {
       this.flagTimer -= dt;
-      if (this.flagTimer <= 0) this.q(".flag").classList.remove("on");
+      if (this.flagTimer <= 0) {
+        this.q(".flag").classList.remove("on");
+        this.placeFlag();
+      }
     }
   }
 
@@ -744,7 +747,14 @@ export class Hud {
   }
   private nodeFootKey = "";
 
-  /** the searchlight warning under the node line, or at its seat when the line is hidden (Stage 116) */
+  /** the mission panel's measured bottom from the last layout pass, the alert's first anchor */
+  private missionBottom = 0;
+
+  /**
+   * The centred stack under the mission panel: the searchlight warning under the node line, or at
+   * its seat when the line is hidden (Stage 116), and the alert under whichever of the two ends
+   * lower, or under the mission panel when neither is up (Stage 120).
+   */
   private placeFlag(): void {
     const foot = this.q(".nodefoot");
     const rootTop = this.root.getBoundingClientRect().top;
@@ -752,12 +762,18 @@ export class Hud {
     const top = `${flagTop(bottom)}px`;
     const flag = this.q(".flag");
     if (flag.style.top !== top) flag.style.top = top;
+    const flagBottom = flag.classList.contains("on") ? flag.getBoundingClientRect().bottom - rootTop : null;
+    const under = bottom === null ? flagBottom : flagBottom === null ? bottom : Math.max(bottom, flagBottom);
+    const alertSeat = `${alertTop(this.missionBottom, under)}px`;
+    const alert = this.q(".alert");
+    if (alert.style.top !== alertSeat) alert.style.top = alertSeat;
   }
 
   /** The repo mech has you in its light. */
   flagged(): void {
     this.q(".flag").classList.add("on");
     this.flagTimer = 0.4;
+    this.placeFlag();
   }
 
   /** the nodes the map draws, handed in by the game while a wake round is on (Stage 88) */

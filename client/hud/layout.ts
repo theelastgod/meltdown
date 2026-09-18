@@ -17,7 +17,7 @@ export const RIGHT_BAND = 0.44;
 /** the alert sits this far under whatever is above it (px) */
 export const ALERT_GAP = 6;
 /** and never lower than this (px), so it stays in the top band whatever the panel does */
-export const ALERT_FLOOR = 120;
+export const ALERT_FLOOR = 160;
 
 /** The width the right-hand band may take, in px, for a view this wide with this inset from the edge. */
 export function rightBandWidth(viewWidth: number, inset: number): number {
@@ -25,8 +25,11 @@ export function rightBandWidth(viewWidth: number, inset: number): number {
 }
 
 /** Where the alert's top goes, given the bottom of the panel above it. */
-export function alertTop(missionBottom: number): number {
-  return Math.min(ALERT_FLOOR, Math.ceil(missionBottom) + ALERT_GAP);
+export function alertTop(missionBottom: number, underBottom: number | null = null): number {
+  // the alert also stacks under the node line and the searchlight warning when they are up
+  // (Stage 120): a three-line mission panel had put it straight through the node line
+  const seat = Math.max(Math.ceil(missionBottom), underBottom === null ? 0 : Math.ceil(underBottom));
+  return Math.min(ALERT_FLOOR, seat + ALERT_GAP);
 }
 
 /** where the searchlight warning sits when nothing is under it (px from the HUD's top) */

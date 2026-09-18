@@ -37,6 +37,15 @@ describe("the alert's seat", () => {
   it("but never drops out of the top band", () => {
     expect(alertTop(400)).toBe(ALERT_FLOOR);
   });
+
+  it("stacks under the node line or the searchlight warning when one of them ends lower (Stage 120)", () => {
+    expect(alertTop(90, 114)).toBe(114 + ALERT_GAP);
+    expect(alertTop(90, 113.2)).toBe(114 + ALERT_GAP);
+    expect(alertTop(90, 144)).toBe(144 + ALERT_GAP);
+    expect(alertTop(90, null)).toBe(90 + ALERT_GAP);
+    expect(alertTop(90, 40)).toBe(90 + ALERT_GAP);
+    expect(alertTop(90, 400)).toBe(ALERT_FLOOR);
+  });
 });
 
 describe("the searchlight warning's seat (Stage 116)", () => {

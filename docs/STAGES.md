@@ -1641,6 +1641,42 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 120 — The alert printed through the node line
+
+**Goal.** The arsenal probe's fourth-slot frame, a wake with the node hexes in the mission panel:
+`NODE A · CELL ONE ▬ PULL IT` and `▲ INTEGRITY -5` through each other at 100 px. Stage 97 hung
+the alert a gap under the mission panel's measured bottom, and Stage 116 seated the searchlight
+warning under the node line; the alert knew nothing of either. A three-line mission panel ends
+near 90 px, the node line sits at 92, and the alert went between them, onto the line.
+
+**What changed.**
+- `client/hud/layout.ts` — `alertTop(missionBottom, underBottom)`: the alert's seat is a gap
+  under the lower of the mission panel and whatever the centred stack ends with — the node line,
+  or the searchlight warning under it — and `ALERT_FLOOR` rises from 120 to 160 so the stack of
+  panel, line and warning fits above it.
+- `client/hud/hud.ts` — the stack is placed as one: the layout pass, the node line showing or
+  hiding, and the warning turning on or off all re-seat the warning and then the alert.
+- `tests/layout.test.ts` — the stacking, the floor, a line that ends higher than the panel.
+- `probe/stage60.ts` — with the node line, the warning and an alert all up, the alert crosses
+  neither and sits at least 4 px under the lower; when the line goes it moves up, and under the
+  warning if the warning is still lit.
+- CI run #145 (Stage 116) was red on that stage's own check with the geometry right: `warning
+  120–144 px (on false)`. The warning is lit for 0.4 s of HUD time and two frames on the runner
+  outlasted it. The check now reads the warning's state the instant it is raised and its
+  rectangle after the frames, and the new check reads the warning's state again after the line
+  goes rather than assuming it.
+
+**Proof.** `npm test` 745 tests (one new); `npm run probe:tps` 45/45 — with the node line at
+92–114 and the warning at 120–144 the alert sits at 150–163 and crosses neither, and with the line
+gone (and the warning expired on these frames) it is back at 63 under the panel;
+`npm run probe:campaign` still 39/39; `npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** The alert ignores the stack (`seat = ceil(missionBottom)`): the layout test fails
+(1 of 22) and the tps probe fails its new check, 44/45 — `alert 63–76 px under line ending 114
+and warning ending 144`: not through them at this mission panel's height, but above them, the
+order the rule exists to keep; the arsenal frame's three-line panel is what put it through. Every
+other check passes.
+
 ## Stage 119 — The book covered the file's name
 
 **Goal.** The run probe's ledger frame: the Counter-Ledger book open, and behind its top-left
