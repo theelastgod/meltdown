@@ -701,7 +701,9 @@ export class Hud {
   wake(w: { phase: string; timeLeft: number; score: [number, number, number]; winner: number; kernelIn: number | null; nodes: { id: number; label: string; owner: number; hold: number; contested: boolean; puller: number }[] }, myTeam: number, stats: RoundStats): void {
     // the results phase is a card (Stage 121): shown while the phase lasts, re-rendered as the
     // countdown ticks, taken down by the warm-up
-    const round = roundCard(w, myTeam, this.zone, stats);
+    // the receipt is the ledger's own frame and comes at the same moment online (Stage 125): while
+    // it is open the card stays down, and it returns once the receipt is signed
+    const round = this.receiptState.open ? null : roundCard(w, myTeam, this.zone, stats);
     if (round) {
       if (round.key !== this.roundCardKey) {
         this.roundCardKey = round.key;

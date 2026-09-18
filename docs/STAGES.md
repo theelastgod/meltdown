@@ -1641,6 +1641,30 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 125 — The round card covered the receipt
+
+**Goal.** The counter-ledger probe's rig frame: `◆ ROUND OVER — NO ONE WOKE DRAINAGE YARD` in
+the mission panel and the Ledger Entry receipt open under it, `MATCH 0001 · LEASED … [ENTER]
+SIGN`. Online the receipt is printed at the settle, which is the moment the round ends — the
+same fifteen seconds Stage 121 gave to the round card, and the card is the later sibling in the
+HUD, drawn over everything at nine-tenths black. Every online match would now have ended with
+the receipt printed behind a card the player could not see through.
+
+**What changed.**
+- `client/hud/hud.ts` — while the receipt is open the wake pass holds the round card down; when
+  the receipt is signed the card comes back for what is left of the results phase. The receipt is
+  the ledger's own frame and takes precedence.
+- `probe/stage5.ts` — with the round card up, a receipt printed by hand hides the card; signing it
+  brings the card back with its title.
+
+**Proof.** `npm test` 754 tests; `npm run probe:wake` 22/22 — with the round card up, a receipt
+printed by hand leaves the receipt showing and the card down; signed, the receipt goes and the
+card is back with `ROUND OVER`; the Stage 121 and 124 checks still pass; `npm run build` and
+`npm run smoke` 7/7.
+
+**Mutation.** The card ignores the receipt: the wake probe fails its new check, 21/22 — `receipt
+open: card true, receipt true`, both up and the card on top; every other check passes.
+
 ## Stage 124 — The round ended with the KERNEL's pulse
 
 **Goal.** Every phase change of the wake — the warm-up ending, the round beginning, the round
