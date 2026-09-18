@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, FOOT_GAP, footRow, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth } from "../client/hud/layout";
+import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -60,6 +60,16 @@ describe("the foot line's row (Stage 118)", () => {
   it("lifts above the row when it does not", () => {
     expect(footRow(170 + 2 * FOOT_GAP - 1, 170)).toBe("above");
     expect(footRow(67, 170)).toBe("above");
+  });
+});
+
+describe("a reader frame's seat (Stage 119)", () => {
+  it("hangs a gap under the header and takes the height left above the bottom inset", () => {
+    expect(frameSeat(75, 540)).toEqual({ top: 75 + FRAME_GAP, maxHeight: 540 - 75 - FRAME_GAP - FRAME_INSET });
+    expect(frameSeat(74.4, 540).top).toBe(75 + FRAME_GAP);
+  });
+  it("never reports a negative height", () => {
+    expect(frameSeat(300, 200).maxHeight).toBe(0);
   });
 });
 

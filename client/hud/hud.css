@@ -180,6 +180,9 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .hex i { position: absolute; left: 0; bottom: 0; height: 3px; background: #fff; opacity: 0.9; }
 
 /* FILE panel (Tab): the Ghostfile — attestation, keystone, weapons, ledger. */
+/* the reader frames are seated under the file's header by the layout pass (Stage 119); their
+   max-height is the whole box, padding and border included */
+#hud .file, #hud .graph, #hud .contracts { box-sizing: border-box; }
 #hud .file { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 760px; max-width: 94vw; max-height: 88vh; overflow: auto; pointer-events: auto; padding: 10px 14px; background: rgba(3,5,9,0.92); border: 1px solid var(--cy); color: var(--cy); text-shadow: 0 0 4px rgba(53,242,255,0.4); box-shadow: 0 0 0 1px rgba(0,0,0,0.7), 0 0 16px rgba(53,242,255,0.2); font-size: 10.5px; cursor: default; }
 #hud .file .hd { font-size: 12px; letter-spacing: 0.12em; margin-bottom: 4px; }
 #hud .file .hd .x { float: right; color: var(--mg); cursor: pointer; }

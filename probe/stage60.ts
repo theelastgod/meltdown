@@ -475,6 +475,12 @@ async function main(): Promise<void> {
       const book = hud.querySelector(".file") as HTMLElement | null;
       const bookOpen = !!book && !book.hidden;
       const hits: string[] = [];
+      // Stage 119: the book covered the file's name. The header is the frame's furniture, so the
+      // frame begins under it and ends above the view's bottom
+      const H = hud.getBoundingClientRect();
+      const sr = hud.querySelector(".status")!.getBoundingClientRect();
+      const br = book ? book.getBoundingClientRect() : sr;
+      const seat = { statusBottom: sr.bottom - H.top, bookTop: br.top - H.top, bookBottom: br.bottom - H.top, view: H.height };
       if (book && bookOpen) {
         const fr = book.getBoundingClientRect();
         for (const el of Array.from(hud.children) as HTMLElement[]) {
@@ -494,12 +500,15 @@ async function main(): Promise<void> {
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       const graph = hud.querySelector(".graph") as HTMLElement | null;
       const graphOpen = !!graph && !graph.hidden;
+      const gr = graph ? graph.getBoundingClientRect() : sr;
+      const graphSeat = { top: gr.top - H.top, bottom: gr.bottom - H.top };
       const quietGraph = [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2));
       document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyG" }));
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       const quietEnd = [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2));
-      return { bookOpen, hits, quietBook, quietAfter, graphOpen, quietGraph, quietEnd };
+      return { bookOpen, hits, quietBook, quietAfter, graphOpen, quietGraph, quietEnd, seat, graphSeat };
     });
+    check("the book and the graph begin under the file's header, with a gap, and end above the view's bottom", bookRead.bookOpen && bookRead.graphOpen && bookRead.seat.bookTop >= bookRead.seat.statusBottom + 4 && bookRead.seat.bookBottom <= bookRead.seat.view - 8 && bookRead.graphSeat.top >= bookRead.seat.statusBottom + 4 && bookRead.graphSeat.bottom <= bookRead.seat.view - 8, `header ends ${bookRead.seat.statusBottom.toFixed(0)} px down · book ${bookRead.seat.bookTop.toFixed(0)}–${bookRead.seat.bookBottom.toFixed(0)} · graph ${bookRead.graphSeat.top.toFixed(0)}–${bookRead.graphSeat.bottom.toFixed(0)} · view ${bookRead.seat.view.toFixed(0)} tall`);
     check("the ledger book is a frame: with it open no visible chrome overlaps it and the gun is silenced, and the gun comes back when it closes", bookRead.bookOpen && bookRead.hits.length === 0 && bookRead.quietBook.includes("ammo") && bookRead.quietBook.includes("rack") && bookRead.quietBook.includes("log") && bookRead.quietBook.includes("alert") && bookRead.quietAfter.length === 0, `book open ${bookRead.bookOpen} · overlapping: [${bookRead.hits.join(", ")}] · silenced: ${bookRead.quietBook.join(",")} · after: [${bookRead.quietAfter.join(",")}]`);
     check("and so is its graph", bookRead.graphOpen && bookRead.quietGraph.includes("ammo") && bookRead.quietGraph.includes("reticle") && bookRead.quietEnd.length === 0, `graph open ${bookRead.graphOpen} · silenced: ${bookRead.quietGraph.join(",")} · after: [${bookRead.quietEnd.join(",")}]`);
     // Stage 109: the rack called the DIRECTIVE "THE"

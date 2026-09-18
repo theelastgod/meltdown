@@ -55,6 +55,22 @@ export function footRow(room: number, need: number): "beside" | "above" {
   return need + 2 * FOOT_GAP <= room ? "beside" : "above";
 }
 
+/** the gap a reader frame keeps under the file's header, and its inset from the view's bottom */
+export const FRAME_GAP = 8;
+export const FRAME_INSET = 14;
+
+/**
+ * Where a reader frame sits (Stage 119): the ledger book, its graph and the contracts desk were
+ * centred at up to 92 % of the view's height, and on a 540 px view that put their top edge over
+ * the file's header — the one piece of chrome every frame keeps, cut through by a translucent
+ * panel. The frame's top hangs a gap under the header's measured bottom and its height is what
+ * is left above the bottom inset.
+ */
+export function frameSeat(statusBottom: number, viewHeight: number): { top: number; maxHeight: number } {
+  const top = Math.ceil(statusBottom) + FRAME_GAP;
+  return { top, maxHeight: Math.max(0, viewHeight - top - FRAME_INSET) };
+}
+
 /**
  * Whether a box that spans [left, right] crosses the play: the middle band of the screen, where the
  * reticle and the file's body are. The rack must never; the check reads this rule.

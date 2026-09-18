@@ -194,10 +194,14 @@ async function main(): Promise<void> {
           if (r.width === 0 || r.height === 0) continue;
           if (r.left < fr.right && r.right > fr.left && r.top < fr.bottom && r.bottom > fr.top) hits.push(el.className.split(" ").slice(-1)[0] ?? el.tagName);
         }
-        return { open: true, hits, quiet: [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2)) };
+        const H = hud.getBoundingClientRect();
+        const sr = hud.querySelector(".status")!.getBoundingClientRect();
+        return { open: true, hits, quiet: [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2)), seat: { statusBottom: sr.bottom - H.top, top: fr.top - H.top, bottom: fr.bottom - H.top, view: H.height } };
       }, frame);
     const deskOpen = await overlapOf(hub, ".contracts");
     check("the desk is a frame: with it open, no visible chrome overlaps it and the gun is silenced", deskOpen.open && deskOpen.hits.length === 0 && deskOpen.quiet.includes("ammo") && deskOpen.quiet.includes("prompt"), `overlapping: [${deskOpen.hits.join(", ")}] · silenced: ${deskOpen.quiet.join(",")}`);
+    // Stage 119: the desk begins under the file's header rather than over it
+    check("and the desk begins under the file's header, with a gap, and ends above the view's bottom", deskOpen.open && !!deskOpen.seat && deskOpen.seat.top >= deskOpen.seat.statusBottom + 4 && deskOpen.seat.bottom <= deskOpen.seat.view - 8, `header ends ${deskOpen.seat?.statusBottom.toFixed(0)} px down · desk ${deskOpen.seat?.top.toFixed(0)}–${deskOpen.seat?.bottom.toFixed(0)} · view ${deskOpen.seat?.view.toFixed(0)} tall`);
     const launch = await hub.evaluate(() => window.__game.launch("m1_wake_unlisted"));
     await hub.waitForFunction(() => new URLSearchParams(location.search).get("mission") === "m1_wake_unlisted" && window.__game?.ready === true && window.__game.campaign().mode === "mission", null, { timeout: 40000, polling: 100 });
     await hub.evaluate(() => window.__game.resumeAudio());

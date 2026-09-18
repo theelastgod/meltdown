@@ -1641,6 +1641,35 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 119 — The book covered the file's name
+
+**Goal.** The run probe's ledger frame: the Counter-Ledger book open, and behind its top-left
+corner `▲ ALP` and `LV 50 · X`, the file's header cut through a translucent panel. Stage 95 made
+the status line the one piece of chrome every frame keeps — who you are and what you are worth —
+and the reader frames (the ledger book, its graph, the contracts desk) were centred at up to
+92 % of the view's height, which on a 540 px view put their top edge over it. Kept, and covered.
+
+**What changed.**
+- `client/hud/layout.ts` — `FRAME_GAP` 8, `FRAME_INSET` 14, `frameSeat(statusBottom, viewHeight)`:
+  the frame's top a gap under the header's measured bottom, its height what is left above the
+  bottom inset.
+- `client/hud/hud.ts` — the layout pass seats the book, the graph and the desk by that rule; the
+  stylesheet's centring is overridden inline.
+- `client/hud/hud.css` — the three frames are border-box, so the seat's height is the whole box.
+- `tests/layout.test.ts` — the seat and the floor.
+- `probe/stage60.ts`, `probe/stage10.ts` — with the book, the graph and the desk open, each begins
+  at least 4 px under the header and ends at least 8 px above the view's bottom.
+
+**Proof.** `npm test` 744 tests (two new); `npm run probe:tps` 44/44 — the header ends 76 px
+down and the book and the graph run 84–526 px in a 540 px view; `npm run probe:campaign` 39/39 —
+the desk the same, 84–526; `npm run build` and `npm run smoke` 7/7. The first reading had the book
+ending at 548 px: the frames were content-box and carried their padding and border outside the
+seat's height, which is why they are border-box now.
+
+**Mutation.** The seat ignores the header (`top = FRAME_GAP`): the layout test fails (2 of 21),
+the tps probe fails its new check, 43/44 (`book 8–526`), and the campaign probe fails its own,
+38/39 (`desk 8–491`); every other check passes.
+
 ## Stage 118 — The foot line wrapped onto three lines at 640
 
 **Goal.** The run probe's gate frame at 640 px wide: `1 · BLANK / · 0.0 m/s / · STAND`, three

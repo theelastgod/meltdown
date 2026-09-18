@@ -14,7 +14,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, flagTop, footRow, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusWidth } from "./layout";
+import { alertTop, flagTop, footRow, frameSeat, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusWidth } from "./layout";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot } from "./radar";
 
@@ -495,6 +495,18 @@ export class Hud {
     const tabs = this.q(".tabs").getBoundingClientRect();
     const above = footRow(tabs.left - slots.right, center.scrollWidth) === "above";
     if (center.classList.contains("above") !== above) center.classList.toggle("above", above);
+    // the reader frames — the ledger book, its graph, the contracts desk — begin under the file's
+    // header rather than over it (Stage 119)
+    const seat = frameSeat(this.q(".status").getBoundingClientRect().bottom - rootTop, this.root.clientHeight);
+    for (const sel of [".file", ".graph", ".contracts"]) {
+      const frame = this.q(sel);
+      const top = `${seat.top}px`;
+      if (frame.style.top !== top) {
+        frame.style.top = top;
+        frame.style.maxHeight = `${seat.maxHeight}px`;
+        frame.style.transform = "translateX(-50%)";
+      } else if (frame.style.maxHeight !== `${seat.maxHeight}px`) frame.style.maxHeight = `${seat.maxHeight}px`;
+    }
     // and the status panel ends before the mission panel begins (Stage 107): its content width
     // follows the panel's measured left edge; a hidden panel is nothing to keep clear of
     const status = this.q(".status");
