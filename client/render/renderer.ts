@@ -25,6 +25,7 @@ import { applyPose, buildRig, disposeRig, rigReport, setRigSlot, WEAPON_IN_SOCKE
 import { poseBody, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
+import { arcPoint, type ArcSpec } from "./ballistic";
 import type { Box } from "../../shared/sim/box";
 
 /** Interpolated view state handed to the renderer each frame. */
@@ -54,6 +55,8 @@ export interface ViewState {
   height: number;
   /** the yaw the next shot leaves along: the aim plus the recoil the sim is carrying (Stage 66) */
   aimYaw: number;
+  /** the round's flight, when the weapon throws one instead of firing a ray (Stage 78) */
+  arc?: ArcSpec | null;
   /** the pitch the next shot leaves along */
   aimPitch: number;
   /** how far the held weapon's shot reaches (m) */
@@ -94,7 +97,7 @@ export interface CameraView {
   /** where the eye's ray lands on screen (CSS px); the screen's centre in first person */
   reticle: { x: number; y: number; visible: boolean };
   /** how far along the eye's ray the reticle is, and whether it is on a wall */
-  aim: { distance: number; hit: boolean; onTarget: boolean };
+  aim: { distance: number; hit: boolean; onTarget: boolean; arc: boolean; point: { x: number; y: number; z: number } };
   /** where the camera's segment starts: the shoulder after a wall beside the player moved it in */
   anchor: { x: number; y: number; z: number };
   /** the lens this frame was drawn with, in degrees: speed widens it (Stage 77) */
@@ -166,7 +169,7 @@ export class Renderer {
   private camSmooth = { d: TPS_DEFAULT.distance, x: 0, y: 0, z: 0, set: false };
   /** the eased shoulder offset: pulling in against a wall beside the player is immediate, sliding back out is not */
   private shoulderSmooth = 0;
-  private lastView: CameraView = { third: true, fov: 80, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false } };
+  private lastView: CameraView = { third: true, fov: 80, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false, arc: false, point: { x: 0, y: 0, z: 0 } } };
   private tmpProj = new THREE.Vector3();
   private vmSlot = 1;
   private vmSwap = 0;
@@ -752,13 +755,15 @@ export class Renderer {
     applyPose(this.local, out, v.yaw);
     g.visible = out.visible && !close && !this.bodyHidden;
     // the reticle: the eye's ray, projected
-    const aim = aimPoint({ x: v.x, y: v.y + v.eye, z: v.z }, v.aimYaw, v.aimPitch, this.boxes, v.targets, v.aimRange);
+    // a launcher's round falls: the mark is where the arc ends, not where the ray would have gone
+    const eye = { x: v.x, y: v.y + v.eye, z: v.z };
+    const aim = v.arc ? arcPoint(eye, v.aimYaw, v.aimPitch, v.arc, this.boxes, v.targets) : aimPoint(eye, v.aimYaw, v.aimPitch, this.boxes, v.targets, v.aimRange);
     this.camera.updateMatrixWorld(true);
     this.tmpProj.set(aim.point.x, aim.point.y, aim.point.z).project(this.camera);
     const visible = this.tmpProj.z < 1 && Math.abs(this.tmpProj.x) <= 1.2 && Math.abs(this.tmpProj.y) <= 1.2;
     const rx = (this.tmpProj.x + 1) * 0.5 * window.innerWidth;
     const ry = (1 - this.tmpProj.y) * 0.5 * window.innerHeight;
-    this.lastView = { third: true, fov: this.camera.fov, anchor: { x: anchor.x, y: anchor.y, z: anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget } };
+    this.lastView = { third: true, fov: this.camera.fov, anchor: { x: anchor.x, y: anchor.y, z: anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget, arc: !!v.arc, point: { x: aim.point.x, y: aim.point.y, z: aim.point.z } } };
   }
 
   render(v: ViewState, rawDt: number): void {
@@ -791,7 +796,19 @@ export class Renderer {
       this.camera.position.set(v.x, v.y + this.eyeSmooth + bobY, v.z);
       this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, (v.stance === "slide" ? 0.03 : bobX * 0.6) + (v.stunned ? Math.sin(this.clock * 25) * 0.02 : 0));
       this.local.group.visible = false;
-      this.lastView = { third: false, fov: this.camera.fov, anchor: { x: 0, y: 0, z: 0 }, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: window.innerWidth / 2, y: window.innerHeight / 2, visible: true }, aim: { distance: 0, hit: false, onTarget: false } };
+      // the crosshair is the screen's centre in this view because the eye's ray is — but a
+      // launcher's round falls here too, and leaving the mark at the centre would tell in one view
+      // the straight-ray lie the other has just stopped telling (Stage 78)
+      let mark = { x: window.innerWidth / 2, y: window.innerHeight / 2, visible: true };
+      let fired = { distance: 0, hit: false, onTarget: false, arc: false, point: { x: v.x, y: v.y + v.eye, z: v.z } };
+      if (v.arc) {
+        const a = arcPoint({ x: v.x, y: v.y + v.eye, z: v.z }, v.aimYaw, v.aimPitch, v.arc, this.boxes, v.targets);
+        this.camera.updateMatrixWorld(true);
+        this.tmpProj.set(a.point.x, a.point.y, a.point.z).project(this.camera);
+        mark = { x: (this.tmpProj.x + 1) * 0.5 * window.innerWidth, y: (1 - this.tmpProj.y) * 0.5 * window.innerHeight, visible: this.tmpProj.z < 1 && Math.abs(this.tmpProj.x) <= 1.2 && Math.abs(this.tmpProj.y) <= 1.2 };
+        fired = { distance: a.distance, hit: a.hit, onTarget: a.onTarget, arc: true, point: { x: a.point.x, y: a.point.y, z: a.point.z } };
+      }
+      this.lastView = { third: false, fov: this.camera.fov, anchor: { x: 0, y: 0, z: 0 }, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: mark, aim: fired };
     }
     // the viewmodel is the first-person weapon; behind the body the hand holds it instead
     this.viewmodel.visible = !this.thirdPerson;

@@ -334,6 +334,66 @@ async function main(): Promise<void> {
     results["aim"] = { ...aim, dummy, off, shot: shotRes };
     await shotCheck(pg, "stage60-reticle.png");
 
+    // ---------------- a round that falls ----------------
+    // The reticle marked the end of a straight ray for every weapon, which is the truth for a bullet
+    // and a lie for a launcher: the phage's round leaves at forty metres a second under twelve of
+    // gravity and is half a metre under that line by the time it arrives (Stage 78).
+    const lob = await pg.evaluate(async () => {
+      const p = window.__game.game.player;
+      p.pos.x = 0;
+      p.pos.z = 14;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      window.__game.setBot([{ kind: "slot", slot: 5 }, { kind: "look", yaw: 0, pitch: 0, ticks: 10 }, { kind: "hold", ticks: 6000 }]);
+      window.__game.advance(60);
+      await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => requestAnimationFrame(r));
+      const s = window.__game.state();
+      const v = window.__game.view();
+      const r = window.__game.game.renderer;
+      const eye = { x: s.pos.x, y: s.pos.y + 1.62, z: s.pos.z };
+      const w = window.__game.game.player.weapon;
+      // where a straight ray at the same aim, at the same distance, would have been drawn
+      const ay = s.yaw + w.kickYaw, ap = s.pitch + w.kickPitch;
+      const c = Math.cos(ap);
+      const straight = r.project({ x: eye.x - Math.sin(ay) * c * v.aim.distance, y: eye.y + Math.sin(ap) * v.aim.distance, z: eye.z - Math.cos(ay) * c * v.aim.distance });
+      const marked = r.project(v.aim.point);
+      const xh = document.querySelector("#hud .xh");
+      return { slot: s.slot, arc: v.aim.arc, point: v.aim.point, distance: v.aim.distance, reticle: v.reticle, straight, marked, ring: !!xh && xh.classList.contains("arc"), eye };
+    });
+    const markGap = Math.hypot(lob.reticle.x - lob.marked.x, lob.reticle.y - lob.marked.y);
+    const dropPx = lob.reticle.y - lob.straight.y;
+    check("a launcher's reticle is the end of its arc, drawn below the straight ray the aim points along, and the HUD says so", lob.arc && lob.slot === 5 && markGap < 1.5 && dropPx > 6 && lob.ring, `slot ${lob.slot} · arc ${lob.arc} · mark ${markGap.toFixed(1)} px from the arc's end, ${dropPx.toFixed(1)} px below the straight ray at ${lob.distance.toFixed(1)} m · ring ${lob.ring}`);
+    // and the claim it makes is the one the sim keeps: fire, and the round goes off where the mark is
+    const landed = await pg.evaluate(async () => {
+      const before = window.__game.view().aim.point;
+      window.__game.setBot([{ kind: "fire", ticks: 16 }, { kind: "hold", ticks: 6000 }]);
+      let last: { x: number; y: number; z: number } | null = null;
+      let seen = false;
+      for (let i = 0; i < 300; i++) {
+        window.__game.advance(1);
+        const list = window.__game.game.world.projectiles;
+        if (list.length) {
+          seen = true;
+          last = { x: list[0]!.pos.x, y: list[0]!.pos.y, z: list[0]!.pos.z };
+        } else if (seen) break;
+        if (i % 6 === 0) await new Promise((r) => requestAnimationFrame(r));
+      }
+      return { before, last, seen };
+    });
+    const miss = landed.last ? Math.hypot(landed.last.x - lob.point.x, landed.last.y - lob.point.y, landed.last.z - lob.point.z) : 99;
+    check("and the round goes off where the mark is: the arc the reticle walks is the arc the sim integrates", landed.seen && miss < 0.6, `the round burst at (${landed.last?.x.toFixed(2)}, ${landed.last?.y.toFixed(2)}, ${landed.last?.z.toFixed(2)}), ${miss.toFixed(2)} m from the mark at (${lob.point.x.toFixed(2)}, ${lob.point.y.toFixed(2)}, ${lob.point.z.toFixed(2)})`);
+    await shotCheck(pg, "stage60-arc.png");
+    // back on a rifle the mark is a ray again, and the ring comes off
+    const backToRay = await pg.evaluate(async () => {
+      window.__game.setBot([{ kind: "slot", slot: 1 }, { kind: "hold", ticks: 6000 }]);
+      window.__game.advance(60);
+      await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => requestAnimationFrame(r));
+      const xh = document.querySelector("#hud .xh");
+      return { arc: window.__game.view().aim.arc, ring: !!xh && xh.classList.contains("arc"), slot: window.__game.state().slot };
+    });
+    check("and a weapon that fires a ray gets the ray's mark back", !backToRay.arc && !backToRay.ring && backToRay.slot === 1, `slot ${backToRay.slot} · arc ${backToRay.arc} · ring ${backToRay.ring}`);
+
     // ---------------- what is lit, and where the filament hangs ----------------
     await pg.evaluate(() => {
       const p = window.__game.game.player;

@@ -1641,6 +1641,40 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 78 — The round that falls
+
+**Goal.** The last item from the camera review's deferred list, and the one a player meets every time
+they pick up the launcher: the reticle marked the end of a straight ray for every weapon. That is the
+truth for a bullet and a lie for a round that arcs. The phage leaves at forty metres a second under
+twelve of gravity, so at sixteen metres it is already sixteen pixels under the mark, and lobbed over
+a wall it lands somewhere the reticle never pointed at.
+
+**What changed.**
+
+- **A new pure module, `client/render/ballistic.ts`.** `arcPoint` walks the arc the simulation
+  integrates — the same launch (direction times speed, plus half the file's ground speed and a third
+  of its climb), the same Euler step at the simulation's own tick, the same order of tests, bodies
+  before boxes — and returns where the round stops, how long it was in the air, and whether it
+  stopped on a body. When the fuse runs out first it says so and marks where it bursts, because a
+  round thrown over a roof at a steep angle really does go off in the air.
+- **Both views mark it.** Third person casts the arc instead of the ray; first person, whose
+  crosshair is pinned to the centre of the screen because the eye's ray is, now projects the same
+  landing point. Stage 76's rule holds: the two views are one game.
+- **And the mark says what it is** — a ring where the round lands rather than a cross where the
+  weapon is pointed, so a mark that arrives a second later on a curve does not claim to be a bullet.
+
+**Proof.** `probe:tps` 26/26 — three new: the launcher's mark sits on the end of its own arc and
+15.7 px below the straight ray at sixteen metres with the ring on the HUD; *firing it puts the burst
+0.30 m from the mark* (a straight-ray mark is 6.11 m out, which is what the mutation reads); and a
+rifle gets the ray's mark back. `stage60-arc.png` is the ring sitting on the burst. `tests/ballistic.test.ts`
+9: no gravity is the straight ray, the drop matches half g t squared, a lob lands on the ground, a
+high lob burns its fuse in the air, a body stops it, a body behind cover in the same step of the walk
+does not, the shooter's own speed is carried, and the whole trace matches a hand-stepped Euler walk.
+`probe:arsenal` 19/19, `probe:campaign` 31/31, `probe:body` 20/20, `probe:frame` 6/6, `probe:mobile`
+14/14, `smoke` 7/7, 552 tests, build and typecheck clean. Four guards mutation-checked: the ray put
+back for the launcher, the shooter's carried speed removed, the fuse removed, and a body left marked
+when a box is nearer in the same step.
+
 ## Stage 77 — Sprinting reads as speed
 
 **Goal.** Another look at real frames rather than at checks. Holding sprint down the middle of the

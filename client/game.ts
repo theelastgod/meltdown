@@ -19,6 +19,7 @@ import { TouchControls, wantsTouch } from "./touch";
 import { PerfMonitor } from "./perf";
 import { Renderer, type ViewState } from "./render/renderer";
 import type { AimTarget } from "./render/tps";
+import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
@@ -743,6 +744,15 @@ export class Game {
     this.hud.setRun(v ? { carried: v.carried, banked: v.banked, banking: v.banking, inSafe: v.inSafe, zone: v.zone, today: v.today, cap: v.cap, owed: v.owed, claims: v.claims.length } : null);
   }
 
+  /**
+   * The round this weapon throws, if it throws one rather than firing a ray. Read from the same
+   * weapon definition the sim launches from, so the mark and the round agree (Stage 78).
+   */
+  private arcOf(p: PlayerState): ArcSpec | null {
+    const pr = weaponDefOf(p).projectile;
+    return pr ? { speed: pr.speed, gravity: pr.gravity, fuse: pr.fuse, vel: { x: p.vel.x, y: p.vel.y, z: p.vel.z }, muzzle: 0.6 } : null;
+  }
+
   /** the hits taken lately, for the HUD's bearings (Stage 74) */
   private hits: HitSource[] = [];
 
@@ -1099,6 +1109,10 @@ export class Game {
       // how far a shot from this weapon reaches: the reticle stops where the shot does, so it
       // cannot mark a body at sixty metres for a weapon whose rounds die at thirty (Stage 73)
       aimRange: weaponDefOf(p).range.max,
+      // and a round that falls is not a ray at all: for a launcher the reticle walks the arc the
+      // sim integrates, from the same launch — the weapon's speed and gravity, plus the half of the
+      // file's own motion the round inherits (Stage 78)
+      arc: this.arcOf(p),
       targets: this.aimTargets(),
     };
     this.input.currentSlot = p.weapon.slot;
@@ -1127,7 +1141,8 @@ export class Game {
       this.renderer.hub.setGhost(this.ghostPose);
     }
     this.renderer.render(view, rdt);
-    this.hud.setReticle(this.renderer.view().reticle);
+    const shown = this.renderer.view();
+    this.hud.setReticle({ ...shown.reticle, arc: shown.aim.arc });
     // and where the last hits came from, relative to where the camera is looking now
     this.hud.setDamage(hitMarks(this.hits, p.pos.x, p.pos.z, view.yaw, this.renderer.clockNow));
     if (this.renderer.life.tram?.passing) this.audio.tram();

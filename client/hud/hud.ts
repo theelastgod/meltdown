@@ -28,13 +28,20 @@ export class Hud {
   private zone = "DRAINAGE YARD";
 
   private reticleAt = { x: -1, y: -1 };
+  private reticleArc = false;
 
   /**
    * The reticle goes where the renderer says the eye's ray lands (Stage 60): the screen's centre in
    * first person, and in third person wherever the shot would go — off-centre near a wall, on it at range.
    */
-  setReticle(r: { x: number; y: number; visible: boolean }): void {
+  setReticle(r: { x: number; y: number; visible: boolean; arc?: boolean }): void {
     const xh = this.q(".xh");
+    // a round that falls gets a mark of its own: the same cross would say "the shot goes here" in
+    // the same words for a thing that arrives a second later, on a curve (Stage 78)
+    if (!!r.arc !== this.reticleArc) {
+      this.reticleArc = !!r.arc;
+      xh.classList.toggle("arc", this.reticleArc);
+    }
     if (Math.abs(r.x - this.reticleAt.x) < 0.5 && Math.abs(r.y - this.reticleAt.y) < 0.5) return;
     this.reticleAt = { x: r.x, y: r.y };
     xh.style.left = `${r.x}px`;
