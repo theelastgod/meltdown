@@ -1641,6 +1641,27 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 82 — A rejoin is not a pause
+
+**Goal.** Run #108 went red on `probe:net`, on a check nothing in Stage 79 touched: *rejoin restores
+the same file and state*. The numbers it printed were `kills 6→7`.
+
+**What changed.** The check read ALPHA's kill count, *then* stopped its bot, then pulled the link.
+The engagement is still running at that point, so in the round trip between the two calls ALPHA
+landed one more kill — and the check, which asserted the count was unchanged across the reconnect,
+called that a failure. It was asserting that the match paused while the link came back, which it
+does not and should not.
+
+The bot stops first now, and the probe waits for whatever is already in flight to land before
+reading the counters. The claim is also stated properly: the file survives the link, so the id and
+the token must be identical and the kill count may only ever go *up* — and it has to have something
+in it for that to mean anything, which the check now requires too.
+
+**Proof.** `probe:net` 19/19, and the guard still has teeth: with the room's rejoin-by-token branch
+disabled, the reconnecting client comes back as a different file — `id 1→3, kills 3→0`, three
+players in a two-player room, no inputs applied — and the check fails. 572 tests, typecheck clean.
+No game code changed.
+
 ## Stage 81 — The loudest thing in the street
 
 **Goal.** Stage 80 gave the street footsteps, which raised the question of what the street already

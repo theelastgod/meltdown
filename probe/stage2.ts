@@ -268,8 +268,13 @@ async function main(): Promise<void> {
     check("bandwidth: < 12 KB/s per client downstream", E.netA.stats.bytesIn / secs < 12000, `${(E.netA.stats.bytesIn / secs / 1000).toFixed(2)} KB/s in, ${(E.netA.stats.bytesOut / secs / 1000).toFixed(2)} KB/s out`);
 
     // ---------------- rejoin ----------------
-    const before = await E.a.evaluate(() => ({ id: window.__game.net()!.playerId, kills: window.__game.state().stats.kills, token: window.__game.net()!.token }));
+    // Stop the bot BEFORE reading the counters, and let whatever is already in flight land. The
+    // engagement is still running when this section starts, so reading the kill count and then
+    // stopping the bot leaves a round trip in which ALPHA can land one more — CI #108 read 6 → 7
+    // and failed a check that is not about kills at all (Stage 82).
     await E.a.evaluate(() => window.__game.setBot(null));
+    await E.a.waitForTimeout(700);
+    const before = await E.a.evaluate(() => ({ id: window.__game.net()!.playerId, kills: window.__game.state().stats.kills, token: window.__game.net()!.token }));
     await E.a.evaluate(() => window.__game.reconnect());
     await waitJoined(E.a, 10000);
     const appliedAtRejoin = (await stats()).rooms["probe"].clients.find((c: any) => c.id === before.id).inputsApplied;
@@ -278,7 +283,9 @@ async function main(): Promise<void> {
     const after = await E.a.evaluate(() => ({ id: window.__game.net()!.playerId, kills: window.__game.state().stats.kills, token: window.__game.net()!.token, status: window.__game.net()!.status }));
     const st2 = (await stats()).rooms["probe"];
     const cAr = st2.clients.find((c: any) => c.id === before.id);
-    check("rejoin restores the same file and state, and inputs flow again", after.id === before.id && after.kills === before.kills && after.token === before.token && st2.players === 2 && cAr.inputsApplied > appliedAtRejoin + 30, `id ${before.id}→${after.id}, kills ${before.kills}→${after.kills}, players in room ${st2.players}, inputs applied after rejoin ${cAr.inputsApplied - appliedAtRejoin}`);
+    // the claim is that the file survives the link, not that the match paused while it did: the
+    // counter may only ever go up, and it has to have something in it for that to mean anything
+    check("rejoin restores the same file and state, and inputs flow again", after.id === before.id && before.kills > 0 && after.kills >= before.kills && after.token === before.token && st2.players === 2 && cAr.inputsApplied > appliedAtRejoin + 30, `id ${before.id}→${after.id}, kills ${before.kills}→${after.kills} (never reset), players in room ${st2.players}, inputs applied after rejoin ${cAr.inputsApplied - appliedAtRejoin}`);
 
     // ---------------- cheater ----------------
     const kicksBefore = st2.kicks;
