@@ -1641,6 +1641,31 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 131 — Every district was the yard
+
+**Goal.** The first wake was the drainage yard, and the wake's lines were written for it: `◆
+ROUND OVER — CELL ONE WOKE THE YARD`, `◆ FULL WAKE — THE YARD IS OFF THE MODEL`, `FILE #3
+(CHARLIE) ENTERED THE YARD`. Lease Row, the Deadletter Docks and the Repo Depot came after, and
+the lines went on saying the yard in all of them, while the mission panel beside them said
+`THE WAKE — LEASE ROW`.
+
+**What changed.**
+- `client/hud/district.ts` — `districtName(level)`: the district's name as the HUD's title prints
+  it; `roundOverLine`, `fullWakeLine`, `enteredLine`, `wakeBeginsLine`: the wake's lines with the
+  district in them.
+- `client/game.ts` — the five lines, offline and online, read the district from the level. The
+  online wake-begins line takes the offline wording, which says what to do.
+- `tests/district.test.ts` — the name, each line, and that none says the yard of a district that
+  is not one.
+- `probe/stage5.ts` — the round-over line read after the clock runs out names DRAINAGE YARD.
+
+**Proof.** `npm test` 766 tests (four new); `npm run probe:wake` 24/24 — after the clock runs
+out the alert reads `◆ ROUND OVER — CELL ONE WOKE DRAINAGE YARD`; `npm run build` and `npm run
+smoke` 7/7.
+
+**Mutation.** The round-over line says the yard again: two unit tests fail and the wake probe
+fails its new check, 23/24 (`… WOKE THE YARD`); every other check passes.
+
 ## Stage 130 — The tutorial never left
 
 **Goal.** At the foot of every desktop frame since the first HUD: `WASD · HOLD CLICK fire · R

@@ -1,3 +1,4 @@
+import { districtName, enteredLine, fullWakeLine, roundOverLine, wakeBeginsLine } from "./hud/district";
 import { runView, type RunView } from "@shared/sim/run";
 import type { RunMsg } from "@shared/net/protocol";
 import { loadSettings, type Settings } from "./settings";
@@ -589,7 +590,7 @@ export class Game {
             break;
           case FX.phase:
             this.kernelMark = ev.a === 1 ? (this.netMatch?.timeLeft ?? null) : null;
-            this.hud.alert(ev.a === 1 ? "◆ THE WAKE BEGINS" : ev.a === 2 ? `◆ ROUND OVER — ${ev.b ? `CELL ${ev.b === 1 ? "ONE" : "TWO"} WOKE THE YARD` : "NO ONE WOKE"}` : "◆ WARM-UP", false, 4);
+            this.hud.alert(ev.a === 1 ? wakeBeginsLine() : ev.a === 2 ? roundOverLine(ev.b, districtName(this.world.level)) : "◆ WARM-UP", false, 4);
             // online the phase had been silent (Stage 124): the same voices as offline
             if (ev.a === 1) this.audio.wakeBegins();
             else if (ev.a === 2) this.audio.roundOver(ev.b === 0 ? "none" : ev.b === this.player.team ? "won" : "lost");
@@ -597,7 +598,7 @@ export class Game {
             this.renderer.post.kick(1);
             break;
           case FX.fullWake:
-            this.hud.alert("◆ FULL WAKE — THE YARD IS OFF THE MODEL", false, 5);
+            this.hud.alert(fullWakeLine(districtName(this.world.level)), false, 5);
             this.renderer.post.kick(1);
             break;
           default:
@@ -620,7 +621,7 @@ export class Game {
         if (ev.playerId === me) this.fileClosed(ev.killerId);
         break;
       case "join":
-        this.hud.push(`FILE #${ev.playerId} (${ev.name}) ENTERED THE YARD`, "cy");
+        this.hud.push(enteredLine(ev.playerId, ev.name, districtName(this.world.level)), "cy");
         break;
       case "leave":
         this.hud.push(`FILE #${ev.playerId} DROPPED OFF THE LEDGER`, "k");
@@ -1258,7 +1259,7 @@ export class Game {
       case "phase":
         // the cadence runs from the round's start, so that is a mark too (Stage 87)
         this.kernelMark = ev.phase === "wake" ? (this.world.wake?.timeLeft ?? null) : null;
-        this.hud.alert(ev.phase === "wake" ? "◆ THE WAKE BEGINS — PULL THE NODES OFF THE MODEL" : ev.phase === "results" ? `◆ ROUND OVER — ${ev.winner ? `CELL ${ev.winner === 1 ? "ONE" : "TWO"} WOKE THE YARD` : "NO ONE WOKE"}` : "◆ WARM-UP", false, 4);
+        this.hud.alert(ev.phase === "wake" ? wakeBeginsLine() : ev.phase === "results" ? roundOverLine(ev.winner, districtName(this.world.level)) : "◆ WARM-UP", false, 4);
         // the round's start and its end have their own voices (Stage 124); the KERNEL's pulse is
         // the warm-up's, the model taking the district back
         if (ev.phase === "wake") this.audio.wakeBegins();
@@ -1267,7 +1268,7 @@ export class Game {
         this.renderer.post.kick(1);
         break;
       case "fullWake":
-        this.hud.alert("◆ FULL WAKE — THE YARD IS OFF THE MODEL", false, 5);
+        this.hud.alert(fullWakeLine(districtName(this.world.level)), false, 5);
         this.audio.nodeFlip(true);
         this.renderer.post.kick(1);
         break;

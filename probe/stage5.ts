@@ -275,13 +275,17 @@ async function main(): Promise<void> {
       window.__game.advance(2);
       const afterEnd = { ...window.__game.state().audio };
       const endedIn = (w as { phase: string }).phase; // the sim moved it; TS still holds the literal just assigned
+      // Stage 131: every district was the yard. The round-over line names the district (read from
+      // the element: the card of Stage 121 has it silenced, its text is still what was written)
+      const roundLine = document.querySelector("#hud .alert")!.textContent ?? "";
       w.phase = "warmup"; w.timeLeft = 0.01;
       window.__game.advance(2);
       const afterBegin = { ...window.__game.state().audio };
       const beganIn = (w as { phase: string }).phase;
       // no named helpers in here: the probe's build injects a __name the page does not have
-      return { endedIn, beganIn, roundOver: (afterEnd["roundOver"] ?? 0) - (before["roundOver"] ?? 0), pulseAtEnd: (afterEnd["kernelPulse"] ?? 0) - (before["kernelPulse"] ?? 0), wakeBegins: (afterBegin["wakeBegins"] ?? 0) - (afterEnd["wakeBegins"] ?? 0), pulseAtBegin: (afterBegin["kernelPulse"] ?? 0) - (afterEnd["kernelPulse"] ?? 0) };
+      return { endedIn, beganIn, roundLine, roundOver: (afterEnd["roundOver"] ?? 0) - (before["roundOver"] ?? 0), pulseAtEnd: (afterEnd["kernelPulse"] ?? 0) - (before["kernelPulse"] ?? 0), wakeBegins: (afterBegin["wakeBegins"] ?? 0) - (afterEnd["wakeBegins"] ?? 0), pulseAtBegin: (afterBegin["kernelPulse"] ?? 0) - (afterEnd["kernelPulse"] ?? 0) };
     });
+    check("the round-over line names the district it is in, not the yard", phaseCues.roundLine === "◆ ROUND OVER — CELL ONE WOKE DRAINAGE YARD", `"${phaseCues.roundLine}"`);
     check("the round's end and the wake's start are heard in their own voices, not as the KERNEL's pulse", phaseCues.endedIn === "results" && phaseCues.roundOver === 1 && phaseCues.pulseAtEnd === 0 && phaseCues.beganIn === "wake" && phaseCues.wakeBegins === 1 && phaseCues.pulseAtBegin === 0, `clock out → ${phaseCues.endedIn}: roundOver ${phaseCues.roundOver}, pulse ${phaseCues.pulseAtEnd} · warm-up out → ${phaseCues.beganIn}: wakeBegins ${phaseCues.wakeBegins}, pulse ${phaseCues.pulseAtBegin}`);
     // Stage 121: the round ended with a line. Put the wake into its results phase by hand and read
     // the drawn frame: the card, its lines, the chrome silenced; then the warm-up, and the card gone
