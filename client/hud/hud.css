@@ -80,6 +80,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.q-prompt .prompt, #hud.q-prompt .prompt-touch, #hud.q-prompt .keys,
 #hud.q-reticle .xh,
 #hud.q-rack .rack,
+#hud.q-alert .alert,
 #hud.q-ammo .ammo,
 #hud.q-nades .nades,
 #hud.q-arrows .dmg, #hud.q-arrows .thr, #hud.q-arrows .hit,

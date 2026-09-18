@@ -43,3 +43,15 @@ describe("the ledger is a frame too (Stage 112)", () => {
     expect(quietFor({ desk: false, terminal: true, card: false, ledger: true })).toEqual([...ALL_GROUPS]);
   });
 });
+
+describe("the alert is chrome (Stage 113)", () => {
+  it("is silenced by the frames that cover the screen", () => {
+    expect(ALL_GROUPS).toContain("alert");
+    expect(quietFor({ desk: true, terminal: false, card: false, ledger: false })).toContain("alert");
+    expect(quietFor({ desk: false, terminal: false, card: true, ledger: false })).toContain("alert");
+    expect(quietFor({ desk: false, terminal: false, card: false, ledger: true })).toContain("alert");
+  });
+  it("and kept by a terminal, which is usually the objective", () => {
+    expect(quietFor({ desk: false, terminal: true, card: false, ledger: false })).not.toContain("alert");
+  });
+});

@@ -432,6 +432,9 @@ async function main(): Promise<void> {
     // the page does not have.
     const bookRead = await pg.evaluate(async () => {
       const hud = document.getElementById("hud")!;
+      // an alert up as the book opens (Stage 113): it is chrome too, and the one that first ran
+      // over the book; raised here so the claim does not depend on an earlier alert's timer
+      window.__game.game.hud.alert("◆ INTEGRITY 30", false, 6);
       document.dispatchEvent(new KeyboardEvent("keydown", { code: "Tab" }));
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       const book = hud.querySelector(".file") as HTMLElement | null;
@@ -462,7 +465,7 @@ async function main(): Promise<void> {
       const quietEnd = [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2));
       return { bookOpen, hits, quietBook, quietAfter, graphOpen, quietGraph, quietEnd };
     });
-    check("the ledger book is a frame: with it open no visible chrome overlaps it and the gun is silenced, and the gun comes back when it closes", bookRead.bookOpen && bookRead.hits.length === 0 && bookRead.quietBook.includes("ammo") && bookRead.quietBook.includes("rack") && bookRead.quietBook.includes("log") && bookRead.quietAfter.length === 0, `book open ${bookRead.bookOpen} · overlapping: [${bookRead.hits.join(", ")}] · silenced: ${bookRead.quietBook.join(",")} · after: [${bookRead.quietAfter.join(",")}]`);
+    check("the ledger book is a frame: with it open no visible chrome overlaps it and the gun is silenced, and the gun comes back when it closes", bookRead.bookOpen && bookRead.hits.length === 0 && bookRead.quietBook.includes("ammo") && bookRead.quietBook.includes("rack") && bookRead.quietBook.includes("log") && bookRead.quietBook.includes("alert") && bookRead.quietAfter.length === 0, `book open ${bookRead.bookOpen} · overlapping: [${bookRead.hits.join(", ")}] · silenced: ${bookRead.quietBook.join(",")} · after: [${bookRead.quietAfter.join(",")}]`);
     check("and so is its graph", bookRead.graphOpen && bookRead.quietGraph.includes("ammo") && bookRead.quietGraph.includes("reticle") && bookRead.quietEnd.length === 0, `graph open ${bookRead.graphOpen} · silenced: ${bookRead.quietGraph.join(",")} · after: [${bookRead.quietEnd.join(",")}]`);
     // Stage 109: the rack called the DIRECTIVE "THE"
     check("every slot on the rack is labelled by a word that names the weapon, not an article", chrome.rackLabels.length === 8 && chrome.rackLabels.every((l) => !/^\d\s+(THE|A|AN)$/i.test(l)) && chrome.rackLabels.some((l) => /^7 DIRECTIVE$/.test(l)), `rack: ${chrome.rackLabels.join(" | ")}`);

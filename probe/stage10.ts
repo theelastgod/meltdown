@@ -207,7 +207,7 @@ async function main(): Promise<void> {
     await hub.waitForTimeout(600);
     await shotCheck(hub, `stage10-terminal.png`);
     const termOpen = await overlapOf(hub, ".terminal");
-    check("and so is a fixer's terminal: the gun and the tutorial go, the objective stays", termOpen.open && termOpen.hits.length === 0 && termOpen.quiet.includes("rack") && !termOpen.quiet.includes("mission"), `overlapping: [${termOpen.hits.join(", ")}] · silenced: ${termOpen.quiet.join(",")}`);
+    check("and so is a fixer's terminal: the gun and the tutorial go, the objective stays", termOpen.open && termOpen.hits.length === 0 && termOpen.quiet.includes("rack") && !termOpen.quiet.includes("mission") && !termOpen.quiet.includes("alert"), `overlapping: [${termOpen.hits.join(", ")}] · silenced: ${termOpen.quiet.join(",")}`);
     await playTerminal(hub);
     await advance(hub, 2);
     // and the frame going is the gun coming back: nothing silenced once the terminal has resolved
@@ -291,6 +291,17 @@ async function main(): Promise<void> {
     const done = await hub.evaluate(() => ({ c: window.__game.campaign(), card: !(document.querySelector("#hud .card") as HTMLElement).hidden, cardTitle: document.querySelector("#hud .card .ct")?.textContent ?? "", audio: window.__game.state().audio }));
     const f2 = await file(acct);
     check("out through the plaza: the contract closes, the card prints, and the ledger host settles it — testimony, Scrip, XP, Threat", done.c.mission?.status === "complete" && done.c.completion?.ok === true && done.card && /CONTRACT CLOSED/.test(done.cardTitle) && f2.campaign?.missionsDone.includes("m1_wake_unlisted") === true && f2.campaign.testimony["m1:lease"] === "burn" && f2.wallet.scrip === 300 && done.c.missionsDone.includes("m1_wake_unlisted"), `status ${done.c.mission?.status} · settled ${done.c.completion?.ok} · card "${done.cardTitle}" · file: missions [${f2.campaign?.missionsDone.join(",")}] testimony ${JSON.stringify(f2.campaign?.testimony)} scrip ${f2.wallet.scrip}`);
+    // Stage 113: the alert had no place in a frame. With the card up the mission panel is silenced
+    // and the alert had hung six pixels from the top of the screen; it is chrome, and the card
+    // silences it with the rest
+    const anchored = await hub.evaluate(async () => {
+      window.__game.game.hud.alert("◆ LEDGER SETTLED — XP +900", false, 3);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const hud = document.getElementById("hud")!;
+      const a = hud.querySelector(".alert") as HTMLElement;
+      return { alertShown: getComputedStyle(a).display !== "none", alertText: a.textContent ?? "", quiet: [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2)), card: !(hud.querySelector(".card") as HTMLElement).hidden };
+    });
+    check("with the card up, an alert raised is silenced with the rest of the chrome rather than hung off the top of the screen", anchored.card && !!anchored.alertText && !anchored.alertShown && anchored.quiet.includes("alert"), `card ${anchored.card} · alert shown ${anchored.alertShown} · silenced: ${anchored.quiet.join(",")} · "${anchored.alertText}"`);
     await shotCheck(hub, `stage10-closed.png`);
     await hub.close();
 

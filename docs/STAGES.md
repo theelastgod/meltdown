@@ -1641,6 +1641,36 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 113 — The alert had no place in a frame
+
+**Goal.** The campaign's closed-file frame, read after Stage 112: the card up, the chrome silenced
+as Stage 95 says — and `◆ FILE CLOSED — RE-LEASING IN 3s` jammed against the top edge of the
+screen, half clipped, six pixels down. Stage 97 hung the alert under the mission panel's measured
+bottom; a frame that silences the mission panel leaves it with no rectangle, and an anchor at
+nothing put the alert at the top. The first fix hung it from the status panel instead — and the
+tps probe's ledger check caught the consequence at once: the alert, re-anchored, hung over the
+open book, the one overlap left on it. The alert is chrome. It had escaped Stage 95's list only
+because, off the top of the screen, it happened not to overlap anything.
+
+**What changed.** `alert` joins the chrome groups: the frames that cover the screen — the desk, a
+card, the ledger — silence it with the rest, and a terminal, which is usually the objective, keeps
+it. The anchor stays what Stage 97 made it; the mission panel is never hidden outside a frame, so
+the case that put the alert at the top no longer draws it at all. A fallback anchor that could
+only ever be exercised where the alert is silenced would have been a guard nobody can observe,
+and it is gone.
+
+**Proof.** `npm test` 725 tests; `npm run probe:tps` 41/41 — the ledger check now raises
+`◆ INTEGRITY 30` for six seconds before opening the book and reads `alert` among the silenced
+groups (before Stage 113 it read only what happened to overlap, and the alert, off the top of the
+screen, never did); `npm run probe:campaign` 37/37 — with the card up an alert raised is silenced
+with the rest of the chrome, and a terminal keeps it; `npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** `alert` removed from the chrome groups again (`ALL_GROUPS` ends at `diag`): the
+campaign probe fails its new check, 36/37 (`card true · alert shown true · silenced: …diag`), and
+the tps ledger check fails, 40/41 (`silenced: …diag`, no `alert`). A first run of the tps guard let
+this mutation through by timing — the alert it had watched had expired before the book opened —
+which is why the check raises its own. Every other check passes under the mutation.
+
 ## Stage 112 — The ledger was not a frame either
 
 **Goal.** The run probe's ledger frame, read after Stage 111: the FILE book open over the yard —
