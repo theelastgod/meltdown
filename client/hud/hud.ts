@@ -7,6 +7,7 @@ import type { FileView } from "../file";
 import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
 import { THREAT_MAX, type ThreatMark } from "./threat";
+import { ALL_GROUPS, quietFor } from "./quiet";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot } from "./radar";
 
@@ -96,7 +97,11 @@ export class Hud {
   }
   private readonly threatArrows: HTMLElement[] = [];
 
+  /** the HUD root: state classes (`touch`, `safe`, the `q-` groups) live on it */
+  private readonly root: HTMLElement;
+
   constructor(root: HTMLElement) {
+    this.root = root;
     root.innerHTML = `
       <div class="scan"></div>
       <div class="xh"><i></i></div>
@@ -342,6 +347,7 @@ export class Hud {
     this.q(".terminal .tl").innerHTML = "";
     this.q(".terminal .tc").innerHTML = "";
     this.q(".terminal .tf").textContent = choices ? "[1–4] CHOOSE" : "[ENTER] CONTINUE";
+    this.applyQuiet();
   }
 
   /** the mirror's footer (Stage 52): a guest's terminal says whose turn it is instead of offering keys */
@@ -366,6 +372,7 @@ export class Hud {
 
   terminalClose(): void {
     this.q(".terminal").hidden = true;
+    this.applyQuiet();
     this.term = { lines: [], shown: 0, chars: 0, ready: false, choices: null };
   }
 
@@ -393,6 +400,23 @@ export class Hud {
     const el = this.q(".contracts");
     el.hidden = !open;
     if (open) el.innerHTML = html;
+    this.applyQuiet();
+  }
+
+  /**
+   * A frame silences the chrome that has no business on it (Stage 95): one class per group on the
+   * root, decided by the pure rule from which modals are open right now. Called on every open and
+   * every close, the timed ones included, so the gun comes back the moment the frame goes.
+   */
+  private applyQuiet(): void {
+    const open = { desk: !this.q(".contracts").hidden, terminal: !this.q(".terminal").hidden, card: !this.q(".card").hidden };
+    const quiet = new Set(quietFor(open));
+    for (const g of ALL_GROUPS) this.root.classList.toggle(`q-${g}`, quiet.has(g));
+  }
+
+  /** which chrome a frame has silenced, for the probe: the classes on the root that begin with `q-` */
+  get quieted(): string[] {
+    return [...this.root.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2)).sort();
   }
 
   /** a full-screen card (contract closed / failed / ending); seconds 0 = until the next card or contracts */
@@ -404,9 +428,11 @@ export class Hud {
     this.q(".card .ct").textContent = title;
     this.q(".card .cl").innerHTML = lines.map((l) => `<div>${l}</div>`).join("");
     this.cardTimer = seconds;
+    this.applyQuiet();
   }
   cardClose(): void {
     this.q(".card").hidden = true;
+    this.applyQuiet();
   }
   get cardOpen(): boolean {
     return !this.q(".card").hidden;

@@ -53,6 +53,18 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .log .cy { color: var(--cy); }
 #hud .prompt { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); width: 46%; padding: 5px 10px; text-align: left; }
 #hud .prompt.off { display: none; }
+/* a frame silences the chrome that has no business on it (Stage 95): one class per group, from hud/quiet.ts */
+#hud.q-prompt .prompt, #hud.q-prompt .prompt-touch, #hud.q-prompt .keys,
+#hud.q-reticle .xh,
+#hud.q-rack .rack,
+#hud.q-ammo .ammo,
+#hud.q-nades .nades,
+#hud.q-arrows .dmg, #hud.q-arrows .thr, #hud.q-arrows .hit,
+#hud.q-log .log,
+#hud.q-map .map,
+#hud.q-mission .mission,
+#hud.q-nodefoot .nodefoot,
+#hud.q-diag .side { display: none !important; }
 #hud .bottom { position: absolute; left: 14px; right: 14px; bottom: 14px; height: 52px; display: flex; align-items: flex-end; justify-content: space-between; }
 #hud .slots { display: flex; gap: 6px; }
 #hud .slot { width: 44px; height: 44px; border: 1px solid rgba(55,255,139,0.35); background: var(--pan); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--gr); }

@@ -1641,6 +1641,43 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 95 — The desk was not a frame
+
+**Goal.** The contracts desk, the fixer's terminal and the closing card are the campaign's frames —
+the places the game stops being a firefight and becomes a conversation. Since Stage 10 the combat
+chrome has gone on drawing straight through them. In the real frame the CLICK TO WAKE banner lies
+across the crew invite, the weapon rack runs along the desk's foot, LEASE-BREAKER 30/30 sits over
+the EXPLORE line, and the reticle hangs in the middle of a fixer's testimony. A frame with a gun's
+ammo count printed over it is not a frame.
+
+**What changed.**
+
+- **A frame silences the chrome that has no business on it.** The desk and a card take everything
+  but the status line; a terminal takes the gun, the tutorial and the arrows and keeps the objective
+  and the map, because a terminal is usually the objective.
+- **The gun comes back the moment the frame goes**, the timed closes included: every open and every
+  close, the card's own timer among them, re-applies the rule from what is open right now.
+- `client/hud/quiet.ts` is the rule, pure and unit-tested: which groups each modal silences, and
+  the wider frame winning when two are open at once. The HUD toggles one `q-<group>` class per
+  group on its root and the stylesheet does the hiding — the same shape as the `touch` and `safe`
+  states it already had.
+
+**Proof.** `probe:campaign` 36/36, three new, measured as geometry rather than as class names
+alone: with the desk open no visible piece of chrome overlaps its box and the gun and the tutorial
+are silenced; with a fixer's terminal open the same, with the objective line still showing; and
+once the terminal resolves nothing is silenced and the ammo block is back. `tests/quiet.test.ts` 5.
+641 tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone. With the rule silencing nothing, the desk check
+names the real intruders — `xh, mission, map, side, prompt, ammo` — and the terminal check names
+`prompt, ammo`, while "the gun comes back" still passes. With the terminal's open path alone no
+longer applying the rule, only the terminal check goes red, at `prompt, ammo` again.
+
+The first run found two overlaps the frame had not shown me: `side`, the ONLINE / FPS diagnostics
+readout, which really was sitting over the desk's right-hand column and is now silenced; and
+`bottom`, the tab bar, which is the frame's own furniture — the CONTRACTS tab that opened the desk
+and closes it — and is exempted the way the status line is.
+
 ## Stage 94 — The alt-fire sounded like the primary
 
 **Goal.** Every alt-fire in the arsenal has sounded exactly like its primary. A choked slug barked

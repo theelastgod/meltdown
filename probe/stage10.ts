@@ -173,6 +173,31 @@ async function main(): Promise<void> {
     const f1 = await file(acct);
     check("picking a house at the terminal writes it to the file on the ledger host and the desk lists the arc, the fixers and the gigs", c1.faction === "cells" && f1.campaign?.faction === "cells" && c1.offers.includes("g_escrow_row") && c1.next === "m1_wake_unlisted" && c1.threat === 0, `script ${seen.join(" → ")} · faction ${c1.faction} · offers [${c1.offers.join(", ")}] · threat ${c1.threat}`);
     await shotCheck(hub, `stage10-contracts.png`);
+    // Stage 95: the desk is a frame, and since Stage 10 the combat chrome has drawn straight through
+    // it — the CLICK TO WAKE banner across the crew invite, the weapon rack along the desk's foot,
+    // the ammo count over the EXPLORE line. Measured as geometry: no visible piece of chrome may
+    // overlap the desk while it is open, and the gun comes back the moment it closes.
+    const overlapOf = (pg: Page, frame: string) =>
+      pg.evaluate((sel) => {
+        const hud = document.getElementById("hud")!;
+        const f = hud.querySelector(sel) as HTMLElement | null;
+        if (!f || f.hidden) return { open: false, hits: ["(frame not open)"], quiet: [] as string[] };
+        const fr = f.getBoundingClientRect();
+        const hits: string[] = [];
+        for (const el of Array.from(hud.children) as HTMLElement[]) {
+          // the status line and the tab bar are the frame's own furniture — who you are, and the
+          // CONTRACTS tab that opened the desk and closes it — not chrome drawn through it
+          if (el === f || el.classList.contains("status") || el.classList.contains("scan") || el.classList.contains("bottom")) continue;
+          const cs = getComputedStyle(el);
+          if (cs.display === "none" || cs.visibility === "hidden" || Number(cs.opacity) === 0 || el.hidden) continue;
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) continue;
+          if (r.left < fr.right && r.right > fr.left && r.top < fr.bottom && r.bottom > fr.top) hits.push(el.className.split(" ").slice(-1)[0] ?? el.tagName);
+        }
+        return { open: true, hits, quiet: [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2)) };
+      }, frame);
+    const deskOpen = await overlapOf(hub, ".contracts");
+    check("the desk is a frame: with it open, no visible chrome overlaps it and the gun is silenced", deskOpen.open && deskOpen.hits.length === 0 && deskOpen.quiet.includes("ammo") && deskOpen.quiet.includes("prompt"), `overlapping: [${deskOpen.hits.join(", ")}] · silenced: ${deskOpen.quiet.join(",")}`);
     const launch = await hub.evaluate(() => window.__game.launch("m1_wake_unlisted"));
     await hub.waitForFunction(() => new URLSearchParams(location.search).get("mission") === "m1_wake_unlisted" && window.__game?.ready === true && window.__game.campaign().mode === "mission", null, { timeout: 40000, polling: 100 });
     await hub.evaluate(() => window.__game.resumeAudio());
@@ -181,8 +206,13 @@ async function main(): Promise<void> {
     check("launching a contract travels to its district with the wake off and its VANTAGE presence placed; the first objective is the street", launch.ok && m0.level === "lease_row" && m0.wake === null && m0.c.mission?.title === "WAKE UNLISTED" && m0.c.mission.objective === "READ THE STREET" && m0.wasps >= 2 && m0.c.dialogue?.script === "m1_intro", `level ${m0.level} · wake ${m0.wake ? "on" : "off"} · ${m0.wasps} wasps · objective "${m0.c.mission?.objective}" · dialogue ${m0.c.dialogue?.script}`);
     await hub.waitForTimeout(600);
     await shotCheck(hub, `stage10-terminal.png`);
+    const termOpen = await overlapOf(hub, ".terminal");
+    check("and so is a fixer's terminal: the gun and the tutorial go, the objective stays", termOpen.open && termOpen.hits.length === 0 && termOpen.quiet.includes("rack") && !termOpen.quiet.includes("mission"), `overlapping: [${termOpen.hits.join(", ")}] · silenced: ${termOpen.quiet.join(",")}`);
     await playTerminal(hub);
     await advance(hub, 2);
+    // and the frame going is the gun coming back: nothing silenced once the terminal has resolved
+    const afterTerm = await hub.evaluate(() => ({ quiet: [...document.getElementById("hud")!.classList].filter((c) => c.startsWith("q-")), ammo: getComputedStyle(document.querySelector("#hud .ammo")!).display }));
+    check("and the gun comes back the moment the frame goes", afterTerm.quiet.length === 0 && afterTerm.ammo !== "none", `silenced after the terminal: [${afterTerm.quiet.join(",")}] · ammo display ${afterTerm.ammo}`);
     const m1 = await hub.evaluate(() => window.__game.campaign().mission);
     check("the terminal resolves and the runtime moves to the escrow terminal at B (marker up)", m1?.kind === "reach" && /ESCROW TERMINAL AT B/.test(m1.objective), `objective "${m1?.objective}" (${m1?.kind})`);
     const B = nodePos("lease_row", "B");
