@@ -27,6 +27,19 @@ describe("what a frame silences", () => {
     expect(quietFor({ desk: false, terminal: true, card: true, ledger: false })).toEqual([...ALL_GROUPS]);
   });
 
+  it("takes the gun off a closed file and leaves it what it reads (Stage 128)", () => {
+    const q = quietFor({ desk: false, terminal: false, card: false, ledger: false, dead: true });
+    for (const g of ["prompt", "reticle", "rack", "ammo", "nades", "arrows", "nodefoot"] as const) expect(q).toContain(g);
+    for (const g of ["alert", "log", "map", "mission", "diag"] as const) expect(q).not.toContain(g);
+  });
+
+  it("a card over a dead file is still the card's silence, and a terminal's and a death's add up", () => {
+    expect(quietFor({ desk: false, terminal: false, card: true, ledger: false, dead: true })).toEqual([...ALL_GROUPS]);
+    const both = quietFor({ desk: false, terminal: true, card: false, ledger: false, dead: true });
+    expect(both).toEqual(quietFor({ desk: false, terminal: true, card: false, ledger: false }));
+    expect(new Set(both).size).toBe(both.length);
+  });
+
   it("never names a group twice", () => {
     for (const open of [{ desk: true, terminal: true, card: true, ledger: false }, { desk: false, terminal: true, card: false, ledger: false }]) {
       const q = quietFor(open);

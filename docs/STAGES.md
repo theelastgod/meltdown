@@ -1641,6 +1641,36 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 128 — The dead file kept its gun
+
+**Goal.** A file is closed: the camera swings onto whatever closed it (Stage 96), the line says
+who, and for three seconds the screen re-leases. Through those three seconds the HUD went on
+drawing the reticle, `LEASE-BREAKER 30 / 30`, the rack, the grenade slots and the hit arrows — a
+gun on a file that has none. The HUD had never read whether the file was alive; the only thing
+that did was the shield's broken mark.
+
+**What changed.**
+- `client/hud/quiet.ts` — a closed file is a frame of its own: `dead` takes the gun's chrome (the
+  reticle, the rack, the ammo, the grenades, the arrows, the tutorial and the node line) and leaves
+  what a dead file reads — the closed-by line, the log, the map, the mission. A terminal's and a
+  death's silences add up; a card over a dead file is still the card's.
+- `client/hud/hud.ts` — the update reads the file's life and re-applies the rule on the change,
+  so the gun goes on the frame the file closes and is back on the frame it is re-leased.
+- `tests/quiet.test.ts` — the dead set, the union with a terminal, the card winning.
+- `probe/stage60.ts` — on the frame that shows the closed file the gun's groups are silenced and
+  the ammo block and the reticle are not displayed, with the alert, the log and the map kept; back
+  on the ledger nothing is silenced.
+
+**Proof.** `npm test` 759 tests (two new); `npm run probe:tps` 47/47 — on the closed file's frame
+the silenced groups are `ammo, arrows, nades, nodefoot, prompt, rack, reticle`, the ammo block and
+the reticle are not displayed, the alert, the log and the map are not among them, and back on the
+ledger nothing is silenced; `npm run probe:campaign` still 39/39 (the desk, the terminal and the
+card as before); `npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** A death silences nothing (`open.dead && false`): the quiet test fails (1 of 11)
+and the tps probe fails its new check, 46/47 — `silenced: · ammo display block · reticle display
+block`, the gun drawn on a closed file; every other check passes.
+
 ## Stage 127 — The warning had gone out before the alert was read
 
 **Goal.** CI runs #151 and #154, red on Stage 120's check with the geometry right: `alert 120–133

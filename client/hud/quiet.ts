@@ -20,6 +20,8 @@ export interface Modals {
   card: boolean;
   /** the ledger book (FILE) or its graph (GRAPH), the file's own frames (Stage 112) */
   ledger: boolean;
+  /** the file is closed and waiting to be re-leased (Stage 128): a dead file has no gun */
+  dead?: boolean;
 }
 
 /** the chrome the rule can silence, each a class on the HUD root: `q-<group>` */
@@ -36,11 +38,20 @@ export const ALL_GROUPS: readonly ChromeGroup[] = ["prompt", "reticle", "rack", 
 /** what a fixer's terminal takes off the screen: the gun and the tutorial, not the objective or the map */
 const TERMINAL: readonly ChromeGroup[] = ["prompt", "reticle", "rack", "ammo", "nades", "arrows", "nodefoot"];
 
+/**
+ * what a closed file takes off the screen while it waits to be re-leased (Stage 128): the gun's
+ * chrome — the reticle, the rack, the ammo, the grenades, the hit arrows, the tutorial and the node
+ * line. The closed-by line, the log, the map and the mission stay: that is what a dead file reads
+ */
+const DEAD: readonly ChromeGroup[] = ["prompt", "reticle", "rack", "ammo", "nades", "arrows", "nodefoot"];
+
 /** The groups to silence for the modals that are open. Nothing open silences nothing. */
 export function quietFor(open: Modals): ChromeGroup[] {
   // the desk, a card and the ledger cover the screen: everything but the status line goes. The
   // ledger and its graph are opened from the tab bar and by Tab and G, from any mode (Stage 112)
   if (open.desk || open.card || open.ledger) return [...ALL_GROUPS];
-  if (open.terminal) return [...TERMINAL];
-  return [];
+  const quiet = new Set<ChromeGroup>();
+  if (open.terminal) for (const g of TERMINAL) quiet.add(g);
+  if (open.dead) for (const g of DEAD) quiet.add(g);
+  return ALL_GROUPS.filter((g) => quiet.has(g));
 }

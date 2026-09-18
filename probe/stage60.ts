@@ -380,8 +380,15 @@ async function main(): Promise<void> {
       const me = window.__game.state().pos;
       const want = Math.atan2(-(killer.x - me.x), -(killer.z - me.z));
       const alertText = (document.querySelector("#hud .alert") as HTMLElement | null)?.textContent ?? "";
-      return { before, look, want, alive: g.player.alive, closedBy: window.__game.state().closedBy, alertText, dummy: d.id };
+      // Stage 128: the dead file kept its gun. Read what the HUD has silenced on the frame that
+      // shows the closed file
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const quiet = g.hud.quieted;
+      const ammoDisplay = getComputedStyle(document.querySelector("#hud .ammo")!).display;
+      const reticleDisplay = getComputedStyle(document.querySelector("#hud .xh")!).display;
+      return { before, look, want, alive: g.player.alive, closedBy: window.__game.state().closedBy, alertText, dummy: d.id, quiet, ammoDisplay, reticleDisplay };
     });
+    check("a closed file has no gun: the reticle, the ammo, the rack and the grenades go while it waits to be re-leased, and the closed-by line, the log and the map stay", !closed.alive && ["reticle", "ammo", "rack", "nades", "prompt"].every((g) => closed.quiet.includes(g)) && !closed.quiet.includes("alert") && !closed.quiet.includes("log") && !closed.quiet.includes("map") && closed.ammoDisplay === "none" && closed.reticleDisplay === "none", `alive ${closed.alive} · silenced: ${closed.quiet.join(",")} · ammo display ${closed.ammoDisplay} · reticle display ${closed.reticleDisplay}`);
     const swung = Math.abs(Math.atan2(Math.sin(closed.look - closed.want), Math.cos(closed.look - closed.want)));
     const wasOff = Math.abs(Math.atan2(Math.sin(closed.before - closed.want), Math.cos(closed.before - closed.want)));
     check("the camera turns onto whatever closed the file, and the line says which file it was", !closed.alive && closed.closedBy.known && wasOff > 2.5 && swung < 0.08 && /FILE CLOSED BY VANTAGE-04/.test(closed.alertText), `looking ${wasOff.toFixed(2)} rad away when it landed, ${swung.toFixed(3)} rad off the killer when the swing settled · "${closed.alertText.trim()}"`);
@@ -558,9 +565,11 @@ async function main(): Promise<void> {
         await new Promise((r) => requestAnimationFrame(r));
         if (Math.abs(window.__game.view().look.yaw - 0.9) < 0.02) break;
       }
-      return { alive: g.player.alive, look: window.__game.view().look.yaw, yaw: window.__game.state().yaw };
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return { alive: g.player.alive, look: window.__game.view().look.yaw, yaw: window.__game.state().yaw, quiet: g.hud.quieted };
     });
     check("and a file back on the ledger has its camera back", relet.alive && Math.abs(relet.look - relet.yaw) < 0.02, `alive ${relet.alive} · the camera is at ${relet.look.toFixed(2)} and the aim at ${relet.yaw.toFixed(2)}`);
+    check("and its gun back: nothing silenced once it is re-leased", relet.alive && relet.quiet.length === 0, `alive ${relet.alive} · silenced: [${relet.quiet.join(",")}]`);
 
     // ---------------- the camera takes the landing ----------------
     // The legs have compressed on landing since Stage 63 and the camera took none of it: a drop off

@@ -531,8 +531,11 @@ export class Hud {
   }
   private ledgerWas = false;
 
+  /** the file is closed and waiting to be re-leased (Stage 128) */
+  private dead = false;
+
   private applyQuiet(): void {
-    const open = { desk: !this.q(".contracts").hidden, terminal: !this.q(".terminal").hidden, card: !this.q(".card").hidden, ledger: this.ledgerOpen() };
+    const open = { desk: !this.q(".contracts").hidden, terminal: !this.q(".terminal").hidden, card: !this.q(".card").hidden, ledger: this.ledgerOpen(), dead: this.dead };
     const quiet = new Set(quietFor(open));
     for (const g of ALL_GROUPS) this.root.classList.toggle(`q-${g}`, quiet.has(g));
   }
@@ -615,6 +618,11 @@ export class Hud {
   }
 
   update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60): void {
+    // a dead file has no gun (Stage 128): the gun's chrome goes with the file and comes back with it
+    if (this.dead !== !p.alive) {
+      this.dead = !p.alive;
+      this.applyQuiet();
+    }
     this.tickRituals(dt);
     this.radarClock += dt;
     // the ledger opens and closes outside this class (Stage 112): read it on the frame it changes
