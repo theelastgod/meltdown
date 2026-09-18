@@ -17,6 +17,7 @@
  * Pure, so the attribution is unit-tested; the HUD only draws the answer.
  */
 import type { HitZone } from "../hit";
+import { WEAPONS, type WeaponId } from "@shared/weapons/manifest";
 
 /** a round of mine that landed on a body: when, where, how far, and what fired it */
 export interface LandedHit {
@@ -83,4 +84,14 @@ export function closeLine(read: LandedHit | null): string {
   if (!read) return "";
   const where = read.zone === "head" ? "HEAD" : read.zone === "legs" ? "LEGS" : "BODY";
   return `${where} · ${read.distance < 10 ? read.distance.toFixed(1) : Math.round(read.distance)} M · ${read.weapon.replace(/_/g, "-").toUpperCase()}`;
+}
+
+/**
+ * The weapon's name for a line a player reads (Stage 123): the log had printed the kill with the
+ * weapon's id — LEASE_BREAKER, REPO_HAMMER, STACK_SMG — where the rack, the receipt and the
+ * manifest say LEASE-BREAKER, REPO HAMMER, STACK SMG. An id the manifest does not know is spelt
+ * out with its underscores as spaces rather than shown raw.
+ */
+export function weaponName(id: string): string {
+  return WEAPONS[id as WeaponId]?.name ?? id.toUpperCase().replace(/_/g, " ");
 }

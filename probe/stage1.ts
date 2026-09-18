@@ -117,6 +117,10 @@ async function main(): Promise<void> {
     const logRead = await page.evaluate(() => ({ lines: [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? ""), mantleCues: window.__game.state().audio["mantle"] ?? 0 }));
     check("a mantle and a slide-jump are heard and not logged: the event log holds no MANTLE or SLIDE-JUMP line after them", state.stats.mantles >= 1 && state.stats.slideJumps >= 1 && logRead.mantleCues >= 1 && !logRead.lines.some((l) => /\b(MANTLE|SLIDE-JUMP)\b/.test(l)), `mantles ${state.stats.mantles} · slide-jumps ${state.stats.slideJumps} · cues ${logRead.mantleCues} · log: ${logRead.lines.join(" / ") || "(empty)"}`);
     const kill = events.find((e) => e.type === "kill");
+    // Stage 123: the log called the gun by its id. The kill line is read from the frame and must
+    // name the weapon as the rack and the receipt do, with no id's underscore anywhere in the log
+    const killLine = await page.evaluate(() => [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "").find((l) => /⟶/.test(l)) ?? "");
+    check("the kill line names the weapon, not its id: LEASE-BREAKER, and no underscored id anywhere in the log", /· LEASE-BREAKER · TTK/.test(killLine) && !/[A-Z]_[A-Z]/.test(killLine), `kill line: "${killLine}"`);
     check("bot killed dummy 1 with hitscan", !!kill && state.stats.kills >= 1, kill && kill.type === "kill" ? `victim ${kill.victimId} after ${kill.ttkTicks} ticks` : "no kill event");
     check("TTK inside the 0.6–1.0 s band", !!kill && kill.type === "kill" && kill.ttkSeconds >= 0.6 && kill.ttkSeconds <= 1.0, kill && kill.type === "kill" ? `${kill.ttkSeconds.toFixed(3)} s` : "n/a");
     const shots = events.filter((e) => e.type === "shot");

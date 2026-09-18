@@ -1641,6 +1641,28 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 123 — The log called the gun by its id
+
+**Goal.** The tps probe's closed frame, in the log: `» BLANK → DUMMY-04 · LEASE_BREAKER · TTK
+1.23s`. The rack says LEASE-BREAKER, the receipt says LEASE-BREAKER, the manifest says
+LEASE-BREAKER; the kill line printed the weapon's id in capitals, underscore and all — and REPO
+HAMMER as REPO_HAMMER, STACK SMG as STACK_SMG — on every kill since Stage 1.
+
+**What changed.**
+- `client/hud/kill.ts` — `weaponName(id)`: the manifest's name for the id, and for an id the
+  manifest does not know the id spelt out with its underscores as spaces.
+- `client/game.ts` — the kill line reads it.
+- `tests/weaponname.test.ts` — every weapon in the manifest, and the fallback.
+- `probe/stage1.ts` — the kill line read from the frame after the bot's kill names LEASE-BREAKER
+  and carries no underscored id.
+
+**Proof.** `npm test` 754 tests (two new); `npm run probe` 17/17 — the kill line reads `» BLANK
+⟶ DUMMY-01 · LEASE-BREAKER · TTK 0.80s`; `npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** The kill line prints the id again: the probe fails its new check, 16/17 (`» BLANK
+⟶ DUMMY-01 · LEASE_BREAKER · TTK 0.80s`); every other check passes. The unit tests read the
+helper and cannot see the line that bypasses it, which is why the probe reads the frame.
+
 ## Stage 122 — The log said MANTLE
 
 **Goal.** The wake probe's frames, read down the left: `» NODE D PULLED OFF THE MODEL — CELL

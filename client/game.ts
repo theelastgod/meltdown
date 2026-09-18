@@ -23,7 +23,7 @@ import type { AimTarget } from "./render/tps";
 import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { impactRead, landedDamage, WASP_SHOT } from "./hit";
-import { bodyKey, closeLine, closeRead, forgetOldHits, rememberHit, type LandedHit } from "./hud/kill";
+import { bodyKey, closeLine, closeRead, forgetOldHits, rememberHit, type LandedHit, weaponName } from "./hud/kill";
 import { threatMarks, type LiveProjectile } from "./hud/threat";
 import { waspLocks, type WaspSeen } from "./vantage";
 import { lookYawPitch } from "./render/feel";
@@ -1276,7 +1276,7 @@ export class Game {
         this.audio.kill(this.killTier(ev.weapon));
         this.hud.killStamp(ev.victimKind, closeLine(closeRead(this.closeBook, bodyKey(ev.victimKind, ev.victimId), this.renderer.clockNow)));
         this.renderer.post.kick(1);
-        this.hud.push(`BLANK ⟶ ${ev.victimKind.toUpperCase()}-${String(ev.victimId).padStart(2, "0")} · ${ev.weapon.toUpperCase()}${ev.ttkTicks ? ` · TTK ${ev.ttkSeconds.toFixed(2)}s` : ""}`, "mg");
+        this.hud.push(`BLANK ⟶ ${ev.victimKind.toUpperCase()}-${String(ev.victimId).padStart(2, "0")} · ${weaponName(ev.weapon)}${ev.ttkTicks ? ` · TTK ${ev.ttkSeconds.toFixed(2)}s` : ""}`, "mg");
         break;
       case "slide":
         this.audio.slide();
