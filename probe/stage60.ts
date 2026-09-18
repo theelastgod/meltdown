@@ -398,6 +398,28 @@ async function main(): Promise<void> {
     });
     check("back on the ledger the picture comes into focus rather than cutting: the CRT is heavy on the first live frame and settled a second later, and the lens opens out", ledger.alive && ledger.first.spawn < 0.3 && ledger.settled.spawn >= 1 && ledger.first.ab > ledger.settled.ab * 1.5 && ledger.first.fov < ledger.settled.fov - 3, `alive after ${ledger.ticks} ticks · aberration ${ledger.first.ab.toExponential(2)} → ${ledger.settled.ab.toExponential(2)} · fov ${ledger.first.fov.toFixed(1)}° → ${ledger.settled.fov.toFixed(1)}° · spawn clock ${ledger.first.spawn.toFixed(2)} → ${ledger.settled.spawn.toFixed(2)} s`);
     check("and it is said and heard: the line, and the cue, once", ledger.cues === 1 && /BACK ON THE LEDGER/.test(ledger.line), `respawn cues ${ledger.cues} · "${ledger.line.trim()}"`);
+
+    // Stage 97: the chrome crossed the play. At this width the eight-slot rack ran left from its
+    // right anchor across the file's own body, and the alert sat at a fixed height under a
+    // two-line mission panel. Judged as plain geometry, not by the rule's own arithmetic.
+    const chrome = await pg.evaluate(async () => {
+      window.__game.game.hud.alert("◆ INTEGRITY 30", false, 3);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const hud = document.getElementById("hud")!;
+      const H = hud.getBoundingClientRect();
+      // no named helpers in here: the probe's build injects a __name the page does not have
+      const out: Record<string, { left: number; right: number; top: number; bottom: number }> = {};
+      for (const sel of [".rack", ".nades", ".alert", ".mission"]) {
+        const r = hud.querySelector(sel)!.getBoundingClientRect();
+        out[sel.slice(1)] = { left: r.left - H.left, right: r.right - H.left, top: r.top - H.top, bottom: r.bottom - H.top };
+      }
+      return { width: H.width, rack: out["rack"]!, nades: out["nades"]!, alert: out["alert"]!, mission: out["mission"]!, alertText: hud.querySelector(".alert")!.textContent };
+    });
+    const overlap = chrome.alert.top < chrome.mission.bottom && chrome.alert.bottom > chrome.mission.top && chrome.alert.left < chrome.mission.right && chrome.alert.right > chrome.mission.left;
+    check("the rack keeps to the right of the play: its left edge is past the middle of the screen with room to spare, at this width and in rows", chrome.rack.left > chrome.width * 0.5 + 30 && chrome.nades.left > chrome.width * 0.5 + 30 && chrome.rack.right <= chrome.width - 10, `rack ${chrome.rack.left.toFixed(0)}–${chrome.rack.right.toFixed(0)} px of ${chrome.width.toFixed(0)} (middle ${(chrome.width / 2).toFixed(0)}) · ${(chrome.rack.bottom - chrome.rack.top).toFixed(0)} px tall`);
+    // "under" is a visible gap, not a touch: the old fixed 58 px cleared this scene's panel by one
+    // pixel and passed the first version of this check, which is not the claim being made
+    check("and the alert sits under the mission panel rather than behind it, with a visible gap", !!chrome.alertText && !overlap && chrome.alert.top >= chrome.mission.bottom + 4 && chrome.alert.top < 130, `alert top ${chrome.alert.top.toFixed(0)} px · mission panel ends at ${chrome.mission.bottom.toFixed(0)} px · gap ${(chrome.alert.top - chrome.mission.bottom).toFixed(0)} px`);
     await shotCheck(pg, "stage60-closed.png");
     // and coming back alive gives the camera back
     const relet = await pg.evaluate(async () => {

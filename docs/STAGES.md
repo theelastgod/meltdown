@@ -1641,6 +1641,37 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 97 — The chrome crossed the play
+
+**Goal.** Two things in a real third-person frame at 960 px wide, both the HUD reaching into the
+part of the screen the game is played in. The weapon rack is anchored to the right edge but eight
+slots wide, so it ran left across the file's own body and the lane ahead — where the ground and
+everyone's feet are. And the alert line sat at a fixed 58 px, straight under a mission panel that is
+two lines tall in every contract, so INTEGRITY 30 printed half-hidden behind the objective.
+
+**What changed.**
+
+- **The rack keeps to the right band.** The rack and its ammo may take a fixed share of the width
+  from the right edge and no more; at 960 px the eight slots wrap into two rows on the right instead
+  of crossing the middle. At 1920 px nothing changes, because nothing needed to.
+- **The alert sits under the mission panel**, wherever the panel actually ends — measured each
+  frame, because the panel's height changes with what it says — and never below the top band.
+- `client/hud/layout.ts` is the rule, pure and unit-tested, including a `crossesPlay` that shares
+  its band edge with the width function to the integer, because `1 − 0.44` is not `0.56` in floating
+  point and a rack that fills the band exactly is on the line, not over it.
+
+**Proof.** `probe:tps` 36/36, two new, judged as plain geometry rather than by the rule's own
+arithmetic: the rack now spans 538–946 px of 960 in two rows, 34 px tall, where it had spanned
+325–946; and with an alert up its top sits at 63 px under a mission panel that ends at 57 px. `tests/layout.test.ts` 5. 651 tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone. With the band opened to the whole width the rack
+runs 327–946 px in one row again and only the rack check goes red. With the alert pinned back at its
+fixed 58 px, only the alert check goes red — but not at first. The first version of that check
+accepted "touching" as "under": this scene's panel ends at 57 px, the old constant cleared it by a
+single pixel, and the mutant passed. The claim is a visible gap, so the check now requires one of at
+least 4 px, where the rule gives 6 and the mutant gives 1. A guard that a mutation does not fail is
+not a guard, and this one was caught by running the mutation rather than by assuming it.
+
 ## Stage 96 — The respawn was a cut
 
 **Goal.** A file that has just been closed is looking at whatever closed it — Stage 83 turned the

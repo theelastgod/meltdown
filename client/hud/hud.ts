@@ -8,6 +8,7 @@ import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
+import { alertTop, rightBandWidth } from "./layout";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot } from "./radar";
 
@@ -404,6 +405,21 @@ export class Hud {
   }
 
   /**
+   * The chrome stays out of the play (Stage 97). The rack and its ammo may take the right band of
+   * the screen and no more, so at 960 px the eight slots wrap into two rows on the right instead of
+   * running across the file's own body; and the alert sits under wherever the mission panel
+   * actually ends, not at a fixed height it was overlapping in every contract. Measured each frame
+   * — one rectangle read — because the panel's height changes with what it says.
+   */
+  private layout(): void {
+    const w = this.root.clientWidth;
+    if (w > 0) this.q(".ammo").style.maxWidth = `${rightBandWidth(w, 14)}px`;
+    const rootTop = this.root.getBoundingClientRect().top;
+    const panel = this.q(".mission").getBoundingClientRect();
+    this.q(".alert").style.top = `${alertTop(panel.bottom - rootTop)}px`;
+  }
+
+  /**
    * A frame silences the chrome that has no business on it (Stage 95): one class per group on the
    * root, decided by the pure rule from which modals are open right now. Called on every open and
    * every close, the timed ones included, so the gun comes back the moment the frame goes.
@@ -493,6 +509,7 @@ export class Hud {
 
   update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60): void {
     this.tickRituals(dt);
+    this.layout();
     this.q(".hpbar").style.width = `${(100 * Math.max(0, p.health)) / Math.max(1, p.maxHealth)}%`;
     this.q(".shbar").style.width = p.maxShield > 0 ? `${(100 * Math.max(0, p.shield)) / p.maxShield}%` : "0%";
     const def = weaponDefOf(p);
