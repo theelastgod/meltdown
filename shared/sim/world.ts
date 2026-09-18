@@ -466,6 +466,10 @@ export class World {
   /** Damage any entity; handles deaths, kill events and TTK bookkeeping. */
   applyDamage(kind: TargetKind, id: number, damage: number, attacker: number, weapon: string, how: "shot" | "explosion" | "melee" | "beam", opts: StepOpts = {}, hit: { zone?: HitZone; distance?: number; alt?: boolean; through?: boolean; projKind?: string } = {}): void {
     if (damage <= 0) return;
+    // the round is settled (Stage 126): for the results phase no file takes damage — the card is
+    // up and the reticle is gone, and a round that is over does not close files. The warm-up keeps
+    // its guns; the dummies and the cast are not covered, as in a safe zone
+    if (kind === "player" && this.wake?.phase === "results") return;
     const shooter = attacker > 0 ? this.players.get(attacker) : undefined;
     // THE RUN's safe zones are a rule about PLAYERS: you bank a claim and use the market without
     // another file shooting you. So a player inside one neither takes damage nor deals it.

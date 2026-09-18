@@ -301,6 +301,12 @@ async function main(): Promise<void> {
       const quiet = [...hud.classList].filter((c) => c.startsWith("q-"));
       // Stage 125: the round card covered the receipt. The Ledger Entry comes at the same moment
       // online; with it open the card stays down, and signing it brings the card back
+      // Stage 126: the round was over and the guns were not. With the phase at results a round
+      // into the file changes nothing; in the warm-up after it, the same round lands
+      p.shield = 0; // the shield would take the first 30 either way; the rule is read on the health
+      const hp0 = p.health;
+      window.__game.game.world.applyDamage("player", p.id, 30, 0, "lease_breaker", "shot");
+      const hpResults = p.health;
       const receipt = hud.querySelector(".receipt") as HTMLElement;
       window.__game.game.hud.receipt(["MATCH 0001 · LEASED", "XP +250 · SCRIP +30"]);
       window.__game.advance(1);
@@ -313,11 +319,16 @@ async function main(): Promise<void> {
       const afterSign = { card: !card.hidden, receipt: !receipt.hidden, title: card.querySelector(".ct")!.textContent ?? "" };
       w.phase = "warmup"; w.timeLeft = 20; w.winner = 0;
       window.__game.advance(1);
+      p.shield = 0;
+      const hpBefore = p.health;
+      window.__game.game.world.applyDamage("player", p.id, 30, 0, "lease_breaker", "shot");
+      const hpWarmup = p.health;
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       const after = !card.hidden;
       const quietAfter = [...hud.classList].filter((c) => c.startsWith("q-"));
-      return { open, title, lines, color, quiet, after, quietAfter, team: p.team, withReceipt, signed, afterSign };
+      return { open, title, lines, color, quiet, after, quietAfter, team: p.team, withReceipt, signed, afterSign, hp0, hpResults, hpBefore, hpWarmup };
     });
+    check("no file takes damage in the results phase, and the warm-up's guns are live again", roundOver.hpResults === roundOver.hp0 && roundOver.hpWarmup === roundOver.hpBefore - 30, `results: ${roundOver.hp0} → ${roundOver.hpResults} after a 30 round · warm-up: ${roundOver.hpBefore} → ${roundOver.hpWarmup}`);
     check("the round card gives way to the Ledger Entry receipt and comes back once it is signed", roundOver.withReceipt.receipt && !roundOver.withReceipt.card && roundOver.signed && !roundOver.afterSign.receipt && roundOver.afterSign.card && roundOver.afterSign.title === "ROUND OVER", `receipt open: card ${roundOver.withReceipt.card}, receipt ${roundOver.withReceipt.receipt} · signed ${roundOver.signed} · after: card ${roundOver.afterSign.card} ("${roundOver.afterSign.title}"), receipt ${roundOver.afterSign.receipt}`);
     check("the round's end is a card: who woke the yard, the score, your own line and the next round's countdown, with the chrome silenced — and the warm-up takes it down", roundOver.open && roundOver.title === "ROUND OVER" && roundOver.lines[0] === "CELL ONE WOKE DRAINAGE YARD" && roundOver.lines[1] === "CELL ONE 40 · CELL TWO 12" && /^YOU · CELL (ONE|TWO) · 3 KILLS · 1 DEATHS · 2 PULLS · 41 s ON NODES$/.test(roundOver.lines[2] ?? "") && /^NEXT ROUND IN 1[23]s$/.test(roundOver.lines[3] ?? "") && roundOver.quiet.includes("q-ammo") && roundOver.quiet.includes("q-reticle") && !roundOver.after && roundOver.quietAfter.length === 0, `card open ${roundOver.open} · "${roundOver.title}" (${roundOver.color}) · ${roundOver.lines.join(" / ")} · silenced ${roundOver.quiet.length} groups · team ${roundOver.team} · after the warm-up: open ${roundOver.after}, silenced ${roundOver.quietAfter.length}`);
     check("offline: no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");

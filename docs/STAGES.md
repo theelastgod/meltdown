@@ -1641,6 +1641,34 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 126 — The round was over and the guns were not
+
+**Goal.** Stage 121 gave the results phase a card that silences the chrome — the reticle, the
+rack, the ammo — for fifteen seconds. The sim never knew: damage carried on through the results
+phase as through any other, so a file reading the score with no reticle on the screen could be
+shot, closed, and re-leased into the warm-up. The round is settled when the phase turns; the
+guns should be too.
+
+**What changed.**
+- `shared/sim/world.ts` — `applyDamage` drops any damage to a player while the wake's phase is
+  `results`, whoever deals it and however. The warm-up keeps its guns, and the dummies and the
+  cast are not covered, as in a safe zone. The rule is in the shared sim, so the client's
+  prediction and the server agree on it.
+- `tests/results.test.ts` — damage lands in the wake and the warm-up, not on a file in results by
+  shot, explosion or beam, and still on a dummy.
+- `probe/stage5.ts` — with the phase at results a 30-point round into the file changes nothing;
+  in the warm-up after it the same round lands.
+
+**Proof.** `npm test` 757 tests (three new; one earlier run under load lost a test to a
+timeout and passed on both reruns); `npm run probe:wake` 23/23 — with the phase at results a
+30-point round leaves the file at 70, and in the warm-up the same round takes it to 40;
+`npm run probe` still 17/17 and `npm run probe:run` 22/22 (the safe-zone rule beside this one);
+`npm run build` and `npm run smoke` 7/7.
+
+**Mutation.** The gate dead (`&& false`): the results test fails (1 of 3) and the wake probe
+fails its new check, 22/23 — `results: 70 → 40 after a 30 round · warm-up: 40 → 10`; every other
+check passes.
+
 ## Stage 125 — The round card covered the receipt
 
 **Goal.** The counter-ledger probe's rig frame: `◆ ROUND OVER — NO ONE WOKE DRAINAGE YARD` in
