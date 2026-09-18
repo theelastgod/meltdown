@@ -6,6 +6,7 @@ import type { Dummy } from "@shared/sim/world";
 import type { FileView } from "../file";
 import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
 import { HIT_MAX, type HitMark } from "./damage";
+import { THREAT_MAX, type ThreatMark } from "./threat";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot } from "./radar";
 
@@ -75,12 +76,33 @@ export class Hud {
   }
   private readonly dmgWedges: HTMLElement[] = [];
 
+  /**
+   * A live charge near the file (Stage 93): an arrow at its bearing, brighter and closer in as the
+   * blast owns more of the ground you are standing on, and amber until you are inside it.
+   */
+  setThreats(marks: readonly ThreatMark[]): void {
+    const arrows = this.threatArrows;
+    for (let i = 0; i < arrows.length; i++) {
+      const m = marks[i];
+      const a = arrows[i]!;
+      if (!m) {
+        if (a.style.opacity !== "0") a.style.opacity = "0";
+        continue;
+      }
+      a.style.transform = `rotate(${m.bearing}rad) translateY(${-80 + m.urgency * 26}px)`;
+      a.style.opacity = String(0.45 + m.urgency * 0.55);
+      a.classList.toggle("in", m.inside);
+    }
+  }
+  private readonly threatArrows: HTMLElement[] = [];
+
   constructor(root: HTMLElement) {
     root.innerHTML = `
       <div class="scan"></div>
       <div class="xh"><i></i></div>
       <div class="hit"></div>
       <div class="dmg">${"<i></i>".repeat(HIT_MAX)}</div>
+      <div class="thr">${"<i></i>".repeat(THREAT_MAX)}</div>
       <div class="stamp">KILL CONFIRMED</div>
       <div class="tear"></div>
 
@@ -128,6 +150,7 @@ export class Hud {
     this.q = (s) => root.querySelector(s) as HTMLElement;
     this.radar = (root.querySelector(".map canvas") as HTMLCanvasElement).getContext("2d")!;
     this.dmgWedges.push(...Array.from(root.querySelectorAll<HTMLElement>(".dmg i")));
+    this.threatArrows.push(...Array.from(root.querySelectorAll<HTMLElement>(".thr i")));
   }
 
   /** Zone label, mission title, radar scale, and the MAP tab's district list. */

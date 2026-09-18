@@ -24,6 +24,7 @@ import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { impactRead, landedDamage, WASP_SHOT } from "./hit";
 import { bodyKey, closeLine, closeRead, forgetOldHits, rememberHit, type LandedHit } from "./hud/kill";
+import { threatMarks, type LiveProjectile } from "./hud/threat";
 import { lookYawPitch } from "./render/feel";
 import { stepCues, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
@@ -82,6 +83,9 @@ const lerpAngle = (a: number, b: number, t: number): number => {
  * Client game: fixed-timestep simulation (SIM_HZ) decoupled from rendering
  * (rAF), with render-time interpolation between the last two sim states.
  */
+/** what a projectile entity's `a` byte means on the wire */
+const PROJ_KINDS = ["phage", "phage", "sticky", "frag", "smoke", "emp"] as const;
+
 export class Game {
   readonly world: World;
   /** Level id this client built (URL `?level=`; the room's Welcome must agree or the client travels). */
@@ -865,6 +869,16 @@ export class Game {
     forgetOldHits(this.closeBook, hit.at);
   }
 
+  /**
+   * Every live charge the client knows about, from whichever source is driving the world: the
+   * simulation's own list offline, and the room's entity list online, where a projectile carries its
+   * kind and where it is and nothing else (Stage 93).
+   */
+  private liveProjectiles(): LiveProjectile[] {
+    if (!this.net) return this.world.projectiles.map((p) => ({ id: p.id, kind: p.kind, x: p.pos.x, y: p.pos.y, z: p.pos.z }));
+    return this.netEntities.filter((e) => e.kind === ENT_PROJECTILE).map((e) => ({ id: e.id, kind: PROJ_KINDS[e.a] ?? "phage", x: e.x, y: e.y, z: e.z }));
+  }
+
   private tookHit(x: number, z: number, damage: number): void {
     this.hits.push({ x, z, at: this.renderer.clockNow, damage });
     this.hits = pruneHits(this.hits, this.renderer.clockNow);
@@ -921,7 +935,6 @@ export class Game {
   private netMatch: NetSnapshot["match"] = null;
 
   private syncNetEntities(): void {
-    const kinds = ["phage", "phage", "sticky", "frag", "smoke", "emp"] as const;
     const ents = this.netEntities;
     const labels = ["", "A", "B", "C", "D", "E", "F", "G", "H"];
     const nodes: NodeView[] = ents
@@ -932,7 +945,7 @@ export class Game {
       const m = this.netMatch;
       this.wakeHud = { phase: m ? (m.phase === 0 ? "warmup" : m.phase === 1 ? "wake" : "results") : "wake", timeLeft: m?.timeLeft ?? 0, score: [0, m?.score1 ?? 0, m?.score2 ?? 0], nodes };
     }
-    this.renderer.fx.syncProjectiles(ents.filter((e) => e.kind === ENT_PROJECTILE).map((e) => ({ id: e.id, kind: kinds[e.a] ?? "phage", pos: { x: e.x, y: e.y, z: e.z }, stuck: e.b === 1 })));
+    this.renderer.fx.syncProjectiles(ents.filter((e) => e.kind === ENT_PROJECTILE).map((e) => ({ id: e.id, kind: PROJ_KINDS[e.a] ?? "phage", pos: { x: e.x, y: e.y, z: e.z }, stuck: e.b === 1 })));
     this.renderer.fx.syncClouds(ents.filter((e) => e.kind === ENT_CLOUD).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, radius: e.c / 100 })));
     this.renderer.fx.syncWasps(ents.filter((e) => e.kind === ENT_WASP).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, yaw: e.c / 1000, alive: e.a === 1, state: e.d })));
     this.renderer.fx.syncMechs(ents.filter((e) => e.kind === ENT_MECH).map((e) => ({ id: e.id, pos: { x: e.x, y: e.y, z: e.z }, yaw: e.c / 1000, lightYaw: e.d / 1000, alive: e.a === 1, locked: false })));
@@ -1306,6 +1319,9 @@ export class Game {
     this.hud.setReticle({ ...shown.reticle, arc: shown.aim.arc });
     // and where the last hits came from, relative to where the camera is looking now
     this.hud.setDamage(hitMarks(this.hits, p.pos.x, p.pos.z, view.yaw, this.renderer.clockNow));
+    // a live charge near the file (Stage 93): until now a frag landing behind you was drawn in the
+    // world and nowhere else, and four and a half metres of blast arrived out of silence
+    this.hud.setThreats(threatMarks(this.liveProjectiles(), { x: p.pos.x, y: p.pos.y, z: p.pos.z, yaw: view.yaw }));
     if (this.renderer.life.tram?.passing) this.audio.tram();
     this.stats.frames++;
     this.fpsWindow.frames++;

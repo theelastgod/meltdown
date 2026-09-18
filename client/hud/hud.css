@@ -76,6 +76,14 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 @keyframes stamp { 0% { opacity: 0; transform: translate(-50%,-50%) rotate(-4deg) scale(1.6); } 12% { opacity: 1; transform: translate(-50%,-50%) rotate(-4deg) scale(1); } 70% { opacity: 1; } 100% { opacity: 0; } }
 /* where a hit came from (Stage 74): a wedge on a ring around the reticle, rotated to the bearing.
    Each is a clipped arc — no canvas, no draw call, and it reads at a glance in the corner of the eye. */
+/* a live charge near the file (Stage 93): an arrow at its bearing, pulled in as it gets worse */
+#hud .thr { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+#hud .thr i { position: absolute; left: -7px; top: -7px; width: 14px; height: 14px; opacity: 0;
+  transition: opacity 90ms linear; transform-origin: 7px 7px;
+  background: var(--am); clip-path: polygon(50% 0%, 100% 100%, 50% 78%, 0% 100%); }
+/* the damage wedges' own red: inside the blast it is the same warning, from the same palette */
+#hud .thr i.in { background: rgb(255,42,109); animation: thrpulse 0.35s steps(2) infinite; }
+@keyframes thrpulse { 0% { opacity: 1; } 100% { opacity: 0.45; } }
 #hud .dmg { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
 #hud .dmg i { --w: 18deg; position: absolute; left: -110px; top: -110px; width: 220px; height: 220px; opacity: 0;
   transition: opacity 90ms linear; border-radius: 50%;

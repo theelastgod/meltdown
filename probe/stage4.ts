@@ -8,6 +8,7 @@
  *   npm run probe:arsenal
  */
 import { spawn, type ChildProcess } from "node:child_process";
+import { GRENADES } from "../shared/weapons/manifest";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
@@ -166,6 +167,53 @@ async function main(): Promise<void> {
     check("the dummy died repeatedly across the cycle", kills >= 3, `${kills} kills`);
     check("VANTAGE hunted: the mech flagged the player and a wasp opened fire", events.some((e) => e.type === "flagged") && events.some((e) => e.type === "shot" && e.weapon === "wasp"), `flagged=${events.filter((e) => e.type === "flagged").length} waspShots=${events.filter((e) => e.type === "shot" && e.weapon === "wasp").length}`);
     check("audio cues fired for shots, explosions and the kill stamp", (state.audio["shot"] ?? 0) > 20 && (state.audio["explosion"] ?? 0) > 0 && (state.audio["kill"] ?? 0) > 0, JSON.stringify(state.audio));
+    // Stage 93: a frag landing beside you used to be drawn in the world and nowhere else — four and
+    // a half metres of blast arriving out of silence while you looked the other way. The direction
+    // is checked by turning the file rather than by re-deriving the bearing here: throw one straight
+    // ahead and the arrow is up; turn a quarter turn to the right — yaw 0 looks toward −z, so yaw
+    // −π/2 looks east — and the charge that was ahead is now off the left shoulder.
+    await page.evaluate(() => {
+      const p = window.__game.game.player;
+      p.pos.x = 0; p.pos.y = 1.2; p.pos.z = -4.5;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      // the cycle's plan left the pouch on whatever it threw last: stage the condition — a frag in
+      // hand, off cooldown — and let the real throw and the real HUD do the rest
+      p.weapon.grenades[0] = 1;
+      p.weapon.grenadeSel = 0;
+      p.weapon.grenadeCooldown = 0;
+    });
+    // read after a frame has actually been drawn, not after a stopwatch: `advance` steps the
+    // simulation and the HUD is written in the frame loop, so a timeout can photograph the frame
+    // before the one that has the arrow on it
+    const readArrow = () =>
+      page.evaluate(async () => {
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const live = [...document.querySelectorAll<HTMLElement>("#hud .thr i")]
+          .map((a) => ({ op: Number(a.style.opacity || "0"), rot: Number(/rotate\(([-\d.e]+)rad\)/.exec(a.style.transform)?.[1] ?? NaN), inside: a.classList.contains("in") }))
+          .filter((a) => a.op > 0.4 && Number.isFinite(a.rot));
+        return { live, charges: window.__game.game.world.projectiles.length };
+      });
+
+    await page.evaluate(() => window.__game.setBot([{ kind: "look", yaw: 0, pitch: 0, ticks: 8 }, { kind: "throw", grenade: 0, aimAt: { x: 0, y: 1.2, z: -8.5 } }, { kind: "hold", ticks: 300 }]));
+    for (let i = 0; i < 6; i++) {
+      await page.evaluate(() => window.__game.advance(8));
+      await page.waitForTimeout(16);
+    }
+    const ahead = await readArrow();
+    // a quarter turn is not instant: the driver eases the view, so give it the ticks to get there
+    // and still land inside the frag's 1.8 s fuse
+    await page.evaluate(() => window.__game.setBot([{ kind: "look", yaw: -Math.PI / 2, pitch: 0, ticks: 30 }, { kind: "hold", ticks: 300 }]));
+    for (let i = 0; i < 5; i++) {
+      await page.evaluate(() => window.__game.advance(8));
+      await page.waitForTimeout(16);
+    }
+    const turned = await readArrow();
+    const yawNow = await page.evaluate(() => window.__game.game.player.yaw);
+    const a0 = ahead.live[0];
+    const a1 = turned.live[0];
+    check("a live charge near the file is pointed at: thrown straight ahead the arrow is up, and turning right puts it off the left shoulder", !!a0 && !!a1 && Math.abs(a0!.rot) < 0.4 && Math.abs(a1!.rot + Math.PI / 2) < 0.4, `${ahead.charges} charges live · facing it: ${a0 ? `${a0.rot.toFixed(2)} rad at ${a0.op.toFixed(2)} opacity` : "no arrow"} · after the quarter turn (view yaw ${yawNow.toFixed(2)}): ${a1 ? `${a1.rot.toFixed(2)} rad` : "no arrow"}`);
+    check("and standing inside the blast says so", !!a0?.inside && (a0?.op ?? 0) > 0.9, `inside ${a0?.inside} at ${a0?.op.toFixed(2)} opacity (a frag's blast is ${GRENADES.frag.radius} m and it was thrown 4 m away)`);
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
 
     writeFileSync(`${OUT}/stage4.json`, JSON.stringify({ ttk: table, shots, hits, kills, explosions: explosions.length, captures, audio: state.audio, checks }, null, 2));

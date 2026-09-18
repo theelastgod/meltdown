@@ -1641,6 +1641,45 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 93 — The charge at your feet
+
+**Goal.** A frag lands beside you while you are looking the other way and the game says nothing at
+all. The thing is drawn in the world — a small object on the ground, behind you, in the dark, in the
+rain — and that is the whole warning. Four and a half metres of blast and a hundred damage arrive out
+of a silence the player had no way to read. Everything needed to warn them has been on the client
+since Stage 4: the wire carries every live projectile's kind and where it is, and what a kind does
+when it goes off is a constant the rule reads out of the simulation itself.
+
+**What changed.**
+
+- **A live charge is pointed at**: an arrow at its bearing, pulled in and brightened as the blast
+  owns more of the ground you are standing on, and red and pulsing once you are inside it.
+- **It will not count down.** The fuse is not on the wire, so a countdown would be a guess dressed as
+  a fact. What is honest — and what the mark says — is how close you are to the middle of a blast
+  that is coming.
+- **Smoke and EMP are left out**: they carry no damage, and a warning that cries for a smoke grenade
+  is a warning nobody reads the next time. Whose charge it is does not come into it either — the
+  wire does not say, and your own frag at your feet kills you exactly as dead.
+- The blast comes from `createProjectile`, the simulation's own single answer for every kind, so a
+  change to a blast moves the warning with it. An unknown kind is not a threat rather than a guessed
+  one.
+
+**Proof.** `probe:arsenal` 21/21, two new, read off the HUD after a frame that actually drew it: a
+frag thrown four metres straight ahead puts the arrow up (−0.00 rad) at full brightness and marked
+inside the blast, and a quarter turn to the right — yaw 0 looks toward −z, so yaw −π/2 looks east —
+swings it to −1.58 rad, off the left shoulder, which is where a thing you were facing ends up.
+`tests/threat.test.ts` 9 on the rule: the blast read out of the simulation, the reach, the fall from
+1 to 0, the height of one on a roof, the bearing turning with the file, and the worst first. 632
+tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone: with the frag withheld from the warning both checks
+lose the arrow; with the arrow no longer rotated only the direction check goes red.
+
+Two things the first version of the check got wrong, both mine rather than the game's. It read the
+HUD after a stopwatch rather than after a drawn frame, and photographed the frame before the one
+with the arrow on it — the same fault as Stage 90, in a new place. And it expected a right turn to
+swing the arrow right; turning right puts what was ahead of you on your left.
+
 ## Stage 92 — The map did not know where you were going
 
 **Goal.** The campaign has put its objective in the world since Stage 10 — the place to reach, the
