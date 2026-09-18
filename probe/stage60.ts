@@ -377,6 +377,27 @@ async function main(): Promise<void> {
     const swung = Math.abs(Math.atan2(Math.sin(closed.look - closed.want), Math.cos(closed.look - closed.want)));
     const wasOff = Math.abs(Math.atan2(Math.sin(closed.before - closed.want), Math.cos(closed.before - closed.want)));
     check("the camera turns onto whatever closed the file, and the line says which file it was", !closed.alive && closed.closedBy.known && wasOff > 2.5 && swung < 0.08 && /FILE CLOSED BY VANTAGE-04/.test(closed.alertText), `looking ${wasOff.toFixed(2)} rad away when it landed, ${swung.toFixed(3)} rad off the killer when the swing settled · "${closed.alertText.trim()}"`);
+
+    // Stage 96: the respawn was a cut. Advance the simulation a tick at a time until the file is
+    // back, then read the picture on the frame that shows it — after a drawn frame, not after a
+    // stopwatch (Stages 90 and 93) — and again once the spawn-in has had its second.
+    const ledger = await pg.evaluate(async () => {
+      const g = window.__game.game;
+      const cues0 = window.__game.state().audio["respawn"] ?? 0;
+      let ticks = 0;
+      while (!g.player.alive && ticks < 900) {
+        window.__game.advance(1);
+        ticks++;
+      }
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const first = { ab: g.renderer.post.crtLevel().aberration, spawn: window.__game.view().spawn, fov: window.__game.view().fov };
+      for (let i = 0; i < 90; i++) await new Promise((r) => requestAnimationFrame(r));
+      const settled = { ab: g.renderer.post.crtLevel().aberration, spawn: window.__game.view().spawn, fov: window.__game.view().fov };
+      const log = [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "");
+      return { alive: g.player.alive, ticks, first, settled, cues: (window.__game.state().audio["respawn"] ?? 0) - cues0, line: log.find((l) => /BACK ON THE LEDGER/.test(l)) ?? "" };
+    });
+    check("back on the ledger the picture comes into focus rather than cutting: the CRT is heavy on the first live frame and settled a second later, and the lens opens out", ledger.alive && ledger.first.spawn < 0.3 && ledger.settled.spawn >= 1 && ledger.first.ab > ledger.settled.ab * 1.5 && ledger.first.fov < ledger.settled.fov - 3, `alive after ${ledger.ticks} ticks · aberration ${ledger.first.ab.toExponential(2)} → ${ledger.settled.ab.toExponential(2)} · fov ${ledger.first.fov.toFixed(1)}° → ${ledger.settled.fov.toFixed(1)}° · spawn clock ${ledger.first.spawn.toFixed(2)} → ${ledger.settled.spawn.toFixed(2)} s`);
+    check("and it is said and heard: the line, and the cue, once", ledger.cues === 1 && /BACK ON THE LEDGER/.test(ledger.line), `respawn cues ${ledger.cues} · "${ledger.line.trim()}"`);
     await shotCheck(pg, "stage60-closed.png");
     // and coming back alive gives the camera back
     const relet = await pg.evaluate(async () => {

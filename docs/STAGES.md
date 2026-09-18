@@ -1641,6 +1641,36 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 96 — The respawn was a cut
+
+**Goal.** A file that has just been closed is looking at whatever closed it — Stage 83 turned the
+camera onto the killer over about a second. Then the simulation puts it back on the ledger, and on
+that frame the camera cuts: a new place, the old heading, no fade, no sound, no line. The world
+jumps and the player works out where they are from the buildings. Every death in the game has ended
+in that jump, and the client's own handler for the moment was a bare `break`.
+
+**What changed.**
+
+- **The picture comes into focus rather than cutting**: the CRT comes up heavy and settles and the
+  lens starts pulled in and opens out, over a second, with the cut itself a tear.
+- **The CRT weight is a multiplier on the settings' own level**, not an absolute: a player who
+  turned the CRT off gets a spawn-in with no grain in it, which is what they asked for. The post
+  chain now keeps the setting and the boost apart and re-applies both.
+- **It is said and heard**: `◆ BACK ON THE LEDGER · <district>` in the log, and a rising two-note
+  under the CRT's hiss.
+- `client/render/spawn.ts` is the rule, pure and unit-tested: the curve is eased out — steep at the
+  start, flat at the end — exactly nothing at and after its second, and the edge that starts it is
+  the one frame a dead file is alive again. Nothing touches the simulation or the aim.
+
+**Proof.** `probe:tps` 34/34, two new, read on the frame that shows the file back: alive after 180 ticks, the aberration at 3.39e-3 on the first live frame and 1.60e-3 a second later, the lens at 73.8° opening to 80.0°, the spawn clock 0.03 s → 1.00 s; and the line `◆ BACK ON THE LEDGER · DRAINAGE YARD` with the cue heard exactly once.
+`tests/spawn.test.ts` 5. 646 tests, build and typecheck clean.
+
+Two mutations, each failing its own guard alone. With the curve returning nothing — the respawn a
+cut again — the aberration reads 1.60e-3 on both frames and the lens 80.0° on both, and only the
+focus check goes red while the line and the cue still land. With the client back to saying nothing
+on the respawn, the picture still comes into focus and only "said and heard" goes red, at zero cues
+and no line.
+
 ## Stage 95 — The desk was not a frame
 
 **Goal.** The contracts desk, the fixer's terminal and the closing card are the campaign's frames —

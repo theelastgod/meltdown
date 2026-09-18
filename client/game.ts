@@ -1223,7 +1223,13 @@ export class Game {
         break;
       case "mantleEnd":
       case "slideEnd":
+        break;
       case "respawn":
+        // back on the ledger (Stage 96): the client said nothing at all here, and the camera cut
+        if (ev.playerId === this.player.id) {
+          this.audio.respawn();
+          this.hud.push(`◆ BACK ON THE LEDGER · ${this.world.level.displayName ?? this.levelId}`, "cy");
+        }
         break;
       default:
         break;

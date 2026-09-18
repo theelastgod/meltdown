@@ -121,9 +121,25 @@ export class PostChain {
   }
 
   private crtBase = { grain: 0.07, aberration: 0.0016, scanline: 0.14, vignette: 0.42 };
+  /** the settings' own level, and the spawn-in's boost on top of it (Stage 96) */
+  private crtLevelSet = 1;
+  private crtBoost = 0;
   /** The CRT setting: 0 is a clean image, 1 the look as shipped, 1.5 heavier grain, aberration, scanlines and vignette. */
   setCrt(k: number): void {
-    const c = Math.max(0, Math.min(1.5, k));
+    this.crtLevelSet = Math.max(0, Math.min(1.5, k));
+    this.applyCrt();
+  }
+  /**
+   * A temporary weight on the CRT, as a multiplier on the settings' level rather than an absolute:
+   * a player who turned the CRT off gets a spawn-in with no grain in it, which is what they asked
+   * for. Re-applied every frame it is set, so it never fights the setting.
+   */
+  spawnBoost(b: number): void {
+    this.crtBoost = Math.max(0, b);
+    this.applyCrt();
+  }
+  private applyCrt(): void {
+    const c = this.crtLevelSet * (1 + this.crtBoost);
     this.crt.uniforms.grain!.value = this.crtBase.grain * c;
     this.crt.uniforms.aberration!.value = this.crtBase.aberration * c;
     this.crt.uniforms.scanline!.value = this.crtBase.scanline * c;

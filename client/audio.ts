@@ -437,6 +437,15 @@ export class GameAudio {
     this.burst({ dur: 0.05, freq: on ? 900 : 650, q: 1.2, gain: 0.1, type: "lowpass", delay: 0.05 });
   }
 
+  /** back on the ledger (Stage 96): a rising two-note with the CRT's own hiss under it */
+  respawn(): void {
+    this.count("respawn");
+    if (!this.ctx) return;
+    this.tone({ dur: 0.12, from: 330, to: 440, gain: 0.12, type: "triangle" });
+    this.tone({ dur: 0.18, from: 440, to: 660, gain: 0.1, type: "triangle", delay: 0.1 });
+    this.burst({ dur: 0.35, freq: 1800, q: 0.4, gain: 0.08, type: "highpass" });
+  }
+
   dryFire(): void {
     this.count("dry");
     if (!this.ctx) return;

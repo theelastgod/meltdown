@@ -25,6 +25,7 @@ import { applyPose, buildRig, disposeRig, rigReport, setRigSlot, WEAPON_IN_SOCKE
 import { poseBody, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
+import { spawnCurve, spawnEdge, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import { arcPoint, type ArcSpec } from "./ballistic";
 import { DEATH_TURN, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
@@ -234,6 +235,13 @@ export class Renderer {
   private fovNow = 80;
   /** the speed the lens is carrying, in degrees (Stage 77) */
   private fovPush = 0;
+  /** the spawn-in (Stage 96): seconds since the file came back on the ledger, and whether it was alive last frame */
+  private spawnT = SPAWN_TIME;
+  private lastAlive = true;
+  /** how far into the spawn-in this frame is, for the probe: 0 on the first live frame, SPAWN_TIME once settled */
+  get spawnClock(): number {
+    return this.spawnT;
+  }
   /** the landing the camera is still taking, and the lean of a slide (Stage 79) */
   private landT = 0;
   private landHard = 0;
@@ -890,7 +898,17 @@ export class Renderer {
     // that snapped with the speed would read as a stutter rather than as acceleration (Stage 77).
     const push = speedPush(v.speed, v.zoom) * SPRINT_FOV;
     this.fovPush += (push - this.fovPush) * Math.min(1, dt * (push > this.fovPush ? 5 : 3));
-    const targetFov = this.baseFov / v.zoom + this.fovPush;
+    // the spawn-in (Stage 96): on the frame a closed file is back on the ledger the camera used to
+    // cut — a new place, the old heading, nothing in between. Now the CRT comes up heavy and
+    // settles and the lens opens out, over a second, and the cut itself is a tear
+    if (spawnEdge(this.lastAlive, v.alive)) {
+      this.spawnT = 0;
+      this.post.kick(0.6);
+    } else this.spawnT = Math.min(SPAWN_TIME, this.spawnT + dt);
+    this.lastAlive = v.alive;
+    const spawn = spawnCurve(this.spawnT);
+    this.post.spawnBoost(spawn.crt);
+    const targetFov = this.baseFov / v.zoom + this.fovPush + spawn.fov;
     this.fovNow += (targetFov - this.fovNow) * Math.min(1, dt * 14);
     if (Math.abs(this.camera.fov - this.fovNow) > 0.01) {
       this.camera.fov = this.fovNow;
