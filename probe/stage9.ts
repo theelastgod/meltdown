@@ -167,6 +167,17 @@ async function main(): Promise<void> {
         window.__game.setBot([{ kind: "look", yaw: b.yaw, pitch: 0.04, ticks: 8 }, { kind: "hold", ticks: 600 }]);
         window.__game.advance(12);
       }, { ...back, yaw: spec.walkway === "x" ? 0 : Math.PI / 2 });
+      // and let the flip's own ring die before the shutter opens (Stage 105). The liberation pulse
+      // expands and fades over 1.4 s of the wake's clock, which advances only with rendered frames,
+      // so how far it had faded at the shutter depended on the frame rate: this frame read 0.22 on
+      // a fast machine and 0.265 on the runner (run #129), over the 0.24 ceiling, with the ring's
+      // green at 52% of the neon. The honest frame is the settled node. A fresh pulse is staged here
+      // deliberately, so the wait is exercised on every run and not only on a slow one.
+      await page.evaluate((pos) => {
+        const wake = window.__game.game.renderer.wake as unknown as { flip: (p: { x: number; y: number; z: number }, team: number) => void; pulses: unknown[] };
+        wake.flip(pos, 1);
+      }, nodeB.pos);
+      await page.waitForFunction(() => (window.__game.game.renderer.wake as unknown as { pulses: unknown[] }).pulses.length === 0, null, { timeout: 30000, polling: 30 });
       await capture("node");
 
       // the walkway, by its stairs (steps only): routed on a nav that treats the walkway as ground

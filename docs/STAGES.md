@@ -1641,6 +1641,40 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 105 — The shutter opened on the flip
+
+**Goal.** Run #129 (Stage 100) was red on one check, `lease_row/node: reads like the clip`: mean
+luma 0.265 against the 0.24 ceiling, with green at 52% of the neon. Stage 100 touched the ammo
+counter and nothing in rendering, and the same frame was green on the commits either side. The
+check's own comment records this frame reading 0.22 from one arrival and 0.24 from another, and
+Stage 70 pinned the camera to the spot for it — but the number kept its variance, because the
+variance was never the position.
+
+**What it was.** The frame is taken eight metres from a node the bot has just flipped, and a flip
+puts a liberation ring on the node — `WakeFx.flip` — that expands and fades over 1.4 s of the
+wake's own clock. That clock advances only with rendered frames. Between the flip and the shutter
+the probe drives the sim by hand, with few frames, so at the shutter the ring's age was however
+many frames the machine had managed: on a fast machine most of a second and a faint wide ring; on
+the runner, slower frames and a young bright one filling the street with green. The check was
+measuring the frame rate.
+
+**What changed.** The node frame waits for the ring to die: a fresh pulse is staged on the node
+deliberately, and the shutter opens only once the wake has no pulses left. Staging it means the
+wait is exercised on every run rather than only on a slow one, and removing the wait fails on any
+machine, which is what a guard should do. No rendering changed; the settled node is the honest
+frame, and the pulse that follows a flip is the game's to keep.
+
+**Proof.** `probe:city` 45/45 with the wait in place, and the three node frames now read
+0.163, 0.176 and 0.158 (green 30–41%) where the same frames had read 0.213, 0.208 and 0.197 on
+this machine before — the old "good" readings had been carrying the tail of the ring too. Two
+plain runs before the change read 0.213 and 0.208 for `lease_row/node`; the runner's 0.265 was the
+same frame with a younger ring.
+
+With the wait removed — the staged pulse at the shutter — the same three node frames on this
+machine read 0.224, 0.233 and 0.241 with green at 43–58% of the neon, and `repo_depot/node` fails
+the 0.24 ceiling: 44/45. That is #129's failure reproduced on a fast machine, smaller here because
+the shutter's own 300 ms had let the ring fade further than the runner's frames had.
+
 ## Stage 104 — The map never heard the shot
 
 **Goal.** Stage 81 gave every gun in the street a voice from its muzzle, panned and delayed by
