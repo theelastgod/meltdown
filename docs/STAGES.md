@@ -1641,6 +1641,38 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 77 — Sprinting reads as speed
+
+**Goal.** Another look at real frames rather than at checks. Holding sprint down the middle of the
+drainage yard looked exactly like walking down it: the same lens, the same framing, the hem dragging
+and nothing else. The number in the corner said 7.2 m/s and the picture said nothing.
+
+**What changed.**
+
+- **The lens widens with the speed.** `speedPush` in `client/render/tps.ts` is the rule, pure and
+  unit-tested: nothing at a walk, one at a sprint, and up to one and a half in a slide, because a
+  slide is faster than a sprint and should read as faster. Seven degrees of field of view at a full
+  sprint. It eases in at five a second and back out at three, so the street opens as the file
+  accelerates rather than snapping, and closes as it stops.
+- **The camera drifts back with it**, thirty-five centimetres at a sprint, along the same segment
+  the wall cast produced — so a sprint into a doorway still pulls in immediately, the way it did.
+- **Down the sights, none of it happens.** Sights are a promise about the framing and a
+  magnification that widened as you ran would be a scope that lies. `speedPush` returns zero for any
+  zoom, at any speed.
+
+The reticle is projected through the camera *after* the lens moves (Stage 66's ordering), so it
+stays on the ray it marks through the whole ease — the `probe:tps` reticle checks run unchanged.
+
+**Proof.** `probe:tps` 22/22 — two new: the lens goes 79.9° → 86.9° and the camera 2.95 m → 3.34 m
+while sprinting at 7.2 m/s and both come back when it stops, with `stage60-sprint.png` taken mid-run
+(the probe drives the simulation by hand, so between two advances the file is frozen at speed and
+the HUD in the picture reads 7.2 m/s) — `tests/tps.test.ts` 14 (three new on the rule itself),
+`probe:look` 18/18, `probe:city` 45/45, `probe:cityLife` 19/19, `probe:body` 20/20, `probe:frame`
+6/6, `probe:mobile` 14/14, `probe:arsenal` 19/19, `smoke` 7/7, 543 tests, build and typecheck clean.
+Four guards mutation-checked: the widening removed (the lens reads 80.0° at a sprint), the drift
+removed (3.00 m), the sights' exemption removed, and the slide capped at a sprint — each fails the
+check that claims it.
+
 ## Stage 76 — One weapon, not two
 
 **Goal.** The adversarial review of the camera and presentation work finished: eighty-four agents,

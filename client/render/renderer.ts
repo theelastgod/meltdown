@@ -24,7 +24,7 @@ import { mergeByMaterial } from "./body";
 import { applyPose, buildRig, disposeRig, rigReport, setRigSlot, WEAPON_IN_SOCKET, weaponStripGeometry, type Rig, type RigReport } from "./rig";
 import { poseBody, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
-import { aimPoint, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
+import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import type { Box } from "../../shared/sim/box";
 
 /** Interpolated view state handed to the renderer each frame. */
@@ -97,6 +97,8 @@ export interface CameraView {
   aim: { distance: number; hit: boolean; onTarget: boolean };
   /** where the camera's segment starts: the shoulder after a wall beside the player moved it in */
   anchor: { x: number; y: number; z: number };
+  /** the lens this frame was drawn with, in degrees: speed widens it (Stage 77) */
+  fov: number;
 }
 
 /** Layer for things the wet-floor mirror must not see (rain, far skyline): cheaper and no blown-out sky. */
@@ -164,7 +166,7 @@ export class Renderer {
   private camSmooth = { d: TPS_DEFAULT.distance, x: 0, y: 0, z: 0, set: false };
   /** the eased shoulder offset: pulling in against a wall beside the player is immediate, sliding back out is not */
   private shoulderSmooth = 0;
-  private lastView: CameraView = { third: true, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false } };
+  private lastView: CameraView = { third: true, fov: 80, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false } };
   private tmpProj = new THREE.Vector3();
   private vmSlot = 1;
   private vmSwap = 0;
@@ -220,6 +222,8 @@ export class Renderer {
     return this.lastView;
   }
   private fovNow = 80;
+  /** the speed the lens is carrying, in degrees (Stage 77) */
+  private fovPush = 0;
   private vmKick = 0;
   private eyeSmooth = MOVE.eyeStand;
   /** the warm-up sprite's material, kept alive so its program stays in the cache (Stage 63) */
@@ -710,7 +714,10 @@ export class Renderer {
    */
   private placeThirdPerson(v: ViewState, dt: number, bobY: number): void {
     const pivot = { x: v.x, y: v.y + this.eyeSmooth, z: v.z };
-    const opts = v.zoom > 1 ? TPS_ADS : TPS_DEFAULT;
+    const base = v.zoom > 1 ? TPS_ADS : TPS_DEFAULT;
+    // the camera drifts back as the file runs, the other half of the speed cue: the distance is
+    // eased below anyway, so this arrives over a few frames rather than on one (Stage 77)
+    const opts = this.fovPush > 0.01 ? { ...base, distance: base.distance + SPRINT_PULL * (this.fovPush / SPRINT_FOV) } : base;
     const cam = thirdPersonCamera(pivot, v.yaw, v.pitch, this.boxes, opts);
     // ease the distance only: pulling in against a wall is immediate (the wall is there now), letting back out is eased
     const k = Math.min(1, dt * 10);
@@ -751,7 +758,7 @@ export class Renderer {
     const visible = this.tmpProj.z < 1 && Math.abs(this.tmpProj.x) <= 1.2 && Math.abs(this.tmpProj.y) <= 1.2;
     const rx = (this.tmpProj.x + 1) * 0.5 * window.innerWidth;
     const ry = (1 - this.tmpProj.y) * 0.5 * window.innerHeight;
-    this.lastView = { third: true, anchor: { x: anchor.x, y: anchor.y, z: anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget } };
+    this.lastView = { third: true, fov: this.camera.fov, anchor: { x: anchor.x, y: anchor.y, z: anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget } };
   }
 
   render(v: ViewState, rawDt: number): void {
@@ -768,7 +775,12 @@ export class Renderer {
     // the ADS ease changes the projection, and the reticle is projected through it: move the lens
     // before the frame is placed, or for the half second of the zoom the reticle is drawn with the
     // previous frame's field of view and sits off the ray it claims to mark (Stage 66)
-    const targetFov = this.baseFov / v.zoom;
+    // and speed reads as field of view: the street widens as the file runs and closes back in as it
+    // stops. It eases in over about a fifth of a second and back out more slowly, because a lens
+    // that snapped with the speed would read as a stutter rather than as acceleration (Stage 77).
+    const push = speedPush(v.speed, v.zoom) * SPRINT_FOV;
+    this.fovPush += (push - this.fovPush) * Math.min(1, dt * (push > this.fovPush ? 5 : 3));
+    const targetFov = this.baseFov / v.zoom + this.fovPush;
     this.fovNow += (targetFov - this.fovNow) * Math.min(1, dt * 14);
     if (Math.abs(this.camera.fov - this.fovNow) > 0.01) {
       this.camera.fov = this.fovNow;
@@ -779,7 +791,7 @@ export class Renderer {
       this.camera.position.set(v.x, v.y + this.eyeSmooth + bobY, v.z);
       this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, (v.stance === "slide" ? 0.03 : bobX * 0.6) + (v.stunned ? Math.sin(this.clock * 25) * 0.02 : 0));
       this.local.group.visible = false;
-      this.lastView = { third: false, anchor: { x: 0, y: 0, z: 0 }, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: window.innerWidth / 2, y: window.innerHeight / 2, visible: true }, aim: { distance: 0, hit: false, onTarget: false } };
+      this.lastView = { third: false, fov: this.camera.fov, anchor: { x: 0, y: 0, z: 0 }, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: window.innerWidth / 2, y: window.innerHeight / 2, visible: true }, aim: { distance: 0, hit: false, onTarget: false } };
     }
     // the viewmodel is the first-person weapon; behind the body the hand holds it instead
     this.viewmodel.visible = !this.thirdPerson;

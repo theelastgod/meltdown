@@ -149,6 +149,69 @@ async function main(): Promise<void> {
     check("aiming down sights brings the camera in over the shoulder", ads.third && ads.distance >= 0.45 && hip.distance - ads.distance > 0.8, `${ads.distance.toFixed(2)} m back while aiming, ${hip.distance.toFixed(2)} m from the hip at the same spot`);
     results["ads"] = { ads, hip };
 
+    // ---------------- speed reads as speed ----------------
+    // Sprinting looked exactly like walking: the same lens, the same framing, and nothing but the
+    // hem moving. The lens widens with the speed and the camera drifts back with it (Stage 77).
+    await pg.evaluate(() => {
+      const p = window.__game.game.player;
+      p.pos.x = 0;
+      p.pos.z = 12;
+      p.vel.x = p.vel.z = 0;
+      window.__game.setBot([{ kind: "look", yaw: 0, pitch: 0, ticks: 5 }, { kind: "hold", ticks: 6000 }]);
+      window.__game.advance(40);
+    });
+    await nextFrame(pg);
+    // the section before this one left the lens easing back out of the sights: let it settle, or
+    // "still" is a number on its way somewhere and every comparison against it is noise
+    const still = await pg.evaluate(async () => {
+      let v = window.__game.view();
+      for (let i = 0; i < 400; i++) {
+        window.__game.advance(1);
+        await new Promise((r) => requestAnimationFrame(r));
+        v = window.__game.view();
+        if (Math.abs(v.fov - window.__game.game.renderer.fov) < 0.15) break;
+      }
+      return { fov: v.fov, distance: v.distance, base: window.__game.game.renderer.fov };
+    });
+    const ran = await pg.evaluate(async (from) => {
+      const rest = from as { fov: number };
+      window.__game.setBot([{ kind: "goto", x: 0, z: -20, sprint: true, radius: 1, timeoutTicks: 1200, stop: false }, { kind: "hold", ticks: 6000 }]);
+      let out = { fov: 0, distance: 0, speed: 0, blocked: false, frames: 0 };
+      let prev = -1;
+      // wait for the lens, not for a count of frames: it eases in at 5/s, which is a fifth of a
+      // second on a machine that draws quickly and a second or two on one that does not
+      for (let i = 0; i < 900; i++) {
+        window.__game.advance(1);
+        await new Promise((r) => requestAnimationFrame(r));
+        const v = window.__game.view();
+        const st = window.__game.state();
+        const sp = Math.hypot(st.vel.x, st.vel.z);
+        if (v.fov > out.fov) out = { fov: v.fov, distance: v.distance, speed: sp, blocked: v.blocked, frames: i };
+        if (sp > 6.8 && v.fov > rest.fov + 1 && prev >= 0 && v.fov - prev <= 0.02) break;
+        prev = v.fov;
+      }
+      return out;
+    }, still);
+    // the picture is taken while it is still running: the probe drives the sim by hand, so between
+    // two advances the file is frozen mid-sprint and the lens is the one the check just measured
+    await shotCheck(pg, "stage60-sprint.png");
+    const stopped = await pg.evaluate(async () => {
+      window.__game.setBot([{ kind: "hold", ticks: 6000 }]);
+      let v = window.__game.view();
+      let sp = 9;
+      for (let i = 0; i < 900; i++) {
+        window.__game.advance(1);
+        await new Promise((r) => requestAnimationFrame(r));
+        v = window.__game.view();
+        const st = window.__game.state();
+        sp = Math.hypot(st.vel.x, st.vel.z);
+        if (sp < 0.4 && v.fov < window.__game.game.renderer.fov + 0.2) break;
+      }
+      return { fov: v.fov, distance: v.distance, speed: sp };
+    });
+    check("sprinting widens the lens and drifts the camera back, and stopping closes it again", ran.speed > 6.8 && ran.fov - still.fov > 5 && ran.distance - still.distance > 0.15 && Math.abs(stopped.fov - still.fov) < 0.4, `still ${still.fov.toFixed(1)}° (base ${still.base.toFixed(0)}) at ${still.distance.toFixed(2)} m · sprinting ${ran.fov.toFixed(1)}° at ${ran.distance.toFixed(2)} m (${ran.speed.toFixed(1)} m/s, blocked ${ran.blocked}) · stopped ${stopped.fov.toFixed(1)}° at ${stopped.distance.toFixed(2)} m`);
+    results["speed"] = { still, ran, stopped };
+
     // ---------------- the reticle marks what the shot hits ----------------
     await pg.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 6000 }]));
     await pg.evaluate(() => window.__game.advance(30));

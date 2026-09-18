@@ -3,7 +3,8 @@
  * and a reticle that marks what the eye's ray reaches.
  */
 import { describe, expect, it } from "vitest";
-import { aimPoint, thirdPersonCamera, TPS_ADS, TPS_DEFAULT } from "../client/render/tps";
+import { aimPoint, speedPush, SPRINT_FOV_MAX, thirdPersonCamera, TPS_ADS, TPS_DEFAULT } from "../client/render/tps";
+import { MOVE } from "../shared/sim/constants";
 import { box } from "../shared/sim/box";
 import { dist, v3, viewDir, yawRight, dot, sub } from "../shared/math/vec3";
 
@@ -124,5 +125,36 @@ describe("where the reticle goes", () => {
     const fist = aimPoint(eye, 0, 0, [], [far], 1.6);
     expect(fist.distance).toBe(1.6);
     expect(fist.onTarget).toBe(false);
+  });
+});
+
+describe("how hard the file is running", () => {
+  it("is nothing at a walk, one at a sprint, and more in a slide", () => {
+    expect(speedPush(0, 1)).toBe(0);
+    expect(speedPush(MOVE.walkSpeed, 1)).toBe(0);
+    expect(speedPush(MOVE.walkSpeed - 2, 1)).toBe(0);
+    expect(speedPush(MOVE.sprintSpeed, 1)).toBeCloseTo(1, 6);
+    expect(speedPush((MOVE.walkSpeed + MOVE.sprintSpeed) / 2, 1)).toBeCloseTo(0.5, 6);
+    // a slide is faster than a sprint and reads as faster, up to the cap
+    expect(speedPush(MOVE.slideMaxSpeed, 1)).toBe(SPRINT_FOV_MAX);
+    expect(speedPush(MOVE.slideMaxSpeed, 1)).toBeGreaterThan(speedPush(MOVE.sprintSpeed, 1));
+  });
+
+  it("rises with the speed and never falls with it", () => {
+    let last = -1;
+    for (let sp = 0; sp <= 12; sp += 0.25) {
+      const v = speedPush(sp, 1);
+      expect(v).toBeGreaterThanOrEqual(last);
+      last = v;
+    }
+  });
+
+  it("is zero down the sights, at any speed: the sights are a promise about the framing", () => {
+    for (const sp of [0, 5.2, 7.2, 10.5]) {
+      expect(speedPush(sp, 1.6)).toBe(0);
+      expect(speedPush(sp, 2.5)).toBe(0);
+    }
+    // and the hip is not "a bit of zoom": exactly 1 is the hip
+    expect(speedPush(MOVE.sprintSpeed, 1)).toBeGreaterThan(0);
   });
 });

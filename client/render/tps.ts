@@ -11,6 +11,7 @@
 import { addScaled, clamp, len, normalize, sub, v3, viewDir, yawRight, type Vec3 } from "../../shared/math/vec3";
 import { rayBox, rayCapsule } from "../../shared/sim/collision";
 import type { Box } from "../../shared/sim/box";
+import { MOVE } from "../../shared/sim/constants";
 
 export interface TpsOpts {
   /** how far behind the pivot the camera sits */
@@ -29,6 +30,24 @@ export interface TpsOpts {
 export const TPS_DEFAULT: TpsOpts = { distance: 3.0, shoulder: 0.78, lift: 0.36, minDistance: 0.45, wallPad: 0.22 };
 /** aiming down sights pulls in and tightens over the shoulder */
 export const TPS_ADS: TpsOpts = { distance: 1.4, shoulder: 0.5, lift: 0.2, minDistance: 0.45, wallPad: 0.22 };
+
+/** degrees of field of view a full sprint is worth */
+export const SPRINT_FOV = 7;
+/** and how far past a sprint the lens keeps widening: a slide leaves a sprint well behind */
+export const SPRINT_FOV_MAX = 1.5;
+/** how much further back the camera drifts at a full sprint (metres) */
+export const SPRINT_PULL = 0.35;
+
+/**
+ * How hard the file is running, as a number: 0 at a walk, 1 at a sprint, and up to SPRINT_FOV_MAX
+ * in a slide, which is faster than a sprint and should read as faster. Aiming down sights returns 0
+ * — a lens that widened while you sprinted would be a scope that lies about its own magnification,
+ * and the sights are the one place the framing is a promise (Stage 77).
+ */
+export function speedPush(speed: number, zoom: number): number {
+  if (zoom > 1.001) return 0;
+  return clamp((speed - MOVE.walkSpeed) / (MOVE.sprintSpeed - MOVE.walkSpeed), 0, SPRINT_FOV_MAX);
+}
 
 export interface TpsCamera {
   pos: Vec3;
