@@ -94,7 +94,9 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .slot { width: 44px; height: 44px; border: 1px solid rgba(55,255,139,0.35); background: var(--pan); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--gr); }
 #hud .slot.on { border-color: var(--gr); box-shadow: 0 0 8px rgba(55,255,139,0.35); }
 #hud .slot.mg { border-color: var(--mg); color: var(--mg); }
-#hud .center { color: rgba(53,242,255,0.7); font-size: 10px; text-align: center; padding-bottom: 14px; }
+#hud .center { color: rgba(53,242,255,0.7); font-size: 10px; text-align: center; padding-bottom: 14px; white-space: nowrap; }
+/* lifted above the row where the slots and the tab strip leave it no room (Stage 118) */
+#hud .center.above { position: absolute; left: 50%; bottom: 60px; transform: translateX(-50%); padding-bottom: 0; }
 #hud .center b { color: var(--cy); }
 #hud .tabs { display: flex; border: 1px solid var(--mg); background: var(--pan); box-shadow: 0 0 8px rgba(255,62,201,0.25); }
 #hud .tab { padding: 6px 10px; border-right: 1px solid rgba(255,62,201,0.35); color: var(--cy); font-size: 10.5px; min-width: 44px; text-align: center; }

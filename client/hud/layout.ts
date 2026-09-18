@@ -43,6 +43,18 @@ export function flagTop(nodeFootBottom: number | null): number {
   return nodeFootBottom === null ? FLAG_TOP : Math.max(FLAG_TOP, Math.ceil(nodeFootBottom) + FLAG_GAP);
 }
 
+/** the gap the foot line keeps from the slots on its left and the tab strip on its right */
+export const FOOT_GAP = 8;
+
+/**
+ * Where the foot line sits (Stage 118): between the slots and the tab strip when the room between
+ * them holds it on one line with a gap either side, and lifted above the row when it does not —
+ * at 640 px wide the row left it 67 px and it wrapped onto three lines.
+ */
+export function footRow(room: number, need: number): "beside" | "above" {
+  return need + 2 * FOOT_GAP <= room ? "beside" : "above";
+}
+
 /**
  * Whether a box that spans [left, right] crosses the play: the middle band of the screen, where the
  * reticle and the file's body are. The rack must never; the check reads this rule.

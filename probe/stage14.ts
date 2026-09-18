@@ -175,13 +175,35 @@ async function main(): Promise<void> {
       const hud = document.getElementById("hud")!;
       const H = hud.getBoundingClientRect();
       const out: Record<string, { left: number; right: number; top: number; bottom: number }> = {};
-      for (const sel of [".mission", ".status", ".map"]) {
-        const b = hud.querySelector(sel)!.getBoundingClientRect();
+      for (const sel of [".mission", ".status", ".map", ".center", ".slots", ".tabs"]) {
+        // the foot line is read as its text's box, not its padded box
+        const el = hud.querySelector(sel)!;
+        const b = sel === ".center" ? (() => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect(); })() : el.getBoundingClientRect();
         out[sel.slice(1)] = { left: b.left - H.left, right: b.right - H.left, top: b.top - H.top, bottom: b.bottom - H.top };
       }
-      return { width: H.width, mission: out["mission"]!, status: out["status"]!, map: out["map"]! };
+      return { width: H.width, mission: out["mission"]!, status: out["status"]!, map: out["map"]!, foot: out["center"]!, slots: out["slots"]!, tabs: out["tabs"]!, footText: hud.querySelector(".center")!.textContent ?? "" };
     });
     await a.setViewportSize({ width: 960, height: 540 });
+    const wide = await a.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const hud = document.getElementById("hud")!;
+      const H = hud.getBoundingClientRect();
+      const out: Record<string, { left: number; right: number; top: number; bottom: number }> = {};
+      for (const sel of [".center", ".slots", ".tabs"]) {
+        const el = hud.querySelector(sel)!;
+        const b = sel === ".center" ? (() => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect(); })() : el.getBoundingClientRect();
+        out[sel.slice(1)] = { left: b.left - H.left, right: b.right - H.left, top: b.top - H.top, bottom: b.bottom - H.top };
+      }
+      return { width: H.width, foot: out["center"]!, slots: out["slots"]!, tabs: out["tabs"]! };
+    });
+    // Stage 118: at 640 the foot line ("1 · BLANK · 0.0 m/s · STAND") had 67 px between the slots
+    // and the tab strip and wrapped onto three lines. Judged as geometry at both widths: one line
+    // tall, clear of the slots and the strip; at 640 lifted above the row, at 960 still in it
+    const oneLine = (r: { top: number; bottom: number }) => r.bottom - r.top <= 16;
+    const crossesRow = (foot: { left: number; right: number; top: number; bottom: number }, box: { left: number; right: number; top: number; bottom: number }) => foot.left < box.right && foot.right > box.left && foot.top < box.bottom && foot.bottom > box.top;
+    const footTightClear = !crossesRow(tight.foot, tight.slots) && !crossesRow(tight.foot, tight.tabs);
+    const footWideClear = !crossesRow(wide.foot, wide.slots) && !crossesRow(wide.foot, wide.tabs);
+    check("the foot line stays one line and clear of the slots and the tab strip: lifted above the row at 640, in the row at 960", oneLine(tight.foot) && footTightClear && tight.foot.bottom <= tight.slots.top && /STAND|WALK|SPRINT|AIR/.test(tight.footText) && oneLine(wide.foot) && footWideClear && wide.foot.top >= wide.slots.top, `at 640: line ${(tight.foot.bottom - tight.foot.top).toFixed(0)} px tall at ${tight.foot.left.toFixed(0)}–${tight.foot.right.toFixed(0)}, ${tight.foot.top.toFixed(0)}–${tight.foot.bottom.toFixed(0)} · slots end ${tight.slots.right.toFixed(0)} (top ${tight.slots.top.toFixed(0)}) · tabs begin ${tight.tabs.left.toFixed(0)} · at 960: ${(wide.foot.bottom - wide.foot.top).toFixed(0)} px tall at ${wide.foot.left.toFixed(0)}–${wide.foot.right.toFixed(0)}, top ${wide.foot.top.toFixed(0)} · slots top ${wide.slots.top.toFixed(0)}`);
     const tightClear = tight.mission.top >= tight.status.bottom + 4 || tight.mission.left >= tight.status.right + 4;
     check("and at 640 the panel takes a second row under the file's header, short of the map", tight.width === 640 && tightClear && tight.mission.top >= tight.status.bottom + 4 && tight.mission.right + 4 <= tight.map.left && tight.mission.left >= 10, `at ${tight.width.toFixed(0)}: status ${tight.status.left.toFixed(0)}–${tight.status.right.toFixed(0)} ends ${tight.status.bottom.toFixed(0)} px down · mission ${tight.mission.left.toFixed(0)}–${tight.mission.right.toFixed(0)} from ${tight.mission.top.toFixed(0)} px down · map begins ${tight.map.left.toFixed(0)}`);
     check("with the run strip up the mission panel keeps clear of the file's header and of the map, and the strip wraps inside it — at 960 px and at 800", band.mission.left >= band.status.right + 4 && band.mission.right + 4 <= band.map.left && band.strip.bottom - band.strip.top > 20 && /CARRYING/.test(band.stripText) && narrow.width === 800 && narrow.mission.left >= narrow.status.right + 4 && narrow.mission.right + 4 <= narrow.map.left, `at ${band.width.toFixed(0)}: status ends ${band.status.right.toFixed(0)} · mission ${band.mission.left.toFixed(0)}–${band.mission.right.toFixed(0)} · map begins ${band.map.left.toFixed(0)} · strip ${(band.strip.bottom - band.strip.top).toFixed(0)} px tall · at ${narrow.width.toFixed(0)}: status ends ${narrow.status.right.toFixed(0)} · mission ${narrow.mission.left.toFixed(0)}–${narrow.mission.right.toFixed(0)} · map begins ${narrow.map.left.toFixed(0)}`);

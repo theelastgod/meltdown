@@ -14,7 +14,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, flagTop, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusWidth } from "./layout";
+import { alertTop, flagTop, footRow, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusWidth } from "./layout";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot } from "./radar";
 
@@ -488,6 +488,13 @@ export class Hud {
     const panel = mission.getBoundingClientRect();
     this.q(".alert").style.top = `${alertTop(panel.bottom - rootTop)}px`;
     this.placeFlag();
+    // the foot line between the slots and the tab strip, or above the row when they leave it no
+    // room (Stage 118): the room is measured with the line out of the row so it cannot change it
+    const center = this.q(".center");
+    const slots = this.q(".slots").getBoundingClientRect();
+    const tabs = this.q(".tabs").getBoundingClientRect();
+    const above = footRow(tabs.left - slots.right, center.scrollWidth) === "above";
+    if (center.classList.contains("above") !== above) center.classList.toggle("above", above);
     // and the status panel ends before the mission panel begins (Stage 107): its content width
     // follows the panel's measured left edge; a hidden panel is nothing to keep clear of
     const status = this.q(".status");

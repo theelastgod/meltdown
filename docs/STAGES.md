@@ -1641,6 +1641,37 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 118 — The foot line wrapped onto three lines at 640
+
+**Goal.** The run probe's gate frame at 640 px wide: `1 · BLANK / · 0.0 m/s / · STAND`, three
+lines crammed between the four slots and the five-tab strip. The bottom row is a flex line with
+the slots on the left, the tab strip on the right and the foot line between them, and at 640 the
+two ends leave the middle 67 px; the line needs about 170. Stage 111 gave the top band a second
+row at this width; the bottom row had no such rule.
+
+**What changed.**
+- `client/hud/layout.ts` — `FOOT_GAP` 8, `footRow(room, need)`: `beside` when the room between
+  the slots and the strip holds the line with a gap either side, `above` when it does not.
+- `client/hud/hud.ts` — the layout pass measures the slots' right edge, the strip's left edge and
+  the line's own width (kept on one line by `white-space: nowrap`) and lifts the line above the
+  row when the rule says so.
+- `client/hud/hud.css` — `.center` no longer wraps; `.center.above` sits centred just above the
+  row.
+- `tests/layout.test.ts` — the rule at the boundary either side.
+- `probe/stage14.ts` — at 640 and at 960 the line is one line tall and clear of the slots and the
+  strip; at 640 it is above the row, at 960 in it.
+
+**Proof.** `npm test` 742 tests (two new); `npm run probe:run` 22/22 — at 640 the line is
+11 px tall at 275–286 px, above the slots (top 300) and the strip, and at 960 it is 11 px tall
+in the row (top 501, slots from 480); `npm run probe:tps` still 43/43; `npm run build` and
+`npm run smoke` 7/7. The probe reads the line's text box, not its padded box: the first reading
+took 14 px of bottom padding for a second line.
+
+**Mutation.** `footRow` always says `beside`: the layout test fails (1 of 19) and the run probe
+fails its new check, 21/22 — at 640 the line, kept to one line by `nowrap`, sits in the row at
+216–390 px and pushes the tab strip to begin at 390, off the right edge of a 640 px view. Every
+other check passes.
+
 ## Stage 117 — The foot line said STAND at a sprint
 
 **Goal.** The tps probe's sprint frame: `1 · BLANK · 7.2 m/s · STAND`. The line under the file's

@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth } from "../client/hud/layout";
+import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, FOOT_GAP, footRow, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -49,6 +49,17 @@ describe("the searchlight warning's seat (Stage 116)", () => {
   });
   it("never rises above its seat for a node line that ends higher", () => {
     expect(flagTop(40)).toBe(FLAG_TOP);
+  });
+});
+
+describe("the foot line's row (Stage 118)", () => {
+  it("sits beside the slots and the tabs when the room holds it with a gap either side", () => {
+    expect(footRow(300, 170)).toBe("beside");
+    expect(footRow(170 + 2 * FOOT_GAP, 170)).toBe("beside");
+  });
+  it("lifts above the row when it does not", () => {
+    expect(footRow(170 + 2 * FOOT_GAP - 1, 170)).toBe("above");
+    expect(footRow(67, 170)).toBe("above");
   });
 });
 
