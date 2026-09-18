@@ -426,6 +426,44 @@ async function main(): Promise<void> {
     // status panel ends, where the mission panel begins, and whether the header line is cut
     console.log(`status ${chrome.status.left.toFixed(0)}–${chrome.status.right.toFixed(0)} px (top ${chrome.status.top.toFixed(0)}–${chrome.status.bottom.toFixed(0)}) · ammo bar to ${chrome.ammobar.right.toFixed(0)} · mission ${chrome.mission.left.toFixed(0)}–${chrome.mission.right.toFixed(0)} (top ${chrome.mission.top.toFixed(0)}–${chrome.mission.bottom.toFixed(0)}) · header line ${chrome.line.scroll} of ${chrome.line.client} px: "${chrome.line.text.trim()}"`);
     check("the file's header keeps clear of the mission panel: the status panel ends before the panel begins, with a gap", chrome.status.right + 4 <= chrome.mission.left && chrome.ammobar.right < chrome.mission.left, `status panel ends at ${chrome.status.right.toFixed(0)} px (its bars at ${chrome.ammobar.right.toFixed(0)}) · mission panel begins at ${chrome.mission.left.toFixed(0)} px · gap ${(chrome.mission.left - chrome.status.right).toFixed(0)} px`);
+    // Stage 112: the ledger was not a frame either. Open the FILE book the way the tab does (Tab),
+    // read every visible piece of chrome against its rectangle and the HUD's quiet classes; close
+    // it; the same for the GRAPH (G). No named helpers in here: the probe's build injects a __name
+    // the page does not have.
+    const bookRead = await pg.evaluate(async () => {
+      const hud = document.getElementById("hud")!;
+      document.dispatchEvent(new KeyboardEvent("keydown", { code: "Tab" }));
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const book = hud.querySelector(".file") as HTMLElement | null;
+      const bookOpen = !!book && !book.hidden;
+      const hits: string[] = [];
+      if (book && bookOpen) {
+        const fr = book.getBoundingClientRect();
+        for (const el of Array.from(hud.children) as HTMLElement[]) {
+          if (el === book || el.classList.contains("status") || el.classList.contains("scan") || el.classList.contains("bottom")) continue;
+          const cs = getComputedStyle(el);
+          if (cs.display === "none" || cs.visibility === "hidden" || Number(cs.opacity) === 0 || el.hidden) continue;
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) continue;
+          if (r.left < fr.right && r.right > fr.left && r.top < fr.bottom && r.bottom > fr.top) hits.push(el.className.split(" ").slice(-1)[0] ?? el.tagName);
+        }
+      }
+      const quietBook = [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2));
+      document.dispatchEvent(new KeyboardEvent("keydown", { code: "Tab" }));
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const quietAfter = [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2));
+      document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyG" }));
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const graph = hud.querySelector(".graph") as HTMLElement | null;
+      const graphOpen = !!graph && !graph.hidden;
+      const quietGraph = [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2));
+      document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyG" }));
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const quietEnd = [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2));
+      return { bookOpen, hits, quietBook, quietAfter, graphOpen, quietGraph, quietEnd };
+    });
+    check("the ledger book is a frame: with it open no visible chrome overlaps it and the gun is silenced, and the gun comes back when it closes", bookRead.bookOpen && bookRead.hits.length === 0 && bookRead.quietBook.includes("ammo") && bookRead.quietBook.includes("rack") && bookRead.quietBook.includes("log") && bookRead.quietAfter.length === 0, `book open ${bookRead.bookOpen} · overlapping: [${bookRead.hits.join(", ")}] · silenced: ${bookRead.quietBook.join(",")} · after: [${bookRead.quietAfter.join(",")}]`);
+    check("and so is its graph", bookRead.graphOpen && bookRead.quietGraph.includes("ammo") && bookRead.quietGraph.includes("reticle") && bookRead.quietEnd.length === 0, `graph open ${bookRead.graphOpen} · silenced: ${bookRead.quietGraph.join(",")} · after: [${bookRead.quietEnd.join(",")}]`);
     // Stage 109: the rack called the DIRECTIVE "THE"
     check("every slot on the rack is labelled by a word that names the weapon, not an article", chrome.rackLabels.length === 8 && chrome.rackLabels.every((l) => !/^\d\s+(THE|A|AN)$/i.test(l)) && chrome.rackLabels.some((l) => /^7 DIRECTIVE$/.test(l)), `rack: ${chrome.rackLabels.join(" | ")}`);
     check("and where the header line does not fit, the cut is an ellipsis rather than a hard edge", chrome.line.scroll > chrome.line.client && chrome.line.overflow === "ellipsis", `header line ${chrome.line.scroll} px of text in ${chrome.line.client} px · text-overflow ${chrome.line.overflow}`);

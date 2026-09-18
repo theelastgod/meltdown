@@ -18,6 +18,8 @@ export interface Modals {
   desk: boolean;
   terminal: boolean;
   card: boolean;
+  /** the ledger book (FILE) or its graph (GRAPH), the file's own frames (Stage 112) */
+  ledger: boolean;
 }
 
 /** the chrome the rule can silence, each a class on the HUD root: `q-<group>` */
@@ -31,8 +33,9 @@ const TERMINAL: readonly ChromeGroup[] = ["prompt", "reticle", "rack", "ammo", "
 
 /** The groups to silence for the modals that are open. Nothing open silences nothing. */
 export function quietFor(open: Modals): ChromeGroup[] {
-  // the desk and a card cover the screen: everything but the status line goes
-  if (open.desk || open.card) return [...ALL_GROUPS];
+  // the desk, a card and the ledger cover the screen: everything but the status line goes. The
+  // ledger and its graph are opened from the tab bar and by Tab and G, from any mode (Stage 112)
+  if (open.desk || open.card || open.ledger) return [...ALL_GROUPS];
   if (open.terminal) return [...TERMINAL];
   return [];
 }

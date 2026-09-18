@@ -501,8 +501,16 @@ export class Hud {
    * root, decided by the pure rule from which modals are open right now. Called on every open and
    * every close, the timed ones included, so the gun comes back the moment the frame goes.
    */
+  /** the ledger book or its graph is up: both live inside the HUD root but are toggled from file.ts */
+  private ledgerOpen(): boolean {
+    const book = this.root.querySelector(".file") as HTMLElement | null;
+    const graph = this.root.querySelector(".graph") as HTMLElement | null;
+    return !!(book && !book.hidden) || !!(graph && !graph.hidden);
+  }
+  private ledgerWas = false;
+
   private applyQuiet(): void {
-    const open = { desk: !this.q(".contracts").hidden, terminal: !this.q(".terminal").hidden, card: !this.q(".card").hidden };
+    const open = { desk: !this.q(".contracts").hidden, terminal: !this.q(".terminal").hidden, card: !this.q(".card").hidden, ledger: this.ledgerOpen() };
     const quiet = new Set(quietFor(open));
     for (const g of ALL_GROUPS) this.root.classList.toggle(`q-${g}`, quiet.has(g));
   }
@@ -587,6 +595,12 @@ export class Hud {
   update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60): void {
     this.tickRituals(dt);
     this.radarClock += dt;
+    // the ledger opens and closes outside this class (Stage 112): read it on the frame it changes
+    const ledger = this.ledgerOpen();
+    if (ledger !== this.ledgerWas) {
+      this.ledgerWas = ledger;
+      this.applyQuiet();
+    }
     this.layout();
     this.q(".hpbar").style.width = `${(100 * Math.max(0, p.health)) / Math.max(1, p.maxHealth)}%`;
     this.q(".shbar").style.width = p.maxShield > 0 ? `${(100 * Math.max(0, p.shield)) / p.maxShield}%` : "0%";

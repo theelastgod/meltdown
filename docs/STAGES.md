@@ -1641,6 +1641,39 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 112 — The ledger was not a frame either
+
+**Goal.** The run probe's ledger frame, read after Stage 111: the FILE book open over the yard —
+aliases, presets, the counter-ledger, the market — and the weapon rack, the ammo count, the log
+and the mission strip drawing straight through it, `30 / 30` at its right edge and five log lines
+poking out from under its left. Stage 95 made the desk, the terminal and the closing card frames
+that silence the combat chrome; the ledger book and its graph, opened from the tab bar and by Tab
+and G in every mode, were never on that list. A frame with a gun's ammo count printed over it is
+not a frame, whichever mode it opened in.
+
+**What changed.**
+
+- **The ledger book and its graph silence everything but the status line**, exactly as the desk
+  does: prompt, reticle, rack, ammo, grenades, arrows, log, map, mission, node foot and the
+  diagnostics — and the gun comes back the frame they close.
+- **The HUD watches for them.** Both panels live inside the HUD root but open and close from
+  `file.ts`, so the HUD reads their state on the frame it changes and applies the rule then; no
+  new coupling between the two.
+- `quietFor` in `client/hud/quiet.ts` gains the `ledger` modal, pure and unit-tested; the ledger
+  wins over a terminal open under it.
+
+**Proof.** `probe:tps` 41/41, two new, read as Stage 95 reads the desk: with the book opened by
+the tab's own key no visible chrome overlaps it and the silenced groups are all eleven; closed,
+none are silenced; the graph reads the same. `tests/quiet.test.ts` 7. 723 tests, build and
+typecheck clean.
+
+Two mutations, both failing the two new checks and nothing else, 39/41 each. With the rule not
+knowing the ledger, nothing is silenced and seven pieces of chrome overlap the open book — the
+reticle, the mission panel, the map, the side, the log, the ammo — and two of the seven unit tests
+go with it. With the HUD never looking at the panels, the rule is intact and all seven unit tests
+pass, and the probe reads the same seven overlaps: the wiring has no unit test and the probe is
+its guard.
+
 ## Stage 111 — The band was too narrow for three
 
 **Goal.** BRAVO's frame from the run probe, 640 px wide, read after Stage 110: the status panel
