@@ -580,7 +580,7 @@ export class Renderer {
   }
 
   /** the probe's read of the third-person presentation: what is lit, and where the filament hangs */
-  presentation(): { onBody: boolean; muzzle: number; handMuzzle: number; filament: { x: number; y: number; z: number }; hand: { x: number; y: number; z: number }; camera: { x: number; y: number; z: number } } {
+  presentation(): { onBody: boolean; muzzle: number; handMuzzle: number; filament: { x: number; y: number; z: number }; filamentDepth: boolean; hand: { x: number; y: number; z: number }; camera: { x: number; y: number; z: number } } {
     const hand = this.local.hand.getWorldPosition(new THREE.Vector3());
     const cam = this.camera.getWorldPosition(new THREE.Vector3());
     return {
@@ -588,6 +588,7 @@ export class Renderer {
       muzzle: this.muzzle.intensity,
       handMuzzle: this.handMuzzle.intensity,
       filament: this.campaignFx.filamentAt(),
+      filamentDepth: this.campaignFx.filamentDepthTest(),
       hand: { x: hand.x, y: hand.y, z: hand.z },
       camera: { x: cam.x, y: cam.y, z: cam.z },
     };

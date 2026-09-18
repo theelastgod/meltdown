@@ -25,6 +25,7 @@ export class CampaignFx {
   private targets: THREE.Group[] = [];
   private targetPool: THREE.Group[] = [];
   private filament: THREE.Group;
+  private filamentMat: THREE.MeshBasicMaterial;
   private filamentOn = false;
   private time = 0;
 
@@ -64,7 +65,10 @@ export class CampaignFx {
     this.group.add(this.escort);
     // the filament: red strands over the weapon, pulsing
     this.filament = new THREE.Group();
-    const fm = new THREE.MeshBasicMaterial({ color: RED, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthTest: false });
+    // depthTest is flipped per host in setFilamentHost; depth is never written, because additive
+    // strands that write depth punch a hole in whatever is drawn after them
+    const fm = new THREE.MeshBasicMaterial({ color: RED, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false });
+    this.filamentMat = fm;
     for (let i = 0; i < 5; i++) {
       const pts: THREE.Vector3[] = [];
       for (let k = 0; k <= 8; k++) {
@@ -90,6 +94,15 @@ export class CampaignFx {
     if (this.filament.parent !== host) host.add(this.filament);
     // on the hand the weapon runs down the socket's own -z, so the camera-space offsets come off
     this.filament.position.set(onHand ? -0.28 : 0, onHand ? 0.26 : 0, onHand ? -0.02 : 0);
+    // and the strands stop being an overlay. On the camera they are drawn over the first-person
+    // weapon and must ignore depth; on the hand they are ordinary world geometry three metres out,
+    // and ignoring depth there paints them through the wall between them and the camera (Stage 76).
+    this.filamentMat.depthTest = onHand;
+  }
+
+  /** what the strands are drawn with, for the check that they stop being an overlay off the camera */
+  filamentDepthTest(): boolean {
+    return this.filamentMat.depthTest;
   }
 
   setMarker(pos: { x: number; y: number; z: number } | null): void {

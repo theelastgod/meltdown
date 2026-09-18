@@ -1641,6 +1641,38 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 76 — One weapon, not two
+
+**Goal.** The adversarial review of the camera and presentation work finished: eighty-four agents,
+five lenses finding and three skeptics verifying each finding, twenty-six raised and seven surviving.
+Five of the seven were the ones Stage 73 had already fixed, reported twice over by different lenses —
+the unsmoothed shoulder, the reticle on the simulation's tick, the filament going out with the body.
+These are the two that were left, and they are the same mistake in two places: a thing written for
+the camera's own space kept its camera-space behaviour after being moved into the world.
+
+**What changed.**
+
+- **The reticle carries the recoil the camera carries, and not the pattern.** Recoil is split sixty
+  forty (`RECOIL_VIEW_SHARE`): sixty per cent moves the view, and the forty the simulation adds to
+  the shot on top of that is the pattern — the climb a player learns by watching where the tracers
+  go. Stage 66 built the third-person reticle from `yaw + kickYaw + patX`, which is exactly the
+  direction the shot leaves along, so in third person the pattern was solved and in first person it
+  still had to be learned. The same weapon had two skill floors depending on a camera setting. The
+  reticle is cast along the camera's own aim now, which is what a first-person crosshair marks.
+- **The filament stops being an overlay when it stops being on the camera.** Its strands are drawn
+  with `depthTest: false`, which is right for geometry parented to the camera and painted over the
+  first-person weapon. Stage 69 hung that same group on the body's hand, three metres out in world
+  space, where ignoring depth paints it through whatever wall is between the body and the camera.
+  The test flips with the host. The material also stops writing depth, which an additive overlay
+  should never have done.
+
+**Proof.** `probe:tps` 20/20 (the recoil check is now two: mid-burst the reticle is 10.5 px off the
+shot the pattern bends and on the camera's ray, and with a burst's kick put on the weapon by hand it
+moves 20 px off the bare aim with it; both filament checks now read the depth state), `probe:body`
+20/20, `probe:campaign` 31/31, `probe:arsenal` 19/19, `smoke` 7/7, 540 tests, build and typecheck
+clean. Both guards mutation-checked: the pattern added back to the aim puts the reticle on the shot
+and 10.4 px off the camera's ray, and the depth test inverted fails both filament checks.
+
 ## Stage 75 — Two waits that measured the machine
 
 **Goal.** Run #102 was red on two checks, in two probes, for the same reason each time: a wait whose

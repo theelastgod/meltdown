@@ -1087,10 +1087,15 @@ export class Game {
       alive: p.alive,
       moveYaw: lenXZ(p.vel) > 0.5 ? Math.atan2(-p.vel.x, -p.vel.z) : p.yaw,
       height: p.height,
-      // what a shot would do from here: the sim fires along the aim plus the recoil it is carrying
-      // (shotDirs in shared/sim/weapons.ts), against the bodies its hitscan tests (Stage 66)
-      aimYaw: p.yaw + p.weapon.kickYaw + p.weapon.patX,
-      aimPitch: p.pitch + p.weapon.kickPitch + p.weapon.patY,
+      // What a shot would do from here, against the bodies the sim's hitscan tests (Stage 66) — but
+      // along the aim the camera is drawn with, which is the aim plus the *view* share of the
+      // recoil. Recoil is split sixty/forty (RECOIL_VIEW_SHARE): sixty per cent moves the view, and
+      // the forty the sim adds to the shot on top of that is the pattern, which a player is meant
+      // to learn from where the tracers go. Adding it here marked the true shot in third person and
+      // nowhere else, so the same weapon climbed predictably in one view and was solved in the
+      // other — one game with two skill floors (Stage 76).
+      aimYaw: p.yaw + p.weapon.kickYaw,
+      aimPitch: p.pitch + p.weapon.kickPitch,
       // how far a shot from this weapon reaches: the reticle stops where the shot does, so it
       // cannot mark a body at sixty metres for a weapon whose rounds die at thirty (Stage 73)
       aimRange: weaponDefOf(p).range.max,
@@ -1107,8 +1112,8 @@ export class Game {
       // mouse look must feel immediate; leaving the reticle on the sim's last tick left it trailing
       // the camera through every flick, on exactly the path no probe drives — a bot never locks the
       // pointer, so this is the one path the checks could not see (Stage 73).
-      view.aimYaw = this.input.yaw + p.weapon.kickYaw + p.weapon.patX;
-      view.aimPitch = this.input.pitch + p.weapon.kickPitch + p.weapon.patY;
+      view.aimYaw = this.input.yaw + p.weapon.kickYaw;
+      view.aimPitch = this.input.pitch + p.weapon.kickPitch;
       if (lenXZ(p.vel) <= 0.5) view.moveYaw = this.input.yaw;
     }
     if (!render || !this.drawing) return;

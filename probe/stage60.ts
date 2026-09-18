@@ -174,9 +174,10 @@ async function main(): Promise<void> {
       const s = window.__game.state();
       // where the eye's ray, at the distance the reticle was drawn for, lands by the same camera: the
       // reticle must be exactly that, whatever the bot's aim settled on
-      // the direction the sim fires along: the aim plus the recoil it is carrying (Stage 66)
+      // the direction the reticle is cast along: the aim plus the recoil the camera carries, which
+      // is the view's share of it and not the pattern the shot also takes (Stage 76)
       const w = window.__game.game.player.weapon;
-      const ay = s.yaw + w.kickYaw + w.patX, ap = s.pitch + w.kickPitch + w.patY;
+      const ay = s.yaw + w.kickYaw, ap = s.pitch + w.kickPitch;
       const c = Math.cos(ap);
       const along = { x: -Math.sin(ay) * c, y: Math.sin(ap), z: -Math.cos(ay) * c };
       const eye = { x: s.pos.x, y: s.pos.y + 1.62, z: s.pos.z };
@@ -200,19 +201,24 @@ async function main(): Promise<void> {
       return { before, after: after.health, alive: after.alive };
     }, dummy.id);
     check("a shot through the reticle lands on that dummy", shotRes.after < shotRes.before, `dummy ${dummy.id} health ${shotRes.before} → ${shotRes.after}`);
-    // and with the recoil still on the weapon the reticle is where the NEXT shot goes, not where the
-    // aim points: a reticle cast from the bare aim would sit still through a burst (Stage 66)
-    // fire again and stop mid-burst, while the recoil is still on the weapon: 60 ticks after a burst
-    // it has recovered to a fifth of a degree, which is a pixel or two and proves nothing
+    // and with the recoil still on the weapon the reticle is where the camera is aiming, not where
+    // the bare aim points — and not, either, where the shot actually goes. Recoil is split sixty
+    // forty: the view carries sixty per cent and the other forty is the pattern, which the sim adds
+    // to the shot and no view shows, because learning it is the skill. Marking the true shot in
+    // third person and nowhere else made one weapon two weapons (Stage 76).
+    // Fire and stop mid-burst, while the recoil is still on the weapon: 60 ticks after a burst it
+    // has recovered to a fifth of a degree, which is a pixel or two and proves nothing.
     const kickUp = await pg.evaluate((id) => {
-      window.__game.setBot([{ kind: "fire", ticks: 200, dummyId: id }, { kind: "hold", ticks: 6000 }]);
-      let kick = 0;
-      for (let i = 0; i < 24 && kick < 0.02; i++) {
+      window.__game.setBot([{ kind: "fire", ticks: 300, dummyId: id }, { kind: "hold", ticks: 6000 }]);
+      let pat = 0;
+      // the view's kick recovers every tick and settles near a hundredth of a radian; the pattern
+      // only recovers between bursts, so it is the one that climbs while the trigger is down
+      for (let i = 0; i < 40 && pat < 0.035; i++) {
         window.__game.advance(4);
         const w = window.__game.game.player.weapon;
-        kick = Math.hypot(w.kickPitch + w.patY, w.kickYaw + w.patX);
+        pat = Math.hypot(w.patX, w.patY);
       }
-      return kick;
+      return pat;
     }, dummy.id);
     await nextFrame(pg);
     const kicked = await pg.evaluate(() => {
@@ -222,15 +228,46 @@ async function main(): Promise<void> {
       const r = window.__game.game.renderer;
       const eye = { x: s.pos.x, y: s.pos.y + 1.62, z: s.pos.z };
       const d = v.aim.distance;
-      const ky = s.yaw + w.kickYaw + w.patX, kp = s.pitch + w.kickPitch + w.patY;
+      const ky = s.yaw + w.kickYaw, kp = s.pitch + w.kickPitch; // the camera's aim
+      const sy = ky + w.patX, sp = kp + w.patY; // the sim's shot, pattern and all
+      const kc = Math.cos(kp), sc = Math.cos(sp), bc = Math.cos(s.pitch);
+      const withKick = r.project({ x: eye.x - Math.sin(ky) * kc * d, y: eye.y + Math.sin(kp) * d, z: eye.z - Math.cos(ky) * kc * d });
+      const shot = r.project({ x: eye.x - Math.sin(sy) * sc * d, y: eye.y + Math.sin(sp) * d, z: eye.z - Math.cos(sy) * sc * d });
+      const bare = r.project({ x: eye.x - Math.sin(s.yaw) * bc * d, y: eye.y + Math.sin(s.pitch) * d, z: eye.z - Math.cos(s.yaw) * bc * d });
+      return { kick: Math.hypot(w.kickPitch, w.kickYaw), pat: Math.hypot(w.patX, w.patY), reticle: v.reticle, withKick, shot, bare };
+    });
+    const toKicked = Math.hypot(kicked.reticle.x - kicked.withKick.x, kicked.reticle.y - kicked.withKick.y);
+    const toShot = Math.hypot(kicked.reticle.x - kicked.shot.x, kicked.reticle.y - kicked.shot.y);
+    const toBare = Math.hypot(kicked.reticle.x - kicked.bare.x, kicked.reticle.y - kicked.bare.y);
+    check("mid-burst the reticle stays on the camera's aim and off the shot the pattern bends: the forty per cent of recoil no view shows is not shown here either", kicked.pat > 0.03 && toKicked < 3 && toShot > 8, `pattern ${kicked.pat.toFixed(4)} rad (view recoil ${kicked.kick.toFixed(4)}) · reticle is ${toKicked.toFixed(1)} px from the camera's ray and ${toShot.toFixed(1)} px from the shot`);
+    // and the sixty per cent it does show, it shows: the equilibrium kick of a sustained burst is a
+    // couple of pixels, which proves nothing either way, so put a burst's worth of kick on the
+    // weapon by hand and watch the reticle carry it off the bare aim
+    const byHand = await pg.evaluate(() => {
+      const w = window.__game.game.player.weapon;
+      w.kickYaw = 0.06;
+      w.kickPitch = -0.04;
+      w.patX = 0;
+      w.patY = 0;
+      return { kickYaw: w.kickYaw, kickPitch: w.kickPitch };
+    });
+    await nextFrame(pg);
+    const held = await pg.evaluate(() => {
+      const s = window.__game.state();
+      const w = window.__game.game.player.weapon;
+      const v = window.__game.view();
+      const r = window.__game.game.renderer;
+      const eye = { x: s.pos.x, y: s.pos.y + 1.62, z: s.pos.z };
+      const d = v.aim.distance;
+      const ky = s.yaw + w.kickYaw, kp = s.pitch + w.kickPitch;
       const kc = Math.cos(kp), bc = Math.cos(s.pitch);
       const withKick = r.project({ x: eye.x - Math.sin(ky) * kc * d, y: eye.y + Math.sin(kp) * d, z: eye.z - Math.cos(ky) * kc * d });
       const bare = r.project({ x: eye.x - Math.sin(s.yaw) * bc * d, y: eye.y + Math.sin(s.pitch) * d, z: eye.z - Math.cos(s.yaw) * bc * d });
-      return { kick: Math.hypot(w.kickPitch + w.patY, w.kickYaw + w.patX), reticle: v.reticle, withKick, bare };
+      return { reticle: v.reticle, withKick, bare };
     });
-    const toKicked = Math.hypot(kicked.reticle.x - kicked.withKick.x, kicked.reticle.y - kicked.withKick.y);
-    const toBare = Math.hypot(kicked.reticle.x - kicked.bare.x, kicked.reticle.y - kicked.bare.y);
-    check("the reticle carries the recoil the sim fires with, so it marks the next shot and not the bare aim", kicked.kick > 0.015 && toKicked < 3 && toBare > 6, `recoil ${kicked.kick.toFixed(4)} rad (peak ${kickUp.toFixed(4)}) · reticle is ${toKicked.toFixed(1)} px from the recoiled ray and ${toBare.toFixed(1)} px from the bare aim`);
+    const heldToKick = Math.hypot(held.reticle.x - held.withKick.x, held.reticle.y - held.withKick.y);
+    const heldToBare = Math.hypot(held.reticle.x - held.bare.x, held.reticle.y - held.bare.y);
+    check("and it does carry the recoil the camera carries: put a burst's kick on the weapon and the reticle goes with it, off the bare aim", heldToKick < 3 && heldToBare > 8, `kick ${byHand.kickYaw.toFixed(3)} / ${byHand.kickPitch.toFixed(3)} rad · reticle is ${heldToKick.toFixed(1)} px from the kicked ray and ${heldToBare.toFixed(1)} px from the bare aim`);
     results["aim"] = { ...aim, dummy, off, shot: shotRes };
     await shotCheck(pg, "stage60-reticle.png");
 
@@ -239,13 +276,19 @@ async function main(): Promise<void> {
       const p = window.__game.game.player;
       p.pos.x = 0;
       p.pos.z = 0;
+      // the burst above emptied most of a magazine and left a kick on the weapon by hand: this
+      // section needs a weapon that fires, and an aim that is the bot's rather than the probe's
+      p.weapon.kickYaw = 0;
+      p.weapon.kickPitch = 0;
+      p.weapon.ammo[p.weapon.slot] = 90;
+      p.weapon.reloadTimer = 0;
       window.__game.game.renderer.campaignFx.setFilament(true);
       window.__game.setBot([{ kind: "look", yaw: 0, pitch: 0, ticks: 5 }, { kind: "fire", ticks: 120 }, { kind: "hold", ticks: 6000 }]);
       window.__game.advance(20);
     });
     await nextFrame(pg);
     const lit = await pg.evaluate(async () => {
-      let best = { onBody: false, muzzle: 0, handMuzzle: 0, filament: { x: 0, y: 0, z: 0 }, hand: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 } };
+      let best = { onBody: false, muzzle: 0, handMuzzle: 0, filament: { x: 0, y: 0, z: 0 }, filamentDepth: false, hand: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 } };
       for (let i = 0; i < 300; i++) {
         window.__game.advance(2); // this probe drives the sim by hand: no ticks, no shots, no flash
         await new Promise((r) => requestAnimationFrame(r));
@@ -257,12 +300,14 @@ async function main(): Promise<void> {
     });
     const toHand = Math.hypot(lit.filament.x - lit.hand.x, lit.filament.y - lit.hand.y, lit.filament.z - lit.hand.z);
     const toCam = Math.hypot(lit.filament.x - lit.camera.x, lit.filament.y - lit.camera.y, lit.filament.z - lit.camera.z);
-    check("the muzzle flash is on the weapon the body is holding, and the Kernel's filament hangs on it rather than in the air in front of the camera", lit.onBody && lit.handMuzzle > 1 && lit.muzzle === 0 && toHand < 0.5 && toCam > 1.5, `body lit ${lit.onBody} · hand light ${lit.handMuzzle.toFixed(1)}, camera light ${lit.muzzle.toFixed(1)} · filament ${toHand.toFixed(2)} m from the hand and ${toCam.toFixed(2)} m from the camera`);
+    // and on the hand the strands are world geometry: they must be depth-tested, or they paint
+    // through the wall between the body and the camera (Stage 76)
+    check("the muzzle flash is on the weapon the body is holding, and the Kernel's filament hangs on it, depth-tested, rather than painting over the street in front of the camera", lit.onBody && lit.handMuzzle > 1 && lit.muzzle === 0 && toHand < 0.5 && toCam > 1.5 && lit.filamentDepth, `body lit ${lit.onBody} · hand light ${lit.handMuzzle.toFixed(1)}, camera light ${lit.muzzle.toFixed(1)} · filament ${toHand.toFixed(2)} m from the hand and ${toCam.toFixed(2)} m from the camera · depth-tested ${lit.filamentDepth}`);
     // and with the body hidden — the camera pulled in against it — the flash falls back to the camera
     await pg.evaluate(() => window.__game.hideBody(true));
     await nextFrame(pg);
     const hidden = await pg.evaluate(async () => {
-      let best = { onBody: true, muzzle: 0, handMuzzle: 0, toCam: 99, toHand: 0 };
+      let best = { onBody: true, muzzle: 0, handMuzzle: 0, toCam: 99, toHand: 0, depth: true };
       for (let i = 0; i < 300; i++) {
         window.__game.advance(2);
         await new Promise((r) => requestAnimationFrame(r));
@@ -273,12 +318,13 @@ async function main(): Promise<void> {
           handMuzzle: p.handMuzzle,
           toCam: Math.hypot(p.filament.x - p.camera.x, p.filament.y - p.camera.y, p.filament.z - p.camera.z),
           toHand: Math.hypot(p.filament.x - p.hand.x, p.filament.y - p.hand.y, p.filament.z - p.hand.z),
+          depth: p.filamentDepth,
         };
         if (best.muzzle > 1) break;
       }
       return best;
     });
-    check("with the body hidden the flash and the filament both fall back to the camera rather than going out with the body", !hidden.onBody && hidden.muzzle > 1 && hidden.toCam < 0.5 && hidden.toHand > 1.5, `body lit ${hidden.onBody} · camera light ${hidden.muzzle.toFixed(1)} · hand light ${hidden.handMuzzle.toFixed(1)} · filament ${hidden.toCam.toFixed(2)} m from the camera and ${hidden.toHand.toFixed(2)} m from the hand`);
+    check("with the body hidden the flash and the filament both fall back to the camera, where the strands are an overlay again", !hidden.onBody && hidden.muzzle > 1 && hidden.toCam < 0.5 && hidden.toHand > 1.5 && !hidden.depth, `body lit ${hidden.onBody} · camera light ${hidden.muzzle.toFixed(1)} · hand light ${hidden.handMuzzle.toFixed(1)} · filament ${hidden.toCam.toFixed(2)} m from the camera and ${hidden.toHand.toFixed(2)} m from the hand · depth-tested ${hidden.depth}`);
     await pg.evaluate(async () => {
       window.__game.hideBody(false);
       window.__game.game.renderer.campaignFx.setFilament(false);
@@ -336,8 +382,8 @@ async function main(): Promise<void> {
       const w = g.player.weapon;
       const eye = { x: s.pos.x, y: s.pos.y + 1.62, z: s.pos.z };
       const d = v.aim.distance;
-      const ly = g.input.yaw + w.kickYaw + w.patX, lp = g.input.pitch + w.kickPitch + w.patY;
-      const sy = s.yaw + w.kickYaw + w.patX, sp = s.pitch + w.kickPitch + w.patY;
+      const ly = g.input.yaw + w.kickYaw, lp = g.input.pitch + w.kickPitch;
+      const sy = s.yaw + w.kickYaw, sp = s.pitch + w.kickPitch;
       const lc = Math.cos(lp), sc2 = Math.cos(sp);
       const live = g.renderer.project({ x: eye.x - Math.sin(ly) * lc * d, y: eye.y + Math.sin(lp) * d, z: eye.z - Math.cos(ly) * lc * d });
       const stale = g.renderer.project({ x: eye.x - Math.sin(sy) * sc2 * d, y: eye.y + Math.sin(sp) * d, z: eye.z - Math.cos(sy) * sc2 * d });
