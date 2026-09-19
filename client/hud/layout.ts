@@ -185,6 +185,23 @@ export function statusLineFit(room: number, need: number): "full" | "short" {
   return need <= room ? "full" : "short";
 }
 
+/** the gap the event log keeps under the stack above it (px) */
+export const LOG_GAP = 6;
+
+/**
+ * Whether the log, whose top is `logTop`, clears the stack that ends at `stackBottom` (Stage 148).
+ *
+ * The log used to cut every entry but the city's PA — one row, `nowrap`, an ellipsis — so in a
+ * 380 px box `OBJECTIVE 3 · HOLD UNTIL THE UPLINK CLOSES — THE LEASE FILE IS GOING OUT WITH IT`
+ * needed 553 px and a player was told to hold until the uplink closes and nothing else. Every
+ * entry reads in full now, so the log grows upward from its anchor with what it says, and this is
+ * the bound that keeps it out of the frame above it: the HUD drops its oldest entry until the log
+ * clears the stack.
+ */
+export function logClears(logTop: number, stackBottom: number): boolean {
+  return logTop >= Math.ceil(stackBottom) + LOG_GAP;
+}
+
 /** the gap the phone's row keeps under the mission panel (px) */
 export const PHONE_ROW_GAP = 6;
 

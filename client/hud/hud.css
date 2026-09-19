@@ -71,8 +71,10 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .side { position: absolute; right: 14px; top: 135px; width: 220px; text-align: right; font-size: 10px; color: rgba(55,255,139,0.75); }
 #hud .side .k { color: rgba(53,242,255,0.7); }
 #hud .log { position: absolute; left: 14px; bottom: 88px; width: 380px; font-size: 10.5px; color: rgba(55,255,139,0.85); }
-#hud .log div { margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#hud .log div.pa { white-space: normal; overflow: visible; text-overflow: clip; }  /* Stage 133: the city's PA reads in full */
+/* Stage 148: every entry reads in full, the objectives with the rest — a cut line is the one thing
+   a log must not do. The HUD drops the oldest entry when a log of wrapped lines would climb over
+   the stack above it. */
+#hud .log div { margin-top: 2px; white-space: normal; overflow: visible; text-overflow: clip; }
 #hud .log .mg { color: var(--mg); }
 #hud .log .am { color: var(--am); }
 #hud .log .cy { color: var(--cy); }

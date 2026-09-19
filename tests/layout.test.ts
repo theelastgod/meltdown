@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, nodeFootTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit, stackShift, phoneRowTop, PHONE_ROW_GAP, logLines, LOG_LINES, PHONE_LOG_LINES } from "../client/hud/layout";
+import { ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, nodeFootTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit, stackShift, phoneRowTop, PHONE_ROW_GAP, logLines, LOG_LINES, PHONE_LOG_LINES, LOG_GAP, logClears } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -46,6 +46,22 @@ describe("the alert's seat", () => {
     expect(alertTop(90, null)).toBe(90 + ALERT_GAP);
     expect(alertTop(90, 40)).toBe(90 + ALERT_GAP);
     expect(alertTop(90, 400)).toBe(400 + ALERT_GAP);
+  });
+});
+
+describe("the event log's ceiling (Stage 148)", () => {
+  it("clears the stack by a gap, and does not at a pixel less", () => {
+    expect(logClears(200, 141)).toBe(true);
+    expect(logClears(141 + LOG_GAP, 141)).toBe(true);
+    expect(logClears(141 + LOG_GAP - 1, 141)).toBe(false);
+    expect(logClears(100, 141)).toBe(false);
+  });
+  it("rounds the stack's bottom up, so half a pixel is not room", () => {
+    expect(logClears(141 + LOG_GAP, 140.2)).toBe(true);
+    expect(logClears(140 + LOG_GAP, 140.2)).toBe(false);
+  });
+  it("is the desktop's own numbers: a log at 375 under a stack ending at 141", () => {
+    expect(logClears(375, 141)).toBe(true);
   });
 });
 

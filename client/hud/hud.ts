@@ -17,7 +17,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
+import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
 import { terminalFooter, terminalSeat } from "./terminal";
 import { closeHint, openHint } from "./keyhint";
 import type { NodeReadout } from "./node";
@@ -892,6 +892,8 @@ export class Hud {
   private missionBottom = 0;
   /** the phone's row (or the legend under it), which the alert also hangs under (Stage 147) */
   private stackUnder: number | null = null;
+  /** the bottom of the stack, from the last layout pass: the log's ceiling (Stage 148) */
+  private stackBottom = 0;
 
   /**
    * The centred stack under the mission panel: the node line a gap under the panel's own measured
@@ -917,6 +919,8 @@ export class Hud {
     const alertSeat = `${alertTop(this.missionBottom, under)}px`;
     const alert = this.q(".alert");
     if (alert.style.top !== alertSeat) alert.style.top = alertSeat;
+    // where the stack ends, which is the ceiling the event log keeps under (Stage 148)
+    this.stackBottom = alert.getBoundingClientRect().bottom - rootTop;
   }
 
   /** The repo mech has you in its light. */
@@ -1086,6 +1090,15 @@ export class Hud {
   push(line: string, cls = ""): void {
     this.lines.push(`<div class="${cls}">» ${line}</div>`);
     while (this.lines.length > logLines(this.root.classList.contains("touch"))) this.lines.shift();
-    this.q(".log").innerHTML = this.lines.join("");
+    const log = this.q(".log");
+    log.innerHTML = this.lines.join("");
+    // every entry reads in full now (Stage 148), so a long one is two or three rows rather than a
+    // cut one, and the log grows upward from its anchor with what it says. It drops its oldest
+    // rather than climb over the stack above it
+    const rootTop = this.root.getBoundingClientRect().top;
+    while (this.lines.length > 1 && !logClears(log.getBoundingClientRect().top - rootTop, this.stackBottom)) {
+      this.lines.shift();
+      log.innerHTML = this.lines.join("");
+    }
   }
 }

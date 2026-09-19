@@ -293,6 +293,53 @@ async function main(): Promise<void> {
     const m2 = await hub.evaluate(() => window.__game.campaign().mission);
     check("reaching B starts the hold: 20 s while the file decrypts", m2?.kind === "survive" && m2.need === 20, `objective "${m2?.objective}" (${m2?.kind}) ${m2?.progress}/${m2?.need}`);
     await shotCheck(hub, `stage10-mission.png`);
+
+    // ---------------- the log cut the line that says what to do (Stage 148) ----------------
+    // Every entry but the city's PA was one row, nowrap, with an ellipsis, in a 380 px box. Four
+    // of the campaign's objective lines did not fit \u2014 `OBJECTIVE 3 \u00b7 HOLD UNTIL THE UPLINK CLOSES
+    // \u2014 THE LEASE FILE IS GOING OUT WITH IT` wanted 553 px \u2014 so the player was told to hold until
+    // the uplink closes and never told why. Walk every objective line the campaign can print
+    // through the HUD's own log and read what is drawn.
+    const objectiveLines = [...new Set(MISSIONS.flatMap((mission) => [mission.objectives, ...(mission.variants ?? []).map((v) => v.objectives ?? [])].flatMap((list) => list.map((o, i) => { const text = (o as { text?: string }).text; return text ? `OBJECTIVE ${i + 1} \u00b7 ${text}` : ""; }))))].filter((t) => t.length > 0);
+    const logRead = await hub.evaluate((texts: string[]) => {
+      const hudApi = window.__game.game.hud;
+      // no named helpers in here: the probe's build injects a __name the page does not have
+      const cutLines: { text: string; shown: number; needs: number }[] = [];
+      let tallest = 0;
+      for (const t of texts) {
+        hudApi.push(t);
+        const drawn = document.querySelectorAll("#hud .log > div");
+        const last = drawn[drawn.length - 1] as HTMLElement;
+        if (last.scrollWidth > last.clientWidth + 1) cutLines.push({ text: t, shown: last.clientWidth, needs: last.scrollWidth });
+        tallest = Math.max(tallest, last.getBoundingClientRect().height);
+      }
+      const logEl = document.querySelector("#hud .log") as HTMLElement;
+      const alertEl = document.querySelector("#hud .alert") as HTMLElement;
+      const hudEl = document.getElementById("hud")!;
+      const hudTop = hudEl.getBoundingClientRect().top;
+      const lb = logEl.getBoundingClientRect();
+      const ab = alertEl.getBoundingClientRect();
+      const lastText = (logEl.lastElementChild?.textContent ?? "").replace(/^\u00bb\s*/, "");
+      return { cut: cutLines, count: texts.length, width: lb.width, top: lb.top - hudTop, bottom: lb.bottom - hudTop, alertBottom: ab.bottom - hudTop, entries: logEl.children.length, tallest, lastText };
+    }, objectiveLines);
+    const lastWanted = objectiveLines[objectiveLines.length - 1] ?? "";
+    check("every objective the campaign can print reads in full in the event log, the longest over more than one row, with the log clear of the stack above it", logRead.cut.length === 0 && logRead.count >= 40 && logRead.tallest > 16 && logRead.lastText === lastWanted && logRead.top >= logRead.alertBottom + 4, `${logRead.count} objective lines through a ${logRead.width.toFixed(0)} px log \u00b7 ${logRead.cut.length} cut${logRead.cut.length ? `: ${logRead.cut.slice(0, 3).map((c) => `"${c.text}" needs ${c.needs} of ${c.shown} px`).join(" \u00b7 ")}` : ""} \u00b7 tallest entry ${logRead.tallest.toFixed(0)} px \u00b7 log ${logRead.top.toFixed(0)}\u2013${logRead.bottom.toFixed(0)} under a stack ending ${logRead.alertBottom.toFixed(0)} \u00b7 last entry "${logRead.lastText.slice(0, 40)}"`);
+    // and the bound itself: five entries of four hundred characters would be forty rows, which
+    // from the log's anchor is over the stack. The log drops its oldest rather than climb.
+    const logBound = await hub.evaluate(() => {
+      const hudApi = window.__game.game.hud;
+      const long = "HOLD THE TOWER UNTIL THE UPLINK CLOSES AND THE LEASE FILE GOES OUT WITH IT ".repeat(6);
+      for (let i = 0; i < 5; i++) hudApi.push(`OBJECTIVE ${i + 1} \u00b7 ${long}`);
+      const logEl = document.querySelector("#hud .log") as HTMLElement;
+      const alertEl = document.querySelector("#hud .alert") as HTMLElement;
+      const hudEl = document.getElementById("hud")!;
+      const hudTop = hudEl.getBoundingClientRect().top;
+      const lb = logEl.getBoundingClientRect();
+      const ab = alertEl.getBoundingClientRect();
+      const first = logEl.firstElementChild as HTMLElement | null;
+      return { entries: logEl.children.length, top: lb.top - hudTop, bottom: lb.bottom - hudTop, alertBottom: ab.bottom - hudTop, cut: first ? first.scrollWidth > first.clientWidth + 1 : false };
+    });
+    check("and a log of lines far too long for it drops its oldest entry rather than climb over the stack, still cutting none of what it shows", logBound.entries >= 1 && logBound.entries < 5 && logBound.top >= logBound.alertBottom + 4 && !logBound.cut, `${logBound.entries} of 5 entries kept \u00b7 log ${logBound.top.toFixed(0)}\u2013${logBound.bottom.toFixed(0)} under a stack ending ${logBound.alertBottom.toFixed(0)} \u00b7 oldest cut ${logBound.cut}`);
     // hold at B: 21 s of sim; a wave lands halfway
     const waspsBefore = await hub.evaluate(() => window.__game.game.world.wasps.length);
     await hub.evaluate((b) => window.__game.setBot([{ kind: "goto", x: b.x, z: b.z, sprint: false, radius: 0.8, timeoutTicks: 60, stop: true }, { kind: "hold", ticks: 60 * 22 }]), B);

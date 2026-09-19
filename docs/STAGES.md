@@ -1641,6 +1641,47 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 148 — The log cut the line that says what to do
+
+**Goal.** The event log at the bottom left is where the game tells you what it wants: `» OBJECTIVE
+3 · HOLD THE TERMINAL WHILE THE FILE DECRYPTS`. Every entry but the city's PA was drawn on one
+row, `white-space: nowrap`, `text-overflow: ellipsis`, in a box 380 px wide. Stage 133 had already
+made the PA read in full and left the objectives cut.
+
+Walked through the HUD's own log, four of the fifty objective lines the campaign can print do not
+fit. The worst is mission six's: `OBJECTIVE 3 · HOLD UNTIL THE UPLINK CLOSES — THE LEASE FILE IS
+GOING OUT WITH IT` wants 553 px of 380, so a player is told to hold until the uplink closes and
+never told that the lease file — the thing the whole arc is about — is going out with it. The
+others are mission one's terminal hold (384 px), mission five's variant (506) and mission six's
+tower (418).
+
+**What changed.**
+
+- `client/hud/hud.css` — every entry reads in full. The `.pa` exception goes with it, because it is
+  now the rule.
+- `client/hud/layout.ts` — `logClears`: a log that reads in full grows upward from its anchor with
+  what it says, so it needs a bound rather than a blade. The bound is the stack above it.
+- `client/hud/hud.ts` — the layout pass keeps where the stack ends, and `push` drops the log's
+  oldest entry until the log clears it. A log of very long lines shows fewer of them; it does not
+  climb into the frame, and it does not cut a word of what it does show.
+- `tests/layout.test.ts` — the bound, at the gap and a pixel inside it, with the stack's bottom
+  rounded up.
+- `probe/stage10.ts` — the campaign probe walks all fifty objective lines through the real log and
+  fails if any is clipped, reading the drawn width against the box. And it pushes five entries far
+  too long for the frame to prove the bound bites: the log drops its oldest rather than climb.
+
+**Proof.** vitest 801/801. `npm run probe:campaign` 42/42: `50 objective lines through a 380 px
+log · 0 cut · tallest entry 24 px · log 382–452 under a stack ending 75`, and the bound biting,
+`3 of 5 entries kept · log 122–452 under a stack ending 75 · oldest cut false`. Regressions
+`probe:mobile` 39/39, whose phone log keeps its three entries, `probe:wake` 26/26, `probe:tps`
+49/49 and `probe:run` 23/23; build, smoke 7/7.
+
+Mutation A, the ellipsis back in the stylesheet: `probe:campaign` 40/42, naming what a player
+loses — `4 cut: "OBJECTIVE 3 · HOLD THE TERMINAL WHILE THE FILE DECRYPTS" needs 384 of 380 px ·
+"OBJECTIVE 2 · PUT OUT THE FOUR LATTICE NODES (THE FEEDS ALREADY TOOK TWO)" needs 506 of 380 px …`
+Mutation B, the log no longer dropping its oldest: `probe:campaign` 41/42 — `5 of 5 entries kept ·
+log -98–452 under a stack ending 75`, a log that has climbed off the top of the frame.
+
 ## Stage 147 — The alert's floor could only ever fire by printing over something
 
 **Goal.** The alert — `◆ INTEGRITY 30`, the line that tells you you are being hit — hangs under the
