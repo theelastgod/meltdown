@@ -3,7 +3,7 @@
  * what they say is what the net client knows.
  */
 import { describe, expect, it } from "vitest";
-import { LINK_BAD_MS, LINK_SLOW_MS, linkLabel, linkTone, roomLabel } from "../client/hud/room";
+import { LINK_BAD_MS, LINK_SLOW_MS, linkLabel, linkTone, roomLabel, roomName } from "../client/hud/room";
 
 describe("the room's label", () => {
   it("says offline when there is no room, whatever the count says", () => {
@@ -52,5 +52,49 @@ describe("the link's own cost (Stage 154)", () => {
   it("keeps its thresholds in the order a player would read them", () => {
     expect(LINK_SLOW_MS).toBeLessThan(LINK_BAD_MS);
     expect(LINK_SLOW_MS).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * The join line's room (Stage 159). It took the last segment of the socket URL whole, so the run
+ * probe's own frame read `LINKED · ROOM run-yard?mode=run&ai=0&level=drainage_yard · FILE #1` and
+ * wrapped onto a second line of a log that holds five.
+ */
+describe("the room's name in the join line", () => {
+  it("is the room, not the link it was reached by", () => {
+    expect(roomName("ws://127.0.0.1:8787/room/run-yard?mode=run&ai=0&level=drainage_yard")).toBe("run-yard");
+    expect(roomName("wss://host/room/wake-run-drainage_yard?level=drainage_yard&mode=run")).toBe("wake-run-drainage_yard");
+    expect(roomName("wss://host/room/audit-3020?audit=1&level=lease_row")).toBe("audit-3020");
+    expect(roomName("ws://h/room/probe")).toBe("probe");
+  });
+
+  it("never carries a query, a fragment or a trailing slash into the log", () => {
+    for (const url of [
+      "ws://h/room/probe?ai=0&level=x",
+      "ws://h/room/probe#frag",
+      "ws://h/room/probe/",
+      "ws://h/room/probe?",
+    ]) {
+      expect(roomName(url)).toBe("probe");
+    }
+  });
+
+  it("is not fooled by a slash inside the query", () => {
+    // the query is cut off before the path is split, not after: a query value carrying a slash —
+    // another room's URL, a path, a list — would otherwise hand the last segment of *that* to the log
+    expect(roomName("ws://h/room/probe?next=ws://other/room/decoy")).toBe("probe");
+    expect(roomName("ws://h/room/probe?level=a/b")).toBe("probe");
+  });
+
+  it("reads a name the link had to escape, and survives one it cannot", () => {
+    expect(roomName("ws://h/room/my%20room?x=1")).toBe("my room");
+    expect(roomName("ws://h/room/lease%3Frow")).toBe("lease"); // an escaped ? is a real one once read
+    expect(roomName("ws://h/room/100%")).toBe("100%"); // a malformed escape is a name like any other
+  });
+
+  it("says something rather than nothing when the link names no room", () => {
+    for (const url of ["", "ws://h", "ws://h/", "?only=query"]) {
+      expect(roomName(url).length).toBeGreaterThan(0);
+    }
   });
 });

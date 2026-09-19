@@ -53,6 +53,7 @@ import type { NodeView } from "./render/wake";
 import { GRENADE_LIST, WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
 import { modsFor, weaponDefOf } from "@shared/sim/player";
 import { rejoinDelay, rejoinTries } from "@shared/net/rejoin";
+import { roomName } from "./hud/room";
 
 export interface NetConfig {
   url: string;
@@ -406,7 +407,7 @@ export class Game {
           this.hud.push(`AUDIT · ${audit.name} · ${audit.line}`, "am");
         }
         this.input.yaw = this.player.yaw;
-        this.hud.push(`${this.rejoins > 0 ? "RELINKED" : "LINKED"} · ROOM ${cfg.url.split("/").pop()} · FILE #${net.playerId}`, "cy");
+        this.hud.push(`${this.rejoins > 0 ? "RELINKED" : "LINKED"} · ROOM ${roomName(cfg.url)} · FILE #${net.playerId}`, "cy");
         this.rejoins = 0;
       } else {
         this.hud.push(`LINK ${st.toUpperCase()}${net.kickReason ? " · " + net.kickReason : ""}`, "mg");

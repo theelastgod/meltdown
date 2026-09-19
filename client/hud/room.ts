@@ -42,3 +42,28 @@ export function linkTone(rttMs: number): LinkTone {
   if (rttMs >= LINK_SLOW_MS) return "slow";
   return "ok";
 }
+
+/**
+ * The room's name out of the link it was reached by (Stage 159).
+ *
+ * The event log's join line took the last segment of the socket URL and printed it whole:
+ * `LINKED · ROOM run-yard?mode=run&ai=0&level=drainage_yard · FILE #1`, straight out of the run
+ * probe's own frame, wrapping onto a second line of a log that holds five. A real room is named
+ * `wake-run-drainage_yard?level=drainage_yard&mode=run` or `audit-3020?audit=1&level=lease_row`, so
+ * the line printed the level twice and the room's settings at a player who cannot change them.
+ *
+ * The name is the path's last segment. The query is how the client was told to connect, not what
+ * the room is called.
+ */
+export function roomName(url: string): string {
+  const path = (url ?? "").split(/[?#]/)[0] ?? "";
+  const last = path.replace(/\/+$/, "").split("/").pop() ?? "";
+  let name = last;
+  try {
+    name = decodeURIComponent(last);
+  } catch {
+    /* a malformed escape is a name like any other: shown as it came */
+  }
+  // a segment that carried an encoded `?` has a real one now
+  return (name.split(/[?#]/)[0] ?? "").trim() || "ROOM";
+}

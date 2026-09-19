@@ -1641,6 +1641,52 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 159 — The join line printed the link instead of the room
+
+**Goal.** The other thing wrong in the frame Stage 157 came out of. The event log's join line took
+the last segment of the socket URL and printed it whole:
+
+```
+» LINKED · ROOM run-yard?mode=run&ai=0&level=drainage_yard · FILE #1
+```
+
+straight off `stage14-carry.png`, wrapping onto a second line of a log that holds five — two of the
+five entries a player gets, spent on a query string. Every networked frame this repo has produced
+carries it; Stage 153's proof line quotes `ROOM probe?ai=0&level=drainage_yard`.
+
+A real room is named `wake-run-drainage_yard?level=drainage_yard&mode=run` from the menu, or
+`audit-3020?audit=1&level=lease_row` from an Audit, so the line told the player the district twice
+and then the room's settings, which they cannot change and did not ask about. The room's name is the
+path's last segment; the query is how the client was told to connect.
+
+**What changed.**
+
+- `client/hud/room.ts` — `roomName(url)`, beside the band's other room readouts: the query and the
+  fragment come off before the path is split, the segment is unescaped, and a link that names no
+  room still says something.
+- `client/game.ts` — the join line asks for the room's name rather than slicing the URL itself.
+- `tests/roomlabel.test.ts` — the real room shapes, the escaped name, the malformed escape, the
+  link that names nothing, and a query carrying a slash.
+- `probe/stage2.ts` — the net probe reads the line off a page whose log is still new, and fails
+  unless it names the room and carries no query at all.
+
+**Proof.** vitest 848/848. `npm run probe:net` 27/27: `"» LINKED · ROOM probe-join-31 · FILE #1" ·
+room read as "probe-join-31"`, where it had read `probe-join-31?ai=0&level=drainage_yard`. The whole
+sweep as CI runs it — every probe, the four lints, the firmware certification, build and smoke —
+green.
+
+Mutation A, the join line slicing the URL itself again: `probe:net` 26/27 — `"» LINKED · ROOM
+probe-join-31?ai=0&level=drainage_yard · FILE #1"`, the defect exactly as it was found. The rule's
+own tests survive it, which is the point of having the probe: a rule that is right and called by
+nobody looks the same as one that works.
+
+Mutation B was a hole before it was a mutation. Taking the query off the path before splitting it is
+one of two guards — the segment is cut at a `?` again after unescaping — and with the first removed
+every test still passed and the probe still passed. The two differ only when the query itself
+carries a slash, which a link to another room or a path-valued setting does: without the first cut,
+`ws://h/room/probe?next=ws://other/room/decoy` names the room `decoy`. That case is a test now, and
+with it the mutation fails. A guard no test can tell from its neighbour is not guarded.
+
 ## Stage 158 — The first trigger pull of a session compiled a shader
 
 **Goal.** Stage 157's sweep went red on the frame budget's hitch check — `max 302 ms` against a 61 ms

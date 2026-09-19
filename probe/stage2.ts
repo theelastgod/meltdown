@@ -374,6 +374,7 @@ async function main(): Promise<void> {
     // Welcome answered once, and a single lost packet ended the session before it began. The two
     // seeds that stranded are the two seeds run here.
     const strandSeeds = [31, 12];
+    let joinSaid = "";
     const joinedOn: { seed: number; joined: boolean; asks: number; id: number; ms: number; status: string }[] = [];
     for (const strandSeed of strandSeeds) {
       const joinPage = await browser.newPage({ viewport: { width: 640, height: 360 } });
@@ -381,6 +382,8 @@ async function main(): Promise<void> {
       const startedAt = Date.now();
       const isIn = await joinPage.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined", null, { timeout: 30000, polling: 50 }).then(() => true, () => false);
       const how = await joinPage.evaluate(() => ({ asks: window.__game.net()?.joinAsks ?? 0, id: window.__game.net()?.playerId ?? -1, status: window.__game.net()?.status ?? "no link" }));
+      // while this page's log is still new, read the line it wrote on joining (Stage 159)
+      if (!joinSaid) joinSaid = await joinPage.evaluate(() => [...document.querySelectorAll("#hud .log div")].map((d) => (d.textContent ?? "").trim()).find((l) => /LINKED . ROOM/.test(l)) ?? "");
       joinedOn.push({ seed: strandSeed, joined: isIn, asks: how.asks, id: how.id, ms: Date.now() - startedAt, status: how.status });
       await joinPage.close();
     }
@@ -388,6 +391,17 @@ async function main(): Promise<void> {
     // asking twice is the whole claim: a seed that joined on its first ask would prove only that
     // the loss moved, not that the retry carried it
     const retried = joinedOn.some((j) => j.asks > 1);
+    // the join line names the room, not the link (Stage 159). It used to print the last segment of
+    // the socket URL whole — `run-yard?mode=run&ai=0&level=drainage_yard` in the run probe's own
+    // frame, wrapping onto a second line of a log that holds five and telling the player the level
+    // twice and the room's settings, which they cannot change.
+    const joinRoom = /ROOM ([^ ]+) . FILE #/.exec(joinSaid)?.[1] ?? "";
+    check(
+      "the join line names the room rather than the link it was reached by: no query, no settings, one line",
+      joinRoom === `probe-join-${strandSeeds[0]}` && !/[?&=]/.test(joinSaid),
+      `"${joinSaid}" \u00b7 room read as "${joinRoom}"`,
+    );
+
     check("a lost join or a lost Welcome no longer ends the session before it begins: the two seeds that stranded for ever ask again and are let in", allIn && retried, joinedOn.map((j) => `seed ${j.seed}: ${j.joined ? `file #${j.id} after ${j.asks} ask(s) in ${j.ms} ms` : `still ${j.status} after ${j.asks} ask(s) and ${j.ms} ms`}`).join(" \u00b7 "));
 
     // ---------------- cheater ----------------
