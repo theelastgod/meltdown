@@ -22,13 +22,23 @@ export function openHint(key: string, what: string, touch: boolean): string {
 }
 
 /**
- * The menu's footer (Stage 152). Stage 145 took the keys off the frames a thumb reaches inside the
- * game and left the screen every player sees first saying `↑↓ MOVE · ENTER SELECT · ← → ADJUST ·
- * ESC BACK`. The menu has taken clicks since it was written — a tap on a row chooses it, a tap on
- * a row's [−] or [+] adjusts it — so what was wrong was only what it said.
+ * The menu's footer (Stage 152, narrowed in Stage 163).
+ *
+ * Stage 145 took the keys off the frames a thumb reaches inside the game and left the screen every
+ * player sees first saying `↑↓ MOVE · ENTER SELECT · ← → ADJUST · ESC BACK`. Stage 152 made that
+ * line right for a phone. It was still the same line on every screen, and on the first one two of
+ * its four instructions are for controls that screen has not got: `adjust` returns unless the row
+ * is a setting, and `back` matches `wake`, `settings` and `pause` and does nothing at all on the
+ * main menu. A title screen that offers ESC and answers with a sound and no movement has told the
+ * player their key was wrong when it was the screen that was.
+ *
+ * So the footer says what this screen offers. Moving and selecting are always there — every screen
+ * is a list. Adjusting is named when the screen holds anything adjustable, by screen rather than by
+ * row, so the line does not flicker as the cursor passes the one row that is not.
  */
-export function menuFooter(touch: boolean): string {
-  return touch ? "TAP A LINE TO CHOOSE · TAP [−] [+] TO ADJUST" : "↑↓ MOVE · ENTER SELECT · ← → ADJUST · ESC BACK";
+export function menuFooter(touch: boolean, adjustable: boolean, canBack: boolean): string {
+  if (touch) return `TAP A LINE TO CHOOSE${adjustable ? " · TAP [−] [+] TO ADJUST" : ""}`;
+  return `↑↓ MOVE · ENTER SELECT${adjustable ? " · ← → ADJUST" : ""}${canBack ? " · ESC BACK" : ""}`;
 }
 
 /** the line under a settings row, which names the same two chips (Stage 152) */

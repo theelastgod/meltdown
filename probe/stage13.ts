@@ -104,7 +104,36 @@ async function main(): Promise<void> {
       const buildEl = menuEl.querySelector(".ft .build") as HTMLElement | null;
       return { foot: (footEl.textContent ?? "").trim(), build: (buildEl?.textContent ?? "").trim() };
     });
-    check("the menu's footer names the keys a desktop has", footDesk.foot.startsWith("\u2191\u2193 MOVE \u00b7 ENTER SELECT \u00b7 \u2190 \u2192 ADJUST \u00b7 ESC BACK") && footDesk.foot.endsWith(footDesk.build), `"${footDesk.foot}"`);
+    // Stage 163: on the main menu it names only what the main menu has. `adjust` returns unless the
+    // row is a setting and `back` matches wake, settings and pause — so on the first screen a player
+    // sees, two of the four instructions were for controls that screen has not got.
+    const footSet = await a.evaluate(async () => {
+      window.__game.menuChoose("settings");
+      await new Promise((r) => requestAnimationFrame(r));
+      const el = document.querySelector("#menu .ft") as HTMLElement;
+      const rows = [...document.querySelectorAll("#menu .list .row")].length;
+      const out = { foot: (el.textContent ?? "").trim(), rows };
+      window.__game.menuKey("Escape");
+      await new Promise((r) => requestAnimationFrame(r));
+      return out;
+    });
+    const backOnRoot = await a.evaluate(async () => {
+      const before = window.__game.menu()!.screen;
+      const cues = (window.__game.state().audio?.uiBack ?? 0) as number;
+      window.__game.menuKey("Escape");
+      await new Promise((r) => requestAnimationFrame(r));
+      return { before, after: window.__game.menu()!.screen, cuesBefore: cues, cuesAfter: (window.__game.state().audio?.uiBack ?? 0) as number };
+    });
+    check(
+      "the menu's footer names the controls the screen has: the main menu moves and selects, the settings screen also adjusts and goes back",
+      footDesk.foot.startsWith("\u2191\u2193 MOVE \u00b7 ENTER SELECT") && !/ADJUST|BACK/.test(footDesk.foot) && footDesk.foot.endsWith(footDesk.build) && /\u2190 \u2192 ADJUST/.test(footSet.foot) && /ESC BACK/.test(footSet.foot),
+      `main "${footDesk.foot}" \u00b7 settings "${footSet.foot}" (${footSet.rows} rows)`,
+    );
+    check(
+      "and ESC on the main menu is silent rather than answering with the back cue and staying put",
+      backOnRoot.before === "main" && backOnRoot.after === "main" && backOnRoot.cuesAfter === backOnRoot.cuesBefore,
+      `screen ${backOnRoot.before} \u2192 ${backOnRoot.after} \u00b7 back cue ${backOnRoot.cuesBefore} \u2192 ${backOnRoot.cuesAfter}`,
+    );
 
     // choices are URLs that name the mode
     const campaign = await a.evaluate(() => window.__game.menuChoose("campaign"));

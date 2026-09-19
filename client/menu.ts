@@ -144,7 +144,7 @@ export class Menu {
     const root = document.createElement("div");
     root.id = "menu";
     root.hidden = true;
-    root.innerHTML = `<div class="card"></div><div class="panel"><div class="hd"><span class="word">MELTDOWN</span><span class="who"></span></div><div class="list"></div><div class="line"></div><div class="ft">${menuFooter(wantsTouch())} · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
+    root.innerHTML = `<div class="card"></div><div class="panel"><div class="hd"><span class="word">MELTDOWN</span><span class="who"></span></div><div class="list"></div><div class="line"></div><div class="ft"><span class="hint"></span> · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
     document.body.appendChild(root);
     this.root = root;
     document.addEventListener("keydown", this.onKey);
@@ -263,6 +263,11 @@ export class Menu {
     const line = this.root.querySelector(".line") as HTMLElement;
     const cur = es[this.cursor];
     line.textContent = cur && !cur.id.startsWith("set:") ? cur.line : cur ? settingsLine(wantsTouch()) : "";
+    // the footer names what this screen offers (Stage 163): every screen is a list, so moving and
+    // selecting are always there; adjusting and going back are not
+    const hint = this.root.querySelector(".ft .hint") as HTMLElement;
+    const wants = menuFooter(wantsTouch(), es.some((e) => e.id.startsWith("set:")), this.canBack());
+    if (hint.textContent !== wants) hint.textContent = wants;
     const hd = this.root.querySelector(".hd .word") as HTMLElement;
     hd.textContent = this.screen === "pause" ? "PAUSED" : this.screen === "wake" ? `${this.pick === "run" ? "THE RUN" : "WAKE"} · PICK A DISTRICT` : this.screen === "settings" ? "SETTINGS" : "MELTDOWN";
   }
@@ -307,7 +312,15 @@ export class Menu {
     this.render();
   }
 
+  /** Whether ESC goes anywhere from here. The main menu is the root: there is nothing behind it. */
+  private canBack(): boolean {
+    return this.screen === "wake" || this.screen === "settings" || this.screen === "pause";
+  }
+
   private back(): void {
+    // no cue for a key that does nothing (Stage 163): the main menu used to answer ESC with the
+    // back sound and stay exactly where it was
+    if (!this.canBack()) return;
     this.host.audio?.uiBack();
     if (this.screen === "wake") this.show("main");
     else if (this.screen === "settings") this.show(this.prev === "pause" ? "pause" : "main");

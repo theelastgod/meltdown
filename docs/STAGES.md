@@ -1641,6 +1641,52 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 163 — The first screen a player sees offered two keys it had not got
+
+**Goal.** The menu's footer reads `↑↓ MOVE · ENTER SELECT · ← → ADJUST · ESC BACK`, and it is the
+same line on every screen, because Stage 152 gave it one argument: whether the player is on a phone.
+
+On the settings screen all four are true. On the main menu — the first screen anybody sees — two are
+not. `adjust()` returns on its first line unless the highlighted row is a setting, and the main menu
+has none. `back()` handles `wake`, `settings` and `pause`, and matches nothing on `main`.
+
+And it did not just fail silently. `back()` played the back cue before testing where it was, so ESC
+on the title screen made the sound of going back and went nowhere — which tells a player their key
+was wrong when it was the screen that was.
+
+**What changed.**
+
+- `client/hud/keyhint.ts` — `menuFooter(touch, adjustable, canBack)`. Moving and selecting are
+  always named, because every screen is a list. Adjusting and going back are named only where they
+  exist. Adjusting is decided per screen rather than per row, so the line does not flicker as the
+  cursor passes the one row in settings that is not a setting.
+- `client/menu.ts` — `canBack()` is one rule, read by the footer and by `back()` itself, and `back()`
+  returns before the cue when there is nowhere to go. The footer is written each render rather than
+  once into the shell.
+- `tests/keyhint.test.ts` — each control named only where it exists, moving and selecting always,
+  and a phone never offered ESC whatever the screen.
+- `probe/stage13.ts` — the ship probe reads the drawn footer on both screens, and presses ESC on the
+  main menu with the cue counter open on either side of it.
+
+**Proof.** vitest 862/862. `npm run probe:ship` 11/11: `main "↑↓ MOVE · ENTER SELECT · dev" ·
+settings "↑↓ MOVE · ENTER SELECT · ← → ADJUST · ESC BACK · dev" (9 rows)`, and `screen main → main ·
+back cue 1 → 1` — the counter reached 1 on a real back out of settings and did not move for the
+main menu's ESC. The whole sweep as CI runs it green but for one check that is not this stage's,
+below.
+
+Mutation A, the footer the same line on every screen again: `probe:ship` 10/11 with the main menu
+offering `← → ADJUST · ESC BACK`, and `tests/keyhint.test.ts` fails 2 of its 10 on its own. Mutation
+B, the cue played before the screen is tested: 10/11 with `back cue 1 → 2` — the sound of going
+back, on a screen that stayed exactly where it was, which is the defect this stage found under the
+wording one.
+
+One failure in this stage's sweep was not this stage's, and it is worth writing down rather than
+re-running past. The first probe's tutorial check came back `after: "R reload · SHIFT sprint"` where
+it wants no `SHIFT`; re-run on the same tree it was 19/19 with `after: "R reload"`. Stage 130's line
+teaches what the file has not done, and whether the bot is recorded as having sprinted depends on it
+crossing a speed threshold inside a plan step — the same timing-sensitivity Stages 151 and 156 found
+elsewhere. Nothing in this stage touches `learn()` or the bot. That is the next stage's.
+
 ## Stage 162 — The fit was checked one element at a time, after each was found cut
 
 **Goal.** Three stages found the same defect in three places: content that was right in a box too

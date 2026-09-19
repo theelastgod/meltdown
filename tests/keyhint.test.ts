@@ -27,15 +27,41 @@ describe("a hint that opens something else", () => {
   });
 });
 
-describe("the menu's footer (Stage 152)", () => {
-  it("names the keys on a keyboard", () => {
-    expect(menuFooter(false)).toBe("↑↓ MOVE · ENTER SELECT · ← → ADJUST · ESC BACK");
+describe("the menu's footer (Stages 152, 163)", () => {
+  // the settings screen: a list, with things to adjust, and somewhere to go back to
+  const settings = { adjustable: true, canBack: true };
+  // the main menu: a list, nothing adjustable, and nothing behind it
+  const root = { adjustable: false, canBack: false };
+
+  it("names the keys on a keyboard, for what the screen offers", () => {
+    expect(menuFooter(false, settings.adjustable, settings.canBack)).toBe("↑↓ MOVE · ENTER SELECT · ← → ADJUST · ESC BACK");
+    expect(menuFooter(false, root.adjustable, root.canBack)).toBe("↑↓ MOVE · ENTER SELECT");
+  });
+
+  it("never offers a control the screen has not got", () => {
+    const first = menuFooter(false, root.adjustable, root.canBack);
+    expect(first).not.toMatch(/ADJUST/);
+    expect(first).not.toMatch(/BACK/);
+    expect(menuFooter(false, true, false)).not.toMatch(/BACK/);
+    expect(menuFooter(false, false, true)).not.toMatch(/ADJUST/);
+  });
+
+  it("always says how to move and how to choose, because every screen is a list", () => {
+    for (const adj of [true, false]) {
+      for (const back of [true, false]) {
+        expect(menuFooter(false, adj, back)).toContain("MOVE");
+        expect(menuFooter(false, adj, back)).toContain("SELECT");
+        expect(menuFooter(true, adj, back)).toContain("TAP A LINE TO CHOOSE");
+      }
+    }
   });
 
   it("names the gestures on a phone, and no key it cannot press", () => {
-    const touch = menuFooter(true);
+    const touch = menuFooter(true, settings.adjustable, settings.canBack);
     expect(touch).toBe("TAP A LINE TO CHOOSE · TAP [−] [+] TO ADJUST");
     expect(touch).not.toMatch(/ENTER|ESC|\u2191\u2193|\u2190 \u2192/);
+    // a phone has no ESC either way, so going back is never named on touch
+    expect(menuFooter(true, false, true)).toBe("TAP A LINE TO CHOOSE");
   });
 
   it("and the settings line follows it", () => {
@@ -44,8 +70,9 @@ describe("the menu's footer (Stage 152)", () => {
     expect(settingsLine(true)).not.toMatch(/\u2190|\u2192/);
   });
 
-  it("keeps the two chips a thumb actually presses, which are drawn in the row", () => {
-    expect(menuFooter(true)).toContain("[−]");
-    expect(menuFooter(true)).toContain("[+]");
+  it("keeps the two chips a thumb actually presses where there is anything to adjust", () => {
+    expect(menuFooter(true, true, true)).toContain("[−]");
+    expect(menuFooter(true, true, true)).toContain("[+]");
+    expect(menuFooter(true, false, true)).not.toContain("[−]");
   });
 });
