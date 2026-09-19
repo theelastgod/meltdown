@@ -543,6 +543,26 @@ async function main(): Promise<void> {
     const shutterAfter = await shutter();
     const menuUp = (v: typeof shutterBefore) => !!v && v.screen === "pause" && v.drawn && v.covers && v.panel && v.rows.length === 4 && /RESUME/.test(v.rows[0] ?? "");
     check("artifact: stage32-pause.png is a picture of the pause menu — drawn over the view, its four choices in it, either side of the shutter", menuUp(shutterBefore) && menuUp(shutterAfter), `before: ${shutterBefore ? `${shutterBefore.screen} drawn ${shutterBefore.drawn} covers ${shutterBefore.covers} panel ${shutterBefore.box} rows [${shutterBefore.rows.join(" / ")}]` : "no menu"} · after: ${shutterAfter ? `${shutterAfter.screen} drawn ${shutterAfter.drawn}` : "no menu"}`);
+    // Stage 152: the menu takes taps \u2014 that is what the RESUME tap below proves \u2014 but it told a
+    // phone to press ENTER. Read its footer and the settings line from the drawn menu.
+    const menuSaid = await m.evaluate(async () => {
+      const menuEl = document.getElementById("menu")!;
+      const footEl = menuEl.querySelector(".ft") as HTMLElement;
+      const buildEl = menuEl.querySelector(".ft .build") as HTMLElement | null;
+      const foot = (footEl.textContent ?? "").trim();
+      // and the settings screen's own line, reached the way a thumb reaches it
+      window.__game.menuChoose("settings");
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const lineEl = menuEl.querySelector(".line") as HTMLElement;
+      const rows = [...menuEl.querySelectorAll("[data-i]")].map((x) => (x.textContent ?? "").trim());
+      const settings = (lineEl.textContent ?? "").trim();
+      const chips = menuEl.querySelectorAll("[data-adj]").length;
+      window.__game.menuChoose("back");
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return { foot, build: (buildEl?.textContent ?? "").trim(), settings, chips, screen: window.__game.menu()?.screen ?? null, rows: rows.length };
+    });
+    const menuKeys = /ENTER|\bESC\b|\u2191\u2193|\u2190 \u2192|WASD/;
+    check("the menu tells a thumb how to use it rather than naming keys a phone has not got, on its footer and on the settings line", menuSaid.foot.startsWith("TAP A LINE TO CHOOSE") && !menuKeys.test(menuSaid.foot.replace(menuSaid.build, "")) && /^tap \[\u2212\] \[\+\]/.test(menuSaid.settings) && !menuKeys.test(menuSaid.settings) && menuSaid.chips > 0, `footer "${menuSaid.foot}" \u00b7 settings line "${menuSaid.settings}" \u00b7 ${menuSaid.chips} adjust chips on ${menuSaid.rows} rows \u00b7 back to ${menuSaid.screen}`);
     const resumeAt = await m.evaluate(() => { const el = document.querySelector("#menu [data-i=\"0\"]") as HTMLElement | null; if (!el) return null; const r = el.getBoundingClientRect(); return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, text: (el.textContent ?? "").trim() }; });
     if (resumeAt) await m.touchscreen.tap(resumeAt.x, resumeAt.y);
     const resumed = await m.evaluate(async () => { for (let i = 0; i < 40; i++) { if (window.__game.menu()?.screen === "hidden") break; await new Promise((r) => setTimeout(r, 50)); } return window.__game.menu()?.screen ?? null; });

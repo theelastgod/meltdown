@@ -13,6 +13,7 @@ import { LEVEL_INFO } from "@shared/sim/level";
 import { HOSTS } from "./config";
 import { DEFAULT_SETTINGS, formatSetting, loadSettings, saveSettings, SETTING_LABELS, stepSetting, type Settings } from "./settings";
 import { wantsTouch } from "./touch";
+import { menuFooter, settingsLine } from "./hud/keyhint";
 import type { GameAudio } from "./audio";
 
 export const TITLE_CARDS: readonly string[] = ["Every mind in Neo-China is leased.", "You woke free."];
@@ -143,7 +144,7 @@ export class Menu {
     const root = document.createElement("div");
     root.id = "menu";
     root.hidden = true;
-    root.innerHTML = `<div class="card"></div><div class="panel"><div class="hd"><span class="word">MELTDOWN</span><span class="who"></span></div><div class="list"></div><div class="line"></div><div class="ft">↑↓ MOVE · ENTER SELECT · ← → ADJUST · ESC BACK · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
+    root.innerHTML = `<div class="card"></div><div class="panel"><div class="hd"><span class="word">MELTDOWN</span><span class="who"></span></div><div class="list"></div><div class="line"></div><div class="ft">${menuFooter(wantsTouch())} · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
     document.body.appendChild(root);
     this.root = root;
     document.addEventListener("keydown", this.onKey);
@@ -261,7 +262,7 @@ export class Menu {
     list.innerHTML = es.map((e, i) => `<div class="row ${i === this.cursor ? "on" : ""}" data-i="${i}"><span class="k">${i === this.cursor ? "▸" : " "}</span><span class="lb">${e.label}</span>${e.id.startsWith("set:") ? `<span class="v"><span class="adj" data-adj="-1">[−]</span> ${e.line} <span class="adj" data-adj="1">[+]</span></span>` : ""}</div>`).join("");
     const line = this.root.querySelector(".line") as HTMLElement;
     const cur = es[this.cursor];
-    line.textContent = cur && !cur.id.startsWith("set:") ? cur.line : cur ? "← → adjusts · applied live · kept in this browser" : "";
+    line.textContent = cur && !cur.id.startsWith("set:") ? cur.line : cur ? settingsLine(wantsTouch()) : "";
     const hd = this.root.querySelector(".hd .word") as HTMLElement;
     hd.textContent = this.screen === "pause" ? "PAUSED" : this.screen === "wake" ? `${this.pick === "run" ? "THE RUN" : "WAKE"} · PICK A DISTRICT` : this.screen === "settings" ? "SETTINGS" : "MELTDOWN";
   }

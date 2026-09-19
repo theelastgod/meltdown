@@ -97,6 +97,15 @@ async function main(): Promise<void> {
     const m2 = await a.evaluate(() => window.__game.menu()!);
     const who = await a.evaluate(() => (document.querySelector("#menu .who") as HTMLElement).textContent ?? "");
     check("the menu lists WAKE / THE RUN / CAMPAIGN / THE OFFICE / THE RANGE / FILE / SETTINGS with the file's identity line; ↓↑ move the cursor", m0.entries.join("|") === "WAKE|THE RUN|CAMPAIGN|THE OFFICE|THE RANGE|FILE|SETTINGS" && m0.cursor === 0 && m1.cursor === 2 && m2.cursor === 1 && /DEPTH 50/.test(who) && /sandbox-ship/.test(who), `[${m0.entries.join(", ")}] · cursor 0→2→1 · "${who}"`);
+    // Stage 152: and on a desktop it still names the keys, because a desktop has them
+    const footDesk = await a.evaluate(() => {
+      const menuEl = document.getElementById("menu")!;
+      const footEl = menuEl.querySelector(".ft") as HTMLElement;
+      const buildEl = menuEl.querySelector(".ft .build") as HTMLElement | null;
+      return { foot: (footEl.textContent ?? "").trim(), build: (buildEl?.textContent ?? "").trim() };
+    });
+    check("the menu's footer names the keys a desktop has", footDesk.foot.startsWith("\u2191\u2193 MOVE \u00b7 ENTER SELECT \u00b7 \u2190 \u2192 ADJUST \u00b7 ESC BACK") && footDesk.foot.endsWith(footDesk.build), `"${footDesk.foot}"`);
+
     // choices are URLs that name the mode
     const campaign = await a.evaluate(() => window.__game.menuChoose("campaign"));
     const office = await a.evaluate(() => window.__game.menuChoose("office"));

@@ -1641,6 +1641,44 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 152 — The first screen told a phone to press ENTER
+
+**Goal.** Stage 145 took the keys off the frames a thumb reaches inside the game: the FILE book,
+the graph, the contracts desk, the district panel, THE RUN's strip. It left the screen every player
+sees first. The menu's footer reads `↑↓ MOVE · ENTER SELECT · ← → ADJUST · ESC BACK`, and the line
+under a settings row reads `← → adjusts · applied live · kept in this browser`. On a phone that is
+four instructions and two arrows for keys it has not got — on WAKE, THE RUN, CAMPAIGN, SETTINGS,
+and on the pause menu a thumb opens with the PAUSE pad Stage 141 built.
+
+What makes it only a wording fault is that the menu has taken clicks since it was written: a tap on
+a row chooses it, a tap on a row's `[−]` or `[+]` adjusts it. The phone probe has been tapping
+RESUME on the pause menu since Stage 141. The screen worked; it just told you to do something else.
+
+**What changed.**
+
+- `client/hud/keyhint.ts` — `menuFooter(touch)` and `settingsLine(touch)`, beside the close and open
+  hints Stage 145 put there. On a phone the footer reads `TAP A LINE TO CHOOSE · TAP [−] [+] TO
+  ADJUST` and the settings line `tap [−] [+] · applied live · kept in this browser`. The two chips
+  keep their brackets, because they are drawn in the row and a thumb presses them.
+- `client/menu.ts` — both lines come from the rules, against the same `wantsTouch()` the touch
+  build already uses.
+- `tests/keyhint.test.ts` — both forms, and that the touch form names no key.
+- `probe/stage32.ts` — the phone probe reads the footer and the settings line off the drawn menu,
+  reaching settings and coming back the way a thumb does.
+- `probe/stage13.ts` — and the desktop's footer still names the keys a desktop has.
+
+**Proof.** vitest 814/814. `npm run probe:mobile` 40/40, read off the drawn menu: `footer "TAP A
+LINE TO CHOOSE · TAP [−] [+] TO ADJUST · dev" · settings line "tap [−] [+] · applied live · kept
+in this browser" · 16 adjust chips`. `npm run probe:ship` 10/10 with the desktop's `"↑↓ MOVE ·
+ENTER SELECT · ← → ADJUST · ESC BACK · dev"`. Regressions `npm run probe` 19/19,
+`probe:campaign` 43/43, `probe:wake` 27/27, `probe:tps` 50/50, `probe:run` 25/25 and `probe:crawl`
+10/10; build, smoke 7/7.
+
+Mutation A, the footer keeping the keyboard's words whatever the device: `tests/keyhint.test.ts` 2
+failed and `probe:mobile` 39/40, the phone reading `↑↓ MOVE · ENTER SELECT · ← → ADJUST · ESC
+BACK`. Mutation B, the settings line keeping its arrows: `probe:mobile` 39/40, `settings line "← →
+adjusts · applied live · kept in this browser"`.
+
 ## Stage 151 — CI ran the probes I did not
 
 **Goal.** Verify runs #176 and #177 went red on work that had been verified here first. Three

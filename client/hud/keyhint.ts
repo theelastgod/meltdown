@@ -20,3 +20,18 @@ export function closeHint(key: string, touch: boolean): string {
 export function openHint(key: string, what: string, touch: boolean): string {
   return touch ? `TAP ${what}` : `[${key}] ${what}`;
 }
+
+/**
+ * The menu's footer (Stage 152). Stage 145 took the keys off the frames a thumb reaches inside the
+ * game and left the screen every player sees first saying `↑↓ MOVE · ENTER SELECT · ← → ADJUST ·
+ * ESC BACK`. The menu has taken clicks since it was written — a tap on a row chooses it, a tap on
+ * a row's [−] or [+] adjusts it — so what was wrong was only what it said.
+ */
+export function menuFooter(touch: boolean): string {
+  return touch ? "TAP A LINE TO CHOOSE · TAP [−] [+] TO ADJUST" : "↑↓ MOVE · ENTER SELECT · ← → ADJUST · ESC BACK";
+}
+
+/** the line under a settings row, which names the same two chips (Stage 152) */
+export function settingsLine(touch: boolean): string {
+  return `${touch ? "tap [−] [+]" : "← → adjusts"} · applied live · kept in this browser`;
+}
