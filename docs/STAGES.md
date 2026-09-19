@@ -1641,6 +1641,39 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 136 — The desk ran under the row
+
+**Goal.** The campaign probe's contracts frame at 960×540, on the tree as of Stage 135: the desk
+begins under the file's header at 85 px (Stage 119) and ends at 526, the view's bottom inset,
+while the bottom row (the slots, the foot line, the tab strip) begins at 474 and is drawn over
+it. The last gig on the desk (`SENSOR SABOTAGE · LEASE ROW`) and the `EXPLORE` line sat behind
+the slots, with `1 · BLANK · 0.0 m/s · AIR` printed across them. Stage 119 seated the frames
+under the header and left the row where it was; the ledger book, content-short, never reached
+it, and the desk did.
+
+**What changed.**
+- `client/hud/layout.ts` — `frameSeat(statusBottom, viewHeight, rowTop)`: where the bottom row
+  is drawn under the frame its top less the gap is the frame's floor, else the view's inset.
+- `client/hud/hud.ts` — the seat reads the row's top (the foot line's when it is lifted above
+  the row); the phone, whose row is at the top left, passes none.
+- `tests/layout.test.ts` — the floor at the row, at a fraction, at a row below the inset, and
+  with no row.
+- `probe/stage10.ts` — at the contracts frame the desk ends above the row with a gap, neither
+  the row nor the foot line crosses it, and what does not fit scrolls inside it.
+- `probe/stage60.ts` — the book's and the graph's seats are judged against the row, not the view.
+
+**Proof.** vitest 770/770. `npm run probe:campaign` 40/40: the desk sits at 84–466 px with the row from 474
+and the foot line from 501, neither crossing it, and its overflow scrolls inside it; the frame
+shows the last gig and the `EXPLORE` line clear of the slots. `npm run probe:tps` 49/49: the
+header ends 76 px down, the book and the graph sit at 84–466 with the row from 474.
+Regressions `probe:mobile` 17/17, `probe:file` 19/19, build, smoke 7/7.
+
+Mutation, the seat's floor back at the view's inset: `tests/layout.test.ts` 1 failed | 24
+passed; `probe:campaign` 39/40 with the desk at 84–526 px, the row from 474 and the foot line
+from 501 both drawn over it; `probe:tps` 48/49 with the book and the graph at 84–526, under the row from 474. The first campaign run of the new check died on
+a named arrow helper inside `page.evaluate` (`__name is not defined`, the probe build's
+keep-names shim); the helper was inlined and the base run repeated.
+
 ## Stage 135 — The money was the first thing to go
 
 **Goal.** THE RUN's frame at 960×540: the run strip (`CARRYING 1 · BANKED 0 · TODAY 0/200 · OWED

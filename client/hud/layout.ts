@@ -69,9 +69,12 @@ export const FRAME_INSET = 14;
  * panel. The frame's top hangs a gap under the header's measured bottom and its height is what
  * is left above the bottom inset.
  */
-export function frameSeat(statusBottom: number, viewHeight: number): { top: number; maxHeight: number } {
+export function frameSeat(statusBottom: number, viewHeight: number, rowTop: number | null = null): { top: number; maxHeight: number } {
   const top = Math.ceil(statusBottom) + FRAME_GAP;
-  return { top, maxHeight: Math.max(0, viewHeight - top - FRAME_INSET) };
+  // Stage 136: where the bottom row (the slots, the foot line, the tab strip) is drawn under the
+  // frame, the frame ends a gap above it rather than at the view's inset, under the row
+  const floor = rowTop === null ? viewHeight - FRAME_INSET : Math.min(viewHeight - FRAME_INSET, Math.floor(rowTop) - FRAME_GAP);
+  return { top, maxHeight: Math.max(0, floor - top) };
 }
 
 /**

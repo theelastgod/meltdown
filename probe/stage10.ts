@@ -172,6 +172,22 @@ async function main(): Promise<void> {
     const c1 = await hub.evaluate(() => window.__game.campaign());
     const f1 = await file(acct);
     check("picking a house at the terminal writes it to the file on the ledger host and the desk lists the arc, the fixers and the gigs", c1.faction === "cells" && f1.campaign?.faction === "cells" && c1.offers.includes("g_escrow_row") && c1.next === "m1_wake_unlisted" && c1.threat === 0, `script ${seen.join(" → ")} · faction ${c1.faction} · offers [${c1.offers.join(", ")}] · threat ${c1.threat}`);
+    // Stage 136: the desk ran under the row. Seated under the header (Stage 119) it ended at the
+    // view's bottom inset, and the slots, the foot line and the tab strip were drawn over its last
+    // rows. Read the frame: the desk ends above the row with a gap and nothing of the row crosses it
+    const deskSeat = await hub.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const hud = document.getElementById("hud")!;
+      const H = hud.getBoundingClientRect();
+      const desk = hud.querySelector(".contracts")!.getBoundingClientRect();
+      const row = hud.querySelector(".bottom")!.getBoundingClientRect();
+      const foot = hud.querySelector(".center")!.getBoundingClientRect();
+      // no named helpers in here: the probe's build injects a __name the page does not have
+      const rowCrosses = desk.left < row.right && row.left < desk.right && desk.top < row.bottom && row.top < desk.bottom;
+      const footCrosses = desk.left < foot.right && foot.left < desk.right && desk.top < foot.bottom && foot.top < desk.bottom;
+      return { deskTop: desk.top - H.top, deskBottom: desk.bottom - H.top, rowTop: row.top - H.top, footTop: foot.top - H.top, view: H.height, rowCrosses, footCrosses, scrolls: (hud.querySelector(".contracts") as HTMLElement).scrollHeight > (hud.querySelector(".contracts") as HTMLElement).clientHeight };
+    });
+    check("the contracts desk ends above the bottom row with a gap: neither the row nor the foot line is drawn over it, and what does not fit scrolls inside it", deskSeat.deskBottom <= deskSeat.rowTop - 4 && !deskSeat.rowCrosses && !deskSeat.footCrosses && deskSeat.scrolls, `desk ${deskSeat.deskTop.toFixed(0)}–${deskSeat.deskBottom.toFixed(0)} px · row from ${deskSeat.rowTop.toFixed(0)} · foot line from ${deskSeat.footTop.toFixed(0)} · view ${deskSeat.view.toFixed(0)} · row crosses ${deskSeat.rowCrosses} · foot crosses ${deskSeat.footCrosses} · scrolls ${deskSeat.scrolls}`);
     await shotCheck(hub, `stage10-contracts.png`);
     // Stage 95: the desk is a frame, and since Stage 10 the combat chrome has drawn straight through
     // it — the CLICK TO WAKE banner across the crew invite, the weapon rack along the desk's foot,

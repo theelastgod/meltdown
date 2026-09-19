@@ -80,6 +80,13 @@ describe("a reader frame's seat (Stage 119)", () => {
   it("never reports a negative height", () => {
     expect(frameSeat(300, 200).maxHeight).toBe(0);
   });
+  it("ends above the bottom row with a gap where the row is drawn under it (Stage 136)", () => {
+    expect(frameSeat(75, 540, 474)).toEqual({ top: 75 + FRAME_GAP, maxHeight: 474 - FRAME_GAP - (75 + FRAME_GAP) });
+    expect(frameSeat(75, 540, 474.6).maxHeight).toBe(474 - FRAME_GAP - (75 + FRAME_GAP));
+    // a row lower than the inset changes nothing
+    expect(frameSeat(75, 540, 539)).toEqual(frameSeat(75, 540));
+    expect(frameSeat(75, 540, null)).toEqual(frameSeat(75, 540));
+  });
 });
 
 describe("statusWidth (Stage 107)", () => {

@@ -502,7 +502,10 @@ export class Hud {
     if (center.classList.contains("above") !== above) center.classList.toggle("above", above);
     // the reader frames — the ledger book, its graph, the contracts desk — begin under the file's
     // header rather than over it (Stage 119)
-    const seat = frameSeat(this.q(".status").getBoundingClientRect().bottom - rootTop, this.root.clientHeight);
+    // and end above the bottom row (Stage 136): its top, or the foot line's when the line is
+    // lifted above the row; the phone lays its row out at the top left and passes none
+    const rowTop = this.root.classList.contains("touch") ? null : Math.min(this.q(".bottom").getBoundingClientRect().top, above ? center.getBoundingClientRect().top : Infinity) - rootTop;
+    const seat = frameSeat(this.q(".status").getBoundingClientRect().bottom - rootTop, this.root.clientHeight, rowTop);
     for (const sel of [".file", ".graph", ".contracts"]) {
       const frame = this.q(sel);
       const top = `${seat.top}px`;

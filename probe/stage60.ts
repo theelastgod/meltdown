@@ -517,7 +517,7 @@ async function main(): Promise<void> {
       const H = hud.getBoundingClientRect();
       const sr = hud.querySelector(".status")!.getBoundingClientRect();
       const br = book ? book.getBoundingClientRect() : sr;
-      const seat = { statusBottom: sr.bottom - H.top, bookTop: br.top - H.top, bookBottom: br.bottom - H.top, view: H.height };
+      const seat = { statusBottom: sr.bottom - H.top, bookTop: br.top - H.top, bookBottom: br.bottom - H.top, view: H.height, rowTop: hud.querySelector(".bottom")!.getBoundingClientRect().top - H.top };
       if (book && bookOpen) {
         const fr = book.getBoundingClientRect();
         for (const el of Array.from(hud.children) as HTMLElement[]) {
@@ -545,7 +545,7 @@ async function main(): Promise<void> {
       const quietEnd = [...hud.classList].filter((c) => c.startsWith("q-")).map((c) => c.slice(2));
       return { bookOpen, hits, quietBook, quietAfter, graphOpen, quietGraph, quietEnd, seat, graphSeat };
     });
-    check("the book and the graph begin under the file's header, with a gap, and end above the view's bottom", bookRead.bookOpen && bookRead.graphOpen && bookRead.seat.bookTop >= bookRead.seat.statusBottom + 4 && bookRead.seat.bookBottom <= bookRead.seat.view - 8 && bookRead.graphSeat.top >= bookRead.seat.statusBottom + 4 && bookRead.graphSeat.bottom <= bookRead.seat.view - 8, `header ends ${bookRead.seat.statusBottom.toFixed(0)} px down · book ${bookRead.seat.bookTop.toFixed(0)}–${bookRead.seat.bookBottom.toFixed(0)} · graph ${bookRead.graphSeat.top.toFixed(0)}–${bookRead.graphSeat.bottom.toFixed(0)} · view ${bookRead.seat.view.toFixed(0)} tall`);
+    check("the book and the graph begin under the file's header, with a gap, and end above the bottom row", bookRead.bookOpen && bookRead.graphOpen && bookRead.seat.bookTop >= bookRead.seat.statusBottom + 4 && bookRead.seat.bookBottom <= bookRead.seat.rowTop - 4 && bookRead.graphSeat.top >= bookRead.seat.statusBottom + 4 && bookRead.graphSeat.bottom <= bookRead.seat.rowTop - 4, `header ends ${bookRead.seat.statusBottom.toFixed(0)} px down · book ${bookRead.seat.bookTop.toFixed(0)}–${bookRead.seat.bookBottom.toFixed(0)} · graph ${bookRead.graphSeat.top.toFixed(0)}–${bookRead.graphSeat.bottom.toFixed(0)} · row from ${bookRead.seat.rowTop.toFixed(0)} · view ${bookRead.seat.view.toFixed(0)} tall`);
     check("the ledger book is a frame: with it open no visible chrome overlaps it and the gun is silenced, and the gun comes back when it closes", bookRead.bookOpen && bookRead.hits.length === 0 && bookRead.quietBook.includes("ammo") && bookRead.quietBook.includes("rack") && bookRead.quietBook.includes("log") && bookRead.quietBook.includes("alert") && bookRead.quietAfter.length === 0, `book open ${bookRead.bookOpen} · overlapping: [${bookRead.hits.join(", ")}] · silenced: ${bookRead.quietBook.join(",")} · after: [${bookRead.quietAfter.join(",")}]`);
     check("and so is its graph", bookRead.graphOpen && bookRead.quietGraph.includes("ammo") && bookRead.quietGraph.includes("reticle") && bookRead.quietEnd.length === 0, `graph open ${bookRead.graphOpen} · silenced: ${bookRead.quietGraph.join(",")} · after: [${bookRead.quietEnd.join(",")}]`);
     // Stage 129: the map said tap to walk. Nothing handles a tap or a click on it; the footer says
