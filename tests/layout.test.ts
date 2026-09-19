@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit, stackShift } from "../client/hud/layout";
+import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit, stackShift, phoneRowTop, PHONE_ROW_GAP, logLines, LOG_LINES, PHONE_LOG_LINES } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -167,5 +167,19 @@ describe("the phone's stack (Stage 139)", () => {
     expect(alertTop(92, 300, shift)).toBe(ALERT_FLOOR + shift);
     expect(alertTop(92, 148, shift)).toBe(148 + ALERT_GAP);
     expect(alertTop(92, 300)).toBe(ALERT_FLOOR);
+  });
+});
+
+describe("the phone's row and log (Stage 140)", () => {
+  it("seats the row at its own seat, or a gap under a mission panel that reaches lower", () => {
+    expect(phoneRowTop(72, null)).toBe(72);
+    expect(phoneRowTop(72, 52)).toBe(72);
+    expect(phoneRowTop(72, 92)).toBe(92 + PHONE_ROW_GAP);
+    expect(phoneRowTop(72, 91.2)).toBe(92 + PHONE_ROW_GAP);
+  });
+  it("keeps three log entries on the phone and five on the desktop", () => {
+    expect(logLines(false)).toBe(LOG_LINES);
+    expect(logLines(true)).toBe(PHONE_LOG_LINES);
+    expect(PHONE_LOG_LINES).toBeLessThan(LOG_LINES);
   });
 });

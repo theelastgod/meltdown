@@ -1641,6 +1641,39 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 140 — The phone's mission panel sat on the tab strip
+
+**Goal.** Stage 139's picture of the wake on the phone: the mission panel, which in the wake
+carries a third line (`CELL ONE 15 · CELL TWO 0 · YOU: ONE`) and the hex strip, ends at 92 px,
+and the phone's slot-and-tab row begins at 72; the strip's hexes sat on the tabs' top border.
+And the phone's log, five entries at 300 px wide with the PA wrapping to three rows, reaches
+176 px from the top when full, into the alert's seat (Stage 139); with the row moved down the
+stack ends at 218, and a log of four such entries (166–318) still crossed it.
+
+**What changed.**
+- `client/hud/layout.ts` — `phoneRowTop(base, missionBottom)`: the row's own seat, or a gap
+  under a mission panel that reaches lower; `logLines(touch)`: five entries, three on the phone.
+- `client/hud/hud.ts` — on the phone the layout seats the row by the rule (its own seat read once
+  before it is moved), and the log keeps its entries by the rule.
+- `client/hud/hud.css` — the phone's log is 420 px wide, so the PA wraps to two rows, not three.
+- `tests/layout.test.ts` — both rules.
+- `probe/stage32.ts` — on the wake page the row sits a gap under the mission panel; six PA lines
+  pushed leave three entries, and the full log stays under the lit alert.
+
+**Proof.** vitest 780/780 (both rules in `tests/layout.test.ts`). `npm run probe:mobile` 29/29: the
+mission panel at 14–92 and the row at 98–144 under it; the stack under the row (legend 150–170,
+node line 176–198, alert 204–218); six PA lines pushed leave three entries at 240–318, clear of
+the lit alert; the PA still reads in full, in two rows now; the picture shows the row under the
+panel. Regressions `probe` 19/19, `probe:tps` 49/49, build, smoke 7/7.
+
+Mutation A, the row at its own seat whatever the panel: `tests/layout.test.ts` 1 failed | 28
+passed, and `probe:mobile` 28/29, the row at 72–118 across the mission panel's 14–92. Mutation B, five entries on the phone too: the layout test
+1 failed | 28 passed, and `probe:mobile` 28/29, five entries at 188–318 across the alert at 204–218. The stage's first phone run kept four entries at
+300 px and read the full log at 166–318, across the alert at 204–218: a fourth entry, and the
+PA in three rows, were more than the phone's middle band holds; the log took a 420 px width and
+three entries. The container was restarted during that run; the tree survived and the
+verification was run again from the start.
+
 ## Stage 139 — The phone's wake was printed over its row
 
 **Goal.** A read of the wake on the phone viewport, on the tree as of Stage 138: the node line

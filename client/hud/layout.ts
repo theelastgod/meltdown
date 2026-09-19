@@ -154,3 +154,23 @@ export function missionRow(viewWidth: number, statusFloorRight: number, mapLeft:
 export function statusLineFit(room: number, need: number): "full" | "short" {
   return need <= room ? "full" : "short";
 }
+
+/** the gap the phone's row keeps under the mission panel (px) */
+export const PHONE_ROW_GAP = 6;
+
+/**
+ * Where the phone's slot-and-tab row begins (Stage 140): at its stylesheet's seat, or a gap under
+ * the mission panel when the panel, centred over the row's span, reaches lower than that — the
+ * wake's panel carries a cell line and the hex strip and had ended at 92 px over a row at 72.
+ * `base` is the row's own seat and `missionBottom` the panel's bottom, or null with none drawn.
+ */
+export function phoneRowTop(base: number, missionBottom: number | null): number {
+  return missionBottom === null ? base : Math.max(base, Math.ceil(missionBottom) + PHONE_ROW_GAP);
+}
+
+/** how many entries the event log keeps (Stage 140): five, and three on the phone, whose log has the alert's seat above it */
+export const LOG_LINES = 5;
+export const PHONE_LOG_LINES = 3;
+export function logLines(touch: boolean): number {
+  return touch ? PHONE_LOG_LINES : LOG_LINES;
+}

@@ -491,7 +491,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .prompt-touch { display: none; }
 #hud.touch .prompt { display: none; }
 #hud.touch .center { display: none; }  /* Stage 139: no stance line on the phone; the row is the slots and the tabs on one line */
-#hud.touch .log { bottom: 72px; width: 300px; }  /* Stage 139: under the stack, above the weapon pad */
+#hud.touch .log { bottom: 72px; width: 420px; }  /* Stage 139: under the stack, above the weapon pad; Stage 140: wide enough for the PA in two rows */
 #hud.touch .terminal { left: 12px; bottom: auto; width: auto; max-width: none; transform: none; overflow: auto; }  /* Stage 138: seated under the row, short of the pads, by the layout */
 #hud.touch .terminal .ch { padding: 7px 8px; }
 #hud.touch .prompt-touch { display: block; left: 50%; right: auto; transform: translateX(-50%); bottom: auto; top: calc(62px + env(safe-area-inset-top)); white-space: nowrap; font-size: 9px; }

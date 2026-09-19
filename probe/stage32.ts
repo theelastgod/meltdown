@@ -387,7 +387,7 @@ async function main(): Promise<void> {
       const hud = document.getElementById("hud")!;
       // no named helpers in here: the probe's build injects a __name the page does not have
       const boxes: Record<string, { left: number; right: number; top: number; bottom: number; text: string } | null> = {};
-      for (const sel of [".bottom", ".bottom .tabs", ".prompt-touch", ".nodefoot", ".alert", ".log"]) {
+      for (const sel of [".bottom", ".bottom .tabs", ".prompt-touch", ".nodefoot", ".alert", ".log", ".mission"]) {
         const el = hud.querySelector(sel) as HTMLElement | null;
         let b: { left: number; right: number; top: number; bottom: number; text: string } | null = null;
         if (el) {
@@ -405,12 +405,15 @@ async function main(): Promise<void> {
       const foot = boxes[".nodefoot"] ?? null;
       const alert = boxes[".alert"] ?? null;
       const log = boxes[".log"] ?? null;
+      const mission = boxes[".mission"] ?? null;
+      const logEntries = hud.querySelectorAll(".log > div").length;
       const pads = [...hud.querySelectorAll<HTMLElement>(".thumbs .tc-b")].map((p) => { const r = p.getBoundingClientRect(); return { id: p.dataset.b ?? "", left: r.left, right: r.right, top: r.top, bottom: r.bottom }; }).filter((p) => p.right > p.left);
       const targets: [string, { left: number; right: number; top: number; bottom: number } | null][] = [["row", row], ["tabs", tabs], ["log", log], ...pads.map((p) => [`pad:${p.id}`, p] as [string, { left: number; right: number; top: number; bottom: number }])];
       const footCrosses = foot ? targets.filter(([, t]) => !!t && foot.left < t.right && t.left < foot.right && foot.top < t.bottom && t.top < foot.bottom).map(([n]) => n) : [];
       const alertCrosses = alert ? targets.filter(([, t]) => !!t && alert.left < t.right && t.left < alert.right && alert.top < t.bottom && t.top < alert.bottom).map(([n]) => n) : [];
       const legendCrosses = legend ? targets.filter(([, t]) => !!t && legend.left < t.right && t.left < legend.right && legend.top < t.bottom && t.top < legend.bottom).map(([n]) => n) : [];
-      return { row, tabs, legend, foot, alert, log, footCrosses, alertCrosses, legendCrosses, phase: window.__game.state().wake?.phase ?? null };
+      const rowCrossesMission = !!mission && row.left < mission.right && mission.left < row.right && row.top < mission.bottom && mission.top < row.bottom;
+      return { row, tabs, legend, foot, alert, log, mission, logEntries, rowCrossesMission, footCrosses, alertCrosses, legendCrosses, phase: window.__game.state().wake?.phase ?? null };
     });
     const wk0 = await readStack();
     const wkUnder0 = wk0.legend ? wk0.legend.bottom : wk0.row.bottom;
@@ -422,6 +425,12 @@ async function main(): Promise<void> {
     const wk1 = await readStack();
     const wkUnder1 = wk1.legend ? wk1.legend.bottom : wk1.row.bottom;
     check("on the node, the node line reads PULL IT under the row and the alert under it, still crossing nothing", !!wk1.foot && /PULL IT/.test(wk1.foot.text) && wk1.foot.top >= wkUnder1 + 4 && !!wk1.alert && wk1.alert.top >= wk1.foot.bottom + 4 && wk1.footCrosses.length === 0 && wk1.alertCrosses.length === 0 && (wk1.legend === null || wk1.legendCrosses.length === 0), `legend ${wk1.legend ? "still up" : "gone"} · node line ${wk1.foot ? `${wk1.foot.top.toFixed(0)}–${wk1.foot.bottom.toFixed(0)} "${wk1.foot.text}"` : "none"} · alert ${wk1.alert ? `${wk1.alert.top.toFixed(0)}–${wk1.alert.bottom.toFixed(0)}` : "none"} · crosses node [${wk1.footCrosses.join(",")}] alert [${wk1.alertCrosses.join(",")}]`);
+    // Stage 140: the wake's mission panel, with its cell line and hex strip, ends at 92 px, and the
+    // phone's row had begun at 72, under it; and a full log had climbed into the alert's seat
+    check("the phone's row sits a gap under the wake's mission panel, which reaches lower than the row's own seat", !!wk1.mission && wk1.mission.bottom > 72 && wk1.row.top >= wk1.mission.bottom + 4 && !wk1.rowCrossesMission, `mission panel ${wk1.mission ? `${wk1.mission.top.toFixed(0)}–${wk1.mission.bottom.toFixed(0)}` : "none"} · row ${wk1.row.top.toFixed(0)}–${wk1.row.bottom.toFixed(0)} · crosses ${wk1.rowCrossesMission}`);
+    await w.evaluate(() => { for (let i = 0; i < 6; i++) window.__game.game.hud.push(`VANTAGE PA · VANTAGE ADVISES DRAINAGE YARD: LEASE RENEWAL IS AUTOMATIC. THANK YOU FOR YOUR CONTINUED COMPLIANCE. (${i + 1})`, "am pa"); });
+    const wk2 = await readStack();
+    check("the phone's log keeps three entries and, full of wrapped PA lines, stays under the alert's seat", wk2.logEntries === 3 && !!wk2.log && !!wk2.alert && wk2.log.top >= wk2.alert.bottom + 4 && wk2.alertCrosses.length === 0, `${wk2.logEntries} entries · log ${wk2.log ? `${wk2.log.top.toFixed(0)}–${wk2.log.bottom.toFixed(0)}` : "none"} · alert ${wk2.alert ? `${wk2.alert.top.toFixed(0)}–${wk2.alert.bottom.toFixed(0)}` : "none"} · alert crosses [${wk2.alertCrosses.join(",")}]`);
     await shotCheck(w, "stage32-wake.png", "#hud .nodefoot");
     await w.close();
 

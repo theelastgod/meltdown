@@ -17,7 +17,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, FLAG_GAP, FLAG_TOP, flagTop, footRow, frameSeat, missionRow, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
+import { alertTop, FLAG_GAP, FLAG_TOP, flagTop, footRow, frameSeat, logLines, missionRow, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
 import { terminalFooter, terminalSeat } from "./terminal";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter } from "./radar";
@@ -507,7 +507,13 @@ export class Hud {
     // on the phone the node line, the warning and the alert stack under the slot-and-tab row, or
     // under the touch legend, which sits under the row while it is up (Stage 139)
     if (this.root.classList.contains("touch")) {
-      const rowBottom = this.q(".bottom").getBoundingClientRect().bottom - rootTop;
+      // the row itself sits under the mission panel when the panel reaches lower than the row's
+      // own seat (Stage 140): the wake's panel had ended over the tab strip
+      const rowEl = this.q(".bottom");
+      if (this.phoneRowBase === null) this.phoneRowBase = rowEl.getBoundingClientRect().top - rootTop;
+      const rowSeat = `${phoneRowTop(this.phoneRowBase, mission.offsetParent !== null && panel.width > 0 ? this.missionBottom : null)}px`;
+      if (rowEl.style.top !== rowSeat) rowEl.style.top = rowSeat;
+      const rowBottom = rowEl.getBoundingClientRect().bottom - rootTop;
       const legend = this.q(".prompt-touch");
       const lc = getComputedStyle(legend);
       const legendShown = lc.display !== "none" && lc.visibility !== "hidden" && Number(lc.opacity) > 0.05;
@@ -614,6 +620,8 @@ export class Hud {
   private dead = false;
   /** how far the phone moves the node line, the warning and the alert down (Stage 139) */
   private stackShift = 0;
+  /** the phone row's own seat, read once before the layout moves it (Stage 140) */
+  private phoneRowBase: number | null = null;
   /** the status panel's second line as last measured in full, and what it needed (Stage 135) */
   private line2Text = "";
   private line2Need = 0;
@@ -1058,7 +1066,7 @@ export class Hud {
 
   push(line: string, cls = ""): void {
     this.lines.push(`<div class="${cls}">» ${line}</div>`);
-    if (this.lines.length > 5) this.lines.shift();
+    while (this.lines.length > logLines(this.root.classList.contains("touch"))) this.lines.shift();
     this.q(".log").innerHTML = this.lines.join("");
   }
 }
