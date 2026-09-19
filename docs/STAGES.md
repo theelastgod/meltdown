@@ -1641,6 +1641,31 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 142 — The menu's picture was a claim about state
+
+**Goal.** Stage 141 took `stage32-pause.png` plainly, because the shot helper counts `#menu`
+among the covers a game picture must not have, and claimed it by reading
+`window.__game.menu().screen` either side of the shutter. That is the state, not the pixels: the
+same string is set before the menu's box is laid out, and a menu that never drew — hidden,
+zero-sized, empty of its choices — would pass the check while the picture showed the game.
+Stage 33's rule is that a picture is a claim, and the claim has to be read from the frame.
+
+**What changed.**
+- `probe/stage32.ts` — the picture's claim is the menu's own drawn box: not hidden, displayed,
+  visible, opaque, covering the view, its panel above 100 × 40 px, and its four choices in it
+  with RESUME first — read either side of the shutter.
+
+**Proof.** `npm run probe:mobile` 32/32: at the shutter the menu is drawn, covering the view, its
+panel at 43–801 × 82–309 px, its rows `▸RESUME / SETTINGS / FILE / QUIT TO MENU`, and the same
+after it. Build, smoke 7/7.
+
+Mutation, the menu's box held down (`pause()` sets the screen and then hides the root) while the
+check reads the state alone, as Stage 141 did: `probe:mobile` 31/32, and the picture's check
+PASSED with the menu never drawn, its panel 0 × 0 px; the failure is the later RESUME tap, which
+cannot reach a menu that is not on screen. The same held-down menu against the
+check as written: `probe:mobile` 30/32, the picture's check FAILED on
+`drawn false covers false panel 0–0 × 0–0`, which is what the frame showed.
+
 ## Stage 141 — The phone could not pause
 
 **Goal.** The pause menu (RESUME / SETTINGS / FILE / QUIT TO MENU, Stage 13) opens when the
