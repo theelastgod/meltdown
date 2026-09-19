@@ -152,7 +152,11 @@ export class NetClient {
     return this.pending;
   }
 
+  /** true once this client was closed on purpose, so a drop can be told from a departure (Stage 153) */
+  left = false;
+
   close(): void {
+    this.left = true;
     this.transport.close();
   }
 

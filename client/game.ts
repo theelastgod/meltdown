@@ -51,6 +51,7 @@ import { monikerById } from "@shared/identity/monikers";
 import type { NodeView } from "./render/wake";
 import { GRENADE_LIST, WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
 import { modsFor, weaponDefOf } from "@shared/sim/player";
+import { rejoinDelay, rejoinTries } from "@shared/net/rejoin";
 
 export interface NetConfig {
   url: string;
@@ -404,8 +405,15 @@ export class Game {
           this.hud.push(`AUDIT · ${audit.name} · ${audit.line}`, "am");
         }
         this.input.yaw = this.player.yaw;
-        this.hud.push(`LINKED · ROOM ${cfg.url.split("/").pop()} · FILE #${net.playerId}`, "cy");
-      } else this.hud.push(`LINK ${st.toUpperCase()}${net.kickReason ? " · " + net.kickReason : ""}`, "mg");
+        this.hud.push(`${this.rejoins > 0 ? "RELINKED" : "LINKED"} · ROOM ${cfg.url.split("/").pop()} · FILE #${net.playerId}`, "cy");
+        this.rejoins = 0;
+      } else {
+        this.hud.push(`LINK ${st.toUpperCase()}${net.kickReason ? " · " + net.kickReason : ""}`, "mg");
+        // a drop is not a departure (Stage 153): the room keeps the seat for its grace window, so
+        // knock, on a doubling wait, for as long as it is held. A kick or a close of our own does
+        // not knock
+        if (st === "closed" && !net.left && this.netConfig && net.token) this.knock();
+      }
     };
     net.onSnapshot = (snap) => this.onSnapshot(snap);
     this.hud.push(`LINKING ${cfg.url}${cfg.sim ? ` (sim ${cfg.sim.latencyMs * 2}ms rtt, ${(cfg.sim.loss * 100).toFixed(0)}% loss)` : ""}`, "k");
@@ -419,6 +427,26 @@ export class Game {
     if (this.net?.token) u.searchParams.set("token", this.net.token);
     this.renderer.post.kick(1);
     setTimeout(() => location.replace(u.toString()), 120);
+  }
+
+  /** how many times this drop has been knocked on, cleared when the room takes the file back */
+  private rejoins = 0;
+  private knockTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Knock on a room that still holds the seat (Stage 153). */
+  private knock(): void {
+    if (this.knockTimer !== null) return;
+    const wait = rejoinDelay(this.rejoins + 1);
+    if (wait === null) {
+      this.hud.push(`LINK LOST · THE ROOM HAS LET THE SEAT GO AFTER ${this.rejoins} TRIES`, "mg");
+      return;
+    }
+    this.rejoins++;
+    this.hud.push(`LINK LOST · REJOINING IN ${(wait / 1000).toFixed(1)}s · TRY ${this.rejoins} OF ${rejoinTries()}`, "am");
+    this.knockTimer = setTimeout(() => {
+      this.knockTimer = null;
+      this.reconnect();
+    }, wait);
   }
 
   /** Rejoin the same room with the session token (state is restored server-side). */

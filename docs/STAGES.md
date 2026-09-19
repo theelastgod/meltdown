@@ -1641,6 +1641,51 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 153 — A dropped link froze the match and nobody tried the door
+
+**Goal.** The room keeps a disconnected file's seat for sixty seconds: `player 1 (ALPHA)
+disconnected; rejoin window 60s`, its body still in the world, `players: 1, connected: 0`. The
+client, meanwhile, did nothing at all. On a closed socket it set its status to `closed`, pushed
+`LINK CLOSED · client close` into the event log, and stopped.
+
+Measured against a live room by closing the transport the way a network blip closes it: the
+client's world froze at tick 126 while the room ran on to 727, and ten seconds later the client was
+still sitting there, `status: "closed"`, with a valid session token in its pocket and a seat held
+open for it. `reconnect()` has existed since the netcode stage and nothing has ever called it but
+the probe.
+
+**What changed.**
+
+- `shared/net/rejoin.ts` — the plan: half a second, then double, for as long as the waits before it
+  fit inside the room's grace window. Six knocks over 31.5 seconds of a 60 second window. The
+  window is a shared constant now, so the room's default and the client's last try cannot drift.
+- `server/room.ts` — its default grace reads that constant.
+- `client/net/netclient.ts` — `left`, set by `close()`: a drop can be told from a departure.
+- `client/game.ts` — a closed link that was not a departure and not a kick knocks on the room,
+  saying so in the log (`LINK LOST · REJOINING IN 0.5s · TRY 1 OF 6`), and the line on the way back
+  reads `RELINKED` rather than `LINKED`.
+- `tests/rejoin.test.ts` — the plan, its bound, and that it scales with the window it is given.
+  One of this stage's own mutations — a plan that never says no — hung the run rather than failing
+  it, because the counter that turns the plan into a number for the player's line trusted the plan
+  to stop. It is bounded now, and a test holds it to that.
+- `probe/stage2.ts` — the net probe drops ALPHA's transport with no `reconnect()` call and fails
+  unless the client comes back by itself, as the same file with the same token, into a seat the
+  room still holds, with its world running on.
+
+**Proof.** vitest 820/820. `npm run probe:net` 24/24, the drop read from the running room: `back
+true as file #1 · tick 1424 → 1522 · token kept true · "» LINK LOST · REJOINING IN 0.5s · TRY 1 OF
+6" · "» RELINKED · ROOM probe?ai=0&level=drainage_yard · FILE #1" · seat connected true`.
+Regressions `npm run probe` 19/19, `probe:run` 25/25, `probe:campaign` 43/43, `probe:harden` 9/9,
+`probe:persist` 7/7 and `probe:mobile` 40/40; build, smoke 7/7.
+
+Mutation A, the client mourning the drop instead of knocking: `probe:net` 20/24 — the drop check
+reading `back false · tick 1417 → 1418 · seat connected false`, the frozen world this stage is
+about, and three later checks that need ALPHA in the room went with it. Mutation B, a plan that
+never says no: `tests/rejoin.test.ts` 3 failed — and the run finished rather than hanging, which
+the first attempt at this mutation did not, because the counter had trusted the plan to stop.
+Mutation C, the client knocking even when it left on purpose: `probe:net` 22/24, the probe's own
+`reconnect()` racing a knock it never asked for.
+
 ## Stage 152 — The first screen told a phone to press ENTER
 
 **Goal.** Stage 145 took the keys off the frames a thumb reaches inside the game: the FILE book,

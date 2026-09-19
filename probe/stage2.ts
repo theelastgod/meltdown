@@ -314,6 +314,24 @@ async function main(): Promise<void> {
     // counter may only ever go up, and it has to have something in it for that to mean anything
     check("rejoin restores the same file and state, and inputs flow again", after.id === before.id && before.kills > 0 && after.kills >= before.kills && after.token === before.token && st2.players === 2 && cAr.inputsApplied > appliedAtRejoin + 30, `id ${before.id}→${after.id}, kills ${before.kills}→${after.kills} (never reset), players in room ${st2.players}, inputs applied after rejoin ${cAr.inputsApplied - appliedAtRejoin}`);
 
+    // ---------------- a drop is not a departure (Stage 153) ----------------
+    // Closing the transport is what a network blip does: no reconnect() call, no menu, nothing the
+    // player did. Measured before this stage, the client froze where it stood \u2014 its world at tick
+    // 126 while the room ran to 727 \u2014 with the room still holding the seat. It knocks now.
+    const dropAt = await E.a.evaluate(() => ({ tick: window.__game.state().tick, id: window.__game.net()!.playerId, token: window.__game.net()!.token }));
+    await E.a.evaluate(() => {
+      const dropped = window.__game.game as unknown as { net: { transport: { close: () => void } } };
+      dropped.net.transport.close();
+    });
+    const knocked = await E.a.waitForFunction(() => window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 25000, polling: 100 }).then(() => true, () => false);
+    await E.a.waitForTimeout(900);
+    const backState = await E.a.evaluate(() => ({ status: window.__game.net()!.status, id: window.__game.net()!.playerId, token: window.__game.net()!.token, tick: window.__game.state().tick, log: [...document.querySelectorAll("#hud .log div")].map((d) => (d.textContent ?? "").trim()) }));
+    const lostLine = backState.log.find((l) => /LINK LOST/.test(l)) ?? "";
+    const backLine = backState.log.find((l) => /RELINKED/.test(l)) ?? "";
+    const dropRoom = (await stats()).rooms["probe"];
+    const dropSeat = dropRoom.clients.find((c: any) => c.id === dropAt.id);
+    check("a dropped link is knocked on rather than mourned: the client rejoins the room that still holds its seat, as the same file, and its world runs on", knocked && backState.id === dropAt.id && backState.token === dropAt.token && backState.tick > dropAt.tick + 30 && /REJOINING IN/.test(lostLine) && !!backLine && !!dropSeat?.connected, `back ${knocked} as file #${backState.id} \u00b7 tick ${dropAt.tick} \u2192 ${backState.tick} \u00b7 token kept ${backState.token === dropAt.token} \u00b7 "${lostLine}" \u00b7 "${backLine}" \u00b7 seat connected ${dropSeat?.connected}`);
+
     // ---------------- cheater ----------------
     const kicksBefore = st2.kicks;
     const cheat = new WebSocket(`ws://127.0.0.1:${HOST_PORT}/room/probe`);

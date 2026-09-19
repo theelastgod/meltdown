@@ -53,6 +53,7 @@ import { glyphSeed } from "../shared/identity/glyph";
 import type { AccountStore } from "./accounts";
 import { fileAuth } from "../shared/progression/account";
 import type { PlayerStats } from "../shared/sim/player";
+import { REJOIN_GRACE_SECONDS } from "../shared/net/rejoin";
 
 export interface Conn {
   send(buf: ArrayBuffer): void;
@@ -245,7 +246,7 @@ export class Room {
       ai: opts.ai ?? true,
       seed: opts.seed ?? ((Date.now() >>> 0) ^ 0x5eed),
       maxPlayers: opts.maxPlayers ?? 8,
-      rejoinGraceSeconds: opts.rejoinGraceSeconds ?? 60,
+      rejoinGraceSeconds: opts.rejoinGraceSeconds ?? REJOIN_GRACE_SECONDS,
       now: opts.now ?? (() => Date.now()),
       onLog: opts.onLog ?? (() => {}),
       accounts: opts.accounts ?? null,
