@@ -1641,6 +1641,47 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 150 — The file's own name line was cut on every screen
+
+**Goal.** The status panel's first line is the file's own: `▲ BLANK · DEBT COLLECTOR · DRAINAGE
+YARD (MAGENTA) · 2 ONLINE`. It was `nowrap` with an ellipsis in a 330 px box, and Stage 135 had
+already given the line under it a short form for exactly this reason while leaving this one alone.
+
+Walked through the HUD with the game's own monikers — and a moniker is earned in the first match a
+file plays — the line wants 435 px with `DEBT COLLECTOR`, 428 with `LEASE-BREAKER`, 399 with
+`FULL WAKE`. So it was cut at every width this game has ever been drawn at, 1920 included, and the
+player lost the room's count and the end of the house. At 960 the cut ate into `(MAGENTA)`; at 800,
+where the panel's box is 233 px, it ate `YARD (MAGENTA) · 1 online` and the district's name went
+with it.
+
+**What changed.**
+
+- `client/hud/hud.ts` — the line's parts are separable spans: the district, the house in its
+  parentheses, the room's count. The layout pass measures what each form wants once per change of
+  what the line says, and picks a form every pass, because the box moves with the window.
+- `client/hud/layout.ts` — `statusHead`: the ladder. The room's count goes first, then the house,
+  then the district. The name and the moniker are what a header line is for and are never shed.
+- `client/hud/hud.css` — the three forms.
+- `tests/layout.test.ts` — the ladder, at the box's own numbers.
+- `probe/stage60.ts` — the check that used to say "where the header line does not fit, the cut is
+  an ellipsis rather than a hard edge" now says it fits. And every moniker the game can give a file
+  is walked through the line at 1280, 960 and 800, failing if any is cut or if the name or the
+  moniker is what goes.
+
+**Proof.** vitest 810/810. `npm run probe:tps` 50/50: the header line `318 px of text in 318 px`,
+and the walk reading what is actually drawn at each width — `1280×720: box 330 px · 20 monikers ·
+0 cut, 0 losing the name · last "WERN CASE -> BLANK · WERN CASE DRAINAGE YARD (MAGENTA)" ·
+960×540: box 318 px · 0 cut · last "... DRAINAGE YARD" · 800×450: box 238 px · 0 cut · last
+"BLANK · WERN CASE"`. The ladder in one line: the room's count goes at 1280, the house at 960, the
+district at 800, the name never. Regressions `probe:mobile` 39/39, `probe:campaign` 42/42,
+`probe:run` 25/25 and `probe:wake` 26/26; build, smoke 7/7.
+
+Mutation A, the HUD picking a form as though every form measured nothing — so it always draws the
+full line: `probe:tps` 48/50, `header line 330 px of text in 318 px` and `20 cut` at every width,
+`"UNLISTED" wants 385 of 330 px`, which is the defect as it stood. Mutation B, the last rung of the
+ladder shedding the moniker rather than the district: `probe:tps` 49/50 — caught only at 800 × 450,
+`0 cut, 13 losing the name`, because that is the only width where the last rung is reached.
+
 ## Stage 149 — Both readouts counted the room and always said one
 
 **Goal.** Two places on the HUD tell you how many files are in the district with you. The file's

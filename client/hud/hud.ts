@@ -17,7 +17,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
+import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { terminalFooter, terminalSeat } from "./terminal";
 import { closeHint, openHint } from "./keyhint";
 import { roomLabel } from "./room";
@@ -127,7 +127,7 @@ export class Hud {
       <div class="tear"></div>
 
       <div class="p status">
-        <div class="line"><span class="glyph"></span>▲ <span class="handle">BLANK</span><span class="moniker"></span> · <span class="dim">DRAINAGE YARD (MAGENTA)</span><span class="room"> · OFFLINE</span></div>
+        <div class="line"><span class="glyph"></span>▲ <span class="handle">BLANK</span><span class="moniker"></span><span class="where"> · <span class="dim">DRAINAGE YARD</span><span class="house"> (MAGENTA)</span></span><span class="room"> · OFFLINE</span></div>
         <div class="line dim">LV <span class="depth">01</span><span class="xpseg"> · XP <span class="xp">0/100</span></span> · ¢ <span class="scrip">0</span> · ◆ <span class="wake">0</span></div>
         <div class="bars">
           <div class="bar cy shield"><i class="shbar" style="width:100%"></i></div>
@@ -178,7 +178,8 @@ export class Hud {
     this.bounds = level.bounds ?? 32;
     this.zone = (level.displayName ?? level.name.replace(/_/g, " ")).toUpperCase();
     const cast = (level.district ?? "magenta").toUpperCase();
-    this.q(".status .dim").textContent = `${this.zone} (${cast})`;
+    this.q(".status .dim").textContent = this.zone;
+    this.q(".status .house").textContent = ` (${cast})`;
     this.q(".mtitle").textContent = `◈ THE WAKE — ${this.zone}`;
     const kills = this.q(".mline");
     if (kills) kills.style.display = level.dummies.length ? "" : "none";
@@ -620,6 +621,29 @@ export class Hud {
       this.line2Need = l2.scrollWidth;
     }
     status.classList.toggle("tight", statusLineFit(l2.clientWidth, this.line2Need) === "short");
+    // Stage 150: and the header line above it sheds rather than cuts. What each form measures is
+    // read once per change of what the line says, with the forms applied in turn; which form is
+    // drawn is decided every pass, because the box moves with the window
+    const l1 = status.querySelector(".line") as HTMLElement;
+    const head = l1.textContent ?? "";
+    if (head !== this.line1Text && l1.clientWidth > 0) {
+      this.line1Text = head;
+      const forms: ("head-1" | "head-2")[] = ["head-1", "head-2"];
+      const had = forms.filter((f) => status.classList.contains(f));
+      status.classList.remove("head-1", "head-2", "head-3");
+      this.line1Full = l1.scrollWidth;
+      status.classList.add("head-1");
+      this.line1NoRoom = l1.scrollWidth;
+      status.classList.remove("head-1");
+      status.classList.add("head-2");
+      this.line1NoHouse = l1.scrollWidth;
+      status.classList.remove("head-2");
+      for (const f of had) status.classList.add(f);
+    }
+    const form = statusHead(l1.clientWidth, this.line1Full, this.line1NoRoom, this.line1NoHouse);
+    status.classList.toggle("head-1", form === "no-room");
+    status.classList.toggle("head-2", form === "no-house");
+    status.classList.toggle("head-3", form === "name");
   }
 
   /**
@@ -901,6 +925,12 @@ export class Hud {
     this.placeFlag();
   }
   private nodeFootKey = "";
+
+  /** what the header line says, and what each of its forms measures (Stage 150) */
+  private line1Text = "";
+  private line1Full = 0;
+  private line1NoRoom = 0;
+  private line1NoHouse = 0;
 
   /** the mission panel's measured bottom from the last layout pass, the alert's first anchor */
   private missionBottom = 0;

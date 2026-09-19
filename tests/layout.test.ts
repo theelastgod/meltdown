@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, nodeFootTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit, stackShift, phoneRowTop, PHONE_ROW_GAP, logLines, LOG_LINES, PHONE_LOG_LINES, LOG_GAP, logClears } from "../client/hud/layout";
+import { ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, nodeFootTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusHead, statusLineFit, stackShift, phoneRowTop, PHONE_ROW_GAP, logLines, LOG_LINES, PHONE_LOG_LINES, LOG_GAP, logClears } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -46,6 +46,26 @@ describe("the alert's seat", () => {
     expect(alertTop(90, null)).toBe(90 + ALERT_GAP);
     expect(alertTop(90, 40)).toBe(90 + ALERT_GAP);
     expect(alertTop(90, 400)).toBe(400 + ALERT_GAP);
+  });
+});
+
+describe("the header line's forms (Stage 150)", () => {
+  it("keeps every part when the box holds it", () => {
+    expect(statusHead(330, 300, 240, 190)).toBe("full");
+    expect(statusHead(330, 330, 240, 190)).toBe("full");
+  });
+  it("sheds the room's count first", () => {
+    expect(statusHead(330, 400, 320, 260)).toBe("no-room");
+    expect(statusHead(330, 331, 330, 260)).toBe("no-room");
+  });
+  it("then the house \u2014 the moniker's own numbers, 435 wanted of a 330 px box", () => {
+    expect(statusHead(330, 435, 373, 313)).toBe("no-house");
+  });
+  it("and then the district, leaving the name and the moniker \u2014 an 800 px window's box of 233", () => {
+    expect(statusHead(233, 435, 373, 313)).toBe("name");
+  });
+  it("never reads a wider form as fitting because a narrower one does", () => {
+    expect(statusHead(300, 400, 400, 200)).toBe("no-house");
   });
 });
 

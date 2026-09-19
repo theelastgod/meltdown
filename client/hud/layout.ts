@@ -185,6 +185,26 @@ export function statusLineFit(room: number, need: number): "full" | "short" {
   return need <= room ? "full" : "short";
 }
 
+/** which parts of the file's header line survive its box (Stage 150) */
+export type HeadForm = "full" | "no-room" | "no-house" | "name";
+
+/**
+ * The file's own header line reads `▲ BLANK · DEBT COLLECTOR · DRAINAGE YARD (MAGENTA) · 2 ONLINE`
+ * in a box 330 px wide, and it was `nowrap` with an ellipsis: the moment a file earns a moniker —
+ * which the first match does — the line wanted 435 px and was cut at every width this game has
+ * ever drawn, 1920 included. At 800 it lost the district's name as well.
+ *
+ * The line sheds instead, in the order a player can afford to lose: the room's count, then the
+ * house in its parentheses, then the district. The name and the moniker are what a header is for,
+ * and they are never shed (Stage 150). `full`, `noRoom` and `noHouse` are what each form measures.
+ */
+export function statusHead(box: number, full: number, noRoom: number, noHouse: number): HeadForm {
+  if (full <= box) return "full";
+  if (noRoom <= box) return "no-room";
+  if (noHouse <= box) return "no-house";
+  return "name";
+}
+
 /** the gap the event log keeps under the stack above it (px) */
 export const LOG_GAP = 6;
 

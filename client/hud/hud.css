@@ -51,6 +51,11 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .status .line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #hud .status .dim { color: rgba(55,255,139,0.7); }
 #hud .status.tight .xpseg { display: none; }  /* Stage 135: the XP goes before the money does */
+/* Stage 150: the header line sheds rather than cuts — the room's count first, then the house, then
+   the district; the file's own name and its moniker are what a header line is for */
+#hud .status.head-1 .room { display: none; }
+#hud .status.head-2 .room, #hud .status.head-2 .house { display: none; }
+#hud .status.head-3 .room, #hud .status.head-3 .where { display: none; }
 #hud .bars { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 6px; }
 #hud .bar { height: 5px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); position: relative; }
 #hud .bar > i { position: absolute; left: 0; top: 0; bottom: 0; }

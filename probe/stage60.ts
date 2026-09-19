@@ -15,6 +15,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
 import { TPS_DEFAULT } from "../client/render/tps";
+import { MONIKERS } from "../shared/identity/monikers";
 
 const VITE_PORT = 5216;
 const OUT = "probe/out";
@@ -553,7 +554,69 @@ async function main(): Promise<void> {
     check("the map's footer says what the map is — heading-up and how far across, from its own scale — and promises no tap", new RegExp(`^▲ AHEAD · ${Math.round(chrome.mapAcross)} M ACROSS$`).test(chrome.mapFoot) && !/tap|click|walk/i.test(chrome.mapFoot), `footer "${chrome.mapFoot}" · the map spans ${chrome.mapAcross.toFixed(1)} m`);
     // Stage 109: the rack called the DIRECTIVE "THE"
     check("every slot on the rack is labelled by a word that names the weapon, not an article", chrome.rackLabels.length === 8 && chrome.rackLabels.every((l) => !/^\d\s+(THE|A|AN)$/i.test(l)) && chrome.rackLabels.some((l) => /^7 DIRECTIVE$/.test(l)), `rack: ${chrome.rackLabels.join(" | ")}`);
-    check("and where the header line does not fit, the cut is an ellipsis rather than a hard edge", chrome.line.scroll > chrome.line.client && chrome.line.overflow === "ellipsis", `header line ${chrome.line.scroll} px of text in ${chrome.line.client} px · text-overflow ${chrome.line.overflow}`);
+    // Stage 150: this check used to say that where the header line does not fit, the cut is a tidy
+    // ellipsis. It fits now: the line sheds the room's count, then the house, then the district,
+    // and never the file's own name.
+    check("the file's header line fits its box rather than being cut", chrome.line.scroll <= chrome.line.client + 1 && /^\u25b2 BLANK/.test(chrome.line.text.trim()), `header line ${chrome.line.scroll} px of text in ${chrome.line.client} px: "${chrome.line.text.trim()}"`);
+    // and it fits for every moniker the game can give a file, at three window widths. A moniker is
+    // earned in the first match, and with one the line wanted 435 px of a 330 px box at every
+    // width this game has ever drawn.
+    const headSeen: string[] = [];
+    let headOk = true;
+    const headKept = await pg.evaluate(() => {
+      const st = document.querySelector("#hud .status") as HTMLElement;
+      return { glyph: (st.querySelector(".glyph") as HTMLElement).innerHTML, handle: (st.querySelector(".handle") as HTMLElement).textContent ?? "", moniker: (st.querySelector(".moniker") as HTMLElement).textContent ?? "" };
+    });
+    for (const headSize of [{ w: 1280, h: 720 }, { w: 960, h: 540 }, { w: 800, h: 450 }]) {
+      await pg.setViewportSize({ width: headSize.w, height: headSize.h });
+      const walk = await pg.evaluate(async (names: string[]) => {
+        const hudApi = window.__game.game.hud;
+        // no named helpers in here: the probe's build injects a __name the page does not have
+        let cut = 0;
+        let lost = 0;
+        let worst = "";
+        let last = "";
+        let boxPx = 0;
+        for (const who of names) {
+          hudApi.setIdentity("", "BLANK", who, 1);
+          await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+          const lineEl = document.querySelector("#hud .status .line") as HTMLElement;
+          const handleEl = document.querySelector("#hud .status .handle") as HTMLElement;
+          const monikerEl = document.querySelector("#hud .status .moniker") as HTMLElement;
+          const lineBox = lineEl.getBoundingClientRect();
+          const handleBox = handleEl.getBoundingClientRect();
+          const monikerBox = monikerEl.getBoundingClientRect();
+          boxPx = lineEl.clientWidth;
+          // what is drawn, not what the line says: textContent counts the spans the form hides
+          const shownParts: string[] = [];
+          for (const sel of [".handle", ".moniker", ".dim", ".house", ".room"]) {
+            const partEl = document.querySelector(`#hud .status .line ${sel}`) as HTMLElement | null;
+            if (partEl && partEl.getBoundingClientRect().width > 0) shownParts.push((partEl.textContent ?? "").trim());
+          }
+          last = `${who} -> ${shownParts.join("")}`;
+          if (lineEl.scrollWidth > lineEl.clientWidth + 1) {
+            cut++;
+            if (!worst) worst = `"${who}" wants ${lineEl.scrollWidth} of ${lineEl.clientWidth} px`;
+          }
+          if (handleBox.width < 1 || handleBox.right > lineBox.right + 1 || monikerBox.width < 1 || monikerBox.right > lineBox.right + 1) {
+            lost++;
+            if (!worst) worst = `"${who}" lost the name or the moniker off the box`;
+          }
+        }
+        return { cut, lost, worst, last, boxPx, count: names.length };
+      }, MONIKERS.map((mk) => mk.text));
+      if (walk.cut > 0 || walk.lost > 0) headOk = false;
+      headSeen.push(`${headSize.w}\u00d7${headSize.h}: box ${walk.boxPx} px \u00b7 ${walk.count} monikers \u00b7 ${walk.cut} cut, ${walk.lost} losing the name${walk.worst ? ` (${walk.worst})` : ""} \u00b7 last "${walk.last}"`);
+    }
+    await pg.setViewportSize({ width: 960, height: 540 });
+    await pg.evaluate(async (kept: { glyph: string; handle: string; moniker: string }) => {
+      const st = document.querySelector("#hud .status") as HTMLElement;
+      (st.querySelector(".glyph") as HTMLElement).innerHTML = kept.glyph;
+      (st.querySelector(".handle") as HTMLElement).textContent = kept.handle;
+      (st.querySelector(".moniker") as HTMLElement).textContent = kept.moniker;
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    }, headKept);
+    check("and it fits for every moniker the game can give a file, at three widths, without ever shedding the name or the moniker itself", headOk, headSeen.join(" \u00b7 "));
     // Stage 135: the second line drops its XP only where the box cannot hold it; here, with the
     // panel at its full width, the XP is up and the line fits
     check("with room for it the second line keeps its XP and fits its box", chrome.xpShown && chrome.line2Overflow <= 0 && /XP \d+\/(\d+|∞) · ¢ \d+/.test(chrome.line2), `"${chrome.line2}" · overflow ${chrome.line2Overflow} px · XP shown ${chrome.xpShown}`);
