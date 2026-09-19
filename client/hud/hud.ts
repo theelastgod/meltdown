@@ -506,7 +506,9 @@ export class Hud {
     // lifted above the row; the phone lays its row out at the top left and passes none
     const rowTop = this.root.classList.contains("touch") ? null : Math.min(this.q(".bottom").getBoundingClientRect().top, above ? center.getBoundingClientRect().top : Infinity) - rootTop;
     const seat = frameSeat(this.q(".status").getBoundingClientRect().bottom - rootTop, this.root.clientHeight, rowTop);
-    for (const sel of [".file", ".graph", ".contracts"]) {
+    // the phone lays the reader frames out edge to edge in its own stylesheet (Stage 137): the
+    // desktop's seat, written inline, had shifted the book half a view off the screen
+    for (const sel of this.root.classList.contains("touch") ? [] : [".file", ".graph", ".contracts"]) {
       const frame = this.q(sel);
       const top = `${seat.top}px`;
       if (frame.style.top !== top) {

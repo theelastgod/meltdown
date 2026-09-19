@@ -1641,6 +1641,46 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 137 — The phone's book was half off the screen
+
+**Goal.** A one-off read of the reader frames on the phone viewport (844×390, the mobile probe's):
+the FILE book, laid edge to edge by the phone's stylesheet, sat at −397…397 px: the desktop
+seat of Stage 119 writes `translateX(-50%)` inline on every frame, the phone's rule overrides
+the box's edges and not its transform, and a full-width book shifted by half its width shows
+its right half. The contracts desk, with no phone rule of its own, sat at 71–376 px under the
+phone's slot-and-tab row (72–158) and under all seven thumb pads, which are drawn over it and
+take the taps meant for it. Neither frame had ever been opened on the phone by a probe.
+
+**What changed.**
+- `client/hud/hud.ts` — the desktop seat is not written on the phone.
+- `client/hud/hud.css` — the graph and the desk take the book's edge-to-edge rule on the phone,
+  which now clears the desktop's transform and its 94vw cap; the `thumbs` group hides the pads,
+  and on the phone the slot-and-tab row goes with them under a frame (the desk precedes the row
+  in the DOM and was drawn under it, its first rows covered).
+- `client/hud/quiet.ts` — `thumbs` is a chrome group, silenced by the frames that cover the
+  screen (the desk, a card, the ledger) and kept by a terminal and a closed file.
+- `tests/quiet.test.ts` — the group's rule.
+- `probe/stage32.ts` — the desk and the book are opened on the phone and read from the drawn
+  frame: inside the view, no pad shown, the row not across the desk, the desk scrolling inside;
+  the pads back when the book closes; a picture of the book.
+
+**Proof.** vitest 772/772 (the group's rule in `tests/quiet.test.ts`). `npm run probe:mobile`
+20/20: the desk at 0–844 × 0–390 in 844×390, no pad shown, the row off it, scrolling inside; the
+book at 0–844 × 0–390, no pad shown, seven pads back after the close (on the runner's phone
+frames, a second apart, the close takes a frame to lift the silence; the read waits for it);
+the picture shows the book edge to edge.
+Regressions (run on the first pass of the stage, before the phone rule's two CSS fixes, which
+touch the phone alone) `probe:tps` 49/49, `probe:campaign` 40/40; build, smoke 7/7 on the final
+tree.
+
+Mutation A, the desktop seat written on the phone too: `probe:mobile` 18/20, both frames at
+−422…422 px, half a view off the screen. Mutation B, the pads outside the frames' silence
+(`thumbs` off `ALL_GROUPS`): `tests/quiet.test.ts` 1 failed | 12 passed, and `probe:mobile`
+18/20 with seven pads shown over both frames and the row back over the desk. Two earlier runs of this stage read the frames at −422…422 × −195…195: with the inline
+seat gone the desktop rule's own `translate(-50%, -50%)` had come through the phone's rule, which
+had never cleared it; the phone rule now does, and plainly, not with `!important`, so an inline
+seat written on the phone still breaks it and mutation A still fails.
+
 ## Stage 136 — The desk ran under the row
 
 **Goal.** The campaign probe's contracts frame at 960×540, on the tree as of Stage 135: the desk

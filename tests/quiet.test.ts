@@ -68,3 +68,15 @@ describe("the alert is chrome (Stage 113)", () => {
     expect(quietFor({ desk: false, terminal: true, card: false, ledger: false })).not.toContain("alert");
   });
 });
+
+describe("the phone's thumb pads are chrome (Stage 137)", () => {
+  it("are silenced by the frames that cover the screen", () => {
+    expect(quietFor({ desk: true, terminal: false, card: false, ledger: false })).toContain("thumbs");
+    expect(quietFor({ desk: false, terminal: false, card: false, ledger: true })).toContain("thumbs");
+    expect(quietFor({ desk: false, terminal: false, card: true, ledger: false })).toContain("thumbs");
+  });
+  it("and kept by a terminal and by a closed file", () => {
+    expect(quietFor({ desk: false, terminal: true, card: false, ledger: false })).not.toContain("thumbs");
+    expect(quietFor({ desk: false, terminal: false, card: false, ledger: false, dead: true })).not.toContain("thumbs");
+  });
+});

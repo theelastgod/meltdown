@@ -262,6 +262,44 @@ async function main(): Promise<void> {
     });
     check("the VANTAGE PA reads in full on the phone, wrapped in the log's box and clear of the pads", !!paPhone && paPhone.rects >= 2 && paPhone.inBox && paPhone.overflowX <= 0 && paPhone.overflowY <= 0 && /COMPLIANCE\.$/.test(paPhone.text) && paPhone.under.length === 0, paPhone ? `${paPhone.rects} rows · overflow ${paPhone.overflowX}/${paPhone.overflowY} px · in the box ${paPhone.inBox} · log ${paPhone.logTop.toFixed(0)}–${paPhone.logBottom.toFixed(0)} px · under ${paPhone.under.join(",") || "no pad"} · ends "…${paPhone.text.slice(-22)}"` : "no PA line in the log");
 
+    // ---------------- the reader frames on the phone (Stage 137) ----------------
+    // The desk sat under all seven thumb pads and the phone's own row, and the FILE book, given the
+    // phone's edge-to-edge rule, was shifted half a view off the screen by the desktop seat's inline
+    // transform. Each frame is opened, read from the drawn frame, and closed
+    const frames: Record<string, { hidden: boolean; inside: boolean; left: number; right: number; top: number; bottom: number; padsShown: number; rowUnder: boolean; scrolls: boolean }> = {};
+    for (const which of ["contracts", "file"] as const) {
+      await pg.evaluate((w) => (w === "contracts" ? window.__game.contracts(true) : window.__game.toggleFile(true)), which);
+      frames[which] = await pg.evaluate(async (w) => {
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const el = document.querySelector(`#hud .${w}`) as HTMLElement;
+        const b = el.getBoundingClientRect();
+        const pads = [...document.querySelectorAll<HTMLElement>("#hud .thumbs .tc-b")].filter((p) => { const r = p.getBoundingClientRect(); const cs = getComputedStyle(p); return r.width > 0 && cs.display !== "none" && cs.visibility !== "hidden" && p.offsetParent !== null; });
+        // the phone's slot-and-tab row goes with the pads under a frame; were it drawn, what the eye
+        // and the thumb meet at the row's own centre would have to be the frame, not the row
+        const rowEl = document.querySelector("#hud .bottom") as HTMLElement;
+        const tabs = rowEl.querySelector(".tabs")!.getBoundingClientRect();
+        const atRow = tabs.width > 0 ? document.elementFromPoint((tabs.left + tabs.right) / 2, (tabs.top + tabs.bottom) / 2) : null;
+        const rowUnder = getComputedStyle(rowEl).display === "none" || (!!atRow && atRow.closest(`#hud .${w}`) === el);
+        return { hidden: el.hidden, inside: b.left >= -0.5 && b.right <= innerWidth + 0.5 && b.top >= -0.5 && b.bottom <= innerHeight + 0.5, left: b.left, right: b.right, top: b.top, bottom: b.bottom, padsShown: pads.length, rowUnder, scrolls: el.scrollHeight > el.clientHeight };
+      }, which);
+      if (which === "file") await shotCheck(pg, "stage32-book.png", "#hud .file");
+      await pg.evaluate((w) => (w === "contracts" ? window.__game.contracts(false) : window.__game.toggleFile(false)), which);
+      await pg.waitForTimeout(150);
+    }
+    // the pads come back on the frame after the close; the runner's phone frames come a second apart
+    const padsBack = await pg.evaluate(async () => {
+      for (let i = 0; i < 60; i++) {
+        const n = [...document.querySelectorAll<HTMLElement>("#hud .thumbs .tc-b")].filter((p) => p.offsetParent !== null && p.getBoundingClientRect().width > 0).length;
+        if (n > 0) return n;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      return 0;
+    });
+    const fd = frames["contracts"]!;
+    const fb = frames["file"]!;
+    check("the contracts desk on the phone fills the view, with the thumb pads and the row off it, and scrolls inside", !fd.hidden && fd.inside && fd.right >= VIEWPORT.width - 0.5 && fd.padsShown === 0 && fd.rowUnder && fd.scrolls, `desk ${fd.left.toFixed(0)}–${fd.right.toFixed(0)} × ${fd.top.toFixed(0)}–${fd.bottom.toFixed(0)} in ${VIEWPORT.width}×${VIEWPORT.height} · pads shown ${fd.padsShown} · the row off it ${fd.rowUnder} · scrolls ${fd.scrolls}`);
+    check("and the FILE book is on the screen, edge to edge, the pads off it, and the pads come back when it closes", !fb.hidden && fb.inside && fb.left >= -0.5 && fb.right >= VIEWPORT.width - 0.5 && fb.padsShown === 0 && padsBack >= 7, `book ${fb.left.toFixed(0)}–${fb.right.toFixed(0)} × ${fb.top.toFixed(0)}–${fb.bottom.toFixed(0)} · pads shown ${fb.padsShown}, back ${padsBack}`);
+
     // ---------------- the frame a phone has to hold ----------------
     await pg.evaluate(() => window.__game.setRealtime(true));
     await pg.waitForTimeout(2500);

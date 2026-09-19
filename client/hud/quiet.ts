@@ -25,15 +25,17 @@ export interface Modals {
 }
 
 /** the chrome the rule can silence, each a class on the HUD root: `q-<group>` */
-export type ChromeGroup = "prompt" | "reticle" | "rack" | "ammo" | "nades" | "arrows" | "log" | "map" | "mission" | "nodefoot" | "diag" | "alert";
+export type ChromeGroup = "prompt" | "reticle" | "rack" | "ammo" | "nades" | "arrows" | "log" | "map" | "mission" | "nodefoot" | "diag" | "alert" | "thumbs";
 
 /**
  * every group; `diag` is the ONLINE / FPS readout, which sat over the desk's right-hand column, and
  * `alert` is the line under the mission panel (Stage 113): with the panel silenced it had hung six
  * pixels from the top of the screen, and re-anchored it hung over the ledger. A frame that covers
- * the screen silences it; a terminal, which is usually the objective, keeps it
+ * the screen silences it; a terminal, which is usually the objective, keeps it. `thumbs` is the
+ * phone's thumb pads (Stage 137): drawn over a desk they took the taps meant for it, and a frame
+ * that covers the screen has nothing for them to drive; a terminal keeps them
  */
-export const ALL_GROUPS: readonly ChromeGroup[] = ["prompt", "reticle", "rack", "ammo", "nades", "arrows", "log", "map", "mission", "nodefoot", "diag", "alert"];
+export const ALL_GROUPS: readonly ChromeGroup[] = ["prompt", "reticle", "rack", "ammo", "nades", "arrows", "log", "map", "mission", "nodefoot", "diag", "alert", "thumbs"];
 
 /** what a fixer's terminal takes off the screen: the gun and the tutorial, not the objective or the map */
 const TERMINAL: readonly ChromeGroup[] = ["prompt", "reticle", "rack", "ammo", "nades", "arrows", "nodefoot"];

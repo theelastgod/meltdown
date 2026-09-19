@@ -90,7 +90,9 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.q-map .map,
 #hud.q-mission .mission,
 #hud.q-nodefoot .nodefoot,
-#hud.q-diag .side { display: none !important; }
+#hud.q-diag .side,
+#hud.q-thumbs .thumbs,
+#hud.touch.q-thumbs .bottom { display: none !important; }  /* Stage 137: the phone's row goes with its pads under a frame */
 #hud .bottom { position: absolute; left: 14px; right: 14px; bottom: 14px; height: 52px; display: flex; align-items: flex-end; justify-content: space-between; }
 #hud .slots { display: flex; gap: 6px; }
 #hud .slot { width: 44px; height: 44px; border: 1px solid rgba(55,255,139,0.35); background: var(--pan); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--gr); }
@@ -464,7 +466,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.touch .p { padding: 4px 6px; }
 #hud.touch .xh { width: 12px; height: 12px; }
 /* the file/ledger panels are full-screen readers on a phone rather than a corner overlay */
-#hud.touch .file { left: 0 !important; right: 0 !important; top: 0 !important; bottom: 0 !important; width: auto !important; max-height: none !important; padding: calc(10px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 10px calc(10px + env(safe-area-inset-left)); overflow: auto; }
+#hud.touch .file, #hud.touch .graph, #hud.touch .contracts { left: 0 !important; right: 0 !important; top: 0 !important; bottom: 0 !important; width: auto !important; max-width: none !important; max-height: none !important; transform: none; padding: calc(10px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 10px calc(10px + env(safe-area-inset-left)); overflow: auto; }
 
 /* What the desktop HUD says, and where it sits, is wrong on a phone (Stage 32).
    The first screenshot of the touch build had the weapon rack, the grenade row, the tab dock and
