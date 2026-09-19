@@ -141,6 +141,24 @@ async function main(): Promise<void> {
       }));
     }));
     check("both readouts count the room: with ALPHA and BRAVO joined, the file's header line and the right-hand band each say two files are online", roomSaid.every((r) => r.files && r.band === "2 ONLINE" && r.head === "\u00b7 2 ONLINE"), roomSaid.map((r, i) => `${i === 0 ? "ALPHA" : "BRAVO"}: header "${r.head}" \u00b7 band "${r.band}"`).join(" \u00b7 "));
+
+    // the line under the crosshair says which file it is about (Stage 157). This probe's own frame
+    // is where that was found: the header said ALPHA, the log said FILE #1, and the line between
+    // them said `1 · BLANK` — the markup's literal from the look stage, which no code had ever
+    // written. Read off ALPHA's drawn frame, where the room has named the file and seated it.
+    const foot = await a.evaluate(() => ({
+      no: ((document.querySelector("#hud .center .fileno") as HTMLElement | null)?.textContent ?? "").trim(),
+      nm: ((document.querySelector("#hud .center .filenm") as HTMLElement | null)?.textContent ?? "").trim(),
+      handle: ((document.querySelector("#hud .status .handle") as HTMLElement | null)?.textContent ?? "").trim(),
+      id: window.__game.net()?.playerId ?? -1,
+      line: ((document.querySelector("#hud .center") as HTMLElement | null)?.textContent ?? "").replace(/\s+/g, " ").trim(),
+    }));
+    check(
+      "the line under the crosshair is about the file drawing it: the number the room gave it and the name the header carries, not the markup's placeholder",
+      foot.id >= 0 && foot.nm === foot.handle && foot.nm !== "BLANK" && foot.no === `#${foot.id}`,
+      `"${foot.line}" \u00b7 the room seated this file as #${foot.id} and the header calls it "${foot.handle}"`,
+    );
+
     check("a run room: the Welcome says run, the wake is off, the client sees the gate and every claim, and the strip reads PVP ZONE", mode === "run" && v0.zones.length === 1 && v0.zones[0]!.label === gate.label && v0.claims.length === claims.length && !v0.inSafe && /PVP ZONE/.test(strip0) && /CARRYING 0/.test(strip0), `mode ${mode} · zones ${v0.zones.map((z) => z.label).join(",")} · claims ${v0.claims.length}/${claims.length} · "${strip0.slice(0, 60)}"`);
 
     // ---- ALPHA carries a claim ----

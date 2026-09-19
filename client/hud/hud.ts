@@ -17,6 +17,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
+import { footTag, footTagText } from "./footline";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { terminalFooter, terminalSeat } from "./terminal";
 import { closeHint, openHint } from "./keyhint";
@@ -162,7 +163,7 @@ export class Hud {
 
       <div class="bottom">
         <div class="slots"><div class="slot on">╪</div><div class="slot">▦</div><div class="slot">▦</div><div class="slot mg">◈</div></div>
-        <div class="center"><b>1</b> · BLANK · <span class="vel">0.0 m/s</span> · <span class="stance">STAND</span></div>
+        <div class="center"><b class="fileno">#—</b> · <span class="filenm">BLANK</span> · <span class="vel">0.0 m/s</span> · <span class="stance">STAND</span></div>
         <div class="tabs"><div class="tab">FILE<span class="n">·</span></div><div class="tab">GRAPH<span class="n">·</span></div><div class="tab">MAP<span class="n">·</span></div><div class="tab">MARKET<span class="n">·</span></div><div class="tab">CONTRACTS<span class="n">·</span></div></div>
       </div>
       <div class="keys">WASD · HOLD CLICK fire · R reload · SPACE jump · CTRL slide · SHIFT sprint</div>
@@ -282,6 +283,7 @@ export class Hud {
   setIdentity(glyphSvg: string, display: string, moniker: string | null, chapter: number): void {
     this.q(".glyph").innerHTML = glyphSvg;
     this.q(".handle").textContent = display;
+    this.display = display; // the foot line under the crosshair says the same name (Stage 157)
     this.q(".moniker").textContent = moniker && moniker !== display ? ` · ${moniker}` : "";
     this.q(".status").classList.toggle("named", chapter >= 3);
   }
@@ -843,6 +845,15 @@ export class Hud {
     if (p.weapon.empTimer > 0) emp.style.opacity = String(Math.min(1, p.weapon.empTimer));
     this.q(".vel").textContent = `${speed.toFixed(1)} m/s`;
     this.q(".stance").textContent = motionWord(p.stance, p.grounded, speed);
+    // and who the line is about (Stage 157): the number the room gave this file and the name the
+    // header's handle carries, written when either changes rather than on every frame
+    const tag = footTag(p.id, this.display);
+    const tagText = footTagText(tag);
+    if (tagText !== this.footText) {
+      this.footText = tagText;
+      this.q(".fileno").textContent = tag.num;
+      this.q(".filenm").textContent = tag.name;
+    }
     const kills = document.querySelector("#hud .kills");
     if (kills) kills.textContent = String(Math.min(5, p.stats.kills)); // the strip is replaced by a contract's objective line
     this.q(".perf").textContent = `${fps.toFixed(0)} FPS · SIM ${tickHz.toFixed(0)} Hz`;
@@ -936,6 +947,9 @@ export class Hud {
   private nodeFootKey = "";
 
   /** what the header line says, and what each of its forms measures (Stage 150) */
+  /** what the city calls this file, as the header's handle was last written with (Stage 157) */
+  private display = "";
+  private footText = "";
   private line1Text = "";
   private line1Full = 0;
   private line1NoRoom = 0;

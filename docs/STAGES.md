@@ -1641,6 +1641,59 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 157 — The line under the crosshair named a file that was not there
+
+**Goal.** The bottom row's middle has read `1 · BLANK · 0.0 m/s · STAND` since the look stage wrote
+the HUD. The speed and the stance are live and always have been. The other two are not: the `1` and
+the `BLANK` were typed into the markup and no code has ever written either of them. Grep the client
+for `.center` and the single hit reads its width for layout.
+
+So the line named a file that was not there. This repo's own run-probe frame, `stage14-carry.png`,
+has the header saying `▲ ALPHA`, the event log saying `FILE #1`, and the line between them, under
+the crosshair, saying `1 · BLANK`.
+
+Three stages measured that line and moved it without reading it. Stage 118 lifted it above the
+bottom row where the slots and the tab strip leave it no room; Stage 132 took that rule back off the
+phone; Stage 136 seated the reader frames above it. Stage 132's goal in this file quotes the string
+in full — `1 · BLANK · 0.0 m/s · STAND` — as a thing printed in the wrong place, which it also was.
+
+**What changed.**
+
+- `client/hud/footline.ts` — `footTag(fileId, display)`: the file's number in the room and what the
+  city calls it. An unnamed file is `BLANK`, which is what the room calls one too; a file with no
+  seat yet is `#—`, because `#0` and `#-1` are each a claim about a seat that does not exist.
+- `client/hud/hud.ts` — the two halves are spans now. The name is remembered where the header's
+  handle is written, so the two readouts cannot disagree, and the line is written when either half
+  changes rather than on every frame.
+- `tests/footline.test.ts` — the pair, the nameless file, the seatless one, and that the cache key
+  moves when either half does.
+- `probe/stage14.ts` — the run probe, whose own frame is the evidence, now reads the line off
+  ALPHA's drawn HUD and fails unless it is the number the room gave the file and the name the
+  header carries.
+
+**Proof.** vitest 839/839. `npm run probe:run` 26/26: `"#1 · ALPHA · 0.0 m/s · AIR" · the room
+seated this file as #1 and the header calls it "ALPHA"`. The whole sweep as CI runs it — every
+probe, the four lints, the firmware certification, build and smoke — green: `probe` 19/19,
+`probe:look` 18/18, `probe:net` 26/26, `probe:arsenal` 32/32, `probe:wake` 27/27, `probe:file`
+19/19, `probe:city` 45/45, `probe:cityLife` 21/21, `probe:mastery` 23/23, `probe:identity` 25/25,
+`probe:campaign` 43/43, `probe:endgame` 16/16, `probe:counter` 16/16, `probe:crawl` 10/10,
+`probe:ship` 10/10, `probe:harden` 9/9, `probe:frame` 7/7, `probe:mobile` 40/40, `probe:persist`
+7/7, `probe:tps` 50/50, `probe:body` 20/20, smoke 7/7.
+
+Mutation A, the line never written after the markup: `probe:run` 25/26 — `"#— · BLANK · 0.0 m/s ·
+AIR"` against a room that had seated the file as #1 and a header calling it ALPHA, which is the
+defect as it was found. Mutation B, the name always the placeholder: 25/26 — `"#1 · BLANK"`, the
+number right and the name still a lie, and `tests/footline.test.ts` fails 2 of its 4 on its own.
+
+One failure in this stage's sweep was not this stage's. `probe:frame` came back 6/7 on the hitch
+check — `p50 61.2 p95 69.5 p99 301.6 max 302 ms · 4.9×` against a 4× bound. Re-run on the same tree
+it was 7/7 at `max 78 ms · 1.3×`. The same ~300 ms hitch under sustained fire is in the Stage 156
+sweep's record too, at `p99 306.7 max 307 ms`, where it passed only because the median was slower
+that run and the ratio came to 3.9. So the check is a ratio whose bound tightens as the machine gets
+faster, and there is a real third-of-a-second stall under sustained fire behind it, seen twice. That
+is the next stage's, not this one's: two writes behind a cache cannot stall a frame for 300 ms, and
+the check sits between two 7/7 runs with this change in.
+
 ## Stage 156 — The frame counter was measured on a clock that stopped when the frame did
 
 **Goal.** The right-hand band has said `N FPS · SIM N Hz` since the first stage. The sim number is
