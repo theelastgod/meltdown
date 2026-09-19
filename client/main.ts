@@ -400,7 +400,10 @@ const menu = menuWanted(bootQ)
         settings: game.settings,
         applySettings: (s) => game.applySettings(s),
         openFile: () => game.file.toggle(true),
-        resume: () => (document.getElementById("view") as HTMLCanvasElement | null)?.requestPointerLock?.(),
+        // a phone has no pointer to lock (Stage 141): RESUME there is the menu going away
+        resume: () => {
+          if (!game.touch) (document.getElementById("view") as HTMLCanvasElement | null)?.requestPointerLock?.();
+        },
         identityLine: () => {
           const v = game.file.identityView();
           return `${v.display} · DEPTH ${String(game.file.depth).padStart(2, "0")} · ${game.file.account}`;
@@ -413,6 +416,10 @@ if (menu) {
   if (crawl) crawl.onFinish = () => menu.start();
   else menu.start();
   game.onLockLost = () => {
+    if (menu.screen === "hidden" && !game.file.isOpen && !crawl?.active) menu.pause();
+  };
+  // Stage 141: the phone's PAUSE pad is its Escape
+  if (game.touch) game.touch.onPause = () => {
     if (menu.screen === "hidden" && !game.file.isOpen && !crawl?.active) menu.pause();
   };
 }

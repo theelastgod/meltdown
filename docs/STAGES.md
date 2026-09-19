@@ -1641,6 +1641,35 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 141 — The phone could not pause
+
+**Goal.** The pause menu (RESUME / SETTINGS / FILE / QUIT TO MENU, Stage 13) opens when the
+pointer lock is lost, which is what Escape does on a desktop. A phone never holds a pointer
+lock, and the touch build had no other way in: once in play a phone had no pause, no settings,
+and no way back to the menu but the browser. Its RESUME, had it been reached, asked the canvas
+for a pointer lock.
+
+**What changed.**
+- `client/touch.ts` — a PAUSE pad among the thumb controls; a tap on it fires `onPause`.
+- `client/main.ts` — the pad opens the pause menu on the same terms as the lost lock (in play,
+  no book open, no crawl); on the phone RESUME asks for no pointer lock.
+- `client/hud/hud.css` — the pad's seat: a 44 px pad left of the area map, under nothing.
+- `probe/stage32.ts` — a page with the menu on, put into play: the pad is inside the view and a
+  thumb's width clear of the map, the mission panel, the file's header and the ONLINE readout;
+  a thumb on it opens the pause menu (its picture), and a thumb on RESUME returns to play.
+
+**Proof.** vitest 780/780. `npm run probe:mobile` 32/32: the pad at 688–732 × 12–56 reading
+`PAUSE`, inside the view, within 8 px of nothing, the smallest control on the phone now 44 px;
+the menu hidden in play; a thumb on the pad opens the pause menu, its picture is of the menu up
+either side of the shutter, and a thumb on `▸RESUME` returns to play. Regressions `probe:ship` 9/9 (the
+desktop's menu flow), `probe:tps` 49/49; build, smoke 7/7.
+
+Mutation A, the pad's tap doing nothing: `probe:mobile` 30/32, the menu still hidden after the
+thumb and the picture of no menu. Mutation B, the pad not wired to the menu: `probe:mobile` 30/32, the same two. The stage's first phone
+run drew the pad 28 px tall and Stage 32's rule (no control under a thumb's 44 px) caught it;
+and the shot helper counts the menu among the covers a game picture must not have, so the
+menu's picture is taken plainly with its claim read either side of the shutter.
+
 ## Stage 140 — The phone's mission panel sat on the tab strip
 
 **Goal.** Stage 139's picture of the wake on the phone: the mission panel, which in the wake

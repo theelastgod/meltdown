@@ -458,6 +458,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .thumbs .tc-reload { right: calc(170px + env(safe-area-inset-right)); bottom: calc(30px + env(safe-area-inset-bottom)); width: 48px; height: 48px; }
 #hud .thumbs .tc-nade   { right: calc(84px + env(safe-area-inset-right)); bottom: calc(148px + env(safe-area-inset-bottom)); width: 46px; height: 46px; }
 #hud .thumbs .tc-slot   { left: calc(14px + env(safe-area-inset-left)); bottom: calc(16px + env(safe-area-inset-bottom)); width: 48px; height: 48px; }
+#hud .thumbs .tc-pause  { right: calc(112px + env(safe-area-inset-right)); top: calc(12px + env(safe-area-inset-top)); width: 44px; height: 44px; font-size: 8px; }  /* Stage 141: a thumb's width, left of the map, clear of it and the mission panel */
 
 /* The terminal chrome was drawn for a 1080-tall desktop. On a phone the panels have to give up
    width and the ones that are reference rather than moment-to-moment move out of the thumbs' way. */

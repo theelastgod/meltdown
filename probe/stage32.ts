@@ -434,6 +434,41 @@ async function main(): Promise<void> {
     await shotCheck(w, "stage32-wake.png", "#hud .nodefoot");
     await w.close();
 
+    // ---------------- pausing on the phone (Stage 141) ----------------
+    // The pause menu opened on the loss of pointer lock, which a phone never holds: in play there
+    // was no way to it, nor to SETTINGS or QUIT. A page with the menu on, put into play, then the
+    // PAUSE pad tapped for real, and RESUME tapped on the menu
+    const m = await ctx.newPage();
+    m.on("pageerror", (e) => errors.push(String(e)));
+    await m.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&touch=1&menu=1&level=drainage_yard&ai=0&wake=0`, { waitUntil: "load" });
+    await m.waitForFunction(() => window.__game?.ready === true && !!window.__game.menu(), null, { timeout: 60000, polling: 100 });
+    await m.evaluate(() => { window.__game.pause(); window.__game.menuChoose("resume"); });
+    await m.evaluate(() => window.__game.advance(30));
+    const padSeat = await m.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const hud = document.getElementById("hud")!;
+      const el = hud.querySelector(".thumbs .tc-pause") as HTMLElement | null;
+      if (!el) return null;
+      const b = el.getBoundingClientRect();
+      const boxes: [string, DOMRect][] = [[".map", hud.querySelector(".map")!.getBoundingClientRect()], [".mission", hud.querySelector(".mission")!.getBoundingClientRect()], [".side", hud.querySelector(".side")!.getBoundingClientRect()], [".status", hud.querySelector(".status")!.getBoundingClientRect()]];
+      const near = boxes.filter(([, r]) => r.width > 0 && b.left - 8 < r.right && r.left < b.right + 8 && b.top - 8 < r.bottom && r.top < b.bottom + 8).map(([n]) => n);
+      return { x: (b.left + b.right) / 2, y: (b.top + b.bottom) / 2, left: b.left, right: b.right, top: b.top, bottom: b.bottom, text: (el.textContent ?? "").trim(), inside: b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= innerHeight, near, menu: window.__game.menu()?.screen ?? null };
+    });
+    check("the phone has a PAUSE pad, inside the view and a thumb's width clear of the map, the mission panel, the file's header and the ONLINE readout, with the menu hidden in play", !!padSeat && padSeat.text === "PAUSE" && padSeat.inside && padSeat.near.length === 0 && padSeat.menu === "hidden", padSeat ? `pad ${padSeat.left.toFixed(0)}–${padSeat.right.toFixed(0)} × ${padSeat.top.toFixed(0)}–${padSeat.bottom.toFixed(0)} "${padSeat.text}" · within 8 px of [${padSeat.near.join(",")}] · menu ${padSeat.menu}` : "no pause pad");
+    if (padSeat) await m.touchscreen.tap(padSeat.x, padSeat.y);
+    const paused = await m.evaluate(async () => { for (let i = 0; i < 40; i++) { if (window.__game.menu()?.screen === "pause") break; await new Promise((r) => setTimeout(r, 50)); } return window.__game.menu()?.screen ?? null; });
+    // the shot helper counts the menu among the covers a game picture must not have; this picture is
+    // of the menu, so it is taken plainly and its claim read either side of the shutter
+    const shutterBefore = await m.evaluate(() => window.__game.menu()?.screen ?? null);
+    await m.screenshot({ path: `${OUT}/stage32-pause.png` });
+    const shutterAfter = await m.evaluate(() => window.__game.menu()?.screen ?? null);
+    check("artifact: stage32-pause.png is a picture of the pause menu, up either side of the shutter", shutterBefore === "pause" && shutterAfter === "pause", `screen ${shutterBefore} before, ${shutterAfter} after`);
+    const resumeAt = await m.evaluate(() => { const el = document.querySelector("#menu [data-i=\"0\"]") as HTMLElement | null; if (!el) return null; const r = el.getBoundingClientRect(); return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, text: (el.textContent ?? "").trim() }; });
+    if (resumeAt) await m.touchscreen.tap(resumeAt.x, resumeAt.y);
+    const resumed = await m.evaluate(async () => { for (let i = 0; i < 40; i++) { if (window.__game.menu()?.screen === "hidden") break; await new Promise((r) => setTimeout(r, 50)); } return window.__game.menu()?.screen ?? null; });
+    check("a thumb on PAUSE opens the pause menu, and a thumb on its RESUME returns to play", paused === "pause" && !!resumeAt && /RESUME/.test(resumeAt.text) && resumed === "hidden", `after PAUSE: ${paused} · tapped ${resumeAt ? `"${resumeAt.text}"` : "nothing"} · after RESUME: ${resumed}`);
+    await m.close();
+
     check("no page errors", errors.length === 0, errors.length ? errors.slice(0, 3).join(" | ") : "clean console");
     await pg.close();
     await ctx.close();

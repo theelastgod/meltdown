@@ -63,6 +63,8 @@ interface Pad {
   tap: number;
   /** slot cycle request on press */
   cycle?: boolean;
+  /** the pause pad (Stage 141): a tap opens the pause menu */
+  pause?: boolean;
   held: Held | null;
 }
 
@@ -83,6 +85,8 @@ export class TouchControls {
   /** mirrors the player's slot so the cycle button can step relative to it */
   currentSlot = 1;
   onGesture: (() => void) | null = null;
+  /** the pause pad's tap (Stage 141): the phone has no Escape and no pointer lock to lose */
+  onPause: (() => void) | null = null;
 
   constructor(host: HTMLElement) {
     this.root = document.createElement("div");
@@ -102,12 +106,13 @@ export class TouchControls {
         <button class="tc-b tc-reload" data-b="reload">RLD</button>
         <button class="tc-b tc-nade" data-b="nade">NADE</button>
         <button class="tc-b tc-slot" data-b="slot">WPN</button>
+        <button class="tc-b tc-pause" data-b="pause">PAUSE</button>
       </div>`;
     host.appendChild(this.root);
     this.ring = this.root.querySelector(".tc-ring")!;
     this.knob = this.root.querySelector(".tc-knob")!;
 
-    const spec: Record<string, { bits?: number; tap?: number; cycle?: boolean }> = {
+    const spec: Record<string, { bits?: number; tap?: number; cycle?: boolean; pause?: boolean }> = {
       fire: { bits: Btn.Fire },
       alt: { bits: Btn.Alt },
       crouch: { bits: Btn.Crouch },
@@ -115,10 +120,11 @@ export class TouchControls {
       reload: { tap: Btn.Reload },
       nade: { tap: Btn.Grenade },
       slot: { cycle: true },
+      pause: { pause: true },
     };
     for (const el of [...this.root.querySelectorAll<HTMLElement>(".tc-b")]) {
       const s = spec[el.dataset.b!]!;
-      this.pads.push({ el, bits: s.bits ?? 0, tap: s.tap ?? 0, cycle: s.cycle, held: null });
+      this.pads.push({ el, bits: s.bits ?? 0, tap: s.tap ?? 0, cycle: s.cycle, pause: s.pause, held: null });
     }
 
     // One listener set on the window: a finger that starts on a button and slides off must keep
@@ -153,6 +159,11 @@ export class TouchControls {
   private down = (e: PointerEvent): void => {
     if (e.pointerType === "mouse" && !this.root.classList.contains("forced")) return;
     const pad = this.padAt(e.clientX, e.clientY);
+    if (pad?.pause) {
+      this.onPause?.();
+      this.engage(e);
+      return;
+    }
     if (pad) {
       if (pad.held) return;
       pad.held = { id: e.pointerId };
