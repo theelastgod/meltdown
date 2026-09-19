@@ -18,6 +18,7 @@
  *
  * Nothing here touches the sim. It produces the same `InputFrame` the keyboard does.
  */
+import { grenadePad } from "./hud/grenadepad";
 import { Btn } from "@shared/sim/input";
 
 /** Radius the stick travels before it is at full deflection, in CSS pixels. */
@@ -105,6 +106,7 @@ export class TouchControls {
         <button class="tc-b tc-crouch" data-b="crouch">SLIDE</button>
         <button class="tc-b tc-reload" data-b="reload">RLD</button>
         <button class="tc-b tc-nade" data-b="nade">NADE</button>
+        <button class="tc-b tc-nadenext" data-b="nadenext">NADE +</button>
         <button class="tc-b tc-slot" data-b="slot">WPN</button>
         <button class="tc-b tc-pause" data-b="pause">PAUSE</button>
       </div>`;
@@ -119,6 +121,7 @@ export class TouchControls {
       jump: { tap: Btn.Jump },
       reload: { tap: Btn.Reload },
       nade: { tap: Btn.Grenade },
+      nadenext: { tap: Btn.GrenadeNext },
       slot: { cycle: true },
       pause: { pause: true },
     };
@@ -146,6 +149,23 @@ export class TouchControls {
 
   /** True once any control has been touched, so the game can treat the session as engaged. */
   engaged = false;
+
+  /**
+   * The grenade pads' labels (Stage 143): the throw pad names what it throws and how many are
+   * left, the cycle pad what the next tap selects. Called every frame; the DOM is written only
+   * when the words change.
+   */
+  setGrenades(sel: number, counts: readonly number[], names: readonly string[]): void {
+    const { throwLabel, cycleLabel } = grenadePad(sel, counts, names);
+    const key = `${throwLabel}|${cycleLabel}`;
+    if (key === this.nadeKey) return;
+    this.nadeKey = key;
+    const t = this.root.querySelector(".tc-nade");
+    const c = this.root.querySelector(".tc-nadenext");
+    if (t) t.textContent = throwLabel;
+    if (c) c.textContent = cycleLabel;
+  }
+  private nadeKey = "";
 
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {

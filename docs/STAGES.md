@@ -1641,6 +1641,43 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 143 — The phone could only ever throw one grenade
+
+**Goal.** The desktop throws with G and cycles the type with Q, and the HUD lists `FRAG 2 ·
+SMOKE 1 · EMP 1` with the selected one lit. The touch build hides that list, with the comment
+"the NADE pad carries the selected one", and nothing on the phone emits the cycle at all: a
+phone was stuck on whichever type it spawned with, could never throw smoke or EMP, and could not
+see how many it had left. The pad said `NADE`.
+
+**What changed.**
+- `client/hud/grenadepad.ts` — `nextGrenade(sel, count)`, the cycle the sim performs, and
+  `grenadePad(sel, counts, names)`, the two pads' words: the throw pad names what it throws with
+  its count, the cycle pad what the next tap selects with its count. An empty type is named, not
+  skipped, because the sim does not skip it.
+- `client/touch.ts` — a cycle pad beside the throw pad, emitting the same button the desktop's Q
+  does; `setGrenades` writes both labels when the words change.
+- `client/game.ts` — the pads are fed from the frame's own player view.
+- `client/hud/hud.css` — the cycle pad's seat, a thumb's width, beside the throw pad.
+- `tests/grenadepad.test.ts` — the cycle and the labels, including the empty type and no list.
+- `probe/stage32.ts` — the labels read from the frame against the file's own grenade list, two
+  taps on the cycle pad walking FRAG to SMOKE to EMP with the labels following, and a tap on the
+  throw pad spending an EMP rather than a frag.
+
+**Proof.** vitest 784 passed, 1 failed: `tests/probeshot.test.ts`, which
+has been red since Stage 142 wrote its picture with a bare `page.screenshot`, not from anything
+this stage touches; Stage 144 is the fix. `npm run probe:mobile` 35/35: the pads read `FRAG 2` and `▸SMOKE 1`,
+both 46 × 46 px, against the file's own list `FRAG 2 / SMOKE 1 / EMP 1` with the first selected;
+two thumbs on the cycle pad walk the selection to SMOKE then EMP with both labels following; a
+thumb on the throw pad takes the EMP to 0 and leaves the frags alone.
+Regressions `probe:arsenal` 32/32 (the desktop's G and Q untouched) and `probe:tps` 49/49;
+build, smoke 7/7.
+
+Mutation A, the cycle pad emitting nothing: `probe:mobile` 33/35, the selection stuck at FRAG
+through both taps and the throw spending a frag. Mutation B, the labels never written: `probe:mobile` 33/35, the pads
+reading `NADE` and `NADE +` while the selection moved under them.
+Mutation C, the labels skipping an empty type:
+`tests/grenadepad.test.ts` 1 failed | 4 passed.
+
 ## Stage 142 — The menu's picture was a claim about state
 
 **Goal.** Stage 141 took `stage32-pause.png` plainly, because the shot helper counts `#menu`

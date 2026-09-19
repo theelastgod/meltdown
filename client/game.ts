@@ -49,7 +49,7 @@ import { emptyInput } from "@shared/sim/input";
 import { trophiesFromLedger } from "./render/hub";
 import { monikerById } from "@shared/identity/monikers";
 import type { NodeView } from "./render/wake";
-import { WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
+import { GRENADE_LIST, WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
 import { modsFor, weaponDefOf } from "@shared/sim/player";
 
 export interface NetConfig {
@@ -1461,6 +1461,8 @@ export class Game {
     this.pings = prunePings(this.pings, this.hud.mapClock);
     this.hud.setRadarPings(this.pings);
     this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt);
+    // Stage 143: the phone's grenade pads say what they throw and what the next tap selects
+    this.touch?.setGrenades(p.weapon.grenadeSel, p.weapon.grenades, GRENADE_LIST.map((g) => g.name));
     // the last quarter of the magazine is heard, once, on the round that crosses into it (Stage
     // 100); a swap starts the count over on the new weapon rather than comparing across guns
     {

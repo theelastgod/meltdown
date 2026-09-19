@@ -244,6 +244,37 @@ async function main(): Promise<void> {
     await release(pg, { x: jump.x, y: jump.y }, 31);
     const j1 = await pg.evaluate(() => window.__game.state().stats.jumps);
     check("a held tap-pad is one action, not a stream of them", j1 - j0 === 1, `jumps ${j0} → ${j1} while the pad was held for 1.5 s`);
+
+    // ---------------- the grenade pads (Stage 143) ----------------
+    // The phone hid the desktop's `FRAG 2 · SMOKE 1 · EMP 1` list and had no cycle at all, so it
+    // was stuck on whichever type it spawned with. The pads' labels and the HUD's own list (still
+    // written, though the phone does not draw it) are read from the frame, then each pad is tapped
+    const nadeRead = async () => pg.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const hud = document.getElementById("hud")!;
+      const t = hud.querySelector(".tc-nade") as HTMLElement;
+      const c = hud.querySelector(".tc-nadenext") as HTMLElement;
+      const list = [...hud.querySelectorAll<HTMLElement>(".nades span")].map((x) => (x.textContent ?? "").trim().replace(/\s+/g, " "));
+      const sel = [...hud.querySelectorAll<HTMLElement>(".nades span")].findIndex((x) => x.classList.contains("on"));
+      const tr = t.getBoundingClientRect();
+      const cr = c.getBoundingClientRect();
+      return { throwLabel: (t.textContent ?? "").trim(), cycleLabel: (c.textContent ?? "").trim(), list, sel, throwAt: { x: (tr.left + tr.right) / 2, y: (tr.top + tr.bottom) / 2, w: tr.width, h: tr.height }, cycleAt: { x: (cr.left + cr.right) / 2, y: (cr.top + cr.bottom) / 2, w: cr.width, h: cr.height } };
+    });
+    const n0 = await nadeRead();
+    await pg.touchscreen.tap(n0.cycleAt.x, n0.cycleAt.y);
+    await pg.evaluate(() => window.__game.advance(6));
+    const n1 = await nadeRead();
+    await pg.touchscreen.tap(n1.cycleAt.x, n1.cycleAt.y);
+    await pg.evaluate(() => window.__game.advance(6));
+    const n2 = await nadeRead();
+    check("the phone's grenade pads name what a tap throws and what the next tap selects, both a thumb's width", /^FRAG \d+$/.test(n0.throwLabel) && /^▸SMOKE \d+$/.test(n0.cycleLabel) && n0.sel === 0 && n0.throwAt.w >= 44 && n0.throwAt.h >= 44 && n0.cycleAt.w >= 44 && n0.cycleAt.h >= 44, `throw "${n0.throwLabel}" ${n0.throwAt.w.toFixed(0)}×${n0.throwAt.h.toFixed(0)} · cycle "${n0.cycleLabel}" ${n0.cycleAt.w.toFixed(0)}×${n0.cycleAt.h.toFixed(0)} · list [${n0.list.join(" / ")}] selected ${n0.sel}`);
+    check("a thumb on the cycle pad changes the grenade, twice, and both labels follow the file's own list", n1.sel === 1 && n2.sel === 2 && /^SMOKE /.test(n1.throwLabel) && /^▸EMP /.test(n1.cycleLabel) && /^EMP /.test(n2.throwLabel) && /^▸FRAG /.test(n2.cycleLabel), `after one: selected ${n1.sel} "${n1.throwLabel}" then "${n1.cycleLabel}" · after two: selected ${n2.sel} "${n2.throwLabel}" then "${n2.cycleLabel}"`);
+    const empBefore = Number((n2.list[2] ?? "").replace(/[^0-9]/g, "") || "0");
+    await pg.touchscreen.tap(n2.throwAt.x, n2.throwAt.y);
+    await pg.evaluate(() => window.__game.advance(30));
+    const n3 = await nadeRead();
+    const empAfter = Number((n3.list[2] ?? "").replace(/[^0-9]/g, "") || "0");
+    check("and a thumb on the throw pad throws the selected type, not the first", empAfter === empBefore - 1 && n3.sel === 2, `EMP ${empBefore} → ${empAfter} · selected ${n3.sel} · list [${n3.list.join(" / ")}]`);
     // Stage 133: the PA (pushed at tick 300, passed during the walks above) reads in full on the phone
     // too, and the taller log stays clear of the thumb pads
     const paPhone = await pg.evaluate(async () => {
