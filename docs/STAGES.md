@@ -1641,6 +1641,47 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 149 — Both readouts counted the room and always said one
+
+**Goal.** Two places on the HUD tell you how many files are in the district with you. The file's
+own header line ends `· 1 online`, and the right-hand band under the area map reads `▸ ONLINE (1)`.
+Both numbers were typed into the HUD's markup at the first stage and never written again by any
+code: no setter, no caller, nothing in the client so much as reads those two spans.
+
+So the run probe's own frame shows ALPHA in a room with BRAVO — the event log beside it reading
+`FILE #2 (BRAVO) ENTERED DRAINAGE YARD` — over a band that says `ONLINE (1)`. And offline, where
+there is no room at all, both still said one file was online in it.
+
+**What changed.**
+
+- `client/net/netclient.ts` — `files`: the room's size from the thing that knows it. The snapshot's
+  player list is everyone but the recipient, so the room is the remotes plus me, and 0 when not
+  joined.
+- `client/hud/room.ts` — `roomLabel(linked, files)`, so both readouts say the same words: `OFFLINE`
+  with no room, `N ONLINE` with one, and never fewer files than the one reading it.
+- `client/hud/hud.ts` — `setRoom`, writing both spans when the label changes, and the markup's two
+  claims replaced by the label's own starting value.
+- `client/game.ts` — the call, beside the rest of the per-frame HUD work.
+- `tests/roomlabel.test.ts` — the rule, including the count that cannot be less than one file.
+- `probe/stage14.ts` — the run probe already has ALPHA and BRAVO in one room and an offline page.
+  It now reads both readouts on all three and fails unless they say two, two and offline.
+
+**Proof.** vitest 805/805. `npm run probe:run` 25/25, read from the drawn frames: `ALPHA: header
+"· 2 ONLINE" · band "2 ONLINE" · BRAVO: header "· 2 ONLINE" · band "2 ONLINE"`, and on the
+offline page `linked false · header "· OFFLINE" · band "OFFLINE"`. Regressions `probe:net` 23/23,
+`probe:campaign` 42/42, `probe:mobile` 39/39 and `probe:tps` 49/49; build, smoke 7/7.
+
+Mutation A, the HUD asking the rule for one file however many are in the room: `probe:run` 24/25 —
+`ALPHA: header "· 1 ONLINE" · band "1 ONLINE" · BRAVO: header "· 1 ONLINE" · band "1 ONLINE"`,
+which is what the markup had been saying. Mutation B, the rule calling no room one file online:
+`tests/roomlabel.test.ts` 1 failed and `probe:run` 24/25 — `linked false · header "· 1 ONLINE" ·
+band "1 ONLINE"`.
+
+A note on the method, from this stage's own mistake: the first version of the unit test was written
+to `tests/room.test.ts`, which already held the match room's fourteen gatekeeper tests, and
+overwrote them. The full suite reported 791 rather than 805 and that ten-test hole is what caught
+it. `git status` says `M` for a file you meant to create; read it.
+
 ## Stage 148 — The log cut the line that says what to do
 
 **Goal.** The event log at the bottom left is where the game tells you what it wants: `» OBJECTIVE

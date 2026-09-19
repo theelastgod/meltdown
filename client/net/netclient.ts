@@ -228,6 +228,14 @@ export class NetClient {
     }
   }
 
+  /**
+   * How many files are in this room, this one included, or 0 with no room (Stage 149). The
+   * snapshot's player list is everyone but the recipient, so the room is the remotes plus me.
+   */
+  get files(): number {
+    return this.status === "joined" ? this.remotes.size + 1 : 0;
+  }
+
   /** Interpolated remote players at the current view tick. */
   remoteViews(): RemoteView[] {
     const t = this.serverTickNow() - INTERP_DELAY_TICKS;

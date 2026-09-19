@@ -127,6 +127,20 @@ async function main(): Promise<void> {
     const mode = await a.evaluate(() => window.__game.endgame().mode);
     const v0 = await a.evaluate(() => window.__game.run()!);
     const strip0 = await a.evaluate(() => (document.querySelector("#hud .runstrip") as HTMLElement).textContent ?? "");
+    // Stage 149: both readouts that say how many files are in the district \u2014 the header line's tail
+    // and the right-hand band \u2014 were typed into the markup at the first stage and never written
+    // again. With ALPHA and BRAVO in this room they both said one. Read them from the drawn frame.
+    const roomSaid = await Promise.all([a, b].map(async (pg) => {
+      await pg.evaluate(async () => {
+        for (let f = 0; f < 4; f++) await new Promise((r) => requestAnimationFrame(r));
+      });
+      return pg.evaluate(() => ({
+        head: ((document.querySelector("#hud .status .room") as HTMLElement | null)?.textContent ?? "").trim(),
+        band: ((document.querySelector("#hud .side .roomband") as HTMLElement | null)?.textContent ?? "").trim(),
+        files: window.__game.net()?.status === "joined",
+      }));
+    }));
+    check("both readouts count the room: with ALPHA and BRAVO joined, the file's header line and the right-hand band each say two files are online", roomSaid.every((r) => r.files && r.band === "2 ONLINE" && r.head === "\u00b7 2 ONLINE"), roomSaid.map((r, i) => `${i === 0 ? "ALPHA" : "BRAVO"}: header "${r.head}" \u00b7 band "${r.band}"`).join(" \u00b7 "));
     check("a run room: the Welcome says run, the wake is off, the client sees the gate and every claim, and the strip reads PVP ZONE", mode === "run" && v0.zones.length === 1 && v0.zones[0]!.label === gate.label && v0.claims.length === claims.length && !v0.inSafe && /PVP ZONE/.test(strip0) && /CARRYING 0/.test(strip0), `mode ${mode} · zones ${v0.zones.map((z) => z.label).join(",")} · claims ${v0.claims.length}/${claims.length} · "${strip0.slice(0, 60)}"`);
 
     // ---- ALPHA carries a claim ----
@@ -423,6 +437,16 @@ async function main(): Promise<void> {
     await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&ai=0&account=sandbox-off&secret=${SECRET}`, { waitUntil: "load" });
     await c.waitForFunction(() => window.__game?.ready === true && !!window.__game.run(), null, { timeout: 40000, polling: 100 });
     const off = await c.evaluate(() => window.__game.run()!);
+    // and with no room at all they do not claim one file is online in it (Stage 149)
+    await c.evaluate(async () => {
+      for (let f = 0; f < 4; f++) await new Promise((r) => requestAnimationFrame(r));
+    });
+    const offRoom = await c.evaluate(() => ({
+      head: ((document.querySelector("#hud .status .room") as HTMLElement | null)?.textContent ?? "").trim(),
+      band: ((document.querySelector("#hud .side .roomband") as HTMLElement | null)?.textContent ?? "").trim(),
+      linked: window.__game.net()?.status === "joined",
+    }));
+    check("and offline, where there is no room, both readouts say so rather than counting one", !offRoom.linked && offRoom.band === "OFFLINE" && offRoom.head === "\u00b7 OFFLINE", `linked ${offRoom.linked} \u00b7 header "${offRoom.head}" \u00b7 band "${offRoom.band}"`);
     await c.evaluate((plan) => window.__game.setBot(plan), goto({ x: claims[0]!.pos.x, z: claims[0]!.pos.z }, 0.9));
     await c.evaluate(() => window.__game.setRealtime(true));
     const offPick = await c.waitForFunction(() => (window.__game.run()?.carried ?? 0) > 0, null, { timeout: 40000, polling: 100 }).then(() => true, () => false);

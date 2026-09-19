@@ -20,6 +20,7 @@ import { ALL_GROUPS, quietFor } from "./quiet";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
 import { terminalFooter, terminalSeat } from "./terminal";
 import { closeHint, openHint } from "./keyhint";
+import { roomLabel } from "./room";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter } from "./radar";
 
@@ -126,7 +127,7 @@ export class Hud {
       <div class="tear"></div>
 
       <div class="p status">
-        <div class="line"><span class="glyph"></span>▲ <span class="handle">BLANK</span><span class="moniker"></span> · <span class="dim">DRAINAGE YARD (MAGENTA)</span> · <span class="online">1 online</span></div>
+        <div class="line"><span class="glyph"></span>▲ <span class="handle">BLANK</span><span class="moniker"></span> · <span class="dim">DRAINAGE YARD (MAGENTA)</span><span class="room"> · OFFLINE</span></div>
         <div class="line dim">LV <span class="depth">01</span><span class="xpseg"> · XP <span class="xp">0/100</span></span> · ¢ <span class="scrip">0</span> · ◆ <span class="wake">0</span></div>
         <div class="bars">
           <div class="bar cy shield"><i class="shbar" style="width:100%"></i></div>
@@ -147,7 +148,7 @@ export class Hud {
       <div class="card" hidden><div class="ct"></div><div class="cl"></div></div>
 
       <div class="p cy map"><div class="t">AREA MAP</div><canvas width="54" height="42"></canvas><div class="f"></div></div>
-      <div class="side"><div><span class="k">▸</span> ONLINE (1)</div><div class="perf"></div></div>
+      <div class="side"><div><span class="k">▸</span> <span class="roomband">OFFLINE</span></div><div class="perf"></div></div>
 
       <div class="log"></div>
       <div class="p cy travel" hidden><div class="t">▲ NEO-CHINA · DISTRICT SELECT <span class="x" data-travel="close"></span></div><div class="list"></div><div class="f">travel reloads the client; online, the room decides the district</div></div>
@@ -253,6 +254,19 @@ export class Hud {
     const house = (h: string) => `<span class="h ${h}">${h === "unaligned" ? "—" : h.toUpperCase()}</span>`;
     el.innerHTML = `<div class="t">▲ DEEP WAKE · SEASON ${v.season} · WEEK ${v.week} <span class="dim">· ESTATE ${v.held["estate"] ?? 0} · CLOCKEATERS ${v.held["clockeaters"] ?? 0} · CELLS ${v.held["cells"] ?? 0}</span></div>${Object.entries(v.districts).map(([d, nodes]) => `<div class="dw"><b>${d.replace(/_/g, " ").toUpperCase()}</b> ${nodes.map((n) => `${n.label} ${house(n.house)}${n.pressure > 0 ? `<i>+${n.pressure.toFixed(0)} ${n.leader.slice(0, 3).toUpperCase()}</i>` : ""}`).join(" · ")}</div>`).join("")}<div class="hist">${v.history.slice(-4).map((l) => `<div>» ${l}</div>`).join("") || "<div class='dim'>no rounds have moved the graph yet</div>"}</div>`;
   }
+
+  /**
+   * How many files are in the room, said the same way in both places that say it (Stage 149): the
+   * file's header line and the right-hand band. Written only when the label changes.
+   */
+  setRoom(linked: boolean, files: number): void {
+    const label = roomLabel(linked, files);
+    if (label === this.roomText) return;
+    this.roomText = label;
+    this.q(".status .room").textContent = ` · ${label}`;
+    this.q(".side .roomband").textContent = label;
+  }
+  private roomText = "";
 
   /** The local file's identity in the status line: glyph, what the city calls you, and the moniker. */
   setIdentity(glyphSvg: string, display: string, moniker: string | null, chapter: number): void {

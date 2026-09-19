@@ -1463,6 +1463,9 @@ export class Game {
     this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt);
     // Stage 143: the phone's grenade pads say what they throw and what the next tap selects
     this.touch?.setGrenades(p.weapon.grenadeSel, p.weapon.grenades, GRENADE_LIST.map((g) => g.name));
+    // how many files are in the room, from the net client that knows (Stage 149): both readouts
+    // had said one since the first stage, in a room of two and in no room at all
+    this.hud.setRoom(this.net?.status === "joined", this.net?.files ?? 0);
     // the last quarter of the magazine is heard, once, on the round that crosses into it (Stage
     // 100); a swap starts the count over on the new weapon rather than comparing across guns
     {
