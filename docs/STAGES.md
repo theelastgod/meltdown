@@ -1641,6 +1641,28 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 134 — The proof frame was of a closed file
+
+**Goal.** CI runs #157, #158 and #159 (Stages 128–130) were red on one check, `artifact:
+stage2-bravo.png — does not show #hud .ammo — the panel was not up when the shutter opened`, and
+the run reproduced it here at 21/22. The net probe gives ALPHA a 32 s kill plan for its hit-light
+read and takes BRAVO's frame 1.2 s after the window closes, while ALPHA is still firing: BRAVO is
+closed, in the three seconds of its re-lease, and since Stage 128 a closed file's HUD has no ammo
+count to show. The frame's name claims a living file's HUD; the probe took it of a corpse.
+
+**What changed.**
+- `probe/stage2.ts` — ALPHA is stood down when the window closes, and BRAVO's shutter waits for
+  its re-lease: health above zero and the ammo panel drawn, polled every 50 ms for up to 10 s,
+  read as a check of its own before the picture.
+
+**Proof.** `npm run probe:net` 23/23: BRAVO re-leased 150 ms after ALPHA stood down, health 70,
+and both frames show `#hud .ammo`; the BRAVO picture is of a standing file with `LEASE-BREAKER
+30 / 30` drawn. Build, smoke 7/7.
+
+Mutation, no wait (`BACK_POLLS` 0): 21/23, BRAVO at health 0 when the shutter opens and
+`stage2-bravo.png` without its ammo panel, the same failure as CI #157–#159 and the local run
+before the fix (four of four).
+
 ## Stage 133 — The city was cut off mid-word
 
 **Goal.** Every frame of this session's probes, desktop and phone, carried the same line at the

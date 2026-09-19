@@ -29,6 +29,8 @@ import { Btn } from "../shared/sim/input";
 
 const VITE_PORT = 5183;
 const HOST_PORT = 8790;
+/** Stage 134: how long the BRAVO frame waits for its re-lease, in 50 ms polls (10 s; a re-lease is 3 s) */
+const BACK_POLLS = 200;
 const OUT = "probe/out";
 const RTT = 150;
 const LOSS = 0.05;
@@ -434,6 +436,24 @@ async function main(): Promise<void> {
     check("and the body bends away from the muzzle, not some other way", im.peakHurt > 0 && bearErr < 0.6, `flinch ${im.peakHurt.toFixed(2)} · it bends from ${(im.best?.hurtFrom ?? 0).toFixed(2)} rad, and ALPHA was ${bearErr.toFixed(2)} rad off that bearing, ${im.best ? Math.hypot(im.best.ax - im.best.bx, im.best.az - im.best.bz).toFixed(1) : "?"} m away`);
 
     await E.b.evaluate(() => window.__game.setDrawing(true));
+    // Stage 134: ALPHA's 32 s kill plan outlives the window above, and BRAVO is closed for the
+    // three seconds of its re-lease at the moment its frame is taken; since Stage 128 the gun's
+    // chrome goes with a closed file, and the picture claims a living file's HUD. ALPHA is stood
+    // down and the shutter waits for BRAVO to be back on the ledger with its ammo drawn
+    await E.a.evaluate(() => window.__game.setBot(null));
+    const bravoBack = await E.b.evaluate(async (polls) => {
+      for (let i = 0; i < polls; i++) {
+        const s = window.__game.state();
+        const el = document.querySelector("#hud .ammo");
+        const cs = el ? getComputedStyle(el) : null;
+        const drawn = !!cs && cs.display !== "none" && cs.visibility !== "hidden" && Number(cs.opacity) >= 0.02;
+        if (s.health > 0 && drawn) return { back: true, waited: i * 50, health: s.health };
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      const s = window.__game.state();
+      return { back: false, waited: polls * 50, health: s.health };
+    }, BACK_POLLS);
+    check("BRAVO is back on the ledger, ammo drawn, before its frame is taken: the picture claims a living file's HUD", bravoBack.back, `re-leased ${bravoBack.waited} ms after ALPHA stood down · health ${bravoBack.health}`);
     await E.a.waitForTimeout(1200);
     await shotCheck(E.a, `stage2-alpha.png`, "#hud .ammo");
     await shotCheck(E.b, `stage2-bravo.png`, "#hud .ammo");
