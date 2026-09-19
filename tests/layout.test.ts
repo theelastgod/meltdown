@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth } from "../client/hud/layout";
+import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -133,3 +133,14 @@ describe("missionRow (Stage 111)", () => {
   });
 });
 
+
+describe("statusLineFit (Stage 135)", () => {
+  it("keeps the full line, XP and all, where the box holds it", () => {
+    expect(statusLineFit(330, 232)).toBe("full");
+    expect(statusLineFit(232, 232)).toBe("full");
+  });
+  it("drops to the short line, scrip and wakelight kept, where it does not", () => {
+    expect(statusLineFit(216, 232)).toBe("short");
+    expect(statusLineFit(180, 232)).toBe("short");
+  });
+});

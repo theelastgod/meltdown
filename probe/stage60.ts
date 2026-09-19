@@ -430,7 +430,8 @@ async function main(): Promise<void> {
       }
       // the file's header line (Stage 107): whether its text is wider than the box that shows it
       const line = hud.querySelector(".status .line") as HTMLElement;
-      return { width: H.width, rack: out["rack"]!, nades: out["nades"]!, alert: out["alert"]!, mission: out["mission"]!, status: out["status"]!, ammobar: out["status .bar.ye"]!, alertText: hud.querySelector(".alert")!.textContent, mapFoot: hud.querySelector(".map .f")!.textContent ?? "", mapAcross: window.__game.game.hud.mapAcross, line: { scroll: line.scrollWidth, client: line.clientWidth, text: line.textContent ?? "", overflow: getComputedStyle(line).textOverflow }, rackLabels: [...hud.querySelectorAll(".rack span")].map((e) => (e.textContent ?? "").replace(/\d+$/, "").trim()) };
+      const l2 = hud.querySelector(".status .line.dim") as HTMLElement;
+      return { xpShown: (hud.querySelector(".status .xpseg") as HTMLElement).offsetParent !== null, line2Overflow: l2.scrollWidth - l2.clientWidth, line2: (l2.textContent ?? "").trim(), width: H.width, rack: out["rack"]!, nades: out["nades"]!, alert: out["alert"]!, mission: out["mission"]!, status: out["status"]!, ammobar: out["status .bar.ye"]!, alertText: hud.querySelector(".alert")!.textContent, mapFoot: hud.querySelector(".map .f")!.textContent ?? "", mapAcross: window.__game.game.hud.mapAcross, line: { scroll: line.scrollWidth, client: line.clientWidth, text: line.textContent ?? "", overflow: getComputedStyle(line).textOverflow }, rackLabels: [...hud.querySelectorAll(".rack span")].map((e) => (e.textContent ?? "").replace(/\d+$/, "").trim()) };
     });
     const overlap = chrome.alert.top < chrome.mission.bottom && chrome.alert.bottom > chrome.mission.top && chrome.alert.left < chrome.mission.right && chrome.alert.right > chrome.mission.left;
     check("the rack keeps to the right of the play: its left edge is past the middle of the screen with room to spare, at this width and in rows", chrome.rack.left > chrome.width * 0.5 + 30 && chrome.nades.left > chrome.width * 0.5 + 30 && chrome.rack.right <= chrome.width - 10, `rack ${chrome.rack.left.toFixed(0)}–${chrome.rack.right.toFixed(0)} px of ${chrome.width.toFixed(0)} (middle ${(chrome.width / 2).toFixed(0)}) · ${(chrome.rack.bottom - chrome.rack.top).toFixed(0)} px tall`);
@@ -553,6 +554,9 @@ async function main(): Promise<void> {
     // Stage 109: the rack called the DIRECTIVE "THE"
     check("every slot on the rack is labelled by a word that names the weapon, not an article", chrome.rackLabels.length === 8 && chrome.rackLabels.every((l) => !/^\d\s+(THE|A|AN)$/i.test(l)) && chrome.rackLabels.some((l) => /^7 DIRECTIVE$/.test(l)), `rack: ${chrome.rackLabels.join(" | ")}`);
     check("and where the header line does not fit, the cut is an ellipsis rather than a hard edge", chrome.line.scroll > chrome.line.client && chrome.line.overflow === "ellipsis", `header line ${chrome.line.scroll} px of text in ${chrome.line.client} px · text-overflow ${chrome.line.overflow}`);
+    // Stage 135: the second line drops its XP only where the box cannot hold it; here, with the
+    // panel at its full width, the XP is up and the line fits
+    check("with room for it the second line keeps its XP and fits its box", chrome.xpShown && chrome.line2Overflow <= 0 && /XP \d+\/(\d+|∞) · ¢ \d+/.test(chrome.line2), `"${chrome.line2}" · overflow ${chrome.line2Overflow} px · XP shown ${chrome.xpShown}`);
     await shotCheck(pg, "stage60-closed.png");
     // and coming back alive gives the camera back
     const relet = await pg.evaluate(async () => {

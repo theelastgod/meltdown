@@ -17,7 +17,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, flagTop, footRow, frameSeat, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusWidth } from "./layout";
+import { alertTop, flagTop, footRow, frameSeat, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter } from "./radar";
 
@@ -125,7 +125,7 @@ export class Hud {
 
       <div class="p status">
         <div class="line"><span class="glyph"></span>▲ <span class="handle">BLANK</span><span class="moniker"></span> · <span class="dim">DRAINAGE YARD (MAGENTA)</span> · <span class="online">1 online</span></div>
-        <div class="line dim">LV <span class="depth">01</span> · XP <span class="xp">0/100</span> · ¢ <span class="scrip">0</span> · ◆ <span class="wake">0</span></div>
+        <div class="line dim">LV <span class="depth">01</span><span class="xpseg"> · XP <span class="xp">0/100</span></span> · ¢ <span class="scrip">0</span> · ◆ <span class="wake">0</span></div>
         <div class="bars">
           <div class="bar cy shield"><i class="shbar" style="width:100%"></i></div>
           <div class="bar gr"><i class="hpbar" style="width:100%"></i></div>
@@ -520,6 +520,17 @@ export class Hud {
     const want = statusWidth(inPlay ? panel.left - rootBox.left : null, status.offsetLeft, frame);
     const px = `${want}px`;
     if (status.style.width !== px) status.style.width = px;
+    // Stage 135: at the panel's floor the second line lost its scrip to the ellipsis. Where the full
+    // line will not fit its box the XP into the depth goes and the money stays; the full line is
+    // measured only when its text changes, and only while the panel is drawn
+    const l2 = status.querySelector(".line.dim") as HTMLElement;
+    const text = l2.textContent ?? "";
+    if (text !== this.line2Text && l2.clientWidth > 0) {
+      status.classList.remove("tight");
+      this.line2Text = text;
+      this.line2Need = l2.scrollWidth;
+    }
+    status.classList.toggle("tight", statusLineFit(l2.clientWidth, this.line2Need) === "short");
   }
 
   /**
@@ -537,6 +548,9 @@ export class Hud {
 
   /** the file is closed and waiting to be re-leased (Stage 128) */
   private dead = false;
+  /** the status panel's second line as last measured in full, and what it needed (Stage 135) */
+  private line2Text = "";
+  private line2Need = 0;
   /** what the tutorial line has seen the file do (Stage 130) */
   private seen: Seen = NOTHING_SEEN;
 

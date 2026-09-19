@@ -1641,6 +1641,36 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 135 — The money was the first thing to go
+
+**Goal.** THE RUN's frame at 960×540: the run strip (`CARRYING 1 · BANKED 0 · TODAY 0/200 · OWED
+0 UNITS · PVP ZONE · 4 CLAIMS OUT`) holds the mission panel at 480 px and the status panel at its
+floor, and the status panel's second line read `LV 50 · XP 524708/∞ · ¢ 200…`. The one figure a
+file carrying claims looks at, its scrip, was the one the ellipsis took; the XP into the depth,
+which the FILE book shows in full, kept its place ahead of it.
+
+**What changed.**
+- `client/hud/layout.ts` — `statusLineFit(room, need)`: the full line where the box holds it,
+  the short one where it does not.
+- `client/hud/hud.ts` — the XP is its own segment of the line; the layout measures the full line
+  when its text changes and marks the panel `tight` when the box cannot hold it.
+- `client/hud/hud.css` — a tight panel hides the XP segment.
+- `tests/layout.test.ts` — the rule at 330, at the line's own width, at 216 and at 180.
+- `probe/stage14.ts` — with the strip up at 960 the second line ends `¢ N · ◆ N`, the scrip's
+  figure whole inside the panel, no overflow, the XP gone.
+- `probe/stage60.ts` — at the panel's full width the XP is up and the line fits.
+
+**Proof.** vitest 769/769. `npm run probe:run` 23/23: with the strip up at 960 the line's box is
+218 px and the line ends `¢ 20000 · ◆ 0`, overflow 0 px, the scrip whole, the XP gone; the frame
+reads `LV 50 · ¢ 20000 · ◆ 0`. `npm run probe:tps` 49/49: at the panel's full width the line
+reads `LV 50 · XP 524708/∞ · ¢ 20000 · ◆ 0`, overflow 0 px.
+Regressions `probe` 19/19, `probe:mobile` 17/17, build, smoke 7/7.
+
+Mutation A, always the full line: `tests/layout.test.ts` 1 failed | 23 passed, and `probe:run`
+22/23 with the full line 49 px over its 218 px box and the XP still up, the frame back to `¢
+200…`. Mutation B, always the short line: the layout test 1 failed | 23 passed, and `probe:tps`
+48/49, the XP hidden with 330 px of room for it.
+
 ## Stage 134 — The proof frame was of a closed file
 
 **Goal.** CI runs #157, #158 and #159 (Stages 128–130) were red on one check, `artifact:

@@ -151,6 +151,18 @@ async function main(): Promise<void> {
       return { width: H.width, mission: out["mission"]!, status: out["status"]!, map: out["map"]!, strip: out["runstrip"]!, stripText: hud.querySelector(".runstrip")!.textContent ?? "" };
     });
     console.log(`band: status ${band.status.left.toFixed(0)}–${band.status.right.toFixed(0)} · mission ${band.mission.left.toFixed(0)}–${band.mission.right.toFixed(0)} · map ${band.map.left.toFixed(0)}–${band.map.right.toFixed(0)} · strip ${(band.strip.bottom - band.strip.top).toFixed(0)} px tall`);
+    // Stage 135: with the strip up the status panel sits at its floor and its second line had
+    // lost the scrip to the ellipsis ("¢ 200…"). Read the line: the XP segment gone, the scrip's
+    // figure whole inside the panel's box, the line not overflowing it
+    const money = await a.evaluate(() => {
+      const status = document.querySelector("#hud .status") as HTMLElement;
+      const l2 = status.querySelector(".line.dim") as HTMLElement;
+      const box = status.getBoundingClientRect();
+      const scrip = (status.querySelector(".scrip") as HTMLElement).getBoundingClientRect();
+      const xp = status.querySelector(".xpseg") as HTMLElement;
+      return { text: (l2.textContent ?? "").trim(), overflow: l2.scrollWidth - l2.clientWidth, scripInside: scrip.width > 0 && scrip.right <= box.right - 1, xpShown: xp.offsetParent !== null, width: box.width };
+    });
+    check("at the panel's floor the second line keeps the scrip whole and drops the XP", money.overflow <= 0 && money.scripInside && !money.xpShown && /¢ \d+ · ◆ \d+$/.test(money.text), `"${money.text}" in ${money.width.toFixed(0)} px · overflow ${money.overflow} px · scrip inside ${money.scripInside} · XP shown ${money.xpShown}`);
     // and the same band at 800 px wide: a centred panel shrinks to the half-view its left edge
     // leaves it, which at 960 already holds it to 480, so the ceiling only binds on a narrower
     // view — at 800 the status floor plus its gap is more than a quarter of the width, and a panel

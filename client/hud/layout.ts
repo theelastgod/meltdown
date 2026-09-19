@@ -131,3 +131,12 @@ export function missionRow(viewWidth: number, statusFloorRight: number, mapLeft:
   if (beside >= MISSION_MIN) return { row: "beside", maxWidth: beside };
   return { row: "below", maxWidth: missionMaxWidth(viewWidth, inset, mapLeft) };
 }
+
+/**
+ * Which form the status panel's second line takes (Stage 135): the full one, with the XP into the
+ * depth, where the line's box holds it; else the short one, which drops the XP and keeps the scrip
+ * and the wakelight. `room` is the line's box width, `need` what the full line measures.
+ */
+export function statusLineFit(room: number, need: number): "full" | "short" {
+  return need <= room ? "full" : "short";
+}
