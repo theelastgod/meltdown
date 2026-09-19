@@ -179,7 +179,7 @@ async function main(): Promise<void> {
           if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) hits.push(`${pad.id}↔${pan.id}`);
         }
       const keyboardWords = [...document.querySelectorAll<HTMLElement>("#hud")].map((h) => h.innerText).join(" ");
-      return { hits: [...new Set(hits)], saysKeyboard: /WASD|CLICK fire|R reload|SPACE jump|click to walk/i.test(keyboardWords) };
+      return { hits: [...new Set(hits)], saysKeyboard: /WASD|CLICK fire|R reload|SPACE jump|click to walk|\[ENTER\]|\[1–4\]/i.test(keyboardWords) };
     });
     check("no HUD panel sits underneath a thumb control", clash.hits.length === 0, clash.hits.length ? clash.hits.join(", ") : `${layout.vw}×${layout.vh}, nothing under the pads`);
     check("and the game does not tell a phone to press WASD", !clash.saysKeyboard, clash.saysKeyboard ? "keyboard legend still on screen" : "touch prompts only");
@@ -312,6 +312,63 @@ async function main(): Promise<void> {
     await shotCheck(pg, "stage32-mobile.png", "#hud .thumbs");
     results.layout = layout;
     results.render = r;
+
+    // ---------------- the fixer's terminal on the phone (Stage 138) ----------------
+    // The creation terminal (WHO DO YOU ANSWER TO?) is up by now, and it was played from the
+    // keyboard alone: Enter to read on, 1–4 to choose. Read its seat and its footer from the drawn
+    // frame, take its picture, then take the third choice with a thumb
+    const term = await pg.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const hud = document.getElementById("hud")!;
+      const el = hud.querySelector(".terminal") as HTMLElement;
+      const b = el.getBoundingClientRect();
+      const row = hud.querySelector(".bottom")!.getBoundingClientRect();
+      const pads = [...hud.querySelectorAll<HTMLElement>(".thumbs .tc-b")].map((p) => ({ id: p.dataset.b ?? "", r: p.getBoundingClientRect() })).filter((p) => p.r.width > 0);
+      const under = pads.filter((p) => b.left < p.r.right && p.r.left < b.right && b.top < p.r.bottom && p.r.top < b.bottom).map((p) => p.id);
+      // each choice row is what a thumb meets at its centre: nothing (the event log, a pad) drawn over it
+      const rows = [...el.querySelectorAll<HTMLElement>(".tc .ch")].map((c) => { const r = c.getBoundingClientRect(); const at = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2); return { text: (c.textContent ?? "").trim(), x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, h: r.height, met: !!at && at.closest(".ch") === c, over: at && at.closest(".ch") !== c ? (at.closest("#hud > *")?.className ?? at.tagName) : "" }; });
+      // the event log paints over whatever it overlaps and, like all the HUD's chrome, takes no
+      // pointer, so hit-testing cannot see it: its box is read outright
+      const logEl = hud.querySelector(".log") as HTMLElement;
+      const log = logEl.getBoundingClientRect();
+      const logDrawn = getComputedStyle(logEl).display !== "none" && log.width > 0 && (logEl.textContent ?? "").trim().length > 0;
+      const logCrosses = logDrawn && b.left < log.right && log.left < b.right && b.top < log.bottom && log.top < b.bottom;
+      const c = window.__game.campaign();
+      return { hidden: el.hidden, ready: c?.dialogue?.ready ?? false, script: c?.dialogue?.script ?? null, faction: c?.faction ?? null, left: b.left, right: b.right, top: b.top, bottom: b.bottom, rowBottom: row.bottom, under, footer: (el.querySelector(".tf")?.textContent ?? "").trim(), rows, inside: b.left >= -0.5 && b.right <= innerWidth + 0.5 && b.top >= -0.5 && b.bottom <= innerHeight + 0.5, logDrawn, logCrosses, logBox: `${log.left.toFixed(0)}–${log.right.toFixed(0)} × ${log.top.toFixed(0)}–${log.bottom.toFixed(0)}` };
+    });
+    const rowH = term.rows.length ? Math.min(...term.rows.map((r) => r.h)) : 0;
+    const covered = term.rows.filter((r) => !r.met);
+    check("the creation terminal is up on the phone, seated under the row, short of every pad and the event log, inside the view, its rows under nothing, and offers a tap", !term.hidden && term.ready && term.inside && term.top >= term.rowBottom + 4 && term.under.length === 0 && !term.logCrosses && term.footer === "TAP A LINE TO CHOOSE" && term.rows.length === 3 && rowH >= 24 && covered.length === 0, `terminal ${term.left.toFixed(0)}–${term.right.toFixed(0)} × ${term.top.toFixed(0)}–${term.bottom.toFixed(0)} · row ends ${term.rowBottom.toFixed(0)} · under ${term.under.join(",") || "no pad"} · log ${term.logDrawn ? `drawn at ${term.logBox}, ${term.logCrosses ? "across it" : "clear of it"}` : "silenced"} · footer "${term.footer}" · ${term.rows.length} rows, ${rowH.toFixed(0)} px tall, ${covered.length ? `row(s) under ${covered.map((r) => r.over).join(",")}` : "each met by a thumb"} · script ${term.script} ready ${term.ready} · house ${term.faction}`);
+    await shotCheck(pg, "stage32-terminal.png", "#hud .terminal");
+    const cells = term.rows.find((r) => /WAKE CELLS/.test(r.text));
+    if (cells) await pg.touchscreen.tap(cells.x, cells.y);
+    const chosen = await pg.evaluate(async () => {
+      for (let i = 0; i < 60; i++) {
+        const c = window.__game.campaign();
+        if (c?.dialogue?.node === "cells") return { node: c.dialogue.node, open: !(document.querySelector("#hud .terminal") as HTMLElement).hidden };
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      const c = window.__game.campaign();
+      return { node: c?.dialogue?.node ?? null, open: !(document.querySelector("#hud .terminal") as HTMLElement).hidden };
+    });
+    check("a thumb on THE WAKE CELLS is the choice: the terminal reads on to the cells' node", !!cells && chosen.node === "cells" && chosen.open, `tapped ${cells ? `"${cells.text}" at ${cells.x.toFixed(0)},${cells.y.toFixed(0)}` : "nothing (no such row)"} · node ${chosen.node} · terminal open ${chosen.open}`);
+    // and a thumb anywhere on the terminal reads on: tap through the rest of the script (the
+    // first tap on a typing node shows it all, the next reads on) until the terminal closes and
+    // the house is written to the file
+    let taps = 0;
+    let done = { faction: null as string | null, open: true, node: null as string | null };
+    for (let i = 0; i < 12 && done.open; i++) {
+      const at = await pg.evaluate(() => { const r = (document.querySelector("#hud .terminal .tl") as HTMLElement).getBoundingClientRect(); return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 }; });
+      await pg.touchscreen.tap(at.x, at.y);
+      taps++;
+      done = await pg.evaluate(async () => {
+        await new Promise((r) => setTimeout(r, 250));
+        const c = window.__game.campaign();
+        return { faction: c?.faction ?? null, open: !(document.querySelector("#hud .terminal") as HTMLElement).hidden, node: c?.dialogue?.node ?? null };
+      });
+    }
+    const house = await pg.evaluate(async () => { for (let i = 0; i < 40; i++) { const c = window.__game.campaign(); if (c?.faction) return c.faction; await new Promise((r) => setTimeout(r, 50)); } return window.__game.campaign()?.faction ?? null; });
+    check("and thumbs on the terminal read the script to its end: it closes and the cells are the file's house", !done.open && house === "cells", `${taps} tap(s) · terminal open ${done.open} · last node ${done.node} · house ${house}`);
 
     check("no page errors", errors.length === 0, errors.length ? errors.slice(0, 3).join(" | ") : "clean console");
     await pg.close();

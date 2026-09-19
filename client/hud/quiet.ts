@@ -47,13 +47,18 @@ const TERMINAL: readonly ChromeGroup[] = ["prompt", "reticle", "rack", "ammo", "
  */
 const DEAD: readonly ChromeGroup[] = ["prompt", "reticle", "rack", "ammo", "nades", "arrows", "nodefoot"];
 
-/** The groups to silence for the modals that are open. Nothing open silences nothing. */
-export function quietFor(open: Modals): ChromeGroup[] {
+/**
+ * The groups to silence for the modals that are open. Nothing open silences nothing. On the phone
+ * (`touch`) a terminal silences the event log as well (Stage 138): the phone's terminal is seated
+ * where the log is drawn, and the log's lines had printed across its first choice.
+ */
+export function quietFor(open: Modals, touch = false): ChromeGroup[] {
   // the desk, a card and the ledger cover the screen: everything but the status line goes. The
   // ledger and its graph are opened from the tab bar and by Tab and G, from any mode (Stage 112)
   if (open.desk || open.card || open.ledger) return [...ALL_GROUPS];
   const quiet = new Set<ChromeGroup>();
   if (open.terminal) for (const g of TERMINAL) quiet.add(g);
+  if (open.terminal && touch) quiet.add("log");
   if (open.dead) for (const g of DEAD) quiet.add(g);
   return ALL_GROUPS.filter((g) => quiet.has(g));
 }

@@ -73,6 +73,8 @@ export class Campaign {
     }
     this.save = campaignOf(this.local);
     document.addEventListener("keydown", (e) => this.onKey(e));
+    // Stage 138: the phone has no Enter and no 1–4; a tap on the terminal reads on or chooses
+    this.game.hud.onTerminalTap((i) => void this.advance(i));
   }
 
   get uiOpen(): boolean {

@@ -302,7 +302,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .terminal .tl { font-size: 12px; line-height: 1.6; min-height: 40px; color: #dff9ff; }
 #hud .terminal .tl .cur { animation: blink 0.6s steps(2) infinite; }
 #hud .terminal .tc { margin-top: 6px; }
-#hud .terminal .ch { padding: 3px 6px; margin: 2px 0; border: 1px solid rgba(53,242,255,0.3); color: var(--cy); }
+#hud .terminal .ch { padding: 3px 6px; margin: 2px 0; border: 1px solid rgba(53,242,255,0.3); color: var(--cy); cursor: pointer; }
 #hud .terminal .ch b { color: var(--ye); margin-right: 6px; }
 #hud .terminal .tf { margin-top: 6px; font-size: 9px; color: rgba(53,242,255,0.5); text-align: right; }
 #hud .terminal.am { border-color: var(--am); color: var(--am); } #hud .terminal.am .th { border-color: rgba(255,176,46,0.4); }
@@ -490,6 +490,8 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 /* one prompt or the other, never both */
 #hud .prompt-touch { display: none; }
 #hud.touch .prompt { display: none; }
+#hud.touch .terminal { left: 12px; bottom: auto; width: auto; max-width: none; transform: none; overflow: auto; }  /* Stage 138: seated under the row, short of the pads, by the layout */
+#hud.touch .terminal .ch { padding: 7px 8px; }
 #hud.touch .prompt-touch { display: block; left: 50%; right: auto; transform: translateX(-50%); bottom: auto; top: calc(62px + env(safe-area-inset-top)); white-space: nowrap; font-size: 9px; }
 /* the dock keeps the left edge and stops well short of the right thumb's arc */
 #hud.touch .bottom { max-width: calc(100vw - 270px); flex-wrap: wrap; gap: 4px; }

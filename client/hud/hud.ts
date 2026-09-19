@@ -18,6 +18,7 @@ import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
 import { alertTop, flagTop, footRow, frameSeat, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
+import { terminalFooter, terminalSeat } from "./terminal";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter } from "./radar";
 
@@ -402,8 +403,21 @@ export class Hud {
     this.term = { lines: lines.slice(), shown: 0, chars: 0, ready: false, choices };
     this.q(".terminal .tl").innerHTML = "";
     this.q(".terminal .tc").innerHTML = "";
-    this.q(".terminal .tf").textContent = choices ? "[1–4] CHOOSE" : "[ENTER] CONTINUE";
+    this.q(".terminal .tf").textContent = terminalFooter(!!choices, this.root.classList.contains("touch"));
     this.applyQuiet();
+  }
+
+  /**
+   * A tap or a click on the terminal (Stage 138): on a choice row, that choice's index; anywhere
+   * else on it, −1, which reads on. The campaign wires this beside its keys.
+   */
+  onTerminalTap(fn: (choice: number) => void): void {
+    this.q(".terminal").addEventListener("click", (e) => {
+      const row = (e.target as HTMLElement).closest(".ch");
+      const rows = [...this.q(".terminal .tc").children];
+      fn(row ? rows.indexOf(row) : -1);
+      e.preventDefault();
+    });
   }
 
   /** the mirror's footer (Stage 52): a guest's terminal says whose turn it is instead of offering keys */
@@ -508,6 +522,33 @@ export class Hud {
     const seat = frameSeat(this.q(".status").getBoundingClientRect().bottom - rootTop, this.root.clientHeight, rowTop);
     // the phone lays the reader frames out edge to edge in its own stylesheet (Stage 137): the
     // desktop's seat, written inline, had shifted the book half a view off the screen
+    // and on the phone the terminal is seated under the row and short of the right-hand pads
+    // (Stage 138), instead of the desktop's place at the foot of the screen
+    if (this.root.classList.contains("touch")) {
+      const term = this.q(".terminal");
+      if (!term.hidden) {
+        const rowBottom = this.q(".bottom").getBoundingClientRect().bottom - rootTop;
+        const vw = this.root.clientWidth;
+        let padsLeft: number | null = null;
+        let leftPadsRight: number | null = null;
+        for (const b of this.root.querySelectorAll<HTMLElement>(".thumbs .tc-b")) {
+          const r = b.getBoundingClientRect();
+          if (r.width === 0) continue;
+          if ((r.left + r.right) / 2 > vw / 2) {
+            if (padsLeft === null || r.left < padsLeft) padsLeft = r.left;
+          } else if (leftPadsRight === null || r.right > leftPadsRight) leftPadsRight = r.right;
+        }
+        const seat = terminalSeat(rowBottom, leftPadsRight, padsLeft, vw, this.root.clientHeight);
+        const top = `${seat.top}px`;
+        if (term.style.top !== top) term.style.top = top;
+        const left = `${seat.left}px`;
+        if (term.style.left !== left) term.style.left = left;
+        const right = `${seat.right}px`;
+        if (term.style.right !== right) term.style.right = right;
+        const max = `${seat.maxHeight}px`;
+        if (term.style.maxHeight !== max) term.style.maxHeight = max;
+      }
+    }
     for (const sel of this.root.classList.contains("touch") ? [] : [".file", ".graph", ".contracts"]) {
       const frame = this.q(sel);
       const top = `${seat.top}px`;
@@ -561,7 +602,7 @@ export class Hud {
 
   private applyQuiet(): void {
     const open = { desk: !this.q(".contracts").hidden, terminal: !this.q(".terminal").hidden, card: !this.q(".card").hidden, ledger: this.ledgerOpen(), dead: this.dead };
-    const quiet = new Set(quietFor(open));
+    const quiet = new Set(quietFor(open, this.root.classList.contains("touch")));
     for (const g of ALL_GROUPS) this.root.classList.toggle(`q-${g}`, quiet.has(g));
   }
 

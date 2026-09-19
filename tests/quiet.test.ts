@@ -80,3 +80,14 @@ describe("the phone's thumb pads are chrome (Stage 137)", () => {
     expect(quietFor({ desk: false, terminal: false, card: false, ledger: false, dead: true })).not.toContain("thumbs");
   });
 });
+
+describe("a terminal on the phone (Stage 138)", () => {
+  it("silences the event log too, which the phone's terminal would otherwise sit under", () => {
+    expect(quietFor({ desk: false, terminal: true, card: false, ledger: false }, true)).toContain("log");
+    expect(quietFor({ desk: false, terminal: true, card: false, ledger: false }, true)).not.toContain("thumbs");
+  });
+  it("and on a keyboard keeps the log, as before", () => {
+    expect(quietFor({ desk: false, terminal: true, card: false, ledger: false })).not.toContain("log");
+    expect(quietFor({ desk: false, terminal: true, card: false, ledger: false }, false)).not.toContain("log");
+  });
+});

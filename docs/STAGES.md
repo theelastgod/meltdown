@@ -1641,6 +1641,56 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 138 — The phone could not answer the fixer
+
+**Goal.** The mobile probe's last frame, since Stage 32: the creation terminal up over the yard —
+`YOU WOKE UNLISTED. THREE HOUSES WILL WANT TO KNOW WHY. WHO DO YOU ANSWER TO?`, three houses,
+`[1–4] CHOOSE`. The terminal was played from the keyboard alone (Enter or Space to read on,
+1–4 to choose; nothing on it answered a pointer), so on a phone the campaign's first question
+had no answer, and the box itself sat at the desktop's place, under the phone's slot-and-tab
+row and the NADE pad. The mobile probe had never opened a terminal.
+
+**What changed.**
+- `client/hud/terminal.ts` — `terminalFooter(hasChoices, touch)`: the keys on a keyboard, a tap
+  on a phone; `terminalSeat(rowBottom, leftPadsRight, padsLeft, viewWidth, viewHeight)`: under
+  the row, short of the nearest pad on either side (the weapon pad at the bottom left, the action
+  pads on the right), inset from the bottom.
+- `client/hud/hud.ts` — a tap or a click on the terminal reports a choice row's index, or −1 for
+  reading on; on the phone the layout seats the terminal by the rule; the footer by the rule.
+- `client/campaign.ts` — the tap is wired beside the keys.
+- `client/hud/quiet.ts` — on the phone a terminal silences the event log as well: the phone's
+  terminal is seated where the log is drawn, and the log's lines had printed across its first
+  choice.
+- `client/hud/hud.css` — the phone's terminal rule, and thumb-sized choice rows.
+- `tests/terminal.test.ts`, `tests/quiet.test.ts` — the footer's words, the seat, the log.
+- `probe/stage32.ts` — the terminal read from the drawn frame: under the row, short of every
+  pad, inside the view, each choice row what a thumb meets at its centre, `TAP A LINE TO
+  CHOOSE`, three rows at least 24 px tall; its picture; a thumb on THE WAKE CELLS reads on to the
+  cells' node, and thumbs on the terminal read the script to its close, with the cells written
+  as the file's house. The phone's keyboard-legend check now counts `[ENTER]` and `[1–4]` as
+  keyboard words.
+
+**Proof.** vitest 776/776. `npm run probe:mobile` 24/24: the terminal at 70–618 ×
+166–367 with the row ending at 158, under no pad, the log silenced, `TAP A LINE TO CHOOSE`, three
+rows 27 px tall
+each met by a thumb at its centre; the picture shows it; a thumb on THE WAKE CELLS reads on to
+the cells' node, and two more thumbs close the script with the cells as the file's house. `npm run probe:campaign` 40/40 and
+`probe:tps` 49/49 (run before the seat's left bound and the log rule, both phone-only). Build,
+smoke 7/7.
+
+Mutation A, the tap not wired: `probe:mobile` 22/24, twelve thumbs and the node still `wake`, no
+house. Mutation B, the desktop's seat on the phone: 23/24, the terminal at 12–485 × 0–201, under
+the row. Mutation C, the keyboard's footer on the phone: `tests/terminal.test.ts` 1 failed | 3
+passed, and `probe:mobile` 23/24 with `[1–4] CHOOSE`. Mutation D, the log kept under the phone's
+terminal: `tests/quiet.test.ts` 1 failed | 14 passed, and `probe:mobile` 23/24 with the log drawn at 14–394 ×
+264–302, across the terminal. (The first read of that mutation passed: each row was "met by a
+thumb" at its centre, but the HUD's chrome takes no pointer, so hit-testing skips the log; the
+log's box is now read outright.). The stage's first phone run read the terminal at 12–618 × 166–367 under the WPN
+pad and the house still null after the choice: the seat had cleared the right-hand pads alone,
+and the house is written at the script's end, not at the choice; the seat took a left bound and
+the check reads the node the choice leads to, then taps on to the close. The picture of that run
+showed the log's PA printed across the first choice; hence the log rule.
+
 ## Stage 137 — The phone's book was half off the screen
 
 **Goal.** A one-off read of the reader frames on the phone viewport (844×390, the mobile probe's):
