@@ -16,21 +16,31 @@
 export const RIGHT_BAND = 0.44;
 /** the alert sits this far under whatever is above it (px) */
 export const ALERT_GAP = 6;
-/** and never lower than this (px), so it stays in the top band whatever the panel does */
-export const ALERT_FLOOR = 160;
 
 /** The width the right-hand band may take, in px, for a view this wide with this inset from the edge. */
 export function rightBandWidth(viewWidth: number, inset: number): number {
   return Math.max(0, Math.floor(viewWidth * RIGHT_BAND) - inset);
 }
 
-/** Where the alert's top goes, given the bottom of the panel above it. */
-export function alertTop(missionBottom: number, underBottom: number | null = null, shift = 0): number {
-  // the alert also stacks under the node line and the searchlight warning when they are up
-  // (Stage 120): a three-line mission panel had put it straight through the node line. `shift` is
-  // the phone's (Stage 139): its floor moves down with the rest of the stack
+/**
+ * Where the alert's top goes, given the bottom of the panel above it, and of the node line and the
+ * searchlight warning when they are up (Stage 120).
+ *
+ * It used to keep a floor — never lower than 160 px, "so it stays in the top band whatever the
+ * panel does" — and that floor could only ever fire by putting the alert into the gap under the
+ * row above it, or through the row itself: it was taken exactly when it was higher on the screen
+ * than the seat. A 480 × 270 window, where the mission panel takes its second row and spans
+ * 84–175, printed `◆ INTEGRITY 30` 13 px inside the panel. And on the phone the floor was the
+ * only thing the shift was applied to, so with no node line up the alert ignored the slot-and-tab
+ * row entirely and sat on it: 98–112 over a row of 98–144 (Stage 147).
+ *
+ * The seat is a gap under whatever is above it, and nothing else. On the phone that includes the
+ * slot-and-tab row and the touch legend, which the HUD hands in: the alert is the one row of the
+ * stack that has something above it the stack's own top does not describe.
+ */
+export function alertTop(missionBottom: number, underBottom: number | null = null): number {
   const seat = Math.max(Math.ceil(missionBottom), underBottom === null ? 0 : Math.ceil(underBottom));
-  return Math.min(ALERT_FLOOR + shift, seat + ALERT_GAP);
+  return seat + ALERT_GAP;
 }
 
 /**

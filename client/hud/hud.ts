@@ -508,6 +508,7 @@ export class Hud {
     }
     const panel = mission.getBoundingClientRect();
     this.missionBottom = panel.bottom - rootTop;
+    this.stackUnder = null;
     // on the phone the node line, the warning and the alert stack under the slot-and-tab row, or
     // under the touch legend, which sits under the row while it is up (Stage 139)
     if (this.root.classList.contains("touch")) {
@@ -528,6 +529,9 @@ export class Hud {
         under = legend.getBoundingClientRect().bottom - rootTop;
       }
       this.stackShift = stackShift(under);
+      // what the alert has above it on this device that the stack's top does not describe
+      // (Stage 147): the row, or the legend under it
+      this.stackUnder = under;
     }
     this.placeFlag();
     // the foot line between the slots and the tab strip, or above the row when they leave it no
@@ -886,6 +890,8 @@ export class Hud {
 
   /** the mission panel's measured bottom from the last layout pass, the alert's first anchor */
   private missionBottom = 0;
+  /** the phone's row (or the legend under it), which the alert also hangs under (Stage 147) */
+  private stackUnder: number | null = null;
 
   /**
    * The centred stack under the mission panel: the node line a gap under the panel's own measured
@@ -906,8 +912,9 @@ export class Hud {
     const flag = this.q(".flag");
     if (flag.style.top !== top) flag.style.top = top;
     const flagBottom = flag.classList.contains("on") ? flag.getBoundingClientRect().bottom - rootTop : null;
-    const under = bottom === null ? flagBottom : flagBottom === null ? bottom : Math.max(bottom, flagBottom);
-    const alertSeat = `${alertTop(this.missionBottom, under, this.stackShift)}px`;
+    const stack = [bottom, flagBottom, this.stackUnder].filter((v): v is number => v !== null);
+    const under = stack.length === 0 ? null : Math.max(...stack);
+    const alertSeat = `${alertTop(this.missionBottom, under)}px`;
     const alert = this.q(".alert");
     if (alert.style.top !== alertSeat) alert.style.top = alertSeat;
   }

@@ -480,6 +480,19 @@ async function main(): Promise<void> {
     const wk2 = await readStack();
     check("the phone's log keeps three entries and, full of wrapped PA lines, stays under the alert's seat", wk2.logEntries === 3 && !!wk2.log && !!wk2.alert && wk2.log.top >= wk2.alert.bottom + 4 && wk2.alertCrosses.length === 0, `${wk2.logEntries} entries · log ${wk2.log ? `${wk2.log.top.toFixed(0)}–${wk2.log.bottom.toFixed(0)}` : "none"} · alert ${wk2.alert ? `${wk2.alert.top.toFixed(0)}–${wk2.alert.bottom.toFixed(0)}` : "none"} · alert crosses [${wk2.alertCrosses.join(",")}]`);
     await shotCheck(w, "stage32-wake.png", "#hud .nodefoot");
+    // Stage 147: with no node line up \u2014 the file away from every node, which is most of a round \u2014
+    // the alert had nothing to hang under but the mission panel, and the phone's row sits between
+    // the two, so it printed at 98\u2013112 across a row of 98\u2013144. Walk off the nodes and read it.
+    await w.evaluate(() => {
+      const away = window.__game.game.player;
+      away.pos.x += 400;
+      away.vel.x = away.vel.y = away.vel.z = 0;
+      window.__game.setBot([{ kind: "hold", ticks: 600 }]);
+    });
+    for (let i = 0; i < 6; i++) await w.evaluate(() => window.__game.advance(10));
+    const wk3 = await readStack();
+    const wkUnder3 = wk3.legend ? wk3.legend.bottom : wk3.row.bottom;
+    check("off every node, with no node line up, the alert still hangs under the phone's row rather than on it", wk3.foot === null && !!wk3.alert && wk3.alert.top >= wkUnder3 + 4 && wk3.alertCrosses.length === 0, `node line ${wk3.foot ? "still up" : "down"} \u00b7 row ends ${wk3.row.bottom.toFixed(0)}${wk3.legend ? `, legend ends ${wk3.legend.bottom.toFixed(0)}` : ""} \u00b7 alert ${wk3.alert ? `${wk3.alert.top.toFixed(0)}\u2013${wk3.alert.bottom.toFixed(0)}` : "none"} \u00b7 crosses [${wk3.alertCrosses.join(",")}]`);
     await w.close();
 
     // ---------------- pausing on the phone (Stage 141) ----------------

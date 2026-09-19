@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, nodeFootTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit, stackShift, phoneRowTop, PHONE_ROW_GAP, logLines, LOG_LINES, PHONE_LOG_LINES } from "../client/hud/layout";
+import { ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, nodeFootTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit, stackShift, phoneRowTop, PHONE_ROW_GAP, logLines, LOG_LINES, PHONE_LOG_LINES } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -34,8 +34,9 @@ describe("the alert's seat", () => {
     expect(alertTop(52.4)).toBe(53 + ALERT_GAP);
   });
 
-  it("but never drops out of the top band", () => {
-    expect(alertTop(400)).toBe(ALERT_FLOOR);
+  it("follows a panel that reaches lower, with no floor to hold it inside one (Stage 147)", () => {
+    expect(alertTop(400)).toBe(400 + ALERT_GAP);
+    expect(alertTop(175)).toBe(175 + ALERT_GAP);
   });
 
   it("stacks under the node line or the searchlight warning when one of them ends lower (Stage 120)", () => {
@@ -44,7 +45,28 @@ describe("the alert's seat", () => {
     expect(alertTop(90, 144)).toBe(144 + ALERT_GAP);
     expect(alertTop(90, null)).toBe(90 + ALERT_GAP);
     expect(alertTop(90, 40)).toBe(90 + ALERT_GAP);
-    expect(alertTop(90, 400)).toBe(ALERT_FLOOR);
+    expect(alertTop(90, 400)).toBe(400 + ALERT_GAP);
+  });
+});
+
+describe("the alert never prints over what it hangs under (Stage 147)", () => {
+  it("clears the panel, the node line, the warning and the phone's row, whatever they measure", () => {
+    for (const panel of [40, 92, 94, 164, 175, 400]) {
+      for (const under of [null, 114, 144, 192, 203]) {
+        const seat = alertTop(panel, under);
+        expect(seat).toBeGreaterThanOrEqual(Math.ceil(panel) + ALERT_GAP);
+        if (under !== null) expect(seat).toBeGreaterThanOrEqual(Math.ceil(under) + ALERT_GAP);
+      }
+    }
+  });
+  it("is the 480 \u00d7 270 window's own numbers: a panel of 84\u2013175 and a node line of 181\u2013203", () => {
+    expect(alertTop(175, 203)).toBe(209);
+    expect(alertTop(175, 203)).toBeGreaterThan(203);
+  });
+  it("and the phone's, where an alert with no node line up had sat on the row", () => {
+    // row 98\u2013144 on an 844 \u00d7 390 phone, mission panel ending at 92
+    expect(alertTop(92, 144)).toBe(150);
+    expect(alertTop(92, 144)).toBeGreaterThan(144);
   });
 });
 
@@ -188,13 +210,20 @@ describe("the phone's stack (Stage 139)", () => {
     expect(stackShift(140)).toBe(140 + FLAG_GAP - FLAG_TOP);
     expect(stackShift(40)).toBe(0);
   });
-  it("carries the warning's seat and the alert's floor with it", () => {
+  it("carries the warning's and the node line's seats with it", () => {
     const shift = stackShift(120);
     expect(flagTop(null, shift)).toBe(FLAG_TOP + shift);
     expect(flagTop(FLAG_TOP + shift + 22, shift)).toBe(FLAG_TOP + shift + 22 + FLAG_GAP);
-    expect(alertTop(92, 300, shift)).toBe(ALERT_FLOOR + shift);
-    expect(alertTop(92, 148, shift)).toBe(148 + ALERT_GAP);
-    expect(alertTop(92, 300)).toBe(ALERT_FLOOR);
+    expect(nodeFootTop(null, shift)).toBe(FLAG_TOP + shift);
+    expect(nodeFootTop(92, shift)).toBe(FLAG_TOP + shift);
+  });
+
+  // Stage 147: the alert takes no shift of its own \u2014 the HUD hands it the row's bottom, which is
+  // what the shift is computed from, so the two agree by construction
+  it("and the alert, handed that same row, seats a gap under it", () => {
+    const rowBottom = 120;
+    expect(alertTop(92, rowBottom)).toBe(rowBottom + ALERT_GAP);
+    expect(alertTop(92, rowBottom)).toBe(FLAG_TOP + stackShift(rowBottom) + ALERT_GAP - FLAG_GAP);
   });
 });
 

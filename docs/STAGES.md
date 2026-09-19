@@ -1641,6 +1641,55 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 147 — The alert's floor could only ever fire by printing over something
+
+**Goal.** The alert — `◆ INTEGRITY 30`, the line that tells you you are being hit — hangs under the
+mission panel, the node line and the searchlight warning. Its rule carried a floor as well: *never
+lower than 160 px, so it stays in the top band whatever the panel does.* Read the arithmetic and
+that floor is only ever reached when it is higher on the screen than the seat under the row above
+it. It could not do anything but put the alert into that row's gap, or through the row.
+
+Which it did, in two frames a player gets:
+
+- A 480 × 270 window, where the mission panel takes its second row under the status panel and
+  spans 84–175: the alert sat at 160–173, thirteen pixels inside the panel. At 640 × 360 it
+  crossed the panel by 4 px and the node line by 3.
+- A phone, with no node line up — the file away from every node, which is most of a round. The
+  phone's shift, the thing that carries the whole stack under the slot-and-tab row, was applied to
+  the floor and to nothing else. With the floor not binding, the alert hung under the mission
+  panel alone and printed at 98–112, across a row of 98–144.
+
+**What changed.**
+
+- `client/hud/layout.ts` — `alertTop` is a gap under whatever is above it, and nothing else. The
+  floor is gone, and with it the `shift` argument: the phone's row is something above the alert,
+  so it is handed in as such rather than folded into a constant.
+- `client/hud/hud.ts` — the layout pass keeps the phone's row (or the touch legend under it) as
+  `stackUnder`, and the alert's seat is taken from the lowest of the node line, the lit warning and
+  that row. On the desktop `stackUnder` is null and the seat is what it was.
+- `tests/layout.test.ts` — the rule as a property: over every panel and every row above it, the
+  alert's top clears both. Plus the two frames' own numbers, and the old floor's cases rewritten.
+- `probe/stage5.ts` — the wake probe, already standing the file on node B with the line up, raises
+  the alert at 1280 × 720, 640 × 360 and 480 × 270 and fails if it is inside the panel or the line.
+  The third-person probe's scene was tried first and could not hold the rule: its mission panel is
+  one line, so the old floor landed a single pixel under the node line and crossed nothing.
+- `probe/stage32.ts` — the phone probe walks the file off every node, so the node line goes down,
+  and reads the alert against the row.
+
+**Proof.** vitest 798/798. `npm run probe:wake` 26/26: with the file on node B and the alert lit,
+`1280×720: alert 128–141 · clear of the panel · 6 px under the line · 640×360: alert 198–211 ·
+clear of the panel · 6 px under the line · 480×270: alert 209–222 · clear of the panel · 6 px
+under the line`. `npm run probe:mobile` 39/39, the off-node frame reading `row ends 144, legend
+ends 170 · alert 176–190 · crosses []`. Regressions `probe:tps` 49/49, `probe:campaign` 40/40 and
+`probe:run` 23/23; build, smoke 7/7.
+
+Mutation A, the floor put back into the rule: `tests/layout.test.ts` 4 failed and `probe:wake`
+25/26 — `640×360: alert 160–173 · INSIDE the panel · INSIDE the line · 480×270: alert 160–173 ·
+INSIDE the panel · -43 px under the line`, the defect as it stood. Mutation B, the HUD no longer
+handing the alert the phone's row: `probe:mobile` 38/39 — `node line down · row ends 144 · alert
+98–112 · crosses [row,tabs]`, and no unit test can see that one, which is why the phone reads it
+from the drawn frame.
+
 ## Stage 146 — The node line printed through the panel it hangs under
 
 **Goal.** The centred stack under the mission panel has three rows: the node line (what is

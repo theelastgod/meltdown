@@ -143,11 +143,19 @@ async function main(): Promise<void> {
     // 94 and the line began at 92, and in a window narrow enough for the panel to take its second
     // row under the status panel the line printed through the panel's own text. The line is up and
     // the file is standing on node B, so this is the frame a player is looking at.
+    // Stage 147 reads the same two frames: the alert kept a floor of 160 px, which could only ever
+    // fire by printing it through the row above it \u2014 at 640 \u00d7 360 it sat inside the panel and the
+    // node line both, and at 480 \u00d7 270 thirteen pixels inside the panel.
     const footSeats: string[] = [];
+    const alertSeats: string[] = [];
     let footSeatsOk = true;
-    for (const size of [{ w: 1280, h: 720 }, { w: 640, h: 360 }]) {
+    let alertSeatsOk = true;
+    for (const size of [{ w: 1280, h: 720 }, { w: 640, h: 360 }, { w: 480, h: 270 }]) {
       await page.setViewportSize({ width: size.w, height: size.h });
       await page.evaluate(async () => {
+        window.__game.game.hud.alert("\u25c6 INTEGRITY 30", false, 4);
+        // the alert fades in over 0.2 s: read it lit
+        await new Promise((r) => setTimeout(r, 350));
         for (let f = 0; f < 5; f++) await new Promise((r) => requestAnimationFrame(r));
       });
       const seat = await page.evaluate(() => {
@@ -156,9 +164,11 @@ async function main(): Promise<void> {
         const panelEl = document.querySelector("#hud .mission") as HTMLElement;
         const lineEl = document.querySelector("#hud .nodefoot") as HTMLElement;
         const statusEl = document.querySelector("#hud .status") as HTMLElement;
+        const alertEl = document.querySelector("#hud .alert") as HTMLElement;
         const pb = panelEl.getBoundingClientRect();
         const nb = lineEl.getBoundingClientRect();
         const sb = statusEl.getBoundingClientRect();
+        const ab = alertEl.getBoundingClientRect();
         return {
           up: !lineEl.hidden && nb.width > 0,
           said: (lineEl.textContent ?? "").trim(),
@@ -167,18 +177,27 @@ async function main(): Promise<void> {
           crosses: pb.left < nb.right && pb.right > nb.left && pb.top < nb.bottom && pb.bottom > nb.top,
           gap: nb.top - pb.bottom,
           second: pb.top >= sb.bottom,
+          alertLit: alertEl.classList.contains("on") && ab.width > 0,
+          alert: `${(ab.top - hudTop).toFixed(0)}\u2013${(ab.bottom - hudTop).toFixed(0)}`,
+          alertInPanel: pb.left < ab.right && pb.right > ab.left && pb.top < ab.bottom && pb.bottom > ab.top,
+          alertInLine: nb.left < ab.right && nb.right > ab.left && nb.top < ab.bottom && nb.bottom > ab.top,
+          alertGap: ab.top - nb.bottom,
         };
       });
       const ok = seat.up && !seat.crosses && seat.gap >= 4 && /NODE B/.test(seat.said);
       if (!ok) footSeatsOk = false;
       if (size.w === 640 && !seat.second) footSeatsOk = false;
       footSeats.push(`${size.w}\u00d7${size.h}: panel ${seat.panel}${seat.second ? " (second row)" : ""} \u00b7 line ${seat.line} \u00b7 ${seat.crosses ? `CROSSING it by ${(-seat.gap).toFixed(0)} px` : `${seat.gap.toFixed(0)} px clear`}`);
+      const alertOk = seat.alertLit && !seat.alertInPanel && !seat.alertInLine && seat.alertGap >= 4;
+      if (!alertOk) alertSeatsOk = false;
+      alertSeats.push(`${size.w}\u00d7${size.h}: alert ${seat.alert} (lit ${seat.alertLit}) \u00b7 ${seat.alertInPanel ? "INSIDE the panel" : "clear of the panel"} \u00b7 ${seat.alertInLine ? "INSIDE the line" : `${seat.alertGap.toFixed(0)} px under the line`}`);
     }
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.evaluate(async () => {
       for (let f = 0; f < 5; f++) await new Promise((r) => requestAnimationFrame(r));
     });
     check("the node line hangs under the mission panel rather than through it, in a wide window and in one narrow enough for the panel to take its second row", footSeatsOk, footSeats.join(" \u00b7 "));
+    check("and the alert hangs under both of them at each of those sizes, with no floor to hold it inside them", alertSeatsOk, alertSeats.join(" \u00b7 "));
     const flipTook = await page.evaluate(async () => {
       const n = window.__game.game.world.wake!.nodes.find((x) => x.id === 2)!;
       let ticks = 0;
