@@ -727,7 +727,7 @@ export class Game {
       c.paIndex++;
       this.audio.pa();
       this.cityLog.push(line);
-      this.hud.push(`VANTAGE PA · ${line}`, "am");
+      this.hud.push(`VANTAGE PA · ${line}`, "am pa"); // Stage 133: the one line of the log that wraps
       c.nextPa = t + Math.round((27 + ((c.paIndex * 11) % 17)) * SIM_HZ);
     }
   }

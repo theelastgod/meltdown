@@ -1641,6 +1641,38 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 133 — The city was cut off mid-word
+
+**Goal.** Every frame of this session's probes, desktop and phone, carried the same line at the
+foot of the event log: `» VANTAGE PA · VANTAGE ADVISES DRAINAGE YARD: LEASE REN…`. The log's
+lines are one row each with an ellipsis, right for a kill line or a node flip, and the city's
+PA is the one thing in it written to be read to the end: eight lines of copy, the longest
+`…LEASE RENEWAL IS AUTOMATIC. THANK YOU FOR YOUR CONTINUED COMPLIANCE.`, and none of them had
+ever been readable past the district's name in a 380 px log.
+
+**What changed.**
+- `client/hud/hud.css` — a log line marked `pa` wraps inside the log's box, no ellipsis; every
+  other line keeps its single row.
+- `client/game.ts` — the PA is pushed with that mark.
+- `probe/stage1.ts` — at tick 330, once the first PA is in the log and before the fight fills
+  it, the line's text range is read: two or more rows, all inside the log's box, no overflow,
+  ending on the copy's last word, while every other line is single-row with its ellipsis.
+- `probe/stage32.ts` — the same on the phone after the walks, and the taller log crosses no
+  thumb pad.
+
+**Proof.** vitest 767/767. `npm run probe` 19/19: at tick 330 the PA is 3 rows in the 380 px
+log, overflow 0/0 px, every row inside the box, ending `…CONTINUED COMPLIANCE.`, the one other
+line single-row with its ellipsis; the frame shows it read to the end. `npm run probe:mobile`
+17/17: 3 rows, the log at 264–302 px, under no pad.
+Regressions `probe:tps` 48/48, build, smoke 7/7.
+
+Mutation A, the wrap rule deleted from the CSS: `probe` 18/19 with the PA one row overflowing
+its box by 388 px and outside it; `probe:mobile` 16/17, 384 px over. Mutation B, the PA pushed
+without its mark (`"am"` again): `probe` 18/19, the same 388 px. The restore step of the first
+script copied back files saved before the edits were made, so the tree lost the stage for that
+script's regression, build and smoke; the edits were re-applied and those three were run again
+on the true tree, and the numbers above are that run's.
+
 ## Stage 132 — The phone paid for the desktop's fixes
 
 **Goal.** The mobile probe's frame after Stages 118 and 129: `1 · BLANK · 0.0 m/s · STAND`

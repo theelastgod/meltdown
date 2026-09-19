@@ -90,10 +90,25 @@ async function main(): Promise<void> {
     const CHUNK = 30;
     let ticksRun = 0;
     let actionShot = false;
+    let paRead: { boxWidth: number; lines: { text: string; pa: boolean; rects: number; inBox: boolean; overflowX: number; overflowY: number; ellipsis: string }[] } | null = null;
     for (let i = 0; i < 80; i++) {
       await page.evaluate((n) => window.__game.advance(n), CHUNK);
       ticksRun += CHUNK;
       await page.waitForTimeout(16); // let a frame render between chunks
+      // Stage 133: the PA is pushed at tick 300; read the log once it is there and before a fight fills it
+      if (!paRead && ticksRun >= 330)
+        paRead = await page.evaluate(async () => {
+          await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+          const log = document.querySelector("#hud .log") as HTMLElement;
+          const box = log.getBoundingClientRect();
+          const lines = [...log.querySelectorAll<HTMLElement>("div")].map((d) => {
+            const tr = document.createRange();
+            tr.selectNodeContents(d);
+            const rects = [...tr.getClientRects()].filter((r) => r.width > 0);
+            return { text: d.textContent ?? "", pa: d.classList.contains("pa"), rects: rects.length, inBox: rects.every((r) => r.left >= box.left - 0.5 && r.right <= box.right + 0.5), overflowX: d.scrollWidth - d.clientWidth, overflowY: d.scrollHeight - d.clientHeight, ellipsis: getComputedStyle(d).textOverflow };
+          });
+          return { boxWidth: box.width, lines };
+        });
       const st = await page.evaluate(() => window.__game.botStatus());
       if (!actionShot && st?.current?.kind === "kill" && (await page.evaluate(() => window.__game.state().stats.shots)) > 0) {
         // mid-fight frame: tracer, dummy flash, HUD ammo ticking down
@@ -123,6 +138,12 @@ async function main(): Promise<void> {
     // name the weapon as the rack and the receipt do, with no id's underscore anywhere in the log
     const killLine = await page.evaluate(() => [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "").find((l) => /⟶/.test(l)) ?? "");
     check("the kill line names the weapon, not its id: LEASE-BREAKER, and no underscored id anywhere in the log", /· LEASE-BREAKER · TTK/.test(killLine) && !/[A-Z]_[A-Z]/.test(killLine), `kill line: "${killLine}"`);
+    // Stage 133: the city's PA had been cut to "LEASE REN…" on every frame; the one line the city
+    // speaks now wraps inside the log's box and reads to its last word, while every other line
+    // keeps its single row and its ellipsis
+    const pa = paRead?.lines.find((l) => /VANTAGE PA/.test(l.text));
+    const others = paRead?.lines.filter((l) => l !== pa) ?? [];
+    check("the VANTAGE PA reads in full: wrapped inside the log's box to its last word, with no ellipsis", !!pa && pa.pa && pa.rects >= 2 && pa.inBox && pa.overflowX <= 0 && pa.overflowY <= 0 && /COMPLIANCE\.$/.test(pa.text) && others.every((l) => !l.pa && l.rects <= 1 && l.ellipsis === "ellipsis"), pa ? `${pa.rects} rows in ${paRead!.boxWidth.toFixed(0)} px · overflow ${pa.overflowX}/${pa.overflowY} px · in the box ${pa.inBox} · ends "…${pa.text.slice(-22)}" · ${others.length} other line(s) single-row` : `no PA line in the log at tick 330: ${paRead?.lines.map((l) => l.text).join(" / ") ?? "(unread)"}`);
     // Stage 130: after the plan — sprint, slide, slide-jump, mantle, a kill — the line teaches only
     // what the file has not done; the bot did not reload, so R reload is what is left (or nothing,
     // if the magazine ran out and it did)

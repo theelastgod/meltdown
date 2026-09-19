@@ -245,6 +245,22 @@ async function main(): Promise<void> {
     await release(pg, { x: jump.x, y: jump.y }, 31);
     const j1 = await pg.evaluate(() => window.__game.state().stats.jumps);
     check("a held tap-pad is one action, not a stream of them", j1 - j0 === 1, `jumps ${j0} → ${j1} while the pad was held for 1.5 s`);
+    // Stage 133: the PA (pushed at tick 300, passed during the walks above) reads in full on the phone
+    // too, and the taller log stays clear of the thumb pads
+    const paPhone = await pg.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const log = document.querySelector("#hud .log") as HTMLElement;
+      const box = log.getBoundingClientRect();
+      const d = [...log.querySelectorAll<HTMLElement>("div")].find((x) => /VANTAGE PA/.test(x.textContent ?? ""));
+      if (!d) return null;
+      const tr = document.createRange();
+      tr.selectNodeContents(d);
+      const rects = [...tr.getClientRects()].filter((r) => r.width > 0);
+      const pads = [...document.querySelectorAll<HTMLElement>("#hud .thumbs .tc-b")].map((b) => ({ id: b.dataset.b ?? "", r: b.getBoundingClientRect() }));
+      const under = pads.filter((p) => box.left < p.r.right && p.r.left < box.right && box.top < p.r.bottom && p.r.top < box.bottom).map((p) => p.id);
+      return { text: d.textContent ?? "", rects: rects.length, inBox: rects.every((r) => r.left >= box.left - 0.5 && r.right <= box.right + 0.5), overflowX: d.scrollWidth - d.clientWidth, overflowY: d.scrollHeight - d.clientHeight, under, logTop: box.top, logBottom: box.bottom };
+    });
+    check("the VANTAGE PA reads in full on the phone, wrapped in the log's box and clear of the pads", !!paPhone && paPhone.rects >= 2 && paPhone.inBox && paPhone.overflowX <= 0 && paPhone.overflowY <= 0 && /COMPLIANCE\.$/.test(paPhone.text) && paPhone.under.length === 0, paPhone ? `${paPhone.rects} rows · overflow ${paPhone.overflowX}/${paPhone.overflowY} px · in the box ${paPhone.inBox} · log ${paPhone.logTop.toFixed(0)}–${paPhone.logBottom.toFixed(0)} px · under ${paPhone.under.join(",") || "no pad"} · ends "…${paPhone.text.slice(-22)}"` : "no PA line in the log");
 
     // ---------------- the frame a phone has to hold ----------------
     await pg.evaluate(() => window.__game.setRealtime(true));
