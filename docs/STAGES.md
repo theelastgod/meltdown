@@ -1641,6 +1641,30 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 144 — The guard called a picture of the menu a picture of the game
+
+**Goal.** `probe/shot.ts` refuses a shot with full-screen chrome over it, and its cover list is
+`#crawl` and `#menu`. Its own comment says a cover that is the shot's subject is named in
+`mustShow` instead, but the naming did nothing: the subject was concatenated onto the covers and
+checked as one of them, so `shot(page, "stage32-pause.png", "#menu")` returned `is a picture of
+#menu, not of #menu`. Stage 142 worked around it with a bare `page.screenshot`, which is what
+Stage 33's lint forbids, and `tests/probeshot.test.ts` has been red ever since.
+
+**What changed.**
+- `probe/shot.ts` — the selector named as the subject is not a cover.
+- `probe/stage32.ts` — the pause picture goes back through the guard, keeping Stage 142's claim
+  on the menu's drawn box as a check of its own.
+
+**Proof.** vitest 785/785, `tests/probeshot.test.ts` green again. `npm run probe:mobile` 36/36:
+`stage32-pause.png shows #menu, nothing over it`, beside the other four phone artifacts, and the
+menu's drawn box still reads panel 43–801 × 82–309 with its four choices either side of the
+shutter.
+Regressions `probe` 19/19 and `probe:ship` 9/9, whose own pictures go through the same guard;
+build, smoke 7/7.
+
+Mutation, the subject counted as a cover again: `probe:mobile` 35/36, refusing the picture with
+the sentence this stage is named for, `stage32-pause.png is a picture of #menu, not of #menu`.
+
 ## Stage 143 — The phone could only ever throw one grenade
 
 **Goal.** The desktop throws with G and cycles the type with Q, and the HUD lists `FRAG 2 ·

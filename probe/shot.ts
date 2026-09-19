@@ -41,6 +41,11 @@ export interface ShotResult {
 export async function shot(page: Page, path: string, mustShow?: string): Promise<ShotResult> {
   // No named function consts in here: tsx builds the probes with --keep-names, which injects a
   // `__name` helper that does not exist inside the page. Everything is inlined for that reason.
+  // Stage 144: the subject is not a cover. `#hud .card` was kept out of COVERS for this reason and
+  // the comment above says those shots "name it in mustShow instead", but the naming did nothing:
+  // a shot of `#menu`, which is in the list, read as "a picture of #menu, not of #menu". A shot
+  // that says what it is a picture of is judged on everything else covering it.
+  const covers = COVERS.filter((c) => c !== mustShow);
   const seen = await page.evaluate(
     ([covers, want]) => {
       const vis = (covers as string[]).concat(want ? [want as string] : []).map((sel) => {
@@ -56,7 +61,7 @@ export async function shot(page: Page, path: string, mustShow?: string): Promise
         shown: want ? vis[vis.length - 1]! : true,
       };
     },
-    [COVERS, mustShow ?? null] as const,
+    [covers, mustShow ?? null] as const,
   );
   const png = await page.screenshot({ path });
   const name = path.split("/").pop() ?? path;

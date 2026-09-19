@@ -504,7 +504,7 @@ async function main(): Promise<void> {
       return { screen: window.__game.menu()?.screen ?? null, drawn: !el.hidden && cs.display !== "none" && cs.visibility !== "hidden" && Number(cs.opacity) > 0.05, covers: r.width >= innerWidth - 0.5 && r.height >= innerHeight - 0.5, panel: p.width > 100 && p.height > 40, rows, box: `${p.left.toFixed(0)}–${p.right.toFixed(0)}×${p.top.toFixed(0)}–${p.bottom.toFixed(0)}` };
     });
     const shutterBefore = await shutter();
-    await m.screenshot({ path: `${OUT}/stage32-pause.png` });
+    await shotCheck(m, "stage32-pause.png", "#menu");
     const shutterAfter = await shutter();
     const menuUp = (v: typeof shutterBefore) => !!v && v.screen === "pause" && v.drawn && v.covers && v.panel && v.rows.length === 4 && /RESUME/.test(v.rows[0] ?? "");
     check("artifact: stage32-pause.png is a picture of the pause menu — drawn over the view, its four choices in it, either side of the shutter", menuUp(shutterBefore) && menuUp(shutterAfter), `before: ${shutterBefore ? `${shutterBefore.screen} drawn ${shutterBefore.drawn} covers ${shutterBefore.covers} panel ${shutterBefore.box} rows [${shutterBefore.rows.join(" / ")}]` : "no menu"} · after: ${shutterAfter ? `${shutterAfter.screen} drawn ${shutterAfter.drawn}` : "no menu"}`);
