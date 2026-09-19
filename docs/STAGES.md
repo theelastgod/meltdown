@@ -1641,6 +1641,48 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 160 — The map's footer never fitted the map
+
+**Goal.** The campaign probe's own frame, `stage10-mission.png`, draws the area map with
+`▲ AHEAD · 114 M ACROS` under it. The S is gone, cut at the box's edge.
+
+Measured on the drawn HUD rather than read off the picture, it is not a long-district edge case: the
+footer overflows in **every district at every window width**, and always has. The full form wants
+123 px of a 116 px box with a two-digit distance and 129 px with a three — drainage yard 70 M and
+the white office 34 M are cut by 7 px, lease row, the docks and the depot at 114 M and the
+Deadletter Office at 134 M by 13.
+
+Stage 129 wrote that footer, Stage 132 measured the phone's and gave it a short form, and the third-
+person probe has checked this one since — `^▲ AHEAD · N M ACROSS$`, the text, exactly, and never the
+fit. The phone's check has asserted `footerOverflow <= 0` since Stage 132. The desktop's never did,
+so the desktop has been cut for thirty stages while a check went green over it.
+
+**What changed.**
+
+- `client/hud/radar.ts` — the footer's forms, longest first: `▲ AHEAD · 114 M ACROSS`, then
+  `▲ 114 M ACROSS`, then the phone's `▲ 114 M WIDE`, then `▲ 114 M`. `mapFoot(box, widths)` takes
+  the longest that fits. The heading-up word sheds first because the arrow already says it; the
+  arrow and the number are never shed, because they are what the footer is for.
+- `client/hud/hud.ts` — each form is measured once per change of distance and the fitting one drawn,
+  the same shape the header line has used since Stage 150.
+- `tests/radar.test.ts` — the ladder shortens at every step, keeps the arrow and the number in every
+  form, picks the longest that fits, and falls to the shortest rather than to none.
+- `probe/stage60.ts` — the check now reads the drawn footer's overflow and its box, not only its
+  words.
+
+**Proof.** vitest 853/853. `npm run probe:tps` 50/50: `footer "▲ 70 M ACROSS" · the map spans 70.0 m
+· overflow 0 px · inside the box true`. Measured again across every district after the change:
+drainage yard 70, lease row / docks / depot 114, the Deadletter Office 134, the white office 34 —
+`scroll 116, client 116, overflow 0` in all of them, at 1280 and at 960, where before they were 123
+and 129 against 116. The whole sweep as CI runs it — every probe, the four lints, the firmware
+certification, build and smoke — green.
+
+Mutation A, the footer never shedding: `probe:tps` 49/50 — `footer "▲ AHEAD · 70 M ACROSS" ·
+overflow 7 px`, the defect as it was found, on the shortest district in the game. Mutation B, the
+ladder allowed 16 px of slack: 49/50 with the same overflow, and `tests/radar.test.ts` fails on its
+own. The phone's own footer check, which has asserted `footerOverflow <= 0` since Stage 132, stays
+green through both — it was never the one that was wrong.
+
 ## Stage 159 — The join line printed the link instead of the room
 
 **Goal.** The other thing wrong in the frame Stage 157 came out of. The event log's join line took

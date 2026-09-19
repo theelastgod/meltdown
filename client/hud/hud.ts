@@ -23,7 +23,7 @@ import { terminalFooter, terminalSeat } from "./terminal";
 import { closeHint, openHint } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
 import type { NodeReadout } from "./node";
-import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter } from "./radar";
+import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
 export class Hud {
@@ -950,6 +950,8 @@ export class Hud {
   /** what the city calls this file, as the header's handle was last written with (Stage 157) */
   private display = "";
   private footText = "";
+  /** what each of the footer's forms measured, at the distance last drawn (Stage 160) */
+  private mapFootWidths: number[] = [];
   private line1Text = "";
   private line1Full = 0;
   private line1NoRoom = 0;
@@ -1038,12 +1040,22 @@ export class Hud {
     for (let y = 0; y < h; y += 9) g.fillRect(0, y, w, 1);
     const across = this.bounds * 2 + 6;
     const scale = w / across;
-    // the footer from the same scale (Stage 129): what the map is, not a tap it never handled
-    const foot = mapFooter(across, this.root.classList.contains("touch"));
-    if (foot !== this.mapFoot) {
-      this.mapFoot = foot;
-      this.q(".map .f").textContent = foot;
+    // the footer from the same scale (Stage 129): what the map is, not a tap it never handled.
+    // It sheds rather than being cut (Stage 160): the full form wants more than the box has ever
+    // had, so each form is measured once per change of distance and the longest that fits is drawn
+    const el = this.q(".map .f");
+    const touch = this.root.classList.contains("touch");
+    const want = mapFooter(across, touch);
+    if (want !== this.mapFoot && el.clientWidth > 0) {
+      this.mapFoot = want;
+      this.mapFootWidths = MAP_FOOT_FORMS.map((f) => {
+        el.textContent = mapFootText(across, f);
+        return el.scrollWidth;
+      });
     }
+    const form = touch ? "wide" : mapFoot(el.clientWidth, this.mapFootWidths);
+    const shown = mapFootText(across, form);
+    if (el.textContent !== shown) el.textContent = shown;
     const cx = w / 2;
     const cy = h / 2;
     // the nodes first, under everything else: the mode's whole geography, which the map has never

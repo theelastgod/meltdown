@@ -3,7 +3,7 @@
  * what happens to one further out than the map reaches.
  */
 import { describe, expect, it } from "vitest";
-import { mapFooter, nodeColour, NODE_COLOURS, nodeMarks, place, spotMarks, SPOT_COLOURS, type RadarNode } from "../client/hud/radar";
+import { mapFoot, MAP_FOOT_FORMS, mapFooter, mapFootText, nodeColour, NODE_COLOURS, nodeMarks, place, spotMarks, SPOT_COLOURS, type RadarNode } from "../client/hud/radar";
 
 const W = 108;
 const H = 84;
@@ -132,5 +132,45 @@ describe("the map's footer (Stage 129)", () => {
   it("has a compact form for the phone's narrow box, still heading-up and still the metres (Stage 132)", () => {
     expect(mapFooter(70, true)).toBe("▲ 70 M WIDE");
     expect(mapFooter(70, true).length).toBeLessThan(mapFooter(70).length - 6);
+  });
+});
+
+/**
+ * The footer's shed ladder (Stage 160). The full form never fitted the box it is drawn in: measured
+ * on the drawn HUD it wants 123 px of a 116 px box with a two-digit distance and 129 with a three,
+ * in every district, at every window width. The campaign probe's frame shows `▲ AHEAD · 114 M ACROS`.
+ */
+describe("the map footer's forms", () => {
+  it("sheds the heading-up word first, which the arrow already says", () => {
+    expect(mapFootText(114, "full")).toBe("▲ AHEAD · 114 M ACROSS");
+    expect(mapFootText(114, "no-ahead")).toBe("▲ 114 M ACROSS");
+    expect(mapFootText(114, "wide")).toBe("▲ 114 M WIDE");
+    expect(mapFootText(114, "metres")).toBe("▲ 114 M");
+  });
+
+  it("keeps the arrow and the number in every form, because they are what it is for", () => {
+    for (const form of MAP_FOOT_FORMS) {
+      const text = mapFootText(114, form);
+      expect(text.startsWith("▲ ")).toBe(true);
+      expect(text).toMatch(/\b114 M\b/);
+    }
+  });
+
+  it("gets shorter at every step down, or a step buys nothing", () => {
+    const lens = MAP_FOOT_FORMS.map((f) => mapFootText(114, f).length);
+    for (let i = 1; i < lens.length; i++) expect(lens[i]!).toBeLessThan(lens[i - 1]!);
+  });
+
+  it("draws the longest form that fits", () => {
+    // the widths a 116 px box really measured: the full form over it, the rest inside
+    expect(mapFoot(116, [129, 116, 105, 70])).toBe("no-ahead");
+    expect(mapFoot(116, [116, 105, 95, 70])).toBe("full");
+    expect(mapFoot(100, [129, 116, 95, 70])).toBe("wide");
+    expect(mapFoot(80, [129, 116, 105, 70])).toBe("metres");
+  });
+
+  it("falls to the shortest form rather than none when nothing fits or nothing was measured", () => {
+    expect(mapFoot(10, [129, 116, 105, 70])).toBe("metres");
+    expect(mapFoot(116, [])).toBe("metres");
   });
 });

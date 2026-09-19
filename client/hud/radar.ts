@@ -144,5 +144,36 @@ export function spotMarks(spots: readonly RadarSpot[], at: { x: number; z: numbe
  */
 export function mapFooter(acrossMetres: number, compact = false): string {
   // the phone's map box is 78 px wide at 8 px type (Stage 132): the arrow alone says heading-up
-  return compact ? `▲ ${Math.round(acrossMetres)} M WIDE` : `▲ AHEAD · ${Math.round(acrossMetres)} M ACROSS`;
+  return mapFootText(acrossMetres, compact ? "wide" : "full");
+}
+
+/**
+ * The footer's forms, longest first (Stage 160).
+ *
+ * The full form has never fitted the box it is drawn in. Measured on the drawn HUD, the map's
+ * footer wants 123 px in a 116 px box with a two-digit distance and 129 with a three — every
+ * district, every window width, since the footer was written. `▲ AHEAD · 114 M ACROS` is what the
+ * campaign probe's own frame shows. The text was checked, exactly, and the fit never was.
+ *
+ * So it sheds, in the order a player can afford to lose it: the heading-up word, which the arrow
+ * already says; then `ACROSS` for the phone's shorter `WIDE`; then the unit alone. The arrow and
+ * the number are never shed — they are what the footer is for.
+ */
+export const MAP_FOOT_FORMS = ["full", "no-ahead", "wide", "metres"] as const;
+export type MapFootForm = (typeof MAP_FOOT_FORMS)[number];
+
+export function mapFootText(acrossMetres: number, form: MapFootForm): string {
+  const m = Math.round(acrossMetres);
+  if (form === "full") return `▲ AHEAD · ${m} M ACROSS`;
+  if (form === "no-ahead") return `▲ ${m} M ACROSS`;
+  if (form === "wide") return `▲ ${m} M WIDE`;
+  return `▲ ${m} M`;
+}
+
+/** The longest form that fits the box, given what each form measured. The last form is the floor. */
+export function mapFoot(box: number, widths: readonly number[]): MapFootForm {
+  for (let i = 0; i < MAP_FOOT_FORMS.length; i++) {
+    if ((widths[i] ?? Infinity) <= box) return MAP_FOOT_FORMS[i]!;
+  }
+  return MAP_FOOT_FORMS[MAP_FOOT_FORMS.length - 1]!;
 }
