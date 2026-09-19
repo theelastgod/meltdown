@@ -21,6 +21,7 @@
  */
 import * as THREE from "three";
 import { PALETTE } from "./city";
+import { drawPool, warmStep, WARM_FRAMES } from "./warmup";
 
 /** Enough for a full lobby firing at once for the tracer's whole life: 12 shooters × 600 RPM × 0.12 s ≈ 15. */
 export const MAX_TRACERS = 64;
@@ -37,6 +38,8 @@ export class VfxPool {
   private tracerNext = 0;
   private sparkBorn: Float32Array;
   private sparkNext = 0;
+  /** drawn frames left before the pools may hide (Stage 158): their shaders compile on a drawn frame */
+  private warming = WARM_FRAMES;
   private m = new THREE.Matrix4();
   private c = new THREE.Color();
 
@@ -148,8 +151,11 @@ export class VfxPool {
       this.sparks.instanceMatrix.needsUpdate = true;
       if (this.sparks.instanceColor) this.sparks.instanceColor.needsUpdate = true;
     }
-    this.tracers.visible = this.liveTracers(clock) > 0;
-    this.sparks.visible = this.liveSparks(clock) > 0;
+    // hidden when empty, except for the first frames of real rendering, where their programs are
+    // compiled against the scene the game actually draws (Stage 158)
+    this.tracers.visible = drawPool(this.liveTracers(clock) > 0, this.warming);
+    this.sparks.visible = drawPool(this.liveSparks(clock) > 0, this.warming);
+    this.warming = warmStep(this.warming);
   }
 
   /** Only ever called when the renderer itself is torn down. */

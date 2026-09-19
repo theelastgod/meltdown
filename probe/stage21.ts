@@ -149,6 +149,22 @@ async function main(): Promise<void> {
     // the body is hidden while the camera is pulled in against it and shown when it is not, so its
     // drawables are taken out of the delta: this measures the effects, not where the camera stood
     const callsAdded = fire1.calls - fire1.rig - (fire0.calls - fire0.rig);
+    // ---- 2b. and the first burst compiles nothing (Stage 158) ----
+    //
+    // The pools are hidden while empty, so until the first shot nothing had ever drawn them and
+    // Three.js had compiled no program for either. The renderer's constructor warms the scene with
+    // both pools shown, but it runs while the lights are still being built: the two programs the
+    // first shot compiled differed from two the warm-up had already made by one field of the cache
+    // key, `1,7` against `1,6`, the scene's point-light count. So the real programs were compiled on
+    // the frame that first needed them — 308 ms against a 61 ms median, at the moment a duel starts.
+    // The pools are drawn for the first frames of real rendering now, where the scene's state is
+    // whatever the game draws with. This window is the page's first sustained fire.
+    check(
+      "the first burst of a session compiles no shader: the pooled effects were warmed against the scene the game actually draws",
+      fire1.programs === fire0.programs,
+      `programs ${fire0.programs} → ${fire1.programs} over ${shots.shots} shots · geometries ${fire0.geometries} → ${fire1.geometries}`,
+    );
+
     check("the effects cost two draw calls in total, not one each", callsAdded <= 4, `${fire0.calls} → ${fire1.calls} calls (+${callsAdded}, rig ${fire0.rig}→${fire1.rig}) with ${fire1.tracers} effects live · ${(fire1.triangles / 1000).toFixed(0)}k triangles · ${grew(fire0, fire1)}`);
 
     // ---- 4. the frame-time tail, which is what a hitch actually is ----

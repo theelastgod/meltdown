@@ -1641,6 +1641,64 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 158 — The first trigger pull of a session compiled a shader
+
+**Goal.** Stage 157's sweep went red on the frame budget's hitch check — `max 302 ms` against a 61 ms
+median — and green when re-run. The same ~300 ms stall under sustained fire is in Stage 156's sweep
+record at 307 ms, where it passed only because that run's median was slower and the ratio came to
+3.9 of an allowed 4. A check that catches a real stall only when the machine is otherwise fast is
+worth chasing rather than re-running.
+
+It reproduced immediately, and it is not a flake. Firing 700 frames from a cold page: every frame
+under 100 ms except one, **frame 3 of the first burst, at 278 ms** — and on the next run 308. Frame 2
+created two shader programs; frame 3 paid for them.
+
+The two programs are the tracer and spark pools. They are hidden while empty — rightly, two draw
+calls of degenerate geometry are two draw calls — and Three.js compiles a material's program the
+first time its object is drawn. So nothing had ever drawn them, and the shot that made them visible
+compiled two shaders mid-frame at the moment a duel starts.
+
+The renderer's constructor already warms the scene: it shows both pools and calls `compile`. The
+cache keys say why that bought nothing. The two programs compiled on the first shot differ from two
+the warm-up had already built by exactly one field — `1,7` against `1,6`, the scene's point-light
+count. The warm-up runs while the lights are still being built, so it compiles programs for a scene
+the game never draws, and the real ones are compiled on the frame that first needs them. The comment
+above that `compile` call warns about this exact trap for a different field of the same key, the
+output colour space, and fixes it by binding the buffer the scene is drawn into. The lights are one
+field over, and nothing had ever checked that the warming worked.
+
+**What changed.**
+
+- `client/render/warmup.ts` — `drawPool(live, framesLeft)` and `warmStep(framesLeft)`: a pool is
+  drawn because it has something to show, or because it is still warming. Rather than compile
+  earlier against a guess at the final scene, the pools stay drawn for the first frames of real
+  rendering, where the state is whatever the game actually draws with.
+- `client/render/vfx.ts` — the visibility line goes through the rule and counts the warm down.
+- `tests/warmup.test.ts` — an empty pool is drawn for the warm frames and then not, a live one
+  always, and the counter never restarts.
+- `probe/stage21.ts` — the frame budget now fails if the first sustained burst of a session compiles
+  a shader at all. It had been measuring the consequence, on a ratio, and catching it one run in two.
+
+**Proof.** vitest 843/843. `npm run probe:frame` 8/8: `programs 46 → 46 over 69 shots · geometries
+61 → 61`, and the hitch check it used to fail intermittently now reads `p50 61.5 max 73 ms · 1.2×`.
+Measured directly from a cold page, firing 120 frames: 0 programs compiled on the first burst, worst
+frame 99.8 ms against a 61.1 ms median, a ratio of 1.63 where it had been 308 over 61. Two side
+effects confirm the diagnosis rather than being aimed at: the per-shot geometry registration goes
+from `59 → 61` to `61 → 61`, because the pools register at load now, and `0.029 per shot` becomes
+`0.000`. The whole sweep as CI runs it — every probe, the four lints, the firmware certification,
+build and smoke — green.
+
+Mutation A, no warm frames at all: `probe:frame` 7/8 — `programs 44 → 46 over 69 shots`, the two
+shaders compiling on the first burst again, and `tests/warmup.test.ts` fails on its own.
+
+One claim this stage dropped on measuring it. The warm was written at two frames "because the driver
+creates the program on the frame the object is drawn and links it on first use". Mutation B, warming
+for a single frame, passes the probe 8/8 with nothing compiled and no stall — so one frame is
+sufficient here and that reason is not demonstrated. The constant stays at two as cheap margin for a
+driver that does link lazily, but the comment now says what was measured, and the test that had
+asserted `>= 2` asserts what can be defended: at least one frame, and few enough that a warm-up
+cannot become a permanent cost. A test defending a guess fails the wrong mutations.
+
 ## Stage 157 — The line under the crosshair named a file that was not there
 
 **Goal.** The bottom row's middle has read `1 · BLANK · 0.0 m/s · STAND` since the look stage wrote
