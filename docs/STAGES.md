@@ -1641,6 +1641,44 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 145 — The phone was told to press keys it does not have
+
+**Goal.** Stage 137's picture of the FILE book on the phone has `[TAB] CLOSE` in its header, and
+the same is true of the graph's `[G] CLOSE`, the contracts desk's `[C] CLOSE`, the district
+panel's `[M] CLOSE` and THE RUN's `SAFE ZONE · [TAB] MARKET`. Every one of those markers already
+closes on a click, so a thumb has always worked; what they said was wrong, on frames a phone
+reaches by tapping. Stage 138 fixed the fixer's terminal this way; these are the rest, and the
+phone probe's keyboard-legend check had been a list of the particular words seen so far rather
+than a rule.
+
+**What changed.**
+- `client/hud/keyhint.ts` — `closeHint(key, touch)` and `openHint(key, what, touch)`: the key on
+  a keyboard, the gesture on a phone.
+- `client/hud/hud.ts` — a `touch` getter, the district panel's marker and the run strip's market
+  hint by the rule.
+- `client/file.ts` — the book's and the graph's markers by the rule.
+- `client/campaign.ts` — the desk's marker by the rule.
+- `tests/keyhint.test.ts` — both rules, and that no bracketed key survives on a phone.
+- `probe/stage32.ts` — the legend check is now the rule: any bracketed key anywhere on the phone
+  HUD fails it, and it names what it found; the desk's and the book's own markers are read as
+  they are opened; and THE RUN's strip, which the phone probe never runs a room for, is handed a
+  safe-zone view of its own and read where a player would see it.
+
+**Proof.** vitest 789/789. `npm run probe:mobile` 38/38: no bracketed key anywhere on the phone's
+HUD, the desk and the book both read `TAP TO CLOSE`, and THE RUN's strip, drawn on the phone,
+reads `◈ CARRYING 0 · BANKED 3 · TODAY 0/200 · OWED 0 UNITS · GATE SAFE ZONE · TAP MARKET · 4
+CLAIMS OUT`. Regressions `probe:run` 23/23, `probe:campaign` 40/40 and `probe:tps` 49/49, whose
+desktops keep the keys; build, smoke 7/7.
+
+Mutation A, the phone given the keyboard's words: `tests/keyhint.test.ts` 2 failed, the gesture and
+the no-bracket rules, and `probe:mobile` 37/38, the desk reading `[C] CLOSE` and the book
+`[TAB] CLOSE`. The legend rule does not catch those two, because a marker inside a
+closed frame is not on the screen when that check reads the HUD's text; the frames' own check is
+what covers them. Mutation B, the run strip keeping `[TAB] MARKET` on the phone: `probe:mobile`
+37/38, the strip reading `… GATE SAFE ZONE · [TAB] MARKET · 4 CLAIMS OUT`. The first attempt at
+that mutation was caught by nothing — `probe:run` 23/23, because it plays on a desktop, where the
+key is right — so the phone probe now draws the strip itself and reads it.
+
 ## Stage 144 — The guard called a picture of the menu a picture of the game
 
 **Goal.** `probe/shot.ts` refuses a shot with full-screen chrome over it, and its cover list is

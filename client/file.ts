@@ -6,6 +6,7 @@
  * the server refuses illegal loadouts at spawn, it never strips them.
  */
 import { ALL_ITEMS, KEYSTONES, LEDGER_ITEMS, MAX_ATTESTED, itemById, type LedgerItem } from "@shared/manifest/items";
+import { closeHint } from "./hud/keyhint";
 import { DEFAULT_LOADOUT, netDelta, validateLoadout, WEAPON_DEPTH, type Loadout, type Ranks } from "@shared/manifest/loadout";
 import { BUDGET_PER_PERCENT, ADDITIVE, type StatMod } from "@shared/manifest/stats";
 import { xpForDepth, totalXpToReach } from "@shared/progression/depth";
@@ -89,6 +90,11 @@ export class GhostFile {
 
   /** the file's credential, kept beside the id in localStorage and sent with every change */
   secret = "";
+
+  /** the touch build (Stage 145): read from the HUD root, the one element both sides agree on */
+  private get touchHud(): boolean {
+    return !!document.getElementById("hud")?.classList.contains("touch");
+  }
 
   constructor(private online: () => boolean) {
     const q = new URLSearchParams(location.search);
@@ -713,7 +719,7 @@ export class GhostFile {
     const ownedCount = this.owned.filter((id) => itemById(id)?.kind === "node").length;
     const v = validateLoadout(this.raw, this.owned, this.depth, this.ranks());
     this.graph.innerHTML = `
-      <div class="hd">▲ LEDGER GRAPH · <span class="cy">${ownedCount}/48 OWNED</span> · ATTESTED ${attested.length}/${MAX_ATTESTED} · SCRIP <b>${this.scrip}</b> · DEPTH <b>${String(this.depth).padStart(2, "0")}</b> <span class="x" data-act="closeGraph">[G] CLOSE</span></div>
+      <div class="hd">▲ LEDGER GRAPH · <span class="cy">${ownedCount}/48 OWNED</span> · ATTESTED ${attested.length}/${MAX_ATTESTED} · SCRIP <b>${this.scrip}</b> · DEPTH <b>${String(this.depth).padStart(2, "0")}</b> <span class="x" data-act="closeGraph">${closeHint("G", this.touchHud)}</span></div>
       <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
         <circle cx="${cx}" cy="${cy}" r="${radii[0]}" class="ring"/><circle cx="${cx}" cy="${cy}" r="${radii[1]}" class="ring"/><circle cx="${cx}" cy="${cy}" r="${radii[2]}" class="ring"/>
         <text x="${cx}" y="${cy - radii[0]! - 24}" class="lbl">RING I · DEPTH 1–4</text><text x="${cx}" y="${cy - radii[1]! - 24}" class="lbl">RING II · DEPTH 6–14</text><text x="${cx}" y="${cy - radii[2]! - 16}" class="lbl">RING III · DEPTH 16–30</text>
@@ -778,7 +784,7 @@ export class GhostFile {
     // nodes reconcile exactly; a keystone may over-pay (the Auditor banks the difference) — only an overdraft is a flag
     const stamp = delta > 1.5 ? "OVERDRAWN" : "RECONCILED";
     this.panel.innerHTML = `
-      <div class="hd">▲ GHOSTFILE · <span class="cy">${v.account}</span> <span class="x" data-act="close">[TAB] CLOSE</span></div>
+      <div class="hd">▲ GHOSTFILE · <span class="cy">${v.account}</span> <span class="x" data-act="close">${closeHint("TAB", this.touchHud)}</span></div>
       <div class="ln">DEPTH <b>${String(v.depth).padStart(2, "0")}</b> · XP <b>${v.xp}</b> (${v.xpIntoDepth}/${v.xpForNext === Infinity ? "∞" : v.xpForNext}) · SCRIP <b>${v.scrip}</b> · WAKELIGHT <b>${v.wakelight}</b> · SALVAGE <b>${v.salvage}</b></div>
       <div class="ln idn">${v.identity.glyphSvg} <span class="dim">THE CITY CALLS YOU</span> <b>${v.identity.display}</b> · CHAPTER <b>${["—", "I", "II", "III"][v.identity.chapter] ?? "—"}</b>${v.identity.chapter >= 3 ? ' <span class="ye">NAMED</span>' : ""} · MONIKER <select data-moniker="1"><option value="">— none —</option>${MONIKERS.map((m) => `<option value="${m.id}" ${m.id === v.identity.moniker ? "selected" : ""} ${v.identity.unlocked.includes(m.id) ? "" : "disabled"}>${m.text}${v.identity.unlocked.includes(m.id) ? "" : " · " + m.how}</option>`).join("")}</select>${v.identity.debt ? ` · <span class="c">DEBT: ${v.identity.debt.display} (${v.identity.debt.kills} files on you)</span>` : ""}</div>
       <div class="ln dim">RITES ${CHAPTERS.map((c) => `${v.identity.chapters.includes(c.chapter) ? "▣" : "▢"} ${c.numeral} ${c.title} (D${c.depth})`).join(" · ")} · ${v.identity.unlocked.length}/${MONIKERS.length} MONIKERS EARNED</div>

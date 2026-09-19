@@ -179,10 +179,11 @@ async function main(): Promise<void> {
           if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) hits.push(`${pad.id}↔${pan.id}`);
         }
       const keyboardWords = [...document.querySelectorAll<HTMLElement>("#hud")].map((h) => h.innerText).join(" ");
-      return { hits: [...new Set(hits)], saysKeyboard: /WASD|CLICK fire|R reload|SPACE jump|click to walk|\[ENTER\]|\[1–4\]/i.test(keyboardWords) };
+      // Stage 145: any bracketed key is a keyboard word, not only the ones seen so far
+      return { hits: [...new Set(hits)], saysKeyboard: /WASD|CLICK fire|R reload|SPACE jump|click to walk|\[[A-Z0-9–-]+\]/i.test(keyboardWords), words: (keyboardWords.match(/\[[A-Z0-9–-]+\][^·\n]{0,18}/gi) ?? []).slice(0, 4).join(" / ") };
     });
     check("no HUD panel sits underneath a thumb control", clash.hits.length === 0, clash.hits.length ? clash.hits.join(", ") : `${layout.vw}×${layout.vh}, nothing under the pads`);
-    check("and the game does not tell a phone to press WASD", !clash.saysKeyboard, clash.saysKeyboard ? "keyboard legend still on screen" : "touch prompts only");
+    check("and the game does not tell a phone to press WASD, or any other key", !clash.saysKeyboard, clash.saysKeyboard ? `keyboard legend still on screen: ${clash.words}` : "touch prompts only");
     // Stage 132: the phone paid for the desktop's fixes. The foot line's seat (Stage 118) and the
     // map's footer (Stage 129) were written for the desktop's boxes; on the phone the line had gone
     // over the file's header and the footer onto two lines. Read from the drawn frame
@@ -296,6 +297,7 @@ async function main(): Promise<void> {
     // The desk sat under all seven thumb pads and the phone's own row, and the FILE book, given the
     // phone's edge-to-edge rule, was shifted half a view off the screen by the desktop seat's inline
     // transform. Each frame is opened, read from the drawn frame, and closed
+    const closeWords: Record<string, string> = {};
     const frames: Record<string, { hidden: boolean; inside: boolean; left: number; right: number; top: number; bottom: number; padsShown: number; rowUnder: boolean; scrolls: boolean }> = {};
     for (const which of ["contracts", "file"] as const) {
       await pg.evaluate((w) => (w === "contracts" ? window.__game.contracts(true) : window.__game.toggleFile(true)), which);
@@ -312,6 +314,7 @@ async function main(): Promise<void> {
         const rowUnder = getComputedStyle(rowEl).display === "none" || (!!atRow && atRow.closest(`#hud .${w}`) === el);
         return { hidden: el.hidden, inside: b.left >= -0.5 && b.right <= innerWidth + 0.5 && b.top >= -0.5 && b.bottom <= innerHeight + 0.5, left: b.left, right: b.right, top: b.top, bottom: b.bottom, padsShown: pads.length, rowUnder, scrolls: el.scrollHeight > el.clientHeight };
       }, which);
+      closeWords[which] = await pg.evaluate((w) => (document.querySelector(`#hud .${w} .hd .x`)?.textContent ?? "").trim(), which);
       if (which === "file") await shotCheck(pg, "stage32-book.png", "#hud .file");
       await pg.evaluate((w) => (w === "contracts" ? window.__game.contracts(false) : window.__game.toggleFile(false)), which);
       await pg.waitForTimeout(150);
@@ -328,6 +331,20 @@ async function main(): Promise<void> {
     const fd = frames["contracts"]!;
     const fb = frames["file"]!;
     check("the contracts desk on the phone fills the view, with the thumb pads and the row off it, and scrolls inside", !fd.hidden && fd.inside && fd.right >= VIEWPORT.width - 0.5 && fd.padsShown === 0 && fd.rowUnder && fd.scrolls, `desk ${fd.left.toFixed(0)}–${fd.right.toFixed(0)} × ${fd.top.toFixed(0)}–${fd.bottom.toFixed(0)} in ${VIEWPORT.width}×${VIEWPORT.height} · pads shown ${fd.padsShown} · the row off it ${fd.rowUnder} · scrolls ${fd.scrolls}`);
+    // Stage 145: THE RUN's strip offers the market in a safe zone. The mobile probe does not run a
+    // room, so the strip is handed a safe-zone view of its own and read where a player would see it
+    const stripWords = await pg.evaluate(async () => {
+      // carried 0 in a safe zone is the market offer; carrying something there is the banking bar instead
+      window.__game.game.hud.setRun({ carried: 0, banked: 3, banking: 0, inSafe: true, zone: "GATE", today: 0, cap: 200, owed: 0, claims: 4 });
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const el = document.querySelector("#hud .runstrip") as HTMLElement;
+      const text = (el.textContent ?? "").trim().replace(/\s+/g, " ");
+      const drawn = !el.hidden && getComputedStyle(el).display !== "none" && el.getBoundingClientRect().width > 0;
+      window.__game.game.hud.setRun(null);
+      return { text, drawn };
+    });
+    check("THE RUN's strip offers the market to a thumb, with no key in it", stripWords.drawn && /TAP MARKET/.test(stripWords.text) && !/\[[A-Z]+\]/.test(stripWords.text), `strip drawn ${stripWords.drawn} · "${stripWords.text}"`);
+    check("the reader frames tell a thumb how to close them, not a key it does not have", closeWords["contracts"] === "TAP TO CLOSE" && closeWords["file"] === "TAP TO CLOSE", `desk "${closeWords["contracts"] ?? "(none)"}" · book "${closeWords["file"] ?? "(none)"}"`);
     check("and the FILE book is on the screen, edge to edge, the pads off it, and the pads come back when it closes", !fb.hidden && fb.inside && fb.left >= -0.5 && fb.right >= VIEWPORT.width - 0.5 && fb.padsShown === 0 && padsBack >= 7, `book ${fb.left.toFixed(0)}–${fb.right.toFixed(0)} × ${fb.top.toFixed(0)}–${fb.bottom.toFixed(0)} · pads shown ${fb.padsShown}, back ${padsBack}`);
 
     // ---------------- the frame a phone has to hold ----------------

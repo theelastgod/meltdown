@@ -19,6 +19,7 @@ import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
 import { alertTop, FLAG_GAP, FLAG_TOP, flagTop, footRow, frameSeat, logLines, missionRow, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
 import { terminalFooter, terminalSeat } from "./terminal";
+import { closeHint, openHint } from "./keyhint";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter } from "./radar";
 
@@ -149,7 +150,7 @@ export class Hud {
       <div class="side"><div><span class="k">▸</span> ONLINE (1)</div><div class="perf"></div></div>
 
       <div class="log"></div>
-      <div class="p cy travel" hidden><div class="t">▲ NEO-CHINA · DISTRICT SELECT <span class="x" data-travel="close">[M] CLOSE</span></div><div class="list"></div><div class="f">travel reloads the client; online, the room decides the district</div></div>
+      <div class="p cy travel" hidden><div class="t">▲ NEO-CHINA · DISTRICT SELECT <span class="x" data-travel="close"></span></div><div class="list"></div><div class="f">travel reloads the client; online, the room decides the district</div></div>
       <div class="p mg prompt">▲ CLICK TO WAKE · <span style="color:var(--cy)">WASD</span> MOVE · <span style="color:var(--cy)">SHIFT</span> SPRINT · <span style="color:var(--cy)">CTRL</span> SLIDE · <span style="color:var(--cy)">SPACE</span> JUMP</div>
       <div class="p mg prompt-touch">▲ TAP TO WAKE · <span style="color:var(--cy)">LEFT</span> STICK MOVES · PUSH TO <span style="color:var(--cy)">SPRINT</span> · <span style="color:var(--cy)">RIGHT</span> DRAG AIMS</div>
 
@@ -184,6 +185,9 @@ export class Hud {
     const rows = LEVEL_INFO;
     list.innerHTML = rows.map((r) => `<div class="row ${r.id === level.name ? "on" : ""} ${r.cast}" data-travel="${r.id}">${r.id === level.name ? "▣" : "▢"} ${r.displayName} <span class="cast">${r.cast.toUpperCase()}</span></div>`).join("");
     const panel = this.q(".travel");
+    // Stage 145: the close marker names the key, or the gesture on a phone
+    const travelX = panel.querySelector('[data-travel="close"]');
+    if (travelX) travelX.textContent = closeHint("M", this.touch);
     panel.onclick = (e) => {
       const t = (e.target as HTMLElement).closest("[data-travel]") as HTMLElement | null;
       if (!t) return;
@@ -330,7 +334,7 @@ export class Hud {
     el.hidden = !v;
     document.getElementById("hud")?.classList.toggle("safe", !!v?.inSafe);
     if (!v) return;
-    const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? `SAFE ZONE · <span class="zone">[TAB] MARKET</span>` : `<span class="pvp">PVP ZONE</span>`;
+    const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? `SAFE ZONE · <span class="zone">${openHint("TAB", "MARKET", this.touch)}</span>` : `<span class="pvp">PVP ZONE</span>`;
     el.innerHTML = `◈ CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · OWED <b>${v.owed}</b> UNITS · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${v.claims} CLAIMS OUT`;
   }
 
@@ -632,6 +636,11 @@ export class Hud {
     const open = { desk: !this.q(".contracts").hidden, terminal: !this.q(".terminal").hidden, card: !this.q(".card").hidden, ledger: this.ledgerOpen(), dead: this.dead };
     const quiet = new Set(quietFor(open, this.root.classList.contains("touch")));
     for (const g of ALL_GROUPS) this.root.classList.toggle(`q-${g}`, quiet.has(g));
+  }
+
+  /** the touch build (Stage 145): the words the chrome uses for its controls follow the device */
+  get touch(): boolean {
+    return this.root.classList.contains("touch");
   }
 
   /** which chrome a frame has silenced, for the probe: the classes on the root that begin with `q-` */
