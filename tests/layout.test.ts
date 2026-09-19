@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit } from "../client/hud/layout";
+import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit, stackShift } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -149,5 +149,23 @@ describe("statusLineFit (Stage 135)", () => {
   it("drops to the short line, scrip and wakelight kept, where it does not", () => {
     expect(statusLineFit(216, 232)).toBe("short");
     expect(statusLineFit(180, 232)).toBe("short");
+  });
+});
+
+describe("the phone's stack (Stage 139)", () => {
+  it("moves the stack down to under the row, or under the legend under it; the desktop moves nothing", () => {
+    expect(stackShift(null)).toBe(0);
+    expect(stackShift(120)).toBe(120 + FLAG_GAP - FLAG_TOP);
+    expect(stackShift(119.2)).toBe(120 + FLAG_GAP - FLAG_TOP);
+    expect(stackShift(140)).toBe(140 + FLAG_GAP - FLAG_TOP);
+    expect(stackShift(40)).toBe(0);
+  });
+  it("carries the warning's seat and the alert's floor with it", () => {
+    const shift = stackShift(120);
+    expect(flagTop(null, shift)).toBe(FLAG_TOP + shift);
+    expect(flagTop(FLAG_TOP + shift + 22, shift)).toBe(FLAG_TOP + shift + 22 + FLAG_GAP);
+    expect(alertTop(92, 300, shift)).toBe(ALERT_FLOOR + shift);
+    expect(alertTop(92, 148, shift)).toBe(148 + ALERT_GAP);
+    expect(alertTop(92, 300)).toBe(ALERT_FLOOR);
   });
 });

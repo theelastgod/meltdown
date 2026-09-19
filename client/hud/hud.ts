@@ -17,7 +17,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, flagTop, footRow, frameSeat, missionRow, rightBandWidth, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
+import { alertTop, FLAG_GAP, FLAG_TOP, flagTop, footRow, frameSeat, missionRow, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
 import { terminalFooter, terminalSeat } from "./terminal";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter } from "./radar";
@@ -504,6 +504,24 @@ export class Hud {
     }
     const panel = mission.getBoundingClientRect();
     this.missionBottom = panel.bottom - rootTop;
+    // on the phone the node line, the warning and the alert stack under the slot-and-tab row, or
+    // under the touch legend, which sits under the row while it is up (Stage 139)
+    if (this.root.classList.contains("touch")) {
+      const rowBottom = this.q(".bottom").getBoundingClientRect().bottom - rootTop;
+      const legend = this.q(".prompt-touch");
+      const lc = getComputedStyle(legend);
+      const legendShown = lc.display !== "none" && lc.visibility !== "hidden" && Number(lc.opacity) > 0.05;
+      let under = rowBottom;
+      if (legendShown) {
+        const seat = `${Math.ceil(rowBottom) + FLAG_GAP}px`;
+        if (legend.style.top !== seat) legend.style.top = seat;
+        under = legend.getBoundingClientRect().bottom - rootTop;
+      }
+      this.stackShift = stackShift(under);
+      const footTop = `${FLAG_TOP + this.stackShift}px`;
+      const foot = this.q(".nodefoot");
+      if (foot.style.top !== footTop) foot.style.top = footTop;
+    }
     this.placeFlag();
     // the foot line between the slots and the tab strip, or above the row when they leave it no
     // room (Stage 118): the room is measured with the line out of the row so it cannot change it
@@ -594,6 +612,8 @@ export class Hud {
 
   /** the file is closed and waiting to be re-leased (Stage 128) */
   private dead = false;
+  /** how far the phone moves the node line, the warning and the alert down (Stage 139) */
+  private stackShift = 0;
   /** the status panel's second line as last measured in full, and what it needed (Stage 135) */
   private line2Text = "";
   private line2Need = 0;
@@ -862,12 +882,12 @@ export class Hud {
     const foot = this.q(".nodefoot");
     const rootTop = this.root.getBoundingClientRect().top;
     const bottom = foot.hidden ? null : foot.getBoundingClientRect().bottom - rootTop;
-    const top = `${flagTop(bottom)}px`;
+    const top = `${flagTop(bottom, this.stackShift)}px`;
     const flag = this.q(".flag");
     if (flag.style.top !== top) flag.style.top = top;
     const flagBottom = flag.classList.contains("on") ? flag.getBoundingClientRect().bottom - rootTop : null;
     const under = bottom === null ? flagBottom : flagBottom === null ? bottom : Math.max(bottom, flagBottom);
-    const alertSeat = `${alertTop(this.missionBottom, under)}px`;
+    const alertSeat = `${alertTop(this.missionBottom, under, this.stackShift)}px`;
     const alert = this.q(".alert");
     if (alert.style.top !== alertSeat) alert.style.top = alertSeat;
   }

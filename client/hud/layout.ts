@@ -25,11 +25,22 @@ export function rightBandWidth(viewWidth: number, inset: number): number {
 }
 
 /** Where the alert's top goes, given the bottom of the panel above it. */
-export function alertTop(missionBottom: number, underBottom: number | null = null): number {
+export function alertTop(missionBottom: number, underBottom: number | null = null, shift = 0): number {
   // the alert also stacks under the node line and the searchlight warning when they are up
-  // (Stage 120): a three-line mission panel had put it straight through the node line
+  // (Stage 120): a three-line mission panel had put it straight through the node line. `shift` is
+  // the phone's (Stage 139): its floor moves down with the rest of the stack
   const seat = Math.max(Math.ceil(missionBottom), underBottom === null ? 0 : Math.ceil(underBottom));
-  return Math.min(ALERT_FLOOR, seat + ALERT_GAP);
+  return Math.min(ALERT_FLOOR + shift, seat + ALERT_GAP);
+}
+
+/**
+ * How far the phone moves the stack down (Stage 139): the node line, the searchlight warning and
+ * the alert were seated at the desktop's 92 px, which on the phone is inside its slot-and-tab
+ * row. They sit under whatever the phone draws there instead: the row, or the touch legend under
+ * it. `underBottom` is that thing's bottom, or null on the desktop, where nothing moves.
+ */
+export function stackShift(underBottom: number | null): number {
+  return underBottom === null ? 0 : Math.max(0, Math.ceil(underBottom) + FLAG_GAP - FLAG_TOP);
 }
 
 /** where the searchlight warning sits when nothing is under it (px from the HUD's top) */
@@ -42,8 +53,8 @@ export const FLAG_GAP = 6;
  * whenever the mech lit you at a node. With the node line up it hangs a gap under the line's
  * measured bottom; with the line hidden it keeps its old seat.
  */
-export function flagTop(nodeFootBottom: number | null): number {
-  return nodeFootBottom === null ? FLAG_TOP : Math.max(FLAG_TOP, Math.ceil(nodeFootBottom) + FLAG_GAP);
+export function flagTop(nodeFootBottom: number | null, shift = 0): number {
+  return nodeFootBottom === null ? FLAG_TOP + shift : Math.max(FLAG_TOP + shift, Math.ceil(nodeFootBottom) + FLAG_GAP);
 }
 
 /** the gap the foot line keeps from the slots on its left and the tab strip on its right */

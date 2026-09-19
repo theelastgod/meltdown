@@ -1641,6 +1641,44 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 139 — The phone's wake was printed over its row
+
+**Goal.** A read of the wake on the phone viewport, on the tree as of Stage 138: the node line
+(`NODE D · VANTAGE · NOBODY IS PULLING`) at 92–114 px, over the stance line the phone keeps in
+its slot-and-tab row, and the wake's alert (`◆ THE WAKE BEGINS — PULL THE NODES OFF THE MODEL`)
+at 120–134 across the tab strip; the touch legend at 62–82 across the row's top. The seats were
+the desktop's (Stages 116, 120): 92 px, which the phone's row occupies. No probe had run the wake
+on the phone.
+
+**What changed.**
+- `client/hud/layout.ts` — `stackShift(underBottom)`: how far the phone moves the stack down,
+  to under the row or under the legend under it; `flagTop` and `alertTop` take the shift, the
+  alert's floor with it.
+- `client/hud/hud.ts` — on the phone the layout seats the legend under the row, the node line
+  under whichever is lowest, and passes the shift to the warning's and the alert's seats.
+- `client/hud/hud.css` — the phone draws no stance line, so its row is one line; its log sits
+  under the stack, narrower and above the weapon pad.
+- `tests/layout.test.ts` — the shift, and the seats carrying it.
+- `probe/stage32.ts` — the phone's row is one line with no stance line (in place of Stage 132's
+  stance-line seat); a second page with the wake on reads the stack before the first tap (legend,
+  node line, alert, each under the last, crossing neither the row, the tabs, the log nor a pad)
+  and on a node after it (`PULL IT`); a picture of the node line.
+
+**Proof.** vitest 778/778 (the shift and the seats in `tests/layout.test.ts`). `npm run
+probe:mobile` 27/27: no stance line and the row at 72–118 (46 px, one line); before the first
+tap the legend at 124–144, the node line at 150–172 and the alert at 178–192, crossing neither
+the row, the tabs, the log nor a pad; on node D the line reads `PULL IT` at 150–172 with the
+alert under it; the picture shows the stack. Regressions `probe:tps` 49/49 and `probe:wake` 24/24 (the desktop's seats,
+shift 0), build, smoke 7/7.
+
+Mutation A, the stance line back on the phone: `probe:mobile` 26/27, the stance line drawn and the row
+two lines, 72–158, 86 px tall. Mutation B, no shift (`stackShift` 0):
+`tests/layout.test.ts` 1 failed | 26 passed, and `probe:mobile` 25/27, the node line at 92–114 across the row and the tabs, the alert at
+120–134 across the tabs, on the yard and on the node alike. The first two phone runs
+of this stage died inside the wake read on named arrow helpers (`__name is not defined`, the
+probe build's keep-names shim, the trap noted at Stage 136); the helpers were inlined and the
+runs repeated.
+
 ## Stage 138 — The phone could not answer the fixer
 
 **Goal.** The mobile probe's last frame, since Stage 32: the creation terminal up over the yard —

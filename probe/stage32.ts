@@ -190,17 +190,16 @@ async function main(): Promise<void> {
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       const hud = document.getElementById("hud")!;
       const status = hud.querySelector(".status")!.getBoundingClientRect();
-      const center = hud.querySelector(".center")!;
-      const range = document.createRange();
-      range.selectNodeContents(center);
-      const foot = range.getBoundingClientRect();
+      // Stage 139: the phone draws no stance line; its row is the slots and the tabs on one line
+      const center = hud.querySelector(".center") as HTMLElement;
+      const stance = getComputedStyle(center).display;
+      const rowBox = hud.querySelector(".bottom")!.getBoundingClientRect();
       const f = hud.querySelector(".map .f") as HTMLElement;
       const fr = f.getBoundingClientRect();
       const mapBox = hud.querySelector(".map")!.getBoundingClientRect();
-      const crossesStatus = foot.left < status.right && foot.right > status.left && foot.top < status.bottom && foot.bottom > status.top;
-      return { footTop: foot.top, footBottom: foot.bottom, statusBottom: status.bottom, crossesStatus, footText: center.textContent ?? "", footerText: f.textContent ?? "", footerLines: (() => { const tr = document.createRange(); tr.selectNodeContents(f); return tr.getClientRects().length; })(), footerOverflow: f.scrollWidth - f.clientWidth, footerInsideMap: fr.left >= mapBox.left - 0.5 && fr.right <= mapBox.right + 0.5 };
+      return { stance, rowTop: rowBox.top, rowBottom: rowBox.bottom, rowHeight: rowBox.height, statusBottom: status.bottom, footerText: f.textContent ?? "", footerLines: (() => { const tr = document.createRange(); tr.selectNodeContents(f); return tr.getClientRects().length; })(), footerOverflow: f.scrollWidth - f.clientWidth, footerInsideMap: fr.left >= mapBox.left - 0.5 && fr.right <= mapBox.right + 0.5 };
     });
-    check("the foot line keeps clear of the file's header on the phone, seated below it where the phone puts it", !phoneFit.crossesStatus && phoneFit.footTop >= phoneFit.statusBottom && /STAND|WALK|SPRINT|AIR/.test(phoneFit.footText), `line ${phoneFit.footTop.toFixed(0)}–${phoneFit.footBottom.toFixed(0)} px · header ends ${phoneFit.statusBottom.toFixed(0)} · crosses ${phoneFit.crossesStatus} · "${phoneFit.footText}"`);
+    check("the phone draws no stance line, and its row is the slots and the tabs on one line under the file's header", phoneFit.stance === "none" && phoneFit.rowHeight <= 60 && phoneFit.rowTop >= phoneFit.statusBottom, `stance line display ${phoneFit.stance} · row ${phoneFit.rowTop.toFixed(0)}–${phoneFit.rowBottom.toFixed(0)} (${phoneFit.rowHeight.toFixed(0)} px tall) · header ends ${phoneFit.statusBottom.toFixed(0)}`);
     check("and the map's footer fits its box on one line", phoneFit.footerLines === 1 && phoneFit.footerOverflow <= 0 && phoneFit.footerInsideMap && /^▲ \d+ M WIDE$/.test(phoneFit.footerText), `"${phoneFit.footerText}" · ${phoneFit.footerLines} line(s) · overflow ${phoneFit.footerOverflow} px · inside the map ${phoneFit.footerInsideMap}`);
 
     // ---------------- the left thumb walks ----------------
@@ -369,6 +368,62 @@ async function main(): Promise<void> {
     }
     const house = await pg.evaluate(async () => { for (let i = 0; i < 40; i++) { const c = window.__game.campaign(); if (c?.faction) return c.faction; await new Promise((r) => setTimeout(r, 50)); } return window.__game.campaign()?.faction ?? null; });
     check("and thumbs on the terminal read the script to its end: it closes and the cells are the file's house", !done.open && house === "cells", `${taps} tap(s) · terminal open ${done.open} · last node ${done.node} · house ${house}`);
+
+    // ---------------- the wake on the phone (Stage 139) ----------------
+    // A second page with the wake on: the node line, the searchlight warning and the alert were
+    // seated at the desktop's 92 px, inside the phone's row; the node line printed over the stance
+    // line and the alert across the tab strip. Read the stack from the drawn frame, before the
+    // first tap (the legend up) and after it
+    const w = await ctx.newPage();
+    w.on("pageerror", (e) => errors.push(String(e)));
+    await w.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&touch=1&level=drainage_yard&ai=0`, { waitUntil: "load" });
+    await w.waitForFunction(() => window.__game?.ready === true, null, { timeout: 60000, polling: 100 });
+    await w.evaluate(() => window.__game.advance(120));
+    const readStack = () => w.evaluate(async () => {
+      window.__game.game.hud.alert("◆ THE WAKE BEGINS — PULL THE NODES OFF THE MODEL", false, 3);
+      // the alert fades in over 0.2 s: read it lit
+      await new Promise((r) => setTimeout(r, 350));
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const hud = document.getElementById("hud")!;
+      // no named helpers in here: the probe's build injects a __name the page does not have
+      const boxes: Record<string, { left: number; right: number; top: number; bottom: number; text: string } | null> = {};
+      for (const sel of [".bottom", ".bottom .tabs", ".prompt-touch", ".nodefoot", ".alert", ".log"]) {
+        const el = hud.querySelector(sel) as HTMLElement | null;
+        let b: { left: number; right: number; top: number; bottom: number; text: string } | null = null;
+        if (el) {
+          const cs = getComputedStyle(el);
+          if (!el.hidden && cs.display !== "none" && cs.visibility !== "hidden" && Number(cs.opacity) >= 0.05) {
+            const r = el.getBoundingClientRect();
+            if (r.width > 0) b = { left: r.left, right: r.right, top: r.top, bottom: r.bottom, text: (el.textContent ?? "").trim().slice(0, 50) };
+          }
+        }
+        boxes[sel] = b;
+      }
+      const row = boxes[".bottom"]!;
+      const tabs = boxes[".bottom .tabs"]!;
+      const legend = boxes[".prompt-touch"] ?? null;
+      const foot = boxes[".nodefoot"] ?? null;
+      const alert = boxes[".alert"] ?? null;
+      const log = boxes[".log"] ?? null;
+      const pads = [...hud.querySelectorAll<HTMLElement>(".thumbs .tc-b")].map((p) => { const r = p.getBoundingClientRect(); return { id: p.dataset.b ?? "", left: r.left, right: r.right, top: r.top, bottom: r.bottom }; }).filter((p) => p.right > p.left);
+      const targets: [string, { left: number; right: number; top: number; bottom: number } | null][] = [["row", row], ["tabs", tabs], ["log", log], ...pads.map((p) => [`pad:${p.id}`, p] as [string, { left: number; right: number; top: number; bottom: number }])];
+      const footCrosses = foot ? targets.filter(([, t]) => !!t && foot.left < t.right && t.left < foot.right && foot.top < t.bottom && t.top < foot.bottom).map(([n]) => n) : [];
+      const alertCrosses = alert ? targets.filter(([, t]) => !!t && alert.left < t.right && t.left < alert.right && alert.top < t.bottom && t.top < alert.bottom).map(([n]) => n) : [];
+      const legendCrosses = legend ? targets.filter(([, t]) => !!t && legend.left < t.right && t.left < legend.right && legend.top < t.bottom && t.top < legend.bottom).map(([n]) => n) : [];
+      return { row, tabs, legend, foot, alert, log, footCrosses, alertCrosses, legendCrosses, phase: window.__game.state().wake?.phase ?? null };
+    });
+    const wk0 = await readStack();
+    const wkUnder0 = wk0.legend ? wk0.legend.bottom : wk0.row.bottom;
+    check("before the first tap the phone's wake stacks the legend under the row, the node line under the legend and the alert under the node line, crossing neither the row, the tabs, the log nor a pad", wk0.phase === "wake" && !!wk0.legend && !!wk0.foot && !!wk0.alert && wk0.legend.top >= wk0.row.bottom + 4 && wk0.foot.top >= wkUnder0 + 4 && wk0.alert.top >= wk0.foot.bottom + 4 && wk0.legendCrosses.length === 0 && wk0.footCrosses.length === 0 && wk0.alertCrosses.length === 0, `phase ${wk0.phase} · row ends ${wk0.row.bottom.toFixed(0)} · legend ${wk0.legend ? `${wk0.legend.top.toFixed(0)}–${wk0.legend.bottom.toFixed(0)}` : "none"} · node line ${wk0.foot ? `${wk0.foot.top.toFixed(0)}–${wk0.foot.bottom.toFixed(0)} "${wk0.foot.text}"` : "none"} · alert ${wk0.alert ? `${wk0.alert.top.toFixed(0)}–${wk0.alert.bottom.toFixed(0)}` : "none"} · log ${wk0.log ? `${wk0.log.top.toFixed(0)}–${wk0.log.bottom.toFixed(0)}` : "none"} · crosses legend [${wk0.legendCrosses.join(",")}] node [${wk0.footCrosses.join(",")}] alert [${wk0.alertCrosses.join(",")}]`);
+    await w.touchscreen.tap(430, 250);
+    await w.evaluate(() => window.__game.advance(30));
+    await w.evaluate(() => window.__game.setBot([{ kind: "goto", x: 0, z: 17, sprint: true, radius: 1, stop: true }, { kind: "hold", ticks: 120 }]));
+    for (let i = 0; i < 20; i++) await w.evaluate(() => window.__game.advance(60));
+    const wk1 = await readStack();
+    const wkUnder1 = wk1.legend ? wk1.legend.bottom : wk1.row.bottom;
+    check("on the node, the node line reads PULL IT under the row and the alert under it, still crossing nothing", !!wk1.foot && /PULL IT/.test(wk1.foot.text) && wk1.foot.top >= wkUnder1 + 4 && !!wk1.alert && wk1.alert.top >= wk1.foot.bottom + 4 && wk1.footCrosses.length === 0 && wk1.alertCrosses.length === 0 && (wk1.legend === null || wk1.legendCrosses.length === 0), `legend ${wk1.legend ? "still up" : "gone"} · node line ${wk1.foot ? `${wk1.foot.top.toFixed(0)}–${wk1.foot.bottom.toFixed(0)} "${wk1.foot.text}"` : "none"} · alert ${wk1.alert ? `${wk1.alert.top.toFixed(0)}–${wk1.alert.bottom.toFixed(0)}` : "none"} · crosses node [${wk1.footCrosses.join(",")}] alert [${wk1.alertCrosses.join(",")}]`);
+    await shotCheck(w, "stage32-wake.png", "#hud .nodefoot");
+    await w.close();
 
     check("no page errors", errors.length === 0, errors.length ? errors.slice(0, 3).join(" | ") : "clean console");
     await pg.close();
