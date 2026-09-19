@@ -154,8 +154,10 @@ async function main(): Promise<void> {
       await page.setViewportSize({ width: size.w, height: size.h });
       await page.evaluate(async () => {
         window.__game.game.hud.alert("\u25c6 INTEGRITY 30", false, 4);
-        // the alert fades in over 0.2 s: read it lit
-        await new Promise((r) => setTimeout(r, 350));
+        // wait for the frame where it is lit rather than for a stopwatch (Stage 151): a slow
+        // runner draws the 0.2 s fade when it gets to it, and a fixed wait reads it transparent
+        const litAlert = document.querySelector("#hud .alert") as HTMLElement;
+        for (let f = 0; f < 240 && Number(getComputedStyle(litAlert).opacity) < 0.95; f++) await new Promise((r) => requestAnimationFrame(r));
         for (let f = 0; f < 5; f++) await new Promise((r) => requestAnimationFrame(r));
       });
       const seat = await page.evaluate(() => {
@@ -198,6 +200,30 @@ async function main(): Promise<void> {
     });
     check("the node line hangs under the mission panel rather than through it, in a wide window and in one narrow enough for the panel to take its second row", footSeatsOk, footSeats.join(" \u00b7 "));
     check("and the alert hangs under both of them at each of those sizes, with no floor to hold it inside them", alertSeatsOk, alertSeats.join(" \u00b7 "));
+    // Stage 151: and the log's bound, where it cannot be met. In a 480 \u00d7 270 window the wake's
+    // stack reaches 209 while the log's own anchor is at 182, so no number of entries clears it:
+    // dropping lines buys nothing there, and the log keeps what the entry cap gave it. Stage 148's
+    // trim, left to run, took this log down to a single line.
+    await page.setViewportSize({ width: 480, height: 270 });
+    const logShort = await page.evaluate(async () => {
+      const hudApi = window.__game.game.hud;
+      // the bound is applied as a line is pushed, from where the HUD was last laid out
+      for (let f = 0; f < 4; f++) await new Promise((r) => requestAnimationFrame(r));
+      for (let i = 0; i < 5; i++) hudApi.push(`SHORT WINDOW LINE ${i + 1}`);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const logEl = document.querySelector("#hud .log") as HTMLElement;
+      const alertEl = document.querySelector("#hud .alert") as HTMLElement;
+      const hudEl = document.getElementById("hud")!;
+      const hudTop0 = hudEl.getBoundingClientRect().top;
+      const lbox = logEl.getBoundingClientRect();
+      const abox = alertEl.getBoundingClientRect();
+      return { entries: logEl.children.length, top: lbox.top - hudTop0, bottom: lbox.bottom - hudTop0, stack: abox.bottom - hudTop0, first: (logEl.firstElementChild?.textContent ?? "").trim(), last: (logEl.lastElementChild?.textContent ?? "").trim() };
+    });
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.evaluate(async () => {
+      for (let f = 0; f < 5; f++) await new Promise((r) => requestAnimationFrame(r));
+    });
+    check("in a window where no number of entries clears the stack, the log keeps the lines the cap gave it rather than dropping them for nothing", logShort.entries === 5 && /LINE 1$/.test(logShort.first) && /LINE 5$/.test(logShort.last) && logShort.top < logShort.stack, `480\u00d7270: ${logShort.entries} of 5 entries \u00b7 log ${logShort.top.toFixed(0)}\u2013${logShort.bottom.toFixed(0)} with the stack ending ${logShort.stack.toFixed(0)}, which nothing clears \u00b7 first "${logShort.first}" \u00b7 last "${logShort.last}"`);
     const flipTook = await page.evaluate(async () => {
       const n = window.__game.game.world.wake!.nodes.find((x) => x.id === 2)!;
       let ticks = 0;

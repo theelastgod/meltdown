@@ -139,11 +139,12 @@ async function main(): Promise<void> {
     const killLine = await page.evaluate(() => [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "").find((l) => /⟶/.test(l)) ?? "");
     check("the kill line names the weapon, not its id: LEASE-BREAKER, and no underscored id anywhere in the log", /· LEASE-BREAKER · TTK/.test(killLine) && !/[A-Z]_[A-Z]/.test(killLine), `kill line: "${killLine}"`);
     // Stage 133: the city's PA had been cut to "LEASE REN…" on every frame; the one line the city
-    // speaks now wraps inside the log's box and reads to its last word, while every other line
-    // keeps its single row and its ellipsis
+    // speaks wraps inside the log's box and reads to its last word. Stage 148 gave every other
+    // line the same, so what this check holds is that nothing in the log is cut — the PA over its
+    // rows, the rest over theirs
     const pa = paRead?.lines.find((l) => /VANTAGE PA/.test(l.text));
     const others = paRead?.lines.filter((l) => l !== pa) ?? [];
-    check("the VANTAGE PA reads in full: wrapped inside the log's box to its last word, with no ellipsis", !!pa && pa.pa && pa.rects >= 2 && pa.inBox && pa.overflowX <= 0 && pa.overflowY <= 0 && /COMPLIANCE\.$/.test(pa.text) && others.every((l) => !l.pa && l.rects <= 1 && l.ellipsis === "ellipsis"), pa ? `${pa.rects} rows in ${paRead!.boxWidth.toFixed(0)} px · overflow ${pa.overflowX}/${pa.overflowY} px · in the box ${pa.inBox} · ends "…${pa.text.slice(-22)}" · ${others.length} other line(s) single-row` : `no PA line in the log at tick 330: ${paRead?.lines.map((l) => l.text).join(" / ") ?? "(unread)"}`);
+    check("the VANTAGE PA reads in full: wrapped inside the log's box to its last word, with no ellipsis", !!pa && pa.pa && pa.rects >= 2 && pa.inBox && pa.overflowX <= 0 && pa.overflowY <= 0 && /COMPLIANCE\.$/.test(pa.text) && others.every((l) => !l.pa && l.overflowX <= 0 && l.ellipsis === "clip"), pa ? `${pa.rects} rows in ${paRead!.boxWidth.toFixed(0)} px · overflow ${pa.overflowX}/${pa.overflowY} px · in the box ${pa.inBox} · ends "…${pa.text.slice(-22)}" · ${others.length} other line(s) uncut, ${others.filter((l) => l.rects > 1).length} of them wrapped` : `no PA line in the log at tick 330: ${paRead?.lines.map((l) => l.text).join(" / ") ?? "(unread)"}`);
     // Stage 130: after the plan — sprint, slide, slide-jump, mantle, a kill — the line teaches only
     // what the file has not done; the bot did not reload, so R reload is what is left (or nothing,
     // if the magazine ran out and it did)

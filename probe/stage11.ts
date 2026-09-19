@@ -165,7 +165,7 @@ async function main(): Promise<void> {
       await kicked.close();
       check(`the playlist's rules refuse a loadout it bans at join (${au.name})`, reason.includes(bad.rule), `kick: "${reason}"`);
     } else check(`the playlist has no loadout rule this week (${au.name}); its mutators are on the sheet and gravity`, true, `${au.line}`);
-    const [a, b] = await Promise.all([open("ALPHA", acct, legal(), { width: 480, height: 270 }), open("BRAVO", "fresh-eg", legal(), null)]);
+    const [a, b] = await Promise.all([open("ALPHA", acct, legal(), { width: 960, height: 540 }), open("BRAVO", "fresh-eg", legal(), null)]);
     for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 });
     await a.waitForTimeout(300);
     const w0 = await a.evaluate(() => ({ eg: window.__game.endgame(), maxShield: window.__game.game.player.maxShield, maxHealth: window.__game.state().maxHealth, mods: window.__game.state().mods, log: [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "") }));

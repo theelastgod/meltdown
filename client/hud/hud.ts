@@ -1140,8 +1140,16 @@ export class Hud {
     // cut one, and the log grows upward from its anchor with what it says. It drops its oldest
     // rather than climb over the stack above it
     const rootTop = this.root.getBoundingClientRect().top;
+    const held = this.lines.slice();
     while (this.lines.length > 1 && !logClears(log.getBoundingClientRect().top - rootTop, this.stackBottom)) {
       this.lines.shift();
+      log.innerHTML = this.lines.join("");
+    }
+    // and where even one entry cannot clear the stack (Stage 151) — a 270 px tall window, where
+    // the log's own anchor is above the alert's seat and the two cross whatever the log says —
+    // trimming loses lines for nothing, so the log keeps what the entry cap gave it
+    if (!logClears(log.getBoundingClientRect().top - rootTop, this.stackBottom)) {
+      this.lines = held;
       log.innerHTML = this.lines.join("");
     }
   }

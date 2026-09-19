@@ -340,6 +340,33 @@ async function main(): Promise<void> {
       return { entries: logEl.children.length, top: lb.top - hudTop, bottom: lb.bottom - hudTop, alertBottom: ab.bottom - hudTop, cut: first ? first.scrollWidth > first.clientWidth + 1 : false };
     });
     check("and a log of lines far too long for it drops its oldest entry rather than climb over the stack, still cutting none of what it shows", logBound.entries >= 1 && logBound.entries < 5 && logBound.top >= logBound.alertBottom + 4 && !logBound.cut, `${logBound.entries} of 5 entries kept \u00b7 log ${logBound.top.toFixed(0)}\u2013${logBound.bottom.toFixed(0)} under a stack ending ${logBound.alertBottom.toFixed(0)} \u00b7 oldest cut ${logBound.cut}`);
+    // Stage 151: and in a 480 \u00d7 270 window the stack reaches 156 while the log's own anchor is at
+    // 182, so there is room for one row and the log keeps one \u2014 the newest \u2014 rather than printing
+    // the other four through the stack. That is the rule working, and it is why CI run #177's
+    // endgame probe could not find its AUDIT line on a page that size: the line was pushed out of
+    // a log with room for one. Its Audit page is read at 960 \u00d7 540 now.
+    await hub.setViewportSize({ width: 480, height: 270 });
+    const logShort = await hub.evaluate(async () => {
+      const hudApi = window.__game.game.hud;
+      // the bound is applied as a line is pushed, from where the HUD was last laid out: let the
+      // layout pass run at the new size first, or the pushes are judged against the old one and
+      // the check passes for the wrong reason
+      for (let f = 0; f < 4; f++) await new Promise((r) => requestAnimationFrame(r));
+      for (let i = 0; i < 5; i++) hudApi.push(`SHORT WINDOW LINE ${i + 1}`);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const logEl = document.querySelector("#hud .log") as HTMLElement;
+      const alertEl = document.querySelector("#hud .alert") as HTMLElement;
+      const hudEl = document.getElementById("hud")!;
+      const hudTop = hudEl.getBoundingClientRect().top;
+      const lb = logEl.getBoundingClientRect();
+      const ab = alertEl.getBoundingClientRect();
+      return { entries: logEl.children.length, top: lb.top - hudTop, bottom: lb.bottom - hudTop, alertBottom: ab.bottom - hudTop, first: (logEl.firstElementChild?.textContent ?? "").trim(), last: (logEl.lastElementChild?.textContent ?? "").trim() };
+    });
+    await hub.setViewportSize({ width: 960, height: 540 });
+    await hub.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    });
+    check("and in a 480 \u00d7 270 window, where the stack leaves the log one row, it keeps that row \u2014 the newest \u2014 and stays clear of the stack rather than printing through it", logShort.entries >= 1 && logShort.entries <= 5 && logShort.top >= logShort.alertBottom + 4 && /LINE 5$/.test(logShort.last), `480\u00d7270: ${logShort.entries} of 5 entries \u00b7 log ${logShort.top.toFixed(0)}\u2013${logShort.bottom.toFixed(0)} with the stack ending ${logShort.alertBottom.toFixed(0)} \u00b7 first "${logShort.first}" \u00b7 last "${logShort.last}"`);
     // hold at B: 21 s of sim; a wave lands halfway
     const waspsBefore = await hub.evaluate(() => window.__game.game.world.wasps.length);
     await hub.evaluate((b) => window.__game.setBot([{ kind: "goto", x: b.x, z: b.z, sprint: false, radius: 0.8, timeoutTicks: 60, stop: true }, { kind: "hold", ticks: 60 * 22 }]), B);

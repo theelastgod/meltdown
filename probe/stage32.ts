@@ -429,8 +429,12 @@ async function main(): Promise<void> {
     await w.evaluate(() => window.__game.advance(120));
     const readStack = () => w.evaluate(async () => {
       window.__game.game.hud.alert("◆ THE WAKE BEGINS — PULL THE NODES OFF THE MODEL", false, 3);
-      // the alert fades in over 0.2 s: read it lit
-      await new Promise((r) => setTimeout(r, 350));
+      // the alert fades in over 0.2 s, and a slow runner draws that fade when it gets to it
+      // (Stage 151): wait for the frame where it is lit rather than for a stopwatch. CI run #176
+      // read 350 ms and two frames after raising it, on a runner drawing at 12 fps, and found it
+      // still transparent — so the seat under the row went unread and the check failed
+      const litEl = document.querySelector("#hud .alert") as HTMLElement;
+      for (let f = 0; f < 240 && Number(getComputedStyle(litEl).opacity) < 0.95; f++) await new Promise((r) => requestAnimationFrame(r));
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       const hud = document.getElementById("hud")!;
       // no named helpers in here: the probe's build injects a __name the page does not have
@@ -461,7 +465,8 @@ async function main(): Promise<void> {
       const alertCrosses = alert ? targets.filter(([, t]) => !!t && alert.left < t.right && t.left < alert.right && alert.top < t.bottom && t.top < alert.bottom).map(([n]) => n) : [];
       const legendCrosses = legend ? targets.filter(([, t]) => !!t && legend.left < t.right && t.left < legend.right && legend.top < t.bottom && t.top < legend.bottom).map(([n]) => n) : [];
       const rowCrossesMission = !!mission && row.left < mission.right && mission.left < row.right && row.top < mission.bottom && mission.top < row.bottom;
-      return { row, tabs, legend, foot, alert, log, mission, logEntries, rowCrossesMission, footCrosses, alertCrosses, legendCrosses, phase: window.__game.state().wake?.phase ?? null };
+      const alertLit = { opacity: Number(getComputedStyle(litEl).opacity), display: getComputedStyle(litEl).display, on: litEl.classList.contains("on"), quiet: [...hud.classList].filter((c) => c.startsWith("q-")).join(",") };
+      return { row, tabs, legend, foot, alert, log, mission, logEntries, rowCrossesMission, footCrosses, alertCrosses, legendCrosses, alertLit, phase: window.__game.state().wake?.phase ?? null };
     });
     const wk0 = await readStack();
     const wkUnder0 = wk0.legend ? wk0.legend.bottom : wk0.row.bottom;
@@ -492,7 +497,7 @@ async function main(): Promise<void> {
     for (let i = 0; i < 6; i++) await w.evaluate(() => window.__game.advance(10));
     const wk3 = await readStack();
     const wkUnder3 = wk3.legend ? wk3.legend.bottom : wk3.row.bottom;
-    check("off every node, with no node line up, the alert still hangs under the phone's row rather than on it", wk3.foot === null && !!wk3.alert && wk3.alert.top >= wkUnder3 + 4 && wk3.alertCrosses.length === 0, `node line ${wk3.foot ? "still up" : "down"} \u00b7 row ends ${wk3.row.bottom.toFixed(0)}${wk3.legend ? `, legend ends ${wk3.legend.bottom.toFixed(0)}` : ""} \u00b7 alert ${wk3.alert ? `${wk3.alert.top.toFixed(0)}\u2013${wk3.alert.bottom.toFixed(0)}` : "none"} \u00b7 crosses [${wk3.alertCrosses.join(",")}]`);
+    check("off every node, with no node line up, the alert still hangs under the phone's row rather than on it", wk3.foot === null && !!wk3.alert && wk3.alert.top >= wkUnder3 + 4 && wk3.alertCrosses.length === 0, `node line ${wk3.foot ? "still up" : "down"} \u00b7 row ends ${wk3.row.bottom.toFixed(0)}${wk3.legend ? `, legend ends ${wk3.legend.bottom.toFixed(0)}` : ""} \u00b7 alert ${wk3.alert ? `${wk3.alert.top.toFixed(0)}\u2013${wk3.alert.bottom.toFixed(0)}` : `none (opacity ${wk3.alertLit.opacity}, display ${wk3.alertLit.display}, lit ${wk3.alertLit.on}, silenced [${wk3.alertLit.quiet}])`} \u00b7 crosses [${wk3.alertCrosses.join(",")}]`);
     await w.close();
 
     // ---------------- pausing on the phone (Stage 141) ----------------

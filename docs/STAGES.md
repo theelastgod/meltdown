@@ -1641,6 +1641,62 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 151 — CI ran the probes I did not
+
+**Goal.** Verify runs #176 and #177 went red on work that had been verified here first. Three
+failures, each one a probe this session had not run:
+
+- `probe:mobile`, on both runs: `off every node, with no node line up, the alert still hangs under
+  the phone's row rather than on it — ... alert none`. Stage 147's phone check raised the alert,
+  waited 350 ms and two frames, and read. That is the house rule for reading an alert, and on a
+  runner drawing at 12 fps it is a race: the fade the rule allows for is drawn when the runner gets
+  to it, not when the stopwatch says.
+- `npm run probe` (the first probe), on #177: `the VANTAGE PA reads in full: wrapped inside the
+  log's box to its last word, with no ellipsis`. Stage 133's check asserted that the PA was the one
+  line that wrapped and that every other line kept `text-overflow: ellipsis`. Stage 148 gave every
+  line the wrap, and left that check asserting the thing it had just removed.
+- `probe:endgame`, on #177: `the Welcome names the playlist and the client runs the same gravity
+  and sheet the room runs`. Its Audit page is 480 × 270, and there Stage 148's new bound — the log
+  drops its oldest entry until it clears the stack above it — can never be satisfied: the log's own
+  anchor, 88 px off the bottom of a 270 px view, is above the alert's seat whatever the log says.
+  So it trimmed to a single line and the `AUDIT · STACK & PHAGE` line the check looks for was gone.
+
+**What changed.**
+
+- `probe/stage32.ts`, `probe/stage5.ts` — both wait for the frame where the alert is lit, bounded
+  at 240 frames, rather than for 350 ms. The phone's check also reports the alert's opacity, its
+  display and the silenced groups when it finds nothing, so the next failure says why.
+- `probe/stage1.ts` — the PA check now holds what Stage 148 made true: nothing in the log is cut,
+  the PA over its rows and the rest over theirs.
+- `client/hud/hud.ts` — the log keeps what the entry cap gave it where no number of entries clears
+  the stack. Trimming there loses lines for nothing.
+- `probe/stage5.ts` — that case as a check: in a 480 × 270 window the wake's stack reaches 209
+  while the log's anchor is at 182, so nothing clears and the log keeps all five lines.
+- `probe/stage10.ts` — and the other case, where one row does fit: at 480 × 270 the campaign's
+  shorter panel leaves the log one row, and it keeps that one — the newest — clear of the stack.
+- `probe/stage11.ts` — the Audit page is read at 960 × 540. Its check looks for the `AUDIT · STACK
+  & PHAGE` line in the event log, and a log with room for one line is not where you read that.
+
+**Proof.** vitest 810/810. The probes CI failed, all green on the same tree: `npm run probe` 19/19,
+`probe:campaign` 43/43, `probe:endgame` 16/16, `probe:mobile` 39/39, and `probe:wake` 27/27 with
+both short-window readings — `480×270: 5 of 5 entries · log 112–182 with the stack ending 222,
+which nothing clears` in the wake's scene, and `1 of 5 entries · log 168–182 with the stack ending
+156` in the campaign's, where one row fits. And the whole sweep as CI runs it — every probe, the
+four lints, build and smoke — green: look 18/18, net 23/23, arsenal 32/32, file 19/19, city 45/45,
+cityLife 21/21, mastery 23/23, identity 25/25, counter 16/16, crawl 10/10, ship 9/9, run 25/25,
+harden 9/9, frame 6/6, persist 7/7, tps 50/50, body 20/20, smoke 7/7.
+
+Mutation A, the log dropping lines where dropping buys nothing: `probe:wake` 26/27 — `480×270: 1 of
+5 entries · log 168–182 with the stack ending 222, which nothing clears`. Mutation B, the log back
+to cutting its lines: `npm run probe` 18/19 — `2 rows in 380 px · overflow 388/0 px · in the box
+false`. And the check the timing fix touched still guards what it guarded: with the HUD no longer
+handing the alert the phone's row, `probe:mobile` is 38/39 — `alert 98–112 · crosses [row,tabs]` —
+so waiting for the lit frame made the check reliable without making it lenient.
+
+The method's own lesson: these three failures all came from probes this session did not run. A
+change to shared HUD code is a change to every frame the game draws, and the probe list in
+`.github/workflows/verify.yml` is the list of things that read those frames.
+
 ## Stage 150 — The file's own name line was cut on every screen
 
 **Goal.** The status panel's first line is the file's own: `▲ BLANK · DEBT COLLECTOR · DRAINAGE
