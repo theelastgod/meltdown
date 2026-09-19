@@ -17,6 +17,7 @@
  *   npm run probe:campaign
  */
 import { spawn, type ChildProcess } from "node:child_process";
+import { cutDetail, hudCuts } from "./hudfit";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
@@ -292,6 +293,13 @@ async function main(): Promise<void> {
     await advance(hub, 3);
     const m2 = await hub.evaluate(() => window.__game.campaign().mission);
     check("reaching B starts the hold: 20 s while the file decrypts", m2?.kind === "survive" && m2.need === 20, `objective "${m2?.objective}" (${m2?.kind}) ${m2?.progress}/${m2?.need}`);
+    // Stage 162: nothing on this frame may be cut. Three stages found content that was right
+    // in a box too small for it, each by looking at a picture; this asks it of every text.
+    {
+      const fitCuts = await hudCuts(hub);
+      check("nothing on the HUD is cut with a mission running", fitCuts.length === 0, cutDetail(fitCuts, "with a mission running"));
+    }
+
     await shotCheck(hub, `stage10-mission.png`);
 
     // ---------------- the log cut the line that says what to do (Stage 148) ----------------

@@ -1641,6 +1641,52 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 162 — The fit was checked one element at a time, after each was found cut
+
+**Goal.** Three stages found the same defect in three places: content that was right in a box too
+small for it. Stage 148 and 151, the event log's entries. Stage 150, the file's own header line, cut
+at every width this game has ever been drawn at, with a moniker every file earns in its first match.
+Stage 160, the map's footer, cut in every district since it was written, under a check that asserted
+its text exactly and its width never.
+
+Each was found by looking at a picture and then measuring. That is a fine way to find the first one
+and a poor way to find the fourth. This asks the question of every text on the HUD at once, in the
+states the probes have already built — because the states are where the defects were: a mission
+running, a claim carried, the chooser open. The base HUD is clean at 1920, 1280, 960 and 800; every
+one of the cut readouts was somewhere a player had got to.
+
+**What changed.**
+
+- `probe/hudfit.ts` — `hudCuts(page)` returns every element on the drawn HUD whose text is wider
+  than its box, where the box holds it to one line or clips it, and `cutDetail` names them with
+  their overflow in pixels.
+- `probe/stage10.ts`, `probe/stage11.ts`, `probe/stage14.ts` — the sweep runs at the frame each
+  already screenshots: a mission running, the district chooser and the Deep Wake open, the run strip
+  up with a claim carried.
+
+**The rule needed both halves, and the first version had one.** It began as leaves only, on the
+reasoning that a parent which scrolls because its child does is the child's story. That walked
+straight past the file's header line, which is five spans that each fit inside a line that does not
+— so reverting Stage 150 left the sweep green. It reports any element that holds its text to one
+line or clips it, leaf or not.
+
+**Proof.** vitest 860/860. `probe:campaign` 44/44, `probe:endgame` 18/18, `probe:run` 27/27, each
+reporting `nothing cut on the HUD`. The whole sweep as CI runs it — every probe, the four lints, the
+firmware certification, build and smoke — green.
+
+The mutations are the point of this stage, because a guard that finds nothing today is only worth
+having if it would have found the ones already found. Reverting **Stage 160**, the map footer's shed:
+`probe:campaign` 43/44 and `probe:endgame` 17/18 with `".f" by 13px ("▲ AHEAD · 114 M ACROSS")`,
+`probe:run` 26/27 with `".f" by 7px` — three probes that have never heard of the map footer, naming
+the element and the pixels. Reverting **Stage 150**, the header line's shed: `probe:run` 26/27 with
+`".line" by 139px ("▲ ALPHA · DRAINAGE YARD (MAGENTA) · 2 ONLINE")` and `probe:campaign` 43/44 by
+2 px. Two defects that each took a stage and a screenshot to find are now caught by one check that
+knows about neither.
+
+Stage 150's revert is also how the sweep's own hole was found: under the leaves-only rule it stayed
+green, because the header is five spans that each fit inside a line that does not. The rule was
+widened before the stage was finished rather than after.
+
 ## Stage 161 — The district chooser and a contract were printed on the same page
 
 **Goal.** The endgame probe's own frame, `stage11-deepwake.png`, shows the district list with

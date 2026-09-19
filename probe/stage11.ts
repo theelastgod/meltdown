@@ -13,6 +13,7 @@
  *   npm run probe:endgame
  */
 import { spawn, type ChildProcess } from "node:child_process";
+import { cutDetail, hudCuts } from "./hudfit";
 import { cssAlpha, hidesPanels } from "../client/hud/panel";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
@@ -236,6 +237,13 @@ async function main(): Promise<void> {
       chooser.open && hidesPanels(chooserAlpha, chooser.overlap),
       `chooser painted ${chooser.bg} (alpha ${chooserAlpha}) over ${chooser.overlap} px\u00b2 of ".${chooser.worst}"`,
     );
+
+    // Stage 162: nothing on this frame may be cut. Three stages found content that was right
+    // in a box too small for it, each by looking at a picture; this asks it of every text.
+    {
+      const fitCuts = await hudCuts(a);
+      check("nothing on the HUD is cut with the district chooser and the Deep Wake open", fitCuts.length === 0, cutDetail(fitCuts, "with the district chooser and the Deep Wake open"));
+    }
 
     await shotCheck(a, `stage11-deepwake.png`);
     check("the MAP tab shows the Deep Wake: the season, who holds each node, the pressure leader and the last lines", /DEEP WAKE · SEASON/.test(mapText) && /LEASE ROW/.test(mapText) && /CEL/.test(mapText), mapText.slice(0, 160));

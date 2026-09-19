@@ -11,6 +11,7 @@
  *   npm run probe:run
  */
 import { spawn, type ChildProcess } from "node:child_process";
+import { cutDetail, hudCuts } from "./hudfit";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
@@ -251,6 +252,13 @@ async function main(): Promise<void> {
     const tightClear = tight.mission.top >= tight.status.bottom + 4 || tight.mission.left >= tight.status.right + 4;
     check("and at 640 the panel takes a second row under the file's header, short of the map", tight.width === 640 && tightClear && tight.mission.top >= tight.status.bottom + 4 && tight.mission.right + 4 <= tight.map.left && tight.mission.left >= 10, `at ${tight.width.toFixed(0)}: status ${tight.status.left.toFixed(0)}–${tight.status.right.toFixed(0)} ends ${tight.status.bottom.toFixed(0)} px down · mission ${tight.mission.left.toFixed(0)}–${tight.mission.right.toFixed(0)} from ${tight.mission.top.toFixed(0)} px down · map begins ${tight.map.left.toFixed(0)}`);
     check("with the run strip up the mission panel keeps clear of the file's header and of the map, and the strip wraps inside it — at 960 px and at 800", band.mission.left >= band.status.right + 4 && band.mission.right + 4 <= band.map.left && band.strip.bottom - band.strip.top > 20 && /CARRYING/.test(band.stripText) && narrow.width === 800 && narrow.mission.left >= narrow.status.right + 4 && narrow.mission.right + 4 <= narrow.map.left, `at ${band.width.toFixed(0)}: status ends ${band.status.right.toFixed(0)} · mission ${band.mission.left.toFixed(0)}–${band.mission.right.toFixed(0)} · map begins ${band.map.left.toFixed(0)} · strip ${(band.strip.bottom - band.strip.top).toFixed(0)} px tall · at ${narrow.width.toFixed(0)}: status ends ${narrow.status.right.toFixed(0)} · mission ${narrow.mission.left.toFixed(0)}–${narrow.mission.right.toFixed(0)} · map begins ${narrow.map.left.toFixed(0)}`);
+    // Stage 162: nothing on this frame may be cut. Three stages found content that was right
+    // in a box too small for it, each by looking at a picture; this asks it of every text.
+    {
+      const fitCuts = await hudCuts(a);
+      check("nothing on the HUD is cut with the run strip up and a claim carried", fitCuts.length === 0, cutDetail(fitCuts, "with the run strip up and a claim carried"));
+    }
+
     await shotCheck(a, `stage14-carry.png`);
     check("walking over a claim carries it: the strip counts it, the room counts it, the claim leaves the street until it respawns", picked && v1.carried === target.value && st1.run?.carried["ALPHA"] === target.value && v1.claims.length === claims.length - 1 && st1.run.claims === claims.length - 1, `carried ${v1.carried} (claim ${target.value}) · room ${JSON.stringify(st1.run?.carried)} · claims out ${v1.claims.length}`);
 
