@@ -1641,6 +1641,50 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 146 — The node line printed through the panel it hangs under
+
+**Goal.** The centred stack under the mission panel has three rows: the node line (what is
+happening to the node under your feet), the searchlight warning, and the alert. Two of them are
+seated by measurement — the warning hangs under the node line's measured bottom (Stage 116), the
+alert under whichever of the two ends lower (Stage 120). The first row was not: `.nodefoot` took
+its 92 px straight from the stylesheet, while the panel above it grows with what it says.
+
+So in every wake round the panel ended at 94 px and the line began at 92: the two borders crossed,
+in every window this game has ever drawn. And in a window narrow enough for the panel to take its
+second row under the status panel — 640 × 360, which is the size the netcode probe and the live
+watcher play at — the panel spans 84–164 and the line still began at 92, printing 72 px straight
+through the objective and the cell line. At 480 px it was 83.
+
+**What changed.**
+
+- `client/hud/layout.ts` — the stack's seat is one rule now, `stackSeat`, and `nodeFootTop` is the
+  first row's use of it: the stack's own top, or a gap under the mission panel's measured bottom
+  where the panel reaches lower. `flagTop` is the same rule on the row below, unchanged in
+  behaviour and in signature.
+- `client/hud/hud.ts` — `placeFlag` seats the node line before it reads its bottom, from the
+  mission panel's bottom measured in the same layout pass. The phone's branch no longer seats the
+  line itself: its shift already carries the stack under the slot-and-tab row, which Stage 140
+  seats under the panel, so the shared rule gives the phone exactly what it had.
+- `tests/layout.test.ts` — the rule: the seat with no panel above it, the gap under the wake's own
+  94 px panel, the second-row panel at 164 and 175, the phone's shift, and that the warning still
+  seats under the line.
+- `probe/stage5.ts` — the wake probe already stands the file on node B mid-pull with the line up.
+  It now reads where the panel and the line actually are, in a 1280 × 720 window and in a 640 × 360
+  one where the panel drops to its second row, and fails if they cross.
+
+**Proof.** vitest 794/794. `npm run probe:wake` 25/25, read with the file standing on node B
+mid-pull and the line up: at 1280 × 720 the panel ends at 94 and the line runs 100–122, 6 px
+clear; at 640 × 360 the panel takes its second row at 84–164 and the line runs 170–192, 6 px
+clear. Regressions `probe:mobile` 38/38, whose stack the shared rule now seats, `probe:tps` 49/49
+and `probe:run` 23/23; build, smoke 7/7.
+
+Mutation A, the node line put back on its stylesheet seat — the HUD asking for the seat with no
+panel above it: `probe:wake` 24/25, `1280×720: panel 14–94 · line 92–114 · CROSSING it by 2 px ·
+640×360: panel 84–164 (second row) · line 92–114 · CROSSING it by 72 px`, which is the defect as
+it stood. Mutation B, the rule itself ignoring the panel: `tests/layout.test.ts` 3 failed — the gap
+under the 94 px panel, the second-row panel, and the phone's shift — and `probe:wake` 24/25 with
+the same two crossings.
+
 ## Stage 145 — The phone was told to press keys it does not have
 
 **Goal.** Stage 137's picture of the FILE book on the phone has `[TAB] CLOSE` in its header, and

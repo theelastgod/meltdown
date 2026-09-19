@@ -3,7 +3,7 @@
  * play" means.
  */
 import { describe, expect, it } from "vitest";
-import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit, stackShift, phoneRowTop, PHONE_ROW_GAP, logLines, LOG_LINES, PHONE_LOG_LINES } from "../client/hud/layout";
+import { ALERT_FLOOR, ALERT_GAP, alertTop, crossesPlay, FLAG_GAP, FLAG_TOP, flagTop, nodeFootTop, FOOT_GAP, footRow, FRAME_GAP, FRAME_INSET, frameSeat, RIGHT_BAND, rightBandWidth, MISSION_MIN, missionMaxWidth, missionRow, STATUS_GAP, STATUS_MIN, STATUS_WIDTH, statusWidth, statusLineFit, stackShift, phoneRowTop, PHONE_ROW_GAP, logLines, LOG_LINES, PHONE_LOG_LINES } from "../client/hud/layout";
 
 describe("the right band", () => {
   it("is a fixed share of the width, less the inset, and never negative", () => {
@@ -45,6 +45,34 @@ describe("the alert's seat", () => {
     expect(alertTop(90, null)).toBe(90 + ALERT_GAP);
     expect(alertTop(90, 40)).toBe(90 + ALERT_GAP);
     expect(alertTop(90, 400)).toBe(ALERT_FLOOR);
+  });
+});
+
+describe("the node line's seat (Stage 146)", () => {
+  it("keeps the stack's top where the mission panel ends above it", () => {
+    expect(nodeFootTop(null)).toBe(FLAG_TOP);
+    expect(nodeFootTop(40)).toBe(FLAG_TOP);
+    expect(nodeFootTop(FLAG_TOP - FLAG_GAP)).toBe(FLAG_TOP);
+  });
+  it("hangs a gap under a panel that reaches lower \u2014 the wake's own, which ends at 94", () => {
+    expect(nodeFootTop(94)).toBe(94 + FLAG_GAP);
+    expect(nodeFootTop(94)).toBeGreaterThan(94);
+    expect(nodeFootTop(93.2)).toBe(94 + FLAG_GAP);
+  });
+  it("clears the panel in the second row, where the line had printed through it", () => {
+    // 640 px wide: the panel drops under the status panel and spans 84\u2013164
+    expect(nodeFootTop(164)).toBe(164 + FLAG_GAP);
+    expect(nodeFootTop(175)).toBe(175 + FLAG_GAP);
+  });
+  it("takes the phone's shift, and the gap under the panel when that reaches lower still", () => {
+    expect(nodeFootTop(null, 60)).toBe(FLAG_TOP + 60);
+    expect(nodeFootTop(94, 60)).toBe(FLAG_TOP + 60);
+    expect(nodeFootTop(200, 60)).toBe(200 + FLAG_GAP);
+  });
+  it("seats the warning under it, so the stack keeps its order", () => {
+    const node = nodeFootTop(164);
+    expect(flagTop(node + 22)).toBe(node + 22 + FLAG_GAP);
+    expect(flagTop(node + 22)).toBeGreaterThan(node);
   });
 });
 

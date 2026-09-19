@@ -17,7 +17,7 @@ import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
-import { alertTop, FLAG_GAP, FLAG_TOP, flagTop, footRow, frameSeat, logLines, missionRow, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
+import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusLineFit, statusWidth } from "./layout";
 import { terminalFooter, terminalSeat } from "./terminal";
 import { closeHint, openHint } from "./keyhint";
 import type { NodeReadout } from "./node";
@@ -528,9 +528,6 @@ export class Hud {
         under = legend.getBoundingClientRect().bottom - rootTop;
       }
       this.stackShift = stackShift(under);
-      const footTop = `${FLAG_TOP + this.stackShift}px`;
-      const foot = this.q(".nodefoot");
-      if (foot.style.top !== footTop) foot.style.top = footTop;
     }
     this.placeFlag();
     // the foot line between the slots and the tab strip, or above the row when they leave it no
@@ -891,13 +888,19 @@ export class Hud {
   private missionBottom = 0;
 
   /**
-   * The centred stack under the mission panel: the searchlight warning under the node line, or at
-   * its seat when the line is hidden (Stage 116), and the alert under whichever of the two ends
-   * lower, or under the mission panel when neither is up (Stage 120).
+   * The centred stack under the mission panel: the node line a gap under the panel's own measured
+   * bottom (Stage 146), the searchlight warning under the node line, or at its seat when the line
+   * is hidden (Stage 116), and the alert under whichever of the two ends lower, or under the
+   * mission panel when neither is up (Stage 120).
    */
   private placeFlag(): void {
     const foot = this.q(".nodefoot");
     const rootTop = this.root.getBoundingClientRect().top;
+    // the node line is the stack's own first row (Stage 146): a gap under the mission panel
+    // wherever the panel reaches lower than its seat. On the phone the shift carries it under the
+    // slot-and-tab row, which Stage 140 already seats under the panel, so the gap is a no-op there
+    const footSeat = `${nodeFootTop(this.missionBottom > 0 ? this.missionBottom : null, this.stackShift)}px`;
+    if (foot.style.top !== footSeat) foot.style.top = footSeat;
     const bottom = foot.hidden ? null : foot.getBoundingClientRect().bottom - rootTop;
     const top = `${flagTop(bottom, this.stackShift)}px`;
     const flag = this.q(".flag");

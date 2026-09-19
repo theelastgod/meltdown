@@ -136,6 +136,49 @@ async function main(): Promise<void> {
     // the picture is of the countdown, not of what came after it: the probe drives the simulation by
     // hand, so between two evaluates the node is frozen mid-pull with the readout up
     await shotCheck(page, "stage5-nodefoot.png");
+
+    // ---------------- the node line hangs under the panel, not through it (Stage 146) ----------
+    // The line is the first row of the centred stack and had its 92 px straight from the
+    // stylesheet, while the mission panel above it grows: in every wake round the panel ended at
+    // 94 and the line began at 92, and in a window narrow enough for the panel to take its second
+    // row under the status panel the line printed through the panel's own text. The line is up and
+    // the file is standing on node B, so this is the frame a player is looking at.
+    const footSeats: string[] = [];
+    let footSeatsOk = true;
+    for (const size of [{ w: 1280, h: 720 }, { w: 640, h: 360 }]) {
+      await page.setViewportSize({ width: size.w, height: size.h });
+      await page.evaluate(async () => {
+        for (let f = 0; f < 5; f++) await new Promise((r) => requestAnimationFrame(r));
+      });
+      const seat = await page.evaluate(() => {
+        const hudEl = document.querySelector("#hud") as HTMLElement;
+        const hudTop = hudEl.getBoundingClientRect().top;
+        const panelEl = document.querySelector("#hud .mission") as HTMLElement;
+        const lineEl = document.querySelector("#hud .nodefoot") as HTMLElement;
+        const statusEl = document.querySelector("#hud .status") as HTMLElement;
+        const pb = panelEl.getBoundingClientRect();
+        const nb = lineEl.getBoundingClientRect();
+        const sb = statusEl.getBoundingClientRect();
+        return {
+          up: !lineEl.hidden && nb.width > 0,
+          said: (lineEl.textContent ?? "").trim(),
+          panel: `${(pb.top - hudTop).toFixed(0)}\u2013${(pb.bottom - hudTop).toFixed(0)}`,
+          line: `${(nb.top - hudTop).toFixed(0)}\u2013${(nb.bottom - hudTop).toFixed(0)}`,
+          crosses: pb.left < nb.right && pb.right > nb.left && pb.top < nb.bottom && pb.bottom > nb.top,
+          gap: nb.top - pb.bottom,
+          second: pb.top >= sb.bottom,
+        };
+      });
+      const ok = seat.up && !seat.crosses && seat.gap >= 4 && /NODE B/.test(seat.said);
+      if (!ok) footSeatsOk = false;
+      if (size.w === 640 && !seat.second) footSeatsOk = false;
+      footSeats.push(`${size.w}\u00d7${size.h}: panel ${seat.panel}${seat.second ? " (second row)" : ""} \u00b7 line ${seat.line} \u00b7 ${seat.crosses ? `CROSSING it by ${(-seat.gap).toFixed(0)} px` : `${seat.gap.toFixed(0)} px clear`}`);
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.evaluate(async () => {
+      for (let f = 0; f < 5; f++) await new Promise((r) => requestAnimationFrame(r));
+    });
+    check("the node line hangs under the mission panel rather than through it, in a wide window and in one narrow enough for the panel to take its second row", footSeatsOk, footSeats.join(" \u00b7 "));
     const flipTook = await page.evaluate(async () => {
       const n = window.__game.game.world.wake!.nodes.find((x) => x.id === 2)!;
       let ticks = 0;

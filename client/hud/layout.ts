@@ -49,12 +49,32 @@ export const FLAG_TOP = 92;
 export const FLAG_GAP = 6;
 
 /**
+ * One row of the centred stack: a gap under whatever is above it, or the stack's own top where
+ * nothing above it reaches that far. `shift` is the phone's (Stage 139).
+ */
+function stackSeat(aboveBottom: number | null, shift: number): number {
+  return aboveBottom === null ? FLAG_TOP + shift : Math.max(FLAG_TOP + shift, Math.ceil(aboveBottom) + FLAG_GAP);
+}
+
+/**
+ * Where the node line sits (Stage 146): it was the one row of the stack seated by a number in the
+ * stylesheet rather than by what is above it, and the mission panel above it grows. In every wake
+ * round the panel ended at 94 px and the line began at 92, and in a window narrow enough for the
+ * panel to take its second row under the status panel — 640 px — the line printed 72 px straight
+ * through it. It now hangs a gap under the panel's measured bottom, which is what the warning and
+ * the alert beneath it have done since Stages 116 and 120.
+ */
+export function nodeFootTop(missionBottom: number | null, shift = 0): number {
+  return stackSeat(missionBottom, shift);
+}
+
+/**
  * The searchlight warning's seat (Stage 116): it shared the node line's 92 px and printed over it
  * whenever the mech lit you at a node. With the node line up it hangs a gap under the line's
  * measured bottom; with the line hidden it keeps its old seat.
  */
 export function flagTop(nodeFootBottom: number | null, shift = 0): number {
-  return nodeFootBottom === null ? FLAG_TOP + shift : Math.max(FLAG_TOP + shift, Math.ceil(nodeFootBottom) + FLAG_GAP);
+  return stackSeat(nodeFootBottom, shift);
 }
 
 /** the gap the foot line keeps from the slots on its left and the tab strip on its right */
