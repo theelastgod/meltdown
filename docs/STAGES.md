@@ -1641,6 +1641,74 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 156 — The frame counter was measured on a clock that stopped when the frame did
+
+**Goal.** The right-hand band has said `N FPS · SIM N Hz` since the first stage. The sim number is
+this game's foundational claim — a fixed 60 Hz timestep decoupled from the render rate — and the
+pair is what a player reads to tell a renderer that cannot keep up from a simulation that is running
+wrong. Measured against a stopwatch, a page running its sim at 60.0 Hz and drawing 3.8 frames a
+second said `8 FPS · SIM 120 Hz`. Both numbers were wrong, both by a factor of two, in the same
+direction, and it was the flattering direction.
+
+The cause was one line's position. `frame()` runs the accumulator and ticks the sim on every frame
+the loop is given, then returns early at `if (!render || !this.drawing) return;` for anything that is
+not a drawn frame. The window both numbers were folded in sat below that return, so its clock only
+advanced on the frames the renderer drew, while the ticks divided by it came from every frame. And
+frames come from two drivers: the animation frame, and the 16 ms keep-alive that carries the sim and
+the link when animation frames are scarce. That timer fires whenever the last frame was more than
+60 ms ago — which on a machine drawing at four frames a second is always. So the window measured
+about half the time that passed and doubled everything divided by it.
+
+Which is exactly the wrong way round. On a machine drawing as fast as it is asked to the two clocks
+are the same and the band is right. It only lies to the player whose machine is struggling — the one
+person who is reading it.
+
+What kept it alive for a hundred and fifty-five stages is where the keep-alive's threshold falls.
+The timer only takes a frame when the last one was more than 60 ms ago, so the second driver — and
+the doubling with it — switches on below about sixteen frames a second and is silent above. The
+first probe draws at 18 fps and reads true: 17.1 before this stage and 18.0 after, on the same
+runner an hour apart. The frame-budget probe draws at 12.9 and reads 28.9. The readout was exact
+wherever anyone happened to look at it and wrong where nobody did, and no probe had ever asserted
+on it — each measures the sim rate honestly for itself and prints the band's number beside its own
+as decoration.
+
+**What changed.**
+
+- `client/hud/perf.ts` — the window as a rule: `perfStep` folds one frame, taking the elapsed time
+  and the ticks from every frame the loop was given and the frame count only from the ones that
+  drew, and returns a reading when the half-second closes. The elapsed time is the sim's own clock,
+  the clamped delta the accumulator was fed, so `SIM` answers the same question the probes ask it —
+  how fast the sim ran for the time it was given.
+- `client/game.ts` — the fold moved above the drawn-frame return, where the ticks it divides already
+  were. `stats.frames` still counts only real draws.
+- `tests/perfwindow.test.ts` — a loop given 60 frames a second that draws one in sixteen must read
+  60 Hz and 3.75 fps, not 60 and 60; the window's boundary and reset; and a frame that arrives out of
+  order cannot run the clock backwards.
+- `probe/stage21.ts` — the frame-budget probe measures everything else about a frame and never read
+  the number the player gets. It now samples the band across the span and holds it to the counters:
+  the renderer's own frame count and the sim's own tick count over the same seconds.
+
+**Proof.** vitest 835/835. `npm run probe:frame` 7/7: `band said 13.0 FPS · SIM 60.0 Hz over 22
+readings; the counters say 12.8 fps · 60.0 Hz over 12.9s (off by 1% and 0%)`. The whole sweep as CI
+runs it — every probe, the four lints, the firmware certification, build and smoke — green:
+`probe` 19/19, `probe:look` 18/18, `probe:net` 26/26, `probe:arsenal` 32/32, `probe:wake` 27/27,
+`probe:file` 19/19, `probe:city` 45/45, `probe:cityLife` 21/21, `probe:mastery` 23/23,
+`probe:identity` 25/25, `probe:campaign` 43/43, `probe:endgame` 16/16, `probe:counter` 16/16,
+`probe:crawl` 10/10, `probe:ship` 10/10, `probe:run` 25/25, `probe:harden` 9/9, `probe:mobile`
+40/40, `probe:persist` 7/7, `probe:tps` 50/50, `probe:body` 20/20, smoke 7/7.
+
+Mutation A, the clock back on the drawn frames only: `probe:frame` 6/7 — `band said 28.9 FPS · SIM
+133.2 Hz; the counters say 13.1 fps · 60.0 Hz (off by 121% and 122%)`, which is the defect as it was
+found, reproduced from the one line. Mutation B, every frame the loop is given counted as a drawn
+one: 6/7 — `21.0 FPS · SIM 60.0 Hz` against 13.1 fps, the sim number right and the frame number
+still half a lie. `tests/perfwindow.test.ts` catches both on its own, 2 of 5 and 1 of 5.
+
+One claim this stage dropped on being measured. The first draft of this entry said the render rates
+quoted in earlier proof lines were doubled too. They are not: the first probe draws at 18 fps, above
+the keep-alive's threshold, and read 17.1 before the change and 18.0 after on the same runner an
+hour apart. The doubling starts below about sixteen frames a second, and that is the whole reason
+this survived — the number was exact wherever it was being watched.
+
 ## Stage 155 — A lost join ended the session before it began
 
 **Goal.** The last stage's link check had to pick its seed. On the same 5 % simulated loss the net

@@ -161,6 +161,60 @@ async function main(): Promise<void> {
     check("no hitch while idle: the worst frame in five seconds is within 4× the median", ratioCalm < 4, `p50 ${calm.p50.toFixed(1)} p95 ${calm.p95.toFixed(1)} p99 ${calm.p99.toFixed(1)} max ${calm.max.toFixed(0)} ms · ${ratioCalm.toFixed(1)}× · ${(calm.n / calm.seconds).toFixed(1)} fps on software GL`);
     check("nor under sustained fire, which is the frame that used to allocate", ratioFire < 4, `p50 ${during.p50.toFixed(1)} p95 ${during.p95.toFixed(1)} p99 ${during.p99.toFixed(1)} max ${during.max.toFixed(0)} ms · ${ratioFire.toFixed(1)}×`);
 
+    // ---- 4. the two numbers the band prints about all of this (Stage 156) ----
+    //
+    // Every check above measures the frame for itself. The number the *player* gets is the band's
+    // `N FPS · SIM N Hz`, and until this stage nothing had ever compared it with anything. It was
+    // folded in a window whose clock only advanced on the frames the renderer drew, while the ticks
+    // divided by it came from every frame the loop was given — and the loop is given frames by two
+    // drivers, the animation frame and the keep-alive timer that carries the sim when animation
+    // frames are scarce. On a machine keeping up the two are the same and the band is right; on one
+    // that is not, it measured about half the time that passed and doubled both numbers. Measured
+    // here before the fix: a page running its sim at 60.0 Hz and drawing 3.8 frames a second said
+    // `8 FPS · SIM 120 Hz` — wrong by two, and only on the machines whose owners read it.
+    //
+    // The band shows the last half-second, which on software GL catches one draw or two; the truth
+    // is over the whole span. So the band is sampled across the span and averaged against it.
+    const band = await pg.evaluate(async () => {
+      const g = window.__game;
+      const before = g.state();
+      const said: { fps: number; sim: number }[] = [];
+      let last = "";
+      for (let i = 0; i < 60; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        const text = (document.querySelector("#hud .perf")?.textContent ?? "").replace(/\s+/g, " ").trim();
+        if (text === last) continue;
+        last = text;
+        const m = /([0-9.]+) FPS . SIM ([0-9.]+) Hz/.exec(text);
+        if (m) said.push({ fps: Number(m[1]), sim: Number(m[2]) });
+      }
+      const after = g.state();
+      const secs = after.loop.realtimeWall - before.loop.realtimeWall;
+      let fpsSum = 0;
+      let simSum = 0;
+      for (const r of said) {
+        fpsSum += r.fps;
+        simSum += r.sim;
+      }
+      return {
+        reads: said.length,
+        saidFps: said.length ? fpsSum / said.length : -1,
+        saidSim: said.length ? simSum / said.length : -1,
+        trueFps: (after.render.frames - before.render.frames) / secs,
+        trueSim: (after.loop.realtimeTicks - before.loop.realtimeTicks) / secs,
+        secs,
+        text: last,
+      };
+    });
+    const simErr = Math.abs(band.saidSim - band.trueSim) / Math.max(1, band.trueSim);
+    const fpsErr = Math.abs(band.saidFps - band.trueFps) / Math.max(0.5, band.trueFps);
+    check(
+      "the band's own two numbers are the ones a stopwatch gets: the sim's rate for the time it was given, and the frames the renderer actually drew",
+      band.reads >= 5 && simErr < 0.12 && fpsErr < 0.25,
+      `band said ${band.saidFps.toFixed(1)} FPS · SIM ${band.saidSim.toFixed(1)} Hz over ${band.reads} readings; the counters say ${band.trueFps.toFixed(1)} fps · ${band.trueSim.toFixed(1)} Hz over ${band.secs.toFixed(1)}s (off by ${(fpsErr * 100).toFixed(0)}% and ${(simErr * 100).toFixed(0)}%) · last read "${band.text}"`,
+    );
+    report.band = band;
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     report.idle = { before: idle0, after: idle1 };
     report.fire = { before: fire0, after: fire1, shots: shots.shots };

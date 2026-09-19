@@ -20,6 +20,7 @@ import { InputController } from "./input";
 import { TouchControls, wantsTouch } from "./touch";
 import { PerfMonitor } from "./perf";
 import { Renderer, type ViewState } from "./render/renderer";
+import { perfStep, perfWindow, type PerfWindow } from "./hud/perf";
 import type { AimTarget } from "./render/tps";
 import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
@@ -158,7 +159,7 @@ export class Game {
   /** the campaign (Stage 10): contracts, missions, dialogue, Threat, protocols */
   readonly campaign: Campaign;
   ghostPose: { x: number; y: number; z: number; yaw: number } | null = null;
-  private fpsWindow = { t: 0, frames: 0, ticks: 0 };
+  private fpsWindow: PerfWindow = perfWindow();
 
   constructor(canvas: HTMLCanvasElement, hudRoot: HTMLElement) {
     const q = new URLSearchParams(location.search);
@@ -1392,6 +1393,18 @@ export class Game {
         this.acc = 0;
       }
     }
+    // the band's two numbers are folded here, on every frame the loop is given (Stage 156): the
+    // ticks come from every frame, so the clock they are divided by has to as well. Below the
+    // drawn-frame return it measured only the time the renderer drew for, and said 120 Hz for a
+    // sim running at 60
+    {
+      const step = perfStep(this.fpsWindow, dt, render && this.drawing, this.stats.ticks);
+      this.fpsWindow = step.window;
+      if (step.read) {
+        this.stats.fps = step.read.fps;
+        this.stats.simHz = step.read.simHz;
+      }
+    }
     const alpha = this.realtime ? Math.min(1, this.acc / SIM_DT) : 1;
     const a = this.prev;
     const b = this.cur;
@@ -1482,13 +1495,6 @@ export class Game {
     this.hud.setThreats(threatMarks(this.liveProjectiles(), { x: p.pos.x, y: p.pos.y, z: p.pos.z, yaw: view.yaw }));
     if (this.renderer.life.tram?.passing) this.audio.tram();
     this.stats.frames++;
-    this.fpsWindow.frames++;
-    this.fpsWindow.t += dt;
-    if (this.fpsWindow.t >= 0.5) {
-      this.stats.fps = this.fpsWindow.frames / this.fpsWindow.t;
-      this.stats.simHz = (this.stats.ticks - this.fpsWindow.ticks) / this.fpsWindow.t;
-      this.fpsWindow = { t: 0, frames: 0, ticks: this.stats.ticks };
-    }
     // the shots the map heard (Stage 104), pruned on the map's own clock
     this.pings = prunePings(this.pings, this.hud.mapClock);
     this.hud.setRadarPings(this.pings);
