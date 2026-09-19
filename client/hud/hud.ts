@@ -20,7 +20,7 @@ import { ALL_GROUPS, quietFor } from "./quiet";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { terminalFooter, terminalSeat } from "./terminal";
 import { closeHint, openHint } from "./keyhint";
-import { roomLabel } from "./room";
+import { linkLabel, linkTone, roomLabel } from "./room";
 import type { NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter } from "./radar";
 
@@ -148,7 +148,7 @@ export class Hud {
       <div class="card" hidden><div class="ct"></div><div class="cl"></div></div>
 
       <div class="p cy map"><div class="t">AREA MAP</div><canvas width="54" height="42"></canvas><div class="f"></div></div>
-      <div class="side"><div><span class="k">▸</span> <span class="roomband">OFFLINE</span></div><div class="perf"></div></div>
+      <div class="side"><div><span class="k">▸</span> <span class="roomband">OFFLINE</span><span class="linkms"></span></div><div class="perf"></div></div>
 
       <div class="log"></div>
       <div class="p cy travel" hidden><div class="t">▲ NEO-CHINA · DISTRICT SELECT <span class="x" data-travel="close"></span></div><div class="list"></div><div class="f">travel reloads the client; online, the room decides the district</div></div>
@@ -260,14 +260,23 @@ export class Hud {
    * How many files are in the room, said the same way in both places that say it (Stage 149): the
    * file's header line and the right-hand band. Written only when the label changes.
    */
-  setRoom(linked: boolean, files: number): void {
+  setRoom(linked: boolean, files: number, rttMs = 0): void {
     const label = roomLabel(linked, files);
-    if (label === this.roomText) return;
-    this.roomText = label;
-    this.q(".status .room").textContent = ` · ${label}`;
-    this.q(".side .roomband").textContent = label;
+    if (label !== this.roomText) {
+      this.roomText = label;
+      this.q(".status .room").textContent = ` · ${label}`;
+      this.q(".side .roomband").textContent = label;
+    }
+    // and what the link costs, which the client has always measured and never said (Stage 154)
+    const ms = linkLabel(linked, rttMs);
+    if (ms === this.linkText) return;
+    this.linkText = ms;
+    const el = this.q(".side .linkms");
+    el.textContent = ms ? ` · ${ms}` : "";
+    el.className = `linkms ${ms ? linkTone(rttMs) : ""}`.trim();
   }
   private roomText = "";
+  private linkText = "";
 
   /** The local file's identity in the status line: glyph, what the city calls you, and the moniker. */
   setIdentity(glyphSvg: string, display: string, moniker: string | null, chapter: number): void {

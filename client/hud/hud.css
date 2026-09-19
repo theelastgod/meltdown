@@ -75,6 +75,10 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .map .f { color: rgba(53,242,255,0.6); text-align: center; font-size: 9px; margin-top: 3px; white-space: nowrap; }
 #hud .side { position: absolute; right: 14px; top: 135px; width: 220px; text-align: right; font-size: 10px; color: rgba(55,255,139,0.75); }
 #hud .side .k { color: rgba(53,242,255,0.7); }
+/* Stage 154: the link's own cost, in the band that already carries the frame's */
+#hud .side .linkms.ok { color: rgba(55,255,139,0.75); }
+#hud .side .linkms.slow { color: var(--am); }
+#hud .side .linkms.bad { color: var(--mg); }
 #hud .log { position: absolute; left: 14px; bottom: 88px; width: 380px; font-size: 10.5px; color: rgba(55,255,139,0.85); }
 /* Stage 148: every entry reads in full, the objectives with the rest — a cut line is the one thing
    a log must not do. The HUD drops the oldest entry when a log of wrapped lines would climb over

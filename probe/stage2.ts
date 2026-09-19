@@ -323,14 +323,49 @@ async function main(): Promise<void> {
       const dropped = window.__game.game as unknown as { net: { transport: { close: () => void } } };
       dropped.net.transport.close();
     });
+    // the log keeps five entries and the room's PA writes into it: read the knock's own line while
+    // it is the newest, not after the rejoin has pushed four more in behind it
+    const lostLine = await E.a.evaluate(async () => {
+      for (let i = 0; i < 120; i++) {
+        const said = [...document.querySelectorAll("#hud .log div")].map((d) => (d.textContent ?? "").trim()).find((l) => /LINK LOST/.test(l));
+        if (said) return said;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      return "";
+    });
     const knocked = await E.a.waitForFunction(() => window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 25000, polling: 100 }).then(() => true, () => false);
     await E.a.waitForTimeout(900);
     const backState = await E.a.evaluate(() => ({ status: window.__game.net()!.status, id: window.__game.net()!.playerId, token: window.__game.net()!.token, tick: window.__game.state().tick, log: [...document.querySelectorAll("#hud .log div")].map((d) => (d.textContent ?? "").trim()) }));
-    const lostLine = backState.log.find((l) => /LINK LOST/.test(l)) ?? "";
     const backLine = backState.log.find((l) => /RELINKED/.test(l)) ?? "";
     const dropRoom = (await stats()).rooms["probe"];
     const dropSeat = dropRoom.clients.find((c: any) => c.id === dropAt.id);
     check("a dropped link is knocked on rather than mourned: the client rejoins the room that still holds its seat, as the same file, and its world runs on", knocked && backState.id === dropAt.id && backState.token === dropAt.token && backState.tick > dropAt.tick + 30 && /REJOINING IN/.test(lostLine) && !!backLine && !!dropSeat?.connected, `back ${knocked} as file #${backState.id} \u00b7 tick ${dropAt.tick} \u2192 ${backState.tick} \u00b7 token kept ${backState.token === dropAt.token} \u00b7 "${lostLine}" \u00b7 "${backLine}" \u00b7 seat connected ${dropSeat?.connected}`);
+
+    // ---------------- the band says what the link costs (Stage 154) ----------------
+    // The client has measured its own round trip since this stage was written and has never shown
+    // it to anybody. Its own room, on the same simulated link the rest of the probe plays on: the
+    // probe room's seats are still held for the eight clients the bandwidth check filled it with,
+    // and a room with no seat left is not what this check is about. The link's seed is the one the
+    // probe's other pages use: with some seeds the join itself is lost to the simulated 5 % and the
+    // client sits in `connecting` for ever, which is a defect of its own and not this check's.
+    const linkPage = await browser.newPage({ viewport: { width: 640, height: 360 } });
+    await linkPage.goto(`http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&net=ws://127.0.0.1:${HOST_PORT}/room/probe-link?ai=0%26level=drainage_yard&level=drainage_yard&name=DELTA&lat=${RTT / 2}&jitter=8&loss=${LOSS}&seed=11`, { waitUntil: "load" });
+    await linkPage.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined", null, { timeout: 40000, polling: 100 });
+    const linkSaid = await linkPage.evaluate(async () => {
+      // the round trip is a median over samples: wait for the band to carry one rather than for a clock
+      for (let i = 0; i < 300; i++) {
+        const seen = document.querySelector("#hud .side .linkms") as HTMLElement | null;
+        if (seen && /[0-9]+ MS/.test(seen.textContent ?? "")) break;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      const msEl = document.querySelector("#hud .side .linkms") as HTMLElement;
+      const bandEl = document.querySelector("#hud .side .roomband") as HTMLElement;
+      return { text: (msEl.textContent ?? "").trim(), cls: msEl.className.trim(), band: (bandEl.textContent ?? "").trim(), rtt: window.__game.net()?.rttMs ?? 0, files: window.__game.net()?.status === "joined" };
+    });
+    const linkMs = Number(/([0-9]+) MS/.exec(linkSaid.text)?.[1] ?? "0");
+    const wantTone = linkMs >= 250 ? "bad" : linkMs >= 120 ? "slow" : "ok";
+    check("the band says what the link costs: the round trip the client measures, drawn, coloured by how bad it is, and on this simulated link it is not an easy one", linkMs > 100 && Math.abs(linkMs - linkSaid.rtt) <= 2 && linkSaid.cls === `linkms ${wantTone}` && wantTone !== "ok" && /ONLINE/.test(linkSaid.band), `band "${linkSaid.band}${linkSaid.text}" (${linkSaid.cls}) \u00b7 the client's own rtt ${linkSaid.rtt.toFixed(1)} ms on a ${RTT} ms simulated link`);
+    await linkPage.close();
 
     // ---------------- cheater ----------------
     const kicksBefore = st2.kicks;

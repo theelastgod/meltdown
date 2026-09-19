@@ -1641,6 +1641,56 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 154 — The client measured the link and told nobody
+
+**Goal.** The client has measured its own round trip since the netcode stage: a median over the
+last samples, the number its whole clock estimate is built on, kept in `rttMs` and read by nothing
+but the probe's diagnostics. Grep the HUD for `rtt`, `ping` or `latency` and the only hits are the
+radar's gunfire pings, which are a different thing entirely.
+
+So the right-hand band, which has room for it and already carries the frame's own cost — `0 FPS ·
+SIM 60 Hz` — said nothing about the link. A player being rubber-banded across the street had
+nothing on the screen to tell them whether it was the link or the game, and no number to take to
+anyone.
+
+**What changed.**
+
+- `client/hud/room.ts` — `linkLabel` and `linkTone`, beside the room's own label: the round trip
+  rounded to a whole millisecond, nothing at all before the first sample or outside a room, and a
+  tone — ok, slow past 120 ms, bad past 250.
+- `client/hud/hud.ts` — `setRoom` takes the round trip and writes it into the band beside the file
+  count, with the tone as its class. The header line is untouched: it sheds first on a narrow
+  screen (Stage 150) and this is a diagnostic, not a name.
+- `client/hud/hud.css` — the three tones.
+- `client/game.ts` — the number comes from the net client each frame, and both readouts moved out
+  of the drawn-frame work: they are text, so a client that is not drawing still says them. The
+  net probe's clients all run `norender`, and the first version of this check could not read a
+  band that only a rendering client wrote.
+- `tests/roomlabel.test.ts` — the label, the silence before the first sample, and the thresholds.
+- `probe/stage2.ts` — the net probe opens one page that draws, on the same simulated 150 ms link
+  the rest of the probe plays on, and fails unless the band's number is the client's own round trip
+  and its tone is what that number deserves.
+
+**Proof.** vitest 824/824. `npm run probe:net` 25/25, twice: `band "1 ONLINE · 147 MS" (linkms
+slow) · the client's own rtt 147.0 ms on a 150 ms simulated link`, and 143 ms on the second run.
+Regressions `npm run probe` 19/19, `probe:run` 25/25, `probe:mobile` 40/40 and `probe:tps` 50/50;
+build, smoke 7/7.
+
+Mutation A, the band showing the link as free: `probe:net` 24/25 — `band "1 ONLINE · 0 MS" · the
+client's own rtt 147.0 ms`. Mutation B, every link looking fine: `probe:net` 23/25 — `(linkms ok)`
+on a 152 ms link. `tests/roomlabel.test.ts` catches both on its own as well.
+
+Two things this stage found rather than built. The first: the check could not read the band on a
+client that does not draw, which is every client the net probe runs, so both readouts moved out of
+the drawn-frame work. The second: with the probe's 5 % simulated loss, two of the three link seeds
+tried never joined at all — the client sat in `connecting` for ever, `bytesOut: 0`, while the room
+streamed snapshots at it. The join is sent once and never again. That is a defect of its own and
+the next stage's.
+
+And one flake fixed in passing: Stage 153's drop check read `LINK LOST · REJOINING` out of an event
+log that holds five entries, four of which the rejoin itself writes, with the room's PA writing
+into it too. It reads the line while it is the newest now, and the net probe ran twice green.
+
 ## Stage 153 — A dropped link froze the match and nobody tried the door
 
 **Goal.** The room keeps a disconnected file's seat for sixty seconds: `player 1 (ALPHA)
