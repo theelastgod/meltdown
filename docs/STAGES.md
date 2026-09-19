@@ -1641,6 +1641,46 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 161 — The district chooser and a contract were printed on the same page
+
+**Goal.** The endgame probe's own frame, `stage11-deepwake.png`, shows the district list with
+`VANTAGE CLEARING HOUSE`, `FLIPS · 7 NODE SECONDS · OBJECTIVE 335` and `[ENTER] SIGN` legible
+straight through the rows you are meant to pick from.
+
+Every HUD panel is painted `--pan`, `rgba(3, 5, 9, 0.72)`. Over the city that translucency is the
+whole look — the street shows faintly through the chrome, which is what the reference clip does.
+Over another panel it is not a look, it is two documents on one page.
+
+Measured on a drawn HUD at 960×540 rather than read off the picture: open contracts, press `M`, and
+the chooser's 386×189 box overlaps the contracts panel by **72 954 px²**, which is all of it — with
+the terminal panel under it too. Two keystrokes. In the probe's own state it is 52 496 px² of the
+settlement receipt.
+
+**What changed.**
+
+- `client/hud/panel.ts` — `cssAlpha(colour)` reads the alpha a browser reports, in every form it
+  reports it in, and counts anything it cannot read as clear, which is the failing side.
+  `hidesPanels(alpha, overlapPx)` is the rule: a panel over nothing may be as translucent as the
+  look wants; a panel over another panel's text may not.
+- `client/hud/hud.css` — `--solid`, the panel colour with nothing showing through, and the chooser
+  painted with it. Nothing else changed: what the city shows through the HUD is the look and stays.
+- `tests/panel.test.ts` — the colours the HUD is really painted, the forms of the same colour, the
+  unreadable ones, and the rule either side of its edge.
+- `probe/stage11.ts` — the endgame probe, whose frame is the evidence, measures the chooser's
+  overlap with every other visible panel and holds it to the rule.
+
+**Proof.** vitest 860/860. `npm run probe:endgame` 17/17: `chooser painted rgb(3, 5, 9) (alpha 1)
+over 52496 px² of ".p am receipt"`, where it had been `rgba(3, 5, 9, 0.72)` over the same. The whole
+sweep as CI runs it — every probe, the four lints, the firmware certification, build and smoke —
+green, and nothing else moved: the HUD is painted exactly as it was everywhere but the chooser.
+
+Mutation A, the chooser translucent again: `probe:endgame` 16/17 — `painted rgba(3, 5, 9, 0.72)
+(alpha 0.72) over 52496 px²`, the defect as it was found. Mutation B, the rule counting 0.7 as
+hiding: `tests/panel.test.ts` fails, and the probe stays green — correctly, because with the CSS
+right the chooser really is opaque and a slacker threshold does not change that verdict. The two
+mutations are caught by the two different layers, each by the one that owns it: the probe guards the
+wiring, the test guards the rule.
+
 ## Stage 160 — The map's footer never fitted the map
 
 **Goal.** The campaign probe's own frame, `stage10-mission.png`, draws the area map with

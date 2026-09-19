@@ -8,6 +8,8 @@
   --am: #ffb02e;
   --bg: #04060a;
   --pan: rgba(3, 5, 9, 0.72);
+  /** the same panel colour with nothing showing through, for a chooser drawn over other panels */
+  --solid: rgb(3, 5, 9);
   --mono: "Courier New", "Lucida Console", Menlo, Consolas, monospace;
 }
 html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: none; background: var(--bg); overflow: hidden; font-family: var(--mono); color: var(--gr); }
@@ -221,7 +223,9 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .file .ft.bad { color: var(--mg); }
 
 /* District select (MAP tab / M) */
-#hud .travel { left: 50%; top: 50%; transform: translate(-50%, -50%); width: 360px; pointer-events: auto; padding: 8px 12px; }
+/* Stage 161: the chooser is opaque. --pan's translucency is for the city behind the HUD; over the
+   contracts panel it printed the district list and a contract on the same page. */
+#hud .travel { left: 50%; top: 50%; transform: translate(-50%, -50%); width: 360px; pointer-events: auto; padding: 8px 12px; background: var(--solid); }
 #hud .travel .t { font-size: 11px; letter-spacing: 0.12em; margin-bottom: 6px; }
 #hud .travel .t .x { float: right; color: var(--mg); cursor: pointer; }
 #hud .travel .row { padding: 4px 6px; margin: 3px 0; border: 1px solid rgba(53,242,255,0.25); cursor: pointer; }

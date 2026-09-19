@@ -13,6 +13,7 @@
  *   npm run probe:endgame
  */
 import { spawn, type ChildProcess } from "node:child_process";
+import { cssAlpha, hidesPanels } from "../client/hud/panel";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
@@ -200,6 +201,42 @@ async function main(): Promise<void> {
     await a.keyboard.press("KeyM");
     await a.waitForTimeout(400);
     const mapText = await a.evaluate(() => (document.querySelector("#hud .travel .season") as HTMLElement)?.textContent ?? "");
+    // the chooser hides what it covers (Stage 161). This probe's own frame is where that was found:
+    // the district rows drawn over the contracts panel at `rgba(3, 5, 9, 0.72)`, with `VANTAGE
+    // CLEARING HOUSE` and `[ENTER] SIGN` legible straight through them. Two keystrokes reach it —
+    // open contracts, press M. What the city shows through the HUD is the look and stays; what
+    // another panel's text shows through a list you are asked to pick from is not.
+    const chooser = await a.evaluate(() => {
+      const panel = document.querySelector("#hud .travel") as HTMLElement;
+      const pb = panel.getBoundingClientRect();
+      let overlap = 0;
+      let worst = "";
+      for (const node of document.querySelectorAll("#hud *")) {
+        const other = node as HTMLElement;
+        if (other === panel || panel.contains(other) || other.contains(panel)) continue;
+        const ob = other.getBoundingClientRect();
+        if (ob.width < 4 || ob.height < 4) continue;
+        const os = getComputedStyle(other);
+        if (os.display === "none" || os.visibility === "hidden" || Number(os.opacity) < 0.05) continue;
+        if (!(other.textContent ?? "").trim()) continue;
+        const ox = Math.min(pb.right, ob.right) - Math.max(pb.left, ob.left);
+        const oy = Math.min(pb.bottom, ob.bottom) - Math.max(pb.top, ob.top);
+        if (ox <= 0 || oy <= 0) continue;
+        const area = Math.round(ox * oy);
+        if (area > overlap) {
+          overlap = area;
+          worst = other.className || other.tagName.toLowerCase();
+        }
+      }
+      return { bg: getComputedStyle(panel).backgroundColor, overlap, worst, open: !panel.hidden };
+    });
+    const chooserAlpha = cssAlpha(chooser.bg);
+    check(
+      "the district chooser hides the panels it is drawn over rather than printing the list and a contract on one page",
+      chooser.open && hidesPanels(chooserAlpha, chooser.overlap),
+      `chooser painted ${chooser.bg} (alpha ${chooserAlpha}) over ${chooser.overlap} px\u00b2 of ".${chooser.worst}"`,
+    );
+
     await shotCheck(a, `stage11-deepwake.png`);
     check("the MAP tab shows the Deep Wake: the season, who holds each node, the pressure leader and the last lines", /DEEP WAKE · SEASON/.test(mapText) && /LEASE ROW/.test(mapText) && /CEL/.test(mapText), mapText.slice(0, 160));
     await a.close();
