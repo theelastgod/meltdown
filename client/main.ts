@@ -176,6 +176,8 @@ export interface GameHook {
     token: string;
     rttMs: number;
     joinMs: number;
+    /** how many times the join was asked before the room let this client in (Stage 155) */
+    joinAsks: number;
     pending: number;
     stats: NetClient["stats"];
     game: Game["netStats"];
@@ -364,6 +366,7 @@ window.__game = {
           token: game.net.token,
           rttMs: game.net.rttMs,
           joinMs: game.net.stats.joinedAtMs ? game.net.stats.joinedAtMs - game.net.stats.connectStartMs : -1,
+          joinAsks: game.net.joinAsks,
           pending: game.net.pendingInputs.length,
           stats: { ...game.net.stats },
           game: { ...game.netStats },

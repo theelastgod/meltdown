@@ -53,7 +53,7 @@ import { glyphSeed } from "../shared/identity/glyph";
 import type { AccountStore } from "./accounts";
 import { fileAuth } from "../shared/progression/account";
 import type { PlayerStats } from "../shared/sim/player";
-import { REJOIN_GRACE_SECONDS } from "../shared/net/rejoin";
+import { JOIN_RESENDS, REJOIN_GRACE_SECONDS } from "../shared/net/rejoin";
 
 export interface Conn {
   send(buf: ArrayBuffer): void;
@@ -83,6 +83,8 @@ interface ClientRec {
   /** inputs held back this session because the client outran the sim */
   throttled: number;
   disconnectedAt: number;
+  /** how many times this link has been told hello again after a repeat join (Stage 155) */
+  rewelcomes: number;
   pendingEvents: NetEvent[];
   sent: Map<number, Snapshot>;
   bytesOut: number;
@@ -289,7 +291,18 @@ export class Room {
       return;
     }
     if (msg.type === "join") {
-      if (rec) return this.strike(rec, "duplicate join");
+      // A repeat join is a client that never heard the Welcome, not an attack (Stage 155). Striking
+      // it punished the one client the room could still help: it was already in its seat, being sent
+      // snapshots, and the only thing it was missing was the hello. Say hello again — a bounded
+      // number of times, so a flood is still noise and still struck.
+      if (rec) {
+        if (rec.rewelcomes >= JOIN_RESENDS) return this.strike(rec, "duplicate join");
+        rec.rewelcomes++;
+        return this.rewelcome(rec);
+      }
+      // the first join is still loading its file: its Welcome is coming, and admitting again here
+      // would seat one connection twice
+      if (this.pendingJoins.has(conn)) return;
       if (msg.version !== PROTOCOL_VERSION) return this.kickConn(conn, `protocol ${msg.version} != ${PROTOCOL_VERSION}`);
       this.join(conn, msg.name, msg.token, msg.account, msg.loadout, msg.identity, msg.secret);
       return;
@@ -390,6 +403,15 @@ export class Room {
     return true;
   }
 
+  /** Say hello again to a seated client whose Welcome was lost (Stage 155). */
+  private rewelcome(rec: ClientRec): void {
+    if (!rec.conn) return;
+    rec.conn.send(encodeWelcome(rec.playerId, this.tick, rec.token, this.world.level.name, this.world.seed, this.mode()));
+    const note: ProgressNote = { stamps: [], ranks: [], challenges: [] };
+    rec.conn.send(encodeFile(this.fileMsg(rec, [], "join", note)));
+    this.opts.onLog(`re-welcomed player ${rec.playerId} (${rec.rewelcomes}/${JOIN_RESENDS}): the join was asked again`);
+  }
+
   private strike(rec: ClientRec, why: string): void {
     const now = this.opts.now();
     if (now - rec.strikeWindowStart > 5000) {
@@ -450,6 +472,7 @@ export class Room {
           rec.lastAppliedSeq = 0;
           rec.traceSkipUntilSeq = 0;
           rec.strikes = 0;
+          rec.rewelcomes = 0; // a fresh link gets the full hello budget again (Stage 155)
           this.byConn.set(conn, rec);
           conn.send(encodeWelcome(rec.playerId, this.tick, rec.token, this.world.level.name, this.world.seed, this.mode()));
           const note: ProgressNote = { stamps: [], ranks: [], challenges: [] };
@@ -588,6 +611,7 @@ export class Room {
       gapFilled: 0,
       throttled: 0,
       disconnectedAt: 0,
+      rewelcomes: 0,
       pendingEvents: [],
       sent: new Map(),
       bytesOut: 0,

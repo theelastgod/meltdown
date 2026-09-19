@@ -411,8 +411,9 @@ export class Game {
         this.hud.push(`LINK ${st.toUpperCase()}${net.kickReason ? " · " + net.kickReason : ""}`, "mg");
         // a drop is not a departure (Stage 153): the room keeps the seat for its grace window, so
         // knock, on a doubling wait, for as long as it is held. A kick or a close of our own does
-        // not knock
-        if (st === "closed" && !net.left && this.netConfig && net.token) this.knock();
+        // not knock. A handshake that never completed knocks too (Stage 155): it has no token to
+        // rejoin with, so it asks the door again from the start rather than ending there
+        if (st === "closed" && !net.left && this.netConfig) this.knock();
       }
     };
     net.onSnapshot = (snap) => this.onSnapshot(snap);

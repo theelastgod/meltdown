@@ -1641,6 +1641,63 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 155 — A lost join ended the session before it began
+
+**Goal.** The last stage's link check had to pick its seed. On the same 5 % simulated loss the net
+probe has played on since the netcode stage, two of the three seeds tried never joined at all: the
+page sat in `connecting` for ever, `playerId: -1`, and on one of them the room streamed 143
+snapshots at a seat it had already given away. The client asked to join once, on `onOpen`, and the
+room answered once. Neither packet was timed, so one loss anywhere in the handshake ended the
+session before it began — silently, with the game still running and the HUD still saying `LINKING`.
+
+The knock built in Stage 153 did not cover it: that knocks on a link that dropped, and this link
+never opened.
+
+**What changed.**
+
+- `shared/net/rejoin.ts` — the handshake's own plan beside the rejoin plan: `joinDelay` (700 ms,
+  doubling, three re-asks), `joinGiveUpMs` and `joinWindowMs`. It is short and it ends: a join is
+  not an input to repeat forever, because the room admits on it.
+- `client/net/netclient.ts` — the join is asked on that plan rather than once, the wait is disarmed
+  by the Welcome, a kick or a close, and a spent plan closes the link so the knock takes the door. A
+  repeat Welcome is taken as an ack and nothing else: running that branch twice would have started a
+  second ping timer and told the game it had joined again.
+- `server/room.ts` — a repeat join from a seated connection is answered with the Welcome and the
+  File message again, up to the same count the client can spend, and only then struck. It used to be
+  struck immediately, which punished the one client the room could still help. A repeat that arrives
+  while the first join is still loading its file is ignored, so one connection is never seated twice.
+- `client/game.ts` — a close with no token knocks too: a handshake that never completed has nothing
+  to rejoin with, so it asks the door again from the start rather than ending there.
+- `tests/joinretry.test.ts` — the plan, the room saying hello again, the bound past which it is
+  noise, and the connection that asks three times while its file is still loading.
+- `probe/stage2.ts` — the two seeds that stranded, 31 and 12, each on its own room on the same
+  lossy link, must end up joined; and at least one of them must have asked more than once, or the
+  check would prove only that the loss had moved.
+
+**Proof.** vitest 830/830. `npm run probe:net` 26/26: `seed 31: file #1 after 2 ask(s) in 917 ms ·
+seed 12: file #1 after 2 ask(s) in 915 ms`. Both asked twice, which is the whole claim — the first
+ask was lost on each of them, exactly as it was when they stranded, and the second carried it.
+The whole sweep as CI runs it — every probe, the four lints, the firmware certification, build and
+smoke — green: `probe` 19/19, `probe:look` 18/18, `probe:arsenal` 32/32, `probe:wake` 27/27,
+`probe:file` 19/19, `probe:city` 45/45, `probe:cityLife` 21/21, `probe:mastery` 23/23,
+`probe:identity` 25/25, `probe:campaign` 43/43, `probe:endgame` 16/16, `probe:counter` 16/16,
+`probe:crawl` 10/10, `probe:ship` 10/10, `probe:run` 25/25, `probe:harden` 9/9, `probe:frame` 6/6,
+`probe:mobile` 40/40, `probe:persist` 7/7, `probe:tps` 50/50, `probe:body` 20/20, smoke 7/7. The
+net client is on every one of those links, so every one of them had to be run.
+
+Mutation A, the client asking once and never again: `probe:net` 25/26 — `seed 31: still connecting
+after 30005 ms · seed 12: still connecting after 30004 ms`, the defect exactly as it was found.
+Mutation B, the room striking the repeat join again: `probe:net` 25/26 on the same two seeds, and
+`tests/joinretry.test.ts` fails 2 of its 6 on its own. The plan's own tests survive both, which is
+the point of having the probe: a rule that is right and wired to nothing looks identical to a rule
+that works.
+
+One thing this stage found rather than built: the retry opened a hole of its own. A store that
+answers asynchronously — the Workers' Durable Object does — leaves the first join in flight with no
+seat yet recorded, so the second ask would have been admitted as a fresh join and seated one
+connection twice. The room ignores a repeat that arrives while the first is still loading, and the
+test that would have caught it asks three times before releasing the file.
+
 ## Stage 154 — The client measured the link and told nobody
 
 **Goal.** The client has measured its own round trip since the netcode stage: a median over the

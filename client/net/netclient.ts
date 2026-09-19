@@ -11,6 +11,7 @@ import {
   type Snapshot,
   type FileMsg, type SocialMsg, type MissionMsg, type RunMsg, encodeChoice, encodeTerminal, type TerminalMsg,
 } from "@shared/net/protocol";
+import { joinDelay, joinGiveUpMs } from "@shared/net/rejoin";
 import type { Transport } from "./transport";
 
 /** Remote players are rendered this many ticks behind the estimated server tick. */
@@ -79,16 +80,48 @@ export class NetClient {
 
   constructor(private transport: Transport, private name: string, token = "", private account = "", private loadout = "", private identity = "", private secret = "") {
     this.token = token;
-    transport.onOpen = () => {
-      transport.send(encodeJoin(this.name, this.token, this.account, this.loadout, this.identity, this.secret));
-    };
+    transport.onOpen = () => this.ask();
     transport.onMessage = (buf) => this.receive(buf);
     transport.onClose = (reason) => {
       if (this.status !== "kicked") this.status = "closed";
       this.kickReason ||= reason;
       if (this.pingTimer) clearInterval(this.pingTimer);
+      this.disarmJoin();
       this.onStatus?.(this.status);
     };
+  }
+
+  /** how many times the join has been asked, the first ask included (Stage 155) */
+  private asks = 0;
+  private joinTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Ask to join, and arm the wait for the Welcome (Stage 155).
+   *
+   * A join and its Welcome are two packets on a link that loses them; neither used to be timed, so
+   * one loss stranded the client in `connecting` for as long as the page was open. The ask repeats
+   * on the shared plan, and when the plan is spent the link is closed so the knock takes the door —
+   * a client that hears nothing at all is told so rather than left waiting.
+   */
+  private ask(): void {
+    this.transport.send(encodeJoin(this.name, this.token, this.account, this.loadout, this.identity, this.secret));
+    const wait = joinDelay(++this.asks);
+    if (this.joinTimer) clearTimeout(this.joinTimer);
+    this.joinTimer = setTimeout(() => {
+      this.joinTimer = null;
+      if (wait === null) this.transport.close();
+      else this.ask();
+    }, wait ?? joinGiveUpMs());
+  }
+
+  private disarmJoin(): void {
+    if (this.joinTimer) clearTimeout(this.joinTimer);
+    this.joinTimer = null;
+  }
+
+  /** how many asks it took to be let in, for the probe and the stats line */
+  get joinAsks(): number {
+    return this.asks;
   }
 
   /** Co-op: resolve a dialogue on the room (host only; the room ignores others). */
@@ -157,6 +190,7 @@ export class NetClient {
 
   close(): void {
     this.left = true;
+    this.disarmJoin();
     this.transport.close();
   }
 
@@ -181,6 +215,11 @@ export class NetClient {
         this.onRun?.(msg.run);
         break;
       case "welcome":
+        // the room says hello again when it thinks the first one was lost (Stage 155); a client
+        // already in its seat takes the repeat as an ack and nothing else — running the branch
+        // twice would start a second ping timer and tell the game it had joined a second time
+        this.disarmJoin();
+        if (this.status === "joined") break;
         this.playerId = msg.playerId;
         this.token = msg.token;
         this.levelName = msg.level;
@@ -206,6 +245,7 @@ export class NetClient {
       }
       case "kick":
         this.status = "kicked";
+        this.disarmJoin();
         this.kickReason = msg.reason;
         this.onStatus?.(this.status);
         break;

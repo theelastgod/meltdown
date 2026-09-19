@@ -40,3 +40,45 @@ export function rejoinTries(graceSeconds = REJOIN_GRACE_SECONDS): number {
   while (n < REJOIN_MAX_TRIES && rejoinDelay(n + 1, graceSeconds) !== null) n++;
   return n;
 }
+
+/**
+ * The join handshake's own retry plan (Stage 155).
+ *
+ * The rule above knocks on a link that dropped. It never covered the link that never opened: the
+ * join was sent once, on `onOpen`, and the Welcome was answered once. Either can be lost like any
+ * other packet, and measured against a room over a 5 % lossy link two seeds in three ended the
+ * same way — the client sat in `connecting` for ever, `playerId: -1`, while the room streamed
+ * snapshots at a file it thought was playing. Nothing timed the handshake out, so nothing retried.
+ *
+ * The client now re-asks on a doubling wait, and the room answers a repeat join by saying hello
+ * again rather than by striking it. Both sides read the same count, so the client cannot spend more
+ * asks than the room will tolerate.
+ */
+
+/** the first wait for a Welcome (ms); each ask waits twice the last */
+export const JOIN_FIRST_MS = 700;
+/** how many times the join is re-sent before the link is handed to the knock */
+export const JOIN_RESENDS = 3;
+
+/**
+ * The wait before the nth re-send of the join (1-based), or null once the plan is spent.
+ *
+ * A join is not an input: the room admits on it, so asking again forever would be asking the room
+ * to admit forever. The plan is short and it ends.
+ */
+export function joinDelay(attempt: number, resends = JOIN_RESENDS): number | null {
+  if (!Number.isInteger(attempt) || attempt < 1 || attempt > resends) return null;
+  return JOIN_FIRST_MS * 2 ** (attempt - 1);
+}
+
+/** How long the client listens after its last ask before giving the door to the knock (ms). */
+export function joinGiveUpMs(resends = JOIN_RESENDS): number {
+  return joinDelay(resends, resends) ?? JOIN_FIRST_MS;
+}
+
+/** The whole handshake plan's span (ms): every wait, plus the listen after the last ask. */
+export function joinWindowMs(resends = JOIN_RESENDS): number {
+  let ms = joinGiveUpMs(resends);
+  for (let n = 1; n <= resends; n++) ms += joinDelay(n, resends) ?? 0;
+  return ms;
+}

@@ -367,6 +367,29 @@ async function main(): Promise<void> {
     check("the band says what the link costs: the round trip the client measures, drawn, coloured by how bad it is, and on this simulated link it is not an easy one", linkMs > 100 && Math.abs(linkMs - linkSaid.rtt) <= 2 && linkSaid.cls === `linkms ${wantTone}` && wantTone !== "ok" && /ONLINE/.test(linkSaid.band), `band "${linkSaid.band}${linkSaid.text}" (${linkSaid.cls}) \u00b7 the client's own rtt ${linkSaid.rtt.toFixed(1)} ms on a ${RTT} ms simulated link`);
     await linkPage.close();
 
+    // ---------------- the handshake is two packets, and both can be lost (Stage 155) ----------------
+    // The check above had to pick its seed: on this same 5 % link, seeds 31 and 12 never joined at
+    // all. Both pages sat in `connecting` for ever, `playerId: -1`, one of them while the room
+    // streamed 143 snapshots at the seat it had already given \u2014 the join was asked once and the
+    // Welcome answered once, and a single lost packet ended the session before it began. The two
+    // seeds that stranded are the two seeds run here.
+    const strandSeeds = [31, 12];
+    const joinedOn: { seed: number; joined: boolean; asks: number; id: number; ms: number; status: string }[] = [];
+    for (const strandSeed of strandSeeds) {
+      const joinPage = await browser.newPage({ viewport: { width: 640, height: 360 } });
+      await joinPage.goto(`http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&net=ws://127.0.0.1:${HOST_PORT}/room/probe-join-${strandSeed}?ai=0%26level=drainage_yard&level=drainage_yard&name=ECHO&lat=${RTT / 2}&jitter=8&loss=${LOSS}&seed=${strandSeed}`, { waitUntil: "load" });
+      const startedAt = Date.now();
+      const isIn = await joinPage.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined", null, { timeout: 30000, polling: 50 }).then(() => true, () => false);
+      const how = await joinPage.evaluate(() => ({ asks: window.__game.net()?.joinAsks ?? 0, id: window.__game.net()?.playerId ?? -1, status: window.__game.net()?.status ?? "no link" }));
+      joinedOn.push({ seed: strandSeed, joined: isIn, asks: how.asks, id: how.id, ms: Date.now() - startedAt, status: how.status });
+      await joinPage.close();
+    }
+    const allIn = joinedOn.every((j) => j.joined && j.id >= 0);
+    // asking twice is the whole claim: a seed that joined on its first ask would prove only that
+    // the loss moved, not that the retry carried it
+    const retried = joinedOn.some((j) => j.asks > 1);
+    check("a lost join or a lost Welcome no longer ends the session before it begins: the two seeds that stranded for ever ask again and are let in", allIn && retried, joinedOn.map((j) => `seed ${j.seed}: ${j.joined ? `file #${j.id} after ${j.asks} ask(s) in ${j.ms} ms` : `still ${j.status} after ${j.asks} ask(s) and ${j.ms} ms`}`).join(" \u00b7 "));
+
     // ---------------- cheater ----------------
     const kicksBefore = st2.kicks;
     const cheat = new WebSocket(`ws://127.0.0.1:${HOST_PORT}/room/probe`);
