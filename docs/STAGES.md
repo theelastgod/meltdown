@@ -1641,6 +1641,100 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 174 — Two endings were written, listed, and could never be played
+
+**Goal.** MELTDOWN ships six endings. The player reaches the white office, Wern makes the offer, and
+the last line of the campaign is a choice. Four of the six are written by that choice. Two are
+written by nothing at all.
+
+`wipe_fire` — THE CITY THAT READ THE FIRE — and `wipe_quiet` — THE QUIET WAKING — are the two
+readings of wiping the ledger, told apart by what the m6 broadcast said. The comment above `ENDINGS`
+states the contract it was built to satisfy:
+
+> m6:broadcast wrote "full" or "redacted" and nothing read either until now: the arc could be
+> finished twice, having answered its final question differently each time, and end the same way
+> both times. These two are mutually exclusive by construction — every run opens exactly one.
+
+That is precisely what still happened, because the office did not choose by gate. It read the id:
+
+```ts
+const endingId = t["m7:ending"] ?? "wipe";
+const e = ENDINGS.find((x) => x.id === endingId) ?? ENDINGS[0]!;
+```
+
+and the only writer of `m7:ending` is the m7 office script, whose four choices write `wipe`,
+`chair`, `chair_clockeater` and `chair_estate`. Across the whole repository the strings `wipe_fire`
+and `wipe_quiet` appear in `testimony.ts` and in test and probe files, and nowhere as a value any
+gameplay code writes or selects. Measured:
+
+```
+broadcast=full      ENDINGS OPEN panel: [wipe, wipe_fire]   ->  delivered: wipe "WIPE THE LEDGER"
+broadcast=redacted  ENDINGS OPEN panel: [wipe, wipe_quiet]  ->  delivered: wipe "WIPE THE LEDGER"
+```
+
+The CONTRACTS panel names the ending. `probe:campaign` takes a screenshot of the panel naming it.
+The player never sees it. Two endings' worth of finished writing — six lines that no one could
+reach — and the arc ends the same way twice however its last question was answered.
+
+**Two guards were watching this and neither could fail.** `tests/campaign.test.ts` checks that the
+broadcast opens the right ending, but it calls `endingsFor`, a pure `ENDINGS.filter(gateOpen)`: it
+measures the filter, never the selection. The campaign reachability lint — Stage 25, built for
+exactly this class of bug, whose own header says *"The ending is simply never reachable and no one
+finds out until a player doesn't"* — has an `ending-is-reachable` rule that asks whether an ending's
+**gate** can be opened. Both gates could. Nothing asked whether the office could ever name it.
+
+**What changed.**
+
+- `shared/campaign/testimony.ts` — `EndingDef` gains `refines?: EndingId`, and the two broadcast
+  endings declare `refines: "wipe"`. New `resolveEnding(t, faction)`: the ending the player chose,
+  unless one of its refinements has its gate open, in which case that one.
+- `client/campaign.ts`, `shared/campaign/save.ts` — both call sites resolve instead of looking up.
+- `shared/campaign/lint.ts` — a new `ending-is-deliverable` rule: an ending must be an id some
+  choice writes, or refine one that is, following the chain and refusing a cycle. Plus
+  `ending-refines-an-ending`, because a typo in a `refines` is silent otherwise.
+
+**The two chairs deliberately do not refine anything.** THE CLOCKEATER'S CHAIR and THE ESTATE'S
+CHAIR are asked for by their own office choices, gated on faction and testimony. A clockeater who
+picks the plain TAKE THE CHAIR while the sharper one is on offer meant to pick it, and resolving it
+away would be taking a choice from the player to fix a bug in a different ending. The broadcast
+endings have no choice of their own, which is what makes them the ones to resolve.
+
+**Proof.** vitest 946/946, fourteen new in `tests/endings.test.ts`, nothing existing moved. The full
+sweep ran green on a still tree: 23 probes, 523 checks — `probe` 21/21, `probe:look` 18/18,
+`probe:net` 27/27, `probe:arsenal` 32/32, `probe:wake` 27/27, `probe:file` 20/20, `probe:city`
+45/45, `probe:cityLife` 21/21, `probe:mastery` 23/23, `probe:identity` 25/25, `probe:campaign`
+**46/46** (44 before), `probe:endgame` 18/18, `probe:economy` 1/1, `probe:counter` 16/16,
+`probe:crawl` 10/10, `probe:ship` 11/11, `probe:run` 27/27, `probe:harden` 9/9, `probe:frame` 8/8,
+`probe:mobile` 40/40, `probe:persist` 7/7, `probe:tps` 50/50, `probe:body` 21/21. Build clean, smoke
+7/7. `probe:run` passed in sequence for the third sweep running.
+
+The two new probe checks run the white office a second time, on a fresh arc that broadcast
+`redacted`, and take choice 0 — wipe the ledger. The card that comes up reads **THE QUIET WAKING**,
+its first line is *"YOU CUT THE TERROR OUT AND SENT THEM ONLY THE TERMS"*, the panel had listed
+`wipe, chair, wipe_quiet`, and the file records `wipe_quiet`. `docs/proof/stage10/stage10-ending-quiet.png`
+is that card. The chair run beside it is untouched and still ends on TAKE THE CHAIR.
+
+Six mutations:
+
+- **A**, the office reading `m7:ending` by id again — the defect itself: 4 of 14 unit tests fail.
+  The campaign lint stays green, correctly: the data still says these endings refine a written one,
+  so the manifest really is deliverable and it is the runtime that stopped delivering. Two layers,
+  two owners (the Stage 161 pattern).
+- **B**, `refines` dropped from the two endings: 8 unit tests fail **and** the lint errors —
+  *"ending wipe_quiet: ending-is-deliverable — no choice writes this id and it refines nothing that
+  is written"*. This is the mutation that recreates the shipped state, and it is now loud in both
+  places.
+- **C**, the deliverability rule deleted from the lint: 3 fail, all of them the rule-fires tests,
+  and the endings themselves stay green — correctly, because the endings really are fine.
+- **D**, resolution ignoring the gate so the first refinement always wins: 6 fail. A refinement
+  whose gate is shut must not take over, or a run that broadcast neither gets an ending it did not
+  earn.
+- **E**, `refines: "chair"` added to THE CLOCKEATER'S CHAIR: 1 fails, the test that says taking the
+  plain chair is still the plain chair. The scope of the fix is tested, not just its effect.
+- **F**, the defect restored and the **probe** run: `probe:campaign` fails at the drawn card —
+  *"ending wipe · card WIPE THE LEDGER"* where it must read THE QUIET WAKING. The claim is read off
+  the frame the player would be looking at, not off a state string.
+
 ## Stage 173 — The Fairness Lint has been red since the commit that wrote it
 
 **Goal.** The Fairness Lint is the project's stated promise that no build in the Ghostfile can buy

@@ -648,6 +648,33 @@ async function main(): Promise<void> {
     check("Wern's offer plays at the desk; the final input is a choice, the chair is taken, and the ending is written to the file", w2?.script === "m7_office" && seenW.length >= 3 && w3.c.ending === "chair" && w3.cardOpen && /TAKE THE CHAIR/.test(w3.card) && fArc.campaign?.ending === "chair" && fArc.campaign.missionsDone.length === 7, `dialogue ${seenW.join(" → ")} · ending ${w3.c.ending} · card "${w3.card}" · file ending ${fArc.campaign?.ending}, ${fArc.campaign?.missionsDone.length}/7`);
     await wo.close();
 
+    // The same office, answered the other way (Stage 174). Two of the six endings are written by no
+    // choice at all — they are the two readings of wiping the ledger, told apart by what the m6
+    // broadcast said — and the office used to look `m7:ending` up by id, find "wipe", and show WIPE
+    // THE LEDGER whichever way the broadcast had gone. The panel listed the one it could not give.
+    const arcQ = "arc-cam-quiet";
+    await post(arcQ, { op: "faction", faction: "cells" });
+    for (const [qid, qt] of [["m1_wake_unlisted", {}], ["m2_deadletter_run", {}], ["m3_repo_volatility", {}], ["m4_the_leak", { "m4:directive": "kept" }], ["m5_blind_the_model", {}], ["m6_trial_by_data", { "m6:broadcast": "redacted" }]] as const) await post(arcQ, { op: "complete", id: qid, testimony: qt });
+    const qo = await newPage({ width: 960, height: 540 }, "quiet");
+    await qo.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=white_office&mission=m7_white_office&account=${arcQ}&secret=${SECRET}&shop=${HOST}`, { waitUntil: "load" });
+    await qo.waitForFunction(() => window.__game?.ready === true && window.__game.campaign().mode === "mission", null, { timeout: 40000, polling: 100 });
+    await qo.evaluate(() => window.__game.resumeAudio());
+    await qo.evaluate(() => {
+      window.__game.setBot([{ kind: "look", yaw: 0, pitch: 0.02, ticks: 5 }, { kind: "hold", ticks: 10 }]);
+      window.__game.advance(15);
+    });
+    const q1 = await qo.evaluate(() => window.__game.campaign().endingsOpen);
+    await runBot(qo, [{ kind: "goto", x: 0, z: -4, sprint: false, radius: 1.5, timeoutTicks: 600, stop: true }]);
+    await advance(qo, 3);
+    const seenQ = await playTerminal(qo, [0]); // wipe the ledger
+    await advance(qo, 3);
+    await qo.waitForTimeout(800);
+    const q3 = await qo.evaluate(() => ({ c: window.__game.campaign(), card: document.querySelector("#hud .card .ct")?.textContent ?? "", lines: document.querySelector("#hud .card .cl")?.textContent ?? "", cardOpen: !(document.querySelector("#hud .card") as HTMLElement).hidden }));
+    const fQuiet = await file(arcQ);
+    await shotCheck(qo, `stage10-ending-quiet.png`, "#hud .card");
+    check("the same last choice, answered the other way: a redacted broadcast wipes to THE QUIET WAKING, and the card is the one the panel offered", q1.join() === "wipe,chair,wipe_quiet" && seenQ.length >= 3 && q3.c.ending === "wipe_quiet" && q3.cardOpen && /QUIET WAKING/.test(q3.card) && fQuiet.campaign?.ending === "wipe_quiet", `endings [${q1.join(", ")}] · ending ${q3.c.ending} · card "${q3.card}" · first line "${q3.lines.slice(0, 40)}" · file ending ${fQuiet.campaign?.ending}`);
+    await qo.close();
+
     check("no page errors across the desk, two districts, the PvP room, the co-op room and the white office", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     results["files"] = { fresh: f2.campaign, arc: fArc.campaign };
     writeFileSync(`${OUT}/stage10.json`, JSON.stringify({ results, checks }, null, 2));

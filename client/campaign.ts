@@ -9,7 +9,7 @@
 import type { Game } from "./game";
 import { closeHint } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
-import { ENDINGS, endingsFor, gateOpen, type Testimony } from "@shared/campaign/testimony";
+import { ENDINGS, endingsFor, gateOpen, resolveEnding, type Testimony } from "@shared/campaign/testimony";
 import { threatProfile, threatRating, type ThreatProfile } from "@shared/campaign/threat";
 import { PROTOCOLS, protocolMods, MAX_PROTOCOLS } from "@shared/campaign/protocols";
 import { scriptById, type ScriptNode } from "@shared/campaign/script";
@@ -349,8 +349,7 @@ export class Campaign {
     this.note(`CONTRACT CLOSED · ${def.title}${ok ? "" : " · " + (reason ?? "")}`);
     this.game.audio.sign();
     if (id === "m7_white_office") {
-      const endingId = t["m7:ending"] ?? "wipe";
-      const e = ENDINGS.find((x) => x.id === endingId) ?? ENDINGS[0]!;
+      const e = resolveEnding(t, this.save.faction);
       this.ending = e.id;
       this.game.hud.card(e.title, [...e.lines, "", "MELTDOWN", "[C] CONTRACTS"], "ye", 0);
       this.game.audio.rite(3);

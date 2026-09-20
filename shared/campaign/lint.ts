@@ -132,6 +132,27 @@ export function lintCampaign(): CampaignViolation[] {
     if (blocked.length) out.push({ where: `ending ${e.id}`, rule: "ending-is-reachable", detail: `needs ${blocked.map(([k, v]) => `${k}=${v}`).join(", ")}, which no choice writes`, severity: "error" });
   }
 
+  // ---- and the white office can actually deliver it (Stage 174) ----
+  //
+  // The rule above asks whether an ending's gate can be opened. It can be — and the ending still
+  // never plays, because the office does not choose by gate: it reads `m7:ending` and resolves the
+  // answer the player gave. `wipe_fire` and `wipe_quiet` passed the gate rule for the life of the
+  // campaign and were delivered exactly never, while the CONTRACTS panel listed them as open. An
+  // ending is deliverable when some choice writes its id, or when it refines one that is.
+  const written = new Set<string>();
+  for (const [k, vals] of producible) if (k.endsWith(":ending")) for (const v of vals) written.add(v);
+  const deliverable = (id: string, seen: Set<string> = new Set()): boolean => {
+    if (written.has(id)) return true;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    const e = ENDINGS.find((x) => x.id === id);
+    return !!e?.refines && deliverable(e.refines, seen);
+  };
+  for (const e of ENDINGS) {
+    if (e.refines && !ENDINGS.some((x) => x.id === e.refines)) out.push({ where: `ending ${e.id}`, rule: "ending-refines-an-ending", detail: `refines "${e.refines}", which is not an ending`, severity: "error" });
+    else if (!deliverable(e.id)) out.push({ where: `ending ${e.id}`, rule: "ending-is-deliverable", detail: "no choice writes this id and it refines nothing that is written — the office can never show it", severity: "error" });
+  }
+
   // ---- missions and gigs: the arc is ordered and nothing depends on what does not exist ----
   out.push(...lintMissionOrder(MISSIONS));
   for (const m of MISSIONS) {

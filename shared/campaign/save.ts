@@ -7,7 +7,7 @@
 import type { Account, CampaignRecord } from "../progression/account";
 import { depthForXp } from "../progression/depth";
 import type { FactionId } from "./factions";
-import { gateOpen, handlersAlive, type Testimony } from "./testimony";
+import { gateOpen, handlersAlive, resolveEnding, type Testimony } from "./testimony";
 import { GIGS, MAIN_ARC, missionById, type MissionDef, type Reward } from "./missions";
 import { MAX_PROTOCOLS, protocolById } from "./protocols";
 import { threatRating } from "./threat";
@@ -73,7 +73,7 @@ export function completeContract(a: Account, id: string, testimony: Testimony): 
   applyReward(a, c, m.reward);
   a.counters[m.kind === "mission" ? "missionsDone" : "gigsDone"] = (a.counters[m.kind === "mission" ? "missionsDone" : "gigsDone"] ?? 0) + 1;
   if (m.id === "m7_white_office") {
-    c.ending = c.testimony["m7:ending"] ?? "wipe";
+    c.ending = resolveEnding(c.testimony, c.faction).id;
     a.counters["endings"] = (a.counters["endings"] ?? 0) + 1;
   }
   a.ledger.push(`${m.kind === "mission" ? "MISSION" : "GIG"} CLOSED · ${m.title}${m.reward.scrip ? ` · +${m.reward.scrip} SCRIP` : ""}${m.reward.protocol ? ` · PROTOCOL ${m.reward.protocol.toUpperCase().replace(/_/g, " ")}` : ""}${m.reward.weapon ? ` · WEAPON ${m.reward.weapon.toUpperCase()}` : ""}`);

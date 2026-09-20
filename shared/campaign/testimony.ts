@@ -36,6 +36,15 @@ export interface EndingDef {
   hidden: boolean;
   gate: Gate;
   lines: string[];
+  /**
+   * This ending is a sharper reading of another one, and the office reaches it through that one
+   * (Stage 174). The white office asks a question and writes the answer to `m7:ending`; an ending
+   * with no choice of its own is delivered only if it refines the answer the player did give and
+   * its own gate is open. Endings the office asks for directly — the two chairs — do not refine
+   * anything, because taking the plain chair while a sharper one is open is a choice, not a
+   * shortfall.
+   */
+  refines?: EndingId;
 }
 
 export const ENDINGS: readonly EndingDef[] = [
@@ -47,10 +56,29 @@ export const ENDINGS: readonly EndingDef[] = [
   // lands. m6:broadcast wrote "full" or "redacted" and nothing read either until now: the arc could
   // be finished twice, having answered its final question differently each time, and end the same
   // way both times. These two are mutually exclusive by construction — every run opens exactly one.
-  { id: "wipe_fire", title: "THE CITY THAT READ THE FIRE", hidden: true, gate: { all: { "m6:broadcast": "full" } }, lines: ["YOU SENT THE FIRE OUT WITH THE PAPERWORK.", "THEY WOKE ALL AT ONCE, AND THEY WOKE FRIGHTENED, AND THEY DID NOT GO BACK.", "NEO-CHINA BURNS DOWN ITS OWN LEDGER BY MORNING. NOBODY ASKS WHO SIGNED THE ORDER."] },
-  { id: "wipe_quiet", title: "THE QUIET WAKING", hidden: true, gate: { all: { "m6:broadcast": "redacted" } }, lines: ["YOU CUT THE TERROR OUT AND SENT THEM ONLY THE TERMS.", "THEY WAKE SLOWLY, ONE LEASE AT A TIME, AND MOST OF THEM KEEP GOING TO WORK.", "IT TAKES A DECADE INSTEAD OF A NIGHT. EVERYONE LIVES THROUGH IT."] },
+  { id: "wipe_fire", title: "THE CITY THAT READ THE FIRE", hidden: true, refines: "wipe", gate: { all: { "m6:broadcast": "full" } }, lines: ["YOU SENT THE FIRE OUT WITH THE PAPERWORK.", "THEY WOKE ALL AT ONCE, AND THEY WOKE FRIGHTENED, AND THEY DID NOT GO BACK.", "NEO-CHINA BURNS DOWN ITS OWN LEDGER BY MORNING. NOBODY ASKS WHO SIGNED THE ORDER."] },
+  { id: "wipe_quiet", title: "THE QUIET WAKING", hidden: true, refines: "wipe", gate: { all: { "m6:broadcast": "redacted" } }, lines: ["YOU CUT THE TERROR OUT AND SENT THEM ONLY THE TERMS.", "THEY WAKE SLOWLY, ONE LEASE AT A TIME, AND MOST OF THEM KEEP GOING TO WORK.", "IT TAKES A DECADE INSTEAD OF A NIGHT. EVERYONE LIVES THROUGH IT."] },
 ];
 
 export function endingsFor(t: Testimony, faction: FactionId | null): EndingDef[] {
   return ENDINGS.filter((e) => gateOpen(e.gate, t, faction));
+}
+
+/**
+ * The ending the white office actually delivers (Stage 174).
+ *
+ * `m7:ending` holds the answer the player gave, and until now it was looked up by id and shown.
+ * Two of the six endings are written by no choice at all — THE CITY THAT READ THE FIRE and THE
+ * QUIET WAKING, the two readings of wiping the ledger, told apart by what the m6 broadcast said.
+ * Both were listed on the CONTRACTS panel as open and both delivered WIPE THE LEDGER instead: the
+ * arc could be finished twice, having answered its last question differently, and end the same way
+ * both times — the exact thing the comment above ENDINGS says must not happen.
+ *
+ * So the answer is resolved rather than read: the chosen ending, unless one of its refinements has
+ * its gate open, in which case that. The refinements of an ending are mutually exclusive by
+ * construction, and the first open one wins if that is ever not true.
+ */
+export function resolveEnding(t: Testimony, faction: FactionId | null): EndingDef {
+  const chosen = ENDINGS.find((e) => e.id === t["m7:ending"]) ?? ENDINGS[0]!;
+  return ENDINGS.find((e) => e.refines === chosen.id && gateOpen(e.gate, t, faction)) ?? chosen;
 }
