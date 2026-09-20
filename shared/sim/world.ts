@@ -371,7 +371,10 @@ export class World {
     const dir = viewDir(p.yaw + p.weapon.kickYaw, p.pitch + p.weapon.kickPitch);
     const start = addScaled(origin, dir, 0.6);
     const vel = v3(dir.x * r.speed + p.vel.x * 0.5, dir.y * r.speed + p.vel.y * 0.3, dir.z * r.speed + p.vel.z * 0.5);
-    this.projectiles.push(createProjectile(this.nextProjId++, r.projKind, p.id, start, vel));
+    // the round is made from the firing weapon's definition AS THIS FILE HAS IT — firmware and all
+    // — rather than from the manifest's stock entry (Stage 170). A grenade has no weapon behind it.
+    const pdef = r.weapon === "grenade" ? undefined : weaponDefOf(p);
+    this.projectiles.push(createProjectile(this.nextProjId++, r.projKind, p.id, start, vel, pdef));
   }
 
   /** Cast one ray from a player (or a wasp with negative shooter id) and apply damage. */

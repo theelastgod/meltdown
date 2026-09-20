@@ -1641,6 +1641,69 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 170 — A rank-20 firmware that changed nothing at all
+
+**Goal.** Mastery rank 20 on the PHAGE LAUNCHER unlocks **CLUSTER**: *"+25% burst radius, −15%
+damage"*. A player grinds a weapon to rank 20, flashes it, and fires a round identical to the one
+they fired before.
+
+A firmware is a `patch` over a `WeaponDef`, and the patched definition is stored on the player's kit
+and read everywhere the sim needs it — except at the one place a phage round is built.
+`createProjectile` took no definition at all and read `WEAPONS.phage`, the stock manifest entry, so
+everything a firmware changes was thrown away between the trigger and the round. Measured, firing
+one round and reading the projectile the sim actually made:
+
+| | the flashed definition says | the round the sim made |
+| --- | --- | --- |
+| CLUSTER radius | 4.38 m | **3.50 m** (stock) |
+| CLUSTER damage | 51 | **60** (stock) |
+| CLUSTER edge damage | 15 | **18** (stock) |
+| LONG FUSE damage | 65 | **60** (stock) |
+| LONG FUSE fuse | 3.25 s | **2.50 s** (stock) |
+| LONG FUSE gravity | 9.6 | **12.0** (stock) |
+| LONG FUSE speed | 48.0 | 48.0 ✓ |
+
+CLUSTER is inert in every property it has. LONG FUSE lands one of its four, and only because
+`speed` happens to travel separately on the fire request rather than through the round's
+constructor. The rank-28 firmware sells *"faster, flatter rounds, +8% damage, longer fuse"* and
+delivers the first word of it.
+
+**What changed.**
+
+- `shared/sim/projectiles.ts` — `createProjectile` takes the firing weapon's definition *as this
+  file has it* and reads the round's fuse, gravity, radius, damage, edge damage and direct hit from
+  there, falling back to the manifest when there is no weapon behind the round. The sticky alt's
+  arm time, damage and proximity come from the same definition rather than from `WEAPONS.phage.alt`,
+  so a firmware that patched the alt would reach the round too.
+- `shared/sim/world.ts` — the spawn passes `weaponDefOf(p)`, the firing file's own definition. A
+  grenade has no weapon behind it and passes nothing.
+
+**Proof.** vitest 895/895, four new, nothing existing moved. `tests/firmware.test.ts` fires one
+round with each firmware flashed and reads the projectile the sim actually made. Each test first
+asserts the firmware really does change the property — `def.radius > stock.radius` — so it cannot
+pass by asserting a no-op, which is how a check for an inert firmware would most easily fool
+itself.
+
+The fourth is the structural one and it guards the rule rather than these two firmwares: it walks
+**every** firmware in the manifest that patches a projectile and requires radius, damage, edge
+damage, gravity and direct to reach the round. A firmware added later, or a property added to the
+spec, is covered without anyone remembering to come back here.
+
+The sweep ran green to 384 checks and then failed one banking check inside `probe:run` — `banked
+0`, the shape Stage 166 established fails with a change and without one. Run alone `probe:run` is
+27/27, and the rest a step at a time: `probe:harden` 9/9, `probe:frame` 8/8, `probe:mobile` 40/40,
+`probe:persist` 7/7, `probe:tps` 50/50, `probe:body` 21/21, build and smoke 7/7. Nothing this stage
+touches is on the banking path: a phage round is not thrown at a gate.
+
+Mutation A, the round built from the stock manifest again — the defect itself: 3 of the 4 fail.
+Mutation B, a single property left reading stock while the rest are patched: 2 fail, one of them
+the manifest-wide walk, which is the point of writing it that way. Mutation C, the definition
+accepted as an argument and then ignored inside: 3 fail.
+
+The test that a file with nothing flashed still fires the stock round stays green under all three,
+correctly — stock is stock whichever way it is read. It is there so the others cannot pass by
+making every round identical.
+
 ## Stage 169 — A round fired from inside a body went through it
 
 **Goal.** `rayCapsule` returns the distance at which a ray *enters* a capsule. Every quadratic in it

@@ -2,7 +2,7 @@
 import { SIM_DT } from "./constants";
 import { rayBox, rayCapsule } from "./collision";
 import type { Box } from "./level";
-import { GRENADES, WEAPONS, type GrenadeId } from "../weapons/manifest";
+import { GRENADES, WEAPONS, type GrenadeId, type WeaponDef } from "../weapons/manifest";
 import { type Vec3, v3, dot, sub, len } from "../math/vec3";
 
 export type ProjKind = "phage" | "sticky" | GrenadeId;
@@ -39,9 +39,20 @@ export interface CapsuleTarget {
   radius: number;
 }
 
-export function createProjectile(id: number, kind: ProjKind, owner: number, pos: Vec3, vel: Vec3): Projectile {
+/**
+ * A round in flight (Stage 170).
+ *
+ * `def` is the FIRING WEAPON'S definition as the player's kit has it — firmware-patched. Without
+ * it this read `WEAPONS.phage` directly, the stock manifest entry, so every property a firmware
+ * changes was thrown away between the trigger and the round: PHAGE CLUSTER at rank 20 patches the
+ * blast's radius, damage and edge damage and the sim made a stock round every time, 3.50 m and 60
+ * damage against the 4.38 m and 51 it had bought. LONG FUSE at rank 28 landed one of its four
+ * changes, and only because `speed` travels separately on the fire request.
+ */
+export function createProjectile(id: number, kind: ProjKind, owner: number, pos: Vec3, vel: Vec3, def?: WeaponDef): Projectile {
   if (kind === "phage" || kind === "sticky") {
-    const p = WEAPONS.phage.projectile!;
+    const w = def ?? WEAPONS.phage;
+    const p = w.projectile ?? WEAPONS.phage.projectile!;
     const sticky = kind === "sticky";
     return {
       id, kind, owner, pos, vel,
@@ -49,12 +60,12 @@ export function createProjectile(id: number, kind: ProjKind, owner: number, pos:
       gravity: p.gravity,
       bounce: 0,
       stuck: false,
-      armed: sticky ? WEAPONS.phage.alt.stickyArm ?? 0.5 : 0,
+      armed: sticky ? w.alt.stickyArm ?? 0.5 : 0,
       radius: p.radius,
-      damage: sticky ? WEAPONS.phage.alt.damage ?? p.damage : p.damage,
+      damage: sticky ? w.alt.damage ?? p.damage : p.damage,
       edgeDamage: p.edgeDamage,
       direct: p.direct,
-      proximity: sticky ? WEAPONS.phage.alt.proximity ?? 2 : 0,
+      proximity: sticky ? w.alt.proximity ?? 2 : 0,
     };
   }
   const g = GRENADES[kind];
