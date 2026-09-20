@@ -2,17 +2,18 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Eleven have since been fixed (Stages 168–178) and
+turned out to be the same finding reported twice. Twelve have since been fixed (Stages 168–179) and
 are listed at the foot of this file with the commit that closed them.
 
-The **21 below are open**. Every one has been read in the source — none is a hunch.
+The **20 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
 mutation-tested check, and ship it as one stage. Several entries turned out sharper or wider than
 first written once measured, and one ("stranded units") is two findings tangled together.
 
-Ordered roughly by how much a player would notice, not by how easy they are.
+Ordered roughly by how much a player would notice, not by how easy they are. Item numbers are
+stable ids, not a queue.
 
 
 ## Netcode
@@ -44,38 +45,6 @@ drop a socket, restore the link at t = 45 s, and observe that the room still rep
 match even though the room would have taken them straight back into their seat with their kills,
 weapon state and token intact. They are told the room dropped them, which is false; their only
 recourse is a page reload, which joins as a brand-new seat and resets the round.
-
-
-## Simulation core
-
-### 2. `slideTime` is never zeroed when a slide ends, so every airborne kill after one slide is credited as a slide-jump kill
-
-`shared/sim/world.ts:506`
-
-**What the code promises.** `KillCtx.shooterSlideJump` feeds `server/progression.ts:100` (`if (c.shooterSlideJump)
-this.count("slideJumpKills")`), which drives the `slide_jump_kill` Attestation Stamp "FIRST
-SLIDE-JUMP KILL" (shared/progression/stamps.ts:56) — an on-chain attestation per
-docs/TOKENOMICS.md:70. The flag is supposed to mean "this kill was made mid-air out of a slide-
-jump".
-
-**What it does.** The flag is computed as `!shooter.grounded && shooter.slideTime > 0`. `slideTime` is only ever
-set to 0 when a slide is *entered* (player.ts:367) or on respawn (player.ts:185). Neither slide
-exit path clears it: the slide-jump branch (player.ts:342-352) and the normal slide-end branch
-(player.ts:353-358) both change `stance` and set `slideCooldown` but leave `slideTime` at its
-final value. So from the first slide of a life until death, `slideTime > 0` is permanently true
-and the flag degenerates to plain `!grounded` — identical to `shooterAir`.
-
-**Measured.** Flat ground box, sprint 120 ticks, tap Crouch to enter the slide, let it end normally. Measured
-`p.slideTime === 0.350` after `p.stance === "stand"` (it should be 0). Then walk 600 ticks with
-no slide and plain-jump: `p.grounded === false`, `p.slideTime === 0.350`, so `!grounded &&
-slideTime > 0` is `true`. A guard is: after any `slideEnd`/`slideJump` event, `p.slideTime ===
-0`; or assert `ctx.shooterSlideJump === false` for a kill made from a plain jump that followed a
-completed slide.
-
-**What a player sees.** The "FIRST SLIDE-JUMP KILL" stamp (and the `slideJumpKills` counter behind it) is minted for an
-ordinary jump-shot kill taken ten seconds after an unrelated slide, so the hardest-looking
-movement stamp in the Ghostfile is handed out for one of the easiest actions. A player who never
-once slide-jumps still earns it.
 
 
 ## Campaign
@@ -669,3 +638,5 @@ stricter than the rule it guards.
   → Stage 177 (b4c0402)
 - A buffered jump survives death: the player involuntarily jumps on the first tick after respawning  
   → Stage 178 (16e73d1)
+- `slideTime` is never zeroed when a slide ends, so every airborne kill after one slide is credited as a slide-jump kill  
+  → Stage 179

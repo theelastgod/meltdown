@@ -10,8 +10,10 @@ import type { HitZone } from "../sim/world";
  * snapshot (local, dummy and entity masks) and left this at 9, so a stale bundle would have passed
  * the version gate and been kicked for "malformed message" instead; tests/wire.test.ts holds a
  * fingerprint of the encoders against this number so that cannot happen quietly again (Stage 56).
+ * Stage 179 added `fromSlideJump` to LocalAuth (a u8 next to grounded) so the slide-jump kill
+ * flag survives prediction rollback.
  */
-export const PROTOCOL_VERSION = 10;
+export const PROTOCOL_VERSION = 11;
 /** Server snapshot cadence in sim ticks (60 Hz sim → 30 Hz snapshots). */
 export const SNAPSHOT_EVERY = 2;
 /** Lag compensation rewind cap in ticks (200 ms at 60 Hz). */
@@ -164,6 +166,7 @@ export interface LocalAuth {
   yaw: number; pitch: number;
   stance: number; height: number; grounded: number; airTime: number; jumpBuffer: number;
   slideTime: number; slideCooldown: number; sdx: number; sdz: number;
+  fromSlideJump: number;
   mfx: number; mfy: number; mfz: number; mtx: number; mty: number; mtz: number; mantleT: number;
   health: number; alive: number; respawnTimer: number; prevButtons: number;
   kills: number; deaths: number; shots: number; hits: number;
@@ -510,6 +513,7 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
     for (let i = 0; i < cur.length; i++) if (mask[i >> 3]! & (1 << (i & 7))) w.f64(cur[i]!);
     w.u8(l.stance);
     w.u8(l.grounded);
+    w.u8(l.fromSlideJump);
     w.u8(l.alive);
     w.i16(l.health);
     w.u16(l.prevButtons);
@@ -700,7 +704,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
         if (mask[i >> 3]! & (1 << (i & 7))) l[k] = r.f64();
         else l[k] = bl ? (bl as unknown as Record<string, number>)[k]! : 0;
       });
-      l.stance = r.u8(); l.grounded = r.u8(); l.alive = r.u8(); l.health = r.i16(); l.prevButtons = r.u16(); l.kills = r.u16(); l.deaths = r.u16(); l.shots = r.u32(); l.hits = r.u32();
+      l.stance = r.u8(); l.grounded = r.u8(); l.fromSlideJump = r.u8(); l.alive = r.u8(); l.health = r.i16(); l.prevButtons = r.u16(); l.kills = r.u16(); l.deaths = r.u16(); l.shots = r.u32(); l.hits = r.u32();
       l.team = r.u8();
       l.slot = r.u8();
       const ammo: number[] = [];

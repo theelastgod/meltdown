@@ -89,7 +89,7 @@ describe("respawn — one definition of a life's motion", () => {
     step(Btn.Forward | Btn.Crouch | Btn.Jump);
     respawnPlayer(p, SPAWN);
     reviveMotion(used, SPAWN);
-    const MOTION = ["pos", "vel", "yaw", "pitch", "stance", "height", "grounded", "airTime", "jumpBuffer", "slideTime", "slideCooldown", "slideDir", "mantleFrom", "mantleTo", "mantleT"] as const;
+    const MOTION = ["pos", "vel", "yaw", "pitch", "stance", "height", "grounded", "airTime", "jumpBuffer", "slideTime", "slideCooldown", "slideDir", "fromSlideJump", "mantleFrom", "mantleTo", "mantleT"] as const;
     for (const k of MOTION) {
       expect(JSON.stringify(p[k as keyof PlayerState]), `${k} differs between a respawned file and a fresh one`).toBe(JSON.stringify(fresh[k as keyof PlayerState]));
       expect(JSON.stringify(used[k as keyof PlayerState]), `${k} is not written by reviveMotion`).toBe(JSON.stringify(fresh[k as keyof PlayerState]));

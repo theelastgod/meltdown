@@ -20,6 +20,7 @@ const FIXTURE_SNAPSHOT = { tick: 500, serverTimeMs: 123456, local: null, players
 /** taken at each version the wire has had since this guard existed */
 const FINGERPRINTS: Record<number, { inputs: string; snapshot: string; join: string }> = {
   10: { inputs: "30a69bbb14c295b4", snapshot: "7dea40f9d78fe131", join: "092459bcd00d16cd" },
+  11: { inputs: "30a69bbb14c295b4", snapshot: "7dea40f9d78fe131", join: "9f10ff65e39ceb05" },
 };
 
 describe("the protocol version moves with the wire", () => {

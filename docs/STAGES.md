@@ -1641,6 +1641,73 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 179 — Every airborne kill after one slide was a slide-jump kill
+
+**Goal.** `KillCtx.shooterSlideJump` feeds `slideJumpKills`, which is the SLIDER moniker and the
+FIRST SLIDE-JUMP KILL stamp. The flag is supposed to mean the kill was made during the airborne
+arc that began as a slide-jump.
+
+It reconstructed that as `!shooter.grounded && shooter.slideTime > 0`. `slideTime` is set to 0
+only on slide *entry* and on respawn. Neither exit branch cleared it — not the slide-jump, not
+the normal slide-end. From the first slide of a life until death, `slideTime > 0` is permanently
+true and the flag degenerates to plain `!grounded`, identical to `shooterAir` beside it.
+
+Measured on a real world — slide, let it end on its own, then an ordinary jump:
+
+```
+SLIDE ENDED  stance stand  slideTime 0.267  grounded true   slideJumps 0
+PLAIN JUMP   stance stand  grounded false   vy 7.03         slideTime 0.267
+PLAIN JUMP KILL  shooterSlideJump true   shooterAir true   (stats.slideJumps is still 0)
+```
+
+A genuine slide-jump is also true, and so is the next plain jump *after landing from one*:
+`slideTime` is still 0.100, `slideJumps` is 1, and `shooterSlideJump` is true again. Clearing
+`slideTime` on exit is not enough — after a real slide-jump the leftover duration would survive
+the landing too.
+
+**What changed.**
+
+- `shared/sim/player.ts` — `fromSlideJump`: this airborne arc began as a slide-jump. Set in the
+  slide-jump branch, cleared on landing (the same `nowGrounded && !wasGrounded` that emits `land`),
+  on mantle entry (that arc is over; mantle end never fires `land`), and in `reviveMotion`. Both
+  slide exits also zero `slideTime`, so the field is the duration of the slide that is happening.
+- `shared/sim/world.ts` — `shooterSlideJump` reads `shooter.fromSlideJump`. The field is in
+  `hashWorld`, `exportLocal` and `importLocal`.
+- `shared/net/protocol.ts` — `fromSlideJump` is a u8 next to `grounded` on LocalAuth.
+  `PROTOCOL_VERSION` 10 → 11, so a stale bundle is kicked for the version rather than feeding
+  `alive` into the new byte. The fixture snapshot has `local: null`, so its fingerprint is
+  unchanged; the join fingerprint moves with the version. A round-trip of a snapshot that *does*
+  carry local is in `tests/slidejump.test.ts`.
+
+**Proof.** Typecheck clean. The new tests (10 in `tests/slidejump.test.ts`, the extra MOTION field
+in `tests/revive.test.ts`) are green, as is `tests/wire.test.ts` at PROTOCOL_VERSION 11. Mutations
+below were watched with the fix reverted. A first full sweep on this machine was not a still tree —
+`tests/city.test.ts` timed out at 5 s under suite load and passed in 2.3 s alone; `probe:look`'s
+60 Hz check read 5.3 ticks/s on SwiftShader; `probe` timed out waiting for a third page's `ready`;
+and a later edit hot-reloaded a page out from under `probe:wake`. Those numbers are not this
+stage's. The sweep is re-run on a still tree after this commit.
+
+Four mutations of the original defect and two of the new field's other readers:
+
+- **A**, `world.ts` back to `!grounded && slideTime > 0`: **1** fails, and it is the genuine
+  kill — *"a kill in the air out of a slide-jump is one"* — because this stage also zeros
+  `slideTime` on the jump, so the old formula now misses the real thing.
+- **B**, `fromSlideJump = true` left out of the slide-jump branch: **4** fail (the genuine kill,
+  the wire round-trip, the leftover-duration assertion, the export).
+- **C**, landing no longer clears the field: **1** fails —
+  *"fromSlideJump survived the landing"*.
+- **D**, `reviveMotion` does not write it: **2** fail — the structural MOTION walk in
+  `tests/revive.test.ts` and *"a respawn does not carry a slide-jump arc into the next life"*.
+- **E**, the original defect whole: old formula and `slideTime` left uncleared: **4** fail,
+  including *"an ordinary jump-shot after a slide was credited as a slide-jump kill"* and
+  leftover `slideTime` 0.267 / 0.100.
+- **F**, `hashWorld` omits the field: **1** fails — two lives that differ only in the flag hash
+  equal.
+
+A and C are the argument for having both layers: zeroing `slideTime` without the new field
+loses the real kill; keeping the field without clearing it on land hands the stamp to the next
+plain jump.
+
 ## Stage 178 — The file jumped after respawning, with nobody touching the keyboard
 
 **Goal.** A jump press the gate refuses is not thrown away. It is held in `jumpBuffer` for

@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-20, at Stage 178, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-20, at Stage 179, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | `16e73d1` — Stage 178 |
-| Next stage number | **179** |
-| CI | `verify` runs #202–#208 (Stages 172–178) all green |
-| Unit tests | 985 across 108 files, `npm test` |
+| HEAD | Stage 179 on this branch (slide-jump kill flag) |
+| Next stage number | **180** |
+| CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
+| Unit tests | 995 across 109 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -178,8 +178,8 @@ now passed in sequence six sweeps running. If it fails, run it alone before conc
 
 ## 5. The week's work
 
-`docs/BACKLOG.md` has **21 open findings**, each read in the source, grouped by area and ordered
-roughly by what a player would notice. It also lists the thirteen already closed, with commits — check
+`docs/BACKLOG.md` has **20 open findings**, each read in the source, grouped by area and ordered
+roughly by what a player would notice. It also lists the twelve already closed, with commits — check
 that list before starting anything, and mark your own as you close them.
 
 A reasonable shape for five days, one stage each, varying the surface so you do not over-fit to one
@@ -188,8 +188,8 @@ HUD/readout:
 
 | | Area | Suggested |
 | --- | --- | --- |
-| Mon | sim-core | **Stage 179 below** — already measured, start here |
-| Tue | campaign | the m1 terminal hold with no anchor; or the m2 informant silently deleting four gigs and the only source of the CLOCKEATER |
+| Mon | sim-core | Stage 179 shipped (`fromSlideJump`) |
+| Tue | campaign | **the m1 terminal hold with no anchor**; or the m2 informant silently deleting four gigs and the only source of the CLOCKEATER |
 | Wed | netcode / campaign | the rejoin knock that gives up at 31.5 s of a 60 s window; or `THREAT_LINES` off by one against the mech threshold |
 | Thu | economy | the stranded-units pair — note this is *two* findings tangled together, and one of them prints banked units as $CAPITAL |
 | Fri | audio-render | the per-frame explosion light fade, or the landing dip divided by a capped dt — both are frame-rate bugs of the Stage 156/164 family |
@@ -203,41 +203,14 @@ Deviate freely. The ordering is a suggestion; the method is not.
 
 ---
 
-## 6. Stage 179 is already half done
+## 6. Stage 180 is next
 
-The finding is verified and measured. Nothing was written to disk — start from here.
-
-**`slideTime` is never zeroed when a slide ends.** `shared/sim/world.ts:507` computes the
-slide-jump kill flag as `!shooter.grounded && shooter.slideTime > 0`. `slideTime` is set to 0 only
-on slide *entry* and on respawn. Neither exit branch clears it — not the slide-jump branch
-(`shared/sim/player.ts:392-402`) nor the normal slide-end branch (`:403-408`); both change `stance`
-and set `slideCooldown` and leave `slideTime` at its final value.
-
-Measured on a real world — slide, let it end naturally, then an ordinary jump:
-
-```
-SLIDE ENDED  stance stand  slideTime 0.267  grounded true  slideJumps 0
-PLAIN JUMP   stance stand  grounded false   vy 4.83        slideTime 0.267
-RESULT  shooterSlideJump on an ordinary jump = true   (stats.slideJumps is still 0)
-```
-
-The sim's own counter says no slide-jump happened and the kill flag says the kill was one. From the
-first slide of a life until death, the flag degenerates to plain `!grounded` — identical to
-`shooterAir` beside it.
-
-**What it costs.** `server/progression.ts:100` feeds `slideJumpKills`, which is the SLIDER moniker
-(`shared/identity/monikers.ts:36`, need 1) and the FIRST SLIDE-JUMP KILL stamp
-(`shared/progression/stamps.ts:56`). Both are identity rewards the player wears, handed out for an
-ordinary jump-shot. `slideKills` is separate, reads `shooterStance === "slide"`, and is correct.
-
-**The fix is not simply clearing `slideTime` on exit.** I had got this far and stopped: after a
-*genuine* slide-jump, `slideTime` survives the landing too, so the next plain jump is still wrongly
-flagged. What is wanted is a field that means "this airborne arc began as a slide-jump" — set in the
-slide-jump branch, cleared on landing (`shared/sim/player.ts:582`, where `nowGrounded &&
-!wasGrounded` already emits the `land` event) and in `reviveMotion`. Then `world.ts:507` reads that
-field instead of reconstructing the fact from two others.
-
-Check whether the new field needs to be in `hashWorld` / `exportLocal` before assuming it does not.
+Stage 179 shipped the `fromSlideJump` field. Start from `docs/BACKLOG.md` item 5: m1's
+"HOLD THE TERMINAL WHILE THE FILE DECRYPTS" has no `at`, so the 20 s timer runs anywhere in Lease
+Row and no marker is drawn. It is the only unanchored survive/hold in the 19 contracts. The
+existing campaign test already holds the player at B, so adding `at: { node: "B" }, radius: 6`
+(same as the other escrow holds) will not break it — add a test that teleports away and requires
+progress to stall.
 
 ---
 

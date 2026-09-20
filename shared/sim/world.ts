@@ -504,7 +504,7 @@ export class World {
       projKind: hit.projKind ?? null,
       shooterStance: shooter?.stance ?? "stand",
       shooterAir: shooter ? !shooter.grounded : false,
-      shooterSlideJump: shooter ? !shooter.grounded && shooter.slideTime > 0 : false,
+      shooterSlideJump: shooter ? shooter.fromSlideJump : false,
       victimTeam,
       victimEmp,
     });
@@ -734,6 +734,7 @@ export class World {
       stance: p.stance === "stand" ? 0 : p.stance === "crouch" ? 1 : p.stance === "slide" ? 2 : 3,
       height: p.height, grounded: p.grounded ? 1 : 0, airTime: p.airTime, jumpBuffer: p.jumpBuffer,
       slideTime: p.slideTime, slideCooldown: p.slideCooldown, sdx: p.slideDir.x, sdz: p.slideDir.z,
+      fromSlideJump: p.fromSlideJump ? 1 : 0,
       mfx: p.mantleFrom.x, mfy: p.mantleFrom.y, mfz: p.mantleFrom.z, mtx: p.mantleTo.x, mty: p.mantleTo.y, mtz: p.mantleTo.z, mantleT: p.mantleT,
       health: p.health, alive: p.alive ? 1 : 0, respawnTimer: p.respawnTimer, prevButtons: p.prevButtons,
       shield: p.shield, sinceDamage: p.sinceDamage,
@@ -759,6 +760,7 @@ export class World {
     p.jumpBuffer = l.jumpBuffer;
     p.slideTime = l.slideTime;
     p.slideCooldown = l.slideCooldown;
+    p.fromSlideJump = l.fromSlideJump === 1;
     set(p.slideDir, l.sdx, 0, l.sdz);
     set(p.mantleFrom, l.mfx, l.mfy, l.mfz);
     set(p.mantleTo, l.mtx, l.mty, l.mtz);
@@ -825,7 +827,7 @@ export function hashWorld(w: World): string {
   for (const p of [...w.players.values()].sort((a, b) => a.id - b.id)) {
     push(p.pos);
     push(p.vel);
-    parts.push(p.yaw, p.pitch, p.height, p.grounded ? 1 : 0, p.health, p.shield, p.slideTime, p.mantleT);
+    parts.push(p.yaw, p.pitch, p.height, p.grounded ? 1 : 0, p.health, p.shield, p.slideTime, p.mantleT, p.fromSlideJump ? 1 : 0);
     parts.push(p.stance === "stand" ? 0 : p.stance === "crouch" ? 1 : p.stance === "slide" ? 2 : 3);
     const wp = p.weapon;
     parts.push(wp.slot, wp.reloadTimer, wp.fireCooldown, wp.charge, wp.shotIndex, wp.magSeed, wp.kickPitch, wp.kickYaw, wp.patX, wp.patY, wp.stunTimer, wp.empTimer, ...wp.ammo, ...wp.grenades);

@@ -137,6 +137,15 @@ export interface PlayerState {
   slideTime: number;
   slideCooldown: number;
   slideDir: Vec3;
+  /**
+   * This airborne arc began as a slide-jump (Stage 179).
+   *
+   * `KillCtx.shooterSlideJump` used to reconstruct that as `!grounded && slideTime > 0`. `slideTime`
+   * is only zeroed on slide *entry* and on respawn, so from the first slide of a life the flag
+   * degenerates to plain `!grounded`. This field is the fact itself: set in the slide-jump branch,
+   * cleared on landing, on mantle (that arc is over), and in `reviveMotion`.
+   */
+  fromSlideJump: boolean;
   mantleFrom: Vec3;
   mantleTo: Vec3;
   mantleT: number;
@@ -175,6 +184,7 @@ export function createPlayer(id: number, name: string, spawn: SpawnPoint): Playe
     slideTime: 0,
     slideCooldown: 0,
     slideDir: v3(0, 0, -1),
+    fromSlideJump: false,
     mantleFrom: v3(),
     mantleTo: v3(),
     mantleT: 0,
@@ -221,6 +231,7 @@ export function reviveMotion(p: PlayerState, spawn: SpawnPoint): void {
   p.jumpBuffer = 0;
   p.slideTime = 0;
   p.slideCooldown = 0;
+  p.fromSlideJump = false;
   set(p.slideDir, 0, 0, -1);
   set(p.mantleFrom, 0, 0, 0);
   set(p.mantleTo, 0, 0, 0);
@@ -397,6 +408,8 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
       p.stance = "stand";
       p.height = MOVE.standHeight;
       p.slideCooldown = MOVE.slideCooldown;
+      p.slideTime = 0;
+      p.fromSlideJump = true;
       p.stats.slideJumps++;
       p.stats.jumps++;
       events.push({ type: "slideJump" });
@@ -404,6 +417,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
       p.stance = crouchHeld ? "crouch" : "stand";
       p.height = crouchHeld ? MOVE.lowHeight : MOVE.standHeight;
       p.slideCooldown = MOVE.slideCooldown;
+      p.slideTime = 0;
       events.push({ type: "slideEnd" });
     }
   } else {
@@ -515,6 +529,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
       copy(p.mantleTo, land);
       p.mantleT = 0;
       set(p.vel, 0, 0, 0);
+      p.fromSlideJump = false;
       p.stats.mantles++;
       events.push({ type: "mantle", from: clone(p.mantleFrom), to: clone(p.mantleTo) });
       return reqs;
@@ -581,6 +596,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
   const nowGrounded = !!g && p.vel.y <= 0.01;
   if (nowGrounded && !wasGrounded) {
     events.push({ type: "land", speed: lenXZ(p.vel) });
+    p.fromSlideJump = false;
   }
   p.grounded = nowGrounded;
   p.airTime = nowGrounded ? 0 : p.airTime + dt;
