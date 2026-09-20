@@ -44,6 +44,14 @@ export const SKINS: readonly SkinDef[] = [
   skin(6, "skin_estate", "ESTATE PLATE", "cyan anodized ledger-grid, the contractor's own paint", 70, 0x11d8, "#35f2ff", "skin_estate_plate"),
   skin(7, "skin_clockeater", "CLOCKEATER BRASS", "gears that run faster than the city can count", 90, 0xa2c4, "#ffd27a", "skin_clockeater_plate"),
   skin(8, "skin_ledger", "LEDGER BREAK", "magenta stamp over a CRT that still says pending", 110, 0x6f0b, "#ff3ec9", "skin_ledger_plate"),
+  skin(9, "skin_vantage", "VANTAGE AMBER", "contractor chevrons, the colour of a searchlight", 80, 0x4c2a, "#ffb02e", "skin_vantage_plate"),
+  skin(10, "skin_blank", "UNLISTED BLACK", "near-black, one pinhole of cyan", 45, 0x90e1, "#35f2ff", "skin_blank_plate"),
+  skin(11, "skin_rain", "RAIN LEASE", "anodized black that never dried", 55, 0x2b17, "#8fd8ff", "skin_rain_plate"),
+  skin(12, "skin_metro", "METRO PLATE", "grey-green tunnel tile, cyan bars", 75, 0x71a0, "#37ff8b", "skin_metro_plate"),
+  skin(13, "skin_violet", "ECHO VIOLET", "ghosting plate, short-range wallsense look", 95, 0x5d33, "#8f4dff", "skin_violet_plate"),
+  skin(14, "skin_forged", "FORGED TRIM", "amber servo light on wet steel", 85, 0x18c4, "#ffb02e", "skin_amber_trim"),
+  skin(15, "skin_grid", "ESTATE GRID", "cyan monitor grid", 65, 0x0e91, "#35f2ff", "skin_cyan_grid"),
+  skin(16, "skin_black_lease", "BLACK LEASE", "CRT phosphor on a sealed file", 100, 0x6a0b, "#7dffb0", "skin_black_lease"),
 ];
 
 /**

@@ -8,7 +8,7 @@
  */
 import * as THREE from "three";
 import type { LevelDef, TramLine, WalkLoop } from "@shared/sim/level";
-import { PALETTE } from "./city";
+import { bindPlate, PALETTE } from "./city";
 import { tickerStep } from "./ticker";
 import { FAR_LAYER } from "./renderer";
 
@@ -72,6 +72,9 @@ export class Crowd {
     const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1 });
     const lampMat = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
     const brollyMat = new THREE.MeshStandardMaterial({ color: 0x0e1218, roughness: 0.8, side: THREE.DoubleSide });
+    bindPlate(dark, "tex_cloak");
+    bindPlate(hoodMat, "tex_cloak");
+    bindPlate(brollyMat, "tex_brolly");
     this.body = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.3, 1.0, 3, 8), dark, count);
     this.hood = new THREE.InstancedMesh(new THREE.ConeGeometry(0.36, 0.5, 7), hoodMat, count);
     this.lamp = new THREE.InstancedMesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), lampMat, count);
@@ -140,7 +143,9 @@ export class Tram {
   constructor(private line: TramLine) {
     for (const dir of [1, -1] as const) {
       const g = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(14, 2.6, 2.4), new THREE.MeshStandardMaterial({ color: 0x141a24, roughness: 0.4, metalness: 0.6 }));
+      const hullMat = new THREE.MeshStandardMaterial({ color: 0x141a24, roughness: 0.4, metalness: 0.6 });
+      bindPlate(hullMat, "tex_monorail");
+      const body = new THREE.Mesh(new THREE.BoxGeometry(14, 2.6, 2.4), hullMat);
       g.add(body);
       const windows = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.9, 2.46), new THREE.MeshBasicMaterial({ color: 0xbfefff }));
       windows.position.y = 0.35;
@@ -370,7 +375,9 @@ export class Sky {
     this.group.add(pts);
     // airship: a dark hull with a magenta ad panel underneath, drifting in a slow circle
     this.ship = new THREE.Group();
-    const hull = new THREE.Mesh(new THREE.CapsuleGeometry(9, 40, 4, 10), new THREE.MeshStandardMaterial({ color: 0x0a0c12, roughness: 0.8 }));
+    const airMat = new THREE.MeshStandardMaterial({ color: 0x0a0c12, roughness: 0.8 });
+    bindPlate(airMat, "tex_airship");
+    const hull = new THREE.Mesh(new THREE.CapsuleGeometry(9, 40, 4, 10), airMat);
     hull.rotation.z = Math.PI / 2;
     this.ship.add(hull);
     const panel = new THREE.Mesh(new THREE.BoxGeometry(34, 8, 0.4), new THREE.MeshBasicMaterial({ color: PALETTE.magenta }));

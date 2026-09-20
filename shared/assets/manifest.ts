@@ -50,10 +50,13 @@ export interface AssetDef {
  * budget below is the download; `MAX_TEXTURE_EDGE` is what bounds the memory.
  */
 export const MAX_ASSET_BYTES = 512 * 1024;
-export const ASSET_BUDGET_BYTES = 4 * 1024 * 1024;
+/** Raised so the Higgsfield city pack can actually ship. GPU bound is still MAX_TEXTURE_EDGE. */
+export const ASSET_BUDGET_BYTES = 64 * 1024 * 1024;
 export const MAX_TEXTURE_EDGE = 1024;
 
-export const ASSETS: readonly AssetDef[] = [
+import generatedJson from "./generated.json";
+
+export const ASSETS_CORE: readonly AssetDef[] = [
   {
     id: "skin_rust_plate",
     kind: "texture",
@@ -236,6 +239,7 @@ export const ASSETS: readonly AssetDef[] = [
   },
 ];
 
+export const ASSETS: readonly AssetDef[] = [...ASSETS_CORE, ...(generatedJson as AssetDef[])];
 export const assetById = (id: string): AssetDef | undefined => ASSETS.find((a) => a.id === id);
 export const assetUrl = (a: AssetDef): string => `/assets/${a.file}`;
 export const totalAssetBytes = (): number => ASSETS.reduce((n, a) => n + a.bytes, 0);

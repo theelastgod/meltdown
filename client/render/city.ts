@@ -291,6 +291,14 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
   bindPlate(M.containerA, "tex_container");
   bindPlate(M.containerB, "tex_container");
   bindPlate(M.containerC, "tex_metal");
+  bindPlate(M.barrel, "tex_barrel");
+  bindPlate(M.cone, "tex_cone");
+  bindPlate(M.car, "tex_car");
+  bindPlate(M.carAlt, "tex_car_alt");
+  bindPlate(M.planter, "tex_planter");
+  bindPlate(M.bush, "tex_bush");
+  bindPlate(M.whiteDesk, "tex_white_desk");
+  bindPlate(M.whiteRug, "tex_white_rug");
   const facades = [facadeTextures(seed + 1, 0.22), facadeTextures(seed + 2, 0.32), facadeTextures(seed + 3, 0.45)].map((f) => {
     f.map.wrapS = f.map.wrapT = f.emissive.wrapS = f.emissive.wrapT = THREE.RepeatWrapping;
     f.map.needsUpdate = f.emissive.needsUpdate = true;

@@ -1,0 +1,1289 @@
+[
+  {
+    "id": "tex_barrel",
+    "kind": "texture",
+    "file": "tex_barrel.png",
+    "size": 256,
+    "bytes": 162736,
+    "sha256": "e255354eb96cc86e79aabfd61ef9fd9a24d60340922db18702aae00a46ca6ab0",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_cone",
+    "kind": "texture",
+    "file": "tex_cone.png",
+    "size": 256,
+    "bytes": 141946,
+    "sha256": "58ca483016cd4980b06d14c73228f80dca03f865b74ddd3d8dc78395e40b7290",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_car",
+    "kind": "texture",
+    "file": "tex_car.png",
+    "size": 256,
+    "bytes": 140383,
+    "sha256": "99515c7efd08a83e584b040f1e0bfc1e991c5ed48a039fffeffb6b14a8561c07",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_car_alt",
+    "kind": "texture",
+    "file": "tex_car_alt.png",
+    "size": 256,
+    "bytes": 147702,
+    "sha256": "05109ab7b8f66cfd9d5a67f0688de8e13e1f9734aa54af353513222db030fbfb",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_planter",
+    "kind": "texture",
+    "file": "tex_planter.png",
+    "size": 256,
+    "bytes": 167425,
+    "sha256": "2dbb30db20a09c0bf2bd9d6770e5bdb3b665cf089cb1677fc30df2dce2bde7b2",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_bush",
+    "kind": "texture",
+    "file": "tex_bush.png",
+    "size": 256,
+    "bytes": 174546,
+    "sha256": "ed93a1c3779f8d89ecb9872f0417c722cd87fc7c0ec7734ac21eea352eff04b8",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_white_desk",
+    "kind": "texture",
+    "file": "tex_white_desk.png",
+    "size": 256,
+    "bytes": 100309,
+    "sha256": "12dc34b2f06aa3553a314c4677aba5a242cd2355836b78c00c0eb33cbbfce54f",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_white_rug",
+    "kind": "texture",
+    "file": "tex_white_rug.png",
+    "size": 256,
+    "bytes": 139037,
+    "sha256": "8923e027c88af8480144be4135f038a17e213dfe216039fb742b49a8ee46c6a5",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_weapon_body",
+    "kind": "texture",
+    "file": "tex_weapon_body.png",
+    "size": 256,
+    "bytes": 176683,
+    "sha256": "c1c98ab9b37897aff9c583a5bcc269e07f5bd932c285f41f5496b40a5a173225",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_weapon_dark",
+    "kind": "texture",
+    "file": "tex_weapon_dark.png",
+    "size": 256,
+    "bytes": 158252,
+    "sha256": "ba93d0a96adc88e28101ef2f0c5eefeb909d4613e654c71edfa986301dc27820",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_cloak",
+    "kind": "texture",
+    "file": "tex_cloak.png",
+    "size": 256,
+    "bytes": 166270,
+    "sha256": "7503867a46907c278ba37c8b1538cc737867df1db171c3fe7c12c5dc4e18828c",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_brolly",
+    "kind": "texture",
+    "file": "tex_brolly.png",
+    "size": 256,
+    "bytes": 152905,
+    "sha256": "a57ec5033f68531c7754e28228721de70f499c1fa95dc157ecd0a7b932f11782",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_kernel_hull",
+    "kind": "texture",
+    "file": "tex_kernel_hull.png",
+    "size": 256,
+    "bytes": 124198,
+    "sha256": "86371aaa5705ac93cc393d891f448a717b43d8e0be04cbc2fd1fb4aff5b9eda9",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_monorail",
+    "kind": "texture",
+    "file": "tex_monorail.png",
+    "size": 256,
+    "bytes": 135786,
+    "sha256": "d8718fc6a5c6869da19a84fdc5accc98ef3de8e85809be8d5248a660fbcd13c5",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_airship",
+    "kind": "texture",
+    "file": "tex_airship.png",
+    "size": 256,
+    "bytes": 145195,
+    "sha256": "26ebd5db540ccb7d9b92c71dcfd86e7ae1e227636cc2bbd5fcc30b5b69457cba",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_awning_mg",
+    "kind": "texture",
+    "file": "tex_awning_mg.png",
+    "size": 256,
+    "bytes": 151925,
+    "sha256": "7f3599d59a3880bf60a2654f3930a386d3462c0e388fe55f95d152b5f51d72f6",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_awning_cy",
+    "kind": "texture",
+    "file": "tex_awning_cy.png",
+    "size": 256,
+    "bytes": 137653,
+    "sha256": "253378b869553cdcf2a98818fbce79fb983b6adb393d0e871a8eadacefe68e02",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_lamp",
+    "kind": "texture",
+    "file": "tex_lamp.png",
+    "size": 256,
+    "bytes": 131784,
+    "sha256": "b252c78d5394eb430b84a0c48bfd20f18e73be72e65eb4fd16c2e67ca178cc72",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_dummy",
+    "kind": "texture",
+    "file": "tex_dummy.png",
+    "size": 256,
+    "bytes": 157373,
+    "sha256": "b84a215dee01d5847440feed6be7fa146b6ae6c207b07be596ebe14ce4edd04d",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_billboard_cy",
+    "kind": "texture",
+    "file": "tex_billboard_cy.png",
+    "size": 256,
+    "bytes": 163155,
+    "sha256": "e56844be88d9349db43a04387afefa4181ccdd543825ffb825dbc9a5568f4764",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_billboard_mg",
+    "kind": "texture",
+    "file": "tex_billboard_mg.png",
+    "size": 256,
+    "bytes": 169822,
+    "sha256": "c1ed1e138453354a522e61c1a7818389f86d9aba67010a8cc2805aa28ebeebc5",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_billboard_ye",
+    "kind": "texture",
+    "file": "tex_billboard_ye.png",
+    "size": 256,
+    "bytes": 155087,
+    "sha256": "740c2ec8432f0995ccbb89a30b00272b1deb2000e9fd8439a1ba12eed2884346",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_facade_amber",
+    "kind": "texture",
+    "file": "tex_facade_amber.png",
+    "size": 256,
+    "bytes": 126111,
+    "sha256": "5b7e35791b4ba7cf8b8a561b59d636bb08d2dba779897f97481ccd68daf5cf91",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_facade_cyan",
+    "kind": "texture",
+    "file": "tex_facade_cyan.png",
+    "size": 256,
+    "bytes": 133002,
+    "sha256": "31e924f507c31c499f1c95d45694cd9c7edac076d49f3f6275a4ca72315b1ff2",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_brick_amber",
+    "kind": "texture",
+    "file": "tex_brick_amber.png",
+    "size": 256,
+    "bytes": 177398,
+    "sha256": "1982c30992d151274a69ea22e300f9e631e8209b15d8e92f32184931bfeb0a79",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_brick_cyan",
+    "kind": "texture",
+    "file": "tex_brick_cyan.png",
+    "size": 256,
+    "bytes": 146046,
+    "sha256": "f978e8c0b79754ef30f077d59ac74e8e8189d2f690849a5055e0bca135169218",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_asphalt_2",
+    "kind": "texture",
+    "file": "tex_asphalt_2.png",
+    "size": 256,
+    "bytes": 175910,
+    "sha256": "53e807d10e0be924c39f069b2f490bee55d6b1c15dcf68f14c216c824088b501",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_desk",
+    "kind": "texture",
+    "file": "tex_desk.png",
+    "size": 256,
+    "bytes": 121536,
+    "sha256": "770546e0e2c502a414def5a9b3cd6494277ff7df8dad9dc10b46475f4a5a4bed",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_nameplate",
+    "kind": "texture",
+    "file": "tex_nameplate.png",
+    "size": 256,
+    "bytes": 149345,
+    "sha256": "4e64fc2bfbf8d873bbec95722fccfaf85bf319fc7324dce178a070de2451d5e6",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_rug",
+    "kind": "texture",
+    "file": "tex_rug.png",
+    "size": 256,
+    "bytes": 182464,
+    "sha256": "6a2b788efc5c7b879c70709459957bd29cef73c97db19551ad032843eb02dd00",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_glass",
+    "kind": "texture",
+    "file": "tex_glass.png",
+    "size": 256,
+    "bytes": 155416,
+    "sha256": "fb2cac87e35a868a60931986a23be036a19d48e0bc185d457ddd4117c9b0820d",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_cone_alt",
+    "kind": "texture",
+    "file": "tex_cone_alt.png",
+    "size": 256,
+    "bytes": 149218,
+    "sha256": "56a8070f5c78e15ab134262353c442b5203d37a66d24f99e9c7f41535d0eb6be",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_grate",
+    "kind": "texture",
+    "file": "tex_grate.png",
+    "size": 256,
+    "bytes": 180607,
+    "sha256": "684eace320f2af0b04f660731694e13d58fd5f1d751a61402408eef6d0288b5c",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_pipe",
+    "kind": "texture",
+    "file": "tex_pipe.png",
+    "size": 256,
+    "bytes": 147977,
+    "sha256": "e96a6c63251310c7bc817375728e8b3f7f18fa7d688a91637311dbdd1c9bec30",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_cable",
+    "kind": "texture",
+    "file": "tex_cable.png",
+    "size": 256,
+    "bytes": 148585,
+    "sha256": "941d39f5ca8a2287c0f3f257eff15f25f0be7c9853af130f3366853b3d02a293",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_tile_metro",
+    "kind": "texture",
+    "file": "tex_tile_metro.png",
+    "size": 256,
+    "bytes": 161538,
+    "sha256": "301c21e9b9cd0abe7dfb5fd51327ce5a01757f2decf42f25021c33e63839d5cc",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_bulkhead",
+    "kind": "texture",
+    "file": "tex_bulkhead.png",
+    "size": 256,
+    "bytes": 166156,
+    "sha256": "66f39efc57b5de5ba764d21c04c37cdc6cf93df34104014ca7a8cb3b279af132",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_vent",
+    "kind": "texture",
+    "file": "tex_vent.png",
+    "size": 256,
+    "bytes": 174154,
+    "sha256": "031462ae59b05360552c54212dd403cab696e6bf43402585571e976cc2bff0a1",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_scaffold",
+    "kind": "texture",
+    "file": "tex_scaffold.png",
+    "size": 256,
+    "bytes": 161508,
+    "sha256": "7cc61b47593eb718ff323ac9b95a9426805da0606ccce002002c771eafe2880b",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_chainlink",
+    "kind": "texture",
+    "file": "tex_chainlink.png",
+    "size": 256,
+    "bytes": 143175,
+    "sha256": "a9914f267df5da6f40b0f9cc3593a5e97ea7e2d67cac6806a4b80e6f85b7d439",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_vantage_plate",
+    "kind": "texture",
+    "file": "skin_vantage_plate.png",
+    "size": 256,
+    "bytes": 177450,
+    "sha256": "ca7276d276c918f3e7d4d2f0ab2af4becf42ac14347e49eedc1a29f152efd94b",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_blank_plate",
+    "kind": "texture",
+    "file": "skin_blank_plate.png",
+    "size": 256,
+    "bytes": 161177,
+    "sha256": "937a79f2d15dadc325d4c1aeced8b0d901c59fced500468099bc6907c89159bf",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_rain_plate",
+    "kind": "texture",
+    "file": "skin_rain_plate.png",
+    "size": 256,
+    "bytes": 166488,
+    "sha256": "d55628cc9dba673f4584e217b1c4797ebe7b133771337550b8475d3c8c04626d",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_metro_plate",
+    "kind": "texture",
+    "file": "skin_metro_plate.png",
+    "size": 256,
+    "bytes": 152892,
+    "sha256": "5793459054cc749329a38f64f108cc4eda881247b0a304e90612835540f26e8d",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_violet_plate",
+    "kind": "texture",
+    "file": "skin_violet_plate.png",
+    "size": 256,
+    "bytes": 139394,
+    "sha256": "a98eb807879f61eda1fba60513e7750ba3f47cd5e144d743b9b80985f0b2c894",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_amber_trim",
+    "kind": "texture",
+    "file": "skin_amber_trim.png",
+    "size": 256,
+    "bytes": 164799,
+    "sha256": "45ce512cea6da4aa1f25bd112b3fbcdef3ef683f97c36ec41e5dcacf99c0e62d",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_cyan_grid",
+    "kind": "texture",
+    "file": "skin_cyan_grid.png",
+    "size": 256,
+    "bytes": 164041,
+    "sha256": "1db7d90a57132450e7a6ef702b202016455455a0677de27e8ce7b054330464cc",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_black_lease",
+    "kind": "texture",
+    "file": "skin_black_lease.png",
+    "size": 256,
+    "bytes": 150921,
+    "sha256": "d64578c87b1c544199979765a790f5bad8a2f721e4947c001a3b27231ff6b098",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_crowd_coat",
+    "kind": "texture",
+    "file": "tex_crowd_coat.png",
+    "size": 256,
+    "bytes": 165816,
+    "sha256": "83a6af662549572faade1f444a0eb1b3525ba6dd0585706261e9c68403bf1c9b",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_pavement",
+    "kind": "texture",
+    "file": "tex_pavement.png",
+    "size": 256,
+    "bytes": 154449,
+    "sha256": "0bab0d51bb5161e785a2a235d1f75b5b13a94329791efc020b2e859e10a66ded",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_000",
+    "kind": "texture",
+    "file": "tex_var_000.png",
+    "size": 256,
+    "bytes": 175673,
+    "sha256": "3c8add5b543c80456cac718e97eae5d2d01997ce9e525bfe539513fe2407a6b0",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_001",
+    "kind": "texture",
+    "file": "tex_var_001.png",
+    "size": 256,
+    "bytes": 147051,
+    "sha256": "a5e7b6b9b71ad8a874b45bce90fa05d944c64b6ed056b46cfed770d11362c949",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_002",
+    "kind": "texture",
+    "file": "tex_var_002.png",
+    "size": 256,
+    "bytes": 174181,
+    "sha256": "43ebc66de56896c3a92d2861d2b1ca4a80c6ee536277d10fea375c14e32ecb7a",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_003",
+    "kind": "texture",
+    "file": "tex_var_003.png",
+    "size": 256,
+    "bytes": 174387,
+    "sha256": "7e4517654aa03f2945a8234e612bbe1b97a609be49fce3c572d36cf180797412",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_004",
+    "kind": "texture",
+    "file": "tex_var_004.png",
+    "size": 256,
+    "bytes": 130613,
+    "sha256": "335b3d751567648f5eced4f7b66962cc9588a9830c4071411cc9e79382233bb1",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_005",
+    "kind": "texture",
+    "file": "tex_var_005.png",
+    "size": 256,
+    "bytes": 173064,
+    "sha256": "f2aae9b61fcea21611d4dcb6280cdab7406dbca968cd264b94a9e95fd6baf602",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_006",
+    "kind": "texture",
+    "file": "tex_var_006.png",
+    "size": 256,
+    "bytes": 178152,
+    "sha256": "d8de8ee9b0e5cdbe6c509750047d0dc4cf1b20003bde92e46c7381e5c4a1b305",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_007",
+    "kind": "texture",
+    "file": "tex_var_007.png",
+    "size": 256,
+    "bytes": 128496,
+    "sha256": "7a9c7afee34df35df7aa1a05a1d1c824f0f61aa57d9e4cce7f33327149de6483",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_008",
+    "kind": "texture",
+    "file": "tex_var_008.png",
+    "size": 256,
+    "bytes": 177803,
+    "sha256": "f89c9ea60c57d1deebdf858c11338f8cd5fc9995342abff1f132b45130e509c6",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_009",
+    "kind": "texture",
+    "file": "tex_var_009.png",
+    "size": 256,
+    "bytes": 183822,
+    "sha256": "1107bf714655937f8218f61609592abaa7f216d44880293049320047eeb86040",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_010",
+    "kind": "texture",
+    "file": "tex_var_010.png",
+    "size": 256,
+    "bytes": 154511,
+    "sha256": "ccb33094b84dabaf54e1573f1c8f73b73dab45d12951f27ccee3ebe8770b8d9b",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_011",
+    "kind": "texture",
+    "file": "tex_var_011.png",
+    "size": 256,
+    "bytes": 163589,
+    "sha256": "2730068df137e8cab54913a3cb1dccc544758ee7ef23182f8822fb809dd409d8",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_012",
+    "kind": "texture",
+    "file": "tex_var_012.png",
+    "size": 256,
+    "bytes": 157212,
+    "sha256": "b24dff672b07958d4e92c44a72dcfaf6a9ce2a35ac5ebd99f38bd0ec7a97f876",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_013",
+    "kind": "texture",
+    "file": "tex_var_013.png",
+    "size": 256,
+    "bytes": 141357,
+    "sha256": "9c8e4ae85671dad675f7efad9ffa0dfe19b165907e0505a17982bad0b03f96d5",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_014",
+    "kind": "texture",
+    "file": "tex_var_014.png",
+    "size": 256,
+    "bytes": 152366,
+    "sha256": "ecb698cfa53759b9eefb51a0f1cfb7eef1987af64e0dca102bc98d8fba11f253",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_015",
+    "kind": "texture",
+    "file": "tex_var_015.png",
+    "size": 256,
+    "bytes": 163127,
+    "sha256": "e8fbc061515ea7341ca501b5537fb061542e39f898944ea9cc139cda80a96a0e",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_016",
+    "kind": "texture",
+    "file": "tex_var_016.png",
+    "size": 256,
+    "bytes": 152959,
+    "sha256": "47b5e2cecd9c5b16e6292c979c368c82e449096b71e68e303448e2ce9aa32d2b",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_017",
+    "kind": "texture",
+    "file": "tex_var_017.png",
+    "size": 256,
+    "bytes": 156400,
+    "sha256": "68c931852350b3ce911bd41d0e071b18c104d526e18429cf62963bf55ab53242",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_018",
+    "kind": "texture",
+    "file": "tex_var_018.png",
+    "size": 256,
+    "bytes": 180700,
+    "sha256": "f46dc34117b84aeb122783124253241f099f627e9e41d4cf0d91ac503afa4390",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_019",
+    "kind": "texture",
+    "file": "tex_var_019.png",
+    "size": 256,
+    "bytes": 151121,
+    "sha256": "0de47cdc9302365b56313a705831f03416f2ee197d29085d1bcc10cd9481867f",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_020",
+    "kind": "texture",
+    "file": "tex_var_020.png",
+    "size": 256,
+    "bytes": 163944,
+    "sha256": "e51e05b60d9f9569bd8c3b22402bd93ccf00ccf8c3b62acd894447568d0cda8b",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_021",
+    "kind": "texture",
+    "file": "tex_var_021.png",
+    "size": 256,
+    "bytes": 157936,
+    "sha256": "efd5a751b272c2f16b976f522cb72f6df6c0c90acdcf3cb90966b5443b913cfe",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_022",
+    "kind": "texture",
+    "file": "tex_var_022.png",
+    "size": 256,
+    "bytes": 179483,
+    "sha256": "56adf1c364ab799fc45004d27275689e515d94b446b8296fec54f5b41b95d12d",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_023",
+    "kind": "texture",
+    "file": "tex_var_023.png",
+    "size": 256,
+    "bytes": 143876,
+    "sha256": "02b726a721ea911f5d6842f92b3328106a4dc5cd2403a56df4da960fd152fb64",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_024",
+    "kind": "texture",
+    "file": "tex_var_024.png",
+    "size": 256,
+    "bytes": 139476,
+    "sha256": "7c6ec55632cbf792147270b7f59ff4d0e8eb64455af990b26ea10b3ee0a2c105",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_025",
+    "kind": "texture",
+    "file": "tex_var_025.png",
+    "size": 256,
+    "bytes": 193915,
+    "sha256": "15a1e75ed7ca45ad975cc66a90df3eba50a5fefe6d01a24ebeadde09dd74933e",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_026",
+    "kind": "texture",
+    "file": "tex_var_026.png",
+    "size": 256,
+    "bytes": 177326,
+    "sha256": "993cf156a34202257d385be0a0686f5e9b60f46d308f1b78f25d0d5bd1e41399",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_027",
+    "kind": "texture",
+    "file": "tex_var_027.png",
+    "size": 256,
+    "bytes": 179788,
+    "sha256": "ac06341afcaf1fe5262df74ec466ab415e09732c09f4e175b35cff071cc044e0",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_028",
+    "kind": "texture",
+    "file": "tex_var_028.png",
+    "size": 256,
+    "bytes": 154196,
+    "sha256": "a4b254f57b83b2ff24ac7a8c3ca99ce5cb023bae9b15a84be7e3719643268cb3",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_029",
+    "kind": "texture",
+    "file": "tex_var_029.png",
+    "size": 256,
+    "bytes": 173509,
+    "sha256": "4e29bd03515f0157bff7fc16caad8c82fe2e7d956d5221cf4515312276a84fd0",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_030",
+    "kind": "texture",
+    "file": "tex_var_030.png",
+    "size": 256,
+    "bytes": 163507,
+    "sha256": "cbb314b1734af59b1a6a0b0b6e5dd2a899ce1327e98360d7fe7a4cd619c67142",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_031",
+    "kind": "texture",
+    "file": "tex_var_031.png",
+    "size": 256,
+    "bytes": 148870,
+    "sha256": "30729eb3f2f1522fe51408e1b8df6e6e59b8af0b6127ca0cc4e297286a75383a",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_032",
+    "kind": "texture",
+    "file": "tex_var_032.png",
+    "size": 256,
+    "bytes": 149024,
+    "sha256": "62dfd5a57a4fc07c5961e5ec8d722e4280754e05305b4c2d5b0df8c55fe38849",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_033",
+    "kind": "texture",
+    "file": "tex_var_033.png",
+    "size": 256,
+    "bytes": 167124,
+    "sha256": "d9fb5f51e3b129e5dc5ce9d0f430ca19beeeb1c3bc29febecd9a6ee2acd38e61",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_034",
+    "kind": "texture",
+    "file": "tex_var_034.png",
+    "size": 256,
+    "bytes": 149546,
+    "sha256": "af2b62ce1ff24970f2be5da8717998965c8f2efa4bf327e0fdb48a28ba365205",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_035",
+    "kind": "texture",
+    "file": "tex_var_035.png",
+    "size": 256,
+    "bytes": 146204,
+    "sha256": "7b1316d7242506d3d2d959654f224e588a1a7eb166edf08ebadece86d9803529",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_036",
+    "kind": "texture",
+    "file": "tex_var_036.png",
+    "size": 256,
+    "bytes": 166091,
+    "sha256": "0ef97e84ac06757a2c59147801127be641b73bc94317f97fb913e705bb04415c",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_037",
+    "kind": "texture",
+    "file": "tex_var_037.png",
+    "size": 256,
+    "bytes": 153684,
+    "sha256": "812c1901b3200521e6107002ea524945185ad03df3fff25facf75471063b3aab",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_038",
+    "kind": "texture",
+    "file": "tex_var_038.png",
+    "size": 256,
+    "bytes": 162811,
+    "sha256": "8e3013e9e19dcd3422ba5de07a8e909455a1dac2cc34fdbae54f1fc1daf86ccb",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_039",
+    "kind": "texture",
+    "file": "tex_var_039.png",
+    "size": 256,
+    "bytes": 164997,
+    "sha256": "ff09bd6206d0d056656f5eee16d344ca4067d2601ccee491dc537628b582c116",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_040",
+    "kind": "texture",
+    "file": "tex_var_040.png",
+    "size": 256,
+    "bytes": 162750,
+    "sha256": "3df17371e7f53b8b2cb618af83ca86e04b39136c5c0f20fdcada1ebb98920963",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_041",
+    "kind": "texture",
+    "file": "tex_var_041.png",
+    "size": 256,
+    "bytes": 167243,
+    "sha256": "1739f1770eb7f067e5cbbae0f0f605d4a5f341056e190c45a8b98a96cab90e6e",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_042",
+    "kind": "texture",
+    "file": "tex_var_042.png",
+    "size": 256,
+    "bytes": 160268,
+    "sha256": "d9535a8656d8d3ff3c25c4635c3c82b98ff5f6f008e6578ba4e6720b358ede59",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_043",
+    "kind": "texture",
+    "file": "tex_var_043.png",
+    "size": 256,
+    "bytes": 161778,
+    "sha256": "10a3aabee0f5fdc2482b481ba5e79574c911509d68e1e858fcb4a6868b3eb3b5",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_044",
+    "kind": "texture",
+    "file": "tex_var_044.png",
+    "size": 256,
+    "bytes": 149997,
+    "sha256": "5777d18f19e8bd5dcbb69929bec12bb7323eb135f53600829882a126b3220e5a",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_045",
+    "kind": "texture",
+    "file": "tex_var_045.png",
+    "size": 256,
+    "bytes": 154450,
+    "sha256": "222271978924f8abba056bea19e902180ec048fe642f6a78f528ba9f690845b0",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_046",
+    "kind": "texture",
+    "file": "tex_var_046.png",
+    "size": 256,
+    "bytes": 145181,
+    "sha256": "aaf4ccad619c52a68508910c04499c927e7a616278d705775a032f8e6f9db3e6",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_047",
+    "kind": "texture",
+    "file": "tex_var_047.png",
+    "size": 256,
+    "bytes": 184899,
+    "sha256": "9b86aafa08789e7e12ad5cf04c86add6490c7886392cb5bb1d5e609720cf5290",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_048",
+    "kind": "texture",
+    "file": "tex_var_048.png",
+    "size": 256,
+    "bytes": 156768,
+    "sha256": "ed0034657d5872fd2609610c54c47eda4bf66bdbe85e754f36113d33eca7b3ae",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_049",
+    "kind": "texture",
+    "file": "tex_var_049.png",
+    "size": 256,
+    "bytes": 132081,
+    "sha256": "203f36c633772324b82b7d0cce82678ea4e5f35de663420bf39fba6d783e2961",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_050",
+    "kind": "texture",
+    "file": "tex_var_050.png",
+    "size": 256,
+    "bytes": 172027,
+    "sha256": "c3eeca2dc553d23cc43ff969f334e432650745ecc566a42aeda05fc41cea5cfa",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_051",
+    "kind": "texture",
+    "file": "tex_var_051.png",
+    "size": 256,
+    "bytes": 167892,
+    "sha256": "93f7c03b0e5b198f38eac5278639f6bbd2ce956c662a219514c9bbc85df56cc5",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_052",
+    "kind": "texture",
+    "file": "tex_var_052.png",
+    "size": 256,
+    "bytes": 147417,
+    "sha256": "8ead882e5168f44a2086b5ec3a15b3a296aa9cdcc6e2feb2dab8634b555bedd5",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_053",
+    "kind": "texture",
+    "file": "tex_var_053.png",
+    "size": 256,
+    "bytes": 162303,
+    "sha256": "8ee27d8bdff99a85c78e4650a48cf06f4f0c8980d8fddce9d94af90d288e5b18",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_054",
+    "kind": "texture",
+    "file": "tex_var_054.png",
+    "size": 256,
+    "bytes": 156345,
+    "sha256": "cef50b847ecf0196c842536be48d355455c74233c84928bf66c89ba32196bffd",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_055",
+    "kind": "texture",
+    "file": "tex_var_055.png",
+    "size": 256,
+    "bytes": 156868,
+    "sha256": "0b09b805580316ae957b4ab978b79ae1b1ed6f50ef860f736a789b4f4f60caf3",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_056",
+    "kind": "texture",
+    "file": "tex_var_056.png",
+    "size": 256,
+    "bytes": 146265,
+    "sha256": "e864faadeed035ad184f0ca3b211caa8577767524982e66dbec1609594a8616e",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_057",
+    "kind": "texture",
+    "file": "tex_var_057.png",
+    "size": 256,
+    "bytes": 175567,
+    "sha256": "784b004b0b9b01a4424f8f445fc43c6baa79682e750714201d9ec96398494795",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_058",
+    "kind": "texture",
+    "file": "tex_var_058.png",
+    "size": 256,
+    "bytes": 151422,
+    "sha256": "853c80530bf87200f6b555ce5f91b9b5568ea9f24f260456ef9ece68e4641e75",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_059",
+    "kind": "texture",
+    "file": "tex_var_059.png",
+    "size": 256,
+    "bytes": 173763,
+    "sha256": "b4eba636e90d5816e12f7e10e90286e3658c1df43ba8d4d9b697596796b05112",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_060",
+    "kind": "texture",
+    "file": "tex_var_060.png",
+    "size": 256,
+    "bytes": 166601,
+    "sha256": "9d17112d7a7ec5d1985a0a8ff8cadb1caa059225b3c6f02ab77b1e0163c7f06e",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_061",
+    "kind": "texture",
+    "file": "tex_var_061.png",
+    "size": 256,
+    "bytes": 168170,
+    "sha256": "889bc7a40de0a434925893a65e92d4f7adac50350a9ee44c5487cbcfeb3e24df",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_062",
+    "kind": "texture",
+    "file": "tex_var_062.png",
+    "size": 256,
+    "bytes": 160389,
+    "sha256": "b8679b7f0e2ba0eb83c69e8d61b04e357f3d47956356e6fe2aa1ad7714322ddb",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_063",
+    "kind": "texture",
+    "file": "tex_var_063.png",
+    "size": 256,
+    "bytes": 159404,
+    "sha256": "74bb0d1f36f60660128f2ee601fc58130984dc495758bd4c7684d02eeb88ab13",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_064",
+    "kind": "texture",
+    "file": "tex_var_064.png",
+    "size": 256,
+    "bytes": 163177,
+    "sha256": "4772f90743a84ee58b9ef5e89494a1d1affc4f9f3204d57a8bf79d8d4d69cf00",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_065",
+    "kind": "texture",
+    "file": "tex_var_065.png",
+    "size": 256,
+    "bytes": 170639,
+    "sha256": "e0115ccd79467fb000ac5c8bcc357992eda3be52fee8fe45c3a510e42c15c88f",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_066",
+    "kind": "texture",
+    "file": "tex_var_066.png",
+    "size": 256,
+    "bytes": 155452,
+    "sha256": "f2d8d54d5219fab37aab46ab8e0687b7fc5f7d35ae84f34f778319cd03feb89f",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_067",
+    "kind": "texture",
+    "file": "tex_var_067.png",
+    "size": 256,
+    "bytes": 184949,
+    "sha256": "3e5641bc5a02a69d38792ceeda56e9b266978e8163b170c64ba94774d145358e",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_068",
+    "kind": "texture",
+    "file": "tex_var_068.png",
+    "size": 256,
+    "bytes": 179698,
+    "sha256": "48cc26d228bbe61e3bc4b83124b7b4f368fa4310a29457676bbbd214d1af946c",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_069",
+    "kind": "texture",
+    "file": "tex_var_069.png",
+    "size": 256,
+    "bytes": 178005,
+    "sha256": "85273189a166d956b2cca740cdc54ee9514d8f702aaf2ae0ecddec6bd52a7e1a",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_070",
+    "kind": "texture",
+    "file": "tex_var_070.png",
+    "size": 256,
+    "bytes": 154918,
+    "sha256": "8200f7b1bd8fa92a70623f1b30f9812081d630672adfc8d5f38534ab038271e2",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_071",
+    "kind": "texture",
+    "file": "tex_var_071.png",
+    "size": 256,
+    "bytes": 157738,
+    "sha256": "b48ced20a43dac4bdd0f1f6e396b8c8ac3fc427cc822fc3fb384f1cb75a03ab3",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_072",
+    "kind": "texture",
+    "file": "tex_var_072.png",
+    "size": 256,
+    "bytes": 144540,
+    "sha256": "121f7eda6e0368f7cb14657321cd25b3809ae907bcac9f555fbdb350a70b392e",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_073",
+    "kind": "texture",
+    "file": "tex_var_073.png",
+    "size": 256,
+    "bytes": 162187,
+    "sha256": "28ba03183b3dc90a6b70c87a172e7c821738096ecae4428021e4b88f14667c3a",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_074",
+    "kind": "texture",
+    "file": "tex_var_074.png",
+    "size": 256,
+    "bytes": 153097,
+    "sha256": "03f4f5d2cc664f6283ae70b89f631d8bc6239abfa2dc8ac350dec7b33f897dbe",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_075",
+    "kind": "texture",
+    "file": "tex_var_075.png",
+    "size": 256,
+    "bytes": 146925,
+    "sha256": "b17e63c376175ad0ca4f2e84990ef709ccf2b31fcb50abef028379bc671cf942",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_076",
+    "kind": "texture",
+    "file": "tex_var_076.png",
+    "size": 256,
+    "bytes": 173268,
+    "sha256": "b55d0c46eeb0a0956643d171ee2bb8bcbf2f3912dbb8d611980542e36ba461bb",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_077",
+    "kind": "texture",
+    "file": "tex_var_077.png",
+    "size": 256,
+    "bytes": 165613,
+    "sha256": "45833b214b7d0d45c113f7efd0e4fc2a731a4c22613bd3dd42f7da3aa5edf46b",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_078",
+    "kind": "texture",
+    "file": "tex_var_078.png",
+    "size": 256,
+    "bytes": 179659,
+    "sha256": "582c9ff6261a65cb94819ba9fa2b14564129b461bb691e9bf95b2f6e578c4b8d",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_080",
+    "kind": "texture",
+    "file": "tex_var_080.png",
+    "size": 256,
+    "bytes": 146471,
+    "sha256": "d274daa7b7b08713a5971a7cca362cfc9b753c05d653c9fbe0881443126a53e8",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_081",
+    "kind": "texture",
+    "file": "tex_var_081.png",
+    "size": 256,
+    "bytes": 167723,
+    "sha256": "34d168098f01f77454bbe8e3795f68911c8f7cd29cecef446da58e9c066daa26",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_082",
+    "kind": "texture",
+    "file": "tex_var_082.png",
+    "size": 256,
+    "bytes": 149172,
+    "sha256": "7a813cb966e45dea791c50979b836c9e3588fefe9f0ca93018f6004cabaf21b2",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_083",
+    "kind": "texture",
+    "file": "tex_var_083.png",
+    "size": 256,
+    "bytes": 124983,
+    "sha256": "b240f384cad0c6c5c3731d967618dc7b18c4ba1caad3528d140a01f0f6e57165",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_084",
+    "kind": "texture",
+    "file": "tex_var_084.png",
+    "size": 256,
+    "bytes": 155720,
+    "sha256": "319c48b4d2022fe9200dd58adf8165f726639884f76af5903cf29db73cfa1e76",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_085",
+    "kind": "texture",
+    "file": "tex_var_085.png",
+    "size": 256,
+    "bytes": 145510,
+    "sha256": "63a7908aa526b7ea1516fb3088f2081ceaa4476e4ae053d49a7801e4f93ca80c",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_086",
+    "kind": "texture",
+    "file": "tex_var_086.png",
+    "size": 256,
+    "bytes": 132058,
+    "sha256": "cab657aae942d3b38a957ca7767f4eba71750bc2386b38e7a6d67816fd79e7b8",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_087",
+    "kind": "texture",
+    "file": "tex_var_087.png",
+    "size": 256,
+    "bytes": 157821,
+    "sha256": "0f684dbce3f86a90e09453f6c1b88b57867496ff28863de62b05c2ca06080526",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_088",
+    "kind": "texture",
+    "file": "tex_var_088.png",
+    "size": 256,
+    "bytes": 151990,
+    "sha256": "b3f815d5f8da9cb9058f48e8906cc88f7393b9a7e8affa34efed41c3edc0441e",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_089",
+    "kind": "texture",
+    "file": "tex_var_089.png",
+    "size": 256,
+    "bytes": 175765,
+    "sha256": "117460bbbed44bfa426a5a2a186a463a2b8a6800aac97abcab913ea8ef0d289a",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_090",
+    "kind": "texture",
+    "file": "tex_var_090.png",
+    "size": 256,
+    "bytes": 154498,
+    "sha256": "817c20d9a6a86b29e8631ee87842e2438b2e4bb2a0fe6aca16dfdf411f9ca312",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_091",
+    "kind": "texture",
+    "file": "tex_var_091.png",
+    "size": 256,
+    "bytes": 149001,
+    "sha256": "67ecbaa3687f16900b3efce7fbbfb57d1251172df69d13f9c0e7c0624d67a7a3",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_093",
+    "kind": "texture",
+    "file": "tex_var_093.png",
+    "size": 256,
+    "bytes": 168525,
+    "sha256": "c67ecb77d2f932724a5089b1be7d55017a70c19a2da55247d72dbef749dbc28b",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_var_094",
+    "kind": "texture",
+    "file": "tex_var_094.png",
+    "size": 256,
+    "bytes": 167203,
+    "sha256": "b07855c88aa9240a31f1d4426bf97dd812415d757255df40ce32682a5bc0f212",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  }
+]

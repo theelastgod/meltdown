@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { markSharedAll, release } from "./dispose";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
-import { PALETTE } from "./city";
+import { bindPlate, PALETTE } from "./city";
 import type { Vec3 } from "@shared/math/vec3";
 
 /** Distinct kitbash silhouettes per weapon. Cheap boxes; the strip colour is the read. */
@@ -9,6 +9,8 @@ export function buildViewmodel(id: WeaponId): THREE.Group {
   const g = new THREE.Group();
   const body = new THREE.MeshStandardMaterial({ color: 0x151a22, roughness: 0.5, metalness: 0.6 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x0c0f15, roughness: 0.7, metalness: 0.3 });
+  bindPlate(body, "tex_weapon_body");
+  bindPlate(dark, "tex_weapon_dark");
   const def = WEAPON_LIST.find((w) => w.id === id)!;
   const strip = new THREE.MeshBasicMaterial({ color: def.tracer });
   // the rig tint (a worn skin) recolours the strip and nothing else — the read stays the silhouette
