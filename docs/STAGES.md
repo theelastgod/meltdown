@@ -1641,6 +1641,131 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 172 — The eighth weapon was a key that threw you out of the match
+
+**Goal.** The button bitfield puts the twelve action bits in 0–11 and the weapon slot select in
+bits 12–15. The server validated the whole word against one hand-written number:
+
+```ts
+if (i.buttons < 0 || i.buttons > MAX_BUTTONS) return false;   // MAX_BUTTONS = 0x7fff
+```
+
+`0x7fff` is one bit short of the field it was guarding. Slot 8 encodes as `8 << 12` = `0x8000`, so
+of the eight weapons the game ships, the eighth was the only one a player could not ask for.
+Measured against the real `Room`, over the real wire encoding:
+
+| slot | buttons | server |
+| --- | --- | --- |
+| 1–7 | `0x1000`–`0x7000` | accepted |
+| 8 | `0x8000` | *"strike 1/3 on player 1: invalid input"* |
+
+It does not stop at one strike. A rejected input does not advance `rec.lastSeq`, and the client
+sends each input three times (`INPUT_REDUNDANCY = 3`) so that ordinary packet loss costs nothing.
+Both facts are right on their own; together they mean every redundant copy of a refused input is
+refused again. Measured, one press of the `8` key:
+
+```
+strike 1/3 on player 1: invalid input
+strike 2/3 on player 1: invalid input
+```
+
+Two of three, from one key. A second press inside the five-second window:
+
+```
+strike 3/3 on player 1: invalid input
+kick player 1: invalid input
+```
+
+— connection closed, `room.stats().players` 0. **Pressing `8` twice ends your match.**
+
+Three input paths reach it, and one of them arrives without the player choosing to:
+
+- `Digit8` on the keyboard (`client/input.ts`).
+- the mouse wheel, which cycled `((slot - 1 + 1) % 8) + 1` — from slot 7 that is slot 8, so every
+  forward lap passes through it.
+- the phone's `WPN` button, which cycled `(slot % 8) + 1` — the same, and on a phone the cycle
+  button is the *only* way to change weapon, so a mobile player is kicked on their second lap.
+
+CLOCKEATER is not a stub in slot 8. It is `WEAPON_DEPTH` 1 — PvP-legal — the reward for the
+ESCROW HEIST · DEPOT gig, with twenty chips, a firmware set, a 25-rank mastery track that asks for
+slide kills and air kills and double kills, and a duel in the Fairness Lint. `World.setLoadout`
+writes `p.weapon.slot` directly, so a player who equips it as their **primary** spawns holding it
+and is fine; it is asking for it that is refused. A player who carries it as their secondary earns
+the weapon, sees it on the wheel, presses the key, and is thrown out of the room.
+
+**What changed.**
+
+- `shared/sim/input.ts` — the bound is gone. `validButtons` checks the two halves as what they are:
+  an `ACTION_MASK` derived from `Btn.SlotShift` rather than written out, and a slot nibble held to
+  `MAX_SLOT`. This is *tighter* than the old rule, not looser — slots 9–15 were rejected before
+  only as a side effect of exceeding `0x7fff`, and are now rejected on purpose.
+- `server/room.ts` — `validInput` asks `validButtons(i.buttons)`.
+- `shared/sim/weapons.ts` — the swap's `sel <= 8` reads `MAX_SLOT`.
+- `shared/sim/input.ts`, `client/input.ts`, `client/touch.ts` — the cycle was written twice, each
+  with its own hard-coded 8. It is now `cycleSlot(current, dir)`, once, off `MAX_SLOT`.
+
+Four places knew how many weapon slots exist and one of them disagreed. They now read one constant.
+
+**Proof.** vitest 915/915, twelve new in `tests/slots.test.ts`, nothing existing moved.
+The central guard walks `WEAPONS` rather than a written-down list: every slot in the manifest is
+pressed twice through the real wire encoding into a real `Room`, and must draw no strike, no kick,
+and leave the player seated — then stepped a second of sim and must actually be the weapon in hand.
+A ninth weapon added at slot 9 fails here until `MAX_SLOT` is raised to meet it, which is the only
+version of this guard that survives the next weapon.
+
+The full sweep ran green on a still tree: 23 probes, 520 checks, nothing skipped and nothing rerun
+— `probe` 21/21, `probe:look` 18/18, `probe:net` 27/27, `probe:arsenal` 32/32, `probe:wake` 27/27,
+`probe:file` 19/19, `probe:city` 45/45, `probe:cityLife` 21/21, `probe:mastery` 23/23,
+`probe:identity` 25/25, `probe:campaign` 44/44, `probe:endgame` 18/18, `probe:economy` 1/1,
+`probe:counter` 16/16, `probe:crawl` 10/10, `probe:ship` 11/11, `probe:run` 27/27, `probe:harden`
+9/9, `probe:frame` 8/8, `probe:mobile` 40/40, `probe:persist` 7/7, `probe:tps` 50/50, `probe:body`
+21/21. **`probe:run` passed in sequence**, the first time since Stage 166 that it has not needed the
+standalone fallback; nothing was done to it, so this is one data point against the instability, not
+an explanation of it.
+
+A first attempt at this sweep failed `probe:look`, `probe:net` and `probe:arsenal` with *"Execution
+context was destroyed"* and `window.__game` undefined. That was mine: I edited `client/input.ts`
+while the sweep was running and the dev server reloaded the pages under the probes. The rule is
+"verify on a still tree" and it is a rule because breaking it manufactures failures that look like
+findings. The sweep above is the rerun on a tree nothing touched.
+
+Build clean. The smoke test read 6/7 locally, on *"no page errors —
+`net::ERR_CERT_AUTHORITY_INVALID`"*, and it is this sandbox rather than the build. `.env.production`
+exists here and is gitignored, so the local `vite build` bakes in the live
+`meltdown-{match,counter,campaign}.wendellphillips.workers.dev` hosts; headless Chromium reaches for
+one at boot, through this environment's TLS-inspecting proxy, and refuses the re-signed certificate.
+Measured both ways: clean tree with `.env.production` present, 6/7 on the same check; this tree with
+`.env.production` moved aside, **7/7, "clean console"** and zero `workers.dev` strings in the
+bundle. CI has no `.env.production`, which is why runs #193–#198 were green on it.
+
+Seven mutations, each a rule put back the way it was:
+
+- **A**, `buttons <= 0x7fff` — the defect itself: 4 of 12 fail, naming CLOCKEATER by name
+  (*"slot 8 (CLOCKEATER) drew strikes"*, *"slot 8 (CLOCKEATER) never became the held weapon"*).
+- **B**, the slot ceiling dropped so 9–15 are accepted again: 2 fail. The tightening is load-bearing
+  and tested, not a comment.
+- **C**, the undefined-bit mask dropped: 1 fails — bit 16 and non-integers.
+- **D**, the sim's swap bound back to a literal `7`: 2 fail. The server taking a slot the sim
+  ignores is its own defect, and the round-trip test is what separates them.
+- **E**, the manifest given a ninth slot with the constants untouched: 4 fail, including the
+  manifest-walk itself. This is the recurrence guard firing.
+- **F**, the cycle wrapping at 7: 2 fail — *"expected [1,2,3,4,5,6,7,1] to deeply equal
+  [1,2,3,4,5,6,7,8]"*. A cycle that silently skips a weapon is the quieter half of this bug.
+- **G**, the old bound restored with the cycle left intact: the two lap tests stay green and the two
+  that press what the cycle produced fail. The cycle and the validator guard different things;
+  neither covers for the other.
+
+**One thing this stage found and did not fix.** `npm run lint:fairness` — the full 366-build run —
+exits 1 with **89 violations**, every one of them `ttk-deviation`, and has done for at least four
+commits (a5703d9, 949d876, 384985b, a5f9837: 89 at every one, so it predates Stage 168). CI has
+never seen it. `verify.yml` line 53 runs `lint:fairness -- --quick`, and `--quick` duels three
+weapons: `lease_breaker`, `repo_hammer`, `longwave`. All 89 violations are on `stack_smg` (75) and
+`clockeater` (14) — the two weapons the quick set does not contain. The gate is not merely faster
+than the lint; it is blind to exactly what the lint is failing on, worst deviation 30.8%.
+
+This is Stage 30's shape again — a gate that is green because of what it does not reach — and it is
+a stage of its own, not a footnote to this one. It is recorded rather than quietly carried.
+
 ## Stage 171 — Two chips that did nothing, and the lint that certified them
 
 **Goal.** The STACK SMG's spread *benefits* are converted to recoil benefits of the same weight, and

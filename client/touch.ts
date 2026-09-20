@@ -19,7 +19,7 @@
  * Nothing here touches the sim. It produces the same `InputFrame` the keyboard does.
  */
 import { grenadePad } from "./hud/grenadepad";
-import { Btn } from "@shared/sim/input";
+import { Btn, cycleSlot } from "@shared/sim/input";
 
 /** Radius the stick travels before it is at full deflection, in CSS pixels. */
 const STICK_RADIUS = 46;
@@ -189,7 +189,7 @@ export class TouchControls {
       pad.held = { id: e.pointerId };
       pad.el.classList.add("on");
       this.tapBits |= pad.tap;
-      if (pad.cycle) this.slotReq = (this.currentSlot % 8) + 1;
+      if (pad.cycle) this.slotReq = cycleSlot(this.currentSlot, 1);
       this.engage(e);
       return;
     }

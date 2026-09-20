@@ -4,7 +4,7 @@
  * so the server reproduces every shot direction exactly.
  */
 import { SIM_DT } from "./constants";
-import { Btn, has, slotOf, type InputFrame } from "./input";
+import { Btn, has, MAX_SLOT, slotOf, type InputFrame } from "./input";
 import {
   GRENADE_COOLDOWN,
   GRENADE_LIST,
@@ -226,7 +226,7 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
 
   // weapon swap
   const sel = slotOf(input.buttons);
-  if (sel >= 1 && sel <= 8 && sel !== w.slot) {
+  if (sel >= 1 && sel <= MAX_SLOT && sel !== w.slot) {
     w.slot = sel;
     w.swapTimer = 0.35; // the swap delay is the cost; the previous weapon's cycle does not carry over
     w.fireCooldown = 0;

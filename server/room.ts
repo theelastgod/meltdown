@@ -15,7 +15,7 @@ import { auditErrors, type AuditDef } from "../shared/endgame/audits";
 import { itemById } from "../shared/manifest/items";
 import type { EndgameStore } from "./endgame";
 import type { House } from "../shared/endgame/season";
-import { Btn, MAX_BUTTONS } from "../shared/sim/input";
+import { Btn, validButtons } from "../shared/sim/input";
 import { levelById } from "../shared/sim/level";
 import { World, type RewindPose, type SimEvent } from "../shared/sim/world";
 import type { PlayerState } from "../shared/sim/player";
@@ -398,7 +398,7 @@ export class Room {
   private validInput(i: NetInput): boolean {
     if (!Number.isFinite(i.yaw) || !Number.isFinite(i.pitch)) return false;
     if (Math.abs(i.pitch) > 1.6) return false;
-    if (i.buttons < 0 || i.buttons > MAX_BUTTONS) return false;
+    if (!validButtons(i.buttons)) return false;
     if (!Number.isFinite(i.px) || !Number.isFinite(i.py) || !Number.isFinite(i.pz)) return false;
     return true;
   }

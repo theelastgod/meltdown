@@ -1,4 +1,4 @@
-import { Btn, withSlot, type InputFrame } from "@shared/sim/input";
+import { Btn, cycleSlot, withSlot, type InputFrame } from "@shared/sim/input";
 import type { TouchControls } from "./touch";
 
 /** Pointer-lock mouse look + keyboard → InputFrame per simulation tick. */
@@ -66,7 +66,7 @@ export class InputController {
     });
     document.addEventListener("wheel", (e) => {
       if (!this.locked) return;
-      this.slotRequest = ((this.currentSlot - 1 + (e.deltaY > 0 ? 1 : 7)) % 8) + 1;
+      this.slotRequest = cycleSlot(this.currentSlot, e.deltaY > 0 ? 1 : -1);
     });
     canvas.addEventListener("contextmenu", (e) => e.preventDefault());
     document.addEventListener("keyup", (e) => this.keys.delete(e.code));
