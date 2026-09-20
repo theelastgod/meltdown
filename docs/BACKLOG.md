@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Thirteen have since been fixed (Stages 168–180) and
+turned out to be the same finding reported twice. Fourteen have since been fixed (Stages 168–181) and
 are listed at the foot of this file with the commit that closed them.
 
-The **19 below are open**. Every one has been read in the source — none is a hunch.
+The **18 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -110,40 +110,6 @@ Behaviourally, `spawnThreat(world, threatProfile(5))` returns `{wasps: 2, mechs:
 **What a player sees.** At Threat 5 the player is told a repo mech has been assigned to them, enters a district braced
 for a 400-HP mech, and there is none — and at Threat 6, when the mech does arrive, the readout
 no longer mentions it. In explore mode the HUD contradicts itself inside one line.
-
-### 6. Turning in the m2 informant silently kills Marrow, removing four gigs and the only source of the CLOCKEATER weapon, with no scene that kills her
-
-`shared/campaign/testimony.ts:27`
-
-**What the code promises.** The m2 choice reads "TURN HIM IN to Marrow's people. The Clockeaters settle their own."
-(shared/campaign/script.ts:83) and Marrow answers it in person on the next node: "The
-Clockeaters will handle it. You won't like how. Neither will I." (script.ts:87). Nothing in the
-scene harms her. The parallel Ida branch, by contrast, prints an explicit death line: "IDA
-VESSEL IS RE-LEASED. HER FILE CLOSES WITH YOUR GLYPH ON THE LAST LINE." (script.ts:124).
-
-**What it does.** `handlersAlive` marks Marrow dead on that testimony: `marrow: t["m2:informant"] !== "turn"`
-(testimony.ts:27-28). `gigsOnOffer` (shared/campaign/save.ts:42) then filters out every gig
-whose fixer is Marrow, and the CONTRACTS panel renders her block as "◈ MARROW … · RE-LEASED"
-with "no one answers" (client/campaign.ts:514-519). Verified by running the data:
-`handlersAlive({"m2:informant":"turn"})` → `{vessel:true, marrow:false, deacon:true}`; Marrow's
-gigs are g_escrow_row (which carries the "gig:first" stamp), g_escrow_depot, g_convoy_row and
-g_escrow_docks — 4 of 12 — and `MISSIONS.filter(m => m.reward.weapon === "clockeater")` returns
-exactly one entry, g_escrow_depot (missions.ts:168). Two of the four are additionally gated on
-the identical condition `not: {"m2:informant": "turn"}`, so the lockout is doubled.
-
-**Measured.** `gigsOnOffer(account, campaign)` with `testimony = {"m2:informant":"turn"}` returns no gig with
-`fixer === "marrow"` at any Threat Rating, therefore never g_escrow_depot, therefore
-`campaign.weapons` can never contain "clockeater" and `account.owned` never "weapon:clockeater",
-for every reachable account. With `{"m2:informant":"spare"}`, g_escrow_depot appears at Threat ≥
-2. The defect-vs-design discriminator: search SCRIPTS for a node narrating Marrow's death or re-
-lease — there is none, while the parallel `expose` branch has one.
-
-**What a player sees.** One dialogue pick at mission 2 of 7 — phrased as handing a traitor to Marrow's own house, and
-answered by Marrow herself — permanently deletes a third of the side content, the "gig:first"
-stamp if it has not already been earned, and the CLOCKEATER, one of the game's two campaign
-weapons. The player's only notice is a CONTRACTS panel that later reports a death the game never
-showed, and a CAMPAIGN WEAPONS row reading "▢ CLOCKEATER" that can never be filled.
-
 
 ## Economy
 
@@ -610,3 +576,5 @@ stricter than the rule it guards.
   → Stage 179
 - m1's "HOLD THE TERMINAL WHILE THE FILE DECRYPTS" has no anchor, so the 20-second timer runs anywhere in Lease Row  
   → Stage 180
+- Turning in the m2 informant silently kills Marrow, removing four gigs and CLOCKEATER, with no death scene  
+  → Stage 181

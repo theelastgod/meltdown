@@ -1641,6 +1641,29 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 181 — Turning the informant in re-leased Marrow, with no death
+
+**Goal.** The m2 choice "TURN HIM IN to Marrow's people" is answered by Marrow in person: "The
+Clockeaters will handle it. You won't like how. Neither will I." Nothing in the scene harms her.
+The parallel Ida branch has an explicit death line. CLOCKEATER lives on Marrow's depot gig.
+
+`handlersAlive` marked her dead on `m2:informant === "turn"`. The CONTRACTS panel had the same
+rule copied, not imported. Four Marrow gigs vanished; two of them were also gated on that
+testimony, so CLOCKEATER was locked twice. Measured: `handlersAlive({"m2:informant":"turn"})`
+was `{marrow:false}`; `gigsOnOffer` at any Threat returned no Marrow gig.
+
+**What changed.**
+
+- `handlersAlive` — Marrow lives. Ida still dies on expose, because that scene writes it.
+- `client/campaign.ts` — the panel reads `handlersAlive` instead of a second copy of the rule.
+- `g_escrow_depot` (CLOCKEATER) no longer carries the doubled `not: turn` gate. The harbour
+  heist still does: turning him in costs a Clockeater job, not a fixer and not the unique
+  weapon.
+
+**Proof.** `tests/campaign.test.ts`: turning him in leaves Marrow alive and `g_escrow_depot` on
+offer. Mutation: restore `marrow: t["m2:informant"] !== "turn"` — 2 fail, the alive assertion
+and `"g_escrow_row"` on offer.
+
 ## Stage 180 — The first mission's hold ran anywhere in Lease Row
 
 **Goal.** "HOLD THE TERMINAL WHILE THE FILE DECRYPTS" is the first combat beat of WAKE UNLISTED.

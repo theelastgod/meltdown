@@ -36,7 +36,7 @@ describe("campaign data", () => {
     expect(gateOpen({ not: { "m2:informant": "turn" } }, { "m2:informant": "turn" }, null)).toBe(false);
     expect(gateOpen({ faction: ["estate"] }, {}, "clockeaters")).toBe(false);
     expect(handlersAlive({ "m4:vessel": "expose" }).vessel).toBe(false);
-    expect(handlersAlive({ "m2:informant": "turn" }).marrow).toBe(false);
+    expect(handlersAlive({ "m2:informant": "turn" }).marrow, "turning the informant in is not a death scene").toBe(true);
     expect(endingsFor({}, null).map((e) => e.id)).toEqual(["wipe"]);
     expect(endingsFor({ "m4:directive": "kept" }, "cells").map((e) => e.id)).toEqual(["wipe", "chair"]);
     expect(endingsFor({ "m4:directive": "kept", "m3:volatility": "hold" }, "clockeaters").map((e) => e.id)).toEqual(["wipe", "chair", "chair_clockeater"]);
@@ -104,6 +104,21 @@ describe("campaign save", () => {
     expect(c.ending).toBe("chair");
     expect(nextMission(c)).toBeNull();
     expect(a.ledger.some((l) => l.startsWith("MISSION CLOSED · THE WHITE OFFICE"))).toBe(true);
+  });
+
+  it("turning the informant in does not re-lease Marrow or lock CLOCKEATER", () => {
+    const a = createAccount("c:turn", "T");
+    a.depth = 20;
+    const c = campaignOf(a);
+    pickFaction(a, "clockeaters");
+    completeContract(a, "m1_wake_unlisted", {});
+    completeContract(a, "m2_deadletter_run", { "m2:informant": "turn" });
+    expect(handlersAlive(c.testimony).marrow).toBe(true);
+    const ids = gigsOnOffer(a, c).map((g) => g.id);
+    expect(ids).toContain("g_escrow_row");
+    expect(ids).toContain("g_escrow_depot");
+    expect(ids).toContain("g_convoy_row");
+    expect(MISSIONS.find((m) => m.id === "g_escrow_depot")!.reward.weapon).toBe("clockeater");
   });
 });
 

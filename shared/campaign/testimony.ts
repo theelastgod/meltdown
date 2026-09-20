@@ -23,9 +23,16 @@ export function gateOpen(g: Gate | undefined, t: Testimony, faction: FactionId |
   return true;
 }
 
-/** Which handlers are alive, read from testimony: the leak can cost Ida, the informant can cost Marrow. */
+/**
+ * Which handlers are alive, read from testimony.
+ *
+ * The leak can cost Ida (`m4:vessel` expose has a death line). Turning the docks informant in
+ * does not kill Marrow (Stage 181): she answers that choice in person and nothing in the scene
+ * harms her. Until this, `marrow: t["m2:informant"] !== "turn"` re-leased her silently, dropped
+ * four gigs, and locked CLOCKEATER — a death the scripts never wrote.
+ */
 export function handlersAlive(t: Testimony): Record<"vessel" | "marrow" | "deacon", boolean> {
-  return { vessel: t["m4:vessel"] !== "expose", marrow: t["m2:informant"] !== "turn", deacon: true };
+  return { vessel: t["m4:vessel"] !== "expose", marrow: true, deacon: true };
 }
 
 export type EndingId = "wipe" | "chair" | "chair_clockeater" | "chair_estate" | "wipe_fire" | "wipe_quiet";

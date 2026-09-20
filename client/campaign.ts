@@ -9,7 +9,7 @@
 import type { Game } from "./game";
 import { closeHint } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
-import { ENDINGS, endingsFor, gateOpen, resolveEnding, type Testimony } from "@shared/campaign/testimony";
+import { ENDINGS, endingsFor, gateOpen, handlersAlive, resolveEnding, type Testimony } from "@shared/campaign/testimony";
 import { threatProfile, threatRating, type ThreatProfile } from "@shared/campaign/threat";
 import { PROTOCOLS, protocolMods, MAX_PROTOCOLS } from "@shared/campaign/protocols";
 import { scriptById, type ScriptNode } from "@shared/campaign/script";
@@ -509,7 +509,7 @@ export class Campaign {
     const faction = FACTIONS.find((f) => f.id === c.faction);
     const next = nextMission(c);
     const offers = gigsOnOffer(a, c);
-    const alive = { vessel: c.testimony["m4:vessel"] !== "expose", marrow: c.testimony["m2:informant"] !== "turn", deacon: true };
+    const alive = handlersAlive(c.testimony);
     const row = (m: MissionDef, on: boolean, why = "") => `<div class="ct ${on ? "on" : "off"}" data-launch="${on ? m.id : ""}"><div class="nm">${m.kind === "mission" ? `◈ ${String(m.order).padStart(2, "0")} · ` : "▸ "}${m.title} <span class="lv">${m.level.replace(/_/g, " ").toUpperCase()}</span></div><div class="br">${m.brief}</div><div class="rw">${[m.reward.scrip ? `+${m.reward.scrip}¢` : "", m.reward.xp ? `+${m.reward.xp} XP` : "", m.reward.protocol ? `PROTOCOL` : "", m.reward.weapon ? `WEAPON ${m.reward.weapon.toUpperCase()}` : "", m.requires?.threat ? `THREAT ≥ ${m.requires.threat}` : ""].filter(Boolean).join(" · ")}${why ? ` · <i>${why}</i>` : ""}${on ? ` · <span class="cy" data-crew="${m.id}">[RUN WITH A CREW]</span>` : ""}</div></div>`;
     const fixers = (["deacon", "marrow", "vessel"] as const).map((h) => {
       const H = HANDLERS[h];

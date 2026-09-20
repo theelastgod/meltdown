@@ -14,7 +14,7 @@ twenty minutes and it is the whole job.
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
 | HEAD | Stage 179 on this branch (slide-jump kill flag) |
-| Next stage number | **181** |
+| Next stage number | **182** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 995 across 109 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -203,11 +203,10 @@ Deviate freely. The ordering is a suggestion; the method is not.
 
 ---
 
-## 6. Stage 181 is next
+## 6. Stage 182 is next
 
-Stage 180 anchored m1's hold at B. Next player-visible: the m2 informant "turn" choice silently
-kills Marrow (four gigs and the only CLOCKEATER source) with no death scene; or THREAT_LINES off
-by one against the mech threshold.
+Stage 181 stopped Marrow being re-leased by turning the informant in. Next: THREAT_LINES off by
+one against the mech threshold, or the rejoin knock that gives up at 31.5 s of a 60 s window.
 
 ---
 
