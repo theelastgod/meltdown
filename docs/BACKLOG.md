@@ -1,0 +1,671 @@
+# The backlog — verified, unfixed findings
+
+Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
+independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
+turned out to be the same finding reported twice. Eleven have since been fixed (Stages 168–178) and
+are listed at the foot of this file with the commit that closed them.
+
+The **21 below are open**. Every one has been read in the source — none is a hunch.
+
+They are not a work order. The standing method is to take one, **verify it yourself before building
+anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
+mutation-tested check, and ship it as one stage. Several entries turned out sharper or wider than
+first written once measured, and one ("stranded units") is two findings tangled together.
+
+Ordered roughly by how much a player would notice, not by how easy they are.
+
+
+## Netcode
+
+### 1. The rejoin knock gives up after 31.5 s of a 60 s grace window and then tells the player the room let the seat go
+
+`shared/net/rejoin.ts:28`
+
+**What the code promises.** shared/net/rejoin.ts:10-12: "The client now knocks, on a doubling wait, for as long as the room
+keeps the seat. The waits are a rule so the two sides cannot drift: the room's default grace and
+the client's last try are the same number." REJOIN_GRACE_SECONDS = 60 (rejoin.ts:16) and
+server/room.ts:1005 holds the seat for `rejoinGraceSeconds * 1000` ms.
+
+**What it does.** `rejoinDelay` stops as soon as the CUMULATIVE spend `500 * (2**n - 1)` exceeds the window, so
+try 7 (at 63.5 s) is refused and the plan ends with try 6 at t = 31.5 s. `rejoinTries()` returns
+6. The room still holds the seat for another 28.5 s — 47.5% of the window is never used.
+client/game.ts:442-446 then prints `LINK LOST · THE ROOM HAS LET THE SEAT GO AFTER 6 TRIES` and
+returns, and nothing re-arms the knock: there is no player-facing reconnect control
+(client/main.ts:357 `reconnect` is only on the `window.__game` probe surface).
+
+**Measured.** Evaluate `rejoinDelay(n)` for n = 1..7 and accumulate: knocks land at 0.5, 1.5, 3.5, 7.5, 15.5,
+31.5 s, and `rejoinDelay(7)` is null; `rejoinTries() === 6`. Compare 31.5 s against
+`REJOIN_GRACE_SECONDS * 1000` = 60000 ms and against server/room.ts:1005. I ran this (scratch at
+/tmp/rejoin.ts): "client's last knock at t = 31.5 s; window left unused = 28.5 s". End-to-end:
+drop a socket, restore the link at t = 45 s, and observe that the room still reports the seat
+(`players: 1, connected: 0`) while the client has stopped knocking.
+
+**What a player sees.** Any outage between 31.5 s and 60 s — an ordinary wifi handover or a tunnel — ends the player's
+match even though the room would have taken them straight back into their seat with their kills,
+weapon state and token intact. They are told the room dropped them, which is false; their only
+recourse is a page reload, which joins as a brand-new seat and resets the round.
+
+
+## Simulation core
+
+### 2. `slideTime` is never zeroed when a slide ends, so every airborne kill after one slide is credited as a slide-jump kill
+
+`shared/sim/world.ts:506`
+
+**What the code promises.** `KillCtx.shooterSlideJump` feeds `server/progression.ts:100` (`if (c.shooterSlideJump)
+this.count("slideJumpKills")`), which drives the `slide_jump_kill` Attestation Stamp "FIRST
+SLIDE-JUMP KILL" (shared/progression/stamps.ts:56) — an on-chain attestation per
+docs/TOKENOMICS.md:70. The flag is supposed to mean "this kill was made mid-air out of a slide-
+jump".
+
+**What it does.** The flag is computed as `!shooter.grounded && shooter.slideTime > 0`. `slideTime` is only ever
+set to 0 when a slide is *entered* (player.ts:367) or on respawn (player.ts:185). Neither slide
+exit path clears it: the slide-jump branch (player.ts:342-352) and the normal slide-end branch
+(player.ts:353-358) both change `stance` and set `slideCooldown` but leave `slideTime` at its
+final value. So from the first slide of a life until death, `slideTime > 0` is permanently true
+and the flag degenerates to plain `!grounded` — identical to `shooterAir`.
+
+**Measured.** Flat ground box, sprint 120 ticks, tap Crouch to enter the slide, let it end normally. Measured
+`p.slideTime === 0.350` after `p.stance === "stand"` (it should be 0). Then walk 600 ticks with
+no slide and plain-jump: `p.grounded === false`, `p.slideTime === 0.350`, so `!grounded &&
+slideTime > 0` is `true`. A guard is: after any `slideEnd`/`slideJump` event, `p.slideTime ===
+0`; or assert `ctx.shooterSlideJump === false` for a kill made from a plain jump that followed a
+completed slide.
+
+**What a player sees.** The "FIRST SLIDE-JUMP KILL" stamp (and the `slideJumpKills` counter behind it) is minted for an
+ordinary jump-shot kill taken ten seconds after an unrelated slide, so the hardest-looking
+movement stamp in the Ghostfile is handed out for one of the easiest actions. A player who never
+once slide-jumps still earns it.
+
+
+## Campaign
+
+### 3. ThreatProfile.detectMult is computed for every rating and read by nothing — Threat never widens VANTAGE detection
+
+`shared/campaign/threat.ts:16`
+
+**What the code promises.** threat.ts's header comment states the rule: "Threat Rating 0–10: how hard VANTAGE hunts this
+file. It rises with the account … and the districts answer: more patrols, wider detection, the
+PA calling your moniker." The field is declared `/** multiplier on wasp detection radius */
+detectMult: number` and computed as `1 + 0.06 * r` (threat.ts:35); THREAT_LINES[6] tells the
+player "FLAGGED · DETECTION DOUBLED".
+
+**What it does.** `ThreatProfile.detectMult` has zero readers in client/, server/ or shared/ outside its own
+declaration. `spawnThreat` (shared/campaign/runtime.ts:88-105) reads only
+`extraWasps`/`extraMechs`; `createMission` (runtime.ts:111, 136-140) reads only those plus
+`rating`; client/campaign.ts reads `rating`, `line`, `named`; server/campaign-room.ts never
+touches the profile. The `detectMult` the AI actually uses is built from the player's own build
+sheet — `detectMult: modsFor(p).droneDetect * (0.85 + 0.15*modsFor(p).footstep)`
+(shared/sim/world.ts:672), consumed at shared/sim/ai.ts:198 and :281 — and the campaign number
+is never folded in. Even its value contradicts its line: at rating 6 it is 1.36, not the 2.0
+that "DETECTION DOUBLED" claims. The only thing that touches it is tests/campaign.test.ts:53,
+`expect(t.detectMult).toBeCloseTo(1.36)` — an assertion on arithmetic nothing runs, which cannot
+fail for this defect.
+
+**Measured.** `grep -rn 'detectMult' client/ server/ shared/ --include=*.ts` yields only threat.ts
+(declaration/computation), shared/sim/ai.ts (the SightTarget field) and shared/sim/world.ts:672
+(built from `modsFor(p)` alone) — no site multiplies a SightTarget's detectMult by a
+ThreatProfile. Behaviourally: in a district world, run `spawnThreat(world, threatProfile(0))` vs
+`threatProfile(10)`, place a player at a fixed distance from a wasp, and compare the tick at
+which `wasp.state` becomes "chase". They are identical; if detectMult were wired, the rating-10
+world would flip at 1.6x the effective distance.
+
+**What a player sees.** A player at Threat 10 ("THE DIRECTIVE · YOU ARE THE FORECAST") is spotted by wasps and mech
+searchlights at exactly the same radius as a player at Threat 0. Half the escalation the FILE
+panel announces — the half it names explicitly at rating 6 — is inert; only the extra patrol
+count ever changes. Stealth builds (STATIC SKIN, DARK POOL, BLACK SWAN) are never counter-
+pressured by Threat the way the game says they are.
+
+### 4. THREAT_LINES is off by one against the mech threshold: Threat 5 announces "A REPO MECH IS ASSIGNED" while extraMechs is still 0
+
+`shared/campaign/threat.ts:31`
+
+**What the code promises.** THREAT_LINES[5] = "HUNTED · A REPO MECH IS ASSIGNED" is the single line the FILE panel
+(client/campaign.ts:529) and the explore HUD (client/campaign.ts:118) print at Threat Rating 5.
+It is a statement about what VANTAGE has just put on the street.
+
+**What it does.** `threatProfile` (threat.ts:35) gives `extraMechs: r >= 6 ? 1 : 0`, so at r=5 it returns
+`{extraWasps: 2, extraMechs: 0}`. The mech only arrives at r=6, where the line has moved on to
+"FLAGGED · DETECTION DOUBLED". Measured profile: r=4 → +2 wasps/+0 mechs "PRICED · EXTRA WASPS
+ON EVERY STREET"; r=5 → +2 wasps/+0 mechs "HUNTED · A REPO MECH IS ASSIGNED"; r=6 → +3 wasps/+1
+mech "FLAGGED · DETECTION DOUBLED". The line and the threshold it describes are one rating
+apart. In explore mode the contradiction is printed inside a single HUD string:
+client/campaign.ts:118 emits `THREAT ${rating} · ${line} · +${t.wasps} WASPS +${t.mechs} MECHS`,
+rendering at Threat 5 as "THREAT 5 · HUNTED · A REPO MECH IS ASSIGNED · +2 WASPS +0 MECHS".
+
+**Measured.** `threatProfile(5).extraMechs === 0` while `THREAT_LINES[5]` contains "REPO MECH IS ASSIGNED".
+The assertion that should hold and does not: for every r in 0..10, `/REPO
+MECH/.test(threatProfile(r).line)` implies `threatProfile(r).extraMechs > 0` — it fails at r=5.
+Behaviourally, `spawnThreat(world, threatProfile(5))` returns `{wasps: 2, mechs: 0}`.
+
+**What a player sees.** At Threat 5 the player is told a repo mech has been assigned to them, enters a district braced
+for a 400-HP mech, and there is none — and at Threat 6, when the mech does arrive, the readout
+no longer mentions it. In explore mode the HUD contradicts itself inside one line.
+
+### 5. m1's "HOLD THE TERMINAL WHILE THE FILE DECRYPTS" has no anchor, so the 20-second timer runs anywhere in Lease Row and no marker is drawn
+
+`shared/campaign/missions.ts:72`
+
+**What the code promises.** The objective text names a place and a requirement — "HOLD THE TERMINAL WHILE THE FILE
+DECRYPTS", immediately after "REACH THE ESCROW TERMINAL AT B". Every other survive/hold
+objective in the campaign is anchored: g_escrow_row at D r=6, g_escrow_depot at E r=6,
+g_escrow_docks at C r=6, m3 at A r=7, m5 at A r=12, m6 at A r=8, g_lattice_depot at A r=10.
+
+**What it does.** It is written as `{ kind: "survive", seconds: 20, text: "HOLD THE TERMINAL WHILE THE FILE
+DECRYPTS", waves: 1 }` — no `at`, no `radius`, the only such objective in all 19 contracts
+including variant objective lists. In `stepMission` (shared/campaign/runtime.ts:243-245) that
+leaves `at` null, so `const inside = !at || nearAny(...)` is unconditionally true and
+`st.progress += SIM_DT` accrues wherever the player is. The wave also spawns around
+`alivePlayers(world)[0]?.pos` instead of the terminal (runtime.ts:249). And because `syncFx`
+builds a marker only for `(o.kind === "survive" || o.kind === "hold") && o.at`
+(client/campaign.ts:204-206), the world marker, the radar "goal" spot and the distance readout
+all disappear for those 20 seconds.
+
+**Measured.** In a `World` on lease_row, run m1 to its second objective, teleport the player to node A (>20 m
+from B) and tick for 20 s: `missionView(st).kind` still advances from "survive" to "reach". The
+same test against g_escrow_row's survive-at-D stalls progress at 0 while the player is away.
+Static check: `MISSIONS.flatMap(m => [...m.objectives, ...(m.variants??[]).flatMap(v =>
+v.objectives??[])]).filter(o => (o.kind==="survive"||o.kind==="hold") && !o.at)` returns exactly
+one element, m1's.
+
+**What a player sees.** The first mission's first combat beat teaches the wrong rule: the player is told to hold a
+terminal, is shown no terminal (the marker vanishes the instant the objective starts), and can
+cross the whole district — or simply run from the VANTAGE wave that spawns on top of them —
+while the file decrypts on schedule. A player who does stand at B gets no confirmation that
+standing there is what did it.
+
+### 6. Turning in the m2 informant silently kills Marrow, removing four gigs and the only source of the CLOCKEATER weapon, with no scene that kills her
+
+`shared/campaign/testimony.ts:27`
+
+**What the code promises.** The m2 choice reads "TURN HIM IN to Marrow's people. The Clockeaters settle their own."
+(shared/campaign/script.ts:83) and Marrow answers it in person on the next node: "The
+Clockeaters will handle it. You won't like how. Neither will I." (script.ts:87). Nothing in the
+scene harms her. The parallel Ida branch, by contrast, prints an explicit death line: "IDA
+VESSEL IS RE-LEASED. HER FILE CLOSES WITH YOUR GLYPH ON THE LAST LINE." (script.ts:124).
+
+**What it does.** `handlersAlive` marks Marrow dead on that testimony: `marrow: t["m2:informant"] !== "turn"`
+(testimony.ts:27-28). `gigsOnOffer` (shared/campaign/save.ts:42) then filters out every gig
+whose fixer is Marrow, and the CONTRACTS panel renders her block as "◈ MARROW … · RE-LEASED"
+with "no one answers" (client/campaign.ts:514-519). Verified by running the data:
+`handlersAlive({"m2:informant":"turn"})` → `{vessel:true, marrow:false, deacon:true}`; Marrow's
+gigs are g_escrow_row (which carries the "gig:first" stamp), g_escrow_depot, g_convoy_row and
+g_escrow_docks — 4 of 12 — and `MISSIONS.filter(m => m.reward.weapon === "clockeater")` returns
+exactly one entry, g_escrow_depot (missions.ts:168). Two of the four are additionally gated on
+the identical condition `not: {"m2:informant": "turn"}`, so the lockout is doubled.
+
+**Measured.** `gigsOnOffer(account, campaign)` with `testimony = {"m2:informant":"turn"}` returns no gig with
+`fixer === "marrow"` at any Threat Rating, therefore never g_escrow_depot, therefore
+`campaign.weapons` can never contain "clockeater" and `account.owned` never "weapon:clockeater",
+for every reachable account. With `{"m2:informant":"spare"}`, g_escrow_depot appears at Threat ≥
+2. The defect-vs-design discriminator: search SCRIPTS for a node narrating Marrow's death or re-
+lease — there is none, while the parallel `expose` branch has one.
+
+**What a player sees.** One dialogue pick at mission 2 of 7 — phrased as handing a traitor to Marrow's own house, and
+answered by Marrow herself — permanently deletes a third of the side content, the "gig:first"
+stamp if it has not already been earned, and the CLOCKEATER, one of the game's two campaign
+weapons. The player's only notice is a CONTRACTS panel that later reports a death the game never
+showed, and a CAMPAIGN WEAPONS row reading "▢ CLOCKEATER" that can never be filled.
+
+
+## Economy
+
+### 7. A file's genuinely-unpaid units from an earlier day are erased as "stranded" the moment it banks again, because `driftOf` compares a multi-day `owed` against one day's row
+
+`server/chain/reconcile-run.ts:74`
+
+**What the code promises.** reconcile-run.ts:75-77 states the protection explicitly: "the day is paid and the epoch has no
+leaf for this file (no wallet when it settled): a real debt the epoch cannot pay. Reported,
+never cleared — until Stage 57 the repair erased it as stranded". docs/ECONOMY.md §6.5 states
+the assumption it rests on: "A file's counter carries exactly ONE run day — `counter.run.day` —
+so a file can only ever be drifted on that day." tests/settle.test.ts:516 guards it ("reports a
+file the settlement could not pay as unpaid, and never clears it as stranded").
+
+**What it does.** `counter.run.owed` is not a one-day quantity. server/room.ts:949 carries it forward across days
+(`{ day, banked: 0, owed: a.counter.run?.owed ?? 0, … }`) and server/merge.ts:68 documents the
+same ("banked is the day's tally and resets with the day; owed and paid carry across days").
+Only `run.day` moves on. So `driftOf(id, run.day, run.owed, …)` (called at lines 106 and 191)
+measures the whole carried debt against the latest day's row and the latest day's epoch. Once
+the file banks again and that later day settles normally, `settled && inEpoch.has(id)` is true,
+so the leftover carried debt takes the `stranded` branch at line 74 and line 110/195 zeroes it.
+The guard at line 77 only holds while the file never banks again — exactly the regime
+tests/settle.test.ts:516 measures, where the orphan links a wallet and then stops playing. I
+drove the real `reconcileRunBacklog` with `run = {day:101, banked:150, owed:200, paid:150}` (200
+units banked unlinked on day 100, skipped by that day's epoch per ledger.ts:288-292 and settle-
+run.ts:80-83; 150 banked and paid on day 101) and it returned `{kind:"stranded", units:200,
+fixed:true, recorded:150, note:"paid by the day's epoch, never cleared off the file"}` and left
+`owed:0`. The day-101 epoch paid 150, not 350; the code even has `recorded: 150` sitting in the
+same object.
+
+**Measured.** `npx tsx` a script that calls `reconcileRunBacklog({fix:true})` with one linked file at
+`run={day:D+1, owed:200+150, paid:150}`, a settled day D+1 whose epoch leaf for that file is
+worth 150, and `runs.day(D+1) = [{file, units:150}]`. Correct behaviour: at most the 150 the
+epoch paid for is cleared (owed → 200). Observed: `cleared: 200`, `owed: 0`, classified
+`stranded`. A direct check in-repo: extend tests/settle.test.ts:516 so `sandbox-v3-orphan` banks
+again on DAY+1 and DAY+1 settles — the existing assertion `owed === 20` then fails.
+
+**What a player sees.** A player who banks units before linking a wallet (the room banks $CAPITAL units with no wallet
+check — room.ts:958-965 — and the ledger line reads "BANKED 40 AT GATE · 40 UNITS OWED"), then
+links and plays again, silently loses every unit from the pre-link day. The file panel's `OWED n
+UNITS` drops to 0 with no prize posted for them and no epoch that can ever pay them; the nightly
+log calls it a repair. Up to RUN_DAILY_CAP = 200 units, i.e. up to 200 $CAPITAL at the ceiling,
+per occurrence.
+
+### 8. The "stranded" repair adds banked UNITS into `run.paid`, a field the game prints as $CAPITAL
+
+`server/chain/reconcile-run.ts:110`
+
+**What the code promises.** `run.paid` is denominated in $CAPITAL. client/file.ts:612 prints it as `OWED <b>${run.owed}</b>
+UNITS · PAID ${run.paid} $CAPITAL`, and server/chain/settle-run.ts:90 writes it as `paid:
+run.paid + line.amount`, where `line.amount` is $CAPITAL (settlement.ts:102: `amount: micro /
+SETTLE_PRECISION`, i.e. units × the day's settled rate). `run.owed`, by contrast, is units —
+settlement.ts:41-46 and room.ts:961-963 both say so.
+
+**What it does.** Both repair sites — reconcile-run.ts:110 and the identical line at reconcile-run.ts:195 — write
+`paid: run.paid + run.owed`, adding a unit count into the $CAPITAL total. The conversion factor
+is the day's settled rate, which is only 1 while the pot does not bind. At docs/TOKENOMICS.md
+§4.4's own month-12 population the rate is 0.4252 $CAPITAL/unit (I ran
+`project(DOC_POPULATION)`: `unitRate: 0.4252054794520548`), and at the STRESS_POPULATION the
+lint runs against it is 0.008858. The epoch leaf that actually paid the file is right there in
+`epoch.leaves` and is never consulted. My reconcileRunBacklog run showed it directly: a file at
+`paid: 150` with 200 units cleared came out at `paid: 350`.
+
+**Measured.** `npx tsx` a script calling `reconcileRunBacklog({fix:true})` on a stranded file at `owed: 200`,
+where the day's epoch leaf for that file is `200 * rate` $CAPITAL. Correct behaviour: `run.paid`
+grows by the leaf's `formatEther` amount. Observed: it grows by 200, the unit count. Compare
+against `settle-run.ts:90`, which does it correctly with `line.amount`.
+
+**What a player sees.** After any stranded repair the file panel overstates what the wallet was paid — by 2.4× at the
+doc population and by 113× at a million MAU (200 units cleared prints as 200 $CAPITAL against
+1.77 actually received). The player sees `PAID 350 $CAPITAL` next to a wallet balance that does
+not match, with no way to reconcile the two. (The same line is also unformatted — `${run.paid}`
+with no `toFixed`, so a settled fractional rate prints as e.g. `PAID 85.04109589041096
+$CAPITAL`.)
+
+
+## Weapons and firmware
+
+### 9. LONGWAVE CAPACITOR's only stated cost cannot occur — the rail has no falloff at all, so 102 damage still one-shots at every range
+
+`shared/manifest/firmwares.ts:27`
+
+**What the code promises.** CAPACITOR is a rank-20 sidegrade whose line reads "−15% charge time, −7% damage (two shots past
+25 m)". firmwares.ts:3-5 calls firmwares "sidegrades" that the TTK harness certifies; the
+parenthetical tells the player the damage cut costs them the one-shot kill beyond 25 m.
+
+**What it does.** The LONGWAVE's range profile is R(40, 200, 200, 1, 260) at shared/weapons/manifest.ts:159 —
+fullTo === falloffTo === 200 and minMult === 1, so falloff() returns exactly 1 at every distance
+the ray can travel (the ray is clamped to range.max = 260 at world.ts:381). Charged damage drops
+110 → 102, and a baseline Blank's effective HP is BASE_HEALTH 70 + BASE_SHIELD 30 = 100
+(shared/sim/player.ts:15-16). 102 ≥ 100 at 1 m and at 259 m alike. There is no range at which
+CAPACITOR needs a second shot that stock does not.
+
+**Measured.** npx tsx: `falloff(WEAPONS.longwave.range, d)` returns 1 for d in {1, 25, 26, 40, 100, 199, 200,
+259}; `Math.round(102 * falloff(...))` = 102 ≥ 100 everywhere. And
+`measureTTK("longwave","primary",40,6,"longwave:capacitor")` → { seconds: 0.767, shots: 1 } vs
+stock { seconds: 0.917, shots: 1 }.
+
+**What a player sees.** CAPACITOR is a strict upgrade sold as a trade: the player pays nothing and gains a 15% faster
+charge. At the weapon's ideal range the harness itself measures 0.767 s with CAPACITOR against
+0.917 s stock — same one shot, 16.4% faster kill — which the Fairness Lint waves through because
+SIDEGRADE_DEVIATION_LIMIT is ±20%. Anyone who reads the line and skips CAPACITOR to keep their
+one-shot kill has been misinformed.
+
+### 10. OVERCHARGE sells "pierces cover", but the stock rail already sets pierce:true and pierce never passes level geometry
+
+`shared/manifest/firmwares.ts:28`
+
+**What the code promises.** The rank-28 LONGWAVE firmware's line is "+8% charge time, +8% damage, pierces cover" — two stat
+changes plus a third, headline capability.
+
+**What it does.** Two separate failures. (a) The stock LONGWAVE already carries `charge: { time: 0.9, damage: 110,
+pierce: true }` at shared/weapons/manifest.ts:162, and shared/sim/weapons.ts:384 passes `pierce:
+c.pierce` straight through — so OVERCHARGE's `pierce: true` overwrites true with true and grants
+nothing. (b) `pierce` does not mean cover-piercing anywhere in the sim: castRay first clamps
+`worldT` to the nearest level box (world.ts:383-386), then every rayCapsule candidate test is
+bounded by that same worldT (world.ts:401, 419, 424, 429). A target behind a wall is never a
+candidate, pierce or not; pierce only decides whether more than one candidate in front of the
+wall is damaged (world.ts:434).
+
+**Measured.** Read WEAPONS.longwave.charge.pierce (already true) before applying the firmware. Falsifiable in
+sim: stand two dummies in a line behind a box, fire a charged rail with and without OVERCHARGE —
+the emitted `shot` event's `hits` array is identical and contains nothing beyond the box, while
+two dummies in the open are both hit with the stock weapon.
+
+**What a player sees.** A player at LONGWAVE rank 28 flashes OVERCHARGE expecting to shoot through cover, and pays a
+real +8% charge time for it. They get neither a new capability nor the advertised one: the stock
+rail already punches through stacked bodies, and no rail shot of any kind passes a wall.
+
+### 11. REPO HAMMER chip lines print the un-scaled template numbers; every spread chip on that weapon is ~30% weaker than its text
+
+`shared/manifest/chips.ts:104`
+
+**What the code promises.** chips.ts:96-118 builds each weapon's chip from a shared template and then prints `line` verbatim
+in the GHOSTFILE kit panel (client/file.ts:777). For the REPO HAMMER those lines read "CHOKE:
+−12% spread / +12% recoil", "HEAVY BARREL: +3% range, −5% spread / −9% ADS strafe", "FLASH CUT:
+−8% spread, quieter / +8% recoil, −4.5% reload", "COUNTERWEIGHT: −10% spread, −4% recoil / −1.5%
+move, −10% ADS strafe".
+
+**What it does.** SPREAD_SCALE (chips.ts:79) multiplies the hammer's spread benefits by 0.7 and settle() then
+rescales the costs to match, but chips.ts:116 rewrites the line only for the clockeater's
+fireRate→reload substitution. Real values: choke −8.5% spread / +8.5% recoil; heavy_barrel −3.5%
+spread / −7.5% ADS strafe; flash_cut −5.5% spread / +6.5% recoil, −3.75% reload; counterweight
+−7% spread / −1.25% move, −7.75% ADS strafe.
+
+**Measured.** npx tsx: `chipById("repo_hammer:choke")` → benefits [{spread,-0.085}], costs [{recoil,0.085}],
+line "CHOKE: −12% spread / +12% recoil". Compare chipById("lease_breaker:choke") → ±0.12 with
+the identical line.
+
+**What a player sees.** A REPO HAMMER player comparing chips in the kit panel reads numbers 27-30% larger than what they
+get — they pick between a chip whose real spread benefit is −3.5% and one that claims −5%, or
+plan a pellet-cone build around −12% that is actually −8.5%. The costs are overstated too, so
+the ledger shown does not match the ledger applied.
+
+### 12. Firmware damage lines drift from the integers the code produces, and DOUBLE BARREL hides a −33% magazine cost
+
+`shared/manifest/firmwares.ts:23`
+
+**What the code promises.** DOUBLE BARREL (firmwares.ts:23) — "two shells per trigger 0.7 s apart, then a long reset; −8%
+pellet damage". SLAM FIRE (:24) — "+20% rate, −15% pellet damage, a little wider". THREE-COUNT
+(:21) — "+15% damage". MEASURED (:26) — "+26% damage".
+
+**What it does.** Every patch rounds to an integer on a small base and the lines were written from the multiplier
+rather than the result. DOUBLE BARREL: Math.round(10×0.92)=9, i.e. −10% not −8%, AND `magSize:
+Math.max(2, d.magSize - 2)` takes the hammer from 6 shells to 4 (−33%), which the line never
+mentions. SLAM FIRE: Math.round(10×0.85) = Math.round(8.5) = 9 (JS rounds half up), so −10%
+instead of the advertised −15% — the nerf is a third smaller than stated (72 pellet damage per
+shell instead of the intended 68). THREE-COUNT: Math.round(16×1.15)=18, +12.5% not +15%.
+MEASURED: Math.round(9×1.26)=11, +22.2% not +26%.
+
+**Measured.** npx tsx: for each FirmwareDef, `f.patch(WEAPONS[f.weapon])` diffed against the base.
+repo_hammer: damage 10→9 (−10%) and magSize 6→4 for double_barrel; 10→9 (−10%) for slam_fire;
+lease_breaker 16→18 (+12.5%); stack_smg 9→11 (+22.2%).
+
+**What a player sees.** A REPO HAMMER player picks DOUBLE BARREL for its two-shell burst and finds mid-fight they have
+four shells instead of six — a cost the kit panel never showed. A player choosing between SLAM
+FIRE ("−15% damage") and DOUBLE BARREL ("−8% damage") is told SLAM FIRE hits softer when both
+land on 9 damage per pellet. MEASURED buyers get 3.8 percentage points less damage than
+promised.
+
+
+## Ledger items and chip lines
+
+### 13. Four STACK SMG chip lines say "spread" where the chip changes recoil; COUNTERWEIGHT delivers 3.4x the recoil it advertises
+
+`shared/manifest/chips.ts:116`
+
+**What the code promises.** chips.ts:116 builds each chip's player-facing line. It contains an explicit rewrite for one stat
+substitution — the clockeater's fireRate→reloadSpeed swap — replacing "+2% fire rate" with the
+computed "+6.25% reload". No such rewrite exists for the spread→recoil substitution declared at
+chips.ts:80.
+
+**What it does.** Every STACK SMG chip whose template carries a spread benefit ships a line naming a stat the chip
+does not touch: stack_smg:choke (template chips.ts:51) "−12% spread" → recoil -0.12;
+stack_smg:heavy_barrel (chips.ts:53) "+3% range, −5% spread" → range +0.03, recoil -0.05;
+stack_smg:flash_cut (chips.ts:54) "−8% spread" → recoil -0.08; stack_smg:counterweight
+(chips.ts:60) "−10% spread, −4% recoil" → benefits [recoil -0.10, recoil -0.04]. COUNTERWEIGHT
+is the worst: it is not a cancellation but a doubling — applyMods compounds 0.90 * 0.96 = 0.864,
+so the chip delivers −13.6% recoil where its line claims −4% recoil and −10% spread. The SMG's
+spread is left at exactly 1.0 by all four.
+
+**Measured.** For each chip in CHIPS, assert every percentage named in `line` is present in `[...benefits,
+...costs]` on the stat the words name. For stack_smg:counterweight, kitFor gives mods.spread ===
+1 and mods.recoil === 0.864; the line asserts spread === 0.90 and recoil === 0.96.
+
+**What a player sees.** The SMG's whole chip identity as printed is a lie about which knob moves. A player choosing
+COUNTERWEIGHT to tighten the hip cone for 25-40 m fights gets no cone change at all, while
+unknowingly getting three times the recoil control the line offers; a player comparing
+COUNTERWEIGHT ("−10% spread, −4% recoil") against COMPENSATOR ("−12% recoil / +12% spread") on
+the SMG is comparing two descriptions of which only one is true of the SMG.
+
+### 14. Every REPO HAMMER spread chip quotes the unscaled template number: CHOKE says −12% and delivers −8.5%
+
+`shared/manifest/chips.ts:79`
+
+**What the code promises.** SPREAD_SCALE (chips.ts:79) scales the repo_hammer's spread benefits by 0.7, and settle()
+(chips.ts:88-94) then rescales that chip's costs by k = benefits/costs to keep the ledger
+balanced. The lines are carried through verbatim from TEMPLATES by chips.ts:116.
+
+**What it does.** The scaled numbers and the printed numbers diverge on four hammer chips. repo_hammer:choke —
+line "−12% spread / +12% recoil", actual spread -0.085, recoil +0.085 (kitFor: spread = 0.915,
+recoil = 1.085). repo_hammer:heavy_barrel (chips.ts:53) — line "+3% range, −5% spread / −9% ADS
+strafe", actual spread -0.035, adsMove -0.075. repo_hammer:flash_cut (chips.ts:54) — line "−8%
+spread ... +8% recoil, −4.5% reload", actual spread -0.055, recoil +0.065, reloadSpeed -0.0375.
+repo_hammer:counterweight (chips.ts:60) — line "−10% spread, −4% recoil / −1.5% move, −10% ADS
+strafe", actual spread -0.07, moveSpeed -0.0125, adsMove -0.0775. Separately, settle()'s
+rounding at chips.ts:93 shifts QUICK SEAT (chips.ts:61) on ALL EIGHT weapons: line "+20% reload
+/ +14% recoil, +9% spread", actual costs recoil +0.1425, spread +0.0925.
+
+**Measured.** kitFor({...DEFAULT_LOADOUT, primary:"repo_hammer",
+chips:{repo_hammer:{muzzle:"repo_hammer:choke"}}}).repo_hammer.mods — line asserts spread ===
+0.88, recoil === 1.12; observed spread === 0.915, recoil === 1.085. Generalised: for every chip,
+each "N%" in `line` must equal 100*|delta| of a mod on the stat named beside it; 12 of 160 chips
+fail today.
+
+**What a player sees.** The REPO HAMMER is the pellet weapon, where cone size is the whole weapon. A hammer player
+buying CHOKE for the advertised −12% cone gets −8.5% — at the hammer's 0.05 rad cone and 15 m, a
+pellet spread radius of 0.686 m instead of the promised 0.660 m — while paying only +8.5% recoil
+instead of the +12% the line warns about. Every number in the trade is wrong in both directions,
+so the player cannot predict the chip from its only description.
+
+### 15. 13 ledger node lines print the pre-reconciliation cost; COLLATERAL says −20% reload and applies −23.5%
+
+`shared/manifest/items.ts:87`
+
+**What the code promises.** reconciled() (items.ts:50-66) takes the authored costs and RESCALES them by b/c0 so the ledger
+balances, then settles the rounding residue onto the last cost (items.ts:56-64). The `line`
+argument is authored against the pre-scale numbers and is never touched. COLLATERAL is authored
+[moveSpeed -0.02, reloadSpeed -0.20] with line "COLLATERAL: +40% shield regen / −2% move, −20%
+reload".
+
+**What it does.** RECONCILE_LOG records scale = 1.163 for collateral, so its shipped costs are moveSpeed -0.0225
+and reloadSpeed -0.235. Measured: sheetFor({attested:["collateral"]}).reloadSpeed === 0.765.
+reloadTimer = d.reloadTime / mods.reloadSpeed (shared/sim/weapons.ts:282), so a STACK SMG reload
+is 1.700/0.765 = 2.222 s where the line promises 1.700/0.80 = 2.125 s — 97 ms more on every
+magazine. Twelve more nodes drift the same way, each verified by reading RECONCILE_LOG and the
+shipped costs array: ARREARS items.ts:105 ("−10% reload" → -0.12), BLACK SWAN items.ts:126
+("−30% regen" → -0.2725), CIRCUIT BREAKER items.ts:128 ("−8% ADS strafe" → -0.0975), GHOST
+RECEIPT items.ts:102 ("−10% node flip" → -0.1175), NIGHT FARE items.ts:85 ("−10% regen" →
+-0.0825), MARGIN CALL items.ts:119 ("+12% spread, +10% recoil" → +0.135, +0.1125), BAD PAPER
+items.ts:110 ("−20% regen" → -0.185), RED INK items.ts:107 ("−16% regen" → -0.1475), MELTDOWN
+CLAUSE items.ts:115 ("−35% regen" → -0.3425), DEFAULT SWAP items.ts:132 ("+15% spread" →
++0.1575), WIRE FRAUD items.ts:109 ("−5% reload" → -0.0575), DARK POOL items.ts:123 ("−10%
+reload" → -0.105).
+
+**Measured.** For every item in LEDGER_ITEMS, parse each "N%" from `line` and require a cost/benefit mod on
+that stat with 100*|delta| rounding to N. 13 of 48 fail. Concretely:
+sheetFor({attested:["collateral"]}).reloadSpeed === 0.765, while itemById("collateral").line
+asserts 0.80; and Math.round(0.235*100) === 24 !== 20, the two values client/file.ts:750 and
+client/file.ts:717 put on screen for the same node.
+
+**What a player sees.** The Ghostfile shows both readouts at once and they contradict each other on screen. The node row
+renders the real mods through fmt at client/file.ts:750, printing "−24% reloadSpeed" for
+COLLATERAL; the ledger-graph tooltip at client/file.ts:717 prints this authored line, "−20%
+reload", for the same node. A player pricing a build reads one number in the list and a
+different number in the hex they click to buy it. For COLLATERAL the gap is 4 percentage points
+— a fifth of the stated cost.
+
+
+## Audio and render
+
+### 16. The respawn cue and the BACK ON THE LEDGER line can never fire online: the dead→alive edge is computed and thrown away
+
+`client/game.ts:480`
+
+**What the code promises.** client/audio.ts:463-470 documents `respawn()` as "back on the ledger (Stage 96): a rising two-
+note with the CRT's own hiss under it", and client/game.ts:1357-1362 pairs it with `hud.push('◆
+BACK ON THE LEDGER · <district>')`. Stage 96's whole premise (client/render/spawn.ts:1-13) is
+that a respawn used to be "a new place, the old heading, no fade, no sound, no line".
+
+**What it does.** `audio.respawn()` has exactly one call site, client/game.ts:1360, inside `onEvent` — the handler
+for SimEvents drained from the locally-stepped world. Online the client never calls
+`world.step()`; it calls `applyInput(..., {predictOnly:true})` (client/game.ts:778), and the
+respawn block in shared/sim/world.ts:259-265 is guarded by `if (!p.alive && !opts.predictOnly)`,
+so no local respawn event is ever produced. The server does produce one, but
+server/room.ts:1151-1216 `toNetEvent` has no `case "respawn"` and falls through to `default:
+return null` at line 1215, so it never reaches the wire (the protocol's event union has only
+shot/fx/kill/death/join/leave). client/game.ts:480 computes `const wasAlive = p.alive;` in
+`onSnapshot` and then uses it only for `netStats` bookkeeping (line 489-493) — the dead→alive
+edge is right there and discarded. The renderer's visual spawn-in still works, because it reads
+`v.alive` itself (client/render/renderer.ts:904 `spawnEdge`), which is exactly why the gap is
+easy to miss.
+
+**Measured.** Join a room, die, respawn, and read `window.__game.audio.fired` (exposed as `audioCues()` in
+client/main.ts:323): `fired.respawn` stays undefined online and increments by 1 per respawn
+offline. Equivalently, grep the HUD log for '◆ BACK ON THE LEDGER' after an online death — it
+never appears.
+
+**What a player sees.** In multiplayer — the game's primary mode — every single respawn is silent and unlogged. The CRT
+comes back up and the lens opens out with no sound and no line in the log, while offline the
+same respawn gets a two-note rise and a ledger entry. Stage 96 fixed the cut only for the
+offline path.
+
+### 17. An explosion's point light fades by a fixed factor per FRAME, so a grenade lights the street 20x more at 60 Hz than at 144 Hz
+
+`client/render/weapons.ts:329`
+
+**What the code promises.** `ArsenalFx.update(dt)` takes a time step and the sibling fades in the same loop are time-based:
+the mesh uses `const t = (this.clock - b.born) / b.life` (weapons.ts:321) and `b.mat.opacity =
+(1 - t) * 0.9` (line 328). client/hit.ts:85-93 documents the house rule for exactly this — "Fade
+a flash or a flinch by elapsed time rather than per frame. The dummies' flash had been stepped
+by a fixed amount every frame since Stage 1, which makes a hit last four times as long on a
+phone as on a desktop" — and client/render/renderer.ts:475-479 repeats it. The explosion light
+is the one that was never converted.
+
+**What it does.** `b.light.intensity *= 0.85;` is a per-call multiplication, so the fade depends on how many times
+`update()` runs during the blast's 0.45 s (big) / 0.3 s (small) life, not on how much time
+passed. With the renderer's capped dt (renderer.ts:866, `Math.min(rawDt, 1/30)`) the blast gets
+64.8 update calls at 144 fps, 27.0 at 60 fps and 13.5 at or below 30 fps. Measured against the
+initial intensity of 120: at the halfway point of the blast the light is 0.62 at 144 fps, 13.4
+at 60 fps and 40.1 at 30 fps. At the end of its life it is 0.003 at 144 fps (invisible long
+before the sphere fades) and 13.4 at 30 fps — i.e. the light is deleted at 11% of full
+brightness, a visible pop.
+
+**Measured.** `const fx = new ArsenalFx(scene); fx.explosion(pos, 4, 0xffb02e, true);` then call
+`fx.update(1/144)` 32 times versus `fx.update(1/60)` 13 times (both ≈0.22 s of clock) and read
+the blast's `light.intensity`: 0.62 vs 13.4. A correct time-based fade would give the same
+number for both.
+
+**What a player sees.** The same frag grenade throws a completely different amount of light on the surrounding geometry
+depending on the player's refresh rate: on a 144 Hz monitor the blast flash is gone almost
+immediately and the explosion reads as a dim additive sphere with no illumination; at 30 fps the
+light snaps off at over a tenth of full brightness instead of fading out.
+
+### 18. The camera's landing dip divides a whole frame's fall by a dt capped at 1/30 s, so below 30 fps every hop lands like a roof drop
+
+`client/render/renderer.ts:878`
+
+**What the code promises.** client/render/feel.ts:15-22 states the constants in metres per second: `LAND_FLOOR = 2.5`
+("below this the ground is just the ground: walking off a kerb is not a landing"), `LAND_CEIL =
+13` ("past this it is as hard as a landing gets"), and `landHardness(fallSpeed)` (feel.ts:31-33)
+is documented as "A jump on the flat comes back at about six metres a second and reads as a
+third of the way up". renderer.ts:875-877 says the value fed in is "the fall speed ... the frame
+before touchdown".
+
+**What it does.** `const fell = this.lastY === null ? 0 : (v.y - this.lastY) / Math.max(1e-4, dt);` — the
+numerator `v.y - this.lastY` is the height change over one whole render frame, i.e. over
+`rawDt`, but the divisor is `dt = Math.min(rawDt, 1 / 30)` (renderer.ts:866), a clock
+deliberately capped for VFX ageing. Whenever the frame time exceeds 1/30 s the quotient is not
+metres per second at all — it is inflated by `rawDt / (1/30)`. A real 6 m/s landing reads as
+9.00 m/s at 20 fps (hardness 0.619 instead of 0.333) and as 15.00 m/s at 12 fps (hardness clamps
+to 1.000, the maximum dip of 0.22 m). The same capped dt then drains the dip timer at line 886
+(`this.landT = Math.max(0, this.landT - dt)`), so the 0.34 s recovery takes 0.51 s of wall time
+at 20 fps and 0.85 s at 12 fps. The identical unit error is at renderer.ts:829-830 (`vy` and
+`turnRate` for the local rig pose) and renderer.ts:705/727 (`seen`, `vy`, `turnRate` for remote
+bodies).
+
+**Measured.** Drive `renderer.render(view, rawDt)` with a body descending at a true 6 m/s and read
+`renderer.view().dip` on the frame after touchdown: 0.073 m at rawDt = 1/60, 0.136 m at rawDt =
+1/20, 0.220 m at rawDt = 1/12. Correct behaviour is the same 0.073 m at all three.
+
+**What a player sees.** On a phone or any machine under 30 fps — and on any single hitched frame that happens to
+coincide with touchdown — every jump, and even stepping off a kerb, slams the camera down the
+full 0.22 m of the hardest possible landing and takes two to three times as long to come back
+up. The 'walking off a kerb is not a landing' floor stops working.
+
+### 19. A REPO MECH acquiring you is silent online: the FX.flagged case plays the HUD flag but not the two-tone alarm
+
+`client/game.ts:577`
+
+**What the code promises.** client/vantage.ts:6-8, the module doc that justifies the wasp cue, states the rule as fact: "A
+mech that flags you gets a two-tone and a HUD flag; a wasp that acquires you gets nothing, and
+it is the one that shoots first." client/audio.ts:389-394 is that two-tone, and the offline
+handler at client/game.ts:1216-1221 does both: `this.hud.flagged();` and `if (this.world.tick %
+30 === 0) this.audio.flagged();`.
+
+**What it does.** The online handler is `case FX.flagged: if (ev.playerId === me) this.hud.flagged(); break;` —
+HUD only, no `this.audio.flagged()`. The server does deliver the event (server/room.ts:1177-1178
+maps the `flagged` SimEvent to `FX.flagged`), and shared/sim/ai.ts:299 pushes `mechFlag` every
+tick the mech's searchlight holds you, so the event stream is there; the client just drops the
+sound. Every neighbouring case in the same switch was given its offline voice — stun
+(game.ts:581), mechBeam (587), hurt (591), nodeFlip (607), contest (614), kernelPulse (619),
+phase (626-628, added by Stage 124 with the comment "online the phase had been silent ... the
+same voices as offline"). `flagged` was missed.
+
+**Measured.** Join a room on a level with mechs (shared/sim/level.ts:212 gives drainage_yard one), walk into a
+mech's searchlight cone and read `audioCues()` (client/main.ts:323): `fired.flagged` stays
+undefined online while `hud.flagged()` fires; offline it increments once per 30 ticks of being
+lit.
+
+**What a player sees.** Online, a repo mech locking its searchlight onto you — the warning you get before MECH.lockTime
+elapses and it opens fire with a beam — makes no sound. The only cue is a HUD flag you have to
+be looking at the right part of the screen to see. Offline the same lock beeps once a second.
+
+
+## Process and gates
+
+### 20. probe:stage2's earshot check has a boundary threshold the bot lands on: `far.d > 30` fails when the sample reads 30.0
+
+`probe/stage2.ts:665`
+
+**What the code promises.** A check that fails one run in twenty is not a guard.
+
+**What it does.** The check requires far.d > 30 && nearest > 28. BRAVO paces to a waypoint near 30 m, so the
+sampled distance straddles the threshold: observed FAIL at 'pacing 30.5-30.0 m' and PASS at
+'pacing 30.4-30.1 m' on consecutive runs of identical code. Everything the check is actually
+about (0 steps heard, walking 18/18) held in both. The threshold should be derived from the
+audible range constant with margin, or the waypoint moved out.
+
+### 21. probe:stage8's Debt check needs >= 2 kills from a live three-client match and intermittently sees 1
+
+`probe/stage8.ts:304`
+
+**What the code promises.** A check that fails one run in twenty is not a guard.
+
+**What it does.** Observed once in a full sweep: 'ALPHA owes BLANK (1 files)' against a `owed.kills >= 2` clause;
+every other clause (debt name, debtTarget both sides) matched. Re-ran 3x on the same tree and 2x
+on a clean tree: 5/5 PASS. The kill count comes from real combat between three live clients, so
+it is load-sensitive. The Debt itself only needs the *most* kills, not two, so the clause is
+stricter than the rule it guards.
+
+
+---
+
+## Closed
+
+- Respawn silently hands the player back the slot-1 rifle instead of their chosen primary  
+  → Stage 168 (a5703d9)
+- Hitscan cannot hit a body you are standing inside: rayCapsule returns null whenever the muzzle is inside the target capsule  
+  → Stage 169 (949d876)
+- PHAGE CLUSTER firmware is completely inert; LONG FUSE applies only 1 of its 4 stated changes  
+  → Stage 170 (384985b)
+- STACK SMG CHOKE and FLASH CUT cancel themselves out — the benefit is converted to recoil but the cost is left on recoil  
+  → Stage 171 (a5f9837)
+- lintChipSchema passes a chip whose benefit and cost are the same stat and cancel — the reconciliation guard cannot see a net-zero trade  
+  → Stage 171 (a5f9837)
+- STACK SMG's CHOKE chip is a null trade: its benefit and its cost land on the same stat and annihilate  
+  → Stage 171 (a5f9837) — same finding as the weapons-dimension entry above
+- Selecting weapon slot 8 (CLOCKEATER) makes the server reject the input and strike the player; two selections inside 5 s kick them out of the match  
+  → Stage 172 (4e626e8)
+- The full Fairness Lint has been red for a long time; CI only ever runs it with --quick  
+  → Stage 173 (2bfcc34) — gate fixed and the 89 recorded; the balance decision itself is open
+- The two broadcast endings wipe_fire and wipe_quiet can never be played — the finale is keyed on `m7:ending`, which no choice ever sets to either id  
+  → Stage 174 (9ab3a09)
+- Two of m5's six "lattice nodes" spawn sealed inside solid buildings, so BLIND THE MODEL cannot be completed on the m3 "HOLD IT" branch  
+  → Stage 175 (b6e526d)
+- The 400 $CAPITAL Deep Wake season pass grants nothing: its cosmetics are written to `a.owned`, but every consumer reads `a.cosmetics`  
+  → Stage 176 (29ebb85)
+- The opening crawl's audio can never sound: the AudioContext is only created after the crawl is over  
+  → Stage 177 (b4c0402)
+- A buffered jump survives death: the player involuntarily jumps on the first tick after respawning  
+  → Stage 178 (16e73d1)

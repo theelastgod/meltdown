@@ -83,9 +83,11 @@ client/     Vite + Three.js presentation: input, renderer (post chain, rain, wet
 server/     authoritative room (transport-agnostic), Node host, Cloudflare Durable Object host, PlayerFile DO + D1 schema
 probe/      headless acceptance probes (one per stage)
 tests/      vitest unit tests for the simulation
-docs/       ART_BIBLE.md, STAGES.md, proof/ artifacts per stage
+docs/       HANDOFF.md, STAGES.md, BACKLOG.md, ART_BIBLE.md, proof/ artifacts per stage
 ```
 
-See `docs/STAGES.md` for the stage plan, `docs/ART_BIBLE.md` for the
-visual ground truth, and `docs/TOKENOMICS.md` for $CAPITAL, the on-chain currency
+Picking this up? Start at `docs/HANDOFF.md` — the method, the rules, and what is open.
+
+See `docs/STAGES.md` for the stage plan, `docs/BACKLOG.md` for verified unfixed
+findings, `docs/ART_BIBLE.md` for the visual ground truth, and `docs/TOKENOMICS.md` for $CAPITAL, the on-chain currency
 on Robinhood Chain.
