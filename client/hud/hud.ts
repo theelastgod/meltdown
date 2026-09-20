@@ -771,8 +771,10 @@ export class Hud {
   }
 
   update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60): void {
-    // the tutorial teaches only what the file has not yet done (Stage 130)
-    const seen = learn(this.seen, { speed, sprintSpeed: SPRINT_READ, shots: p.stats.shots, reloading: p.weapon.reloadTimer > 0, jumps: p.stats.jumps, slides: p.stats.slides });
+    // the tutorial teaches only what the file has not yet done (Stage 130), read from the sim's own
+    // running totals rather than this frame's speed: it is folded on drawn frames, and a sprint
+    // that peaks between two of them is still a sprint the file performed (Stage 164)
+    const seen = learn(this.seen, { topSpeed: p.stats.topSpeed, sprintSpeed: SPRINT_READ, shots: p.stats.shots, reloading: p.weapon.reloadTimer > 0, jumps: p.stats.jumps, slides: p.stats.slides });
     if (seen.moved !== this.seen.moved || seen.fired !== this.seen.fired || seen.reloaded !== this.seen.reloaded || seen.jumped !== this.seen.jumped || seen.slid !== this.seen.slid || seen.sprinted !== this.seen.sprinted) {
       this.seen = seen;
       const line = keysLine(seen);

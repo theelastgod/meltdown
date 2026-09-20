@@ -62,6 +62,36 @@ async function main(): Promise<void> {
     return s.png;
   };
   try {
+    // Stage 164: the tutorial is folded inside the drawn-frame branch, and five of its six facts
+    // are the sim's own running totals — shots, jumps, slides, and a reload that lasts long enough
+    // to land in any frame. Sprinting was the one read from the frame's instantaneous speed, so on
+    // a machine whose sim outruns its renderer a sprint could peak and fall away between two drawn
+    // frames, and the line went on asking for a key the file had already pressed. `advance()` runs
+    // its ticks synchronously and draws nothing, so a whole sprint inside one call is exactly that
+    // machine: the only frames drawn here are the one before it and the one after, both at rest.
+    const gapPage = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    await gapPage.goto(URL + "?headless=1&ai=0&level=drainage_yard", { waitUntil: "load" });
+    await gapPage.waitForFunction(() => window.__game?.ready === true, null, { timeout: 30000, polling: 100 });
+    const gapPlan: BotStep[] = [
+      { kind: "goto", x: 0, z: 16, sprint: true }, // sprint the lane
+      { kind: "hold", ticks: 60 }, // and come to a stop, all of it inside one advance()
+    ];
+    await gapPage.evaluate((pl) => window.__game.setBot(pl), gapPlan);
+    const gap = await gapPage.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const keys = document.querySelector("#hud .keys") as HTMLElement;
+      const before = keys.textContent ?? "";
+      const v0 = window.__game.state().vel;
+      const restBefore = Math.hypot(v0.x, v0.z);
+      window.__game.advance(200); // the sprint and the stop, with no frame drawn inside it
+      const v1 = window.__game.state().vel;
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return { before, restBefore, restAfter: Math.hypot(v1.x, v1.z), after: keys.textContent ?? "", top: window.__game.state().stats.topSpeed };
+    });
+    await gapPage.close();
+    const drawnAt = Math.max(gap.restBefore, gap.restAfter);
+    check("a sprint that begins and ends between two drawn frames is still learned", /SHIFT sprint/.test(gap.before) && gap.top >= 6.2 && drawnAt < 0.5 && !/SHIFT sprint/.test(gap.after), `the sim reached ${gap.top.toFixed(2)} m/s while no drawn frame saw above ${drawnAt.toFixed(2)} · line "${gap.before}" \u2192 "${gap.after || "(empty)"}"`);
+
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(String(e)));
@@ -150,6 +180,23 @@ async function main(): Promise<void> {
     // if the magazine ran out and it did)
     const keysAfter = await page.evaluate(() => { const k = document.querySelector("#hud .keys") as HTMLElement; return { text: k.textContent ?? "", hidden: k.hidden }; });
     check("the tutorial line teaches everything to a file that has done nothing, and after the run only what it has not done", keysBefore === "WASD · HOLD CLICK fire · R reload · SPACE jump · CTRL slide · SHIFT sprint" && !/WASD|HOLD CLICK|SPACE|CTRL|SHIFT/.test(keysAfter.text) && (keysAfter.text === "R reload" || (keysAfter.text === "" && keysAfter.hidden)), `before: "${keysBefore}" · after: "${keysAfter.text}" (hidden ${keysAfter.hidden})`);
+    // Stage 164: the tutorial is folded on drawn frames only, and five of its six facts are the
+    // sim's own running totals — shots, jumps, slides, and a reload that lasts long enough to land
+    // in any frame. Sprinting was the one read from the frame's instantaneous speed, so a sprint
+    // that peaked between two drawn frames left the line asking for a key the file had pressed.
+    // This run is exactly that regime: the sim is driven in 30-tick chunks and only a handful of
+    // frames are drawn across it. Every lesson the sim's counters can state is held against the
+    // drawn line, the sprint one included.
+    const simFacts: [string, boolean][] = [
+      ["WASD", state.stats.topSpeed > 0.5],
+      ["HOLD CLICK fire", state.stats.shots > 0],
+      ["SPACE jump", state.stats.jumps > 0],
+      ["CTRL slide", state.stats.slides > 0],
+      ["SHIFT sprint", state.stats.topSpeed >= 6.2],
+    ];
+    const undone = simFacts.filter(([, done]) => !done).map(([text]) => text);
+    const stillOffered = simFacts.filter(([, done]) => done).map(([text]) => text).filter((text) => keysAfter.text.includes(text));
+    check("the tutorial offers no key the sim's own counters say the file has used", undone.length === 0 && stillOffered.length === 0, `top ${state.stats.topSpeed.toFixed(2)} m/s vs sprint read 6.2 · shots ${state.stats.shots} · jumps ${state.stats.jumps} · slides ${state.stats.slides} → line "${keysAfter.text}"${stillOffered.length ? ` still offers ${stillOffered.join(", ")}` : ""}${undone.length ? ` · the run did not do ${undone.join(", ")}` : ""}`);
     check("bot killed dummy 1 with hitscan", !!kill && state.stats.kills >= 1, kill && kill.type === "kill" ? `victim ${kill.victimId} after ${kill.ttkTicks} ticks` : "no kill event");
     check("TTK inside the 0.6–1.0 s band", !!kill && kill.type === "kill" && kill.ttkSeconds >= 0.6 && kill.ttkSeconds <= 1.0, kill && kill.type === "kill" ? `${kill.ttkSeconds.toFixed(3)} s` : "n/a");
     const shots = events.filter((e) => e.type === "shot");
@@ -180,6 +227,7 @@ async function main(): Promise<void> {
     const h2 = await page2.evaluate(() => window.__game.state().hash);
     check("replaying the same input plan reproduces the same world hash", h2 === state.hash, `${state.hash} == ${h2}`);
     await page2.close();
+
 
     // --- Screenshot: bot on the deck, looking at the dummy ---
     await page.waitForTimeout(120);

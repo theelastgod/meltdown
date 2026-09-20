@@ -1641,6 +1641,74 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 164 — Five of the tutorial's six facts were counted; the sixth was sampled, and it was the one that went missing
+
+**Goal.** Stage 163's sweep failed one check that was not Stage 163's, and it was written down
+rather than re-run past: the first probe's tutorial line came back `R reload · SHIFT sprint` where
+it wants no `SHIFT`, then 19/19 on a re-run of the same tree. This is that check's defect, and it
+is the player's, not the probe's.
+
+`learn()` is folded inside `Hud.update()`, which `frame()` reaches only past `if (!render ||
+!this.drawing) return;` — so the tutorial samples nothing but frames the renderer actually drew.
+Five of its six facts survive that, because they are the sim's own running totals: `stats.shots`,
+`stats.jumps` and `stats.slides` only rise, and a reload holds `reloadTimer > 0` long enough to
+land in any frame at all. The sixth read `speed`: the horizontal velocity of the one frame being
+drawn.
+
+A sprint is a moment, and sampling catches a moment only if it happens to be looking. Driven in
+30-tick chunks with a frame between them — the first probe's regime, and a slow machine's — the sim
+reached 7.2 m/s over 410 ticks while 19 frames were drawn, and the line went on asking for SHIFT.
+The slower the machine, the longer this game tells you to press a key you have already pressed.
+
+This is Stage 156's defect one layer over. That stage moved the fps window out of the drawn-frame
+branch because it was counting frames from inside the branch that only runs when a frame is drawn.
+Work that belongs to every frame does not belong under that return.
+
+**What changed.**
+
+- `client/hud/keys.ts` — `learn()` takes `topSpeed` where it took `speed`. Every fact it reads is
+  now cumulative, so a frame missed is not a lesson missed.
+- `client/hud/hud.ts` — the call passes `p.stats.topSpeed`, the sim's own high-water mark, taken
+  every tick at `shared/sim/player.ts:545` and only ever rising. The foot line's `m/s` and its
+  stance word still read the frame's own speed, and should: those say what is happening, and the
+  tutorial says what has happened.
+- `tests/keys.test.ts` — a sprint whose peak fell between two drawn frames, the threshold held at
+  the read rather than above it, and moving kept apart from sprinting at 0.5 m/s.
+- `probe/stage1.ts` — two checks. The drawn line is now held against every lesson the sim's own
+  counters can state, rather than against a string typed into the probe. And, on a page of its own
+  before anything else runs, a whole sprint goes inside a single `advance()` call: `advance()` ticks
+  synchronously and draws nothing, so the only frames drawn are the one before it and the one after,
+  both with the file at rest. That is the slow machine exactly, and unlike a chunked run it is not
+  a matter of where the frames happen to fall.
+
+**Proof.** vitest 864/864. `npm run probe` 21/21, including `the sim reached 7.20 m/s while no drawn
+frame saw above 0.00 · line "WASD · HOLD CLICK fire · R reload · SPACE jump · CTRL slide · SHIFT
+sprint" → "HOLD CLICK fire · R reload · SPACE jump · CTRL slide"`, and `top 9.40 m/s vs sprint read
+6.2 · shots 7 · jumps 3 · slides 1 → line "R reload"`. The whole sweep as CI runs it green but for one check that is not this
+stage's, below.
+
+Mutation A, the call site handed the frame's own speed again: `probe` fails 3 times out of 3 on
+`the sim reached 7.20 m/s while no drawn frame saw above 0.00`, and the bot run's two tutorial
+checks come back `R reload · SHIFT sprint` with it. Mutation B, the sprint read doubled so nothing
+reaches it: 3 of the 7 unit tests fail and the probe stays green, correctly — the call site is still
+handing over the mark. Mutation C, the walk read dropped to 0: 1 test. Mutation D, the sprint fact
+no longer sticky: `never forgets a lesson`, alone.
+
+One failure in this stage's sweep was not this stage's. `probe:body`'s `a jump splits the legs and
+flares the hem` came back `1 air frames` where it wants 2, and 20/20 with `2 air frames · widest
+split 0.80 rad` on three clean re-runs of the same tree. It drives one jump in realtime and counts
+the rendered frames that land off the ground, calling `state()` — which hashes the world — on every
+one of 240; when the machine is busy the count it is waiting for does not arrive. Nothing in this
+stage touches the rig or that probe. That is the next stage's.
+
+The first guard written for this stage did not guard it, and that is the part worth keeping. It read
+the drawn line against the sim's counters at the end of the existing bot run — derived rather than
+hardcoded, which is an improvement, and still green 5 times out of 5 with the fix reverted. The bot
+slides at 9.4 m/s for thirty ticks, so a drawn frame catches the peak almost every time; Stage 163
+caught the once it did not. A check that fails one run in twenty is not a guard. Putting the whole
+sprint inside one `advance()` call takes the luck out: with the fix reverted it fails every time,
+because there is no drawn frame above 0.00 m/s for the sampled read to find.
+
 ## Stage 163 — The first screen a player sees offered two keys it had not got
 
 **Goal.** The menu's footer reads `↑↓ MOVE · ENTER SELECT · ← → ADJUST · ESC BACK`, and it is the
