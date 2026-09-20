@@ -1641,6 +1641,102 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 176 — Four hundred $CAPITAL for three things the game could not see
+
+**Goal.** The Deep Wake season pass is the largest sink in the economy: `SEASON_PASS_PRICE = 400`
+$CAPITAL, burned on chain, gone from the supply. What it hands back is deliberately small and
+deliberately off-chain — a theme and two slots, *"no stat, no token, nothing the sim reads"*, so
+that the game's biggest sink can never become a trading vehicle:
+
+| grant | what it says it is |
+| --- | --- |
+| `theme_deep_wake` | DEEP WAKE — *"the colour the graph goes when a season ends and nobody wins"* |
+| `alias_4` | ALIAS SLOT IV — *"a fourth saved name, for the season you paid to sit out of"* |
+| `preset_6` | PRESET SLOT VI — *"a sixth saved loadout"* |
+
+The counter-ledger granted them like this:
+
+```ts
+if (bought.includes(season)) for (const id of SEASON_PASS_GRANTS) if (!a.owned.includes(id)) a.owned.push(id);
+```
+
+`a.owned` is the progression-item list: nodes, chips, keystones, weapons. Every consumer of a
+cosmetic reads `a.cosmetics`, whose only writer is the Wakelight shop. Measured on an account
+holding exactly what that line writes:
+
+```
+AFTER : owned has all grants? true · cosmetics []
+RESULT slotsOf {"aliases":1,"presets":1}
+RESULT setTheme(theme_deep_wake) -> false
+RESULT savePreset(6) -> {"ok":false,"reason":"slot 6 not owned (1 slots)"}
+RESULT setAlias(4) -> {"ok":false,"reason":"slot 4 not owned (1 slots)"}
+```
+
+The theme would not apply. Both slots stayed locked. **The pass bought nothing at all**, and the
+400 $CAPITAL was burned all the same.
+
+**The probe that proves the sink was checking the wrong list.** `probe:run` asserts the burn, the
+supply drop and then `SEASON_PASS_GRANTS.every((g) => fs.owned.includes(g))` — the list the defect
+wrote to. It passed every run. This is the same shape as Stage 171's chip lint and Stage 174's
+ending filter: a guard that measures the half that works.
+
+**Half the repair is the list; the other half is how a slot is counted.** `slotsOf` read the
+*number* of `alias_` / `preset_` ids on the file. That is right for anything bought in the shop,
+because `buyCosmetic` refuses slot n before slot n-1, so shop-bought ids are contiguous and the
+count equals the highest. It is wrong for a pass that grants `alias_4` and `preset_6` outright —
+one past the top of the shop (which sells up to `alias_3` and `preset_5`) and the only way to reach
+either. Moving the ids to `cosmetics` alone would have given a pass holder **two** alias slots, not
+four, and `setAlias(4)` would still have failed. `slotsOf` now reads the highest slot owned, which
+is identical for every combination the shop can sell — a test walks the whole ladder and requires
+the two readings to agree at each rung — and means what the id says for a grant.
+
+**What changed.**
+
+- `shared/economy/catalog.ts` — `grantSeasonPass(a)`: the grants go on `a.cosmetics`, idempotently,
+  because a reconcile runs on every counter refresh. That also repairs files that already paid: the
+  next refresh puts the cosmetics where they can be found, with no migration.
+- `server/chain/ledger.ts` — `reconcile` calls it.
+- `shared/endgame/rewrite.ts` — `slotsOf` reads the highest owned slot; `buyCosmetic` refuses to
+  sell a slot the file already has, so a pass holder cannot be charged 90 Wakelight for ALIAS SLOT
+  II when they already hold four.
+- `probe/stage14.ts` — the sink check reads `cosmetics`.
+
+**Proof.** vitest 971/971, thirteen new in `tests/seasonpass.test.ts`, nothing existing moved. The
+full sweep ran green on a still tree: 23 probes, 523 checks — `probe` 21/21, `probe:look` 18/18,
+`probe:net` 27/27, `probe:arsenal` 32/32, `probe:wake` 27/27, `probe:file` 20/20, `probe:city`
+45/45, `probe:cityLife` 21/21, `probe:mastery` 23/23, `probe:identity` 25/25, `probe:campaign`
+46/46, `probe:endgame` 18/18, `probe:economy` 1/1, `probe:counter` 16/16, `probe:crawl` 10/10,
+`probe:ship` 11/11, `probe:run` **27/27** with the sink check now reading the list the game uses,
+`probe:harden` 9/9, `probe:frame` 8/8, `probe:mobile` 40/40, `probe:persist` 7/7, `probe:tps` 50/50,
+`probe:body` 21/21. Build clean, smoke 7/7. `probe:run` passed in sequence for the fifth sweep
+running.
+
+The central guard is written over `SEASON_PASS_COSMETICS` rather than over these three ids: for each
+grant it asks the game to *use* the thing — apply the theme, write to the alias slot, save into the
+preset slot — so a fourth grant added later has to work rather than merely be present. Presence is
+exactly what the old probe check measured.
+
+Six mutations:
+
+- **A**, the grant back on `a.owned` — the defect itself: 3 of 13 fail.
+- **B**, `slotsOf` back to counting ids: 3 fail, including the ladder test that holds counting and
+  highest to agree wherever both are defined.
+- **C**, the already-owned sale check removed: 1 fails, on Wakelight actually leaving the wallet.
+- **D**, the grant disconnected from `reconcile` while the function stays: **this passed**, and was
+  a hole — every other test called `grantSeasonPass` by name. `probe:run` does catch it, against a
+  real chain, in about two and a half minutes. Closed with a cheap check that the ledger's held-pass
+  branch calls the grant, so the unit suite says it too.
+- **E**, the grant not idempotent: 1 fails.
+- **F**, `slotsOf` taking the max without the floor of one: 2 fail — a file that has never bought
+  anything still has one alias and one preset.
+
+**The architecture caught me mid-stage, which is the point of having it.** `grantSeasonPass` went
+first into `shared/endgame/rewrite.ts`, beside the other cosmetic functions, importing the pass
+definition from `shared/economy/catalog.ts`. Two tests failed immediately: `tests/quarantine.test.ts`
+and `tests/counter.test.ts` both hold that the PvP match bundle never reaches `shared/economy` or
+`server/chain`, and `rewrite.ts` is in that bundle's graph. The import would have pulled prices into
+the room. The grant lives on the economy side instead, where the pass it implements already lives.
+
 ## Stage 175 — Two of the six lattice nodes were sealed inside a building
 
 **Goal.** BLIND THE MODEL is mission five of seven. *"Destroy the sensor lattice district by

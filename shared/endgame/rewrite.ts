@@ -62,10 +62,19 @@ export function rewrite(a: Account): { ok: boolean; reason?: string; wakelight?:
   return { ok: true, wakelight: REWRITE_WAKELIGHT };
 }
 
-/** Slots a file has: one alias and one preset for free, more from the shop. */
+/**
+ * Slots a file has: one alias and one preset for free, more from the shop.
+ *
+ * Read as the highest slot owned rather than as a count of ids (Stage 176). For anything bought in
+ * the shop the two are the same number, because `buyCosmetic` refuses to sell slot n before slot
+ * n-1 and the ids are therefore contiguous. They come apart for the Deep Wake pass, which grants
+ * `alias_4` and `preset_6` — one past the top of the shop, and the only way to reach either. An id
+ * that says it is the fourth slot has to mean the file has four.
+ */
 export function slotsOf(a: Account): { aliases: number; presets: number } {
   const owned = a.cosmetics ?? [];
-  return { aliases: 1 + owned.filter((id) => id.startsWith("alias_")).length, presets: 1 + owned.filter((id) => id.startsWith("preset_")).length };
+  const top = (kind: string) => Math.max(1, ...owned.filter((id) => id.startsWith(`${kind}_`)).map((id) => Number(id.slice(kind.length + 1))).filter(Number.isFinite));
+  return { aliases: top("alias"), presets: top("preset") };
 }
 
 export function buyCosmetic(a: Account, id: string): { ok: boolean; reason?: string } {
@@ -73,9 +82,13 @@ export function buyCosmetic(a: Account, id: string): { ok: boolean; reason?: str
   if (!c) return { ok: false, reason: "unknown cosmetic" };
   a.cosmetics = a.cosmetics ?? [];
   if (a.cosmetics.includes(id)) return { ok: false, reason: "already owned" };
-  // slots come in order
+  // slots come in order, and a slot the file already has is not for sale: a Deep Wake pass grants
+  // the top slot outright, and selling the ones underneath it afterwards would charge Wakelight
+  // for nothing (Stage 176)
   if (c.kind !== "theme") {
     const n = Number(id.split("_")[1]);
+    const have = c.kind === "alias" ? slotsOf(a).aliases : slotsOf(a).presets;
+    if (n <= have) return { ok: false, reason: `${c.kind} slot ${n} already owned (${have} slots)` };
     if (n > 2 && !a.cosmetics.includes(`${c.kind}_${n - 1}`)) return { ok: false, reason: `needs ${c.kind} slot ${n - 1} first` };
   }
   if (a.wallet.wakelight < c.wakelight) return { ok: false, reason: `needs ${c.wakelight} Wakelight` };

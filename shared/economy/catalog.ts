@@ -11,6 +11,7 @@ import { FIRMWARES } from "../manifest/firmwares";
 import { COSMETICS } from "../endgame/rewrite";
 import type { EconomyItem, MarketBlock } from "./manifest";
 import { ROOM_HOUR_PRICE, SEASON_PASS_PRICE } from "./sinks";
+import type { Account } from "../progression/account";
 
 /** An on-chain cosmetic: an ERC-1155 token id, a $CAPITAL price, a wear seed, and a palette the renderer tints with. Nothing else. */
 export interface SkinDef {
@@ -78,4 +79,19 @@ export function economyManifest(): EconomyItem[] {
   for (const c of SEASON_PASS_COSMETICS) out.push({ id: c.id, kind: c.kind === "theme" ? "theme" : "cosmetic", mechanical: null, market: null });
   out.push({ id: "rewrite_certificate", kind: "rewrite_certificate", mechanical: null, market: { capital: null, onChain: true, tradable: false, randomness: "none" } });
   return out;
+}
+
+/**
+ * Put a held Deep Wake pass's grants on the file (Stage 176).
+ *
+ * The pass is the game's largest sink: 400 $CAPITAL, burned, for a theme and two slots. Until this
+ * existed the counter-ledger wrote those three ids to `a.owned` — the progression list for nodes,
+ * chips and weapons — and every consumer of them reads `a.cosmetics`. The theme would not apply
+ * and both slots stayed locked. Idempotent, because a reconcile runs on every counter refresh.
+ */
+export function grantSeasonPass(a: Account): string[] {
+  a.cosmetics = a.cosmetics ?? [];
+  const added: string[] = [];
+  for (const c of SEASON_PASS_COSMETICS) if (!a.cosmetics.includes(c.id)) { a.cosmetics.push(c.id); added.push(c.id); }
+  return added;
 }

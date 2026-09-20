@@ -60,6 +60,7 @@ const ARGS = ["--no-proxy-server", "--use-angle=swiftshader", "--use-gl=angle", 
 interface FileRec {
   depth: number;
   owned: string[];
+  cosmetics?: string[];
   wallet: { scrip: number };
   ledger: string[];
   counter: { address: string | null; run?: { day: number; banked: number; owed: number; paid: number }; capital: string; seasons?: number[]; roomHours?: number } | null;
@@ -439,7 +440,7 @@ async function main(): Promise<void> {
       `gross ${econ.observed.grossUnits} units over ${econ.observed.runnerDays} runner-days · ${econ.note}`,
     );
 
-    check("the sinks burn: the Deep Wake pass and three room-hours leave the supply for good, the pass grants cosmetics and nothing the sim reads", buyS.ok && buyR.ok && supply0 - supply1 === owed && burn1 - burn0 === owed && (fs.counter?.seasons ?? []).includes(season) && fs.counter?.roomHours === 3 && SEASON_PASS_GRANTS.every((g) => fs.owned.includes(g)), `pass ${buyS.ok} ${buyS.reason ?? ""} · hours ${buyR.ok} ${buyR.reason ?? ""} · supply -${Number(supply0 - supply1) / 1e18} · burned +${Number(burn1 - burn0) / 1e18} · seasons [${(fs.counter?.seasons ?? []).join(",")}] · hours ${fs.counter?.roomHours} · granted ${SEASON_PASS_GRANTS.filter((g) => fs.owned.includes(g)).length}/${SEASON_PASS_GRANTS.length}`);
+    check("the sinks burn: the Deep Wake pass and three room-hours leave the supply for good, the pass grants cosmetics and nothing the sim reads", buyS.ok && buyR.ok && supply0 - supply1 === owed && burn1 - burn0 === owed && (fs.counter?.seasons ?? []).includes(season) && fs.counter?.roomHours === 3 && SEASON_PASS_GRANTS.every((g) => (fs.cosmetics ?? []).includes(g)), `pass ${buyS.ok} ${buyS.reason ?? ""} · hours ${buyR.ok} ${buyR.reason ?? ""} · supply -${Number(supply0 - supply1) / 1e18} · burned +${Number(burn1 - burn0) / 1e18} · seasons [${(fs.counter?.seasons ?? []).join(",")}] · hours ${fs.counter?.roomHours} · granted ${SEASON_PASS_GRANTS.filter((g) => (fs.cosmetics ?? []).includes(g)).length}/${SEASON_PASS_GRANTS.length} onto the list the game reads`);
 
     // ---- private rooms (Stage 20): the hours open a room, the code is the door, it mints nothing ----
     const hoursBefore = (await file(acct)).counter?.roomHours ?? 0;

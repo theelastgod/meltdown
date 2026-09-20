@@ -11,7 +11,7 @@ import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import { parseSiweMessage, validateSiweMessage } from "viem/siwe";
 import type { Account, CounterRecord } from "../../shared/progression/account";
 import { MAX_CAPITAL_PER_UNIT, emptyCounter, LAUNCH_GRANT, LAUNCH_GRANT_DEPTH, NAME_DEPTH, nameFee, SIWE_STATEMENT, validName } from "../../shared/economy/counter";
-import { SEASON_PASS_GRANTS, SKINS } from "../../shared/economy/catalog";
+import { grantSeasonPass, SKINS } from "../../shared/economy/catalog";
 import { ARTIFACTS, type Contracts } from "./deploy";
 import { GameSigner } from "./signer";
 import type { WalletStore } from "./wallets";
@@ -480,8 +480,13 @@ export class CounterLedger {
       const worn = rig.includes(c.worn) ? c.worn : 0;
       const bought = seasons.filter((_, i) => held[i]);
       a.counter = { ...c, capital: formatEther(capital), ghostfile: Number(token), name: name || null, rig, worn, seasons: bought, roomHours: Number(hours) };
-      // a pass grants cosmetics and nothing else — the lint refuses a mechanical block on any of them
-      if (bought.includes(season)) for (const id of SEASON_PASS_GRANTS) if (!a.owned.includes(id)) a.owned.push(id);
+      // A pass grants cosmetics and nothing else — the lint refuses a mechanical block on any of
+      // them — so they go on the cosmetics list, which is the list every consumer reads. Until
+      // Stage 176 they went to `a.owned`, the progression-item list for nodes, chips and weapons,
+      // where nothing looks for them: 400 $CAPITAL burned for a theme that would not apply and two
+      // slots that stayed locked. The write is idempotent and runs on every reconcile, so a file
+      // that already paid picks them up the next time its counter refreshes.
+      if (bought.includes(season)) grantSeasonPass(a);
       return { ok: true, counter: a.counter };
     } catch (e) {
       return soft(e);
