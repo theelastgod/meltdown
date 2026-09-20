@@ -45,7 +45,7 @@ interface Check {
 const ARGS = ["--no-proxy-server", "--use-angle=swiftshader", "--use-gl=angle", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--autoplay-policy=no-user-gesture-required", "--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows"];
 
 function lint(args: string[]): { code: number; out: string } {
-  const r = spawnSync(process.execPath, ["node_modules/tsx/dist/cli.mjs", "shared/fairness/cli.ts", "--quick", ...args], { encoding: "utf8", timeout: 240000 });
+  const r = spawnSync(process.execPath, ["node_modules/tsx/dist/cli.mjs", "shared/fairness/cli.ts", ...args], { encoding: "utf8", timeout: 240000 });
   return { code: r.status ?? -1, out: (r.stdout ?? "") + (r.stderr ?? "") };
 }
 
@@ -64,12 +64,16 @@ async function main(): Promise<void> {
   };
 
   // ---------------- fairness lint ----------------
+  // The full lint, all eight weapons. Until Stage 173 this said `--quick`, which duels three of
+  // them, and every violation the full lint has ever reported is on one of the five it skipped.
   const clean = lint([]);
   const head = clean.out.split("\n")[0] ?? "";
-  check("lint: the shipped catalogue passes the Fairness Lint", clean.code === 0 && /FAIRNESS LINT PASS/.test(clean.out), head);
-  const tradeless = lint(["--inject=tradeless"]);
+  const ledger = clean.out.split("\n").find((l) => l.startsWith("recorded debt")) ?? "";
+  check("lint: the shipped catalogue passes the Fairness Lint, all eight weapons duelled", clean.code === 0 && /FAIRNESS LINT PASS/.test(clean.out), `${head} · ${ledger}`);
+  check("lint: nothing new and nothing worse against the recorded debt", /new 0 · worse 0/.test(clean.out), ledger || "no debt line printed");
+  const tradeless = lint(["--quick", "--inject=tradeless"]);
   check("lint: an injected trade-less node fails (schema + TTK + beats-every-bracket)", tradeless.code === 1 && /non-empty-costs/.test(tradeless.out) && /BEATS EVERY BRACKET/.test(tradeless.out), tradeless.out.split("\n").filter((l) => /VIOLATION|BEATS/.test(l)).slice(0, 2).join(" | "));
-  const netpower = lint(["--inject=netpower"]);
+  const netpower = lint(["--quick", "--inject=netpower"]);
   check("lint: an injected reconciled-but-net-power node fails on simulation, not arithmetic", netpower.code === 1 && /ttk-deviation/.test(netpower.out) && !/non-empty-costs/.test(netpower.out), netpower.out.split("\n").filter((l) => /VIOLATION/.test(l)).slice(0, 2).join(" | "));
 
   const host = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "server/node-host.ts", String(HOST_PORT)], { stdio: ["ignore", "pipe", "pipe"] });

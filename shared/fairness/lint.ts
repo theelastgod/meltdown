@@ -23,6 +23,11 @@ export const RANGE_BRACKETS = [3, 8, 15, 25, 40] as const;
 export const TTK_DEVIATION_LIMIT = 0.04;
 /** A bracket where the baseline weapon needs longer than this is out of role: it feeds only the every-bracket rule. */
 export const IN_ROLE_TTK = 3.0;
+/**
+ * The mobility course is a continuous measurement, not a count of shots, so its only slack is
+ * float noise (Stage 173).
+ */
+export const MOBILITY_SLACK = 1e-3;
 export const MOBILITY_DEVIATION_LIMIT = 0.05;
 /** Keystones are the rule-benders: they may lose more, never gain more, and get one violent mobility axis. */
 export const KEYSTONE_MOBILITY_LIMIT = 0.12;
@@ -95,6 +100,23 @@ export interface LintViolation {
   build: string;
   rule: string;
   detail: string;
+  /**
+   * A stable name for *this* violation, independent of the numbers it carries (Stage 173). The
+   * detail string moves whenever a measurement moves; the identity does not, which is what lets a
+   * recorded violation be recognised again and a new one be told apart from it.
+   */
+  key: string;
+  /** How far out of bounds, as a fraction (0.192 = 19.2%). Compared against the record to catch drift. */
+  magnitude: number;
+  /**
+   * The smallest change this measurement can express, as the same fraction (Stage 173).
+   *
+   * A duel's time-to-kill is a whole number of shots, so it moves in steps of one shot interval and
+   * nothing smaller: on the SMG at 25 m that step is 5.9% of the kill, and on CLOCKEATER at 25 m it
+   * is 28.3%. A recorded violation is "worse" only when it grows by more than its own step, because
+   * anything at or below that is the same measurement landing on the next shot.
+   */
+  slack: number;
 }
 
 export interface BuildReport {
@@ -216,7 +238,7 @@ export interface FairnessReport {
 export function runFairnessLint(opts: { weapons?: readonly WeaponId[]; builds?: Candidate[]; quick?: boolean } = {}): FairnessReport {
   const violations: LintViolation[] = [];
   const schema = [...lintItemSchema(), ...lintChipSchema()];
-  for (const v of schema) violations.push({ build: v.itemId, rule: "schema:" + v.rule, detail: v.detail });
+  for (const v of schema) violations.push({ build: v.itemId, rule: "schema:" + v.rule, detail: v.detail, key: `${v.itemId}|schema:${v.rule}`, magnitude: 0, slack: 0 });
   const quickWeapons = ["lease_breaker", "repo_hammer", "longwave"] as WeaponId[];
   const weapons = opts.weapons ?? (opts.quick ? quickWeapons : WEAPON_LIST.map((w) => w.id));
   // weapon-scoped builds (chips, firmwares) duel their own weapon, which may be outside the quick set
@@ -229,7 +251,7 @@ export function runFairnessLint(opts: { weapons?: readonly WeaponId[]; builds?: 
     const owned = [...b.loadout.attested, ...(b.loadout.keystone ? [b.loadout.keystone] : [])];
     const legal = validateLoadout(b.loadout, owned, 50, SANDBOX_RANKS);
     const bv: LintViolation[] = [];
-    if (!legal.ok) bv.push({ build: b.name, rule: "illegal-build", detail: legal.errors.map((e) => e.detail).join("; ") });
+    if (!legal.ok) bv.push({ build: b.name, rule: "illegal-build", detail: legal.errors.map((e) => e.detail).join("; "), key: `${b.name}|illegal-build`, magnitude: 0, slack: 0 });
     const table = duelTable(legal.loadout, b.weapons ?? weapons);
     let worstOffense = 0;
     let worstDefense = 0;
@@ -250,18 +272,73 @@ export function runFairnessLint(opts: { weapons?: readonly WeaponId[]; builds?: 
       worstOffense = Math.max(worstOffense, Math.abs(dOff));
       worstDefense = Math.max(worstDefense, Math.abs(dDef));
       // nodes: symmetric ±4%. keystones: no gain beyond 4%; losses are the trade.
+      // one shot of this weapon, as a fraction of the baseline kill: the finest step this duel has
+      const shot = 60 / WEAPONS[r.weapon].rpm;
+      const offSlack = ref.offense > 0 && Number.isFinite(ref.offense) ? shot / ref.offense : 0;
+      const defSlack = ref.defense > 0 && Number.isFinite(ref.defense) ? shot / ref.defense : 0;
       const offBad = keystone ? dOff < -lim : Math.abs(dOff) > lim;
       const defBad = keystone ? dDef > lim : Math.abs(dDef) > lim;
-      if (offBad) bv.push({ build: b.name, rule: "ttk-deviation", detail: `${r.weapon} @${r.range} m offense ${(dOff * 100).toFixed(1)}% (${r.offense.toFixed(3)} vs ${ref.offense.toFixed(3)} s)` });
-      if (defBad) bv.push({ build: b.name, rule: "ttk-deviation", detail: `${r.weapon} @${r.range} m defense ${(dDef * 100).toFixed(1)}% (${r.defense.toFixed(3)} vs ${ref.defense.toFixed(3)} s)` });
+      if (offBad) bv.push({ build: b.name, rule: "ttk-deviation", key: `${b.name}|ttk-deviation|${r.weapon}|${r.range}|offense`, magnitude: Math.abs(dOff), slack: offSlack, detail: `${r.weapon} @${r.range} m offense ${(dOff * 100).toFixed(1)}% (${r.offense.toFixed(3)} vs ${ref.offense.toFixed(3)} s)` });
+      if (defBad) bv.push({ build: b.name, rule: "ttk-deviation", key: `${b.name}|ttk-deviation|${r.weapon}|${r.range}|defense`, magnitude: Math.abs(dDef), slack: defSlack, detail: `${r.weapon} @${r.range} m defense ${(dDef * 100).toFixed(1)}% (${r.defense.toFixed(3)} vs ${ref.defense.toFixed(3)} s)` });
     }
-    if (beatsEvery) bv.push({ build: b.name, rule: "beats-every-bracket", detail: "faster than baseline in all five range brackets" });
+    if (beatsEvery) bv.push({ build: b.name, rule: "beats-every-bracket", detail: "faster than baseline in all five range brackets", key: `${b.name}|beats-every-bracket`, magnitude: 0, slack: 0 });
     const mobility = b.weapons ? baselineMobility : mobilityCourse(legal.loadout); // chips apply while held; the course holds the rifle
     const dm = mobility / baselineMobility - 1;
     const mlim = keystone ? KEYSTONE_MOBILITY_LIMIT : MOBILITY_DEVIATION_LIMIT;
-    if (Math.abs(dm) > mlim) bv.push({ build: b.name, rule: "mobility-deviation", detail: `course ${mobility.toFixed(2)} s vs ${baselineMobility.toFixed(2)} s (${(dm * 100).toFixed(1)}%, limit ±${mlim * 100}%)` });
+    if (Math.abs(dm) > mlim) bv.push({ build: b.name, rule: "mobility-deviation", key: `${b.name}|mobility-deviation`, magnitude: Math.abs(dm), slack: MOBILITY_SLACK, detail: `course ${mobility.toFixed(2)} s vs ${baselineMobility.toFixed(2)} s (${(dm * 100).toFixed(1)}%, limit ±${mlim * 100}%)` });
     builds.push({ name: b.name, loadout: legal.loadout, worstOffense, worstDefense, beatsEveryBracket: beatsEvery, mobility, violations: bv });
     violations.push(...bv);
   }
   return { ok: violations.length === 0, schema, baseline, baselineMobility, builds, violations };
+}
+
+/** One violation the project has looked at, decided about, and written down (Stage 173). */
+export interface DebtEntry {
+  key: string;
+  /** the magnitude when it was recorded; a later run may not exceed it by more than that duel's own slack */
+  magnitude: number;
+  /** the detail string at the time of recording, so the file reads as a list of decisions, not hashes */
+  detail: string;
+}
+
+export interface DebtReport {
+  /** violations with no entry in the record — the build must fail on these */
+  fresh: LintViolation[];
+  /** recorded violations that grew by more than their own slack — the build must fail on these too */
+  worsened: { violation: LintViolation; was: number }[];
+  /** recorded violations that no longer happen: good news, and a line to delete from the record */
+  cleared: DebtEntry[];
+  /** true when nothing new and nothing worse */
+  ok: boolean;
+}
+
+/**
+ * Reconcile a run against the recorded debt.
+ *
+ * The full Fairness Lint has been red since the commit that introduced it, and CI has only ever run
+ * it with `--quick`, which duels three of the eight weapons and so cannot see any of it. A gate
+ * nobody can pass gets routed around; this is the shape Stage 30 found and it had been here from
+ * the beginning. The answer is not to loosen the rule — the violations are real — but to write the
+ * known ones down where they can be read and counted, and to fail on anything that is not on that
+ * list. The debt is then visible, frozen, and can only be paid down.
+ *
+ * A cleared entry is reported and does not fail: a run that fixes something should not go red for
+ * fixing it. The count is printed either way, so a record that has rotted is obvious.
+ */
+export function reconcileDebt(violations: readonly LintViolation[], debt: readonly DebtEntry[]): DebtReport {
+  const recorded = new Map(debt.map((d) => [d.key, d]));
+  const seen = new Set<string>();
+  const fresh: LintViolation[] = [];
+  const worsened: { violation: LintViolation; was: number }[] = [];
+  for (const v of violations) {
+    const d = recorded.get(v.key);
+    if (!d) {
+      fresh.push(v);
+      continue;
+    }
+    seen.add(v.key);
+    if (v.magnitude > d.magnitude + v.slack) worsened.push({ violation: v, was: d.magnitude });
+  }
+  const cleared = debt.filter((d) => !seen.has(d.key));
+  return { fresh, worsened, cleared, ok: fresh.length === 0 && worsened.length === 0 };
 }

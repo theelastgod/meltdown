@@ -50,7 +50,7 @@ jobs:
         if: ${{ !cancelled() }}
       - run: npm run probe:wake
         if: ${{ !cancelled() }}
-      - run: npm run lint:fairness -- --quick
+      - run: npm run lint:fairness
         if: ${{ !cancelled() }}
       - run: npm run probe:file
         if: ${{ !cancelled() }}
