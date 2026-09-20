@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Fourteen have since been fixed (Stages 168–181) and
+turned out to be the same finding reported twice. Fifteen have since been fixed (Stages 168–182) and
 are listed at the foot of this file with the commit that closed them.
 
-The **18 below are open**. Every one has been read in the source — none is a hunch.
+The **17 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -84,32 +84,6 @@ searchlights at exactly the same radius as a player at Threat 0. Half the escala
 panel announces — the half it names explicitly at rating 6 — is inert; only the extra patrol
 count ever changes. Stealth builds (STATIC SKIN, DARK POOL, BLACK SWAN) are never counter-
 pressured by Threat the way the game says they are.
-
-### 4. THREAT_LINES is off by one against the mech threshold: Threat 5 announces "A REPO MECH IS ASSIGNED" while extraMechs is still 0
-
-`shared/campaign/threat.ts:31`
-
-**What the code promises.** THREAT_LINES[5] = "HUNTED · A REPO MECH IS ASSIGNED" is the single line the FILE panel
-(client/campaign.ts:529) and the explore HUD (client/campaign.ts:118) print at Threat Rating 5.
-It is a statement about what VANTAGE has just put on the street.
-
-**What it does.** `threatProfile` (threat.ts:35) gives `extraMechs: r >= 6 ? 1 : 0`, so at r=5 it returns
-`{extraWasps: 2, extraMechs: 0}`. The mech only arrives at r=6, where the line has moved on to
-"FLAGGED · DETECTION DOUBLED". Measured profile: r=4 → +2 wasps/+0 mechs "PRICED · EXTRA WASPS
-ON EVERY STREET"; r=5 → +2 wasps/+0 mechs "HUNTED · A REPO MECH IS ASSIGNED"; r=6 → +3 wasps/+1
-mech "FLAGGED · DETECTION DOUBLED". The line and the threshold it describes are one rating
-apart. In explore mode the contradiction is printed inside a single HUD string:
-client/campaign.ts:118 emits `THREAT ${rating} · ${line} · +${t.wasps} WASPS +${t.mechs} MECHS`,
-rendering at Threat 5 as "THREAT 5 · HUNTED · A REPO MECH IS ASSIGNED · +2 WASPS +0 MECHS".
-
-**Measured.** `threatProfile(5).extraMechs === 0` while `THREAT_LINES[5]` contains "REPO MECH IS ASSIGNED".
-The assertion that should hold and does not: for every r in 0..10, `/REPO
-MECH/.test(threatProfile(r).line)` implies `threatProfile(r).extraMechs > 0` — it fails at r=5.
-Behaviourally, `spawnThreat(world, threatProfile(5))` returns `{wasps: 2, mechs: 0}`.
-
-**What a player sees.** At Threat 5 the player is told a repo mech has been assigned to them, enters a district braced
-for a 400-HP mech, and there is none — and at Threat 6, when the mech does arrive, the readout
-no longer mentions it. In explore mode the HUD contradicts itself inside one line.
 
 ## Economy
 
@@ -578,3 +552,5 @@ stricter than the rule it guards.
   → Stage 180
 - Turning in the m2 informant silently kills Marrow, removing four gigs and CLOCKEATER, with no death scene  
   → Stage 181
+- THREAT_LINES is off by one against the mech threshold: Threat 5 announces a mech while extraMechs is 0  
+  → Stage 182

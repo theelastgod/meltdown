@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 182 — Threat 5 announced a mech that was not there
+
+**Goal.** THREAT_LINES[5] is "HUNTED · A REPO MECH IS ASSIGNED". `threatProfile` spawned
+`extraMechs` at `r >= 6`. At Threat 5 the FILE panel and the explore HUD printed the assignment
+next to `+0 MECHS`.
+
+**What changed.** `extraMechs: r >= 5 ? 1 : 0`. The line and the street agree. Later ratings keep
+the mech and move the line on, which is what those lines are for.
+
+**Proof.** For every rating 0..10, `/REPO MECH/.test(line)` implies `extraMechs > 0`. Mutation:
+threshold back to 6 — Threat 5 fails that walk.
+
 ## Stage 181 — Turning the informant in re-leased Marrow, with no death
 
 **Goal.** The m2 choice "TURN HIM IN to Marrow's people" is answered by Marrow in person: "The

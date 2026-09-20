@@ -32,5 +32,5 @@ export const THREAT_LINES = ["UNLISTED · THE MODEL HAS NOT NOTICED", "NOTED · 
 
 export function threatProfile(rating: number): ThreatProfile {
   const r = Math.max(0, Math.min(10, rating));
-  return { rating: r, extraWasps: Math.floor(r / 2), extraMechs: r >= 6 ? 1 : 0, detectMult: 1 + 0.06 * r, named: r >= 3, line: THREAT_LINES[r] ?? THREAT_LINES[0]! };
+  return { rating: r, extraWasps: Math.floor(r / 2), extraMechs: r >= 5 ? 1 : 0, detectMult: 1 + 0.06 * r, named: r >= 3, line: THREAT_LINES[r] ?? THREAT_LINES[0]! };
 }

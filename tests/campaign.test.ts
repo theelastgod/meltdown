@@ -56,6 +56,10 @@ describe("campaign data", () => {
     busy.counters["wins"] = 20;
     busy.campaign = { faction: "cells", testimony: {}, missionsDone: ["a", "b", "c"], gigsDone: ["x", "y"], protocols: [], worn: [], weapons: [], ending: null };
     expect(threatRating(busy)).toBeGreaterThanOrEqual(5);
+    for (let r = 0; r <= 10; r++) {
+      const p = threatProfile(r);
+      if (/REPO MECH/.test(p.line)) expect(p.extraMechs, `Threat ${r} announced a mech and spawned ${p.extraMechs}`).toBeGreaterThan(0);
+    }
   });
   it("Kernel Protocols are real power, capped at three worn", () => {
     expect(PROTOCOLS.every((p) => p.corrupted)).toBe(true);
