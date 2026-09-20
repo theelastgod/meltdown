@@ -4,7 +4,7 @@ import { DUMMY_MAX_HEALTH, DUMMY_RESPAWN_SECONDS, MOVE, SIM_DT, SIM_HZ } from ".
 import { emptyInput, type InputFrame } from "./input";
 import type { DummyDef, LevelDef } from "./level";
 import { rayBox, rayCapsule } from "./collision";
-import { applySheet, createPlayer, eyePos, modsFor, respawnPlayer, stepPlayer, weaponDefOf, type PlayerEvent, type PlayerState } from "./player";
+import { applySheet, armFromKit, createPlayer, eyePos, modsFor, respawnPlayer, stepPlayer, weaponDefOf, type PlayerEvent, type PlayerState } from "./player";
 import { DEFAULT_LOADOUT, kitFor, sheetFor, type Loadout } from "../manifest/loadout";
 import { type FireRequest } from "./weapons";
 import { createProjectile, stepProjectiles, type CapsuleTarget, type Cloud, type Projectile, type ProjKind } from "./projectiles";
@@ -216,17 +216,15 @@ export class World {
     if (extra) for (const [k, v] of Object.entries(extra) as [keyof StatSheet, number][]) sheet[k] = ADDITIVE.has(k) ? sheet[k] + v : sheet[k] * v;
     applySheet(p, sheet);
     const kit = kitFor(loadout);
-    p.kit = { defs: {}, mods: {}, mechanics: {} };
+    p.kit = { defs: {}, mods: {}, mechanics: {}, primarySlot: WEAPONS[loadout.primary]?.slot ?? 1 };
     for (const w of Object.values(WEAPONS)) {
       const k = kit[w.id];
       if (k.def !== w) p.kit.defs[w.slot] = k.def;
       if (Object.values(loadout.chips?.[w.id] ?? {}).some(Boolean)) p.kit.mods[w.slot] = k.mods;
       if (k.mechanics.length) p.kit.mechanics[w.slot] = k.mechanics;
-      // a firmware that changes the magazine starts with that magazine
-      if (k.def.magSize !== w.magSize) p.weapon.ammo[w.slot] = k.def.magSize;
     }
-    const slot = WEAPONS[loadout.primary]?.slot ?? 1;
-    p.weapon.slot = slot;
+    // the primary in hand and the firmware magazines loaded, by the one rule a respawn uses too
+    armFromKit(p);
   }
 
   removePlayer(id: number): void {

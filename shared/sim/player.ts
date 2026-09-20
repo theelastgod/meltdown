@@ -23,9 +23,28 @@ export interface PlayerKit {
   defs: Partial<Record<number, WeaponDef>>;
   mods: Partial<Record<number, StatSheet>>;
   mechanics: Partial<Record<number, ChipMechanic[]>>;
+  /** The slot the attested primary sits in: what the file spawns holding, every life (Stage 168). */
+  primarySlot: number;
 }
 
-export const emptyKit = (): PlayerKit => ({ defs: {}, mods: {}, mechanics: {} });
+export const emptyKit = (): PlayerKit => ({ defs: {}, mods: {}, mechanics: {}, primarySlot: 1 });
+
+/**
+ * The weapon state a kit implies: the chosen primary in hand, and the firmware magazines loaded
+ * (Stage 168).
+ *
+ * This used to be written once, inside `setLoadout`, and a respawn did not repeat it.
+ * `resetWeaponState` assigns a whole fresh `createWeaponState()` over the live one and that fresh
+ * state hardcodes `slot: 1` and the stock magazines — so a file came back from its own death
+ * holding the LEASE-BREAKER whatever it had attested, and with the stock magazine whatever firmware
+ * it had flashed. Four of the five primaries were lost on the first death; DUMP STAGE's magazine
+ * went 34 back to 40 and DOUBLE BARREL's 4 back to 6, which is a firmware's stated cost paid once
+ * and refunded on every respawn thereafter.
+ */
+export function armFromKit(p: PlayerState): void {
+  p.weapon.slot = p.kit.primarySlot;
+  for (const [slot, def] of Object.entries(p.kit.defs)) if (def) p.weapon.ammo[Number(slot)] = def.magSize;
+}
 
 /** The definition the sim runs for a slot: the kit's firmware-patched one, else stock. */
 export const weaponDefOf = (p: PlayerState, slot = p.weapon.slot): WeaponDef => p.kit.defs[slot] ?? stockDefOf(slot);
@@ -180,6 +199,7 @@ export function respawnPlayer(p: PlayerState, spawn: SpawnPoint): void {
   p.height = MOVE.standHeight;
   p.alive = true;
   resetWeaponState(p.weapon);
+  armFromKit(p); // a life comes back with the gun it attested, not the one slot 1 happens to hold
   applySheet(p, p.mods);
   p.sinceDamage = 99;
   p.slideTime = 0;

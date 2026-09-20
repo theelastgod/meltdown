@@ -1641,6 +1641,77 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 168 — A file came back from its own death holding someone else's gun
+
+**Goal.** Stage 167 found a drone whose respawn restored a subset of its state. This is the same
+defect one layer up, where it costs a player their weapon.
+
+`respawnPlayer` calls `resetWeaponState`, which assigns a whole fresh `createWeaponState()` over the
+live one — and that fresh state hardcodes `slot: 1` and the stock magazines. The attested primary
+and the firmware magazines were written once, inside `setLoadout`, and nothing wrote them again.
+Measured on a world, a loadout and a death:
+
+| attested primary | slot at spawn | slot after one death |
+| --- | --- | --- |
+| LEASE-BREAKER | 1 | 1 |
+| REPO HAMMER | 2 | **1** |
+| STACK SMG | 3 | **1** |
+| LONGWAVE RAIL | 4 | **1** |
+| PHAGE LAUNCHER | 5 | **1** |
+
+Four of the five. Only the LEASE-BREAKER survived, and only because slot 1 is the number that was
+hardcoded. Pick anything else, die once, and you spend the rest of the match holding a rifle you
+did not choose — a different recoil pattern, a different range band, a different reload — unless you
+notice and scroll back.
+
+The magazines went the same way, and the wrong way round:
+
+| firmware | stock | flashed | at spawn | after one death |
+| --- | --- | --- | --- | --- |
+| DUMP STAGE (`−15% magazine`) | 40 | 34 | 34 | **40** |
+| DOUBLE BARREL | 6 | 4 | 4 | **6** |
+
+A firmware's magazine is one of the costs it charges for its rate or its burst. It was charged once,
+at spawn, and refunded on every death after that.
+
+**What changed.**
+
+- `shared/sim/player.ts` — `armFromKit(p)`: the weapon state a kit implies, in one place. The
+  attested primary in hand, and every firmware magazine loaded. `PlayerKit` gains `primarySlot`,
+  because which weapon was attested was not recorded anywhere that survived `resetWeaponState` —
+  `p.weapon.slot` was the only copy and it was the thing being overwritten.
+- `shared/sim/world.ts` — `setLoadout` records `primarySlot` and calls `armFromKit` instead of
+  writing the slot and the magazines inline.
+- `shared/sim/player.ts` — `respawnPlayer` calls the same `armFromKit` after `resetWeaponState`.
+
+The slot and the ammo already cross the wire in `exportLocal`/`importLocal` and are already in
+`hashWorld`, so the server's fix reaches the client without a protocol change and the determinism
+check covers it.
+
+**Proof.** vitest 886/886, ten new, and not one existing test moved — which is worth noting for a
+change to what every respawn in the game does. `tests/respawn.test.ts` holds each primary through a
+death, each firmware magazine through a death, and then the structural one: a respawned file's
+whole weapon state must equal a freshly spawned file's, field for field, for three different
+loadouts. Anything `setLoadout` sets that a respawn forgets fails there rather than in a match.
+
+The sweep ran green to `probe:ship` — 358 checks — and then stopped at `probe:run` on the same
+40-second join timeout at `stage14.ts:126` that Stage 166 established fails with a change and
+without one. So the rest was run a step at a time rather than read past: `probe:run` alone 27/27,
+`probe:harden` 9/9, `probe:frame` 8/8, `probe:mobile` 40/40, `probe:persist` 7/7, `probe:tps`
+50/50, `probe:body` 21/21, build and smoke 7/7. The whole list covered, in pieces.
+
+Mutation A, the respawn no longer re-arming from the kit — the defect itself: 8 of the 10 fail.
+Mutation B, the slot restored but the firmware magazines forgotten: exactly the two magazine tests.
+Mutation C, the kit recording slot 1 whatever was attested: exactly the four primary tests. Each
+half of the rule is guarded on its own, and no mutation can be mistaken for another.
+
+Two of the eight scouts run over this repository in parallel reported this independently, which is
+what put it on the list. Neither was taken on trust: `resetWeaponState` was read, then the loss was
+measured on a real world with a real loadout and a real death. The first measurement of the
+magazine half showed no difference at all and was wrong — the firmware ids are namespaced
+(`repo_hammer:double_barrel`, not `double_barrel`), so the one under test had silently not been
+flashed. With the right id the refund is real, and it is in the table above.
+
 ## Stage 167 — A drone carried its own death back with it
 
 **Goal.** An EMP grenade disables a drone for three seconds: it stops, sags out of the air, and
