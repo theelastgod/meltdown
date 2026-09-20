@@ -18,7 +18,7 @@
  * `tests/campaign.test.ts` fails the build on any violation.
  */
 import { FACTIONS, type FactionId } from "./factions";
-import { MISSIONS, type MissionDef } from "./missions";
+import { MISSIONS, type MissionDef, type Objective } from "./missions";
 import { SCRIPTS, type ScriptDef } from "./script";
 import { ENDINGS, type Gate } from "./testimony";
 import { resolveSpot } from "./runtime";
@@ -161,6 +161,7 @@ export function lintCampaign(): CampaignViolation[] {
   }
 
   out.push(...lintSpotsAreInTheOpen());
+  out.push(...lintHoldsAreAnchored());
 
   // ---- missions and gigs: the arc is ordered and nothing depends on what does not exist ----
   out.push(...lintMissionOrder(MISSIONS));
@@ -229,6 +230,30 @@ function sightlineExists(level: LevelDef, x: number, z: number): boolean {
     }
   }
   return false;
+}
+
+/**
+ * A survive/hold with no `at` is a timer that runs anywhere (Stage 180).
+ *
+ * m1's "HOLD THE TERMINAL WHILE THE FILE DECRYPTS" was the only one: `inside = !at || nearAny(...)`
+ * is unconditionally true, the wave spawns on the player instead of the terminal, and the marker
+ * is not drawn because `syncFx` requires `o.at`. Every other survive/hold in the 19 contracts
+ * names a node. This asks the table, not the one mission.
+ */
+export function lintHoldsAreAnchored(missions: readonly MissionDef[] = MISSIONS): CampaignViolation[] {
+  const out: CampaignViolation[] = [];
+  const walk = (where: string, objectives: readonly Objective[]) => {
+    for (const o of objectives) {
+      if ((o.kind === "survive" || o.kind === "hold") && !o.at) {
+        out.push({ where, rule: "hold-is-anchored", detail: `"${o.text}" has no at — the timer runs anywhere and no marker is drawn`, severity: "error" });
+      }
+    }
+  };
+  for (const m of missions) {
+    walk(`${m.kind} ${m.id}`, m.objectives);
+    for (const [i, v] of (m.variants ?? []).entries()) if (v.objectives) walk(`${m.id} variant ${i + 1}`, v.objectives);
+  }
+  return out;
 }
 
 /** every spot a mission or gig names, with where it came from */

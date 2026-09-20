@@ -69,7 +69,7 @@ export const MISSIONS: readonly MissionDef[] = [
     level: "lease_row",
     fixer: "deacon",
     brief: "Steal your own lease file from the escrow terminal at the B intersection. Find out why you were flagged.",
-    objectives: [D("m1_intro", "READ THE STREET"), reach({ node: "B" }, "REACH THE ESCROW TERMINAL AT B"), { kind: "survive", seconds: 20, text: "HOLD THE TERMINAL WHILE THE FILE DECRYPTS", waves: 1 }, reach({ node: "E" }, "TAKE THE FILE FROM THE CABINET AT E"), D("m1_file", "THE FILE"), reach({ node: "A" }, "GET OUT THROUGH THE PLAZA")],
+    objectives: [D("m1_intro", "READ THE STREET"), reach({ node: "B" }, "REACH THE ESCROW TERMINAL AT B"), { kind: "survive", seconds: 20, at: { node: "B" }, radius: 6, text: "HOLD THE TERMINAL WHILE THE FILE DECRYPTS", waves: 1 }, reach({ node: "E" }, "TAKE THE FILE FROM THE CABINET AT E"), D("m1_file", "THE FILE"), reach({ node: "A" }, "GET OUT THROUGH THE PLAZA")],
     reward: { scrip: 300, xp: 900, stamp: "mission:first" },
     wasps: 2,
     mechs: 0,

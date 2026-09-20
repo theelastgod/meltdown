@@ -1641,6 +1641,34 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 180 — The first mission's hold ran anywhere in Lease Row
+
+**Goal.** "HOLD THE TERMINAL WHILE THE FILE DECRYPTS" is the first combat beat of WAKE UNLISTED.
+The text names a place. Every other survive/hold in the 19 contracts names one too: an `at` node
+and a radius, so the timer only runs there, the wave spawns there, and `syncFx` draws a marker.
+
+This one was `{ kind: "survive", seconds: 20, text: "HOLD THE TERMINAL WHILE THE FILE DECRYPTS",
+waves: 1 }` — no `at`. `stepMission` treats a missing at as "everywhere"
+(`inside = !at || nearAny(...)`). The wave spawned on the player. The marker, the radar goal and
+the distance readout all vanished for those 20 seconds because they require `o.at`.
+
+Measured on a real lease_row world: reach B, start the hold, teleport to A, wait 21 s. The
+objective advanced to "TAKE THE FILE FROM THE CABINET AT E" with the player never at the terminal.
+The same table walk returns exactly one unanchored survive/hold in the whole campaign: this one.
+
+**What changed.**
+
+- `shared/campaign/missions.ts` — `at: { node: "B" }, radius: 6`, same as the other escrow holds.
+- `shared/campaign/lint.ts` — `hold-is-anchored`: a survive/hold with no `at` is an error. Wired
+  through `lintCampaign` so CI sees it, not only a named call.
+
+**Proof.** `tests/hold.test.ts` (5): away from B the timer stalls; at B for 20 s it decrypts; the
+wave's wasps are within 12 m of B, not of the player at A; the shipped table has none without
+`at`; deleting `at` and running `lintCampaign` still reports `hold-is-anchored`. Existing
+`tests/campaign.test.ts` already held the player at B, so it stayed green. Mutations: unanchoring
+m1 fails the table walk and the away-from-B test; unwiring the rule from `lintCampaign` fails
+*"the rule is not reachable through lintCampaign"*.
+
 ## Stage 179 — Every airborne kill after one slide was a slide-jump kill
 
 **Goal.** `KillCtx.shooterSlideJump` feeds `slideJumpKills`, which is the SLIDER moniker and the

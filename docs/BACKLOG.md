@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Twelve have since been fixed (Stages 168–179) and
+turned out to be the same finding reported twice. Thirteen have since been fixed (Stages 168–180) and
 are listed at the foot of this file with the commit that closed them.
 
-The **20 below are open**. Every one has been read in the source — none is a hunch.
+The **19 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -110,38 +110,6 @@ Behaviourally, `spawnThreat(world, threatProfile(5))` returns `{wasps: 2, mechs:
 **What a player sees.** At Threat 5 the player is told a repo mech has been assigned to them, enters a district braced
 for a 400-HP mech, and there is none — and at Threat 6, when the mech does arrive, the readout
 no longer mentions it. In explore mode the HUD contradicts itself inside one line.
-
-### 5. m1's "HOLD THE TERMINAL WHILE THE FILE DECRYPTS" has no anchor, so the 20-second timer runs anywhere in Lease Row and no marker is drawn
-
-`shared/campaign/missions.ts:72`
-
-**What the code promises.** The objective text names a place and a requirement — "HOLD THE TERMINAL WHILE THE FILE
-DECRYPTS", immediately after "REACH THE ESCROW TERMINAL AT B". Every other survive/hold
-objective in the campaign is anchored: g_escrow_row at D r=6, g_escrow_depot at E r=6,
-g_escrow_docks at C r=6, m3 at A r=7, m5 at A r=12, m6 at A r=8, g_lattice_depot at A r=10.
-
-**What it does.** It is written as `{ kind: "survive", seconds: 20, text: "HOLD THE TERMINAL WHILE THE FILE
-DECRYPTS", waves: 1 }` — no `at`, no `radius`, the only such objective in all 19 contracts
-including variant objective lists. In `stepMission` (shared/campaign/runtime.ts:243-245) that
-leaves `at` null, so `const inside = !at || nearAny(...)` is unconditionally true and
-`st.progress += SIM_DT` accrues wherever the player is. The wave also spawns around
-`alivePlayers(world)[0]?.pos` instead of the terminal (runtime.ts:249). And because `syncFx`
-builds a marker only for `(o.kind === "survive" || o.kind === "hold") && o.at`
-(client/campaign.ts:204-206), the world marker, the radar "goal" spot and the distance readout
-all disappear for those 20 seconds.
-
-**Measured.** In a `World` on lease_row, run m1 to its second objective, teleport the player to node A (>20 m
-from B) and tick for 20 s: `missionView(st).kind` still advances from "survive" to "reach". The
-same test against g_escrow_row's survive-at-D stalls progress at 0 while the player is away.
-Static check: `MISSIONS.flatMap(m => [...m.objectives, ...(m.variants??[]).flatMap(v =>
-v.objectives??[])]).filter(o => (o.kind==="survive"||o.kind==="hold") && !o.at)` returns exactly
-one element, m1's.
-
-**What a player sees.** The first mission's first combat beat teaches the wrong rule: the player is told to hold a
-terminal, is shown no terminal (the marker vanishes the instant the objective starts), and can
-cross the whole district — or simply run from the VANTAGE wave that spawns on top of them —
-while the file decrypts on schedule. A player who does stand at B gets no confirmation that
-standing there is what did it.
 
 ### 6. Turning in the m2 informant silently kills Marrow, removing four gigs and the only source of the CLOCKEATER weapon, with no scene that kills her
 
@@ -640,3 +608,5 @@ stricter than the rule it guards.
   → Stage 178 (16e73d1)
 - `slideTime` is never zeroed when a slide ends, so every airborne kill after one slide is credited as a slide-jump kill  
   → Stage 179
+- m1's "HOLD THE TERMINAL WHILE THE FILE DECRYPTS" has no anchor, so the 20-second timer runs anywhere in Lease Row  
+  → Stage 180
