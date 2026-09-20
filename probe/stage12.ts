@@ -151,6 +151,23 @@ async function main(): Promise<void> {
     check("after the first view the crawl is skippable: the hint shows, SPACE jumps to the cut (black, silent, ~1.6 s at 1×), then the title", s0.c.seen && s0.c.skippable && s0.hint && /SKIP/.test(s0.hintText ?? "") && s1.phase === "cut" && !s1.hum && s1.typed === 0 && s2.phase === "title" && s2.done, `seen ${s0.c.seen} skippable ${s0.c.skippable} · hint ${s0.hint} "${s0.hintText}" · after SPACE: ${s1.phase} typed ${s1.typed} hum ${s1.hum} · then ${s2.phase} done ${s2.done}`);
     await b.close();
 
+    // ---------------- the hum is asked for before there is anywhere to make it ----------------
+    // A browser builds no AudioContext without a gesture, and the only listener that resumed audio
+    // was on the canvas — which the crawl overlay covers, swallowing its own clicks. For the whole
+    // crawl the hum, the key per two characters and the tear counted themselves and returned at
+    // `if (!this.ctx) return` (Stage 177). `crawl().hum` is the crawl's own request; `audioLive()`
+    // is whether anything is sounding, and the two came apart for the whole ~35 s.
+    const h = await newPage("hum");
+    await h.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=1&crawlspeed=${SPEED}&level=drainage_yard`, { waitUntil: "load" });
+    await h.waitForFunction(() => window.__game?.ready === true && window.__game.crawl()?.hum === true, null, { timeout: 40000, polling: 50 });
+    const humAsked = await h.evaluate(() => ({ crawl: window.__game.crawl()!, live: window.__game.audioLive() }));
+    // one key that is not a skip, over the overlay that stops its own clicks from bubbling
+    await h.keyboard.press("KeyA");
+    await h.waitForTimeout(250);
+    const humWoke = await h.evaluate(() => ({ crawl: window.__game.crawl()!, live: window.__game.audioLive() }));
+    check("the crawl's hum is asked for before any gesture and sounds the moment one arrives, from a key the overlay would have swallowed", humAsked.crawl.hum && !humAsked.live.ready && !humAsked.live.humming && humWoke.live.ready && humWoke.live.humming && humWoke.crawl.hum, `asked hum ${humAsked.crawl.hum} · before: audio ready ${humAsked.live.ready} humming ${humAsked.live.humming} · after one key: ready ${humWoke.live.ready} humming ${humWoke.live.humming} · phase ${humWoke.crawl.phase}`);
+    await h.close();
+
     // ---------------- headless default: no crawl ----------------
     const c = await newPage("headless");
     await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard`, { waitUntil: "load" });

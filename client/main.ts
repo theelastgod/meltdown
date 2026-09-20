@@ -121,6 +121,8 @@ export interface GameHook {
   injectRemote: (views: RemoteBodyView[] | null) => void;
   pwa: () => Promise<{ supported: boolean; registered: boolean; controlled: boolean; scope: string | null }>;
   crawl: () => CrawlView | null;
+  /** Whether audio is actually live, and whether the crawl's hum is actually sounding (Stage 177). */
+  audioLive: () => { ready: boolean; humming: boolean };
   crawlSkip: () => boolean;
   crawlFinish: () => void;
   crawlPause: (on: boolean) => void;
@@ -300,6 +302,9 @@ window.__game = {
   injectRemote: (views) => game.renderer.syncRemotes(views ?? []),
   pwa: () => pwaState(),
   crawl: () => crawl?.view() ?? null,
+  // `crawl().hum` is the crawl's own request latch; this is the other half — whether a context
+  // exists and whether the oscillator is running. The two came apart for the whole crawl.
+  audioLive: () => ({ ready: game.audio.ready, humming: game.audio.crawlHumming }),
   crawlSkip: () => crawl?.skip() ?? false,
   crawlFinish: () => crawl?.finish(true),
   crawlPause: (on) => {

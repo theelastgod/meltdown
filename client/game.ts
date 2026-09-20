@@ -256,6 +256,14 @@ export class Game {
     this.prev = snap(this.player);
     this.cur = snap(this.player);
     this.input.onGesture = () => this.audio.resume();
+    // Any gesture anywhere wakes the audio, not only one that reaches the canvas (Stage 177). The
+    // opening crawl's overlay sits over the canvas and calls stopPropagation() on its own clicks,
+    // so for the whole crawl — and for the menu after a keyboard exit from it — nothing reached
+    // the canvas listener and no AudioContext was ever built: the hum, the key per two characters
+    // and the tear all counted themselves and returned at `if (!this.ctx) return`. Capture phase,
+    // because the overlay stops the bubble. Not `once`: `resume()` is idempotent and also lifts a
+    // context the browser suspended while the tab was in the background.
+    for (const ev of ["pointerdown", "keydown", "touchstart"] as const) document.addEventListener(ev, () => this.audio.resume(), { capture: true });
     this.applySettings(this.settings);
     document.addEventListener("visibilitychange", () => this.audio.duck(document.hidden));
     this.input.onLockChange = (l) => {

@@ -39,6 +39,8 @@ export class GameAudio {
       this.startBed();
     }
     if (this.ctx.state === "suspended") void this.ctx.resume();
+    // a hum asked for before there was anywhere to put it (Stage 177)
+    if (this.humWanted && !this.humNodes) this.crawlHum(true);
   }
 
   get ready(): boolean {
@@ -607,9 +609,20 @@ export class GameAudio {
 
   // ---- the opening crawl: a hum under the text, a soft key per two characters, the tear ----
   private humNodes: { osc: OscillatorNode; gain: GainNode } | null = null;
+  /**
+   * Whether the hum is wanted, as opposed to whether it is sounding (Stage 177).
+   *
+   * The crawl asks for the hum once, on an edge, at the moment the first paragraph starts typing —
+   * which is before any gesture has happened and therefore before there is a context to build it
+   * in. The request is remembered so that the gesture, whenever it comes, starts the hum that was
+   * already asked for. A tick and a tear are one-shots and cannot be recovered this way; a hum
+   * that runs for half a minute can.
+   */
+  private humWanted = false;
   /** The CRT hum under the crawl; stops dead (not faded) at the cut. */
   crawlHum(on: boolean): void {
     this.count(on ? "crawlHumOn" : "crawlHumOff");
+    this.humWanted = on;
     if (!this.ctx) return;
     if (on && !this.humNodes) {
       const osc = this.ctx.createOscillator();

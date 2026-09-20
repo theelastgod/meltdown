@@ -1641,6 +1641,88 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 177 — Thirty-five seconds of sound the browser was never asked to make
+
+**Goal.** `client/audio.ts` heads a block *"the opening crawl: a hum under the text, a soft key per
+two characters, the tear"*, and `client/crawl.ts` says *"the hum runs under the text and stops dead
+at the cut"*. The crawl calls all three cues for its whole run.
+
+A browser will not build an `AudioContext` without a user gesture, and `GameAudio` builds its
+context in exactly one place: `resume()`. The only thing that called it during boot was a click on
+the **canvas** — and the crawl's overlay sits over the canvas and calls `e.stopPropagation()` on
+its own clicks. Nothing ever reached the listener. Every cue arrived at `if (!this.ctx) return;`
+*after* counting itself, which is why `audioCues()` looked healthy the whole time.
+
+Measured in a real browser, on the same dev server, before and after this stage — counting every
+`AudioContext` the page constructs:
+
+| | before a gesture | after one key over the crawl | after one click on the overlay |
+| --- | --- | --- | --- |
+| shipped | 0 contexts, cues `crawlHumOn:1 crawlTick:2` | **0** | **0** |
+| now | 0 contexts (correct: no gesture yet) | **1** | **1** |
+
+Zero, either way in, for the whole crawl — and the keyboard exit takes `finish(false)`, which
+skipped even the one `resume()` the code had, so the menu that follows played its title-card sting
+and UI cues into a null context too.
+
+**What changed.**
+
+- `client/game.ts` — a gesture *anywhere in the document* wakes the audio: `pointerdown`,
+  `keydown` and `touchstart`, in **capture** phase, because the overlay stops the bubble. Not
+  `once`, since `resume()` is idempotent and also lifts a context the browser suspended while the
+  tab was backgrounded. The crawl keeps swallowing its own clicks — it owns them — and a test
+  holds that it still does, because "stop swallowing the click" would have been the wrong fix.
+- `client/audio.ts` — `humWanted`. The hum is edge-triggered at the moment the first paragraph
+  starts typing, long before any gesture, so the *request* has to outlive the missing context:
+  `resume()` starts a hum that was already asked for. A tick and a tear are one-shots and are
+  simply gone; a hum that runs for half a minute is not.
+- `client/main.ts` — `audioLive()` on the probe surface. `crawl().hum` is the crawl's own request
+  latch, which is what the probe was already reading; `audioLive()` is whether a context exists and
+  whether the oscillator is running. The two came apart for the entire crawl and nothing could see
+  it. `crawlHumming` had existed since Stage 12 and was read by nothing.
+
+**Proof.** vitest 979/979, eight new in `tests/crawlaudio.test.ts`, nothing existing moved. The
+full sweep ran on a still tree: 22 of 23 probes green, 523 checks, with `probe:crawl` **11/11** (10
+before — the new check) and `probe:run` 27/27 in sequence for the sixth sweep running. Build clean,
+smoke 7/7.
+
+`probe:identity` failed once in that sweep, at 24/25, and it is not this stage's: the clause that
+missed was `owed.kills >= 2` reading 1, from real combat between three live clients, while every
+other clause of that check (the Debt's name, its target on both the server and the client) matched.
+Re-run three times on this tree and twice on a clean tree: **5/5 pass**. The mechanism rules it out
+as well — `probe:identity` calls `resumeAudio()` on every page immediately after join, before any
+combat, so the AudioContext is built at the same moment with and without this change, and the new
+listener's later `resume()` calls find a context already there and do nothing.
+
+`probe:net` then failed once on the re-run, at 26/27, on `far.d > 30` reading **30.0** — the bot
+paces to a waypoint that straddles the threshold. Re-run: 27/27, at 30.1. Everything that check is
+about (0 footsteps heard at range, walking in 18 of 18 samples) held in both. Both of these are
+marginal guards rather than defects, and both are written down rather than left to be rediscovered.
+
+Four mutations:
+
+- **A**, the document listener removed — the defect itself: 1 unit test fails, and `probe:crawl`
+  fails reading *"after one key: ready **false** humming false"*.
+- **B**, `humWanted` dropped so a hum asked for early never starts: 3 unit tests fail, and the probe
+  fails reading *"after one key: ready **true** humming **false**"* — a context, and silence under
+  it. Two mutations, two different signatures out of one check, which is what a check earning its
+  place looks like.
+- **C**, `humWanted` latched on and never cleared: 1 fails — a hum the crawl had already stopped at
+  the cut must not come back when the gesture arrives.
+- **D**, the listener without `capture: true`: 1 fails. Capture is the whole mechanism; without it
+  the overlay blocks it again and the fix is decorative.
+
+**Most of this stage was spent measuring the wrong thing, and that is worth writing down.** The
+first four measurements all reported 0 contexts *with the fix in place*, and the served module had
+the new listener in it when I curled it. The page was loading `/assets/index-BIWgUxr9.js` — a built
+bundle. A `vite preview` server started by a throwaway script two stages earlier had leaked: the
+script killed the `npx` shim and left the real child alive on port 5299, serving `dist/` from
+before this stage. Every "measurement" was of stale code. Then, hunting it, I ran
+`ps | grep -E '[v]ite' | xargs kill` — and the pattern matched my own shell's command line, so I
+killed the shell mid-command (exit 144). That is the exact trap the method rules name; I walked
+into it anyway. The rule now has a second half: kill by PID, and kill the *process*, not the `npx`
+wrapper in front of it.
+
 ## Stage 176 — Four hundred $CAPITAL for three things the game could not see
 
 **Goal.** The Deep Wake season pass is the largest sink in the economy: `SEASON_PASS_PRICE = 400`
