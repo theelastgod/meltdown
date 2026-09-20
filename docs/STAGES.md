@@ -1641,6 +1641,80 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 178 — The file jumped after respawning, with nobody touching the keyboard
+
+**Goal.** A jump press the gate refuses is not thrown away. It is held in `jumpBuffer` for
+`MOVE.jumpBuffer` seconds so that it fires the moment it becomes legal — the reason a jump you
+pressed a frame too early still works when you land. The gate refuses a jump while crouched, while
+sliding under a low gap where `canStand` is false, and past coyote time in the air.
+
+`respawnPlayer` never touched `jumpBuffer`. Worse, the buffer cannot expire while dead:
+`stepPlayer` returns at
+
+```ts
+if (!p.alive) return reqs;
+```
+
+and the decay is *below* that line, so whatever the buffer held at the instant of death is frozen
+for the whole respawn wait — waiting longer does not save you. Measured on a real world, a jump
+pressed while crouched and then a death, with no key held at any point afterwards:
+
+```
+buffer at death 0.100 · after respawn: buffer 0.000  vy -2.50  y 1.02  jumps 0→1
+```
+
+The file left the ground on its first live tick. `stats.jumps` counted it, so it also fed the
+mastery challenges that count jumps. `grounded` and `airTime` froze at the instant of death the
+same way.
+
+**This is Stage 167's defect two layers up.** There, a drone's respawn restored a subset of one
+life's state and carried its EMP through death. Here it is the player's, and the missing fields are
+the ones that decide whether the file is standing, falling, or about to jump.
+
+**What changed.**
+
+- `shared/sim/player.ts` — `reviveMotion(p, spawn)`: the motion state of one life, written once.
+  `createPlayer` calls it after building the object and `respawnPlayer` calls it instead of its own
+  shorter list, so there is one definition for the first life and every later one.
+
+The fields it writes are `pos`, `vel`, `yaw`, `pitch`, `stance`, `height`, `grounded`, `airTime`,
+`jumpBuffer`, `slideTime`, `slideCooldown`, `slideDir` and the three mantle fields. `id`, `name`,
+`team`, `mods`, `kit` and `stats` are not this life's and are not touched — `stats` least of all,
+since those are the match's totals and a respawn that cleared them would erase the scoreboard.
+
+**One of those is honest bookkeeping rather than a bug.** The three mantle fields were also stale
+across a respawn, but a mantle cannot resume: the branch is gated on `stance === "mantle"` and a
+respawn stands the file up. They are written here because they are this life's motion, so that the
+next field added to the list cannot be the next one forgotten — not because I found them doing
+harm, and the test says which of the two it is checking.
+
+**Proof.** vitest 985/985, six new in `tests/revive.test.ts`, nothing existing moved — worth saying
+for a change to what every respawn in the game does, and to what `createPlayer` returns. The full
+sweep ran green on a still tree: **23 probes, 523 checks, nothing skipped and nothing rerun** —
+`probe` 21/21, `probe:look` 18/18, `probe:net` 27/27, `probe:arsenal` 32/32, `probe:wake` 27/27,
+`probe:file` 20/20, `probe:city` 45/45, `probe:cityLife` 21/21, `probe:mastery` 23/23,
+`probe:identity` 25/25, `probe:campaign` 46/46, `probe:endgame` 18/18, `probe:economy` 1/1,
+`probe:counter` 16/16, `probe:crawl` 11/11, `probe:ship` 11/11, `probe:run` 27/27, `probe:harden`
+9/9, `probe:frame` 8/8, `probe:mobile` 40/40, `probe:persist` 7/7, `probe:tps` 50/50, `probe:body`
+21/21. Build clean, smoke 7/7.
+
+That full green matters more here than usual. `pos`, `vel`, `stance` and the rest of this state
+cross the wire and feed `hashWorld`, so a respawn that now writes four more fields is a change the
+determinism replay, the prediction and reconciliation probes and the 50-check tick-rate probe all
+had to agree with. They did, unchanged.
+
+Four mutations:
+
+- **A**, the respawn back to its old subset — the defect itself: 3 of 6 fail.
+- **B**, `jumpBuffer` alone left out: **1** fails, and it is the player-visible one —
+  *"the file jumped after respawning with no key held: expected 1 to be +0"*.
+- **C**, `grounded` and `airTime` alone left out: **1** fails, and it is the structural walk —
+  *"airTime differs between a respawned file and a fresh one: expected '0.0166…' to be '0'"*.
+  B and C are the argument for having both layers: the field a player can feel is caught by the
+  test that plays, and the field nobody can see is caught by the test that counts.
+- **D**, `reviveMotion` also clearing `stats.kills`: 1 fails. The scope of what a life owns is
+  tested, not just the contents.
+
 ## Stage 177 — Thirty-five seconds of sound the browser was never asked to make
 
 **Goal.** `client/audio.ts` heads a block *"the opening crawl: a hum under the text, a soft key per

@@ -153,7 +153,7 @@ export interface PlayerState {
 }
 
 export function createPlayer(id: number, name: string, spawn: SpawnPoint): PlayerState {
-  return {
+  const p: PlayerState = {
     id,
     name,
     team: 0,
@@ -188,22 +188,52 @@ export function createPlayer(id: number, name: string, spawn: SpawnPoint): Playe
     firstDamageTick: -1,
     lastAttacker: -1,
   };
+  reviveMotion(p, spawn); // one definition of a life's motion, for the first life and every later one
+  return p;
 }
 
-export function respawnPlayer(p: PlayerState, spawn: SpawnPoint): void {
+/**
+ * The motion state of one life, written the same way whether the life is the first or the fifth
+ * (Stage 178).
+ *
+ * `respawnPlayer` used to list a subset of it, and what the subset left out was carried through
+ * death. `jumpBuffer` is the one that costs the player something: a jump press the gate refuses —
+ * crouched, sliding under a low gap, past coyote time — is held for `MOVE.jumpBuffer` so that it
+ * fires the moment it becomes legal, and `stepPlayer` returns at `if (!p.alive)` *before* the
+ * decay, so the buffer cannot run down while dead. Measured, a jump pressed while crouched and
+ * then death: the respawned file jumped on its first live tick with no key held, `stats.jumps`
+ * 0 → 1. `grounded` and `airTime` froze at the instant of death the same way.
+ *
+ * The three mantle fields are inert after a respawn — the mantle branch is gated on
+ * `stance === "mantle"` and a respawn stands the player up — but they are this life's motion and
+ * are written here with the rest, so the next field added to the list cannot be the next one
+ * forgotten.
+ */
+export function reviveMotion(p: PlayerState, spawn: SpawnPoint): void {
   copy(p.pos, spawn.pos);
   set(p.vel, 0, 0, 0);
   p.yaw = spawn.yaw;
   p.pitch = 0;
   p.stance = "stand";
   p.height = MOVE.standHeight;
+  p.grounded = false;
+  p.airTime = 0;
+  p.jumpBuffer = 0;
+  p.slideTime = 0;
+  p.slideCooldown = 0;
+  set(p.slideDir, 0, 0, -1);
+  set(p.mantleFrom, 0, 0, 0);
+  set(p.mantleTo, 0, 0, 0);
+  p.mantleT = 0;
+}
+
+export function respawnPlayer(p: PlayerState, spawn: SpawnPoint): void {
+  reviveMotion(p, spawn);
   p.alive = true;
   resetWeaponState(p.weapon);
   armFromKit(p); // a life comes back with the gun it attested, not the one slot 1 happens to hold
   applySheet(p, p.mods);
   p.sinceDamage = 99;
-  p.slideTime = 0;
-  p.slideCooldown = 0;
   p.firstDamageTick = -1;
   p.lastAttacker = -1;
 }
