@@ -103,7 +103,19 @@ export const CHIPS: ChipDef[] = WEAPON_LIST.flatMap((w) =>
           ? { stat: "reloadSpeed" as const, delta: Math.round((x.delta * modWeight(x)) / modWeight({ stat: "reloadSpeed", delta: x.delta }) * 400) / 400 }
           : { stat: x.stat, delta: x.stat === "spread" ? Math.round(x.delta * k * 400) / 400 : x.delta },
     );
-    const costs = settle(benefits, t.costs.map((x) => ({ ...x })), !!t.mechanic);
+    // A converted benefit must not land on a stat the cost already occupies (Stage 171). The
+    // conversion above relabels the axis a BENEFIT is paid in; if the cost is sitting on the new
+    // label the two cancel, the chip does nothing, and the weight check cannot see it because the
+    // two sides still weigh the same. CHOKE on the STACK SMG read "−12% spread / +12% recoil" and
+    // delivered a net recoil change of exactly 0.0000. Where that happens the cost moves to the
+    // axis the benefit vacated, which keeps the trade's shape and its magnitude.
+    const onBenefit = new Set(benefits.map((x) => x.stat));
+    const swapped = t.costs.map((x) => {
+      if (!onBenefit.has(x.stat)) return { ...x };
+      const vacated = t.benefits.find((y) => benefits.every((z) => z.stat !== y.stat));
+      return vacated ? { stat: vacated.stat, delta: x.delta } : { ...x };
+    });
+    const costs = settle(benefits, swapped, !!t.mechanic);
     return {
       id: `${w.id}:${t.key}`,
       weapon: w.id,
@@ -133,6 +145,15 @@ export function lintChipSchema(chips: readonly ChipDef[] = CHIPS): { itemId: str
     if (Math.abs(b - cc) > 1.5) out.push({ itemId: c.id, rule: "reconciled", detail: `benefits weigh ${b.toFixed(1)}, costs ${cc.toFixed(1)}` });
     if (c.rank < 1 || c.rank > 30) out.push({ itemId: c.id, rule: "rank", detail: String(c.rank) });
     for (const x of [...c.benefits, ...c.costs]) if (x.stat === "damage" || x.stat === "maxHealth" || x.stat === "maxShield") out.push({ itemId: c.id, rule: "flat-damage", detail: `${x.stat} is not tradeable on a chip` });
+    // A benefit and a cost on the SAME stat cancel, wholly or partly, and the reconciliation rule
+    // above cannot see it: the two sides weigh the same precisely BECAUSE they cancel (Stage 171).
+    // Two chips shipped this way and did nothing at all.
+    for (const b of c.benefits) {
+      for (const k of c.costs) {
+        if (b.stat !== k.stat) continue;
+        out.push({ itemId: c.id, rule: "same-stat-trade", detail: `${b.stat}: benefit ${b.delta} against cost ${k.delta} — these cancel to ${(b.delta + k.delta).toFixed(4)}` });
+      }
+    }
   }
   return out;
 }

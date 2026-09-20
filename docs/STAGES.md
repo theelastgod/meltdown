@@ -1641,6 +1641,68 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 171 — Two chips that did nothing, and the lint that certified them
+
+**Goal.** The STACK SMG's spread *benefits* are converted to recoil benefits of the same weight, and
+the comment above the rule says exactly why: a tighter cone on a sprayer is worth −6 to −8% TTK at
+25–40 m, far more than the trade charges for, so the benefit is paid in "handling you feel, not
+misses you don't". The conversion is deliberately one-sided and it is right.
+
+But CHOKE's cost was already recoil. So the benefit converted *onto its own cost*, and they
+cancelled:
+
+| chip | line shown to the player | benefit | cost | net |
+| --- | --- | --- | --- | --- |
+| `stack_smg:choke` | *"−12% spread / +12% recoil"* | recoil −0.1200 | recoil +0.1200 | **0.0000** |
+| `stack_smg:flash_cut` | *"−8% spread, quieter / +8% recoil, −4.5% reload"* | recoil −0.0800 | recoil +0.0800 | **0.0000** |
+
+CHOKE is the STACK SMG's rank-9 muzzle chip. A player reaches rank 9, sockets the only thing that
+socket takes at that rank, and gets exactly nothing. FLASH CUT at rank 22 is worse than nothing: its
+recoil cancels and its −4.5% reload cost stands, so the socket is a net loss with "quieter" attached.
+
+`lintChipSchema` runs on every sweep — through the Fairness Lint and through `tests/mastery.test.ts`
+— and reported zero problems across all 160 chips. It could not see this. It compares the total
+*weight* of the two sides, and the two sides weighed the same **precisely because they cancelled**:
+`benefits weigh 7.20, costs 7.20`. A guard whose arithmetic is satisfied by the defect.
+
+**What changed.**
+
+- `shared/manifest/chips.ts` — where a converted benefit lands on a stat the cost already occupies,
+  the cost moves to the axis the benefit vacated. The trade keeps its shape and its magnitude, and
+  nothing cancels. Weapons outside the conversion set are untouched: `lease_breaker:choke` is still
+  spread for recoil.
+- `shared/manifest/chips.ts` — `lintChipSchema` gains `same-stat-trade`: a benefit and a cost on one
+  stat cancel, wholly or partly, and the weight rule above cannot see it.
+
+**Proof.** vitest 903/903, eight new, nothing existing moved — the manifest still ships 160 chips,
+twenty per weapon, and the Fairness Lint still passes. `tests/chiptrade.test.ts` holds three things:
+that no chip in the manifest trades a stat against itself, that **every** benefit still nets
+non-zero once its own costs are subtracted — presence is not the test, because the defect had both
+sides present — and that the new lint rule actually fires on a hand-made colliding chip, because a
+rule that never fires is a green light with no bulb. A fourth holds that it does *not* fire on an
+honest opposite-direction trade, and two more pin the conversion's scope: `lease_breaker:choke` is
+untouched, and FLASH CUT keeps the half of itself that never collided.
+
+The sweep ran green to 381 checks and then failed four banking checks inside `probe:run`, the shape
+Stage 166 established fails with a change and without one. Run alone `probe:run` is 27/27, and the
+rest a step at a time: `probe:harden` 9/9, `probe:frame` 8/8, `probe:mobile` 40/40, `probe:persist`
+7/7, `probe:tps` 50/50, `probe:body` 21/21, build and smoke 7/7. Nothing here is on the banking
+path: these are STACK SMG muzzle chips and the run bot carries the default loadout.
+
+Mutation A, the colliding cost left where it was — the defect itself: 5 of the 8 fail. Mutation B,
+the new lint rule removed while the manifest stays fixed: exactly one fails, the rule-fires test,
+and the manifest tests stay green — correctly, because the manifest really is fixed. The two layers
+guard different things and neither stands in for the other. Mutation C, the cost moved whether or
+not anything collided: 2 fail, one of them the multi-part chip whose other half must not move.
+
+**One thing this exposes rather than fixes, and it is a content decision rather than an engineering
+one.** CHOKE and COMPENSATOR are mirror templates — one trades recoil for spread, the other spread
+for recoil. On a weapon where the game has decided those are the same axis, the mirror collapses:
+`stack_smg:choke` is now recoil −0.12 for spread +0.12, which is exactly `stack_smg:compensator`,
+three ranks earlier. Nothing is dead any more, but rank 9 hands that weapon a chip it already has at
+rank 6. No derivation produces a distinct trade there; it needs a different template for that
+weapon, which is an authoring call and belongs with the other owner decisions in `docs/PLAN.md`.
+
 ## Stage 170 — A rank-20 firmware that changed nothing at all
 
 **Goal.** Mastery rank 20 on the PHAGE LAUNCHER unlocks **CLUSTER**: *"+25% burst radius, −15%
