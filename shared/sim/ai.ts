@@ -135,14 +135,26 @@ export function stepWasp(w: Wasp, targets: readonly SightTarget[], boxes: readon
   }
   w.fireCooldown = Math.max(0, w.fireCooldown - dt);
   // acquire: nearest visible target (jammed wasps hunt other players' enemies: anyone but the jammer)
+  //
+  // `bestD` is the distance AS THE DRONE MODELS IT — the real one divided by how well the file
+  // hides from VANTAGE — and that is the right measure for noticing a file and for holding one it
+  // has already noticed. It is not the right measure for the gun (Stage 166). `fireRange` was
+  // compared against it, so the drone's reach was 25 m only against a file whose detectability
+  // happened to be exactly 1: STATIC SKIN, a first-district attestation, shortened it to 18.0 m,
+  // and BAD DEBT stretched it to 33.7 m. Twenty-four of the ledger's nodes moved it, each on its
+  // own, and every one of them describes itself as changing how well you are seen. Metres are
+  // metres: the gun is gated on the real distance.
   let best: SightTarget | null = null;
   let bestD = w.state === "chase" ? WASP.fireRange + 4 : WASP.detect;
+  let bestTrue = Infinity;
   for (const t of targets) {
     if (!t.alive || t.id === w.jammedBy) continue;
-    const d = len(sub(t.chest, w.pos)) / (t.detectMult ?? 1);
+    const trueD = len(sub(t.chest, w.pos));
+    const d = trueD / (t.detectMult ?? 1);
     if (d < bestD && canSee(w.pos, t.chest, boxes, clouds)) {
       best = t;
       bestD = d;
+      bestTrue = trueD;
     }
   }
   if (best) {
@@ -154,7 +166,7 @@ export function stepWasp(w: Wasp, targets: readonly SightTarget[], boxes: readon
     const hold = v3(best.chest.x + away.x * WASP.holdDistance, clamp(best.chest.y + 2.5, 1.5, 7), best.chest.z + away.z * WASP.holdDistance);
     moveToward(w.pos, hold, WASP.chaseSpeed, dt);
     w.yaw = Math.atan2(-(best.chest.x - w.pos.x), -(best.chest.z - w.pos.z));
-    if (bestD <= WASP.fireRange && w.fireCooldown <= 0) {
+    if (bestTrue <= WASP.fireRange && w.fireCooldown <= 0) {
       w.fireCooldown = WASP.fireInterval;
       const d = sub(best.chest, w.pos);
       const flat = Math.sqrt(d.x * d.x + d.z * d.z);

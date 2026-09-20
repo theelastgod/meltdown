@@ -1641,6 +1641,83 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 166 — The drone's range was 25 metres only against a file wearing nothing
+
+**Goal.** `WASP.fireRange` is 25 m, and every other number around it is in metres: `detect` 18,
+`holdDistance` 8, the falloff profile out to 60. But the wasp compares that range against `bestD`,
+the distance divided by the target's `detectMult` — the distance as the drone *models* the file
+rather than the distance the file is. So 25 m was the reach only against a file whose detectability
+happened to be exactly 1, which means a file with nothing attested.
+
+Measured against the real manifest, one attestation at a time, no stacking:
+
+| attestation | Depth | detectMult | opened fire at | held the chase to |
+| --- | --- | --- | --- | --- |
+| BLACK SWAN | 30 | 0.500 | 12.5 m | 14.5 m |
+| WIRE FRAUD | 11 | 0.666 | 16.7 m | 19.3 m |
+| STATIC SKIN | 1 | 0.721 | 18.0 m | 20.9 m |
+| *(nothing attested)* | — | 1.000 | **25.0 m** | 29.0 m |
+| ESCROW | 8 | 1.123 | 28.1 m | 32.6 m |
+| MELTDOWN CLAUSE | 16 | 1.221 | 30.5 m | 35.4 m |
+| BAD DEBT | 6 | 1.350 | 33.7 m | 39.1 m |
+
+Twenty-four of the ledger's nodes move it, and every one of them describes itself as changing how
+well you are *seen*. STATIC SKIN is a first-district node — "−30% drone detection / footsteps +20%
+louder" — and it quietly took nine metres off the drone's gun. BAD DEBT, at Depth 6, added nearly
+nine. Nothing in the game says so, because it is not what any of them were written to do.
+
+The two halves had been folded into one number. Detectability should decide when a drone notices a
+file and how long it holds one it has already noticed; both of those are questions about modelling
+and both scale correctly. How far the gun shoots is not one of those questions. Metres are metres.
+
+**What changed.**
+
+- `shared/sim/ai.ts` — `stepWasp` carries the chosen target's true distance alongside the modelled
+  one, and the gun is gated on the true distance. Acquisition and the reacquire window keep the
+  scaling, which is what they are for. Four lines.
+
+The mech is deliberately untouched. Its beam has no range of its own — it fires at whatever the
+searchlight has flagged, and the searchlight *is* the detector, so scaling it by detectability is
+that rule working, not the same defect a second time.
+
+**Proof.** vitest 871/871, seven of them new. `tests/drone.test.ts` holds the two halves apart: the
+gun fires inside 25 m and not outside it for a loud file, a quiet one and a bare one alike; and
+detectability still moves where a patrolling wasp notices a file (17.9 m bare, 23 m loud, and a
+quiet file not noticed at 23 m) and how far a chasing one holds it (28.9 m bare, 38 m loud). A file
+so quiet the drone holds it only to 14.5 m is shot only inside that, because a file the drone
+cannot model is a file it cannot shoot — the gun is not the binding rule there.
+
+Mutation A, the gun gated on the modelled distance again — the defect itself: 4 of the 7 fail.
+Mutation B, detectability scaling nothing at all, which is the obvious over-correction: exactly the
+3 detectability tests fail and the gun tests stay green, which is the shape it should have.
+Mutation C, the gun given BAD DEBT's old reach as a constant: 4 fail. The two halves of the rule
+are guarded separately and neither mutation can be mistaken for the other.
+
+A live check was written for this and then thrown away, and why is the useful part. `probe:arsenal`
+was made to measure every drone round that reached the file against the 25 m range: it came back
+`143 of 144 drone rounds landed, longest 8.1 m`. The wasp closes to `holdDistance`, 8 m, and fires
+from there — so with the defect reverted the same check reported the same numbers and passed,
+33/33. It could not fail. That is also the answer to why this survived 165 stages of probes that
+watch drones shoot: every one of them watched a drone shoot from inside eight metres, and the range
+was never exercised where it was wrong. The rule is a pure function of the sim and the unit layer
+owns it.
+
+`probe:run` failed in this stage's sweep and is not this stage's, which took a full baseline sweep
+to establish rather than a re-run. With the change applied it came back `banked 0` on three banking
+checks, twice. Run on its own it is 27/27 with the change and 27/27 with it stashed — but that
+proves little, because the failure only appears inside a sweep. There is also a real mechanism by
+which this change could have caused it: a quiet file now takes drone fire out to the full 25 m
+where before the drone held off, so ALPHA could plausibly have been dying mid-carry and dropping
+the claim. So the sweep was run again with the change stashed, and `probe:run` failed there too —
+differently, a 40 s timeout at `stage14.ts:126`, long before any banking. Unstable in a sweep on
+this machine, with the change and without it.
+
+The sweep stops where it falls, so the steps after `probe:run` were run one at a time instead of
+read past: `probe:harden` 9/9, `probe:frame` 8/8, `probe:mobile` 40/40, `probe:persist` 7/7,
+`probe:tps` 50/50, `probe:body` 21/21, and build + smoke 7/7. Everything before it was green in the
+sweep itself, 382 checks. That is the whole list covered, in pieces rather than in one run, and CI
+on a clean container is the arbiter. `probe:run`'s instability under sweep load is the next stage's.
+
 ## Stage 165 — The jump was photographed by waiting for a frame to land inside two thirds of a second
 
 **Goal.** Stage 164's sweep failed one check that was not Stage 164's: `probe:body`'s `a jump splits
