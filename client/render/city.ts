@@ -27,12 +27,17 @@ function lcg(seed: number): () => number {
 const basic = (color: number, opacity = 1): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity });
 
 /** Optional generated plate: if it never arrives the procedural map stays. Cosmetic; the sim never sees it. */
-function bindPlate(mat: THREE.MeshStandardMaterial, id: string): void {
+export function bindPlate(mat: THREE.MeshStandardMaterial, id: string, alsoEmissive = false): void {
   void assetTexture(id).then((tex) => {
     if (!tex) return;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.colorSpace = THREE.SRGBColorSpace;
     mat.map = tex;
+    if (alsoEmissive) {
+      mat.emissiveMap = tex;
+      mat.emissive = new THREE.Color(0xffffff);
+      mat.emissiveIntensity = Math.max(mat.emissiveIntensity, 1.1);
+    }
     mat.needsUpdate = true;
   });
 }
@@ -273,10 +278,25 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
   bindPlate(M.sidewalk, "tex_wet_asphalt");
   bindPlate(M.white, "tex_white_office");
   bindPlate(M.whiteFloor, "tex_white_office");
+  bindPlate(M.shutter, "tex_shutter");
+  bindPlate(M.fenceMat, "tex_shutter");
+  bindPlate(M.crate, "tex_crate");
+  bindPlate(M.stall, "tex_crate");
+  bindPlate(M.dumpster, "tex_dumpster");
+  bindPlate(M.concrete, "tex_concrete");
+  bindPlate(M.base, "tex_concrete");
+  bindPlate(M.metal, "tex_metal");
+  bindPlate(M.vending, "tex_metal");
+  bindPlate(M.metro, "tex_metal");
+  bindPlate(M.containerA, "tex_container");
+  bindPlate(M.containerB, "tex_container");
+  bindPlate(M.containerC, "tex_metal");
   const facades = [facadeTextures(seed + 1, 0.22), facadeTextures(seed + 2, 0.32), facadeTextures(seed + 3, 0.45)].map((f) => {
     f.map.wrapS = f.map.wrapT = f.emissive.wrapS = f.emissive.wrapT = THREE.RepeatWrapping;
     f.map.needsUpdate = f.emissive.needsUpdate = true;
-    return std({ map: f.map, emissiveMap: f.emissive, emissive: 0xffffff, emissiveIntensity: 1.5, roughness: 0.8, metalness: 0.1 });
+    const mat = std({ map: f.map, emissiveMap: f.emissive, emissive: 0xffffff, emissiveIntensity: 1.5, roughness: 0.8, metalness: 0.1 });
+    bindPlate(mat, "tex_facade", true);
+    return mat;
   });
   const b3 = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) => ({ min: { x: Math.min(x0, x1), y: Math.min(y0, y1), z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), y: Math.max(y0, y1), z: Math.max(z0, z1) } });
 
@@ -666,7 +686,9 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
   const rnd = lcg(seed);
   const facades = [facadeTextures(1), facadeTextures(2, 0.1), facadeTextures(3, 0.25)].map((f) => {
     f.map.wrapS = f.map.wrapT = f.emissive.wrapS = f.emissive.wrapT = THREE.RepeatWrapping;
-    return new THREE.MeshStandardMaterial({ map: f.map, emissiveMap: f.emissive, emissive: 0xffffff, emissiveIntensity: 0.7, roughness: 0.8, metalness: 0.1 });
+    const mat = new THREE.MeshStandardMaterial({ map: f.map, emissiveMap: f.emissive, emissive: 0xffffff, emissiveIntensity: 0.7, roughness: 0.8, metalness: 0.1 });
+    bindPlate(mat, "tex_facade", true);
+    return mat;
   });
   const castColor = cast === "cyan" ? PALETTE.cyan : cast === "amber" ? PALETTE.amber : PALETTE.magenta;
   const signs = new SignAtlas();

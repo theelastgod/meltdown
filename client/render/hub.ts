@@ -8,7 +8,7 @@ import * as THREE from "three";
 import { release } from "./dispose";
 import type { LevelDef } from "@shared/sim/level";
 import type { HubDef } from "@shared/sim/hub";
-import { MeshBatch, PALETTE, SignAtlas } from "./city";
+import { bindPlate, MeshBatch, PALETTE, SignAtlas } from "./city";
 import { MOVE } from "@shared/sim/constants";
 
 export interface HubState {
@@ -59,6 +59,11 @@ export class HubDressing {
       let m = mats.get(tag);
       if (!m) {
         m = tag === "window_glow" || tag === "rug" ? new THREE.MeshBasicMaterial({ color: RENO_COLORS[tag] ?? 0x222222 }) : new THREE.MeshStandardMaterial({ color: RENO_COLORS[tag] ?? 0x222222, roughness: 0.8, metalness: tag === "server_rack" ? 0.6 : 0.1, emissive: tag === "server_rack" ? PALETTE.cyan : 0x000000, emissiveIntensity: 0.15 });
+        if (m instanceof THREE.MeshStandardMaterial) {
+          if (tag === "server_rack") bindPlate(m, "tex_server_rack", true);
+          else if (tag === "crates") bindPlate(m, "tex_crate");
+          else if (tag === "shelf") bindPlate(m, "tex_metal");
+        }
         mats.set(tag, m);
       }
       return m;
