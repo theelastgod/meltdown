@@ -142,10 +142,28 @@ export function rayBox(o: Vec3, d: Vec3, b: Box, maxT: number): number | null {
   return tmin;
 }
 
+/** Is a point inside a capsule: within `r` of the segment a..b? */
+function insideCapsule(p: Vec3, a: Vec3, b: Vec3, r: number): boolean {
+  const abx = b.x - a.x, aby = b.y - a.y, abz = b.z - a.z;
+  const apx = p.x - a.x, apy = p.y - a.y, apz = p.z - a.z;
+  const len2 = abx * abx + aby * aby + abz * abz;
+  const t = len2 > 1e-12 ? Math.max(0, Math.min(1, (apx * abx + apy * aby + apz * abz) / len2)) : 0;
+  const dx = apx - abx * t, dy = apy - aby * t, dz = apz - abz * t;
+  return dx * dx + dy * dy + dz * dz <= r * r;
+}
+
 /** Ray vs vertical capsule (feet, radius, height). Returns entry distance or null. */
 export function rayCapsule(o: Vec3, d: Vec3, feet: Vec3, r: number, h: number, maxT: number): number | null {
   const a = v3(feet.x, feet.y + r, feet.z);
   const b = v3(feet.x, feet.y + h - r, feet.z);
+  // A ray that starts INSIDE the capsule is already touching it, so its entry distance is zero
+  // (Stage 169). Every quadratic below takes the near root, which is negative when the origin is
+  // inside, and the `t >= 0` tests then reject it — so a shot fired from inside a body reported a
+  // clean miss and passed straight through. That made the function discontinuous where it matters
+  // most: at 0.39 m from a file's axis a level shot landed, and at 0.30 m it hit nothing at all.
+  // Files do not push each other apart, so standing inside one another is ordinary melee range,
+  // and a mech's capsule is 1.1 m wide — walking up to one put your eye inside it.
+  if (insideCapsule(o, a, b, r)) return maxT >= 0 ? 0 : null;
   // Infinite cylinder around the segment axis (vertical) first.
   const ox = o.x - a.x;
   const oz = o.z - a.z;

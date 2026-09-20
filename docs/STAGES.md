@@ -1641,6 +1641,68 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 169 — A round fired from inside a body went through it
+
+**Goal.** `rayCapsule` returns the distance at which a ray *enters* a capsule. Every quadratic in it
+takes the near root, and the near root is negative when the ray starts inside — so the `t >= 0`
+tests rejected it and the function reported a miss. A shot fired from inside a body did not hit it.
+
+That is not a corner case here, because **files do not push each other apart**. Two placed 0.15 m
+apart and simulated for two seconds are still 0.15 m apart. Standing inside another file is
+ordinary melee range — which is where the shock baton is meant to be used and where a shotgun is at
+its best — and a mech's capsule is 1.1 m wide, so simply walking up to one put your eye inside it.
+
+Measured on a level shot, the function had a hole in the middle of its own domain:
+
+| horizontal gap to the target's axis | before | after |
+| --- | --- | --- |
+| 2.00 m | hit at 1.666 m | hit at 1.666 m |
+| 0.45 m | hit at 0.116 m | hit at 0.116 m |
+| 0.39 m | hit at 0.056 m | hit at 0.056 m |
+| 0.30 m | **miss** | hit at 0.000 m |
+| 0.00 m | **miss** | hit at 0.000 m |
+| a mech at 0.80 m | **miss** | hit at 0.000 m |
+
+So the defect was a discontinuity: at 0.39 m a level shot landed, and at 0.30 m it hit nothing at
+all. The zone rule is unchanged — `zoneOf` reads the hit point's height exactly as it does at every
+other distance, and at contact range a level shot is already at head height, which is what it
+reports at 0.39 m today.
+
+**What changed.**
+
+- `shared/sim/collision.ts` — `insideCapsule(p, a, b, r)`, and `rayCapsule` returns 0 when its
+  origin is already inside. A ray that starts inside is already touching: its entry distance is
+  zero. The hitscan skips the shooter's own capsule (`o.id === shooterId`) and the AI loops skip
+  themselves, so nothing can now hit itself.
+
+**Proof.** vitest 891/891, five new, and nothing existing moved — including the TTK harness, which
+measures every weapon at its intended range and never fires from inside anything.
+`tests/contact.test.ts` holds the zero-range hit, the mech's wider capsule, and two files at melee
+range killing each other. The structural one walks the whole approach from two metres to zero in
+one-centimetre steps and requires every single step to land and the distance never to rise as the
+target gets closer — a hole anywhere in the function's domain fails it, not just this one.
+
+The sweep ran green to `probe:ship` — 358 checks — then stopped at `probe:run` on the same
+40-second join timeout at `stage14.ts:126` seen in Stages 166 and 168, which a baseline sweep
+established fails with a change and without one. The rest was run a step at a time: `probe:run`
+alone 27/27, `probe:harden` 9/9, `probe:frame` 8/8, `probe:mobile` 40/40, `probe:persist` 7/7,
+`probe:tps` 50/50, `probe:body` 21/21, build and smoke 7/7.
+
+Mutation A, the inside check removed — the defect itself: 4 of the 5 fail. Mutation B, inside
+reported at the ray's far limit rather than zero: 3 fail, caught by the continuity walk, which
+holds the *value* and not merely the non-null. Mutation C, every ray treated as starting inside:
+exactly the negative test fails — the one that fires past a capsule, beside it, away from it and
+beyond its range — so the fix is bounded and has not simply made everything hit.
+
+The melee-range test was written first in a weaker form, and measuring caught it: with the defect
+in place it still passed. `rayCapsule` did not return null there at all. The shot was aimed steeply
+down, so the ray left through the bottom sphere and the *near root of that sphere* was positive —
+the function returned **0.867 m** for a target at 0.20 m. The round registered, at the wrong
+distance, the wrong zone and the wrong falloff, and five rounds fired point blank left the target
+on 20 health instead of killing it. "A round landed" could not tell those apart. The test now holds
+the round to the distance it actually flew and the exchange to its outcome, and mutation A fails it.
+That also sharpens what the defect was: not always a miss, but always the wrong answer.
+
 ## Stage 168 — A file came back from its own death holding someone else's gun
 
 **Goal.** Stage 167 found a drone whose respawn restored a subset of its state. This is the same
