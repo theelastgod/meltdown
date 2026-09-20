@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { Box, LevelDef, SignDef, TrafficLane } from "@shared/sim/level";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { brickTexture, facadeTextures, hazardTexture, shutterTexture } from "./textures";
+import { texture as assetTexture } from "./assets";
 
 export const PALETTE = {
   bg: 0x04050a,
@@ -24,6 +25,17 @@ function lcg(seed: number): () => number {
 }
 
 const basic = (color: number, opacity = 1): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity });
+
+/** Optional generated plate: if it never arrives the procedural map stays. Cosmetic; the sim never sees it. */
+function bindPlate(mat: THREE.MeshStandardMaterial, id: string): void {
+  void assetTexture(id).then((tex) => {
+    if (!tex) return;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    mat.map = tex;
+    mat.needsUpdate = true;
+  });
+}
 
 /**
  * Neon batcher: every tube and strip is a translated box appended to one
@@ -255,6 +267,12 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.needsUpdate = true;
   }
+  bindPlate(M.brick, "tex_neon_brick");
+  bindPlate(M.brickDark, "tex_neon_brick");
+  bindPlate(M.hazard, "tex_vantage_hazard");
+  bindPlate(M.sidewalk, "tex_wet_asphalt");
+  bindPlate(M.white, "tex_white_office");
+  bindPlate(M.whiteFloor, "tex_white_office");
   const facades = [facadeTextures(seed + 1, 0.22), facadeTextures(seed + 2, 0.32), facadeTextures(seed + 3, 0.45)].map((f) => {
     f.map.wrapS = f.map.wrapT = f.emissive.wrapS = f.emissive.wrapT = THREE.RepeatWrapping;
     f.map.needsUpdate = f.emissive.needsUpdate = true;

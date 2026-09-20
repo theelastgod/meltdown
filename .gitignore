@@ -6,3 +6,4 @@ probe/out/
 .DS_Store
 .wrangler/
 .env.production
+art-source/
