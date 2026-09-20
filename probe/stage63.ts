@@ -67,15 +67,28 @@ async function main(): Promise<void> {
   /** run frames until the eased pose stops moving, then read it: the pose clock is the renderer's,
    *  which under SwiftShader runs far slower than the wall clock, so waiting in milliseconds is not
    *  waiting for the pose */
+  /**
+   * The pose is settled when the whole rig has stopped, not when two of its numbers have (Stage
+   * 165). This waited on the hips and the hood, and returned while the legs were still easing —
+   * and the ease clamps its step at 1/30 s, so how far the legs had got depended on how many
+   * frames had been drawn. The same jump read 0.80 rad of split at 960x540 and 0.75 at 1600x900.
+   * Every bone the rig reports is compared.
+   */
   const settled = (pg: Page, id?: number) =>
     pg.evaluate(async ([who]) => {
       let prev = window.__game.rig(who as number | undefined);
       for (let i = 0; i < 200; i++) {
         await new Promise((r) => requestAnimationFrame(r));
         const now = window.__game.rig(who as number | undefined);
-        const still = Math.abs((now.out?.hips.y ?? 0) - (prev.out?.hips.y ?? 0)) < 3e-4 && Math.abs(now.hoodApex - prev.hoodApex) < 3e-4;
+        let moved = Math.abs(now.hoodApex - prev.hoodApex);
+        for (const bone of Object.keys(now.bones)) {
+          const a = now.bones[bone]!;
+          const b = prev.bones[bone];
+          if (!b) continue;
+          moved = Math.max(moved, Math.abs(a.x - b.x), Math.abs(a.y - b.y), Math.abs(a.z - b.z));
+        }
         prev = now;
-        if (still && i > 4) return now;
+        if (moved < 3e-4 && i > 4) return now;
       }
       return prev;
     }, [id] as const);
@@ -92,6 +105,55 @@ async function main(): Promise<void> {
       },
       [frames, id] as const,
     );
+  /**
+   * Render a fixed number of frames, then read the rig (Stage 165).
+   *
+   * `poseBody` clamps its ease step at 1/30 s, and every frame this harness draws is longer than
+   * that, so each rendered frame advances the ease by the same fraction whatever the frame rate. A
+   * count of frames therefore means the same thing on a fast machine and a slow one. A per-frame
+   * delta does not, which is what left the same jump reading 0.800 rad of split at 960x540 and
+   * 0.766 at 1600x900 under `settled()` — it stops on the first frame that moved less than its
+   * threshold, and how far the legs have got by then is a count of frames drawn. Thirty frames
+   * puts the slowest channel within 1e-4 of its target.
+   */
+  const poseAfter = (pg: Page, frames: number) =>
+    pg.evaluate(async (n) => {
+      for (let i = 0; i < (n as number); i++) await new Promise((r) => requestAnimationFrame(r));
+      return window.__game.rig();
+    }, frames);
+
+  /**
+   * One jump, read from the sim rather than watched for (Stage 165).
+   *
+   * A jump is off the ground for 0.67 s and no longer — 7.4 m/s against 22 m/s² — and this harness
+   * draws a frame every 0.23 s. Counting rendered frames that land inside that window leaves one
+   * frame of margin, and the patience wrapped around it buys nothing: once the file is down, no
+   * later frame can be airborne, however many you wait for. The walk and the slide can be waited
+   * for because they repeat or persist; a jump happens once. So the sim is stepped into the air
+   * instead: advance() ticks the sim and draws nothing, and the renderer photographs the pose at
+   * leisure while the file is held there.
+   */
+  const leapRead = async (pg: Page) => {
+    await pg.evaluate(() => window.__game.setRealtime(false));
+    await pg.evaluate((b) => window.__game.setBot([{ kind: "hold", ticks: 2, buttons: b as number }, { kind: "hold", ticks: 6000 }]), Btn.Jump);
+    const held = await pg.evaluate(() => {
+      // the loop's own count of drawn frames, either side of finding the air: stepping the sim
+      // draws none, and a reading that needs a frame to land in the window says so here
+      const drew0 = window.__game.state().loop.frames;
+      let off = -1;
+      for (let i = 0; i < 30 && off < 0; i++) {
+        window.__game.advance(1);
+        if (!window.__game.state().grounded) off = i + 1;
+      }
+      if (off < 0) return { off, vy: 0, grounded: true, drawn: window.__game.state().loop.frames - drew0 };
+      window.__game.advance(8); // clear of the ground and still rising, and held there
+      const st = window.__game.state();
+      return { off, vy: st.vel.y, grounded: st.grounded, drawn: st.loop.frames - drew0 };
+    });
+    const pose = held.off > 0 && !held.grounded ? await poseAfter(pg, 30) : null;
+    const down = await pg.evaluate(() => window.__game.state().grounded);
+    return { held, stillAir: !down, state: pose?.out?.state ?? "none", split: pose ? (pose.out?.legL.rx ?? 0) - (pose.out?.legR.rx ?? 0) : 0, flare: pose?.uniforms?.flare ?? 0 };
+  };
   const vite = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", String(VITE_PORT), "--strictPort"], { stdio: ["ignore", "pipe", "pipe"] });
   await waitFor(vite, /127\.0\.0\.1/, "vite");
   const browser = await chromium.launch({ args: ARGS });
@@ -370,27 +432,26 @@ async function main(): Promise<void> {
     await shotCheck(pg, "stage63-slide.png");
     await pg.evaluate(() => window.__game.setRealtime(true));
     await pg.waitForFunction(() => (window.__game.botStatus()?.current as { kind?: string } | null)?.kind === "hold" && window.__game.state().stance === "stand", null, { timeout: 30000, polling: 100 });
-    await pg.evaluate((b) => window.__game.setBot([{ kind: "hold", ticks: 2, buttons: b as number }, { kind: "hold", ticks: 6000 }]), Btn.Jump);
-    // the same rule as the slide: freeze the sim off the ground rather than hope a frame lands there
-    const airFrames = await pg.evaluate(async () => {
-      let n = 0;
-      for (let i = 0; i < 240; i++) {
-        await new Promise((r) => requestAnimationFrame(r));
-        if (!window.__game.state().grounded) n++;
-        if (n >= 2) {
-          window.__game.setRealtime(false);
-          return n;
-        }
-      }
-      return n;
-    });
-    const air = airFrames >= 2 ? await settled(pg) : null;
-    const airborne = air && air.out?.state === "air" ? [air] : [];
-    const airPeakFlare = Math.max(0, ...airborne.map((r) => r.uniforms?.flare ?? 0));
-    // the split is measured at its widest, not on every frame: the first frame off the ground is a
-    // third of the way through the ease and asserting the settled pose there is asserting the ease
-    const split = Math.max(0, ...airborne.map((r) => (r.out?.legL.rx ?? 0) - (r.out?.legR.rx ?? 0)));
-    check("a jump splits the legs and flares the hem", airborne.length >= 1 && split >= 0.55 && airPeakFlare >= 0.12, `${airFrames} air frames · widest split ${split.toFixed(2)} rad (last ${airborne[airborne.length - 1]?.out?.legL.rx.toFixed(2)} / ${airborne[airborne.length - 1]?.out?.legR.rx.toFixed(2)}) · flare ${airPeakFlare.toFixed(2)}`);
+    const leapA = await leapRead(pg);
+    // the split is read from the settled pose rather than from whichever frame happened to land:
+    // the first frame off the ground is a third of the way through the ease, and asserting the
+    // pose there is asserting the ease
+    check("a jump splits the legs and flares the hem", leapA.state === "air" && leapA.stillAir && leapA.split >= 0.55 && leapA.flare >= 0.12, `off the ground on sim tick ${leapA.held.off}, held at ${leapA.held.vy.toFixed(2)} m/s rising · split ${leapA.split.toFixed(2)} rad · flare ${leapA.flare.toFixed(2)}`);
+    // and what that reads is the rig, not the renderer. The same jump at four times the pixels,
+    // where a frame takes 316 ms against the 0.67 s the file is airborne: the rendered-frame race
+    // this replaced returns one airborne frame there where it needs two, which is the shape of the
+    // failure Stage 164's sweep hit at 960x540 with one frame of margin
+    await pg.setViewportSize({ width: 1600, height: 900 });
+    await pg.evaluate(() => window.__game.setRealtime(true));
+    await pg.waitForFunction(() => window.__game.state().grounded === true, null, { timeout: 60000, polling: 50 });
+    await pg.waitForTimeout(400);
+    const leapB = await leapRead(pg);
+    await pg.setViewportSize({ width: 960, height: 540 });
+    // the reading owes nothing to the frame rate, and says so two ways: it draws no frame at all
+    // while it finds the air — a rendered-frame race cannot report zero — and it gives the same
+    // pose at four times the pixels. The second alone is not enough: how many frames land inside a
+    // 0.67 s window is the machine's business, and on a fast enough one even the race catches two
+    check("the jump is found by stepping the sim, not by catching a frame, and reads the same where the renderer draws four times slower", leapA.held.drawn === 0 && leapB.held.drawn === 0 && leapB.state === "air" && leapB.stillAir && leapB.split >= 0.55 && leapB.flare >= 0.12 && Math.abs(leapB.split - leapA.split) <= 0.005 && Math.abs(leapB.flare - leapA.flare) <= 0.005, `frames drawn while finding the air: ${leapA.held.drawn} at 960x540, ${leapB.held.drawn} at 1600x900 · split ${leapA.split.toFixed(3)} vs ${leapB.split.toFixed(3)}, flare ${leapA.flare.toFixed(3)} vs ${leapB.flare.toFixed(3)} · apart by ${Math.abs(leapB.split - leapA.split).toFixed(3)} / ${Math.abs(leapB.flare - leapA.flare).toFixed(3)}`);
 
     // ---------------- 8. recoil ----------------
     await pg.evaluate(() => window.__game.setRealtime(true));

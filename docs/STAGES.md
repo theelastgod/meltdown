@@ -1641,6 +1641,78 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 165 — The jump was photographed by waiting for a frame to land inside two thirds of a second
+
+**Goal.** Stage 164's sweep failed one check that was not Stage 164's: `probe:body`'s `a jump splits
+the legs and flares the hem` came back `1 air frames` where it wants 2, and 20/20 on three clean
+re-runs of the same tree. That failure is this stage's, and it is arithmetic rather than luck.
+
+A jump is 7.4 m/s against 22 m/s²: off the ground for 0.67 s and no longer. This harness draws a
+frame every 0.23 s. So the window holds three frame boundaries, the check needs two of them, and it
+has one frame of margin. The 240 iterations of patience wrapped around the wait buy nothing at all:
+once the file is down, no later frame can be airborne, however many you wait for. The walk and the
+slide can be waited for because they repeat or persist. A jump happens once.
+
+The first explanation was wrong and measuring said so. `state()` builds a large object and hashes
+the world, and the wait called it on every one of those frames — an obvious suspect for slowing the
+very frames being counted. Measured, it costs 0.2 ms against a 227 ms frame: nothing. The frame rate
+is the renderer's, and the check was reading the renderer.
+
+Then both readings side by side at four window sizes, which is the one thing that does move the
+frame interval here:
+
+| viewport | frame | rendered-frame race | stepping the sim |
+| --- | --- | --- | --- |
+| 960×540 | 229 ms | 2 airborne frames — passes | air, split 0.758, flare 0.228 |
+| 1600×900 | 316 ms | **1** — fails | air, split 0.751, flare 0.216 |
+| 2133×1200 | 466 ms | **1** — fails | air, split 0.751, flare 0.216 |
+| 2844×1600 | 642 ms | **0** — fails | air, split 0.751, flare 0.216 |
+
+The CI failure reproduced exactly at 316 ms, and the sweep runs at 960×540 with one frame of margin.
+
+**What changed.** All of it in `probe/stage63.ts`; no game code moved.
+
+- `leapRead()` steps the sim into the air rather than watching for it. `advance()` ticks the sim and
+  draws nothing, so the file is put off the ground tick by tick, held eight ticks in while it is
+  still rising, and the pose is read while it is held there. It reports the loop's own count of
+  frames drawn while the air was found, which is zero — a reading that owes nothing to the frame
+  rate can say so exactly, and a rendered-frame race cannot say it at all.
+- `poseAfter()` reads the pose after a fixed count of frames. `poseBody` clamps its ease step at
+  1/30 s and every frame here is longer than that, so each rendered frame advances the ease by the
+  same fraction whatever the frame rate: a count of frames means the same thing on a fast machine
+  and a slow one. Thirty puts the slowest channel within 1e-4 of its target.
+- `settled()` compares every bone by value. It waited on `out.hips.y` and `hoodApex`, and `out` is a
+  live reference into the rig — the same object on both sides of the subtraction, so that half of
+  the test was always exactly zero and only the hood ever governed it. The hood goes still long
+  before the legs do, which is why the same jump read 0.800 rad of split at 960×540 and 0.751 at
+  1600×900: what came back depended on the window size. Its guard here is indirect — every other
+  pose check in the probe reads through it, and all of them stay green — and the jump no longer
+  depends on it at all.
+
+**Proof.** `npm run probe:body` 21/21, six runs: `frames drawn while finding the air: 0 at 960x540,
+0 at 1600x900 · split 0.800 vs 0.800, flare 0.250 vs 0.250 · apart by 0.000 / 0.000`, identical
+every time. The full CI sweep on the tree before this change was 519/520, the one failure being this
+check under the tolerance it has now earned; nothing outside this probe file has changed since.
+
+Mutation A, the rendered-frame race restored: 20/21, `frames drawn while finding the air: 2 at
+960x540, 2 at 1600x900`. Mutation B, the photograph taken 60 ticks in, after the file has landed:
+19/21, `split 0.00 · flare 0.00`, both jump checks. Mutation C, the pose read through `settled()`
+again: 20/21, the two window sizes 0.009 apart against a 0.005 tolerance. Mutation D, the rig's air
+pose no longer splitting the legs: 19/21 at `split -0.00`, so the check still guards the thing it is
+named for and not only its own plumbing.
+
+Two of those tolerances are worth separating honestly. `drawn === 0` is exact: a reading that needs
+a frame to land inside the window cannot report zero, so mutation A cannot pass it. The agreement
+between the two window sizes is empirical — 0.000 apart six times over with a fixed frame count,
+against 0.001 to 0.048 apart reading through `settled()` — so it catches mutation C but is a
+measurement, not a proof.
+
+And for the second stage running, the first guard written did not guard. It was the two window
+sizes alone, on the reasoning that a slower renderer is what breaks the race — and mutation A passed
+it, because at 1600×900 this machine still caught two airborne frames. How many frames land inside
+0.67 s is the machine's business, and on a fast enough one even the race gets its two. Counting the
+frames the reading itself drew takes the machine out of it.
+
 ## Stage 164 — Five of the tutorial's six facts were counted; the sixth was sampled, and it was the one that went missing
 
 **Goal.** Stage 163's sweep failed one check that was not Stage 163's, and it was written down
@@ -1699,7 +1771,9 @@ flares the hem` came back `1 air frames` where it wants 2, and 20/20 with `2 air
 split 0.80 rad` on three clean re-runs of the same tree. It drives one jump in realtime and counts
 the rendered frames that land off the ground, calling `state()` — which hashes the world — on every
 one of 240; when the machine is busy the count it is waiting for does not arrive. Nothing in this
-stage touches the rig or that probe. That is the next stage's.
+stage touches the rig or that probe. That is the next stage's. (The suspicion of `state()` here was
+wrong: Stage 165 measured it at 0.2 ms against a 227 ms frame. The cause is the window, not the
+read.)
 
 The first guard written for this stage did not guard it, and that is the part worth keeping. It read
 the drawn line against the sim's counters at the end of the existing bot run — derived rather than
