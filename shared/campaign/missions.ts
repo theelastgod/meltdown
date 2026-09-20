@@ -124,7 +124,13 @@ export const MISSIONS: readonly MissionDef[] = [
     level: "lease_row",
     fixer: "deacon",
     brief: "Destroy the sensor lattice district by district. VANTAGE responds like an immune system — the hardest combat in the arc.",
-    objectives: [D("m5_lattice", "THE LATTICE"), { kind: "destroy", spots: [{ node: "B" }, { node: "C" }, { node: "D" }, { node: "E" }, { x: 0, z: -30 }, { x: 0, z: 30 }], label: "LATTICE NODE", text: "PUT OUT THE SIX LATTICE NODES" }, { kind: "survive", seconds: 40, at: { node: "A" }, radius: 12, text: "SURVIVE THE IMMUNE RESPONSE AT THE PLAZA", waves: 3 }],
+    // The four inner nodes are the district generator's own, which are always on open ground. The
+    // two outer posts were written as (0, ±30) and both landed inside a 4.2 m building on LEASE
+    // ROW, sealing a 1.8 m lattice node in concrete where nothing could shoot it (Stage 175).
+    // These two were found by scanning the level rather than typed: 4.4 m of clearance each — the
+    // generator gives its own nodes 4.2 — on opposite outer diagonals, so the six spread across
+    // the district the brief says to blind.
+    objectives: [D("m5_lattice", "THE LATTICE"), { kind: "destroy", spots: [{ node: "B" }, { node: "C" }, { node: "D" }, { node: "E" }, { x: 32, z: -32 }, { x: -34, z: 34 }], label: "LATTICE NODE", text: "PUT OUT THE SIX LATTICE NODES" }, { kind: "survive", seconds: 40, at: { node: "A" }, radius: 12, text: "SURVIVE THE IMMUNE RESPONSE AT THE PLAZA", waves: 3 }],
     variants: [{ gate: { all: { "m3:volatility": "publish" } }, objectives: [D("m5_lattice", "THE LATTICE"), { kind: "destroy", spots: [{ node: "B" }, { node: "C" }, { node: "D" }, { node: "E" }], label: "LATTICE NODE", text: "PUT OUT THE FOUR LATTICE NODES (THE FEEDS ALREADY TOOK TWO)" }, { kind: "survive", seconds: 40, at: { node: "A" }, radius: 12, text: "SURVIVE THE IMMUNE RESPONSE AT THE PLAZA", waves: 3 }] }],
     reward: { scrip: 800, xp: 2000, protocol: "wern_pulse" },
     wasps: 6,

@@ -1641,6 +1641,104 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 175 — Two of the six lattice nodes were sealed inside a building
+
+**Goal.** BLIND THE MODEL is mission five of seven. *"Destroy the sensor lattice district by
+district. VANTAGE responds like an immune system — the hardest combat in the arc."* The objective
+reads **PUT OUT THE SIX LATTICE NODES**, and it names six places:
+
+```ts
+spots: [{ node: "B" }, { node: "C" }, { node: "D" }, { node: "E" }, { x: 0, z: -30 }, { x: 0, z: 30 }]
+```
+
+Four are level nodes, which the district generator puts on open ground. Two are coordinates typed
+into the mission table, and both land inside a building on LEASE ROW:
+
+| spot | standing column | |
+| --- | --- | --- |
+| node B | clear | |
+| node C, D, E | clear | |
+| `(0, -30)` | inside `x[-11, 11] y[0, 4.2] z[-31.4, -22]` | the split block's south building |
+| `(0, 30)` | inside `x[-11, 11] y[0, 4.2] z[22, 44]` | the tower block's ground floor |
+
+A lattice node is a dummy 1.8 m tall. Both were entombed under 4.2 m of concrete with eight metres
+of it in every horizontal direction. Measured by sweeping a full circle of eye positions at four
+radii:
+
+```
+node B (control)     line of sight from 222/288 eye positions (nearest radius 2 m)
+literal (0,-30)      line of sight from   0/277 eye positions · from 20 m overhead: false
+literal (0,30)       line of sight from   0/277 eye positions · from 20 m overhead: false
+```
+
+Zero, from anywhere, at any range, including from directly above. `castRay` clips at the first
+solid box before it tests a single dummy capsule, and `applyExplosion` refuses any target that
+fails `canSee`, so no weapon and no grenade in the game could touch them. Campaign worlds run with
+`dummyRespawn: false`, so the pair never cycled out and got another chance. **The mission asks for
+six and can deliver four.** It cannot be completed.
+
+One branch escapes: the m3 PUBLISH variant asks for four and names four nodes. Every other route
+through the arc — including the m3 "HOLD IT" answer — reaches mission five and stops there.
+
+**What changed.**
+
+- `shared/campaign/lint.ts` — `lintSpotsAreInTheOpen`, wired into `lintCampaign`. Every spot every
+  mission, gig and variant names is resolved on its own level; a standing column inside solid
+  geometry is `spot-is-in-the-open`, a destroy spot with no sightline from any open ground is
+  `spot-can-be-shot`, and a node the level does not have is `spot-names-a-node`. All errors. Run
+  over the shipped campaign it reports exactly the two, across 7 missions and 12 gigs — so this was
+  one authoring slip, not a pattern, which is worth knowing before rewriting anything else.
+- `shared/campaign/missions.ts` — the two spots move to `(32, -32)` and `(-34, 34)`.
+
+**The new coordinates were found, not chosen.** Scanning LEASE ROW for ground with at least 3.5 m
+of clearance, at least 12 m from any existing node, and with a sightline, gives 16 candidates; the
+best in each half are `(32, -32)` and `(-34, 34)` at **4.4 m** of clearance each. The generator
+gives its own node B **4.2 m**, so the two typed spots now stand in more room than the level's own
+work, and the test holds them to that comparison rather than to a number. They sit on opposite
+outer diagonals, which spreads the six across the district the brief says to blind — the original
+pair was meant to be north and south on the centre axis, and that axis has no open ground: measured
+along `x = 0`, clearance never exceeds 5.0 m and that is the plaza itself, with the rest of the line
+either buildings or half-metre gaps between props.
+
+**Proof.** vitest 958/958, twelve new in `tests/spots.test.ts`, nothing existing moved. The full
+sweep ran green on a still tree: 23 probes, 523 checks — `probe` 21/21, `probe:look` 18/18,
+`probe:net` 27/27, `probe:arsenal` 32/32, `probe:wake` 27/27, `probe:file` 20/20, `probe:city`
+45/45, `probe:cityLife` 21/21, `probe:mastery` 23/23, `probe:identity` 25/25, `probe:campaign`
+46/46, `probe:endgame` 18/18, `probe:economy` 1/1, `probe:counter` 16/16, `probe:crawl` 10/10,
+`probe:ship` 11/11, `probe:run` 27/27, `probe:harden` 9/9, `probe:frame` 8/8, `probe:mobile` 40/40,
+`probe:persist` 7/7, `probe:tps` 50/50, `probe:body` 21/21. Build clean, smoke 7/7. `probe:run`
+passed in sequence for the fourth sweep running, which is now long enough to say the shape Stages
+166–171 kept hitting has not recurred since.
+
+The guard walks the manifest, not a list: every spot of every objective of every mission, gig and
+variant, resolved on that mission's own level. A seventh lattice node typed into the wrong block
+fails it before anyone plays mission five.
+
+Six mutations:
+
+- **A**, both coordinates put back — the defect itself: 9 of 12 tests fail and the lint errors
+  twice.
+- **B**, only one of the two put back: 9 fail and the lint errors once. The guard counts, so a
+  half-fix is not a fix.
+- **C**, the rule unwired from `lintCampaign` while the function stays: **this passed**, and was a
+  hole. Every test called `lintSpotsAreInTheOpen` by name, so the rule could be disconnected from
+  the thing CI actually runs and nothing would say so. Closed with a test that injects a bad spot
+  and requires `lintCampaign` itself to report it; the mutation now fails.
+- **D**, the rule skipping variants: 1 fails.
+- **E**, the rule looking only at `destroy` and not at `reach`, `hold`, `survive at` or `escort`:
+  1 fails. A place you must stand in is as unreachable as a place you must shoot.
+- **F**, the standable test ignoring box height, so every spot reads as blocked: 6 fail and the
+  lint errors on the *new* coordinates. A rule that says no to everything is not a working rule.
+
+**One thing tried and thrown away.** The check that would really answer this is "can the player
+walk there", so I wrote a flood fill from the plaza over a 1 m grid. It reported node B, node E and
+both new candidates as unreachable — all four demonstrably reachable, since gigs send players to
+them and the campaign is played through them. The model was wrong: a 1 m lattice with a disc test
+cannot represent step-ups, mantling or squeezing past a bollard, which is most of how this game
+moves. Rather than tune it until it agreed with what I already believed, it is gone. The lint keeps
+the two questions it can answer exactly — is the column solid, and can anything see it — and the
+walkable question stays unanswered rather than answered wrongly.
+
 ## Stage 174 — Two endings were written, listed, and could never be played
 
 **Goal.** MELTDOWN ships six endings. The player reaches the white office, Wern makes the offer, and

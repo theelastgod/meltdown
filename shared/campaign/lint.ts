@@ -21,6 +21,13 @@ import { FACTIONS, type FactionId } from "./factions";
 import { MISSIONS, type MissionDef } from "./missions";
 import { SCRIPTS, type ScriptDef } from "./script";
 import { ENDINGS, type Gate } from "./testimony";
+import { resolveSpot } from "./runtime";
+import { levelById } from "../sim/level";
+import { canSee } from "../sim/ai";
+import { DUMMY_HEIGHT } from "../sim/world";
+import { v3 } from "../math/vec3";
+import type { Objective, Spot } from "./missions";
+import type { LevelDef } from "../sim/level";
 
 export interface CampaignViolation {
   where: string;
@@ -153,6 +160,8 @@ export function lintCampaign(): CampaignViolation[] {
     else if (!deliverable(e.id)) out.push({ where: `ending ${e.id}`, rule: "ending-is-deliverable", detail: "no choice writes this id and it refines nothing that is written — the office can never show it", severity: "error" });
   }
 
+  out.push(...lintSpotsAreInTheOpen());
+
   // ---- missions and gigs: the arc is ordered and nothing depends on what does not exist ----
   out.push(...lintMissionOrder(MISSIONS));
   for (const m of MISSIONS) {
@@ -189,5 +198,87 @@ export function lintCampaign(): CampaignViolation[] {
   for (const k of [...producible.keys()]) if (k.endsWith(":ending")) read.add(k);
   for (const k of producible.keys()) if (!read.has(k)) out.push({ where: `testimony ${k}`, rule: "testimony-is-read", detail: "written by a choice and read by no gate — the choice changes nothing mechanical", severity: "note" });
 
+  return out;
+}
+
+
+/** Levels are deterministic but not free to build; the lint touches each one once. */
+const levelCache = new Map<string, LevelDef>();
+const levelFor = (id: string): LevelDef => {
+  let l = levelCache.get(id);
+  if (!l) levelCache.set(id, (l = levelById(id)));
+  return l;
+};
+
+/** Is the standing column at this point clear of the level's solid geometry? */
+function standable(level: LevelDef, x: number, z: number): boolean {
+  return !level.boxes.some((b) => x > b.min.x && x < b.max.x && z > b.min.z && z < b.max.z && b.max.y > 0.1 && b.min.y < DUMMY_HEIGHT);
+}
+
+/** Can anything standing on open ground see the chest of something standing here? */
+function sightlineExists(level: LevelDef, x: number, z: number): boolean {
+  const chest = v3(x, DUMMY_HEIGHT * 0.55, z);
+  const half = level.bounds ?? 60;
+  for (const r of [3, 8, 16, 28]) {
+    for (let a = 0; a < 360; a += 10) {
+      const ex = x + r * Math.cos((a * Math.PI) / 180);
+      const ez = z + r * Math.sin((a * Math.PI) / 180);
+      if (Math.abs(ex) > half || Math.abs(ez) > half) continue;
+      if (!standable(level, ex, ez)) continue;
+      if (canSee(v3(ex, 1.6, ez), chest, level.boxes, [])) return true;
+    }
+  }
+  return false;
+}
+
+/** every spot a mission or gig names, with where it came from */
+function spotsOf(o: Objective): Spot[] {
+  switch (o.kind) {
+    case "destroy": return o.spots;
+    case "escort": return o.path;
+    case "reach": case "hold": return [o.at];
+    case "survive": return o.at ? [o.at] : [];
+    default: return [];
+  }
+}
+
+/**
+ * A spot inside a building is a mission that cannot be finished (Stage 175).
+ *
+ * Objectives name a place either as a level node — which the district generator puts on open
+ * ground — or as a literal pair of coordinates typed into the mission table. A node cannot be
+ * wrong. A literal can, and two of BLIND THE MODEL's six lattice nodes were: `{x:0,z:-30}` and
+ * `{x:0,z:30}` on LEASE ROW both land inside a 4.2 m building, and a lattice node is a 1.8 m
+ * dummy, so both were sealed in concrete. `castRay` clips at the first solid box before testing
+ * any dummy, and `applyExplosion` refuses a target it cannot see, so neither could be destroyed
+ * by any means the game offers — and campaign worlds do not respawn dummies, so the pair never
+ * cycled out. PUT OUT THE SIX LATTICE NODES could reach four.
+ *
+ * The reachability lint this joins was built to answer "can the campaign be finished?" from the
+ * testimony graph. It had no idea the geometry could say no.
+ */
+export function lintSpotsAreInTheOpen(): CampaignViolation[] {
+  const out: CampaignViolation[] = [];
+  for (const m of MISSIONS) {
+    const level = levelFor(m.level);
+    const runs: [string, readonly Objective[]][] = [[m.id, m.objectives]];
+    for (const [i, v] of (m.variants ?? []).entries()) if (v.objectives) runs.push([`${m.id} variant ${i + 1}`, v.objectives]);
+    for (const [where, objectives] of runs) {
+      for (const o of objectives) {
+        for (const s of spotsOf(o)) {
+          if ("node" in s) {
+            if (!level.nodes.some((n) => n.label === s.node)) out.push({ where, rule: "spot-names-a-node", detail: `"${o.kind}" names node ${s.node}, which ${m.level} does not have`, severity: "error" });
+            continue;
+          }
+          const p = resolveSpot(level, s);
+          if (!standable(level, p.x, p.z)) {
+            out.push({ where, rule: "spot-is-in-the-open", detail: `"${o.kind}" spot (${p.x}, ${p.z}) on ${m.level} is inside a solid box — nothing can stand there`, severity: "error" });
+          } else if (o.kind === "destroy" && !sightlineExists(level, p.x, p.z)) {
+            out.push({ where, rule: "spot-can-be-shot", detail: `"${o.kind}" spot (${p.x}, ${p.z}) on ${m.level} has no line of sight from any open ground — it can never be destroyed`, severity: "error" });
+          }
+        }
+      }
+    }
+  }
   return out;
 }
