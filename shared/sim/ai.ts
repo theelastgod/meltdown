@@ -69,15 +69,68 @@ export type AiRequest =
   | { kind: "mechFlag"; mech: number; targetId: number }
   | { kind: "mechBeam"; mech: number; origin: Vec3; targetId: number; damage: number };
 
+/**
+ * Everything a drone carries for ONE LIFE, written the same way when it is built and when it comes
+ * back (Stage 167).
+ *
+ * It used to be two lists: the constructor's, and a shorter one inside the respawn branch. What the
+ * shorter one left out was carried through death. An EMP lasts 3 s and a wasp is down for 20, and
+ * the countdown is frozen while it is dead because the `!w.alive` branch returns before it — so a
+ * drone EMP'd and then shot down came back still disabled, sagged out of the sky from 4.00 m to
+ * 3.11 m and hung there for 2.48 s before it could do anything. `fireCooldown` went the other way:
+ * the 1 s grace that stops a drone opening fire the instant it sees you belonged only to the first
+ * generation, and a replacement opened fire in 0.48 s.
+ *
+ * `id`, `waypoints` and `shots` are not reset: the first two are which drone this is, and the third
+ * is the index into its aim-jitter sequence, which is a property of the drone and not of one life.
+ */
+function reviveWasp(w: Wasp): void {
+  w.pos = clone(w.waypoints[0]!);
+  w.vel = v3();
+  w.yaw = 0;
+  w.health = WASP.health;
+  w.alive = true;
+  w.respawnTimer = 0;
+  w.wp = 1 % w.waypoints.length;
+  w.state = "patrol";
+  w.targetId = -1;
+  w.fireCooldown = 1;
+  w.disabledTimer = 0;
+  w.lostTimer = 0;
+  w.jammedBy = -1;
+  w.jamTimer = 0;
+}
+
 export function createWasp(id: number, waypoints: Vec3[]): Wasp {
-  return { id, pos: clone(waypoints[0]!), vel: v3(), yaw: 0, health: WASP.health, alive: true, respawnTimer: 0, waypoints, wp: 1 % waypoints.length, state: "patrol", targetId: -1, fireCooldown: 1, shots: 0, disabledTimer: 0, lostTimer: 0, jammedBy: -1, jamTimer: 0 };
+  const w: Wasp = { id, pos: v3(), vel: v3(), yaw: 0, health: 0, alive: true, respawnTimer: 0, waypoints, wp: 0, state: "patrol", targetId: -1, fireCooldown: 0, shots: 0, disabledTimer: 0, lostTimer: 0, jammedBy: -1, jamTimer: 0 };
+  reviveWasp(w);
+  return w;
+}
+
+/** the mech's one-life state, on the same rule as the wasp's (Stage 167) */
+function reviveMech(m: Mech): void {
+  const a = m.path[0]!;
+  const b = m.path[1] ?? a;
+  m.pos = clone(a);
+  m.yaw = Math.atan2(-(b.x - a.x), -(b.z - a.z));
+  if (!m.faceFixed) m.face = m.yaw;
+  m.health = MECH.health;
+  m.alive = true;
+  m.respawnTimer = 0;
+  m.pathT = 0;
+  m.dir = 1;
+  m.lightYaw = 0;
+  m.sweepDir = 1;
+  m.targetId = -1;
+  m.lockTimer = 0;
+  m.fireCooldown = 0;
+  m.disabledTimer = 0;
 }
 
 export function createMech(id: number, path: Vec3[], face?: number): Mech {
-  const a = path[0]!;
-  const b = path[1] ?? a;
-  const yaw = Math.atan2(-(b.x - a.x), -(b.z - a.z));
-  return { id, pos: clone(a), yaw, face: face ?? yaw, faceFixed: face !== undefined, health: MECH.health, alive: true, respawnTimer: 0, path, pathT: 0, dir: 1, lightYaw: 0, sweepDir: 1, targetId: -1, lockTimer: 0, fireCooldown: 0, disabledTimer: 0 };
+  const m: Mech = { id, pos: v3(), yaw: 0, face: face ?? 0, faceFixed: face !== undefined, health: 0, alive: true, respawnTimer: 0, path, pathT: 0, dir: 1, lightYaw: 0, sweepDir: 1, targetId: -1, lockTimer: 0, fireCooldown: 0, disabledTimer: 0 };
+  reviveMech(m);
+  return m;
 }
 
 export function canSee(from: Vec3, to: Vec3, boxes: readonly Box[], clouds: readonly Cloud[]): boolean {
@@ -113,15 +166,7 @@ export function stepWasp(w: Wasp, targets: readonly SightTarget[], boxes: readon
   const dt = SIM_DT;
   if (!w.alive) {
     w.respawnTimer -= dt;
-    if (w.respawnTimer <= 0) {
-      w.alive = true;
-      w.health = WASP.health;
-      w.pos = clone(w.waypoints[0]!);
-      w.wp = 1 % w.waypoints.length;
-      w.state = "patrol";
-      w.targetId = -1;
-      w.jammedBy = -1;
-    }
+    if (w.respawnTimer <= 0) reviveWasp(w);
     return;
   }
   if (w.disabledTimer > 0) {
@@ -194,14 +239,7 @@ export function stepMech(m: Mech, targets: readonly SightTarget[], boxes: readon
   const dt = SIM_DT;
   if (!m.alive) {
     m.respawnTimer -= dt;
-    if (m.respawnTimer <= 0) {
-      m.alive = true;
-      m.health = MECH.health;
-      m.pos = clone(m.path[0]!);
-      m.pathT = 0;
-      m.targetId = -1;
-      m.lockTimer = 0;
-    }
+    if (m.respawnTimer <= 0) reviveMech(m);
     return;
   }
   if (m.disabledTimer > 0) {

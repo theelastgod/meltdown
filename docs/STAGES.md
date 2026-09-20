@@ -1641,6 +1641,69 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 167 — A drone carried its own death back with it
+
+**Goal.** An EMP grenade disables a drone for three seconds: it stops, sags out of the air, and
+hangs there while you finish it. That is the combination the grenade exists for. Twenty seconds
+later the replacement wasp spawns at the top of its patrol — and falls straight back out of the sky.
+
+One life's state had two definitions: the constructor's list, and a shorter list inside the respawn
+branch. Whatever the shorter one left out was carried through death, and the countdown is *frozen*
+while the drone is dead, because `stepWasp` returns from the `!w.alive` branch before it reaches
+the disabled one. Measured on the exact sequence a player performs:
+
+| | before | after |
+| --- | --- | --- |
+| EMP left when it was shot down | 2.50 s | 2.50 s |
+| disabled *after* it respawns | **2.48 s** | 0.00 s |
+| where it hangs after respawning | 4.00 m → **3.11 m** | 4.00 m |
+| a fresh drone opens fire after | 0.98 s | 0.98 s |
+| its *replacement* opens fire after | **0.48 s** | 0.97 s |
+
+So it went both ways. `disabledTimer` came back and the new drone was born broken. `fireCooldown`
+went the other way: the one-second grace that stops a drone shooting you the instant it sees you
+belonged only to the first generation, and every replacement was half a second quicker on the
+trigger than the drone it replaced. `lostTimer` and `jamTimer` rode across too. The mech carried the
+same 2.50 s of EMP through a *sixty*-second death.
+
+**What changed.**
+
+- `shared/sim/ai.ts` — `reviveWasp()` and `reviveMech()`. One life's state now has one definition,
+  written the same way when the drone is built and when it comes back; `createWasp` and
+  `createMech` call it rather than repeating it. `id`, `waypoints` and `path` are not reset because
+  they are which drone this is, and neither is `shots`, which is the index into the drone's own
+  aim-jitter sequence — a property of the drone, not of one life.
+
+**Proof.** vitest 876/876, five new. `tests/drone.test.ts`: a drone EMP'd and shot down comes back
+with `disabledTimer` 0, at 4.00 m, patrolling; the grace before the first shot belongs to every
+life; and the mech the same.
+
+The fifth test is the one that matters, and it guards the category rather than the instance: a wasp
+that has chased, fired, been EMP'd, been jammed and lost its target is compared **field for field**
+against a freshly built one, excluding only the three identity fields. A field added to the
+constructor and forgotten in the revive fails that test rather than a player's match.
+
+The full sweep green: 526 checks, and smoke 7/7 once `.env.production` — a local deploy artifact
+that points the build at the live Workers, which this sandbox's TLS interception then fails — is
+moved aside. `probe:run` passed in this sweep, which is worth recording: Stage 166 saw it fail
+twice and established by a baseline sweep that it fails with and without that change. Intermittent
+confirmed from the other side.
+
+Mutation A, the wasp's respawn back to its hand-listed subset — the defect itself: 3 of the 12
+fail, the EMP, the grace and the field-for-field. Mutation B, one field quietly dropped from the
+revive (`disabledTimer`) and nothing else changed: 2 fail, and the field-for-field test is one of
+them — which is the whole point of writing it, because that mutation is what this defect *was*.
+Mutation C, the grace set to 0: exactly the grace test. Mutation D, the mech's respawn back to its
+subset: the two mech tests and nothing else. Each mutation is caught, and each by the tests that
+own it rather than by all of them at once.
+
+Two of the eight scouts run over this repository in parallel independently reported the same shape
+one layer up — that `respawnPlayer` restores a subset too, and that a player's chosen primary
+weapon does not survive their own death. Read directly rather than taken on trust:
+`resetWeaponState` assigns a whole fresh `createWeaponState()` over the live one, and that fresh
+state hardcodes `slot: 1`. Nothing after the respawn puts the chosen primary back. That is the next
+stage, and it is this one with the stakes raised.
+
 ## Stage 166 — The drone's range was 25 metres only against a file wearing nothing
 
 **Goal.** `WASP.fireRange` is 25 m, and every other number around it is in metres: `detect` 18,
