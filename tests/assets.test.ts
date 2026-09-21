@@ -159,6 +159,30 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
   });
 });
 
+describe("a worn catalog plate reaches the body the city sees", () => {
+  const renderer = () => readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
+
+  it("bindSkinMap writes the plate onto the local trim, not only the first-person strip", () => {
+    const src = renderer();
+    const fn = src.slice(src.indexOf("private bindSkinMap"), src.indexOf("skinBound()"));
+    expect(fn).toMatch(/this\.local\.trim\.map = tex/);
+  });
+
+  it("skinBound fails if the trim is not drawing the plate", () => {
+    const src = renderer();
+    const fn = src.slice(src.indexOf("skinBound()"), src.indexOf("private drawTag"));
+    expect(fn).toMatch(/this\.local\.trim\.map !== this\.skinMap/);
+  });
+
+  it("a remote's strip and trim take the catalog texture, not only the tint", () => {
+    const src = renderer();
+    const fn = src.slice(src.indexOf("syncRemotes("), src.indexOf("private poseRemotes"));
+    expect(fn).toMatch(/def\?\.texture/);
+    expect(fn).toMatch(/e\.stripMat\.map = tex/);
+    expect(fn).toMatch(/e\.rig\.trim\.map = tex/);
+  });
+});
+
 describe("the loader fails soft", () => {
   it("a request with no document resolves null instead of rejecting", async () => {
     disposeAssets();

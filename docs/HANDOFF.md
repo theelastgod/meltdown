@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 205, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 206, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 205 on this branch (phage rounds wear the phage plate) |
-| Next stage number | **206** |
+| HEAD | Stage 206 on this branch (catalog plates reach the body trim) |
+| Next stage number | **207** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | ~1027 across 115 files, `npm test` |
+| Unit tests | ~1041 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,10 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 206 is next
+## 6. Stage 207 is next
 
-Stage 205 mapped phage/sticky rounds to `skin_phage_plate`. Next is whatever a player would
-notice. Do not loosen fairness.
+Stage 206 put the worn catalog plate on the body trim and on remote strips. Next is whatever a
+player would notice. Do not loosen fairness. `tex_cable` is still a named leftover plate with no
+mesh.
 
 ---
 

@@ -492,7 +492,7 @@ export class Renderer {
     }
   }
 
-  private remoteMeshes = new Map<number, { group: THREE.Group; rig: Rig; strip: THREE.Mesh; stripMat: THREE.MeshBasicMaterial; slot: number; skin: number; tint: string | null; tag: THREE.Sprite; tagKey: string; canvas: HTMLCanvasElement; view: RemoteBodyView | null; prev: { x: number; y: number; z: number; yaw: number } | null; speedEst: number; phase: number; kick: number; flash: number; hurt: number; hurtFrom: number }>();
+  private remoteMeshes = new Map<number, { group: THREE.Group; rig: Rig; strip: THREE.Mesh; stripMat: THREE.MeshBasicMaterial; slot: number; skin: number; plateId: string | null; tint: string | null; tag: THREE.Sprite; tagKey: string; canvas: HTMLCanvasElement; view: RemoteBodyView | null; prev: { x: number; y: number; z: number; yaw: number } | null; speedEst: number; phase: number; kick: number; flash: number; hurt: number; hurtFrom: number }>();
   /** the local rig's worn skin tint (null: stock) */
   skinTint: string | null = null;
 
@@ -534,10 +534,10 @@ export class Renderer {
   }
 
   /**
-   * The plate on the strips (Stage 55). From Stage 43 to Stage 54 the texture was downloaded, held
-   * in `skinMap`, and never assigned to a material: the probe asserted it had loaded, not that
-   * anything drew it, and the four plates the game sells were invisible. It is bound here, on the
-   * strip material every viewmodel carries, and `skinBound()` answers whether it is.
+   * The plate on the strips (Stage 55) and on the body trim the third-person camera actually looks
+   * at (Stage 206). Stage 43 downloaded it; Stage 55 assigned it to viewmodel strips; the default
+   * camera is behind the file, so the plate stayed on a hidden first-person gun. The trim is the
+   * same MeshBasicMaterial read as the strip. Fail-soft: a miss leaves the tint.
    */
   private bindSkinMap(tex: THREE.Texture | null): void {
     for (const vm of [...this.viewmodels.values(), ...this.localWeapons.values()]) {
@@ -546,11 +546,14 @@ export class Renderer {
       strip.map = tex;
       strip.needsUpdate = true;
     }
+    this.local.trim.map = tex;
+    this.local.trim.needsUpdate = true;
   }
 
-  /** true when a plate is loaded and every viewmodel's strip material is drawing it */
+  /** true when a plate is loaded and the strips *and* the body trim are drawing it */
   skinBound(): boolean {
     if (!this.skinMap) return false;
+    if (this.local.trim.map !== this.skinMap) return false;
     for (const vm of [...this.viewmodels.values(), ...this.localWeapons.values()]) {
       const strip = vm.userData.strip as THREE.MeshBasicMaterial | undefined;
       if (!strip || strip.map !== this.skinMap) return false;
@@ -622,7 +625,7 @@ export class Renderer {
         tag.center.set(0.1, 0.5);
         rig.group.add(tag);
         this.scene.add(rig.group);
-        e = { group: rig.group, rig, strip, stripMat, slot: v.slot ?? 0, skin: -1, tint: null, tag, tagKey: "", canvas, view: null, prev: null, speedEst: 0, phase: 0, kick: 0, flash: 0, hurt: 0, hurtFrom: 0 };
+        e = { group: rig.group, rig, strip, stripMat, slot: v.slot ?? 0, skin: -1, plateId: null, tint: null, tag, tagKey: "", canvas, view: null, prev: null, speedEst: 0, phase: 0, kick: 0, flash: 0, hurt: 0, hurtFrom: 0 };
         this.remoteMeshes.set(v.id, e);
       }
       this.drawTag(e, v.name ?? "BLANK", v.tag ?? "", !!v.debt);
@@ -632,13 +635,31 @@ export class Renderer {
       if (skin !== e.skin || slot !== e.slot) {
         e.skin = skin;
         e.slot = slot;
-        const tint = skinByToken(skin)?.tint ?? null;
+        const def = skinByToken(skin);
+        const tint = def?.tint ?? null;
+        const plate = def?.texture ?? null;
         e.tint = tint;
         e.rig.mat.emissive.set(tint ?? PALETTE.cyan);
         e.rig.tint.set(tint ?? PALETTE.cyan);
         const slotId = Renderer.slotId(slot);
         setRigSlot(e.rig, slotId, e.strip);
         e.stripMat.color.set(tint ?? (slotId ? WEAPON_LIST[slot - 1]!.tracer : PALETTE.cyan));
+        // Stage 206: the catalog plate was local-strip only. A teammate wearing RUST LEASE was a
+        // tint and no map. Same fail-soft load as setSkin, keyed so a slower plate cannot land after a swap.
+        e.plateId = plate;
+        e.stripMat.map = null;
+        e.rig.trim.map = null;
+        e.stripMat.needsUpdate = true;
+        e.rig.trim.needsUpdate = true;
+        if (plate) {
+          void assetTexture(plate).then((tex) => {
+            if (e.plateId !== plate || !tex) return;
+            e.stripMat.map = tex;
+            e.rig.trim.map = tex;
+            e.stripMat.needsUpdate = true;
+            e.rig.trim.needsUpdate = true;
+          });
+        }
       }
       e.group.position.set(v.x, v.y, v.z);
       e.group.rotation.y = v.yaw;

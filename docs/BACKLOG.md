@@ -100,3 +100,5 @@ one stage.
   → Stage 204
 - Phage and sticky rounds were unplated violet boxes  
   → Stage 205
+- A worn catalog plate never reached the body trim or a teammate's strip  
+  → Stage 206

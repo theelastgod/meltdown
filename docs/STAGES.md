@@ -1641,6 +1641,21 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 206 — The catalog plate never reached the body the city sees
+
+**Goal.** Stage 55 bound a worn skin's plate to the first-person viewmodel strip. The default camera
+is third person. The body trim — the MeshBasicMaterial spine and boots the city actually looks at —
+kept the tint and never the map. A teammate's strip was the same: `skinByToken` set the colour and
+left `stripMat.map` null. RUST LEASE was a download plus an orange edge.
+
+**What changed.** `bindSkinMap` writes the plate onto `local.trim`. `skinBound` fails if the trim is
+not drawing it. Remotes load the catalog texture onto their strip and trim, fail-soft, keyed so a
+slower plate cannot land after a swap.
+
+**Proof.** `tests/assets.test.ts` ("a worn catalog plate reaches the body the city sees"). Mutations:
+`local.trim.map` omitted — 1 fail; `skinBound` trim check omitted — 1 fail; remote `stripMat.map`
+omitted — 1 fail; remote `trim.map` omitted — 1 fail; `def?.texture` not read — 1 fail.
+
 ## Stage 205 — Phage rounds were a flat violet box
 
 **Goal.** Frag/smoke/emp nades got plates in Stage 203. Phage and sticky projectiles stayed
