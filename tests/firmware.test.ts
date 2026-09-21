@@ -111,7 +111,7 @@ describe("a flashed firmware reaches the round it fires", () => {
         const actual = pct(b.damage, p.damage);
         const m = f.line.match(/([+\-−]\d+(?:\.\d+)?)%\s*(?:pellet )?damage/);
         expect(m, `${f.id} damage ${b.damage}→${p.damage} is not on the line`).toBeTruthy();
-        const claimed = Number(m![1].replace("−", "-"));
+        const claimed = Number((m?.[1] ?? "").replace("−", "-"));
         expect(Math.abs(claimed - actual), `${f.id} claims ${claimed}% damage, patch is ${actual.toFixed(1)}%`).toBeLessThan(0.6);
       }
       if (p.magSize !== b.magSize) {

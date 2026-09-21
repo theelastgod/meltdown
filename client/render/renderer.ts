@@ -792,7 +792,7 @@ export class Renderer {
    * its hand turns with the pitch; it is hidden when the camera is pulled in against it. The
    * reticle goes where the eye's ray lands on screen, so what it covers is what a shot hits.
    */
-  private placeThirdPerson(v: ViewState, dt: number, bobY: number): void {
+  private placeThirdPerson(v: ViewState, dt: number, bobY: number, rawDt: number): void {
     const pivot = { x: v.x, y: v.y + this.eyeSmooth, z: v.z };
     // the death camera: the body's own yaw still belongs to the file (it is a corpse, it keeps the
     // facing it fell with), but the camera turns onto whatever closed it (Stage 83)
@@ -914,7 +914,7 @@ export class Renderer {
       this.camera.fov = this.fovNow;
       this.camera.updateProjectionMatrix();
     }
-    if (this.thirdPerson) this.placeThirdPerson(v, dt, bobY - dip);
+    if (this.thirdPerson) this.placeThirdPerson(v, dt, bobY - dip, rawDt);
     else {
       this.camera.position.set(v.x, v.y + this.eyeSmooth + bobY - dip, v.z);
       this.camera.rotation.set(v.pitch + v.kickPitch, v.yaw + v.kickYaw, this.rollNow + (this.rollNow > 0.005 ? 0 : bobX * 0.6) + (v.stunned ? Math.sin(this.clock * 25) * 0.02 : 0));

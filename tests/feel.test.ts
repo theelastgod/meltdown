@@ -34,6 +34,7 @@ describe("the renderer divides the fall by the real frame", () => {
     const src = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
     expect(src).toMatch(/fallSpeed\(this\.lastY, v\.y, rawDt\)/);
     expect(src).toMatch(/this\.landT = Math.max\(0, this\.landT - rawDt\)/);
+    expect(src).toMatch(/placeThirdPerson\(v, dt, bobY - dip, rawDt\)/);
   });
 });
 
