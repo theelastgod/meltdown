@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 198 — Online FX replayed the predicted swap
+
+**Goal.** Stage 196 gave every FX id an online case. Swap, throw, charge, lunge and melee
+already play from local prediction (`applyInput` predictOnly, then `onEvent`). Playing them
+again on `FX.swap` for `playerId === me` doubled the click.
+
+**What changed.** Those five play only when `playerId !== me` (or `=== me` then `break` for
+melee). Teammates still hear them. You already did.
+
+**Proof.** `tests/onlinefx.test.ts`. Mutation: FX.swap plays for me — 1 fail.
+
 ## Stage 197 — PAID printed the raw float
 
 **Goal.** `client/file.ts` printed `PAID ${run.paid} $CAPITAL`. `run.paid` is $CAPITAL, often a

@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 197, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 198, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 197 on this branch (PAID prints two decimal places) |
-| Next stage number | **198** |
+| HEAD | Stage 198 on this branch (self-action FX do not replay) |
+| Next stage number | **199** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1027 across 115 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 198 is next
+## 6. Stage 199 is next
 
-Stage 197 prints PAID to two places. Next is whatever a player would notice that is not
-already in STAGES.md.
+Stage 198 stopped predicted swap/throw/charge from playing twice. Next is whatever a player
+would notice that is not already in STAGES.md.
 
 ---
 

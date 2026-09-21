@@ -28,4 +28,13 @@ describe("online FX has a case for every kind the room sends", () => {
     const block = fxSwitch.slice(fxSwitch.indexOf("case FX.mechDeath"), fxSwitch.indexOf("case FX.nodeFlip"));
     expect(block).toMatch(/this\.audio\.explosion\(true\)/);
   });
+
+  it("self-action FX do not replay for the predicting file", () => {
+    for (const name of ["swap", "throw", "chargeFull", "lunge", "melee"] as const) {
+      const start = fxSwitch.indexOf(`case FX.${name}`);
+      const next = fxSwitch.indexOf("case FX.", start + 1);
+      const block = fxSwitch.slice(start, next === -1 ? undefined : next);
+      expect(block, name).toMatch(/ev\.playerId !== me|ev\.playerId === me\) break/);
+    }
+  });
 });

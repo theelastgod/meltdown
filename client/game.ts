@@ -607,23 +607,22 @@ export class Game {
             }
             break;
           case FX.swap:
-            if (ev.playerId === me) this.audio.swap();
+            // prediction already played this for us (Stage 198)
+            if (ev.playerId !== me) this.audio.swap();
             break;
           case FX.melee:
-            if (ev.playerId === me) {
-              this.audio.shot("shock_baton");
-              if (ev.a > 0) this.audio.hit("body");
-              if (ev.b) this.renderer.post.kick(0.4);
-            }
+            if (ev.playerId === me) break;
+            this.audio.shot("shock_baton");
+            if (ev.a > 0) this.audio.hit("body");
             break;
           case FX.throw:
-            if (ev.playerId === me) this.audio.throw();
+            if (ev.playerId !== me) this.audio.throw();
             break;
           case FX.chargeFull:
-            if (ev.playerId === me) this.audio.charge(1);
+            if (ev.playerId !== me) this.audio.charge(1);
             break;
           case FX.lunge:
-            if (ev.playerId === me) this.audio.jump();
+            if (ev.playerId !== me) this.audio.jump();
             break;
           case FX.waspDeath:
             this.hud.push(`WASP-${String(ev.a).padStart(2, "0")} DOWNED`, "am");
