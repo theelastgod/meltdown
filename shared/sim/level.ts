@@ -260,6 +260,12 @@ export const LEVEL_INFO: readonly { id: string; displayName: string; cast: Distr
 /** Levels the district select does not list (reached by the campaign only). */
 export const HIDDEN_LEVELS: readonly string[] = [WHITE_LEVEL_ID];
 
+/** The city's name for a level id, without building the geometry. */
+export function levelDisplayName(id: string): string {
+  if (id === WHITE_LEVEL_ID) return "THE WHITE OFFICE";
+  return (LEVEL_INFO.find((l) => l.id === id)?.displayName ?? id.replace(/_/g, " ")).toUpperCase();
+}
+
 /** Build a level by id; unknown ids fall back to the default district. */
 export function levelById(id: string | null | undefined): LevelDef {
   if (id === "drainage_yard") return drainageYard();

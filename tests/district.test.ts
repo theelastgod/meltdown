@@ -1,11 +1,32 @@
 /** Every district was the yard (Stage 131). */
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { districtName, enteredLine, fullWakeLine, roundOverLine, wakeBeginsLine } from "../client/hud/district";
+import { levelDisplayName } from "../shared/sim/level";
+import { MISSIONS } from "../shared/campaign/missions";
 
 describe("districtName", () => {
   it("is the display name in capitals, or the id spelt out", () => {
     expect(districtName({ name: "drainage_yard", displayName: "Drainage Yard" })).toBe("DRAINAGE YARD");
     expect(districtName({ name: "lease_row" })).toBe("LEASE ROW");
+  });
+});
+
+describe("a contract names the district the city does", () => {
+  it("does not print the underscore id", () => {
+    expect(levelDisplayName("deadletter_docks")).toBe("DEADLETTER DOCKS");
+    expect(levelDisplayName("lease_row")).toBe("LEASE ROW");
+    expect(levelDisplayName("repo_depot")).toBe("REPO DEPOT");
+    expect(levelDisplayName("white_office")).toBe("THE WHITE OFFICE");
+    expect(levelDisplayName("deadletter_docks")).not.toMatch(/_/);
+    for (const m of MISSIONS) expect(levelDisplayName(m.level), m.id).not.toMatch(/_/);
+  });
+
+  it("the wrong-district note and the contracts list both call it", () => {
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/PLAYS IN \$\{levelDisplayName\(def\.level\)\}/);
+    expect(src).toMatch(/levelDisplayName\(m\.level\)/);
+    expect(src).not.toMatch(/def\.level\.toUpperCase\(\)/);
   });
 });
 

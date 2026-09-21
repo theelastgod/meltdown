@@ -20,6 +20,7 @@ import { sandboxAccount, type Account } from "@shared/progression/account";
 import type { SimEvent } from "@shared/sim/world";
 import type { MissionMsg } from "@shared/net/protocol";
 import { HUB_LEVEL_ID } from "@shared/sim/hub";
+import { levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
 import { HOSTS } from "./config";
 import { weaponName } from "./hud/kill";
@@ -137,7 +138,7 @@ export class Campaign {
     const a = this.account();
     const def = missionById(id);
     if (!def) return this.note(`UNKNOWN CONTRACT ${id}`);
-    if (def.level !== this.game.levelId) return this.note(`${def.title} PLAYS IN ${def.level.toUpperCase()}`);
+    if (def.level !== this.game.levelId) return this.note(`${def.title} PLAYS IN ${levelDisplayName(def.level)}`);
     const launch = canLaunch(a, this.save, id);
     if (!launch.ok) this.note(`CONTRACT NOT ON OFFER · ${launch.reason} — RUNNING IT ANYWAY OFF THE RECORD`);
     this.mission = createMission(id, this.game.world, this.save.testimony, this.save.faction, this.threat.rating);
@@ -512,7 +513,7 @@ export class Campaign {
     const next = nextMission(c);
     const offers = gigsOnOffer(a, c);
     const alive = handlersAlive(c.testimony);
-    const row = (m: MissionDef, on: boolean, why = "") => `<div class="ct ${on ? "on" : "off"}" data-launch="${on ? m.id : ""}"><div class="nm">${m.kind === "mission" ? `◈ ${String(m.order).padStart(2, "0")} · ` : "▸ "}${m.title} <span class="lv">${m.level.replace(/_/g, " ").toUpperCase()}</span></div><div class="br">${m.brief}</div><div class="rw">${[m.reward.scrip ? `+${m.reward.scrip}¢` : "", m.reward.xp ? `+${m.reward.xp} XP` : "", m.reward.protocol ? `PROTOCOL` : "", m.reward.weapon ? `WEAPON ${weaponName(m.reward.weapon)}` : "", m.requires?.threat ? `THREAT ≥ ${m.requires.threat}` : ""].filter(Boolean).join(" · ")}${why ? ` · <i>${why}</i>` : ""}${on ? ` · <span class="cy" data-crew="${m.id}">[RUN WITH A CREW]</span>` : ""}</div></div>`;
+    const row = (m: MissionDef, on: boolean, why = "") => `<div class="ct ${on ? "on" : "off"}" data-launch="${on ? m.id : ""}"><div class="nm">${m.kind === "mission" ? `◈ ${String(m.order).padStart(2, "0")} · ` : "▸ "}${m.title} <span class="lv">${levelDisplayName(m.level)}</span></div><div class="br">${m.brief}</div><div class="rw">${[m.reward.scrip ? `+${m.reward.scrip}¢` : "", m.reward.xp ? `+${m.reward.xp} XP` : "", m.reward.protocol ? `PROTOCOL` : "", m.reward.weapon ? `WEAPON ${weaponName(m.reward.weapon)}` : "", m.requires?.threat ? `THREAT ≥ ${m.requires.threat}` : ""].filter(Boolean).join(" · ")}${why ? ` · <i>${why}</i>` : ""}${on ? ` · <span class="cy" data-crew="${m.id}">[RUN WITH A CREW]</span>` : ""}</div></div>`;
     const fixers = (["deacon", "marrow", "vessel"] as const).map((h) => {
       const H = HANDLERS[h];
       const mine = offers.filter((g) => g.fixer === h);

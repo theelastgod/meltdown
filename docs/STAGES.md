@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 216 — A contract in the wrong district printed the id
+
+**Goal.** The contracts list spells `DEADLETTER DOCKS`. Launching THE LEAK from Lease Row wrote
+`THE LEAK PLAYS IN DEADLETTER_DOCKS`. m7 would have said `WHITE_OFFICE` where the city says
+THE WHITE OFFICE.
+
+**What changed.** `levelDisplayName(id)` is the display name without building the district.
+The wrong-district note and the contracts list both call it.
+
+**Proof.** `tests/district.test.ts`: `deadletter_docks` is `DEADLETTER DOCKS`, `white_office` is
+`THE WHITE OFFICE`, no underscore on any mission. Source must call `levelDisplayName(def.level)`
+and must not `def.level.toUpperCase()`. Mutation: the note uppercases the id — 1 fail.
+
 ## Stage 215 — Campaign unlocks called THE DIRECTIVE "DIRECTIVE"
 
 **Goal.** Stage 212 made the kill stamp print `weaponName`. Closing THE LEAK still wrote

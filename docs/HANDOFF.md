@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 215, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 216, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 215 on this branch (campaign unlocks print THE DIRECTIVE) |
-| Next stage number | **216** |
+| HEAD | Stage 216 on this branch (contracts name the district, not the id) |
+| Next stage number | **217** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | ~1043 across 117 files, `npm test` |
+| Unit tests | ~1047 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 216 is next
+## 6. Stage 217 is next
 
-Stage 215 made campaign unlocks print THE DIRECTIVE. Next is whatever a player would notice. Do
-not loosen fairness.
+Stage 216 made a wrong-district contract print DEADLETTER DOCKS, not DEADLETTER_DOCKS. Next is
+whatever a player would notice. Do not loosen fairness.
 
 ---
 
