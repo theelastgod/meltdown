@@ -82,6 +82,11 @@ describe("chips and firmwares", () => {
     expect(src).not.toMatch(/chip-rank", detail: `\$\{id\} needs \$\{wid\}/);
     const fw = validateLoadout({ ...DEFAULT_LOADOUT, firmware: { lease_breaker: "lease_breaker:three_count" } }, owned, 50, ranks); // rank 20
     expect(fw.errors.map((e) => e.rule)).toContain("firmware-rank");
+    const fwKick = fw.errors.find((e) => e.rule === "firmware-rank")!;
+    expect(fwKick.detail).toMatch(/THREE-COUNT/);
+    expect(fwKick.detail).toMatch(/LEASE-BREAKER mastery/);
+    expect(fwKick.detail).not.toMatch(/lease_breaker:three_count/);
+    expect(fwKick.detail).not.toMatch(/needs lease_breaker mastery/);
     const fwOk = validateLoadout({ ...DEFAULT_LOADOUT, firmware: { lease_breaker: "lease_breaker:three_count" } }, owned, 50, SANDBOX_RANKS);
     expect(fwOk.errors).toEqual([]);
   });

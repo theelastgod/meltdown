@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 234 — The firmware-rank kick named lease_breaker:three_count
+
+**Goal.** Stage 233 taught the chip-rank kick LEASE-BREAKER FLASH CUT. Flashing THREE-COUNT at
+rank 12 still kicked `lease_breaker:three_count needs lease_breaker mastery 20`. The FILE panel
+already prints THREE-COUNT.
+
+**What changed.** That detail interpolates `f.name` and `gun(wid)`.
+
+**Proof.** `tests/mastery.test.ts`: the kick matches THREE-COUNT and LEASE-BREAKER mastery, not
+`lease_breaker:three_count`. Mutation: interpolate the ids again — 1 fail.
+
 ## Stage 233 — The chip-rank kick named lease_breaker:flash_cut
 
 **Goal.** Stage 231 taught the loadout kick THE DIRECTIVE. Socketing FLASH CUT at rank 12 still

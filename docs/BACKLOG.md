@@ -156,3 +156,5 @@ one stage.
   → Stage 232
 - The chip-rank kick named lease_breaker:flash_cut  
   → Stage 233
+- The firmware-rank kick named lease_breaker:three_count  
+  → Stage 234
