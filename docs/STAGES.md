@@ -1641,6 +1641,43 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 184 — Threat never widened how far VANTAGE could see
+
+**Goal.** Threat Rating "rises with the account … and the districts answer: more patrols, wider
+detection, the PA calling your moniker." `ThreatProfile.detectMult` is `1 + 0.06 * r`.
+THREAT_LINES[6] is "FLAGGED · DETECTION DOUBLED". The wasp's notice distance is
+`trueD / SightTarget.detectMult` against `WASP.detect` (18 m).
+
+`detectMult` had zero readers outside its own file. `spawnThreat` placed `extraWasps` /
+`extraMechs`. `stepAI` built each SightTarget from the file's build sheet alone
+(`modsFor(p).droneDetect * (0.85 + 0.15 * footstep)`). The only test was
+`expect(t.detectMult).toBeCloseTo(1.36)` — arithmetic nothing runs. Measured on a real
+lease_row world, a stationary wasp 22 m from a Blank (LOS open on +x from spawn):
+
+| | detectMult on the target | chase by 2 s |
+| --- | ---: | --- |
+| Threat 0 | 1.00 | no |
+| Threat 10 | 1.00 (profile says 1.6) | no |
+
+The ticks were identical. At 18 × 1.6 = 28.8 m the rating-10 world should have flipped.
+
+**What changed.**
+
+- `World.threatDetectMult` — default 1 (PvP never calls spawnThreat). `spawnThreat` writes the
+  profile. `stepAI` multiplies it into SightTarget next to the build. `hashWorld` carries it.
+- Did not retune `1 + 0.06 * r` so rating 6 is 2.0. The line still overclaims; wiring the field
+  is this stage. Doubling is a balance decision, same family as Stage 173.
+
+**Proof.** `tests/detectmult.test.ts` (2): spawnThreat writes 1 / 1.36 / 1.6; 22 m is patrol at
+Threat 0 and chase at Threat 10. Typecheck clean. `npm test` 1005/1005 across 111 files.
+Campaign / economy / assets lints clean. Fairness not re-run: this stage does not touch a sheet.
+
+Mutations:
+
+- **A**, `stepAI` back to the build sheet alone: **1** fails — Threat 10 does not chase at 22 m.
+- **B**, spawnThreat does not write the field: **1** fails — the world stays at 1 after rating 6.
+  The 22 m play still passes, because that test sets the field itself. Each layer owns one.
+
 ## Stage 183 — The rejoin knock gave up at 31.5 s of a 60 s seat
 
 **Goal.** After a drop, the client knocks on a doubling wait "for as long as the room keeps the

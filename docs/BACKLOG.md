@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Sixteen have since been fixed (Stages 168–183) and
+turned out to be the same finding reported twice. Seventeen have since been fixed (Stages 168–184) and
 are listed at the foot of this file with the commit that closed them.
 
-The **16 below are open**. Every one has been read in the source — none is a hunch.
+The **15 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -15,44 +15,6 @@ first written once measured, and one ("stranded units") is two findings tangled 
 Ordered roughly by how much a player would notice, not by how easy they are. Item numbers are
 stable ids, not a queue.
 
-
-## Campaign
-
-### 3. ThreatProfile.detectMult is computed for every rating and read by nothing — Threat never widens VANTAGE detection
-
-`shared/campaign/threat.ts:16`
-
-**What the code promises.** threat.ts's header comment states the rule: "Threat Rating 0–10: how hard VANTAGE hunts this
-file. It rises with the account … and the districts answer: more patrols, wider detection, the
-PA calling your moniker." The field is declared `/** multiplier on wasp detection radius */
-detectMult: number` and computed as `1 + 0.06 * r` (threat.ts:35); THREAT_LINES[6] tells the
-player "FLAGGED · DETECTION DOUBLED".
-
-**What it does.** `ThreatProfile.detectMult` has zero readers in client/, server/ or shared/ outside its own
-declaration. `spawnThreat` (shared/campaign/runtime.ts:88-105) reads only
-`extraWasps`/`extraMechs`; `createMission` (runtime.ts:111, 136-140) reads only those plus
-`rating`; client/campaign.ts reads `rating`, `line`, `named`; server/campaign-room.ts never
-touches the profile. The `detectMult` the AI actually uses is built from the player's own build
-sheet — `detectMult: modsFor(p).droneDetect * (0.85 + 0.15*modsFor(p).footstep)`
-(shared/sim/world.ts:672), consumed at shared/sim/ai.ts:198 and :281 — and the campaign number
-is never folded in. Even its value contradicts its line: at rating 6 it is 1.36, not the 2.0
-that "DETECTION DOUBLED" claims. The only thing that touches it is tests/campaign.test.ts:53,
-`expect(t.detectMult).toBeCloseTo(1.36)` — an assertion on arithmetic nothing runs, which cannot
-fail for this defect.
-
-**Measured.** `grep -rn 'detectMult' client/ server/ shared/ --include=*.ts` yields only threat.ts
-(declaration/computation), shared/sim/ai.ts (the SightTarget field) and shared/sim/world.ts:672
-(built from `modsFor(p)` alone) — no site multiplies a SightTarget's detectMult by a
-ThreatProfile. Behaviourally: in a district world, run `spawnThreat(world, threatProfile(0))` vs
-`threatProfile(10)`, place a player at a fixed distance from a wasp, and compare the tick at
-which `wasp.state` becomes "chase". They are identical; if detectMult were wired, the rating-10
-world would flip at 1.6x the effective distance.
-
-**What a player sees.** A player at Threat 10 ("THE DIRECTIVE · YOU ARE THE FORECAST") is spotted by wasps and mech
-searchlights at exactly the same radius as a player at Threat 0. Half the escalation the FILE
-panel announces — the half it names explicitly at rating 6 — is inert; only the extra patrol
-count ever changes. Stealth builds (STATIC SKIN, DARK POOL, BLACK SWAN) are never counter-
-pressured by Threat the way the game says they are.
 
 ## Economy
 
@@ -525,3 +487,5 @@ stricter than the rule it guards.
   → Stage 182
 - The rejoin knock gives up after 31.5 s of a 60 s grace window and then tells the player the room let the seat go  
   → Stage 183
+- ThreatProfile.detectMult is computed for every rating and read by nothing — Threat never widens VANTAGE detection  
+  → Stage 184

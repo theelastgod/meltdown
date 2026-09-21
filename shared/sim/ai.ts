@@ -60,7 +60,7 @@ export interface SightTarget {
   eye: Vec3;
   chest: Vec3;
   alive: boolean;
-  /** detection radius multiplier against this target (build) */
+  /** detection radius multiplier against this target (build × campaign Threat) */
   detectMult?: number;
 }
 

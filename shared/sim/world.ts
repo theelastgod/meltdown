@@ -148,6 +148,11 @@ export class World {
   private pending: SimEvent[] = [];
   /** an Audit playlist's gravity (symmetric for every file in the room; 1 outside an Audit) */
   gravityMult = 1;
+  /**
+   * Campaign Threat's multiplier on wasp/mech detection (Stage 184). 1 in PvP: rooms never
+   * call spawnThreat. Folded into SightTarget.detectMult next to the file's own build.
+   */
+  threatDetectMult = 1;
   private nextSpawn = 0;
   private nextProjId = 1;
   private nextCloudId = 1;
@@ -670,7 +675,10 @@ export class World {
 
   private stepAI(opts: StepOpts): void {
     const targets: SightTarget[] = [];
-    for (const p of this.players.values()) targets.push({ id: p.id, eye: eyePos(p), chest: v3(p.pos.x, p.pos.y + p.height * 0.55, p.pos.z), alive: p.alive, detectMult: modsFor(p).droneDetect * (0.85 + 0.15 * modsFor(p).footstep) });
+    for (const p of this.players.values()) {
+      const build = modsFor(p).droneDetect * (0.85 + 0.15 * modsFor(p).footstep);
+      targets.push({ id: p.id, eye: eyePos(p), chest: v3(p.pos.x, p.pos.y + p.height * 0.55, p.pos.z), alive: p.alive, detectMult: build * this.threatDetectMult });
+    }
     const reqs: AiRequest[] = [];
     for (const w of this.wasps) stepWasp(w, targets, this.level.boxes, this.clouds, this.tick, reqs);
     for (const m of this.mechs) stepMech(m, targets, this.level.boxes, this.clouds, reqs);
@@ -822,7 +830,7 @@ export class World {
 
 /** Stable digest of all gameplay-relevant state; equal digests ⇒ identical simulation. */
 export function hashWorld(w: World): string {
-  const parts: number[] = [w.tick];
+  const parts: number[] = [w.tick, w.threatDetectMult];
   const push = (v: Vec3) => parts.push(v.x, v.y, v.z);
   for (const p of [...w.players.values()].sort((a, b) => a.id - b.id)) {
     push(p.pos);

@@ -86,6 +86,7 @@ function patrolAround(c: Vec3, r: number, rnd: () => number): Vec3[] {
 
 /** Spawn the district's Threat presence: extra patrols around the wake nodes, a mech on the main street. */
 export function spawnThreat(world: World, threat: ThreatProfile, seed = 7): { wasps: number; mechs: number } {
+  world.threatDetectMult = threat.detectMult;
   const rnd = lcg(seed + world.seed);
   const anchors = world.level.nodes.length ? world.level.nodes.map((n) => n.pos) : world.level.spawns.map((s) => s.pos);
   let wasps = 0;
