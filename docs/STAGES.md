@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 209 — Wasp arms were a flat brown box
+
+**Goal.** Stage 200 bound `tex_wasp_hull` to the wasp body. Each rotor arm was a new
+`MeshStandardMaterial` at `0x1a1812` with no map, so a wasp up close was a plated hull on four
+unplated sticks.
+
+**What changed.** The arms share the hull material. Fail-soft with the hull.
+
+**Proof.** `tests/assets.test.ts` requires the arm mesh to be built with `waspMat`. Mutation: a
+fresh unplated standard material — 1 fail.
+
 ## Stage 208 — The NAMED nameplate was a brown box
 
 **Goal.** Chapter III puts a nameplate on the Deadletter desk. `tex_nameplate` already dresses

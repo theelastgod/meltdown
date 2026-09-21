@@ -106,3 +106,5 @@ one stage.
   → Stage 207
 - The Chapter III desk nameplate was an unplated brown box  
   → Stage 208
+- Wasp rotor arms were unplated brown boxes  
+  → Stage 209
