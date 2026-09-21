@@ -153,7 +153,9 @@ export class Tram {
       const windows = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.9, 2.46), windowMat);
       windows.position.y = 0.35;
       g.add(windows);
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(14.05, 0.08, 2.45), new THREE.MeshBasicMaterial({ color: PALETTE.magenta }));
+      const railStripMat = new THREE.MeshBasicMaterial({ color: PALETTE.magenta });
+      bindPlate(railStripMat, "tex_billboard_mg");
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(14.05, 0.08, 2.45), railStripMat);
       strip.position.y = -1.2;
       g.add(strip);
       const headMat = new THREE.MeshBasicMaterial({ color: 0xfff3d0 });

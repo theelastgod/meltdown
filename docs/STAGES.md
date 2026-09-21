@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 256 — The monorail under-strip was a flat magenta bar
+
+**Goal.** Stage 254 plated the headlamp. The magenta band under each car was still
+`MeshBasicMaterial` with no map.
+
+**What changed.** `bindPlate(railStripMat, "tex_billboard_mg")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `life.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 255 — The airship keel strip was a flat cyan bar
 
 **Goal.** Stage 210 plated the airship ad panel. The 34 m cyan strip hanging under it was still

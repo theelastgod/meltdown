@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 255, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 256, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 255 on this branch (airship keel wears tex_billboard_cy) |
-| Next stage number | **256** |
+| HEAD | Stage 256 on this branch (monorail under-strip wears tex_billboard_mg) |
+| Next stage number | **257** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1062 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,9 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 256 is next
+## 6. Stage 257 is next
 
-Stage 255 put `tex_billboard_cy` on the airship keel strip. Do not loosen fairness.
+Stage 256 put `tex_billboard_mg` on the monorail under-strip. Do not loosen fairness.
 
 ---
 

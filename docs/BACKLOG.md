@@ -200,3 +200,5 @@ one stage.
   → Stage 254
 - The airship keel strip was a flat cyan bar  
   → Stage 255
+- The monorail under-strip was a flat magenta bar  
+  → Stage 256
