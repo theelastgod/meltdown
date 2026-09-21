@@ -426,6 +426,7 @@ export class Renderer {
         hood.position.y = MOVE.standHeight - 0.05;
         group.add(hood);
         const amber = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
+        bindPlate(amber, "tex_lamp");
         const band = new THREE.Mesh(new THREE.TorusGeometry(MOVE.capsuleRadius + 0.02, 0.02, 6, 24), amber);
         band.rotation.x = Math.PI / 2;
         band.position.y = MOVE.standHeight * 0.82;

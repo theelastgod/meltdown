@@ -116,3 +116,5 @@ one stage.
   → Stage 212
 - Crowd chest lamps were an unplated amber box  
   → Stage 213
+- Range dummy servos were an unplated amber box  
+  → Stage 214

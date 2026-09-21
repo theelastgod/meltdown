@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 214 — Range dummy servos were a flat amber box
+
+**Goal.** The dummy's body and hood wear `tex_dummy`. The chest servo and the neck band shared one
+`MeshBasicMaterial` amber with no map, so a target in the office range was a plated silhouette
+with two glowing unplated bits. Street lamps and crowd chest lights already use `tex_lamp`.
+
+**What changed.** `bindPlate(amber, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `renderer.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 213 — Crowd chest lamps were a flat amber box
 
 **Goal.** Street lamps wear `tex_lamp`. Each pedestrian's chest lease-light was `MeshBasicMaterial`
