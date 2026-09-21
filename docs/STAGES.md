@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 232 — The not-owned kick named long_lease
+
+**Goal.** Stage 230 taught RING ONE ESCROW. Attesting LONG LEASE on a file that does not own it
+still kicked `long_lease is not in your file`. Duplicate attestations and a keystone that does
+not touch the subgraph were the same: ids.
+
+**What changed.** Those details interpolate `itemName`.
+
+**Proof.** `tests/fairness.test.ts`: unowned `long_lease` is `LONG LEASE is not in your file`.
+Source must `${itemName(id)} is not in your file`. Mutation: interpolate the id again — 2 fail.
+
 ## Stage 231 — The loadout kick named directive
 
 **Goal.** Stage 229 taught the Audit kick LEASE-BREAKER. Bringing THE DIRECTIVE into a PvP room

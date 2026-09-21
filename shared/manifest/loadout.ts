@@ -5,7 +5,7 @@
  * Depth-gated weapons; nothing else. Unknown fields (a Kernel Protocol, say)
  * are refused, not stripped silently.
  */
-import { ALL_ITEMS, MAX_ATTESTED, MAX_KEYSTONES, itemById } from "./items";
+import { ALL_ITEMS, MAX_ATTESTED, MAX_KEYSTONES, itemById, itemName } from "./items";
 import { applyMods, baseSheet, modWeight, type StatSheet } from "./stats";
 import { WEAPONS, WEAPON_LIST, type WeaponDef, type WeaponId, CAMPAIGN_WEAPONS } from "../weapons/manifest";
 import { chipById, type ChipMechanic, type Socket } from "./chips";
@@ -71,12 +71,12 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
   if (attested.length > MAX_ATTESTED) errors.push({ rule: "attest-limit", detail: `${attested.length} attested, max ${MAX_ATTESTED}` });
   const seen = new Set<string>();
   for (const id of attested) {
-    if (seen.has(id)) errors.push({ rule: "duplicate", detail: `${id} attested twice` });
+    if (seen.has(id)) errors.push({ rule: "duplicate", detail: `${itemName(id)} attested twice` });
     seen.add(id);
     const it = itemById(id);
     if (!it) errors.push({ rule: "unknown-node", detail: id });
-    else if (it.kind !== "node") errors.push({ rule: "not-a-node", detail: `${id} is a ${it.kind}` });
-    else if (!owned.includes(id)) errors.push({ rule: "not-owned", detail: `${id} is not in your file` });
+    else if (it.kind !== "node") errors.push({ rule: "not-a-node", detail: `${itemName(id)} is a ${it.kind}` });
+    else if (!owned.includes(id)) errors.push({ rule: "not-owned", detail: `${itemName(id)} is not in your file` });
   }
   // connectivity over the attested subgraph
   const set = new Set(attested.filter((id) => itemById(id)?.kind === "node"));
@@ -99,8 +99,8 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
     else {
       const k = itemById(lo.keystone);
       if (!k || k.kind !== "keystone") errors.push({ rule: "unknown-keystone", detail: lo.keystone });
-      else if (!owned.includes(k.id)) errors.push({ rule: "not-owned", detail: `${k.id} is not in your file` });
-      else if (set.size > 0 && !k.links.some((l) => set.has(l))) errors.push({ rule: "keystone-linked", detail: `${k.id} must touch an attested node (${k.links.join(", ")})` });
+      else if (!owned.includes(k.id)) errors.push({ rule: "not-owned", detail: `${itemName(k.id)} is not in your file` });
+      else if (set.size > 0 && !k.links.some((l) => set.has(l))) errors.push({ rule: "keystone-linked", detail: `${itemName(k.id)} must touch an attested node (${k.links.map(itemName).join(", ")})` });
       else keystone = k.id;
     }
   }

@@ -152,3 +152,5 @@ one stage.
   → Stage 230
 - The loadout kick named directive / phage  
   → Stage 231
+- The not-owned kick named long_lease  
+  → Stage 232

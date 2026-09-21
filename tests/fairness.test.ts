@@ -34,8 +34,10 @@ describe("loadout legality (validated server-side at spawn)", () => {
   it("rejects more than 7, unowned, disconnected, unknown fields, and depth-gated weapons", () => {
     const eight = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "curb_weight", "contagion_rider", "long_lease", "quiet_ledger", "night_fare", "spite_clause"], keystone: null }, owned, 10);
     expect(eight.errors.map((e) => e.rule)).toContain("attest-limit");
-    const unowned = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile"], keystone: null }, [], 10);
+    const unowned = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["long_lease"], keystone: null }, [], 10);
     expect(unowned.errors.map((e) => e.rule)).toContain("not-owned");
+    expect(unowned.errors.find((e) => e.rule === "not-owned")!.detail).toBe("LONG LEASE is not in your file");
+    expect(unowned.errors.find((e) => e.rule === "not-owned")!.detail).not.toBe("long_lease is not in your file");
     const disconnected = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "wake_lung"], keystone: null }, owned, 10);
     expect(disconnected.errors.map((e) => e.rule)).toContain("connected");
     const smuggled = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: null, protocols: ["kp_filament_01"] }, owned, 10);
