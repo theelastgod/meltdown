@@ -206,3 +206,5 @@ one stage.
   → Stage 257
 - The monorail tail lamp was a flat red box  
   → Stage 258
+- The airship nose was a flat red sphere  
+  → Stage 259

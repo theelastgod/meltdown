@@ -399,7 +399,9 @@ export class Sky {
     const strip = new THREE.Mesh(new THREE.BoxGeometry(34.4, 0.3, 0.6), keelMat);
     strip.position.y = -14.2;
     this.ship.add(strip);
-    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), new THREE.MeshBasicMaterial({ color: PALETTE.red }));
+    const noseMat = new THREE.MeshBasicMaterial({ color: PALETTE.red });
+    bindPlate(noseMat, "tex_lamp");
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), noseMat);
     nose.position.x = 29;
     this.ship.add(nose);
     this.group.add(this.ship);

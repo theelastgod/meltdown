@@ -1641,6 +1641,15 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 259 — The airship nose was a flat red sphere
+
+**Goal.** Stage 255 plated the keel strip. The red nose at +29 m was still unmapped.
+
+**What changed.** `bindPlate(noseMat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `life.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 258 — The monorail tail lamp was a flat red box
 
 **Goal.** Stage 254 plated the headlamp. The red tail on the other end of each car was still
