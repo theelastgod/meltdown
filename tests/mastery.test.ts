@@ -109,6 +109,13 @@ describe("chips and firmwares", () => {
     expect(shapeKick.detail).not.toMatch(/^lease_breaker:/);
     expect(src).toMatch(/chips-shape", detail: `\$\{gun\(wid as WeaponId\)\}: sockets must be an object`/);
     expect(src).not.toMatch(/chips-shape", detail: `\$\{wid\}: sockets must be an object`/);
+    const noSock = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { barrel: "lease_breaker:long_barrel" } } }, owned, 50, ranks);
+    expect(noSock.errors.map((e) => e.rule)).toContain("chip-socket");
+    const noSockKick = noSock.errors.find((e) => e.rule === "chip-socket")!;
+    expect(noSockKick.detail).toBe('LEASE-BREAKER: no socket "barrel"');
+    expect(noSockKick.detail).not.toMatch(/^lease_breaker:/);
+    expect(src).toMatch(/chip-socket", detail: `\$\{gun\(wid as WeaponId\)\}: no socket "\$\{socket\}"`/);
+    expect(src).not.toMatch(/chip-socket", detail: `\$\{wid\}: no socket "\$\{socket\}"`/);
   });
   it("a chip's mods apply only while its weapon is held; a firmware patches the definition the sim runs", () => {
     const world = new World(drainageYard(), { ai: false, seed: 1 });

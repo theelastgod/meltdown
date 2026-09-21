@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 240 — The unknown-socket kick named lease_breaker
+
+**Goal.** Stage 239 taught the chips-shape kick LEASE-BREAKER. Putting a chip in a socket named
+`barrel` still kicked `lease_breaker: no socket "barrel"`. The FILE panel already prints
+LEASE-BREAKER.
+
+**What changed.** That detail interpolates `gun(wid)`.
+
+**Proof.** `tests/mastery.test.ts`: the kick is `LEASE-BREAKER: no socket "barrel"`, not
+`lease_breaker:`. Source must `${gun(wid as WeaponId)}`. Mutation: interpolate the id again — 1 fail.
+
 ## Stage 239 — The chips-shape kick named lease_breaker
 
 **Goal.** Stage 238 taught the connected kick SLIPFILE. Socketing chips as a list still kicked

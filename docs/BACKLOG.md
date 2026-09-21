@@ -168,3 +168,5 @@ one stage.
   → Stage 238
 - The chips-shape kick named lease_breaker  
   → Stage 239
+- The unknown-socket kick named lease_breaker  
+  → Stage 240
