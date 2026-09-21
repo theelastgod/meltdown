@@ -80,3 +80,5 @@ one stage.
   → Stage 195
 - probe:stage8's Debt check needs >= 2 kills and intermittently sees 1  
   → Stage 195
+- Online FX.waspDeath / mechDeath / swap / throw / charge / lunge / melee / fullWake had no voice  
+  → Stage 196

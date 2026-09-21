@@ -606,11 +606,33 @@ export class Game {
               if (ev.x !== 0 || ev.y !== 0 || ev.z !== 0) this.tookHit(ev.x, ev.z, ev.a);
             }
             break;
+          case FX.swap:
+            if (ev.playerId === me) this.audio.swap();
+            break;
+          case FX.melee:
+            if (ev.playerId === me) {
+              this.audio.shot("shock_baton");
+              if (ev.a > 0) this.audio.hit("body");
+              if (ev.b) this.renderer.post.kick(0.4);
+            }
+            break;
+          case FX.throw:
+            if (ev.playerId === me) this.audio.throw();
+            break;
+          case FX.chargeFull:
+            if (ev.playerId === me) this.audio.charge(1);
+            break;
+          case FX.lunge:
+            if (ev.playerId === me) this.audio.jump();
+            break;
           case FX.waspDeath:
             this.hud.push(`WASP-${String(ev.a).padStart(2, "0")} DOWNED`, "am");
+            this.audio.explosion(false);
             break;
           case FX.mechDeath:
-            this.hud.push(`REPO MECH ${ev.a} DISABLED`, "am");
+            this.hud.push(`REPO MECH ${ev.a} DISABLED — VANTAGE RE-LEASING`, "am");
+            this.audio.explosion(true);
+            this.renderer.post.kick(1);
             break;
           case FX.nodeFlip: {
             const n = this.netEntities.find((e) => e.kind === ENT_NODE && e.id === ev.a);
@@ -641,6 +663,7 @@ export class Game {
             break;
           case FX.fullWake:
             this.hud.alert(fullWakeLine(districtName(this.world.level)), false, 5);
+            this.audio.nodeFlip(true);
             this.renderer.post.kick(1);
             break;
           default:

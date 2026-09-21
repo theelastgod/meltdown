@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 196 — Wasps going down online made no sound
+
+**Goal.** Offline, `waspDeath` logs WASP-NN DOWNED and plays `audio.explosion(false)`; `mechDeath`
+does the same with the bigger bang. The room already puts both on the wire as `FX.waspDeath` /
+`FX.mechDeath`. The online switch logged the line and returned. Swap, throw, charge-full, lunge,
+melee and full-wake were the same: on the wire, no case.
+
+**What changed.** The online FX switch has a case for every `FX` id. Wasp/mech deaths play the
+same explosions as offline. The walk is the FX table itself.
+
+**Proof.** `tests/onlinefx.test.ts`. Mutation: waspDeath HUD-only — 1 fail.
+
 ## Stage 195 — Probe checks that fail on a boundary are not guards
 
 **Goal.** `probe:net` required `far.d > 30` while BRAVO paces a waypoint at 30 m. `probe:identity`
