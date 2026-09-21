@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 238 — The connected kick named slipfile
+
+**Goal.** Stage 232 taught the not-owned kick LONG LEASE. Attesting SLIPFILE and WAKE LUNG — two
+nodes that do not touch — still kicked `attestation is not a connected subgraph (1 of 2 reachable
+from slipfile)`. The FILE panel already prints SLIPFILE on the hex.
+
+**What changed.** That detail interpolates `itemName(start)`.
+
+**Proof.** `tests/fairness.test.ts`: the kick is `… reachable from SLIPFILE`, not `from slipfile`.
+Source must `${itemName(start)}`. Mutation: interpolate the id again — 2 fail.
+
 ## Stage 237 — The firmware-weapon kick named stack_smg:dump_stage
 
 **Goal.** Stage 235 taught the chip-weapon kick. Flashing DUMP STAGE onto the Lease-Breaker still

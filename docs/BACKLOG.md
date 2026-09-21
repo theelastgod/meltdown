@@ -164,3 +164,5 @@ one stage.
   → Stage 236
 - The firmware-weapon kick named stack_smg:dump_stage  
   → Stage 237
+- The connected kick named slipfile  
+  → Stage 238

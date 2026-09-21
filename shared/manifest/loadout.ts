@@ -91,7 +91,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
         stack.push(l);
       }
     }
-    if (reach.size !== set.size) errors.push({ rule: "connected", detail: `attestation is not a connected subgraph (${reach.size} of ${set.size} reachable from ${start})` });
+    if (reach.size !== set.size) errors.push({ rule: "connected", detail: `attestation is not a connected subgraph (${reach.size} of ${set.size} reachable from ${itemName(start)})` });
   }
   let keystone: string | null = null;
   if (lo.keystone !== undefined && lo.keystone !== null) {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { lintItemSchema, ALL_ITEMS, LEDGER_ITEMS, type LedgerItem } from "../shared/manifest/items";
 import { validateLoadout, sheetFor, netDelta } from "../shared/manifest/loadout";
 import { duel, mobilityCourse, runFairnessLint } from "../shared/fairness/lint";
@@ -40,6 +41,12 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(unowned.errors.find((e) => e.rule === "not-owned")!.detail).not.toBe("long_lease is not in your file");
     const disconnected = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "wake_lung"], keystone: null }, owned, 10);
     expect(disconnected.errors.map((e) => e.rule)).toContain("connected");
+    const connKick = disconnected.errors.find((e) => e.rule === "connected")!;
+    expect(connKick.detail).toBe("attestation is not a connected subgraph (1 of 2 reachable from SLIPFILE)");
+    expect(connKick.detail).not.toMatch(/from slipfile/);
+    const src = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reachable from \$\{itemName\(start\)\}/);
+    expect(src).not.toMatch(/reachable from \$\{start\}/);
     const smuggled = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: null, protocols: ["kp_filament_01"] }, owned, 10);
     expect(smuggled.errors.map((e) => e.rule)).toContain("unknown-field");
     const gated = validateLoadout({ primary: "phage", secondary: "stack_smg", attested: [], keystone: null }, owned, 2);
