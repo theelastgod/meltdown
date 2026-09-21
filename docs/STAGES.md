@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 215 — Campaign unlocks called THE DIRECTIVE "DIRECTIVE"
+
+**Goal.** Stage 212 made the kill stamp print `weaponName`. Closing THE LEAK still wrote
+`WEAPON DIRECTIVE` on the file ledger and `WEAPON UNLOCKED · DIRECTIVE` on the CRT card. The
+contracts list was the same. The rack, the stamp and the manifest say THE DIRECTIVE.
+
+**What changed.** The ledger uses `WEAPONS[id].name`. The card and the list call `weaponName`.
+
+**Proof.** Completing THE LEAK writes `WEAPON THE DIRECTIVE`. `tests/weaponname.test.ts`: campaign
+and save sources must not `toUpperCase` the id. Mutation: `rw.weapon.toUpperCase()` — 1 fail.
+
 ## Stage 214 — Range dummy servos were a flat amber box
 
 **Goal.** The dummy's body and hood wear `tex_dummy`. The chest servo and the neck band shared one

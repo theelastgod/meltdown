@@ -22,6 +22,8 @@ import type { MissionMsg } from "@shared/net/protocol";
 import { HUB_LEVEL_ID } from "@shared/sim/hub";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
 import { HOSTS } from "./config";
+import { weaponName } from "./hud/kill";
+import { CAMPAIGN_WEAPONS } from "@shared/weapons/manifest";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop";
 
@@ -345,7 +347,7 @@ export class Campaign {
     this.completion = { id, ok, reason };
     const def = missionById(id)!;
     const rw = def.reward;
-    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${rw.weapon.toUpperCase()}` : "", "[C] CONTRACTS"].filter(Boolean);
+    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", "[C] CONTRACTS"].filter(Boolean);
     this.note(`CONTRACT CLOSED · ${def.title}${ok ? "" : " · " + (reason ?? "")}`);
     this.game.audio.sign();
     if (id === "m7_white_office") {
@@ -510,7 +512,7 @@ export class Campaign {
     const next = nextMission(c);
     const offers = gigsOnOffer(a, c);
     const alive = handlersAlive(c.testimony);
-    const row = (m: MissionDef, on: boolean, why = "") => `<div class="ct ${on ? "on" : "off"}" data-launch="${on ? m.id : ""}"><div class="nm">${m.kind === "mission" ? `◈ ${String(m.order).padStart(2, "0")} · ` : "▸ "}${m.title} <span class="lv">${m.level.replace(/_/g, " ").toUpperCase()}</span></div><div class="br">${m.brief}</div><div class="rw">${[m.reward.scrip ? `+${m.reward.scrip}¢` : "", m.reward.xp ? `+${m.reward.xp} XP` : "", m.reward.protocol ? `PROTOCOL` : "", m.reward.weapon ? `WEAPON ${m.reward.weapon.toUpperCase()}` : "", m.requires?.threat ? `THREAT ≥ ${m.requires.threat}` : ""].filter(Boolean).join(" · ")}${why ? ` · <i>${why}</i>` : ""}${on ? ` · <span class="cy" data-crew="${m.id}">[RUN WITH A CREW]</span>` : ""}</div></div>`;
+    const row = (m: MissionDef, on: boolean, why = "") => `<div class="ct ${on ? "on" : "off"}" data-launch="${on ? m.id : ""}"><div class="nm">${m.kind === "mission" ? `◈ ${String(m.order).padStart(2, "0")} · ` : "▸ "}${m.title} <span class="lv">${m.level.replace(/_/g, " ").toUpperCase()}</span></div><div class="br">${m.brief}</div><div class="rw">${[m.reward.scrip ? `+${m.reward.scrip}¢` : "", m.reward.xp ? `+${m.reward.xp} XP` : "", m.reward.protocol ? `PROTOCOL` : "", m.reward.weapon ? `WEAPON ${weaponName(m.reward.weapon)}` : "", m.requires?.threat ? `THREAT ≥ ${m.requires.threat}` : ""].filter(Boolean).join(" · ")}${why ? ` · <i>${why}</i>` : ""}${on ? ` · <span class="cy" data-crew="${m.id}">[RUN WITH A CREW]</span>` : ""}</div></div>`;
     const fixers = (["deacon", "marrow", "vessel"] as const).map((h) => {
       const H = HANDLERS[h];
       const mine = offers.filter((g) => g.fixer === h);
@@ -529,7 +531,7 @@ export class Campaign {
       <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => `${k.replace(/^m\\d:/, "")}=${v}`).join(" · ") || "— nothing on the record —"} · ENDINGS OPEN: ${endings}</div>
       <div class="cols"><div><div class="sh">THE ARC · ${c.missionsDone.length}/${MAIN_ARC.length}</div>${arc}<div class="sh">FIXERS · GIGS ${c.gigsDone.length}/${GIGS.length}</div>${fixers}</div>
       <div><div class="sh">KERNEL PROTOCOLS · ${c.worn.length}/${MAX_PROTOCOLS} WORN <span class="red">· CAMPAIGN ONLY · STRIPPED AT PVP JOIN</span></div>${protos}
-      <div class="sh">CAMPAIGN WEAPONS</div><div class="ln">${["directive", "clockeater"].map((w) => `${c.weapons.includes(w as "directive") ? "▣" : "▢"} ${w.toUpperCase()}`).join(" · ")}</div>
+      <div class="sh">CAMPAIGN WEAPONS</div><div class="ln">${CAMPAIGN_WEAPONS.map((w) => `${c.weapons.includes(w as "directive" | "clockeater") ? "▣" : "▢"} ${weaponName(w)}`).join(" · ")}</div>
       <div class="sh">CREW</div><div class="ln">${this.crew ? `IN CREW <b class="ye">${this.crew}</b> · ${this.host ? "you hold the terminals" : "the host holds the terminals"} · tell a friend the code` : `<input data-crewcode="1" maxlength="8" placeholder="INVITE CODE" style="text-transform:uppercase"> <span class="cy" data-act="joinCrew">[JOIN A CREW]</span> <span class="dim">or RUN WITH A CREW on a contract above and read the code out</span>`}</div>
       <div class="sh">EXPLORE</div><div class="ln dim">travel to a district from the MAP with the Threat live: <span class="cy" data-explore="1">[EXPLORE THIS DISTRICT]</span></div></div></div>`;
   }

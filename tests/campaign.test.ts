@@ -99,6 +99,8 @@ describe("campaign save", () => {
     completeContract(a, "m4_the_leak", { "m4:directive": "kept", "m4:vessel": "expose" });
     expect(c.weapons).toEqual(["directive"]);
     expect(a.owned).toContain("weapon:directive");
+    expect(a.ledger.some((l) => l.includes("WEAPON THE DIRECTIVE"))).toBe(true);
+    expect(a.ledger.some((l) => /WEAPON DIRECTIVE\b/.test(l) && !l.includes("THE DIRECTIVE"))).toBe(false);
     // Ida is dead: her gigs are off the board
     expect(gigsOnOffer(a, c).some((g) => g.fixer === "vessel")).toBe(false);
     expect(wearProtocols(a, ["red_lease", "nope", "filament_core", "red_lease"])).toEqual(["red_lease", "filament_core"]);
