@@ -95,6 +95,11 @@ describe("chips and firmwares", () => {
     expect(fwKick.detail).not.toMatch(/needs lease_breaker mastery/);
     const fwOk = validateLoadout({ ...DEFAULT_LOADOUT, firmware: { lease_breaker: "lease_breaker:three_count" } }, owned, 50, SANDBOX_RANKS);
     expect(fwOk.errors).toEqual([]);
+    const fwWeapon = validateLoadout({ ...DEFAULT_LOADOUT, firmware: { lease_breaker: "stack_smg:dump_stage" } }, owned, 50, SANDBOX_RANKS);
+    expect(fwWeapon.errors.map((e) => e.rule)).toContain("firmware-weapon");
+    const fwWeaponKick = fwWeapon.errors.find((e) => e.rule === "firmware-weapon")!;
+    expect(fwWeaponKick.detail).toMatch(/DUMP STAGE is a STACK SMG firmware/);
+    expect(fwWeaponKick.detail).not.toMatch(/stack_smg:dump_stage/);
   });
   it("a chip's mods apply only while its weapon is held; a firmware patches the definition the sim runs", () => {
     const world = new World(drainageYard(), { ai: false, seed: 1 });

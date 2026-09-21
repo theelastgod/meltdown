@@ -162,3 +162,5 @@ one stage.
   → Stage 235
 - The chip-socket kick named lease_breaker:long_barrel  
   → Stage 236
+- The firmware-weapon kick named stack_smg:dump_stage  
+  → Stage 237
