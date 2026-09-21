@@ -585,7 +585,7 @@ export class Game {
             this.renderer.fx.explosion(pos, ev.a / 10, 0x35f2ff, false);
             break;
           case FX.flagged:
-            if (ev.playerId === me) this.hud.flagged();
+            if (ev.playerId === me) this.mechHasYou();
             break;
           case FX.stun:
             if (ev.playerId === me) {
@@ -886,6 +886,12 @@ export class Game {
     this.closedByLast.x = who.at?.x ?? 0;
     this.closedByLast.z = who.at?.z ?? 0;
     this.closedByLast.known = !!who.at;
+  }
+
+  /** HUD flag plus the two-tone, once a second, online and off (Stage 194). */
+  private mechHasYou(): void {
+    this.hud.flagged();
+    if (this.world.tick % 30 === 0) this.audio.flagged();
   }
 
   /** Offline this is a sim event; online it is the snapshot's dead→alive edge (Stage 191). */
@@ -1232,10 +1238,7 @@ export class Game {
         }
         break;
       case "flagged":
-        if (ev.playerId === this.player.id) {
-          this.hud.flagged();
-          if (this.world.tick % 30 === 0) this.audio.flagged();
-        }
+        if (ev.playerId === this.player.id) this.mechHasYou();
         break;
       case "mechBeam":
         this.renderer.fx.beam(ev.from, ev.to, 0xffb02e, 0.08, 0.35);
