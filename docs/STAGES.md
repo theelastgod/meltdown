@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 218 — Directive chips were named THE CHOKE
+
+**Goal.** Stage 109 taught the rack not to label THE DIRECTIVE as THE. Stage 217 taught the stamp
+matrix the same. Chip names still took `w.name.split(" ")[0]`, so every Directive muzzle, kinetic
+and protocol chip was THE CHOKE, THE COMPENSATOR, THE LONG BARREL.
+
+**What changed.** Chip names use `weaponShortLabel`, the same skip-the-article helper the rack
+uses. DIRECTIVE CHOKE.
+
+**Proof.** `tests/chiptrade.test.ts`: `directive:choke` is DIRECTIVE CHOKE, not THE CHOKE. Source
+must call `weaponShortLabel(w.name)` and must not `w.name.split(" ")[0]`. Mutation: first token
+again — 2 fail.
+
 ## Stage 217 — Directive stamps called the gun "THE"
 
 **Goal.** Stage 109 taught the rack not to label THE DIRECTIVE as `THE`. The stamp matrix still

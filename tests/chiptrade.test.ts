@@ -13,6 +13,20 @@ import { describe, expect, it } from "vitest";
 import { CHIPS, formatChipLine, lintChipSchema, type ChipDef } from "../shared/manifest/chips";
 import { LEDGER_ITEMS, ledgerTradeText, lintItemSchema, type LedgerItem } from "../shared/manifest/items";
 
+describe("a chip is named by the weapon, not its article", () => {
+  it("THE DIRECTIVE's CHOKE is DIRECTIVE CHOKE, not THE CHOKE", () => {
+    const c = CHIPS.find((x) => x.id === "directive:choke")!;
+    expect(c.name).toBe("DIRECTIVE CHOKE");
+    expect(c.name).not.toMatch(/^THE /);
+  });
+
+  it("the name is built with weaponShortLabel, not the first token of w.name", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/weaponShortLabel\(w\.name\)/);
+    expect(src).not.toMatch(/w\.name\.split\(" "\)\[0\]/);
+  });
+});
+
 describe("no chip trades a stat against itself", () => {
   it("holds across the whole manifest", () => {
     const colliding = CHIPS.filter((c) => c.benefits.some((b) => c.costs.some((k) => k.stat === b.stat)));

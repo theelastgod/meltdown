@@ -5,7 +5,7 @@
  * paired trade on the same ledger as the Ledger Graph; a chip's mods apply
  * only while that weapon is held. ~120 at launch: 20 per weapon.
  */
-import { WEAPON_LIST, type WeaponId } from "../weapons/manifest";
+import { WEAPON_LIST, weaponShortLabel, type WeaponId } from "../weapons/manifest";
 import { ADDITIVE, isBenefit, modWeight, type StatKey, type StatMod } from "./stats";
 
 export type Socket = "muzzle" | "kinetic" | "protocol";
@@ -179,7 +179,7 @@ export const CHIPS: ChipDef[] = WEAPON_LIST.flatMap((w) =>
       id: `${w.id}:${t.key}`,
       weapon: w.id,
       socket: t.socket,
-      name: `${w.name.split(" ")[0]} ${t.name}`,
+      name: `${weaponShortLabel(w.name)} ${t.name}`,
       rank: t.rank,
       benefits,
       costs,

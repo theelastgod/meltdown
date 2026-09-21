@@ -252,6 +252,14 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
 export const WEAPON_LIST: WeaponDef[] = Object.values(WEAPONS).sort((a, b) => a.slot - b.slot);
 export const weaponBySlot = (slot: number): WeaponDef | undefined => WEAPON_LIST[slot - 1];
 
+/** First word of a weapon name that actually names it (Stage 109 / 218). "THE DIRECTIVE" → DIRECTIVE. */
+const ARTICLES = new Set(["THE", "A", "AN"]);
+export function weaponShortLabel(name: string): string {
+  const words = name.trim().split(/\s+/).filter((w) => w.length > 0);
+  const named = words.find((w) => !ARTICLES.has(w.toUpperCase()));
+  return named ?? words[0] ?? "";
+}
+
 export type GrenadeId = "frag" | "smoke" | "emp";
 export interface GrenadeDef {
   id: GrenadeId;

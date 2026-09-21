@@ -124,3 +124,5 @@ one stage.
   → Stage 216
 - Weapon stamps called THE DIRECTIVE "THE" and REPO HAMMER "REPO"  
   → Stage 217
+- Directive chips were named THE CHOKE  
+  → Stage 218
