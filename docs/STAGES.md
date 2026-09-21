@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 252 — The wasp eye was a flat amber box
+
+**Goal.** Stage 251 put `tex_lamp` on the mech visor. The wasp's eye — the amber cube a player
+reads when a rotor comes in — was still unmapped.
+
+**What changed.** `bindPlate(eyeMat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `weapons.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 251 — The mech visor strip was a flat amber box
 
 **Goal.** Dummy servos and crowd chest lamps wear `tex_lamp`. The mech's visor strip — the 2 m

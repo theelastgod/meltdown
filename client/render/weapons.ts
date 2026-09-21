@@ -217,7 +217,9 @@ export class ArsenalFx {
         bindPlate(waspMat, "tex_wasp_hull");
         const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.7), waspMat);
         group.add(body);
-        const eye = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.06, 0.06), new THREE.MeshBasicMaterial({ color: PALETTE.amber }));
+        const eyeMat = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
+        bindPlate(eyeMat, "tex_lamp");
+        const eye = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.06, 0.06), eyeMat);
         eye.position.set(0, 0, -0.36);
         group.add(eye);
         const rotors: THREE.Mesh[] = [];

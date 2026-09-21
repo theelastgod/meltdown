@@ -192,3 +192,5 @@ one stage.
   → Stage 250
 - The mech visor strip was a flat amber box  
   → Stage 251
+- The wasp eye was a flat amber box  
+  → Stage 252
