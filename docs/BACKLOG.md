@@ -134,3 +134,5 @@ one stage.
   → Stage 221
 - The completed-arc line printed CHAIR CLOCKEATER, not THE CLOCKEATER'S CHAIR  
   → Stage 222
+- Deep Wake history said TURNED CELLS, not THE WAKE CELLS  
+  → Stage 223

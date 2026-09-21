@@ -10,6 +10,17 @@ import { seasonIndex, seasonWeek } from "./clock";
 
 export type House = "estate" | "clockeaters" | "cells" | "unaligned";
 export const HOUSES: readonly House[] = ["estate", "clockeaters", "cells"];
+
+/** What the MAP tab and the season log print: THE WAKE CELLS, not CELLS. */
+export const HOUSE_NAME: Record<House, string> = {
+  estate: "THE ESTATE",
+  clockeaters: "THE CLOCKEATERS",
+  cells: "THE WAKE CELLS",
+  unaligned: "UNALIGNED",
+};
+export function houseName(h: string): string {
+  return HOUSE_NAME[h as House] ?? h.replace(/_/g, " ").toUpperCase();
+}
 export const DISTRICTS: readonly string[] = ["lease_row", "deadletter_docks", "repo_depot"];
 export const NODE_LABELS: readonly string[] = ["A", "B", "C", "D", "E"];
 /** pressure needed to turn a node */
@@ -78,7 +89,7 @@ export function rollSeason(st: SeasonState, now = Date.now()): boolean {
       turns += n.turns;
     }
     const top = Object.entries(held).sort((a, b) => b[1] - a[1])[0];
-    lines.push(`${d.toUpperCase().replace(/_/g, " ")} · ${top && top[0] !== "unaligned" ? `${top[0].toUpperCase()} HELD ${top[1]}/5` : "NO HOUSE HELD IT"} · ${turns} TURNS`);
+    lines.push(`${d.toUpperCase().replace(/_/g, " ")} · ${top && top[0] !== "unaligned" ? `${houseName(top[0]!)} HELD ${top[1]}/5` : "NO HOUSE HELD IT"} · ${turns} TURNS`);
   }
   st.history.push(...lines);
   if (st.history.length > 60) st.history.splice(0, st.history.length - 60);
@@ -117,8 +128,8 @@ export function applyRound(st: SeasonState, push: RoundPush, now = Date.now()): 
   }
   st.rounds++;
   const w = seasonWeek(now);
-  st.last = `S${st.season} W${w} · ${push.level.toUpperCase().replace(/_/g, " ")} · ${push.flips.reduce((a, f) => a + f.count, 0)} FLIPS${turned.length ? " · " + turned.map((t) => `${t.label} → ${t.to.toUpperCase()}`).join(", ") : ""}`;
-  if (turned.length) st.history.push(`S${st.season} W${w} · ${turned.map((t) => `${push.level.toUpperCase().replace(/_/g, " ")} ${t.label} TURNED ${t.to.toUpperCase()}${t.from !== "unaligned" ? ` (FROM ${t.from.toUpperCase()})` : ""}`).join(" · ")}`);
+  st.last = `S${st.season} W${w} · ${push.level.toUpperCase().replace(/_/g, " ")} · ${push.flips.reduce((a, f) => a + f.count, 0)} FLIPS${turned.length ? " · " + turned.map((t) => `${t.label} → ${houseName(t.to)}`).join(", ") : ""}`;
+  if (turned.length) st.history.push(`S${st.season} W${w} · ${turned.map((t) => `${push.level.toUpperCase().replace(/_/g, " ")} ${t.label} TURNED ${houseName(t.to)}${t.from !== "unaligned" ? ` (FROM ${houseName(t.from)})` : ""}`).join(" · ")}`);
   if (st.history.length > 60) st.history.splice(0, st.history.length - 60);
   return turned;
 }

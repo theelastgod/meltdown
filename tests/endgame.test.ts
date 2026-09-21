@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { dayIndex, pickDistinct, seasonIndex, seasonWeek, weekIndex } from "../shared/endgame/clock";
 import { claimContract, contractsFor, dailyView, CONTRACT_POOL } from "../shared/endgame/contracts";
 import { AUDITS, auditErrors, auditFor, currentAudit, leaderboard } from "../shared/endgame/audits";
-import { applyRound, emptySeason, rollSeason, seasonView, TURN_AT } from "../shared/endgame/season";
+import { applyRound, emptySeason, houseName, rollSeason, seasonView, TURN_AT } from "../shared/endgame/season";
 import { buyCosmetic, canRewrite, COSMETICS, rewrite, REWRITE_WAKELIGHT, savePreset, setAlias, setTheme, slotsOf } from "../shared/endgame/rewrite";
 import { createAccount, sandboxAccount } from "../shared/progression/account";
 import { itemById } from "../shared/manifest/items";
@@ -79,6 +80,16 @@ describe("audits", () => {
 });
 
 describe("the Deep Wake", () => {
+  it("names the houses the city does, not the id", () => {
+    expect(houseName("cells")).toBe("THE WAKE CELLS");
+    expect(houseName("estate")).toBe("THE ESTATE");
+    expect(houseName("clockeaters")).toBe("THE CLOCKEATERS");
+    expect(houseName("cells")).not.toBe("CELLS");
+    const src = readFileSync(new URL("../shared/endgame/season.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/TURNED \$\{houseName\(t\.to\)\}/);
+    expect(src).not.toMatch(/t\.to\.toUpperCase\(\)/);
+  });
+
   it("rounds push pressure toward the flipping files' houses; enough pressure turns a node; the season rolls with a history from real data", () => {
     const st = emptySeason(100);
     const now = 100 * 28 * DAY_MS + 1000;
@@ -89,7 +100,8 @@ describe("the Deep Wake", () => {
     expect(t2).toEqual([{ label: "B", from: "unaligned", to: "cells" }]);
     expect(st.districts["lease_row"]!["B"]!.house).toBe("cells");
     expect(st.districts["lease_row"]!["B"]!.pressure.cells).toBe(0);
-    expect(st.history.some((l) => /LEASE ROW B TURNED CELLS/.test(l))).toBe(true);
+    expect(st.history.some((l) => /LEASE ROW B TURNED THE WAKE CELLS/.test(l))).toBe(true);
+    expect(st.history.some((l) => /TURNED CELLS(?! )/.test(l))).toBe(false);
     // the holding house gets +1 on its nodes when its cell wins; the estate needs TURN_AT of its own to take it back
     for (let i = 0; i < TURN_AT; i++) applyRound(st, { level: "lease_row", flips: [{ label: "B", house: "estate", count: 1 }], winners: ["cells"] }, now);
     expect(st.districts["lease_row"]!["B"]!.house).toBe("cells"); // the winners' +1 kept pace: the holder defends a tie

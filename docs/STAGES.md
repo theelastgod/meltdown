@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 223 — Deep Wake history said TURNED CELLS
+
+**Goal.** A node turning to the Wake Cells wrote `LEASE ROW B TURNED CELLS` and `B → CELLS`. The
+houses the city names are THE ESTATE, THE CLOCKEATERS, THE WAKE CELLS. Season close was the same:
+`CELLS HELD 3/5`.
+
+**What changed.** `houseName` maps the four houses. The season last-line, the turn history, and
+the close log all call it.
+
+**Proof.** `tests/endgame.test.ts`: `houseName("cells")` is THE WAKE CELLS; history matches
+`LEASE ROW B TURNED THE WAKE CELLS` and not `TURNED CELLS`. Source must `houseName(t.to)`.
+Mutation: `t.to.toUpperCase()` — 1 fail.
+
 ## Stage 222 — The completed arc printed CHAIR CLOCKEATER
 
 **Goal.** Stage 174 made the office deliver THE CLOCKEATER'S CHAIR and THE CITY THAT READ THE
