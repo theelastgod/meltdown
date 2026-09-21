@@ -85,6 +85,23 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(Math.round(def.charge!.damage)).toBeGreaterThanOrEqual(100);
   });
 
+  it("a line that sells piercing cover must grant pierce the stock weapon does not have", () => {
+    // OVERCHARGE said "pierces cover". Stock LONGWAVE already has charge.pierce, and pierce
+    // never passes a level box — it only continues through bodies in front of the wall.
+    for (const f of FIRMWARES.filter((x) => /pierces cover/i.test(x.line))) {
+      const stock = WEAPONS[f.weapon];
+      const patched = f.patch(stock);
+      expect(stock.charge?.pierce, `${f.id} sells cover pierce the stock rail already has`).not.toBe(true);
+      expect(patched.charge?.pierce, `${f.id} does not actually set pierce`).toBe(true);
+    }
+  });
+
+  it("OVERCHARGE does not sell a pierce the stock rail already has", () => {
+    const f = FIRMWARES.find((x) => x.id === "longwave:overcharge")!;
+    expect(WEAPONS.longwave.charge!.pierce).toBe(true);
+    expect(f.line).not.toMatch(/pierce/i);
+  });
+
   it("every firmware in the manifest that patches a projectile gets that projectile", () => {
     // the structural guard: not these two firmwares, but the rule. A firmware added later that
     // changes a projectile property, or a property added to the spec, is covered without anyone

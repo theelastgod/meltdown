@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-20, at Stage 186, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-20, at Stage 187, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 186 on this branch (CAPACITOR no longer sells a second shot) |
-| Next stage number | **187** |
+| HEAD | Stage 187 on this branch (OVERCHARGE no longer sells a fake pierce) |
+| Next stage number | **188** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1007 across 111 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -178,7 +178,7 @@ now passed in sequence six sweeps running. If it fails, run it alone before conc
 
 ## 5. The week's work
 
-`docs/BACKLOG.md` has **12 open findings**, each read in the source, grouped by area and ordered
+`docs/BACKLOG.md` has **11 open findings**, each read in the source, grouped by area and ordered
 roughly by what a player would notice. It also lists the twelve already closed, with commits — check
 that list before starting anything, and mark your own as you close them.
 
@@ -203,10 +203,11 @@ Deviate freely. The ordering is a suggestion; the method is not.
 
 ---
 
-## 6. Stage 187 is next
+## 6. Stage 188 is next
 
-Stage 186 took the false "two shots past 25 m" off CAPACITOR. Next: OVERCHARGE's "pierces
-cover", or the chip/node lines that print numbers they do not deliver.
+Stage 187 took "pierces cover" off OVERCHARGE. Pierce still does not pass walls; that is a
+different gun. Next: the chip/node lines that print numbers they do not deliver (items 11–15
+are the same defect in different tables).
 
 ---
 

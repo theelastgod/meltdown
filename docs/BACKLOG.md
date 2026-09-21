@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Nineteen have since been fixed (Stages 168–186) and
+turned out to be the same finding reported twice. Twenty have since been fixed (Stages 168–187) and
 are listed at the foot of this file with the commit that closed them.
 
-The **12 below are open**. Every one has been read in the source — none is a hunch.
+The **11 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -17,31 +17,6 @@ stable ids, not a queue.
 
 
 ## Weapons and firmware
-
-### 10. OVERCHARGE sells "pierces cover", but the stock rail already sets pierce:true and pierce never passes level geometry
-
-`shared/manifest/firmwares.ts:28`
-
-**What the code promises.** The rank-28 LONGWAVE firmware's line is "+8% charge time, +8% damage, pierces cover" — two stat
-changes plus a third, headline capability.
-
-**What it does.** Two separate failures. (a) The stock LONGWAVE already carries `charge: { time: 0.9, damage: 110,
-pierce: true }` at shared/weapons/manifest.ts:162, and shared/sim/weapons.ts:384 passes `pierce:
-c.pierce` straight through — so OVERCHARGE's `pierce: true` overwrites true with true and grants
-nothing. (b) `pierce` does not mean cover-piercing anywhere in the sim: castRay first clamps
-`worldT` to the nearest level box (world.ts:383-386), then every rayCapsule candidate test is
-bounded by that same worldT (world.ts:401, 419, 424, 429). A target behind a wall is never a
-candidate, pierce or not; pierce only decides whether more than one candidate in front of the
-wall is damaged (world.ts:434).
-
-**Measured.** Read WEAPONS.longwave.charge.pierce (already true) before applying the firmware. Falsifiable in
-sim: stand two dummies in a line behind a box, fire a charged rail with and without OVERCHARGE —
-the emitted `shot` event's `hits` array is identical and contains nothing beyond the box, while
-two dummies in the open are both hit with the stock weapon.
-
-**What a player sees.** A player at LONGWAVE rank 28 flashes OVERCHARGE expecting to shoot through cover, and pays a
-real +8% charge time for it. They get neither a new capability nor the advertised one: the stock
-rail already punches through stacked bodies, and no rail shot of any kind passes a wall.
 
 ### 11. REPO HAMMER chip lines print the un-scaled template numbers; every spread chip on that weapon is ~30% weaker than its text
 
@@ -394,3 +369,5 @@ stricter than the rule it guards.
   → Stage 185
 - LONGWAVE CAPACITOR's only stated cost cannot occur — 102 damage still one-shots at every range  
   → Stage 186
+- OVERCHARGE sells "pierces cover", but the stock rail already pierces bodies and no rail passes a wall  
+  → Stage 187

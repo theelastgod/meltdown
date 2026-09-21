@@ -1641,6 +1641,21 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 187 — OVERCHARGE sold a pierce the stock rail already has
+
+**Goal.** OVERCHARGE's line was "+8% charge time, +8% damage, pierces cover". Stock LONGWAVE
+already has `charge.pierce: true`. Pierce in the sim continues through bodies in front of a
+wall; `castRay` clamps to the nearest box first, so nothing behind cover is a candidate.
+The player pays +8% charge for a headline that is both redundant and false.
+
+Did not teach rays to pass level geometry. That is a different gun.
+
+**What changed.** The line is the two stats. The patch no longer writes `pierce: true` over
+true. A walk: a firmware that names "pierces cover" must be adding pierce the stock weapon
+does not have.
+
+**Proof.** `tests/firmware.test.ts` (8). Mutation: line and `pierce: true` restored — 2 fail.
+
 ## Stage 186 — CAPACITOR sold a second shot the rail cannot need
 
 **Goal.** CAPACITOR's line was "−15% charge time, −7% damage (two shots past 25 m)". Charged
