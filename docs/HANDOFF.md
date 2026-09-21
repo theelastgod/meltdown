@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 226, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 227, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 226 on this branch (HOUSE · THE WAKE CELLS) |
-| Next stage number | **227** |
+| HEAD | Stage 227 on this branch (range ghosts name DEADLETTER OFFICE (HUB)) |
+| Next stage number | **228** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1062 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 227 is next
+## 6. Stage 228 is next
 
-Stage 226 made picking a house write HOUSE · THE WAKE CELLS, not HOUSE · CELLS. Next is
-whatever a player would notice. Do not loosen fairness.
+Stage 227 made a range ghost write DEADLETTER OFFICE (HUB). Next is whatever a player would
+notice. Do not loosen fairness.
 
 ---
 

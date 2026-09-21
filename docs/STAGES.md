@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 227 — A range ghost wrote DEADLETTER_OFFICE
+
+**Goal.** Stage 216 taught the city `levelDisplayName`. A best time on the Deadletter range still
+pushed `RANGE · DEADLETTER OFFICE` from the id with underscores swapped, and a White Office ghost
+would have said WHITE OFFICE, not THE WHITE OFFICE. The hub's own display name is DEADLETTER
+OFFICE (HUB).
+
+**What changed.** `rangeCourseName` is the city's name without importing the level builder.
+`recordGhost` interpolates it.
+
+**Proof.** A hub ghost writes `RANGE · DEADLETTER OFFICE (HUB)` and not `DEADLETTER_OFFICE`.
+Source must not `run.level.toUpperCase()`. Mutation: uppercase the id again — 1 fail.
+
 ## Stage 226 — Picking a house wrote HOUSE · CELLS
 
 **Goal.** Stage 223 taught Deep Wake THE WAKE CELLS. Choosing a faction still pushed

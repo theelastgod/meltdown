@@ -117,12 +117,20 @@ export function validGhost(raw: unknown): GhostRun | null {
   return { level: r.level, seconds: r.seconds, samples: r.samples.map((v) => Math.round(v * 100) / 100), at: typeof r.at === "number" ? r.at : Date.now() };
 }
 
+/** The city's name for a ghost course. Does not import the level builder. */
+export function rangeCourseName(id: string): string {
+  if (id === "white_office") return "THE WHITE OFFICE";
+  if (id === "deadletter_office") return "DEADLETTER OFFICE (HUB)";
+  if (id === "drainage_yard") return "DRAINAGE YARD (RANGE)";
+  return id.replace(/_/g, " ").toUpperCase();
+}
+
 /** Keep a run on the file if it is the best for its course. */
 export function recordGhost(a: Account, run: GhostRun): boolean {
   const cur = a.ghosts[run.level];
   if (cur && cur.seconds <= run.seconds) return false;
   a.ghosts[run.level] = run;
-  a.ledger.push(`RANGE · ${run.level.toUpperCase().replace(/_/g, " ")} · ${run.seconds.toFixed(2)}s${cur ? ` (−${(cur.seconds - run.seconds).toFixed(2)}s)` : " · FIRST RUN"}`);
+  a.ledger.push(`RANGE · ${rangeCourseName(run.level)} · ${run.seconds.toFixed(2)}s${cur ? ` (−${(cur.seconds - run.seconds).toFixed(2)}s)` : " · FIRST RUN"}`);
   return true;
 }
 

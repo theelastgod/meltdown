@@ -1,8 +1,9 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { glyphFor, glyphSeed, glyphSvg, layersForDepth } from "../shared/identity/glyph";
 import { CHAPTERS, chapterFor, MONIKERS, monikerUnlocked, unlockedMonikers, wornMoniker } from "../shared/identity/monikers";
 import { assertClean, displayName, IDENTITY_KEYS, identityTag, mechanicalLeaks, parseTag, publicIdentity } from "../shared/identity/identity";
-import { createAccount, recordGhost, sandboxAccount, upgradeAccount, validGhost } from "../shared/progression/account";
+import { createAccount, rangeCourseName, recordGhost, sandboxAccount, upgradeAccount, validGhost } from "../shared/progression/account";
 import { totalXpToReach } from "../shared/progression/depth";
 import { deadletterOffice, HUB_LEVEL_ID, overPad } from "../shared/sim/hub";
 import { LEVEL_IDS, levelById } from "../shared/sim/level";
@@ -120,6 +121,13 @@ describe("account identity fields", () => {
     expect(recordGhost(a, { ...run, seconds: 11 })).toBe(true);
     expect(a.ghosts[HUB_LEVEL_ID]!.seconds).toBe(11);
     expect(a.ledger.filter((l) => l.startsWith("RANGE")).length).toBe(2);
+    expect(a.ledger.some((l) => l.startsWith("RANGE · DEADLETTER OFFICE (HUB)"))).toBe(true);
+    expect(a.ledger.some((l) => /RANGE · DEADLETTER_OFFICE/.test(l))).toBe(false);
+    const src = readFileSync(new URL("../shared/progression/account.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/RANGE · \$\{rangeCourseName\(run\.level\)\}/);
+    expect(src).not.toMatch(/run\.level\.toUpperCase\(\)/);
+    expect(rangeCourseName("white_office")).toBe("THE WHITE OFFICE");
+    expect(rangeCourseName("white_office")).not.toBe("WHITE OFFICE");
     expect(totalXpToReach(10)).toBeGreaterThan(0);
   });
 });

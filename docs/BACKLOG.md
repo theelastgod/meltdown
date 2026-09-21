@@ -142,3 +142,5 @@ one stage.
   → Stage 225
 - Picking a house wrote HOUSE · CELLS  
   → Stage 226
+- A range ghost wrote DEADLETTER_OFFICE / WHITE OFFICE  
+  → Stage 227
