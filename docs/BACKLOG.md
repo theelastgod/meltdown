@@ -204,3 +204,5 @@ one stage.
   → Stage 256
 - The wasp rotors were a flat brown disc  
   → Stage 257
+- The monorail tail lamp was a flat red box  
+  → Stage 258

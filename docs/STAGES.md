@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 258 — The monorail tail lamp was a flat red box
+
+**Goal.** Stage 254 plated the headlamp. The red tail on the other end of each car was still
+unmapped.
+
+**What changed.** `bindPlate(tailMat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `life.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 257 — The wasp rotors were a flat brown disc
 
 **Goal.** Stage 209 put the hull plate on the rotor arms. The spinning discs were still
