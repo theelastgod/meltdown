@@ -52,6 +52,14 @@ describe("daily contracts", () => {
   });
 });
 
+describe("the FILE tab names the week's guns", () => {
+  it("lists REPO HAMMER, not repo_hammer", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/au\.weapons\.map\(weaponName\)/);
+    expect(src).not.toMatch(/au\.weapons\.join\(", "\)/);
+  });
+});
+
 describe("audits", () => {
   it("the week picks a playlist; its rules refuse weapons, keystones and rings it bans; leaderboards keep the best per file", () => {
     expect(AUDITS.length).toBeGreaterThanOrEqual(8);

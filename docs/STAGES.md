@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 228 — The Audit line listed repo_hammer
+
+**Goal.** PELLET WEEK's FILE tab printed `repo_hammer, clockeater, shock_baton` next to the
+playlist. The rack, the stamp and the join line already say REPO HAMMER.
+
+**What changed.** The list maps `weaponName`.
+
+**Proof.** `tests/endgame.test.ts`: FILE source must `au.weapons.map(weaponName)` and must not
+`au.weapons.join`. Mutation: join the ids again — 1 fail.
+
 ## Stage 227 — A range ghost wrote DEADLETTER_OFFICE
 
 **Goal.** Stage 216 taught the city `levelDisplayName`. A best time on the Deadletter range still
