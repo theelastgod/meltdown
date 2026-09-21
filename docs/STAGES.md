@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 191 — Online respawn was silent
+
+**Goal.** `audio.respawn` and `◆ BACK ON THE LEDGER` lived on the sim's `respawn` event. Online
+the client never steps the world, and the server does not put `respawn` on the wire. `onSnapshot`
+already computed `wasAlive` and used it only for correction stats.
+
+**What changed.** The dead→alive edge on the snapshot calls `backOnTheLedger()`, the same door
+the sim event uses offline. Did not add `respawn` to the wire.
+
+**Proof.** `tests/respawncue.test.ts`. Mutation: snapshot edge omitted — 1 fail.
+
 ## Stage 190 — Ledger node lines quoted the pre-scale costs
 
 **Goal.** `reconciled()` rescales costs so the Auditor balances, then ships the authored

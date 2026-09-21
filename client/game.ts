@@ -494,6 +494,9 @@ export class Game {
       const replay = net.ackUpTo(ns.local.seq);
       for (const r of replay) this.world.applyInput(p, r, { predictOnly: true, silent: true });
       this.netStats.replayedInputs += replay.length;
+      // online never steps the world, so the sim's respawn event never fires here. The dead→alive
+      // edge on the snapshot is the same moment (Stage 191).
+      if (!wasAlive && p.alive) this.backOnTheLedger();
       if (wasSynced && wasAlive && p.alive) {
         const corr = Math.hypot(p.pos.x - before.x, p.pos.y - before.y, p.pos.z - before.z);
         if (corr > 0.001) this.netStats.corrections++;
@@ -884,6 +887,13 @@ export class Game {
     this.closedByLast.z = who.at?.z ?? 0;
     this.closedByLast.known = !!who.at;
   }
+
+  /** Offline this is a sim event; online it is the snapshot's dead→alive edge (Stage 191). */
+  private backOnTheLedger(): void {
+    this.audio.respawn();
+    this.hud.push(`◆ BACK ON THE LEDGER · ${this.world.level.displayName ?? this.levelId}`, "cy");
+  }
+
   /** what closed the file last, for the check that the camera found it */
   readonly closedByLast = { name: "", x: 0, z: 0, known: false };
 
@@ -1363,11 +1373,7 @@ export class Game {
       case "slideEnd":
         break;
       case "respawn":
-        // back on the ledger (Stage 96): the client said nothing at all here, and the camera cut
-        if (ev.playerId === this.player.id) {
-          this.audio.respawn();
-          this.hud.push(`◆ BACK ON THE LEDGER · ${this.world.level.displayName ?? this.levelId}`, "cy");
-        }
+        if (ev.playerId === this.player.id) this.backOnTheLedger();
         break;
       default:
         break;

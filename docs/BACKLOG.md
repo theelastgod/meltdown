@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Twenty-three have since been fixed (Stages 168–190) and
+turned out to be the same finding reported twice. Twenty-four have since been fixed (Stages 168–191) and
 are listed at the foot of this file with the commit that closed them.
 
-The **6 below are open**. Every one has been read in the source — none is a hunch.
+The **5 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -17,38 +17,6 @@ stable ids, not a queue.
 
 
 ## Audio and render
-
-### 16. The respawn cue and the BACK ON THE LEDGER line can never fire online: the dead→alive edge is computed and thrown away
-
-`client/game.ts:480`
-
-**What the code promises.** client/audio.ts:463-470 documents `respawn()` as "back on the ledger (Stage 96): a rising two-
-note with the CRT's own hiss under it", and client/game.ts:1357-1362 pairs it with `hud.push('◆
-BACK ON THE LEDGER · <district>')`. Stage 96's whole premise (client/render/spawn.ts:1-13) is
-that a respawn used to be "a new place, the old heading, no fade, no sound, no line".
-
-**What it does.** `audio.respawn()` has exactly one call site, client/game.ts:1360, inside `onEvent` — the handler
-for SimEvents drained from the locally-stepped world. Online the client never calls
-`world.step()`; it calls `applyInput(..., {predictOnly:true})` (client/game.ts:778), and the
-respawn block in shared/sim/world.ts:259-265 is guarded by `if (!p.alive && !opts.predictOnly)`,
-so no local respawn event is ever produced. The server does produce one, but
-server/room.ts:1151-1216 `toNetEvent` has no `case "respawn"` and falls through to `default:
-return null` at line 1215, so it never reaches the wire (the protocol's event union has only
-shot/fx/kill/death/join/leave). client/game.ts:480 computes `const wasAlive = p.alive;` in
-`onSnapshot` and then uses it only for `netStats` bookkeeping (line 489-493) — the dead→alive
-edge is right there and discarded. The renderer's visual spawn-in still works, because it reads
-`v.alive` itself (client/render/renderer.ts:904 `spawnEdge`), which is exactly why the gap is
-easy to miss.
-
-**Measured.** Join a room, die, respawn, and read `window.__game.audio.fired` (exposed as `audioCues()` in
-client/main.ts:323): `fired.respawn` stays undefined online and increments by 1 per respawn
-offline. Equivalently, grep the HUD log for '◆ BACK ON THE LEDGER' after an online death — it
-never appears.
-
-**What a player sees.** In multiplayer — the game's primary mode — every single respawn is silent and unlogged. The CRT
-comes back up and the lens opens out with no sound and no line in the log, while offline the
-same respawn gets a two-note rise and a ledger entry. Stage 96 fixed the cut only for the
-offline path.
 
 ### 17. An explosion's point light fades by a fixed factor per FRAME, so a grenade lights the street 20x more at 60 Hz than at 144 Hz
 
@@ -229,3 +197,5 @@ stricter than the rule it guards.
   → Stage 189
 - 13 ledger node lines print the pre-reconciliation cost; COLLATERAL says −20% reload and applies −23.5%  
   → Stage 190
+- The respawn cue and BACK ON THE LEDGER never fire online  
+  → Stage 191

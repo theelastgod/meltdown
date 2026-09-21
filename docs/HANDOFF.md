@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 190, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 191, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 190 on this branch (ledger node lines match reconciled costs) |
-| Next stage number | **191** |
+| HEAD | Stage 191 on this branch (online respawn cue on the snapshot edge) |
+| Next stage number | **192** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1012 across 111 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -178,7 +178,7 @@ now passed in sequence six sweeps running. If it fails, run it alone before conc
 
 ## 5. The week's work
 
-`docs/BACKLOG.md` has **6 open findings**, each read in the source, grouped by area and ordered
+`docs/BACKLOG.md` has **5 open findings**, each read in the source, grouped by area and ordered
 roughly by what a player would notice. It also lists the twelve already closed, with commits — check
 that list before starting anything, and mark your own as you close them.
 
@@ -203,10 +203,10 @@ Deviate freely. The ordering is a suggestion; the method is not.
 
 ---
 
-## 6. Stage 191 is next
+## 6. Stage 192 is next
 
-Stage 190 printed ledger node lines from the reconciled mods. Next: the online respawn cue
-that never fires, or the per-frame explosion light.
+Stage 191 fires BACK ON THE LEDGER from the snapshot's dead→alive edge. Next: the explosion
+light that fades per frame, or the landing dip divided by a capped dt.
 
 ---
 
