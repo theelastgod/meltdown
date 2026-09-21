@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-20, at Stage 188, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 189, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 188 on this branch (chip lines are the settled mods) |
-| Next stage number | **189** |
+| HEAD | Stage 189 on this branch (firmware lines match the integers) |
+| Next stage number | **190** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1012 across 111 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -178,7 +178,7 @@ now passed in sequence six sweeps running. If it fails, run it alone before conc
 
 ## 5. The week's work
 
-`docs/BACKLOG.md` has **8 open findings**, each read in the source, grouped by area and ordered
+`docs/BACKLOG.md` has **7 open findings**, each read in the source, grouped by area and ordered
 roughly by what a player would notice. It also lists the twelve already closed, with commits — check
 that list before starting anything, and mark your own as you close them.
 
@@ -203,10 +203,10 @@ Deviate freely. The ordering is a suggestion; the method is not.
 
 ---
 
-## 6. Stage 189 is next
+## 6. Stage 190 is next
 
-Stage 188 prints chip lines from the settled mods. Next: firmware damage lines vs the
-integers the patch produces (item 12), or ledger node lines vs reconciled costs (item 15).
+Stage 189 printed firmware damage from the integer the patch produces. Next: ledger node
+lines vs reconciled costs, or the online respawn cue that never fires.
 
 ---
 

@@ -102,6 +102,34 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(f.line).not.toMatch(/pierce/i);
   });
 
+  it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
+    const pct = (from: number, to: number) => ((to - from) / from) * 100;
+    for (const f of FIRMWARES) {
+      const b = WEAPONS[f.weapon];
+      const p = f.patch(b);
+      if (p.damage !== b.damage) {
+        const actual = pct(b.damage, p.damage);
+        const m = f.line.match(/([+\-−]\d+(?:\.\d+)?)%\s*(?:pellet )?damage/);
+        expect(m, `${f.id} damage ${b.damage}→${p.damage} is not on the line`).toBeTruthy();
+        const claimed = Number(m![1].replace("−", "-"));
+        expect(Math.abs(claimed - actual), `${f.id} claims ${claimed}% damage, patch is ${actual.toFixed(1)}%`).toBeLessThan(0.6);
+      }
+      if (p.magSize !== b.magSize) {
+        expect(f.line, `${f.id} mag ${b.magSize}→${p.magSize} is not on the line`).toMatch(/mag/i);
+      }
+    }
+  });
+
+  it("DOUBLE BARREL names the four-shell mag and the −10% pellet, not −8%", () => {
+    const f = FIRMWARES.find((x) => x.id === "repo_hammer:double_barrel")!;
+    const p = f.patch(WEAPONS.repo_hammer);
+    expect(p.damage).toBe(9);
+    expect(p.magSize).toBe(4);
+    expect(f.line).toMatch(/−10%/);
+    expect(f.line).toMatch(/magazine 4/);
+    expect(f.line).not.toMatch(/−8%/);
+  });
+
   it("every firmware in the manifest that patches a projectile gets that projectile", () => {
     // the structural guard: not these two firmwares, but the rule. A firmware added later that
     // changes a projectile property, or a property added to the spec, is covered without anyone

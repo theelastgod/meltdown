@@ -1641,6 +1641,21 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 189 — Firmware lines quoted the multiplier, not the integer
+
+**Goal.** Patches `Math.round` onto a small base. THREE-COUNT said +15% and dealt 16→18
+(+12.5%). DOUBLE BARREL said −8% pellet and dealt 10→9 (−10%), and cut the mag 6→4 with no
+mention. SLAM FIRE said −15% and landed on the same 9. MEASURED said +26% and dealt 9→11
+(+22%).
+
+**What changed.** The lines use the integer the patch produces. DOUBLE BARREL names magazine 4.
+A walk: a damage change on the patch is a percentage on the line within 0.6 points; a mag
+change is named.
+
+Did not change the patches (TTK / fairness). The lie was the copy.
+
+**Proof.** `tests/firmware.test.ts`. Mutation: DOUBLE BARREL back to −8% and no mag — 2 fail.
+
 ## Stage 188 — Chip lines quoted the template, not the mods
 
 **Goal.** Every chip is a template remapped per weapon: the hammer's spread benefits are ×0.7,

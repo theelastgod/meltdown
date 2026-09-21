@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Twenty-one have since been fixed (Stages 168–188) and
+turned out to be the same finding reported twice. Twenty-two have since been fixed (Stages 168–189) and
 are listed at the foot of this file with the commit that closed them.
 
-The **8 below are open**. Every one has been read in the source — none is a hunch.
+The **7 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -14,35 +14,6 @@ first written once measured, and one ("stranded units") is two findings tangled 
 
 Ordered roughly by how much a player would notice, not by how easy they are. Item numbers are
 stable ids, not a queue.
-
-
-## Weapons and firmware
-
-### 12. Firmware damage lines drift from the integers the code produces, and DOUBLE BARREL hides a −33% magazine cost
-
-`shared/manifest/firmwares.ts:23`
-
-**What the code promises.** DOUBLE BARREL (firmwares.ts:23) — "two shells per trigger 0.7 s apart, then a long reset; −8%
-pellet damage". SLAM FIRE (:24) — "+20% rate, −15% pellet damage, a little wider". THREE-COUNT
-(:21) — "+15% damage". MEASURED (:26) — "+26% damage".
-
-**What it does.** Every patch rounds to an integer on a small base and the lines were written from the multiplier
-rather than the result. DOUBLE BARREL: Math.round(10×0.92)=9, i.e. −10% not −8%, AND `magSize:
-Math.max(2, d.magSize - 2)` takes the hammer from 6 shells to 4 (−33%), which the line never
-mentions. SLAM FIRE: Math.round(10×0.85) = Math.round(8.5) = 9 (JS rounds half up), so −10%
-instead of the advertised −15% — the nerf is a third smaller than stated (72 pellet damage per
-shell instead of the intended 68). THREE-COUNT: Math.round(16×1.15)=18, +12.5% not +15%.
-MEASURED: Math.round(9×1.26)=11, +22.2% not +26%.
-
-**Measured.** npx tsx: for each FirmwareDef, `f.patch(WEAPONS[f.weapon])` diffed against the base.
-repo_hammer: damage 10→9 (−10%) and magSize 6→4 for double_barrel; 10→9 (−10%) for slam_fire;
-lease_breaker 16→18 (+12.5%); stack_smg 9→11 (+22.2%).
-
-**What a player sees.** A REPO HAMMER player picks DOUBLE BARREL for its two-shell burst and finds mid-fight they have
-four shells instead of six — a cost the kit panel never showed. A player choosing between SLAM
-FIRE ("−15% damage") and DOUBLE BARREL ("−8% damage") is told SLAM FIRE hits softer when both
-land on 9 damage per pellet. MEASURED buyers get 3.8 percentage points less damage than
-promised.
 
 
 ## Ledger items
@@ -294,3 +265,5 @@ stricter than the rule it guards.
   → Stage 188
 - Every REPO HAMMER spread chip quotes the unscaled template number  
   → Stage 188
+- Firmware damage lines drift from the integers the code produces; DOUBLE BARREL hides a −33% magazine  
+  → Stage 189
