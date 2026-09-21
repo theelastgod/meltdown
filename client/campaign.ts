@@ -9,7 +9,7 @@
 import type { Game } from "./game";
 import { closeHint } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
-import { ENDINGS, endingsFor, gateOpen, handlersAlive, resolveEnding, type Testimony } from "@shared/campaign/testimony";
+import { ENDINGS, endingTitle, endingsFor, gateOpen, handlersAlive, resolveEnding, type Testimony } from "@shared/campaign/testimony";
 import { threatProfile, threatRating, type ThreatProfile } from "@shared/campaign/threat";
 import { PROTOCOLS, protocolMods, MAX_PROTOCOLS } from "@shared/campaign/protocols";
 import { scriptById, type ScriptNode } from "@shared/campaign/script";
@@ -520,7 +520,7 @@ export class Campaign {
       const done = GIGS.filter((g) => g.fixer === h && c.gigsDone.includes(g.id)).length;
       return `<div class="fx ${H.color}"><div class="fh">${H.sigil} ${H.name} <span class="dim">${H.title}</span> ${alive[h] ? "" : '<span class="mg">· RE-LEASED</span>'}</div>${alive[h] ? mine.map((g) => row(g, true)).join("") || `<div class="dim">no contracts on offer${done ? ` · ${done} closed` : ""}</div>` : '<div class="dim">no one answers</div>'}</div>`;
     }).join("");
-    const arc = next ? row(next, true) : `<div class="dim">THE ARC IS COMPLETE · ENDING: ${(c.ending ?? "").toUpperCase().replace(/_/g, " ")}</div>`;
+    const arc = next ? row(next, true) : `<div class="dim">THE ARC IS COMPLETE · ENDING: ${endingTitle(c.ending)}</div>`;
     const protos = PROTOCOLS.map((p) => {
       const owned = c.protocols.includes(p.id);
       const worn = c.worn.includes(p.id);

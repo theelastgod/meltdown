@@ -132,3 +132,5 @@ one stage.
   → Stage 220
 - Travelling printed WHITE OFFICE / DEADLETTER_DOCKS instead of the city name  
   → Stage 221
+- The completed-arc line printed CHAIR CLOCKEATER, not THE CLOCKEATER'S CHAIR  
+  → Stage 222

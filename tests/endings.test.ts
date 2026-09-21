@@ -13,7 +13,8 @@
  * can be opened, and both gates could. Nothing asked whether the office could ever name it.
  */
 import { describe, expect, it } from "vitest";
-import { ENDINGS, endingsFor, resolveEnding, type Testimony } from "../shared/campaign/testimony";
+import { readFileSync } from "node:fs";
+import { ENDINGS, endingTitle, endingsFor, resolveEnding, type Testimony } from "../shared/campaign/testimony";
 import { SCRIPTS } from "../shared/campaign/script";
 import { lintCampaign } from "../shared/campaign/lint";
 
@@ -65,6 +66,24 @@ describe("endings — every ending the game ships can be delivered", () => {
       // and it is the sharper of the two on offer, not the one every run gets
       expect(got).not.toBe("wipe");
     }
+  });
+});
+
+describe("the contracts panel names the ending, not the id", () => {
+  it("is the title for every shipped ending", () => {
+    for (const e of ENDINGS) {
+      expect(endingTitle(e.id)).toBe(e.title);
+      expect(endingTitle(e.id)).not.toBe(e.id.toUpperCase().replace(/_/g, " "));
+    }
+    expect(endingTitle("chair_clockeater")).toBe("THE CLOCKEATER'S CHAIR");
+    expect(endingTitle("wipe_fire")).toBe("THE CITY THAT READ THE FIRE");
+    expect(endingTitle("chair_clockeater")).not.toBe("CHAIR CLOCKEATER");
+  });
+
+  it("the complete line interpolates endingTitle", () => {
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/ENDING: \$\{endingTitle\(c\.ending\)\}/);
+    expect(src).not.toMatch(/c\.ending \?\? ""\)\.toUpperCase\(\)/);
   });
 });
 

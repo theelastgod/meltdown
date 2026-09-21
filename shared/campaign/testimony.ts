@@ -71,6 +71,11 @@ export function endingsFor(t: Testimony, faction: FactionId | null): EndingDef[]
   return ENDINGS.filter((e) => gateOpen(e.gate, t, faction));
 }
 
+/** What the contracts panel prints when the arc is done: the title, not CHAIR CLOCKEATER. */
+export function endingTitle(id: string | null | undefined): string {
+  return ENDINGS.find((e) => e.id === id)?.title ?? (id ?? "").replace(/_/g, " ").toUpperCase();
+}
+
 /**
  * The ending the white office actually delivers (Stage 174).
  *

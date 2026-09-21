@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 222 — The completed arc printed CHAIR CLOCKEATER
+
+**Goal.** Stage 174 made the office deliver THE CLOCKEATER'S CHAIR and THE CITY THAT READ THE
+FIRE. The contracts panel, when the arc was done, still spelled the id:
+`THE ARC IS COMPLETE · ENDING: CHAIR CLOCKEATER`. WIPE became WIPE, not WIPE THE LEDGER. The
+open-endings list a few lines down already used `e.title`.
+
+**What changed.** `endingTitle(id)` is the authored title. The complete line interpolates it.
+
+**Proof.** `tests/endings.test.ts`: every shipped ending's title; `chair_clockeater` is not
+`CHAIR CLOCKEATER`. Source must `endingTitle(c.ending)`. Mutation: uppercase the id again — 1 fail.
+
 ## Stage 221 — Travelling printed WHITE_OFFICE
 
 **Goal.** Stage 216 taught the contracts list `levelDisplayName`. Joining a room on a different
