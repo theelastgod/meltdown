@@ -120,10 +120,10 @@ describe("chips and firmwares", () => {
     const chipShape = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { muzzle: 1 } } }, owned, 50, ranks);
     expect(chipShape.errors.map((e) => e.rule)).toContain("chip-shape");
     const chipShapeKick = chipShape.errors.find((e) => e.rule === "chip-shape")!;
-    expect(chipShapeKick.detail).toBe("LEASE-BREAKER.muzzle: chip must be an id");
-    expect(chipShapeKick.detail).not.toMatch(/^lease_breaker\./);
-    expect(src).toMatch(/chip-shape", detail: `\$\{gun\(wid as WeaponId\)\}\.\$\{socket\}: chip must be an id`/);
-    expect(src).not.toMatch(/chip-shape", detail: `\$\{wid\}\.\$\{socket\}: chip must be an id`/);
+    expect(chipShapeKick.detail).toBe("LEASE-BREAKER.MUZZLE: chip must be an id");
+    expect(chipShapeKick.detail).not.toMatch(/LEASE-BREAKER\.muzzle/);
+    expect(src).toMatch(/chip-shape", detail: `\$\{gun\(wid as WeaponId\)\}\.\$\{socket\.toUpperCase\(\)\}: chip must be an id`/);
+    expect(src).not.toMatch(/chip-shape", detail: `\$\{gun\(wid as WeaponId\)\}\.\$\{socket\}: chip must be an id`/);
     const fwShape = validateLoadout({ ...DEFAULT_LOADOUT, firmware: { lease_breaker: 1 } }, owned, 50, ranks);
     expect(fwShape.errors.map((e) => e.rule)).toContain("firmware-shape");
     const fwShapeKick = fwShape.errors.find((e) => e.rule === "firmware-shape")!;

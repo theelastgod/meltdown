@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 247 — The chip-shape kick said .muzzle
+
+**Goal.** Stage 245 taught the chip-socket kick MUZZLE / KINETIC. Putting a number in the muzzle
+socket still kicked `LEASE-BREAKER.muzzle: chip must be an id`. The FILE panel labels the socket
+MUZZLE.
+
+**What changed.** That socket word is uppercased.
+
+**Proof.** `tests/mastery.test.ts`: the kick is `LEASE-BREAKER.MUZZLE: chip must be an id`. Mutation:
+lowercase `muzzle` again — 1 fail.
+
 ## Stage 246 — The not-a-node kick said "is a keystone"
 
 **Goal.** Stage 232 taught the FILE names. Attesting DEBTLESS as a node still kicked

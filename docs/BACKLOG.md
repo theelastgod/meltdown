@@ -182,3 +182,5 @@ one stage.
   → Stage 245
 - The not-a-node kick said "is a keystone"  
   → Stage 246
+- The chip-shape kick said .muzzle  
+  → Stage 247
