@@ -109,6 +109,8 @@ export class ArsenalFx {
     bindPlate(this.projMats.frag, "tex_weapon_dark");
     bindPlate(this.projMats.smoke, "tex_weapon_dark");
     bindPlate(this.projMats.emp, "tex_metal");
+    bindPlate(this.projMats.phage, "skin_phage_plate");
+    bindPlate(this.projMats.sticky, "skin_phage_plate");
   }
 
   /** live explosion light intensities — the 60 Hz / 144 Hz guard reads these */

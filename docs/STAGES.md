@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 205 — Phage rounds were a flat violet box
+
+**Goal.** Frag/smoke/emp nades got plates in Stage 203. Phage and sticky projectiles stayed
+`MeshBasicMaterial` violet with no map, so a launched round did not wear the phage plate the
+catalog already sold.
+
+**What changed.** Both bind `skin_phage_plate` fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires `bindPlate(this.projMats.phage, "skin_phage_plate")`.
+Mutation: that call omitted — 1 fail.
+
 ## Stage 204 — A nade at your feet online did not kick the camera
 
 **Goal.** Offline, `explode` kicks 0.6 when you are inside 2× radius, and `emp` kicks 1 inside the

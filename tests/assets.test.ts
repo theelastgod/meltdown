@@ -155,6 +155,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(campaign).toMatch(/bindPlate\(hoodMat, "tex_cloak"\)/);
     const weapons = readFileSync(new URL("../client/render/weapons.ts", import.meta.url), "utf8");
     expect(weapons).toMatch(/bindPlate\(this\.projMats\.frag, "tex_weapon_dark"\)/);
+    expect(weapons).toMatch(/bindPlate\(this\.projMats\.phage, "skin_phage_plate"\)/);
   });
 });
 
