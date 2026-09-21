@@ -176,3 +176,5 @@ one stage.
   → Stage 242
 - The contracts list named PROTOCOL  
   → Stage 243
+- The closed-contract ledger named red_lease  
+  → Stage 244

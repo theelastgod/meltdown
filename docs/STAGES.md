@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 244 — The closed-contract ledger named red_lease
+
+**Goal.** Stage 243 taught the contracts list RED LEASE. Closing DEADLETTER RUN still wrote
+`PROTOCOL RED LEASE` by uppercasing `red_lease`, not by reading the authored name. The settlement
+card already interpolates `PROTOCOLS.find(…).name`.
+
+**What changed.** That ledger slot interpolates `protocolById(…).name`.
+
+**Proof.** `tests/campaign.test.ts`: the line matches PROTOCOL RED LEASE, not `PROTOCOL red_lease`.
+Source must `${protocolById(m.reward.protocol)?.name`. Mutation: interpolate the id again — 1 fail.
+
 ## Stage 243 — The contracts list named PROTOCOL
 
 **Goal.** Stage 215 taught campaign unlocks THE DIRECTIVE. The contracts CRT still printed a bare

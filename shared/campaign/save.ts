@@ -77,7 +77,7 @@ export function completeContract(a: Account, id: string, testimony: Testimony): 
     c.ending = resolveEnding(c.testimony, c.faction).id;
     a.counters["endings"] = (a.counters["endings"] ?? 0) + 1;
   }
-  a.ledger.push(`${m.kind === "mission" ? "MISSION" : "GIG"} CLOSED · ${m.title}${m.reward.scrip ? ` · +${m.reward.scrip} SCRIP` : ""}${m.reward.protocol ? ` · PROTOCOL ${m.reward.protocol.toUpperCase().replace(/_/g, " ")}` : ""}${m.reward.weapon ? ` · WEAPON ${WEAPONS[m.reward.weapon as WeaponId]?.name ?? m.reward.weapon.toUpperCase()}` : ""}`);
+  a.ledger.push(`${m.kind === "mission" ? "MISSION" : "GIG"} CLOSED · ${m.title}${m.reward.scrip ? ` · +${m.reward.scrip} SCRIP` : ""}${m.reward.protocol ? ` · PROTOCOL ${protocolById(m.reward.protocol)?.name ?? m.reward.protocol}` : ""}${m.reward.weapon ? ` · WEAPON ${WEAPONS[m.reward.weapon as WeaponId]?.name ?? m.reward.weapon.toUpperCase()}` : ""}`);
   return { ok: true, reward: m.reward };
 }
 

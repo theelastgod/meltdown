@@ -121,6 +121,11 @@ describe("campaign save", () => {
     // the Directive unlocks with THE LEAK; a protocol with the run
     for (const id of ["m2_deadletter_run", "m3_repo_volatility"]) completeContract(a, id, {});
     expect(c.protocols).toEqual(["red_lease", "filament_core"]);
+    expect(a.ledger.some((l) => l.includes("PROTOCOL RED LEASE"))).toBe(true);
+    expect(a.ledger.some((l) => /PROTOCOL red_lease/.test(l))).toBe(false);
+    const saveSrc = readFileSync(new URL("../shared/campaign/save.ts", import.meta.url), "utf8");
+    expect(saveSrc).toMatch(/PROTOCOL \$\{protocolById\(m\.reward\.protocol\)\?\.name/);
+    expect(saveSrc).not.toMatch(/PROTOCOL \$\{m\.reward\.protocol\.toUpperCase\(\)\.replace/);
     completeContract(a, "m4_the_leak", { "m4:directive": "kept", "m4:vessel": "expose" });
     expect(c.weapons).toEqual(["directive"]);
     expect(a.owned).toContain("weapon:directive");
