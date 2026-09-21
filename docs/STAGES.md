@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 249 — The keystone-shape kick said keystone
+
+**Goal.** Stage 248 taught the keystone-limit kick KEYSTONE. Putting a number in the keystone slot
+still kicked `keystone must be an id`. The FILE panel already labels the slot KEYSTONE.
+
+**What changed.** That word is `KEYSTONE`.
+
+**Proof.** `tests/fairness.test.ts`: the kick is `KEYSTONE must be an id`. Mutation: lowercase
+`keystone` again — 1 fail.
+
 ## Stage 248 — The keystone-limit kick said keystone
 
 **Goal.** Stage 246 taught the not-a-node kick KEYSTONE. Sending two keystones as a list still

@@ -186,3 +186,5 @@ one stage.
   → Stage 247
 - The keystone-limit kick said keystone  
   → Stage 248
+- The keystone-shape kick said keystone  
+  → Stage 249

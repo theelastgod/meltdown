@@ -95,7 +95,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
   }
   let keystone: string | null = null;
   if (lo.keystone !== undefined && lo.keystone !== null) {
-    if (typeof lo.keystone !== "string") errors.push({ rule: "keystone-shape", detail: "keystone must be an id" });
+    if (typeof lo.keystone !== "string") errors.push({ rule: "keystone-shape", detail: "KEYSTONE must be an id" });
     else {
       const k = itemById(lo.keystone);
       if (!k || k.kind !== "keystone") errors.push({ rule: "unknown-keystone", detail: lo.keystone });
