@@ -4,6 +4,7 @@
  * and the three launch keystones.
  */
 import { ADDITIVE, BUDGET_PER_PERCENT, isBenefit, modWeight, type StatMod } from "./stats";
+import { formatChipLine } from "./chips";
 
 export type ItemKind = "node" | "keystone";
 
@@ -48,6 +49,7 @@ const node = (id: string, name: string, ring: number, requiresDepth: number, cos
 export const RECONCILE_LOG: { id: string; benefits: number; costs: number; scale: number }[] = [];
 
 function reconciled(id: string, name: string, ring: number, requiresDepth: number, cost: number, benefits: StatMod[], costs: StatMod[], line: string): LedgerItem {
+  void line;
   const b = benefits.reduce((a, m) => a + modWeight(m), 0);
   const c0 = costs.reduce((a, m) => a + modWeight(m), 0);
   RECONCILE_LOG.push({ id, benefits: b, costs: c0, scale: b / c0 });
@@ -62,7 +64,7 @@ function reconciled(id: string, name: string, ring: number, requiresDepth: numbe
   const unit = ADDITIVE.has(last.stat) ? 1 : 0.0025;
   const units = Math.max(1, Math.round(need / per / (ADDITIVE.has(last.stat) ? 1 : 0.25)));
   last.delta = units * unit * Math.sign(last.delta);
-  return node(id, name, ring, requiresDepth, cost, [], benefits, scaled, line);
+  return node(id, name, ring, requiresDepth, cost, [], benefits, scaled, formatChipLine(name, benefits, scaled));
 }
 
 const m = (stat: StatMod["stat"], delta: number): StatMod => ({ stat, delta });
@@ -200,6 +202,10 @@ export function lintItemSchema(items: readonly LedgerItem[] = ALL_ITEMS): Schema
         const other = items.find((x) => x.id === l)!;
         if (other.kind === "node" && !other.links.includes(it.id)) out.push({ itemId: it.id, rule: "link-symmetric", detail: `${l} does not link back` });
       }
+    }
+    if (it.kind === "node") {
+      const rebuilt = formatChipLine(it.name, it.benefits, it.costs);
+      if (it.line !== rebuilt) out.push({ itemId: it.id, rule: "line-matches-mods", detail: `printed "${it.line}" · mods "${rebuilt}"` });
     }
     if (it.cost <= 0) out.push({ itemId: it.id, rule: "positive-price", detail: "Scrip price must be positive" });
     for (const m of [...it.benefits, ...it.costs]) {

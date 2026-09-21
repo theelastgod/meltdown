@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Twenty-two have since been fixed (Stages 168–189) and
+turned out to be the same finding reported twice. Twenty-three have since been fixed (Stages 168–190) and
 are listed at the foot of this file with the commit that closed them.
 
-The **7 below are open**. Every one has been read in the source — none is a hunch.
+The **6 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -14,46 +14,6 @@ first written once measured, and one ("stranded units") is two findings tangled 
 
 Ordered roughly by how much a player would notice, not by how easy they are. Item numbers are
 stable ids, not a queue.
-
-
-## Ledger items
-
-### 15. 13 ledger node lines print the pre-reconciliation cost; COLLATERAL says −20% reload and applies −23.5%
-
-`shared/manifest/items.ts:87`
-
-**What the code promises.** reconciled() (items.ts:50-66) takes the authored costs and RESCALES them by b/c0 so the ledger
-balances, then settles the rounding residue onto the last cost (items.ts:56-64). The `line`
-argument is authored against the pre-scale numbers and is never touched. COLLATERAL is authored
-[moveSpeed -0.02, reloadSpeed -0.20] with line "COLLATERAL: +40% shield regen / −2% move, −20%
-reload".
-
-**What it does.** RECONCILE_LOG records scale = 1.163 for collateral, so its shipped costs are moveSpeed -0.0225
-and reloadSpeed -0.235. Measured: sheetFor({attested:["collateral"]}).reloadSpeed === 0.765.
-reloadTimer = d.reloadTime / mods.reloadSpeed (shared/sim/weapons.ts:282), so a STACK SMG reload
-is 1.700/0.765 = 2.222 s where the line promises 1.700/0.80 = 2.125 s — 97 ms more on every
-magazine. Twelve more nodes drift the same way, each verified by reading RECONCILE_LOG and the
-shipped costs array: ARREARS items.ts:105 ("−10% reload" → -0.12), BLACK SWAN items.ts:126
-("−30% regen" → -0.2725), CIRCUIT BREAKER items.ts:128 ("−8% ADS strafe" → -0.0975), GHOST
-RECEIPT items.ts:102 ("−10% node flip" → -0.1175), NIGHT FARE items.ts:85 ("−10% regen" →
--0.0825), MARGIN CALL items.ts:119 ("+12% spread, +10% recoil" → +0.135, +0.1125), BAD PAPER
-items.ts:110 ("−20% regen" → -0.185), RED INK items.ts:107 ("−16% regen" → -0.1475), MELTDOWN
-CLAUSE items.ts:115 ("−35% regen" → -0.3425), DEFAULT SWAP items.ts:132 ("+15% spread" →
-+0.1575), WIRE FRAUD items.ts:109 ("−5% reload" → -0.0575), DARK POOL items.ts:123 ("−10%
-reload" → -0.105).
-
-**Measured.** For every item in LEDGER_ITEMS, parse each "N%" from `line` and require a cost/benefit mod on
-that stat with 100*|delta| rounding to N. 13 of 48 fail. Concretely:
-sheetFor({attested:["collateral"]}).reloadSpeed === 0.765, while itemById("collateral").line
-asserts 0.80; and Math.round(0.235*100) === 24 !== 20, the two values client/file.ts:750 and
-client/file.ts:717 put on screen for the same node.
-
-**What a player sees.** The Ghostfile shows both readouts at once and they contradict each other on screen. The node row
-renders the real mods through fmt at client/file.ts:750, printing "−24% reloadSpeed" for
-COLLATERAL; the ledger-graph tooltip at client/file.ts:717 prints this authored line, "−20%
-reload", for the same node. A player pricing a build reads one number in the list and a
-different number in the hex they click to buy it. For COLLATERAL the gap is 4 percentage points
-— a fifth of the stated cost.
 
 
 ## Audio and render
@@ -267,3 +227,5 @@ stricter than the rule it guards.
   → Stage 188
 - Firmware damage lines drift from the integers the code produces; DOUBLE BARREL hides a −33% magazine  
   → Stage 189
+- 13 ledger node lines print the pre-reconciliation cost; COLLATERAL says −20% reload and applies −23.5%  
+  → Stage 190

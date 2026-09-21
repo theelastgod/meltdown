@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 190 — Ledger node lines quoted the pre-scale costs
+
+**Goal.** `reconciled()` rescales costs so the Auditor balances, then ships the authored
+`line`. COLLATERAL said −20% reload and applied −23.5%. The Ghostfile row printed the real
+mod; the hex tooltip printed the authored line.
+
+**What changed.** `reconciled()` writes `formatChipLine` from the settled benefits and costs.
+`lintItemSchema` `line-matches-mods` rebuilds it. Keystones keep their authored lines.
+
+**Proof.** COLLATERAL is `+40% regen / −2.25% move, −23.5% reload`. Mutation: authored line
+restored — 2 fail.
+
 ## Stage 189 — Firmware lines quoted the multiplier, not the integer
 
 **Goal.** Patches `Math.round` onto a small base. THREE-COUNT said +15% and dealt 16→18

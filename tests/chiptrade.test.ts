@@ -9,7 +9,8 @@
  * they weighed the same precisely because they cancelled.
  */
 import { describe, expect, it } from "vitest";
-import { CHIPS, lintChipSchema, type ChipDef } from "../shared/manifest/chips";
+import { CHIPS, formatChipLine, lintChipSchema, type ChipDef } from "../shared/manifest/chips";
+import { LEDGER_ITEMS, lintItemSchema, type LedgerItem } from "../shared/manifest/items";
 
 describe("no chip trades a stat against itself", () => {
   it("holds across the whole manifest", () => {
@@ -99,5 +100,27 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };
     expect(lintChipSchema([lying]).map((v) => v.rule)).toContain("line-matches-mods");
+  });
+});
+
+describe("a ledger node line is the mods after reconciliation (Stage 190)", () => {
+  it("COLLATERAL prints −23.5% reload, not the authored −20%", () => {
+    const it = LEDGER_ITEMS.find((x) => x.id === "collateral")!;
+    expect(it.costs.find((c) => c.stat === "reloadSpeed")!.delta).toBeCloseTo(-0.235, 5);
+    expect(it.line).toMatch(/−23\.5% reload/);
+    expect(it.line).not.toMatch(/−20% reload/);
+  });
+
+  it("every node line rebuilds from the settled mods", () => {
+    expect(lintItemSchema().filter((v) => v.rule === "line-matches-mods")).toEqual([]);
+    for (const it of LEDGER_ITEMS) {
+      expect(it.line, it.id).toBe(formatChipLine(it.name, it.benefits, it.costs));
+    }
+  });
+
+  it("and the lint fires when a node still quotes the pre-scale cost", () => {
+    const it = LEDGER_ITEMS.find((x) => x.id === "collateral")!;
+    const lying: LedgerItem = { ...it, line: "COLLATERAL: +40% shield regen / −2% move, −20% reload" };
+    expect(lintItemSchema([lying]).map((v) => v.rule)).toContain("line-matches-mods");
   });
 });

@@ -6,7 +6,7 @@
  * only while that weapon is held. ~120 at launch: 20 per weapon.
  */
 import { WEAPON_LIST, type WeaponId } from "../weapons/manifest";
-import { isBenefit, modWeight, type StatKey, type StatMod } from "./stats";
+import { ADDITIVE, isBenefit, modWeight, type StatKey, type StatMod } from "./stats";
 
 export type Socket = "muzzle" | "kinetic" | "protocol";
 
@@ -107,6 +107,12 @@ const STAT_LINE: Partial<Record<StatKey, string>> = {
   flipRate: "flip",
   shieldRegen: "regen",
   headMult: "headshot",
+  grenades: "grenade",
+  mantleTime: "mantle",
+  shieldDelay: "regen delay",
+  slideBoost: "slide",
+  slideFriction: "slide decay",
+  throwSpeed: "throw",
 };
 
 function fmtPct(delta: number): string {
@@ -116,7 +122,13 @@ function fmtPct(delta: number): string {
 }
 
 function fmtMods(mods: readonly StatMod[]): string {
-  return mods.map((x) => `${fmtPct(x.delta)} ${STAT_LINE[x.stat] ?? x.stat}`).join(", ");
+  return mods
+    .map((x) => {
+      const label = STAT_LINE[x.stat] ?? x.stat;
+      if (ADDITIVE.has(x.stat)) return `${x.delta > 0 ? "+" : x.delta < 0 ? "−" : ""}${Math.abs(x.delta)} ${label}`;
+      return `${fmtPct(x.delta)} ${label}`;
+    })
+    .join(", ");
 }
 
 const MECHANIC_LEAD: Record<ChipMechanic, string> = {
