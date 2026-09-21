@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 245 — The chip-socket kick said "not kinetic"
+
+**Goal.** Stage 236 taught the kick LEASE-BREAKER LONG BARREL. The FILE panel labels the socket
+KINETIC. The kick still said `is a muzzle chip, not kinetic`.
+
+**What changed.** Both socket words are uppercased.
+
+**Proof.** `tests/mastery.test.ts`: the kick is `… MUZZLE chip, not KINETIC`. Mutation: lowercase
+`kinetic` again — 1 fail.
+
 ## Stage 244 — The closed-contract ledger named red_lease
 
 **Goal.** Stage 243 taught the contracts list RED LEASE. Closing DEADLETTER RUN still wrote

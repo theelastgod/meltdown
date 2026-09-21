@@ -178,3 +178,5 @@ one stage.
   → Stage 243
 - The closed-contract ledger named red_lease  
   → Stage 244
+- The chip-socket kick said "not kinetic"  
+  → Stage 245
