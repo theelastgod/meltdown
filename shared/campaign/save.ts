@@ -6,7 +6,7 @@
  */
 import type { Account, CampaignRecord } from "../progression/account";
 import { depthForXp } from "../progression/depth";
-import type { FactionId } from "./factions";
+import { factionName, type FactionId } from "./factions";
 import { gateOpen, handlersAlive, resolveEnding, type Testimony } from "./testimony";
 import { GIGS, MAIN_ARC, missionById, type MissionDef, type Reward } from "./missions";
 import { MAX_PROTOCOLS, protocolById } from "./protocols";
@@ -101,7 +101,7 @@ export function pickFaction(a: Account, faction: FactionId): boolean {
   if (c.faction) return false;
   c.faction = faction;
   c.testimony["faction"] = faction;
-  a.ledger.push(`HOUSE · ${faction.toUpperCase()}`);
+  a.ledger.push(`HOUSE · ${factionName(faction)}`);
   return true;
 }
 

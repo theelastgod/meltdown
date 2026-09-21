@@ -45,3 +45,8 @@ export const HANDLERS: Record<HandlerId, HandlerDef> = {
 };
 
 export const factionById = (id: string | null | undefined): FactionDef | null => FACTIONS.find((f) => f.id === id) ?? null;
+
+/** What the ledger prints for a house: THE WAKE CELLS, not CELLS. */
+export function factionName(id: string): string {
+  return factionById(id)?.name ?? id.replace(/_/g, " ").toUpperCase();
+}

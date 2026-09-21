@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 226 — Picking a house wrote HOUSE · CELLS
+
+**Goal.** Stage 223 taught Deep Wake THE WAKE CELLS. Choosing a faction still pushed
+`HOUSE · CELLS` / `HOUSE · CLOCKEATERS` onto the file ledger. The contracts panel already
+prints THE ESTATE, THE CLOCKEATERS, THE WAKE CELLS.
+
+**What changed.** `factionName(id)` is the authored name. `pickFaction` interpolates it.
+
+**Proof.** `tests/campaign.test.ts`: `factionName("cells")` is THE WAKE CELLS; picking cells
+writes `HOUSE · THE WAKE CELLS` and not `HOUSE · CELLS`. Source must `factionName(faction)`.
+Mutation: uppercase the id again — 1 fail.
+
 ## Stage 225 — The receipt spelled FIRST_KILL LEASE BREAKER
 
 **Goal.** Mid-round the CRT already printed `STAMP · FIRST FILE CLOSED · LEASE-BREAKER` from

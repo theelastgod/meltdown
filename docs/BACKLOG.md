@@ -140,3 +140,5 @@ one stage.
   → Stage 224
 - The receipt spelled FIRST_KILL LEASE BREAKER  
   → Stage 225
+- Picking a house wrote HOUSE · CELLS  
+  → Stage 226

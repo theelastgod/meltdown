@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { FACTIONS, HANDLERS } from "../shared/campaign/factions";
+import { FACTIONS, factionName, HANDLERS } from "../shared/campaign/factions";
 import { ENDINGS, endingsFor, gateOpen, handlersAlive, type Testimony } from "../shared/campaign/testimony";
 import { campaignErrors, lintCampaign, producibleTestimony, reachableNodes } from "../shared/campaign/lint";
 import { threatProfile, threatRating } from "../shared/campaign/threat";
@@ -72,12 +72,26 @@ describe("campaign data", () => {
   });
 });
 
+describe("picking a house writes the name, not the id", () => {
+  it("THE WAKE CELLS, not CELLS", () => {
+    expect(factionName("cells")).toBe("THE WAKE CELLS");
+    expect(factionName("clockeaters")).toBe("THE CLOCKEATERS");
+    expect(factionName("estate")).toBe("THE ESTATE");
+    expect(factionName("cells")).not.toBe("CELLS");
+    const src = readFileSync(new URL("../shared/campaign/save.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/HOUSE · \$\{factionName\(faction\)\}/);
+    expect(src).not.toMatch(/HOUSE · \$\{faction\.toUpperCase\(\)\}/);
+  });
+});
+
 describe("campaign save", () => {
   it("missions go in arc order, gigs open with Threat and testimony, rewards land on the file", () => {
     const a = createAccount("c:1", "C");
     const c = campaignOf(a);
     expect(canLaunch(a, c, "m1_wake_unlisted").ok).toBe(false); // no house yet
     expect(pickFaction(a, "cells")).toBe(true);
+    expect(a.ledger.some((l) => l === "HOUSE · THE WAKE CELLS")).toBe(true);
+    expect(a.ledger.some((l) => l === "HOUSE · CELLS")).toBe(false);
     expect(pickFaction(a, "estate")).toBe(false);
     expect(canLaunch(a, c, "m2_deadletter_run")).toEqual({ ok: false, reason: "WAKE UNLISTED comes first" });
     expect(completeContract(a, "m1_wake_unlisted", { "m1:lease": "burn" }).ok).toBe(true);
