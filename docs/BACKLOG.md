@@ -90,3 +90,5 @@ one stage.
   → Stage 199
 - Higgsfield city/kit plates were on disk and never bound to a mesh  
   → Stage 200
+- STACK SMG CHOKE duplicated COMPENSATOR after the spread→recoil conversion  
+  → Stage 201

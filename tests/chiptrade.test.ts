@@ -57,10 +57,14 @@ describe("the conversion is scoped to the weapon that needs it", () => {
     expect(c.costs).toEqual([{ stat: "recoil", delta: 0.12 }]);
   });
 
-  it("gives the converting weapon a cost on the axis its benefit vacated", () => {
-    const c = CHIPS.find((x) => x.id === "stack_smg:choke")!;
-    expect(c.benefits.map((b) => b.stat)).toEqual(["recoil"]);
-    expect(c.costs.map((k) => k.stat)).toEqual(["spread"]);
+  it("the SMG CHOKE is not a copy of COMPENSATOR", () => {
+    const choke = CHIPS.find((x) => x.id === "stack_smg:choke")!;
+    const comp = CHIPS.find((x) => x.id === "stack_smg:compensator")!;
+    expect(choke.benefits).toEqual([{ stat: "recoil", delta: -0.12 }]);
+    expect(choke.costs).toEqual([{ stat: "adsMove", delta: -0.12 }]);
+    expect(comp.costs).toEqual([{ stat: "spread", delta: 0.12 }]);
+    expect(choke.costs).not.toEqual(comp.costs);
+    expect(choke.line).toBe("CHOKE: −12% recoil / −12% ADS strafe");
   });
 
   it("keeps a multi-part chip's other half intact", () => {
@@ -82,8 +86,8 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
 
   it("the SMG's CHOKE names recoil, not the spread it no longer has", () => {
     const c = CHIPS.find((x) => x.id === "stack_smg:choke")!;
-    expect(c.line).toBe("CHOKE: −12% recoil / +12% spread");
-    expect(c.line).not.toMatch(/spread \//);
+    expect(c.line).toBe("CHOKE: −12% recoil / −12% ADS strafe");
+    expect(c.line).not.toMatch(/spread/);
   });
 
   it("the SMG's COUNTERWEIGHT does not sell a cone it does not move", () => {

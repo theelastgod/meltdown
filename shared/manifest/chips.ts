@@ -143,8 +143,17 @@ export function formatChipLine(name: string, benefits: readonly StatMod[], costs
   return mechanic ? `${name}: ${MECHANIC_LEAD[mechanic]}, ${trade}` : `${name}: ${trade}`;
 }
 
+/** STACK SMG CHOKE cannot be the spread/recoil mirror — conversion makes it COMPENSATOR (Stage 171). */
+function templateFor(w: WeaponId, t: Template): Template {
+  if (w === "stack_smg" && t.key === "choke") {
+    return { ...t, benefits: [m("recoil", -0.12)], costs: [m("adsMove", -0.12)], line: "−12% recoil / −12% ADS strafe" };
+  }
+  return t;
+}
+
 export const CHIPS: ChipDef[] = WEAPON_LIST.flatMap((w) =>
-  TEMPLATES.map((t) => {
+  TEMPLATES.map((raw) => {
+    const t = templateFor(w.id, raw);
     const k = SPREAD_SCALE[w.id] ?? 1;
     const benefits = t.benefits.map((x) =>
       x.stat === "spread" && SPREAD_TO_RECOIL.has(w.id)

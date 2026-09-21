@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 201 — STACK SMG CHOKE was COMPENSATOR three ranks early
+
+**Goal.** Stage 171 converted SMG spread benefits to recoil so CHOKE would not net to zero. The
+honest leftover: rank-9 CHOKE became recoil −12% / spread +12%, which is rank-6 COMPENSATOR.
+
+**What changed.** `stack_smg:choke` is authored as recoil −12% / ADS strafe −12%. Other weapons keep
+the spread/recoil choke. Fairness is untouched.
+
+**Proof.** `tests/chiptrade.test.ts`: CHOKE costs adsMove, COMPENSATOR costs spread, line is
+`CHOKE: −12% recoil / −12% ADS strafe`. Mutation: SMG uses the shared choke template — costs
+become spread, 1 fail.
+
 ## Stage 200 — Higgsfield plates sat in the manifest and never hit a mesh
 
 **Goal.** `public/assets` already held awnings, billboards, chain-link, kernel hull, crowd coats,
