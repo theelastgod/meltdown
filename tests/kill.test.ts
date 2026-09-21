@@ -6,6 +6,8 @@
  * not a missing line, it is a confident wrong one.
  */
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { WEAPON_LIST } from "../shared/weapons/manifest";
 import { bodyKey, closeLine, closeRead, CLOSE_WINDOW, forgetOldHits, HIT_MEMORY, ledgered, rememberHit, stampTitle, type LandedHit } from "../client/hud/kill";
 
 const P7 = bodyKey("player", 7);
@@ -97,6 +99,28 @@ describe("the line under it", () => {
     expect(closeLine(hit({ zone: "head", distance: 41.4, weapon: "lease_breaker" }))).toBe("HEAD · 41 M · LEASE-BREAKER");
     expect(closeLine(hit({ zone: "legs", distance: 7.25 }))).toBe("LEGS · 7.3 M · LEASE-BREAKER");
     expect(closeLine(hit({ zone: "body", distance: 100 }))).toBe("BODY · 100 M · LEASE-BREAKER");
+  });
+
+  it("names the gun the way the rack does, not a hyphenated id", () => {
+    expect(closeLine(hit({ weapon: "repo_hammer" }))).toBe("BODY · 20 M · REPO HAMMER");
+    expect(closeLine(hit({ weapon: "stack_smg" }))).toBe("BODY · 20 M · STACK SMG");
+    expect(closeLine(hit({ weapon: "longwave" }))).toBe("BODY · 20 M · LONGWAVE RAIL");
+    expect(closeLine(hit({ weapon: "phage" }))).toBe("BODY · 20 M · PHAGE LAUNCHER");
+    expect(closeLine(hit({ weapon: "shock_baton" }))).toBe("BODY · 20 M · SHOCK BATON");
+    expect(closeLine(hit({ weapon: "directive" }))).toBe("BODY · 20 M · THE DIRECTIVE");
+    expect(closeLine(hit({ weapon: "clockeater" }))).toBe("BODY · 20 M · CLOCKEATER");
+    for (const w of WEAPON_LIST) {
+      const line = closeLine(hit({ weapon: w.id }));
+      expect(line, w.id).toContain(w.name);
+      expect(line, w.id).not.toMatch(/_/);
+    }
+  });
+
+  it("builds that name through weaponName, not a second spelling of the id", () => {
+    const src = readFileSync(new URL("../client/hud/kill.ts", import.meta.url), "utf8");
+    const fn = src.slice(src.indexOf("export function closeLine"), src.indexOf("export function weaponName"));
+    expect(fn).toMatch(/weaponName\(read\.weapon\)/);
+    expect(fn).not.toMatch(/replace\(\/_\/g/);
   });
 
   it("says nothing at all when there is nothing to say", () => {

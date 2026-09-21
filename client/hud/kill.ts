@@ -83,7 +83,9 @@ export function ledgered(victimKind: string): boolean {
 export function closeLine(read: LandedHit | null): string {
   if (!read) return "";
   const where = read.zone === "head" ? "HEAD" : read.zone === "legs" ? "LEGS" : "BODY";
-  return `${where} · ${read.distance < 10 ? read.distance.toFixed(1) : Math.round(read.distance)} M · ${read.weapon.replace(/_/g, "-").toUpperCase()}`;
+  // Stage 123 named the log; the stamp under the confirm still hyphenated the id (REPO-HAMMER,
+  // PHAGE, DIRECTIVE) while the rack says REPO HAMMER, PHAGE LAUNCHER, THE DIRECTIVE.
+  return `${where} · ${read.distance < 10 ? read.distance.toFixed(1) : Math.round(read.distance)} M · ${weaponName(read.weapon)}`;
 }
 
 /**

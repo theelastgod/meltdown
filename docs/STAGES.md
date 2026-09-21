@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 212 — The kill stamp still hyphenated the gun
+
+**Goal.** Stage 123 made the event log print `weaponName` — REPO HAMMER, STACK SMG, LEASE-BREAKER.
+The CRT stamp under the confirm still built the gun from the id: underscores to hyphens, then
+uppercased. A Repo Hammer close read `REPO-HAMMER`. Phage read `PHAGE`, not `PHAGE LAUNCHER`. The
+Directive read `DIRECTIVE`, not `THE DIRECTIVE`. LEASE-BREAKER happened to match, so the existing
+stamp test could not see it.
+
+**What changed.** `closeLine` interpolates `weaponName(read.weapon)`. One spelling, stamp and log.
+
+**Proof.** `tests/kill.test.ts`: every shipped weapon's stamp contains the manifest name and no
+underscore. Source must call `weaponName(read.weapon)` and must not `replace(/_/g`. Mutation:
+hyphenate the id again — 2 fail.
+
 ## Stage 211 — The monorail's windows were a flat ice box
 
 **Goal.** The tram hull wears `tex_monorail`. The window band was `MeshBasicMaterial` `#bfefff`

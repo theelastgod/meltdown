@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 211, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 212, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 211 on this branch (tram windows wear the glass plate) |
-| Next stage number | **212** |
+| HEAD | Stage 212 on this branch (the kill stamp uses weaponName) |
+| Next stage number | **213** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | ~1041 across 117 files, `npm test` |
+| Unit tests | ~1043 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 212 is next
+## 6. Stage 213 is next
 
-Stage 211 put `tex_glass` on the monorail windows. Next is whatever a player would notice. Do not
-loosen fairness.
+Stage 212 made the kill stamp use `weaponName`. Next is whatever a player would notice. Do not
+loosen fairness. Crowd chest lamps are still an unplated amber box.
 
 ---
 
