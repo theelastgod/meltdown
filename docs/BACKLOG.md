@@ -190,3 +190,5 @@ one stage.
   → Stage 249
 - The unknown-socket kick said "barrel"  
   → Stage 250
+- The mech visor strip was a flat amber box  
+  → Stage 251

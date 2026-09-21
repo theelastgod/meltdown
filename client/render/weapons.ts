@@ -273,7 +273,9 @@ export class ArsenalFx {
           foot.position.set(s, 0.1, 0.1);
           group.add(foot);
         }
-        const strip = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.06, 0.06), new THREE.MeshBasicMaterial({ color: PALETTE.amber }));
+        const stripMat = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
+        bindPlate(stripMat, "tex_lamp");
+        const strip = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.06, 0.06), stripMat);
         strip.position.set(0, 2.95, -0.7);
         group.add(strip);
         const head = new THREE.Group();

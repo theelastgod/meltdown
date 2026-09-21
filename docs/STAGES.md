@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 251 — The mech visor strip was a flat amber box
+
+**Goal.** Dummy servos and crowd chest lamps wear `tex_lamp`. The mech's visor strip — the 2 m
+amber bar a player reads at 30 m — was `MeshBasicMaterial` amber with no map.
+
+**What changed.** `bindPlate(stripMat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `weapons.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 250 — The unknown-socket kick said "barrel"
 
 **Goal.** Stage 247 taught the chip-shape kick MUZZLE. Putting a chip in a socket named `barrel`
