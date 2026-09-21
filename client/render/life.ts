@@ -390,7 +390,9 @@ export class Sky {
     const panel = new THREE.Mesh(new THREE.BoxGeometry(34, 8, 0.4), panelMat);
     panel.position.y = -10;
     this.ship.add(panel);
-    const strip = new THREE.Mesh(new THREE.BoxGeometry(34.4, 0.3, 0.6), new THREE.MeshBasicMaterial({ color: PALETTE.cyan }));
+    const keelMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan });
+    bindPlate(keelMat, "tex_billboard_cy");
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(34.4, 0.3, 0.6), keelMat);
     strip.position.y = -14.2;
     this.ship.add(strip);
     const nose = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), new THREE.MeshBasicMaterial({ color: PALETTE.red }));

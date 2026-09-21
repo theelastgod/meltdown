@@ -198,3 +198,5 @@ one stage.
   → Stage 253
 - The monorail headlamp was a flat cream box  
   → Stage 254
+- The airship keel strip was a flat cyan bar  
+  → Stage 255
