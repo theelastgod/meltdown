@@ -6,7 +6,7 @@
  * symmetric, so the Fairness Lint's guarantees hold inside a playlist.
  */
 import type { StatKey } from "../manifest/stats";
-import type { WeaponId } from "../weapons/manifest";
+import { WEAPONS, type WeaponId } from "../weapons/manifest";
 import type { Loadout } from "../manifest/loadout";
 import { weekIndex } from "./clock";
 
@@ -52,7 +52,8 @@ export interface AuditError {
 /** The playlist's own loadout rules, on top of the normal validation. */
 export function auditErrors(lo: Loadout, audit: AuditDef, ringOf: (id: string) => number | undefined): AuditError[] {
   const errs: AuditError[] = [];
-  if (audit.weapons.length) for (const w of [lo.primary, lo.secondary]) if (!audit.weapons.includes(w)) errs.push({ rule: "audit-weapon", detail: `${w} is not in ${audit.name} (${audit.weapons.join(", ")})` });
+  const gun = (id: WeaponId) => WEAPONS[id]?.name ?? id;
+  if (audit.weapons.length) for (const w of [lo.primary, lo.secondary]) if (!audit.weapons.includes(w)) errs.push({ rule: "audit-weapon", detail: `${gun(w)} is not in ${audit.name} (${audit.weapons.map(gun).join(", ")})` });
   if (audit.noKeystone && lo.keystone) errs.push({ rule: "audit-keystone", detail: `${audit.name}: no keystone this week` });
   if (audit.ringOnly) for (const id of lo.attested) if ((ringOf(id) ?? 0) !== audit.ringOnly) errs.push({ rule: "audit-ring", detail: `${id} is not a ring-${audit.ringOnly} node` });
   return errs;

@@ -146,3 +146,5 @@ one stage.
   → Stage 227
 - The Audit FILE line listed repo_hammer  
   → Stage 228
+- The Audit kick named lease_breaker  
+  → Stage 229

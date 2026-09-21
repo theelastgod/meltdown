@@ -69,7 +69,12 @@ describe("audits", () => {
     const ringOf = (id: string) => itemById(id)?.ring;
     const lo = { primary: "lease_breaker" as const, secondary: "shock_baton" as const, attested: ["slipfile"], keystone: "debtless", chips: {}, firmware: {} };
     const pellet = AUDITS.find((x) => x.id === "pellet_week")!;
-    expect(auditErrors(lo, pellet, ringOf).map((e) => e.rule)).toEqual(["audit-weapon"]);
+    const banned = auditErrors(lo, pellet, ringOf);
+    expect(banned.map((e) => e.rule)).toEqual(["audit-weapon"]);
+    expect(banned[0]!.detail).toMatch(/LEASE-BREAKER/);
+    expect(banned[0]!.detail).toMatch(/REPO HAMMER/);
+    expect(banned[0]!.detail).not.toMatch(/lease_breaker/);
+    expect(banned[0]!.detail).not.toMatch(/repo_hammer/);
     expect(auditErrors({ ...lo, primary: "repo_hammer" }, pellet, ringOf)).toEqual([]);
     const nk = AUDITS.find((x) => x.id === "no_keystone")!;
     expect(auditErrors(lo, nk, ringOf).map((e) => e.rule)).toEqual(["audit-keystone"]);

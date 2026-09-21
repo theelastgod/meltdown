@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 228, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 229, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 228 on this branch (Audit lists REPO HAMMER) |
-| Next stage number | **229** |
+| HEAD | Stage 229 on this branch (Audit kick names LEASE-BREAKER) |
+| Next stage number | **230** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1062 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,9 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 229 is next
+## 6. Stage 230 is next
 
-Stage 228 made the Audit FILE line list REPO HAMMER, not repo_hammer. Next is whatever a player
+Stage 229 made the Audit kick name LEASE-BREAKER, not lease_breaker. Next is whatever a player
 would notice. Do not loosen fairness.
 
 ---

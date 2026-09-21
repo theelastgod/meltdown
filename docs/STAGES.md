@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 229 — The Audit kick named lease_breaker
+
+**Goal.** Stage 228 taught the FILE tab REPO HAMMER. Joining PELLET WEEK with the Lease-Breaker
+still kicked `lease_breaker is not in PELLET WEEK (repo_hammer, clockeater, shock_baton)`.
+
+**What changed.** `auditErrors` prints `WEAPONS[id].name`.
+
+**Proof.** `tests/endgame.test.ts`: the detail matches LEASE-BREAKER and REPO HAMMER, not
+`lease_breaker` / `repo_hammer`. Mutation: interpolate the id again — 1 fail.
+
 ## Stage 228 — The Audit line listed repo_hammer
 
 **Goal.** PELLET WEEK's FILE tab printed `repo_hammer, clockeater, shock_baton` next to the
