@@ -87,7 +87,7 @@ export async function settleRunDay(day: number, d: SettleDeps): Promise<SettleRe
       if (!a.counter || !run) continue;
       // only the units this day paid for: a file may have banked again since
       const spent = Math.min(run.owed, unitsOf.get(line.account) ?? 0);
-      a.counter = { ...a.counter, run: { ...run, owed: Math.max(0, run.owed - spent), paid: run.paid + line.amount } };
+      a.counter = { ...a.counter, run: { ...run, owed: Math.max(0, run.owed - spent), paid: run.paid + line.amount, clearedDay: day } };
       await d.save(a);
     } catch (e) {
       stranded.push(line.account);

@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Seventeen have since been fixed (Stages 168–184) and
+turned out to be the same finding reported twice. Eighteen have since been fixed (Stages 168–185) and
 are listed at the foot of this file with the commit that closed them.
 
-The **15 below are open**. Every one has been read in the source — none is a hunch.
+The **13 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -14,81 +14,6 @@ first written once measured, and one ("stranded units") is two findings tangled 
 
 Ordered roughly by how much a player would notice, not by how easy they are. Item numbers are
 stable ids, not a queue.
-
-
-## Economy
-
-### 7. A file's genuinely-unpaid units from an earlier day are erased as "stranded" the moment it banks again, because `driftOf` compares a multi-day `owed` against one day's row
-
-`server/chain/reconcile-run.ts:74`
-
-**What the code promises.** reconcile-run.ts:75-77 states the protection explicitly: "the day is paid and the epoch has no
-leaf for this file (no wallet when it settled): a real debt the epoch cannot pay. Reported,
-never cleared — until Stage 57 the repair erased it as stranded". docs/ECONOMY.md §6.5 states
-the assumption it rests on: "A file's counter carries exactly ONE run day — `counter.run.day` —
-so a file can only ever be drifted on that day." tests/settle.test.ts:516 guards it ("reports a
-file the settlement could not pay as unpaid, and never clears it as stranded").
-
-**What it does.** `counter.run.owed` is not a one-day quantity. server/room.ts:949 carries it forward across days
-(`{ day, banked: 0, owed: a.counter.run?.owed ?? 0, … }`) and server/merge.ts:68 documents the
-same ("banked is the day's tally and resets with the day; owed and paid carry across days").
-Only `run.day` moves on. So `driftOf(id, run.day, run.owed, …)` (called at lines 106 and 191)
-measures the whole carried debt against the latest day's row and the latest day's epoch. Once
-the file banks again and that later day settles normally, `settled && inEpoch.has(id)` is true,
-so the leftover carried debt takes the `stranded` branch at line 74 and line 110/195 zeroes it.
-The guard at line 77 only holds while the file never banks again — exactly the regime
-tests/settle.test.ts:516 measures, where the orphan links a wallet and then stops playing. I
-drove the real `reconcileRunBacklog` with `run = {day:101, banked:150, owed:200, paid:150}` (200
-units banked unlinked on day 100, skipped by that day's epoch per ledger.ts:288-292 and settle-
-run.ts:80-83; 150 banked and paid on day 101) and it returned `{kind:"stranded", units:200,
-fixed:true, recorded:150, note:"paid by the day's epoch, never cleared off the file"}` and left
-`owed:0`. The day-101 epoch paid 150, not 350; the code even has `recorded: 150` sitting in the
-same object.
-
-**Measured.** `npx tsx` a script that calls `reconcileRunBacklog({fix:true})` with one linked file at
-`run={day:D+1, owed:200+150, paid:150}`, a settled day D+1 whose epoch leaf for that file is
-worth 150, and `runs.day(D+1) = [{file, units:150}]`. Correct behaviour: at most the 150 the
-epoch paid for is cleared (owed → 200). Observed: `cleared: 200`, `owed: 0`, classified
-`stranded`. A direct check in-repo: extend tests/settle.test.ts:516 so `sandbox-v3-orphan` banks
-again on DAY+1 and DAY+1 settles — the existing assertion `owed === 20` then fails.
-
-**What a player sees.** A player who banks units before linking a wallet (the room banks $CAPITAL units with no wallet
-check — room.ts:958-965 — and the ledger line reads "BANKED 40 AT GATE · 40 UNITS OWED"), then
-links and plays again, silently loses every unit from the pre-link day. The file panel's `OWED n
-UNITS` drops to 0 with no prize posted for them and no epoch that can ever pay them; the nightly
-log calls it a repair. Up to RUN_DAILY_CAP = 200 units, i.e. up to 200 $CAPITAL at the ceiling,
-per occurrence.
-
-### 8. The "stranded" repair adds banked UNITS into `run.paid`, a field the game prints as $CAPITAL
-
-`server/chain/reconcile-run.ts:110`
-
-**What the code promises.** `run.paid` is denominated in $CAPITAL. client/file.ts:612 prints it as `OWED <b>${run.owed}</b>
-UNITS · PAID ${run.paid} $CAPITAL`, and server/chain/settle-run.ts:90 writes it as `paid:
-run.paid + line.amount`, where `line.amount` is $CAPITAL (settlement.ts:102: `amount: micro /
-SETTLE_PRECISION`, i.e. units × the day's settled rate). `run.owed`, by contrast, is units —
-settlement.ts:41-46 and room.ts:961-963 both say so.
-
-**What it does.** Both repair sites — reconcile-run.ts:110 and the identical line at reconcile-run.ts:195 — write
-`paid: run.paid + run.owed`, adding a unit count into the $CAPITAL total. The conversion factor
-is the day's settled rate, which is only 1 while the pot does not bind. At docs/TOKENOMICS.md
-§4.4's own month-12 population the rate is 0.4252 $CAPITAL/unit (I ran
-`project(DOC_POPULATION)`: `unitRate: 0.4252054794520548`), and at the STRESS_POPULATION the
-lint runs against it is 0.008858. The epoch leaf that actually paid the file is right there in
-`epoch.leaves` and is never consulted. My reconcileRunBacklog run showed it directly: a file at
-`paid: 150` with 200 units cleared came out at `paid: 350`.
-
-**Measured.** `npx tsx` a script calling `reconcileRunBacklog({fix:true})` on a stranded file at `owed: 200`,
-where the day's epoch leaf for that file is `200 * rate` $CAPITAL. Correct behaviour: `run.paid`
-grows by the leaf's `formatEther` amount. Observed: it grows by 200, the unit count. Compare
-against `settle-run.ts:90`, which does it correctly with `line.amount`.
-
-**What a player sees.** After any stranded repair the file panel overstates what the wallet was paid — by 2.4× at the
-doc population and by 113× at a million MAU (200 units cleared prints as 200 $CAPITAL against
-1.77 actually received). The player sees `PAID 350 $CAPITAL` next to a wallet balance that does
-not match, with no way to reconcile the two. (The same line is also unformatted — `${run.paid}`
-with no `toFixed`, so a settled fractional rate prints as e.g. `PAID 85.04109589041096
-$CAPITAL`.)
 
 
 ## Weapons and firmware
@@ -489,3 +414,7 @@ stricter than the rule it guards.
   → Stage 183
 - ThreatProfile.detectMult is computed for every rating and read by nothing — Threat never widens VANTAGE detection  
   → Stage 184
+- A file's genuinely-unpaid units from an earlier day are erased as "stranded" the moment it banks again  
+  → Stage 185
+- The "stranded" repair adds banked UNITS into `run.paid`, a field the game prints as $CAPITAL  
+  → Stage 185

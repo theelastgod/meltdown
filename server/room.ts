@@ -946,7 +946,7 @@ export class Room {
     if (!rec || !a) return;
     const day = dayIndex(this.opts.now());
     if (!a.counter) a.counter = { address: null, linkedAt: 0, ghostfile: 0, stamps: [], name: null, rig: [], worn: 0, capital: "0" };
-    const run = a.counter.run && a.counter.run.day === day ? a.counter.run : { day, banked: 0, owed: a.counter.run?.owed ?? 0, paid: a.counter.run?.paid ?? 0 };
+    const run = a.counter.run && a.counter.run.day === day ? a.counter.run : { day, banked: 0, owed: a.counter.run?.owed ?? 0, paid: a.counter.run?.paid ?? 0, clearedDay: a.counter.run?.clearedDay };
     let line: string;
     if (this.opts.private) {
       // a room you paid for is not a room that pays you (shared/net/private.ts): Scrip, never units

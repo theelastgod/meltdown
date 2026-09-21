@@ -1641,6 +1641,39 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 185 — Reconciling a later day wiped yesterday's unpaid units as stranded
+
+**Goal.** `counter.run.owed` is units and it carries across days. `run.paid` is $CAPITAL.
+`settle-run` already spends `min(owed, today's row)` and credits `line.amount`. The
+reconciliation promised the same: leftover unpaid from a day with no wallet is reported,
+never cleared.
+
+`driftOf` treated "in this day's epoch" as "every unit on the file was paid for". A file
+that banked 20 unlinked, then linked and banked 150 on a later day, settled that later day
+correctly (`owed` 20, `paid` 150) and the next backlog pass classified the 20 as stranded,
+zeroed it, and wrote `paid: 150 + 20`. The 20 were units; `paid` is $CAPITAL.
+
+Measured with the real `reconcileRunBacklog({fix:true})` after that night: `{kind:"stranded",
+units:20, fixed:true}`, `owed:0`, `paid:170`. The existing unpaid guard never re-banked, so
+it stayed green.
+
+**What changed.**
+
+- `clearedDay` on the run counter — settle-run and the direct withdrawal set it when they
+  spend the day's row. `driftOf` then reports leftover as `unpaid`, not `stranded`.
+- A stranded repair copies settle-run: `spent = min(owed, today's row)`, `paid +=` the epoch
+  leaf's $CAPITAL, `clearedDay = day`. Both call sites share `clearStranded`.
+
+**Proof.** `tests/settle.test.ts`: leftover 20 survives the later night and the backlog;
+a mixed stranded clear spends 20 of 200 and credits 20 $CAPITAL, not 200. Typecheck, unit
+tests, economy lint.
+
+Mutations:
+
+- **A**, `driftOf` back to "in epoch ⇒ all owed is stranded": **2** fail — leftover is
+  stranded-and-fixed; mixed report says 200 units.
+- **B**, repair `owed:0, paid += owed`: **1** fails — mixed clear wipes the carried 180.
+
 ## Stage 184 — Threat never widened how far VANTAGE could see
 
 **Goal.** Threat Rating "rises with the account … and the districts answer: more patrols, wider

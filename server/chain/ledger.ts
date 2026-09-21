@@ -417,7 +417,7 @@ export class CounterLedger {
       const hash = await this.payFromTreasury(c.address as Hex, parseEther(String(units * MAX_CAPITAL_PER_UNIT)));
       const r = await this.pub.waitForTransactionReceipt({ hash });
       if (r.status !== "success") return { ok: false, reason: "payout reverted" };
-      a.counter = { ...c, run: { ...run, owed: run.owed - units, paid: run.paid + units } };
+      a.counter = { ...c, run: { ...run, owed: run.owed - units, paid: run.paid + units, clearedDay: run.day } };
       // spent, so tonight's settlement does not pay for them a second time
       await this.opts.runs?.spend(run.day, a.id, units);
       this.log(`payout ${units} $CAPITAL → ${a.id}`);

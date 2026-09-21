@@ -67,7 +67,8 @@ function mergeRun(prev: CounterRecord["run"], base: CounterRecord["run"], next: 
   const day = Math.max(prev.day, next.day);
   // banked is the day's tally and resets with the day; owed and paid carry across days
   const banked = next.day > prev.day ? next.banked : next.day < prev.day ? prev.banked : delta(prev.banked, base.banked, next.banked);
-  return { day, banked, owed: Math.max(0, delta(prev.owed, base.owed, next.owed)), paid: delta(prev.paid, base.paid, next.paid) };
+  const clearedDay = Math.max(prev.clearedDay ?? 0, next.clearedDay ?? 0);
+  return { day, banked, owed: Math.max(0, delta(prev.owed, base.owed, next.owed)), paid: delta(prev.paid, base.paid, next.paid), ...(clearedDay > 0 ? { clearedDay } : {}) };
 }
 
 function mergeCounter(prev: Account["counter"], base: Account["counter"], next: Account["counter"]): Account["counter"] {

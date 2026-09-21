@@ -253,7 +253,7 @@ describe("reconciling the two records", () => {
     expect(s.ok).toBe(true);
     // the epoch was posted and the clear failed: the units are paid for and still owed on the file
     const after = r.store.accounts.get("sandbox-r2")!;
-    after.counter = { ...after.counter!, run: { ...after.counter!.run!, owed: 20, paid: 0 } };
+    after.counter = { ...after.counter!, run: { ...after.counter!.run!, owed: 20, paid: 0, clearedDay: undefined } };
     r.store.save(after);
     // and now unpayable in both directions
     expect((await r.b.ledger.payout(after)).reason).toMatch(/settled/);
@@ -267,6 +267,23 @@ describe("reconciling the two records", () => {
     expect(done.counter!.run!.paid).toBe(20);
     // the money was always there: the epoch still pays it
     expect((await r.b.ledger.claimPrize(done, s.epoch!)).ok).toBe(true);
+  }, 60_000);
+
+  it("a stranded clear spends only the day's units and credits the leaf's $CAPITAL, not the carried owed", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-r2b", DEV_KEYS.player);
+    r.bank(a, 20);
+    expect((await settleRunDay(DAY, r.deps)).ok).toBe(true);
+    const after = r.store.accounts.get("sandbox-r2b")!;
+    after.counter = { ...after.counter!, run: { ...after.counter!.run!, owed: 200, paid: 0, clearedDay: undefined } };
+    r.store.save(after);
+
+    const report = await reconcileRunDay(DAY, r.recon, { fix: true });
+    expect(report.drift[0]).toMatchObject({ file: "sandbox-r2b", kind: "stranded", units: 20, fixed: true });
+    expect(report.cleared).toBe(20);
+    const done = r.store.accounts.get("sandbox-r2b")!;
+    expect(done.counter!.run!.owed, "wiped the carried 180 as stranded").toBe(180);
+    expect(done.counter!.run!.paid, "credited units into $CAPITAL").toBe(20);
   }, 60_000);
 
   it("says nothing about a day that agrees with itself", async () => {
@@ -465,7 +482,7 @@ describe("walking the backlog, not one day at a time", () => {
     expect((await settleRunDay(DAY, r.deps)).ok).toBe(true);
     // the epoch went out and the file was never cleared, and nobody looked for a fortnight
     const stranded = r.store.accounts.get("sandbox-b5")!;
-    stranded.counter = { ...stranded.counter!, run: { ...stranded.counter!.run!, owed: 30 } };
+    stranded.counter = { ...stranded.counter!, run: { ...stranded.counter!.run!, owed: 30, paid: 0, clearedDay: undefined } };
     r.store.save(stranded);
 
     const fixed = await reconcileRunBacklog({ ...r.recon, today: DAY + 14 }, { fix: true });
@@ -535,6 +552,32 @@ describe("the fourth review (Stage 57): what the settlement pays, and what the w
     const back = await reconcileRunBacklog({ ...r.recon, today: DAY + 1 }, { fix: true });
     expect(back.drift.find((d) => d.file === "sandbox-v3-orphan")).toMatchObject({ kind: "unpaid", fixed: false });
     expect(r.store.accounts.get("sandbox-v3-orphan")!.counter!.run!.owed).toBe(20);
+  }, 60_000);
+
+  it("a later settled day does not wipe earlier unpaid units as stranded, and paid is $CAPITAL not units", async () => {
+    const r = await rig();
+    const { a } = await r.link("sandbox-v3b", DEV_KEYS.player);
+    r.bank(a, 30);
+    const orphan = r.store.load("sandbox-v3b-orphan", "ORPHAN");
+    orphan.counter = { address: null, linkedAt: 0, ghostfile: 0, stamps: [], name: null, rig: [], worn: 0, capital: "0", run: { day: DAY, banked: 20, owed: 20, paid: 0 } };
+    r.store.save(orphan);
+    r.runs.add(DAY, orphan.id, 20);
+    expect((await settleRunDay(DAY, r.deps)).skipped).toContain("sandbox-v3b-orphan");
+    await r.link("sandbox-v3b-orphan", DEV_KEYS.treasury);
+    const linked = r.store.accounts.get("sandbox-v3b-orphan")!;
+    r.bank(linked, 150, DAY + 1);
+    expect((await settleRunDay(DAY + 1, r.deps)).ok).toBe(true);
+    const afterNight = r.store.accounts.get("sandbox-v3b-orphan")!;
+    expect(afterNight.counter!.run!.owed, "the night spent the leftover 20 as well as today's 150").toBe(20);
+    expect(afterNight.counter!.run!.paid, "paid mixed units into $CAPITAL").toBe(150);
+
+    const back = await reconcileRunBacklog({ ...r.recon, today: DAY + 2 }, { fix: true });
+    const entry = back.drift.find((d) => d.file === "sandbox-v3b-orphan");
+    expect(entry).toMatchObject({ kind: "unpaid", units: 20, fixed: false });
+    expect(back.cleared).toBe(0);
+    const done = r.store.accounts.get("sandbox-v3b-orphan")!;
+    expect(done.counter!.run!.owed).toBe(20);
+    expect(done.counter!.run!.paid).toBe(150);
   }, 60_000);
 
   it("refuses to post an epoch the chain already has when the store forgot it, before drawing anything", async () => {

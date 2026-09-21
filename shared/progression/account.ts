@@ -70,8 +70,8 @@ export interface CounterRecord {
   worn: number;
   /** last known $CAPITAL balance, as a decimal string (display only) */
   capital: string;
-  /** THE RUN (Stage 14): the day's banked units against the cap, units owed to the wallet, units paid out */
-  run?: { day: number; banked: number; owed: number; paid: number };
+  /** THE RUN (Stage 14): the day's banked units against the cap, units owed to the wallet, $CAPITAL paid out */
+  run?: { day: number; banked: number; owed: number; paid: number; /** day whose epoch (or withdrawal) already spent this file's row — leftover owed is older debt, not stranded */ clearedDay?: number };
   /** The sinks (Stage 19), read from the chain: Deep Wake seasons the wallet has bought out, and unspent private room-hours. */
   seasons?: number[];
   roomHours?: number;

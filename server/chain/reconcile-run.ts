@@ -22,9 +22,10 @@
  * settlement: a repair that runs inside the thing being repaired cannot be trusted to notice when
  * that thing is what is broken.
  */
+import { formatEther } from "viem";
 import type { Account } from "../../shared/progression/account";
 import type { CounterLedger } from "./ledger";
-import { EPOCH_BASE } from "./prizes-store";
+import { EPOCH_BASE, type StoredEpoch } from "./prizes-store";
 import type { RunStore } from "../run-store";
 import type { WalletStore } from "./wallets";
 
@@ -68,16 +69,34 @@ export interface ReconcileDeps {
  * `reconcileRunDay` and `reconcileRunBacklog` both need them and two copies would drift apart —
  * which, given what this file is for, would be a poor joke.
  */
-function driftOf(id: string, day: number, owed: number, have: number, settled: boolean, inEpoch: boolean): Drift | null {
+function leafCapital(epoch: StoredEpoch | null | undefined, file: string): number {
+  const leaf = epoch?.leaves.find((l) => l.file === file);
+  if (!leaf) return 0;
+  return Number(formatEther(BigInt(leaf.amount)));
+}
+
+function driftOf(id: string, day: number, owed: number, have: number, settled: boolean, inEpoch: boolean, clearedThisDay: boolean): Drift | null {
   if (owed <= 0) return null;
-  // the day is paid and the epoch has a leaf for this file: what is still owed went out in it and was never cleared
-  if (settled && inEpoch) return { file: id, day, kind: "stranded", units: owed, owed, recorded: have, fixed: false, note: "paid by the day's epoch, never cleared off the file" };
+  // the day is paid and the epoch has a leaf for this file
+  if (settled && inEpoch) {
+    // settle-run already spent this day's row (Stage 185): leftover owed is older unpaid debt,
+    // not units the epoch paid. Wiping it as stranded was the defect.
+    if (clearedThisDay) return { file: id, day, kind: "unpaid", units: owed, owed, recorded: have, fixed: false, note: "the day's epoch paid this file; leftover owed is an earlier day the epoch cannot pay" };
+    // clear failed after the post: only the day's row was paid for, never the carried remainder
+    return { file: id, day, kind: "stranded", units: Math.min(owed, have) || owed, owed, recorded: have, fixed: false, note: "paid by the day's epoch, never cleared off the file" };
+  }
   // the day is paid and the epoch has no leaf for this file (no wallet when it settled): a real debt
   // the epoch cannot pay. Reported, never cleared — until Stage 57 the repair erased it as stranded
   if (settled) return { file: id, day, kind: "unpaid", units: owed, owed, recorded: have, fixed: false, note: "the day settled without this file; still owed, and no epoch can pay it" };
   // not settled: the table must hold at least what the file is owed, or the night will underpay
   if (have >= owed) return null;
   return { file: id, day, kind: "unrecorded", units: owed - have, owed, recorded: have, fixed: false, note: "banked on the file but missing from the day's table" };
+}
+
+/** Same spend as settle-run.ts: only this day's units, $CAPITAL from the leaf, mark the day cleared. */
+function clearStranded(run: NonNullable<NonNullable<Account["counter"]>["run"]>, day: number, have: number, capital: number): NonNullable<NonNullable<Account["counter"]>["run"]> {
+  const spent = Math.min(run.owed, have > 0 ? have : run.owed);
+  return { ...run, owed: Math.max(0, run.owed - spent), paid: run.paid + capital, clearedDay: day };
 }
 
 export async function reconcileRunDay(day: number, d: ReconcileDeps, opts: { fix?: boolean } = {}): Promise<ReconcileResult> {
@@ -103,11 +122,12 @@ export async function reconcileRunDay(day: number, d: ReconcileDeps, opts: { fix
     }
     const run = a.counter?.run;
     if (!run || run.day !== day) continue;
-    const entry = driftOf(id, day, run.owed, recorded.get(id) ?? 0, settled, inEpoch.has(id));
+    const have = recorded.get(id) ?? 0;
+    const entry = driftOf(id, day, run.owed, have, settled, inEpoch.has(id), run.clearedDay === day);
     if (!entry) continue;
     if (fix) {
       if (entry.kind === "stranded" && a.counter) {
-        a.counter = { ...a.counter, run: { ...run, owed: 0, paid: run.paid + run.owed } };
+        a.counter = { ...a.counter, run: clearStranded(run, day, have, leafCapital(epoch, id)) };
         await d.save(a);
         cleared += entry.units;
         entry.fixed = true;
@@ -159,6 +179,7 @@ export async function reconcileRunBacklog(d: ReconcileDeps & { today: number }, 
   const files = await d.wallets.accounts();
   const settledCache = new Map<number, boolean>();
   const leavesCache = new Map<number, Set<string>>();
+  const epochCache = new Map<number, StoredEpoch | null>();
   const recordedCache = new Map<number, Map<string, number>>();
   const seenDays = new Set<number>();
   const drift: Drift[] = [];
@@ -183,16 +204,18 @@ export async function reconcileRunBacklog(d: ReconcileDeps & { today: number }, 
     }
     if (!settledCache.has(day)) {
       const epoch = await d.ledger.epoch(EPOCH_BASE.run + day);
+      epochCache.set(day, epoch);
       settledCache.set(day, !!(await d.runs.settled(day)) || !!epoch);
       leavesCache.set(day, new Set((epoch?.leaves ?? []).map((l) => l.file)));
     }
     if (!recordedCache.has(day)) recordedCache.set(day, new Map((await d.runs.day(day)).map((r) => [r.file, r.units])));
     seenDays.add(day);
-    const entry = driftOf(id, day, run.owed, recordedCache.get(day)!.get(id) ?? 0, settledCache.get(day)!, leavesCache.get(day)?.has(id) ?? false);
+    const have = recordedCache.get(day)!.get(id) ?? 0;
+    const entry = driftOf(id, day, run.owed, have, settledCache.get(day)!, leavesCache.get(day)?.has(id) ?? false, run.clearedDay === day);
     if (!entry) continue;
     if (fix) {
       if (entry.kind === "stranded" && a.counter) {
-        a.counter = { ...a.counter, run: { ...run, owed: 0, paid: run.paid + run.owed } };
+        a.counter = { ...a.counter, run: clearStranded(run, day, have, leafCapital(epochCache.get(day), id)) };
         await d.save(a);
         cleared += entry.units;
         entry.fixed = true;
