@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 203, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 204, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 203 on this branch (escort hood and nades plated) |
-| Next stage number | **204** |
+| HEAD | Stage 204 on this branch (online nade kick) |
+| Next stage number | **205** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1027 across 115 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 204 is next
+## 6. Stage 205 is next
 
-Stage 203 plated the escort hood and thrown nades. Next is whatever a player would notice. Do not
-loosen fairness.
+Stage 204 kicked the camera for a nearby online blast. Next is whatever a player would notice.
+Do not loosen fairness.
 
 ---
 

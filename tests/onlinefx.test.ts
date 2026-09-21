@@ -29,6 +29,13 @@ describe("online FX has a case for every kind the room sends", () => {
     expect(block).toMatch(/this\.audio\.explosion\(true\)/);
   });
 
+  it("a nearby blast online kicks the camera the way offline does", () => {
+    const boom = fxSwitch.slice(fxSwitch.indexOf("case FX.explode"), fxSwitch.indexOf("case FX.cloud"));
+    expect(boom).toMatch(/this\.renderer\.post\.kick\(0\.6\)/);
+    const emp = fxSwitch.slice(fxSwitch.indexOf("case FX.emp"), fxSwitch.indexOf("case FX.flagged"));
+    expect(emp).toMatch(/this\.renderer\.post\.kick\(1\)/);
+  });
+
   it("self-action FX do not replay for the predicting file", () => {
     for (const name of ["swap", "throw", "chargeFull", "lunge", "melee"] as const) {
       const start = fxSwitch.indexOf(`case FX.${name}`);

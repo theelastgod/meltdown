@@ -96,3 +96,5 @@ one stage.
   → Stage 202
 - Campaign escort hood and thrown nades were unplated  
   → Stage 203
+- A nade at your feet online did not kick the camera  
+  → Stage 204

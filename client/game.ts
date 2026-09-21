@@ -576,6 +576,7 @@ export class Game {
           case FX.explode:
             this.renderer.fx.explosion(pos, ev.a / 10, ev.b === 3 ? 0xffb02e : 0x8f4dff, ev.b === 3);
             this.audio.explosion(ev.b === 3);
+            if (Math.hypot(ev.x - this.player.pos.x, ev.z - this.player.pos.z) < (ev.a / 10) * 2) this.renderer.post.kick(0.6);
             break;
           case FX.cloud:
             this.audio.smoke();
@@ -583,6 +584,7 @@ export class Game {
           case FX.emp:
             this.audio.emp();
             this.renderer.fx.explosion(pos, ev.a / 10, 0x35f2ff, false);
+            if (Math.hypot(ev.x - this.player.pos.x, ev.z - this.player.pos.z) < ev.a / 10) this.renderer.post.kick(1);
             break;
           case FX.flagged:
             if (ev.playerId === me) this.mechHasYou();

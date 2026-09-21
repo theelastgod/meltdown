@@ -1641,6 +1641,15 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 204 — A nade at your feet online did not kick the camera
+
+**Goal.** Offline, `explode` kicks 0.6 when you are inside 2× radius, and `emp` kicks 1 inside the
+radius. Online those FX played the bang and the light and left the camera still.
+
+**What changed.** The same hypot checks on `FX.explode` / `FX.emp`.
+
+**Proof.** `tests/onlinefx.test.ts`. Mutation: explode case has no post.kick — 1 fail.
+
 ## Stage 203 — The escort's hood and thrown nades were unplated
 
 **Goal.** Stage 200 bound leftover city plates. The campaign escort's body wore `tex_crowd_coat`
