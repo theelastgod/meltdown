@@ -57,6 +57,12 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(asNode.errors.map((e) => e.rule)).toContain("not-a-node");
     expect(asNode.errors.find((e) => e.rule === "not-a-node")!.detail).toBe("DEBTLESS is a KEYSTONE");
     expect(asNode.errors.find((e) => e.rule === "not-a-node")!.detail).not.toBe("DEBTLESS is a keystone");
+    const two = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: ["debtless", "bad_debt"] }, owned, 10);
+    expect(two.errors.map((e) => e.rule)).toContain("keystone-limit");
+    expect(two.errors.find((e) => e.rule === "keystone-limit")!.detail).toBe("max 1 KEYSTONE");
+    expect(two.errors.find((e) => e.rule === "keystone-limit")!.detail).not.toBe("max 1 keystone");
+    expect(src).toMatch(/max \$\{MAX_KEYSTONES\} KEYSTONE/);
+    expect(src).not.toMatch(/max \$\{MAX_KEYSTONES\} keystone/);
   });
   it("every legal build reconciles: NET DELTA 0 on the Auditor's ledger within tolerance", () => {
     const lo = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "contagion_rider"], keystone: null }, owned, 10).loadout;

@@ -184,3 +184,5 @@ one stage.
   → Stage 246
 - The chip-shape kick said .muzzle  
   → Stage 247
+- The keystone-limit kick said keystone  
+  → Stage 248

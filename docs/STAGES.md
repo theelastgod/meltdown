@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 248 — The keystone-limit kick said keystone
+
+**Goal.** Stage 246 taught the not-a-node kick KEYSTONE. Sending two keystones as a list still
+kicked `max 1 keystone`. The FILE panel already labels the slot KEYSTONE.
+
+**What changed.** That word is `KEYSTONE`.
+
+**Proof.** `tests/fairness.test.ts`: the kick is `max 1 KEYSTONE`. Mutation: lowercase `keystone`
+again — 1 fail.
+
 ## Stage 247 — The chip-shape kick said .muzzle
 
 **Goal.** Stage 245 taught the chip-socket kick MUZZLE / KINETIC. Putting a number in the muzzle
