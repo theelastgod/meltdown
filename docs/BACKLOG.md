@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Eighteen have since been fixed (Stages 168–185) and
+turned out to be the same finding reported twice. Nineteen have since been fixed (Stages 168–186) and
 are listed at the foot of this file with the commit that closed them.
 
-The **13 below are open**. Every one has been read in the source — none is a hunch.
+The **12 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -17,32 +17,6 @@ stable ids, not a queue.
 
 
 ## Weapons and firmware
-
-### 9. LONGWAVE CAPACITOR's only stated cost cannot occur — the rail has no falloff at all, so 102 damage still one-shots at every range
-
-`shared/manifest/firmwares.ts:27`
-
-**What the code promises.** CAPACITOR is a rank-20 sidegrade whose line reads "−15% charge time, −7% damage (two shots past
-25 m)". firmwares.ts:3-5 calls firmwares "sidegrades" that the TTK harness certifies; the
-parenthetical tells the player the damage cut costs them the one-shot kill beyond 25 m.
-
-**What it does.** The LONGWAVE's range profile is R(40, 200, 200, 1, 260) at shared/weapons/manifest.ts:159 —
-fullTo === falloffTo === 200 and minMult === 1, so falloff() returns exactly 1 at every distance
-the ray can travel (the ray is clamped to range.max = 260 at world.ts:381). Charged damage drops
-110 → 102, and a baseline Blank's effective HP is BASE_HEALTH 70 + BASE_SHIELD 30 = 100
-(shared/sim/player.ts:15-16). 102 ≥ 100 at 1 m and at 259 m alike. There is no range at which
-CAPACITOR needs a second shot that stock does not.
-
-**Measured.** npx tsx: `falloff(WEAPONS.longwave.range, d)` returns 1 for d in {1, 25, 26, 40, 100, 199, 200,
-259}; `Math.round(102 * falloff(...))` = 102 ≥ 100 everywhere. And
-`measureTTK("longwave","primary",40,6,"longwave:capacitor")` → { seconds: 0.767, shots: 1 } vs
-stock { seconds: 0.917, shots: 1 }.
-
-**What a player sees.** CAPACITOR is a strict upgrade sold as a trade: the player pays nothing and gains a 15% faster
-charge. At the weapon's ideal range the harness itself measures 0.767 s with CAPACITOR against
-0.917 s stock — same one shot, 16.4% faster kill — which the Fairness Lint waves through because
-SIDEGRADE_DEVIATION_LIMIT is ±20%. Anyone who reads the line and skips CAPACITOR to keep their
-one-shot kill has been misinformed.
 
 ### 10. OVERCHARGE sells "pierces cover", but the stock rail already sets pierce:true and pierce never passes level geometry
 
@@ -418,3 +392,5 @@ stricter than the rule it guards.
   → Stage 185
 - The "stranded" repair adds banked UNITS into `run.paid`, a field the game prints as $CAPITAL  
   → Stage 185
+- LONGWAVE CAPACITOR's only stated cost cannot occur — 102 damage still one-shots at every range  
+  → Stage 186

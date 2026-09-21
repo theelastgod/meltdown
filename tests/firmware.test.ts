@@ -11,8 +11,9 @@ import { drainageYard } from "../shared/sim/level";
 import { Btn, withSlot, type InputFrame } from "../shared/sim/input";
 import { DEFAULT_LOADOUT, type Loadout } from "../shared/manifest/loadout";
 import { weaponDefOf } from "../shared/sim/player";
-import { WEAPONS } from "../shared/weapons/manifest";
+import { falloff, WEAPONS } from "../shared/weapons/manifest";
 import { FIRMWARES } from "../shared/manifest/firmwares";
+import { BASE_HEALTH, BASE_SHIELD } from "../shared/sim/player";
 import { SIM_DT } from "../shared/sim/constants";
 import type { Projectile } from "../shared/sim/projectiles";
 
@@ -61,6 +62,27 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(made.radius).toBe(stock.radius);
     expect(made.damage).toBe(stock.damage);
     expect(made.gravity).toBe(stock.gravity);
+  });
+
+  it("a line that names a second shot past a range actually needs that shot", () => {
+    // CAPACITOR said "two shots past 25 m". The rail has no falloff, 102 ≥ 100 at 259 m.
+    const hp = BASE_HEALTH + BASE_SHIELD;
+    const named = FIRMWARES.filter((f) => /two shots past (\d+)\s*m/i.test(f.line));
+    for (const f of named) {
+      const m = f.line.match(/two shots past (\d+)\s*m/i)!;
+      const past = Number(m[1]) + 1;
+      const def = f.patch(WEAPONS[f.weapon]);
+      const dmg = def.charge?.damage ?? def.damage;
+      const dealt = Math.round(dmg * falloff(def.range, past));
+      expect(dealt, `${f.id} still one-shots at ${past} m (${dealt} ≥ ${hp})`).toBeLessThan(hp);
+    }
+  });
+
+  it("CAPACITOR does not advertise a second shot the rail cannot need", () => {
+    const f = FIRMWARES.find((x) => x.id === "longwave:capacitor")!;
+    const def = f.patch(WEAPONS.longwave);
+    expect(f.line).not.toMatch(/two shots/i);
+    expect(Math.round(def.charge!.damage)).toBeGreaterThanOrEqual(100);
   });
 
   it("every firmware in the manifest that patches a projectile gets that projectile", () => {

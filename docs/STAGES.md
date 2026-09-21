@@ -1641,6 +1641,22 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 186 — CAPACITOR sold a second shot the rail cannot need
+
+**Goal.** CAPACITOR's line was "−15% charge time, −7% damage (two shots past 25 m)". Charged
+damage is 102. A Blank is 100 effective. The LONGWAVE range profile is fullTo === falloffTo
+=== 200, minMult 1, so falloff is 1 at every metre the ray travels. 102 one-shots at 1 m and
+at 259 m. The harness at 40 m is 0.767 s / 1 shot vs stock 0.917 s / 1 shot.
+
+Did not add a 25 m falloff. That would two-shot at the weapon's own ideal range (40 m) and is
+a balance rewrite. The lie was the parenthetical.
+
+**What changed.** The line is the two stats it actually applies. A walk: any firmware that
+names "two shots past N m" must deal less than 100 at N+1 m.
+
+**Proof.** `tests/firmware.test.ts` (6). Mutation: parenthetical restored — 2 fail (the walk
+at 26 m still deals 102; CAPACITOR still says two shots).
+
 ## Stage 185 — Reconciling a later day wiped yesterday's unpaid units as stranded
 
 **Goal.** `counter.run.owed` is units and it carries across days. `run.paid` is $CAPITAL.
