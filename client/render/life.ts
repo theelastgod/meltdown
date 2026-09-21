@@ -156,7 +156,9 @@ export class Tram {
       const strip = new THREE.Mesh(new THREE.BoxGeometry(14.05, 0.08, 2.45), new THREE.MeshBasicMaterial({ color: PALETTE.magenta }));
       strip.position.y = -1.2;
       g.add(strip);
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 1.2), new THREE.MeshBasicMaterial({ color: 0xfff3d0 }));
+      const headMat = new THREE.MeshBasicMaterial({ color: 0xfff3d0 });
+      bindPlate(headMat, "tex_lamp");
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 1.2), headMat);
       head.position.set(dir * 7.05, -0.4, 0);
       g.add(head);
       const tail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 1.2), new THREE.MeshBasicMaterial({ color: PALETTE.red }));

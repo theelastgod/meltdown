@@ -196,3 +196,5 @@ one stage.
   → Stage 252
 - The mech searchlight lens was a flat cream disc  
   → Stage 253
+- The monorail headlamp was a flat cream box  
+  → Stage 254

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 254 — The monorail headlamp was a flat cream box
+
+**Goal.** Stage 211 plated the monorail window band. The headlamp on each car — the cream box a
+player reads as the train comes in — was still `MeshBasicMaterial` with no map.
+
+**What changed.** `bindPlate(headMat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `life.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 253 — The mech searchlight lens was a flat cream disc
 
 **Goal.** Stage 251 put `tex_lamp` on the visor strip. The searchlight's facing disc — the 0.22 m

@@ -169,6 +169,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(life).toMatch(/bindPlate\(panelMat, "tex_billboard_mg"\)/);
     expect(life).toMatch(/bindPlate\(windowMat, "tex_glass"\)/);
     expect(life).toMatch(/bindPlate\(lampMat, "tex_lamp"\)/);
+    expect(life).toMatch(/bindPlate\(headMat, "tex_lamp"\)/);
     const rendererSrc = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
     expect(rendererSrc).toMatch(/bindPlate\(amber, "tex_lamp"\)/);
   });
