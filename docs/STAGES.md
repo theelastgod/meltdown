@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 246 — The not-a-node kick said "is a keystone"
+
+**Goal.** Stage 232 taught the FILE names. Attesting DEBTLESS as a node still kicked
+`DEBTLESS is a keystone`. The FILE panel labels it KEYSTONE.
+
+**What changed.** The kind is uppercased.
+
+**Proof.** `tests/fairness.test.ts`: the kick is `DEBTLESS is a KEYSTONE`. Mutation: lowercase
+`keystone` again — 1 fail.
+
 ## Stage 245 — The chip-socket kick said "not kinetic"
 
 **Goal.** Stage 236 taught the kick LEASE-BREAKER LONG BARREL. The FILE panel labels the socket

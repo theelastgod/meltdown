@@ -180,3 +180,5 @@ one stage.
   → Stage 244
 - The chip-socket kick said "not kinetic"  
   → Stage 245
+- The not-a-node kick said "is a keystone"  
+  → Stage 246
