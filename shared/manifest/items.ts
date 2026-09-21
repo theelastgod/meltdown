@@ -174,6 +174,12 @@ export const KEYSTONES: LedgerItem[] = [
 export const ALL_ITEMS: LedgerItem[] = [...LEDGER_ITEMS, ...KEYSTONES];
 export const itemById = (id: string): LedgerItem | undefined => ALL_ITEMS.find((i) => i.id === id);
 
+/** The trade half of a ledger line, for the Ghostfile row — same text as the hex tooltip. */
+export function ledgerTradeText(it: Pick<LedgerItem, "line">): string {
+  const i = it.line.indexOf(": ");
+  return i >= 0 ? it.line.slice(i + 2) : it.line;
+}
+
 export interface SchemaViolation {
   itemId: string;
   rule: string;

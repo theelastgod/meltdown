@@ -5,10 +5,10 @@
  * The FILE panel (Tab) edits the loadout. Legality is only advisory here —
  * the server refuses illegal loadouts at spawn, it never strips them.
  */
-import { ALL_ITEMS, KEYSTONES, LEDGER_ITEMS, MAX_ATTESTED, itemById, type LedgerItem } from "@shared/manifest/items";
+import { ALL_ITEMS, KEYSTONES, LEDGER_ITEMS, MAX_ATTESTED, itemById, ledgerTradeText, type LedgerItem } from "@shared/manifest/items";
 import { closeHint } from "./hud/keyhint";
 import { DEFAULT_LOADOUT, netDelta, validateLoadout, WEAPON_DEPTH, type Loadout, type Ranks } from "@shared/manifest/loadout";
-import { BUDGET_PER_PERCENT, ADDITIVE, type StatMod } from "@shared/manifest/stats";
+import { BUDGET_PER_PERCENT, ADDITIVE } from "@shared/manifest/stats";
 import { xpForDepth, totalXpToReach } from "@shared/progression/depth";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import type { FileMsg } from "@shared/net/protocol";
@@ -747,7 +747,6 @@ export class GhostFile {
     const v = this.view();
     const attested = Array.isArray(this.raw.attested) ? (this.raw.attested as string[]) : [];
     const keystone = typeof this.raw.keystone === "string" ? this.raw.keystone : null;
-    const fmt = (m: StatMod) => `${m.delta > 0 ? "+" : "−"}${ADDITIVE.has(m.stat) ? Math.abs(m.delta) : Math.round(Math.abs(m.delta) * 100) + "%"} ${m.stat}`;
     const row = (it: LedgerItem) => {
       const on = it.kind === "node" ? attested.includes(it.id) : keystone === it.id;
       const owned = this.owned.includes(it.id);
@@ -755,7 +754,7 @@ export class GhostFile {
       const w = it.benefits.reduce((a, m) => a + Math.abs(m.delta) * (ADDITIVE.has(m.stat) ? 1 : 100) * BUDGET_PER_PERCENT[m.stat], 0).toFixed(1);
       return `<div class="it ${on ? "on" : ""} ${owned ? "" : "locked"}" data-act="${it.kind === "node" ? "attest" : "keystone"}" data-id="${it.id}">
         <span class="chk">${on ? "▣" : "▢"}</span><span class="nm">${it.name}</span><span class="ring">R${it.ring} · D${it.requiresDepth} · ${it.cost}¢ · ${w}</span>
-        <div class="tr"><span class="b">${it.benefits.map(fmt).join(", ")}</span> / <span class="c">${it.costs.map(fmt).join(", ")}</span></div>
+        <div class="tr">${ledgerTradeText(it)}</div>
         ${gated ? `<div class="c">needs Depth ${it.requiresDepth}</div>` : ""}${!owned && !gated ? `<div class="c">not in your file</div>` : ""}
       </div>`;
     };

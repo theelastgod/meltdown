@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 199 — Ghostfile node rows quoted a second, rounded trade
+
+**Goal.** Stage 190 made the hex tooltip print `formatChipLine` from the settled mods. The FILE
+panel (Tab) still rebuilt the same node with `Math.round` and the camelCase key. COLLATERAL's
+tooltip said `+40% regen / −2.25% move, −23.5% reload`. The row under it said
+`+40% shieldRegen / −2% moveSpeed, −24% reloadSpeed`.
+
+**What changed.** `ledgerTradeText` takes the trade half of the node's line. The row interpolates
+that. One string, both places.
+
+**Proof.** `tests/chiptrade.test.ts`: COLLATERAL is `+40% regen / −2.25% move, −23.5% reload`,
+not `reloadSpeed` or `−24%`. FILE-panel source must call `ledgerTradeText(it)` and must not
+contain `Math.round(Math.abs(m.delta) * 100)`. Mutation: row lists `m.stat` instead — 1 fail.
+
 ## Stage 198 — Online FX replayed the predicted swap
 
 **Goal.** Stage 196 gave every FX id an online case. Swap, throw, charge, lunge and melee

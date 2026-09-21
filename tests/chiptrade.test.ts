@@ -8,9 +8,10 @@
  * 0.0000. `lintChipSchema` could not see it: it compares the total WEIGHT of the two sides, and
  * they weighed the same precisely because they cancelled.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { CHIPS, formatChipLine, lintChipSchema, type ChipDef } from "../shared/manifest/chips";
-import { LEDGER_ITEMS, lintItemSchema, type LedgerItem } from "../shared/manifest/items";
+import { LEDGER_ITEMS, ledgerTradeText, lintItemSchema, type LedgerItem } from "../shared/manifest/items";
 
 describe("no chip trades a stat against itself", () => {
   it("holds across the whole manifest", () => {
@@ -122,5 +123,20 @@ describe("a ledger node line is the mods after reconciliation (Stage 190)", () =
     const it = LEDGER_ITEMS.find((x) => x.id === "collateral")!;
     const lying: LedgerItem = { ...it, line: "COLLATERAL: +40% shield regen / −2% move, −20% reload" };
     expect(lintItemSchema([lying]).map((v) => v.rule)).toContain("line-matches-mods");
+  });
+
+  it("the Ghostfile row quotes that same trade, not a rounded camelCase second copy", () => {
+    const it = LEDGER_ITEMS.find((x) => x.id === "collateral")!;
+    expect(ledgerTradeText(it)).toBe("+40% regen / −2.25% move, −23.5% reload");
+    expect(ledgerTradeText(it)).not.toMatch(/reloadSpeed/);
+    expect(ledgerTradeText(it)).not.toMatch(/−24%/);
+  });
+});
+
+describe("the FILE panel reads ledgerTradeText", () => {
+  it("does not rebuild the trade with Math.round and the camelCase key", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/ledgerTradeText\(it\)/);
+    expect(src).not.toMatch(/Math\.round\(Math\.abs\(m\.delta\) \* 100\)/);
   });
 });

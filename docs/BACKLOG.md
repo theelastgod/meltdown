@@ -86,3 +86,5 @@ one stage.
   → Stage 197
 - Online FX replayed predicted swap/throw/charge/lunge/melee for the local file  
   → Stage 198
+- Ghostfile FILE-panel node rows quoted rounded camelCase mods, not the ledger line  
+  → Stage 199
