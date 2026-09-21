@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 224, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 225, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 224 on this branch (Deep Wake map names THE WAKE CELLS) |
-| Next stage number | **225** |
+| HEAD | Stage 225 on this branch (receipt stamps use the line) |
+| Next stage number | **226** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | ~1059 across 117 files, `npm test` |
+| Unit tests | ~1061 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,10 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 225 is next
+## 6. Stage 226 is next
 
-Stage 224 made the Deep Wake map print THE WAKE CELLS. Next is whatever a player would notice.
-Do not loosen fairness.
+Stage 225 made the Ledger Entry print FIRST FILE CLOSED · LEASE-BREAKER, not FIRST_KILL LEASE
+BREAKER. Next is whatever a player would notice. Do not loosen fairness. Picking a house still
+writes HOUSE · CLOCKEATERS.
 
 ---
 

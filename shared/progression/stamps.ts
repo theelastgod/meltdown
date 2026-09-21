@@ -121,6 +121,11 @@ export const STAMPS: StampDef[] = [
 
 export const stampById = (id: string): StampDef | undefined => STAMPS.find((s) => s.id === id);
 
+/** What a player reads for a stamp id: the line, not FIRST_KILL LEASE BREAKER. */
+export function stampLine(id: string): string {
+  return stampById(id)?.line ?? id.replace(/[:_]/g, " ").toUpperCase();
+}
+
 /** Redacted rendering: the line's letters become blocks, its spacing kept. */
 export function redact(line: string): string {
   return line.replace(/[A-Z0-9]/g, "█");

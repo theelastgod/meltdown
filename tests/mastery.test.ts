@@ -10,7 +10,7 @@ import { CHIPS, lintChipSchema } from "../shared/manifest/chips";
 import { FIRMWARES, weaponWithFirmware } from "../shared/manifest/firmwares";
 import { DEFAULT_LOADOUT, kitFor, SANDBOX_RANKS, validateLoadout } from "../shared/manifest/loadout";
 import { addXp, bump, challengeClearedLine, CURRICULA, emptyMastery, GATES, masteryRankLine, rankFor, xpForRank } from "../shared/progression/mastery";
-import { redact, STAMPS } from "../shared/progression/stamps";
+import { redact, STAMPS, stampLine } from "../shared/progression/stamps";
 import { certifyFirmwares } from "../shared/sim/ttk";
 import { World, hashWorld } from "../shared/sim/world";
 import { drainageYard } from "../shared/sim/level";
@@ -184,6 +184,22 @@ describe("the CRT names a rank and a gate the way the rack does", () => {
     expect(src).toMatch(/masteryRankLine\(r\)/);
     expect(src).toMatch(/challengeClearedLine\(c\)/);
     expect(src).not.toMatch(/r\.replace\(":r"/);
+  });
+});
+
+describe("the receipt names a stamp the way the file does", () => {
+  it("is the line, not the id with colons swapped for spaces", () => {
+    expect(stampLine("first_kill:lease_breaker")).toBe("FIRST FILE CLOSED · LEASE-BREAKER");
+    expect(stampLine("first_kill:directive")).toBe("FIRST FILE CLOSED · THE DIRECTIVE");
+    expect(stampLine("first_kill:lease_breaker")).not.toBe("FIRST_KILL LEASE BREAKER");
+    expect(stampLine("first_kill:lease_breaker")).not.toBe("first_kill:lease_breaker");
+  });
+
+  it("the room interpolates stampLine on the receipt and the file message", () => {
+    const src = readFileSync(new URL("../server/room.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/STAMP · \$\{stampLine\(id\)\}/);
+    expect(src).not.toMatch(/id\.toUpperCase\(\)\.replace\(\/\[:_\]/);
+    expect(src).not.toMatch(/STAMP · \$\{id\}/);
   });
 });
 

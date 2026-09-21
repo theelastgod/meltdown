@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 225 — The receipt spelled FIRST_KILL LEASE BREAKER
+
+**Goal.** Mid-round the CRT already printed `STAMP · FIRST FILE CLOSED · LEASE-BREAKER` from
+`stamp.line`. The file message that fills the FILE ledger, and the Ledger Entry receipt at
+settlement, still wrote the id: `STAMP · first_kill:lease_breaker` on the wire, and
+`STAMP · FIRST_KILL LEASE BREAKER` on the receipt. The durable file (progression.ts) already
+used the line.
+
+**What changed.** `stampLine(id)` is the authored line. The room interpolates it on both paths.
+
+**Proof.** `tests/mastery.test.ts`: `first_kill:lease_breaker` is `FIRST FILE CLOSED · LEASE-BREAKER`,
+not `FIRST_KILL LEASE BREAKER`. Source must `STAMP · ${stampLine(id)}` and must not
+`id.toUpperCase().replace(/[:_]`. Mutation: receipt uppercases the id again — 1 fail.
+
 ## Stage 224 — The Deep Wake map still said CELLS
 
 **Goal.** Stage 223 taught the season log THE WAKE CELLS. The MAP tab still printed `CELLS 3`

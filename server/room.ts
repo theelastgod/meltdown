@@ -46,6 +46,7 @@ import {
   type Snapshot, encodeSocial, type DossierEntry, type SocialMsg } from "../shared/net/protocol";
 import { DEFAULT_LOADOUT, validateLoadout, type Loadout, stripCampaignFields } from "../shared/manifest/loadout";
 import { applyMatch, ranksOf, type Account } from "../shared/progression/account";
+import { stampLine } from "../shared/progression/stamps";
 import { ProgressionTracker, type ProgressNote } from "./progression";
 import { assertClean, displayName, identityTag, publicIdentity, type PublicIdentity } from "../shared/identity/identity";
 import { CHAPTERS, chapterFor, unlockedMonikers, wornMoniker } from "../shared/identity/monikers";
@@ -865,7 +866,7 @@ export class Room {
       this.opts.onActive(dayIndex(this.opts.now()), rec.account.id, rec.account.depth >= RUN_DEPTH);
       rec.lastSettleXp = entry.xp.total;
       const note = rec.progress.onRoundEnd(p, contribution.won, contribution.seconds, p.stats.kills === top, this.world.level.name);
-      for (const id of note.stamps) entry.lines.push(`STAMP · ${id.toUpperCase().replace(/[:_]/g, " ")}`);
+      for (const id of note.stamps) entry.lines.push(`STAMP · ${stampLine(id)}`);
       this.rituals(rec, entry.depthBefore, entry.depthAfter);
       if (rec.account.debt) entry.lines.push(`DEBT · ${rec.account.debt.display} · ${rec.account.debt.kills} FILES ON YOU`);
       this.saveAccount(rec.account, (err) => this.opts.onLog(`file save failed for ${rec.account?.id}: ${String(err)}`));
@@ -1053,7 +1054,7 @@ export class Room {
       const note = rec.progress.onEvents(tickEvents, p, rec.playerId, this.tick, this.world.wasps);
       if (note) {
         this.saveAccount(rec.account);
-        rec.conn?.send(encodeFile(this.fileMsg(rec, note.stamps.map((id) => `STAMP · ${id}`), "stamp", note)));
+        rec.conn?.send(encodeFile(this.fileMsg(rec, note.stamps.map((id) => `STAMP · ${stampLine(id)}`), "stamp", note)));
       }
     }
     for (const ev of tickEvents) {

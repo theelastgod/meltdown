@@ -138,3 +138,5 @@ one stage.
   → Stage 223
 - The Deep Wake map still printed CELLS / ESTATE  
   → Stage 224
+- The receipt spelled FIRST_KILL LEASE BREAKER  
+  → Stage 225
