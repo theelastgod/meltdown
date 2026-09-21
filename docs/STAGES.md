@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 221 — Travelling printed WHITE_OFFICE
+
+**Goal.** Stage 216 taught the contracts list `levelDisplayName`. Joining a room on a different
+district still pushed `TRAVELLING — WHITE OFFICE` from `net.levelName` with underscores swapped
+for spaces. THE WHITE OFFICE lost THE. DEADLETTER_DOCKS became DEADLETTER DOCKS only by luck.
+
+**What changed.** The travelling alert interpolates `levelDisplayName(net.levelName)`.
+
+**Proof.** `tests/district.test.ts`: source must `TRAVELLING — ${levelDisplayName(net.levelName)}`
+and must not `net.levelName.replace`. Mutation: uppercase the id again — 1 fail.
+
 ## Stage 220 — The join line quoted ledger ids
 
 **Goal.** On admit the CRT pushed `ATTESTED [long_lease, quiet_ledger] · BAD_DEBT`. The FILE

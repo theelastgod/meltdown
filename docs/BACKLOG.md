@@ -130,3 +130,5 @@ one stage.
   → Stage 219
 - The join line quoted long_lease and BAD_DEBT  
   → Stage 220
+- Travelling printed WHITE OFFICE / DEADLETTER_DOCKS instead of the city name  
+  → Stage 221

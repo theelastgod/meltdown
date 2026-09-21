@@ -28,6 +28,12 @@ describe("a contract names the district the city does", () => {
     expect(src).toMatch(/levelDisplayName\(m\.level\)/);
     expect(src).not.toMatch(/def\.level\.toUpperCase\(\)/);
   });
+
+  it("the travelling alert names the district the city does", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/TRAVELLING — \$\{levelDisplayName\(net\.levelName\)\}/);
+    expect(src).not.toMatch(/TRAVELLING — \$\{net\.levelName\.replace/);
+  });
 });
 
 describe("the wake's lines name their district", () => {

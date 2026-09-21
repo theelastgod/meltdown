@@ -6,7 +6,7 @@ import { skinByToken } from "@shared/economy/catalog";
 import { MAX_CATCHUP_TICKS, MOVE, SIM_DT, SIM_HZ } from "@shared/sim/constants";
 import { WAKE } from "@shared/sim/wake";
 import type { InputFrame } from "@shared/sim/input";
-import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS } from "@shared/sim/level";
+import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS, levelDisplayName } from "@shared/sim/level";
 import { itemName } from "@shared/manifest/items";
 import { eyeHeight, eyePos, type PlayerState } from "@shared/sim/player";
 import { canSee, MECH, WASP } from "@shared/sim/ai";
@@ -394,7 +394,7 @@ export class Game {
       if (st === "joined") {
         if (net.levelName && net.levelName !== this.levelId && LEVEL_IDS.includes(net.levelName)) {
           // the room plays a different district: travel there (a fresh world and renderer for that level)
-          this.hud.alert(`◆ TRAVELLING — ${net.levelName.replace(/_/g, " ").toUpperCase()}`, false, 3);
+          this.hud.alert(`◆ TRAVELLING — ${levelDisplayName(net.levelName)}`, false, 3);
           this.travel(net.levelName);
           return;
         }
