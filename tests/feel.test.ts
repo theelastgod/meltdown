@@ -3,7 +3,8 @@
  * end at nothing, and be worth seeing in between, or it reads as a glitch rather than as weight.
  */
 import { describe, expect, it } from "vitest";
-import { landDip, landHardness, LAND_CEIL, LAND_DIP, LAND_FLOOR, LAND_TIME, lookYawPitch, SLIDE_ROLL, stanceRoll } from "../client/render/feel";
+import { readFileSync } from "node:fs";
+import { fallSpeed, landDip, landHardness, LAND_CEIL, LAND_DIP, LAND_FLOOR, LAND_TIME, lookYawPitch, SLIDE_ROLL, stanceRoll } from "../client/render/feel";
 
 describe("how hard a landing was", () => {
   it("is nothing for a step off a kerb and everything for a drop", () => {
@@ -17,6 +18,22 @@ describe("how hard a landing was", () => {
   it("reads the fall, not the climb: rising is never a landing", () => {
     expect(landHardness(9)).toBe(0);
     expect(landHardness(0.5)).toBe(0);
+  });
+
+  it("a 6 m/s fall is 6 m/s at 60 Hz, 20 Hz and 12 Hz", () => {
+    // lastY - y over the real frame, not the hitch-capped dt
+    expect(fallSpeed(6, 6 - 6 / 60, 1 / 60)).toBeCloseTo(-6, 6);
+    expect(fallSpeed(6, 6 - 6 / 20, 1 / 20)).toBeCloseTo(-6, 6);
+    expect(fallSpeed(6, 6 - 6 / 12, 1 / 12)).toBeCloseTo(-6, 6);
+    expect(landHardness(fallSpeed(6, 6 - 6 / 12, 1 / 12))).toBeCloseTo(landHardness(-6), 6);
+  });
+});
+
+describe("the renderer divides the fall by the real frame", () => {
+  it("uses rawDt for fallSpeed and drains the dip on rawDt", () => {
+    const src = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/fallSpeed\(this\.lastY, v\.y, rawDt\)/);
+    expect(src).toMatch(/this\.landT = Math.max\(0, this\.landT - rawDt\)/);
   });
 });
 

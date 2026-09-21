@@ -32,6 +32,11 @@ export function landHardness(fallSpeed: number): number {
   return clamp((Math.max(0, -fallSpeed) - LAND_FLOOR) / (LAND_CEIL - LAND_FLOOR), 0, 1);
 }
 
+/** Metres per second from two eye heights and the real frame time, never a hitch-capped dt. */
+export function fallSpeed(lastY: number, y: number, frameDt: number): number {
+  return (y - lastY) / Math.max(1e-4, frameDt);
+}
+
 /**
  * The dip at a point in its life, in metres below the eye: down fast, back up slower, and exactly
  * zero at both ends. A half sine skewed toward the start — a landing is an impact and then a

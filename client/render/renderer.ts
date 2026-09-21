@@ -28,7 +28,7 @@ import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hi
 import { spawnCurve, spawnEdge, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import { arcPoint, type ArcSpec } from "./ballistic";
-import { DEATH_TURN, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
+import { DEATH_TURN, fallSpeed, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
 
 /** Interpolated view state handed to the renderer each frame. */
@@ -826,8 +826,8 @@ export class Renderer {
     g.position.set(v.x, v.y, v.z);
     g.rotation.y = v.yaw;
     // the pose (Stage 63): everything the body does comes from pose.ts, from what this frame knows
-    const vy = Number.isNaN(this.lastViewY) ? 0 : clamp((v.y - this.lastViewY) / dt, -12, 12);
-    const turnRate = Number.isNaN(this.lastViewYaw) ? 0 : clamp(wrapAngle(v.yaw - this.lastViewYaw) / dt, -20, 20);
+    const vy = Number.isNaN(this.lastViewY) ? 0 : clamp((v.y - this.lastViewY) / Math.max(1e-4, rawDt), -12, 12);
+    const turnRate = Number.isNaN(this.lastViewYaw) ? 0 : clamp(wrapAngle(v.yaw - this.lastViewYaw) / Math.max(1e-4, rawDt), -20, 20);
     this.lastViewY = v.y;
     this.lastViewYaw = v.yaw;
     const inp: PoseInput = { speed: v.speed, moveYaw: v.moveYaw, yaw: v.yaw, pitch: v.pitch, vy, turnRate, grounded: v.grounded, stance: v.stance as Stance, height: v.height, reloading: v.reloading, ads: v.zoom > 1 ? 1 : 0, kick: this.vmKick, swap: this.vmSwap, charge: clamp(v.charge, 0, 1), hurt: this.hurtT, hurtFrom: wrapAngle(this.hurtYaw - v.yaw), alive: v.alive, stunned: v.stunned, clock: this.clock, phase: this.bobPhase };
@@ -875,7 +875,7 @@ export class Renderer {
     // the camera takes the landing the legs have been taking since Stage 63. The fall speed is the
     // frame before touchdown, because on the frame itself the sim has already stopped the file
     // (Stage 79)
-    const fell = this.lastY === null ? 0 : (v.y - this.lastY) / Math.max(1e-4, dt);
+    const fell = this.lastY === null ? 0 : fallSpeed(this.lastY, v.y, rawDt);
     if (v.grounded && this.wasAir && v.alive) {
       this.landHard = landHardness(this.fallSpeed);
       this.landT = this.landHard > 0 ? LAND_TIME : 0;
@@ -883,7 +883,7 @@ export class Renderer {
     if (!v.grounded) this.fallSpeed = fell;
     this.wasAir = !v.grounded;
     this.lastY = v.y;
-    this.landT = Math.max(0, this.landT - dt);
+    this.landT = Math.max(0, this.landT - rawDt);
     const dip = this.landT > 0 ? landDip(this.landHard, LAND_TIME - this.landT) : 0;
     this.dipNow = dip;
     // and it leans into a slide in both views: the first-person one always did, by a fixed amount
