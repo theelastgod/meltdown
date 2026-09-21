@@ -194,3 +194,5 @@ one stage.
   → Stage 251
 - The wasp eye was a flat amber box  
   → Stage 252
+- The mech searchlight lens was a flat cream disc  
+  → Stage 253

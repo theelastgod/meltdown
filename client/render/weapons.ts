@@ -284,7 +284,9 @@ export class ArsenalFx {
         head.position.set(0, 3.2, 0);
         const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.5), hull);
         head.add(lamp);
-        const lens = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12), new THREE.MeshBasicMaterial({ color: 0xffd28a }));
+        const lensMat = new THREE.MeshBasicMaterial({ color: 0xffd28a });
+        bindPlate(lensMat, "tex_lamp");
+        const lens = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12), lensMat);
         lens.position.set(0, 0, -0.26);
         head.add(lens);
         const spot = new THREE.SpotLight(0xffc46a, 90, 34, 0.22, 0.6, 1.4);
