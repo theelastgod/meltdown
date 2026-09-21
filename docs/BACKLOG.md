@@ -202,3 +202,5 @@ one stage.
   → Stage 255
 - The monorail under-strip was a flat magenta bar  
   → Stage 256
+- The wasp rotors were a flat brown disc  
+  → Stage 257

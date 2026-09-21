@@ -223,11 +223,13 @@ export class ArsenalFx {
         eye.position.set(0, 0, -0.36);
         group.add(eye);
         const rotors: THREE.Mesh[] = [];
+        const rotorMat = new THREE.MeshBasicMaterial({ color: 0x2b2618, transparent: true, opacity: 0.55 });
+        bindPlate(rotorMat, "tex_wasp_hull");
         for (const [x, z] of [[-0.35, -0.3], [0.35, -0.3], [-0.35, 0.3], [0.35, 0.3]]) {
           const arm = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.06), waspMat);
           arm.position.set(x!, 0.08, z!);
           group.add(arm);
-          const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.01, 8), new THREE.MeshBasicMaterial({ color: 0x2b2618, transparent: true, opacity: 0.55 }));
+          const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.01, 8), rotorMat);
           rotor.position.set(x!, 0.12, z!);
           group.add(rotor);
           rotors.push(rotor);

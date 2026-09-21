@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 257 — The wasp rotors were a flat brown disc
+
+**Goal.** Stage 209 put the hull plate on the rotor arms. The spinning discs were still
+`MeshBasicMaterial` brown with no map.
+
+**What changed.** One `rotorMat` for the four discs, `bindPlate(rotorMat, "tex_wasp_hull")`,
+fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `weapons.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 256 — The monorail under-strip was a flat magenta bar
 
 **Goal.** Stage 254 plated the headlamp. The magenta band under each car was still
