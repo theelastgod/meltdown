@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 224 — The Deep Wake map still said CELLS
+
+**Goal.** Stage 223 taught the season log THE WAKE CELLS. The MAP tab still printed `CELLS 3`
+in the header, and each node's house chip was `h.toUpperCase()` — CELLS, ESTATE, CLOCKEATERS.
+District keys were `lease_row` with underscores swapped.
+
+**What changed.** The header and the chips call `houseName`. District rows call
+`levelDisplayName`.
+
+**Proof.** `tests/endgame.test.ts`: hud source must `houseName(h)` and `houseName("cells")` and
+must not `h.toUpperCase()` for the chip. Mutation: chips uppercase the id again — 1 fail.
+
 ## Stage 223 — Deep Wake history said TURNED CELLS
 
 **Goal.** A node turning to the Wake Cells wrote `LEASE ROW B TURNED CELLS` and `B → CELLS`. The

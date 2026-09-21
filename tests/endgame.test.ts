@@ -88,6 +88,11 @@ describe("the Deep Wake", () => {
     const src = readFileSync(new URL("../shared/endgame/season.ts", import.meta.url), "utf8");
     expect(src).toMatch(/TURNED \$\{houseName\(t\.to\)\}/);
     expect(src).not.toMatch(/t\.to\.toUpperCase\(\)/);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/houseName\(h\)/);
+    expect(hud).toMatch(/houseName\("cells"\)/);
+    expect(hud).toMatch(/levelDisplayName\(d\)/);
+    expect(hud).not.toMatch(/h === "unaligned" \? "—" : h\.toUpperCase\(\)/);
   });
 
   it("rounds push pressure toward the flipping files' houses; enough pressure turns a node; the season rolls with a history from real data", () => {

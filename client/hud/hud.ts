@@ -4,7 +4,8 @@ import { weaponDefOf } from "@shared/sim/player";
 import { GRENADE_LIST, WEAPON_LIST } from "@shared/weapons/manifest";
 import type { Dummy } from "@shared/sim/world";
 import type { FileView } from "../file";
-import { LEVEL_INFO, type  LevelDef } from "@shared/sim/level";
+import { LEVEL_INFO, levelDisplayName, type LevelDef } from "@shared/sim/level";
+import { houseName } from "@shared/endgame/season";
 import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
@@ -253,8 +254,8 @@ export class Hud {
       el.innerHTML = "";
       return;
     }
-    const house = (h: string) => `<span class="h ${h}">${h === "unaligned" ? "—" : h.toUpperCase()}</span>`;
-    el.innerHTML = `<div class="t">▲ DEEP WAKE · SEASON ${v.season} · WEEK ${v.week} <span class="dim">· ESTATE ${v.held["estate"] ?? 0} · CLOCKEATERS ${v.held["clockeaters"] ?? 0} · CELLS ${v.held["cells"] ?? 0}</span></div>${Object.entries(v.districts).map(([d, nodes]) => `<div class="dw"><b>${d.replace(/_/g, " ").toUpperCase()}</b> ${nodes.map((n) => `${n.label} ${house(n.house)}${n.pressure > 0 ? `<i>+${n.pressure.toFixed(0)} ${n.leader.slice(0, 3).toUpperCase()}</i>` : ""}`).join(" · ")}</div>`).join("")}<div class="hist">${v.history.slice(-4).map((l) => `<div>» ${l}</div>`).join("") || "<div class='dim'>no rounds have moved the graph yet</div>"}</div>`;
+    const house = (h: string) => `<span class="h ${h}">${h === "unaligned" ? "—" : houseName(h)}</span>`;
+    el.innerHTML = `<div class="t">▲ DEEP WAKE · SEASON ${v.season} · WEEK ${v.week} <span class="dim">· ${houseName("estate")} ${v.held["estate"] ?? 0} · ${houseName("clockeaters")} ${v.held["clockeaters"] ?? 0} · ${houseName("cells")} ${v.held["cells"] ?? 0}</span></div>${Object.entries(v.districts).map(([d, nodes]) => `<div class="dw"><b>${levelDisplayName(d)}</b> ${nodes.map((n) => `${n.label} ${house(n.house)}${n.pressure > 0 ? `<i>+${n.pressure.toFixed(0)} ${n.leader.slice(0, 3).toUpperCase()}</i>` : ""}`).join(" · ")}</div>`).join("")}<div class="hist">${v.history.slice(-4).map((l) => `<div>» ${l}</div>`).join("") || "<div class='dim'>no rounds have moved the graph yet</div>"}</div>`;
   }
 
   /**

@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 223, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 224, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 223 on this branch (Deep Wake names THE WAKE CELLS) |
-| Next stage number | **224** |
+| HEAD | Stage 224 on this branch (Deep Wake map names THE WAKE CELLS) |
+| Next stage number | **225** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1059 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 224 is next
+## 6. Stage 225 is next
 
-Stage 223 made a Deep Wake turn print THE WAKE CELLS, not CELLS. Next is whatever a player
-would notice. Do not loosen fairness.
+Stage 224 made the Deep Wake map print THE WAKE CELLS. Next is whatever a player would notice.
+Do not loosen fairness.
 
 ---
 

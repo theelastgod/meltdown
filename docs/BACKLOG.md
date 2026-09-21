@@ -136,3 +136,5 @@ one stage.
   → Stage 222
 - Deep Wake history said TURNED CELLS, not THE WAKE CELLS  
   → Stage 223
+- The Deep Wake map still printed CELLS / ESTATE  
+  → Stage 224
