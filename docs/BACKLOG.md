@@ -166,3 +166,5 @@ one stage.
   → Stage 237
 - The connected kick named slipfile  
   → Stage 238
+- The chips-shape kick named lease_breaker  
+  → Stage 239

@@ -102,6 +102,13 @@ describe("chips and firmwares", () => {
     const fwWeaponKick = fwWeapon.errors.find((e) => e.rule === "firmware-weapon")!;
     expect(fwWeaponKick.detail).toMatch(/DUMP STAGE is a STACK SMG firmware/);
     expect(fwWeaponKick.detail).not.toMatch(/stack_smg:dump_stage/);
+    const shape = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: ["lease_breaker:long_barrel"] } }, owned, 50, ranks);
+    expect(shape.errors.map((e) => e.rule)).toContain("chips-shape");
+    const shapeKick = shape.errors.find((e) => e.rule === "chips-shape")!;
+    expect(shapeKick.detail).toBe("LEASE-BREAKER: sockets must be an object");
+    expect(shapeKick.detail).not.toMatch(/^lease_breaker:/);
+    expect(src).toMatch(/chips-shape", detail: `\$\{gun\(wid as WeaponId\)\}: sockets must be an object`/);
+    expect(src).not.toMatch(/chips-shape", detail: `\$\{wid\}: sockets must be an object`/);
   });
   it("a chip's mods apply only while its weapon is held; a firmware patches the definition the sim runs", () => {
     const world = new World(drainageYard(), { ai: false, seed: 1 });

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 239 — The chips-shape kick named lease_breaker
+
+**Goal.** Stage 238 taught the connected kick SLIPFILE. Socketing chips as a list still kicked
+`lease_breaker: sockets must be an object`. The FILE panel already prints LEASE-BREAKER.
+
+**What changed.** That detail interpolates `gun(wid)`.
+
+**Proof.** `tests/mastery.test.ts`: the kick is `LEASE-BREAKER: sockets must be an object`, not
+`lease_breaker:`. Source must `${gun(wid as WeaponId)}`. Mutation: interpolate the id again — 1 fail.
+
 ## Stage 238 — The connected kick named slipfile
 
 **Goal.** Stage 232 taught the not-owned kick LONG LEASE. Attesting SLIPFILE and WAKE LUNG — two

@@ -116,7 +116,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
           continue;
         }
         if (!slots || typeof slots !== "object" || Array.isArray(slots)) {
-          errors.push({ rule: "chips-shape", detail: `${wid}: sockets must be an object` });
+          errors.push({ rule: "chips-shape", detail: `${gun(wid as WeaponId)}: sockets must be an object` });
           continue;
         }
         const out: ChipSlots = {};
