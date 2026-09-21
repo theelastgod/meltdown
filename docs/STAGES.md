@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 233 — The chip-rank kick named lease_breaker:flash_cut
+
+**Goal.** Stage 231 taught the loadout kick THE DIRECTIVE. Socketing FLASH CUT at rank 12 still
+kicked `lease_breaker:flash_cut needs lease_breaker mastery 22`. The FILE panel already prints
+LEASE-BREAKER FLASH CUT.
+
+**What changed.** That detail interpolates `c.name` and `gun(wid)`.
+
+**Proof.** `tests/mastery.test.ts`: the kick matches LEASE-BREAKER FLASH CUT and LEASE-BREAKER
+mastery, not `lease_breaker:flash_cut`. Mutation: interpolate the ids again — 1 fail.
+
 ## Stage 232 — The not-owned kick named long_lease
 
 **Goal.** Stage 230 taught RING ONE ESCROW. Attesting LONG LEASE on a file that does not own it

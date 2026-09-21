@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 232, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 233, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 232 on this branch (not-owned kick names LONG LEASE) |
-| Next stage number | **233** |
+| HEAD | Stage 233 on this branch (chip-rank kick names LEASE-BREAKER FLASH CUT) |
+| Next stage number | **234** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1062 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 233 is next
+## 6. Stage 234 is next
 
-Stage 232 made an unowned node kick LONG LEASE, not long_lease. Next is whatever a player would
-notice. Do not loosen fairness. Chip-rank kicks still name lease_breaker:long_barrel.
+Stage 233 made a chip-rank kick name LEASE-BREAKER FLASH CUT. Firmware-rank kicks still name
+`lease_breaker:three_count`. Do not loosen fairness.
 
 ---
 

@@ -154,3 +154,5 @@ one stage.
   → Stage 231
 - The not-owned kick named long_lease  
   → Stage 232
+- The chip-rank kick named lease_breaker:flash_cut  
+  → Stage 233
