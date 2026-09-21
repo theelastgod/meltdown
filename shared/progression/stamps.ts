@@ -35,7 +35,10 @@ export interface StampDef {
 const st = (id: string, group: StampDef["group"], counter: StampCounter, need: number, line: string): StampDef => ({ id, group, counter, need, line });
 
 const perWeapon: StampDef[] = WEAPON_LIST.flatMap((w) => {
-  const n = w.name.split(" ")[0]!;
+  // Stage 109 taught the rack not to call THE DIRECTIVE "THE". The stamp matrix still took
+  // the first word, so a Directive first-kill read FIRST FILE CLOSED · THE and a Repo Hammer
+  // read · REPO. The line is the gun's name.
+  const n = w.name;
   return [
     st(`first_kill:${w.id}`, "weapon", `kills:${w.id}`, 1, `FIRST FILE CLOSED · ${n}`),
     st(`first_head:${w.id}`, "weapon", `headshotKills:${w.id}`, 1, `FIRST HEADSHOT · ${n}`),

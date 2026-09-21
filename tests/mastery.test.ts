@@ -4,6 +4,7 @@
  * un-redact only when the server has seen the thing.
  */
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { ALL_ITEMS, KEYSTONES, LEDGER_ITEMS, lintItemSchema } from "../shared/manifest/items";
 import { CHIPS, lintChipSchema } from "../shared/manifest/chips";
 import { FIRMWARES, weaponWithFirmware } from "../shared/manifest/firmwares";
@@ -160,6 +161,24 @@ describe("the server verifies firsts", () => {
     const stampMsgs = a.msgs.filter((m) => m?.type === "file" && m.file.reason === "stamp");
     expect(stampMsgs.length).toBeGreaterThan(0);
     expect((stampMsgs[0] as { file: { newStamps: string[] } }).file.newStamps).toContain("first_kill:lease_breaker");
+  });
+});
+
+describe("weapon stamps name the gun", () => {
+  it("is the manifest name, not the first word", () => {
+    for (const w of WEAPON_LIST) {
+      const s = STAMPS.find((x) => x.id === `first_kill:${w.id}`);
+      expect(s?.line, w.id).toBe(`FIRST FILE CLOSED · ${w.name}`);
+    }
+    expect(STAMPS.find((s) => s.id === "first_kill:directive")!.line).not.toBe("FIRST FILE CLOSED · THE");
+    expect(STAMPS.find((s) => s.id === "first_kill:repo_hammer")!.line).not.toBe("FIRST FILE CLOSED · REPO");
+  });
+
+  it("does not take the first word of the name", () => {
+    const src = readFileSync(new URL("../shared/progression/stamps.ts", import.meta.url), "utf8");
+    const block = src.slice(src.indexOf("const perWeapon"), src.indexOf("export const STAMPS"));
+    expect(block).toMatch(/const n = w\.name;/);
+    expect(block).not.toMatch(/w\.name\.split\(/);
   });
 });
 

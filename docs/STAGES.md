@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 217 — Directive stamps called the gun "THE"
+
+**Goal.** Stage 109 taught the rack not to label THE DIRECTIVE as `THE`. The stamp matrix still
+took `w.name.split(" ")[0]`, so a Directive first-kill, first-head, mastery and hundred all read
+`· THE`. A Repo Hammer read `· REPO`. LEASE-BREAKER is one word, so the existing FIRST FILE
+CLOSED check could not see it.
+
+**What changed.** The matrix uses `w.name`.
+
+**Proof.** `tests/mastery.test.ts`: every `first_kill` line is `FIRST FILE CLOSED · ${w.name}`;
+source must not `split`. Mutation: first word again — 2 fail.
+
 ## Stage 216 — A contract in the wrong district printed the id
 
 **Goal.** The contracts list spells `DEADLETTER DOCKS`. Launching THE LEAK from Lease Row wrote

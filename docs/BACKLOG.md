@@ -122,3 +122,5 @@ one stage.
   → Stage 215
 - A contract in the wrong district printed DEADLETTER_DOCKS  
   → Stage 216
+- Weapon stamps called THE DIRECTIVE "THE" and REPO HAMMER "REPO"  
+  → Stage 217
