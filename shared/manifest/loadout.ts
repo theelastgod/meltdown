@@ -122,7 +122,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
         const out: ChipSlots = {};
         for (const [socket, id] of Object.entries(slots as Record<string, unknown>)) {
           if (!SOCKETS.includes(socket as Socket)) {
-            errors.push({ rule: "chip-socket", detail: `${gun(wid as WeaponId)}: no socket "${socket}"` });
+            errors.push({ rule: "chip-socket", detail: `${gun(wid as WeaponId)}: no socket "${socket.toUpperCase()}"` });
             continue;
           }
           if (id === null || id === undefined) continue;

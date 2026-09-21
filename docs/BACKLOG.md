@@ -188,3 +188,5 @@ one stage.
   → Stage 248
 - The keystone-shape kick said keystone  
   → Stage 249
+- The unknown-socket kick said "barrel"  
+  → Stage 250

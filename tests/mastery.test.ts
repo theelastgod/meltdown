@@ -113,10 +113,10 @@ describe("chips and firmwares", () => {
     const noSock = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { barrel: "lease_breaker:long_barrel" } } }, owned, 50, ranks);
     expect(noSock.errors.map((e) => e.rule)).toContain("chip-socket");
     const noSockKick = noSock.errors.find((e) => e.rule === "chip-socket")!;
-    expect(noSockKick.detail).toBe('LEASE-BREAKER: no socket "barrel"');
-    expect(noSockKick.detail).not.toMatch(/^lease_breaker:/);
-    expect(src).toMatch(/chip-socket", detail: `\$\{gun\(wid as WeaponId\)\}: no socket "\$\{socket\}"`/);
-    expect(src).not.toMatch(/chip-socket", detail: `\$\{wid\}: no socket "\$\{socket\}"`/);
+    expect(noSockKick.detail).toBe('LEASE-BREAKER: no socket "BARREL"');
+    expect(noSockKick.detail).not.toMatch(/"barrel"/);
+    expect(src).toMatch(/chip-socket", detail: `\$\{gun\(wid as WeaponId\)\}: no socket "\$\{socket\.toUpperCase\(\)\}"`/);
+    expect(src).not.toMatch(/chip-socket", detail: `\$\{gun\(wid as WeaponId\)\}: no socket "\$\{socket\}"`/);
     const chipShape = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { muzzle: 1 } } }, owned, 50, ranks);
     expect(chipShape.errors.map((e) => e.rule)).toContain("chip-shape");
     const chipShapeKick = chipShape.errors.find((e) => e.rule === "chip-shape")!;

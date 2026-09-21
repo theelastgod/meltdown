@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 249, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 250, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 249 on this branch (keystone-shape kick says KEYSTONE) |
-| Next stage number | **250** |
+| HEAD | Stage 250 on this branch (unknown-socket kick says BARREL) |
+| Next stage number | **251** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1062 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,9 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 250 is next
+## 6. Stage 251 is next
 
-Stage 249 made the keystone-shape kick say KEYSTONE. Do not loosen fairness.
+Stage 250 made the unknown-socket kick say BARREL. Do not loosen fairness.
 
 ---
 

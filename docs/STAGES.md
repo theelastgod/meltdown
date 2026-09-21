@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 250 — The unknown-socket kick said "barrel"
+
+**Goal.** Stage 247 taught the chip-shape kick MUZZLE. Putting a chip in a socket named `barrel`
+still kicked `LEASE-BREAKER: no socket "barrel"`. The FILE panel labels sockets in capitals.
+
+**What changed.** That quoted socket is uppercased.
+
+**Proof.** `tests/mastery.test.ts`: the kick is `LEASE-BREAKER: no socket "BARREL"`. Mutation:
+lowercase `barrel` again — 1 fail.
+
 ## Stage 249 — The keystone-shape kick said keystone
 
 **Goal.** Stage 248 taught the keystone-limit kick KEYSTONE. Putting a number in the keystone slot
