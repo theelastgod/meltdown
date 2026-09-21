@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 243 — The contracts list named PROTOCOL
+
+**Goal.** Stage 215 taught campaign unlocks THE DIRECTIVE. The contracts CRT still printed a bare
+`PROTOCOL` on a mission that grants RED LEASE. The settlement card already prints KERNEL PROTOCOL ·
+RED LEASE; the weapon reward on the same row already interpolates `weaponName`.
+
+**What changed.** That slot interpolates `PROTOCOLS.find(…).name`.
+
+**Proof.** `tests/campaign.test.ts`: m2 grants `red_lease` named RED LEASE; the row template is
+`PROTOCOL ${PROTOCOLS.find`, not `` `PROTOCOL` ``. Mutation: the bare PROTOCOL again — 1 fail.
+
 ## Stage 242 — The firmware-shape kick named lease_breaker
 
 **Goal.** Stage 241 taught the chip-shape kick LEASE-BREAKER. Flashing a number as firmware still

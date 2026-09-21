@@ -174,3 +174,5 @@ one stage.
   → Stage 241
 - The firmware-shape kick named lease_breaker  
   → Stage 242
+- The contracts list named PROTOCOL  
+  → Stage 243

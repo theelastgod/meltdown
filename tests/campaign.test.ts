@@ -72,6 +72,17 @@ describe("campaign data", () => {
   });
 });
 
+describe("the contracts list names the protocol the settlement does", () => {
+  it("RED LEASE, not a bare PROTOCOL", () => {
+    const m2 = missionById("m2_deadletter_run")!;
+    expect(m2.reward.protocol).toBe("red_lease");
+    expect(PROTOCOLS.find((p) => p.id === m2.reward.protocol)!.name).toBe("RED LEASE");
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/PROTOCOL \$\{PROTOCOLS\.find/);
+    expect(src).not.toMatch(/m\.reward\.protocol \? `PROTOCOL` : ""/);
+  });
+});
+
 describe("picking a house writes the name, not the id", () => {
   it("THE WAKE CELLS, not CELLS", () => {
     expect(factionName("cells")).toBe("THE WAKE CELLS");
