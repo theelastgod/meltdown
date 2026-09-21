@@ -9,7 +9,7 @@ import { ALL_ITEMS, KEYSTONES, LEDGER_ITEMS, lintItemSchema } from "../shared/ma
 import { CHIPS, lintChipSchema } from "../shared/manifest/chips";
 import { FIRMWARES, weaponWithFirmware } from "../shared/manifest/firmwares";
 import { DEFAULT_LOADOUT, kitFor, SANDBOX_RANKS, validateLoadout } from "../shared/manifest/loadout";
-import { addXp, bump, CURRICULA, emptyMastery, GATES, rankFor, xpForRank } from "../shared/progression/mastery";
+import { addXp, bump, challengeClearedLine, CURRICULA, emptyMastery, GATES, masteryRankLine, rankFor, xpForRank } from "../shared/progression/mastery";
 import { redact, STAMPS } from "../shared/progression/stamps";
 import { certifyFirmwares } from "../shared/sim/ttk";
 import { World, hashWorld } from "../shared/sim/world";
@@ -161,6 +161,29 @@ describe("the server verifies firsts", () => {
     const stampMsgs = a.msgs.filter((m) => m?.type === "file" && m.file.reason === "stamp");
     expect(stampMsgs.length).toBeGreaterThan(0);
     expect((stampMsgs[0] as { file: { newStamps: string[] } }).file.newStamps).toContain("first_kill:lease_breaker");
+  });
+});
+
+describe("the CRT names a rank and a gate the way the rack does", () => {
+  it("a rank is the gun's name, not the id with underscores swapped for spaces", () => {
+    expect(masteryRankLine("lease_breaker:r10")).toBe("LEASE-BREAKER → RANK 10");
+    expect(masteryRankLine("repo_hammer:r20")).toBe("REPO HAMMER → RANK 20");
+    expect(masteryRankLine("directive:r5")).toBe("THE DIRECTIVE → RANK 5");
+    expect(masteryRankLine("directive:r5")).not.toBe("DIRECTIVE → RANK 5");
+    expect(masteryRankLine("lease_breaker:r10")).not.toBe("LEASE BREAKER → RANK 10");
+  });
+
+  it("a cleared gate is the gun and the challenge, not DIRECTIVE R5", () => {
+    expect(challengeClearedLine("directive:r5")).toBe("THE DIRECTIVE · 8 HEADSHOT KILLS");
+    expect(challengeClearedLine("lease_breaker:r10")).toBe("LEASE-BREAKER · 3 KILLS MID-SLIDE");
+    expect(challengeClearedLine("directive:r5")).not.toBe("DIRECTIVE R5");
+  });
+
+  it("the log interpolates those helpers, not a second spelling of the id", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/masteryRankLine\(r\)/);
+    expect(src).toMatch(/challengeClearedLine\(c\)/);
+    expect(src).not.toMatch(/r\.replace\(":r"/);
   });
 });
 

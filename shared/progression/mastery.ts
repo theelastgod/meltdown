@@ -5,7 +5,7 @@
  * two firmwares (20, 28). Character growth and player growth are the same
  * system.
  */
-import { WEAPON_LIST, type WeaponId } from "../weapons/manifest";
+import { WEAPON_LIST, WEAPONS, type WeaponId } from "../weapons/manifest";
 import { CHIPS } from "../manifest/chips";
 import { FIRMWARES } from "../manifest/firmwares";
 
@@ -156,4 +156,23 @@ export function firmwareUnlocked(fwId: string, masteries: Record<WeaponId, Maste
 
 export function unlockedChips(weapon: WeaponId, masteries: Record<WeaponId, Mastery>): string[] {
   return CHIPS.filter((c) => c.weapon === weapon && (masteries[weapon]?.rank ?? 1) >= c.rank).map((c) => c.id);
+}
+
+const RANK_ID = /^(.*):r(\d+)$/;
+
+/** CRT line for a rank the tracker just crossed: the gun's name, not the id. */
+export function masteryRankLine(id: string): string {
+  const m = RANK_ID.exec(id);
+  if (!m) return id.replace(/_/g, " ").toUpperCase();
+  const name = WEAPONS[m[1] as WeaponId]?.name ?? m[1]!.replace(/_/g, " ").toUpperCase();
+  return `${name} → RANK ${m[2]}`;
+}
+
+/** CRT line for a gate the tracker just cleared: the gun's name and the challenge, not `DIRECTIVE R5`. */
+export function challengeClearedLine(id: string): string {
+  const m = RANK_ID.exec(id);
+  const w = m?.[1] as WeaponId | undefined;
+  const ch = w ? CURRICULA[w]?.find((c) => c.id === id) : undefined;
+  if (ch && w) return `${WEAPONS[w]!.name} · ${ch.text.toUpperCase()}`;
+  return id.replace(/_/g, " ").toUpperCase();
 }

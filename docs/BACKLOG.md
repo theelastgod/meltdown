@@ -126,3 +126,5 @@ one stage.
   → Stage 217
 - Directive chips were named THE CHOKE  
   → Stage 218
+- Mastery CRT lines spelled LEASE BREAKER / DIRECTIVE R5  
+  → Stage 219

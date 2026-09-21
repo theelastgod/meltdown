@@ -1641,6 +1641,21 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 219 — A mastery line spelled the weapon id
+
+**Goal.** Crossing rank 10 on the Lease-Breaker pushed `MASTERY · LEASE BREAKER → RANK 10` — the
+id with underscores swapped for spaces. THE DIRECTIVE was `DIRECTIVE → RANK 5`. Clearing a gate
+pushed `CHALLENGE CLEARED · DIRECTIVE R5`, not the challenge. The stamp beside it already says
+THE DIRECTIVE.
+
+**What changed.** `masteryRankLine` and `challengeClearedLine` take the tracker ids and print the
+manifest name (and the challenge text). The CRT interpolates those.
+
+**Proof.** `tests/mastery.test.ts`: `lease_breaker:r10` is `LEASE-BREAKER → RANK 10`;
+`directive:r5` is `THE DIRECTIVE → RANK 5` and `THE DIRECTIVE · 8 HEADSHOT KILLS`. Source must
+call the helpers. Mutation: rank helper reverts to `replace(":r"` — 1 fail; game.ts interpolates
+the id again — 1 fail.
+
 ## Stage 218 — Directive chips were named THE CHOKE
 
 **Goal.** Stage 109 taught the rack not to label THE DIRECTIVE as THE. Stage 217 taught the stamp

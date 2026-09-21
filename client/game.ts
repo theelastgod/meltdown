@@ -26,6 +26,7 @@ import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { impactRead, landedDamage, WASP_SHOT } from "./hit";
 import { bodyKey, closeLine, closeRead, forgetOldHits, rememberHit, type LandedHit, weaponName } from "./hud/kill";
+import { challengeClearedLine, masteryRankLine } from "@shared/progression/mastery";
 import { threatMarks, type LiveProjectile } from "./hud/threat";
 import { waspLocks, type WaspSeen } from "./vantage";
 import { lookYawPitch } from "./render/feel";
@@ -205,8 +206,8 @@ export class Game {
         this.hud.push(`STAMP · ${l}`, "am");
         this.hud.alert(`◆ ATTESTED — ${l}`, true, 3.5);
       }
-      for (const r of ranks) this.hud.push(`MASTERY · ${r.replace(":r", " → RANK ").replace(/_/g, " ").toUpperCase()}`, "cy");
-      for (const c of challenges) this.hud.push(`CHALLENGE CLEARED · ${c.replace(/_/g, " ").toUpperCase()}`, "cy");
+      for (const r of ranks) this.hud.push(`MASTERY · ${masteryRankLine(r)}`, "cy");
+      for (const c of challenges) this.hud.push(`CHALLENGE CLEARED · ${challengeClearedLine(c)}`, "cy");
       if (lines.length || ranks.length) this.renderer.post.kick(0.6);
     };
     this.file.onIdentity = (f) => this.applyIdentity(f.identityView());
