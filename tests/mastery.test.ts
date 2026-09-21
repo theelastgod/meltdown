@@ -68,6 +68,9 @@ describe("chips and firmwares", () => {
     expect(ok.errors).toEqual([]);
     const wrongWeapon = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { muzzle: "stack_smg:long_barrel" } } }, owned, 50, ranks);
     expect(wrongWeapon.errors.map((e) => e.rule)).toContain("chip-weapon");
+    const weaponKick = wrongWeapon.errors.find((e) => e.rule === "chip-weapon")!;
+    expect(weaponKick.detail).toMatch(/STACK LONG BARREL is a STACK SMG chip/);
+    expect(weaponKick.detail).not.toMatch(/stack_smg:long_barrel/);
     const wrongSocket = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { kinetic: "lease_breaker:long_barrel" } } }, owned, 50, ranks);
     expect(wrongSocket.errors.map((e) => e.rule)).toContain("chip-socket");
     const locked = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { muzzle: "lease_breaker:flash_cut" } } }, owned, 50, ranks); // rank 22

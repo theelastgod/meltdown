@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 235 — The chip-weapon kick named stack_smg:long_barrel
+
+**Goal.** Stage 233 taught the chip-rank kick LEASE-BREAKER FLASH CUT. Putting a Stack SMG LONG
+BARREL on the Lease-Breaker still kicked `stack_smg:long_barrel is a stack_smg chip`.
+
+**What changed.** That detail interpolates `c.name` and `gun(c.weapon)`.
+
+**Proof.** `tests/mastery.test.ts`: the kick is `STACK LONG BARREL is a STACK SMG chip`, not
+`stack_smg:long_barrel`. Mutation: interpolate the id again — 1 fail.
+
 ## Stage 234 — The firmware-rank kick named lease_breaker:three_count
 
 **Goal.** Stage 233 taught the chip-rank kick LEASE-BREAKER FLASH CUT. Flashing THREE-COUNT at

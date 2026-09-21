@@ -158,3 +158,5 @@ one stage.
   → Stage 233
 - The firmware-rank kick named lease_breaker:three_count  
   → Stage 234
+- The chip-weapon kick named stack_smg:long_barrel  
+  → Stage 235
