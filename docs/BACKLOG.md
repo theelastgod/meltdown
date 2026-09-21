@@ -94,3 +94,5 @@ one stage.
   → Stage 201
 - Remote bodies estimated speed from the hitch-capped dt  
   → Stage 202
+- Campaign escort hood and thrown nades were unplated  
+  → Stage 203

@@ -105,8 +105,11 @@ export class ArsenalFx {
     smoke: new THREE.MeshStandardMaterial({ color: 0x3a4250, roughness: 0.7 }),
     emp: new THREE.MeshStandardMaterial({ color: 0x142230, emissive: PALETTE.cyan, emissiveIntensity: 0.5 }),
   });
-
-  constructor(private scene: THREE.Scene) {}
+  constructor(private scene: THREE.Scene) {
+    bindPlate(this.projMats.frag, "tex_weapon_dark");
+    bindPlate(this.projMats.smoke, "tex_weapon_dark");
+    bindPlate(this.projMats.emp, "tex_metal");
+  }
 
   /** live explosion light intensities — the 60 Hz / 144 Hz guard reads these */
   blastLights(): number[] {

@@ -147,10 +147,14 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
       "tex_desk", "tex_dummy", "tex_facade_amber", "tex_facade_cyan", "tex_glass", "tex_kernel_hull",
       "tex_lamp", "tex_nameplate", "tex_pavement", "tex_rug", "tex_scaffold", "tex_tile_metro",
       "tex_vent", "tex_asphalt_2", "tex_pipe", "tex_grate", "tex_cone_alt",
-      "tex_wasp_hull", "tex_mech_hull", "tex_kiosk_crt", "tex_wet_cobble",
+      "tex_wasp_hull", "tex_mech_hull", "tex_kiosk_crt", "tex_wet_cobble", "tex_cloak",
     ]) {
       expect(src, id).toContain(`"${id}"`);
     }
+    const campaign = readFileSync(new URL("../client/render/campaign.ts", import.meta.url), "utf8");
+    expect(campaign).toMatch(/bindPlate\(hoodMat, "tex_cloak"\)/);
+    const weapons = readFileSync(new URL("../client/render/weapons.ts", import.meta.url), "utf8");
+    expect(weapons).toMatch(/bindPlate\(this\.projMats\.frag, "tex_weapon_dark"\)/);
   });
 });
 

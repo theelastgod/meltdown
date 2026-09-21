@@ -46,7 +46,9 @@ export class CampaignFx {
     const body = new THREE.Mesh(new THREE.CapsuleGeometry(MOVE.capsuleRadius - 0.02, MOVE.standHeight - MOVE.capsuleRadius * 2, 4, 10), mat);
     body.position.y = MOVE.standHeight / 2;
     this.escort.add(body);
-    const hood = new THREE.Mesh(new THREE.ConeGeometry(MOVE.capsuleRadius + 0.06, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0x120c04, roughness: 0.9 }));
+    const hoodMat = new THREE.MeshStandardMaterial({ color: 0x120c04, roughness: 0.9 });
+    bindPlate(hoodMat, "tex_cloak");
+    const hood = new THREE.Mesh(new THREE.ConeGeometry(MOVE.capsuleRadius + 0.06, 0.5, 8), hoodMat);
     hood.position.y = MOVE.standHeight - 0.05;
     this.escort.add(hood);
     const canvas = document.createElement("canvas");

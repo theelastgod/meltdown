@@ -616,7 +616,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
         break;
       }
       case "post":
-        batch.box(b, M.metal);
+        batch.box(b, M.pipe);
         if (sy > 6) neon.box(0.06, sy - 1, 0.06, b.max.x + 0.02, cy, b.max.z + 0.02, PALETTE.cyan); // monorail posts carry a light line
         break;
       case "gate": {

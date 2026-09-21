@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 202, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 203, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 202 on this branch (remote pose uses rawDt) |
-| Next stage number | **203** |
+| HEAD | Stage 203 on this branch (escort hood and nades plated) |
+| Next stage number | **204** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1027 across 115 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 203 is next
+## 6. Stage 204 is next
 
-Stage 202 passed rawDt into poseRemotes. Next is whatever a player would notice. Do not loosen
-fairness.
+Stage 203 plated the escort hood and thrown nades. Next is whatever a player would notice. Do not
+loosen fairness.
 
 ---
 

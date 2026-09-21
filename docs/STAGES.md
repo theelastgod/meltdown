@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 203 — The escort's hood and thrown nades were unplated
+
+**Goal.** Stage 200 bound leftover city plates. The campaign escort's body wore `tex_crowd_coat`
+and its hood stayed a flat cone. Frag/smoke/emp nades were unmapped steel.
+
+**What changed.** Hood `tex_cloak`. Frag and smoke `tex_weapon_dark`, EMP `tex_metal`. Posts use
+the pipe plate.
+
+**Proof.** `tests/assets.test.ts` lists `tex_cloak` in renderer sources. Mutation: hood
+constructor omits bindPlate — 1 fail if the id is dropped from campaign.ts.
+
 ## Stage 202 — Remote bodies estimated speed on the capped clock
 
 **Goal.** Stage 193 divided the local landing by rawDt so a hitch did not slam the camera.
