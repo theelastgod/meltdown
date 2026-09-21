@@ -148,6 +148,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
       "tex_lamp", "tex_nameplate", "tex_pavement", "tex_rug", "tex_scaffold", "tex_tile_metro",
       "tex_vent", "tex_asphalt_2", "tex_pipe", "tex_grate", "tex_cone_alt",
       "tex_wasp_hull", "tex_mech_hull", "tex_kiosk_crt", "tex_wet_cobble", "tex_cloak",
+      "tex_cable",
     ]) {
       expect(src, id).toContain(`"${id}"`);
     }
@@ -156,6 +157,8 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     const weapons = readFileSync(new URL("../client/render/weapons.ts", import.meta.url), "utf8");
     expect(weapons).toMatch(/bindPlate\(this\.projMats\.frag, "tex_weapon_dark"\)/);
     expect(weapons).toMatch(/bindPlate\(this\.projMats\.phage, "skin_phage_plate"\)/);
+    const city = readFileSync(new URL("../client/render/city.ts", import.meta.url), "utf8");
+    expect(city).toMatch(/bindPlate\(M\.railMg, "tex_cable"\)/);
   });
 });
 

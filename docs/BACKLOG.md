@@ -102,3 +102,5 @@ one stage.
   → Stage 205
 - A worn catalog plate never reached the body trim or a teammate's strip  
   → Stage 206
+- Pedestrian rails were a flat magenta box; `tex_cable` sat unused  
+  → Stage 207

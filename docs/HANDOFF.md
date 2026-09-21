@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 206, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 207, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 206 on this branch (catalog plates reach the body trim) |
-| Next stage number | **207** |
+| HEAD | Stage 207 on this branch (pedestrian rails wear tex_cable) |
+| Next stage number | **208** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1041 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 207 is next
+## 6. Stage 208 is next
 
-Stage 206 put the worn catalog plate on the body trim and on remote strips. Next is whatever a
-player would notice. Do not loosen fairness. `tex_cable` is still a named leftover plate with no
-mesh.
+Stage 207 bound leftover `tex_cable` to the pedestrian rails. Next is whatever a player would
+notice. Do not loosen fairness. The hub's Chapter III nameplate is still an unplated brown box.
 
 ---
 

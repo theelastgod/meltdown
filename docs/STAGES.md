@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 207 — Pedestrian rails were a flat magenta box
+
+**Goal.** Stage 200 bound leftover city plates. `tex_cable` was on disk — wet conduit, cyan
+markers, magenta neon in the rain — and `dressLevel` never named it. The clip's pedestrian rail
+(`rail` tags: posts and a top bar) stayed `MeshBasicMaterial` magenta with no map.
+
+**What changed.** `bindPlate(M.railMg, "tex_cable")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call and lists `tex_cable` with the leftover ids.
+Mutation: the call omitted — 1 fail.
+
 ## Stage 206 — The catalog plate never reached the body the city sees
 
 **Goal.** Stage 55 bound a worn skin's plate to the first-person viewmodel strip. The default camera
