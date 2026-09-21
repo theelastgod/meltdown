@@ -1641,6 +1641,28 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 188 — Chip lines quoted the template, not the mods
+
+**Goal.** Every chip is a template remapped per weapon: the hammer's spread benefits are ×0.7,
+the SMG's spread benefits become recoil, the Clockeater's fire-rate benefits become reload,
+then `settle()` rescales the costs. The kit panel printed `t.line` verbatim, with one rewrite
+for Clockeater fire-rate. CHOKE on the hammer said −12% spread and delivered −8.5%. CHOKE on
+the SMG said −12% spread and delivered −12% recoil. COUNTERWEIGHT on the SMG sold a cone it
+does not move.
+
+Measured: 31 named percentages across the 160 chips did not match a settled mod.
+
+**What changed.** `formatChipLine` builds the line from the settled benefits and costs. The
+template string is no longer shown. `lintChipSchema` `line-matches-mods` rebuilds the line
+and fails if they differ.
+
+Did not retune the ledger-node lines (item 15) or firmware damage rounding (item 12). Those
+are other tables.
+
+**Proof.** `tests/chiptrade.test.ts`: hammer CHOKE is "−8.5% spread / +8.5% recoil"; SMG CHOKE
+is "−12% recoil / +12% spread"; SMG COUNTERWEIGHT does not say spread. Mutation: lines back
+to `${t.name}: ${t.line}` — 5 fail, including the shipped-manifest lint.
+
 ## Stage 187 — OVERCHARGE sold a pierce the stock rail already has
 
 **Goal.** OVERCHARGE's line was "+8% charge time, +8% damage, pierces cover". Stock LONGWAVE

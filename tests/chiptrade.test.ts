@@ -62,9 +62,42 @@ describe("the conversion is scoped to the weapon that needs it", () => {
   });
 
   it("keeps a multi-part chip's other half intact", () => {
-    // FLASH CUT is "−8% spread, quieter / +8% recoil, −4.5% reload": only the recoil pair collided
+    // FLASH CUT on the SMG converted the spread benefit to recoil; the quieter half stayed
     const c = CHIPS.find((x) => x.id === "stack_smg:flash_cut")!;
     expect(c.benefits.map((b) => b.stat).sort()).toEqual(["droneDetect", "recoil"]);
     expect(c.costs.map((k) => k.stat).sort()).toEqual(["reloadSpeed", "spread"]);
+  });
+});
+
+describe("a chip line is the mods it applies (Stage 188)", () => {
+  it("the hammer's CHOKE prints the scaled cone, not the template −12%", () => {
+    const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
+    expect(c.benefits).toEqual([{ stat: "spread", delta: -0.085 }]);
+    expect(c.costs).toEqual([{ stat: "recoil", delta: 0.085 }]);
+    expect(c.line).toBe("CHOKE: −8.5% spread / +8.5% recoil");
+    expect(c.line).not.toMatch(/−12%/);
+  });
+
+  it("the SMG's CHOKE names recoil, not the spread it no longer has", () => {
+    const c = CHIPS.find((x) => x.id === "stack_smg:choke")!;
+    expect(c.line).toBe("CHOKE: −12% recoil / +12% spread");
+    expect(c.line).not.toMatch(/spread \//);
+  });
+
+  it("the SMG's COUNTERWEIGHT does not sell a cone it does not move", () => {
+    const c = CHIPS.find((x) => x.id === "stack_smg:counterweight")!;
+    expect(c.benefits.every((b) => b.stat === "recoil")).toBe(true);
+    expect(c.line).not.toMatch(/spread/);
+    expect(c.line).toMatch(/recoil/);
+  });
+
+  it("every shipped line rebuilds from the settled mods", () => {
+    expect(lintChipSchema().filter((v) => v.rule === "line-matches-mods")).toEqual([]);
+  });
+
+  it("and the lint fires when a line is the template the mods left behind", () => {
+    const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
+    const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };
+    expect(lintChipSchema([lying]).map((v) => v.rule)).toContain("line-matches-mods");
   });
 });

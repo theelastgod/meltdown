@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Twenty have since been fixed (Stages 168–187) and
+turned out to be the same finding reported twice. Twenty-one have since been fixed (Stages 168–188) and
 are listed at the foot of this file with the commit that closed them.
 
-The **11 below are open**. Every one has been read in the source — none is a hunch.
+The **8 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -17,31 +17,6 @@ stable ids, not a queue.
 
 
 ## Weapons and firmware
-
-### 11. REPO HAMMER chip lines print the un-scaled template numbers; every spread chip on that weapon is ~30% weaker than its text
-
-`shared/manifest/chips.ts:104`
-
-**What the code promises.** chips.ts:96-118 builds each weapon's chip from a shared template and then prints `line` verbatim
-in the GHOSTFILE kit panel (client/file.ts:777). For the REPO HAMMER those lines read "CHOKE:
-−12% spread / +12% recoil", "HEAVY BARREL: +3% range, −5% spread / −9% ADS strafe", "FLASH CUT:
-−8% spread, quieter / +8% recoil, −4.5% reload", "COUNTERWEIGHT: −10% spread, −4% recoil / −1.5%
-move, −10% ADS strafe".
-
-**What it does.** SPREAD_SCALE (chips.ts:79) multiplies the hammer's spread benefits by 0.7 and settle() then
-rescales the costs to match, but chips.ts:116 rewrites the line only for the clockeater's
-fireRate→reload substitution. Real values: choke −8.5% spread / +8.5% recoil; heavy_barrel −3.5%
-spread / −7.5% ADS strafe; flash_cut −5.5% spread / +6.5% recoil, −3.75% reload; counterweight
-−7% spread / −1.25% move, −7.75% ADS strafe.
-
-**Measured.** npx tsx: `chipById("repo_hammer:choke")` → benefits [{spread,-0.085}], costs [{recoil,0.085}],
-line "CHOKE: −12% spread / +12% recoil". Compare chipById("lease_breaker:choke") → ±0.12 with
-the identical line.
-
-**What a player sees.** A REPO HAMMER player comparing chips in the kit panel reads numbers 27-30% larger than what they
-get — they pick between a chip whose real spread benefit is −3.5% and one that claims −5%, or
-plan a pellet-cone build around −12% that is actually −8.5%. The costs are overstated too, so
-the ledger shown does not match the ledger applied.
 
 ### 12. Firmware damage lines drift from the integers the code produces, and DOUBLE BARREL hides a −33% magazine cost
 
@@ -70,65 +45,7 @@ land on 9 damage per pellet. MEASURED buyers get 3.8 percentage points less dama
 promised.
 
 
-## Ledger items and chip lines
-
-### 13. Four STACK SMG chip lines say "spread" where the chip changes recoil; COUNTERWEIGHT delivers 3.4x the recoil it advertises
-
-`shared/manifest/chips.ts:116`
-
-**What the code promises.** chips.ts:116 builds each chip's player-facing line. It contains an explicit rewrite for one stat
-substitution — the clockeater's fireRate→reloadSpeed swap — replacing "+2% fire rate" with the
-computed "+6.25% reload". No such rewrite exists for the spread→recoil substitution declared at
-chips.ts:80.
-
-**What it does.** Every STACK SMG chip whose template carries a spread benefit ships a line naming a stat the chip
-does not touch: stack_smg:choke (template chips.ts:51) "−12% spread" → recoil -0.12;
-stack_smg:heavy_barrel (chips.ts:53) "+3% range, −5% spread" → range +0.03, recoil -0.05;
-stack_smg:flash_cut (chips.ts:54) "−8% spread" → recoil -0.08; stack_smg:counterweight
-(chips.ts:60) "−10% spread, −4% recoil" → benefits [recoil -0.10, recoil -0.04]. COUNTERWEIGHT
-is the worst: it is not a cancellation but a doubling — applyMods compounds 0.90 * 0.96 = 0.864,
-so the chip delivers −13.6% recoil where its line claims −4% recoil and −10% spread. The SMG's
-spread is left at exactly 1.0 by all four.
-
-**Measured.** For each chip in CHIPS, assert every percentage named in `line` is present in `[...benefits,
-...costs]` on the stat the words name. For stack_smg:counterweight, kitFor gives mods.spread ===
-1 and mods.recoil === 0.864; the line asserts spread === 0.90 and recoil === 0.96.
-
-**What a player sees.** The SMG's whole chip identity as printed is a lie about which knob moves. A player choosing
-COUNTERWEIGHT to tighten the hip cone for 25-40 m fights gets no cone change at all, while
-unknowingly getting three times the recoil control the line offers; a player comparing
-COUNTERWEIGHT ("−10% spread, −4% recoil") against COMPENSATOR ("−12% recoil / +12% spread") on
-the SMG is comparing two descriptions of which only one is true of the SMG.
-
-### 14. Every REPO HAMMER spread chip quotes the unscaled template number: CHOKE says −12% and delivers −8.5%
-
-`shared/manifest/chips.ts:79`
-
-**What the code promises.** SPREAD_SCALE (chips.ts:79) scales the repo_hammer's spread benefits by 0.7, and settle()
-(chips.ts:88-94) then rescales that chip's costs by k = benefits/costs to keep the ledger
-balanced. The lines are carried through verbatim from TEMPLATES by chips.ts:116.
-
-**What it does.** The scaled numbers and the printed numbers diverge on four hammer chips. repo_hammer:choke —
-line "−12% spread / +12% recoil", actual spread -0.085, recoil +0.085 (kitFor: spread = 0.915,
-recoil = 1.085). repo_hammer:heavy_barrel (chips.ts:53) — line "+3% range, −5% spread / −9% ADS
-strafe", actual spread -0.035, adsMove -0.075. repo_hammer:flash_cut (chips.ts:54) — line "−8%
-spread ... +8% recoil, −4.5% reload", actual spread -0.055, recoil +0.065, reloadSpeed -0.0375.
-repo_hammer:counterweight (chips.ts:60) — line "−10% spread, −4% recoil / −1.5% move, −10% ADS
-strafe", actual spread -0.07, moveSpeed -0.0125, adsMove -0.0775. Separately, settle()'s
-rounding at chips.ts:93 shifts QUICK SEAT (chips.ts:61) on ALL EIGHT weapons: line "+20% reload
-/ +14% recoil, +9% spread", actual costs recoil +0.1425, spread +0.0925.
-
-**Measured.** kitFor({...DEFAULT_LOADOUT, primary:"repo_hammer",
-chips:{repo_hammer:{muzzle:"repo_hammer:choke"}}}).repo_hammer.mods — line asserts spread ===
-0.88, recoil === 1.12; observed spread === 0.915, recoil === 1.085. Generalised: for every chip,
-each "N%" in `line` must equal 100*|delta| of a mod on the stat named beside it; 12 of 160 chips
-fail today.
-
-**What a player sees.** The REPO HAMMER is the pellet weapon, where cone size is the whole weapon. A hammer player
-buying CHOKE for the advertised −12% cone gets −8.5% — at the hammer's 0.05 rad cone and 15 m, a
-pellet spread radius of 0.686 m instead of the promised 0.660 m — while paying only +8.5% recoil
-instead of the +12% the line warns about. Every number in the trade is wrong in both directions,
-so the player cannot predict the chip from its only description.
+## Ledger items
 
 ### 15. 13 ledger node lines print the pre-reconciliation cost; COLLATERAL says −20% reload and applies −23.5%
 
@@ -371,3 +288,9 @@ stricter than the rule it guards.
   → Stage 186
 - OVERCHARGE sells "pierces cover", but the stock rail already pierces bodies and no rail passes a wall  
   → Stage 187
+- REPO HAMMER chip lines print the un-scaled template numbers  
+  → Stage 188
+- Four STACK SMG chip lines say "spread" where the chip changes recoil  
+  → Stage 188
+- Every REPO HAMMER spread chip quotes the unscaled template number  
+  → Stage 188

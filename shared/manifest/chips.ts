@@ -6,7 +6,7 @@
  * only while that weapon is held. ~120 at launch: 20 per weapon.
  */
 import { WEAPON_LIST, type WeaponId } from "../weapons/manifest";
-import { isBenefit, modWeight, type StatMod } from "./stats";
+import { isBenefit, modWeight, type StatKey, type StatMod } from "./stats";
 
 export type Socket = "muzzle" | "kinetic" | "protocol";
 
@@ -93,6 +93,44 @@ function settle(benefits: StatMod[], costs: StatMod[], mechanic: boolean): StatM
   return costs.map((x) => ({ stat: x.stat, delta: Math.round(x.delta * k * 400) / 400 }));
 }
 
+/** Player-facing names for the stats a chip line is allowed to quote. */
+const STAT_LINE: Partial<Record<StatKey, string>> = {
+  spread: "spread",
+  recoil: "recoil",
+  range: "range",
+  adsMove: "ADS strafe",
+  reloadSpeed: "reload",
+  fireRate: "fire rate",
+  moveSpeed: "move",
+  droneDetect: "detection",
+  footstep: "footsteps",
+  flipRate: "flip",
+  shieldRegen: "regen",
+  headMult: "headshot",
+};
+
+function fmtPct(delta: number): string {
+  const p = Math.round(delta * 10000) / 100;
+  const body = Number.isInteger(p) ? String(Math.abs(p)) : String(Math.abs(p));
+  return `${delta > 0 ? "+" : delta < 0 ? "−" : ""}${body}%`;
+}
+
+function fmtMods(mods: readonly StatMod[]): string {
+  return mods.map((x) => `${fmtPct(x.delta)} ${STAT_LINE[x.stat] ?? x.stat}`).join(", ");
+}
+
+const MECHANIC_LEAD: Record<ChipMechanic, string> = {
+  contagion_kill: "kills pull the nearest node for 4 s",
+  escrow_kill: "kills restore 10 shield",
+  vantage_bane: "bonus damage to VANTAGE units",
+};
+
+/** The kit panel reads this. It is built from the settled mods, never from the template. */
+export function formatChipLine(name: string, benefits: readonly StatMod[], costs: readonly StatMod[], mechanic?: ChipMechanic): string {
+  const trade = `${fmtMods(benefits)} / ${fmtMods(costs)}`;
+  return mechanic ? `${name}: ${MECHANIC_LEAD[mechanic]}, ${trade}` : `${name}: ${trade}`;
+}
+
 export const CHIPS: ChipDef[] = WEAPON_LIST.flatMap((w) =>
   TEMPLATES.map((t) => {
     const k = SPREAD_SCALE[w.id] ?? 1;
@@ -125,7 +163,7 @@ export const CHIPS: ChipDef[] = WEAPON_LIST.flatMap((w) =>
       benefits,
       costs,
       mechanic: t.mechanic,
-      line: `${t.name}: ${FIRERATE_TO_RELOAD.has(w.id) && t.benefits.some((x) => x.stat === "fireRate") ? t.line.replace(/\+[\d.]+% fire rate/, `+${(benefits.find((x) => x.stat === "reloadSpeed")!.delta * 100).toFixed(2).replace(/\.?0+$/, "")}% reload`) : t.line}`,
+      line: formatChipLine(t.name, benefits, costs, t.mechanic),
     };
   }),
 );
@@ -154,6 +192,9 @@ export function lintChipSchema(chips: readonly ChipDef[] = CHIPS): { itemId: str
         out.push({ itemId: c.id, rule: "same-stat-trade", detail: `${b.stat}: benefit ${b.delta} against cost ${k.delta} — these cancel to ${(b.delta + k.delta).toFixed(4)}` });
       }
     }
+    const templateName = c.name.replace(/^\S+\s/, "");
+    const rebuilt = formatChipLine(templateName, c.benefits, c.costs, c.mechanic);
+    if (c.line !== rebuilt) out.push({ itemId: c.id, rule: "line-matches-mods", detail: `printed "${c.line}" · mods "${rebuilt}"` });
   }
   return out;
 }
