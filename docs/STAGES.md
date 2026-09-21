@@ -1641,6 +1641,15 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 213 — Crowd chest lamps were a flat amber box
+
+**Goal.** Street lamps wear `tex_lamp`. Each pedestrian's chest lease-light was `MeshBasicMaterial`
+amber with no map, so the crowd was plated coats and cloaks with a glowing cube on the sternum.
+
+**What changed.** `bindPlate(lampMat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `life.ts`. Mutation: the call omitted — 1 fail.
+
 ## Stage 212 — The kill stamp still hyphenated the gun
 
 **Goal.** Stage 123 made the event log print `weaponName` — REPO HAMMER, STACK SMG, LEASE-BREAKER.

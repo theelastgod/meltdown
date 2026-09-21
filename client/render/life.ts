@@ -75,6 +75,7 @@ export class Crowd {
     bindPlate(dark, "tex_crowd_coat");
     bindPlate(hoodMat, "tex_cloak");
     bindPlate(brollyMat, "tex_brolly");
+    bindPlate(lampMat, "tex_lamp");
     this.body = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.3, 1.0, 3, 8), dark, count);
     this.hood = new THREE.InstancedMesh(new THREE.ConeGeometry(0.36, 0.5, 7), hoodMat, count);
     this.lamp = new THREE.InstancedMesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), lampMat, count);

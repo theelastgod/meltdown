@@ -114,3 +114,5 @@ one stage.
   → Stage 211
 - The kill stamp hyphenated the weapon id (REPO-HAMMER, PHAGE, DIRECTIVE)  
   → Stage 212
+- Crowd chest lamps were an unplated amber box  
+  → Stage 213
