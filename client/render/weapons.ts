@@ -91,7 +91,7 @@ export function buildViewmodel(id: WeaponId): THREE.Group {
 /** World-space effects: beams, explosions, smoke, EMP rings, projectiles, wasps, mechs. */
 export class ArsenalFx {
   private beams: { mesh: THREE.Mesh; born: number; life: number; mat: THREE.MeshBasicMaterial }[] = [];
-  private blasts: { mesh: THREE.Mesh; light: THREE.PointLight; born: number; life: number; mat: THREE.MeshBasicMaterial; color: THREE.Color }[] = [];
+  private blasts: { mesh: THREE.Mesh; light: THREE.PointLight; born: number; life: number; peak: number; mat: THREE.MeshBasicMaterial; color: THREE.Color }[] = [];
   private clouds = new Map<number, { group: THREE.Group; mats: THREE.MeshBasicMaterial[]; born: number }>();
   private projectiles = new Map<number, THREE.Mesh>();
   private wasps = new Map<number, { group: THREE.Group; rotors: THREE.Mesh[]; light: THREE.PointLight }>();
@@ -107,6 +107,11 @@ export class ArsenalFx {
   });
 
   constructor(private scene: THREE.Scene) {}
+
+  /** live explosion light intensities — the 60 Hz / 144 Hz guard reads these */
+  blastLights(): number[] {
+    return this.blasts.map((b) => b.light.intensity);
+  }
 
   beam(from: Vec3, to: Vec3, color: number, radius = 0.035, life = 0.45): void {
     const a = new THREE.Vector3(from.x, from.y, from.z);
@@ -127,10 +132,11 @@ export class ArsenalFx {
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), mat);
     mesh.position.set(pos.x, pos.y, pos.z);
     mesh.scale.setScalar(0.2);
-    const light = new THREE.PointLight(color, big ? 120 : 40, radius * 4, 1.6);
+    const peak = big ? 120 : 40;
+    const light = new THREE.PointLight(color, peak, radius * 4, 1.6);
     light.position.set(pos.x, pos.y + 0.3, pos.z);
     this.scene.add(mesh, light);
-    this.blasts.push({ mesh, light, born: this.clock, life: big ? 0.45 : 0.3, mat, color: c });
+    this.blasts.push({ mesh, light, born: this.clock, life: big ? 0.45 : 0.3, peak, mat, color: c });
   }
 
   cloud(id: number, pos: Vec3, radius: number): void {
@@ -328,7 +334,8 @@ export class ArsenalFx {
       } else {
         b.mesh.scale.setScalar(0.3 + t * 3.2);
         b.mat.opacity = (1 - t) * 0.9;
-        b.light.intensity *= 0.85;
+        // same clock as the sphere: a per-frame 0.85 made 144 Hz delete the light before 60 Hz did
+        b.light.intensity = b.peak * (1 - t);
       }
     }
     for (const c of this.clouds.values()) {
