@@ -52,6 +52,7 @@ describe("city districts", () => {
       }
     }
   });
+  // 15 s: under a full suite this walk has taken ~8 s on this machine and hit the 5 s default
   it("the elevated walkway is reachable up its stairs (steps, no mantle)", () => {
     for (const spec of DISTRICT_SPECS) {
       const L = generateDistrict(spec);
@@ -62,7 +63,7 @@ describe("city districts", () => {
       expect(path, spec.id).not.toBeNull();
       expect(path![path!.length - 1]!.y).toBeCloseTo(walk.max.y, 1);
     }
-  });
+  }, 15_000);
   it("a district plays: the wake starts, a Blank walks a street, and the world hashes deterministically", () => {
     const mk = () => new World(levelById("lease_row"), { ai: true, seed: 9 });
     const w1 = mk();

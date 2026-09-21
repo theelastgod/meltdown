@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-20, at Stage 179, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-20, at Stage 183, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 179 on this branch (slide-jump kill flag) |
-| Next stage number | **183** |
+| HEAD | Stage 183 on this branch (rejoin remainder knock) |
+| Next stage number | **184** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 995 across 109 files, `npm test` |
+| Unit tests | 1003 across 110 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -178,7 +178,7 @@ now passed in sequence six sweeps running. If it fails, run it alone before conc
 
 ## 5. The week's work
 
-`docs/BACKLOG.md` has **20 open findings**, each read in the source, grouped by area and ordered
+`docs/BACKLOG.md` has **16 open findings**, each read in the source, grouped by area and ordered
 roughly by what a player would notice. It also lists the twelve already closed, with commits — check
 that list before starting anything, and mark your own as you close them.
 
@@ -189,8 +189,8 @@ HUD/readout:
 | | Area | Suggested |
 | --- | --- | --- |
 | Mon | sim-core | Stage 179 shipped (`fromSlideJump`) |
-| Tue | campaign | **the m1 terminal hold with no anchor**; or the m2 informant silently deleting four gigs and the only source of the CLOCKEATER |
-| Wed | netcode / campaign | the rejoin knock that gives up at 31.5 s of a 60 s window; or `THREAT_LINES` off by one against the mech threshold |
+| Tue | campaign | Stages 180–181 (m1 hold; Marrow on informant turn) |
+| Wed | netcode / campaign | Stages 182–183 (Threat 5 mech; rejoin remainder knock) |
 | Thu | economy | the stranded-units pair — note this is *two* findings tangled together, and one of them prints banked units as $CAPITAL |
 | Fri | audio-render | the per-frame explosion light fade, or the landing dip divided by a capped dt — both are frame-rate bugs of the Stage 156/164 family |
 
@@ -203,10 +203,10 @@ Deviate freely. The ordering is a suggestion; the method is not.
 
 ---
 
-## 6. Stage 183 is next
+## 6. Stage 184 is next
 
-Stage 182 made Threat 5 actually spawn the mech it announces. Next: the rejoin knock that gives
-up at 31.5 s of a 60 s window, or detectMult never reaching the wasps.
+Stage 183 spends the rejoin remainder so the last knock lands at 60 s, not 31.5 s. Next:
+`detectMult` never reaching the wasps, or the stranded-units pair.
 
 ---
 

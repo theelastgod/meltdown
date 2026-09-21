@@ -2,10 +2,10 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Fifteen have since been fixed (Stages 168–182) and
+turned out to be the same finding reported twice. Sixteen have since been fixed (Stages 168–183) and
 are listed at the foot of this file with the commit that closed them.
 
-The **17 below are open**. Every one has been read in the source — none is a hunch.
+The **16 below are open**. Every one has been read in the source — none is a hunch.
 
 They are not a work order. The standing method is to take one, **verify it yourself before building
 anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
@@ -14,37 +14,6 @@ first written once measured, and one ("stranded units") is two findings tangled 
 
 Ordered roughly by how much a player would notice, not by how easy they are. Item numbers are
 stable ids, not a queue.
-
-
-## Netcode
-
-### 1. The rejoin knock gives up after 31.5 s of a 60 s grace window and then tells the player the room let the seat go
-
-`shared/net/rejoin.ts:28`
-
-**What the code promises.** shared/net/rejoin.ts:10-12: "The client now knocks, on a doubling wait, for as long as the room
-keeps the seat. The waits are a rule so the two sides cannot drift: the room's default grace and
-the client's last try are the same number." REJOIN_GRACE_SECONDS = 60 (rejoin.ts:16) and
-server/room.ts:1005 holds the seat for `rejoinGraceSeconds * 1000` ms.
-
-**What it does.** `rejoinDelay` stops as soon as the CUMULATIVE spend `500 * (2**n - 1)` exceeds the window, so
-try 7 (at 63.5 s) is refused and the plan ends with try 6 at t = 31.5 s. `rejoinTries()` returns
-6. The room still holds the seat for another 28.5 s — 47.5% of the window is never used.
-client/game.ts:442-446 then prints `LINK LOST · THE ROOM HAS LET THE SEAT GO AFTER 6 TRIES` and
-returns, and nothing re-arms the knock: there is no player-facing reconnect control
-(client/main.ts:357 `reconnect` is only on the `window.__game` probe surface).
-
-**Measured.** Evaluate `rejoinDelay(n)` for n = 1..7 and accumulate: knocks land at 0.5, 1.5, 3.5, 7.5, 15.5,
-31.5 s, and `rejoinDelay(7)` is null; `rejoinTries() === 6`. Compare 31.5 s against
-`REJOIN_GRACE_SECONDS * 1000` = 60000 ms and against server/room.ts:1005. I ran this (scratch at
-/tmp/rejoin.ts): "client's last knock at t = 31.5 s; window left unused = 28.5 s". End-to-end:
-drop a socket, restore the link at t = 45 s, and observe that the room still reports the seat
-(`players: 1, connected: 0`) while the client has stopped knocking.
-
-**What a player sees.** Any outage between 31.5 s and 60 s — an ordinary wifi handover or a tunnel — ends the player's
-match even though the room would have taken them straight back into their seat with their kills,
-weapon state and token intact. They are told the room dropped them, which is false; their only
-recourse is a page reload, which joins as a brand-new seat and resets the round.
 
 
 ## Campaign
@@ -554,3 +523,5 @@ stricter than the rule it guards.
   → Stage 181
 - THREAT_LINES is off by one against the mech threshold: Threat 5 announces a mech while extraMechs is 0  
   → Stage 182
+- The rejoin knock gives up after 31.5 s of a 60 s grace window and then tells the player the room let the seat go  
+  → Stage 183

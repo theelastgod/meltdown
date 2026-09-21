@@ -23,23 +23,33 @@ export const assetStats = { requested: 0, loaded: 0, failed: 0 };
 
 function load(def: AssetDef): Promise<THREE.Texture | null> {
   return new Promise((resolve) => {
-    const loader = new THREE.TextureLoader();
-    loader.load(
-      assetUrl(def),
-      (tex) => {
-        // colour maps are authored in sRGB; the renderer works in linear
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.anisotropy = 1;
-        tex.needsUpdate = true;
-        assetStats.loaded++;
-        resolve(tex);
-      },
-      undefined,
-      () => {
-        assetStats.failed++;
-        resolve(null);
-      },
-    );
+    const fail = () => {
+      assetStats.failed++;
+      resolve(null);
+    };
+    try {
+      // TextureLoader needs a document. Without one, fail soft — same as a 404.
+      if (typeof document === "undefined") {
+        fail();
+        return;
+      }
+      const loader = new THREE.TextureLoader();
+      loader.load(
+        assetUrl(def),
+        (tex) => {
+          // colour maps are authored in sRGB; the renderer works in linear
+          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.anisotropy = 1;
+          tex.needsUpdate = true;
+          assetStats.loaded++;
+          resolve(tex);
+        },
+        undefined,
+        fail,
+      );
+    } catch {
+      fail();
+    }
   });
 }
 
@@ -54,7 +64,10 @@ export function texture(id: string): Promise<THREE.Texture | null> {
   if (hit) return hit;
   const def = assetById(id);
   assetStats.requested++;
-  const p = def && def.kind === "texture" ? load(def) : Promise.resolve(null);
+  const p = (def && def.kind === "texture" ? load(def) : Promise.resolve(null)).catch(() => {
+    assetStats.failed++;
+    return null;
+  });
   cache.set(id, p);
   return p;
 }

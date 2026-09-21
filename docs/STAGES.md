@@ -1641,6 +1641,70 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 183 — The rejoin knock gave up at 31.5 s of a 60 s seat
+
+**Goal.** After a drop, the client knocks on a doubling wait "for as long as the room keeps the
+seat". `REJOIN_GRACE_SECONDS` is 60. `server/room.ts` holds the file for that many milliseconds
+(`now - disconnectedAt > rejoinGraceSeconds * 1000`). The comment on the wait rule says the last
+try and the grace are the same number, so a knock still lands while the seat is there.
+
+`rejoinDelay` refused a try once the geometric sum `500 * (2^n - 1)` would exceed the window.
+Try 7 would land at 63.5 s, so the plan stopped at try 6. Measured on the shipped functions:
+
+| try | wait (ms) | lands at (ms) | unused (ms) |
+| --- | ---: | ---: | ---: |
+| 1 | 500 | 500 | 59500 |
+| 2 | 1000 | 1500 | 58500 |
+| 3 | 2000 | 3500 | 56500 |
+| 4 | 4000 | 7500 | 52500 |
+| 5 | 8000 | 15500 | 44500 |
+| 6 | 16000 | 31500 | 28500 |
+| 7 | null | — | 28500 |
+
+`rejoinTries()` was 6. 47.5% of the hold unused. `client/game.ts` then prints
+`LINK LOST · THE ROOM HAS LET THE SEAT GO AFTER 6 TRIES` and does not knock again. The room
+still has the seat. The existing test encoded this: it asserted the geometric sum of six waits
+was `<= 60000` and the sum of seven was not, which is the halt, not the promise.
+
+**What changed.** `rejoinDelay` walks the waits, doubles while the double fits, and spends the
+remainder on the last try so it lands on the window. Default plan: six doubles, then 28.5 s,
+seventh knock at 60.0 s, try 8 is null. `rejoinTries()` is 7. The HUD line is still the same
+string; it now reports seven tries because it reads the rule.
+
+Did not densify the 28.5 s tail into extra 16 s knocks. That would recover a 40 s outage sooner;
+it is a different shape than "the last try and the grace are the same number".
+
+**Proof.** `tests/rejoin.test.ts` (7): last landing is 60000 ms; a knock never lands after the
+window for grace 0, 1, 5, 15, 60, 120 s; a 1 s window's last knock is at 1000 ms, not 500.
+Typecheck clean. `npm test` 1003/1003 across 110 files. Four lints: fairness PASS (366 builds,
+recorded debt 89, new 0), campaign 0 errors, economy 0, assets 163 / 0 violations.
+
+A 23-probe sweep on this still tree did not finish as a number. The first probe (`stage1`)
+passed its checks then threw `page.goto` 30 s on a second page, npm exited 1, and a vite was
+left on 5199. Later probes inherited that: several printed `N/N checks passed` and then a
+navigation timeout; `probe:cityLife` read 8.4 ticks/s on SwiftShader (the Stage 179 look flake);
+`probe:campaign` stayed on the m1 hold (wasps 5→5) — that is Stage 180's anchor, and the probe
+is the next thing to point at B, not this wait rule. The wrapper killed the sweep at 60 min
+during `probe:body`. Those counts are not this stage's. The unit tests and the four lints are.
+
+Two gates were already red on this tree, not this defect, and would have failed `verify` before
+the probes:
+
+- Stage 180's second `Objective` import in `shared/campaign/lint.ts` made `tsc` fail. Dropped the
+  duplicate.
+- Viewmodel plates call `TextureLoader` from `buildRig` in node tests; no `document`, four
+  unhandled rejections, suite exit 1. `load()` fails soft, same as a 404. The walkway test under
+  suite load (Stage 179) took 7.6 s against a 5 s default; timeout 15 s.
+
+Mutations, fix reverted:
+
+- **A**, geometric-sum gate restored (`spent = 500*(2^n-1)`, refuse when spent > window): **3**
+  fail. Last knock at 31500 not 60000; a 1 s window still ends at 500 ms.
+- **B**, start-of-wait gate (`started < window`, no cap): **3** fail. Last knock at 63500, after
+  the seat; try 2 of a 1 s window lands at 1500 ms.
+
+The existing geometric-sum assertion would have stayed green under A. It was checking the halt.
+
 ## Stage 182 — Threat 5 announced a mech that was not there
 
 **Goal.** THREAT_LINES[5] is "HUNTED · A REPO MECH IS ASSIGNED". `threatProfile` spawned

@@ -9,7 +9,7 @@
  *
  * The client now knocks, on a doubling wait, for as long as the room keeps the seat. The waits are
  * a rule so the two sides cannot drift: the room's default grace and the client's last try are the
- * same number.
+ * same number. Stage 183: the last wait is the remainder of that window, not a refused double.
  */
 
 /** how long the room keeps a disconnected file's seat, in seconds */
@@ -18,14 +18,24 @@ export const REJOIN_GRACE_SECONDS = 60;
 export const REJOIN_FIRST_MS = 500;
 
 /**
- * The wait before the nth rejoin (1-based), or null once the grace window is spent — counting
- * every wait before it, so the last try lands inside the window rather than after it.
+ * The wait before the nth rejoin (1-based), or null once the grace window is spent.
+ *
+ * Waits double, then the last one is the remainder so it lands on the window rather than
+ * refusing the next double (which overshoots) and leaving the second half of the seat unused.
+ * Measured: the geometric-sum gate ended the plan at 31.5 s of a 60 s hold.
  */
 export function rejoinDelay(attempt: number, graceSeconds = REJOIN_GRACE_SECONDS): number | null {
   if (!Number.isInteger(attempt) || attempt < 1) return null;
-  const wait = REJOIN_FIRST_MS * 2 ** (attempt - 1);
-  const spent = REJOIN_FIRST_MS * (2 ** attempt - 1);
-  return spent <= graceSeconds * 1000 ? wait : null;
+  const windowMs = graceSeconds * 1000;
+  let landed = 0;
+  for (let n = 1; n <= attempt; n++) {
+    const remaining = windowMs - landed;
+    if (remaining <= 0) return null;
+    const wait = Math.min(REJOIN_FIRST_MS * 2 ** (n - 1), remaining);
+    if (n === attempt) return wait;
+    landed += wait;
+  }
+  return null;
 }
 
 /** no window is worth more knocks than this, whatever the arithmetic says */

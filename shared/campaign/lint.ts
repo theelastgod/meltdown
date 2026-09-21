@@ -18,7 +18,7 @@
  * `tests/campaign.test.ts` fails the build on any violation.
  */
 import { FACTIONS, type FactionId } from "./factions";
-import { MISSIONS, type MissionDef, type Objective } from "./missions";
+import { MISSIONS, type MissionDef } from "./missions";
 import { SCRIPTS, type ScriptDef } from "./script";
 import { ENDINGS, type Gate } from "./testimony";
 import { resolveSpot } from "./runtime";

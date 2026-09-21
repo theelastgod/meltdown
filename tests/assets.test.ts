@@ -18,6 +18,7 @@ import { reachable } from "./helpers/imports";
 import { ASSETS, ASSET_BUDGET_BYTES, MAX_ASSET_BYTES, MAX_TEXTURE_EDGE, assetById, assetUrl, totalAssetBytes, type AssetDef } from "../shared/assets/manifest";
 import { lintAssets, pngSize } from "../shared/assets/lint";
 import { SKINS } from "../shared/economy/catalog";
+import { disposeAssets, texture } from "../client/render/assets";
 
 const isAssetModule = (f: string) => /shared[\\/]assets[\\/](manifest|lint)\.ts$/.test(f) || /client[\\/]render[\\/]assets\.ts$/.test(f);
 
@@ -125,5 +126,13 @@ describe("a cosmetic may name a texture, and that is all it may name", () => {
 
   it("and every texture a skin names is one the budget knows about", () => {
     for (const s of SKINS) if (s.texture) expect(ASSETS.some((a) => a.id === s.texture)).toBe(true);
+  });
+});
+
+describe("the loader fails soft", () => {
+  it("a request with no document resolves null instead of rejecting", async () => {
+    disposeAssets();
+    await expect(texture("tex_weapon_body")).resolves.toBeNull();
+    disposeAssets();
   });
 });
