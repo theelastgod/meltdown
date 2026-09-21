@@ -147,7 +147,9 @@ export class Tram {
       bindPlate(hullMat, "tex_monorail");
       const body = new THREE.Mesh(new THREE.BoxGeometry(14, 2.6, 2.4), hullMat);
       g.add(body);
-      const windows = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.9, 2.46), new THREE.MeshBasicMaterial({ color: 0xbfefff }));
+      const windowMat = new THREE.MeshBasicMaterial({ color: 0xbfefff });
+      bindPlate(windowMat, "tex_glass");
+      const windows = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.9, 2.46), windowMat);
       windows.position.y = 0.35;
       g.add(windows);
       const strip = new THREE.Mesh(new THREE.BoxGeometry(14.05, 0.08, 2.45), new THREE.MeshBasicMaterial({ color: PALETTE.magenta }));

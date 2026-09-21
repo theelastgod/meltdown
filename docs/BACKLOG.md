@@ -110,3 +110,5 @@ one stage.
   → Stage 209
 - The airship ad panel was a flat magenta slab  
   → Stage 210
+- The monorail window band was an unplated ice box  
+  → Stage 211

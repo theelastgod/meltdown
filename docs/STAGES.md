@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 211 — The monorail's windows were a flat ice box
+
+**Goal.** The tram hull wears `tex_monorail`. The window band was `MeshBasicMaterial` `#bfefff`
+with no map, so a car passing overhead was plated steel with a glowing slab. `tex_glass` already
+dresses shop glass.
+
+**What changed.** `bindPlate(windowMat, "tex_glass")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `life.ts`. Mutation: the call omitted — 1 fail.
+
 ## Stage 210 — The airship's ad panel was a flat magenta slab
 
 **Goal.** The hull already wears `tex_airship`. The 34 m panel under it — the thing you actually
