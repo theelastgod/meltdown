@@ -7,6 +7,7 @@
  */
 import type { StatKey } from "../manifest/stats";
 import { WEAPONS, type WeaponId } from "../weapons/manifest";
+import { itemName } from "../manifest/items";
 import type { Loadout } from "../manifest/loadout";
 import { weekIndex } from "./clock";
 
@@ -55,7 +56,7 @@ export function auditErrors(lo: Loadout, audit: AuditDef, ringOf: (id: string) =
   const gun = (id: WeaponId) => WEAPONS[id]?.name ?? id;
   if (audit.weapons.length) for (const w of [lo.primary, lo.secondary]) if (!audit.weapons.includes(w)) errs.push({ rule: "audit-weapon", detail: `${gun(w)} is not in ${audit.name} (${audit.weapons.map(gun).join(", ")})` });
   if (audit.noKeystone && lo.keystone) errs.push({ rule: "audit-keystone", detail: `${audit.name}: no keystone this week` });
-  if (audit.ringOnly) for (const id of lo.attested) if ((ringOf(id) ?? 0) !== audit.ringOnly) errs.push({ rule: "audit-ring", detail: `${id} is not a ring-${audit.ringOnly} node` });
+  if (audit.ringOnly) for (const id of lo.attested) if ((ringOf(id) ?? 0) !== audit.ringOnly) errs.push({ rule: "audit-ring", detail: `${itemName(id)} is not a ring-${audit.ringOnly} node` });
   return errs;
 }
 

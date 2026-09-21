@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 230 — The RING ONE kick named escrow
+
+**Goal.** Stage 229 taught the weapon kick LEASE-BREAKER. RING ONE still kicked
+`escrow is not a ring-1 node`. The FILE panel already prints ESCROW.
+
+**What changed.** That detail interpolates `itemName(id)`.
+
+**Proof.** `tests/endgame.test.ts`: attested `escrow` on RING ONE matches ESCROW and not
+`escrow is not`. Mutation: interpolate the id again — 1 fail.
+
 ## Stage 229 — The Audit kick named lease_breaker
 
 **Goal.** Stage 228 taught the FILE tab REPO HAMMER. Joining PELLET WEEK with the Lease-Breaker

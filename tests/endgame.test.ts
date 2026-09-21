@@ -80,6 +80,10 @@ describe("audits", () => {
     expect(auditErrors(lo, nk, ringOf).map((e) => e.rule)).toEqual(["audit-keystone"]);
     const r1 = AUDITS.find((x) => x.id === "ring_one")!;
     expect(auditErrors({ ...lo, keystone: null, attested: ["slipfile"] }, r1, ringOf)).toEqual([]);
+    const ringKick = auditErrors({ ...lo, keystone: null, attested: ["escrow"] }, r1, ringOf);
+    expect(ringKick.map((e) => e.rule)).toEqual(["audit-ring"]);
+    expect(ringKick[0]!.detail).toMatch(/ESCROW/);
+    expect(ringKick[0]!.detail).not.toMatch(/^escrow /);
     const ring2 = itemById("slipfile") ? undefined : null;
     void ring2;
     const board = leaderboard([

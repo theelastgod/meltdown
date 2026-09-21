@@ -148,3 +148,5 @@ one stage.
   → Stage 228
 - The Audit kick named lease_breaker  
   → Stage 229
+- The RING ONE kick named escrow  
+  → Stage 230
