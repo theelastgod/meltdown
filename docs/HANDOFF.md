@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 235, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 236, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 235 on this branch (chip-weapon kick names STACK LONG BARREL) |
-| Next stage number | **236** |
+| HEAD | Stage 236 on this branch (chip-socket kick names LEASE-BREAKER LONG BARREL) |
+| Next stage number | **237** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1062 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 236 is next
+## 6. Stage 237 is next
 
-Stage 235 made a chip-weapon kick name STACK LONG BARREL. Chip-socket kicks still name ids.
-Do not loosen fairness.
+Stage 236 made a chip-socket kick name LEASE-BREAKER LONG BARREL. Firmware-weapon kicks still
+name ids. Do not loosen fairness.
 
 ---
 

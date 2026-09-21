@@ -133,7 +133,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
           const c = chipById(id);
           if (!c) errors.push({ rule: "unknown-chip", detail: id });
           else if (c.weapon !== wid) errors.push({ rule: "chip-weapon", detail: `${c.name} is a ${gun(c.weapon)} chip` });
-          else if (c.socket !== socket) errors.push({ rule: "chip-socket", detail: `${id} is a ${c.socket} chip, not ${socket}` });
+          else if (c.socket !== socket) errors.push({ rule: "chip-socket", detail: `${c.name} is a ${c.socket} chip, not ${socket}` });
           else if ((ranks[wid as WeaponId] ?? 1) < c.rank) errors.push({ rule: "chip-rank", detail: `${c.name} needs ${gun(wid as WeaponId)} mastery ${c.rank} (you are ${ranks[wid as WeaponId] ?? 1})` });
           else out[socket as Socket] = id;
         }

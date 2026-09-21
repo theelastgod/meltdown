@@ -73,6 +73,9 @@ describe("chips and firmwares", () => {
     expect(weaponKick.detail).not.toMatch(/stack_smg:long_barrel/);
     const wrongSocket = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { kinetic: "lease_breaker:long_barrel" } } }, owned, 50, ranks);
     expect(wrongSocket.errors.map((e) => e.rule)).toContain("chip-socket");
+    const socketKick = wrongSocket.errors.find((e) => e.rule === "chip-socket")!;
+    expect(socketKick.detail).toMatch(/LEASE-BREAKER LONG BARREL is a muzzle chip, not kinetic/);
+    expect(socketKick.detail).not.toMatch(/lease_breaker:long_barrel/);
     const locked = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { muzzle: "lease_breaker:flash_cut" } } }, owned, 50, ranks); // rank 22
     expect(locked.errors.map((e) => e.rule)).toContain("chip-rank");
     const rankKick = locked.errors.find((e) => e.rule === "chip-rank")!;

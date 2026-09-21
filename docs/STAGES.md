@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 236 — The chip-socket kick named lease_breaker:long_barrel
+
+**Goal.** Stage 235 taught the cross-weapon kick STACK LONG BARREL. Putting LONG BARREL in the
+kinetic socket still kicked `lease_breaker:long_barrel is a muzzle chip, not kinetic`.
+
+**What changed.** That detail interpolates `c.name`.
+
+**Proof.** `tests/mastery.test.ts`: the kick is `LEASE-BREAKER LONG BARREL is a muzzle chip, not
+kinetic`. Mutation: interpolate the id again — 1 fail.
+
 ## Stage 235 — The chip-weapon kick named stack_smg:long_barrel
 
 **Goal.** Stage 233 taught the chip-rank kick LEASE-BREAKER FLASH CUT. Putting a Stack SMG LONG

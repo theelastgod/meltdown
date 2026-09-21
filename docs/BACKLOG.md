@@ -160,3 +160,5 @@ one stage.
   → Stage 234
 - The chip-weapon kick named stack_smg:long_barrel  
   → Stage 235
+- The chip-socket kick named lease_breaker:long_barrel  
+  → Stage 236
