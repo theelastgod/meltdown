@@ -380,7 +380,9 @@ export class Sky {
     const hull = new THREE.Mesh(new THREE.CapsuleGeometry(9, 40, 4, 10), airMat);
     hull.rotation.z = Math.PI / 2;
     this.ship.add(hull);
-    const panel = new THREE.Mesh(new THREE.BoxGeometry(34, 8, 0.4), new THREE.MeshBasicMaterial({ color: PALETTE.magenta }));
+    const panelMat = new THREE.MeshBasicMaterial({ color: PALETTE.magenta });
+    bindPlate(panelMat, "tex_billboard_mg");
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(34, 8, 0.4), panelMat);
     panel.position.y = -10;
     this.ship.add(panel);
     const strip = new THREE.Mesh(new THREE.BoxGeometry(34.4, 0.3, 0.6), new THREE.MeshBasicMaterial({ color: PALETTE.cyan }));

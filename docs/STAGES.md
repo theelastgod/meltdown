@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 210 — The airship's ad panel was a flat magenta slab
+
+**Goal.** The hull already wears `tex_airship`. The 34 m panel under it — the thing you actually
+read against the skyline — was `MeshBasicMaterial` magenta with no map. `tex_billboard_mg` was
+already on shop fronts.
+
+**What changed.** `bindPlate(panelMat, "tex_billboard_mg")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `life.ts`. Mutation: the call omitted — 1 fail.
+
 ## Stage 209 — Wasp arms were a flat brown box
 
 **Goal.** Stage 200 bound `tex_wasp_hull` to the wasp body. Each rotor arm was a new

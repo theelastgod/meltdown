@@ -108,3 +108,5 @@ one stage.
   → Stage 208
 - Wasp rotor arms were unplated brown boxes  
   → Stage 209
+- The airship ad panel was a flat magenta slab  
+  → Stage 210

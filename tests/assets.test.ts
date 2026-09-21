@@ -162,6 +162,8 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(city).toMatch(/bindPlate\(M\.railMg, "tex_cable"\)/);
     const hub = readFileSync(new URL("../client/render/hub.ts", import.meta.url), "utf8");
     expect(hub).toMatch(/bindPlate\(m, "tex_nameplate"\)/);
+    const life = readFileSync(new URL("../client/render/life.ts", import.meta.url), "utf8");
+    expect(life).toMatch(/bindPlate\(panelMat, "tex_billboard_mg"\)/);
   });
 });
 
