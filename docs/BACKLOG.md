@@ -104,3 +104,5 @@ one stage.
   → Stage 206
 - Pedestrian rails were a flat magenta box; `tex_cable` sat unused  
   → Stage 207
+- The Chapter III desk nameplate was an unplated brown box  
+  → Stage 208

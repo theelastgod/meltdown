@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 208 — The NAMED nameplate was a brown box
+
+**Goal.** Chapter III puts a nameplate on the Deadletter desk. `tex_nameplate` already dresses
+directive pages in the city. The hub's `nameplate` renovation tag stayed a flat `0x3a3218` standard
+material, so the plate that says the city learned your name never wore the plate.
+
+**What changed.** `bindPlate(m, "tex_nameplate")` on that tag, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires the hub call. Mutation: the call omitted — 1 fail.
+
 ## Stage 207 — Pedestrian rails were a flat magenta box
 
 **Goal.** Stage 200 bound leftover city plates. `tex_cable` was on disk — wet conduit, cyan
