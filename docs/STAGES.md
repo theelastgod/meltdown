@@ -1641,6 +1641,45 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 195 — Probe checks that fail on a boundary are not guards
+
+**Goal.** `probe:net` required `far.d > 30` while BRAVO paces a waypoint at 30 m. `probe:identity`
+required `owed.kills >= 2` when a Debt is the enemy who closed you *most*. Both had been seen
+fail with the behaviour they actually test still holding.
+
+**What changed.** Earshot is `far.d >= 29.5 && nearest >= 28`. Debt is `kills >= 1`.
+
+**Proof.** `tests/probesflake.test.ts`. Mutation: `> 30` / `>= 2` restored — those strings fail.
+
+## Stage 194 — A mech lock was silent online
+
+**Goal.** Offline, `flagged` plays the HUD flag and the two-tone once a second. Online
+`FX.flagged` played only the HUD. The server already delivers the event.
+
+**What changed.** Both paths call `mechHasYou()`.
+
+**Proof.** `tests/mechflag.test.ts`. Mutation: HUD-only `FX.flagged` — 1 fail.
+
+## Stage 193 — A hitch made every hop land like a roof drop
+
+**Goal.** Fall speed was `(v.y - lastY) / min(rawDt, 1/30)`. A true 6 m/s landing read as 15 m/s
+at 12 fps and slammed the camera the full 0.22 m. Dip recovery also drained on the capped clock.
+
+**What changed.** `fallSpeed(lastY, y, rawDt)`. `landT` drains on `rawDt`. Local pose `vy` /
+`turnRate` use `rawDt` too.
+
+**Proof.** `fallSpeed` is −6 at 1/60, 1/20 and 1/12. Mutation: divide by capped `dt` — 1 fail.
+
+## Stage 192 — A grenade's light faded per frame
+
+**Goal.** Blast mesh opacity used `(clock - born) / life`. The point light did `intensity *= 0.85`
+per update. Halfway through a 0.45 s frag: 0.62 at 144 Hz, 13.4 at 60 Hz.
+
+**What changed.** `intensity = peak * (1 - t)` on the same `t` as the sphere.
+
+**Proof.** `tests/blastlight.test.ts`: 32× 1/144 and 13× 1/60 agree within 3. Mutation: `*= 0.85`
+— 144 Hz is 0.66, not ~60.
+
 ## Stage 191 — Online respawn was silent
 
 **Goal.** `audio.respawn` and `◆ BACK ON THE LEDGER` lived on the sim's `respawn` event. Online

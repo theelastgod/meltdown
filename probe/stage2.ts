@@ -662,7 +662,7 @@ async function main(): Promise<void> {
       nearest = Math.min(nearest, r.d);
     }
     const stillFar = await a3.evaluate(() => window.__game.state().heard.n);
-    check("and at the far end of the yard it is out of earshot, while it is still walking", far.d > 30 && nearest > 28 && walking >= samples - 4 && stillFar === far.n, `BRAVO pacing ${nearest.toFixed(1)}–${far.d.toFixed(1)} m away, walking in ${walking} of ${samples} samples · ${stillFar - far.n} steps heard in the two and a half seconds it took`);
+    check("and at the far end of the yard it is out of earshot, while it is still walking", far.d >= 29.5 && nearest >= 28 && walking >= samples - 4 && stillFar === far.n, `BRAVO pacing ${nearest.toFixed(1)}–${far.d.toFixed(1)} m away, walking in ${walking} of ${samples} samples · ${stillFar - far.n} steps heard in the two and a half seconds it took`);
     await a3.close();
     await b3.close();
 

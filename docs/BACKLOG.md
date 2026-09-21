@@ -2,142 +2,13 @@
 
 Forty-nine candidates came out of a parallel sweep over this repository. Each was put to
 independent adversarial verification that defaulted to *refuted*, and **32 survived**; two of those
-turned out to be the same finding reported twice. Twenty-four have since been fixed (Stages 168–191) and
-are listed at the foot of this file with the commit that closed them.
+turned out to be the same finding reported twice. All of them have since been fixed (Stages 168–195)
+and are listed at the foot of this file with the commit that closed them.
 
-The **5 below are open**. Every one has been read in the source — none is a hunch.
+**None are open.** The standing method still holds for whatever turns up next: take one,
+verify it yourself before building anything, guard it with a mutation-tested check, ship it as
+one stage.
 
-They are not a work order. The standing method is to take one, **verify it yourself before building
-anything** — the entries here are a starting point, not evidence — then fix it, guard it with a
-mutation-tested check, and ship it as one stage. Several entries turned out sharper or wider than
-first written once measured, and one ("stranded units") is two findings tangled together.
-
-Ordered roughly by how much a player would notice, not by how easy they are. Item numbers are
-stable ids, not a queue.
-
-
-## Audio and render
-
-### 17. An explosion's point light fades by a fixed factor per FRAME, so a grenade lights the street 20x more at 60 Hz than at 144 Hz
-
-`client/render/weapons.ts:329`
-
-**What the code promises.** `ArsenalFx.update(dt)` takes a time step and the sibling fades in the same loop are time-based:
-the mesh uses `const t = (this.clock - b.born) / b.life` (weapons.ts:321) and `b.mat.opacity =
-(1 - t) * 0.9` (line 328). client/hit.ts:85-93 documents the house rule for exactly this — "Fade
-a flash or a flinch by elapsed time rather than per frame. The dummies' flash had been stepped
-by a fixed amount every frame since Stage 1, which makes a hit last four times as long on a
-phone as on a desktop" — and client/render/renderer.ts:475-479 repeats it. The explosion light
-is the one that was never converted.
-
-**What it does.** `b.light.intensity *= 0.85;` is a per-call multiplication, so the fade depends on how many times
-`update()` runs during the blast's 0.45 s (big) / 0.3 s (small) life, not on how much time
-passed. With the renderer's capped dt (renderer.ts:866, `Math.min(rawDt, 1/30)`) the blast gets
-64.8 update calls at 144 fps, 27.0 at 60 fps and 13.5 at or below 30 fps. Measured against the
-initial intensity of 120: at the halfway point of the blast the light is 0.62 at 144 fps, 13.4
-at 60 fps and 40.1 at 30 fps. At the end of its life it is 0.003 at 144 fps (invisible long
-before the sphere fades) and 13.4 at 30 fps — i.e. the light is deleted at 11% of full
-brightness, a visible pop.
-
-**Measured.** `const fx = new ArsenalFx(scene); fx.explosion(pos, 4, 0xffb02e, true);` then call
-`fx.update(1/144)` 32 times versus `fx.update(1/60)` 13 times (both ≈0.22 s of clock) and read
-the blast's `light.intensity`: 0.62 vs 13.4. A correct time-based fade would give the same
-number for both.
-
-**What a player sees.** The same frag grenade throws a completely different amount of light on the surrounding geometry
-depending on the player's refresh rate: on a 144 Hz monitor the blast flash is gone almost
-immediately and the explosion reads as a dim additive sphere with no illumination; at 30 fps the
-light snaps off at over a tenth of full brightness instead of fading out.
-
-### 18. The camera's landing dip divides a whole frame's fall by a dt capped at 1/30 s, so below 30 fps every hop lands like a roof drop
-
-`client/render/renderer.ts:878`
-
-**What the code promises.** client/render/feel.ts:15-22 states the constants in metres per second: `LAND_FLOOR = 2.5`
-("below this the ground is just the ground: walking off a kerb is not a landing"), `LAND_CEIL =
-13` ("past this it is as hard as a landing gets"), and `landHardness(fallSpeed)` (feel.ts:31-33)
-is documented as "A jump on the flat comes back at about six metres a second and reads as a
-third of the way up". renderer.ts:875-877 says the value fed in is "the fall speed ... the frame
-before touchdown".
-
-**What it does.** `const fell = this.lastY === null ? 0 : (v.y - this.lastY) / Math.max(1e-4, dt);` — the
-numerator `v.y - this.lastY` is the height change over one whole render frame, i.e. over
-`rawDt`, but the divisor is `dt = Math.min(rawDt, 1 / 30)` (renderer.ts:866), a clock
-deliberately capped for VFX ageing. Whenever the frame time exceeds 1/30 s the quotient is not
-metres per second at all — it is inflated by `rawDt / (1/30)`. A real 6 m/s landing reads as
-9.00 m/s at 20 fps (hardness 0.619 instead of 0.333) and as 15.00 m/s at 12 fps (hardness clamps
-to 1.000, the maximum dip of 0.22 m). The same capped dt then drains the dip timer at line 886
-(`this.landT = Math.max(0, this.landT - dt)`), so the 0.34 s recovery takes 0.51 s of wall time
-at 20 fps and 0.85 s at 12 fps. The identical unit error is at renderer.ts:829-830 (`vy` and
-`turnRate` for the local rig pose) and renderer.ts:705/727 (`seen`, `vy`, `turnRate` for remote
-bodies).
-
-**Measured.** Drive `renderer.render(view, rawDt)` with a body descending at a true 6 m/s and read
-`renderer.view().dip` on the frame after touchdown: 0.073 m at rawDt = 1/60, 0.136 m at rawDt =
-1/20, 0.220 m at rawDt = 1/12. Correct behaviour is the same 0.073 m at all three.
-
-**What a player sees.** On a phone or any machine under 30 fps — and on any single hitched frame that happens to
-coincide with touchdown — every jump, and even stepping off a kerb, slams the camera down the
-full 0.22 m of the hardest possible landing and takes two to three times as long to come back
-up. The 'walking off a kerb is not a landing' floor stops working.
-
-### 19. A REPO MECH acquiring you is silent online: the FX.flagged case plays the HUD flag but not the two-tone alarm
-
-`client/game.ts:577`
-
-**What the code promises.** client/vantage.ts:6-8, the module doc that justifies the wasp cue, states the rule as fact: "A
-mech that flags you gets a two-tone and a HUD flag; a wasp that acquires you gets nothing, and
-it is the one that shoots first." client/audio.ts:389-394 is that two-tone, and the offline
-handler at client/game.ts:1216-1221 does both: `this.hud.flagged();` and `if (this.world.tick %
-30 === 0) this.audio.flagged();`.
-
-**What it does.** The online handler is `case FX.flagged: if (ev.playerId === me) this.hud.flagged(); break;` —
-HUD only, no `this.audio.flagged()`. The server does deliver the event (server/room.ts:1177-1178
-maps the `flagged` SimEvent to `FX.flagged`), and shared/sim/ai.ts:299 pushes `mechFlag` every
-tick the mech's searchlight holds you, so the event stream is there; the client just drops the
-sound. Every neighbouring case in the same switch was given its offline voice — stun
-(game.ts:581), mechBeam (587), hurt (591), nodeFlip (607), contest (614), kernelPulse (619),
-phase (626-628, added by Stage 124 with the comment "online the phase had been silent ... the
-same voices as offline"). `flagged` was missed.
-
-**Measured.** Join a room on a level with mechs (shared/sim/level.ts:212 gives drainage_yard one), walk into a
-mech's searchlight cone and read `audioCues()` (client/main.ts:323): `fired.flagged` stays
-undefined online while `hud.flagged()` fires; offline it increments once per 30 ticks of being
-lit.
-
-**What a player sees.** Online, a repo mech locking its searchlight onto you — the warning you get before MECH.lockTime
-elapses and it opens fire with a beam — makes no sound. The only cue is a HUD flag you have to
-be looking at the right part of the screen to see. Offline the same lock beeps once a second.
-
-
-## Process and gates
-
-### 20. probe:stage2's earshot check has a boundary threshold the bot lands on: `far.d > 30` fails when the sample reads 30.0
-
-`probe/stage2.ts:665`
-
-**What the code promises.** A check that fails one run in twenty is not a guard.
-
-**What it does.** The check requires far.d > 30 && nearest > 28. BRAVO paces to a waypoint near 30 m, so the
-sampled distance straddles the threshold: observed FAIL at 'pacing 30.5-30.0 m' and PASS at
-'pacing 30.4-30.1 m' on consecutive runs of identical code. Everything the check is actually
-about (0 steps heard, walking 18/18) held in both. The threshold should be derived from the
-audible range constant with margin, or the waypoint moved out.
-
-### 21. probe:stage8's Debt check needs >= 2 kills from a live three-client match and intermittently sees 1
-
-`probe/stage8.ts:304`
-
-**What the code promises.** A check that fails one run in twenty is not a guard.
-
-**What it does.** Observed once in a full sweep: 'ALPHA owes BLANK (1 files)' against a `owed.kills >= 2` clause;
-every other clause (debt name, debtTarget both sides) matched. Re-ran 3x on the same tree and 2x
-on a clean tree: 5/5 PASS. The kill count comes from real combat between three live clients, so
-it is load-sensitive. The Debt itself only needs the *most* kills, not two, so the clause is
-stricter than the rule it guards.
-
-
----
 
 ## Closed
 
@@ -199,3 +70,13 @@ stricter than the rule it guards.
   → Stage 190
 - The respawn cue and BACK ON THE LEDGER never fire online  
   → Stage 191
+- An explosion's point light fades by a fixed factor per FRAME  
+  → Stage 192
+- The camera's landing dip divides a whole frame's fall by a dt capped at 1/30 s  
+  → Stage 193
+- A REPO MECH acquiring you is silent online  
+  → Stage 194
+- probe:stage2's earshot check has a boundary threshold the bot lands on  
+  → Stage 195
+- probe:stage8's Debt check needs >= 2 kills and intermittently sees 1  
+  → Stage 195

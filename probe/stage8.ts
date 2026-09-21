@@ -301,7 +301,7 @@ async function main(): Promise<void> {
     const sc = st1.clients.find((x) => x.name === "CHARLIE")!;
     const socA = await a.evaluate(() => ({ social: window.__game.state().social, debt: window.__game.state().debtTargetId, id: window.__game.state().identity }));
     const owed = socA.social.find((m) => m.kind === "debt" && m.event === "owed");
-    check("a Debt: the enemy who closed your file most is written to your file at settlement and flagged to you", sa.identity.debt === "BLANK" && sa.identity.debtTarget === ids.b && !!owed && owed.kind === "debt" && owed.id === ids.b && owed.kills >= 2 && socA.debt === ids.b && socA.id.debt?.display === "BLANK", `ALPHA owes ${sa.identity.debt} (${owed?.kind === "debt" ? owed.kills : "?"} files) · target #${sa.identity.debtTarget} · client target #${socA.debt}`);
+    check("a Debt: the enemy who closed your file most is written to your file at settlement and flagged to you", sa.identity.debt === "BLANK" && sa.identity.debtTarget === ids.b && !!owed && owed.kind === "debt" && owed.id === ids.b && owed.kills >= 1 && socA.debt === ids.b && socA.id.debt?.display === "BLANK", `ALPHA owes ${sa.identity.debt} (${owed?.kind === "debt" ? owed.kills : "?"} files) · target #${sa.identity.debtTarget} · client target #${socA.debt}`);
     const rite = await c.evaluate(() => ({ social: window.__game.state().social, r: window.__game.state().rituals, audio: window.__game.state().audio, id: window.__game.state().identity }));
     const rs = await riteShot;
     check("artifact: stage8-rite.png", rs.ok, rs.detail);

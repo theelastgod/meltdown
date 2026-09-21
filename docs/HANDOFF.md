@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 191, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 195, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 191 on this branch (online respawn cue on the snapshot edge) |
-| Next stage number | **192** |
+| HEAD | Stage 195 on this branch (the recorded backlog is empty) |
+| Next stage number | **196** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1012 across 111 files, `npm test` |
+| Unit tests | ~1027 across 115 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -178,35 +178,23 @@ now passed in sequence six sweeps running. If it fails, run it alone before conc
 
 ## 5. The week's work
 
-`docs/BACKLOG.md` has **5 open findings**, each read in the source, grouped by area and ordered
-roughly by what a player would notice. It also lists the twelve already closed, with commits — check
-that list before starting anything, and mark your own as you close them.
+`docs/BACKLOG.md` has **0 open findings**. The recorded sweep is closed (Stages 168–195).
+New defects still follow the same method.
 
-A reasonable shape for five days, one stage each, varying the surface so you do not over-fit to one
-layer — that mistake has been made here before, when Stages 156–164 came out almost entirely
-HUD/readout:
-
-| | Area | Suggested |
+| | Area | Shipped |
 | --- | --- | --- |
-| Mon | sim-core | Stage 179 shipped (`fromSlideJump`) |
-| Tue | campaign | Stages 180–181 (m1 hold; Marrow on informant turn) |
-| Wed | netcode / campaign | Stages 182–184 (Threat 5 mech; rejoin remainder; detectMult) |
-| Thu | economy | Stage 185 shipped (stranded leftover is unpaid; paid is the leaf) |
-| Fri | audio-render | the per-frame explosion light fade, or the landing dip divided by a capped dt — both are frame-rate bugs of the Stage 156/164 family |
-
-The three ledger/weapon *line* findings (chips and nodes printing numbers they do not deliver) are
-all the same defect in different tables and would make one good stage together rather than three
-thin ones. The two `process` entries are flaky guards, not game defects — worth a quiet stage if
-you are blocked, not ahead of anything a player can see.
-
-Deviate freely. The ordering is a suggestion; the method is not.
+| Mon | sim-core | Stage 179 (`fromSlideJump`) |
+| Tue | campaign | Stages 180–181 |
+| Wed | netcode / campaign | Stages 182–184 |
+| Thu | economy / copy | Stages 185–190 |
+| Fri | audio-render / probes | Stages 191–195 |
 
 ---
 
-## 6. Stage 192 is next
+## 6. Stage 196 is next
 
-Stage 191 fires BACK ON THE LEDGER from the snapshot's dead→alive edge. Next: the explosion
-light that fades per frame, or the landing dip divided by a capped dt.
+The recorded backlog is empty (Stages 168–195). Next is whatever a player would notice that
+is not already in STAGES.md: look at real frames, measure, one defect, mutation-tested guard.
 
 ---
 
