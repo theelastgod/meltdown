@@ -35,6 +35,8 @@ describe("the renderer divides the fall by the real frame", () => {
     expect(src).toMatch(/fallSpeed\(this\.lastY, v\.y, rawDt\)/);
     expect(src).toMatch(/this\.landT = Math.max\(0, this\.landT - rawDt\)/);
     expect(src).toMatch(/placeThirdPerson\(v, dt, bobY - dip, rawDt\)/);
+    expect(src).toMatch(/this\.poseRemotes\(rawDt\)/);
+    expect(src).not.toMatch(/this\.poseRemotes\(dt\)/);
   });
 });
 

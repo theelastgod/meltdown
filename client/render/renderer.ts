@@ -976,7 +976,7 @@ export class Renderer {
     }
     // (the stun roll is applied in placeThirdPerson, before the reticle is projected through it)
     this.decayHits(dt);
-    this.poseRemotes(dt);
+    this.poseRemotes(rawDt);
     this.fx.update(dt);
     this.wake.update(dt);
     this.run.update(dt);

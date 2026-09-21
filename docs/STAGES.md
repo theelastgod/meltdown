@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 202 — Remote bodies estimated speed on the capped clock
+
+**Goal.** Stage 193 divided the local landing by rawDt so a hitch did not slam the camera.
+`poseRemotes` already took a parameter named rawDt, then `render` passed it the hitch-capped `dt`.
+A 12 fps frame with 0.2 m of travel read as 6 m/s instead of 2.4 m/s, so teammates sprinted in
+place for one pose.
+
+**What changed.** `this.poseRemotes(rawDt)`. VFX still age on the capped clock.
+
+**Proof.** `tests/feel.test.ts` requires `poseRemotes(rawDt)` and refuses `poseRemotes(dt)`.
+Mutation: pass `dt` — 1 fail.
+
 ## Stage 201 — STACK SMG CHOKE was COMPENSATOR three ranks early
 
 **Goal.** Stage 171 converted SMG spread benefits to recoil so CHOKE would not net to zero. The

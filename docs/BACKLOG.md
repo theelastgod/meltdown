@@ -92,3 +92,5 @@ one stage.
   → Stage 200
 - STACK SMG CHOKE duplicated COMPENSATOR after the spread→recoil conversion  
   → Stage 201
+- Remote bodies estimated speed from the hitch-capped dt  
+  → Stage 202
