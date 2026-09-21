@@ -128,3 +128,5 @@ one stage.
   → Stage 218
 - Mastery CRT lines spelled LEASE BREAKER / DIRECTIVE R5  
   → Stage 219
+- The join line quoted long_lease and BAD_DEBT  
+  → Stage 220

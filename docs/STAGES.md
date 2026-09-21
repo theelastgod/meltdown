@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 220 — The join line quoted ledger ids
+
+**Goal.** On admit the CRT pushed `ATTESTED [long_lease, quiet_ledger] · BAD_DEBT`. The FILE
+panel already prints LONG LEASE, QUIET LEDGER, BAD DEBT. The id with `toUpperCase` only happened
+to match for DEBTLESS.
+
+**What changed.** `itemName(id)` is the authored name. The join line maps attested nodes and the
+keystone through it.
+
+**Proof.** `tests/economy.test.ts`: `bad_debt` is `BAD DEBT`, `long_lease` is `LONG LEASE`. Source
+must `attested.map(itemName)` and `itemName(f.loadout.keystone)`, must not `keystone.toUpperCase()`.
+Mutation: join line uppercases the id again — 1 fail.
+
 ## Stage 219 — A mastery line spelled the weapon id
 
 **Goal.** Crossing rank 10 on the Lease-Breaker pushed `MASTERY · LEASE BREAKER → RANK 10` — the

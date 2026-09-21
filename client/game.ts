@@ -7,6 +7,7 @@ import { MAX_CATCHUP_TICKS, MOVE, SIM_DT, SIM_HZ } from "@shared/sim/constants";
 import { WAKE } from "@shared/sim/wake";
 import type { InputFrame } from "@shared/sim/input";
 import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS } from "@shared/sim/level";
+import { itemName } from "@shared/manifest/items";
 import { eyeHeight, eyePos, type PlayerState } from "@shared/sim/player";
 import { canSee, MECH, WASP } from "@shared/sim/ai";
 import { aimAssistScale } from "./aimassist";
@@ -380,7 +381,7 @@ export class Game {
       if (f.reason === "join" && this.net === net) {
         // the server admitted this loadout: run the same sheet locally (arrives before the first snapshot)
         this.world.setLoadout(this.player, f.loadout as Parameters<World["setLoadout"]>[1]);
-        this.hud.push(`FILE ${f.account} · DEPTH ${String(f.depth).padStart(2, "0")} · ATTESTED [${f.loadout.attested.join(", ") || "none"}]${f.loadout.keystone ? " · " + f.loadout.keystone.toUpperCase() : ""}`, "cy");
+        this.hud.push(`FILE ${f.account} · DEPTH ${String(f.depth).padStart(2, "0")} · ATTESTED [${f.loadout.attested.map(itemName).join(", ") || "none"}]${f.loadout.keystone ? " · " + itemName(f.loadout.keystone) : ""}`, "cy");
       } else if (f.reason === "settle") {
         // the Ledger Entry ritual: the receipt prints line by line, the stamp thunks, the player signs
         this.hud.receipt(f.ledger);

@@ -174,6 +174,11 @@ export const KEYSTONES: LedgerItem[] = [
 export const ALL_ITEMS: LedgerItem[] = [...LEDGER_ITEMS, ...KEYSTONES];
 export const itemById = (id: string): LedgerItem | undefined => ALL_ITEMS.find((i) => i.id === id);
 
+/** What a player reads for a node or keystone: the authored name, not the id. */
+export function itemName(id: string): string {
+  return itemById(id)?.name ?? id.replace(/_/g, " ").toUpperCase();
+}
+
 /** The trade half of a ledger line, for the Ghostfile row — same text as the hex tooltip. */
 export function ledgerTradeText(it: Pick<LedgerItem, "line">): string {
   const i = it.line.indexOf(": ");

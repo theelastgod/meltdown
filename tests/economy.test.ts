@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { lintEconomy, lintTokenConstants } from "../shared/economy/lint";
 import type { EconomyItem } from "../shared/economy/manifest";
+import { itemName } from "../shared/manifest/items";
 
 const cosmetic = (id: string, extra: Partial<EconomyItem> = {}): EconomyItem => ({
   id,
@@ -50,5 +52,22 @@ describe("economy lint — $CAPITAL never touches a stat", () => {
 
   it("token constants reconcile", () => {
     expect(lintTokenConstants()).toEqual([]);
+  });
+});
+
+describe("the join line names the ledger, not the id", () => {
+  it("BAD DEBT and LONG LEASE are names, not BAD_DEBT and long_lease", () => {
+    expect(itemName("bad_debt")).toBe("BAD DEBT");
+    expect(itemName("long_lease")).toBe("LONG LEASE");
+    expect(itemName("quiet_ledger")).toBe("QUIET LEDGER");
+    expect(itemName("debtless")).toBe("DEBTLESS");
+    expect(itemName("bad_debt")).not.toBe("BAD_DEBT");
+  });
+
+  it("the CRT interpolates itemName for attested nodes and the keystone", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/attested\.map\(itemName\)/);
+    expect(src).toMatch(/itemName\(f\.loadout\.keystone\)/);
+    expect(src).not.toMatch(/keystone\.toUpperCase\(\)/);
   });
 });
