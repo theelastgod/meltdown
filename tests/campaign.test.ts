@@ -264,8 +264,14 @@ describe("the PvP wall", () => {
     expect(validateLoadout({ primary: "lease_breaker", secondary: "shock_baton", attested: [], protocols: ["x"] }, [], 50).errors.some((e) => e.rule === "unknown-field")).toBe(true);
     const locked = validateLoadout({ primary: "directive", secondary: "shock_baton", attested: [] }, [], 50);
     expect(locked.errors.some((e) => e.rule === "weapon-locked")).toBe(true);
+    expect(locked.errors.find((e) => e.rule === "weapon-locked")!.detail).toBe("THE DIRECTIVE unlocks in the campaign");
+    expect(locked.errors.find((e) => e.rule === "weapon-locked")!.detail).not.toMatch(/directive unlocks/);
     expect(validateLoadout({ primary: "directive", secondary: "clockeater", attested: [] }, ["weapon:directive", "weapon:clockeater"], 50).ok).toBe(true);
     expect(validateLoadout({ primary: "directive", secondary: "clockeater", attested: [] }, sandboxAccount("s").owned, 50).ok).toBe(true);
+    const src = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/\$\{gun\(w\)\} unlocks in the campaign/);
+    expect(src).toMatch(/\$\{gun\(w\)\} needs Depth/);
+    expect(src).not.toMatch(/\$\{w\} unlocks in the campaign/);
   });
   it("the PvP worker's module graph (match room, file DO, validator) never reaches shared/campaign", () => {
     const seen = new Set<string>();

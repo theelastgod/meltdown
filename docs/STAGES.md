@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 231 — The loadout kick named directive
+
+**Goal.** Stage 229 taught the Audit kick LEASE-BREAKER. Bringing THE DIRECTIVE into a PvP room
+without the unlock still kicked `directive unlocks in the campaign`. A Depth-1 file with the
+Phage still kicked `phage needs Depth 5`. The FILE panel already prints THE DIRECTIVE and
+PHAGE LAUNCHER.
+
+**What changed.** Those details interpolate `WEAPONS[id].name`.
+
+**Proof.** `tests/campaign.test.ts`: locked Directive is `THE DIRECTIVE unlocks in the campaign`.
+`tests/fairness.test.ts`: Phage at Depth 2 is `PHAGE LAUNCHER needs Depth`. Source must
+`${gun(w)} unlocks`. Mutation: interpolate the id again — 1 fail.
+
 ## Stage 230 — The RING ONE kick named escrow
 
 **Goal.** Stage 229 taught the weapon kick LEASE-BREAKER. RING ONE still kicked

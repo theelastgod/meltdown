@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 230, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 231, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 230 on this branch (RING ONE kick names ESCROW) |
-| Next stage number | **231** |
+| HEAD | Stage 231 on this branch (loadout kick names THE DIRECTIVE) |
+| Next stage number | **232** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1062 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 231 is next
+## 6. Stage 232 is next
 
-Stage 230 made the RING ONE kick name ESCROW, not escrow. Next is whatever a player would
-notice. Do not loosen fairness.
+Stage 231 made a locked Directive kick THE DIRECTIVE, not directive. Next is whatever a player
+would notice. Do not loosen fairness. Not-owned nodes still kick `long_lease is not in your
+file`.
 
 ---
 

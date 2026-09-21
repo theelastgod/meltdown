@@ -42,6 +42,8 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(smuggled.errors.map((e) => e.rule)).toContain("unknown-field");
     const gated = validateLoadout({ primary: "phage", secondary: "stack_smg", attested: [], keystone: null }, owned, 2);
     expect(gated.errors.map((e) => e.rule)).toContain("weapon-depth");
+    expect(gated.errors.find((e) => e.rule === "weapon-depth")!.detail).toMatch(/^PHAGE LAUNCHER needs Depth/);
+    expect(gated.errors.find((e) => e.rule === "weapon-depth")!.detail).not.toMatch(/^phage needs Depth/);
   });
   it("every legal build reconciles: NET DELTA 0 on the Auditor's ledger within tolerance", () => {
     const lo = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "contagion_rider"], keystone: null }, owned, 10).loadout;

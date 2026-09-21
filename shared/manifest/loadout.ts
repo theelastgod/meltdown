@@ -61,10 +61,11 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
   for (const k of Object.keys(lo)) if (!KNOWN_FIELDS.has(k)) errors.push({ rule: "unknown-field", detail: `field "${k}" is not part of a PvP loadout` });
   const primary = typeof lo.primary === "string" && lo.primary in WEAPONS ? (lo.primary as WeaponId) : null;
   const secondary = typeof lo.secondary === "string" && lo.secondary in WEAPONS ? (lo.secondary as WeaponId) : null;
+  const gun = (id: WeaponId) => WEAPONS[id]?.name ?? id;
   if (!primary) errors.push({ rule: "weapon", detail: `unknown primary ${String(lo.primary)}` });
   if (!secondary) errors.push({ rule: "weapon", detail: `unknown secondary ${String(lo.secondary)}` });
-  for (const w of [primary, secondary]) if (w && WEAPON_DEPTH[w] > depth) errors.push({ rule: "weapon-depth", detail: `${w} needs Depth ${WEAPON_DEPTH[w]} (you are ${depth})` });
-  for (const w of [primary, secondary]) if (w && CAMPAIGN_WEAPONS.includes(w) && !owned.includes(`weapon:${w}`)) errors.push({ rule: "weapon-locked", detail: `${w} unlocks in the campaign` });
+  for (const w of [primary, secondary]) if (w && WEAPON_DEPTH[w] > depth) errors.push({ rule: "weapon-depth", detail: `${gun(w)} needs Depth ${WEAPON_DEPTH[w]} (you are ${depth})` });
+  for (const w of [primary, secondary]) if (w && CAMPAIGN_WEAPONS.includes(w) && !owned.includes(`weapon:${w}`)) errors.push({ rule: "weapon-locked", detail: `${gun(w)} unlocks in the campaign` });
   const attested = Array.isArray(lo.attested) ? lo.attested.filter((x): x is string => typeof x === "string") : [];
   if (!Array.isArray(lo.attested) && lo.attested !== undefined) errors.push({ rule: "attested-shape", detail: "attested must be a list of node ids" });
   if (attested.length > MAX_ATTESTED) errors.push({ rule: "attest-limit", detail: `${attested.length} attested, max ${MAX_ATTESTED}` });

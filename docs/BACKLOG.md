@@ -150,3 +150,5 @@ one stage.
   → Stage 229
 - The RING ONE kick named escrow  
   → Stage 230
+- The loadout kick named directive / phage  
+  → Stage 231
