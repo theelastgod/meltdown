@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 241 — The chip-shape kick named lease_breaker.muzzle
+
+**Goal.** Stage 240 taught the unknown-socket kick LEASE-BREAKER. Putting a number in the muzzle
+socket still kicked `lease_breaker.muzzle: chip must be an id`. The FILE panel already prints
+LEASE-BREAKER.
+
+**What changed.** That detail interpolates `gun(wid)`.
+
+**Proof.** `tests/mastery.test.ts`: the kick is `LEASE-BREAKER.muzzle: chip must be an id`, not
+`lease_breaker.muzzle`. Source must `${gun(wid as WeaponId)}.${socket}`. Mutation: interpolate
+the id again — 1 fail.
+
 ## Stage 240 — The unknown-socket kick named lease_breaker
 
 **Goal.** Stage 239 taught the chips-shape kick LEASE-BREAKER. Putting a chip in a socket named

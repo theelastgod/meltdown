@@ -170,3 +170,5 @@ one stage.
   → Stage 239
 - The unknown-socket kick named lease_breaker  
   → Stage 240
+- The chip-shape kick named lease_breaker.muzzle  
+  → Stage 241

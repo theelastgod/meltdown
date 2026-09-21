@@ -127,7 +127,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
           }
           if (id === null || id === undefined) continue;
           if (typeof id !== "string") {
-            errors.push({ rule: "chip-shape", detail: `${wid}.${socket}: chip must be an id` });
+            errors.push({ rule: "chip-shape", detail: `${gun(wid as WeaponId)}.${socket}: chip must be an id` });
             continue;
           }
           const c = chipById(id);
