@@ -7,7 +7,7 @@ import type { Vec3 } from "@shared/math/vec3";
 import { PostChain } from "./post";
 import { Rain } from "./rain";
 import { makeFlatWetFloor, makeWetFloor } from "./wetfloor";
-import { buildSkyline, dressLevel, PALETTE, Traffic } from "./city";
+import { bindPlate, buildSkyline, dressLevel, PALETTE, Traffic } from "./city";
 import { VfxPool } from "./vfx";
 import { markShared, release } from "./dispose";
 import { CityLife, flickerMaterial } from "./life";
@@ -415,6 +415,7 @@ export class Renderer {
       if (!e) {
         // VANTAGE repo unit: hooded dark silhouette, amber servo light, never a lit face
         const mat = new THREE.MeshStandardMaterial({ color: 0x0d0a06, emissive: PALETTE.amber, emissiveIntensity: 0.12, roughness: 0.7 });
+        bindPlate(mat, "tex_dummy");
         const cap = new THREE.Mesh(new THREE.CapsuleGeometry(MOVE.capsuleRadius, MOVE.standHeight - MOVE.capsuleRadius * 2, 4, 10), mat);
         cap.position.y = MOVE.standHeight / 2;
         const group = new THREE.Group();

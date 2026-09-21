@@ -208,7 +208,9 @@ export class ArsenalFx {
       let e = this.wasps.get(w.id);
       if (!e) {
         const group = new THREE.Group();
-        const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.7), new THREE.MeshStandardMaterial({ color: 0x14120e, roughness: 0.6, metalness: 0.5 }));
+        const waspMat = new THREE.MeshStandardMaterial({ color: 0x14120e, roughness: 0.6, metalness: 0.5 });
+        bindPlate(waspMat, "tex_wasp_hull");
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.7), waspMat);
         group.add(body);
         const eye = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.06, 0.06), new THREE.MeshBasicMaterial({ color: PALETTE.amber }));
         eye.position.set(0, 0, -0.36);
@@ -254,6 +256,7 @@ export class ArsenalFx {
       if (!e) {
         const group = new THREE.Group();
         const hull = new THREE.MeshStandardMaterial({ color: 0x1a1710, roughness: 0.55, metalness: 0.6 });
+        bindPlate(hull, "tex_mech_hull");
         const torso = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.6, 1.4), hull);
         torso.position.y = 2.2;
         group.add(torso);

@@ -5,7 +5,7 @@
  */
 import * as THREE from "three";
 import { markShared, release } from "./dispose";
-import { PALETTE } from "./city";
+import { bindPlate, PALETTE } from "./city";
 
 export interface RunClaimView {
   id: number;
@@ -70,8 +70,12 @@ export class RunFx {
       group.add(label);
       // the market kiosk: a counter, a screen lit amber, a MARKET sign — the panel's market opens from here
       const kiosk = new THREE.Group();
-      kiosk.add(new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.1, 0.7), new THREE.MeshStandardMaterial({ color: 0x0c1016, roughness: 0.6, metalness: 0.4 })));
-      const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ color: PALETTE.amber }));
+      const kioskMat = new THREE.MeshStandardMaterial({ color: 0x0c1016, roughness: 0.6, metalness: 0.4 });
+      bindPlate(kioskMat, "tex_metal");
+      kiosk.add(new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.1, 0.7), kioskMat));
+      const screenMat = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
+      bindPlate(screenMat, "tex_kiosk_crt");
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.7), screenMat);
       screen.position.set(0, 1.25, 0.36);
       kiosk.add(screen);
       const sign = this.labelSprite("MARKET");

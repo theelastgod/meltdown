@@ -52,6 +52,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(14, "skin_forged", "FORGED TRIM", "amber servo light on wet steel", 85, 0x18c4, "#ffb02e", "skin_amber_trim"),
   skin(15, "skin_grid", "ESTATE GRID", "cyan monitor grid", 65, 0x0e91, "#35f2ff", "skin_cyan_grid"),
   skin(16, "skin_black_lease", "BLACK LEASE", "CRT phosphor on a sealed file", 100, 0x6a0b, "#7dffb0", "skin_black_lease"),
+  skin(17, "skin_phage", "PHAGE PLATE", "green-black contagion paint, the launcher's own stain", 88, 0x4e2c, "#37ff8b", "skin_phage_plate"),
+  skin(18, "skin_longwave", "LONGWAVE ICE", "cold cyan rail, the colour a charge howls", 105, 0x7b19, "#8fd8ff", "skin_longwave_plate"),
+  skin(19, "skin_hammer", "HAMMER RUST", "shotgun steel that never left the rain", 72, 0x2c80, "#e0561e", "skin_hammer_plate"),
+  skin(20, "skin_baton", "BATON VIOLET", "shock-violet trim on a close-in stick", 68, 0x91d4, "#8f4dff", "skin_baton_plate"),
 ];
 
 /**

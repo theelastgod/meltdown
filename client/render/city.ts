@@ -27,13 +27,13 @@ function lcg(seed: number): () => number {
 const basic = (color: number, opacity = 1): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity });
 
 /** Optional generated plate: if it never arrives the procedural map stays. Cosmetic; the sim never sees it. */
-export function bindPlate(mat: THREE.MeshStandardMaterial, id: string, alsoEmissive = false): void {
+export function bindPlate(mat: THREE.MeshStandardMaterial | THREE.MeshBasicMaterial, id: string, alsoEmissive = false): void {
   void assetTexture(id).then((tex) => {
     if (!tex) return;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.colorSpace = THREE.SRGBColorSpace;
     mat.map = tex;
-    if (alsoEmissive) {
+    if (alsoEmissive && mat instanceof THREE.MeshStandardMaterial) {
       mat.emissiveMap = tex;
       mat.emissive = new THREE.Color(0xffffff);
       mat.emissiveIntensity = Math.max(mat.emissiveIntensity, 1.1);
@@ -259,6 +259,12 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
     white: std({ color: 0xd9dde3, roughness: 0.92, metalness: 0.0 }),
     whiteDesk: std({ color: 0xe9e5dc, roughness: 0.6, metalness: 0.05 }),
     whiteRug: std({ color: 0xb9b3a6, roughness: 1 }),
+    road: std({ color: 0x12161c, roughness: 0.9, metalness: 0.05 }),
+    desk: std({ color: 0x2a2418, roughness: 0.7, metalness: 0.1 }),
+    scaffold: std({ color: 0x151b26, roughness: 0.5, metalness: 0.55 }),
+    pipe: std({ color: 0x3a4038, roughness: 0.45, metalness: 0.6 }),
+    grate: std({ color: 0x1a1e24, roughness: 0.5, metalness: 0.5 }),
+    coneAlt: std({ color: 0xff6a1e, roughness: 0.7 }),
     whiteFloor: std({ color: 0xcfd3d8, roughness: 0.35, metalness: 0.1 }),
     glassWall: new THREE.MeshBasicMaterial({ color: 0x9fd8e8, transparent: true, opacity: 0.3, depthWrite: false }),
     page: basic(0xfff6d5),
@@ -272,25 +278,25 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.needsUpdate = true;
   }
-  bindPlate(M.brick, "tex_neon_brick");
-  bindPlate(M.brickDark, "tex_neon_brick");
+  bindPlate(M.brick, cast === "amber" ? "tex_brick_amber" : cast === "cyan" ? "tex_brick_cyan" : "tex_neon_brick");
+  bindPlate(M.brickDark, "tex_bulkhead");
   bindPlate(M.hazard, "tex_vantage_hazard");
-  bindPlate(M.sidewalk, "tex_wet_asphalt");
+  bindPlate(M.sidewalk, "tex_wet_cobble");
   bindPlate(M.white, "tex_white_office");
   bindPlate(M.whiteFloor, "tex_white_office");
   bindPlate(M.shutter, "tex_shutter");
-  bindPlate(M.fenceMat, "tex_shutter");
+  bindPlate(M.fenceMat, "tex_chainlink");
   bindPlate(M.crate, "tex_crate");
   bindPlate(M.stall, "tex_crate");
   bindPlate(M.dumpster, "tex_dumpster");
   bindPlate(M.concrete, "tex_concrete");
-  bindPlate(M.base, "tex_concrete");
+  bindPlate(M.base, "tex_pavement");
   bindPlate(M.metal, "tex_metal");
-  bindPlate(M.vending, "tex_metal");
-  bindPlate(M.metro, "tex_metal");
+  bindPlate(M.vending, "tex_vent");
+  bindPlate(M.metro, "tex_tile_metro");
   bindPlate(M.containerA, "tex_container");
   bindPlate(M.containerB, "tex_container");
-  bindPlate(M.containerC, "tex_metal");
+  bindPlate(M.containerC, "tex_bulkhead");
   bindPlate(M.barrel, "tex_barrel");
   bindPlate(M.cone, "tex_cone");
   bindPlate(M.car, "tex_car");
@@ -299,11 +305,30 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
   bindPlate(M.bush, "tex_bush");
   bindPlate(M.whiteDesk, "tex_white_desk");
   bindPlate(M.whiteRug, "tex_white_rug");
-  const facades = [facadeTextures(seed + 1, 0.22), facadeTextures(seed + 2, 0.32), facadeTextures(seed + 3, 0.45)].map((f) => {
+  bindPlate(M.awningMg, "tex_awning_mg");
+  bindPlate(M.awningCy, "tex_awning_cy");
+  bindPlate(M.lampHead, "tex_lamp");
+  bindPlate(M.glassDim, "tex_glass");
+  bindPlate(M.glassWall, "tex_glass");
+  bindPlate(M.shopA, "tex_billboard_mg");
+  bindPlate(M.shopB, "tex_billboard_cy");
+  bindPlate(M.shopC, "tex_billboard_ye");
+  bindPlate(M.page, "tex_nameplate");
+  bindPlate(M.road, "tex_asphalt_2");
+  bindPlate(M.desk, "tex_desk");
+  bindPlate(M.scaffold, "tex_scaffold");
+  bindPlate(M.pipe, "tex_pipe");
+  bindPlate(M.grate, "tex_grate");
+  bindPlate(M.coneAlt, "tex_cone_alt");
+  const facadeIds =
+    cast === "amber" ? (["tex_facade_amber", "tex_var_000", "tex_var_001"] as const)
+    : cast === "cyan" ? (["tex_facade_cyan", "tex_var_002", "tex_var_003"] as const)
+    : (["tex_facade", "tex_var_004", "tex_var_005"] as const);
+  const facades = [facadeTextures(seed + 1, 0.22), facadeTextures(seed + 2, 0.32), facadeTextures(seed + 3, 0.45)].map((f, i) => {
     f.map.wrapS = f.map.wrapT = f.emissive.wrapS = f.emissive.wrapT = THREE.RepeatWrapping;
     f.map.needsUpdate = f.emissive.needsUpdate = true;
     const mat = std({ map: f.map, emissiveMap: f.emissive, emissive: 0xffffff, emissiveIntensity: 1.5, roughness: 0.8, metalness: 0.1 });
-    bindPlate(mat, "tex_facade", true);
+    bindPlate(mat, facadeIds[i]!, true);
     return mat;
   });
   const b3 = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) => ({ min: { x: Math.min(x0, x1), y: Math.min(y0, y1), z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), y: Math.max(y0, y1), z: Math.max(z0, z1) } });
@@ -388,7 +413,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
         break;
       }
       case "plant":
-        batch.box(b, M.metal);
+        batch.box(b, M.pipe);
         neon.box(sx + 0.05, 0.06, 0.06, cx, b.max.y + 0.03, b.max.z, altColor);
         break;
       case "block":
@@ -416,7 +441,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
       case "desk":
       case "chair":
       case "terminal":
-        batch.box(b, M.metal, 2);
+        batch.box(b, b.tag === "desk" ? M.desk : M.metal, 2);
         if (b.tag === "terminal") batch.box(b3(b.min.x + 0.05, b.min.y + 0.15, b.max.z, b.max.x - 0.05, b.max.y - 0.05, b.max.z + 0.02), M.glassDim);
         break;
       case "cot":
@@ -569,7 +594,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
         neonPerimeter(neon, b, PALETTE.green, b.max.y + 0.03, 0.08);
         const door = new THREE.PlaneGeometry(2.4, 2.6);
         door.translate(cx, 1.3, b.max.z + 0.02);
-        batch.add(door, basic(0x061a12));
+        batch.add(door, M.grate);
         neon.box(2.6, 0.06, 0.06, cx, 2.7, b.max.z + 0.04, PALETTE.green);
         neon.box(0.06, 2.6, 0.06, cx - 1.3, 1.3, b.max.z + 0.04, PALETTE.green);
         neon.box(0.06, 2.6, 0.06, cx + 1.3, 1.3, b.max.z + 0.04, PALETTE.green);
@@ -587,7 +612,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
       case "cone": {
         const m = new THREE.ConeGeometry(sx / 2, sy, 8);
         m.translate(cx, cy, cz);
-        batch.add(m, M.cone);
+        batch.add(m, rnd() < 0.5 ? M.cone : M.coneAlt);
         break;
       }
       case "post":
@@ -647,7 +672,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
         neon.box(dx, 0.04, 0.04, dcx, d.min.y - 0.02, d.max.z, d.tag === "awning_mg" ? PALETTE.magenta : PALETTE.cyan);
         break;
       case "vista_road":
-        batch.box(d, M.base);
+        batch.box(d, M.road);
         // lane line down the middle
         neon.box(dx > dz ? dx : 0.12, 0.02, dz > dx ? dz : 0.12, dcx, d.max.y + 0.01, dcz, 0x2a3a48);
         break;
@@ -662,7 +687,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
         batch.box(b3(dcx - 0.3, d.max.y - 0.2, dcz - 0.15, dcx + 0.3, d.max.y, dcz + 0.15), M.lampHead);
         break;
       case "beam":
-        batch.box(d, M.metal, 3);
+        batch.box(d, M.scaffold, 3);
         if (dx > 40 || dz > 40) neon.box(dx > dz ? dx : 0.06, 0.06, dz > dx ? dz : 0.06, dcx, d.min.y - 0.04, dcz, PALETTE.magenta);
         break;
       case "portal":
@@ -692,10 +717,14 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
   const neon = new NeonBatch(group);
   const batch = new MeshBatch(group);
   const rnd = lcg(seed);
-  const facades = [facadeTextures(1), facadeTextures(2, 0.1), facadeTextures(3, 0.25)].map((f) => {
+  const skyIds =
+    cast === "amber" ? (["tex_facade_amber", "tex_var_006", "tex_var_007"] as const)
+    : cast === "cyan" ? (["tex_facade_cyan", "tex_var_008", "tex_var_009"] as const)
+    : (["tex_facade", "tex_var_010", "tex_var_011"] as const);
+  const facades = [facadeTextures(1), facadeTextures(2, 0.1), facadeTextures(3, 0.25)].map((f, i) => {
     f.map.wrapS = f.map.wrapT = f.emissive.wrapS = f.emissive.wrapT = THREE.RepeatWrapping;
     const mat = new THREE.MeshStandardMaterial({ map: f.map, emissiveMap: f.emissive, emissive: 0xffffff, emissiveIntensity: 0.7, roughness: 0.8, metalness: 0.1 });
-    bindPlate(mat, "tex_facade", true);
+    bindPlate(mat, skyIds[i]!, true);
     return mat;
   });
   const castColor = cast === "cyan" ? PALETTE.cyan : cast === "amber" ? PALETTE.amber : PALETTE.magenta;
@@ -732,6 +761,7 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
 
   // THE KERNEL: blood-red data-center megastructure on the horizon, immune to fog so it always reads.
   const kernelMat = new THREE.MeshBasicMaterial({ color: 0x120307, fog: false });
+  bindPlate(kernelMat, "tex_kernel_hull");
   const kernel = new THREE.Mesh(new THREE.BoxGeometry(180, 260, 120), kernelMat);
   kernel.position.set(-60, 120, -420);
   group.add(kernel);

@@ -6,7 +6,7 @@
  */
 import * as THREE from "three";
 import { MOVE } from "@shared/sim/constants";
-import { PALETTE } from "./city";
+import { bindPlate, PALETTE } from "./city";
 
 const RED = 0xff1e3c;
 
@@ -42,6 +42,7 @@ export class CampaignFx {
     // the escort: an amber figure, a hood, a tag
     this.escort = new THREE.Group();
     const mat = new THREE.MeshStandardMaterial({ color: 0x2a1a08, emissive: PALETTE.amber, emissiveIntensity: 0.25, roughness: 0.8 });
+    bindPlate(mat, "tex_crowd_coat");
     const body = new THREE.Mesh(new THREE.CapsuleGeometry(MOVE.capsuleRadius - 0.02, MOVE.standHeight - MOVE.capsuleRadius * 2, 4, 10), mat);
     body.position.y = MOVE.standHeight / 2;
     this.escort.add(body);

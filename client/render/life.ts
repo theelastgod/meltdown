@@ -72,7 +72,7 @@ export class Crowd {
     const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1 });
     const lampMat = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
     const brollyMat = new THREE.MeshStandardMaterial({ color: 0x0e1218, roughness: 0.8, side: THREE.DoubleSide });
-    bindPlate(dark, "tex_cloak");
+    bindPlate(dark, "tex_crowd_coat");
     bindPlate(hoodMat, "tex_cloak");
     bindPlate(brollyMat, "tex_brolly");
     this.body = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.3, 1.0, 3, 8), dark, count);

@@ -1285,5 +1285,77 @@
     "bytes": 167203,
     "sha256": "b07855c88aa9240a31f1d4426bf97dd812415d757255df40ce32682a5bc0f212",
     "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_wasp_hull",
+    "kind": "texture",
+    "file": "tex_wasp_hull.png",
+    "size": 256,
+    "bytes": 159560,
+    "sha256": "750c4549391167c4d9d65cc666ecc8ee530406317f7462a51fdcc83dbb707102",
+    "provenance": "derived from unused Higgsfield mill variant tex_var_012, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_mech_hull",
+    "kind": "texture",
+    "file": "tex_mech_hull.png",
+    "size": 256,
+    "bytes": 139490,
+    "sha256": "46c47491f1cb73b3650dc0cebf450ac1ab4438c3cfe772ff73c11aaeed067c1d",
+    "provenance": "derived from unused Higgsfield mill variant tex_var_013, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_kiosk_crt",
+    "kind": "texture",
+    "file": "tex_kiosk_crt.png",
+    "size": 256,
+    "bytes": 138185,
+    "sha256": "19b28d21f66cd266522cb59bbc057a2ae04bfcf6711970dc24b401eec1cfa47f",
+    "provenance": "derived from unused Higgsfield mill variant tex_var_014, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_wet_cobble",
+    "kind": "texture",
+    "file": "tex_wet_cobble.png",
+    "size": 256,
+    "bytes": 159881,
+    "sha256": "8e0ccc2520b36acc339eb8c75f2f8f897ee1d71bb27d42b9483c6983d47dd004",
+    "provenance": "derived from unused Higgsfield mill variant tex_var_015, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_phage_plate",
+    "kind": "texture",
+    "file": "skin_phage_plate.png",
+    "size": 256,
+    "bytes": 150592,
+    "sha256": "4327046455604cbaf7294cad19cd8245b5b25922065a4fac2d9bcd47ec04c0a8",
+    "provenance": "derived from unused Higgsfield mill variant tex_var_016, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_longwave_plate",
+    "kind": "texture",
+    "file": "skin_longwave_plate.png",
+    "size": 256,
+    "bytes": 148672,
+    "sha256": "c93800817297c14653b4ef1eceb0556dbb847e002ed5ec9cb583f469b9af7067",
+    "provenance": "derived from unused Higgsfield mill variant tex_var_017, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_hammer_plate",
+    "kind": "texture",
+    "file": "skin_hammer_plate.png",
+    "size": 256,
+    "bytes": 172794,
+    "sha256": "169c24c361524df1e0c0bfe3c9d12080120e4527c04d3572127845b796c19eb0",
+    "provenance": "derived from unused Higgsfield mill variant tex_var_018, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_baton_plate",
+    "kind": "texture",
+    "file": "skin_baton_plate.png",
+    "size": 256,
+    "bytes": 133718,
+    "sha256": "6de799202cf8afaed1d520f4670256f940307b8e7ad510017680376d9788d5a2",
+    "provenance": "derived from unused Higgsfield mill variant tex_var_019, conditioned by tools/asset-add.ts"
   }
 ]

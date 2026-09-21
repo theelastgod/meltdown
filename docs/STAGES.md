@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 200 — Higgsfield plates sat in the manifest and never hit a mesh
+
+**Goal.** `public/assets` already held awnings, billboards, chain-link, kernel hull, crowd coats,
+district bricks, mill variants, and more. `dressLevel` still bound a handful of ids. Awnings were
+flat magenta. THE KERNEL was a dark box. Pedestrians wore the cloak plate twice. The rest of the
+city was procedural canvas.
+
+**What changed.** Those named plates bind on the matching materials (fail-soft). District facades
+pick amber/cyan plates plus unused mill variants. New hull/CRT/cobble/skin plates were conditioned
+from leftover mill variants. Catalog skins 17–20 (phage, longwave, hammer, baton).
+
+**Proof.** `tests/assets.test.ts` lists the leftover ids in the renderer sources. `lint:assets` 171
+assets, 0 violations. Mutation: drop `"tex_awning_cy"` from city.ts — 1 fail.
+
 ## Stage 199 — Ghostfile node rows quoted a second, rounded trade
 
 **Goal.** Stage 190 made the hex tooltip print `formatChipLine` from the settled mods. The FILE

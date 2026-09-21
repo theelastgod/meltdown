@@ -88,3 +88,5 @@ one stage.
   → Stage 198
 - Ghostfile FILE-panel node rows quoted rounded camelCase mods, not the ledger line  
   → Stage 199
+- Higgsfield city/kit plates were on disk and never bound to a mesh  
+  → Stage 200

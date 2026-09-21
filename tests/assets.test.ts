@@ -129,6 +129,31 @@ describe("a cosmetic may name a texture, and that is all it may name", () => {
   });
 });
 
+describe("leftover Higgsfield plates are bound, not only declared", () => {
+  it("named leftover city and kit plates are passed to bindPlate", () => {
+    const files = [
+      "client/render/city.ts",
+      "client/render/life.ts",
+      "client/render/hub.ts",
+      "client/render/renderer.ts",
+      "client/render/weapons.ts",
+      "client/render/campaign.ts",
+      "client/render/run.ts",
+    ];
+    const src = files.map((f) => readFileSync(new URL(`../${f}`, import.meta.url), "utf8")).join("\n");
+    for (const id of [
+      "tex_awning_cy", "tex_awning_mg", "tex_billboard_cy", "tex_billboard_mg", "tex_billboard_ye",
+      "tex_brick_amber", "tex_brick_cyan", "tex_bulkhead", "tex_chainlink", "tex_crowd_coat",
+      "tex_desk", "tex_dummy", "tex_facade_amber", "tex_facade_cyan", "tex_glass", "tex_kernel_hull",
+      "tex_lamp", "tex_nameplate", "tex_pavement", "tex_rug", "tex_scaffold", "tex_tile_metro",
+      "tex_vent", "tex_asphalt_2", "tex_pipe", "tex_grate", "tex_cone_alt",
+      "tex_wasp_hull", "tex_mech_hull", "tex_kiosk_crt", "tex_wet_cobble",
+    ]) {
+      expect(src, id).toContain(`"${id}"`);
+    }
+  });
+});
+
 describe("the loader fails soft", () => {
   it("a request with no document resolves null instead of rejecting", async () => {
     disposeAssets();

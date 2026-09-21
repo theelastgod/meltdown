@@ -59,11 +59,11 @@ export class HubDressing {
       let m = mats.get(tag);
       if (!m) {
         m = tag === "window_glow" || tag === "rug" ? new THREE.MeshBasicMaterial({ color: RENO_COLORS[tag] ?? 0x222222 }) : new THREE.MeshStandardMaterial({ color: RENO_COLORS[tag] ?? 0x222222, roughness: 0.8, metalness: tag === "server_rack" ? 0.6 : 0.1, emissive: tag === "server_rack" ? PALETTE.cyan : 0x000000, emissiveIntensity: 0.15 });
-        if (m instanceof THREE.MeshStandardMaterial) {
-          if (tag === "server_rack") bindPlate(m, "tex_server_rack", true);
-          else if (tag === "crates") bindPlate(m, "tex_crate");
-          else if (tag === "shelf") bindPlate(m, "tex_metal");
-        }
+        if (tag === "server_rack" && m instanceof THREE.MeshStandardMaterial) bindPlate(m, "tex_server_rack", true);
+        else if (tag === "crates" && m instanceof THREE.MeshStandardMaterial) bindPlate(m, "tex_crate");
+        else if (tag === "shelf" && m instanceof THREE.MeshStandardMaterial) bindPlate(m, "tex_metal");
+        else if (tag === "rug" && m instanceof THREE.MeshBasicMaterial) bindPlate(m, "tex_rug");
+        else if (tag === "desk" && m instanceof THREE.MeshStandardMaterial) bindPlate(m, "tex_desk");
         mats.set(tag, m);
       }
       return m;

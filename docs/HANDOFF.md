@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 199, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 200, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 199 on this branch (Ghostfile row quotes the ledger line) |
-| Next stage number | **200** |
+| HEAD | Stage 200 on this branch (leftover Higgsfield plates bind) |
+| Next stage number | **201** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1027 across 115 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 200 is next
+## 6. Stage 201 is next
 
-Stage 199 made the Ghostfile node row quote the same trade as the hex tooltip. Next is
-`stack_smg:choke` duplicating `stack_smg:compensator` (Stage 171's conversion leftover — see §7).
+Stage 200 bound leftover Higgsfield plates. Next is `stack_smg:choke` duplicating COMPENSATOR
+unless already fixed in the tree. Then `poseRemotes` is still called with the capped `dt`.
 Do not loosen fairness.
 
 ---
@@ -213,11 +213,8 @@ not loosen the rule.** If a change of yours adds a violation, that is your chang
 to record. `npm run lint:fairness -- --record` exists and regenerating it is a deliberate act whose
 diff is the thing to review.
 
-**`stack_smg:choke` now duplicates `stack_smg:compensator`.** Stage 171 fixed two chips that netted
-exactly zero, and the honest consequence is that the rank-9 muzzle chip is now identical to the
-rank-6 one. No derivation produces a distinct trade there; it needs a different template for that
-weapon, which is authoring. It is written up at the foot of Stage 171 and belongs with the other
-owner decisions in `docs/PLAN.md`.
+**`stack_smg:choke` is no longer COMPENSATOR.** Stage 201 authored it as recoil −12% / ADS strafe
+−12%. Do not convert that back to spread. Do not loosen fairness.
 
 **The Cloudflare deploy is blocked**, not forgotten. Every `wrangler` invocation was refused by this
 sandbox's permission classifier, including read-only listing, and no workaround was attempted.
