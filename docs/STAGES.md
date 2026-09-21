@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 197 — PAID printed the raw float
+
+**Goal.** `client/file.ts` printed `PAID ${run.paid} $CAPITAL`. `run.paid` is $CAPITAL, often a
+fraction after settlement (Stage 185). The prizes line beside it uses `toFixed(0)`. A file at
+month-12's 0.4252 rate showed `PAID 85.04109589041096 $CAPITAL`.
+
+**What changed.** `Number(run.paid).toFixed(2)`.
+
+**Proof.** `tests/paidfmt.test.ts`. Mutation: raw interpolation — 1 fail.
+
 ## Stage 196 — Wasps going down online made no sound
 
 **Goal.** Offline, `waspDeath` logs WASP-NN DOWNED and plays `audio.explosion(false)`; `mechDeath`
