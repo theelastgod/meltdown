@@ -176,7 +176,7 @@ export class CounterClient {
       if (!(await this.tx(this.info.contracts.market, ABI.LedgerMarket!.abi, "buy", [BigInt(listing), 1n]))) return { ok: false, reason: "buy reverted" };
       await this.op("reconcile");
       await this.load();
-      this.say(`BOUGHT · listing ${listing} · ${L.price} $CAPITAL`);
+      this.say(`BOUGHT · LISTING ${listing} · ${L.price} $CAPITAL`);
       return { ok: true };
     } catch (e) {
       const reason = String((e as Error).message ?? e).split("\n").find((l) => /revert|Error|fetch|failed/i.test(l))?.slice(0, 100) ?? "failed";

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 304 — A market buy said listing
+
+**Goal.** Stage 302 CRT-cased `WEAR · OK`. A buy still wrote
+`BOUGHT · listing 3` — sentence case in a CRT log.
+
+**What changed.** `BOUGHT · LISTING ${listing}`.
+
+**Proof.** `tests/counter.test.ts` requires `BOUGHT · LISTING` and refuses
+`listing`. Mutation: lowercase restored — 1 fail.
+
 ## Stage 303 — The campaign ledger kept the underscore on a gun
 
 **Goal.** Stage 301 taught FILE `weaponName`. The close line on the ledger

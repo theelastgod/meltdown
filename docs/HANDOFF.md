@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 303, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 304, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 303 on this branch (ledger gun fallback spells spaces) |
-| Next stage number | **304** |
+| HEAD | Stage 304 on this branch (BOUGHT · LISTING) |
+| Next stage number | **305** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1075 across 117 files, `npm test` |
+| Unit tests | 1076 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,11 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 304 is next
+## 6. Stage 305 is next
 
-Stage 303 spelled underscores as spaces on the campaign ledger gun fallback. Do not
-loosen fairness. Do not plate viewmodel or remote strips. The join line still prints
-the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 304 CRT-cased `BOUGHT · LISTING`. `LISTED · token` is still sentence case. Do
+not loosen fairness. Do not plate viewmodel or remote strips. The join line still
+prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

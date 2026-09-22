@@ -29,6 +29,14 @@ describe("the counter-ledger FILE line", () => {
   });
 });
 
+describe("a market buy is said in CRT", () => {
+  it("prints LISTING, not listing", () => {
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/BOUGHT · LISTING \$\{listing\}/);
+    expect(src).not.toMatch(/BOUGHT · listing \$\{listing\}/);
+  });
+});
+
 describe("the counter-ledger on the devnet", () => {
   let b: Boot;
   const store = new MemoryAccountStore(devSeed);
