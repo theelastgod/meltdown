@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 446 — A wrong-weapon chip said is a chip
+
+**Goal.** Stage 235 taught the names. Putting STACK LONG BARREL on the
+Lease-Breaker still kicked `STACK LONG BARREL is a STACK SMG chip`.
+
+**What changed.** `IS A … CHIP`.
+
+**Proof.** `tests/mastery.test.ts`: the kick matches `IS A STACK SMG CHIP`.
+loadout.ts must the CRT template. Mutation: mixed case again — 1 fail.
+
 ## Stage 445 — A firmware below mastery said needs mastery
 
 **Goal.** Stage 444 taught chip `NEEDS MASTERY`. Flashing THREE-COUNT at rank

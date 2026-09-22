@@ -580,3 +580,5 @@ one stage.
   → Stage 444
 - A firmware below mastery said needs mastery  
   → Stage 445
+- A wrong-weapon chip said is a chip  
+  → Stage 446
