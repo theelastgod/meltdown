@@ -500,3 +500,5 @@ one stage.
   → Stage 404
 - Buying a cosmetic twice said already owned  
   → Stage 405
+- A poor shop said needs Wakelight  
+  → Stage 406

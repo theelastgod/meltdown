@@ -239,6 +239,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/Robinhood Wallet · WalletConnect · injected/);
   });
 
+  it("a poor shop is NEEDS N WAKELIGHT, not needs N Wakelight", () => {
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/NEEDS \$\{c\.wakelight\} WAKELIGHT/);
+    expect(src).not.toMatch(/needs \$\{c\.wakelight\} Wakelight/);
+  });
+
   it("buying a cosmetic twice is ALREADY OWNED, not already owned", () => {
     const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "ALREADY OWNED"/);

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 406 — A poor shop said needs Wakelight
+
+**Goal.** Stage 405 taught `ALREADY OWNED`. Buying a theme without enough
+Wakelight still returned `needs 300 Wakelight`.
+
+**What changed.** `NEEDS ${c.wakelight} WAKELIGHT`.
+
+**Proof.** `tests/endgame.test.ts`: rewrite.ts must `NEEDS ${c.wakelight} WAKELIGHT`
+and must not `needs ${c.wakelight} Wakelight`. Mutation: mixed case again — 1 fail.
+
 ## Stage 405 — Buying a cosmetic twice said already owned
 
 **Goal.** Stage 400 taught `REWRITE OPENS AT`. Buying a theme the file already

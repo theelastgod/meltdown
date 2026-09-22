@@ -97,7 +97,7 @@ export function buyCosmetic(a: Account, id: string): { ok: boolean; reason?: str
     if (n <= have) return { ok: false, reason: `${c.kind} slot ${n} already owned (${have} slots)` };
     if (n > 2 && !a.cosmetics.includes(`${c.kind}_${n - 1}`)) return { ok: false, reason: `needs ${c.kind} slot ${n - 1} first` };
   }
-  if (a.wallet.wakelight < c.wakelight) return { ok: false, reason: `needs ${c.wakelight} Wakelight` };
+  if (a.wallet.wakelight < c.wakelight) return { ok: false, reason: `NEEDS ${c.wakelight} WAKELIGHT` };
   a.wallet.wakelight -= c.wakelight;
   a.cosmetics.push(id);
   a.ledger.push(`WAKELIGHT · ${c.name} · −${c.wakelight}`);
