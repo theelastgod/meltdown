@@ -7,7 +7,7 @@
  * three ids to `a.owned`, which is the progression list for nodes, chips, keystones and weapons.
  * Every consumer of a cosmetic reads `a.cosmetics`. Measured on an account holding exactly what
  * the reconcile wrote: `slotsOf` → 1 alias and 1 preset, `setTheme("theme_deep_wake")` → false,
- * `savePreset(6)` → "slot 6 not owned (1 slots)", `setAlias(4)` → "slot 4 not owned (1 slots)".
+ * `savePreset(6)` → "SLOT 6 NOT OWNED (1 SLOT)", `setAlias(4)` → "SLOT 4 NOT OWNED (1 SLOT)".
  * The pass bought nothing at all.
  *
  * Half of the repair is the list. The other half is `slotsOf`, which counted ids: it works for

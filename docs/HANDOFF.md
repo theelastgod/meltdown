@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 410, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 411, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 410 on this branch (EMPTY ALIAS) |
-| Next stage number | **411** |
+| HEAD | Stage 411 on this branch (SLOT N NOT OWNED) |
+| Next stage number | **412** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1179 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |

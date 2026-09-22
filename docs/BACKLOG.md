@@ -510,3 +510,5 @@ one stage.
   → Stage 409
 - An empty alias said empty alias  
   → Stage 410
+- A write into a missing slot said not owned  
+  → Stage 411

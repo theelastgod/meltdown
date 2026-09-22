@@ -4,7 +4,7 @@ import { dayIndex, pickDistinct, seasonIndex, seasonWeek, weekIndex } from "../s
 import { claimContract, contractsFor, dailyView, CONTRACT_POOL } from "../shared/endgame/contracts";
 import { AUDITS, auditErrors, auditFor, currentAudit, leaderboard } from "../shared/endgame/audits";
 import { applyRound, emptySeason, houseName, rollSeason, seasonView, TURN_AT } from "../shared/endgame/season";
-import { buyCosmetic, canRewrite, COSMETICS, rewrite, REWRITE_WAKELIGHT, savePreset, setAlias, setTheme, slotsOf, slotsWord } from "../shared/endgame/rewrite";
+import { buyCosmetic, canRewrite, COSMETICS, rewrite, REWRITE_WAKELIGHT, savePreset, setAlias, setTheme, slotNotOwned, slotsOf, slotsWord } from "../shared/endgame/rewrite";
 import { createAccount, sandboxAccount } from "../shared/progression/account";
 import { itemById } from "../shared/manifest/items";
 import { DAY_MS } from "../shared/endgame/clock";
@@ -237,6 +237,15 @@ describe("the FILE shop counts slots", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/ROBINHOOD WALLET · WALLETCONNECT · INJECTED/);
     expect(src).not.toMatch(/Robinhood Wallet · WalletConnect · injected/);
+  });
+
+  it("a write into a missing slot is SLOT N NOT OWNED, not slot N not owned", () => {
+    expect(slotNotOwned(4, 1)).toBe("SLOT 4 NOT OWNED (1 SLOT)");
+    expect(slotNotOwned(6, 1)).toBe("SLOT 6 NOT OWNED (1 SLOT)");
+    expect(slotNotOwned(4, 1)).not.toMatch(/not owned/);
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: slotNotOwned\(slot, slots\)/);
+    expect(src).not.toMatch(/slot \$\{slot\} not owned \(\$\{slots\} slots\)/);
   });
 
   it("a poor shop is NEEDS N WAKELIGHT, not needs N Wakelight", () => {

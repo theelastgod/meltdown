@@ -77,6 +77,11 @@ export function slotsWord(n: number): string {
   return `${n} SLOT${n === 1 ? "" : "S"}`;
 }
 
+/** A write into a slot the file does not have. */
+export function slotNotOwned(slot: number, have: number): string {
+  return `SLOT ${slot} NOT OWNED (${slotsWord(have)})`;
+}
+
 export function slotsOf(a: Account): { aliases: number; presets: number } {
   const owned = a.cosmetics ?? [];
   const top = (kind: string) => Math.max(1, ...owned.filter((id) => id.startsWith(`${kind}_`)).map((id) => Number(id.slice(kind.length + 1))).filter(Number.isFinite));
@@ -113,7 +118,7 @@ export function setTheme(a: Account, id: string | null): boolean {
 /** Save a loadout preset into an owned slot (raw JSON; validated like any loadout when it is applied). */
 export function savePreset(a: Account, slot: number, name: string, loadout: unknown): { ok: boolean; reason?: string } {
   const slots = slotsOf(a).presets;
-  if (slot < 1 || slot > slots) return { ok: false, reason: `slot ${slot} not owned (${slots} slots)` };
+  if (slot < 1 || slot > slots) return { ok: false, reason: slotNotOwned(slot, slots) };
   a.presets = a.presets ?? [];
   a.presets[slot - 1] = { name: String(name).slice(0, 24).toUpperCase() || `PRESET ${slot}`, loadout: JSON.parse(JSON.stringify(loadout ?? {})) };
   return { ok: true };
@@ -121,7 +126,7 @@ export function savePreset(a: Account, slot: number, name: string, loadout: unkn
 
 export function setAlias(a: Account, slot: number, alias: string): { ok: boolean; reason?: string } {
   const slots = slotsOf(a).aliases;
-  if (slot < 1 || slot > slots) return { ok: false, reason: `slot ${slot} not owned (${slots} slots)` };
+  if (slot < 1 || slot > slots) return { ok: false, reason: slotNotOwned(slot, slots) };
   const clean = alias.replace(/[^\x20-\x7e]/g, "").trim().slice(0, 16).toUpperCase();
   if (!clean) return { ok: false, reason: "EMPTY ALIAS" };
   a.aliases = a.aliases ?? [];

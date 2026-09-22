@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 411 — A write into a missing slot said not owned
+
+**Goal.** Stage 410 taught `EMPTY ALIAS`. Saving preset 4 or alias 4 on a new
+file still returned `slot 4 not owned (1 slots)`.
+
+**What changed.** `slotNotOwned`: `SLOT 4 NOT OWNED (1 SLOT)`. savePreset and
+setAlias call it.
+
+**Proof.** `tests/endgame.test.ts`: `slotNotOwned(4, 1)` is `SLOT 4 NOT OWNED (1 SLOT)`.
+rewrite.ts must `slotNotOwned(slot, slots)` and must not
+`slot ${slot} not owned (${slots} slots)`. Mutation: mixed case again — 1 fail.
+
 ## Stage 410 — An empty alias said empty alias
 
 **Goal.** Stage 409 taught `NEEDS SLOT N FIRST`. Setting a blank alias still
