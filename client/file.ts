@@ -13,7 +13,7 @@ import { xpForDepth, totalXpToReach } from "@shared/progression/depth";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import type { FileMsg } from "@shared/net/protocol";
 import { sandboxAccount, type Account, type GhostRun } from "@shared/progression/account";
-import { publicIdentity } from "@shared/identity/identity";
+import { filesWord, publicIdentity } from "@shared/identity/identity";
 import { COSMETICS, canRewrite, slotsOf, slotsWord, cosmeticById } from "@shared/endgame/rewrite";
 import type { ContractView } from "@shared/endgame/contracts";
 import type { AuditDef, AuditEntry } from "@shared/endgame/audits";
@@ -787,7 +787,7 @@ export class GhostFile {
     this.panel.innerHTML = `
       <div class="hd">▲ GHOSTFILE · <span class="cy">${v.account}</span> <span class="x" data-act="close">${closeHint("TAB", this.touchHud)}</span></div>
       <div class="ln">DEPTH <b>${String(v.depth).padStart(2, "0")}</b> · XP <b>${v.xp}</b> (${v.xpIntoDepth}/${v.xpForNext === Infinity ? "∞" : v.xpForNext}) · SCRIP <b>${v.scrip}</b> · WAKELIGHT <b>${v.wakelight}</b> · SALVAGE <b>${v.salvage}</b></div>
-      <div class="ln idn">${v.identity.glyphSvg} <span class="dim">THE CITY CALLS YOU</span> <b>${v.identity.display}</b> · CHAPTER <b>${["—", "I", "II", "III"][v.identity.chapter] ?? "—"}</b>${v.identity.chapter >= 3 ? ' <span class="ye">NAMED</span>' : ""} · MONIKER <select data-moniker="1"><option value="">— none —</option>${MONIKERS.map((m) => `<option value="${m.id}" ${m.id === v.identity.moniker ? "selected" : ""} ${v.identity.unlocked.includes(m.id) ? "" : "disabled"}>${m.text}${v.identity.unlocked.includes(m.id) ? "" : " · " + m.how}</option>`).join("")}</select>${v.identity.debt ? ` · <span class="c">DEBT: ${v.identity.debt.display} (${v.identity.debt.kills} files on you)</span>` : ""}</div>
+      <div class="ln idn">${v.identity.glyphSvg} <span class="dim">THE CITY CALLS YOU</span> <b>${v.identity.display}</b> · CHAPTER <b>${["—", "I", "II", "III"][v.identity.chapter] ?? "—"}</b>${v.identity.chapter >= 3 ? ' <span class="ye">NAMED</span>' : ""} · MONIKER <select data-moniker="1"><option value="">— none —</option>${MONIKERS.map((m) => `<option value="${m.id}" ${m.id === v.identity.moniker ? "selected" : ""} ${v.identity.unlocked.includes(m.id) ? "" : "disabled"}>${m.text}${v.identity.unlocked.includes(m.id) ? "" : " · " + m.how}</option>`).join("")}</select>${v.identity.debt ? ` · <span class="c">DEBT: ${v.identity.debt.display} (${filesWord(v.identity.debt.kills)} ON YOU)</span>` : ""}</div>
       <div class="ln dim">RITES ${CHAPTERS.map((c) => `${v.identity.chapters.includes(c.chapter) ? "▣" : "▢"} ${c.numeral} ${c.title} (D${c.depth})`).join(" · ")} · ${v.identity.unlocked.length}/${MONIKERS.length} MONIKERS EARNED</div>
       <div class="ln">PRIMARY <span class="wp" data-act="primary">[${wname(this.raw.primary)}]</span> · SECONDARY <span class="wp" data-act="secondary">[${wname(this.raw.secondary)}]</span> <span class="dim">(D${WEAPON_DEPTH[this.raw.primary as WeaponId] ?? "?"} / D${WEAPON_DEPTH[this.raw.secondary as WeaponId] ?? "?"})</span></div>
       <div class="cols">

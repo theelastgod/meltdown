@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 356 — FILE identity said files on you
+
+**Goal.** Stage 342 taught `1 FILE ON YOU` on the HUD and ledger. FILE's identity
+row still wrote `(2 files on you)`.
+
+**What changed.** `filesWord(...) ON YOU`.
+
+**Proof.** `tests/identity.test.ts`: file.ts must `filesWord(v.identity.debt.kills)} ON YOU`
+and must not `files on you`. Mutation: lowercase files on you again — 1 fail.
+`npm test` 1126/1126.
+
 ## Stage 355 — An empty rig said nothing on the rig yet
 
 **Goal.** Stage 354 taught `NOT PLAYED YET`. An empty cosmetics rig still dimmed

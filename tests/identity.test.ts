@@ -104,6 +104,9 @@ describe("public identity", () => {
     const hud = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(hud).toMatch(/filesWord\(m\.kills\)/);
     expect(hud).not.toMatch(/m\.kills\} FILES/);
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(file).toMatch(/filesWord\(v\.identity\.debt\.kills\)\} ON YOU/);
+    expect(file).not.toMatch(/files on you/);
     const room = readFileSync(new URL("../server/room.ts", import.meta.url), "utf8");
     expect(room).toMatch(/filesWord\(topKills\)/);
     expect(room).toMatch(/filesWord\(rec\.account\.debt\.kills\)/);
