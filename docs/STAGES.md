@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 359 — An empty ledger said no lines yet
+
+**Goal.** Stage 358 taught `NO LISTINGS`. An empty FILE ledger still dimmed
+`no lines yet`.
+
+**What changed.** `NO LINES YET`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `NO LINES YET` and must not
+`no lines yet`. Mutation: lowercase again — 1 fail.
+`npm test` 1129/1129.
+
 ## Stage 358 — An empty market said no listings
 
 **Goal.** Stage 357 taught `NO SCORES YET THIS WEEK`. An empty Ledger Market still

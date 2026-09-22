@@ -406,3 +406,5 @@ one stage.
   → Stage 357
 - An empty market said no listings  
   → Stage 358
+- An empty ledger said no lines yet  
+  → Stage 359

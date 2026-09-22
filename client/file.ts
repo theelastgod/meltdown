@@ -795,7 +795,7 @@ export class GhostFile {
           <div class="sh">KEYSTONE · ONE · LINKED</div>${KEYSTONES.map(row).join("")}</div>
         <div><div class="sh">WEAPON MASTERY · CHIPS · FIRMWARE</div><div class="kit">${kit}</div>
           <div class="sh">ATTESTATION STAMPS · ${this.stamps.length}/${STAMPS.length}</div><div class="stamps">${stampRows}</div>
-          <div class="sh">LEDGER</div><div class="ledger">${v.ledger.length ? v.ledger.map((l) => `<div>${l}</div>`).join("") : "<div class='dim'>no lines yet</div>"}</div>
+          <div class="sh">LEDGER</div><div class="ledger">${v.ledger.length ? v.ledger.map((l) => `<div>${l}</div>`).join("") : "<div class='dim'>NO LINES YET</div>"}</div>
         </div>
       </div>
       <div class="eg">${this.endgameHtml()}</div>
