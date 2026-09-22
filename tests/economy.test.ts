@@ -280,4 +280,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(23, "skin_breaker", "LEASE STEEL", "ANODIZED SHOTGUN STEEL, AMBER CHEVRONS IN THE RAIN"/);
     expect(src).not.toMatch(/skin\(23, "skin_breaker", "LEASE STEEL", "anodized shotgun steel, amber chevrons in the rain"/);
   });
+
+  it("ARC VIOLET's market line is CRT, not shock-arc plate", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_arc")!.line;
+    expect(line).toBe("SHOCK-ARC PLATE, THE BATON'S OWN LIGHT");
+    expect(line).not.toBe("shock-arc plate, the baton's own light");
+    expect(src).toMatch(/skin\(24, "skin_arc", "ARC VIOLET", "SHOCK-ARC PLATE, THE BATON'S OWN LIGHT"/);
+    expect(src).not.toMatch(/skin\(24, "skin_arc", "ARC VIOLET", "shock-arc plate, the baton's own light"/);
+  });
 });

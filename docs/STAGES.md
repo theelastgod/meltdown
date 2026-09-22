@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 516 — ARC VIOLET's market line said shock-arc plate
+
+**Goal.** Stage 515 taught LEASE STEEL. ARC VIOLET still said
+mixed-case `shock-arc plate, the baton's own light`.
+
+**What changed.** `SHOCK-ARC PLATE, THE BATON'S OWN LIGHT`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 515 — LEASE STEEL's market line said anodized shotgun steel
 
 **Goal.** Stage 514 taught DIRECTIVE CORE. LEASE STEEL still said

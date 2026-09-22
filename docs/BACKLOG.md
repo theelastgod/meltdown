@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- ARC VIOLET's market line still says mixed-case `shock-arc plate, the baton's own light`
+  → Stage 516
 - LEASE STEEL's market line still says mixed-case `anodized shotgun steel, amber chevrons in the rain`
   → Stage 515
 - DIRECTIVE CORE's market line still says mixed-case `red filament on the optic`
