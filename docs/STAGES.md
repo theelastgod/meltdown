@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 292 — The PA and the ledger line fell back to the level id
+
+**Goal.** Wake lines already call `districtName`. The VANTAGE PA and
+`BACK ON THE LEDGER` still used `displayName ?? this.levelId`, which
+prints `LEASE_ROW` whenever the display name is missing.
+
+**What changed.** Both call `districtName(this.world.level)`.
+
+**Proof.** `tests/district.test.ts` requires both calls and refuses
+`displayName ?? this.levelId`. Mutation: the PA uses the id again — 1 fail.
+
 ## Stage 291 — Hitscan tracer lines were unplated
 
 **Goal.** Stage 283 plated the cylinder beam in `weapons.ts`. The pooled

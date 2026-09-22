@@ -34,6 +34,12 @@ describe("a contract names the district the city does", () => {
     expect(src).toMatch(/TRAVELLING — \$\{levelDisplayName\(net\.levelName\)\}/);
     expect(src).not.toMatch(/TRAVELLING — \$\{net\.levelName\.replace/);
   });
+  it("the PA and the ledger line call districtName, not the level id", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/const district = districtName\(this\.world\.level\)/);
+    expect(src).toMatch(/BACK ON THE LEDGER · \$\{districtName\(this\.world\.level\)\}/);
+    expect(src).not.toMatch(/displayName \?\? this\.levelId/);
+  });
 });
 
 describe("the wake's lines name their district", () => {

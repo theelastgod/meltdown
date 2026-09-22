@@ -787,7 +787,7 @@ export class Game {
       c.nextSiren = t + Math.round((38 + ((t * 7) % 23)) * SIM_HZ);
     }
     if (t >= c.nextPa) {
-      const district = (this.world.level.displayName ?? this.levelId).toUpperCase();
+      const district = districtName(this.world.level);
       const named = this.campaign?.threat.named && c.paIndex % 2 === 1;
       const who = this.file.identityView().display;
       const line = named ? `VANTAGE ADVISES ${district}: ${who} IS UNLISTED. REPORT ON SIGHT. THREAT RATING ${this.campaign.threat.rating}.` : Game.PA_LINES[c.paIndex % Game.PA_LINES.length]!.replace(/\{D\}/g, district);
@@ -922,7 +922,7 @@ export class Game {
   /** Offline this is a sim event; online it is the snapshot's dead→alive edge (Stage 191). */
   private backOnTheLedger(): void {
     this.audio.respawn();
-    this.hud.push(`◆ BACK ON THE LEDGER · ${this.world.level.displayName ?? this.levelId}`, "cy");
+    this.hud.push(`◆ BACK ON THE LEDGER · ${districtName(this.world.level)}`, "cy");
   }
 
   /** what closed the file last, for the check that the camera found it */
