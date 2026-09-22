@@ -588,3 +588,5 @@ one stage.
   → Stage 448
 - Attesting a keystone said is a KEYSTONE  
   → Stage 449
+- Chip sockets as a list said must be an object  
+  → Stage 450

@@ -122,9 +122,11 @@ describe("chips and firmwares", () => {
     const shape = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: ["lease_breaker:long_barrel"] } }, owned, 50, ranks);
     expect(shape.errors.map((e) => e.rule)).toContain("chips-shape");
     const shapeKick = shape.errors.find((e) => e.rule === "chips-shape")!;
-    expect(shapeKick.detail).toBe("LEASE-BREAKER: sockets must be an object");
+    expect(shapeKick.detail).toBe("LEASE-BREAKER: SOCKETS MUST BE AN OBJECT");
+    expect(shapeKick.detail).not.toBe("LEASE-BREAKER: sockets must be an object");
     expect(shapeKick.detail).not.toMatch(/^lease_breaker:/);
-    expect(src).toMatch(/chips-shape", detail: `\$\{gun\(wid as WeaponId\)\}: sockets must be an object`/);
+    expect(src).toMatch(/chips-shape", detail: `\$\{gun\(wid as WeaponId\)\}: SOCKETS MUST BE AN OBJECT`/);
+    expect(src).not.toMatch(/chips-shape", detail: `\$\{gun\(wid as WeaponId\)\}: sockets must be an object`/);
     expect(src).not.toMatch(/chips-shape", detail: `\$\{wid\}: sockets must be an object`/);
     const noSock = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { barrel: "lease_breaker:long_barrel" } } }, owned, 50, ranks);
     expect(noSock.errors.map((e) => e.rule)).toContain("chip-socket");

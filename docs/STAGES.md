@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 450 — Chip sockets as a list said must be an object
+
+**Goal.** Stage 239 taught the gun name on that kick. A chips map that is
+an array still kicked `LEASE-BREAKER: sockets must be an object`.
+
+**What changed.** `SOCKETS MUST BE AN OBJECT`.
+
+**Proof.** `tests/mastery.test.ts`: the kick is
+`LEASE-BREAKER: SOCKETS MUST BE AN OBJECT`. loadout.ts must the CRT
+template. Mutation: mixed case again — 1 fail.
+
 ## Stage 449 — Attesting a keystone said is a KEYSTONE
 
 **Goal.** Stage 448 taught firmware `IS A … FIRMWARE`. Attesting DEBTLESS
