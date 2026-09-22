@@ -81,6 +81,13 @@ export function testimonyKey(k: string): string {
   return k.replace(/^m\d+:/, "");
 }
 
+/** CRT line for one testimony pair: LEASE=BURN, not lease=burn. */
+export function testimonyLine(k: string, v: string): string {
+  const key = testimonyKey(k).replace(/_/g, " ").toUpperCase();
+  const val = v.replace(/_/g, " ").toUpperCase();
+  return `${key}=${val}`;
+}
+
 /**
  * The ending the white office actually delivers (Stage 174).
  *

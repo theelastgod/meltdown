@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 286 — TESTIMONY printed lease=burn
+
+**Goal.** Stage 285 stripped `m1:`. The remainder was still the file's
+snake_case tokens: `lease=burn`, `spare_docks`. The rest of the CRT speaks
+LEASE-BREAKER, not lease_breaker.
+
+**What changed.** `testimonyLine()` CRT-cases both sides (`LEASE=BURN`,
+`LATTICE=SPARE DOCKS`). The panel calls it.
+
+**Proof.** `tests/campaign.test.ts`: `testimonyLine("m1:lease", "burn")` is
+`LEASE=BURN`. Mutations: CRT-case omitted — 1 fail; the panel call omitted —
+1 fail.
+
 ## Stage 285 — TESTIMONY printed m1:lease
 
 **Goal.** The contracts panel promised to strip the mission prefix the file

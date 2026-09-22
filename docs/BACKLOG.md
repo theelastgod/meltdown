@@ -260,3 +260,5 @@ one stage.
   → Stage 284
 - TESTIMONY printed m1:lease  
   → Stage 285
+- TESTIMONY printed lease=burn  
+  → Stage 286
