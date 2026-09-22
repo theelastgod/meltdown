@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 475 — CAMPAIGN's subtitle said the desk
+
+**Goal.** Stage 474 taught THE RUN's subtitle. CAMPAIGN's row still
+printed mixed-case `the desk at the Deadletter Office: fixers, gigs,
+the seven-mission arc`.
+
+**What changed.** `THE DESK AT THE DEADLETTER OFFICE: FIXERS, GIGS,
+THE SEVEN-MISSION ARC`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the source. `tests/district.test.ts` asserts that sentence and that
+menu.ts must not the mixed-case template. Mutation: mixed case again —
+1 fail.
+
 ## Stage 474 — THE RUN's subtitle said play to earn
 
 **Goal.** Stage 473 taught WAKE's subtitle. THE RUN's row still printed

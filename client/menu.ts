@@ -31,7 +31,7 @@ export interface MenuEntry {
 const MAIN: MenuEntry[] = [
   { id: "wake", label: "WAKE", line: "THE SIGNATURE MODE: FLIP THE NODES, HOLD THE DISTRICT, BEAT THE KERNEL'S CLOCK" },
   { id: "run", label: "THE RUN", line: "PLAY TO EARN: CARRY $CAPITAL CLAIMS OUT OF THE PVP ZONE TO A GATE; DIE AND THEY DROP" },
-  { id: "campaign", label: "CAMPAIGN", line: "the desk at the Deadletter Office: fixers, gigs, the seven-mission arc" },
+  { id: "campaign", label: "CAMPAIGN", line: "THE DESK AT THE DEADLETTER OFFICE: FIXERS, GIGS, THE SEVEN-MISSION ARC" },
   { id: "office", label: "THE OFFICE", line: "the hub: your file on the wall, the range ghosts, the dossier" },
   { id: "range", label: "THE RANGE", line: "the drainage yard, offline, with dummies" },
   { id: "file", label: "FILE", line: "the Ghostfile: nodes, mastery, stamps, the counter-ledger" },

@@ -89,4 +89,9 @@ describe("the main menu CRT-cases its lines", () => {
     expect(src).toMatch(/id: "run", label: "THE RUN", line: "PLAY TO EARN: CARRY \$CAPITAL CLAIMS OUT OF THE PVP ZONE TO A GATE; DIE AND THEY DROP"/);
     expect(src).not.toMatch(/id: "run", label: "THE RUN", line: "play to earn:/);
   });
+  it("CAMPAIGN's subtitle is the desk in CRT", () => {
+    const src = readFileSync(new URL("../client/menu.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/id: "campaign", label: "CAMPAIGN", line: "THE DESK AT THE DEADLETTER OFFICE: FIXERS, GIGS, THE SEVEN-MISSION ARC"/);
+    expect(src).not.toMatch(/id: "campaign", label: "CAMPAIGN", line: "the desk at the Deadletter Office:/);
+  });
 });
