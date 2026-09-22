@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- DEADLETTER WHITE's market line still says mixed-case `the office's own paint`
+  → Stage 496
 - KERNEL PLATE's market line still says mixed-case `red filament without the filament`
   → Stage 495
 - FILE value-imported crtPhrase from the chain client, so the first download carried viem

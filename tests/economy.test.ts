@@ -100,4 +100,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(3, "skin_kernel", "KERNEL PLATE", "RED FILAMENT WITHOUT THE FILAMENT"/);
     expect(src).not.toMatch(/skin\(3, "skin_kernel", "KERNEL PLATE", "red filament without the filament"/);
   });
+
+  it("DEADLETTER WHITE's market line is CRT, not the office's own paint", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_deadletter")!.line;
+    expect(line).toBe("THE OFFICE'S OWN PAINT, CUT FROM A SEALED DOOR");
+    expect(line).not.toBe("the office's own paint, cut from a sealed door");
+    expect(src).toMatch(/skin\(4, "skin_deadletter", "DEADLETTER WHITE", "THE OFFICE'S OWN PAINT, CUT FROM A SEALED DOOR"/);
+    expect(src).not.toMatch(/skin\(4, "skin_deadletter", "DEADLETTER WHITE", "the office's own paint, cut from a sealed door"/);
+  });
 });
