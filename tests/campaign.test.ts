@@ -159,6 +159,12 @@ describe("picking a house writes the name, not the id", () => {
     expect(src).not.toMatch(/house already picked/);
   });
 
+  it("a claimed completion is CLOSED BY THE ROOM, not closed by the room", () => {
+    const src = readFileSync(new URL("../shared/campaign/endpoint.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/A CONTRACT IS CLOSED BY THE ROOM THAT RAN IT, NOT BY ASKING/);
+    expect(src).not.toMatch(/a contract is closed by the room that ran it, not by asking/);
+  });
+
   it("an unknown house is UNKNOWN HOUSE, not unknown house", () => {
     const src = readFileSync(new URL("../shared/campaign/endpoint.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "UNKNOWN HOUSE"/);

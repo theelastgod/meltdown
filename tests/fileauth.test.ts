@@ -156,7 +156,7 @@ describe("a contract is closed by the room that ran it, not by asking", () => {
     const a = fresh();
     const r = campaignRequest(a, { op: "complete", id: "m1_wake_unlisted", testimony: { "m1:lease": "burn" } });
     expect(r.ok).toBe(false);
-    expect(r.reason).toMatch(/closed by the room/);
+    expect(r.reason).toMatch(/CLOSED BY THE ROOM/);
     expect(r.campaign.missionsDone).toEqual([]);
     // and nothing was paid out for the asking
     expect(a.wallet.scrip).toBe(fresh().wallet.scrip);

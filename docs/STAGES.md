@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 418 — A claimed completion said closed by the room
+
+**Goal.** Stage 417 taught `HOUSE ALREADY PICKED`. Completing a contract from
+the client still returned `a contract is closed by the room that ran it, not
+by asking`.
+
+**What changed.** `A CONTRACT IS CLOSED BY THE ROOM THAT RAN IT, NOT BY ASKING`.
+`tests/fileauth.test.ts` now matches `CLOSED BY THE ROOM`.
+
+**Proof.** `tests/campaign.test.ts`: endpoint.ts must the CRT sentence and must
+not the mixed-case sentence. Mutation: mixed case again — 1 fail.
+
 ## Stage 417 — A second house said house already picked
 
 **Goal.** Stage 416 taught `UNKNOWN HOUSE`. Picking a house when one is already

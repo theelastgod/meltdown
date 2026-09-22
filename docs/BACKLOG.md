@@ -524,3 +524,5 @@ one stage.
   → Stage 416
 - A second house said house already picked  
   → Stage 417
+- A claimed completion said closed by the room  
+  → Stage 418

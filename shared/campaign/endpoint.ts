@@ -45,7 +45,7 @@ export function campaignRequest(a: Account, body: unknown, opts: CampaignOptions
       return { ok, reason: ok ? undefined : "HOUSE ALREADY PICKED", campaign: campaignOf(a) };
     }
     case "complete": {
-      if (!opts.trustCompletion) return { ok: false, reason: "a contract is closed by the room that ran it, not by asking", campaign: campaignOf(a) };
+      if (!opts.trustCompletion) return { ok: false, reason: "A CONTRACT IS CLOSED BY THE ROOM THAT RAN IT, NOT BY ASKING", campaign: campaignOf(a) };
       const id = String((req as { id?: unknown }).id ?? "");
       const t = (req as { testimony?: unknown }).testimony;
       const testimony = t && typeof t === "object" && !Array.isArray(t) ? Object.fromEntries(Object.entries(t as Record<string, unknown>).filter(([, v]) => typeof v === "string").map(([k, v]) => [k, String(v)])) : {};

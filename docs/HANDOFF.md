@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 417, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 418, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 417 on this branch (HOUSE ALREADY PICKED) |
-| Next stage number | **418** |
+| HEAD | Stage 418 on this branch (CLOSED BY THE ROOM) |
+| Next stage number | **419** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1184 across 117 files, `npm test` |
+| Unit tests | 1187 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,12 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 418 is next
+## 6. Stage 419 is next
 
-Stage 417 CRT-cased `HOUSE ALREADY PICKED`. Completing a contract from the
-client still returns `a contract is closed by the room that ran it, not by asking`.
-Do not loosen fairness. Do not plate viewmodel or remote strips. The join line
-still prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 418 CRT-cased `CLOSED BY THE ROOM`. Launching still returns
+`unknown contract`. Do not loosen fairness. Do not plate viewmodel or remote
+strips. The join line still prints the socket name — `probe:net` asserts
+`probe-join-31`; leave it.
 
 ---
 
