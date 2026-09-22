@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- PHAGE PLATE's market line still says mixed-case `green-black contagion paint`
+  → Stage 509
 - BLACK LEASE's market line still says mixed-case `CRT phosphor on a sealed file`
   → Stage 508
 - ESTATE GRID's market line still says mixed-case `cyan monitor grid`

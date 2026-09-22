@@ -217,4 +217,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(16, "skin_black_lease", "BLACK LEASE", "CRT PHOSPHOR ON A SEALED FILE"/);
     expect(src).not.toMatch(/skin\(16, "skin_black_lease", "BLACK LEASE", "CRT phosphor on a sealed file"/);
   });
+
+  it("PHAGE PLATE's market line is CRT, not green-black contagion paint", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_phage")!.line;
+    expect(line).toBe("GREEN-BLACK CONTAGION PAINT, THE LAUNCHER'S OWN STAIN");
+    expect(line).not.toBe("green-black contagion paint, the launcher's own stain");
+    expect(src).toMatch(/skin\(17, "skin_phage", "PHAGE PLATE", "GREEN-BLACK CONTAGION PAINT, THE LAUNCHER'S OWN STAIN"/);
+    expect(src).not.toMatch(/skin\(17, "skin_phage", "PHAGE PLATE", "green-black contagion paint, the launcher's own stain"/);
+  });
 });

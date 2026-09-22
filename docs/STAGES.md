@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 509 — PHAGE PLATE's market line said green-black contagion paint
+
+**Goal.** Stage 508 taught BLACK LEASE. PHAGE PLATE still said
+mixed-case `green-black contagion paint, the launcher's own stain`.
+
+**What changed.** `GREEN-BLACK CONTAGION PAINT, THE LAUNCHER'S OWN
+STAIN`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 508 — BLACK LEASE's market line said CRT phosphor on a sealed file
 
 **Goal.** Stage 507 taught ESTATE GRID. BLACK LEASE still said
