@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 354 — An unplayed Audit said not played yet
+
+**Goal.** Stage 353 taught `NONE POSTED`. An Audit never joined still dimmed
+`not played yet`.
+
+**What changed.** `NOT PLAYED YET`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `"NOT PLAYED YET"` and must not
+`"not played yet"`. Mutation: sentence-case again — 1 fail.
+`npm test` 1125/1125.
+
 ## Stage 353 — No prizes said none posted
 
 **Goal.** Stage 352 taught `EMPTY`. A wallet with no prize still dimmed

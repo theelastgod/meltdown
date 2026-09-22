@@ -177,6 +177,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/class='dim'>empty/);
   });
 
+  it("an unplayed Audit is NOT PLAYED YET, not not played yet", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/"NOT PLAYED YET"/);
+    expect(src).not.toMatch(/"not played yet"/);
+  });
+
   it("an empty prize row is NONE POSTED FOR THIS WALLET, not none posted", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/class="dim">NONE POSTED FOR THIS WALLET/);
