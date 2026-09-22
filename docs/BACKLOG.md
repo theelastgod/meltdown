@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- FORGED TRIM's market line still says mixed-case `amber servo light on wet steel`
+  → Stage 506
 - ECHO VIOLET's market line still says mixed-case `ghosting plate, short-range wallsense look`
   → Stage 505
 - METRO PLATE's market line still says mixed-case `grey-green tunnel tile, cyan bars`

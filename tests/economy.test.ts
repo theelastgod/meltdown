@@ -190,4 +190,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(13, "skin_violet", "ECHO VIOLET", "GHOSTING PLATE, SHORT-RANGE WALLSENSE LOOK"/);
     expect(src).not.toMatch(/skin\(13, "skin_violet", "ECHO VIOLET", "ghosting plate, short-range wallsense look"/);
   });
+
+  it("FORGED TRIM's market line is CRT, not amber servo light on wet steel", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_forged")!.line;
+    expect(line).toBe("AMBER SERVO LIGHT ON WET STEEL");
+    expect(line).not.toBe("amber servo light on wet steel");
+    expect(src).toMatch(/skin\(14, "skin_forged", "FORGED TRIM", "AMBER SERVO LIGHT ON WET STEEL"/);
+    expect(src).not.toMatch(/skin\(14, "skin_forged", "FORGED TRIM", "amber servo light on wet steel"/);
+  });
 });
