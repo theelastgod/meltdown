@@ -134,7 +134,7 @@ export class CounterClient {
       const signature = await this.wallet!.signMessage({ account: this.wallet!.account!, message });
       const r = (await (await fetch(`${this.shop}/link/verify`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: this.account, message, signature, secret: this.secret }) })).json()) as { ok: boolean; reason?: string; counter: CounterRecord | null };
       if (r.ok) await this.op("view");
-      this.say(r.ok ? `LINKED · ${this.short()}${r.reason ? " · " + r.reason : ""}` : `LINK REFUSED: ${crtPhrase(r.reason ?? "")}`);
+      this.say(r.ok ? `LINKED · ${this.short()}${r.reason ? " · " + crtPhrase(r.reason) : ""}` : `LINK REFUSED: ${crtPhrase(r.reason ?? "")}`);
       return { ok: r.ok, reason: r.reason };
     } catch (e) {
       const reason = String((e as Error).message ?? e).split("\n")[0]!.slice(0, 100);

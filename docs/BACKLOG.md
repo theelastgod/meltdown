@@ -326,3 +326,5 @@ one stage.
   → Stage 317
 - COUNTER-LEDGER quoted the catch as written  
   → Stage 318
+- LINKED quoted a host note in sentence case  
+  → Stage 319

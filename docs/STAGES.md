@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 319 — LINKED quoted a host note in sentence case
+
+**Goal.** Stage 309 CRT-cased `LINK REFUSED`. A successful link that still carries a
+reason interpolated it as written: `LINKED · 0xabc… · already bound`.
+
+**What changed.** The success note uses `crtPhrase(r.reason)`.
+
+**Proof.** `tests/counter.test.ts`: source must `+ crtPhrase(r.reason)` on the LINKED
+line. Mutation: concatenate `r.reason` raw — 1 fail.
+
 ## Stage 318 — COUNTER-LEDGER quoted the catch as written
 
 **Goal.** Stage 317 CRT-cased a thrown sink. Fetching `/counter` that throws still

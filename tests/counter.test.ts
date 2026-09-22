@@ -58,6 +58,12 @@ describe("the counter-ledger FILE line", () => {
     expect(src).not.toMatch(/ROOM REFUSED: \$\{r\.reason\}/);
   });
 
+  it("LINKED CRT-cases a host note, not a sentence-case reason", () => {
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/LINKED · \$\{this\.short\(\)\}\$\{r\.reason \? " · " \+ crtPhrase\(r\.reason\) : ""\}/);
+    expect(src).not.toMatch(/LINKED · \$\{this\.short\(\)\}\$\{r\.reason \? " · " \+ r\.reason : ""\}/);
+  });
+
   it("COUNTER-LEDGER CRT-cases the caught error, not TypeError: Failed to fetch", () => {
     const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
     expect(src).toMatch(/COUNTER-LEDGER: \$\{crtPhrase\(/);
