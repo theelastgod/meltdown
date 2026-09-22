@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 428 — An unknown node said unknown item
+
+**Goal.** Stage 427 taught `NOT ON TODAY'S BOARD`. Buying an id the ledger
+catalogue does not have still returned `unknown item`.
+
+**What changed.** `UNKNOWN ITEM`.
+
+**Proof.** `tests/fairness.test.ts`: buyNode of `not_a_node` is
+`UNKNOWN ITEM`. account.ts must `reason: "UNKNOWN ITEM"` and must not
+`reason: "unknown item"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 427 — An id off today's board said not on today's board
 
 **Goal.** Stage 426 taught `ALREADY CLAIMED`. Claiming an id that is not

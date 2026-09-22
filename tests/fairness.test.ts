@@ -153,3 +153,13 @@ describe("progression", () => {
     expect(craft("wear_rust", "sandbox", 2)!.digest).not.toBe(again!.digest);
   });
 });
+
+describe("the ledger shop CRT-cases a miss", () => {
+  it("an unknown node is UNKNOWN ITEM, not unknown item", () => {
+    const a = createAccount("miss", "M");
+    expect(buyNode(a, "not_a_node")).toEqual({ ok: false, reason: "UNKNOWN ITEM" });
+    const src = readFileSync(new URL("../shared/progression/account.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "UNKNOWN ITEM"/);
+    expect(src).not.toMatch(/reason: "unknown item"/);
+  });
+});

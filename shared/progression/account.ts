@@ -317,7 +317,7 @@ export function applyMatch(a: Account, c: MatchContribution): LedgerEntry {
 
 export function buyNode(a: Account, id: string, discount = 1): { ok: boolean; reason?: string } {
   const it = itemById(id);
-  if (!it) return { ok: false, reason: "unknown item" };
+  if (!it) return { ok: false, reason: "UNKNOWN ITEM" };
   if (a.owned.includes(id)) return { ok: false, reason: "already in your file" };
   if (a.depth < it.requiresDepth) return { ok: false, reason: `needs Depth ${it.requiresDepth}` };
   const price = Math.round(it.cost * discount);
