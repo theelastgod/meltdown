@@ -239,6 +239,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/Robinhood Wallet · WalletConnect · injected/);
   });
 
+  it("a locked chip or firmware is (LOCKED), not (locked)", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/ \(LOCKED\)/);
+    expect(src).not.toMatch(/ \(locked\)/);
+  });
+
   it("the other book is CRT, not VANTAGE priced you", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/VANTAGE PRICED YOU\. THIS IS THE OTHER BOOK\./);

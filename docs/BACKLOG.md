@@ -474,3 +474,5 @@ one stage.
   → Stage 391
 - An alias field said a name the city may call you  
   → Stage 392
+- A locked chip said (locked)  
+  → Stage 393

@@ -771,10 +771,10 @@ export class GhostFile {
       const need = xpForRank(rank);
       const sockets = (["muzzle", "kinetic", "protocol"] as Socket[]).map((sock) => {
         const cur = chipsRaw[w.id]?.[sock] ?? "";
-        const opts = CHIPS.filter((c) => c.weapon === w.id && c.socket === sock).map((c) => `<option value="${c.id}" ${c.id === cur ? "selected" : ""} ${c.rank > rank ? "disabled" : ""}>${c.name.replace(/^\S+ /, "")} · r${c.rank}${c.rank > rank ? " (locked)" : ""}</option>`).join("");
+        const opts = CHIPS.filter((c) => c.weapon === w.id && c.socket === sock).map((c) => `<option value="${c.id}" ${c.id === cur ? "selected" : ""} ${c.rank > rank ? "disabled" : ""}>${c.name.replace(/^\S+ /, "")} · r${c.rank}${c.rank > rank ? " (LOCKED)" : ""}</option>`).join("");
         return `<label class="sock">${sock.toUpperCase()} <select data-chip="${w.id}" data-socket="${sock}"><option value="">— none —</option>${opts}</select></label>`;
       }).join("");
-      const fws = FIRMWARES.filter((f) => f.weapon === w.id).map((f) => `<option value="${f.id}" ${fwRaw[w.id] === f.id ? "selected" : ""} ${f.rank > rank ? "disabled" : ""}>${f.name} · r${f.rank}${f.rank > rank ? " (locked)" : ""}</option>`).join("");
+      const fws = FIRMWARES.filter((f) => f.weapon === w.id).map((f) => `<option value="${f.id}" ${fwRaw[w.id] === f.id ? "selected" : ""} ${f.rank > rank ? "disabled" : ""}>${f.name} · r${f.rank}${f.rank > rank ? " (LOCKED)" : ""}</option>`).join("");
       const chipLines = Object.values(chipsRaw[w.id] ?? {}).map((id) => chipById(id)?.line).filter(Boolean).join(" · ");
       const fwLine = fwRaw[w.id] ? firmwareById(fwRaw[w.id]!)?.line ?? "" : "";
       const gateText = gate ? `<span class="c">GATE r${gate.gate}: ${gate.text} (${m?.counters[gate.counter] ?? 0}/${gate.need})</span>` : rank >= MAX_RANK ? `<span class="b">MASTERED</span>` : `<span class="dim">${into}/${need} xp</span>`;

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 393 — A locked chip said (locked)
+
+**Goal.** Stage 392 taught the alias placeholder. A chip or firmware above your
+mastery still tagged `(locked)`.
+
+**What changed.** `(LOCKED)` on both option lists.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must ` (LOCKED)` and must not
+` (locked)`. Mutation: lowercase again — 1 fail.
+
 ## Stage 392 — An alias field said a name the city may call you
 
 **Goal.** Stage 391 taught `(G OPENS THE WHOLE GRAPH)`. Setting an alias still
