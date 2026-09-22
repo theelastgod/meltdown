@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { release } from "./dispose";
-import { PALETTE } from "./city";
+import { bindPlate, PALETTE } from "./city";
 import type { Vec3 } from "@shared/math/vec3";
 import { WAKE } from "@shared/sim/wake";
 
@@ -84,6 +84,7 @@ export class WakeFx {
       if (!e) {
         const group = new THREE.Group();
         const ringMat = new THREE.MeshBasicMaterial({ color: VIOLET, transparent: true, opacity: 0.95, side: THREE.DoubleSide });
+        bindPlate(ringMat, "tex_lamp");
         const ring = new THREE.Mesh(this.hexShape(WAKE.nodeRadius, WAKE.nodeRadius - 0.18), ringMat);
         ring.rotation.x = -Math.PI / 2;
         ring.position.y = 0.03;

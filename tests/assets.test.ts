@@ -139,6 +139,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
       "client/render/weapons.ts",
       "client/render/campaign.ts",
       "client/render/run.ts",
+      "client/render/wake.ts",
     ];
     const src = files.map((f) => readFileSync(new URL(`../${f}`, import.meta.url), "utf8")).join("\n");
     for (const id of [
@@ -180,6 +181,8 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(run).toMatch(/bindPlate\(mat, "tex_kiosk_crt"\)/);
     expect(run).toMatch(/bindPlate\(ringMat, "tex_lamp"\)/);
     expect(run).toMatch(/bindPlate\(colMat, "tex_lamp"\)/);
+    const wake = readFileSync(new URL("../client/render/wake.ts", import.meta.url), "utf8");
+    expect(wake).toMatch(/bindPlate\(ringMat, "tex_lamp"\)/);
     const life = readFileSync(new URL("../client/render/life.ts", import.meta.url), "utf8");
     expect(life).toMatch(/bindPlate\(panelMat, "tex_billboard_mg"\)/);
     expect(life).toMatch(/bindPlate\(windowMat, "tex_glass"\)/);

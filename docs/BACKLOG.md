@@ -234,3 +234,5 @@ one stage.
   → Stage 271
 - THE RUN's safe-zone column was a flat cyan tube  
   → Stage 272
+- THE WAKE hex ring was a flat violet hoop  
+  → Stage 273

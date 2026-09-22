@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 273 — THE WAKE hex ring was a flat violet hoop
+
+**Goal.** Stage 269 plated THE RUN's ground ring. THE WAKE's hex node ring — the neon
+outline a file stands on to flip a pad — was still unmapped `MeshBasicMaterial` violet
+at 0.95 opacity.
+
+**What changed.** `bindPlate(ringMat, "tex_lamp")`, fail-soft. The violet wash stays;
+the lamp plate is the map.
+
+**Proof.** `tests/assets.test.ts` requires that call in `wake.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 272 — THE RUN's safe-zone column was a flat cyan tube
 
 **Goal.** Stage 269 plated the ground ring. The 9 m column of light above it was still
