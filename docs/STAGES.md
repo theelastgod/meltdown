@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 503 — RAIN LEASE's market line said anodized black that never dried
+
+**Goal.** Stage 502 taught UNLISTED BLACK. RAIN LEASE still said
+mixed-case `anodized black that never dried`.
+
+**What changed.** `ANODIZED BLACK THAT NEVER DRIED`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 502 — UNLISTED BLACK's market line said near-black
 
 **Goal.** Stage 501 taught VANTAGE AMBER. UNLISTED BLACK still said

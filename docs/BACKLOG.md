@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- RAIN LEASE's market line still says mixed-case `anodized black that never dried`
+  → Stage 503
 - UNLISTED BLACK's market line still says mixed-case `near-black, one pinhole of cyan`
   → Stage 502
 - VANTAGE AMBER's market line still says mixed-case `contractor chevrons, the colour of a searchlight`
