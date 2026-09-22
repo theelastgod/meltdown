@@ -590,3 +590,5 @@ one stage.
   → Stage 449
 - Chip sockets as a list said must be an object  
   → Stage 450
+- A malformed attested list said must be a list of node ids  
+  → Stage 451

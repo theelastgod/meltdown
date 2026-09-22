@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 451 — A malformed attested list said must be a list of node ids
+
+**Goal.** Stage 450 taught `SOCKETS MUST BE AN OBJECT`. Attested that is not
+an array still kicked `attested must be a list of node ids`.
+
+**What changed.** `ATTESTED MUST BE A LIST OF NODE IDS`.
+
+**Proof.** `tests/mastery.test.ts`: loadout.ts must that CRT string and must not
+the sentence-case string. Mutation: mixed case again — 1 fail.
+
 ## Stage 450 — Chip sockets as a list said must be an object
 
 **Goal.** Stage 239 taught the gun name on that kick. A chips map that is

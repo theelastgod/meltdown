@@ -125,6 +125,8 @@ describe("chips and firmwares", () => {
     expect(shapeKick.detail).toBe("LEASE-BREAKER: SOCKETS MUST BE AN OBJECT");
     expect(shapeKick.detail).not.toBe("LEASE-BREAKER: sockets must be an object");
     expect(shapeKick.detail).not.toMatch(/^lease_breaker:/);
+    expect(src).toMatch(/attested-shape", detail: "ATTESTED MUST BE A LIST OF NODE IDS"/);
+    expect(src).not.toMatch(/attested-shape", detail: "attested must be a list of node ids"/);
     expect(src).toMatch(/chips-shape", detail: `\$\{gun\(wid as WeaponId\)\}: SOCKETS MUST BE AN OBJECT`/);
     expect(src).not.toMatch(/chips-shape", detail: `\$\{gun\(wid as WeaponId\)\}: sockets must be an object`/);
     expect(src).not.toMatch(/chips-shape", detail: `\$\{wid\}: sockets must be an object`/);
