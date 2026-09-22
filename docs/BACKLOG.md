@@ -210,3 +210,5 @@ one stage.
   → Stage 259
 - THE KERNEL's red strips were flat bars  
   → Stage 260
+- Parked-car headlamps were a flat cream strip  
+  → Stage 261

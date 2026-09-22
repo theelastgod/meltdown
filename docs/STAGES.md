@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 261 — Parked-car headlamps were a flat cream strip
+
+**Goal.** Street lamps already wear `tex_lamp`. Each parked car still had a cream
+`MeshBasicMaterial` head-light strip with no map — the same unplated cream the
+monorail headlamp had before Stage 254.
+
+**What changed.** `bindPlate(M.head, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `city.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 260 — THE KERNEL's red strips were flat bars
 
 **Goal.** Stage 200 plated the hull. The nine vertical and six horizontal red bars on THE KERNEL
