@@ -183,6 +183,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/nothing on the rig yet/);
   });
 
+  it("a missing treasury falls back to LOADING…, not loading…", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/info\?\.reason \?\? "LOADING…"/);
+    expect(src).not.toMatch(/info\?\.reason \?\? "loading…"/);
+  });
+
   it("a waiting Audit playlist is LOADING…, not loading…", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/joinAudit[\s\S]*class='dim'>LOADING…/);

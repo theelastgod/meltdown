@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 362 — A missing treasury said loading
+
+**Goal.** Stage 361 taught Audit `LOADING…`. The counter still fell back to
+`loading…` when treasury was missing.
+
+**What changed.** `LOADING…`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `info?.reason ?? "LOADING…"` and
+must not `"loading…"`. Mutation: lowercase again — 1 fail.
+`npm test` 1132/1132.
+
 ## Stage 361 — A waiting Audit said loading
 
 **Goal.** Stage 360 taught `LOADING THE BOARD…`. An Audit with no playlist still

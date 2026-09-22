@@ -615,7 +615,7 @@ export class GhostFile {
     const prizes = c.prizes;
     const prizeBlock = v?.linked ? `<div class="ln">PRIZES ${prizes.length ? prizes.map((p) => `<span class="${p.claimed ? "dim" : ""}">${p.reason} · ${Number(p.amount).toFixed(0)} $CAPITAL ${p.claimed ? "· CLAIMED" : `<span class="btn" data-act="claimPrize" data-id="${p.epoch}">[CLAIM]</span>`}</span>`).join(" · ") : `<span class="dim">NONE POSTED FOR THIS WALLET</span>`} <span class="btn" data-act="prizes">[REFRESH]</span> <span class="dim">THE RUN settles nightly, Audit placements weekly, Deep Wake contributions at season end; claims are sponsored</span></div>` : "";
     const t = info?.treasury;
-    const delta = t ? `SUPPLY ${Number(t.supply).toLocaleString()} · BURNED <b>${Number(t.burned).toFixed(0)}</b> · MARKET VOLUME ${Number(t.volume).toFixed(0)} · <span class="gr">NET DELTA: 0.000 — RECONCILED</span>` : info?.reason ?? "loading…";
+    const delta = t ? `SUPPLY ${Number(t.supply).toLocaleString()} · BURNED <b>${Number(t.burned).toFixed(0)}</b> · MARKET VOLUME ${Number(t.volume).toFixed(0)} · <span class="gr">NET DELTA: 0.000 — RECONCILED</span>` : info?.reason ?? "LOADING…";
     return `<div class="sh">COUNTER-LEDGER // $CAPITAL <span class="dim">${info ? (info.devnet ? "DEVNET" : "ROBINHOOD CHAIN") + " · chain " + info.chainId : ""}</span></div>
       <div class="ln dim">VANTAGE priced you. This is the other book. It does not buy damage. It does not buy armor. It does not buy a node.</div>
       <div class="ln">${wallet}${linked ? " · " + linked : ""}</div>
