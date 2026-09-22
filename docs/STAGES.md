@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 522 — ALIAS SLOT IV's shop line said a fourth saved name
+
+**Goal.** Stage 521 listed owned pass cosmetics on the FILE shop.
+ALIAS SLOT IV still said mixed-case `a fourth saved name, for the
+season you paid to sit out of`.
+
+**What changed.** `A FOURTH SAVED NAME, FOR THE SEASON YOU PAID TO SIT
+OUT OF`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/seasonpass.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 521 — the Deep Wake pass theme could not be worn
 
 **Goal.** Stage 176 put `theme_deep_wake` on `a.cosmetics` and `setTheme`

@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- ALIAS SLOT IV's shop line still says mixed-case `a fourth saved name`
+  → Stage 522
 - The Deep Wake pass theme could not be worn: no shop row, no HUD palette
   → Stage 521
 - CLOCK GEAR's market line still says mixed-case `brass gears on wet steel`

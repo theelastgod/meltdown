@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 521, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 522, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 521 on this branch (Deep Wake pass theme wear) |
-| Next stage number | **522** |
+| HEAD | Stage 522 on this branch (ALIAS SLOT IV shop line) |
+| Next stage number | **523** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 522 is next
+## 6. Stage 523 is next
 
-Stage 521 made the Deep Wake pass theme wearable (palette + FILE shop
-WEAR) and CRT-cased its line. ALIAS SLOT IV still says mixed-case
-`a fourth saved name, for the season you paid to sit out of`. Title
+Stage 522 CRT-cased ALIAS SLOT IV's shop line. PRESET SLOT VI still
+says mixed-case `a sixth saved loadout`. Title
 cards stay prose (probe:ship asserts them). Crew-code reasons stay
 mixed-case (`probe:campaign` asserts `not a crew code`). Do not loosen
 fairness. Do not plate viewmodel or remote strips. The join line still

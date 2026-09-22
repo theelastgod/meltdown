@@ -96,6 +96,15 @@ describe("the Deep Wake pass — what it grants is what the game reads", () => {
     expect(src).not.toMatch(/id: "theme_deep_wake".*line: "the colour the graph goes when a season ends and nobody wins"/s);
   });
 
+  it("ALIAS SLOT IV's shop line is CRT, not a fourth saved name", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SEASON_PASS_COSMETICS.find((c) => c.id === "alias_4")!.line;
+    expect(line).toBe("A FOURTH SAVED NAME, FOR THE SEASON YOU PAID TO SIT OUT OF");
+    expect(line).not.toBe("a fourth saved name, for the season you paid to sit out of");
+    expect(src).toMatch(/id: "alias_4".*line: "A FOURTH SAVED NAME, FOR THE SEASON YOU PAID TO SIT OUT OF"/s);
+    expect(src).not.toMatch(/id: "alias_4".*line: "a fourth saved name, for the season you paid to sit out of"/s);
+  });
+
   it("the FILE tab wears the pass theme and lists owned pass cosmetics", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/passThemePalette\(id\)/);

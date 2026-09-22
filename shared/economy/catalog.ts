@@ -81,7 +81,7 @@ export const SEASON_PASS_COSMETICS: readonly {
   palette?: { cy: string; gr: string; mg: string; ye: string; am: string };
 }[] = [
   { id: "theme_deep_wake", kind: "theme", name: "DEEP WAKE", line: "THE COLOUR THE GRAPH GOES WHEN A SEASON ENDS AND NOBODY WINS", palette: { cy: "#7ad4ff", gr: "#4aa8a0", mg: "#b070e8", ye: "#d4dde8", am: "#7c90b0" } },
-  { id: "alias_4", kind: "alias", name: "ALIAS SLOT IV", line: "a fourth saved name, for the season you paid to sit out of" },
+  { id: "alias_4", kind: "alias", name: "ALIAS SLOT IV", line: "A FOURTH SAVED NAME, FOR THE SEASON YOU PAID TO SIT OUT OF" },
   { id: "preset_6", kind: "preset", name: "PRESET SLOT VI", line: "a sixth saved loadout" },
 ] as const;
 
