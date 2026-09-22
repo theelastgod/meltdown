@@ -306,3 +306,5 @@ one stage.
   → Stage 307
 - NO WALLET left a sentence-case how-to  
   → Stage 308
+- LINK REFUSED quoted the host in sentence case  
+  → Stage 309

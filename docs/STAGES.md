@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 309 — LINK REFUSED quoted the host in sentence case
+
+**Goal.** Stage 306 CRT-cased `WALLET REFUSED`. A refused SIWE still interpolated
+the host as written: `LINK REFUSED: stale nonce`.
+
+**What changed.** `crtPhrase()` on the host reason. `LINK REFUSED` interpolates it.
+
+**Proof.** `tests/counter.test.ts`: `crtPhrase("stale nonce")` is `STALE NONCE`.
+Source must `crtPhrase(` on that line. Mutation: interpolate the raw reason — 1 fail.
+`npm test` 1081/1081.
+
 ## Stage 308 — NO WALLET left a sentence-case how-to
 
 **Goal.** Stage 307 CRT-cased `(LOCAL ACCOUNT)`. Connecting with no injected

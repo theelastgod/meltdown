@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 308, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 309, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 308 on this branch (NO WALLET rest is CRT) |
-| Next stage number | **309** |
+| HEAD | Stage 309 on this branch (LINK REFUSED is CRT) |
+| Next stage number | **310** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1080 across 117 files, `npm test` |
+| Unit tests | 1081 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 309 is next
+## 6. Stage 310 is next
 
-Stage 308 CRT-cased the `NO WALLET:` rest. `LINK REFUSED:` still interpolates
-the host reason as written. Do not loosen fairness. Do not plate viewmodel or
+Stage 309 CRT-cased `LINK REFUSED`. `ROOM REFUSED:` still interpolates the
+host reason as written. Do not loosen fairness. Do not plate viewmodel or
 remote strips. The join line still prints the socket name — `probe:net` asserts
 `probe-join-31`; leave it.
 

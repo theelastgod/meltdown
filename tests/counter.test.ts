@@ -47,6 +47,15 @@ describe("the counter-ledger FILE line", () => {
     expect(src).toMatch(/WALLET REFUSED: \$\{crtPhrase\(/);
     expect(src).not.toMatch(/WALLET REFUSED: \$\{String\(\(e as Error\)\.message/);
   });
+
+  it("LINK REFUSED CRT-cases the host reason, not stale nonce", () => {
+    expect(crtPhrase("stale nonce")).toBe("STALE NONCE");
+    expect(crtPhrase("wrong statement: the link signs nothing else")).toBe("WRONG STATEMENT: THE LINK SIGNS NOTHING ELSE");
+    expect(crtPhrase("stale nonce")).not.toBe("stale nonce");
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/LINK REFUSED: \$\{crtPhrase\(/);
+    expect(src).not.toMatch(/LINK REFUSED: \$\{r\.reason\}/);
+  });
 });
 
 describe("a market buy is said in CRT", () => {
