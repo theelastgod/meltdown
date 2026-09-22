@@ -289,4 +289,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(24, "skin_arc", "ARC VIOLET", "SHOCK-ARC PLATE, THE BATON'S OWN LIGHT"/);
     expect(src).not.toMatch(/skin\(24, "skin_arc", "ARC VIOLET", "shock-arc plate, the baton's own light"/);
   });
+
+  it("REPO CHEVRON's market line is CRT, not contractor hazard stripes", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_chevron")!.line;
+    expect(line).toBe("CONTRACTOR HAZARD STRIPES, THE SHOTGUN'S OWN RAIN");
+    expect(line).not.toBe("contractor hazard stripes, the shotgun's own rain");
+    expect(src).toMatch(/skin\(25, "skin_chevron", "REPO CHEVRON", "CONTRACTOR HAZARD STRIPES, THE SHOTGUN'S OWN RAIN"/);
+    expect(src).not.toMatch(/skin\(25, "skin_chevron", "REPO CHEVRON", "contractor hazard stripes, the shotgun's own rain"/);
+  });
 });

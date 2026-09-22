@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- REPO CHEVRON's market line still says mixed-case `contractor hazard stripes, the shotgun's own rain`
+  → Stage 517
 - ARC VIOLET's market line still says mixed-case `shock-arc plate, the baton's own light`
   → Stage 516
 - LEASE STEEL's market line still says mixed-case `anodized shotgun steel, amber chevrons in the rain`
