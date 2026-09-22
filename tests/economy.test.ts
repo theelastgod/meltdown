@@ -91,4 +91,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(2, "skin_phosphor", "PHOSPHOR TRIM", "THE FIRST CRT'S GREEN ON EVERY EDGE"/);
     expect(src).not.toMatch(/skin\(2, "skin_phosphor", "PHOSPHOR TRIM", "the first CRT's green on every edge"/);
   });
+
+  it("KERNEL PLATE's market line is CRT, not red filament without the filament", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_kernel")!.line;
+    expect(line).toBe("RED FILAMENT WITHOUT THE FILAMENT");
+    expect(line).not.toBe("red filament without the filament");
+    expect(src).toMatch(/skin\(3, "skin_kernel", "KERNEL PLATE", "RED FILAMENT WITHOUT THE FILAMENT"/);
+    expect(src).not.toMatch(/skin\(3, "skin_kernel", "KERNEL PLATE", "red filament without the filament"/);
+  });
 });

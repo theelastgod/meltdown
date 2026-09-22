@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- KERNEL PLATE's market line still says mixed-case `red filament without the filament`
+  → Stage 495
 - FILE value-imported crtPhrase from the chain client, so the first download carried viem
   → Stage 494
 - PHOSPHOR TRIM's market line still says mixed-case `the first CRT's green on every edge`
