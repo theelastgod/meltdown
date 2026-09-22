@@ -20,7 +20,7 @@
  * full, which is the right failure for a visual effect and the wrong one for anything else.
  */
 import * as THREE from "three";
-import { PALETTE } from "./city";
+import { bindPlate, PALETTE } from "./city";
 import { drawPool, warmStep, WARM_FRAMES } from "./warmup";
 
 /** Enough for a full lobby firing at once for the tracer's whole life: 12 shooters × 600 RPM × 0.12 s ≈ 15. */
@@ -59,6 +59,7 @@ export class VfxPool {
     // ---- sparks: one InstancedMesh, one instance per spark ----
     const sgeo = new THREE.SphereGeometry(0.05, 6, 6);
     const smat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    bindPlate(smat, "tex_lamp");
     this.sparks = new THREE.InstancedMesh(sgeo, smat, MAX_SPARKS);
     this.sparks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.sparks.frustumCulled = false;

@@ -262,3 +262,5 @@ one stage.
   → Stage 285
 - TESTIMONY printed lease=burn  
   → Stage 286
+- Impact sparks were unplated additive spheres  
+  → Stage 287

@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 287 — Impact sparks were unplated additive spheres
+
+**Goal.** Stage 283 plated hitscan beams. The pooled impact sparks — 64
+instanced spheres at the hit — were still unmapped additive
+`MeshBasicMaterial`.
+
+**What changed.** `bindPlate(smat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `vfx.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 286 — TESTIMONY printed lease=burn
 
 **Goal.** Stage 285 stripped `m1:`. The remainder was still the file's
