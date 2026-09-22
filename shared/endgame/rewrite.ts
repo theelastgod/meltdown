@@ -85,7 +85,7 @@ export function slotsOf(a: Account): { aliases: number; presets: number } {
 
 export function buyCosmetic(a: Account, id: string): { ok: boolean; reason?: string } {
   const c = cosmeticById(id);
-  if (!c) return { ok: false, reason: "unknown cosmetic" };
+  if (!c) return { ok: false, reason: "UNKNOWN COSMETIC" };
   a.cosmetics = a.cosmetics ?? [];
   if (a.cosmetics.includes(id)) return { ok: false, reason: "ALREADY OWNED" };
   // slots come in order, and a slot the file already has is not for sale: a Deep Wake pass grants

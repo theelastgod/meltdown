@@ -502,3 +502,5 @@ one stage.
   → Stage 405
 - A poor shop said needs Wakelight  
   → Stage 406
+- An unknown shop id said unknown cosmetic  
+  → Stage 407

@@ -245,6 +245,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/needs \$\{c\.wakelight\} Wakelight/);
   });
 
+  it("an unknown shop id is UNKNOWN COSMETIC, not unknown cosmetic", () => {
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "UNKNOWN COSMETIC"/);
+    expect(src).not.toMatch(/reason: "unknown cosmetic"/);
+  });
+
   it("buying a cosmetic twice is ALREADY OWNED, not already owned", () => {
     const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "ALREADY OWNED"/);

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 407 — An unknown shop id said unknown cosmetic
+
+**Goal.** Stage 406 taught `NEEDS N WAKELIGHT`. Buying an id the catalogue
+does not have still returned `unknown cosmetic`.
+
+**What changed.** `UNKNOWN COSMETIC`.
+
+**Proof.** `tests/endgame.test.ts`: rewrite.ts must `reason: "UNKNOWN COSMETIC"`
+and must not `reason: "unknown cosmetic"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 406 — A poor shop said needs Wakelight
 
 **Goal.** Stage 405 taught `ALREADY OWNED`. Buying a theme without enough
