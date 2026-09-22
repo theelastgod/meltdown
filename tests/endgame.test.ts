@@ -61,6 +61,13 @@ describe("the FILE tab names the week's guns", () => {
 });
 
 describe("audits", () => {
+  it("playlist lines are CRT, not Repo Hammer and Clockeater only", () => {
+    for (const a of AUDITS) expect(a.line).toBe(a.line.toUpperCase());
+    const pellet = AUDITS.find((x) => x.id === "pellet_week")!;
+    expect(pellet.line).toBe("REPO HAMMER AND CLOCKEATER ONLY. EVERY FILE IS A SHOTGUN FILE.");
+    expect(pellet.line).not.toBe("Repo Hammer and Clockeater only. Every file is a shotgun file.");
+  });
+
   it("the week picks a playlist; its rules refuse weapons, keystones and rings it bans; leaderboards keep the best per file", () => {
     expect(AUDITS.length).toBeGreaterThanOrEqual(8);
     expect(auditFor(3)).toBe(AUDITS[3]);

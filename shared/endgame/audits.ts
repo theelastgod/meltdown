@@ -29,14 +29,14 @@ export interface AuditDef {
 const a = (id: string, name: string, line: string, weapons: WeaponId[], sheet: AuditDef["sheet"], gravityMult = 1, extra: Partial<AuditDef> = {}): AuditDef => ({ id, name, line, weapons, sheet, gravityMult, ...extra });
 
 export const AUDITS: readonly AuditDef[] = [
-  a("pellet_week", "PELLET WEEK", "Repo Hammer and Clockeater only. Every file is a shotgun file.", ["repo_hammer", "clockeater", "shock_baton"], {}),
-  a("glass", "GLASS", "Shields off, +20% move. Every shot counts twice.", [], { maxShield: -100, moveSpeed: 1.2 }),
-  a("long_lease", "LONG LEASE", "Longwave and the Directive only; range ×1.3. The streets get long.", ["longwave", "directive", "shock_baton"], { range: 1.3 }),
-  a("no_keystone", "NO KEYSTONE", "Keystones are not attested this week. Nodes carry the file.", [], {}, 1, { noKeystone: true }),
-  a("ring_one", "RING ONE", "Only ring-one nodes may be attested. Back to the first ledger.", [], {}, 1, { ringOnly: 1 }),
-  a("low_lease", "LOW LEASE", "Gravity ×0.6, slide boost +25%. The city floats.", [], { slideBoost: 1.25 }, 0.6),
-  a("heavy_air", "HEAVY AIR", "Gravity ×1.4, reload ×1.15. Nothing hangs.", [], { reloadSpeed: 1.15 }, 1.4),
-  a("stack_and_phage", "STACK & PHAGE", "Stack SMG and Phage only, grenades +1.", ["stack_smg", "phage", "shock_baton"], { grenades: 1 }),
+  a("pellet_week", "PELLET WEEK", "REPO HAMMER AND CLOCKEATER ONLY. EVERY FILE IS A SHOTGUN FILE.", ["repo_hammer", "clockeater", "shock_baton"], {}),
+  a("glass", "GLASS", "SHIELDS OFF, +20% MOVE. EVERY SHOT COUNTS TWICE.", [], { maxShield: -100, moveSpeed: 1.2 }),
+  a("long_lease", "LONG LEASE", "LONGWAVE AND THE DIRECTIVE ONLY; RANGE ×1.3. THE STREETS GET LONG.", ["longwave", "directive", "shock_baton"], { range: 1.3 }),
+  a("no_keystone", "NO KEYSTONE", "KEYSTONES ARE NOT ATTESTED THIS WEEK. NODES CARRY THE FILE.", [], {}, 1, { noKeystone: true }),
+  a("ring_one", "RING ONE", "ONLY RING-ONE NODES MAY BE ATTESTED. BACK TO THE FIRST LEDGER.", [], {}, 1, { ringOnly: 1 }),
+  a("low_lease", "LOW LEASE", "GRAVITY ×0.6, SLIDE BOOST +25%. THE CITY FLOATS.", [], { slideBoost: 1.25 }, 0.6),
+  a("heavy_air", "HEAVY AIR", "GRAVITY ×1.4, RELOAD ×1.15. NOTHING HANGS.", [], { reloadSpeed: 1.15 }, 1.4),
+  a("stack_and_phage", "STACK & PHAGE", "STACK SMG AND PHAGE ONLY, GRENADES +1.", ["stack_smg", "phage", "shock_baton"], { grenades: 1 }),
 ];
 
 export function auditFor(week: number): AuditDef {

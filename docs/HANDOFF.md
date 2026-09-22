@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 324, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 325, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 324 on this branch (LINKING sim suffix is CRT) |
-| Next stage number | **325** |
+| HEAD | Stage 325 on this branch (Audit playlist lines are CRT) |
+| Next stage number | **326** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1095 across 117 files, `npm test` |
+| Unit tests | 1097 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,11 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 325 is next
+## 6. Stage 326 is next
 
-Stage 324 CRT-cased the `LINKING` sim suffix. Do not loosen fairness. Do not plate
-viewmodel or remote strips. The join line still prints the socket name —
-`probe:net` asserts `probe-join-31`; leave it.
+Stage 325 CRT-cased Audit playlist lines. The RANGE log still suffixes times as
+`5.55s`. Do not loosen fairness. Do not plate viewmodel or remote strips. The
+join line still prints the socket name — `probe:net` asserts `probe-join-31`;
+leave it.
 
 ---
 

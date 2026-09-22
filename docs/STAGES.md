@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 325 — An Audit playlist quoted its line in sentence case
+
+**Goal.** Stage 321 CRT-cased THE RUN's admit line. Joining PELLET WEEK still
+pushed `AUDIT · PELLET WEEK · Repo Hammer and Clockeater only. Every file is a shotgun file.`
+
+**What changed.** The eight playlist lines are CRT. The HUD and FILE tab already
+interpolate `audit.line`.
+
+**Proof.** `tests/endgame.test.ts`: every `AUDITS[].line` equals its uppercase;
+PELLET WEEK is `REPO HAMMER AND CLOCKEATER ONLY. EVERY FILE IS A SHOTGUN FILE.`
+Mutation: the sentence-case PELLET WEEK line again — 1 fail.
+`npm test` 1097/1097.
+
 ## Stage 324 — LINKING wrote sim / ms rtt / loss
 
 **Goal.** Stage 298 CRT-cased the drop line. A simulated link still wrote
