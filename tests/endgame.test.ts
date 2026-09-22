@@ -123,6 +123,8 @@ describe("the Deep Wake", () => {
     expect(hud).toMatch(/levelDisplayName\(d\)/);
     expect(hud).not.toMatch(/h === "unaligned" \? "—" : h\.toUpperCase\(\)/);
     expect(hud).not.toMatch(/n\.leader\.slice\(0, 3\)\.toUpperCase\(\)/);
+    expect(hud).toMatch(/class='dim'>NO ROUNDS HAVE MOVED THE GRAPH YET/);
+    expect(hud).not.toMatch(/no rounds have moved the graph yet/);
   });
 
   it("rounds push pressure toward the flipping files' houses; enough pressure turns a node; the season rolls with a history from real data", () => {

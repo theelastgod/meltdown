@@ -426,3 +426,5 @@ one stage.
   → Stage 367
 - An unlinked wallet how-to was sentence case  
   → Stage 368
+- MAP said no rounds have moved the graph yet  
+  → Stage 369

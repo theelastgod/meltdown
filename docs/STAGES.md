@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 369 — MAP said no rounds have moved the graph yet
+
+**Goal.** Stage 223 taught Deep Wake history titles. An empty MAP history still
+dimmed `no rounds have moved the graph yet`.
+
+**What changed.** `NO ROUNDS HAVE MOVED THE GRAPH YET`.
+
+**Proof.** `tests/endgame.test.ts`: hud.ts must that CRT line and must not the
+sentence-case line. Mutation: lowercase again — 1 fail.
+
 ## Stage 368 — An unlinked wallet how-to was sentence case
 
 **Goal.** Stage 367 taught `$CAPITAL BY LENGTH, BURNED`. `[LINK A WALLET]`
