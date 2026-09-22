@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 482 — PHOSPHOR's shop line said green-on-black
+
+**Goal.** Stage 481 taught the FILE chain miss. The Wakelight shop
+prints each cosmetic's `line` into the FILE tab. PHOSPHOR still said
+mixed-case `green-on-black terminal, the first CRT you ever saw`.
+
+**What changed.** `GREEN-ON-BLACK TERMINAL, THE FIRST CRT YOU EVER
+SAW`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/endgame.test.ts` asserts that sentence and
+that rewrite.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 481 — The FILE's chain miss said the raw reason
 
 **Goal.** Stage 480 taught the settings line. A missing treasury still

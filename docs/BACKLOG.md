@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- PHOSPHOR's Wakelight shop line still says mixed-case `green-on-black terminal`
+  → Stage 482
 - The FILE's chain miss still prints the host's raw `info.reason`
   → Stage 481
 - The settings line still says mixed-case `applied live · kept in this browser`
