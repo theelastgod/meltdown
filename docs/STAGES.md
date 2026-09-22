@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 390 — EXPLORE said travel to a district
+
+**Goal.** Stage 389 taught `NOTHING ON THE RECORD`. The EXPLORE row still
+dimmed `travel to a district from the MAP with the Threat live:`.
+
+**What changed.** `TRAVEL TO A DISTRICT FROM THE MAP WITH THE THREAT LIVE:`.
+
+**Proof.** `tests/campaign.test.ts`: campaign.ts must the CRT line and must not
+the mixed-case line. Mutation: lowercase again — 1 fail.
+`npm test` 1159/1159.
+
 ## Stage 389 — Empty TESTIMONY said nothing on the record
 
 **Goal.** Stage 388 taught `TELL A FRIEND THE CODE`. A file with no testimony

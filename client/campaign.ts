@@ -549,7 +549,7 @@ export class Campaign {
       <div><div class="sh">KERNEL PROTOCOLS · ${c.worn.length}/${MAX_PROTOCOLS} WORN <span class="red">· CAMPAIGN ONLY · STRIPPED AT PVP JOIN</span></div>${protos}
       <div class="sh">CAMPAIGN WEAPONS</div><div class="ln">${CAMPAIGN_WEAPONS.map((w) => `${c.weapons.includes(w as "directive" | "clockeater") ? "▣" : "▢"} ${weaponName(w)}`).join(" · ")}</div>
       <div class="sh">CREW</div><div class="ln">${this.crew ? `IN CREW <b class="ye">${this.crew}</b> · ${this.host ? "YOU HOLD THE TERMINALS" : "THE HOST HOLDS THE TERMINALS"} · TELL A FRIEND THE CODE` : `<input data-crewcode="1" maxlength="8" placeholder="INVITE CODE" style="text-transform:uppercase"> <span class="cy" data-act="joinCrew">[JOIN A CREW]</span> <span class="dim">OR RUN WITH A CREW ON A CONTRACT ABOVE AND READ THE CODE OUT</span>`}</div>
-      <div class="sh">EXPLORE</div><div class="ln dim">travel to a district from the MAP with the Threat live: <span class="cy" data-explore="1">[EXPLORE THIS DISTRICT]</span></div></div></div>`;
+      <div class="sh">EXPLORE</div><div class="ln dim">TRAVEL TO A DISTRICT FROM THE MAP WITH THE THREAT LIVE: <span class="cy" data-explore="1">[EXPLORE THIS DISTRICT]</span></div></div></div>`;
   }
 
   /** Clicks inside the contracts panel (the HUD forwards them). */

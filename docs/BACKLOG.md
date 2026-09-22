@@ -468,3 +468,5 @@ one stage.
   → Stage 388
 - Empty TESTIMONY said nothing on the record  
   → Stage 389
+- EXPLORE said travel to a district  
+  → Stage 390
