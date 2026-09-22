@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 296 — City neon tubes were unplated boxes
+
+**Goal.** Street lamps, KERNEL bars and the metro lock already wear `tex_lamp`.
+Every other neon strip — the tubes along walls, walkways, rails, gates —
+was still unmapped `MeshBasicMaterial` from `NeonBatch.flush`.
+
+**What changed.** `bindPlate(neonMat, "tex_lamp")` when a colour's mesh is
+flushed, fail-soft. The colour stays; the lamp plate is the map.
+
+**Proof.** `tests/assets.test.ts` requires that call in `city.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 295 — The metro lock glyph was a flat green hex
 
 **Goal.** Stage 273 plated THE WAKE's hex ring. The tunnel mouth's hex lock

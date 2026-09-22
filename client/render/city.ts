@@ -61,7 +61,11 @@ export class NeonBatch {
     for (const [color, list] of this.parts) {
       const merged = mergeGeometries(list, false);
       for (const g of list) g.dispose();
-      if (merged) this.parent.add(new THREE.Mesh(merged, basic(color)));
+      if (merged) {
+        const neonMat = basic(color);
+        bindPlate(neonMat, "tex_lamp");
+        this.parent.add(new THREE.Mesh(merged, neonMat));
+      }
     }
     this.parts.clear();
   }

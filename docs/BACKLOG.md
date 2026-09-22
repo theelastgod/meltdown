@@ -280,3 +280,5 @@ one stage.
   → Stage 294
 - The metro lock glyph was a flat green hex  
   → Stage 295
+- City neon tubes were unplated boxes  
+  → Stage 296
