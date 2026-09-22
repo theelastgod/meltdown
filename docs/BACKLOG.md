@@ -462,3 +462,5 @@ one stage.
   → Stage 385
 - A crew host said you hold the terminals  
   → Stage 386
+- A crew guest said the host holds the terminals  
+  → Stage 387

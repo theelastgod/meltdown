@@ -126,6 +126,12 @@ describe("an empty fixer board is CRT", () => {
     expect(src).toMatch(/YOU HOLD THE TERMINALS/);
     expect(src).not.toMatch(/"you hold the terminals"/);
   });
+
+  it("a crew guest is THE HOST HOLDS THE TERMINALS, not the host holds the terminals", () => {
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/THE HOST HOLDS THE TERMINALS/);
+    expect(src).not.toMatch(/"the host holds the terminals"/);
+  });
 });
 
 describe("picking a house writes the name, not the id", () => {
