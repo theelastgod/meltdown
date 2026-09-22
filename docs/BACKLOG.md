@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- PRESET SLOT VI's shop line still says mixed-case `a sixth saved loadout`
+  → Stage 523
 - ALIAS SLOT IV's shop line still says mixed-case `a fourth saved name`
   → Stage 522
 - The Deep Wake pass theme could not be worn: no shop row, no HUD palette

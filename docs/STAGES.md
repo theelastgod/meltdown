@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 523 — PRESET SLOT VI's shop line said a sixth saved loadout
+
+**Goal.** Stage 522 taught ALIAS SLOT IV. PRESET SLOT VI still said
+mixed-case `a sixth saved loadout`.
+
+**What changed.** `A SIXTH SAVED LOADOUT`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/seasonpass.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 522 — ALIAS SLOT IV's shop line said a fourth saved name
 
 **Goal.** Stage 521 listed owned pass cosmetics on the FILE shop.

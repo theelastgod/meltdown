@@ -105,6 +105,15 @@ describe("the Deep Wake pass — what it grants is what the game reads", () => {
     expect(src).not.toMatch(/id: "alias_4".*line: "a fourth saved name, for the season you paid to sit out of"/s);
   });
 
+  it("PRESET SLOT VI's shop line is CRT, not a sixth saved loadout", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SEASON_PASS_COSMETICS.find((c) => c.id === "preset_6")!.line;
+    expect(line).toBe("A SIXTH SAVED LOADOUT");
+    expect(line).not.toBe("a sixth saved loadout");
+    expect(src).toMatch(/id: "preset_6".*line: "A SIXTH SAVED LOADOUT"/);
+    expect(src).not.toMatch(/id: "preset_6".*line: "a sixth saved loadout"/);
+  });
+
   it("the FILE tab wears the pass theme and lists owned pass cosmetics", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/passThemePalette\(id\)/);
