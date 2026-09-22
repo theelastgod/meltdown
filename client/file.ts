@@ -759,7 +759,7 @@ export class GhostFile {
         ${gated ? `<div class="c">needs Depth ${it.requiresDepth}</div>` : ""}${!owned && !gated ? `<div class="c">not in your file</div>` : ""}
       </div>`;
     };
-    const wname = (id: unknown) => WEAPON_LIST.find((w) => w.id === id)?.name ?? String(id);
+    const wname = (id: unknown) => weaponName(String(id));
     const chipsRaw = (this.raw.chips as Record<string, Record<string, string>>) ?? {};
     const fwRaw = (this.raw.firmware as Record<string, string>) ?? {};
     const kit = WEAPON_LIST.map((w) => {

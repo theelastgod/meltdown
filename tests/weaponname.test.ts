@@ -31,3 +31,11 @@ describe("the campaign quotes that name, not the id", () => {
     expect(src).not.toMatch(/WEAPON \$\{m\.reward\.weapon\.toUpperCase\(\)\}/);
   });
 });
+
+describe("the FILE tab names the gun the city does", () => {
+  it("PRIMARY calls weaponName, not String(id)", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/weaponName\(String\(id\)\)/);
+    expect(src).not.toMatch(/\?\? String\(id\)/);
+  });
+});

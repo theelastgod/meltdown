@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 301 — FILE PRIMARY fell back to the id
+
+**Goal.** The kill log, the Audit line and the campaign card all call `weaponName`. FILE's
+PRIMARY / SECONDARY still used `WEAPON_LIST.find(...)?.name ?? String(id)`, so an unknown
+kit printed `lease_breaker` instead of LEASE-BREAKER.
+
+**What changed.** That helper calls `weaponName(String(id))`.
+
+**Proof.** `tests/weaponname.test.ts`: FILE source must `weaponName(String(id))` and must not
+`?? String(id)`. Mutation: the String fallback again — 1 fail.
+
 ## Stage 300 — Deep Wake history spelled districts with replace
 
 **Goal.** The MAP tab already calls `levelDisplayName`. Season close and
