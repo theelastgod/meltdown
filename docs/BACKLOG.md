@@ -316,3 +316,5 @@ one stage.
   → Stage 312
 - SELL FAILED quoted the caught error in sentence case  
   → Stage 313
+- ROOM FAILED quoted the caught error in sentence case  
+  → Stage 314

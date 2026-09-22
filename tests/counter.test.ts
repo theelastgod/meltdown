@@ -58,6 +58,12 @@ describe("the counter-ledger FILE line", () => {
     expect(src).not.toMatch(/ROOM REFUSED: \$\{r\.reason\}/);
   });
 
+  it("ROOM FAILED CRT-cases the caught error, not the provider's English", () => {
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/ROOM FAILED: \$\{crtPhrase\(/);
+    expect(src).not.toMatch(/ROOM FAILED: \$\{reason\}/);
+  });
+
   it("SELL FAILED CRT-cases the caught error, not the provider's English", () => {
     const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
     expect(src).toMatch(/SELL FAILED: \$\{crtPhrase\(/);

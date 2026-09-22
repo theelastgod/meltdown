@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 314 — ROOM FAILED quoted the caught error in sentence case
+
+**Goal.** Stage 313 CRT-cased `SELL FAILED`. Opening a private room that throws
+still interpolated the caught line as written: `ROOM FAILED: Failed to fetch`.
+
+**What changed.** `ROOM FAILED: ${crtPhrase(reason)}`.
+
+**Proof.** `tests/counter.test.ts`: source must `ROOM FAILED: ${crtPhrase(` and must not
+`ROOM FAILED: ${reason}`. Mutation: interpolate the raw reason — 1 fail.
+`npm test` 1086/1086.
+
 ## Stage 313 — SELL FAILED quoted the caught error in sentence case
 
 **Goal.** Stage 312 CRT-cased `BUY FAILED`. Listing a skin that reverts still interpolated

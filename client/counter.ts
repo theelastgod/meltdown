@@ -233,7 +233,7 @@ export class CounterClient {
       return r;
     } catch (e) {
       const reason = String((e as Error).message ?? e).slice(0, 100);
-      this.say(`ROOM FAILED: ${reason}`);
+      this.say(`ROOM FAILED: ${crtPhrase(reason)}`);
       return { ok: false, reason };
     }
   }
