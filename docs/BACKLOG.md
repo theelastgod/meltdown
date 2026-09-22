@@ -568,3 +568,5 @@ one stage.
   → Stage 438
 - A hidden GPU said unknown  
   → Stage 439
+- A sandbox buy said the sandbox file already owns everything  
+  → Stage 440

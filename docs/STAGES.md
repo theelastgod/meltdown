@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 440 — A sandbox buy said the sandbox file already owns everything
+
+**Goal.** Stage 435 taught `NO LEDGER HOST LINKED`. Buying a node with no shop
+still returned `offline: the sandbox file already owns everything`.
+
+**What changed.** `OFFLINE: THE SANDBOX FILE ALREADY OWNS EVERYTHING`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must that CRT reason and must not
+the sentence-case reason. Mutation: lowercase again — 1 fail.
+
 ## Stage 439 — A hidden GPU said unknown
 
 **Goal.** Stage 438 taught `SAMPLING`. A browser that hides the renderer

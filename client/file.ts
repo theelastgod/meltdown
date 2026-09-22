@@ -387,7 +387,7 @@ export class GhostFile {
 
   /** Buy a node through the ledger shop (Scrip); the host answers with the whole file. */
   async buy(nodeId: string, refund = false): Promise<{ ok: boolean; reason?: string }> {
-    if (!this.shop) return { ok: false, reason: "offline: the sandbox file already owns everything" };
+    if (!this.shop) return { ok: false, reason: "OFFLINE: THE SANDBOX FILE ALREADY OWNS EVERYTHING" };
     this.busy = nodeId;
     this.renderGraph();
     try {

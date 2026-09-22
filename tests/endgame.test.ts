@@ -361,6 +361,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/return (s \|\| )?"unknown"/);
   });
 
+  it("a sandbox buy is OFFLINE: THE SANDBOX FILE ALREADY OWNS EVERYTHING", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "OFFLINE: THE SANDBOX FILE ALREADY OWNS EVERYTHING"/);
+    expect(src).not.toMatch(/reason: "offline: the sandbox file already owns everything"/);
+  });
+
   it("a FILE op with no shop is NO LEDGER HOST LINKED, not no ledger host linked", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "NO LEDGER HOST LINKED"/);
