@@ -646,6 +646,15 @@ describe("rewrite and the Wakelight shop", () => {
     expect(src).toMatch(/id: "alias_2".*line: "A SECOND SAVED NAME THE CITY MAY CALL YOU"/s);
     expect(src).not.toMatch(/id: "alias_2".*line: "a second saved name the city may call you"/s);
   });
+
+  it("ALIAS SLOT III's shop line is CRT, not a third", () => {
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    const line = COSMETICS.find((c) => c.id === "alias_3")!.line;
+    expect(line).toBe("A THIRD");
+    expect(line).not.toBe("a third");
+    expect(src).toMatch(/id: "alias_3", kind: "alias", name: "ALIAS SLOT III", line: "A THIRD"/);
+    expect(src).not.toMatch(/id: "alias_3", kind: "alias", name: "ALIAS SLOT III", line: "a third"/);
+  });
 });
 
 // ---- the room: an Audit playlist's rules at join, scores at settlement, the Deep Wake push ----
