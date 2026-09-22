@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 269, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 270, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 269 on this branch (RUN safe-zone ring wears tex_lamp) |
-| Next stage number | **270** |
+| HEAD | Stage 270 on this branch (LEASE-BREAKER top rail wears tex_lamp) |
+| Next stage number | **271** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1067 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,9 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 270 is next
+## 6. Stage 271 is next
 
-Stage 269 put `tex_lamp` on THE RUN's safe-zone ground ring. Do not loosen fairness.
+Stage 270 put `tex_lamp` on LEASE-BREAKER's magenta top rail. Do not loosen fairness.
 
 ---
 

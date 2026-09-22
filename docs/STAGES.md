@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 270 — LEASE-BREAKER's top rail was a flat magenta box
+
+**Goal.** The viewmodel tracer strip is the gun's colour. LEASE-BREAKER still
+had a second rail — a 10 cm magenta box on top of the receiver — as unmapped
+`MeshBasicMaterial`. Street lamps and THE KERNEL's bars already wear `tex_lamp`.
+
+**What changed.** `bindPlate(mgRail, "tex_lamp")`, fail-soft. The magenta
+stays; the lamp plate is the map.
+
+**Proof.** `tests/assets.test.ts` requires that call in `weapons.ts`. Mutation:
+the call omitted — 1 fail.
+
 ## Stage 269 — THE RUN's safe-zone ring was a flat cyan hoop
 
 **Goal.** Stage 268 plated the claim octahedra. The ground ring of each safe

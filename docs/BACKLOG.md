@@ -228,3 +228,5 @@ one stage.
   → Stage 268
 - THE RUN's safe-zone ring was a flat cyan hoop  
   → Stage 269
+- LEASE-BREAKER's top rail was a flat magenta box  
+  → Stage 270

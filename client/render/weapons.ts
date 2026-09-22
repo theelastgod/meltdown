@@ -23,13 +23,16 @@ export function buildViewmodel(id: WeaponId): THREE.Group {
     return m;
   };
   switch (id) {
-    case "lease_breaker":
+    case "lease_breaker": {
       add(new THREE.BoxGeometry(0.09, 0.12, 0.42), body, 0, 0, 0);
       add(new THREE.BoxGeometry(0.035, 0.035, 0.36), body, 0, 0.03, -0.36);
       add(new THREE.BoxGeometry(0.06, 0.16, 0.07), body, 0, -0.12, 0.08);
       add(new THREE.BoxGeometry(0.012, 0.012, 0.3), strip, 0.05, 0.03, -0.1);
-      add(new THREE.BoxGeometry(0.1, 0.008, 0.03), new THREE.MeshBasicMaterial({ color: PALETTE.magenta }), 0, 0.065, 0.1);
+      const mgRail = new THREE.MeshBasicMaterial({ color: PALETTE.magenta });
+      bindPlate(mgRail, "tex_lamp");
+      add(new THREE.BoxGeometry(0.1, 0.008, 0.03), mgRail, 0, 0.065, 0.1);
       break;
+    }
     case "repo_hammer":
       add(new THREE.BoxGeometry(0.11, 0.13, 0.5), body, 0, 0, 0);
       add(new THREE.CylinderGeometry(0.035, 0.035, 0.42, 8).rotateX(Math.PI / 2), dark, 0, 0.04, -0.42);
