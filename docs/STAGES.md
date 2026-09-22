@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 463 — An unknown chip gun said unknown weapon
+
+**Goal.** Stage 462 taught `UNKNOWN SECONDARY`. A chip map keyed on
+`not_a_gun` still kicked `unknown weapon not_a_gun`.
+
+**What changed.** `UNKNOWN WEAPON ${id}` on the chip-weapon kick.
+
+**Proof.** Measured kick was mixed-case. After the fix:
+`UNKNOWN WEAPON not_a_gun`. `tests/mastery.test.ts` asserts that
+sentence and that loadout.ts must the CRT template and must not the
+mixed-case template. Mutation: mixed case again — 1 fail.
+
 ## Stage 462 — An unknown secondary said unknown secondary
 
 **Goal.** Stage 461 taught `UNKNOWN PRIMARY`. A loadout whose secondary

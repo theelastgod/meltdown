@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- A chip map keyed on an unknown weapon still kicks mixed-case `unknown weapon`
+  → Stage 463
 - An unknown secondary still kicks mixed-case `unknown secondary`
   → Stage 462
 - An unknown primary still kicks mixed-case `unknown primary`

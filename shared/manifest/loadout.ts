@@ -112,7 +112,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
     else {
       for (const [wid, slots] of Object.entries(lo.chips as Record<string, unknown>)) {
         if (!(wid in WEAPONS)) {
-          errors.push({ rule: "chip-weapon", detail: `unknown weapon ${wid}` });
+          errors.push({ rule: "chip-weapon", detail: `UNKNOWN WEAPON ${wid}` });
           continue;
         }
         if (!slots || typeof slots !== "object" || Array.isArray(slots)) {
