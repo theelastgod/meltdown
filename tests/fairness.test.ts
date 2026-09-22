@@ -51,8 +51,12 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(smuggled.errors.map((e) => e.rule)).toContain("unknown-field");
     const gated = validateLoadout({ primary: "phage", secondary: "stack_smg", attested: [], keystone: null }, owned, 2);
     expect(gated.errors.map((e) => e.rule)).toContain("weapon-depth");
-    expect(gated.errors.find((e) => e.rule === "weapon-depth")!.detail).toMatch(/^PHAGE LAUNCHER needs Depth/);
+    expect(gated.errors.find((e) => e.rule === "weapon-depth")!.detail).toMatch(/^PHAGE LAUNCHER NEEDS DEPTH/);
     expect(gated.errors.find((e) => e.rule === "weapon-depth")!.detail).not.toMatch(/^phage needs Depth/);
+    expect(gated.errors.find((e) => e.rule === "weapon-depth")!.detail).not.toMatch(/needs Depth/);
+    const loadoutSrc = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
+    expect(loadoutSrc).toMatch(/NEEDS DEPTH \$\{WEAPON_DEPTH\[w\]\} \(YOU ARE \$\{depth\}\)/);
+    expect(loadoutSrc).not.toMatch(/needs Depth \$\{WEAPON_DEPTH\[w\]\} \(you are \$\{depth\}\)/);
     const asNode = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["debtless"], keystone: null }, owned, 10);
     expect(asNode.errors.map((e) => e.rule)).toContain("not-a-node");
     expect(asNode.errors.find((e) => e.rule === "not-a-node")!.detail).toBe("DEBTLESS is a KEYSTONE");

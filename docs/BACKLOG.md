@@ -570,3 +570,5 @@ one stage.
   → Stage 439
 - A sandbox buy said the sandbox file already owns everything  
   → Stage 440
+- A Depth-gated gun said needs Depth  
+  → Stage 441

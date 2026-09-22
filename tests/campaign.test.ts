@@ -409,7 +409,7 @@ describe("the PvP wall", () => {
     expect(validateLoadout({ primary: "directive", secondary: "clockeater", attested: [] }, sandboxAccount("s").owned, 50).ok).toBe(true);
     const src = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
     expect(src).toMatch(/\$\{gun\(w\)\} unlocks in the campaign/);
-    expect(src).toMatch(/\$\{gun\(w\)\} needs Depth/);
+    expect(src).toMatch(/\$\{gun\(w\)\} NEEDS DEPTH/);
     expect(src).not.toMatch(/\$\{w\} unlocks in the campaign/);
     expect(src).toMatch(/\$\{itemName\(id\)\} is not in your file/);
     expect(src).not.toMatch(/\$\{id\} is not in your file/);

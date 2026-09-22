@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 441 — A Depth-gated gun said needs Depth
+
+**Goal.** Stage 430 taught buyNode `NEEDS DEPTH`. Spawning PHAGE LAUNCHER too
+shallow still kicked `PHAGE LAUNCHER needs Depth 20 (you are 10)`.
+
+**What changed.** `NEEDS DEPTH` / `YOU ARE`.
+
+**Proof.** `tests/fairness.test.ts`: the kick matches `^PHAGE LAUNCHER NEEDS DEPTH`.
+loadout.ts must the CRT template. Mutation: mixed case again — 1 fail.
+
 ## Stage 440 — A sandbox buy said the sandbox file already owns everything
 
 **Goal.** Stage 435 taught `NO LEDGER HOST LINKED`. Buying a node with no shop
