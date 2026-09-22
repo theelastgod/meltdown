@@ -623,7 +623,7 @@ export class GhostFile {
       ${runBlock}
       ${sinkBlock}
       ${prizeBlock}
-      <div class="sh">LEDGER MARKET · settles only in $CAPITAL · 5% fee: 2% burned, 2% treasury, 1% creator</div>${market || "<div class='dim'>no listings</div>"}
+      <div class="sh">LEDGER MARKET · settles only in $CAPITAL · 5% fee: 2% burned, 2% treasury, 1% creator</div>${market || "<div class='dim'>NO LISTINGS</div>"}
       <div class="ln dim">${delta}</div>
       ${c.last ? `<div class="ln am">${c.last}</div>` : ""}`;
   }

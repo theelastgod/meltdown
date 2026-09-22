@@ -404,3 +404,5 @@ one stage.
   → Stage 356
 - An empty Audit board said no scores yet this week  
   → Stage 357
+- An empty market said no listings  
+  → Stage 358

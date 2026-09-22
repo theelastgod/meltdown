@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 358 — An empty market said no listings
+
+**Goal.** Stage 357 taught `NO SCORES YET THIS WEEK`. An empty Ledger Market still
+dimmed `no listings`.
+
+**What changed.** `NO LISTINGS`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `NO LISTINGS` and must not `no listings`.
+Mutation: lowercase again — 1 fail.
+
 ## Stage 357 — An empty Audit board said no scores yet this week
 
 **Goal.** Stage 354 taught `NOT PLAYED YET`. An empty leaderboard still dimmed
