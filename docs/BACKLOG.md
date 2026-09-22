@@ -222,3 +222,7 @@ one stage.
   → Stage 265
 - Offline kill log called a player PLAYER  
   → Stage 266
+- The range ghost was a flat cyan capsule  
+  → Stage 267
+- The range ghost was an unplated cyan capsule  
+  → Stage 267

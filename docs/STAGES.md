@@ -1641,6 +1641,28 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 267 — The range ghost was a flat cyan capsule
+
+**Goal.** Stage 203 plated the escort hood. The Deadletter range ghost — the cyan figure that
+replays a best time — was still unmapped additive cyan.
+
+**What changed.** `bindPlate(this.ghostMat, "tex_cloak")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `hub.ts`. Mutation: the call omitted —
+1 fail.
+
+## Stage 267 — The range ghost was an unplated cyan capsule
+
+**Goal.** Campaign escorts and crowd hoods wear `tex_cloak`. The Deadletter
+Office range ghost — the translucent cyan figure on the lane — was still
+`MeshBasicMaterial` with no map.
+
+**What changed.** `bindPlate(this.ghostMat, "tex_cloak")`, fail-soft. The
+cyan additive wash stays; the cloak plate is the map.
+
+**Proof.** `tests/assets.test.ts` requires that call in `hub.ts`. Mutation:
+the call omitted — 1 fail.
+
 ## Stage 266 — Offline kill log called a player PLAYER
 
 **Goal.** Online kill log says `FILE #n ⟶ FILE-01`. Offline said

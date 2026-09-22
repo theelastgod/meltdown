@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 266, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 267, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 266 on this branch (offline kill log says FILE, not PLAYER) |
-| Next stage number | **267** |
+| HEAD | Stage 267 on this branch (range ghost wears tex_cloak) |
+| Next stage number | **268** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1065 across 117 files, `npm test` |
+| Unit tests | 1067 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,9 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 267 is next
+## 6. Stage 268 is next
 
-Stage 266 named a closed file FILE in the offline kill log. Do not loosen fairness.
+Stage 267 put `tex_cloak` on the Deadletter Office range ghost. THE RUN
+claim octahedra are still unplated amber/magenta. Do not loosen fairness.
 
 ---
 

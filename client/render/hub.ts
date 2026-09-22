@@ -35,6 +35,7 @@ export class HubDressing {
     scene.add(this.group);
     // the ghost: a translucent cyan figure, additive so it reads through the lane's fog
     this.ghostMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
+    bindPlate(this.ghostMat, "tex_cloak");
     this.ghost = new THREE.Group();
     const body = new THREE.Mesh(new THREE.CapsuleGeometry(MOVE.capsuleRadius - 0.02, MOVE.standHeight - MOVE.capsuleRadius * 2, 4, 10), this.ghostMat);
     body.position.y = MOVE.standHeight / 2;
