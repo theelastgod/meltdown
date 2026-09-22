@@ -133,6 +133,12 @@ describe("an empty fixer board is CRT", () => {
     expect(src).not.toMatch(/tell a friend the code/);
   });
 
+  it("empty TESTIMONY is NOTHING ON THE RECORD, not nothing on the record", () => {
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/NOTHING ON THE RECORD/);
+    expect(src).not.toMatch(/nothing on the record/);
+  });
+
   it("a crew guest is THE HOST HOLDS THE TERMINALS, not the host holds the terminals", () => {
     const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
     expect(src).toMatch(/THE HOST HOLDS THE TERMINALS/);

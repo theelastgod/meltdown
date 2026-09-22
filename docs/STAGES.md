@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 389 — Empty TESTIMONY said nothing on the record
+
+**Goal.** Stage 388 taught `TELL A FRIEND THE CODE`. A file with no testimony
+still dimmed `— nothing on the record —`.
+
+**What changed.** `— NOTHING ON THE RECORD —`.
+
+**Proof.** `tests/campaign.test.ts`: campaign.ts must `NOTHING ON THE RECORD`
+and must not `nothing on the record`. Mutation: lowercase again — 1 fail.
+`npm test` 1158/1158.
+
 ## Stage 388 — The crew share line said tell a friend the code
 
 **Goal.** Stage 387 taught `THE HOST HOLDS THE TERMINALS`. The same line still

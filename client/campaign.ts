@@ -544,7 +544,7 @@ export class Campaign {
     const endings = endingsFor(c.testimony, c.faction).map((e) => e.title).join(" · ");
     return `<div class="hd">▲ CONTRACTS · ${faction ? `${faction.name}` : "NO HOUSE"} <span class="x" data-act="close">${closeHint("C", this.game.hud.touch)}</span></div>
       <div class="ln">THREAT <b>${threat.rating}</b> · ${threat.line}${threat.named ? " · THE PA CALLS YOUR NAME" : ""}</div>
-      <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => testimonyLine(k, v)).join(" · ") || "— nothing on the record —"} · ENDINGS OPEN: ${endings}</div>
+      <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => testimonyLine(k, v)).join(" · ") || "— NOTHING ON THE RECORD —"} · ENDINGS OPEN: ${endings}</div>
       <div class="cols"><div><div class="sh">THE ARC · ${c.missionsDone.length}/${MAIN_ARC.length}</div>${arc}<div class="sh">FIXERS · GIGS ${c.gigsDone.length}/${GIGS.length}</div>${fixers}</div>
       <div><div class="sh">KERNEL PROTOCOLS · ${c.worn.length}/${MAX_PROTOCOLS} WORN <span class="red">· CAMPAIGN ONLY · STRIPPED AT PVP JOIN</span></div>${protos}
       <div class="sh">CAMPAIGN WEAPONS</div><div class="ln">${CAMPAIGN_WEAPONS.map((w) => `${c.weapons.includes(w as "directive" | "clockeater") ? "▣" : "▢"} ${weaponName(w)}`).join(" · ")}</div>
