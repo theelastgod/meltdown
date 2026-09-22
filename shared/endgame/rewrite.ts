@@ -30,7 +30,7 @@ export const COSMETICS: readonly CosmeticDef[] = [
   { id: "alias_2", kind: "alias", name: "ALIAS SLOT II", line: "A SECOND SAVED NAME THE CITY MAY CALL YOU", wakelight: 90 },
   { id: "alias_3", kind: "alias", name: "ALIAS SLOT III", line: "A THIRD", wakelight: 140 },
   { id: "preset_2", kind: "preset", name: "PRESET SLOT II", line: "A SECOND SAVED LOADOUT", wakelight: 60 },
-  { id: "preset_3", kind: "preset", name: "PRESET SLOT III", line: "a third", wakelight: 90 },
+  { id: "preset_3", kind: "preset", name: "PRESET SLOT III", line: "A THIRD", wakelight: 90 },
   { id: "preset_4", kind: "preset", name: "PRESET SLOT IV", line: "a fourth", wakelight: 120 },
   { id: "preset_5", kind: "preset", name: "PRESET SLOT V", line: "a fifth", wakelight: 160 },
 ];

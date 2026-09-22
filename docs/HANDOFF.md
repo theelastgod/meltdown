@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 488, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 489, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 488 on this branch (PRESET SLOT II shop line) |
-| Next stage number | **489** |
+| HEAD | Stage 489 on this branch (PRESET SLOT III shop line) |
+| Next stage number | **490** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 489 is next
+## 6. Stage 490 is next
 
-Stage 488 CRT-cased PRESET SLOT II's shop line. PRESET SLOT III still
-says `a third`. Title cards stay prose (probe:ship asserts them).
+Stage 489 CRT-cased PRESET SLOT III's shop line. PRESET SLOT IV still
+says `a fourth`. Title cards stay prose (probe:ship asserts them).
 Crew-code reasons stay mixed-case (`probe:campaign` asserts `not a
 crew code`). Do not loosen fairness. Do not plate viewmodel or remote
 strips. The join line still prints the socket name — `probe:net`
