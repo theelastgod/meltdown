@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 507 — ESTATE GRID's market line said cyan monitor grid
+
+**Goal.** Stage 506 taught FORGED TRIM. ESTATE GRID still said
+mixed-case `cyan monitor grid`.
+
+**What changed.** `CYAN MONITOR GRID`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 506 — FORGED TRIM's market line said amber servo light on wet steel
 
 **Goal.** Stage 505 taught ECHO VIOLET. FORGED TRIM still said

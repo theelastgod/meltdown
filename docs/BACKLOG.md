@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- ESTATE GRID's market line still says mixed-case `cyan monitor grid`
+  → Stage 507
 - FORGED TRIM's market line still says mixed-case `amber servo light on wet steel`
   → Stage 506
 - ECHO VIOLET's market line still says mixed-case `ghosting plate, short-range wallsense look`

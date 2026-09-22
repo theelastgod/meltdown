@@ -50,7 +50,7 @@ export const SKINS: readonly SkinDef[] = [
   skin(12, "skin_metro", "METRO PLATE", "GREY-GREEN TUNNEL TILE, CYAN BARS", 75, 0x71a0, "#37ff8b", "skin_metro_plate"),
   skin(13, "skin_violet", "ECHO VIOLET", "GHOSTING PLATE, SHORT-RANGE WALLSENSE LOOK", 95, 0x5d33, "#8f4dff", "skin_violet_plate"),
   skin(14, "skin_forged", "FORGED TRIM", "AMBER SERVO LIGHT ON WET STEEL", 85, 0x18c4, "#ffb02e", "skin_amber_trim"),
-  skin(15, "skin_grid", "ESTATE GRID", "cyan monitor grid", 65, 0x0e91, "#35f2ff", "skin_cyan_grid"),
+  skin(15, "skin_grid", "ESTATE GRID", "CYAN MONITOR GRID", 65, 0x0e91, "#35f2ff", "skin_cyan_grid"),
   skin(16, "skin_black_lease", "BLACK LEASE", "CRT phosphor on a sealed file", 100, 0x6a0b, "#7dffb0", "skin_black_lease"),
   skin(17, "skin_phage", "PHAGE PLATE", "green-black contagion paint, the launcher's own stain", 88, 0x4e2c, "#37ff8b", "skin_phage_plate"),
   skin(18, "skin_longwave", "LONGWAVE ICE", "cold cyan rail, the colour a charge howls", 105, 0x7b19, "#8fd8ff", "skin_longwave_plate"),

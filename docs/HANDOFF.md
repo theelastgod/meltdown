@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 506, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 507, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 506 on this branch (FORGED TRIM market line) |
-| Next stage number | **507** |
+| HEAD | Stage 507 on this branch (ESTATE GRID market line) |
+| Next stage number | **508** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 507 is next
+## 6. Stage 508 is next
 
-Stage 506 CRT-cased FORGED TRIM's market line. ESTATE GRID still says
-mixed-case `cyan monitor grid`. Title cards
+Stage 507 CRT-cased ESTATE GRID's market line. BLACK LEASE still says
+mixed-case `CRT phosphor on a sealed file`. Title cards
 stay prose (probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints

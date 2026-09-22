@@ -199,4 +199,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(14, "skin_forged", "FORGED TRIM", "AMBER SERVO LIGHT ON WET STEEL"/);
     expect(src).not.toMatch(/skin\(14, "skin_forged", "FORGED TRIM", "amber servo light on wet steel"/);
   });
+
+  it("ESTATE GRID's market line is CRT, not cyan monitor grid", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_grid")!.line;
+    expect(line).toBe("CYAN MONITOR GRID");
+    expect(line).not.toBe("cyan monitor grid");
+    expect(src).toMatch(/skin\(15, "skin_grid", "ESTATE GRID", "CYAN MONITOR GRID"/);
+    expect(src).not.toMatch(/skin\(15, "skin_grid", "ESTATE GRID", "cyan monitor grid"/);
+  });
 });
