@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 435, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 436, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 435 on this branch (NO LEDGER HOST LINKED) |
-| Next stage number | **436** |
+| HEAD | Stage 436 on this branch (NO LEDGER HOST) |
+| Next stage number | **437** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1202 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 436 is next
+## 6. Stage 437 is next
 
-Stage 435 CRT-cased `NO LEDGER HOST LINKED`. Perf overlay still sets
-`no ledger host`. Do not loosen fairness. Do not plate viewmodel or remote
+Stage 436 CRT-cased perf `NO LEDGER HOST`. The overlay still suffixes
+`report in N s`. Do not loosen fairness. Do not plate viewmodel or remote
 strips. The join line still prints the socket name — `probe:net` asserts
 `probe-join-31`; leave it.
 

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 436 — The perf overlay said no ledger host
+
+**Goal.** Stage 435 taught `NO LEDGER HOST LINKED`. The perf strip still wrote
+`NOT REPORTED: no ledger host`.
+
+**What changed.** `NO LEDGER HOST`.
+
+**Proof.** `tests/endgame.test.ts`: perf.ts must `postError = "NO LEDGER HOST"`
+and must not `postError = "no ledger host"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 435 — A FILE op with no shop said no ledger host linked
 
 **Goal.** Stage 371 taught ENDGAME no-host CRT. Claim / rewrite / cosmetic

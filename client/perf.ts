@@ -94,7 +94,7 @@ export class PerfMonitor {
   private async post(): Promise<void> {
     this.report = this.build();
     if (!this.host) {
-      this.postError = "no ledger host";
+      this.postError = "NO LEDGER HOST";
       return;
     }
     this.posting = true; // once; a failure is shown, not retried every frame

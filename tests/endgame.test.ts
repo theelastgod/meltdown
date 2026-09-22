@@ -337,6 +337,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/reason: "no file"/);
   });
 
+  it("a perf overlay with no host is NO LEDGER HOST, not no ledger host", () => {
+    const src = readFileSync(new URL("../client/perf.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/postError = "NO LEDGER HOST"/);
+    expect(src).not.toMatch(/postError = "no ledger host"/);
+  });
+
   it("a FILE op with no shop is NO LEDGER HOST LINKED, not no ledger host linked", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "NO LEDGER HOST LINKED"/);

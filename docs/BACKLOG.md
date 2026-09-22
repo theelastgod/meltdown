@@ -560,3 +560,5 @@ one stage.
   → Stage 434
 - A FILE op with no shop said no ledger host linked  
   → Stage 435
+- The perf overlay said no ledger host  
+  → Stage 436
