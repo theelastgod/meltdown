@@ -334,3 +334,5 @@ one stage.
   → Stage 321
 - An empty attested list said none  
   → Stage 322
+- PRIVATE ROOM · CODE suffixed hours as h  
+  → Stage 323

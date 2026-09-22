@@ -48,6 +48,12 @@ describe("the counter-ledger FILE line", () => {
     expect(src).not.toMatch(/WALLET REFUSED: \$\{String\(\(e as Error\)\.message/);
   });
 
+  it("PRIVATE ROOM · CODE suffixes hours as H, not h", () => {
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/PRIVATE ROOM · CODE \$\{r\.code\} · \$\{hours\}H/);
+    expect(src).not.toMatch(/PRIVATE ROOM · CODE \$\{r\.code\} · \$\{hours\}h/);
+  });
+
   it("ROOM REFUSED CRT-cases the host reason, not a how-to", () => {
     expect(crtPhrase("link a wallet first: a private room is bought, not requested")).toBe(
       "LINK A WALLET FIRST: A PRIVATE ROOM IS BOUGHT, NOT REQUESTED",

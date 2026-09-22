@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 323 — PRIVATE ROOM · CODE suffixed hours as h
+
+**Goal.** Stage 320 CRT-cased the private-room admit line. Opening one still
+said `PRIVATE ROOM · CODE ABCD · 1h`.
+
+**What changed.** `${hours}H`.
+
+**Proof.** `tests/counter.test.ts`: source must `CODE ${r.code} · ${hours}H` and
+must not `${hours}h` on that line. Mutation: lowercase h again — 1 fail.
+`npm test` 1095/1095.
+
 ## Stage 322 — An empty attested list said none
 
 **Goal.** Stage 301 taught FILE `weaponName`. The join FILE line still fell back
