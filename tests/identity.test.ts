@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { glyphFor, glyphSeed, glyphSvg, layersForDepth } from "../shared/identity/glyph";
 import { CHAPTERS, chapterFor, MONIKERS, monikerUnlocked, unlockedMonikers, wornMoniker } from "../shared/identity/monikers";
-import { assertClean, displayName, filesWord, IDENTITY_KEYS, identityTag, mechanicalLeaks, parseTag, publicIdentity } from "../shared/identity/identity";
+import { assertClean, displayName, filesWord, IDENTITY_KEYS, identityTag, mechanicalLeaks, parseTag, publicIdentity, stampsWord } from "../shared/identity/identity";
 import { createAccount, rangeCourseName, recordGhost, sandboxAccount, upgradeAccount, validGhost } from "../shared/progression/account";
 import { totalXpToReach } from "../shared/progression/depth";
 import { deadletterOffice, HUB_LEVEL_ID, overPad } from "../shared/sim/hub";
@@ -83,6 +83,19 @@ describe("public identity", () => {
     expect(back.chapter).toBe(3);
     expect(back.moniker).toBe("divergent");
   });
+  it("one stamp is STAMP, not STAMPS", () => {
+    expect(stampsWord(1)).toBe("1 STAMP");
+    expect(stampsWord(2)).toBe("2 STAMPS");
+    expect(stampsWord(0)).toBe("0 STAMPS");
+    expect(stampsWord(1)).not.toBe("1 STAMPS");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/stampsWord\(e\.stamps\)/);
+    expect(hud).not.toMatch(/e\.stamps\} STAMPS/);
+    const rewrite = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    expect(rewrite).toMatch(/stampsWord\(a\.stamps\.length\)\} KEPT/);
+    expect(rewrite).not.toMatch(/a\.stamps\.length\} STAMPS KEPT/);
+  });
+
   it("one file is FILE, not FILES", () => {
     expect(filesWord(1)).toBe("1 FILE");
     expect(filesWord(2)).toBe("2 FILES");

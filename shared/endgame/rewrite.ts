@@ -5,6 +5,7 @@
  * Never power: nothing here touches a stat.
  */
 import type { Account } from "../progression/account";
+import { stampsWord } from "../identity/identity";
 import { DEFAULT_LOADOUT } from "../manifest/loadout";
 import { emptyMasteries } from "../progression/mastery";
 import { MAX_DEPTH } from "../progression/depth";
@@ -58,7 +59,7 @@ export function rewrite(a: Account): { ok: boolean; reason?: string; wakelight?:
   a.debt = null;
   a.wallet.wakelight += REWRITE_WAKELIGHT;
   a.counters["rewrites"] = a.rewrites;
-  a.ledger.push(`REWRITE ${a.rewrites} · THE FILE BURNS · ${a.stamps.length} STAMPS KEPT · +${REWRITE_WAKELIGHT} WAKELIGHT`);
+  a.ledger.push(`REWRITE ${a.rewrites} · THE FILE BURNS · ${stampsWord(a.stamps.length)} KEPT · +${REWRITE_WAKELIGHT} WAKELIGHT`);
   return { ok: true, wakelight: REWRITE_WAKELIGHT };
 }
 

@@ -40,6 +40,11 @@ export function filesWord(n: number): string {
   return `${n} FILE${n === 1 ? "" : "S"}`;
 }
 
+/** One stamp is STAMP, not STAMPS. */
+export function stampsWord(n: number): string {
+  return `${n} STAMP${n === 1 ? "" : "S"}`;
+}
+
 export function displayName(a: Account | null, handle: string): string {
   if (!a) return handle;
   if (chapterFor(a.depth) >= 3) return a.name || handle;

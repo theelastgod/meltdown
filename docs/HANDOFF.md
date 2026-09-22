@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 346, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 347, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 346 on this branch (1 UNIT DROPPED not UNITS) |
-| Next stage number | **347** |
+| HEAD | Stage 347 on this branch (1 STAMP not STAMPS) |
+| Next stage number | **348** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1116 across 117 files, `npm test` |
+| Unit tests | 1118 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,11 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 347 is next
+## 6. Stage 348 is next
 
-Stage 346 CRT-cased `1 UNIT DROPPED`. Dossier `1 STAMPS` and `1 TRIES` are still
-always plural. Do not loosen fairness. Do not plate viewmodel or remote strips. The
-join line still prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 347 CRT-cased `1 STAMP`. `LINK LOST` still writes `AFTER 1 TRIES`. Do not
+loosen fairness. Do not plate viewmodel or remote strips. The join line still
+prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 347 — One stamp was STAMPS
+
+**Goal.** Stage 338 taught `1 DEATH`. The dossier still wrote `1 STAMPS`, and
+Rewrite still wrote `1 STAMPS KEPT`.
+
+**What changed.** `stampsWord`: `1 STAMP`, `2 STAMPS`. The dossier and the rewrite
+ledger both call it.
+
+**Proof.** `tests/identity.test.ts`: `stampsWord(1)` is `1 STAMP`. hud.ts must
+`stampsWord(e.stamps)` and must not `e.stamps} STAMPS`. Mutation: always STAMPS —
+1 fail.
+`npm test` 1118/1118.
+
 ## Stage 346 — One unit dropped was UNITS
 
 **Goal.** Stage 345 taught `1 CLAIM OUT`. Dying with one unit still logged

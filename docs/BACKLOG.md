@@ -382,3 +382,5 @@ one stage.
   → Stage 345
 - One unit dropped was UNITS  
   → Stage 346
+- One stamp was STAMPS  
+  → Stage 347

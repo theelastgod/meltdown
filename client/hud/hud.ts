@@ -16,6 +16,7 @@ import { keysLine, learn, NOTHING_SEEN, type Seen } from "./keys";
 import { SPRINT_READ } from "./stance";
 import { roundCard, type RoundStats } from "./round";
 import { claimsWord } from "../runcue";
+import { stampsWord } from "@shared/identity/identity";
 import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
@@ -293,7 +294,7 @@ export class Hud {
 
   /** 1.2 s pre-match dossier flash: both cells' files, identity only. */
   dossier(entries: { team: number; display: string; glyphSvg: string; chapter: number; moniker: string | null; stamps: number; debt: boolean; me: boolean }[], seconds: number): void {
-    const cell = (t: number) => `<div class="cell c${t}"><div class="ch">CELL ${t === 1 ? "ONE" : "TWO"}</div>${entries.filter((e) => e.team === t).map((e) => `<div class="ent ${e.me ? "me" : ""} ${e.debt ? "debt" : ""}">${e.glyphSvg}<div><div class="nm">${e.display}${e.debt ? ' <span class="dbt">◆ DEBT</span>' : ""}</div><div class="sub">CH ${["—", "I", "II", "III"][e.chapter] ?? "—"}${e.moniker ? " · " + e.moniker : ""} · ${e.stamps} STAMPS</div></div></div>`).join("") || '<div class="ent dim">— EMPTY —</div>'}</div>`;
+    const cell = (t: number) => `<div class="cell c${t}"><div class="ch">CELL ${t === 1 ? "ONE" : "TWO"}</div>${entries.filter((e) => e.team === t).map((e) => `<div class="ent ${e.me ? "me" : ""} ${e.debt ? "debt" : ""}">${e.glyphSvg}<div><div class="nm">${e.display}${e.debt ? ' <span class="dbt">◆ DEBT</span>' : ""}</div><div class="sub">CH ${["—", "I", "II", "III"][e.chapter] ?? "—"}${e.moniker ? " · " + e.moniker : ""} · ${stampsWord(e.stamps)}</div></div></div>`).join("") || '<div class="ent dim">— EMPTY —</div>'}</div>`;
     this.q(".dossier .cells").innerHTML = cell(1) + cell(2);
     const d = this.q(".dossier");
     d.hidden = false;
