@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 357 — An empty Audit board said no scores yet this week
+
+**Goal.** Stage 354 taught `NOT PLAYED YET`. An empty leaderboard still dimmed
+`no scores yet this week`.
+
+**What changed.** `NO SCORES YET THIS WEEK`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `NO SCORES YET THIS WEEK` and must not
+`no scores yet this week`. Mutation: lowercase again — 1 fail.
+
 ## Stage 356 — FILE identity said files on you
 
 **Goal.** Stage 342 taught `1 FILE ON YOU` on the HUD and ledger. FILE's identity

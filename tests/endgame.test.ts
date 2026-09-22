@@ -183,6 +183,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/nothing on the rig yet/);
   });
 
+  it("an empty Audit board is NO SCORES YET THIS WEEK, not no scores yet this week", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/class='dim'>NO SCORES YET THIS WEEK/);
+    expect(src).not.toMatch(/no scores yet this week/);
+  });
+
   it("an unplayed Audit is NOT PLAYED YET, not not played yet", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/"NOT PLAYED YET"/);
