@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 347, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 348, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 347 on this branch (1 STAMP not STAMPS) |
-| Next stage number | **348** |
+| HEAD | Stage 348 on this branch (1 TRY not TRIES) |
+| Next stage number | **349** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1118 across 117 files, `npm test` |
+| Unit tests | 1119 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,9 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 348 is next
+## 6. Stage 349 is next
 
-Stage 347 CRT-cased `1 STAMP`. `LINK LOST` still writes `AFTER 1 TRIES`. Do not
+Stage 348 CRT-cased `1 TRY`. THE RUN strip still writes `OWED 1 UNITS`. Do not
 loosen fairness. Do not plate viewmodel or remote strips. The join line still
 prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
 

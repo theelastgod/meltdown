@@ -55,7 +55,7 @@ import { filesWord } from "@shared/identity/identity";
 import type { NodeView } from "./render/wake";
 import { GRENADE_LIST, WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
 import { modsFor, weaponDefOf } from "@shared/sim/player";
-import { rejoinDelay, rejoinTries } from "@shared/net/rejoin";
+import { rejoinDelay, rejoinTries, triesWord } from "@shared/net/rejoin";
 import { linkStatusLine, linkingSimNote, roomName } from "./hud/room";
 
 export interface NetConfig {
@@ -452,7 +452,7 @@ export class Game {
     if (this.knockTimer !== null) return;
     const wait = rejoinDelay(this.rejoins + 1);
     if (wait === null) {
-      this.hud.push(`LINK LOST · THE ROOM HAS LET THE SEAT GO AFTER ${this.rejoins} TRIES`, "mg");
+      this.hud.push(`LINK LOST · THE ROOM HAS LET THE SEAT GO AFTER ${triesWord(this.rejoins)}`, "mg");
       return;
     }
     this.rejoins++;

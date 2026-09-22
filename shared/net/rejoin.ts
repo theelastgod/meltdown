@@ -51,6 +51,11 @@ export function rejoinTries(graceSeconds = REJOIN_GRACE_SECONDS): number {
   return n;
 }
 
+/** One try is TRY, not TRIES. */
+export function triesWord(n: number): string {
+  return `${n} ${n === 1 ? "TRY" : "TRIES"}`;
+}
+
 /**
  * The join handshake's own retry plan (Stage 155).
  *

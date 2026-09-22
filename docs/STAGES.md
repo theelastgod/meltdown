@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 348 — One try was TRIES
+
+**Goal.** Stage 347 taught `1 STAMP`. Giving up the seat still said
+`AFTER 1 TRIES`.
+
+**What changed.** `triesWord`: `1 TRY`, `2 TRIES`. The LINK LOST line calls it.
+
+**Proof.** `tests/rejoin.test.ts`: `triesWord(1)` is `1 TRY`. game.ts must
+`triesWord(this.rejoins)` and must not `this.rejoins} TRIES`. Mutation: always
+TRIES — 1 fail.
+`npm test` 1119/1119.
+
 ## Stage 347 — One stamp was STAMPS
 
 **Goal.** Stage 338 taught `1 DEATH`. The dossier still wrote `1 STAMPS`, and

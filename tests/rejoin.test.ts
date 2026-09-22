@@ -6,7 +6,8 @@
  * would overshoot, which ended the plan at 31.5 s of a 60 s hold. Stage 183 spends the remainder.
  */
 import { describe, expect, it } from "vitest";
-import { REJOIN_FIRST_MS, REJOIN_GRACE_SECONDS, REJOIN_MAX_TRIES, rejoinDelay, rejoinTries } from "../shared/net/rejoin";
+import { readFileSync } from "node:fs";
+import { REJOIN_FIRST_MS, REJOIN_GRACE_SECONDS, REJOIN_MAX_TRIES, rejoinDelay, rejoinTries, triesWord } from "../shared/net/rejoin";
 
 /** successive waits and the time each knock lands, summing the rule itself rather than the closed form */
 function plan(graceSeconds = REJOIN_GRACE_SECONDS) {
@@ -81,5 +82,15 @@ describe("the rejoin plan", () => {
     expect(rejoinDelay(0)).toBeNull();
     expect(rejoinDelay(-2)).toBeNull();
     expect(rejoinDelay(1.5)).toBeNull();
+  });
+
+  it("one try is TRY, not TRIES", () => {
+    expect(triesWord(1)).toBe("1 TRY");
+    expect(triesWord(2)).toBe("2 TRIES");
+    expect(triesWord(0)).toBe("0 TRIES");
+    expect(triesWord(1)).not.toBe("1 TRIES");
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/triesWord\(this\.rejoins\)/);
+    expect(src).not.toMatch(/this\.rejoins\} TRIES/);
   });
 });
