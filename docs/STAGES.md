@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 315 — NAME FAILED quoted the caught error in sentence case
+
+**Goal.** Stage 314 CRT-cased `ROOM FAILED`. Registering a name that reverts still
+interpolated the caught line as written: `NAME FAILED: User rejected the request.`
+
+**What changed.** `NAME FAILED: ${crtPhrase(reason)}`.
+
+**Proof.** `tests/counter.test.ts`: source must `NAME FAILED: ${crtPhrase(` and must not
+`NAME FAILED: ${reason}`. Mutation: interpolate the raw reason — 1 fail.
+`npm test` 1087/1087.
+
 ## Stage 314 — ROOM FAILED quoted the caught error in sentence case
 
 **Goal.** Stage 313 CRT-cased `SELL FAILED`. Opening a private room that throws

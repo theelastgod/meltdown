@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 314, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 315, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 314 on this branch (ROOM FAILED is CRT) |
-| Next stage number | **315** |
+| HEAD | Stage 315 on this branch (NAME FAILED is CRT) |
+| Next stage number | **316** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1086 across 117 files, `npm test` |
+| Unit tests | 1087 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,11 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 315 is next
+## 6. Stage 316 is next
 
-Stage 314 CRT-cased `ROOM FAILED`. `NAME FAILED:` still interpolates the caught
-error. Do not loosen fairness. Do not plate viewmodel or remote strips. The join
-line still prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 315 CRT-cased `NAME FAILED`. A thrown wear/reconcile/stamps op still
+interpolates `${op.toUpperCase()} FAILED: ${reason}`. Do not loosen fairness.
+Do not plate viewmodel or remote strips. The join line still prints the socket
+name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

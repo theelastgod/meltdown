@@ -318,3 +318,5 @@ one stage.
   → Stage 313
 - ROOM FAILED quoted the caught error in sentence case  
   → Stage 314
+- NAME FAILED quoted the caught error in sentence case  
+  → Stage 315
