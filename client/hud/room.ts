@@ -67,3 +67,8 @@ export function roomName(url: string): string {
   // a segment that carried an encoded `?` has a real one now
   return (name.split(/[?#]/)[0] ?? "").trim() || "ROOM";
 }
+
+/** The drop/kick line: CRT, not sentence case. `room full` was reaching the log as written. */
+export function linkStatusLine(st: string, reason?: string): string {
+  return `LINK ${st.toUpperCase()}${reason ? " · " + reason.toUpperCase() : ""}`;
+}

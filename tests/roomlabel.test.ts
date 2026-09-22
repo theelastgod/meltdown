@@ -2,8 +2,9 @@
  * The room's readouts (Stage 149): the header line and the right-hand band say the same thing, and
  * what they say is what the net client knows.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { LINK_BAD_MS, LINK_SLOW_MS, linkLabel, linkTone, roomLabel, roomName } from "../client/hud/room";
+import { LINK_BAD_MS, LINK_SLOW_MS, linkLabel, linkStatusLine, linkTone, roomLabel, roomName } from "../client/hud/room";
 
 describe("the room's label", () => {
   it("says offline when there is no room, whatever the count says", () => {
@@ -90,6 +91,16 @@ describe("the room's name in the join line", () => {
     expect(roomName("ws://h/room/my%20room?x=1")).toBe("my room");
     expect(roomName("ws://h/room/lease%3Frow")).toBe("lease"); // an escaped ? is a real one once read
     expect(roomName("ws://h/room/100%")).toBe("100%"); // a malformed escape is a name like any other
+  });
+
+  it("the drop line CRT-cases the kick reason", () => {
+    expect(linkStatusLine("closed", "room full")).toBe("LINK CLOSED · ROOM FULL");
+    expect(linkStatusLine("closed", "malformed message")).toBe("LINK CLOSED · MALFORMED MESSAGE");
+    expect(linkStatusLine("closed", "room full")).not.toBe("LINK CLOSED · room full");
+    expect(linkStatusLine("connecting")).toBe("LINK CONNECTING");
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/linkStatusLine\(st, net\.kickReason\)/);
+    expect(src).not.toMatch(/net\.kickReason \? " · " \+ net\.kickReason/);
   });
 
   it("says something rather than nothing when the link names no room", () => {

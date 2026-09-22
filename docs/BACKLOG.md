@@ -284,3 +284,5 @@ one stage.
   → Stage 296
 - The WAKE picker printed neochina-lease_row  
   → Stage 297
+- The drop line printed room full  
+  → Stage 298

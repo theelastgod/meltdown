@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 298 — The drop line printed room full
+
+**Goal.** The log CRT-cases the link status (`LINK CLOSED`). The kick reason
+still arrived as written: `room full`, `malformed message`.
+
+**What changed.** `linkStatusLine()` CRT-cases both sides.
+
+**Proof.** `tests/roomlabel.test.ts`: `linkStatusLine("closed", "room full")` is
+`LINK CLOSED · ROOM FULL`. Source must call it. Mutation: the reason left in
+sentence case — 1 fail.
+
 ## Stage 297 — The WAKE picker printed neochina-lease_row
 
 **Goal.** The district list labels LEASE ROW. The line under a pick still said

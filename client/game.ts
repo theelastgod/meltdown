@@ -55,7 +55,7 @@ import type { NodeView } from "./render/wake";
 import { GRENADE_LIST, WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
 import { modsFor, weaponDefOf } from "@shared/sim/player";
 import { rejoinDelay, rejoinTries } from "@shared/net/rejoin";
-import { roomName } from "./hud/room";
+import { linkStatusLine, roomName } from "./hud/room";
 
 export interface NetConfig {
   url: string;
@@ -420,7 +420,7 @@ export class Game {
         this.hud.push(`${this.rejoins > 0 ? "RELINKED" : "LINKED"} · ROOM ${roomName(cfg.url)} · FILE #${net.playerId}`, "cy");
         this.rejoins = 0;
       } else {
-        this.hud.push(`LINK ${st.toUpperCase()}${net.kickReason ? " · " + net.kickReason : ""}`, "mg");
+        this.hud.push(linkStatusLine(st, net.kickReason), "mg");
         // a drop is not a departure (Stage 153): the room keeps the seat for its grace window, so
         // knock, on a doubling wait, for as long as it is held. A kick or a close of our own does
         // not knock. A handshake that never completed knocks too (Stage 155): it has no token to
