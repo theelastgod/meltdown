@@ -584,3 +584,5 @@ one stage.
   → Stage 446
 - A wrong-socket chip said is a chip, not  
   → Stage 447
+- A wrong-weapon firmware said is a firmware  
+  → Stage 448

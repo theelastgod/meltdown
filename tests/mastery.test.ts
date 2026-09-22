@@ -114,8 +114,11 @@ describe("chips and firmwares", () => {
     const fwWeapon = validateLoadout({ ...DEFAULT_LOADOUT, firmware: { lease_breaker: "stack_smg:dump_stage" } }, owned, 50, SANDBOX_RANKS);
     expect(fwWeapon.errors.map((e) => e.rule)).toContain("firmware-weapon");
     const fwWeaponKick = fwWeapon.errors.find((e) => e.rule === "firmware-weapon")!;
-    expect(fwWeaponKick.detail).toMatch(/DUMP STAGE is a STACK SMG firmware/);
+    expect(fwWeaponKick.detail).toMatch(/DUMP STAGE IS A STACK SMG FIRMWARE/);
+    expect(fwWeaponKick.detail).not.toMatch(/is a STACK SMG firmware/);
     expect(fwWeaponKick.detail).not.toMatch(/stack_smg:dump_stage/);
+    expect(src).toMatch(/firmware-weapon", detail: `\$\{f\.name\} IS A \$\{gun\(f\.weapon\)\} FIRMWARE/);
+    expect(src).not.toMatch(/firmware-weapon", detail: `\$\{f\.name\} is a \$\{gun\(f\.weapon\)\} firmware/);
     const shape = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: ["lease_breaker:long_barrel"] } }, owned, 50, ranks);
     expect(shape.errors.map((e) => e.rule)).toContain("chips-shape");
     const shapeKick = shape.errors.find((e) => e.rule === "chips-shape")!;

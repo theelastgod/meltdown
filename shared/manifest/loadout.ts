@@ -157,7 +157,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
         }
         const f = firmwareById(id);
         if (!f) errors.push({ rule: "unknown-firmware", detail: id });
-        else if (f.weapon !== wid) errors.push({ rule: "firmware-weapon", detail: `${f.name} is a ${gun(f.weapon)} firmware` });
+        else if (f.weapon !== wid) errors.push({ rule: "firmware-weapon", detail: `${f.name} IS A ${gun(f.weapon)} FIRMWARE` });
         else if ((ranks[wid as WeaponId] ?? 1) < f.rank) errors.push({ rule: "firmware-rank", detail: `${f.name} NEEDS ${gun(wid as WeaponId)} MASTERY ${f.rank} (YOU ARE ${ranks[wid as WeaponId] ?? 1})` });
         else firmware[wid as WeaponId] = id;
       }

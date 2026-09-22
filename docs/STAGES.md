@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 448 — A wrong-weapon firmware said is a firmware
+
+**Goal.** Stage 447 taught chip-socket `IS A … CHIP, NOT`. Flashing DUMP
+STAGE on the Lease-Breaker still kicked `DUMP STAGE is a STACK SMG firmware`.
+
+**What changed.** `IS A … FIRMWARE`.
+
+**Proof.** `tests/mastery.test.ts`: the kick matches `IS A STACK SMG FIRMWARE`.
+loadout.ts must the CRT firmware-weapon template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 447 — A wrong-socket chip said is a chip, not
 
 **Goal.** Stage 446 taught `IS A … CHIP`. Putting LONG BARREL in Kinetic
