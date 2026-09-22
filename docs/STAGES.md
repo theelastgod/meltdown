@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 364 — SIWE how-to was sentence case
+
+**Goal.** Stage 363 taught `FETCHING THE CHAIN CLIENT…`. Signing the link still
+dimmed `one SIWE statement; the Ghostfile mints with sponsored gas`.
+
+**What changed.** `ONE SIWE STATEMENT; THE GHOSTFILE MINTS WITH SPONSORED GAS`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not the
+sentence-case line. Mutation: lowercase again — 1 fail.
+
 ## Stage 363 — The counter said fetching the chain client
 
 **Goal.** Stage 362 taught treasury `LOADING…`. Waiting for the chain client still

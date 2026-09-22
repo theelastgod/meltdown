@@ -416,3 +416,5 @@ one stage.
   → Stage 362
 - The counter said fetching the chain client  
   → Stage 363
+- SIWE how-to was sentence case  
+  → Stage 364

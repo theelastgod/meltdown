@@ -207,6 +207,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/class='dim'>no lines yet/);
   });
 
+  it("the SIWE how-to is CRT, not one SIWE statement", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/ONE SIWE STATEMENT; THE GHOSTFILE MINTS WITH SPONSORED GAS/);
+    expect(src).not.toMatch(/one SIWE statement; the Ghostfile mints with sponsored gas/);
+  });
+
   it("a waiting counter is FETCHING THE CHAIN CLIENT, not fetching the chain client", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/COUNTER-LEDGER \/\/ FETCHING THE CHAIN CLIENT…/);
