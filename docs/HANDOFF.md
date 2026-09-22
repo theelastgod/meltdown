@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 333, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 334, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 333 on this branch (FILE CLOSED metres are M) |
-| Next stage number | **334** |
+| HEAD | Stage 334 on this branch (RE-LEASING IN is 3S) |
+| Next stage number | **335** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1105 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 334 is next
+## 6. Stage 335 is next
 
-Stage 333 CRT-cased FILE CLOSED metres. `RE-LEASING IN 3s` is still lowercase
-`s`. Do not loosen fairness. Do not plate viewmodel or remote strips. The join
-line still prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 334 CRT-cased `RE-LEASING IN 3S`. Campaign hold / survive still suffix `s`.
+`NEXT ROUND IN` still suffixes `s`. Do not loosen fairness. Do not plate
+viewmodel or remote strips. The join line still prints the socket name —
+`probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

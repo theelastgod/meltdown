@@ -93,6 +93,12 @@ describe("what it is called", () => {
     expect(src).not.toMatch(/d\.toFixed\(0\)\} m/);
   });
 
+  it("RE-LEASING IN suffixes the wait as S, not 3s", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/RE-LEASING IN 3S/);
+    expect(src).not.toMatch(/RE-LEASING IN 3s/);
+  });
+
   it("and does not put the range on the ledger", () => {
     expect(ledgered("dummy")).toBe(false);
     expect(ledgered("player")).toBe(true);

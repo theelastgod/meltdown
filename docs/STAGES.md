@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 334 — RE-LEASING IN suffixed the wait as s
+
+**Goal.** Stage 328 CRT-cased `REJOINING IN 0.5S`. The death stamp still said
+`◆ FILE CLOSED — RE-LEASING IN 3s`.
+
+**What changed.** `3S` on both FILE CLOSED lines.
+
+**Proof.** `tests/kill.test.ts`: game.ts must `RE-LEASING IN 3S` and must not
+`RE-LEASING IN 3s`. Mutation: lowercase s again — 1 fail.
+
 ## Stage 333 — FILE CLOSED BY suffixed metres as m
 
 **Goal.** Stage 332 CRT-cased the nodefoot as `M`. The death stamp still said
