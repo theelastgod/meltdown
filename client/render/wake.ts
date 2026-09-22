@@ -89,6 +89,7 @@ export class WakeFx {
         ring.rotation.x = -Math.PI / 2;
         ring.position.y = 0.03;
         const fillMat = new THREE.MeshBasicMaterial({ color: VIOLET, transparent: true, opacity: 0.05, side: THREE.DoubleSide, depthWrite: false });
+        bindPlate(fillMat, "tex_lamp");
         const fill = new THREE.Mesh(this.hexShape(WAKE.nodeRadius - 0.25, 0), fillMat);
         fill.rotation.x = -Math.PI / 2;
         fill.position.y = 0.02;
