@@ -246,3 +246,5 @@ one stage.
   → Stage 277
 - The Kernel filament was a flat red strand  
   → Stage 278
+- The player's cloak was an unplated silhouette  
+  → Stage 279

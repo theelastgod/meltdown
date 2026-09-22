@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 279 — The player's cloak was an unplated silhouette
+
+**Goal.** Crowd hoods, the escort hood, and the range ghost already wear `tex_cloak`.
+The cloak every file wears in the street — local and remote — was still unmapped
+near-black `MeshStandardMaterial`.
+
+**What changed.** `bindPlate(mat, "tex_cloak")`, fail-soft. The trim still takes the
+worn skin; the body plate does not.
+
+**Proof.** `tests/assets.test.ts` requires that call in `rig.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 278 — The Kernel filament was a flat red strand
 
 **Goal.** Stage 277 plated the objective beam. The five red tubes over the viewmodel while a

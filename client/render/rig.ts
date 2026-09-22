@@ -12,7 +12,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { MOVE } from "../../shared/sim/constants";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
-import { PALETTE } from "./city";
+import { bindPlate, PALETTE } from "./city";
 import { buildViewmodel } from "./weapons";
 import { markShared, release } from "./dispose";
 import { createPoseState, FORE_A, FORE_B, MAG_WELL, nearestOnSegment, twoBoneIK, type PoseOut, type PoseState } from "./pose";
@@ -255,6 +255,7 @@ export function buildRig(slot: WeaponId | null = null): Rig {
   const uniforms: SwayUniforms = { uSway: { value: new THREE.Vector3() }, uFlap: { value: 0 }, uPhase: { value: 0 }, uFlare: { value: 0 } };
   // the cloak is near-black: a silhouette the strip-lights barely find, with the faintest cast of the worn tint
   const mat = new THREE.MeshStandardMaterial({ color: 0x05060a, emissive: PALETTE.cyan, emissiveIntensity: RIG_EMISSIVE, roughness: 1 });
+  bindPlate(mat, "tex_cloak");
   const trim = new THREE.MeshBasicMaterial({ color: PALETTE.cyan });
   swayPatch(mat, uniforms);
   swayPatch(trim, uniforms);

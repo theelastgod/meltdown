@@ -140,6 +140,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
       "client/render/campaign.ts",
       "client/render/run.ts",
       "client/render/wake.ts",
+      "client/render/rig.ts",
     ];
     const src = files.map((f) => readFileSync(new URL(`../${f}`, import.meta.url), "utf8")).join("\n");
     for (const id of [
@@ -199,6 +200,8 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(life).toMatch(/bindPlate\(railStripMat, "tex_billboard_mg"\)/);
     const rendererSrc = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
     expect(rendererSrc).toMatch(/bindPlate\(amber, "tex_lamp"\)/);
+    const rig = readFileSync(new URL("../client/render/rig.ts", import.meta.url), "utf8");
+    expect(rig).toMatch(/bindPlate\(mat, "tex_cloak"\)/);
   });
 });
 
