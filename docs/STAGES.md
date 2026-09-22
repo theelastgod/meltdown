@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 291 — Hitscan tracer lines were unplated
+
+**Goal.** Stage 283 plated the cylinder beam in `weapons.ts`. The pooled
+`LineSegments` every shot actually draws — 64 additive tracer segments —
+were still unmapped `LineBasicMaterial`.
+
+**What changed.** `bindPlate` accepts `LineBasicMaterial`. `bindPlate(mat, "tex_lamp")`
+on the tracer pool, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `vfx.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 290 — The Deep Wake MAP named a house CEL
 
 **Goal.** Stage 224 taught the MAP THE WAKE CELLS. Pressure on a node still

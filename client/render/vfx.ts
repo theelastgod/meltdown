@@ -52,6 +52,7 @@ export class VfxPool {
     geo.setAttribute("position", new THREE.BufferAttribute(this.tracerPos, 3));
     geo.setAttribute("color", new THREE.BufferAttribute(this.tracerColor, 3));
     const mat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+    bindPlate(mat, "tex_lamp");
     this.tracers = new THREE.LineSegments(geo, mat);
     this.tracers.frustumCulled = false; // the segments move every frame; a stale bounding box would pop them
     scene.add(this.tracers);

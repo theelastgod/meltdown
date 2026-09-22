@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 290, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 291, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 290 on this branch (MAP pressure names THE WAKE CELLS) |
-| Next stage number | **291** |
+| HEAD | Stage 291 on this branch (VFX tracers wear tex_lamp) |
+| Next stage number | **292** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1069 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 291 is next
+## 6. Stage 292 is next
 
-Stage 290 named MAP pressure with `houseName`. Do not loosen fairness. Do not plate viewmodel
-or remote strips (skin maps overwrite those).
+Stage 291 put `tex_lamp` on pooled tracer lines. Do not loosen fairness. Do not plate
+viewmodel or remote strips (skin maps overwrite those).
 
 ---
 
