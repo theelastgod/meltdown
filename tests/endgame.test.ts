@@ -29,6 +29,12 @@ describe("daily contracts", () => {
     expect(src).not.toMatch(/reason: "already claimed"/);
   });
 
+  it("an id off today's board is NOT ON TODAY'S BOARD, not not on today's board", () => {
+    const src = readFileSync(new URL("../shared/endgame/contracts.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "NOT ON TODAY'S BOARD"/);
+    expect(src).not.toMatch(/reason: "not on today's board"/);
+  });
+
   it("three a day from the pool, seeded by the day; progress is the counter delta since the day began; a claim pays once", () => {
     const day = 20700;
     const now = day * DAY_MS + 1000;
@@ -45,6 +51,7 @@ describe("daily contracts", () => {
     a.counters[today[0]!.counter] = 100 + today[0]!.need;
     const v1 = dailyView(a, now);
     expect(v1.contracts[0]!.done).toBe(true);
+    expect(claimContract(a, "nope_id", now)).toEqual({ ok: false, reason: "NOT ON TODAY'S BOARD" });
     expect(claimContract(a, today[1]!.id, now).ok).toBe(false);
     const r = claimContract(a, today[0]!.id, now);
     expect(r.ok).toBe(true);

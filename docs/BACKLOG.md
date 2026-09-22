@@ -542,3 +542,5 @@ one stage.
   → Stage 425
 - A second claim said already claimed  
   → Stage 426
+- An id off today's board said not on today's board  
+  → Stage 427

@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 427 — An id off today's board said not on today's board
+
+**Goal.** Stage 426 taught `ALREADY CLAIMED`. Claiming an id that is not
+one of the day's three still returned `not on today's board`.
+
+**What changed.** `NOT ON TODAY'S BOARD`.
+
+**Proof.** `tests/endgame.test.ts`: claim of `nope_id` is
+`NOT ON TODAY'S BOARD`. contracts.ts must `reason: "NOT ON TODAY'S BOARD"`
+and must not `reason: "not on today's board"`. Mutation: lowercase
+again — 1 fail.
+
 ## Stage 426 — A second claim said already claimed
 
 **Goal.** Stage 425 taught `NOT ON OFFER YET`. Claiming a daily contract
