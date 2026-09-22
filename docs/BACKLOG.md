@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- LONGWAVE FILAMENT's market line still says mixed-case `cyan wave-traces on black alloy`
+  → Stage 518
 - REPO CHEVRON's market line still says mixed-case `contractor hazard stripes, the shotgun's own rain`
   → Stage 517
 - ARC VIOLET's market line still says mixed-case `shock-arc plate, the baton's own light`
