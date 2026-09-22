@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 387, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 388, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 387 on this branch (crew guest line is CRT) |
-| Next stage number | **388** |
+| HEAD | Stage 388 on this branch (TELL A FRIEND THE CODE) |
+| Next stage number | **389** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1155 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,12 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 388 is next
+## 6. Stage 389 is next
 
-Stage 387 CRT-cased `THE HOST HOLDS THE TERMINALS`. Remaining CRT copy includes
-`tell a friend the code` and TESTIMONY `nothing on the record`. Do not loosen
-fairness. Do not plate viewmodel or remote strips. The join line still prints the
-socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 388 CRT-cased `TELL A FRIEND THE CODE`. TESTIMONY still dims
+`nothing on the record`. Do not loosen fairness. Do not plate viewmodel or
+remote strips. The join line still prints the socket name — `probe:net` asserts
+`probe-join-31`; leave it.
 
 ---
 

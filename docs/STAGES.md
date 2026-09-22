@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 388 — The crew share line said tell a friend the code
+
+**Goal.** Stage 387 taught `THE HOST HOLDS THE TERMINALS`. The same line still
+ended `tell a friend the code`.
+
+**What changed.** `TELL A FRIEND THE CODE`.
+
+**Proof.** `tests/campaign.test.ts`: campaign.ts must `TELL A FRIEND THE CODE`
+and must not `tell a friend the code`. Mutation: lowercase again — 1 fail.
+
 ## Stage 387 — A crew guest said the host holds the terminals
 
 **Goal.** Stage 386 taught `YOU HOLD THE TERMINALS`. A guest still dimmed

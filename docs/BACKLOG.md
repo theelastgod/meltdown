@@ -464,3 +464,5 @@ one stage.
   → Stage 386
 - A crew guest said the host holds the terminals  
   → Stage 387
+- The crew share line said tell a friend the code  
+  → Stage 388
