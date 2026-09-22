@@ -104,7 +104,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
       else keystone = k.id;
     }
   }
-  if (Array.isArray(lo.keystone)) errors.push({ rule: "keystone-limit", detail: `max ${MAX_KEYSTONES} KEYSTONE` });
+  if (Array.isArray(lo.keystone)) errors.push({ rule: "keystone-limit", detail: `MAX ${MAX_KEYSTONES} KEYSTONE` });
   // chips: one per socket, for that weapon, unlocked by its mastery rank
   const chips: Loadout["chips"] = {};
   if (lo.chips !== undefined) {

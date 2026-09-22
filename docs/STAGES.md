@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 472 — A keystone list said max N KEYSTONE
+
+**Goal.** Stage 471 taught `FIELD … IS NOT PART OF A PVP LOADOUT`. A
+keystone field that is an array still kicked `max 1 KEYSTONE`.
+
+**What changed.** `MAX ${n} KEYSTONE`.
+
+**Proof.** Measured kick was mixed-case. After the fix:
+`MAX 1 KEYSTONE`. `tests/fairness.test.ts` asserts that sentence and
+that loadout.ts must the CRT template and must not the mixed-case
+template. Mutation: mixed case again — 1 fail.
+
 ## Stage 471 — An unknown field said is not part of a PvP loadout
 
 **Goal.** Stage 470 taught `NO SOCKET`. A smuggled `protocols` field

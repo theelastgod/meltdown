@@ -87,10 +87,10 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(loadoutSrc).not.toMatch(/\$\{itemName\(id\)\} is a \$\{it\.kind\.toUpperCase\(\)\}/);
     const two = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: ["debtless", "bad_debt"] }, owned, 10);
     expect(two.errors.map((e) => e.rule)).toContain("keystone-limit");
-    expect(two.errors.find((e) => e.rule === "keystone-limit")!.detail).toBe("max 1 KEYSTONE");
-    expect(two.errors.find((e) => e.rule === "keystone-limit")!.detail).not.toBe("max 1 keystone");
-    expect(src).toMatch(/max \$\{MAX_KEYSTONES\} KEYSTONE/);
-    expect(src).not.toMatch(/max \$\{MAX_KEYSTONES\} keystone/);
+    expect(two.errors.find((e) => e.rule === "keystone-limit")!.detail).toBe("MAX 1 KEYSTONE");
+    expect(two.errors.find((e) => e.rule === "keystone-limit")!.detail).not.toBe("max 1 KEYSTONE");
+    expect(src).toMatch(/MAX \$\{MAX_KEYSTONES\} KEYSTONE/);
+    expect(src).not.toMatch(/max \$\{MAX_KEYSTONES\} KEYSTONE/);
     const ksShape = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: 1 }, owned, 10);
     expect(ksShape.errors.map((e) => e.rule)).toContain("keystone-shape");
     expect(ksShape.errors.find((e) => e.rule === "keystone-shape")!.detail).toBe("KEYSTONE MUST BE AN ID");
