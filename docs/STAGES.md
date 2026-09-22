@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 460 — A keystone that misses the attestation said must touch
+
+**Goal.** Stage 455 taught `KEYSTONE MUST BE AN ID`. DEBTLESS attested
+against WAKE LUNG still kicked `DEBTLESS must touch an attested node
+(SLIPFILE, QUIET LEDGER)`.
+
+**What changed.** `MUST TOUCH AN ATTESTED NODE`.
+
+**Proof.** Measured kick was mixed-case. After the fix:
+`DEBTLESS MUST TOUCH AN ATTESTED NODE (SLIPFILE, QUIET LEDGER)`.
+`tests/fairness.test.ts` asserts that sentence and that loadout.ts must
+the CRT template and must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 459 — A chips list said must map weapon
 
 **Goal.** Stage 458 taught `FIRMWARE MUST MAP`. A chips field that is an

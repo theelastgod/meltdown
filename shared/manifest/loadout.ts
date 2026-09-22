@@ -100,7 +100,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
       const k = itemById(lo.keystone);
       if (!k || k.kind !== "keystone") errors.push({ rule: "unknown-keystone", detail: lo.keystone });
       else if (!owned.includes(k.id)) errors.push({ rule: "not-owned", detail: `${itemName(k.id)} IS NOT IN YOUR FILE` });
-      else if (set.size > 0 && !k.links.some((l) => set.has(l))) errors.push({ rule: "keystone-linked", detail: `${itemName(k.id)} must touch an attested node (${k.links.map(itemName).join(", ")})` });
+      else if (set.size > 0 && !k.links.some((l) => set.has(l))) errors.push({ rule: "keystone-linked", detail: `${itemName(k.id)} MUST TOUCH AN ATTESTED NODE (${k.links.map(itemName).join(", ")})` });
       else keystone = k.id;
     }
   }

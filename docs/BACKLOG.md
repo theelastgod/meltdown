@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- A keystone that does not touch the attestation still kicks mixed-case `must touch an attested node`
+  → Stage 460
 - Respawn silently hands the player back the slot-1 rifle instead of their chosen primary  
   → Stage 168 (a5703d9)
 - Hitscan cannot hit a body you are standing inside: rayCapsule returns null whenever the muzzle is inside the target capsule  

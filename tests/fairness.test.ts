@@ -86,6 +86,12 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(ksShape.errors.find((e) => e.rule === "keystone-shape")!.detail).not.toBe("KEYSTONE must be an id");
     expect(src).toMatch(/keystone-shape", detail: "KEYSTONE MUST BE AN ID"/);
     expect(src).not.toMatch(/keystone-shape", detail: "KEYSTONE must be an id"/);
+    const ksLinked = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["wake_lung"], keystone: "debtless" }, owned, 10);
+    expect(ksLinked.errors.map((e) => e.rule)).toContain("keystone-linked");
+    expect(ksLinked.errors.find((e) => e.rule === "keystone-linked")!.detail).toBe("DEBTLESS MUST TOUCH AN ATTESTED NODE (SLIPFILE, QUIET LEDGER)");
+    expect(ksLinked.errors.find((e) => e.rule === "keystone-linked")!.detail).not.toBe("DEBTLESS must touch an attested node (SLIPFILE, QUIET LEDGER)");
+    expect(src).toMatch(/\$\{itemName\(k\.id\)\} MUST TOUCH AN ATTESTED NODE/);
+    expect(src).not.toMatch(/\$\{itemName\(k\.id\)\} must touch an attested node/);
   });
   it("every legal build reconciles: NET DELTA 0 on the Auditor's ledger within tolerance", () => {
     const lo = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "contagion_rider"], keystone: null }, owned, 10).loadout;
