@@ -58,6 +58,12 @@ describe("the counter-ledger FILE line", () => {
     expect(src).not.toMatch(/ROOM REFUSED: \$\{r\.reason\}/);
   });
 
+  it("a thrown sink burn CRT-cases FAILED, not DEEP WAKE SEASON 1 FAILED: Failed to fetch", () => {
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/\$\{label\} FAILED: \$\{crtPhrase\(/);
+    expect(src).not.toMatch(/\$\{label\} FAILED: \$\{reason\}/);
+  });
+
   it("a thrown counter op CRT-cases FAILED, not WEAR FAILED: Failed to fetch", () => {
     const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
     expect(src).toMatch(/\$\{op\.toUpperCase\(\)\} FAILED: \$\{crtPhrase\(/);

@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 317 — A thrown sink burn quoted FAILED in sentence case
+
+**Goal.** Stage 316 CRT-cased a thrown counter op. Buying the Deep Wake pass or
+room-hours that throw still interpolated the catch as written:
+`DEEP WAKE SEASON 1 FAILED: Failed to fetch`.
+
+**What changed.** `${label} FAILED: ${crtPhrase(reason)}`.
+
+**Proof.** `tests/counter.test.ts`: source must `${label} FAILED: ${crtPhrase(` and
+must not `${label} FAILED: ${reason}`. Mutation: interpolate the raw reason — 1 fail.
+`npm test` 1089/1089.
+
 ## Stage 316 — A thrown counter op quoted FAILED in sentence case
 
 **Goal.** Stage 315 CRT-cased `NAME FAILED`. Wear / reconcile / stamps that throw
