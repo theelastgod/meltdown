@@ -533,7 +533,7 @@ export class Campaign {
       const H = HANDLERS[h];
       const mine = offers.filter((g) => g.fixer === h);
       const done = GIGS.filter((g) => g.fixer === h && c.gigsDone.includes(g.id)).length;
-      return `<div class="fx ${H.color}"><div class="fh">${H.sigil} ${H.name} <span class="dim">${H.title}</span> ${alive[h] ? "" : '<span class="mg">· RE-LEASED</span>'}</div>${alive[h] ? mine.map((g) => row(g, true)).join("") || `<div class="dim">no contracts on offer${done ? ` · ${done} closed` : ""}</div>` : '<div class="dim">no one answers</div>'}</div>`;
+      return `<div class="fx ${H.color}"><div class="fh">${H.sigil} ${H.name} <span class="dim">${H.title}</span> ${alive[h] ? "" : '<span class="mg">· RE-LEASED</span>'}</div>${alive[h] ? mine.map((g) => row(g, true)).join("") || `<div class="dim">NO CONTRACTS ON OFFER${done ? ` · ${done} CLOSED` : ""}</div>` : '<div class="dim">no one answers</div>'}</div>`;
     }).join("");
     const arc = next ? row(next, true) : `<div class="dim">THE ARC IS COMPLETE · ENDING: ${endingTitle(c.ending)}</div>`;
     const protos = PROTOCOLS.map((p) => {

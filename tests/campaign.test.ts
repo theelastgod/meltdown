@@ -100,6 +100,16 @@ describe("the contracts list names the protocol the settlement does", () => {
   });
 });
 
+describe("an empty fixer board is CRT", () => {
+  it("NO CONTRACTS ON OFFER, not no contracts on offer", () => {
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/NO CONTRACTS ON OFFER/);
+    expect(src).toMatch(/\$\{done\} CLOSED/);
+    expect(src).not.toMatch(/no contracts on offer/);
+    expect(src).not.toMatch(/\$\{done\} closed/);
+  });
+});
+
 describe("picking a house writes the name, not the id", () => {
   it("THE WAKE CELLS, not CELLS", () => {
     expect(factionName("cells")).toBe("THE WAKE CELLS");

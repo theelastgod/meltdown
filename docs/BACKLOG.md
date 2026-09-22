@@ -450,3 +450,5 @@ one stage.
   → Stage 379
 - The counter chain label said chain  
   → Stage 380
+- An empty fixer board said no contracts on offer  
+  → Stage 381

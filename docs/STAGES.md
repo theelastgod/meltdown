@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 381 — An empty fixer board said no contracts on offer
+
+**Goal.** Stage 370 taught CRT empty states. A fixer with nothing on offer still
+dimmed `no contracts on offer · 2 closed`.
+
+**What changed.** `NO CONTRACTS ON OFFER` and `CLOSED`.
+
+**Proof.** `tests/campaign.test.ts`: campaign.ts must those CRT tokens and must not
+the sentence-case pair. Mutation: lowercase again — 1 fail.
+
 ## Stage 380 — The counter chain label said chain
 
 **Goal.** Stage 379 taught the prizes how-to. COUNTER-LEDGER still dimmed
