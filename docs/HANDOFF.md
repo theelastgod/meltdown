@@ -16,7 +16,7 @@ twenty minutes and it is the whole job.
 | HEAD | Stage 263 on this branch (lamp pools and vending fronts wear tex_lamp) |
 | Next stage number | **264** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | ~1062 across 117 files, `npm test` |
+| Unit tests | 1065 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
