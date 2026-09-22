@@ -550,3 +550,5 @@ one stage.
   → Stage 429
 - A Depth-gated buy said needs Depth  
   → Stage 430
+- A poor buy said needs Scrip  
+  → Stage 431

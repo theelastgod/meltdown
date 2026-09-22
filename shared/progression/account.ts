@@ -321,7 +321,7 @@ export function buyNode(a: Account, id: string, discount = 1): { ok: boolean; re
   if (a.owned.includes(id)) return { ok: false, reason: "ALREADY IN YOUR FILE" };
   if (a.depth < it.requiresDepth) return { ok: false, reason: `NEEDS DEPTH ${it.requiresDepth}` };
   const price = Math.round(it.cost * discount);
-  if (a.wallet.scrip < price) return { ok: false, reason: `needs ${price} Scrip` };
+  if (a.wallet.scrip < price) return { ok: false, reason: `NEEDS ${price} SCRIP` };
   a.wallet.scrip -= price;
   a.owned.push(id);
   a.ledger.push(`BOUGHT ${it.name} · −${price} SCRIP`);

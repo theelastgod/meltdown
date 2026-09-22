@@ -166,6 +166,12 @@ describe("the ledger shop CRT-cases a miss", () => {
     expect(src).not.toMatch(/reason: "unknown item"/);
   });
 
+  it("a poor buy is NEEDS N SCRIP, not needs N Scrip", () => {
+    const src = readFileSync(new URL("../shared/progression/account.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/NEEDS \$\{price\} SCRIP/);
+    expect(src).not.toMatch(/needs \$\{price\} Scrip/);
+  });
+
   it("a Depth-gated buy is NEEDS DEPTH, not needs Depth", () => {
     const src = readFileSync(new URL("../shared/progression/account.ts", import.meta.url), "utf8");
     expect(src).toMatch(/NEEDS DEPTH \$\{it\.requiresDepth\}/);

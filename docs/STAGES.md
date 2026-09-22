@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 431 — A poor buy said needs Scrip
+
+**Goal.** Stage 430 taught `NEEDS DEPTH`. Buying a node the file cannot afford
+still returned `needs 400 Scrip`.
+
+**What changed.** `NEEDS ${price} SCRIP`.
+
+**Proof.** `tests/fairness.test.ts`: account.ts must `NEEDS ${price} SCRIP` and
+must not `needs ${price} Scrip`. Mutation: mixed case again — 1 fail.
+
 ## Stage 430 — A Depth-gated buy said needs Depth
 
 **Goal.** Stage 394 taught FILE `NEEDS DEPTH`. Buying a node the file is too
