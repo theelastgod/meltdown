@@ -480,3 +480,5 @@ one stage.
   → Stage 394
 - An unowned node said not in your file  
   → Stage 395
+- An empty chip socket said none  
+  → Stage 396

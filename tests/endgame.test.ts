@@ -311,6 +311,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/class="c">not in your file/);
   });
 
+  it("an empty chip socket is NONE, not none", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/<select data-chip="\$\{w\.id\}" data-socket="\$\{sock\}"><option value="">— NONE —<\/option>/);
+    expect(src).not.toMatch(/<select data-chip="\$\{w\.id\}" data-socket="\$\{sock\}"><option value="">— none —<\/option>/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);
