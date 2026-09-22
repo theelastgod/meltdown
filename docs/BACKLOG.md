@@ -314,3 +314,5 @@ one stage.
   → Stage 311
 - BUY FAILED quoted the caught error in sentence case  
   → Stage 312
+- SELL FAILED quoted the caught error in sentence case  
+  → Stage 313
