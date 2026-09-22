@@ -224,7 +224,7 @@ export class GhostFile {
 
   /** claim / rewrite / cosmetic ops on the ledger host; the answer carries the account and today's board */
   async postEndgame(op: "claim" | "rewrite" | "cosmetic", body: Record<string, unknown>): Promise<{ ok: boolean; reason?: string }> {
-    if (!this.shop) return { ok: false, reason: "no ledger host linked" };
+    if (!this.shop) return { ok: false, reason: "NO LEDGER HOST LINKED" };
     try {
       const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/${op}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, secret: this.secret }) });
       const r = (await res.json()) as { ok: boolean; reason?: string; account?: Account; daily?: { day: number; contracts: ContractView[] } };
@@ -290,7 +290,7 @@ export class GhostFile {
 
   /** The campaign endpoint on the ledger host: faction, completions, worn protocols. */
   async postCampaign(body: Record<string, unknown>): Promise<{ ok: boolean; reason?: string; account?: Account }> {
-    if (!this.shop) return { ok: false, reason: "no ledger host linked" };
+    if (!this.shop) return { ok: false, reason: "NO LEDGER HOST LINKED" };
     try {
       const res = await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/campaign`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, secret: this.secret }) });
       const r = (await res.json()) as { ok: boolean; reason?: string; account?: Account };

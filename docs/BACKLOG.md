@@ -558,3 +558,5 @@ one stage.
   → Stage 433
 - A ghost token said unknown skin  
   → Stage 434
+- A FILE op with no shop said no ledger host linked  
+  → Stage 435

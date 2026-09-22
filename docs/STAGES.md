@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 435 — A FILE op with no shop said no ledger host linked
+
+**Goal.** Stage 371 taught ENDGAME no-host CRT. Claim / rewrite / cosmetic
+with no shop still returned `no ledger host linked`.
+
+**What changed.** `NO LEDGER HOST LINKED` on both FILE posts.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `reason: "NO LEDGER HOST LINKED"`
+and must not `reason: "no ledger host linked"`. Mutation: lowercase again —
+1 fail.
+
 ## Stage 434 — A ghost token said unknown skin
 
 **Goal.** Stage 433 taught `NOT ON YOUR RIG`. Wearing a token the catalogue

@@ -337,6 +337,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/reason: "no file"/);
   });
 
+  it("a FILE op with no shop is NO LEDGER HOST LINKED, not no ledger host linked", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "NO LEDGER HOST LINKED"/);
+    expect(src).not.toMatch(/reason: "no ledger host linked"/);
+  });
+
   it("a gated node is NEEDS DEPTH, not needs Depth", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/NEEDS DEPTH \$\{/);
