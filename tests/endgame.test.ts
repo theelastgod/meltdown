@@ -317,6 +317,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/<select data-chip="\$\{w\.id\}" data-socket="\$\{sock\}"><option value="">— none —<\/option>/);
   });
 
+  it("an empty moniker is NONE, not none", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/<select data-moniker="1"><option value="">— NONE —<\/option>/);
+    expect(src).not.toMatch(/<select data-moniker="1"><option value="">— none —<\/option>/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);

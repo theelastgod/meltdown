@@ -482,3 +482,5 @@ one stage.
   → Stage 395
 - An empty chip socket said none  
   → Stage 396
+- An empty moniker said none  
+  → Stage 397

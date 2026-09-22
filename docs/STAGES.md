@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 397 — An empty moniker said none
+
+**Goal.** Stage 396 taught chip `— NONE —`. An empty moniker still dimmed
+`— none —` on THE CITY CALLS YOU row.
+
+**What changed.** `— NONE —` on the moniker select.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the moniker select
+`— NONE —` and must not the moniker select `— none —`. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 396 — An empty chip socket said none
 
 **Goal.** Stage 395 taught `NOT IN YOUR FILE`. An empty chip socket still
