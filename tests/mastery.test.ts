@@ -96,9 +96,13 @@ describe("chips and firmwares", () => {
     expect(fw.errors.map((e) => e.rule)).toContain("firmware-rank");
     const fwKick = fw.errors.find((e) => e.rule === "firmware-rank")!;
     expect(fwKick.detail).toMatch(/THREE-COUNT/);
-    expect(fwKick.detail).toMatch(/LEASE-BREAKER mastery/);
+    expect(fwKick.detail).toMatch(/LEASE-BREAKER MASTERY/);
+    expect(fwKick.detail).toMatch(/YOU ARE/);
+    expect(fwKick.detail).not.toMatch(/LEASE-BREAKER mastery/);
     expect(fwKick.detail).not.toMatch(/lease_breaker:three_count/);
     expect(fwKick.detail).not.toMatch(/needs lease_breaker mastery/);
+    expect(src).toMatch(/firmware-rank", detail: `\$\{f\.name\} NEEDS \$\{gun\(wid as WeaponId\)\} MASTERY/);
+    expect(src).not.toMatch(/firmware-rank", detail: `\$\{f\.name\} needs \$\{gun\(wid as WeaponId\)\} mastery/);
     const fwOk = validateLoadout({ ...DEFAULT_LOADOUT, firmware: { lease_breaker: "lease_breaker:three_count" } }, owned, 50, SANDBOX_RANKS);
     expect(fwOk.errors).toEqual([]);
     const fwWeapon = validateLoadout({ ...DEFAULT_LOADOUT, firmware: { lease_breaker: "stack_smg:dump_stage" } }, owned, 50, SANDBOX_RANKS);

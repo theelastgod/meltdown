@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 445 — A firmware below mastery said needs mastery
+
+**Goal.** Stage 444 taught chip `NEEDS MASTERY`. Flashing THREE-COUNT at rank
+1 still kicked `THREE-COUNT needs LEASE-BREAKER mastery 20 (you are 1)`.
+
+**What changed.** `NEEDS … MASTERY … (YOU ARE …)`.
+
+**Proof.** `tests/mastery.test.ts`: the kick matches `LEASE-BREAKER MASTERY`
+and `YOU ARE`. loadout.ts must the CRT firmware-rank template. Mutation:
+mixed case again — 1 fail.
+
 ## Stage 444 — A chip below mastery said needs mastery
 
 **Goal.** Stage 443 taught `IS NOT IN YOUR FILE`. Socketing FLASH CUT at

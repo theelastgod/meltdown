@@ -578,3 +578,5 @@ one stage.
   → Stage 443
 - A chip below mastery said needs mastery  
   → Stage 444
+- A firmware below mastery said needs mastery  
+  → Stage 445
