@@ -428,3 +428,5 @@ one stage.
   → Stage 368
 - MAP said no rounds have moved the graph yet  
   → Stage 369
+- THE RUN's unlinked dim was sentence case  
+  → Stage 370

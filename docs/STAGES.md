@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 370 — THE RUN's unlinked dim was sentence case
+
+**Goal.** Stage 369 taught MAP's empty history. An unlinked FILE still dimmed
+`THE RUN pays the wallet: link one and the units you bank at a gate settle into $CAPITAL.`
+
+**What changed.** The same sentence, CRT.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not
+`THE RUN pays the wallet:`. Mutation: lowercase again — 1 fail.
+
 ## Stage 369 — MAP said no rounds have moved the graph yet
 
 **Goal.** Stage 223 taught Deep Wake history titles. An empty MAP history still
