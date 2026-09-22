@@ -330,7 +330,7 @@ export function buyNode(a: Account, id: string, discount = 1): { ok: boolean; re
 
 export function refundNode(a: Account, id: string): { ok: boolean; reason?: string } {
   const it = itemById(id);
-  if (!it || !a.owned.includes(id)) return { ok: false, reason: "not in your file" };
+  if (!it || !a.owned.includes(id)) return { ok: false, reason: "NOT IN YOUR FILE" };
   a.owned = a.owned.filter((x) => x !== id);
   a.loadout.attested = a.loadout.attested.filter((x) => x !== id);
   if (a.loadout.keystone === id) a.loadout.keystone = null;

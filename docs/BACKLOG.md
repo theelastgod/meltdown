@@ -552,3 +552,5 @@ one stage.
   → Stage 430
 - A poor buy said needs Scrip  
   → Stage 431
+- A refund of an unowned node said not in your file  
+  → Stage 432

@@ -187,4 +187,12 @@ describe("the ledger shop CRT-cases a miss", () => {
     expect(src).toMatch(/reason: "ALREADY IN YOUR FILE"/);
     expect(src).not.toMatch(/reason: "already in your file"/);
   });
+
+  it("a refund of an unowned node is NOT IN YOUR FILE, not not in your file", () => {
+    const a = createAccount("ref", "R");
+    expect(refundNode(a, "slipfile")).toEqual({ ok: false, reason: "NOT IN YOUR FILE" });
+    const src = readFileSync(new URL("../shared/progression/account.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "NOT IN YOUR FILE"/);
+    expect(src).not.toMatch(/reason: "not in your file"/);
+  });
 });

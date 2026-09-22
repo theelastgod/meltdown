@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 432 — A refund of an unowned node said not in your file
+
+**Goal.** Stage 431 taught `NEEDS N SCRIP`. Refunding a node the file does
+not hold still returned `not in your file`.
+
+**What changed.** `NOT IN YOUR FILE`.
+
+**Proof.** `tests/fairness.test.ts`: refundNode of slipfile on a new file is
+`NOT IN YOUR FILE`. account.ts must `reason: "NOT IN YOUR FILE"` and must not
+`reason: "not in your file"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 431 — A poor buy said needs Scrip
 
 **Goal.** Stage 430 taught `NEEDS DEPTH`. Buying a node the file cannot afford
