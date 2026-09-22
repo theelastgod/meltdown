@@ -176,6 +176,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).toMatch(/class='dim'>EMPTY/);
     expect(src).not.toMatch(/class='dim'>empty/);
   });
+
+  it("an empty prize row is NONE POSTED FOR THIS WALLET, not none posted", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/class="dim">NONE POSTED FOR THIS WALLET/);
+    expect(src).not.toMatch(/none posted for this wallet/);
+  });
 });
 
 describe("rewrite and the Wakelight shop", () => {

@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 353 — No prizes said none posted
+
+**Goal.** Stage 352 taught `EMPTY`. A wallet with no prize still dimmed
+`none posted for this wallet`.
+
+**What changed.** `NONE POSTED FOR THIS WALLET`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `NONE POSTED FOR THIS WALLET` and
+must not `none posted for this wallet`. Mutation: sentence-case again — 1 fail.
+`npm test` 1124/1124.
+
 ## Stage 352 — An empty preset said empty
 
 **Goal.** Stage 351 taught `1 SLOT`. An unused preset or alias still dimmed `empty`.
