@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- PRESET SLOT II's shop line still says mixed-case `a second saved loadout`
+  → Stage 488
 - ALIAS SLOT III's shop line still says mixed-case `a third`
   → Stage 487
 - ALIAS SLOT II's shop line still says mixed-case `a second saved name the city may call you`
