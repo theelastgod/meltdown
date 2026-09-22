@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- METRO PLATE's market line still says mixed-case `grey-green tunnel tile, cyan bars`
+  → Stage 504
 - RAIN LEASE's market line still says mixed-case `anodized black that never dried`
   → Stage 503
 - UNLISTED BLACK's market line still says mixed-case `near-black, one pinhole of cyan`

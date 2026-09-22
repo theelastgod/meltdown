@@ -172,4 +172,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(11, "skin_rain", "RAIN LEASE", "ANODIZED BLACK THAT NEVER DRIED"/);
     expect(src).not.toMatch(/skin\(11, "skin_rain", "RAIN LEASE", "anodized black that never dried"/);
   });
+
+  it("METRO PLATE's market line is CRT, not grey-green tunnel tile", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_metro")!.line;
+    expect(line).toBe("GREY-GREEN TUNNEL TILE, CYAN BARS");
+    expect(line).not.toBe("grey-green tunnel tile, cyan bars");
+    expect(src).toMatch(/skin\(12, "skin_metro", "METRO PLATE", "GREY-GREEN TUNNEL TILE, CYAN BARS"/);
+    expect(src).not.toMatch(/skin\(12, "skin_metro", "METRO PLATE", "grey-green tunnel tile, cyan bars"/);
+  });
 });

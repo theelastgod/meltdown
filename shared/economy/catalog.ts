@@ -47,7 +47,7 @@ export const SKINS: readonly SkinDef[] = [
   skin(9, "skin_vantage", "VANTAGE AMBER", "CONTRACTOR CHEVRONS, THE COLOUR OF A SEARCHLIGHT", 80, 0x4c2a, "#ffb02e", "skin_vantage_plate"),
   skin(10, "skin_blank", "UNLISTED BLACK", "NEAR-BLACK, ONE PINHOLE OF CYAN", 45, 0x90e1, "#35f2ff", "skin_blank_plate"),
   skin(11, "skin_rain", "RAIN LEASE", "ANODIZED BLACK THAT NEVER DRIED", 55, 0x2b17, "#8fd8ff", "skin_rain_plate"),
-  skin(12, "skin_metro", "METRO PLATE", "grey-green tunnel tile, cyan bars", 75, 0x71a0, "#37ff8b", "skin_metro_plate"),
+  skin(12, "skin_metro", "METRO PLATE", "GREY-GREEN TUNNEL TILE, CYAN BARS", 75, 0x71a0, "#37ff8b", "skin_metro_plate"),
   skin(13, "skin_violet", "ECHO VIOLET", "ghosting plate, short-range wallsense look", 95, 0x5d33, "#8f4dff", "skin_violet_plate"),
   skin(14, "skin_forged", "FORGED TRIM", "amber servo light on wet steel", 85, 0x18c4, "#ffb02e", "skin_amber_trim"),
   skin(15, "skin_grid", "ESTATE GRID", "cyan monitor grid", 65, 0x0e91, "#35f2ff", "skin_cyan_grid"),

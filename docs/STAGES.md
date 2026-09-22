@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 504 — METRO PLATE's market line said grey-green tunnel tile
+
+**Goal.** Stage 503 taught RAIN LEASE. METRO PLATE still said
+mixed-case `grey-green tunnel tile, cyan bars`.
+
+**What changed.** `GREY-GREEN TUNNEL TILE, CYAN BARS`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 503 — RAIN LEASE's market line said anodized black that never dried
 
 **Goal.** Stage 502 taught UNLISTED BLACK. RAIN LEASE still said
