@@ -298,3 +298,5 @@ one stage.
   → Stage 303
 - A market buy said listing  
   → Stage 304
+- A market list said token  
+  → Stage 305

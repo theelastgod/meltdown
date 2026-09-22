@@ -37,6 +37,14 @@ describe("a market buy is said in CRT", () => {
   });
 });
 
+describe("a market list is said in CRT", () => {
+  it("prints TOKEN, not token", () => {
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/LISTED · TOKEN \$\{token\}/);
+    expect(src).not.toMatch(/LISTED · token \$\{token\}/);
+  });
+});
+
 describe("the counter-ledger on the devnet", () => {
   let b: Boot;
   const store = new MemoryAccountStore(devSeed);

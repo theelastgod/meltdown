@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 305 — A market list said token
+
+**Goal.** Stage 304 CRT-cased `BOUGHT · LISTING`. Listing a skin still said
+`LISTED · token 3 · 60 $CAPITAL`.
+
+**What changed.** `LISTED · TOKEN ${token}`.
+
+**Proof.** `tests/counter.test.ts`: source must `LISTED · TOKEN ${token}` and must not
+`LISTED · token ${token}`. Mutation: lowercase token again — 1 fail.
+
 ## Stage 304 — A market buy said listing
 
 **Goal.** Stage 302 CRT-cased `WEAR · OK`. A buy still wrote

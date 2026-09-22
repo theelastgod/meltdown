@@ -268,7 +268,7 @@ export class CounterClient {
       if (!(await this.tx(this.info.contracts.market, ABI.LedgerMarket!.abi, "list", [BigInt(token), 1n, parseEther(String(price))]))) return { ok: false, reason: "list reverted" };
       await this.op("reconcile");
       await this.load();
-      this.say(`LISTED · token ${token} · ${price} $CAPITAL`);
+      this.say(`LISTED · TOKEN ${token} · ${price} $CAPITAL`);
       return { ok: true };
     } catch (e) {
       const reason = String((e as Error).message ?? e).split("\n").find((l) => /revert|Error|fetch|failed/i.test(l))?.slice(0, 100) ?? "failed";
