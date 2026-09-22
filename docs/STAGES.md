@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 500 — LEDGER BREAK's market line said magenta stamp over a CRT
+
+**Goal.** Stage 499 taught CLOCKEATER BRASS. LEDGER BREAK still said
+mixed-case `magenta stamp over a CRT that still says pending`.
+
+**What changed.** `MAGENTA STAMP OVER A CRT THAT STILL SAYS PENDING`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 499 — CLOCKEATER BRASS's market line said gears that run faster
 
 **Goal.** Stage 498 taught ESTATE PLATE. CLOCKEATER BRASS still said

@@ -136,4 +136,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(7, "skin_clockeater", "CLOCKEATER BRASS", "GEARS THAT RUN FASTER THAN THE CITY CAN COUNT"/);
     expect(src).not.toMatch(/skin\(7, "skin_clockeater", "CLOCKEATER BRASS", "gears that run faster than the city can count"/);
   });
+
+  it("LEDGER BREAK's market line is CRT, not magenta stamp over a CRT", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_ledger")!.line;
+    expect(line).toBe("MAGENTA STAMP OVER A CRT THAT STILL SAYS PENDING");
+    expect(line).not.toBe("magenta stamp over a CRT that still says pending");
+    expect(src).toMatch(/skin\(8, "skin_ledger", "LEDGER BREAK", "MAGENTA STAMP OVER A CRT THAT STILL SAYS PENDING"/);
+    expect(src).not.toMatch(/skin\(8, "skin_ledger", "LEDGER BREAK", "magenta stamp over a CRT that still says pending"/);
+  });
 });
