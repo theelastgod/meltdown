@@ -49,6 +49,11 @@ describe("loadout legality (validated server-side at spawn)", () => {
     const src = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
     expect(src).toMatch(/\$\{attested\.length\} ATTESTED, MAX \$\{MAX_ATTESTED\}/);
     expect(src).not.toMatch(/\$\{attested\.length\} attested, max \$\{MAX_ATTESTED\}/);
+    const dup = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "slipfile"], keystone: null }, owned, 10);
+    expect(dup.errors.find((e) => e.rule === "duplicate")!.detail).toBe("SLIPFILE ATTESTED TWICE");
+    expect(dup.errors.find((e) => e.rule === "duplicate")!.detail).not.toBe("SLIPFILE attested twice");
+    expect(src).toMatch(/\$\{itemName\(id\)\} ATTESTED TWICE/);
+    expect(src).not.toMatch(/\$\{itemName\(id\)\} attested twice/);
     expect(src).toMatch(/reachable from \$\{itemName\(start\)\}/);
     expect(src).not.toMatch(/reachable from \$\{start\}/);
     const smuggled = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: null, protocols: ["kp_filament_01"] }, owned, 10);

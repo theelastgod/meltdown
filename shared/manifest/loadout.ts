@@ -71,7 +71,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
   if (attested.length > MAX_ATTESTED) errors.push({ rule: "attest-limit", detail: `${attested.length} ATTESTED, MAX ${MAX_ATTESTED}` });
   const seen = new Set<string>();
   for (const id of attested) {
-    if (seen.has(id)) errors.push({ rule: "duplicate", detail: `${itemName(id)} attested twice` });
+    if (seen.has(id)) errors.push({ rule: "duplicate", detail: `${itemName(id)} ATTESTED TWICE` });
     seen.add(id);
     const it = itemById(id);
     if (!it) errors.push({ rule: "unknown-node", detail: id });

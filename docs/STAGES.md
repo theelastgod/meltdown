@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 453 — The same node twice said attested twice
+
+**Goal.** Stage 452 taught `N ATTESTED, MAX M`. Attesting SLIPFILE twice
+still kicked `SLIPFILE attested twice`.
+
+**What changed.** `ATTESTED TWICE`.
+
+**Proof.** `tests/fairness.test.ts`: the kick is `SLIPFILE ATTESTED TWICE`.
+loadout.ts must `${itemName(id)} ATTESTED TWICE` and must not
+`${itemName(id)} attested twice`. Mutation: mixed case again — 1 fail.
+
 ## Stage 452 — Eight attested said attested, max
 
 **Goal.** Stage 451 taught `ATTESTED MUST BE A LIST OF NODE IDS`. Attesting

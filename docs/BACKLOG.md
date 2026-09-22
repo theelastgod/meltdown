@@ -594,3 +594,5 @@ one stage.
   → Stage 451
 - Eight attested said attested, max  
   → Stage 452
+- The same node twice said attested twice  
+  → Stage 453
