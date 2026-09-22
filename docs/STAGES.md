@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 375 — Units settle nightly was sentence case
+
+**Goal.** Stage 374 taught `BELOW DEPTH ${RUN_DEPTH} THE RUN PAYS SCRIP`. The
+settlement how-to still dimmed `units settle nightly at up to`.
+
+**What changed.** The same sentence, CRT.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `UNITS SETTLE NIGHTLY AT UP TO` and
+must not `units settle nightly at up to`. Mutation: lowercase again — 1 fail.
+
 ## Stage 374 — A Depth-gated RUN said the run pays Scrip
 
 **Goal.** Stage 373 taught the private-room invite. Below the Depth gate THE RUN

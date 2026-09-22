@@ -239,6 +239,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/Robinhood Wallet · WalletConnect · injected/);
   });
 
+  it("units settle nightly is CRT, not sentence case", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);
+    expect(src).not.toMatch(/units settle nightly at up to/);
+  });
+
   it("an unlinked RUN is CRT, not pays the wallet", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/THE RUN PAYS THE WALLET: LINK ONE AND THE UNITS YOU BANK AT A GATE SETTLE INTO \$CAPITAL\./);
