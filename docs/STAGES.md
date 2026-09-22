@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 332 — The nodefoot suffixed distance as m
+
+**Goal.** Stage 266 CRT-cased WASP LIVE as `M`. Approaching a node still wrote
+` · 12 m`.
+
+**What changed.** `${r.distance.toFixed(0)} M`.
+
+**Proof.** `tests/node.test.ts`: hud.ts must `} M` and must not `} m` on the
+distance. Mutation: lowercase m again — 1 fail.
+`npm test` 1104/1104.
+
 ## Stage 331 — FLIP / LOCK IN suffixed the wait as s
 
 **Goal.** Stage 328 CRT-cased `REJOINING IN 0.5S`. Standing on a node still said

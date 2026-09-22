@@ -945,7 +945,7 @@ export class Hud {
     const clock = nodeClockNote(r.toward, r.seconds);
     const tone = r.contested ? "am" : mine ? "gr" : r.puller ? "mg" : "cy";
     el.className = `p nodefoot ${tone}`;
-    el.innerHTML = `<b>NODE ${r.label}</b> · ${cell(r.owner)} <span class="hold"><i style="width:${Math.round(r.hold * 100)}%"></i></span> ${who}${clock}${r.on ? "" : ` · ${r.distance.toFixed(0)} m`}`;
+    el.innerHTML = `<b>NODE ${r.label}</b> · ${cell(r.owner)} <span class="hold"><i style="width:${Math.round(r.hold * 100)}%"></i></span> ${who}${clock}${r.on ? "" : ` · ${r.distance.toFixed(0)} M`}`;
     this.placeFlag();
   }
   private nodeFootKey = "";

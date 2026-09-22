@@ -352,3 +352,5 @@ one stage.
   → Stage 330
 - FLIP / LOCK IN suffixed the wait as s  
   → Stage 331
+- The nodefoot suffixed distance as m  
+  → Stage 332

@@ -128,6 +128,12 @@ describe("which node is yours to worry about", () => {
 });
 
 describe("the nodefoot clock", () => {
+  it("suffixes approach distance as M, not 12 m", () => {
+    const src = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/r\.distance\.toFixed\(0\)\} M/);
+    expect(src).not.toMatch(/r\.distance\.toFixed\(0\)\} m/);
+  });
+
   it("suffixes seconds as S, not FLIP IN 2.4s", () => {
     expect(nodeClockNote("flip", 2.4)).toBe(" · FLIP IN 2.4S");
     expect(nodeClockNote("hold", 1)).toBe(" · LOCK IN 1.0S");
