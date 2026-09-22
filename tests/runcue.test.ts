@@ -2,7 +2,8 @@
  * The claims fell without a sound (Stage 101): pickup, bank and drop read from two views of the run.
  */
 import { describe, expect, it } from "vitest";
-import { momentLine, runMoments } from "../client/runcue";
+import { readFileSync } from "node:fs";
+import { claimsWord, momentLine, runMoments } from "../client/runcue";
 
 describe("runMoments", () => {
   it("a rise in carried is a pickup, with the new total", () => {
@@ -30,5 +31,17 @@ describe("momentLine", () => {
     expect(momentLine({ kind: "bank", value: 5, banked: 6 }, "EAST GATE")).toBe("BANKED 5 ◈ AT EAST GATE");
     expect(momentLine({ kind: "bank", value: 5, banked: 6 }, null)).toBe("BANKED 5 ◈ AT THE GATE");
     expect(momentLine({ kind: "drop", value: 5 }, null)).toBe("◈ 5 UNITS DROPPED WHERE YOU FELL");
+  });
+});
+
+describe("the RUN strip counts claims", () => {
+  it("one claim is CLAIM OUT, not CLAIMS OUT", () => {
+    expect(claimsWord(1)).toBe("1 CLAIM OUT");
+    expect(claimsWord(2)).toBe("2 CLAIMS OUT");
+    expect(claimsWord(0)).toBe("0 CLAIMS OUT");
+    expect(claimsWord(1)).not.toBe("1 CLAIMS OUT");
+    const src = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/claimsWord\(v\.claims\)/);
+    expect(src).not.toMatch(/v\.claims\} CLAIMS OUT/);
   });
 });

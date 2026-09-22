@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 345 — One claim was CLAIMS OUT
+
+**Goal.** Stage 340 taught `1 PULL`. THE RUN strip still said `1 CLAIMS OUT`.
+
+**What changed.** `claimsWord`: `1 CLAIM OUT`, `2 CLAIMS OUT`.
+
+**Proof.** `tests/runcue.test.ts`: `claimsWord(1)` is `1 CLAIM OUT`. hud.ts must
+`claimsWord(v.claims)` and must not `v.claims} CLAIMS OUT`. Mutation: always CLAIMS —
+1 fail.
+
 ## Stage 344 — One mech was MECHS
 
 **Goal.** Stage 343 taught `1 WASP`. Threat and contract notes still said

@@ -15,6 +15,7 @@ import { motionWord } from "./stance";
 import { keysLine, learn, NOTHING_SEEN, type Seen } from "./keys";
 import { SPRINT_READ } from "./stance";
 import { roundCard, type RoundStats } from "./round";
+import { claimsWord } from "../runcue";
 import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
@@ -363,7 +364,7 @@ export class Hud {
     document.getElementById("hud")?.classList.toggle("safe", !!v?.inSafe);
     if (!v) return;
     const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? `SAFE ZONE · <span class="zone">${openHint("TAB", "MARKET", this.touch)}</span>` : `<span class="pvp">PVP ZONE</span>`;
-    el.innerHTML = `◈ CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · OWED <b>${v.owed}</b> UNITS · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${v.claims} CLAIMS OUT`;
+    el.innerHTML = `◈ CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · OWED <b>${v.owed}</b> UNITS · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${claimsWord(v.claims)}`;
   }
 
   /**

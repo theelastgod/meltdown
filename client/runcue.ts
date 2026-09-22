@@ -45,3 +45,8 @@ export function momentLine(m: RunMoment, zone: string | null): string {
       return `◈ ${m.value} UNITS DROPPED WHERE YOU FELL`;
   }
 }
+
+/** One claim on the strip is CLAIM OUT, not CLAIMS OUT. */
+export function claimsWord(n: number): string {
+  return `${n} CLAIM${n === 1 ? "" : "S"} OUT`;
+}
