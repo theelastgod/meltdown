@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- UNLISTED BLACK's market line still says mixed-case `near-black, one pinhole of cyan`
+  → Stage 502
 - VANTAGE AMBER's market line still says mixed-case `contractor chevrons, the colour of a searchlight`
   → Stage 501
 - LEDGER BREAK's market line still says mixed-case `magenta stamp over a CRT that still says pending`

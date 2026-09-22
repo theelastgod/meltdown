@@ -154,4 +154,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(9, "skin_vantage", "VANTAGE AMBER", "CONTRACTOR CHEVRONS, THE COLOUR OF A SEARCHLIGHT"/);
     expect(src).not.toMatch(/skin\(9, "skin_vantage", "VANTAGE AMBER", "contractor chevrons, the colour of a searchlight"/);
   });
+
+  it("UNLISTED BLACK's market line is CRT, not near-black", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_blank")!.line;
+    expect(line).toBe("NEAR-BLACK, ONE PINHOLE OF CYAN");
+    expect(line).not.toBe("near-black, one pinhole of cyan");
+    expect(src).toMatch(/skin\(10, "skin_blank", "UNLISTED BLACK", "NEAR-BLACK, ONE PINHOLE OF CYAN"/);
+    expect(src).not.toMatch(/skin\(10, "skin_blank", "UNLISTED BLACK", "near-black, one pinhole of cyan"/);
+  });
 });
