@@ -153,6 +153,12 @@ describe("an empty fixer board is CRT", () => {
 });
 
 describe("picking a house writes the name, not the id", () => {
+  it("an unknown house is UNKNOWN HOUSE, not unknown house", () => {
+    const src = readFileSync(new URL("../shared/campaign/endpoint.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "UNKNOWN HOUSE"/);
+    expect(src).not.toMatch(/reason: "unknown house"/);
+  });
+
   it("THE WAKE CELLS, not CELLS", () => {
     expect(factionName("cells")).toBe("THE WAKE CELLS");
     expect(factionName("clockeaters")).toBe("THE CLOCKEATERS");

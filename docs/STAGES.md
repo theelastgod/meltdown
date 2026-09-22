@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 416 — An unknown house said unknown house
+
+**Goal.** Stage 414 taught campaign `UNKNOWN OP`. Picking a house that is not
+on the list still returned `unknown house`.
+
+**What changed.** `UNKNOWN HOUSE`.
+
+**Proof.** `tests/campaign.test.ts`: campaign endpoint must `reason: "UNKNOWN HOUSE"`
+and must not `reason: "unknown house"`. Mutation: mixed case again — 1 fail.
+
 ## Stage 415 — An unknown economy op said unknown op
 
 **Goal.** Stage 414 taught campaign `UNKNOWN OP`. A counter post the

@@ -40,7 +40,7 @@ export function campaignRequest(a: Account, body: unknown, opts: CampaignOptions
   switch (req.op) {
     case "faction": {
       const f = String((req as { faction?: unknown }).faction ?? "");
-      if (!FACTIONS.some((x) => x.id === f)) return { ok: false, reason: "unknown house", campaign: campaignOf(a) };
+      if (!FACTIONS.some((x) => x.id === f)) return { ok: false, reason: "UNKNOWN HOUSE", campaign: campaignOf(a) };
       const ok = pickFaction(a, f as FactionId);
       return { ok, reason: ok ? undefined : "house already picked", campaign: campaignOf(a) };
     }
