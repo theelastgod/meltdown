@@ -548,3 +548,5 @@ one stage.
   → Stage 428
 - A held node said already in your file  
   → Stage 429
+- A Depth-gated buy said needs Depth  
+  → Stage 430

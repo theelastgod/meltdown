@@ -139,7 +139,10 @@ describe("progression", () => {
     expect(e.xp.total).toBeGreaterThan(0);
     expect(a.wallet.scrip).toBeGreaterThan(0);
     expect(a.depth).toBeGreaterThanOrEqual(1);
-    expect(buyNode(a, "wake_lung").ok).toBe(false); // Depth 10
+    const gatedBuy = buyNode(a, "wake_lung");
+    expect(gatedBuy.ok).toBe(false);
+    expect(gatedBuy.reason).toMatch(/^NEEDS DEPTH /);
+    expect(gatedBuy.reason).not.toMatch(/^needs Depth /);
     a.wallet.scrip = 5000;
     expect(buyNode(a, "slipfile").ok).toBe(true);
     expect(buyNode(a, "slipfile").ok).toBe(false);
@@ -161,6 +164,12 @@ describe("the ledger shop CRT-cases a miss", () => {
     const src = readFileSync(new URL("../shared/progression/account.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "UNKNOWN ITEM"/);
     expect(src).not.toMatch(/reason: "unknown item"/);
+  });
+
+  it("a Depth-gated buy is NEEDS DEPTH, not needs Depth", () => {
+    const src = readFileSync(new URL("../shared/progression/account.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/NEEDS DEPTH \$\{it\.requiresDepth\}/);
+    expect(src).not.toMatch(/needs Depth \$\{it\.requiresDepth\}/);
   });
 
   it("a node the file already holds is ALREADY IN YOUR FILE, not already in your file", () => {

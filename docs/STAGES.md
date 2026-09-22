@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 430 — A Depth-gated buy said needs Depth
+
+**Goal.** Stage 394 taught FILE `NEEDS DEPTH`. Buying a node the file is too
+shallow for still returned `needs Depth 10`.
+
+**What changed.** `NEEDS DEPTH ${it.requiresDepth}`.
+
+**Proof.** `tests/fairness.test.ts`: buyNode of wake_lung matches `^NEEDS DEPTH `.
+account.ts must `NEEDS DEPTH ${it.requiresDepth}`. Mutation: mixed case again —
+1 fail.
+
 ## Stage 429 — A held node said already in your file
 
 **Goal.** Stage 428 taught `UNKNOWN ITEM`. Buying a node the file already

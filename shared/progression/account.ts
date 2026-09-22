@@ -319,7 +319,7 @@ export function buyNode(a: Account, id: string, discount = 1): { ok: boolean; re
   const it = itemById(id);
   if (!it) return { ok: false, reason: "UNKNOWN ITEM" };
   if (a.owned.includes(id)) return { ok: false, reason: "ALREADY IN YOUR FILE" };
-  if (a.depth < it.requiresDepth) return { ok: false, reason: `needs Depth ${it.requiresDepth}` };
+  if (a.depth < it.requiresDepth) return { ok: false, reason: `NEEDS DEPTH ${it.requiresDepth}` };
   const price = Math.round(it.cost * discount);
   if (a.wallet.scrip < price) return { ok: false, reason: `needs ${price} Scrip` };
   a.wallet.scrip -= price;
