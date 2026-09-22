@@ -312,3 +312,5 @@ one stage.
   → Stage 310
 - LINK FAILED quoted the caught error in sentence case  
   → Stage 311
+- BUY FAILED quoted the caught error in sentence case  
+  → Stage 312

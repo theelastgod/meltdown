@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 312 — BUY FAILED quoted the caught error in sentence case
+
+**Goal.** Stage 311 CRT-cased `LINK FAILED`. A reverted market buy still interpolated the
+caught line as written: `BUY FAILED: User rejected the request.`
+
+**What changed.** `BUY FAILED: ${crtPhrase(reason)}`.
+
+**Proof.** `tests/counter.test.ts`: source must `BUY FAILED: ${crtPhrase(` and must not
+`BUY FAILED: ${reason}`. Mutation: interpolate the raw reason — 1 fail.
+
 ## Stage 311 — LINK FAILED quoted the caught error in sentence case
 
 **Goal.** Stage 309 CRT-cased `LINK REFUSED`. A thrown SIWE still interpolated

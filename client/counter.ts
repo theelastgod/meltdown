@@ -185,7 +185,7 @@ export class CounterClient {
       return { ok: true };
     } catch (e) {
       const reason = String((e as Error).message ?? e).split("\n").find((l) => /revert|Error|fetch|failed/i.test(l))?.slice(0, 100) ?? "failed";
-      this.say(`BUY FAILED: ${reason}`);
+      this.say(`BUY FAILED: ${crtPhrase(reason)}`);
       return { ok: false, reason };
     } finally {
       this.busy = false;
