@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 415 — An unknown economy op said unknown op
+
+**Goal.** Stage 414 taught campaign `UNKNOWN OP`. A counter post the
+endpoint does not recognise still returned `unknown op`.
+
+**What changed.** `UNKNOWN OP` in `shared/economy/endpoint.ts`.
+
+**Proof.** `tests/endgame.test.ts`: economy endpoint must `reason: "UNKNOWN OP"`
+and must not `reason: "unknown op"`. Mutation: mixed case again — 1 fail.
+
 ## Stage 414 — An unknown campaign op said unknown op
 
 **Goal.** Stage 413 taught cosmetic `UNKNOWN OP`. A campaign post the

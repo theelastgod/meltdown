@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 414, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 415, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 414 on this branch (campaign UNKNOWN OP) |
-| Next stage number | **415** |
+| HEAD | Stage 415 on this branch (economy UNKNOWN OP) |
+| Next stage number | **416** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1183 across 117 files, `npm test` |
+| Unit tests | 1184 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,12 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 415 is next
+## 6. Stage 416 is next
 
-Stage 414 CRT-cased campaign `UNKNOWN OP`. Economy still returns
-`unknown op`. Do not loosen fairness. Do not plate viewmodel or remote
-strips. The join line still prints the socket name — `probe:net` asserts
-`probe-join-31`; leave it.
+Stage 415 CRT-cased economy `UNKNOWN OP`. Campaign still returns
+`unknown house` / `house already picked`. Do not loosen fairness. Do not
+plate viewmodel or remote strips. The join line still prints the socket
+name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

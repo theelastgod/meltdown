@@ -45,7 +45,7 @@ export async function counterRequest(a: Account, body: unknown, ops: CounterOps)
       r = { ok: true };
       break;
     default:
-      r = { ok: false, reason: "unknown op" };
+      r = { ok: false, reason: "UNKNOWN OP" };
   }
   return { ...r, counter: a.counter ?? null, view: counterView(a) };
 }
