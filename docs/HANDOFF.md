@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 473, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 474, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 473 on this branch (WAKE menu line) |
-| Next stage number | **474** |
+| HEAD | Stage 474 on this branch (THE RUN menu line) |
+| Next stage number | **475** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,12 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 474 is next
+## 6. Stage 475 is next
 
-Stage 473 CRT-cased WAKE's menu subtitle. THE RUN's subtitle still
-says `play to earn`. Do not loosen fairness. Do not plate viewmodel
-or remote strips. The join line still prints the socket name —
-`probe:net` asserts `probe-join-31`; leave it.
+Stage 474 CRT-cased THE RUN's menu subtitle. CAMPAIGN's subtitle still
+says `the desk at the Deadletter Office`. Do not loosen fairness. Do
+not plate viewmodel or remote strips. The join line still prints the
+socket name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

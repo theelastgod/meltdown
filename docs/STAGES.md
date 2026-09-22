@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 474 — THE RUN's subtitle said play to earn
+
+**Goal.** Stage 473 taught WAKE's subtitle. THE RUN's row still printed
+mixed-case `play to earn: carry $CAPITAL claims out of the PvP zone to
+a gate; die and they drop`.
+
+**What changed.** `PLAY TO EARN: CARRY $CAPITAL CLAIMS OUT OF THE PVP
+ZONE TO A GATE; DIE AND THEY DROP`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the source. `tests/district.test.ts` asserts that sentence and that
+menu.ts must not the mixed-case template. Mutation: mixed case again —
+1 fail.
+
 ## Stage 473 — WAKE's subtitle said the signature mode
 
 **Goal.** Stage 472 finished the loadout kick mill. The main menu's

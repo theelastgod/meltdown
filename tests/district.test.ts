@@ -84,4 +84,9 @@ describe("the main menu CRT-cases its lines", () => {
     expect(src).toMatch(/id: "wake", label: "WAKE", line: "THE SIGNATURE MODE: FLIP THE NODES, HOLD THE DISTRICT, BEAT THE KERNEL'S CLOCK"/);
     expect(src).not.toMatch(/id: "wake", label: "WAKE", line: "the signature mode:/);
   });
+  it("THE RUN's subtitle is play to earn in CRT", () => {
+    const src = readFileSync(new URL("../client/menu.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/id: "run", label: "THE RUN", line: "PLAY TO EARN: CARRY \$CAPITAL CLAIMS OUT OF THE PVP ZONE TO A GATE; DIE AND THEY DROP"/);
+    expect(src).not.toMatch(/id: "run", label: "THE RUN", line: "play to earn:/);
+  });
 });

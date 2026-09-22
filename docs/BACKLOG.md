@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- THE RUN's menu subtitle still says mixed-case `play to earn`
+  → Stage 474
 - WAKE's menu subtitle still says mixed-case `the signature mode`
   → Stage 473
 - A keystone list still kicks mixed-case `max N KEYSTONE`
