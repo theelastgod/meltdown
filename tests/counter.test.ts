@@ -48,6 +48,16 @@ describe("the counter-ledger FILE line", () => {
     expect(src).not.toMatch(/WALLET REFUSED: \$\{String\(\(e as Error\)\.message/);
   });
 
+  it("ROOM REFUSED CRT-cases the host reason, not a how-to", () => {
+    expect(crtPhrase("link a wallet first: a private room is bought, not requested")).toBe(
+      "LINK A WALLET FIRST: A PRIVATE ROOM IS BOUGHT, NOT REQUESTED",
+    );
+    expect(crtPhrase("not enough room-hours: 0 of 1")).toBe("NOT ENOUGH ROOM-HOURS: 0 OF 1");
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/ROOM REFUSED: \$\{crtPhrase\(/);
+    expect(src).not.toMatch(/ROOM REFUSED: \$\{r\.reason\}/);
+  });
+
   it("LINK REFUSED CRT-cases the host reason, not stale nonce", () => {
     expect(crtPhrase("stale nonce")).toBe("STALE NONCE");
     expect(crtPhrase("wrong statement: the link signs nothing else")).toBe("WRONG STATEMENT: THE LINK SIGNS NOTHING ELSE");

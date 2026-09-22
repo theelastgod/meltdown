@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 310 — ROOM REFUSED quoted the host in sentence case
+
+**Goal.** Stage 309 CRT-cased `LINK REFUSED`. Opening a private room without a
+wallet still said `ROOM REFUSED: link a wallet first: a private room is bought, not requested`.
+
+**What changed.** `crtPhrase()` on the host reason. `ROOM REFUSED` interpolates it.
+
+**Proof.** `tests/counter.test.ts`: `crtPhrase("link a wallet first: a private room is bought, not requested")`
+is `LINK A WALLET FIRST: A PRIVATE ROOM IS BOUGHT, NOT REQUESTED`. Source must
+`crtPhrase(` on that line. Mutation: interpolate the raw reason — 1 fail.
+`npm test` 1082/1082.
+
 ## Stage 309 — LINK REFUSED quoted the host in sentence case
 
 **Goal.** Stage 306 CRT-cased `WALLET REFUSED`. A refused SIWE still interpolated

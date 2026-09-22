@@ -308,3 +308,5 @@ one stage.
   → Stage 308
 - LINK REFUSED quoted the host in sentence case  
   → Stage 309
+- ROOM REFUSED quoted the host in sentence case  
+  → Stage 310
