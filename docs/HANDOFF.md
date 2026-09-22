@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 523, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 524, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 523 on this branch (PRESET SLOT VI shop line) |
-| Next stage number | **524** |
+| HEAD | Stage 524 on this branch (THREE-COUNT FILE line) |
+| Next stage number | **525** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,15 +191,14 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 524 is next
+## 6. Stage 525 is next
 
-Stage 523 CRT-cased PRESET SLOT VI's shop line. Wakelight shop and
-pass cosmetics are CRT. FILE mastery still prints mixed-case firmware
-lines (`three-round bursts at 900 rpm`). Title
-cards stay prose (probe:ship asserts them). Crew-code reasons stay
-mixed-case (`probe:campaign` asserts `not a crew code`). Do not loosen
-fairness. Do not plate viewmodel or remote strips. The join line still
-prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 524 CRT-cased THREE-COUNT's FILE line. LONG LEASE still says
+mixed-case `slower, heavier rounds`. Title cards stay prose
+(probe:ship asserts them). Crew-code reasons stay mixed-case
+(`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
+Do not plate viewmodel or remote strips. The join line still prints
+the socket name — `probe:net` asserts `probe-join-31`; leave it.
 
 City path tests can time out
 under a full `npm test` (the walkway case has taken ~8 s on this

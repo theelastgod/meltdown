@@ -5,6 +5,7 @@
  * changes was thrown away between the trigger and the round. PHAGE CLUSTER, a rank-20 unlock,
  * patches the blast's radius, damage and edge damage, and the sim made a stock round every time.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { World } from "../shared/sim/world";
 import { drainageYard } from "../shared/sim/level";
@@ -102,6 +103,15 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(f.line).not.toMatch(/pierce/i);
   });
 
+  it("THREE-COUNT's FILE line is CRT, not three-round bursts", () => {
+    const src = readFileSync(new URL("../shared/manifest/firmwares.ts", import.meta.url), "utf8");
+    const line = FIRMWARES.find((f) => f.id === "lease_breaker:three_count")!.line;
+    expect(line).toBe("THREE-ROUND BURSTS AT 900 RPM, +12.5% DAMAGE, A THIRD OF A SECOND BETWEEN BURSTS, WIDE FROM THE HIP");
+    expect(line).not.toBe("three-round bursts at 900 rpm, +12.5% damage, a third of a second between bursts, wide from the hip");
+    expect(src).toMatch(/id: "lease_breaker:three_count".*line: "THREE-ROUND BURSTS AT 900 RPM, \+12\.5% DAMAGE, A THIRD OF A SECOND BETWEEN BURSTS, WIDE FROM THE HIP"/s);
+    expect(src).not.toMatch(/line: "three-round bursts at 900 rpm, \+12\.5% damage, a third of a second between bursts, wide from the hip"/);
+  });
+
   it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
     const pct = (from: number, to: number) => ((to - from) / from) * 100;
     for (const f of FIRMWARES) {
@@ -109,7 +119,7 @@ describe("a flashed firmware reaches the round it fires", () => {
       const p = f.patch(b);
       if (p.damage !== b.damage) {
         const actual = pct(b.damage, p.damage);
-        const m = f.line.match(/([+\-−]\d+(?:\.\d+)?)%\s*(?:pellet )?damage/);
+        const m = f.line.match(/([+\-−]\d+(?:\.\d+)?)%\s*(?:pellet )?damage/i);
         expect(m, `${f.id} damage ${b.damage}→${p.damage} is not on the line`).toBeTruthy();
         const claimed = Number((m?.[1] ?? "").replace("−", "-"));
         expect(Math.abs(claimed - actual), `${f.id} claims ${claimed}% damage, patch is ${actual.toFixed(1)}%`).toBeLessThan(0.6);

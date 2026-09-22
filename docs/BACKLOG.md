@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- THREE-COUNT's FILE line still says mixed-case `three-round bursts at 900 rpm`
+  → Stage 524
 - PRESET SLOT VI's shop line still says mixed-case `a sixth saved loadout`
   → Stage 523
 - ALIAS SLOT IV's shop line still says mixed-case `a fourth saved name`

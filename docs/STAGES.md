@@ -1641,6 +1641,21 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 524 — THREE-COUNT's FILE line said three-round bursts
+
+**Goal.** Stage 523 closed the last pass-cosmetic shop line. FILE
+mastery still printed THREE-COUNT as mixed-case `three-round bursts at
+900 rpm, +12.5% damage…`.
+
+**What changed.** `THREE-ROUND BURSTS AT 900 RPM, +12.5% DAMAGE, A
+THIRD OF A SECOND BETWEEN BURSTS, WIDE FROM THE HIP`. The firmware
+integer-quote check now matches `damage` case-insensitively.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/firmware.test.ts` asserts that sentence, that
+firmwares.ts must not the mixed-case template, and that every firmware
+still quotes the patch integer. Mutation: mixed case again — 1 fail.
+
 ## Stage 523 — PRESET SLOT VI's shop line said a sixth saved loadout
 
 **Goal.** Stage 522 taught ALIAS SLOT IV. PRESET SLOT VI still said
