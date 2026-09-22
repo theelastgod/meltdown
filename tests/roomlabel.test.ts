@@ -93,6 +93,12 @@ describe("the room's name in the join line", () => {
     expect(roomName("ws://h/room/100%")).toBe("100%"); // a malformed escape is a name like any other
   });
 
+  it("the private-room admit line is CRT, not the buyer's rules", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/PRIVATE ROOM · THE BUYER'S RULES AND INVITE LIST · BANKS SCRIP, NEVER \$CAPITAL/);
+    expect(src).not.toMatch(/PRIVATE ROOM · the buyer's rules/);
+  });
+
   it("the drop line CRT-cases the kick reason", () => {
     expect(linkStatusLine("closed", "room full")).toBe("LINK CLOSED · ROOM FULL");
     expect(linkStatusLine("closed", "malformed message")).toBe("LINK CLOSED · MALFORMED MESSAGE");

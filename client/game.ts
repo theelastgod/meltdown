@@ -403,7 +403,7 @@ export class Game {
         // a private room (Stage 20): the buyer's district, mode and clock — and no $CAPITAL
         const priv = net.mode.startsWith("private:");
         const mode = priv ? net.mode.slice("private:".length) : net.mode;
-        if (priv) this.hud.push("PRIVATE ROOM · the buyer's rules and invite list · banks Scrip, never $CAPITAL", "am");
+        if (priv) this.hud.push("PRIVATE ROOM · THE BUYER'S RULES AND INVITE LIST · BANKS SCRIP, NEVER $CAPITAL", "am");
         // an Audit room: the same symmetric rules the room runs, so prediction agrees
         if (mode === "run") {
           this.runMode = true;

@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 320 — PRIVATE ROOM quoted the rest in sentence case
+
+**Goal.** Stage 298 CRT-cased the drop line. Joining a private room still pushed
+`PRIVATE ROOM · the buyer's rules and invite list · banks Scrip, never $CAPITAL`.
+
+**What changed.** `PRIVATE ROOM · THE BUYER'S RULES AND INVITE LIST · BANKS SCRIP, NEVER $CAPITAL`.
+
+**Proof.** `tests/roomlabel.test.ts`: source must that CRT line and must not
+`PRIVATE ROOM · the buyer's rules`. Mutation: sentence-case rest again — 1 fail.
+`npm test` 1092/1092.
+
 ## Stage 319 — LINKED quoted a host note in sentence case
 
 **Goal.** Stage 309 CRT-cased `LINK REFUSED`. A successful link that still carries a
