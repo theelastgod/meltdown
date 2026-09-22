@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 337 — ON NODES suffixed seconds as s
+
+**Goal.** Stage 336 CRT-cased `NEXT ROUND IN 13S`. The same card still wrote
+`41 s ON NODES`. `probe:stage5` asserted that form.
+
+**What changed.** `nodeSecondsLine` prints `41 S ON NODES`. The card calls it.
+The probe now expects `S`.
+
+**Proof.** `tests/round.test.ts`: `nodeSecondsLine(41.4)` is `41 S ON NODES`.
+round.ts must `nodeSecondsLine(stats.nodeSeconds)`. Mutation: lowercase s
+again — 1 fail.
+`npm test` 1109/1109.
+
 ## Stage 336 — NEXT ROUND IN suffixed the wait as s
 
 **Goal.** Stage 335 CRT-cased the hold clock. The results card still wrote
