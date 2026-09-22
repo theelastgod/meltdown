@@ -97,3 +97,16 @@ export function closeLine(read: LandedHit | null): string {
 export function weaponName(id: string): string {
   return WEAPONS[id as WeaponId]?.name ?? id.toUpperCase().replace(/_/g, " ");
 }
+
+/**
+ * What the kill log calls the body (Stage 266). Offline printed
+ * `BLANK ⟶ PLAYER-01` from `victimKind.toUpperCase()`; online already said FILE.
+ * The stamp is FILE CLOSED. The log should match.
+ */
+export function victimLabel(kind: string): string {
+  if (kind === "player") return "FILE";
+  if (kind === "dummy") return "DUMMY";
+  if (kind === "wasp") return "WASP";
+  if (kind === "mech") return "MECH";
+  return kind.toUpperCase().replace(/_/g, " ");
+}

@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 266 — Offline kill log called a player PLAYER
+
+**Goal.** Online kill log says `FILE #n ⟶ FILE-01`. Offline said
+`BLANK ⟶ PLAYER-01` because it printed `victimKind.toUpperCase()`. The stamp
+is FILE CLOSED. The city does not call a file a PLAYER.
+
+**What changed.** `victimLabel()` in `client/hud/kill.ts` — player is FILE,
+dummy DUMMY, wasp WASP, mech MECH. Offline and online logs both call it.
+
+**Proof.** `tests/kill.test.ts`: `victimLabel("player")` is FILE, not PLAYER;
+`game.ts` has no `victimKind.toUpperCase()` and no second DUMMY/FILE table.
+Mutations: `player` branch returns `PLAYER` — 1 fail; offline log back to
+`toUpperCase()` — 1 fail.
+
 ## Stage 265 — THE KERNEL's halo was a flat red plane
 
 **Goal.** Stage 260 plated the red grid bars. The 420 m × 200 m plane behind THE KERNEL —

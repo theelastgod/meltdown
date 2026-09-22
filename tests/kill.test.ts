@@ -8,7 +8,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { WEAPON_LIST } from "../shared/weapons/manifest";
-import { bodyKey, closeLine, closeRead, CLOSE_WINDOW, forgetOldHits, HIT_MEMORY, ledgered, rememberHit, stampTitle, type LandedHit } from "../client/hud/kill";
+import { bodyKey, closeLine, closeRead, CLOSE_WINDOW, forgetOldHits, HIT_MEMORY, ledgered, rememberHit, stampTitle, type LandedHit, victimLabel } from "../client/hud/kill";
 
 const P7 = bodyKey("player", 7);
 const P8 = bodyKey("player", 8);
@@ -125,5 +125,23 @@ describe("the line under it", () => {
 
   it("says nothing at all when there is nothing to say", () => {
     expect(closeLine(null)).toBe("");
+  });
+});
+
+describe("the kill log names the body the city does", () => {
+  it("calls a player a FILE, not PLAYER", () => {
+    expect(victimLabel("player")).toBe("FILE");
+    expect(victimLabel("player")).not.toBe("PLAYER");
+    expect(victimLabel("dummy")).toBe("DUMMY");
+    expect(victimLabel("wasp")).toBe("WASP");
+    expect(victimLabel("mech")).toBe("MECH");
+  });
+
+  it("the offline log and the wire log both call victimLabel", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/victimLabel\(ev\.victimKind\)/);
+    expect(src).toMatch(/victimLabel\(kind\)/);
+    expect(src).not.toMatch(/ev\.victimKind\.toUpperCase\(\)/);
+    expect(src).not.toMatch(/\["DUMMY", "FILE", "WASP", "MECH"\]/);
   });
 });

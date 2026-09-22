@@ -26,7 +26,7 @@ import type { AimTarget } from "./render/tps";
 import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { impactRead, landedDamage, WASP_SHOT } from "./hit";
-import { bodyKey, closeLine, closeRead, forgetOldHits, rememberHit, type LandedHit, weaponName } from "./hud/kill";
+import { bodyKey, closeLine, closeRead, forgetOldHits, rememberHit, type LandedHit, victimLabel, weaponName } from "./hud/kill";
 import { challengeClearedLine, masteryRankLine } from "@shared/progression/mastery";
 import { threatMarks, type LiveProjectile } from "./hud/threat";
 import { waspLocks, type WaspSeen } from "./vantage";
@@ -681,9 +681,8 @@ export class Game {
           const kind = ["dummy", "player", "wasp", "mech"][ev.victimKind] ?? "player";
           this.hud.killStamp(kind, closeLine(closeRead(this.closeBook, bodyKey(kind, ev.victimId), this.renderer.clockNow)));
           this.renderer.post.kick(1);
-          const vk = ["DUMMY", "FILE", "WASP", "MECH"][ev.victimKind] ?? "?";
-          this.hud.push(`FILE #${me} ⟶ ${vk}-${String(ev.victimId).padStart(2, "0")}${ev.ttkTicks ? ` · TTK ${(ev.ttkTicks / SIM_HZ).toFixed(2)}s` : ""}`, "mg");
-        } else this.hud.push(`FILE #${ev.playerId} ⟶ ${["DUMMY", "FILE", "WASP", "MECH"][ev.victimKind] ?? "?"}-${String(ev.victimId).padStart(2, "0")}`, "k");
+          this.hud.push(`FILE #${me} ⟶ ${victimLabel(kind)}-${String(ev.victimId).padStart(2, "0")}${ev.ttkTicks ? ` · TTK ${(ev.ttkTicks / SIM_HZ).toFixed(2)}s` : ""}`, "mg");
+        } else this.hud.push(`FILE #${ev.playerId} ⟶ ${victimLabel(["dummy", "player", "wasp", "mech"][ev.victimKind] ?? "player")}-${String(ev.victimId).padStart(2, "0")}`, "k");
         break;
       case "death":
         if (ev.playerId === me) this.fileClosed(ev.killerId);
@@ -1363,7 +1362,7 @@ export class Game {
         this.audio.kill(this.killTier(ev.weapon));
         this.hud.killStamp(ev.victimKind, closeLine(closeRead(this.closeBook, bodyKey(ev.victimKind, ev.victimId), this.renderer.clockNow)));
         this.renderer.post.kick(1);
-        this.hud.push(`BLANK ⟶ ${ev.victimKind.toUpperCase()}-${String(ev.victimId).padStart(2, "0")} · ${weaponName(ev.weapon)}${ev.ttkTicks ? ` · TTK ${ev.ttkSeconds.toFixed(2)}s` : ""}`, "mg");
+        this.hud.push(`BLANK ⟶ ${victimLabel(ev.victimKind)}-${String(ev.victimId).padStart(2, "0")} · ${weaponName(ev.weapon)}${ev.ttkTicks ? ` · TTK ${ev.ttkSeconds.toFixed(2)}s` : ""}`, "mg");
         break;
       case "slide":
         this.audio.slide();
