@@ -226,3 +226,5 @@ one stage.
   → Stage 267
 - THE RUN's claims were unplated octahedra  
   → Stage 268
+- THE RUN's safe-zone ring was a flat cyan hoop  
+  → Stage 269

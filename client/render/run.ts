@@ -57,7 +57,9 @@ export class RunFx {
     this.zones = [];
     for (const z of views) {
       const group = new THREE.Group();
-      const ring = new THREE.Mesh(new THREE.RingGeometry(z.radius - 0.35, z.radius, 48), new THREE.MeshBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }));
+      const ringMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false });
+      bindPlate(ringMat, "tex_lamp");
+      const ring = new THREE.Mesh(new THREE.RingGeometry(z.radius - 0.35, z.radius, 48), ringMat);
       ring.rotation.x = -Math.PI / 2;
       ring.position.y = 0.03;
       group.add(ring);

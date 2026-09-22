@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 269 — THE RUN's safe-zone ring was a flat cyan hoop
+
+**Goal.** Stage 268 plated the claim octahedra. The ground ring of each safe
+zone — the hoop a file stands inside to bank — was still unmapped
+`MeshBasicMaterial` cyan at 0.55 opacity.
+
+**What changed.** `bindPlate(ringMat, "tex_lamp")`, fail-soft. The cyan wash
+stays; the lamp plate is the map.
+
+**Proof.** `tests/assets.test.ts` requires that call in `run.ts`. Mutation:
+the call omitted — 1 fail.
+
 ## Stage 268 — THE RUN's claims were unplated octahedra
 
 **Goal.** Stage 267 plated the range ghost. THE RUN's hovering claims — amber while held,
