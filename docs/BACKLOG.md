@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- MEASURED's FILE line still says mixed-case `−22% rate, +22% damage`
+  → Stage 529
 - DUMP STAGE's FILE line still says mixed-case `+18% rate, −15% magazine`
   → Stage 528
 - SLAM FIRE's FILE line still says mixed-case `+20% rate, −10% pellet damage, a little wider`

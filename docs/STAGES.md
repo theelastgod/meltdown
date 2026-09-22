@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 529 — MEASURED's FILE line said −22% rate
+
+**Goal.** Stage 528 taught DUMP STAGE. MEASURED still said mixed-case
+`−22% rate, +22% damage, −30% spread`.
+
+**What changed.** `−22% RATE, +22% DAMAGE, −30% SPREAD`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/firmware.test.ts` asserts that sentence and
+that firmwares.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 528 — DUMP STAGE's FILE line said +18% rate
 
 **Goal.** Stage 527 taught SLAM FIRE. DUMP STAGE still said mixed-case
