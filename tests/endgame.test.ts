@@ -673,6 +673,15 @@ describe("rewrite and the Wakelight shop", () => {
     expect(src).toMatch(/id: "preset_3", kind: "preset", name: "PRESET SLOT III", line: "A THIRD"/);
     expect(src).not.toMatch(/id: "preset_3", kind: "preset", name: "PRESET SLOT III", line: "a third"/);
   });
+
+  it("PRESET SLOT IV's shop line is CRT, not a fourth", () => {
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    const line = COSMETICS.find((c) => c.id === "preset_4")!.line;
+    expect(line).toBe("A FOURTH");
+    expect(line).not.toBe("a fourth");
+    expect(src).toMatch(/id: "preset_4", kind: "preset", name: "PRESET SLOT IV", line: "A FOURTH"/);
+    expect(src).not.toMatch(/id: "preset_4", kind: "preset", name: "PRESET SLOT IV", line: "a fourth"/);
+  });
 });
 
 // ---- the room: an Audit playlist's rules at join, scores at settlement, the Deep Wake push ----
