@@ -448,3 +448,5 @@ one stage.
   → Stage 378
 - The prizes how-to said THE RUN settles nightly  
   → Stage 379
+- The counter chain label said chain  
+  → Stage 380

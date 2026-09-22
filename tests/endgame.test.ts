@@ -263,6 +263,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/THE RUN settles nightly, Audit placements weekly/);
   });
 
+  it("the counter chain label is CHAIN, not chain", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/" · CHAIN " \+ info\.chainId/);
+    expect(src).not.toMatch(/" · chain " \+ info\.chainId/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);

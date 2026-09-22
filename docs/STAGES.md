@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 380 — The counter chain label said chain
+
+**Goal.** Stage 379 taught the prizes how-to. COUNTER-LEDGER still dimmed
+`DEVNET · chain 8899`.
+
+**What changed.** ` · CHAIN ` + chainId.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `" · CHAIN " + info.chainId`
+and must not `" · chain " + info.chainId`. Mutation: lowercase again — 1 fail.
+`npm test` 1149/1149.
+
 ## Stage 379 — The prizes how-to said THE RUN settles nightly
 
 **Goal.** Stage 378 taught the Ledger Market heading. PRIZES still dimmed
