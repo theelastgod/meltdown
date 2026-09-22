@@ -68,6 +68,12 @@ describe("loadout legality (validated server-side at spawn)", () => {
     const loadoutSrc = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
     expect(loadoutSrc).toMatch(/NEEDS DEPTH \$\{WEAPON_DEPTH\[w\]\} \(YOU ARE \$\{depth\}\)/);
     expect(loadoutSrc).not.toMatch(/needs Depth \$\{WEAPON_DEPTH\[w\]\} \(you are \$\{depth\}\)/);
+    const unknownNode = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["nope_node"], keystone: null }, owned, 10);
+    expect(unknownNode.errors.map((e) => e.rule)).toContain("unknown-node");
+    expect(unknownNode.errors.find((e) => e.rule === "unknown-node")!.detail).toBe("UNKNOWN NODE nope_node");
+    expect(unknownNode.errors.find((e) => e.rule === "unknown-node")!.detail).not.toBe("nope_node");
+    expect(src).toMatch(/unknown-node", detail: `UNKNOWN NODE \$\{id\}`/);
+    expect(src).not.toMatch(/unknown-node", detail: id \}/);
     const asNode = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["debtless"], keystone: null }, owned, 10);
     expect(asNode.errors.map((e) => e.rule)).toContain("not-a-node");
     expect(asNode.errors.find((e) => e.rule === "not-a-node")!.detail).toBe("DEBTLESS IS A KEYSTONE");

@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- An unknown node still kicks the raw id
+  → Stage 469
 - An unknown keystone still kicks the raw id
   → Stage 468
 - An unknown firmware still kicks the raw id

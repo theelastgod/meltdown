@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 469 — An unknown node said only the raw id
+
+**Goal.** Stage 468 taught `UNKNOWN KEYSTONE`. An attested id of
+`nope_node` still kicked the raw id `nope_node`.
+
+**What changed.** `UNKNOWN NODE ${id}`.
+
+**Proof.** Measured kick was the bare id. After the fix:
+`UNKNOWN NODE nope_node`. `tests/fairness.test.ts` asserts that
+sentence and that loadout.ts must the CRT template and must not
+`detail: id`. Mutation: raw id again — 1 fail.
+
 ## Stage 468 — An unknown keystone said only the raw id
 
 **Goal.** Stage 467 taught `UNKNOWN FIRMWARE`. A keystone of

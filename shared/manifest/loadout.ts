@@ -74,7 +74,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
     if (seen.has(id)) errors.push({ rule: "duplicate", detail: `${itemName(id)} ATTESTED TWICE` });
     seen.add(id);
     const it = itemById(id);
-    if (!it) errors.push({ rule: "unknown-node", detail: id });
+    if (!it) errors.push({ rule: "unknown-node", detail: `UNKNOWN NODE ${id}` });
     else if (it.kind !== "node") errors.push({ rule: "not-a-node", detail: `${itemName(id)} IS A ${it.kind.toUpperCase()}` });
     else if (!owned.includes(id)) errors.push({ rule: "not-owned", detail: `${itemName(id)} IS NOT IN YOUR FILE` });
   }
