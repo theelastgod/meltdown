@@ -92,6 +92,12 @@ export function nearestNode(nodes: readonly NodeLike[], at: { x: number; z: numb
  * is a flip, up to one is the owner locking it. A contested node is not moving at all — that is what
  * contested means in this simulation — so it says so rather than dividing by nothing.
  */
+/** The nodefoot clock: CRT, not `FLIP IN 2.4s`. */
+export function nodeClockNote(toward: NodeReadout["toward"], seconds: number): string {
+  if (toward !== "flip" && toward !== "hold") return "";
+  return ` · ${toward === "flip" ? "FLIP" : "LOCK"} IN ${seconds.toFixed(1)}S`;
+}
+
 export function nodeReadout(node: NodeLike, tracked: TrackedNode | undefined, distance: number, nodeRadius: number): NodeReadout {
   const rate = tracked?.rate ?? 0;
   const on = distance <= nodeRadius;

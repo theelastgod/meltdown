@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 331 — FLIP / LOCK IN suffixed the wait as s
+
+**Goal.** Stage 328 CRT-cased `REJOINING IN 0.5S`. Standing on a node still said
+`FLIP IN 2.4s` / `LOCK IN 1.0s`.
+
+**What changed.** `nodeClockNote` prints ` · FLIP IN 2.4S`. The nodefoot calls it.
+
+**Proof.** `tests/node.test.ts`: `nodeClockNote("flip", 2.4)` is ` · FLIP IN 2.4S`.
+hud.ts must `nodeClockNote(r.toward, r.seconds)`. Mutation: lowercase s again — 1 fail.
+`npm test` 1103/1103.
+
 ## Stage 330 — The RANGE ledger suffixed times as s
 
 **Goal.** Stage 326 CRT-cased the RANGE log as `5.55S`. `recordGhost` still wrote

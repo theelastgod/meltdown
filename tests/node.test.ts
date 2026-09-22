@@ -3,7 +3,8 @@
  * so the seconds it prints are the simulation's seconds and not a guess about who is standing where.
  */
 import { describe, expect, it } from "vitest";
-import { kernelIn, MOVING, nearestNode, nodeReadout, trackHolds, type NodeLike, type TrackedNode } from "../client/hud/node";
+import { readFileSync } from "node:fs";
+import { kernelIn, MOVING, nearestNode, nodeClockNote, nodeReadout, trackHolds, type NodeLike, type TrackedNode } from "../client/hud/node";
 import { WAKE } from "../shared/sim/wake";
 
 const node = (over: Partial<NodeLike> = {}): NodeLike => ({ id: 3, label: "C", pos: { x: 10, z: -4 }, owner: 0, hold: 1, contested: false, puller: 0, ...over });
@@ -123,6 +124,18 @@ describe("which node is yours to worry about", () => {
     expect(nearestNode(nodes, { x: 10, z: 0 }, 8)).toBeNull();
     expect(nearestNode([], { x: 0, z: 0 }, 8)).toBeNull();
     expect(nearestNode(nodes, { x: 2, z: 0 }, 8)!.distance).toBeCloseTo(2, 6);
+  });
+});
+
+describe("the nodefoot clock", () => {
+  it("suffixes seconds as S, not FLIP IN 2.4s", () => {
+    expect(nodeClockNote("flip", 2.4)).toBe(" · FLIP IN 2.4S");
+    expect(nodeClockNote("hold", 1)).toBe(" · LOCK IN 1.0S");
+    expect(nodeClockNote("flip", 2.4)).not.toBe(" · FLIP IN 2.4s");
+    expect(nodeClockNote("still", 2.4)).toBe("");
+    const src = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/nodeClockNote\(r\.toward, r\.seconds\)/);
+    expect(src).not.toMatch(/LOCK\} IN \$\{r\.seconds\.toFixed\(1\)\}s/);
   });
 });
 

@@ -24,7 +24,7 @@ import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, m
 import { terminalFooter, terminalSeat } from "./terminal";
 import { closeHint, openHint } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
-import type { NodeReadout } from "./node";
+import { nodeClockNote, type NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
@@ -942,7 +942,7 @@ export class Hud {
     const cell = (t: number) => (t === 1 ? "CELL ONE" : t === 2 ? "CELL TWO" : "VANTAGE");
     const mine = r.puller && r.puller === myTeam;
     const who = r.contested ? "CONTESTED" : r.toward === "still" ? (r.on ? "PULL IT" : "NOBODY IS PULLING") : `${cell(r.puller || r.owner)} ${r.toward === "flip" ? "PULLING" : "SETTLING"}`;
-    const clock = r.toward === "flip" || r.toward === "hold" ? ` · ${r.toward === "flip" ? "FLIP" : "LOCK"} IN ${r.seconds.toFixed(1)}s` : "";
+    const clock = nodeClockNote(r.toward, r.seconds);
     const tone = r.contested ? "am" : mine ? "gr" : r.puller ? "mg" : "cy";
     el.className = `p nodefoot ${tone}`;
     el.innerHTML = `<b>NODE ${r.label}</b> · ${cell(r.owner)} <span class="hold"><i style="width:${Math.round(r.hold * 100)}%"></i></span> ${who}${clock}${r.on ? "" : ` · ${r.distance.toFixed(0)} m`}`;
