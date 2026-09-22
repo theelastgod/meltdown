@@ -84,12 +84,12 @@ export class WakeFx {
       if (!e) {
         const group = new THREE.Group();
         const ringMat = new THREE.MeshBasicMaterial({ color: VIOLET, transparent: true, opacity: 0.95, side: THREE.DoubleSide });
-        bindPlate(ringMat, "tex_lamp");
+        bindPlate(ringMat, "tex_wake_hex");
         const ring = new THREE.Mesh(this.hexShape(WAKE.nodeRadius, WAKE.nodeRadius - 0.18), ringMat);
         ring.rotation.x = -Math.PI / 2;
         ring.position.y = 0.03;
         const fillMat = new THREE.MeshBasicMaterial({ color: VIOLET, transparent: true, opacity: 0.05, side: THREE.DoubleSide, depthWrite: false });
-        bindPlate(fillMat, "tex_lamp");
+        bindPlate(fillMat, "tex_wake_hex");
         const fill = new THREE.Mesh(this.hexShape(WAKE.nodeRadius - 0.25, 0), fillMat);
         fill.rotation.x = -Math.PI / 2;
         fill.position.y = 0.02;

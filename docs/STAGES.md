@@ -1641,6 +1641,30 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 422 — Hitscan, blast, spark and optic still wore the lamp plate
+
+**Goal.** Hitscan beams, nade blasts, impact sparks, THE DIRECTIVE's optic and THE
+WAKE hex pads all reused `tex_lamp`. Imagine filled dedicated plates: tracer, blast,
+spark, wake hex, directive core, plus SMG / lease / shock kit plates for the catalog.
+
+**What changed.** Those FX bind the new ids, fail-soft. Catalog skins 21–24
+(STACK PLATE, DIRECTIVE CORE, LEASE STEEL, ARC VIOLET) name the kit plates.
+
+**Proof.** `tests/assets.test.ts`: weapons must `bindPlate(beamMat, "tex_tracer")`,
+`blastMat`/`tex_blast`, `optic`/`tex_directive_core`; vfx `smat`/`tex_spark`; wake
+ring/fill `tex_wake_hex`. Mutation: beamMat still `tex_lamp` — 1 fail.
+
+## Stage 421 — Launching after the arc said the arc is complete
+
+**Goal.** Stage 420 taught `PICK A HOUSE FIRST`. Launching a main mission
+after the seven still returned `the arc is complete`.
+
+**What changed.** `THE ARC IS COMPLETE`.
+
+**Proof.** `tests/campaign.test.ts`: save.ts must `reason: "THE ARC IS COMPLETE"`
+and must not `reason: "the arc is complete"`. Mutation: mixed case again —
+1 fail.
+
 ## Stage 420 — A mission with no house said pick a house first
 
 **Goal.** Stage 419 taught `UNKNOWN CONTRACT`. Launching a main mission with

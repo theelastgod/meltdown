@@ -1357,5 +1357,77 @@
     "bytes": 133718,
     "sha256": "6de799202cf8afaed1d520f4670256f940307b8e7ad510017680376d9788d5a2",
     "provenance": "derived from unused Higgsfield mill variant tex_var_019, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_tracer",
+    "kind": "texture",
+    "file": "tex_tracer.png",
+    "size": 256,
+    "bytes": 164348,
+    "sha256": "444f09fc0b570bf7175141cd07d34401f5651c7d1fd9e6d63c069c0aa7d0e39a",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_blast",
+    "kind": "texture",
+    "file": "tex_blast.png",
+    "size": 256,
+    "bytes": 155051,
+    "sha256": "dd7fa3acf39f36d3ba006d352c63803b922076fabf0e40742ae0f44b424c9b5e",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_spark",
+    "kind": "texture",
+    "file": "tex_spark.png",
+    "size": 256,
+    "bytes": 151528,
+    "sha256": "7da10f5076a0fe9ed018114b6bd173fa6417012607abcfa1b4fe5e39372991a5",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_wake_hex",
+    "kind": "texture",
+    "file": "tex_wake_hex.png",
+    "size": 256,
+    "bytes": 165717,
+    "sha256": "7549a140914e830582998e9fc7a730e0cc12407d37bfc9d144d855380fa11615",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_directive_core",
+    "kind": "texture",
+    "file": "tex_directive_core.png",
+    "size": 256,
+    "bytes": 161466,
+    "sha256": "665a6914d6d24c14cb3801cb6375f3bb3272bcdfe2490131673ace16d221869b",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_smg_stack",
+    "kind": "texture",
+    "file": "tex_smg_stack.png",
+    "size": 256,
+    "bytes": 149225,
+    "sha256": "f678d2883cb6e740c720c72fe891149199d46470c9e2ee1cea192a9ea20ea92e",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_lease_steel",
+    "kind": "texture",
+    "file": "tex_lease_steel.png",
+    "size": 256,
+    "bytes": 144733,
+    "sha256": "fb4cc5a3f94e1c033e169fe02819792b061ad551762fc79d6401c494d2cf02de",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_shock_arc",
+    "kind": "texture",
+    "file": "tex_shock_arc.png",
+    "size": 256,
+    "bytes": 165658,
+    "sha256": "c12d2b73a920ab0a9370ee30484d5df562c194e77808960412fc1723b55bc840",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
   }
 ]

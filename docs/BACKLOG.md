@@ -530,3 +530,7 @@ one stage.
   → Stage 419
 - A mission with no house said pick a house first  
   → Stage 420
+- Launching after the arc said the arc is complete  
+  → Stage 421
+- Hitscan, blast, spark and optic still wore the lamp plate  
+  → Stage 422

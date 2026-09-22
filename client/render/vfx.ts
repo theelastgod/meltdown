@@ -60,7 +60,7 @@ export class VfxPool {
     // ---- sparks: one InstancedMesh, one instance per spark ----
     const sgeo = new THREE.SphereGeometry(0.05, 6, 6);
     const smat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-    bindPlate(smat, "tex_lamp");
+    bindPlate(smat, "tex_spark");
     this.sparks = new THREE.InstancedMesh(sgeo, smat, MAX_SPARKS);
     this.sparks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.sparks.frustumCulled = false;

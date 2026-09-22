@@ -77,7 +77,7 @@ export function buildViewmodel(id: WeaponId): THREE.Group {
       add(new THREE.BoxGeometry(0.012, 0.012, 0.44), strip, 0.05, 0.04, -0.2);
       add(new THREE.BoxGeometry(0.06, 0.18, 0.08), body, 0, -0.13, 0.12);
       const optic = new THREE.MeshBasicMaterial({ color: 0xff2a3a });
-      bindPlate(optic, "tex_lamp");
+      bindPlate(optic, "tex_directive_core");
       add(new THREE.BoxGeometry(0.03, 0.03, 0.03), optic, 0, 0.1, -0.11);
       break;
     case "clockeater":
@@ -129,7 +129,7 @@ export class ArsenalFx {
     const len = a.distanceTo(b);
     if (len < 0.01) return;
     const beamMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
-    bindPlate(beamMat, "tex_lamp");
+    bindPlate(beamMat, "tex_tracer");
     const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, len, 6, 1, true), beamMat);
     mesh.position.copy(a).lerp(b, 0.5);
     mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
@@ -140,7 +140,7 @@ export class ArsenalFx {
   explosion(pos: Vec3, radius: number, color: number, big = true): void {
     const c = new THREE.Color(color);
     const blastMat = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
-    bindPlate(blastMat, "tex_lamp");
+    bindPlate(blastMat, "tex_blast");
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), blastMat);
     mesh.position.set(pos.x, pos.y, pos.z);
     mesh.scale.setScalar(0.2);

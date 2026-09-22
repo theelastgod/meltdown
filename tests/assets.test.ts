@@ -153,6 +153,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
       "tex_vent", "tex_asphalt_2", "tex_pipe", "tex_grate", "tex_cone_alt",
       "tex_wasp_hull", "tex_mech_hull", "tex_kiosk_crt", "tex_wet_cobble", "tex_cloak",
       "tex_cable", "tex_wet_asphalt",
+      "tex_tracer", "tex_blast", "tex_spark", "tex_wake_hex", "tex_directive_core",
     ]) {
       expect(src, id).toContain(`"${id}"`);
     }
@@ -171,9 +172,9 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(weapons).toMatch(/bindPlate\(lensMat, "tex_lamp"\)/);
     expect(weapons).toMatch(/bindPlate\(coneMat, "tex_lamp"\)/);
     expect(weapons).toMatch(/bindPlate\(mgRail, "tex_lamp"\)/);
-    expect(weapons).toMatch(/bindPlate\(optic, "tex_lamp"\)/);
-    expect(weapons).toMatch(/bindPlate\(beamMat, "tex_lamp"\)/);
-    expect(weapons).toMatch(/bindPlate\(blastMat, "tex_lamp"\)/);
+    expect(weapons).toMatch(/bindPlate\(optic, "tex_directive_core"\)/);
+    expect(weapons).toMatch(/bindPlate\(beamMat, "tex_tracer"\)/);
+    expect(weapons).toMatch(/bindPlate\(blastMat, "tex_blast"\)/);
     expect(weapons).toMatch(/new THREE\.Mesh\(new THREE\.BoxGeometry\(0\.06, 0\.04, 0\.06\), waspMat\)/);
     const city = readFileSync(new URL("../client/render/city.ts", import.meta.url), "utf8");
     expect(city).toMatch(/bindPlate\(M\.railMg, "tex_cable"\)/);
@@ -195,8 +196,8 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(run).toMatch(/bindPlate\(ringMat, "tex_lamp"\)/);
     expect(run).toMatch(/bindPlate\(colMat, "tex_lamp"\)/);
     const wake = readFileSync(new URL("../client/render/wake.ts", import.meta.url), "utf8");
-    expect(wake).toMatch(/bindPlate\(ringMat, "tex_lamp"\)/);
-    expect(wake).toMatch(/bindPlate\(fillMat, "tex_lamp"\)/);
+    expect(wake).toMatch(/bindPlate\(ringMat, "tex_wake_hex"\)/);
+    expect(wake).toMatch(/bindPlate\(fillMat, "tex_wake_hex"\)/);
     expect(wake).toMatch(/bindPlate\(colMat, "tex_lamp"\)/);
     expect(wake).toMatch(/bindPlate\(mat, "tex_lamp"\)/);
     expect(wake).toMatch(/bindPlate\(linkMat, "tex_lamp"\)/);
@@ -214,7 +215,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     const rig = readFileSync(new URL("../client/render/rig.ts", import.meta.url), "utf8");
     expect(rig).toMatch(/bindPlate\(mat, "tex_cloak"\)/);
     const vfx = readFileSync(new URL("../client/render/vfx.ts", import.meta.url), "utf8");
-    expect(vfx).toMatch(/bindPlate\(smat, "tex_lamp"\)/);
+    expect(vfx).toMatch(/bindPlate\(smat, "tex_spark"\)/);
     expect(vfx).toMatch(/bindPlate\(mat, "tex_lamp"\)/);
     const wetfloor = readFileSync(new URL("../client/render/wetfloor.ts", import.meta.url), "utf8");
     expect(wetfloor).toMatch(/bindPlate\(floorMat, "tex_wet_cobble"\)/);
