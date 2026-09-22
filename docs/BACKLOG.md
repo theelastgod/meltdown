@@ -478,3 +478,5 @@ one stage.
   → Stage 393
 - A gated node said needs Depth  
   → Stage 394
+- An unowned node said not in your file  
+  → Stage 395

@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 395 — An unowned node said not in your file
+
+**Goal.** Stage 394 taught `NEEDS DEPTH`. An unowned ledger node still dimmed
+`not in your file` on the FILE panel.
+
+**What changed.** `NOT IN YOUR FILE`. Loadout/fairness `is not in your file`
+is left mixed case — those tests require authored names plus the sentence.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `class="c">NOT IN YOUR FILE`
+and must not `class="c">not in your file`. Mutation: mixed case again — 1 fail.
+
 ## Stage 394 — A gated node said needs Depth
 
 **Goal.** Stage 393 taught `(LOCKED)`. A Depth-gated ledger node still dimmed

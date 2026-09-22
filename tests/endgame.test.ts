@@ -305,6 +305,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/placeholder="a name the city may call you"/);
   });
 
+  it("an unowned node is NOT IN YOUR FILE, not not in your file", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/class="c">NOT IN YOUR FILE/);
+    expect(src).not.toMatch(/class="c">not in your file/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);

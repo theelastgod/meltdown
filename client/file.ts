@@ -757,7 +757,7 @@ export class GhostFile {
       return `<div class="it ${on ? "on" : ""} ${owned ? "" : "locked"}" data-act="${it.kind === "node" ? "attest" : "keystone"}" data-id="${it.id}">
         <span class="chk">${on ? "▣" : "▢"}</span><span class="nm">${it.name}</span><span class="ring">R${it.ring} · D${it.requiresDepth} · ${it.cost}¢ · ${w}</span>
         <div class="tr">${ledgerTradeText(it)}</div>
-        ${gated ? `<div class="c">NEEDS DEPTH ${it.requiresDepth}</div>` : ""}${!owned && !gated ? `<div class="c">not in your file</div>` : ""}
+        ${gated ? `<div class="c">NEEDS DEPTH ${it.requiresDepth}</div>` : ""}${!owned && !gated ? `<div class="c">NOT IN YOUR FILE</div>` : ""}
       </div>`;
     };
     const wname = (id: unknown) => weaponName(String(id));
