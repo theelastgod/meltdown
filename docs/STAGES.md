@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 429 — A held node said already in your file
+
+**Goal.** Stage 428 taught `UNKNOWN ITEM`. Buying a node the file already
+holds still returned `already in your file`.
+
+**What changed.** `ALREADY IN YOUR FILE`.
+
+**Proof.** `tests/fairness.test.ts`: a second buyNode of slipfile is
+`ALREADY IN YOUR FILE`. account.ts must `reason: "ALREADY IN YOUR FILE"`
+and must not `reason: "already in your file"`. Mutation: lowercase
+again — 1 fail.
+
 ## Stage 428 — An unknown node said unknown item
 
 **Goal.** Stage 427 taught `NOT ON TODAY'S BOARD`. Buying an id the ledger

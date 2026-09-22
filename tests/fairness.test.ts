@@ -162,4 +162,14 @@ describe("the ledger shop CRT-cases a miss", () => {
     expect(src).toMatch(/reason: "UNKNOWN ITEM"/);
     expect(src).not.toMatch(/reason: "unknown item"/);
   });
+
+  it("a node the file already holds is ALREADY IN YOUR FILE, not already in your file", () => {
+    const a = createAccount("dup", "D");
+    a.wallet.scrip = 5000;
+    expect(buyNode(a, "slipfile").ok).toBe(true);
+    expect(buyNode(a, "slipfile")).toEqual({ ok: false, reason: "ALREADY IN YOUR FILE" });
+    const src = readFileSync(new URL("../shared/progression/account.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "ALREADY IN YOUR FILE"/);
+    expect(src).not.toMatch(/reason: "already in your file"/);
+  });
 });
