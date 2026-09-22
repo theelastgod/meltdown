@@ -1429,5 +1429,41 @@
     "bytes": 165658,
     "sha256": "c12d2b73a920ab0a9370ee30484d5df562c194e77808960412fc1723b55bc840",
     "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_repo_chevron",
+    "kind": "texture",
+    "file": "tex_repo_chevron.png",
+    "size": 256,
+    "bytes": 148875,
+    "sha256": "79ed997744d92f6385fd85d54f3d04298a7c9d08ea00328e809cf88f7027d7e1",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_longwave_filament",
+    "kind": "texture",
+    "file": "tex_longwave_filament.png",
+    "size": 256,
+    "bytes": 160489,
+    "sha256": "8c91907b03190297d60319b9be845eba1d5331d0d1738025a16e9d77fdba0540",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_phage_vein",
+    "kind": "texture",
+    "file": "tex_phage_vein.png",
+    "size": 256,
+    "bytes": 158562,
+    "sha256": "63d115daf35e281c26a4f889d7eeefd50b2e2b92ccf5dcab2e42ecf787ceef6a",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_clock_gear",
+    "kind": "texture",
+    "file": "tex_clock_gear.png",
+    "size": 256,
+    "bytes": 168889,
+    "sha256": "047300d193fe8859c8e839847a7bd2b95dc441be690101fa2e5ea48a7554abc7",
+    "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
   }
 ]

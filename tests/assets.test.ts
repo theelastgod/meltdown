@@ -127,6 +127,18 @@ describe("a cosmetic may name a texture, and that is all it may name", () => {
   it("and every texture a skin names is one the budget knows about", () => {
     for (const s of SKINS) if (s.texture) expect(ASSETS.some((a) => a.id === s.texture)).toBe(true);
   });
+
+  it("Imagine kit plates 25–28 are catalogued, not leftover-unbound", () => {
+    const ids = ["tex_repo_chevron", "tex_longwave_filament", "tex_phage_vein", "tex_clock_gear"] as const;
+    for (const id of ids) expect(ASSETS.some((a) => a.id === id), id).toBe(true);
+    const named = SKINS.filter((s) => s.texture && (ids as readonly string[]).includes(s.texture)).map((s) => s.texture);
+    expect(new Set(named).size).toBe(4);
+    const catalog = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    expect(catalog).toMatch(/"tex_repo_chevron"/);
+    expect(catalog).toMatch(/"tex_longwave_filament"/);
+    expect(catalog).toMatch(/"tex_phage_vein"/);
+    expect(catalog).toMatch(/"tex_clock_gear"/);
+  });
 });
 
 describe("leftover Higgsfield plates are bound, not only declared", () => {

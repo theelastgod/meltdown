@@ -1641,6 +1641,21 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 464 — Four Imagine plates sat on disk uncatalogued
+
+**Goal.** Stage 422 catalogued skins 21–24. Four new Imagine plates
+(repo chevron, longwave filament, phage vein, clock gear) were
+conditioned to 256px and sat under `public/assets` with no catalog
+row, so Wakelight could not sell them.
+
+**What changed.** Manifest + skins 25–28: REPO CHEVRON, LONGWAVE
+FILAMENT, PHAGE VEIN, CLOCK GEAR. Renderer-only, fail-soft. Viewmodel
+and remote strips still unplated.
+
+**Proof.** `lint:assets` 183 assets, 0 violations. `tests/assets.test.ts`
+asserts all four ids are declared and named by a skin. Mutation: CLOCK
+GEAR lost its texture field — 1 fail.
+
 ## Stage 463 — An unknown chip gun said unknown weapon
 
 **Goal.** Stage 462 taught `UNKNOWN SECONDARY`. A chip map keyed on
