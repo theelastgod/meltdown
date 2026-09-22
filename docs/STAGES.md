@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 484 — ICE's shop line said Deadletter Docks in January
+
+**Goal.** Stage 483 taught AMBER's shop line. ICE still said mixed-case
+`Deadletter Docks in January`.
+
+**What changed.** `DEADLETTER DOCKS IN JANUARY`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/endgame.test.ts` asserts that sentence and
+that rewrite.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 483 — AMBER's shop line said the Estate's own monitors
 
 **Goal.** Stage 482 taught PHOSPHOR's shop line. AMBER still said

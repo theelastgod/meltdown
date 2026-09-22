@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 483, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 484, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 483 on this branch (AMBER shop line) |
-| Next stage number | **484** |
+| HEAD | Stage 484 on this branch (ICE shop line) |
+| Next stage number | **485** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 484 is next
+## 6. Stage 485 is next
 
-Stage 483 CRT-cased AMBER's shop line. ICE's still says `Deadletter
-Docks in January`. Title cards stay prose (probe:ship asserts them).
+Stage 484 CRT-cased ICE's shop line. BLOODLINE's still says `Kernel
+red on black`. Title cards stay prose (probe:ship asserts them).
 Crew-code reasons stay mixed-case (`probe:campaign` asserts `not a
 crew code`). Do not loosen fairness. Do not plate viewmodel or remote
 strips. The join line still prints the socket name — `probe:net`

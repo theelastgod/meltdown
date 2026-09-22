@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- ICE's Wakelight shop line still says mixed-case `Deadletter Docks in January`
+  → Stage 484
 - AMBER's Wakelight shop line still says mixed-case `the Estate's own monitors`
   → Stage 483
 - PHOSPHOR's Wakelight shop line still says mixed-case `green-on-black terminal`

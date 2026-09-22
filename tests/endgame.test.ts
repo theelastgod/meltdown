@@ -619,6 +619,15 @@ describe("rewrite and the Wakelight shop", () => {
     expect(src).toMatch(/id: "theme_amber".*line: "THE ESTATE'S OWN MONITORS"/s);
     expect(src).not.toMatch(/line: "the Estate's own monitors"/);
   });
+
+  it("ICE's shop line is CRT, not Deadletter Docks in January", () => {
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    const line = COSMETICS.find((c) => c.id === "theme_ice")!.line;
+    expect(line).toBe("DEADLETTER DOCKS IN JANUARY");
+    expect(line).not.toBe("Deadletter Docks in January");
+    expect(src).toMatch(/id: "theme_ice".*line: "DEADLETTER DOCKS IN JANUARY"/s);
+    expect(src).not.toMatch(/line: "Deadletter Docks in January"/);
+  });
 });
 
 // ---- the room: an Audit playlist's rules at join, scores at settlement, the Deep Wake push ----
