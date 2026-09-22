@@ -128,12 +128,13 @@ export class ArsenalFx {
     const b = new THREE.Vector3(to.x, to.y, to.z);
     const len = a.distanceTo(b);
     if (len < 0.01) return;
-    const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
-    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, len, 6, 1, true), mat);
+    const beamMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
+    bindPlate(beamMat, "tex_lamp");
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, len, 6, 1, true), beamMat);
     mesh.position.copy(a).lerp(b, 0.5);
     mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
     this.scene.add(mesh);
-    this.beams.push({ mesh, born: this.clock, life, mat });
+    this.beams.push({ mesh, born: this.clock, life, mat: beamMat });
   }
 
   explosion(pos: Vec3, radius: number, color: number, big = true): void {

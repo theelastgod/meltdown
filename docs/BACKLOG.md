@@ -254,3 +254,5 @@ one stage.
   → Stage 281
 - Smoke clouds were unplated grey spheres  
   → Stage 282
+- Hitscan beams were unplated additive tubes  
+  → Stage 283

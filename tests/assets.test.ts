@@ -170,6 +170,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(weapons).toMatch(/bindPlate\(coneMat, "tex_lamp"\)/);
     expect(weapons).toMatch(/bindPlate\(mgRail, "tex_lamp"\)/);
     expect(weapons).toMatch(/bindPlate\(optic, "tex_lamp"\)/);
+    expect(weapons).toMatch(/bindPlate\(beamMat, "tex_lamp"\)/);
     expect(weapons).toMatch(/new THREE\.Mesh\(new THREE\.BoxGeometry\(0\.06, 0\.04, 0\.06\), waspMat\)/);
     const city = readFileSync(new URL("../client/render/city.ts", import.meta.url), "utf8");
     expect(city).toMatch(/bindPlate\(M\.railMg, "tex_cable"\)/);
