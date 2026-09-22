@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 485 — BLOODLINE's shop line said Kernel red on black
+
+**Goal.** Stage 484 taught ICE's shop line. BLOODLINE still said
+mixed-case `Kernel red on black; for files that have taken the chair`.
+
+**What changed.** `KERNEL RED ON BLACK; FOR FILES THAT HAVE TAKEN THE
+CHAIR`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/endgame.test.ts` asserts that sentence and
+that rewrite.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 484 — ICE's shop line said Deadletter Docks in January
 
 **Goal.** Stage 483 taught AMBER's shop line. ICE still said mixed-case

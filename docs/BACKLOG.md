@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- BLOODLINE's Wakelight shop line still says mixed-case `Kernel red on black`
+  → Stage 485
 - ICE's Wakelight shop line still says mixed-case `Deadletter Docks in January`
   → Stage 484
 - AMBER's Wakelight shop line still says mixed-case `the Estate's own monitors`

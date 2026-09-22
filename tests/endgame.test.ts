@@ -628,6 +628,15 @@ describe("rewrite and the Wakelight shop", () => {
     expect(src).toMatch(/id: "theme_ice".*line: "DEADLETTER DOCKS IN JANUARY"/s);
     expect(src).not.toMatch(/line: "Deadletter Docks in January"/);
   });
+
+  it("BLOODLINE's shop line is CRT, not Kernel red on black", () => {
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    const line = COSMETICS.find((c) => c.id === "theme_bloodline")!.line;
+    expect(line).toBe("KERNEL RED ON BLACK; FOR FILES THAT HAVE TAKEN THE CHAIR");
+    expect(line).not.toBe("Kernel red on black; for files that have taken the chair");
+    expect(src).toMatch(/id: "theme_bloodline".*line: "KERNEL RED ON BLACK; FOR FILES THAT HAVE TAKEN THE CHAIR"/s);
+    expect(src).not.toMatch(/line: "Kernel red on black; for files that have taken the chair"/);
+  });
 });
 
 // ---- the room: an Audit playlist's rules at join, scores at settlement, the Deep Wake push ----
