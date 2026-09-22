@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 403 — A firmware option said r
+
+**Goal.** Stage 402 taught chip `· R`. A firmware still tagged `· r5` on
+the FILE kit select.
+
+**What changed.** `· R${f.rank}`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `} · R${f.rank}` and must not
+`} · r${f.rank}`. Mutation: mixed case again — 1 fail.
+
 ## Stage 402 — A chip option said r
 
 **Goal.** Stage 401 taught `GATE R`. A chip still tagged `· r5` on the

@@ -494,3 +494,5 @@ one stage.
   → Stage 401
 - A chip option said r  
   → Stage 402
+- A firmware option said r  
+  → Stage 403
