@@ -27,7 +27,7 @@ function lcg(seed: number): () => number {
 const basic = (color: number, opacity = 1): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity });
 
 /** Optional generated plate: if it never arrives the procedural map stays. Cosmetic; the sim never sees it. */
-export function bindPlate(mat: THREE.MeshStandardMaterial | THREE.MeshBasicMaterial | THREE.LineBasicMaterial, id: string, alsoEmissive = false): void {
+export function bindPlate(mat: THREE.MeshStandardMaterial | THREE.MeshBasicMaterial | THREE.LineBasicMaterial | THREE.LineDashedMaterial, id: string, alsoEmissive = false): void {
   void assetTexture(id).then((tex) => {
     if (!tex) return;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;

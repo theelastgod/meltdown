@@ -132,7 +132,9 @@ export class WakeFx {
         if (o && o.id > v.id) pts.push(new THREE.Vector3(v.pos.x, v.pos.y + 0.06, v.pos.z), new THREE.Vector3(o.pos.x, o.pos.y + 0.06, o.pos.z));
       }
       const geo = new THREE.BufferGeometry().setFromPoints(pts);
-      this.links = new THREE.LineSegments(geo, new THREE.LineDashedMaterial({ color: PALETTE.violet, dashSize: 0.6, gapSize: 0.5, transparent: true, opacity: 0.45 }));
+      const linkMat = new THREE.LineDashedMaterial({ color: PALETTE.violet, dashSize: 0.6, gapSize: 0.5, transparent: true, opacity: 0.45 });
+      bindPlate(linkMat, "tex_lamp");
+      this.links = new THREE.LineSegments(geo, linkMat);
       this.links.computeLineDistances();
       this.scene.add(this.links);
     }

@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 293 — THE WAKE link lines were unplated dashes
+
+**Goal.** Stage 291 plated hitscan `LineBasicMaterial`. THE WAKE's dashed edges between hexes
+were still unmapped `LineDashedMaterial`.
+
+**What changed.** `bindPlate` accepts `LineDashedMaterial`. `bindPlate(linkMat, "tex_lamp")`,
+fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `wake.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 292 — The PA and the ledger line fell back to the level id
 
 **Goal.** Wake lines already call `districtName`. The VANTAGE PA and
