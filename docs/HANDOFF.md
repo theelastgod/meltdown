@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 391, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 392, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 391 on this branch (graph hint is CRT) |
-| Next stage number | **392** |
+| HEAD | Stage 392 on this branch (alias placeholder is CRT) |
+| Next stage number | **393** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1160 across 117 files, `npm test` |
+| Unit tests | 1161 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,11 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 392 is next
+## 6. Stage 393 is next
 
-Stage 391 CRT-cased the graph hint. Do not loosen fairness. Do not plate
-viewmodel or remote strips. The join line still prints the socket name —
-`probe:net` asserts `probe-join-31`; leave it.
+Stage 392 CRT-cased the alias placeholder. Remaining CRT copy includes
+chip `(locked)` and FILE `needs Depth` / `not in your file`. Do not loosen
+fairness. Do not plate viewmodel or remote strips. The join line still prints
+the socket name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

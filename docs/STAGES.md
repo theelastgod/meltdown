@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 392 — An alias field said a name the city may call you
+
+**Goal.** Stage 391 taught `(G OPENS THE WHOLE GRAPH)`. Setting an alias still
+showed `a name the city may call you`.
+
+**What changed.** `A NAME THE CITY MAY CALL YOU`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT placeholder and must
+not the sentence-case placeholder. Mutation: lowercase again — 1 fail.
+`npm test` 1161/1161.
+
 ## Stage 391 — The graph hint said G opens the whole graph
 
 **Goal.** Stage 390 taught the EXPLORE how-to. FILE still dimmed

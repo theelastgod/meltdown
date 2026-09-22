@@ -648,7 +648,7 @@ export class GhostFile {
       const p = a?.presets?.[i];
       return `<div class="ct"><span>PRESET ${i + 1} · ${p ? p.name : "<span class='dim'>EMPTY</span>"}</span><span>${p ? `<span class="btn" data-act="loadPreset" data-id="${i + 1}">[LOAD]</span> ` : ""}<span class="btn" data-act="savePreset" data-id="${i + 1}">[SAVE CURRENT]</span></span></div>`;
     }).join("");
-    const aliases = Array.from({ length: slots.aliases }, (_, i) => `<div class="ct"><span>ALIAS ${i + 1} · ${a?.aliases?.[i] ?? "<span class='dim'>EMPTY</span>"}</span><span><input type="text" maxlength="16" data-alias="${i + 1}" placeholder="a name the city may call you"> <span class="btn" data-act="setAlias" data-id="${i + 1}">[SET]</span></span></div>`).join("");
+    const aliases = Array.from({ length: slots.aliases }, (_, i) => `<div class="ct"><span>ALIAS ${i + 1} · ${a?.aliases?.[i] ?? "<span class='dim'>EMPTY</span>"}</span><span><input type="text" maxlength="16" data-alias="${i + 1}" placeholder="A NAME THE CITY MAY CALL YOU"> <span class="btn" data-act="setAlias" data-id="${i + 1}">[SET]</span></span></div>`).join("");
     return `<div class="sh">DAILY CONTRACTS · DAY ${eg.day}</div>${contracts}
       <div class="sh">AUDIT · THE WEEK'S PLAYLIST · LEADERBOARD</div>${audit}
       <div class="sh">REWRITE · WAKELIGHT ${a?.wallet.wakelight ?? this.wakelight}◆</div>${rewriteBox}

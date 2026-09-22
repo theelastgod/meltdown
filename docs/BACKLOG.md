@@ -472,3 +472,5 @@ one stage.
   → Stage 390
 - The graph hint said G opens the whole graph  
   → Stage 391
+- An alias field said a name the city may call you  
+  → Stage 392

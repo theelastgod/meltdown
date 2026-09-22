@@ -287,6 +287,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/\(G opens the whole graph\)/);
   });
 
+  it("an alias field is CRT, not a name the city may call you", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/placeholder="A NAME THE CITY MAY CALL YOU"/);
+    expect(src).not.toMatch(/placeholder="a name the city may call you"/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);
