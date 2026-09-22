@@ -73,13 +73,26 @@ export const SKINS: readonly SkinDef[] = [
  * the brief states first. They are a theme and two slots: no stat, no token, nothing the sim reads.
  * The lint's `identity-is-cosmetic` rule refuses a mechanical block on any of them.
  */
-export const SEASON_PASS_COSMETICS: readonly { id: string; kind: "theme" | "alias" | "preset"; name: string; line: string }[] = [
-  { id: "theme_deep_wake", kind: "theme", name: "DEEP WAKE", line: "the colour the graph goes when a season ends and nobody wins" },
+export const SEASON_PASS_COSMETICS: readonly {
+  id: string;
+  kind: "theme" | "alias" | "preset";
+  name: string;
+  line: string;
+  palette?: { cy: string; gr: string; mg: string; ye: string; am: string };
+}[] = [
+  { id: "theme_deep_wake", kind: "theme", name: "DEEP WAKE", line: "THE COLOUR THE GRAPH GOES WHEN A SEASON ENDS AND NOBODY WINS", palette: { cy: "#7ad4ff", gr: "#4aa8a0", mg: "#b070e8", ye: "#d4dde8", am: "#7c90b0" } },
   { id: "alias_4", kind: "alias", name: "ALIAS SLOT IV", line: "a fourth saved name, for the season you paid to sit out of" },
   { id: "preset_6", kind: "preset", name: "PRESET SLOT VI", line: "a sixth saved loadout" },
 ] as const;
 
 export const SEASON_PASS_GRANTS: readonly string[] = SEASON_PASS_COSMETICS.map((c) => c.id);
+
+/** HUD palette for a pass theme. Shop themes live on COSMETICS; this is the 400 $CAPITAL grant. */
+export function passThemePalette(id: string | null | undefined): { cy: string; gr: string; mg: string; ye: string; am: string } | null {
+  if (!id) return null;
+  const c = SEASON_PASS_COSMETICS.find((x) => x.id === id);
+  return c?.kind === "theme" ? c.palette ?? null : null;
+}
 
 export const skinByToken = (token: number): SkinDef | undefined => SKINS.find((s) => s.token === token);
 export const skinById = (id: string): SkinDef | undefined => SKINS.find((s) => s.id === id);

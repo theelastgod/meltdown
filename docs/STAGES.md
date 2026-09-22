@@ -1641,6 +1641,25 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 521 — the Deep Wake pass theme could not be worn
+
+**Goal.** Stage 176 put `theme_deep_wake` on `a.cosmetics` and `setTheme`
+accepted it. The FILE shop only mapped Wakelight `COSMETICS`, so there
+was no WEAR. `themePalette` used `cosmeticById`, which does not know
+the pass list, and the grant had no palette. Measured: grant lands,
+`setTheme` true, `cosmeticById` null, shop false, palette missing. The
+400 $CAPITAL theme left the HUD on the default.
+
+**What changed.** `passThemePalette` on the grant (cy `#7ad4ff`). FILE
+shop lists owned pass cosmetics with WEAR, not a Wakelight price.
+`themePalette` falls through to the pass palette. Shop line
+`THE COLOUR THE GRAPH GOES WHEN A SEASON ENDS AND NOBODY WINS`. Still
+not for sale (`UNKNOWN COSMETIC`).
+
+**Proof.** `tests/seasonpass.test.ts`. Mutations: drop palette — 1 fail;
+mixed-case line — 1 fail; `themePalette` only `cosmeticById` — 1 fail;
+empty `passShop` — 1 fail.
+
 ## Stage 520 — CLOCK GEAR's market line said brass gears on wet steel
 
 **Goal.** Stage 519 taught PHAGE VEIN. CLOCK GEAR still said mixed-case

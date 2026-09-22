@@ -15,6 +15,7 @@ import type { FileMsg } from "@shared/net/protocol";
 import { sandboxAccount, type Account, type GhostRun } from "@shared/progression/account";
 import { filesWord, publicIdentity } from "@shared/identity/identity";
 import { COSMETICS, canRewrite, slotsOf, slotsWord, cosmeticById } from "@shared/endgame/rewrite";
+import { SEASON_PASS_COSMETICS, passThemePalette } from "@shared/economy/catalog";
 import type { ContractView } from "@shared/endgame/contracts";
 import type { AuditDef, AuditEntry } from "@shared/endgame/audits";
 import { CHIPS, chipById, type Socket } from "@shared/manifest/chips";
@@ -645,6 +646,7 @@ export class GhostFile {
     const slots = a ? slotsOf(a) : { aliases: 1, presets: 1 };
     const owned = a?.cosmetics ?? [];
     const shop = COSMETICS.map((c) => `<div class="cos ${owned.includes(c.id) ? "owned" : ""}"><b>${c.name}</b> <span class="dim">${c.line}</span> · ${owned.includes(c.id) ? (c.kind === "theme" ? `<span class="btn" data-act="theme" data-id="${c.id}">[${a?.theme === c.id ? "WORN" : "WEAR"}]</span>` : "OWNED") : `<span class="btn ${(a?.wallet.wakelight ?? 0) >= c.wakelight ? "" : "off"}" data-act="buyCosmetic" data-id="${c.id}">[${c.wakelight}◆]</span>`}</div>`).join("");
+    const passShop = SEASON_PASS_COSMETICS.filter((c) => owned.includes(c.id)).map((c) => `<div class="cos owned"><b>${c.name}</b> <span class="dim">${c.line}</span> · ${c.kind === "theme" ? `<span class="btn" data-act="theme" data-id="${c.id}">[${a?.theme === c.id ? "WORN" : "WEAR"}]</span>` : "OWNED"}</div>`).join("");
     const presets = Array.from({ length: slots.presets }, (_, i) => {
       const p = a?.presets?.[i];
       return `<div class="ct"><span>PRESET ${i + 1} · ${p ? p.name : "<span class='dim'>EMPTY</span>"}</span><span>${p ? `<span class="btn" data-act="loadPreset" data-id="${i + 1}">[LOAD]</span> ` : ""}<span class="btn" data-act="savePreset" data-id="${i + 1}">[SAVE CURRENT]</span></span></div>`;
@@ -653,13 +655,13 @@ export class GhostFile {
     return `<div class="sh">DAILY CONTRACTS · DAY ${eg.day}</div>${contracts}
       <div class="sh">AUDIT · THE WEEK'S PLAYLIST · LEADERBOARD</div>${audit}
       <div class="sh">REWRITE · WAKELIGHT ${a?.wallet.wakelight ?? this.wakelight}◆</div>${rewriteBox}
-      <div class="cols"><div><div class="sh">WAKELIGHT SHOP · THEMES · SLOTS</div>${shop}</div><div><div class="sh">PRESETS · ${slotsWord(slots.presets)}</div>${presets}<div class="sh">ALIASES · ${slotsWord(slots.aliases)}</div>${aliases}</div></div>`;
+      <div class="cols"><div><div class="sh">WAKELIGHT SHOP · THEMES · SLOTS</div>${shop}${passShop}</div><div><div class="sh">PRESETS · ${slotsWord(slots.presets)}</div>${presets}<div class="sh">ALIASES · ${slotsWord(slots.aliases)}</div>${aliases}</div></div>`;
   }
 
   /** the theme the file wears (palette for the HUD) */
   themePalette(): { cy: string; gr: string; mg: string; ye: string; am: string } | null {
     const id = this.accountRecord?.theme;
-    return id ? cosmeticById(id)?.palette ?? null : null;
+    return id ? cosmeticById(id)?.palette ?? passThemePalette(id) : null;
   }
 
   get isGraphOpen(): boolean {

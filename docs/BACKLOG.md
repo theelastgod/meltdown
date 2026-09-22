@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- The Deep Wake pass theme could not be worn: no shop row, no HUD palette
+  → Stage 521
 - CLOCK GEAR's market line still says mixed-case `brass gears on wet steel`
   → Stage 520
 - PHAGE VEIN's market line still says mixed-case `iridescent spore-vein polymer`

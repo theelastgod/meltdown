@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 520, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 521, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 520 on this branch (CLOCK GEAR market line) |
-| Next stage number | **521** |
+| HEAD | Stage 521 on this branch (Deep Wake pass theme wear) |
+| Next stage number | **522** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 521 is next
+## 6. Stage 522 is next
 
-Stage 520 CRT-cased CLOCK GEAR's market line. Ledger Market SKINS
-lines 1–28 are CRT. Deep Wake pass cosmetics still say mixed-case
-`the colour the graph goes when a season ends and nobody wins`. Title
+Stage 521 made the Deep Wake pass theme wearable (palette + FILE shop
+WEAR) and CRT-cased its line. ALIAS SLOT IV still says mixed-case
+`a fourth saved name, for the season you paid to sit out of`. Title
 cards stay prose (probe:ship asserts them). Crew-code reasons stay
 mixed-case (`probe:campaign` asserts `not a crew code`). Do not loosen
 fairness. Do not plate viewmodel or remote strips. The join line still

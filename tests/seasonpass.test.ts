@@ -16,8 +16,8 @@
  * outright — one past the top of the shop, and the only way to reach either.
  */
 import { describe, expect, it } from "vitest";
-import { COSMETICS, buyCosmetic, setAlias, setTheme, savePreset, slotsOf } from "../shared/endgame/rewrite";
-import { SEASON_PASS_COSMETICS, SEASON_PASS_GRANTS, grantSeasonPass } from "../shared/economy/catalog";
+import { COSMETICS, buyCosmetic, setAlias, setTheme, savePreset, slotsOf, cosmeticById } from "../shared/endgame/rewrite";
+import { SEASON_PASS_COSMETICS, SEASON_PASS_GRANTS, grantSeasonPass, passThemePalette } from "../shared/economy/catalog";
 import { SEASON_PASS_PRICE } from "../shared/economy/sinks";
 import { createAccount, type Account } from "../shared/progression/account";
 import { readFileSync } from "node:fs";
@@ -74,6 +74,34 @@ describe("the Deep Wake pass — what it grants is what the game reads", () => {
   it("the price is real money leaving the supply, which is why this mattered", () => {
     expect(SEASON_PASS_PRICE).toBeGreaterThan(0);
     expect(SEASON_PASS_GRANTS.length).toBe(3);
+  });
+
+  it("the Deep Wake theme has a HUD palette, not an empty wear", () => {
+    const c = SEASON_PASS_COSMETICS.find((x) => x.id === "theme_deep_wake")!;
+    expect(c.palette).toEqual({ cy: "#7ad4ff", gr: "#4aa8a0", mg: "#b070e8", ye: "#d4dde8", am: "#7c90b0" });
+    expect(passThemePalette("theme_deep_wake")).toEqual(c.palette);
+    expect(passThemePalette("alias_4")).toBeNull();
+    expect(cosmeticById("theme_deep_wake")).toBeUndefined();
+    const a = holder();
+    a.wallet.wakelight = 10_000;
+    expect(buyCosmetic(a, "theme_deep_wake").reason).toBe("UNKNOWN COSMETIC");
+  });
+
+  it("DEEP WAKE's shop line is CRT, not the colour the graph goes", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SEASON_PASS_COSMETICS.find((c) => c.id === "theme_deep_wake")!.line;
+    expect(line).toBe("THE COLOUR THE GRAPH GOES WHEN A SEASON ENDS AND NOBODY WINS");
+    expect(line).not.toBe("the colour the graph goes when a season ends and nobody wins");
+    expect(src).toMatch(/id: "theme_deep_wake".*line: "THE COLOUR THE GRAPH GOES WHEN A SEASON ENDS AND NOBODY WINS"/s);
+    expect(src).not.toMatch(/id: "theme_deep_wake".*line: "the colour the graph goes when a season ends and nobody wins"/s);
+  });
+
+  it("the FILE tab wears the pass theme and lists owned pass cosmetics", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/passThemePalette\(id\)/);
+    expect(src).not.toMatch(/return id \? cosmeticById\(id\)\?\.palette \?\? null : null;/);
+    expect(src).toMatch(/SEASON_PASS_COSMETICS\.filter\(\(c\) => owned\.includes\(c\.id\)\)/);
+    expect(src).toMatch(/\$\{shop\}\$\{passShop\}/);
   });
 });
 
