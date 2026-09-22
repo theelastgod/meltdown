@@ -716,7 +716,7 @@ export class GhostFile {
       const gated = n.requiresDepth > this.depth;
       const cls = `${n.kind} ${owned ? "own" : gated ? "gated" : "lease"} ${on ? "on" : ""} ${this.busy === n.id ? "busy" : ""}`;
       const act = owned ? (n.kind === "node" ? "attest" : "keystone") : "buy";
-      nodes += `<g class="${cls}" data-act="${act}" data-id="${n.id}"><polygon points="${hex(p.x, p.y, n.kind === "keystone" ? 20 : 15)}"/><text x="${p.x}" y="${p.y + 3}">${n.kind === "keystone" ? "◆" : owned ? (on ? "▣" : "▢") : gated ? "D" + n.requiresDepth : n.cost}</text><title>${n.name} · ${n.line}${owned ? "" : ` · ${n.cost} SCRIP · needs Depth ${n.requiresDepth}`}</title></g>`;
+      nodes += `<g class="${cls}" data-act="${act}" data-id="${n.id}"><polygon points="${hex(p.x, p.y, n.kind === "keystone" ? 20 : 15)}"/><text x="${p.x}" y="${p.y + 3}">${n.kind === "keystone" ? "◆" : owned ? (on ? "▣" : "▢") : gated ? "D" + n.requiresDepth : n.cost}</text><title>${n.name} · ${n.line}${owned ? "" : ` · ${n.cost} SCRIP · NEEDS DEPTH ${n.requiresDepth}`}</title></g>`;
     }
     const ownedCount = this.owned.filter((id) => itemById(id)?.kind === "node").length;
     const v = validateLoadout(this.raw, this.owned, this.depth, this.ranks());
@@ -757,7 +757,7 @@ export class GhostFile {
       return `<div class="it ${on ? "on" : ""} ${owned ? "" : "locked"}" data-act="${it.kind === "node" ? "attest" : "keystone"}" data-id="${it.id}">
         <span class="chk">${on ? "▣" : "▢"}</span><span class="nm">${it.name}</span><span class="ring">R${it.ring} · D${it.requiresDepth} · ${it.cost}¢ · ${w}</span>
         <div class="tr">${ledgerTradeText(it)}</div>
-        ${gated ? `<div class="c">needs Depth ${it.requiresDepth}</div>` : ""}${!owned && !gated ? `<div class="c">not in your file</div>` : ""}
+        ${gated ? `<div class="c">NEEDS DEPTH ${it.requiresDepth}</div>` : ""}${!owned && !gated ? `<div class="c">not in your file</div>` : ""}
       </div>`;
     };
     const wname = (id: unknown) => weaponName(String(id));

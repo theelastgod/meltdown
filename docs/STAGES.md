@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 394 — A gated node said needs Depth
+
+**Goal.** Stage 393 taught `(LOCKED)`. A Depth-gated ledger node still dimmed
+`needs Depth 12` on the row and the hex tooltip.
+
+**What changed.** `NEEDS DEPTH` in both places.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `NEEDS DEPTH ${` and must not
+`needs Depth ${`. Mutation: mixed case again — 1 fail.
+
 ## Stage 393 — A locked chip said (locked)
 
 **Goal.** Stage 392 taught the alias placeholder. A chip or firmware above your

@@ -476,3 +476,5 @@ one stage.
   → Stage 392
 - A locked chip said (locked)  
   → Stage 393
+- A gated node said needs Depth  
+  → Stage 394

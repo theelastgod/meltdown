@@ -239,6 +239,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/Robinhood Wallet · WalletConnect · injected/);
   });
 
+  it("a gated node is NEEDS DEPTH, not needs Depth", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/NEEDS DEPTH \$\{/);
+    expect(src).not.toMatch(/needs Depth \$\{/);
+  });
+
   it("a locked chip or firmware is (LOCKED), not (locked)", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/ \(LOCKED\)/);
