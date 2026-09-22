@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 398 — Mastery progress said xp
+
+**Goal.** Stage 397 taught moniker `— NONE —`. Unmastered kit still dimmed
+`${into}/${need} xp`.
+
+**What changed.** `${into}/${need} XP`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `class="dim">${into}/${need} XP`
+and must not `class="dim">${into}/${need} xp`. Mutation: lowercase again —
+1 fail.
+
 ## Stage 397 — An empty moniker said none
 
 **Goal.** Stage 396 taught chip `— NONE —`. An empty moniker still dimmed

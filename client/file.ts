@@ -777,7 +777,7 @@ export class GhostFile {
       const fws = FIRMWARES.filter((f) => f.weapon === w.id).map((f) => `<option value="${f.id}" ${fwRaw[w.id] === f.id ? "selected" : ""} ${f.rank > rank ? "disabled" : ""}>${f.name} · r${f.rank}${f.rank > rank ? " (LOCKED)" : ""}</option>`).join("");
       const chipLines = Object.values(chipsRaw[w.id] ?? {}).map((id) => chipById(id)?.line).filter(Boolean).join(" · ");
       const fwLine = fwRaw[w.id] ? firmwareById(fwRaw[w.id]!)?.line ?? "" : "";
-      const gateText = gate ? `<span class="c">GATE r${gate.gate}: ${gate.text} (${m?.counters[gate.counter] ?? 0}/${gate.need})</span>` : rank >= MAX_RANK ? `<span class="b">MASTERED</span>` : `<span class="dim">${into}/${need} xp</span>`;
+      const gateText = gate ? `<span class="c">GATE r${gate.gate}: ${gate.text} (${m?.counters[gate.counter] ?? 0}/${gate.need})</span>` : rank >= MAX_RANK ? `<span class="b">MASTERED</span>` : `<span class="dim">${into}/${need} XP</span>`;
       return `<div class="wk"><div class="nm">${w.name} <span class="ring">MASTERY ${String(rank).padStart(2, "0")}/${MAX_RANK}</span></div><div class="tr">${gateText}</div><div class="socks">${sockets}<label class="sock">FIRMWARE <select data-fw="${w.id}"><option value="">STOCK</option>${fws}</select></label></div>${chipLines || fwLine ? `<div class="tr">${[fwLine, chipLines].filter(Boolean).join(" · ")}</div>` : ""}</div>`;
     }).join("");
     const stampRows = STAMPS.map((st) => `<div class="st ${this.stamps.includes(st.id) ? "on" : ""}">${this.stamps.includes(st.id) ? "▣ " + st.line : "▢ " + redact(st.line)}</div>`).join("");

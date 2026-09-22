@@ -484,3 +484,5 @@ one stage.
   → Stage 396
 - An empty moniker said none  
   → Stage 397
+- Mastery progress said xp  
+  → Stage 398
