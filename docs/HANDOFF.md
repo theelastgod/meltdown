@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 411, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 412, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 411 on this branch (SLOT N NOT OWNED) |
-| Next stage number | **412** |
+| HEAD | Stage 412 on this branch (NOT OWNED) |
+| Next stage number | **413** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1179 across 117 files, `npm test` |
+| Unit tests | 1181 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,13 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 411 is next
+## 6. Stage 413 is next
 
-Stage 410 CRT-cased `EMPTY ALIAS`. Shop still returns
-`slot N not owned (M slots)`. Do not loosen fairness. Do not plate viewmodel
-or remote strips. The join line still prints the socket name — `probe:net`
-asserts `probe-join-31`; leave it. Note `tests/seasonpass.test.ts` comments
-quote the mixed-case form; update those if you CRT the string.
+Stage 412 CRT-cased `NOT OWNED`. Host still returns `unknown op` on a
+cosmetic post it does not recognise. Do not loosen fairness. Do not plate
+viewmodel or remote strips. The join line still prints the socket name —
+`probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

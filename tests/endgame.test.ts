@@ -248,6 +248,14 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/slot \$\{slot\} not owned \(\$\{slots\} slots\)/);
   });
 
+  it("wearing a theme you do not own is NOT OWNED, not not owned", () => {
+    for (const rel of ["../server/player-do.ts", "../server/node-host.ts"] as const) {
+      const src = readFileSync(new URL(rel, import.meta.url), "utf8");
+      expect(src, rel).toMatch(/reason: "NOT OWNED"/);
+      expect(src, rel).not.toMatch(/reason: "not owned"/);
+    }
+  });
+
   it("a poor shop is NEEDS N WAKELIGHT, not needs N Wakelight", () => {
     const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
     expect(src).toMatch(/NEEDS \$\{c\.wakelight\} WAKELIGHT/);

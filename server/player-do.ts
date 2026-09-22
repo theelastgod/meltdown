@@ -157,7 +157,7 @@ export class PlayerFile implements DurableObject {
       let r: { ok: boolean; reason?: string } = { ok: true };
       if (url.pathname === "/claim") r = claimContract(a, String((body as { id?: unknown }).id ?? ""));
       else if (url.pathname === "/rewrite") r = rewrite(a);
-      else if (url.pathname === "/cosmetic") r = body.op === "buy" ? buyCosmetic(a, String((body as { cosmetic?: unknown }).cosmetic ?? body.id)) : body.op === "theme" ? { ok: setTheme(a, (body as { theme?: string | null }).theme ?? null), reason: "not owned" } : body.op === "preset" ? savePreset(a, Number(body.slot ?? 0), String(body.name ?? ""), body.loadout) : body.op === "alias" ? setAlias(a, Number(body.slot ?? 0), String(body.alias ?? "")) : { ok: false, reason: "unknown op" };
+      else if (url.pathname === "/cosmetic") r = body.op === "buy" ? buyCosmetic(a, String((body as { cosmetic?: unknown }).cosmetic ?? body.id)) : body.op === "theme" ? { ok: setTheme(a, (body as { theme?: string | null }).theme ?? null), reason: "NOT OWNED" } : body.op === "preset" ? savePreset(a, Number(body.slot ?? 0), String(body.name ?? ""), body.loadout) : body.op === "alias" ? setAlias(a, Number(body.slot ?? 0), String(body.alias ?? "")) : { ok: false, reason: "unknown op" };
       dailyView(a); // rolls the day
       // an adopted secret is kept whether or not the operation succeeded: a failed first request
       // must not leave the file still unowned (Stage 56)

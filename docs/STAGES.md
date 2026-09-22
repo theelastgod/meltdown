@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 412 — Wearing a theme you do not own said not owned
+
+**Goal.** Stage 411 taught `SLOT N NOT OWNED`. Setting a theme the file
+does not have still returned `not owned` from both hosts.
+
+**What changed.** `NOT OWNED` on the cosmetic theme refuse in
+`server/player-do.ts` and `server/node-host.ts`.
+
+**Proof.** `tests/endgame.test.ts`: both hosts must `reason: "NOT OWNED"` and
+must not `reason: "not owned"`. Mutation: player-do mixed case again — 1 fail.
+
 ## Stage 411 — A write into a missing slot said not owned
 
 **Goal.** Stage 410 taught `EMPTY ALIAS`. Saving preset 4 or alias 4 on a new

@@ -512,3 +512,5 @@ one stage.
   → Stage 410
 - A write into a missing slot said not owned  
   → Stage 411
+- Wearing a theme you do not own said not owned  
+  → Stage 412
