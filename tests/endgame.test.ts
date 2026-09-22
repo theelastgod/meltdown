@@ -269,6 +269,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/" · chain " \+ info\.chainId/);
   });
 
+  it("the Ledger Graph shop footer is CRT, not click a leased node", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/CLICK A LEASED NODE TO BUY IT WITH SCRIP \(VIOLET → GREEN\); CLICK AN OWNED NODE TO ATTEST IT/);
+    expect(src).not.toMatch(/click a leased node to buy it with Scrip/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);

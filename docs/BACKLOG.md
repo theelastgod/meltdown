@@ -454,3 +454,5 @@ one stage.
   → Stage 381
 - A re-leased fixer said no one answers  
   → Stage 382
+- The Ledger Graph said click a leased node  
+  → Stage 383

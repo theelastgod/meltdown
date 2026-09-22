@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 383 — The Ledger Graph said click a leased node
+
+**Goal.** Stage 382 taught `NO ONE ANSWERS`. The Ledger Graph footer, with a
+shop, still said `click a leased node to buy it with Scrip (violet → green);
+click an owned node to attest it`.
+
+**What changed.** The same sentence, CRT.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not
+`click a leased node to buy it with Scrip`. Mutation: lowercase again — 1 fail.
+`npm test` 1152/1152.
+
 ## Stage 382 — A re-leased fixer said no one answers
 
 **Goal.** Stage 381 taught `NO CONTRACTS ON OFFER`. A dead handler still dimmed
