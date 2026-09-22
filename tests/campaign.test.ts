@@ -165,6 +165,12 @@ describe("picking a house writes the name, not the id", () => {
     expect(src).not.toMatch(/a contract is closed by the room that ran it, not by asking/);
   });
 
+  it("an unknown launch is UNKNOWN CONTRACT, not unknown contract", () => {
+    const src = readFileSync(new URL("../shared/campaign/save.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "UNKNOWN CONTRACT"/);
+    expect(src).not.toMatch(/reason: "unknown contract"/);
+  });
+
   it("an unknown house is UNKNOWN HOUSE, not unknown house", () => {
     const src = readFileSync(new URL("../shared/campaign/endpoint.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "UNKNOWN HOUSE"/);

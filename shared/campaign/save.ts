@@ -46,7 +46,7 @@ export function gigsOnOffer(a: Account, c: CampaignSave): MissionDef[] {
 /** Can this mission be launched now? Missions go in arc order; gigs must be on offer. */
 export function canLaunch(a: Account, c: CampaignSave, id: string): { ok: boolean; reason?: string } {
   const m = missionById(id);
-  if (!m) return { ok: false, reason: "unknown contract" };
+  if (!m) return { ok: false, reason: "UNKNOWN CONTRACT" };
   if (m.kind === "mission") {
     if (!c.faction) return { ok: false, reason: "pick a house first" };
     const next = nextMission(c);
@@ -62,7 +62,7 @@ export function canLaunch(a: Account, c: CampaignSave, id: string): { ok: boolea
 export function completeContract(a: Account, id: string, testimony: Testimony): { ok: boolean; reason?: string; reward?: Reward } {
   const c = campaignOf(a);
   const m = missionById(id);
-  if (!m) return { ok: false, reason: "unknown contract" };
+  if (!m) return { ok: false, reason: "UNKNOWN CONTRACT" };
   // testimony is written as given (only keys the scripts know)
   for (const [k, v] of Object.entries(testimony)) if (/^(faction|m\d:[a-z_]+)$/.test(k) && /^[a-z_]+$/.test(v)) c.testimony[k] = v;
   if (c.testimony["faction"] && !c.faction) c.faction = c.testimony["faction"] as FactionId;

@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 419 — An unknown launch said unknown contract
+
+**Goal.** Stage 418 taught `CLOSED BY THE ROOM`. Launching or completing an
+id the catalogue does not have still returned `unknown contract`.
+
+**What changed.** `UNKNOWN CONTRACT` in `canLaunch` and `completeContract`.
+
+**Proof.** `tests/campaign.test.ts`: save.ts must `reason: "UNKNOWN CONTRACT"`
+and must not `reason: "unknown contract"`. Mutation: one of two mixed case
+again — 1 fail.
+
 ## Stage 418 — A claimed completion said closed by the room
 
 **Goal.** Stage 417 taught `HOUSE ALREADY PICKED`. Completing a contract from
