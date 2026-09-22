@@ -142,6 +142,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
       "client/render/wake.ts",
       "client/render/rig.ts",
       "client/render/vfx.ts",
+      "client/render/wetfloor.ts",
     ];
     const src = files.map((f) => readFileSync(new URL(`../${f}`, import.meta.url), "utf8")).join("\n");
     for (const id of [
@@ -210,6 +211,8 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(rig).toMatch(/bindPlate\(mat, "tex_cloak"\)/);
     const vfx = readFileSync(new URL("../client/render/vfx.ts", import.meta.url), "utf8");
     expect(vfx).toMatch(/bindPlate\(smat, "tex_lamp"\)/);
+    const wetfloor = readFileSync(new URL("../client/render/wetfloor.ts", import.meta.url), "utf8");
+    expect(wetfloor).toMatch(/bindPlate\(floorMat, "tex_wet_cobble"\)/);
   });
 });
 

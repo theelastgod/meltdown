@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { Reflector } from "three/examples/jsm/objects/Reflector.js";
+import { bindPlate } from "./city";
 
 /**
  * Wet street: a planar reflection rendered at low resolution and smeared
@@ -118,9 +119,11 @@ export function makeWetFloor(width: number, depth: number, y: number, fogColor: 
  * so the neon above still bleeds into it.
  */
 export function makeFlatWetFloor(width: number, depth: number, y: number, fogColor: THREE.Color): THREE.Mesh {
+  const floorMat = new THREE.MeshBasicMaterial({ color: fogColor.clone().multiplyScalar(1.35), transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending });
+  bindPlate(floorMat, "tex_wet_cobble");
   const m = new THREE.Mesh(
     new THREE.PlaneGeometry(width, depth),
-    new THREE.MeshBasicMaterial({ color: fogColor.clone().multiplyScalar(1.35), transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending }),
+    floorMat,
   );
   m.rotation.x = -Math.PI / 2;
   m.position.y = y;

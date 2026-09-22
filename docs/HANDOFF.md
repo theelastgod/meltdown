@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 287, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 288, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 287 on this branch (impact sparks wear tex_lamp) |
-| Next stage number | **288** |
+| HEAD | Stage 288 on this branch (mobile wet floor wears tex_wet_cobble) |
+| Next stage number | **289** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1069 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 288 is next
+## 6. Stage 289 is next
 
-Stage 287 put `tex_lamp` on impact sparks. The mobile wet floor is still
-unplated. Do not loosen fairness. Do not plate viewmodel or remote strips
-(skin maps overwrite those).
+Stage 288 put `tex_wet_cobble` on the mobile wet floor. Do not loosen fairness.
+Do not plate viewmodel or remote strips (skin maps overwrite those).
 
 ---
 

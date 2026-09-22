@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 288 — The mobile wet floor was an unplated sheen
+
+**Goal.** Sidewalks already wear `tex_wet_cobble`. The phone's fake wet floor
+— an additive plane in place of the desktop mirror — was still unmapped
+`MeshBasicMaterial`.
+
+**What changed.** `bindPlate(floorMat, "tex_wet_cobble")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `wetfloor.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 287 — Impact sparks were unplated additive spheres
 
 **Goal.** Stage 283 plated hitscan beams. The pooled impact sparks — 64
