@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { createRun, dropCarried, inSafeZone, RUN, runView, stepRun, type RunEvent } from "../shared/sim/run";
+import { readFileSync } from "node:fs";
+import { createRun, dropCarried, inSafeZone, RUN, runView, stepRun, type RunEvent, unitsWord } from "../shared/sim/run";
 import { SIM_HZ } from "../shared/sim/constants";
 import { World } from "../shared/sim/world";
 import { levelById } from "../shared/sim/level";
@@ -18,6 +19,17 @@ import { v3 } from "../shared/math/vec3";
 
 const zones = [{ kind: "safe" as const, label: "GATE", pos: v3(0, 0, 0), radius: 5 }];
 const claims = [{ pos: v3(20, 0, 0), value: 3 }, { pos: v3(30, 0, 0), value: 2 }];
+
+describe("banked units on the ledger", () => {
+  it("one unit is UNIT OWED, not UNITS OWED", () => {
+    expect(unitsWord(1)).toBe("1 UNIT");
+    expect(unitsWord(2)).toBe("2 UNITS");
+    expect(unitsWord(1)).not.toBe("1 UNITS");
+    const src = readFileSync(new URL("../server/room.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/unitsWord\(paid\)\} OWED/);
+    expect(src).not.toMatch(/\$\{paid\} UNITS OWED/);
+  });
+});
 
 describe("THE RUN — the sim", () => {
   it("a carrier picks a claim up, the claim respawns later, a death drops the carried value where the file fell, and a gate banks it after the dwell", () => {
@@ -126,7 +138,7 @@ describe("THE RUN — the room and the payout", () => {
     expect(acc.counter?.run?.owed).toBe(claim.value);
     expect(acc.counter?.run?.banked).toBe(claim.value);
     // the room banks units; the day's settlement, not the room, decides what a unit is worth
-    expect(acc.ledger.some((l) => /BANKED .* UNITS OWED/.test(l))).toBe(true);
+    expect(acc.ledger.some((l) => /BANKED .* UNITS? OWED/.test(l))).toBe(true);
     const runMsgs = a.msgs.filter((m) => m?.type === "run") as { type: "run"; run: { carried: number; banked: number; owed: number; zones: unknown[]; claims: unknown[] } }[];
     expect(runMsgs.length).toBeGreaterThan(0);
     expect(runMsgs[runMsgs.length - 1]!.run.owed).toBe(claim.value);

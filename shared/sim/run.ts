@@ -34,6 +34,11 @@ export const RUN_SCRIP_PER_UNIT = 10;
  *  emission schedule and may be lower (shared/economy/settlement.ts); it is never higher. */
 export const MAX_CAPITAL_PER_UNIT = 1;
 
+/** One unit is UNIT, not UNITS. */
+export function unitsWord(n: number): string {
+  return `${n} UNIT${n === 1 ? "" : "S"}`;
+}
+
 export interface ZoneDef {
   kind: "safe";
   label: string;

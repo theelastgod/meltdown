@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 350 — One banked unit was UNITS OWED
+
+**Goal.** Stage 349 taught `OWED 1 UNIT`. Banking still wrote `1 UNITS OWED` on
+the ledger.
+
+**What changed.** `unitsWord`: `1 UNIT`, `2 UNITS`. The bank line calls it.
+
+**Proof.** `tests/run.test.ts`: `unitsWord(1)` is `1 UNIT`. room.ts must
+`unitsWord(paid)} OWED` and must not `${paid} UNITS OWED`. Mutation: always
+UNITS — 1 fail.
+`npm test` 1121/1121.
+
 ## Stage 349 — One owed was UNITS
 
 **Goal.** Stage 346 taught `1 UNIT DROPPED`. THE RUN strip and FILE still wrote

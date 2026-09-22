@@ -7,7 +7,7 @@
  */
 import { SEASON_DEPTH } from "../shared/endgame/season";
 import { encodeRun, type RunMsg } from "../shared/net/protocol";
-import { RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT, runView } from "../shared/sim/run";
+import { RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT, runView, unitsWord } from "../shared/sim/run";
 import { dayIndex } from "../shared/endgame/clock";
 import { dailyOf } from "../shared/endgame/contracts";
 import { MOVE, SIM_HZ } from "../shared/sim/constants";
@@ -963,7 +963,7 @@ export class Room {
       // units, not $CAPITAL: the day's rate is set by the settlement, which the room never sees
       run.owed += paid;
       if (paid > 0) this.opts.onRunBank(day, a.id, paid);
-      line = paid < value ? `BANKED ${value} AT ${zone} · ${paid} UNITS OWED · DAY CAP ${RUN_DAILY_CAP} REACHED` : `BANKED ${value} AT ${zone} · ${paid} UNITS OWED`;
+      line = paid < value ? `BANKED ${value} AT ${zone} · ${unitsWord(paid)} OWED · DAY CAP ${RUN_DAILY_CAP} REACHED` : `BANKED ${value} AT ${zone} · ${unitsWord(paid)} OWED`;
     }
     a.counter.run = run;
     a.counters["runBanked"] = (a.counters["runBanked"] ?? 0) + value;
