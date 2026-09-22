@@ -244,3 +244,5 @@ one stage.
   → Stage 276
 - The campaign objective beam was a flat cyan tube  
   → Stage 277
+- The Kernel filament was a flat red strand  
+  → Stage 278

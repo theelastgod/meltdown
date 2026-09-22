@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 277, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 278, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 277 on this branch (campaign objective beam wears tex_lamp) |
-| Next stage number | **278** |
+| HEAD | Stage 278 on this branch (Kernel filament wears tex_lamp) |
+| Next stage number | **279** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1067 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 278 is next
+## 6. Stage 279 is next
 
-Stage 277 put `tex_lamp` on the campaign objective beam (and destroy-target beams). Kernel
-filament strands are still unplated. Do not loosen fairness.
+Stage 278 put `tex_lamp` on the Kernel filament. Do not loosen fairness.
 
 ---
 

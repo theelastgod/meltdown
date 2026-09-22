@@ -75,6 +75,7 @@ export class CampaignFx {
     // depthTest is flipped per host in setFilamentHost; depth is never written, because additive
     // strands that write depth punch a hole in whatever is drawn after them
     const fm = new THREE.MeshBasicMaterial({ color: RED, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false });
+    bindPlate(fm, "tex_lamp");
     this.filamentMat = fm;
     for (let i = 0; i < 5; i++) {
       const pts: THREE.Vector3[] = [];
