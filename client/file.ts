@@ -599,7 +599,7 @@ export class GhostFile {
     const market = (info?.listings ?? []).map((l) => {
       const s = v?.skins.find((k) => k.token === l.token);
       const mine = !!c.address && l.seller.toLowerCase() === c.address.toLowerCase();
-      return `<div class="cos ${s?.owned ? "owned" : ""}"><b>${s?.name ?? "TOKEN " + l.token}</b> <span class="dim">${s?.line ?? ""}</span> · <span class="sw" style="background:${s?.tint ?? "#fff"}"></span> · ${l.amount} listed by ${mine ? "<span class='ye'>YOU</span>" : l.seller.slice(0, 6) + "…"} · <span class="btn ${v?.linked && !c.busy && !mine ? "" : "off"}" data-act="buyListing" data-id="${l.listing}">[${l.price} $CAPITAL]</span></div>`;
+      return `<div class="cos ${s?.owned ? "owned" : ""}"><b>${s?.name ?? "TOKEN " + l.token}</b> <span class="dim">${s?.line ?? ""}</span> · <span class="sw" style="background:${s?.tint ?? "#fff"}"></span> · ${l.amount} LISTED BY ${mine ? "<span class='ye'>YOU</span>" : l.seller.slice(0, 6) + "…"} · <span class="btn ${v?.linked && !c.busy && !mine ? "" : "off"}" data-act="buyListing" data-id="${l.listing}">[${l.price} $CAPITAL]</span></div>`;
     }).join("");
     const run = v?.run ?? { day: 0, banked: 0, owed: 0, paid: 0 };
     // units, not $CAPITAL: the day's rate is set when the day settles, and a unit is worth at most one

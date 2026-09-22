@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 377 — A market row said listed by
+
+**Goal.** Stage 376 taught the other-book manifesto. A Ledger Market listing
+still wrote `listed by YOU` / `listed by 0x…`.
+
+**What changed.** `LISTED BY`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `LISTED BY` on the row and must
+not `listed by ${mine`. Mutation: lowercase again — 1 fail.
+`npm test` 1146/1146.
+
 ## Stage 376 — The other book was sentence case
 
 **Goal.** Stage 375 taught `UNITS SETTLE NIGHTLY`. The manifesto still dimmed

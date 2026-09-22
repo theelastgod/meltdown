@@ -245,6 +245,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/VANTAGE priced you\. This is the other book\./);
   });
 
+  it("a market row is LISTED BY, not listed by", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/LISTED BY \$\{mine \? "<span class='ye'>YOU<\/span>"/);
+    expect(src).not.toMatch(/listed by \$\{mine/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);
