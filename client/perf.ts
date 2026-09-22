@@ -71,7 +71,7 @@ export class PerfMonitor {
   private draw(): void {
     const s = this.summary();
     const r = this.game.renderer.renderer.info.render;
-    this.el.innerHTML = `PERF · ${s.fps.toFixed(0)} fps · p50 <b>${s.p50.toFixed(1)}</b> p95 <b>${s.p95.toFixed(1)}</b> p99 <b>${s.p99.toFixed(1)}</b> max ${s.max.toFixed(0)} ms · ${r.calls} calls · ${(r.triangles / 1000).toFixed(0)}k tris · scale ${this.game.renderer.post.scale}<br><span class="dim">${this.gpu().slice(0, 60)} · ${innerWidth}×${innerHeight}@${devicePixelRatio} · ${this.posted ? "REPORTED" : this.postError ? `NOT REPORTED: ${this.postError}` : `report in ${Math.max(0, Math.ceil(this.after - (performance.now() - this.startedAt) / 1000))} s`}</span>`;
+    this.el.innerHTML = `PERF · ${s.fps.toFixed(0)} fps · p50 <b>${s.p50.toFixed(1)}</b> p95 <b>${s.p95.toFixed(1)}</b> p99 <b>${s.p99.toFixed(1)}</b> max ${s.max.toFixed(0)} ms · ${r.calls} calls · ${(r.triangles / 1000).toFixed(0)}k tris · scale ${this.game.renderer.post.scale}<br><span class="dim">${this.gpu().slice(0, 60)} · ${innerWidth}×${innerHeight}@${devicePixelRatio} · ${this.posted ? "REPORTED" : this.postError ? `NOT REPORTED: ${this.postError}` : `REPORT IN ${Math.max(0, Math.ceil(this.after - (performance.now() - this.startedAt) / 1000))} S`}</span>`;
   }
 
   build(): PerfReport {

@@ -343,6 +343,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/postError = "no ledger host"/);
   });
 
+  it("a waiting perf overlay is REPORT IN N S, not report in N s", () => {
+    const src = readFileSync(new URL("../client/perf.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/REPORT IN \$\{Math\.max\(0, Math\.ceil\(this\.after - \(performance\.now\(\) - this\.startedAt\) \/ 1000\)\)\} S/);
+    expect(src).not.toMatch(/report in \$\{Math\.max\(0, Math\.ceil\(this\.after - \(performance\.now\(\) - this\.startedAt\) \/ 1000\)\)\} s/);
+  });
+
   it("a FILE op with no shop is NO LEDGER HOST LINKED, not no ledger host linked", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "NO LEDGER HOST LINKED"/);

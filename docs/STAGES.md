@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 437 — A waiting perf overlay said report in N s
+
+**Goal.** Stage 436 taught `NO LEDGER HOST`. Before the report posts, the
+strip still wrote `report in 30 s`.
+
+**What changed.** `REPORT IN ${…} S`.
+
+**Proof.** `tests/endgame.test.ts`: perf.ts must `REPORT IN ${Math.max(…)} S`
+and must not `report in ${Math.max(…)} s`. Mutation: mixed case again —
+1 fail.
+
 ## Stage 436 — The perf overlay said no ledger host
 
 **Goal.** Stage 435 taught `NO LEDGER HOST LINKED`. The perf strip still wrote
