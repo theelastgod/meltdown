@@ -4,7 +4,7 @@ import { dayIndex, pickDistinct, seasonIndex, seasonWeek, weekIndex } from "../s
 import { claimContract, contractsFor, dailyView, CONTRACT_POOL } from "../shared/endgame/contracts";
 import { AUDITS, auditErrors, auditFor, currentAudit, leaderboard } from "../shared/endgame/audits";
 import { applyRound, emptySeason, houseName, rollSeason, seasonView, TURN_AT } from "../shared/endgame/season";
-import { buyCosmetic, canRewrite, COSMETICS, rewrite, REWRITE_WAKELIGHT, savePreset, setAlias, setTheme, slotsOf } from "../shared/endgame/rewrite";
+import { buyCosmetic, canRewrite, COSMETICS, rewrite, REWRITE_WAKELIGHT, savePreset, setAlias, setTheme, slotsOf, slotsWord } from "../shared/endgame/rewrite";
 import { createAccount, sandboxAccount } from "../shared/progression/account";
 import { itemById } from "../shared/manifest/items";
 import { DAY_MS } from "../shared/endgame/clock";
@@ -155,6 +155,20 @@ describe("the Deep Wake", () => {
     expect(st.history.some((l) => /SEASON 100 CLOSED/.test(l))).toBe(true);
     expect(st.districts["lease_row"]!["B"]!.house).not.toBe("unaligned");
     expect(rollSeason(st, now + 28 * DAY_MS)).toBe(false);
+  });
+});
+
+describe("the FILE shop counts slots", () => {
+  it("one slot is SLOT, not SLOTS", () => {
+    expect(slotsWord(1)).toBe("1 SLOT");
+    expect(slotsWord(2)).toBe("2 SLOTS");
+    expect(slotsWord(0)).toBe("0 SLOTS");
+    expect(slotsWord(1)).not.toBe("1 SLOTS");
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/PRESETS · \$\{slotsWord\(slots\.presets\)\}/);
+    expect(src).toMatch(/ALIASES · \$\{slotsWord\(slots\.aliases\)\}/);
+    expect(src).not.toMatch(/slots\.presets\} SLOTS/);
+    expect(src).not.toMatch(/slots\.aliases\} SLOTS/);
   });
 });
 

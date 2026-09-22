@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 351 — One shop slot was SLOTS
+
+**Goal.** Stage 347 taught `1 STAMP`. FILE still headed `PRESETS · 1 SLOTS` and
+`ALIASES · 1 SLOTS`. A new file has one of each.
+
+**What changed.** `slotsWord`: `1 SLOT`, `2 SLOTS`. Both headings call it.
+
+**Proof.** `tests/endgame.test.ts`: `slotsWord(1)` is `1 SLOT`. file.ts must
+`slotsWord(slots.presets)` / `slotsWord(slots.aliases)` and must not
+`slots.presets} SLOTS`. Mutation: always SLOTS — 1 fail.
+
 ## Stage 350 — One banked unit was UNITS OWED
 
 **Goal.** Stage 349 taught `OWED 1 UNIT`. Banking still wrote `1 UNITS OWED` on

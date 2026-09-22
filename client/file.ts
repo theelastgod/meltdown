@@ -14,7 +14,7 @@ import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import type { FileMsg } from "@shared/net/protocol";
 import { sandboxAccount, type Account, type GhostRun } from "@shared/progression/account";
 import { publicIdentity } from "@shared/identity/identity";
-import { COSMETICS, canRewrite, slotsOf, cosmeticById } from "@shared/endgame/rewrite";
+import { COSMETICS, canRewrite, slotsOf, slotsWord, cosmeticById } from "@shared/endgame/rewrite";
 import type { ContractView } from "@shared/endgame/contracts";
 import type { AuditDef, AuditEntry } from "@shared/endgame/audits";
 import { CHIPS, chipById, type Socket } from "@shared/manifest/chips";
@@ -652,7 +652,7 @@ export class GhostFile {
     return `<div class="sh">DAILY CONTRACTS · DAY ${eg.day}</div>${contracts}
       <div class="sh">AUDIT · THE WEEK'S PLAYLIST · LEADERBOARD</div>${audit}
       <div class="sh">REWRITE · WAKELIGHT ${a?.wallet.wakelight ?? this.wakelight}◆</div>${rewriteBox}
-      <div class="cols"><div><div class="sh">WAKELIGHT SHOP · THEMES · SLOTS</div>${shop}</div><div><div class="sh">PRESETS · ${slots.presets} SLOTS</div>${presets}<div class="sh">ALIASES · ${slots.aliases} SLOTS</div>${aliases}</div></div>`;
+      <div class="cols"><div><div class="sh">WAKELIGHT SHOP · THEMES · SLOTS</div>${shop}</div><div><div class="sh">PRESETS · ${slotsWord(slots.presets)}</div>${presets}<div class="sh">ALIASES · ${slotsWord(slots.aliases)}</div>${aliases}</div></div>`;
   }
 
   /** the theme the file wears (palette for the HUD) */

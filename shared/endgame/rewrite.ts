@@ -72,6 +72,11 @@ export function rewrite(a: Account): { ok: boolean; reason?: string; wakelight?:
  * `alias_4` and `preset_6` — one past the top of the shop, and the only way to reach either. An id
  * that says it is the fourth slot has to mean the file has four.
  */
+/** One slot is SLOT, not SLOTS. */
+export function slotsWord(n: number): string {
+  return `${n} SLOT${n === 1 ? "" : "S"}`;
+}
+
 export function slotsOf(a: Account): { aliases: number; presets: number } {
   const owned = a.cosmetics ?? [];
   const top = (kind: string) => Math.max(1, ...owned.filter((id) => id.startsWith(`${kind}_`)).map((id) => Number(id.slice(kind.length + 1))).filter(Number.isFinite));

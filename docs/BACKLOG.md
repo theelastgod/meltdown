@@ -390,3 +390,5 @@ one stage.
   → Stage 349
 - One banked unit was UNITS OWED  
   → Stage 350
+- One shop slot was SLOTS  
+  → Stage 351
