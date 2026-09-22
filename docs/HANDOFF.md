@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 366, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 367, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 366 on this branch (closed name registry is CRT) |
-| Next stage number | **367** |
+| HEAD | Stage 367 on this branch (name-fee how-to is CRT) |
+| Next stage number | **368** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1136 across 117 files, `npm test` |
+| Unit tests | 1137 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,9 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 367 is next
+## 6. Stage 368 is next
 
-Stage 366 CRT-cased the closed name registry. Do not loosen fairness. Do not plate
+Stage 367 CRT-cased the name-fee how-to. Do not loosen fairness. Do not plate
 viewmodel or remote strips. The join line still prints the socket name —
 `probe:net` asserts `probe-join-31`; leave it.
 

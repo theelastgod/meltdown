@@ -422,3 +422,5 @@ one stage.
   → Stage 365
 - A closed name registry said the registry opens at Depth  
   → Stage 366
+- A name fee said by length, burned  
+  → Stage 367

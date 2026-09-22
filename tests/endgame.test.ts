@@ -225,6 +225,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/the registry opens at Depth \$\{NAME_DEPTH\}/);
   });
 
+  it("a name fee is $CAPITAL BY LENGTH, BURNED, not by length, burned", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/\$CAPITAL BY LENGTH, BURNED/);
+    expect(src).not.toMatch(/\$CAPITAL by length, burned/);
+  });
+
   it("a waiting counter is FETCHING THE CHAIN CLIENT, not fetching the chain client", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/COUNTER-LEDGER \/\/ FETCHING THE CHAIN CLIENT…/);

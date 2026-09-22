@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 367 — A name fee said by length, burned
+
+**Goal.** Stage 366 taught `THE REGISTRY OPENS AT DEPTH`. Writing a name
+still dimmed `$CAPITAL by length, burned`.
+
+**What changed.** `$CAPITAL BY LENGTH, BURNED`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `$CAPITAL BY LENGTH, BURNED`
+and must not `$CAPITAL by length, burned`. Mutation: lowercase again — 1 fail.
+`npm test` 1137/1137.
+
 ## Stage 366 — A closed name registry said the registry opens at Depth
 
 **Goal.** Stage 365 taught `WRITTEN WHERE THEY CAN'T REDACT IT`. A linked
