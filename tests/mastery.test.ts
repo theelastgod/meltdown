@@ -173,6 +173,13 @@ describe("chips and firmwares", () => {
     expect(unknownGunKick.detail).not.toBe("unknown weapon not_a_gun");
     expect(src).toMatch(/chip-weapon", detail: `UNKNOWN WEAPON \$\{wid\}`/);
     expect(src).not.toMatch(/chip-weapon", detail: `unknown weapon \$\{wid\}`/);
+    const unknownFwGun = validateLoadout({ ...DEFAULT_LOADOUT, firmware: { also_bad: "y" } }, owned, 50, ranks);
+    expect(unknownFwGun.errors.map((e) => e.rule)).toContain("firmware-weapon");
+    const unknownFwKick = unknownFwGun.errors.find((e) => e.rule === "firmware-weapon" && /weapon/i.test(e.detail))!;
+    expect(unknownFwKick.detail).toBe("UNKNOWN WEAPON also_bad");
+    expect(unknownFwKick.detail).not.toBe("unknown weapon also_bad");
+    expect(src).toMatch(/firmware-weapon", detail: `UNKNOWN WEAPON \$\{wid\}`/);
+    expect(src).not.toMatch(/firmware-weapon", detail: `unknown weapon \$\{wid\}`/);
   });
   it("a chip's mods apply only while its weapon is held; a firmware patches the definition the sim runs", () => {
     const world = new World(drainageYard(), { ai: false, seed: 1 });

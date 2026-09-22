@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 465 — An unknown firmware gun said unknown weapon
+
+**Goal.** Stage 463 taught chip `UNKNOWN WEAPON`. A firmware map keyed
+on `also_bad` still kicked `unknown weapon also_bad`.
+
+**What changed.** `UNKNOWN WEAPON ${id}` on the firmware-weapon kick.
+
+**Proof.** Measured kick was mixed-case. After the fix:
+`UNKNOWN WEAPON also_bad`. `tests/mastery.test.ts` asserts that
+sentence and that loadout.ts must the CRT template and must not the
+mixed-case template. Mutation: mixed case again — 1 fail.
+
 ## Stage 464 — Four Imagine plates sat on disk uncatalogued
 
 **Goal.** Stage 422 catalogued skins 21–24. Four new Imagine plates

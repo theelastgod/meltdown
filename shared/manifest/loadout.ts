@@ -148,7 +148,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
       for (const [wid, id] of Object.entries(lo.firmware as Record<string, unknown>)) {
         if (id === null || id === undefined) continue;
         if (!(wid in WEAPONS)) {
-          errors.push({ rule: "firmware-weapon", detail: `unknown weapon ${wid}` });
+          errors.push({ rule: "firmware-weapon", detail: `UNKNOWN WEAPON ${wid}` });
           continue;
         }
         if (typeof id !== "string") {

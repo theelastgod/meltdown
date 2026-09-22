@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- A firmware map keyed on an unknown weapon still kicks mixed-case `unknown weapon`
+  → Stage 465
 - Four Imagine plates sat on disk uncatalogued (repo chevron, longwave filament, phage vein, clock gear)
   → Stage 464
 - A chip map keyed on an unknown weapon still kicks mixed-case `unknown weapon`
