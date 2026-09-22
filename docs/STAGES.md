@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 442 — A campaign gun said unlocks in the campaign
+
+**Goal.** Stage 441 taught loadout `NEEDS DEPTH`. Spawning THE DIRECTIVE
+without the unlock still kicked `THE DIRECTIVE unlocks in the campaign`.
+
+**What changed.** `UNLOCKS IN THE CAMPAIGN`.
+
+**Proof.** `tests/campaign.test.ts`: the kick is `THE DIRECTIVE UNLOCKS IN THE
+CAMPAIGN`. loadout.ts must `${gun(w)} UNLOCKS IN THE CAMPAIGN` and must not
+`${gun(w)} unlocks in the campaign`. Mutation: mixed case again — 1 fail.
+
 ## Stage 441 — A Depth-gated gun said needs Depth
 
 **Goal.** Stage 430 taught buyNode `NEEDS DEPTH`. Spawning PHAGE LAUNCHER too

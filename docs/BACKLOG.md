@@ -572,3 +572,5 @@ one stage.
   → Stage 440
 - A Depth-gated gun said needs Depth  
   → Stage 441
+- A campaign gun said unlocks in the campaign  
+  → Stage 442

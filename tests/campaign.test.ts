@@ -403,12 +403,13 @@ describe("the PvP wall", () => {
     expect(validateLoadout({ primary: "lease_breaker", secondary: "shock_baton", attested: [], protocols: ["x"] }, [], 50).errors.some((e) => e.rule === "unknown-field")).toBe(true);
     const locked = validateLoadout({ primary: "directive", secondary: "shock_baton", attested: [] }, [], 50);
     expect(locked.errors.some((e) => e.rule === "weapon-locked")).toBe(true);
-    expect(locked.errors.find((e) => e.rule === "weapon-locked")!.detail).toBe("THE DIRECTIVE unlocks in the campaign");
+    expect(locked.errors.find((e) => e.rule === "weapon-locked")!.detail).toBe("THE DIRECTIVE UNLOCKS IN THE CAMPAIGN");
     expect(locked.errors.find((e) => e.rule === "weapon-locked")!.detail).not.toMatch(/directive unlocks/);
     expect(validateLoadout({ primary: "directive", secondary: "clockeater", attested: [] }, ["weapon:directive", "weapon:clockeater"], 50).ok).toBe(true);
     expect(validateLoadout({ primary: "directive", secondary: "clockeater", attested: [] }, sandboxAccount("s").owned, 50).ok).toBe(true);
     const src = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
-    expect(src).toMatch(/\$\{gun\(w\)\} unlocks in the campaign/);
+    expect(src).toMatch(/\$\{gun\(w\)\} UNLOCKS IN THE CAMPAIGN/);
+    expect(src).not.toMatch(/\$\{gun\(w\)\} unlocks in the campaign/);
     expect(src).toMatch(/\$\{gun\(w\)\} NEEDS DEPTH/);
     expect(src).not.toMatch(/\$\{w\} unlocks in the campaign/);
     expect(src).toMatch(/\$\{itemName\(id\)\} is not in your file/);

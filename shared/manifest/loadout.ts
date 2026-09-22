@@ -65,7 +65,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
   if (!primary) errors.push({ rule: "weapon", detail: `unknown primary ${String(lo.primary)}` });
   if (!secondary) errors.push({ rule: "weapon", detail: `unknown secondary ${String(lo.secondary)}` });
   for (const w of [primary, secondary]) if (w && WEAPON_DEPTH[w] > depth) errors.push({ rule: "weapon-depth", detail: `${gun(w)} NEEDS DEPTH ${WEAPON_DEPTH[w]} (YOU ARE ${depth})` });
-  for (const w of [primary, secondary]) if (w && CAMPAIGN_WEAPONS.includes(w) && !owned.includes(`weapon:${w}`)) errors.push({ rule: "weapon-locked", detail: `${gun(w)} unlocks in the campaign` });
+  for (const w of [primary, secondary]) if (w && CAMPAIGN_WEAPONS.includes(w) && !owned.includes(`weapon:${w}`)) errors.push({ rule: "weapon-locked", detail: `${gun(w)} UNLOCKS IN THE CAMPAIGN` });
   const attested = Array.isArray(lo.attested) ? lo.attested.filter((x): x is string => typeof x === "string") : [];
   if (!Array.isArray(lo.attested) && lo.attested !== undefined) errors.push({ rule: "attested-shape", detail: "attested must be a list of node ids" });
   if (attested.length > MAX_ATTESTED) errors.push({ rule: "attest-limit", detail: `${attested.length} attested, max ${MAX_ATTESTED}` });
