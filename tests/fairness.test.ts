@@ -35,6 +35,8 @@ describe("loadout legality (validated server-side at spawn)", () => {
   it("rejects more than 7, unowned, disconnected, unknown fields, and depth-gated weapons", () => {
     const eight = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "curb_weight", "contagion_rider", "long_lease", "quiet_ledger", "night_fare", "spite_clause"], keystone: null }, owned, 10);
     expect(eight.errors.map((e) => e.rule)).toContain("attest-limit");
+    expect(eight.errors.find((e) => e.rule === "attest-limit")!.detail).toBe("8 ATTESTED, MAX 7");
+    expect(eight.errors.find((e) => e.rule === "attest-limit")!.detail).not.toBe("8 attested, max 7");
     const unowned = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["long_lease"], keystone: null }, [], 10);
     expect(unowned.errors.map((e) => e.rule)).toContain("not-owned");
     expect(unowned.errors.find((e) => e.rule === "not-owned")!.detail).toBe("LONG LEASE IS NOT IN YOUR FILE");
@@ -45,6 +47,8 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(connKick.detail).toBe("attestation is not a connected subgraph (1 of 2 reachable from SLIPFILE)");
     expect(connKick.detail).not.toMatch(/from slipfile/);
     const src = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/\$\{attested\.length\} ATTESTED, MAX \$\{MAX_ATTESTED\}/);
+    expect(src).not.toMatch(/\$\{attested\.length\} attested, max \$\{MAX_ATTESTED\}/);
     expect(src).toMatch(/reachable from \$\{itemName\(start\)\}/);
     expect(src).not.toMatch(/reachable from \$\{start\}/);
     const smuggled = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: null, protocols: ["kp_filament_01"] }, owned, 10);

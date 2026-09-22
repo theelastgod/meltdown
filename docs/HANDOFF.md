@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 451, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 452, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 451 on this branch (ATTESTED MUST BE A LIST OF NODE IDS) |
-| Next stage number | **452** |
+| HEAD | Stage 452 on this branch (N ATTESTED, MAX M) |
+| Next stage number | **453** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 452 is next
+## 6. Stage 453 is next
 
-Stage 451 CRT-cased `ATTESTED MUST BE A LIST OF NODE IDS`. Do not loosen
-fairness. Do not plate viewmodel or remote strips. The join line still
-prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 452 CRT-cased `N ATTESTED, MAX M`. The same node twice still kicks
+`attested twice`. Do not loosen fairness. Do not plate viewmodel or remote
+strips. The join line still prints the socket name — `probe:net` asserts
+`probe-join-31`; leave it.
 
 ---
 

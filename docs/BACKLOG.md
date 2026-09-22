@@ -592,3 +592,5 @@ one stage.
   → Stage 450
 - A malformed attested list said must be a list of node ids  
   → Stage 451
+- Eight attested said attested, max  
+  → Stage 452

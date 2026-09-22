@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 452 — Eight attested said attested, max
+
+**Goal.** Stage 451 taught `ATTESTED MUST BE A LIST OF NODE IDS`. Attesting
+eight nodes still kicked `8 attested, max 7`.
+
+**What changed.** `N ATTESTED, MAX M`.
+
+**Proof.** `tests/fairness.test.ts`: the kick is `8 ATTESTED, MAX 7`.
+loadout.ts must `${attested.length} ATTESTED, MAX ${MAX_ATTESTED}` and must
+not the mixed-case template. Mutation: mixed case again — 1 fail.
+
 ## Stage 451 — A malformed attested list said must be a list of node ids
 
 **Goal.** Stage 450 taught `SOCKETS MUST BE AN OBJECT`. Attested that is not

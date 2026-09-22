@@ -68,7 +68,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
   for (const w of [primary, secondary]) if (w && CAMPAIGN_WEAPONS.includes(w) && !owned.includes(`weapon:${w}`)) errors.push({ rule: "weapon-locked", detail: `${gun(w)} UNLOCKS IN THE CAMPAIGN` });
   const attested = Array.isArray(lo.attested) ? lo.attested.filter((x): x is string => typeof x === "string") : [];
   if (!Array.isArray(lo.attested) && lo.attested !== undefined) errors.push({ rule: "attested-shape", detail: "ATTESTED MUST BE A LIST OF NODE IDS" });
-  if (attested.length > MAX_ATTESTED) errors.push({ rule: "attest-limit", detail: `${attested.length} attested, max ${MAX_ATTESTED}` });
+  if (attested.length > MAX_ATTESTED) errors.push({ rule: "attest-limit", detail: `${attested.length} ATTESTED, MAX ${MAX_ATTESTED}` });
   const seen = new Set<string>();
   for (const id of attested) {
     if (seen.has(id)) errors.push({ rule: "duplicate", detail: `${itemName(id)} attested twice` });
