@@ -639,7 +639,7 @@ export class GhostFile {
     const board = eg.board.slice(0, 10).map((e, i) => `<div class="${e.account === me ? "me" : ""}"><span>${String(i + 1).padStart(2, "0")} ${e.display}</span><span>${e.score}</span></div>`).join("") || "<div class='dim'>NO SCORES YET THIS WEEK</div>";
     const myAudit = a?.audits && au && a.audits.week === au.week ? `BEST ${a.audits.best} · ${a.audits.played} PLAYED` : "NOT PLAYED YET";
     const audit = au ? `<div class="ln"><b>${au.name}</b> · WEEK ${au.week} · ${au.line}${au.weapons.length ? ` · <span class="dim">${au.weapons.map(weaponName).join(", ")}</span>` : ""} · <span class="btn" data-act="joinAudit">[JOIN THE AUDIT]</span> <span class="dim">${myAudit}</span></div><div class="board">${board}</div>` : "<div class='dim'>LOADING…</div>";
-    const rw = a ? canRewrite(a) : { ok: false, reason: "no file" };
+    const rw = a ? canRewrite(a) : { ok: false, reason: "NO FILE" };
     const rewriteBox = `<div class="rew">REWRITE · ${a?.rewrites ?? 0} SO FAR · ${rw.ok ? `<span class="btn" data-act="rewrite">[BURN THE FILE — KEEP THE STAMPS AND THE GLYPH'S AGE — +500 WAKELIGHT]</span>` : `<span class="dim">${rw.reason}</span>`}</div>`;
     const slots = a ? slotsOf(a) : { aliases: 1, presets: 1 };
     const owned = a?.cosmetics ?? [];

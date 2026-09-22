@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 399 — Rewrite without a file said no file
+
+**Goal.** Stage 395 taught `NOT IN YOUR FILE`. Opening Rewrite with no account still
+dimmed `no file`.
+
+**What changed.** `NO FILE`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `reason: "NO FILE"` and must not
+`reason: "no file"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 398 — Mastery progress said xp
 
 **Goal.** Stage 397 taught moniker `— NONE —`. Unmastered kit still dimmed

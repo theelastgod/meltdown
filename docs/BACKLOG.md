@@ -486,3 +486,5 @@ one stage.
   → Stage 397
 - Mastery progress said xp  
   → Stage 398
+- Rewrite without a file said no file  
+  → Stage 399

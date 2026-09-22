@@ -239,6 +239,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/Robinhood Wallet · WalletConnect · injected/);
   });
 
+  it("rewrite without a file is NO FILE, not no file", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "NO FILE"/);
+    expect(src).not.toMatch(/reason: "no file"/);
+  });
+
   it("a gated node is NEEDS DEPTH, not needs Depth", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/NEEDS DEPTH \$\{/);
