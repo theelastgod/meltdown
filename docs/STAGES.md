@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 346 — One unit dropped was UNITS
+
+**Goal.** Stage 345 taught `1 CLAIM OUT`. Dying with one unit still logged
+`◈ 1 UNITS DROPPED WHERE YOU FELL`.
+
+**What changed.** `1 UNIT DROPPED`, `5 UNITS DROPPED`.
+
+**Proof.** `tests/runcue.test.ts`: drop of 1 is `◈ 1 UNIT DROPPED WHERE YOU FELL`. Source
+must not `${m.value} UNITS DROPPED`. Mutation: always UNITS — 1 fail.
+
 ## Stage 345 — One claim was CLAIMS OUT
 
 **Goal.** Stage 340 taught `1 PULL`. THE RUN strip still said `1 CLAIMS OUT`.

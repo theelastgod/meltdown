@@ -31,6 +31,11 @@ describe("momentLine", () => {
     expect(momentLine({ kind: "bank", value: 5, banked: 6 }, "EAST GATE")).toBe("BANKED 5 ◈ AT EAST GATE");
     expect(momentLine({ kind: "bank", value: 5, banked: 6 }, null)).toBe("BANKED 5 ◈ AT THE GATE");
     expect(momentLine({ kind: "drop", value: 5 }, null)).toBe("◈ 5 UNITS DROPPED WHERE YOU FELL");
+    expect(momentLine({ kind: "drop", value: 1 }, null)).toBe("◈ 1 UNIT DROPPED WHERE YOU FELL");
+    expect(momentLine({ kind: "drop", value: 1 }, null)).not.toBe("◈ 1 UNITS DROPPED WHERE YOU FELL");
+    const src = readFileSync(new URL("../client/runcue.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/UNIT\$\{m\.value === 1 \? "" : "S"\} DROPPED/);
+    expect(src).not.toMatch(/\$\{m\.value\} UNITS DROPPED/);
   });
 });
 

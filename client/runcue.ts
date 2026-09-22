@@ -42,7 +42,7 @@ export function momentLine(m: RunMoment, zone: string | null): string {
     case "bank":
       return `BANKED ${m.value} ◈ AT ${zone ?? "THE GATE"}`;
     case "drop":
-      return `◈ ${m.value} UNITS DROPPED WHERE YOU FELL`;
+      return `◈ ${m.value} UNIT${m.value === 1 ? "" : "S"} DROPPED WHERE YOU FELL`;
   }
 }
 
