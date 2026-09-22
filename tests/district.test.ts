@@ -94,4 +94,9 @@ describe("the main menu CRT-cases its lines", () => {
     expect(src).toMatch(/id: "campaign", label: "CAMPAIGN", line: "THE DESK AT THE DEADLETTER OFFICE: FIXERS, GIGS, THE SEVEN-MISSION ARC"/);
     expect(src).not.toMatch(/id: "campaign", label: "CAMPAIGN", line: "the desk at the Deadletter Office:/);
   });
+  it("THE OFFICE's subtitle is the hub in CRT", () => {
+    const src = readFileSync(new URL("../client/menu.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/id: "office", label: "THE OFFICE", line: "THE HUB: YOUR FILE ON THE WALL, THE RANGE GHOSTS, THE DOSSIER"/);
+    expect(src).not.toMatch(/id: "office", label: "THE OFFICE", line: "the hub:/);
+  });
 });

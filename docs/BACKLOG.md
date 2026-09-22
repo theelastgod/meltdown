@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- THE OFFICE's menu subtitle still says mixed-case `the hub`
+  → Stage 476
 - CAMPAIGN's menu subtitle still says mixed-case `the desk at the Deadletter Office`
   → Stage 475
 - THE RUN's menu subtitle still says mixed-case `play to earn`

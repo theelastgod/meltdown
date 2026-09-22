@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 476 — THE OFFICE's subtitle said the hub
+
+**Goal.** Stage 475 taught CAMPAIGN's subtitle. THE OFFICE's row still
+printed mixed-case `the hub: your file on the wall, the range ghosts,
+the dossier`.
+
+**What changed.** `THE HUB: YOUR FILE ON THE WALL, THE RANGE GHOSTS,
+THE DOSSIER`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the source. `tests/district.test.ts` asserts that sentence and that
+menu.ts must not the mixed-case template. Mutation: mixed case again —
+1 fail.
+
 ## Stage 475 — CAMPAIGN's subtitle said the desk
 
 **Goal.** Stage 474 taught THE RUN's subtitle. CAMPAIGN's row still
