@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- OVERCHARGE's FILE line still says mixed-case `+8% charge time, +8% damage`
+  → Stage 531
 - CAPACITOR's FILE line still says mixed-case `−15% charge time, −7% damage`
   → Stage 530
 - MEASURED's FILE line still says mixed-case `−22% rate, +22% damage`

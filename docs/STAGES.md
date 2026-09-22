@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 531 — OVERCHARGE's FILE line said +8% charge time
+
+**Goal.** Stage 530 taught CAPACITOR. OVERCHARGE still said mixed-case
+`+8% charge time, +8% damage`.
+
+**What changed.** `+8% CHARGE TIME, +8% DAMAGE`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/firmware.test.ts` asserts that sentence and
+that firmwares.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 530 — CAPACITOR's FILE line said −15% charge time
 
 **Goal.** Stage 529 taught MEASURED. CAPACITOR still said mixed-case

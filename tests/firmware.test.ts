@@ -166,6 +166,15 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(src).not.toMatch(/line: "−15% charge time, −7% damage"/);
   });
 
+  it("OVERCHARGE's FILE line is CRT, not +8% charge time", () => {
+    const src = readFileSync(new URL("../shared/manifest/firmwares.ts", import.meta.url), "utf8");
+    const line = FIRMWARES.find((f) => f.id === "longwave:overcharge")!.line;
+    expect(line).toBe("+8% CHARGE TIME, +8% DAMAGE");
+    expect(line).not.toBe("+8% charge time, +8% damage");
+    expect(src).toMatch(/id: "longwave:overcharge".*line: "\+8% CHARGE TIME, \+8% DAMAGE"/s);
+    expect(src).not.toMatch(/line: "\+8% charge time, \+8% damage"/);
+  });
+
   it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
     const pct = (from: number, to: number) => ((to - from) / from) * 100;
     for (const f of FIRMWARES) {
