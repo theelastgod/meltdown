@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 404 — Listing a rig token said List for how much
+
+**Goal.** Stage 403 taught firmware `· R`. Selling a rig token still prompted
+`List for how much $CAPITAL?`.
+
+**What changed.** `LIST FOR HOW MUCH $CAPITAL?`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT prompt and must not
+the sentence-case prompt. Mutation: mixed case again — 1 fail.
+
 ## Stage 403 — A firmware option said r
 
 **Goal.** Stage 402 taught chip `· R`. A firmware still tagged `· r5` on

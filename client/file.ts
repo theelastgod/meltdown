@@ -541,7 +541,7 @@ export class GhostFile {
       else if (act === "prizes") this.withCounter((c) => c.op("prizes"));
       else if (act === "claimPrize") this.withCounter((c) => c.op("claimPrize", { epoch: Number(id) }));
       else if (act === "sell") {
-        const price = Number(window.prompt("List for how much $CAPITAL?", "50") ?? 0);
+        const price = Number(window.prompt("LIST FOR HOW MUCH $CAPITAL?", "50") ?? 0);
         if (price > 0) this.withCounter((c) => c.sell(Number(id), price));
       }
       else if (act === "attestStamps") this.withCounter((c) => c.op("stamps"));

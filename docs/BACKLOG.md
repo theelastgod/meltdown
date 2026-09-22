@@ -496,3 +496,5 @@ one stage.
   → Stage 402
 - A firmware option said r  
   → Stage 403
+- Listing a rig token said List for how much  
+  → Stage 404

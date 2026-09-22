@@ -359,6 +359,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/\} · r\$\{f\.rank\}/);
   });
 
+  it("listing a rig token is LIST FOR HOW MUCH, not List for how much", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/window\.prompt\("LIST FOR HOW MUCH \$CAPITAL\?"/);
+    expect(src).not.toMatch(/window\.prompt\("List for how much \$CAPITAL\?"/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);
