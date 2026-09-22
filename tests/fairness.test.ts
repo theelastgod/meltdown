@@ -59,8 +59,10 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(loadoutSrc).not.toMatch(/needs Depth \$\{WEAPON_DEPTH\[w\]\} \(you are \$\{depth\}\)/);
     const asNode = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["debtless"], keystone: null }, owned, 10);
     expect(asNode.errors.map((e) => e.rule)).toContain("not-a-node");
-    expect(asNode.errors.find((e) => e.rule === "not-a-node")!.detail).toBe("DEBTLESS is a KEYSTONE");
-    expect(asNode.errors.find((e) => e.rule === "not-a-node")!.detail).not.toBe("DEBTLESS is a keystone");
+    expect(asNode.errors.find((e) => e.rule === "not-a-node")!.detail).toBe("DEBTLESS IS A KEYSTONE");
+    expect(asNode.errors.find((e) => e.rule === "not-a-node")!.detail).not.toBe("DEBTLESS is a KEYSTONE");
+    expect(loadoutSrc).toMatch(/\$\{itemName\(id\)\} IS A \$\{it\.kind\.toUpperCase\(\)\}/);
+    expect(loadoutSrc).not.toMatch(/\$\{itemName\(id\)\} is a \$\{it\.kind\.toUpperCase\(\)\}/);
     const two = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: ["debtless", "bad_debt"] }, owned, 10);
     expect(two.errors.map((e) => e.rule)).toContain("keystone-limit");
     expect(two.errors.find((e) => e.rule === "keystone-limit")!.detail).toBe("max 1 KEYSTONE");

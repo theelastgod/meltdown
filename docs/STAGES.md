@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 449 — Attesting a keystone said is a KEYSTONE
+
+**Goal.** Stage 448 taught firmware `IS A … FIRMWARE`. Attesting DEBTLESS
+as a node still kicked `DEBTLESS is a KEYSTONE`.
+
+**What changed.** `IS A ${kind}`.
+
+**Proof.** `tests/fairness.test.ts`: the kick is `DEBTLESS IS A KEYSTONE`.
+loadout.ts must `${itemName(id)} IS A ${it.kind.toUpperCase()}` and must not
+the mixed-case template. Mutation: mixed case again — 1 fail.
+
 ## Stage 448 — A wrong-weapon firmware said is a firmware
 
 **Goal.** Stage 447 taught chip-socket `IS A … CHIP, NOT`. Flashing DUMP

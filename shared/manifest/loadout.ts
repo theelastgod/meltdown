@@ -75,7 +75,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
     seen.add(id);
     const it = itemById(id);
     if (!it) errors.push({ rule: "unknown-node", detail: id });
-    else if (it.kind !== "node") errors.push({ rule: "not-a-node", detail: `${itemName(id)} is a ${it.kind.toUpperCase()}` });
+    else if (it.kind !== "node") errors.push({ rule: "not-a-node", detail: `${itemName(id)} IS A ${it.kind.toUpperCase()}` });
     else if (!owned.includes(id)) errors.push({ rule: "not-owned", detail: `${itemName(id)} IS NOT IN YOUR FILE` });
   }
   // connectivity over the attested subgraph

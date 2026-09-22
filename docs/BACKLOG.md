@@ -586,3 +586,5 @@ one stage.
   → Stage 447
 - A wrong-weapon firmware said is a firmware  
   → Stage 448
+- Attesting a keystone said is a KEYSTONE  
+  → Stage 449
