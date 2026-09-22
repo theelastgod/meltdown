@@ -86,6 +86,12 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(ksShape.errors.find((e) => e.rule === "keystone-shape")!.detail).not.toBe("KEYSTONE must be an id");
     expect(src).toMatch(/keystone-shape", detail: "KEYSTONE MUST BE AN ID"/);
     expect(src).not.toMatch(/keystone-shape", detail: "KEYSTONE must be an id"/);
+    const ksUnknown = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: "not_a_stone" }, owned, 10);
+    expect(ksUnknown.errors.map((e) => e.rule)).toContain("unknown-keystone");
+    expect(ksUnknown.errors.find((e) => e.rule === "unknown-keystone")!.detail).toBe("UNKNOWN KEYSTONE not_a_stone");
+    expect(ksUnknown.errors.find((e) => e.rule === "unknown-keystone")!.detail).not.toBe("not_a_stone");
+    expect(src).toMatch(/unknown-keystone", detail: `UNKNOWN KEYSTONE \$\{lo\.keystone\}`/);
+    expect(src).not.toMatch(/unknown-keystone", detail: lo\.keystone \}/);
     const ksLinked = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["wake_lung"], keystone: "debtless" }, owned, 10);
     expect(ksLinked.errors.map((e) => e.rule)).toContain("keystone-linked");
     expect(ksLinked.errors.find((e) => e.rule === "keystone-linked")!.detail).toBe("DEBTLESS MUST TOUCH AN ATTESTED NODE (SLIPFILE, QUIET LEDGER)");

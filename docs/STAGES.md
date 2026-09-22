@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 468 — An unknown keystone said only the raw id
+
+**Goal.** Stage 467 taught `UNKNOWN FIRMWARE`. A keystone of
+`not_a_stone` still kicked the raw id `not_a_stone`.
+
+**What changed.** `UNKNOWN KEYSTONE ${id}`.
+
+**Proof.** Measured kick was the bare id. After the fix:
+`UNKNOWN KEYSTONE not_a_stone`. `tests/fairness.test.ts` asserts that
+sentence and that loadout.ts must the CRT template and must not
+`detail: lo.keystone`. Mutation: raw id again — 1 fail.
+
 ## Stage 467 — An unknown firmware said only the raw id
 
 **Goal.** Stage 466 taught `UNKNOWN CHIP`. A firmware id of `nope`
