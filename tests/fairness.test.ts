@@ -92,6 +92,12 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(ksLinked.errors.find((e) => e.rule === "keystone-linked")!.detail).not.toBe("DEBTLESS must touch an attested node (SLIPFILE, QUIET LEDGER)");
     expect(src).toMatch(/\$\{itemName\(k\.id\)\} MUST TOUCH AN ATTESTED NODE/);
     expect(src).not.toMatch(/\$\{itemName\(k\.id\)\} must touch an attested node/);
+    const badPrimary = validateLoadout({ primary: "not_a_gun", secondary: "stack_smg", attested: [], keystone: null }, owned, 10);
+    expect(badPrimary.errors.map((e) => e.rule)).toContain("weapon");
+    expect(badPrimary.errors.find((e) => e.rule === "weapon")!.detail).toBe("UNKNOWN PRIMARY not_a_gun");
+    expect(badPrimary.errors.find((e) => e.rule === "weapon")!.detail).not.toBe("unknown primary not_a_gun");
+    expect(src).toMatch(/UNKNOWN PRIMARY \$\{String\(lo\.primary\)\}/);
+    expect(src).not.toMatch(/unknown primary \$\{String\(lo\.primary\)\}/);
   });
   it("every legal build reconciles: NET DELTA 0 on the Auditor's ledger within tolerance", () => {
     const lo = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "contagion_rider"], keystone: null }, owned, 10).loadout;

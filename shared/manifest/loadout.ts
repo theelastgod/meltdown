@@ -62,7 +62,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
   const primary = typeof lo.primary === "string" && lo.primary in WEAPONS ? (lo.primary as WeaponId) : null;
   const secondary = typeof lo.secondary === "string" && lo.secondary in WEAPONS ? (lo.secondary as WeaponId) : null;
   const gun = (id: WeaponId) => WEAPONS[id]?.name ?? id;
-  if (!primary) errors.push({ rule: "weapon", detail: `unknown primary ${String(lo.primary)}` });
+  if (!primary) errors.push({ rule: "weapon", detail: `UNKNOWN PRIMARY ${String(lo.primary)}` });
   if (!secondary) errors.push({ rule: "weapon", detail: `unknown secondary ${String(lo.secondary)}` });
   for (const w of [primary, secondary]) if (w && WEAPON_DEPTH[w] > depth) errors.push({ rule: "weapon-depth", detail: `${gun(w)} NEEDS DEPTH ${WEAPON_DEPTH[w]} (YOU ARE ${depth})` });
   for (const w of [primary, secondary]) if (w && CAMPAIGN_WEAPONS.includes(w) && !owned.includes(`weapon:${w}`)) errors.push({ rule: "weapon-locked", detail: `${gun(w)} UNLOCKS IN THE CAMPAIGN` });

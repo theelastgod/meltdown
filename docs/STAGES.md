@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 461 — An unknown primary said unknown primary
+
+**Goal.** Stage 460 taught `MUST TOUCH AN ATTESTED NODE`. A loadout
+whose primary is `not_a_gun` still kicked `unknown primary not_a_gun`.
+
+**What changed.** `UNKNOWN PRIMARY ${id}`.
+
+**Proof.** Measured kick was mixed-case. After the fix:
+`UNKNOWN PRIMARY not_a_gun`. `tests/fairness.test.ts` asserts that
+sentence and that loadout.ts must the CRT template and must not the
+mixed-case template. Mutation: mixed case again — 1 fail.
+
 ## Stage 460 — A keystone that misses the attestation said must touch
 
 **Goal.** Stage 455 taught `KEYSTONE MUST BE AN ID`. DEBTLESS attested

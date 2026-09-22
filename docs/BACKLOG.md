@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- An unknown primary still kicks mixed-case `unknown primary`
+  → Stage 461
 - A keystone that does not touch the attestation still kicks mixed-case `must touch an attested node`
   → Stage 460
 - Respawn silently hands the player back the slot-1 rifle instead of their chosen primary  
