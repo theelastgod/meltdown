@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- ALIAS SLOT II's shop line still says mixed-case `a second saved name the city may call you`
+  → Stage 486
 - BLOODLINE's Wakelight shop line still says mixed-case `Kernel red on black`
   → Stage 485
 - ICE's Wakelight shop line still says mixed-case `Deadletter Docks in January`

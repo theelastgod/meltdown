@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 486 — ALIAS SLOT II's shop line said a second saved name
+
+**Goal.** Stage 485 taught BLOODLINE's shop line. ALIAS SLOT II still
+said mixed-case `a second saved name the city may call you`.
+
+**What changed.** `A SECOND SAVED NAME THE CITY MAY CALL YOU`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/endgame.test.ts` asserts that sentence and
+that rewrite.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 485 — BLOODLINE's shop line said Kernel red on black
 
 **Goal.** Stage 484 taught ICE's shop line. BLOODLINE still said

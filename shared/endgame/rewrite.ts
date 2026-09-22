@@ -27,7 +27,7 @@ export const COSMETICS: readonly CosmeticDef[] = [
   { id: "theme_amber", kind: "theme", name: "AMBER", line: "THE ESTATE'S OWN MONITORS", wakelight: 120, palette: { cy: "#ffd27a", gr: "#ffb02e", mg: "#ff8a3c", ye: "#ffe34a", am: "#ff9a1e" } },
   { id: "theme_ice", kind: "theme", name: "ICE", line: "DEADLETTER DOCKS IN JANUARY", wakelight: 160, palette: { cy: "#bfefff", gr: "#8fd8ff", mg: "#d9b8ff", ye: "#ffffff", am: "#a8c8ff" } },
   { id: "theme_bloodline", kind: "theme", name: "BLOODLINE", line: "KERNEL RED ON BLACK; FOR FILES THAT HAVE TAKEN THE CHAIR", wakelight: 300, palette: { cy: "#ff6b7a", gr: "#ff1e3c", mg: "#ff3ec9", ye: "#ffd6da", am: "#ff5a3c" } },
-  { id: "alias_2", kind: "alias", name: "ALIAS SLOT II", line: "a second saved name the city may call you", wakelight: 90 },
+  { id: "alias_2", kind: "alias", name: "ALIAS SLOT II", line: "A SECOND SAVED NAME THE CITY MAY CALL YOU", wakelight: 90 },
   { id: "alias_3", kind: "alias", name: "ALIAS SLOT III", line: "a third", wakelight: 140 },
   { id: "preset_2", kind: "preset", name: "PRESET SLOT II", line: "a second saved loadout", wakelight: 60 },
   { id: "preset_3", kind: "preset", name: "PRESET SLOT III", line: "a third", wakelight: 90 },
