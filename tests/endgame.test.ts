@@ -207,6 +207,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/class='dim'>no lines yet/);
   });
 
+  it("a waiting counter is FETCHING THE CHAIN CLIENT, not fetching the chain client", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/COUNTER-LEDGER \/\/ FETCHING THE CHAIN CLIENT…/);
+    expect(src).not.toMatch(/fetching the chain client/);
+  });
+
   it("an empty market is NO LISTINGS, not no listings", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/class='dim'>NO LISTINGS/);

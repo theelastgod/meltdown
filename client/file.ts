@@ -589,7 +589,7 @@ export class GhostFile {
   /** COUNTER-LEDGER // $CAPITAL: the wallet link, the Ghostfile, the stamps on chain, the name, the rig and the market. Identity and ownership only. */
   counterHtml(): string {
     const c = this.counter;
-    if (!c) return this.shop ? `<div class="dim">COUNTER-LEDGER // fetching the chain client…</div>` : "";
+    if (!c) return this.shop ? `<div class="dim">COUNTER-LEDGER // FETCHING THE CHAIN CLIENT…</div>` : "";
     const v = this.counterState;
     const info = c.info;
     const wallet = c.address ? `WALLET <b>${c.short()}</b>` : `<span class="btn" data-act="link">[LINK A WALLET]</span> <span class="dim">Robinhood Wallet · WalletConnect · injected</span>`;

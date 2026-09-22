@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 363 — The counter said fetching the chain client
+
+**Goal.** Stage 362 taught treasury `LOADING…`. Waiting for the chain client still
+dimmed `COUNTER-LEDGER // fetching the chain client…`.
+
+**What changed.** `FETCHING THE CHAIN CLIENT…`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `FETCHING THE CHAIN CLIENT…` and must
+not `fetching the chain client`. Mutation: lowercase again — 1 fail.
+
 ## Stage 362 — A missing treasury said loading
 
 **Goal.** Stage 361 taught Audit `LOADING…`. The counter still fell back to
