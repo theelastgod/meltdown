@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 457 — A non-string firmware said must be an id
+
+**Goal.** Stage 456 taught `CHIP MUST BE AN ID`. A numeric firmware still
+kicked `LEASE-BREAKER: firmware must be an id`.
+
+**What changed.** `FIRMWARE MUST BE AN ID`.
+
+**Proof.** `tests/mastery.test.ts`: the kick is
+`LEASE-BREAKER: FIRMWARE MUST BE AN ID`. loadout.ts must the CRT template
+and must not the mixed-case template. Mutation: mixed case again — 1 fail.
+
 ## Stage 456 — A non-string chip said must be an id
 
 **Goal.** Stage 455 taught `KEYSTONE MUST BE AN ID`. A numeric muzzle chip

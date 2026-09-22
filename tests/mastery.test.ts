@@ -150,9 +150,11 @@ describe("chips and firmwares", () => {
     const fwShape = validateLoadout({ ...DEFAULT_LOADOUT, firmware: { lease_breaker: 1 } }, owned, 50, ranks);
     expect(fwShape.errors.map((e) => e.rule)).toContain("firmware-shape");
     const fwShapeKick = fwShape.errors.find((e) => e.rule === "firmware-shape")!;
-    expect(fwShapeKick.detail).toBe("LEASE-BREAKER: firmware must be an id");
+    expect(fwShapeKick.detail).toBe("LEASE-BREAKER: FIRMWARE MUST BE AN ID");
+    expect(fwShapeKick.detail).not.toBe("LEASE-BREAKER: firmware must be an id");
     expect(fwShapeKick.detail).not.toMatch(/^lease_breaker:/);
-    expect(src).toMatch(/firmware-shape", detail: `\$\{gun\(wid as WeaponId\)\}: firmware must be an id`/);
+    expect(src).toMatch(/firmware-shape", detail: `\$\{gun\(wid as WeaponId\)\}: FIRMWARE MUST BE AN ID`/);
+    expect(src).not.toMatch(/firmware-shape", detail: `\$\{gun\(wid as WeaponId\)\}: firmware must be an id`/);
     expect(src).not.toMatch(/firmware-shape", detail: `\$\{wid\}: firmware must be an id`/);
   });
   it("a chip's mods apply only while its weapon is held; a firmware patches the definition the sim runs", () => {

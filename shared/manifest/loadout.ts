@@ -152,7 +152,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
           continue;
         }
         if (typeof id !== "string") {
-          errors.push({ rule: "firmware-shape", detail: `${gun(wid as WeaponId)}: firmware must be an id` });
+          errors.push({ rule: "firmware-shape", detail: `${gun(wid as WeaponId)}: FIRMWARE MUST BE AN ID` });
           continue;
         }
         const f = firmwareById(id);

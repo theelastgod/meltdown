@@ -602,3 +602,5 @@ one stage.
   → Stage 455
 - A non-string chip said must be an id  
   → Stage 456
+- A non-string firmware said must be an id  
+  → Stage 457
