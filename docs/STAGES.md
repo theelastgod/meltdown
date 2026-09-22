@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 307 — The wallet line said local account
+
+**Goal.** Stage 306 CRT-cased `WALLET REFUSED`. A local-key wallet still said
+`WALLET · 0xabc… (local account)`.
+
+**What changed.** `(LOCAL ACCOUNT)`.
+
+**Proof.** `tests/counter.test.ts`: source must `(LOCAL ACCOUNT)` and must not
+`(local account)`. Mutation: lowercase again — 1 fail.
+
 ## Stage 306 — WALLET REFUSED quoted the provider in sentence case
 
 **Goal.** Stage 302 CRT-cased `WEAR · OK`. Refusing a wallet still interpolated the

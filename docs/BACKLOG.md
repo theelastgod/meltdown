@@ -302,3 +302,5 @@ one stage.
   → Stage 305
 - WALLET REFUSED quoted the provider in sentence case  
   → Stage 306
+- The wallet line said local account  
+  → Stage 307

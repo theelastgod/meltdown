@@ -97,7 +97,7 @@ export class CounterClient {
       const acct = privateKeyToAccount(key as Hex);
       this.wallet = createWalletClient({ chain, transport, account: acct });
       this.address = acct.address;
-      this.say(`WALLET · ${this.short()} (local account)`);
+      this.say(`WALLET · ${this.short()} (LOCAL ACCOUNT)`);
       return true;
     }
     const eth = (window as unknown as { ethereum?: Eip1193 }).ethereum;

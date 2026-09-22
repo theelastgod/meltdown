@@ -28,6 +28,12 @@ describe("the counter-ledger FILE line", () => {
     expect(src).not.toMatch(/op\.toUpperCase\(\)\} · ok/);
   });
 
+  it("the local-account tag is CRT", () => {
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/WALLET · \$\{this\.short\(\)\} \(LOCAL ACCOUNT\)/);
+    expect(src).not.toMatch(/\(local account\)/);
+  });
+
   it("WALLET REFUSED CRT-cases the provider's reason", () => {
     expect(crtPhrase("User rejected the request.")).toBe("USER REJECTED THE REQUEST.");
     expect(crtPhrase("User rejected the request.")).not.toBe("User rejected the request.");
