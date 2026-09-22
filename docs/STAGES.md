@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 373 — A private-room invite said give it to whoever you want in
+
+**Goal.** Stage 372 taught the sink how-to. Opening a private room still dimmed
+`give it to whoever you want in; it is the only way in`.
+
+**What changed.** `GIVE IT TO WHOEVER YOU WANT IN; IT IS THE ONLY WAY IN`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not the
+sentence-case line. Mutation: lowercase again — 1 fail.
+`npm test` 1142/1142.
+
 ## Stage 372 — The sink how-to said both burned in full
 
 **Goal.** Stage 371 taught the ENDGAME no-host dim. Linked sinks still dimmed

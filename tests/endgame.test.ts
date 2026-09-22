@@ -257,6 +257,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/both burned in full; a pass is cosmetics/);
   });
 
+  it("a private-room invite is CRT, not give it to whoever you want in", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/GIVE IT TO WHOEVER YOU WANT IN; IT IS THE ONLY WAY IN/);
+    expect(src).not.toMatch(/give it to whoever you want in; it is the only way in/);
+  });
+
   it("a waiting counter is FETCHING THE CHAIN CLIENT, not fetching the chain client", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/COUNTER-LEDGER \/\/ FETCHING THE CHAIN CLIENT…/);

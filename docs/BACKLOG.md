@@ -434,3 +434,5 @@ one stage.
   → Stage 371
 - The sink how-to said both burned in full  
   → Stage 372
+- A private-room invite said give it to whoever you want in  
+  → Stage 373
