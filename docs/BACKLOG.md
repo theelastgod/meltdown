@@ -418,3 +418,5 @@ one stage.
   → Stage 363
 - SIWE how-to was sentence case  
   → Stage 364
+- A written name said written where they can't redact it  
+  → Stage 365

@@ -213,6 +213,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/one SIWE statement; the Ghostfile mints with sponsored gas/);
   });
 
+  it("a written name is WRITTEN WHERE THEY CAN'T REDACT IT, not sentence case", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/WRITTEN WHERE THEY CAN'T REDACT IT/);
+    expect(src).not.toMatch(/written where they can't redact it/);
+  });
+
   it("a waiting counter is FETCHING THE CHAIN CLIENT, not fetching the chain client", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/COUNTER-LEDGER \/\/ FETCHING THE CHAIN CLIENT…/);

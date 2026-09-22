@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 365 — A written name said written where they can't redact it
+
+**Goal.** Stage 364 taught `ONE SIWE STATEMENT; THE GHOSTFILE MINTS WITH
+SPONSORED GAS`. A linked file that already has a name still dimmed
+`written where they can't redact it`.
+
+**What changed.** `WRITTEN WHERE THEY CAN'T REDACT IT`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not the
+sentence-case line. Mutation: lowercase again — 1 fail.
+`npm test` 1135/1135.
+
 ## Stage 364 — SIWE how-to was sentence case
 
 **Goal.** Stage 363 taught `FETCHING THE CHAIN CLIENT…`. Signing the link still
