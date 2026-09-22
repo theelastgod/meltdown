@@ -1,7 +1,7 @@
 /** The round ended with a line (Stage 121): the card for the results phase. */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { deathsWord, killsWord, nextRoundLine, nodeSecondsLine, roundCard, roundWinner } from "../client/hud/round";
+import { deathsWord, killsWord, nextRoundLine, nodeSecondsLine, pullsWord, roundCard, roundWinner } from "../client/hud/round";
 
 const stats = { kills: 3, deaths: 1, flips: 2, nodeSeconds: 41.4 };
 
@@ -45,6 +45,16 @@ describe("roundCard", () => {
   });
   it("never counts below zero", () => {
     expect(roundCard({ phase: "results", timeLeft: -0.3, score: [0, 1, 0], winner: 1 }, 1, "Z", stats)!.lines.at(-1)).toBe("NEXT ROUND IN 0S");
+  });
+
+  it("one pull is PULL, not PULLS", () => {
+    expect(pullsWord(1)).toBe("1 PULL");
+    expect(pullsWord(2)).toBe("2 PULLS");
+    expect(pullsWord(0)).toBe("0 PULLS");
+    expect(pullsWord(1)).not.toBe("1 PULLS");
+    const src = readFileSync(new URL("../client/hud/round.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/pullsWord\(stats\.flips\)/);
+    expect(src).not.toMatch(/stats\.flips\} PULLS/);
   });
 
   it("one kill is KILL, not KILLS", () => {

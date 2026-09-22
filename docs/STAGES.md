@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 340 — One pull was PULLS
+
+**Goal.** Stage 339 taught `1 KILL`. The same YOU line still said `1 PULLS`.
+
+**What changed.** `pullsWord`: `1 PULL`, `2 PULLS`.
+
+**Proof.** `tests/round.test.ts`: `pullsWord(1)` is `1 PULL`. Source must
+`pullsWord(stats.flips)` and must not `stats.flips} PULLS`. Mutation: always PULLS —
+1 fail.
+
 ## Stage 339 — One kill was KILLS
 
 **Goal.** Stage 338 taught `1 DEATH`. The same YOU line still said `1 KILLS`.
