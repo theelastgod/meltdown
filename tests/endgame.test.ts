@@ -200,7 +200,8 @@ describe("the FILE shop counts slots", () => {
 
   it("a missing treasury falls back to LOADING…, not loading…", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
-    expect(src).toMatch(/info\?\.reason \?\? "LOADING…"/);
+    expect(src).toMatch(/info\?\.reason \? crtPhrase\(info\.reason\) : "LOADING…"/);
+    expect(src).not.toMatch(/info\?\.reason \?\? "LOADING…"/);
     expect(src).not.toMatch(/info\?\.reason \?\? "loading…"/);
   });
 

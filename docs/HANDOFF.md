@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 480, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 481, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 480 on this branch (settings line APPLIED LIVE) |
-| Next stage number | **481** |
+| HEAD | Stage 481 on this branch (FILE chain reason CRT) |
+| Next stage number | **482** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,13 +191,13 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 481 is next
+## 6. Stage 482 is next
 
-Stage 480 CRT-cased the settings line. Title cards stay prose
-(probe:ship asserts them). Measure a new player-visible defect. Do
-not loosen fairness. Do not plate viewmodel or remote strips. The
-join line still prints the socket name — `probe:net` asserts
-`probe-join-31`; leave it.
+Stage 481 CRT-cased the FILE chain miss. Title cards stay prose
+(probe:ship asserts them). Crew-code reasons stay mixed-case
+(`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
+Do not plate viewmodel or remote strips. The join line still prints
+the socket name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

@@ -24,7 +24,7 @@ import { redact, STAMPS } from "@shared/progression/stamps";
 import { glyphFor, glyphSvg } from "@shared/identity/glyph";
 import { counterView, MAX_CAPITAL_PER_UNIT, nameFee, NAME_DEPTH, RUN_DAILY_CAP, RUN_DEPTH } from "@shared/economy/counter";
 import { newFileSecret } from "@shared/progression/account";
-import type { CounterClient, CounterView } from "./counter";
+import { crtPhrase, type CounterClient, type CounterView } from "./counter";
 import { COUNTER_URL } from "./config";
 import { CHAPTERS, chapterFor, MONIKERS, monikerById, unlockedMonikers, wornMoniker } from "@shared/identity/monikers";
 import { weaponName } from "./hud/kill";
@@ -615,7 +615,7 @@ export class GhostFile {
     const prizes = c.prizes;
     const prizeBlock = v?.linked ? `<div class="ln">PRIZES ${prizes.length ? prizes.map((p) => `<span class="${p.claimed ? "dim" : ""}">${p.reason} · ${Number(p.amount).toFixed(0)} $CAPITAL ${p.claimed ? "· CLAIMED" : `<span class="btn" data-act="claimPrize" data-id="${p.epoch}">[CLAIM]</span>`}</span>`).join(" · ") : `<span class="dim">NONE POSTED FOR THIS WALLET</span>`} <span class="btn" data-act="prizes">[REFRESH]</span> <span class="dim">THE RUN SETTLES NIGHTLY, AUDIT PLACEMENTS WEEKLY, DEEP WAKE CONTRIBUTIONS AT SEASON END; CLAIMS ARE SPONSORED</span></div>` : "";
     const t = info?.treasury;
-    const delta = t ? `SUPPLY ${Number(t.supply).toLocaleString()} · BURNED <b>${Number(t.burned).toFixed(0)}</b> · MARKET VOLUME ${Number(t.volume).toFixed(0)} · <span class="gr">NET DELTA: 0.000 — RECONCILED</span>` : info?.reason ?? "LOADING…";
+    const delta = t ? `SUPPLY ${Number(t.supply).toLocaleString()} · BURNED <b>${Number(t.burned).toFixed(0)}</b> · MARKET VOLUME ${Number(t.volume).toFixed(0)} · <span class="gr">NET DELTA: 0.000 — RECONCILED</span>` : (info?.reason ? crtPhrase(info.reason) : "LOADING…");
     return `<div class="sh">COUNTER-LEDGER // $CAPITAL <span class="dim">${info ? (info.devnet ? "DEVNET" : "ROBINHOOD CHAIN") + " · CHAIN " + info.chainId : ""}</span></div>
       <div class="ln dim">VANTAGE PRICED YOU. THIS IS THE OTHER BOOK. IT DOES NOT BUY DAMAGE. IT DOES NOT BUY ARMOR. IT DOES NOT BUY A NODE.</div>
       <div class="ln">${wallet}${linked ? " · " + linked : ""}</div>

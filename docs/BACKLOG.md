@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- The FILE's chain miss still prints the host's raw `info.reason`
+  → Stage 481
 - The settings line still says mixed-case `applied live · kept in this browser`
   → Stage 480
 - SETTINGS's menu subtitle still says mixed-case `sensitivity, field of view`

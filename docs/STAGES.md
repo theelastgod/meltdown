@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 481 — The FILE's chain miss said the raw reason
+
+**Goal.** Stage 480 taught the settings line. A missing treasury still
+printed `info.reason` as the host sent it, so a chain-down suffix like
+`fetch failed` reached the COUNTER-LEDGER tab mixed-case.
+
+**What changed.** `crtPhrase(info.reason)` when there is a reason,
+else `LOADING…`.
+
+**Proof.** Measured source interpolated `info?.reason` raw. After the
+fix file.ts must `crtPhrase(info.reason)`. `tests/endgame.test.ts`
+asserts that template and must not the raw `??`. Mutation: raw reason
+again — 1 fail.
+
 ## Stage 480 — The settings line said applied live
 
 **Goal.** Stage 479 finished the main-menu row mill. The line under a
