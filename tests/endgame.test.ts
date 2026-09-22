@@ -245,6 +245,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/THE RUN pays the wallet:/);
   });
 
+  it("ENDGAME without a host is CRT, not contracts, Audits", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/CONTRACTS, AUDITS, THE DEEP WAKE AND REWRITE NEED A LEDGER HOST \(LINK A ROOM OR OPEN WITH \?SHOP=\)/);
+    expect(src).not.toMatch(/contracts, Audits, the Deep Wake and Rewrite need a ledger host/);
+  });
+
   it("a waiting counter is FETCHING THE CHAIN CLIENT, not fetching the chain client", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/COUNTER-LEDGER \/\/ FETCHING THE CHAIN CLIENT…/);

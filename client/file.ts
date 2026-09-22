@@ -632,7 +632,7 @@ export class GhostFile {
   endgameHtml(): string {
     const eg = this.endgame;
     const a = this.accountRecord;
-    if (!this.shop) return `<div class="sh">ENDGAME</div><div class="dim">contracts, Audits, the Deep Wake and Rewrite need a ledger host (link a room or open with ?shop=)</div>`;
+    if (!this.shop) return `<div class="sh">ENDGAME</div><div class="dim">CONTRACTS, AUDITS, THE DEEP WAKE AND REWRITE NEED A LEDGER HOST (LINK A ROOM OR OPEN WITH ?SHOP=)</div>`;
     const contracts = eg.contracts.map((c) => `<div class="ct ${c.done ? "done" : ""} ${c.claimed ? "claimed" : ""}"><span>${c.text} <span class="dim">+${c.scrip}¢ +${c.wakelight}◆</span></span><span><span class="bar"><i style="width:${Math.round((100 * c.progress) / c.need)}%"></i></span> ${c.progress}/${c.need} ${c.claimed ? "CLAIMED" : c.done ? `<span class="btn" data-act="claim" data-id="${c.id}">[CLAIM]</span>` : ""}</span></div>`).join("") || "<div class='dim'>LOADING THE BOARD…</div>";
     const au = eg.audit;
     const me = this.account;

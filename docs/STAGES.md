@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 371 — ENDGAME without a host said contracts, Audits
+
+**Goal.** Stage 370 taught THE RUN's unlinked dim. Opening FILE with no ledger
+host still dimmed `contracts, Audits, the Deep Wake and Rewrite need a ledger
+host (link a room or open with ?shop=)`.
+
+**What changed.** `CONTRACTS, AUDITS, THE DEEP WAKE AND REWRITE NEED A LEDGER
+HOST (LINK A ROOM OR OPEN WITH ?SHOP=)`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not
+`contracts, Audits, the Deep Wake`. Mutation: lowercase again — 1 fail.
+`npm test` 1140/1140.
+
 ## Stage 370 — THE RUN's unlinked dim was sentence case
 
 **Goal.** Stage 369 taught MAP's empty history. An unlinked FILE still dimmed
