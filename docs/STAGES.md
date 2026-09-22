@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 361 — A waiting Audit said loading
+
+**Goal.** Stage 360 taught `LOADING THE BOARD…`. An Audit with no playlist still
+dimmed `loading…`.
+
+**What changed.** `LOADING…`.
+
+**Proof.** `tests/endgame.test.ts`: after `joinAudit`, file.ts must `LOADING…` and
+must not `loading…`. Mutation: lowercase again — 1 fail.
+`npm test` 1131/1131.
+
 ## Stage 360 — Waiting contracts said loading the board
 
 **Goal.** Stage 359 taught `NO LINES YET`. Daily contracts with no rows yet still

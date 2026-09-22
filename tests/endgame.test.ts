@@ -183,6 +183,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/nothing on the rig yet/);
   });
 
+  it("a waiting Audit playlist is LOADING…, not loading…", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/joinAudit[\s\S]*class='dim'>LOADING…/);
+    expect(src).not.toMatch(/joinAudit[\s\S]*class='dim'>loading…/);
+  });
+
   it("a waiting contracts board is LOADING THE BOARD…, not loading the board…", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/class='dim'>LOADING THE BOARD…/);

@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 360, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 361, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 360 on this branch (LOADING THE BOARD) |
-| Next stage number | **361** |
+| HEAD | Stage 361 on this branch (Audit LOADING) |
+| Next stage number | **362** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1130 across 117 files, `npm test` |
+| Unit tests | 1131 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,12 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 361 is next
+## 6. Stage 362 is next
 
-Stage 360 CRT-cased `LOADING THE BOARD…`. An Audit with no playlist still dims
-`loading…`. Do not loosen fairness. Do not plate viewmodel or remote strips. The
-join line still prints the socket name — `probe:net` asserts `probe-join-31`;
-leave it.
+Stage 361 CRT-cased Audit `LOADING…`. The counter still falls back to `loading…`
+when treasury is missing. Do not loosen fairness. Do not plate viewmodel or
+remote strips. The join line still prints the socket name — `probe:net` asserts
+`probe-join-31`; leave it.
 
 ---
 
