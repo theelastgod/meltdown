@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 306 — WALLET REFUSED quoted the provider in sentence case
+
+**Goal.** Stage 302 CRT-cased `WEAR · OK`. Refusing a wallet still interpolated the
+provider's English: `WALLET REFUSED: User rejected the request.`
+
+**What changed.** `crtPhrase()` uppercases the reason. `WALLET REFUSED` interpolates it.
+
+**Proof.** `tests/counter.test.ts`: `crtPhrase("User rejected the request.")` is
+`USER REJECTED THE REQUEST.` Source must `crtPhrase(` on that line. Mutation: interpolate
+the raw message — 1 fail.
+
 ## Stage 305 — A market list said token
 
 **Goal.** Stage 304 CRT-cased `BOUGHT · LISTING`. Listing a skin still said

@@ -300,3 +300,5 @@ one stage.
   → Stage 304
 - A market list said token  
   → Stage 305
+- WALLET REFUSED quoted the provider in sentence case  
+  → Stage 306

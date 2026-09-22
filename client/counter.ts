@@ -34,7 +34,12 @@ export type CounterView = ReturnType<typeof counterView>;
 
 /** CRT line for a counter-ledger op. `WEAR · ok` was reaching the FILE tab as written. */
 export function counterOpLine(op: string, ok: boolean, reason?: string): string {
-  return ok ? `${op.toUpperCase()} · OK` : `${op.toUpperCase()} · ${(reason ?? "").toUpperCase()}`;
+  return ok ? `${op.toUpperCase()} · OK` : `${op.toUpperCase()} · ${crtPhrase(reason ?? "")}`;
+}
+
+/** CRT-case a reason or tag: NO WALLET, not no wallet. */
+export function crtPhrase(s: string): string {
+  return s.replace(/_/g, " ").toUpperCase();
 }
 
 interface Eip1193 {
@@ -107,7 +112,7 @@ export class CounterClient {
       this.say(`WALLET · ${this.short()}`);
       return !!this.address;
     } catch (e) {
-      this.say(`WALLET REFUSED: ${String((e as Error).message ?? e).slice(0, 80)}`);
+      this.say(`WALLET REFUSED: ${crtPhrase(String((e as Error).message ?? e).slice(0, 80))}`);
       return false;
     }
   }

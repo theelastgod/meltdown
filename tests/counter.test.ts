@@ -14,7 +14,7 @@ import { devSeed, MemoryAccountStore } from "../server/accounts";
 import { identityTag, parseTag, publicIdentity } from "../shared/identity/identity";
 import { Room, type Conn } from "../server/room";
 import { decodeServerMessage, encodeJoin } from "../shared/net/protocol";
-import { counterOpLine } from "../client/counter";
+import { counterOpLine, crtPhrase } from "../client/counter";
 
 type Boot = Awaited<ReturnType<typeof bootDevnetLedger>>;
 
@@ -26,6 +26,14 @@ describe("the counter-ledger FILE line", () => {
     const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
     expect(src).toMatch(/counterOpLine\(op, r\.ok, r\.reason\)/);
     expect(src).not.toMatch(/op\.toUpperCase\(\)\} · ok/);
+  });
+
+  it("WALLET REFUSED CRT-cases the provider's reason", () => {
+    expect(crtPhrase("User rejected the request.")).toBe("USER REJECTED THE REQUEST.");
+    expect(crtPhrase("User rejected the request.")).not.toBe("User rejected the request.");
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/WALLET REFUSED: \$\{crtPhrase\(/);
+    expect(src).not.toMatch(/WALLET REFUSED: \$\{String\(\(e as Error\)\.message/);
   });
 });
 
