@@ -268,3 +268,5 @@ one stage.
   → Stage 288
 - TESTIMONY printed CHAIR CLOCKEATER  
   → Stage 289
+- The Deep Wake MAP named a house CEL  
+  → Stage 290

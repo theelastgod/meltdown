@@ -255,7 +255,7 @@ export class Hud {
       return;
     }
     const house = (h: string) => `<span class="h ${h}">${h === "unaligned" ? "—" : houseName(h)}</span>`;
-    el.innerHTML = `<div class="t">▲ DEEP WAKE · SEASON ${v.season} · WEEK ${v.week} <span class="dim">· ${houseName("estate")} ${v.held["estate"] ?? 0} · ${houseName("clockeaters")} ${v.held["clockeaters"] ?? 0} · ${houseName("cells")} ${v.held["cells"] ?? 0}</span></div>${Object.entries(v.districts).map(([d, nodes]) => `<div class="dw"><b>${levelDisplayName(d)}</b> ${nodes.map((n) => `${n.label} ${house(n.house)}${n.pressure > 0 ? `<i>+${n.pressure.toFixed(0)} ${n.leader.slice(0, 3).toUpperCase()}</i>` : ""}`).join(" · ")}</div>`).join("")}<div class="hist">${v.history.slice(-4).map((l) => `<div>» ${l}</div>`).join("") || "<div class='dim'>no rounds have moved the graph yet</div>"}</div>`;
+    el.innerHTML = `<div class="t">▲ DEEP WAKE · SEASON ${v.season} · WEEK ${v.week} <span class="dim">· ${houseName("estate")} ${v.held["estate"] ?? 0} · ${houseName("clockeaters")} ${v.held["clockeaters"] ?? 0} · ${houseName("cells")} ${v.held["cells"] ?? 0}</span></div>${Object.entries(v.districts).map(([d, nodes]) => `<div class="dw"><b>${levelDisplayName(d)}</b> ${nodes.map((n) => `${n.label} ${house(n.house)}${n.pressure > 0 ? `<i>+${n.pressure.toFixed(0)} ${houseName(n.leader)}</i>` : ""}`).join(" · ")}</div>`).join("")}<div class="hist">${v.history.slice(-4).map((l) => `<div>» ${l}</div>`).join("") || "<div class='dim'>no rounds have moved the graph yet</div>"}</div>`;
   }
 
   /**

@@ -108,8 +108,10 @@ describe("the Deep Wake", () => {
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     expect(hud).toMatch(/houseName\(h\)/);
     expect(hud).toMatch(/houseName\("cells"\)/);
+    expect(hud).toMatch(/houseName\(n\.leader\)/);
     expect(hud).toMatch(/levelDisplayName\(d\)/);
     expect(hud).not.toMatch(/h === "unaligned" \? "—" : h\.toUpperCase\(\)/);
+    expect(hud).not.toMatch(/n\.leader\.slice\(0, 3\)\.toUpperCase\(\)/);
   });
 
   it("rounds push pressure toward the flipping files' houses; enough pressure turns a node; the season rolls with a history from real data", () => {

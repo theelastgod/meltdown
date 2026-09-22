@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 290 — The Deep Wake MAP named a house CEL
+
+**Goal.** Stage 224 taught the MAP THE WAKE CELLS. Pressure on a node still
+printed the first three letters of the id — `+3 CEL`, `+3 EST`, `+3 CLO` —
+next to a holder already named in full.
+
+**What changed.** `houseName(n.leader)` in `client/hud/hud.ts`.
+
+**Proof.** `tests/endgame.test.ts` requires `houseName(n.leader)` and refuses
+`n.leader.slice(0, 3).toUpperCase()`. Mutation: the slice restored — 1 fail.
+
 ## Stage 289 — TESTIMONY printed CHAIR CLOCKEATER
 
 **Goal.** Stage 222 taught the completed-arc line THE CLOCKEATER'S CHAIR. Stage 286 CRT-cased
