@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 303 — The campaign ledger kept the underscore on a gun
+
+**Goal.** Stage 301 taught FILE `weaponName`. The close line on the ledger
+still fell back to `weapon.toUpperCase()`, so an unknown kit printed
+`WEAPON LEASE_BREAKER`.
+
+**What changed.** The fallback spells underscores as spaces.
+
+**Proof.** `tests/weaponname.test.ts` requires `.replace(/_/g, " ").toUpperCase()`
+and refuses `?? weapon.toUpperCase()`. Mutation: the replace omitted — 1 fail.
+
 ## Stage 302 — The FILE tab printed WEAR · ok
 
 **Goal.** Stage 298 CRT-cased kick reasons. The counter-ledger line on FILE

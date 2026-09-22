@@ -28,7 +28,8 @@ describe("the campaign quotes that name, not the id", () => {
   it("the ledger line is the manifest name", () => {
     const src = readFileSync(new URL("../shared/campaign/save.ts", import.meta.url), "utf8");
     expect(src).toMatch(/WEAPONS\[m\.reward\.weapon/);
-    expect(src).not.toMatch(/WEAPON \$\{m\.reward\.weapon\.toUpperCase\(\)\}/);
+    expect(src).toMatch(/m\.reward\.weapon\.replace\(\/_\/g, " "\)\.toUpperCase\(\)/);
+    expect(src).not.toMatch(/\?\? m\.reward\.weapon\.toUpperCase\(\)/);
   });
 });
 
