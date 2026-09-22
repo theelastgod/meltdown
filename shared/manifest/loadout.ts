@@ -143,7 +143,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
   }
   const firmware: Loadout["firmware"] = {};
   if (lo.firmware !== undefined) {
-    if (!lo.firmware || typeof lo.firmware !== "object" || Array.isArray(lo.firmware)) errors.push({ rule: "firmware-shape", detail: "firmware must map weapon → firmware id" });
+    if (!lo.firmware || typeof lo.firmware !== "object" || Array.isArray(lo.firmware)) errors.push({ rule: "firmware-shape", detail: "FIRMWARE MUST MAP WEAPON → FIRMWARE ID" });
     else {
       for (const [wid, id] of Object.entries(lo.firmware as Record<string, unknown>)) {
         if (id === null || id === undefined) continue;

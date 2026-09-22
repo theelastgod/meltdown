@@ -604,3 +604,5 @@ one stage.
   → Stage 456
 - A non-string firmware said must be an id  
   → Stage 457
+- A firmware list said must map weapon  
+  → Stage 458
