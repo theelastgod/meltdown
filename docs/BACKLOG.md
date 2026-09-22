@@ -230,3 +230,5 @@ one stage.
   → Stage 269
 - LEASE-BREAKER's top rail was a flat magenta box  
   → Stage 270
+- THE DIRECTIVE's optic cube was a flat red box  
+  → Stage 271

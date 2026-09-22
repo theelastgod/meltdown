@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 271 — THE DIRECTIVE's optic cube was a flat red box
+
+**Goal.** Stage 270 plated LEASE-BREAKER's magenta rail. THE DIRECTIVE still had a 3 cm red
+cube on the optic as unmapped `MeshBasicMaterial`. Street lamps already wear `tex_lamp`.
+
+**What changed.** `bindPlate(optic, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `weapons.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 270 — LEASE-BREAKER's top rail was a flat magenta box
 
 **Goal.** The viewmodel tracer strip is the gun's colour. LEASE-BREAKER still

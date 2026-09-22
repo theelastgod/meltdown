@@ -76,7 +76,9 @@ export function buildViewmodel(id: WeaponId): THREE.Group {
       add(new THREE.BoxGeometry(0.05, 0.06, 0.16), dark, 0, 0.1, -0.02);
       add(new THREE.BoxGeometry(0.012, 0.012, 0.44), strip, 0.05, 0.04, -0.2);
       add(new THREE.BoxGeometry(0.06, 0.18, 0.08), body, 0, -0.13, 0.12);
-      add(new THREE.BoxGeometry(0.03, 0.03, 0.03), new THREE.MeshBasicMaterial({ color: 0xff2a3a }), 0, 0.1, -0.11);
+      const optic = new THREE.MeshBasicMaterial({ color: 0xff2a3a });
+      bindPlate(optic, "tex_lamp");
+      add(new THREE.BoxGeometry(0.03, 0.03, 0.03), optic, 0, 0.1, -0.11);
       break;
     case "clockeater":
       // a burst pistol: short, wide, three magenta slits across the slide
