@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 459 — A chips list said must map weapon
+
+**Goal.** Stage 458 taught `FIRMWARE MUST MAP`. A chips field that is an
+array still kicked `chips must map weapon → socket → chip id`.
+
+**What changed.** `CHIPS MUST MAP WEAPON → SOCKET → CHIP ID`.
+
+**Proof.** `tests/mastery.test.ts`: the kick is
+`CHIPS MUST MAP WEAPON → SOCKET → CHIP ID`. loadout.ts must that CRT
+string and must not the mixed-case string. Mutation: mixed case again —
+1 fail.
+
 ## Stage 458 — A firmware list said must map weapon
 
 **Goal.** Stage 457 taught `FIRMWARE MUST BE AN ID`. A firmware field that

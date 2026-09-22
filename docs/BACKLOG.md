@@ -606,3 +606,5 @@ one stage.
   → Stage 457
 - A firmware list said must map weapon  
   → Stage 458
+- A chips list said must map weapon  
+  → Stage 459

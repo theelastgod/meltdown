@@ -108,7 +108,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
   // chips: one per socket, for that weapon, unlocked by its mastery rank
   const chips: Loadout["chips"] = {};
   if (lo.chips !== undefined) {
-    if (!lo.chips || typeof lo.chips !== "object" || Array.isArray(lo.chips)) errors.push({ rule: "chips-shape", detail: "chips must map weapon → socket → chip id" });
+    if (!lo.chips || typeof lo.chips !== "object" || Array.isArray(lo.chips)) errors.push({ rule: "chips-shape", detail: "CHIPS MUST MAP WEAPON → SOCKET → CHIP ID" });
     else {
       for (const [wid, slots] of Object.entries(lo.chips as Record<string, unknown>)) {
         if (!(wid in WEAPONS)) {

@@ -161,6 +161,11 @@ describe("chips and firmwares", () => {
     expect(fwMap.errors.find((e) => e.rule === "firmware-shape")!.detail).not.toBe("firmware must map weapon → firmware id");
     expect(src).toMatch(/detail: "FIRMWARE MUST MAP WEAPON → FIRMWARE ID"/);
     expect(src).not.toMatch(/detail: "firmware must map weapon → firmware id"/);
+    const chipMap = validateLoadout({ ...DEFAULT_LOADOUT, chips: ["x"] }, owned, 50, ranks);
+    expect(chipMap.errors.find((e) => e.rule === "chips-shape")!.detail).toBe("CHIPS MUST MAP WEAPON → SOCKET → CHIP ID");
+    expect(chipMap.errors.find((e) => e.rule === "chips-shape")!.detail).not.toBe("chips must map weapon → socket → chip id");
+    expect(src).toMatch(/detail: "CHIPS MUST MAP WEAPON → SOCKET → CHIP ID"/);
+    expect(src).not.toMatch(/detail: "chips must map weapon → socket → chip id"/);
   });
   it("a chip's mods apply only while its weapon is held; a firmware patches the definition the sim runs", () => {
     const world = new World(drainageYard(), { ai: false, seed: 1 });
