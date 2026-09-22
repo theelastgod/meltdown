@@ -50,7 +50,7 @@ export function canLaunch(a: Account, c: CampaignSave, id: string): { ok: boolea
   if (m.kind === "mission") {
     if (!c.faction) return { ok: false, reason: "PICK A HOUSE FIRST" };
     const next = nextMission(c);
-    if (!next) return { ok: false, reason: "the arc is complete" };
+    if (!next) return { ok: false, reason: "THE ARC IS COMPLETE" };
     if (next.id !== id) return { ok: false, reason: `${next.title} comes first` };
     return { ok: true };
   }

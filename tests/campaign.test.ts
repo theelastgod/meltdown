@@ -177,6 +177,12 @@ describe("picking a house writes the name, not the id", () => {
     expect(src).not.toMatch(/reason: "pick a house first"/);
   });
 
+  it("launching after the arc is THE ARC IS COMPLETE, not the arc is complete", () => {
+    const src = readFileSync(new URL("../shared/campaign/save.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "THE ARC IS COMPLETE"/);
+    expect(src).not.toMatch(/reason: "the arc is complete"/);
+  });
+
   it("an unknown house is UNKNOWN HOUSE, not unknown house", () => {
     const src = readFileSync(new URL("../shared/campaign/endpoint.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "UNKNOWN HOUSE"/);
