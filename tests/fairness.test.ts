@@ -37,7 +37,7 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(eight.errors.map((e) => e.rule)).toContain("attest-limit");
     const unowned = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["long_lease"], keystone: null }, [], 10);
     expect(unowned.errors.map((e) => e.rule)).toContain("not-owned");
-    expect(unowned.errors.find((e) => e.rule === "not-owned")!.detail).toBe("LONG LEASE is not in your file");
+    expect(unowned.errors.find((e) => e.rule === "not-owned")!.detail).toBe("LONG LEASE IS NOT IN YOUR FILE");
     expect(unowned.errors.find((e) => e.rule === "not-owned")!.detail).not.toBe("long_lease is not in your file");
     const disconnected = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "wake_lung"], keystone: null }, owned, 10);
     expect(disconnected.errors.map((e) => e.rule)).toContain("connected");

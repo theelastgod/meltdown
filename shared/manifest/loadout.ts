@@ -76,7 +76,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
     const it = itemById(id);
     if (!it) errors.push({ rule: "unknown-node", detail: id });
     else if (it.kind !== "node") errors.push({ rule: "not-a-node", detail: `${itemName(id)} is a ${it.kind.toUpperCase()}` });
-    else if (!owned.includes(id)) errors.push({ rule: "not-owned", detail: `${itemName(id)} is not in your file` });
+    else if (!owned.includes(id)) errors.push({ rule: "not-owned", detail: `${itemName(id)} IS NOT IN YOUR FILE` });
   }
   // connectivity over the attested subgraph
   const set = new Set(attested.filter((id) => itemById(id)?.kind === "node"));
@@ -99,7 +99,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
     else {
       const k = itemById(lo.keystone);
       if (!k || k.kind !== "keystone") errors.push({ rule: "unknown-keystone", detail: lo.keystone });
-      else if (!owned.includes(k.id)) errors.push({ rule: "not-owned", detail: `${itemName(k.id)} is not in your file` });
+      else if (!owned.includes(k.id)) errors.push({ rule: "not-owned", detail: `${itemName(k.id)} IS NOT IN YOUR FILE` });
       else if (set.size > 0 && !k.links.some((l) => set.has(l))) errors.push({ rule: "keystone-linked", detail: `${itemName(k.id)} must touch an attested node (${k.links.map(itemName).join(", ")})` });
       else keystone = k.id;
     }

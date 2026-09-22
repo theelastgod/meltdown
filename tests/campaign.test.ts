@@ -412,7 +412,10 @@ describe("the PvP wall", () => {
     expect(src).not.toMatch(/\$\{gun\(w\)\} unlocks in the campaign/);
     expect(src).toMatch(/\$\{gun\(w\)\} NEEDS DEPTH/);
     expect(src).not.toMatch(/\$\{w\} unlocks in the campaign/);
-    expect(src).toMatch(/\$\{itemName\(id\)\} is not in your file/);
+    expect(src).toMatch(/\$\{itemName\(id\)\} IS NOT IN YOUR FILE/);
+    expect(src).not.toMatch(/\$\{itemName\(id\)\} is not in your file/);
+    expect(src).toMatch(/\$\{itemName\(k\.id\)\} IS NOT IN YOUR FILE/);
+    expect(src).not.toMatch(/\$\{itemName\(k\.id\)\} is not in your file/);
     expect(src).not.toMatch(/\$\{id\} is not in your file/);
   });
   it("the PvP worker's module graph (match room, file DO, validator) never reaches shared/campaign", () => {

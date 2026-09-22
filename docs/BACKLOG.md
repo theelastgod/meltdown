@@ -574,3 +574,5 @@ one stage.
   → Stage 441
 - A campaign gun said unlocks in the campaign  
   → Stage 442
+- An unowned node said is not in your file  
+  → Stage 443

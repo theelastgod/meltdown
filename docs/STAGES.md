@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 443 — An unowned node said is not in your file
+
+**Goal.** Stage 442 taught `UNLOCKS IN THE CAMPAIGN`. Attesting LONG LEASE
+the file does not hold still kicked `LONG LEASE is not in your file`.
+
+**What changed.** `IS NOT IN YOUR FILE` on the node and keystone paths.
+
+**Proof.** `tests/fairness.test.ts`: the kick is `LONG LEASE IS NOT IN YOUR
+FILE`. loadout.ts must `${itemName(id)} IS NOT IN YOUR FILE` and
+`${itemName(k.id)} IS NOT IN YOUR FILE`. Mutation: one of two mixed case
+again — 1 fail.
+
 ## Stage 442 — A campaign gun said unlocks in the campaign
 
 **Goal.** Stage 441 taught loadout `NEEDS DEPTH`. Spawning THE DIRECTIVE
