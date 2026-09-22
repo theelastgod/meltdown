@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 470 — A missing socket said no socket
+
+**Goal.** Stage 469 taught `UNKNOWN NODE`. A chip keyed on socket
+`barrel` still kicked `LEASE-BREAKER: no socket "BARREL"`.
+
+**What changed.** `NO SOCKET`.
+
+**Proof.** Measured kick was mixed-case. After the fix:
+`LEASE-BREAKER: NO SOCKET "BARREL"`. `tests/mastery.test.ts` asserts
+that sentence and that loadout.ts must the CRT template and must not
+the mixed-case template. Mutation: mixed case again — 1 fail.
+
 ## Stage 469 — An unknown node said only the raw id
 
 **Goal.** Stage 468 taught `UNKNOWN KEYSTONE`. An attested id of

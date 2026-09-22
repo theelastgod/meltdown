@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- A missing socket still kicks mixed-case `no socket`
+  → Stage 470
 - An unknown node still kicks the raw id
   → Stage 469
 - An unknown keystone still kicks the raw id
