@@ -534,3 +534,5 @@ one stage.
   → Stage 421
 - Hitscan, blast, spark and optic still wore the lamp plate  
   → Stage 422
+- Skipping a mission said comes first  
+  → Stage 423

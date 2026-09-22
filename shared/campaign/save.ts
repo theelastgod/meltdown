@@ -51,7 +51,7 @@ export function canLaunch(a: Account, c: CampaignSave, id: string): { ok: boolea
     if (!c.faction) return { ok: false, reason: "PICK A HOUSE FIRST" };
     const next = nextMission(c);
     if (!next) return { ok: false, reason: "THE ARC IS COMPLETE" };
-    if (next.id !== id) return { ok: false, reason: `${next.title} comes first` };
+    if (next.id !== id) return { ok: false, reason: `${next.title} COMES FIRST` };
     return { ok: true };
   }
   if (!gigsOnOffer(a, c).some((g) => g.id === id)) return { ok: false, reason: c.gigsDone.includes(id) ? "already closed" : "not on offer yet" };

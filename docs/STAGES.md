@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 423 — Skipping a mission said comes first
+
+**Goal.** Stage 421 taught `THE ARC IS COMPLETE`. Launching m2 before m1 still
+returned `WAKE UNLISTED comes first`.
+
+**What changed.** `${next.title} COMES FIRST`.
+
+**Proof.** `tests/campaign.test.ts`: canLaunch(m2) is `WAKE UNLISTED COMES FIRST`.
+save.ts must `${next.title} COMES FIRST`. Mutation: lowercase again — 1 fail.
+
 ## Stage 422 — Hitscan, blast, spark and optic still wore the lamp plate
 
 **Goal.** Hitscan beams, nade blasts, impact sparks, THE DIRECTIVE's optic and THE

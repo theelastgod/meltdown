@@ -153,6 +153,12 @@ describe("an empty fixer board is CRT", () => {
 });
 
 describe("picking a house writes the name, not the id", () => {
+  it("skipping a mission is TITLE COMES FIRST, not comes first", () => {
+    const src = readFileSync(new URL("../shared/campaign/save.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/\$\{next\.title\} COMES FIRST/);
+    expect(src).not.toMatch(/\$\{next\.title\} comes first/);
+  });
+
   it("a second house is HOUSE ALREADY PICKED, not house already picked", () => {
     const src = readFileSync(new URL("../shared/campaign/endpoint.ts", import.meta.url), "utf8");
     expect(src).toMatch(/HOUSE ALREADY PICKED/);
@@ -209,7 +215,7 @@ describe("campaign save", () => {
     expect(a.ledger.some((l) => l === "HOUSE · THE WAKE CELLS")).toBe(true);
     expect(a.ledger.some((l) => l === "HOUSE · CELLS")).toBe(false);
     expect(pickFaction(a, "estate")).toBe(false);
-    expect(canLaunch(a, c, "m2_deadletter_run")).toEqual({ ok: false, reason: "WAKE UNLISTED comes first" });
+    expect(canLaunch(a, c, "m2_deadletter_run")).toEqual({ ok: false, reason: "WAKE UNLISTED COMES FIRST" });
     expect(completeContract(a, "m1_wake_unlisted", { "m1:lease": "burn" }).ok).toBe(true);
     expect(c.testimony["m1:lease"]).toBe("burn");
     expect(a.wallet.scrip).toBe(300);
