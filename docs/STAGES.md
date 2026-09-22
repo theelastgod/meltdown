@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 525 — LONG LEASE's FILE line said slower, heavier rounds
+
+**Goal.** Stage 524 taught THREE-COUNT. LONG LEASE still said
+mixed-case `slower, heavier rounds: −18% rate, +19% damage, −25%
+spread`.
+
+**What changed.** `SLOWER, HEAVIER ROUNDS: −18% RATE, +19% DAMAGE,
+−25% SPREAD`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/firmware.test.ts` asserts that sentence and
+that firmwares.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 524 — THREE-COUNT's FILE line said three-round bursts
 
 **Goal.** Stage 523 closed the last pass-cosmetic shop line. FILE

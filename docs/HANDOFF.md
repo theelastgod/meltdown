@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 524, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 525, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 524 on this branch (THREE-COUNT FILE line) |
-| Next stage number | **525** |
+| HEAD | Stage 525 on this branch (LONG LEASE FILE line) |
+| Next stage number | **526** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 525 is next
+## 6. Stage 526 is next
 
-Stage 524 CRT-cased THREE-COUNT's FILE line. LONG LEASE still says
-mixed-case `slower, heavier rounds`. Title cards stay prose
+Stage 525 CRT-cased LONG LEASE's FILE line. DOUBLE BARREL still says
+mixed-case `two shells per trigger`. Title cards stay prose
 (probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints

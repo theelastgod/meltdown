@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- LONG LEASE's FILE line still says mixed-case `slower, heavier rounds`
+  → Stage 525
 - THREE-COUNT's FILE line still says mixed-case `three-round bursts at 900 rpm`
   → Stage 524
 - PRESET SLOT VI's shop line still says mixed-case `a sixth saved loadout`

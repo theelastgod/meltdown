@@ -112,6 +112,15 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(src).not.toMatch(/line: "three-round bursts at 900 rpm, \+12\.5% damage, a third of a second between bursts, wide from the hip"/);
   });
 
+  it("LONG LEASE's FILE line is CRT, not slower, heavier rounds", () => {
+    const src = readFileSync(new URL("../shared/manifest/firmwares.ts", import.meta.url), "utf8");
+    const line = FIRMWARES.find((f) => f.id === "lease_breaker:long_lease")!.line;
+    expect(line).toBe("SLOWER, HEAVIER ROUNDS: −18% RATE, +19% DAMAGE, −25% SPREAD");
+    expect(line).not.toBe("slower, heavier rounds: −18% rate, +19% damage, −25% spread");
+    expect(src).toMatch(/id: "lease_breaker:long_lease".*line: "SLOWER, HEAVIER ROUNDS: −18% RATE, \+19% DAMAGE, −25% SPREAD"/s);
+    expect(src).not.toMatch(/line: "slower, heavier rounds: −18% rate, \+19% damage, −25% spread"/);
+  });
+
   it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
     const pct = (from: number, to: number) => ((to - from) / from) * 100;
     for (const f of FIRMWARES) {
