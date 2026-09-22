@@ -218,3 +218,5 @@ one stage.
   → Stage 263
 - The Chapter III office window was a flat cyan slab  
   → Stage 264
+- THE KERNEL's halo was a flat red plane  
+  → Stage 265

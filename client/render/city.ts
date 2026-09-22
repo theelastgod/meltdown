@@ -784,7 +784,9 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
     strips.add(g, stripMat);
   }
   strips.flush();
-  const halo = new THREE.Mesh(new THREE.PlaneGeometry(420, 200), new THREE.MeshBasicMaterial({ color: 0x3a0510, transparent: true, opacity: 0.5, fog: false }));
+  const haloMat = new THREE.MeshBasicMaterial({ color: 0x3a0510, transparent: true, opacity: 0.5, fog: false });
+  bindPlate(haloMat, "tex_lamp");
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(420, 200), haloMat);
   halo.position.set(-60, 90, -482);
   group.add(halo);
   return group;

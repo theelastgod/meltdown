@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 265 — THE KERNEL's halo was a flat red plane
+
+**Goal.** Stage 260 plated the red grid bars. The 420 m × 200 m plane behind THE KERNEL —
+the blood-red wash on the horizon — was still `MeshBasicMaterial` with no map.
+
+**What changed.** `bindPlate(haloMat, "tex_lamp")`, fail-soft. The red tint stays.
+
+**Proof.** `tests/assets.test.ts` requires that call in `city.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 264 — Chapter III window glow was a flat cyan slab
 
 **Goal.** Stage 208 plated the Chapter III desk nameplate. The other Chapter III

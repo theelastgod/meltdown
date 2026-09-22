@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 264, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 265, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 264 on this branch (Chapter III window glow wears tex_glass) |
-| Next stage number | **265** |
+| HEAD | Stage 265 on this branch (KERNEL halo wears tex_lamp) |
+| Next stage number | **266** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1065 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 265 is next
+## 6. Stage 266 is next
 
-Stage 264 put `tex_glass` on the Chapter III window glow. THE KERNEL's halo plane
-behind the megastructure is still a flat dark-red `MeshBasicMaterial`. Do not loosen fairness.
+Stage 265 put `tex_lamp` on THE KERNEL's horizon halo. Do not loosen fairness.
 
 ---
 
