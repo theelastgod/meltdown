@@ -87,7 +87,7 @@ export function buyCosmetic(a: Account, id: string): { ok: boolean; reason?: str
   const c = cosmeticById(id);
   if (!c) return { ok: false, reason: "unknown cosmetic" };
   a.cosmetics = a.cosmetics ?? [];
-  if (a.cosmetics.includes(id)) return { ok: false, reason: "already owned" };
+  if (a.cosmetics.includes(id)) return { ok: false, reason: "ALREADY OWNED" };
   // slots come in order, and a slot the file already has is not for sale: a Deep Wake pass grants
   // the top slot outright, and selling the ones underneath it afterwards would charge Wakelight
   // for nothing (Stage 176)

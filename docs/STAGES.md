@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 405 — Buying a cosmetic twice said already owned
+
+**Goal.** Stage 400 taught `REWRITE OPENS AT`. Buying a theme the file already
+has still returned `already owned`.
+
+**What changed.** `ALREADY OWNED`.
+
+**Proof.** `tests/endgame.test.ts`: rewrite.ts must `reason: "ALREADY OWNED"` and
+must not `reason: "already owned"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 404 — Listing a rig token said List for how much
 
 **Goal.** Stage 403 taught firmware `· R`. Selling a rig token still prompted

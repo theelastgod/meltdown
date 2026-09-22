@@ -239,6 +239,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/Robinhood Wallet · WalletConnect · injected/);
   });
 
+  it("buying a cosmetic twice is ALREADY OWNED, not already owned", () => {
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "ALREADY OWNED"/);
+    expect(src).not.toMatch(/reason: "already owned"/);
+  });
+
   it("rewrite too early is DEPTH N — REWRITE OPENS AT, not Depth", () => {
     const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
     expect(src).toMatch(/DEPTH \$\{a\.depth\} — REWRITE OPENS AT \$\{MAX_DEPTH\}/);
@@ -466,7 +472,7 @@ describe("rewrite and the Wakelight shop", () => {
     expect(buyCosmetic(a, "preset_3").ok).toBe(true);
     expect(slotsOf(a).presets).toBe(3);
     expect(buyCosmetic(a, "theme_amber").ok).toBe(true);
-    expect(buyCosmetic(a, "theme_amber")).toEqual({ ok: false, reason: "already owned" });
+    expect(buyCosmetic(a, "theme_amber")).toEqual({ ok: false, reason: "ALREADY OWNED" });
     expect(setTheme(a, "theme_ice")).toBe(false);
     expect(setTheme(a, "theme_amber")).toBe(true);
     expect(a.wallet.wakelight).toBe(REWRITE_WAKELIGHT - 60 - 90 - 120);

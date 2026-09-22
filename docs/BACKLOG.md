@@ -498,3 +498,5 @@ one stage.
   → Stage 403
 - Listing a rig token said List for how much  
   → Stage 404
+- Buying a cosmetic twice said already owned  
+  → Stage 405

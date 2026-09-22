@@ -135,7 +135,7 @@ describe("the shop — a slot the file already has is not for sale", () => {
     const a = createAccount("shopper");
     a.wallet.wakelight = 10_000;
     expect(buyCosmetic(a, "theme_ice")).toEqual({ ok: true });
-    expect(buyCosmetic(a, "theme_ice").reason).toBe("already owned");
+    expect(buyCosmetic(a, "theme_ice").reason).toBe("ALREADY OWNED");
     expect(buyCosmetic(a, "theme_amber")).toEqual({ ok: true });
   });
 });
