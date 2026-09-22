@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 322 — An empty attested list said none
+
+**Goal.** Stage 301 taught FILE `weaponName`. The join FILE line still fell back
+to `none` when nothing was attested: `ATTESTED [none]`.
+
+**What changed.** `|| "NONE"`.
+
+**Proof.** `tests/roomlabel.test.ts`: source must `|| "NONE"` on the attested join
+and must not `|| "none"`. Mutation: lowercase none again — 1 fail.
+`npm test` 1094/1094.
+
 ## Stage 321 — THE RUN quoted the rest in sentence case
 
 **Goal.** Stage 320 CRT-cased the private-room admit line. Joining THE RUN still

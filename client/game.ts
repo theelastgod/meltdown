@@ -381,7 +381,7 @@ export class Game {
       if (f.reason === "join" && this.net === net) {
         // the server admitted this loadout: run the same sheet locally (arrives before the first snapshot)
         this.world.setLoadout(this.player, f.loadout as Parameters<World["setLoadout"]>[1]);
-        this.hud.push(`FILE ${f.account} · DEPTH ${String(f.depth).padStart(2, "0")} · ATTESTED [${f.loadout.attested.map(itemName).join(", ") || "none"}]${f.loadout.keystone ? " · " + itemName(f.loadout.keystone) : ""}`, "cy");
+        this.hud.push(`FILE ${f.account} · DEPTH ${String(f.depth).padStart(2, "0")} · ATTESTED [${f.loadout.attested.map(itemName).join(", ") || "NONE"}]${f.loadout.keystone ? " · " + itemName(f.loadout.keystone) : ""}`, "cy");
       } else if (f.reason === "settle") {
         // the Ledger Entry ritual: the receipt prints line by line, the stamp thunks, the player signs
         this.hud.receipt(f.ledger);

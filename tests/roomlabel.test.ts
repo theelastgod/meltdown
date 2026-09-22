@@ -93,6 +93,12 @@ describe("the room's name in the join line", () => {
     expect(roomName("ws://h/room/100%")).toBe("100%"); // a malformed escape is a name like any other
   });
 
+  it("an empty attested list prints NONE, not none", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/attested\.map\(itemName\)\.join\(", "\) \|\| "NONE"/);
+    expect(src).not.toMatch(/attested\.map\(itemName\)\.join\(", "\) \|\| "none"/);
+  });
+
   it("THE RUN admit line is CRT, not carry the claims", () => {
     const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(src).toMatch(/THE RUN · CARRY THE CLAIMS TO A GATE; DIE AND THEY DROP/);
