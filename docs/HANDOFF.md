@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 299, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 300, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 299 on this branch (HUD zone uses districtName) |
-| Next stage number | **300** |
+| HEAD | Stage 300 on this branch (Deep Wake history uses levelDisplayName) |
+| Next stage number | **301** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1073 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 300 is next
+## 6. Stage 301 is next
 
-Stage 299 put `districtName` on the HUD zone. Deep Wake history still spells districts
-with `toUpperCase().replace`. Do not loosen fairness. Do not plate viewmodel or remote
-strips (skin maps overwrite those).
+Stage 300 put `levelDisplayName` on Deep Wake history. Do not loosen fairness. Do not
+plate viewmodel or remote strips (skin maps overwrite those).
 
 ---
 

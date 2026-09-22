@@ -7,6 +7,7 @@
  * staking, nothing to buy — the graph is moved by matches only.
  */
 import { seasonIndex, seasonWeek } from "./clock";
+import { levelDisplayName } from "../sim/level";
 
 export type House = "estate" | "clockeaters" | "cells" | "unaligned";
 export const HOUSES: readonly House[] = ["estate", "clockeaters", "cells"];
@@ -89,7 +90,7 @@ export function rollSeason(st: SeasonState, now = Date.now()): boolean {
       turns += n.turns;
     }
     const top = Object.entries(held).sort((a, b) => b[1] - a[1])[0];
-    lines.push(`${d.toUpperCase().replace(/_/g, " ")} · ${top && top[0] !== "unaligned" ? `${houseName(top[0]!)} HELD ${top[1]}/5` : "NO HOUSE HELD IT"} · ${turns} TURNS`);
+    lines.push(`${levelDisplayName(d)} · ${top && top[0] !== "unaligned" ? `${houseName(top[0]!)} HELD ${top[1]}/5` : "NO HOUSE HELD IT"} · ${turns} TURNS`);
   }
   st.history.push(...lines);
   if (st.history.length > 60) st.history.splice(0, st.history.length - 60);
@@ -128,8 +129,8 @@ export function applyRound(st: SeasonState, push: RoundPush, now = Date.now()): 
   }
   st.rounds++;
   const w = seasonWeek(now);
-  st.last = `S${st.season} W${w} · ${push.level.toUpperCase().replace(/_/g, " ")} · ${push.flips.reduce((a, f) => a + f.count, 0)} FLIPS${turned.length ? " · " + turned.map((t) => `${t.label} → ${houseName(t.to)}`).join(", ") : ""}`;
-  if (turned.length) st.history.push(`S${st.season} W${w} · ${turned.map((t) => `${push.level.toUpperCase().replace(/_/g, " ")} ${t.label} TURNED ${houseName(t.to)}${t.from !== "unaligned" ? ` (FROM ${houseName(t.from)})` : ""}`).join(" · ")}`);
+  st.last = `S${st.season} W${w} · ${levelDisplayName(push.level)} · ${push.flips.reduce((a, f) => a + f.count, 0)} FLIPS${turned.length ? " · " + turned.map((t) => `${t.label} → ${houseName(t.to)}`).join(", ") : ""}`;
+  if (turned.length) st.history.push(`S${st.season} W${w} · ${turned.map((t) => `${levelDisplayName(push.level)} ${t.label} TURNED ${houseName(t.to)}${t.from !== "unaligned" ? ` (FROM ${houseName(t.from)})` : ""}`).join(" · ")}`);
   if (st.history.length > 60) st.history.splice(0, st.history.length - 60);
   return turned;
 }

@@ -104,7 +104,11 @@ describe("the Deep Wake", () => {
     expect(houseName("cells")).not.toBe("CELLS");
     const src = readFileSync(new URL("../shared/endgame/season.ts", import.meta.url), "utf8");
     expect(src).toMatch(/TURNED \$\{houseName\(t\.to\)\}/);
+    expect(src).toMatch(/levelDisplayName\(d\)/);
+    expect(src).toMatch(/levelDisplayName\(push\.level\)/);
     expect(src).not.toMatch(/t\.to\.toUpperCase\(\)/);
+    expect(src).not.toMatch(/d\.toUpperCase\(\)\.replace\(\/_\/g/);
+    expect(src).not.toMatch(/push\.level\.toUpperCase\(\)\.replace\(\/_\/g/);
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     expect(hud).toMatch(/houseName\(h\)/);
     expect(hud).toMatch(/houseName\("cells"\)/);

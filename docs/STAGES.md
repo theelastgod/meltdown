@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 300 — Deep Wake history spelled districts with replace
+
+**Goal.** The MAP tab already calls `levelDisplayName`. Season close and
+turn lines still used `id.toUpperCase().replace(/_/g, " ")`, the same
+fallback that printed WHITE OFFICE instead of THE WHITE OFFICE.
+
+**What changed.** `levelDisplayName(d)` / `levelDisplayName(push.level)` in
+`shared/endgame/season.ts`.
+
+**Proof.** `tests/endgame.test.ts` requires those calls and refuses the
+replace. Mutation: `rollSeason` uses replace again — 1 fail.
+
 ## Stage 299 — The HUD zone line duplicated the district helper
 
 **Goal.** Wake lines, the PA and BACK ON THE LEDGER call `districtName`. The
