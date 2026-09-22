@@ -171,6 +171,12 @@ describe("picking a house writes the name, not the id", () => {
     expect(src).not.toMatch(/reason: "unknown contract"/);
   });
 
+  it("a mission with no house is PICK A HOUSE FIRST, not pick a house first", () => {
+    const src = readFileSync(new URL("../shared/campaign/save.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "PICK A HOUSE FIRST"/);
+    expect(src).not.toMatch(/reason: "pick a house first"/);
+  });
+
   it("an unknown house is UNKNOWN HOUSE, not unknown house", () => {
     const src = readFileSync(new URL("../shared/campaign/endpoint.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "UNKNOWN HOUSE"/);

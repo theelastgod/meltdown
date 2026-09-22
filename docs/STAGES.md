@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 420 — A mission with no house said pick a house first
+
+**Goal.** Stage 419 taught `UNKNOWN CONTRACT`. Launching a main mission with
+no house still returned `pick a house first`.
+
+**What changed.** `PICK A HOUSE FIRST`.
+
+**Proof.** `tests/campaign.test.ts`: save.ts must `reason: "PICK A HOUSE FIRST"`
+and must not `reason: "pick a house first"`. Mutation: mixed case again — 1 fail.
+
 ## Stage 419 — An unknown launch said unknown contract
 
 **Goal.** Stage 418 taught `CLOSED BY THE ROOM`. Launching or completing an

@@ -528,3 +528,5 @@ one stage.
   → Stage 418
 - An unknown launch said unknown contract  
   → Stage 419
+- A mission with no house said pick a house first  
+  → Stage 420

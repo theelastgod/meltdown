@@ -48,7 +48,7 @@ export function canLaunch(a: Account, c: CampaignSave, id: string): { ok: boolea
   const m = missionById(id);
   if (!m) return { ok: false, reason: "UNKNOWN CONTRACT" };
   if (m.kind === "mission") {
-    if (!c.faction) return { ok: false, reason: "pick a house first" };
+    if (!c.faction) return { ok: false, reason: "PICK A HOUSE FIRST" };
     const next = nextMission(c);
     if (!next) return { ok: false, reason: "the arc is complete" };
     if (next.id !== id) return { ok: false, reason: `${next.title} comes first` };
