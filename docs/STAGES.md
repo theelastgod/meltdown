@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 327 — The RANGE alert suffixed times as s
+
+**Goal.** Stage 326 CRT-cased the RANGE log. The stamp still said
+`◆ RANGE RECORD — 5.55s`.
+
+**What changed.** `${run.seconds.toFixed(2)}S` on both RANGE RECORD and RANGE.
+
+**Proof.** `tests/roomlabel.test.ts`: source must `RANGE RECORD — ${run.seconds.toFixed(2)}S`
+and must not `}s` on that line. Mutation: lowercase s again — 1 fail.
+`npm test` 1099/1099.
+
 ## Stage 326 — The RANGE log suffixed times as s
 
 **Goal.** Stage 323 CRT-cased `1h` as `1H`. Finishing a range ghost still pushed

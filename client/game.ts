@@ -242,7 +242,7 @@ export class Game {
       this.ghost = new RangeGhost(this.world.level.hub, this.levelId, `meltdown.ghost.${this.file.account}.${this.levelId}`);
       this.ghost.onFinish = (run, improved) => {
         this.hud.push(`RANGE · ${run.seconds.toFixed(2)}S${improved ? " · NEW BEST" : ` · BEST ${this.ghost!.best!.seconds.toFixed(2)}S`}`, improved ? "am" : "k");
-        this.hud.alert(improved ? `◆ RANGE RECORD — ${run.seconds.toFixed(2)}s` : `◆ RANGE — ${run.seconds.toFixed(2)}s`, !improved, 3);
+        this.hud.alert(improved ? `◆ RANGE RECORD — ${run.seconds.toFixed(2)}S` : `◆ RANGE — ${run.seconds.toFixed(2)}S`, !improved, 3);
         if (improved) {
           this.audio.sign();
           void this.file.postGhost(run);
