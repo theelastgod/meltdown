@@ -408,3 +408,5 @@ one stage.
   → Stage 358
 - An empty ledger said no lines yet  
   → Stage 359
+- Waiting contracts said loading the board  
+  → Stage 360

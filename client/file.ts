@@ -633,7 +633,7 @@ export class GhostFile {
     const eg = this.endgame;
     const a = this.accountRecord;
     if (!this.shop) return `<div class="sh">ENDGAME</div><div class="dim">contracts, Audits, the Deep Wake and Rewrite need a ledger host (link a room or open with ?shop=)</div>`;
-    const contracts = eg.contracts.map((c) => `<div class="ct ${c.done ? "done" : ""} ${c.claimed ? "claimed" : ""}"><span>${c.text} <span class="dim">+${c.scrip}¢ +${c.wakelight}◆</span></span><span><span class="bar"><i style="width:${Math.round((100 * c.progress) / c.need)}%"></i></span> ${c.progress}/${c.need} ${c.claimed ? "CLAIMED" : c.done ? `<span class="btn" data-act="claim" data-id="${c.id}">[CLAIM]</span>` : ""}</span></div>`).join("") || "<div class='dim'>loading the board…</div>";
+    const contracts = eg.contracts.map((c) => `<div class="ct ${c.done ? "done" : ""} ${c.claimed ? "claimed" : ""}"><span>${c.text} <span class="dim">+${c.scrip}¢ +${c.wakelight}◆</span></span><span><span class="bar"><i style="width:${Math.round((100 * c.progress) / c.need)}%"></i></span> ${c.progress}/${c.need} ${c.claimed ? "CLAIMED" : c.done ? `<span class="btn" data-act="claim" data-id="${c.id}">[CLAIM]</span>` : ""}</span></div>`).join("") || "<div class='dim'>LOADING THE BOARD…</div>";
     const au = eg.audit;
     const me = this.account;
     const board = eg.board.slice(0, 10).map((e, i) => `<div class="${e.account === me ? "me" : ""}"><span>${String(i + 1).padStart(2, "0")} ${e.display}</span><span>${e.score}</span></div>`).join("") || "<div class='dim'>NO SCORES YET THIS WEEK</div>";

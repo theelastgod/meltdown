@@ -183,6 +183,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/nothing on the rig yet/);
   });
 
+  it("a waiting contracts board is LOADING THE BOARD…, not loading the board…", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/class='dim'>LOADING THE BOARD…/);
+    expect(src).not.toMatch(/class='dim'>loading the board…/);
+  });
+
   it("an empty ledger is NO LINES YET, not no lines yet", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/class='dim'>NO LINES YET/);

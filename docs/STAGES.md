@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 360 — Waiting contracts said loading the board
+
+**Goal.** Stage 359 taught `NO LINES YET`. Daily contracts with no rows yet still
+dimmed `loading the board…`.
+
+**What changed.** `LOADING THE BOARD…`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `LOADING THE BOARD…` and must not
+`loading the board…`. Mutation: lowercase again — 1 fail.
+`npm test` 1130/1130.
+
 ## Stage 359 — An empty ledger said no lines yet
 
 **Goal.** Stage 358 taught `NO LISTINGS`. An empty FILE ledger still dimmed
