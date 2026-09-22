@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 433 — A token not on the rig said not on your rig
+
+**Goal.** Stage 432 taught `NOT IN YOUR FILE`. Wearing a token the file's
+rig does not hold still returned `not on your rig`.
+
+**What changed.** `NOT ON YOUR RIG`.
+
+**Proof.** `tests/counter.test.ts`: wearSkin of token 1 on a new file is
+`NOT ON YOUR RIG`. counter.ts must `reason: "NOT ON YOUR RIG"` and must not
+`reason: "not on your rig"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 432 — A refund of an unowned node said not in your file
 
 **Goal.** Stage 431 taught `NEEDS N SCRIP`. Refunding a node the file does

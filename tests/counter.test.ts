@@ -10,6 +10,7 @@ import { economyManifest, SKINS, skinByToken } from "../shared/economy/catalog";
 import { lintEconomy } from "../shared/economy/lint";
 import { counterRequest } from "../shared/economy/endpoint";
 import { NAME_DEPTH, SIWE_STATEMENT, LAUNCH_GRANT, nameFee, wearSkin } from "../shared/economy/counter";
+import { createAccount } from "../shared/progression/account";
 import { devSeed, MemoryAccountStore } from "../server/accounts";
 import { identityTag, parseTag, publicIdentity } from "../shared/identity/identity";
 import { Room, type Conn } from "../server/room";
@@ -127,6 +128,16 @@ describe("the counter-ledger FILE line", () => {
     const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
     expect(src).toMatch(/LINK REFUSED: \$\{crtPhrase\(/);
     expect(src).not.toMatch(/LINK REFUSED: \$\{r\.reason\}/);
+  });
+});
+
+describe("wearing a skin CRT-cases a miss", () => {
+  it("a token not on the rig is NOT ON YOUR RIG, not not on your rig", () => {
+    const a = createAccount("wear", "W");
+    expect(wearSkin(a, 1)).toEqual({ ok: false, reason: "NOT ON YOUR RIG" });
+    const src = readFileSync(new URL("../shared/economy/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "NOT ON YOUR RIG"/);
+    expect(src).not.toMatch(/reason: "not on your rig"/);
   });
 });
 

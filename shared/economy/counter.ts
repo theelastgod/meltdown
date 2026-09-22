@@ -47,7 +47,7 @@ import { RUN_DEPTH } from "../sim/run";
 /** Wear an owned skin (token id) or 0 for none. Cached ownership is enough: equipping never waits on a chain read. */
 export function wearSkin(a: Account, token: number): { ok: boolean; reason?: string } {
   const c = a.counter ?? emptyCounter();
-  if (token !== 0 && !c.rig.includes(token)) return { ok: false, reason: "not on your rig" };
+  if (token !== 0 && !c.rig.includes(token)) return { ok: false, reason: "NOT ON YOUR RIG" };
   if (token !== 0 && !skinByToken(token)) return { ok: false, reason: "unknown skin" };
   a.counter = { ...c, worn: token };
   return { ok: true };
