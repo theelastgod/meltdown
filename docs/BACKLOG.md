@@ -540,3 +540,5 @@ one stage.
   → Stage 424
 - A locked gig said not on offer yet  
   → Stage 425
+- A second claim said already claimed  
+  → Stage 426

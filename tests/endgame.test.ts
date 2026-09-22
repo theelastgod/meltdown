@@ -23,6 +23,12 @@ describe("the endgame clock", () => {
 });
 
 describe("daily contracts", () => {
+  it("a second claim is ALREADY CLAIMED, not already claimed", () => {
+    const src = readFileSync(new URL("../shared/endgame/contracts.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "ALREADY CLAIMED"/);
+    expect(src).not.toMatch(/reason: "already claimed"/);
+  });
+
   it("three a day from the pool, seeded by the day; progress is the counter delta since the day began; a claim pays once", () => {
     const day = 20700;
     const now = day * DAY_MS + 1000;
@@ -44,7 +50,7 @@ describe("daily contracts", () => {
     expect(r.ok).toBe(true);
     expect(a.wallet.scrip).toBe(today[0]!.scrip);
     expect(a.wallet.wakelight).toBe(today[0]!.wakelight);
-    expect(claimContract(a, today[0]!.id, now)).toEqual({ ok: false, reason: "already claimed" });
+    expect(claimContract(a, today[0]!.id, now)).toEqual({ ok: false, reason: "ALREADY CLAIMED" });
     // the next day rolls the base and the claims
     const v2 = dailyView(a, now + DAY_MS);
     expect(v2.day).toBe(day + 1);

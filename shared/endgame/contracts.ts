@@ -83,7 +83,7 @@ export function claimContract(a: Account, id: string, now = Date.now()): { ok: b
   const v = dailyView(a, now);
   const ct = v.contracts.find((x) => x.id === id);
   if (!ct) return { ok: false, reason: "not on today's board" };
-  if (ct.claimed) return { ok: false, reason: "already claimed" };
+  if (ct.claimed) return { ok: false, reason: "ALREADY CLAIMED" };
   if (!ct.done) return { ok: false, reason: `${ct.progress}/${ct.need}` };
   a.daily!.claimed.push(id);
   a.wallet.scrip += ct.scrip;

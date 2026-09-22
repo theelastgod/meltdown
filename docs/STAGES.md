@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 426 — A second claim said already claimed
+
+**Goal.** Stage 425 taught `NOT ON OFFER YET`. Claiming a daily contract
+the file already banked still returned `already claimed`.
+
+**What changed.** `ALREADY CLAIMED`.
+
+**Proof.** `tests/endgame.test.ts`: a second claim is `ALREADY CLAIMED`.
+contracts.ts must `reason: "ALREADY CLAIMED"` and must not
+`reason: "already claimed"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 425 — A locked gig said not on offer yet
 
 **Goal.** Stage 424 taught `ALREADY CLOSED`. A Threat-locked gig still returned
