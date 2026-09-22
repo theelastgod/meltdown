@@ -131,7 +131,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
             continue;
           }
           const c = chipById(id);
-          if (!c) errors.push({ rule: "unknown-chip", detail: id });
+          if (!c) errors.push({ rule: "unknown-chip", detail: `UNKNOWN CHIP ${id}` });
           else if (c.weapon !== wid) errors.push({ rule: "chip-weapon", detail: `${c.name} IS A ${gun(c.weapon)} CHIP` });
           else if (c.socket !== socket) errors.push({ rule: "chip-socket", detail: `${c.name} IS A ${c.socket.toUpperCase()} CHIP, NOT ${socket.toUpperCase()}` });
           else if ((ranks[wid as WeaponId] ?? 1) < c.rank) errors.push({ rule: "chip-rank", detail: `${c.name} NEEDS ${gun(wid as WeaponId)} MASTERY ${c.rank} (YOU ARE ${ranks[wid as WeaponId] ?? 1})` });
