@@ -177,6 +177,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/class='dim'>empty/);
   });
 
+  it("an empty rig is NOTHING ON THE RIG YET, not nothing on the rig yet", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/class='dim'>NOTHING ON THE RIG YET/);
+    expect(src).not.toMatch(/nothing on the rig yet/);
+  });
+
   it("an unplayed Audit is NOT PLAYED YET, not not played yet", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/"NOT PLAYED YET"/);

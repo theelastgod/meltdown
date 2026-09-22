@@ -398,3 +398,5 @@ one stage.
   → Stage 353
 - An unplayed Audit said not played yet  
   → Stage 354
+- An empty rig said nothing on the rig yet  
+  → Stage 355

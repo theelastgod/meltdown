@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 355 — An empty rig said nothing on the rig yet
+
+**Goal.** Stage 354 taught `NOT PLAYED YET`. An empty cosmetics rig still dimmed
+`nothing on the rig yet`.
+
+**What changed.** `NOTHING ON THE RIG YET`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `NOTHING ON THE RIG YET` and must
+not `nothing on the rig yet`. Mutation: sentence-case again — 1 fail.
+`npm test` 1126/1126.
+
 ## Stage 354 — An unplayed Audit said not played yet
 
 **Goal.** Stage 353 taught `NONE POSTED`. An Audit never joined still dimmed
