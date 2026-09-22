@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 339 — One kill was KILLS
+
+**Goal.** Stage 338 taught `1 DEATH`. The same YOU line still said `1 KILLS`.
+
+**What changed.** `killsWord`: `1 KILL`, `3 KILLS`.
+
+**Proof.** `tests/round.test.ts`: `killsWord(1)` is `1 KILL`. Source must
+`killsWord(stats.kills)` and must not `stats.kills} KILLS`. Mutation: always KILLS —
+1 fail.
+
 ## Stage 338 — One death was DEATHS
 
 **Goal.** Stage 337 CRT-cased `41 S ON NODES`. The same card still wrote

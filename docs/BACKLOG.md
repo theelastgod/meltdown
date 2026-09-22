@@ -366,3 +366,5 @@ one stage.
   → Stage 337
 - One death was DEATHS  
   → Stage 338
+- One kill was KILLS  
+  → Stage 339
