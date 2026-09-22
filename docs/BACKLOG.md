@@ -456,3 +456,5 @@ one stage.
   → Stage 382
 - The Ledger Graph said click a leased node  
   → Stage 383
+- The Ledger Graph sandbox said sandbox: every node  
+  → Stage 384

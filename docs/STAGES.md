@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 384 — The Ledger Graph sandbox said sandbox: every node
+
+**Goal.** Stage 383 taught the shop footer. Offline, the graph still said
+`sandbox: every node is in the file — click to attest`.
+
+**What changed.** `SANDBOX: EVERY NODE IS IN THE FILE — CLICK TO ATTEST`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not the
+sentence-case line. Mutation: lowercase again — 1 fail.
+`npm test` 1153/1153.
+
 ## Stage 383 — The Ledger Graph said click a leased node
 
 **Goal.** Stage 382 taught `NO ONE ANSWERS`. The Ledger Graph footer, with a

@@ -275,6 +275,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/click a leased node to buy it with Scrip/);
   });
 
+  it("the Ledger Graph sandbox footer is CRT, not sandbox: every node", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/SANDBOX: EVERY NODE IS IN THE FILE — CLICK TO ATTEST/);
+    expect(src).not.toMatch(/sandbox: every node is in the file — click to attest/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);
