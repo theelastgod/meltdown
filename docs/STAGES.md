@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 462 — An unknown secondary said unknown secondary
+
+**Goal.** Stage 461 taught `UNKNOWN PRIMARY`. A loadout whose secondary
+is `also_bad` still kicked `unknown secondary also_bad`.
+
+**What changed.** `UNKNOWN SECONDARY ${id}`.
+
+**Proof.** Measured kick was mixed-case. After the fix:
+`UNKNOWN SECONDARY also_bad`. `tests/fairness.test.ts` asserts that
+sentence and that loadout.ts must the CRT template and must not the
+mixed-case template. Mutation: mixed case again — 1 fail.
+
 ## Stage 461 — An unknown primary said unknown primary
 
 **Goal.** Stage 460 taught `MUST TOUCH AN ATTESTED NODE`. A loadout

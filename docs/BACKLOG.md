@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- An unknown secondary still kicks mixed-case `unknown secondary`
+  → Stage 462
 - An unknown primary still kicks mixed-case `unknown primary`
   → Stage 461
 - A keystone that does not touch the attestation still kicks mixed-case `must touch an attested node`

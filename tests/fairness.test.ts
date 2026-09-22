@@ -98,6 +98,13 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(badPrimary.errors.find((e) => e.rule === "weapon")!.detail).not.toBe("unknown primary not_a_gun");
     expect(src).toMatch(/UNKNOWN PRIMARY \$\{String\(lo\.primary\)\}/);
     expect(src).not.toMatch(/unknown primary \$\{String\(lo\.primary\)\}/);
+    const badSecondary = validateLoadout({ primary: "lease_breaker", secondary: "also_bad", attested: [], keystone: null }, owned, 10);
+    expect(badSecondary.errors.map((e) => e.rule)).toContain("weapon");
+    const secKick = badSecondary.errors.find((e) => e.rule === "weapon" && /secondary/i.test(e.detail))!;
+    expect(secKick.detail).toBe("UNKNOWN SECONDARY also_bad");
+    expect(secKick.detail).not.toBe("unknown secondary also_bad");
+    expect(src).toMatch(/UNKNOWN SECONDARY \$\{String\(lo\.secondary\)\}/);
+    expect(src).not.toMatch(/unknown secondary \$\{String\(lo\.secondary\)\}/);
   });
   it("every legal build reconciles: NET DELTA 0 on the Auditor's ledger within tolerance", () => {
     const lo = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "contagion_rider"], keystone: null }, owned, 10).loadout;
