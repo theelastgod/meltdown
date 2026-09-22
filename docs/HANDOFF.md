@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 280, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 281, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 280 on this branch (WAKE flip ring wears tex_lamp) |
-| Next stage number | **281** |
+| HEAD | Stage 281 on this branch (mech cone wears tex_lamp) |
+| Next stage number | **282** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1067 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,9 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 281 is next
+## 6. Stage 282 is next
 
-Stage 280 put `tex_lamp` on THE WAKE's flip ring. Do not loosen fairness.
+Stage 281 put `tex_lamp` on the mech searchlight cone. Do not loosen fairness.
 
 ---
 

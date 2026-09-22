@@ -303,9 +303,11 @@ export class ArsenalFx {
         head.add(target);
         spot.target = target;
         head.add(spot);
+        const coneMat = new THREE.MeshBasicMaterial({ color: 0xffc46a, transparent: true, opacity: 0.045, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+        bindPlate(coneMat, "tex_lamp");
         const cone = new THREE.Mesh(
           new THREE.ConeGeometry(6.5, 30, 24, 1, true).rotateX(-Math.PI / 2).translate(0, 0, -15),
-          new THREE.MeshBasicMaterial({ color: 0xffc46a, transparent: true, opacity: 0.045, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }),
+          coneMat,
         );
         cone.rotation.x = 0.04;
         head.add(cone);

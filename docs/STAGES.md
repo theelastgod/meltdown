@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 281 — The mech searchlight cone was a flat amber volume
+
+**Goal.** Stage 253 plated the searchlight lens. The 30 m additive cone that
+reads the beam in the rain was still unmapped `MeshBasicMaterial` at 0.045
+opacity.
+
+**What changed.** `bindPlate(coneMat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `weapons.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 280 — THE WAKE flip ring was a flat hex pulse
 
 **Goal.** Stage 273 plated the pad's hex ring. The liberation ring that expands

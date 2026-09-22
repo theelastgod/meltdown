@@ -250,3 +250,5 @@ one stage.
   → Stage 279
 - THE WAKE flip ring was a flat hex pulse  
   → Stage 280
+- The mech searchlight cone was a flat amber volume  
+  → Stage 281
