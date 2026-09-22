@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 338 — One death was DEATHS
+
+**Goal.** Stage 337 CRT-cased `41 S ON NODES`. The same card still wrote
+`1 DEATHS`. `probe:stage5` asserted that form.
+
+**What changed.** `deathsWord` prints `1 DEATH` / `2 DEATHS`. The card calls it.
+The probe now expects `1 DEATH`.
+
+**Proof.** `tests/round.test.ts`: `deathsWord(1)` is `1 DEATH`. round.ts must
+`deathsWord(stats.deaths)`. Mutation: always `DEATHS` — 1 fail.
+`npm test` 1110/1110.
+
 ## Stage 337 — ON NODES suffixed seconds as s
 
 **Goal.** Stage 336 CRT-cased `NEXT ROUND IN 13S`. The same card still wrote

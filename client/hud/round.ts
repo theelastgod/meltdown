@@ -41,6 +41,11 @@ export function nodeSecondsLine(seconds: number): string {
   return `${Math.round(seconds)} S ON NODES`;
 }
 
+/** One death is DEATH, not DEATHS. */
+export function deathsWord(n: number): string {
+  return `${n} DEATH${n === 1 ? "" : "S"}`;
+}
+
 /** which cell the round went to: the full wake's winner, else the score, else nobody */
 export function roundWinner(w: RoundView): number {
   if (w.winner === 1 || w.winner === 2) return w.winner;
@@ -57,7 +62,7 @@ export function roundCard(w: RoundView, myTeam: number, zone: string, stats: Rou
     winner ? `${cell(winner)} WOKE ${zone}` : `NO ONE WOKE ${zone}`,
     `CELL ONE ${s1} · CELL TWO ${s2}`,
   ];
-  if (myTeam === 1 || myTeam === 2) lines.push(`YOU · ${cell(myTeam)} · ${stats.kills} KILLS · ${stats.deaths} DEATHS · ${stats.flips} PULLS · ${nodeSecondsLine(stats.nodeSeconds)}`);
+  if (myTeam === 1 || myTeam === 2) lines.push(`YOU · ${cell(myTeam)} · ${stats.kills} KILLS · ${deathsWord(stats.deaths)} · ${stats.flips} PULLS · ${nodeSecondsLine(stats.nodeSeconds)}`);
   lines.push(nextRoundLine(left));
   const color = !winner || !(myTeam === 1 || myTeam === 2) ? "am" : winner === myTeam ? "cy" : "mg";
   return { title: "ROUND OVER", lines, color, key: `${winner}|${s1}|${s2}|${myTeam}|${stats.kills}|${stats.deaths}|${stats.flips}|${Math.round(stats.nodeSeconds)}|${left}` };
