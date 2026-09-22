@@ -610,6 +610,15 @@ describe("rewrite and the Wakelight shop", () => {
     expect(src).toMatch(/id: "theme_phosphor".*line: "GREEN-ON-BLACK TERMINAL, THE FIRST CRT YOU EVER SAW"/s);
     expect(src).not.toMatch(/line: "green-on-black terminal, the first CRT you ever saw"/);
   });
+
+  it("AMBER's shop line is CRT, not the Estate's own monitors", () => {
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    const line = COSMETICS.find((c) => c.id === "theme_amber")!.line;
+    expect(line).toBe("THE ESTATE'S OWN MONITORS");
+    expect(line).not.toBe("the Estate's own monitors");
+    expect(src).toMatch(/id: "theme_amber".*line: "THE ESTATE'S OWN MONITORS"/s);
+    expect(src).not.toMatch(/line: "the Estate's own monitors"/);
+  });
 });
 
 // ---- the room: an Audit playlist's rules at join, scores at settlement, the Deep Wake push ----

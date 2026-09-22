@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- AMBER's Wakelight shop line still says mixed-case `the Estate's own monitors`
+  → Stage 483
 - PHOSPHOR's Wakelight shop line still says mixed-case `green-on-black terminal`
   → Stage 482
 - The FILE's chain miss still prints the host's raw `info.reason`
