@@ -28,6 +28,11 @@ import { CAMPAIGN_WEAPONS } from "@shared/weapons/manifest";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop";
 
+/** The hold/survive objective clock: CRT, not `12s / 20s`. */
+export function holdClock(progress: number, need: number): string {
+  return `${Math.floor(progress)}S / ${need}S`;
+}
+
 interface Playing {
   script: string;
   node: ScriptNode;
@@ -221,7 +226,7 @@ export class Campaign {
       ...(v.escort ? [{ kind: "escort" as const, x: v.escort.x, z: v.escort.z }] : []),
       ...targets.map((t) => ({ kind: "target" as const, x: t.x, z: t.z })),
     ]);
-    const prog = o ? (o.kind === "kill" || o.kind === "destroy" ? `${v.progress}/${v.need}` : o.kind === "survive" || o.kind === "hold" ? `${Math.floor(v.progress)}s / ${v.need}s` : o.kind === "escort" ? `${Math.round(v.progress * 100)}%` : null) : null;
+    const prog = o ? (o.kind === "kill" || o.kind === "destroy" ? `${v.progress}/${v.need}` : o.kind === "survive" || o.kind === "hold" ? holdClock(v.progress, v.need) : o.kind === "escort" ? `${Math.round(v.progress * 100)}%` : null) : null;
     // …and how far it is, when the contract has a place it wants you (Stage 92): a distance is the
     // difference between "go to the substation" and knowing whether to sprint or to take the long
     // way round
@@ -368,7 +373,7 @@ export class Campaign {
     const me = this.game.player.id;
     this.host = m.hostId === me;
     const v = m.view as ReturnType<typeof missionView>;
-    const prog = v.kind === "kill" || v.kind === "destroy" ? `${v.progress}/${v.need}` : v.kind === "survive" || v.kind === "hold" ? `${Math.floor(v.progress)}s / ${v.need}s` : null;
+    const prog = v.kind === "kill" || v.kind === "destroy" ? `${v.progress}/${v.need}` : v.kind === "survive" || v.kind === "hold" ? holdClock(v.progress, v.need) : null;
     this.game.hud.setObjective(`◈ ${v.title}${this.crew ? ` · CREW ${this.crew}` : ""}${this.host ? " · HOST" : ""}`, v.objective || (v.status === "complete" ? "CONTRACT CLOSED" : v.status === "failed" ? "CONTRACT FAILED" : ""), prog);
     const fx = this.game.renderer.campaignFx;
     fx.setEscort(v.escort ? { x: v.escort.x, z: v.escort.z } : null, v.escort?.waiting ?? false);

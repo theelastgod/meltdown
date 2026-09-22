@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 335 — Campaign hold/survive suffixed the clock as s
+
+**Goal.** Stage 334 CRT-cased `RE-LEASING IN 3S`. A hold still wrote `12s / 20s`
+on the objective strip.
+
+**What changed.** `holdClock` prints `12S / 20S`. Offline and co-op both call it.
+
+**Proof.** `tests/hold.test.ts`: `holdClock(12.9, 20)` is `12S / 20S`. campaign.ts
+must `holdClock(v.progress, v.need)` and must not the lowercase template.
+Mutation: lowercase s again — 1 fail.
+`npm test` 1107/1107.
+
 ## Stage 334 — RE-LEASING IN suffixed the wait as s
 
 **Goal.** Stage 328 CRT-cased `REJOINING IN 0.5S`. The death stamp still said

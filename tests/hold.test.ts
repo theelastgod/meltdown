@@ -6,7 +6,9 @@
  * syncFx drew no marker. Measured: walk to B, start the hold, teleport to A, wait 21 s — the
  * objective advanced to "TAKE THE FILE FROM THE CABINET AT E" with the player never at the terminal.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { holdClock } from "../client/campaign";
 import { World } from "../shared/sim/world";
 import { levelById } from "../shared/sim/level";
 import { createMission, missionView, resolveDialogue, stepMission } from "../shared/campaign/runtime";
@@ -105,6 +107,17 @@ describe("every survive/hold names a place", () => {
     } finally {
       hold.at = keep;
     }
+  });
+});
+
+describe("the hold/survive clock", () => {
+  it("suffixes seconds as S, not 12s / 20s", () => {
+    expect(holdClock(12.9, 20)).toBe("12S / 20S");
+    expect(holdClock(0, 20)).toBe("0S / 20S");
+    expect(holdClock(12.9, 20)).not.toBe("12s / 20s");
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/holdClock\(v\.progress, v\.need\)/);
+    expect(src).not.toMatch(/Math\.floor\(v\.progress\)\}s \/ \$\{v\.need\}s/);
   });
 });
 
