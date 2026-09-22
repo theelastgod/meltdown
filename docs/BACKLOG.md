@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- BATON VIOLET's market line still says mixed-case `shock-violet trim on a close-in stick`
+  → Stage 512
 - HAMMER RUST's market line still says mixed-case `shotgun steel that never left the rain`
   → Stage 511
 - LONGWAVE ICE's market line still says mixed-case `cold cyan rail, the colour a charge howls`

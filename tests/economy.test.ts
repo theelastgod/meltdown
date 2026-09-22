@@ -244,4 +244,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(19, "skin_hammer", "HAMMER RUST", "SHOTGUN STEEL THAT NEVER LEFT THE RAIN"/);
     expect(src).not.toMatch(/skin\(19, "skin_hammer", "HAMMER RUST", "shotgun steel that never left the rain"/);
   });
+
+  it("BATON VIOLET's market line is CRT, not shock-violet trim", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_baton")!.line;
+    expect(line).toBe("SHOCK-VIOLET TRIM ON A CLOSE-IN STICK");
+    expect(line).not.toBe("shock-violet trim on a close-in stick");
+    expect(src).toMatch(/skin\(20, "skin_baton", "BATON VIOLET", "SHOCK-VIOLET TRIM ON A CLOSE-IN STICK"/);
+    expect(src).not.toMatch(/skin\(20, "skin_baton", "BATON VIOLET", "shock-violet trim on a close-in stick"/);
+  });
 });

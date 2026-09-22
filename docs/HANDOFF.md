@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 511, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 512, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 511 on this branch (HAMMER RUST market line) |
-| Next stage number | **512** |
+| HEAD | Stage 512 on this branch (BATON VIOLET market line) |
+| Next stage number | **513** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 512 is next
+## 6. Stage 513 is next
 
-Stage 511 CRT-cased HAMMER RUST's market line. BATON VIOLET still says
-mixed-case `shock-violet trim on a close-in stick`. Title cards stay
+Stage 512 CRT-cased BATON VIOLET's market line. STACK PLATE still says
+mixed-case `stacked polymer, the SMG's own rain`. Title cards stay
 prose (probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints
