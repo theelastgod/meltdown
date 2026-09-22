@@ -157,6 +157,15 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(src).not.toMatch(/line: "−22% rate, \+22% damage, −30% spread"/);
   });
 
+  it("CAPACITOR's FILE line is CRT, not −15% charge time", () => {
+    const src = readFileSync(new URL("../shared/manifest/firmwares.ts", import.meta.url), "utf8");
+    const line = FIRMWARES.find((f) => f.id === "longwave:capacitor")!.line;
+    expect(line).toBe("−15% CHARGE TIME, −7% DAMAGE");
+    expect(line).not.toBe("−15% charge time, −7% damage");
+    expect(src).toMatch(/id: "longwave:capacitor".*line: "−15% CHARGE TIME, −7% DAMAGE"/s);
+    expect(src).not.toMatch(/line: "−15% charge time, −7% damage"/);
+  });
+
   it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
     const pct = (from: number, to: number) => ((to - from) / from) * 100;
     for (const f of FIRMWARES) {

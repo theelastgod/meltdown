@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- CAPACITOR's FILE line still says mixed-case `−15% charge time, −7% damage`
+  → Stage 530
 - MEASURED's FILE line still says mixed-case `−22% rate, +22% damage`
   → Stage 529
 - DUMP STAGE's FILE line still says mixed-case `+18% rate, −15% magazine`
