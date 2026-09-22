@@ -432,3 +432,5 @@ one stage.
   → Stage 370
 - ENDGAME without a host said contracts, Audits  
   → Stage 371
+- The sink how-to said both burned in full  
+  → Stage 372

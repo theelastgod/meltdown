@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 371, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 372, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 371 on this branch (ENDGAME no-host dim is CRT) |
-| Next stage number | **372** |
+| HEAD | Stage 372 on this branch (sink how-to is CRT) |
+| Next stage number | **373** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1140 across 117 files, `npm test` |
+| Unit tests | 1141 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,9 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 372 is next
+## 6. Stage 373 is next
 
-Stage 371 CRT-cased the ENDGAME no-host dim. Do not loosen fairness. Do not plate
+Stage 372 CRT-cased the sink how-to. Do not loosen fairness. Do not plate
 viewmodel or remote strips. The join line still prints the socket name —
 `probe:net` asserts `probe-join-31`; leave it.
 

@@ -251,6 +251,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/contracts, Audits, the Deep Wake and Rewrite need a ledger host/);
   });
 
+  it("the sink how-to is CRT, not both burned in full", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/BOTH BURNED IN FULL; A PASS IS COSMETICS, AN HOUR IS A SERVER OF YOUR OWN — A PRIVATE ROOM BANKS SCRIP, NEVER \$CAPITAL/);
+    expect(src).not.toMatch(/both burned in full; a pass is cosmetics/);
+  });
+
   it("a waiting counter is FETCHING THE CHAIN CLIENT, not fetching the chain client", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/COUNTER-LEDGER \/\/ FETCHING THE CHAIN CLIENT…/);

@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 372 — The sink how-to said both burned in full
+
+**Goal.** Stage 371 taught the ENDGAME no-host dim. Linked sinks still dimmed
+`both burned in full; a pass is cosmetics, an hour is a server of your own —
+a private room banks Scrip, never $CAPITAL`.
+
+**What changed.** The same sentence, CRT.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not
+`both burned in full; a pass is cosmetics`. Mutation: lowercase again — 1 fail.
+`npm test` 1141/1141.
+
 ## Stage 371 — ENDGAME without a host said contracts, Audits
 
 **Goal.** Stage 370 taught THE RUN's unlinked dim. Opening FILE with no ledger
