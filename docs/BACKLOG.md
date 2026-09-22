@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- PRESET SLOT V's shop line still says mixed-case `a fifth`
+  → Stage 491
 - PRESET SLOT IV's shop line still says mixed-case `a fourth`
   → Stage 490
 - PRESET SLOT III's shop line still says mixed-case `a third`

@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 491 — PRESET SLOT V's shop line said a fifth
+
+**Goal.** Stage 490 taught PRESET SLOT IV. PRESET SLOT V still said
+mixed-case `a fifth`.
+
+**What changed.** `A FIFTH`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/endgame.test.ts` asserts that sentence and
+that rewrite.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 490 — PRESET SLOT IV's shop line said a fourth
 
 **Goal.** Stage 489 taught PRESET SLOT III. PRESET SLOT IV still said
