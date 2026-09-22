@@ -341,6 +341,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/class="dim">\$\{into\}\/\$\{need\} xp/);
   });
 
+  it("a mastery gate is GATE R, not GATE r", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/GATE R\$\{gate\.gate\}/);
+    expect(src).not.toMatch(/GATE r\$\{gate\.gate\}/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);

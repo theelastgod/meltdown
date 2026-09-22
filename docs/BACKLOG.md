@@ -490,3 +490,5 @@ one stage.
   → Stage 399
 - Rewrite too early said Depth  
   → Stage 400
+- A mastery gate said GATE r  
+  → Stage 401

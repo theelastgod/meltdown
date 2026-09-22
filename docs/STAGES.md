@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 401 — A mastery gate said GATE r
+
+**Goal.** Stage 400 taught `REWRITE OPENS AT`. An open mastery challenge still
+dimmed `GATE r5`.
+
+**What changed.** `GATE R${gate.gate}`. Chip and firmware option ranks stay
+lowercase for the next stages.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `GATE R${gate.gate}` and must
+not `GATE r${gate.gate}`. Mutation: mixed case again — 1 fail.
+
 ## Stage 400 — Rewrite too early said Depth
 
 **Goal.** Stage 399 taught `NO FILE`. Below Depth 50, Rewrite still dimmed
