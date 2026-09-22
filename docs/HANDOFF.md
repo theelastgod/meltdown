@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 262, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 263, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 262 on this branch (spawn pads wear tex_wet_asphalt) |
-| Next stage number | **263** |
+| HEAD | Stage 263 on this branch (lamp pools and vending fronts wear tex_lamp) |
+| Next stage number | **264** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | ~1062 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 263 is next
+## 6. Stage 264 is next
 
-Stage 262 put leftover `tex_wet_asphalt` on spawn pads. Lamp ground-pools and vending fronts
-(`M.glow`) are still a flat cyan wash. Do not loosen fairness.
+Stage 263 put `tex_lamp` on lamp ground-pools and vending fronts. Do not loosen fairness.
 
 ---
 

@@ -324,6 +324,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
   bindPlate(M.head, "tex_lamp");
   bindPlate(M.padStart, "tex_wet_asphalt");
   bindPlate(M.padEnd, "tex_wet_asphalt");
+  bindPlate(M.glow, "tex_lamp");
   const facadeIds =
     cast === "amber" ? (["tex_facade_amber", "tex_var_000", "tex_var_001"] as const)
     : cast === "cyan" ? (["tex_facade_cyan", "tex_var_002", "tex_var_003"] as const)

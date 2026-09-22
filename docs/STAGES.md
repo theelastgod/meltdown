@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 263 — Lamp pools and vending fronts were a flat cyan wash
+
+**Goal.** Street lamps already wear `tex_lamp`. The ground-pool under each lamp and the lit
+front of each vending machine still used `M.glow` — `MeshBasicMaterial` cyan at 0.18 opacity
+with no map.
+
+**What changed.** `bindPlate(M.glow, "tex_lamp")`, fail-soft. The cyan wash stays; the lamp
+plate is the map.
+
+**Proof.** `tests/assets.test.ts` requires that call in `city.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 262 — Spawn pads were flat green and magenta boxes
 
 **Goal.** `tex_wet_asphalt` has been in the manifest since the city pack and never reached a mesh.

@@ -214,3 +214,5 @@ one stage.
   → Stage 261
 - Spawn pads were flat green and magenta boxes  
   → Stage 262
+- Lamp pools and vending fronts were a flat cyan wash  
+  → Stage 263
