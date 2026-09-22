@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 318 — COUNTER-LEDGER quoted the catch as written
+
+**Goal.** Stage 317 CRT-cased a thrown sink. Fetching `/counter` that throws still
+interpolated `String(e)`: `COUNTER-LEDGER: TypeError: Failed to fetch`.
+
+**What changed.** `COUNTER-LEDGER: ${crtPhrase(String(e).slice(0, 100))}`.
+
+**Proof.** `tests/counter.test.ts`: source must `COUNTER-LEDGER: ${crtPhrase(` and must not
+`COUNTER-LEDGER: ${String(e)}`. Mutation: interpolate String(e) — 1 fail.
+
 ## Stage 317 — A thrown sink burn quoted FAILED in sentence case
 
 **Goal.** Stage 316 CRT-cased a thrown counter op. Buying the Deep Wake pass or

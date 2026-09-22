@@ -74,7 +74,7 @@ export class CounterClient {
       this.onChange?.();
       return !this.info.reason;
     } catch (e) {
-      this.say(`COUNTER-LEDGER: ${String(e)}`);
+      this.say(`COUNTER-LEDGER: ${crtPhrase(String(e).slice(0, 100))}`);
       return false;
     }
   }

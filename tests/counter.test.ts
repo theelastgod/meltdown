@@ -58,6 +58,12 @@ describe("the counter-ledger FILE line", () => {
     expect(src).not.toMatch(/ROOM REFUSED: \$\{r\.reason\}/);
   });
 
+  it("COUNTER-LEDGER CRT-cases the caught error, not TypeError: Failed to fetch", () => {
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/COUNTER-LEDGER: \$\{crtPhrase\(/);
+    expect(src).not.toMatch(/COUNTER-LEDGER: \$\{String\(e\)\}/);
+  });
+
   it("a thrown sink burn CRT-cases FAILED, not DEEP WAKE SEASON 1 FAILED: Failed to fetch", () => {
     const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
     expect(src).toMatch(/\$\{label\} FAILED: \$\{crtPhrase\(/);
