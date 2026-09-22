@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 330 — The RANGE ledger suffixed times as s
+
+**Goal.** Stage 326 CRT-cased the RANGE log as `5.55S`. `recordGhost` still wrote
+`RANGE · DEADLETTER OFFICE (HUB) · 12.50s · FIRST RUN` and `11.00s (−1.50s)`.
+
+**What changed.** `${run.seconds.toFixed(2)}S` and the improvement delta the same way.
+
+**Proof.** `tests/identity.test.ts`: first run is `12.50S · FIRST RUN`; a faster run
+is `11.00S (−1.50S)`. Mutation: lowercase s again — 1 fail.
+`npm test` 1102/1102.
+
 ## Stage 329 — Kill TTK suffixed the time as s
 
 **Goal.** Stage 326 CRT-cased RANGE times as `5.55S`. A kill log still wrote

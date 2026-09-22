@@ -130,6 +130,19 @@ describe("account identity fields", () => {
     expect(rangeCourseName("white_office")).not.toBe("WHITE OFFICE");
     expect(totalXpToReach(10)).toBeGreaterThan(0);
   });
+
+  it("the RANGE ledger suffixes times as S, not 12.50s", () => {
+    const a = createAccount("f:g2", "G2");
+    const run = validGhost({ level: HUB_LEVEL_ID, seconds: 12.5, samples: new Array(40).fill(1) })!;
+    expect(recordGhost(a, run)).toBe(true);
+    expect(a.ledger.at(-1)).toBe("RANGE · DEADLETTER OFFICE (HUB) · 12.50S · FIRST RUN");
+    expect(recordGhost(a, { ...run, seconds: 11 })).toBe(true);
+    expect(a.ledger.at(-1)).toBe("RANGE · DEADLETTER OFFICE (HUB) · 11.00S (−1.50S)");
+    expect(a.ledger.at(-1)).not.toBe("RANGE · DEADLETTER OFFICE (HUB) · 11.00s (−1.50s)");
+    const src = readFileSync(new URL("../shared/progression/account.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/toFixed\(2\)\}S/);
+    expect(src).not.toMatch(/toFixed\(2\)\}s/);
+  });
 });
 
 describe("the Deadletter Office", () => {

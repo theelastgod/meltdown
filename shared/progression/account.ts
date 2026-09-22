@@ -130,7 +130,7 @@ export function recordGhost(a: Account, run: GhostRun): boolean {
   const cur = a.ghosts[run.level];
   if (cur && cur.seconds <= run.seconds) return false;
   a.ghosts[run.level] = run;
-  a.ledger.push(`RANGE · ${rangeCourseName(run.level)} · ${run.seconds.toFixed(2)}s${cur ? ` (−${(cur.seconds - run.seconds).toFixed(2)}s)` : " · FIRST RUN"}`);
+  a.ledger.push(`RANGE · ${rangeCourseName(run.level)} · ${run.seconds.toFixed(2)}S${cur ? ` (−${(cur.seconds - run.seconds).toFixed(2)}S)` : " · FIRST RUN"}`);
   return true;
 }
 
