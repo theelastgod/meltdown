@@ -240,3 +240,5 @@ one stage.
   → Stage 274
 - THE WAKE light column was a flat violet tube  
   → Stage 275
+- The campaign objective ring was a flat cyan hoop  
+  → Stage 276

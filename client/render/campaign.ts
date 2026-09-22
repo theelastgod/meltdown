@@ -33,7 +33,9 @@ export class CampaignFx {
     scene.add(this.group);
     this.marker = new THREE.Group();
     this.marker.add(beam(PALETTE.cyan));
-    this.ring = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.1, 32), new THREE.MeshBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.6, side: THREE.DoubleSide, depthWrite: false }));
+    const ringMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.6, side: THREE.DoubleSide, depthWrite: false });
+    bindPlate(ringMat, "tex_lamp");
+    this.ring = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.1, 32), ringMat);
     this.ring.rotation.x = -Math.PI / 2;
     this.ring.position.y = 0.06;
     this.marker.add(this.ring);
