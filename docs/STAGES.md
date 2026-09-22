@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 374 — A Depth-gated RUN said the run pays Scrip
+
+**Goal.** Stage 373 taught the private-room invite. Below the Depth gate THE RUN
+still dimmed `below Depth ${RUN_DEPTH} the run pays Scrip`.
+
+**What changed.** `BELOW DEPTH ${RUN_DEPTH} THE RUN PAYS SCRIP`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not the
+sentence-case line. Mutation: lowercase again — 1 fail.
+`npm test` 1143/1143.
+
 ## Stage 373 — A private-room invite said give it to whoever you want in
 
 **Goal.** Stage 372 taught the sink how-to. Opening a private room still dimmed

@@ -263,6 +263,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/give it to whoever you want in; it is the only way in/);
   });
 
+  it("a Depth-gated RUN is CRT, not the run pays Scrip", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/BELOW DEPTH \$\{RUN_DEPTH\} THE RUN PAYS SCRIP/);
+    expect(src).not.toMatch(/below Depth \$\{RUN_DEPTH\} the run pays Scrip/);
+  });
+
   it("a waiting counter is FETCHING THE CHAIN CLIENT, not fetching the chain client", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/COUNTER-LEDGER \/\/ FETCHING THE CHAIN CLIENT…/);

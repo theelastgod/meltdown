@@ -436,3 +436,5 @@ one stage.
   → Stage 372
 - A private-room invite said give it to whoever you want in  
   → Stage 373
+- A Depth-gated RUN said the run pays Scrip  
+  → Stage 374
