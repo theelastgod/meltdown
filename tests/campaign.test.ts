@@ -108,6 +108,12 @@ describe("an empty fixer board is CRT", () => {
     expect(src).not.toMatch(/no contracts on offer/);
     expect(src).not.toMatch(/\$\{done\} closed/);
   });
+
+  it("a re-leased fixer is NO ONE ANSWERS, not no one answers", () => {
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/NO ONE ANSWERS/);
+    expect(src).not.toMatch(/no one answers/);
+  });
 });
 
 describe("picking a house writes the name, not the id", () => {

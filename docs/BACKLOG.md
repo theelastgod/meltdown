@@ -452,3 +452,5 @@ one stage.
   → Stage 380
 - An empty fixer board said no contracts on offer  
   → Stage 381
+- A re-leased fixer said no one answers  
+  → Stage 382

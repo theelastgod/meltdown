@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 382 — A re-leased fixer said no one answers
+
+**Goal.** Stage 381 taught `NO CONTRACTS ON OFFER`. A dead handler still dimmed
+`no one answers`.
+
+**What changed.** `NO ONE ANSWERS`.
+
+**Proof.** `tests/campaign.test.ts`: campaign.ts must `NO ONE ANSWERS` and must not
+`no one answers`. Mutation: lowercase again — 1 fail.
+
 ## Stage 381 — An empty fixer board said no contracts on offer
 
 **Goal.** Stage 370 taught CRT empty states. A fixer with nothing on offer still

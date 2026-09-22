@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 381, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 382, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 381 on this branch (NO CONTRACTS ON OFFER) |
-| Next stage number | **382** |
+| HEAD | Stage 382 on this branch (NO ONE ANSWERS) |
+| Next stage number | **383** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1149 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 382 is next
+## 6. Stage 383 is next
 
-Stage 381 CRT-cased `NO CONTRACTS ON OFFER`. A re-leased fixer still dims
-`no one answers`. Do not loosen fairness. Do not plate viewmodel or remote
+Stage 382 CRT-cased `NO ONE ANSWERS`. The Ledger Graph footer still says
+`click a leased node`. Do not loosen fairness. Do not plate viewmodel or remote
 strips. The join line still prints the socket name — `probe:net` asserts
 `probe-join-31`; leave it.
 
