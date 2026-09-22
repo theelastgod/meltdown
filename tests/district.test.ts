@@ -109,4 +109,9 @@ describe("the main menu CRT-cases its lines", () => {
     expect(src).toMatch(/id: "file", label: "FILE", line: "THE GHOSTFILE: NODES, MASTERY, STAMPS, THE COUNTER-LEDGER"/);
     expect(src).not.toMatch(/id: "file", label: "FILE", line: "the Ghostfile:/);
   });
+  it("SETTINGS's subtitle is sensitivity in CRT", () => {
+    const src = readFileSync(new URL("../client/menu.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/id: "settings", label: "SETTINGS", line: "SENSITIVITY, FIELD OF VIEW, VOLUMES, THE CRT"/);
+    expect(src).not.toMatch(/id: "settings", label: "SETTINGS", line: "sensitivity, field of view,/);
+  });
 });

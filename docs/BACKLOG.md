@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- SETTINGS's menu subtitle still says mixed-case `sensitivity, field of view`
+  → Stage 479
 - FILE's menu subtitle still says mixed-case `the Ghostfile`
   → Stage 478
 - THE RANGE's menu subtitle still says mixed-case `the drainage yard`
