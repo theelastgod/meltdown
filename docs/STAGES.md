@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 444 — A chip below mastery said needs mastery
+
+**Goal.** Stage 443 taught `IS NOT IN YOUR FILE`. Socketing FLASH CUT at
+rank 1 still kicked `LEASE-BREAKER FLASH CUT needs LEASE-BREAKER mastery
+22 (you are 1)`.
+
+**What changed.** `NEEDS … MASTERY … (YOU ARE …)`. Firmware rank stays
+mixed case.
+
+**Proof.** `tests/mastery.test.ts`: the kick matches `LEASE-BREAKER MASTERY`
+and `YOU ARE`. loadout.ts must the CRT chip-rank template. Mutation:
+mixed case again — 1 fail.
+
 ## Stage 443 — An unowned node said is not in your file
 
 **Goal.** Stage 442 taught `UNLOCKS IN THE CAMPAIGN`. Attesting LONG LEASE

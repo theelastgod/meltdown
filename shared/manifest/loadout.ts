@@ -134,7 +134,7 @@ export function validateLoadout(raw: unknown, owned: readonly string[], depth: n
           if (!c) errors.push({ rule: "unknown-chip", detail: id });
           else if (c.weapon !== wid) errors.push({ rule: "chip-weapon", detail: `${c.name} is a ${gun(c.weapon)} chip` });
           else if (c.socket !== socket) errors.push({ rule: "chip-socket", detail: `${c.name} is a ${c.socket.toUpperCase()} chip, not ${socket.toUpperCase()}` });
-          else if ((ranks[wid as WeaponId] ?? 1) < c.rank) errors.push({ rule: "chip-rank", detail: `${c.name} needs ${gun(wid as WeaponId)} mastery ${c.rank} (you are ${ranks[wid as WeaponId] ?? 1})` });
+          else if ((ranks[wid as WeaponId] ?? 1) < c.rank) errors.push({ rule: "chip-rank", detail: `${c.name} NEEDS ${gun(wid as WeaponId)} MASTERY ${c.rank} (YOU ARE ${ranks[wid as WeaponId] ?? 1})` });
           else out[socket as Socket] = id;
         }
         chips[wid as WeaponId] = out;

@@ -83,11 +83,14 @@ describe("chips and firmwares", () => {
     expect(locked.errors.map((e) => e.rule)).toContain("chip-rank");
     const rankKick = locked.errors.find((e) => e.rule === "chip-rank")!;
     expect(rankKick.detail).toMatch(/LEASE-BREAKER FLASH CUT/);
-    expect(rankKick.detail).toMatch(/LEASE-BREAKER mastery/);
+    expect(rankKick.detail).toMatch(/LEASE-BREAKER MASTERY/);
+    expect(rankKick.detail).toMatch(/YOU ARE/);
     expect(rankKick.detail).not.toMatch(/lease_breaker:flash_cut/);
     expect(rankKick.detail).not.toMatch(/needs lease_breaker mastery/);
+    expect(rankKick.detail).not.toMatch(/LEASE-BREAKER mastery/);
     const src = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
-    expect(src).toMatch(/chip-rank", detail: `\$\{c\.name\} needs \$\{gun\(wid as WeaponId\)\}/);
+    expect(src).toMatch(/chip-rank", detail: `\$\{c\.name\} NEEDS \$\{gun\(wid as WeaponId\)\} MASTERY/);
+    expect(src).not.toMatch(/chip-rank", detail: `\$\{c\.name\} needs \$\{gun\(wid as WeaponId\)\} mastery/);
     expect(src).not.toMatch(/chip-rank", detail: `\$\{id\} needs \$\{wid\}/);
     const fw = validateLoadout({ ...DEFAULT_LOADOUT, firmware: { lease_breaker: "lease_breaker:three_count" } }, owned, 50, ranks); // rank 20
     expect(fw.errors.map((e) => e.rule)).toContain("firmware-rank");
