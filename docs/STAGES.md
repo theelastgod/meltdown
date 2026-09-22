@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 378 — The Ledger Market heading said settles only in
+
+**Goal.** Stage 377 taught `LISTED BY`. The market heading still wrote
+`settles only in $CAPITAL · 5% fee: 2% burned, 2% treasury, 1% creator`.
+
+**What changed.** The same line, CRT.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT heading and must not
+`LEDGER MARKET · settles only in`. Mutation: lowercase again — 1 fail.
+`npm test` 1147/1147.
+
 ## Stage 377 — A market row said listed by
 
 **Goal.** Stage 376 taught the other-book manifesto. A Ledger Market listing

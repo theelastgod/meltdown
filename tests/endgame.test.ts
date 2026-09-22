@@ -251,6 +251,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/listed by \$\{mine/);
   });
 
+  it("the Ledger Market heading is CRT, not settles only in", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/LEDGER MARKET · SETTLES ONLY IN \$CAPITAL · 5% FEE: 2% BURNED, 2% TREASURY, 1% CREATOR/);
+    expect(src).not.toMatch(/LEDGER MARKET · settles only in \$CAPITAL/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);
