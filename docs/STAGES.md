@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 456 — A non-string chip said must be an id
+
+**Goal.** Stage 455 taught `KEYSTONE MUST BE AN ID`. A numeric muzzle chip
+still kicked `LEASE-BREAKER.MUZZLE: chip must be an id`.
+
+**What changed.** `CHIP MUST BE AN ID`.
+
+**Proof.** `tests/mastery.test.ts`: the kick is
+`LEASE-BREAKER.MUZZLE: CHIP MUST BE AN ID`. loadout.ts must the CRT
+template. Mutation: mixed case again — 1 fail.
+
 ## Stage 455 — A non-string keystone said must be an id
 
 **Goal.** Stage 248 taught `KEYSTONE` on that kick. A numeric keystone still

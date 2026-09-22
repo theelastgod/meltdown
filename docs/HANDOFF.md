@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 455, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 456, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 455 on this branch (KEYSTONE MUST BE AN ID) |
-| Next stage number | **456** |
+| HEAD | Stage 456 on this branch (CHIP MUST BE AN ID) |
+| Next stage number | **457** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,12 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 455 is next
+## 6. Stage 457 is next
 
-Stage 454 CRT-cased `ATTESTATION IS NOT A CONNECTED SUBGRAPH`. A
-non-string keystone still kicks `KEYSTONE must be an id`. Do not loosen
-fairness. Do not plate viewmodel or remote strips. The join line still
-prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 456 CRT-cased `CHIP MUST BE AN ID`. A non-string firmware still kicks
+`firmware must be an id`. Do not loosen fairness. Do not plate viewmodel or
+remote strips. The join line still prints the socket name — `probe:net`
+asserts `probe-join-31`; leave it.
 
 ---
 

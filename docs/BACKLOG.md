@@ -600,3 +600,5 @@ one stage.
   → Stage 454
 - A non-string keystone said must be an id  
   → Stage 455
+- A non-string chip said must be an id  
+  → Stage 456
