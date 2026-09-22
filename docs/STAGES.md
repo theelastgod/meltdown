@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 527 — SLAM FIRE's FILE line said a little wider
+
+**Goal.** Stage 526 taught DOUBLE BARREL. SLAM FIRE still said
+mixed-case `+20% rate, −10% pellet damage, a little wider`.
+
+**What changed.** `+20% RATE, −10% PELLET DAMAGE, A LITTLE WIDER`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/firmware.test.ts` asserts that sentence and
+that firmwares.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 526 — DOUBLE BARREL's FILE line said two shells per trigger
 
 **Goal.** Stage 525 taught LONG LEASE. DOUBLE BARREL still said

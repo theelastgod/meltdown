@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- SLAM FIRE's FILE line still says mixed-case `+20% rate, −10% pellet damage, a little wider`
+  → Stage 527
 - DOUBLE BARREL's FILE line still says mixed-case `two shells per trigger`
   → Stage 526
 - LONG LEASE's FILE line still says mixed-case `slower, heavier rounds`

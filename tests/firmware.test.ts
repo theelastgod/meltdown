@@ -130,6 +130,15 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(src).not.toMatch(/line: "two shells per trigger 0\.7 s apart, then a long reset; −10% pellet damage, magazine 4"/);
   });
 
+  it("SLAM FIRE's FILE line is CRT, not a little wider", () => {
+    const src = readFileSync(new URL("../shared/manifest/firmwares.ts", import.meta.url), "utf8");
+    const line = FIRMWARES.find((f) => f.id === "repo_hammer:slam_fire")!.line;
+    expect(line).toBe("+20% RATE, −10% PELLET DAMAGE, A LITTLE WIDER");
+    expect(line).not.toBe("+20% rate, −10% pellet damage, a little wider");
+    expect(src).toMatch(/id: "repo_hammer:slam_fire".*line: "\+20% RATE, −10% PELLET DAMAGE, A LITTLE WIDER"/s);
+    expect(src).not.toMatch(/line: "\+20% rate, −10% pellet damage, a little wider"/);
+  });
+
   it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
     const pct = (from: number, to: number) => ((to - from) / from) * 100;
     for (const f of FIRMWARES) {
