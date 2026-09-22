@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 329 — Kill TTK suffixed the time as s
+
+**Goal.** Stage 326 CRT-cased RANGE times as `5.55S`. A kill log still wrote
+`· TTK 0.80s`.
+
+**What changed.** `ttkNote` prints ` · TTK 0.80S`. Both the wire log and the offline log
+call it.
+
+**Proof.** `tests/kill.test.ts`: `ttkNote(0.8)` is ` · TTK 0.80S`. game.ts must
+`ttkNote(ev.ttkTicks / SIM_HZ)` and `ttkNote(ev.ttkSeconds)`. Mutation: the lowercase
+suffix again — 1 fail.
+
 ## Stage 328 — REJOINING IN suffixed the wait as s
 
 **Goal.** Stage 327 CRT-cased the RANGE alert. Knocking after a drop still

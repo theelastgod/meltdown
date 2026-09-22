@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 328, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 329, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 328 on this branch (REJOINING wait is S) |
-| Next stage number | **329** |
+| HEAD | Stage 329 on this branch (kill TTK is S) |
+| Next stage number | **330** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1100 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 329 is next
+## 6. Stage 330 is next
 
-Stage 328 CRT-cased the rejoin wait. Kill TTK still suffixes `${n}s`. Do not
-loosen fairness. Do not plate viewmodel or remote strips. The join line still
-prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 329 CRT-cased kill TTK. `recordGhost` still suffixes RANGE times as `s`.
+FLIP / LOCK IN on the node readout still uses `s`. Do not loosen fairness. Do not
+plate viewmodel or remote strips. The join line still prints the socket name —
+`probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

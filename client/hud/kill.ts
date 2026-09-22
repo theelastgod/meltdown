@@ -88,6 +88,11 @@ export function closeLine(read: LandedHit | null): string {
   return `${where} · ${read.distance < 10 ? read.distance.toFixed(1) : Math.round(read.distance)} M · ${weaponName(read.weapon)}`;
 }
 
+/** Kill-log TTK. RANGE already says 5.55S; TTK still said 0.80s. */
+export function ttkNote(seconds: number): string {
+  return ` · TTK ${seconds.toFixed(2)}S`;
+}
+
 /**
  * The weapon's name for a line a player reads (Stage 123): the log had printed the kill with the
  * weapon's id — LEASE_BREAKER, REPO_HAMMER, STACK_SMG — where the rack, the receipt and the

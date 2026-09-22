@@ -8,7 +8,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { WEAPON_LIST } from "../shared/weapons/manifest";
-import { bodyKey, closeLine, closeRead, CLOSE_WINDOW, forgetOldHits, HIT_MEMORY, ledgered, rememberHit, stampTitle, type LandedHit, victimLabel } from "../client/hud/kill";
+import { bodyKey, closeLine, closeRead, CLOSE_WINDOW, forgetOldHits, HIT_MEMORY, ledgered, rememberHit, stampTitle, ttkNote, type LandedHit, victimLabel } from "../client/hud/kill";
 
 const P7 = bodyKey("player", 7);
 const P8 = bodyKey("player", 8);
@@ -143,5 +143,16 @@ describe("the kill log names the body the city does", () => {
     expect(src).toMatch(/victimLabel\(kind\)/);
     expect(src).not.toMatch(/ev\.victimKind\.toUpperCase\(\)/);
     expect(src).not.toMatch(/\["DUMMY", "FILE", "WASP", "MECH"\]/);
+  });
+});
+
+describe("kill TTK is CRT", () => {
+  it("suffixes S, not s", () => {
+    expect(ttkNote(0.8)).toBe(" · TTK 0.80S");
+    expect(ttkNote(0.8)).not.toMatch(/s$/);
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/ttkNote\(ev\.ttkTicks \/ SIM_HZ\)/);
+    expect(src).toMatch(/ttkNote\(ev\.ttkSeconds\)/);
+    expect(src).not.toMatch(/TTK \$\{.*\}\.toFixed\(2\)\}s/);
   });
 });
