@@ -492,3 +492,5 @@ one stage.
   → Stage 400
 - A mastery gate said GATE r  
   → Stage 401
+- A chip option said r  
+  → Stage 402

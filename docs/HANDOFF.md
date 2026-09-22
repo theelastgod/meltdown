@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 401, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 402, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 401 on this branch (GATE R) |
-| Next stage number | **402** |
+| HEAD | Stage 402 on this branch (chip R) |
+| Next stage number | **403** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1170 across 117 files, `npm test` |
+| Unit tests | 1171 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,11 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 402 is next
+## 6. Stage 403 is next
 
-Stage 401 CRT-cased `GATE R`. FILE still dims chip options `· r5`. Do not
-loosen fairness. Do not plate viewmodel or remote strips. The join line still
-prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 402 CRT-cased chip `· R`. FILE still dims firmware options `· r5`. Do
+not loosen fairness. Do not plate viewmodel or remote strips. The join line
+still prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

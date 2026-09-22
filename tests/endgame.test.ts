@@ -347,6 +347,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/GATE r\$\{gate\.gate\}/);
   });
 
+  it("a chip option rank is R, not r", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/\} · R\$\{c\.rank\}/);
+    expect(src).not.toMatch(/\} · r\$\{c\.rank\}/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);

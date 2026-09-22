@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 402 — A chip option said r
+
+**Goal.** Stage 401 taught `GATE R`. A chip still tagged `· r5` on the
+FILE kit select.
+
+**What changed.** `· R${c.rank}`. Firmware option ranks stay lowercase.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `} · R${c.rank}` and must not
+`} · r${c.rank}`. Mutation: mixed case again — 1 fail.
+
 ## Stage 401 — A mastery gate said GATE r
 
 **Goal.** Stage 400 taught `REWRITE OPENS AT`. An open mastery challenge still
