@@ -77,3 +77,11 @@ describe("the WAKE picker names the district, not the room", () => {
     expect(src).not.toMatch(/public room \$\{HOSTS\.publicRoom\}/);
   });
 });
+
+describe("the main menu CRT-cases its lines", () => {
+  it("WAKE's subtitle is the signature mode in CRT", () => {
+    const src = readFileSync(new URL("../client/menu.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/id: "wake", label: "WAKE", line: "THE SIGNATURE MODE: FLIP THE NODES, HOLD THE DISTRICT, BEAT THE KERNEL'S CLOCK"/);
+    expect(src).not.toMatch(/id: "wake", label: "WAKE", line: "the signature mode:/);
+  });
+});

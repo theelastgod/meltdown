@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- WAKE's menu subtitle still says mixed-case `the signature mode`
+  → Stage 473
 - A keystone list still kicks mixed-case `max N KEYSTONE`
   → Stage 472
 - An unknown PvP field still kicks mixed-case `is not part of a PvP loadout`

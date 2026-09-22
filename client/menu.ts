@@ -29,7 +29,7 @@ export interface MenuEntry {
 }
 
 const MAIN: MenuEntry[] = [
-  { id: "wake", label: "WAKE", line: "the signature mode: flip the nodes, hold the district, beat THE KERNEL's clock" },
+  { id: "wake", label: "WAKE", line: "THE SIGNATURE MODE: FLIP THE NODES, HOLD THE DISTRICT, BEAT THE KERNEL'S CLOCK" },
   { id: "run", label: "THE RUN", line: "play to earn: carry $CAPITAL claims out of the PvP zone to a gate; die and they drop" },
   { id: "campaign", label: "CAMPAIGN", line: "the desk at the Deadletter Office: fixers, gigs, the seven-mission arc" },
   { id: "office", label: "THE OFFICE", line: "the hub: your file on the wall, the range ghosts, the dossier" },
