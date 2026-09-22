@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 510 — LONGWAVE ICE's market line said cold cyan rail
+
+**Goal.** Stage 509 taught PHAGE PLATE. LONGWAVE ICE still said
+mixed-case `cold cyan rail, the colour a charge howls`.
+
+**What changed.** `COLD CYAN RAIL, THE COLOUR A CHARGE HOWLS`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 509 — PHAGE PLATE's market line said green-black contagion paint
 
 **Goal.** Stage 508 taught BLACK LEASE. PHAGE PLATE still said

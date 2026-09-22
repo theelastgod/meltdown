@@ -226,4 +226,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(17, "skin_phage", "PHAGE PLATE", "GREEN-BLACK CONTAGION PAINT, THE LAUNCHER'S OWN STAIN"/);
     expect(src).not.toMatch(/skin\(17, "skin_phage", "PHAGE PLATE", "green-black contagion paint, the launcher's own stain"/);
   });
+
+  it("LONGWAVE ICE's market line is CRT, not cold cyan rail", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_longwave")!.line;
+    expect(line).toBe("COLD CYAN RAIL, THE COLOUR A CHARGE HOWLS");
+    expect(line).not.toBe("cold cyan rail, the colour a charge howls");
+    expect(src).toMatch(/skin\(18, "skin_longwave", "LONGWAVE ICE", "COLD CYAN RAIL, THE COLOUR A CHARGE HOWLS"/);
+    expect(src).not.toMatch(/skin\(18, "skin_longwave", "LONGWAVE ICE", "cold cyan rail, the colour a charge howls"/);
+  });
 });

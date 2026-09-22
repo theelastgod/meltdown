@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- LONGWAVE ICE's market line still says mixed-case `cold cyan rail, the colour a charge howls`
+  → Stage 510
 - PHAGE PLATE's market line still says mixed-case `green-black contagion paint`
   → Stage 509
 - BLACK LEASE's market line still says mixed-case `CRT phosphor on a sealed file`

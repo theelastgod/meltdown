@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 509, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 510, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 509 on this branch (PHAGE PLATE market line) |
-| Next stage number | **510** |
+| HEAD | Stage 510 on this branch (LONGWAVE ICE market line) |
+| Next stage number | **511** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 510 is next
+## 6. Stage 511 is next
 
-Stage 509 CRT-cased PHAGE PLATE's market line. LONGWAVE ICE still says
-mixed-case `cold cyan rail, the colour a charge howls`. Title cards
-stay prose (probe:ship asserts them). Crew-code reasons stay mixed-case
+Stage 510 CRT-cased LONGWAVE ICE's market line. HAMMER RUST still says
+mixed-case `shotgun steel that never left the rain`. Title cards stay
+prose (probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints
 the socket name — `probe:net` asserts `probe-join-31`; leave it.
