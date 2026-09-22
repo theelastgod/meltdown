@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 385 — The crew how-to said or RUN WITH A CREW on a contract
+
+**Goal.** Stage 384 taught the sandbox graph footer. Joining a crew still dimmed
+`or RUN WITH A CREW on a contract above and read the code out`.
+
+**What changed.** `OR RUN WITH A CREW ON A CONTRACT ABOVE AND READ THE CODE OUT`.
+
+**Proof.** `tests/campaign.test.ts`: campaign.ts must the CRT line and must not
+the mixed-case line. Mutation: lowercase again — 1 fail.
+`npm test` 1154/1154.
+
 ## Stage 384 — The Ledger Graph sandbox said sandbox: every node
 
 **Goal.** Stage 383 taught the shop footer. Offline, the graph still said

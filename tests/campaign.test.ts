@@ -114,6 +114,12 @@ describe("an empty fixer board is CRT", () => {
     expect(src).toMatch(/NO ONE ANSWERS/);
     expect(src).not.toMatch(/no one answers/);
   });
+
+  it("the crew how-to is CRT, not or RUN WITH A CREW on a contract", () => {
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/OR RUN WITH A CREW ON A CONTRACT ABOVE AND READ THE CODE OUT/);
+    expect(src).not.toMatch(/or RUN WITH A CREW on a contract above and read the code out/);
+  });
 });
 
 describe("picking a house writes the name, not the id", () => {
