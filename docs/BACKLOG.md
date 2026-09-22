@@ -506,3 +506,5 @@ one stage.
   → Stage 407
 - A granted slot said already owned  
   → Stage 408
+- Buying a slot out of order said needs first  
+  → Stage 409

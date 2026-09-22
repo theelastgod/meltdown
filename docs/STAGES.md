@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 409 — Buying a slot out of order said needs first
+
+**Goal.** Stage 408 taught `SLOT N ALREADY OWNED`. Buying slot 3 before
+slot 2 still returned `needs alias slot 2 first`.
+
+**What changed.** `NEEDS ${c.kind.toUpperCase()} SLOT ${n - 1} FIRST`.
+
+**Proof.** `tests/endgame.test.ts`: rewrite.ts must the CRT template and must
+not `needs ${c.kind} slot ${n - 1} first`. Mutation: mixed case again — 1 fail.
+
 ## Stage 408 — A granted slot said already owned
 
 **Goal.** Stage 407 taught `UNKNOWN COSMETIC`. A Deep Wake pass holder

@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 408, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 409, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 408 on this branch (SLOT ALREADY OWNED) |
-| Next stage number | **409** |
+| HEAD | Stage 409 on this branch (NEEDS SLOT N FIRST) |
+| Next stage number | **410** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1177 across 117 files, `npm test` |
+| Unit tests | 1178 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,11 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 409 is next
+## 6. Stage 410 is next
 
-Stage 408 CRT-cased `SLOT N ALREADY OWNED`. Shop still returns
-`needs alias slot N first`. Do not loosen fairness. Do not plate viewmodel
-or remote strips. The join line still prints the socket name — `probe:net`
+Stage 409 CRT-cased `NEEDS SLOT N FIRST`. Shop still returns `empty alias`
+and `slot N not owned`. Do not loosen fairness. Do not plate viewmodel or
+remote strips. The join line still prints the socket name — `probe:net`
 asserts `probe-join-31`; leave it.
 
 ---

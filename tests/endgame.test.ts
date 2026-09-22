@@ -257,6 +257,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/slot \$\{n\} already owned \(\$\{have\} slots\)/);
   });
 
+  it("buying a slot out of order is NEEDS SLOT N FIRST, not needs slot first", () => {
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/NEEDS \$\{c\.kind\.toUpperCase\(\)\} SLOT \$\{n - 1\} FIRST/);
+    expect(src).not.toMatch(/needs \$\{c\.kind\} slot \$\{n - 1\} first/);
+  });
+
   it("buying a cosmetic twice is ALREADY OWNED, not already owned", () => {
     const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "ALREADY OWNED"/);

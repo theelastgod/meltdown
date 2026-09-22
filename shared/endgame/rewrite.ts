@@ -95,7 +95,7 @@ export function buyCosmetic(a: Account, id: string): { ok: boolean; reason?: str
     const n = Number(id.split("_")[1]);
     const have = c.kind === "alias" ? slotsOf(a).aliases : slotsOf(a).presets;
     if (n <= have) return { ok: false, reason: `${c.kind.toUpperCase()} SLOT ${n} ALREADY OWNED (${have} SLOTS)` };
-    if (n > 2 && !a.cosmetics.includes(`${c.kind}_${n - 1}`)) return { ok: false, reason: `needs ${c.kind} slot ${n - 1} first` };
+    if (n > 2 && !a.cosmetics.includes(`${c.kind}_${n - 1}`)) return { ok: false, reason: `NEEDS ${c.kind.toUpperCase()} SLOT ${n - 1} FIRST` };
   }
   if (a.wallet.wakelight < c.wakelight) return { ok: false, reason: `NEEDS ${c.wakelight} WAKELIGHT` };
   a.wallet.wakelight -= c.wakelight;
