@@ -767,6 +767,7 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
   kernel.position.set(-60, 120, -420);
   group.add(kernel);
   const stripMat = new THREE.MeshBasicMaterial({ color: PALETTE.red, fog: false });
+  bindPlate(stripMat, "tex_lamp");
   const strips = new MeshBatch(group);
   for (let i = 0; i < 9; i++) {
     const g = new THREE.BoxGeometry(1.2, 250, 1.2);

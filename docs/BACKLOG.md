@@ -208,3 +208,5 @@ one stage.
   → Stage 258
 - The airship nose was a flat red sphere  
   → Stage 259
+- THE KERNEL's red strips were flat bars  
+  → Stage 260

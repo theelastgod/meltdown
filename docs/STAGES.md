@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 260 — THE KERNEL's red strips were flat bars
+
+**Goal.** Stage 200 plated the hull. The nine vertical and six horizontal red bars on THE KERNEL
+— the blood-red grid a player reads on the horizon — were still `MeshBasicMaterial` with no map.
+
+**What changed.** `bindPlate(stripMat, "tex_lamp")`, fail-soft. The red colour stays; the lamp
+plate is the same map every other city light uses.
+
+**Proof.** `tests/assets.test.ts` requires that call in `city.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 259 — The airship nose was a flat red sphere
 
 **Goal.** Stage 255 plated the keel strip. The red nose at +29 m was still unmapped.
