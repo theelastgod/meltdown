@@ -224,5 +224,5 @@ one stage.
   → Stage 266
 - The range ghost was a flat cyan capsule  
   → Stage 267
-- The range ghost was an unplated cyan capsule  
-  → Stage 267
+- THE RUN's claims were unplated octahedra  
+  → Stage 268

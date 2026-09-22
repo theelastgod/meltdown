@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 267, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 268, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 267 on this branch (range ghost wears tex_cloak) |
-| Next stage number | **268** |
+| HEAD | Stage 268 on this branch (RUN claims wear tex_kiosk_crt) |
+| Next stage number | **269** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1067 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 268 is next
+## 6. Stage 269 is next
 
-Stage 267 put `tex_cloak` on the Deadletter Office range ghost. THE RUN
-claim octahedra are still unplated amber/magenta. Do not loosen fairness.
+Stage 268 put `tex_kiosk_crt` on THE RUN's claim octahedra. Do not loosen fairness.
 
 ---
 

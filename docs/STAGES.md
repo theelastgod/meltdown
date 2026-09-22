@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 268 — THE RUN's claims were unplated octahedra
+
+**Goal.** Stage 267 plated the range ghost. THE RUN's hovering claims — amber while held,
+magenta when dropped — were still unmapped `MeshBasicMaterial`. The market kiosk screen
+already wears `tex_kiosk_crt`.
+
+**What changed.** `bindPlate(mat, "tex_kiosk_crt")` when a claim mesh is born, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `run.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 267 — The range ghost was a flat cyan capsule
 
 **Goal.** Stage 203 plated the escort hood. The Deadletter range ghost — the cyan figure that

@@ -102,6 +102,7 @@ export class RunFx {
       let e = this.claims.get(v.id);
       if (!e) {
         const mat = new THREE.MeshBasicMaterial({ color: v.dropped ? PALETTE.magenta : PALETTE.amber });
+        bindPlate(mat, "tex_kiosk_crt");
         const mesh = new THREE.Mesh(this.geo, mat);
         const light = new THREE.PointLight(v.dropped ? PALETTE.magenta : PALETTE.amber, 0.9, 5, 2);
         mesh.add(light);
