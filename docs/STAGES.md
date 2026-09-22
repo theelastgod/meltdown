@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 311 — LINK FAILED quoted the caught error in sentence case
+
+**Goal.** Stage 309 CRT-cased `LINK REFUSED`. A thrown SIWE still interpolated
+the provider as written: `LINK FAILED: User rejected the request.`
+
+**What changed.** `crtPhrase()` on the caught message. `LINK FAILED` interpolates it.
+
+**Proof.** `tests/counter.test.ts`: `crtPhrase("User rejected the request.")` is
+`USER REJECTED THE REQUEST.` Source must `crtPhrase(` on that line. Mutation:
+interpolate the raw reason — 1 fail.
+`npm test` 1083/1083.
+
 ## Stage 310 — ROOM REFUSED quoted the host in sentence case
 
 **Goal.** Stage 309 CRT-cased `LINK REFUSED`. Opening a private room without a

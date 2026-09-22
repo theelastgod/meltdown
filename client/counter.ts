@@ -138,7 +138,7 @@ export class CounterClient {
       return { ok: r.ok, reason: r.reason };
     } catch (e) {
       const reason = String((e as Error).message ?? e).split("\n")[0]!.slice(0, 100);
-      this.say(`LINK FAILED: ${reason}`);
+      this.say(`LINK FAILED: ${crtPhrase(reason)}`);
       return { ok: false, reason };
     } finally {
       this.busy = false;

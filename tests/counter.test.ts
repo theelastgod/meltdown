@@ -58,6 +58,14 @@ describe("the counter-ledger FILE line", () => {
     expect(src).not.toMatch(/ROOM REFUSED: \$\{r\.reason\}/);
   });
 
+  it("LINK FAILED CRT-cases the caught error, not the provider's English", () => {
+    expect(crtPhrase("User rejected the request.")).toBe("USER REJECTED THE REQUEST.");
+    expect(crtPhrase("Failed to fetch")).toBe("FAILED TO FETCH");
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/LINK FAILED: \$\{crtPhrase\(/);
+    expect(src).not.toMatch(/LINK FAILED: \$\{reason\}/);
+  });
+
   it("LINK REFUSED CRT-cases the host reason, not stale nonce", () => {
     expect(crtPhrase("stale nonce")).toBe("STALE NONCE");
     expect(crtPhrase("wrong statement: the link signs nothing else")).toBe("WRONG STATEMENT: THE LINK SIGNS NOTHING ELSE");

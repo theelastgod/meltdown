@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 310, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 311, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 310 on this branch (ROOM REFUSED is CRT) |
-| Next stage number | **311** |
+| HEAD | Stage 311 on this branch (LINK FAILED is CRT) |
+| Next stage number | **312** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1082 across 117 files, `npm test` |
+| Unit tests | 1083 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,9 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 311 is next
+## 6. Stage 312 is next
 
-Stage 310 CRT-cased `ROOM REFUSED`. `LINK FAILED:` still interpolates the
+Stage 311 CRT-cased `LINK FAILED`. `BUY FAILED:` still interpolates the
 caught error as written. Do not loosen fairness. Do not plate viewmodel or
 remote strips. The join line still prints the socket name — `probe:net` asserts
 `probe-join-31`; leave it.

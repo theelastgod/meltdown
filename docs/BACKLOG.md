@@ -310,3 +310,5 @@ one stage.
   → Stage 309
 - ROOM REFUSED quoted the host in sentence case  
   → Stage 310
+- LINK FAILED quoted the caught error in sentence case  
+  → Stage 311
