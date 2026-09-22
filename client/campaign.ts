@@ -33,6 +33,11 @@ export function holdClock(progress: number, need: number): string {
   return `${Math.floor(progress)}S / ${need}S`;
 }
 
+/** One wasp is WASP, not WASPS. */
+export function waspsWord(n: number): string {
+  return `${n} WASP${n === 1 ? "" : "S"}`;
+}
+
 interface Playing {
   script: string;
   node: ScriptNode;
@@ -123,7 +128,7 @@ export class Campaign {
     else if (this.explore) {
       this.mode = "explore";
       const t = spawnThreat(this.game.world, this.threat);
-      this.note(`THREAT ${this.threat.rating} · ${this.threat.line} · +${t.wasps} WASPS +${t.mechs} MECHS`);
+      this.note(`THREAT ${this.threat.rating} · ${this.threat.line} · +${waspsWord(t.wasps)} +${t.mechs} MECHS`);
       this.game.hud.setObjective(`◈ ${this.game.world.level.displayName ?? this.game.levelId} · EXPLORING`, this.threat.line, null);
     }
     this.applyProtocols();
@@ -150,7 +155,7 @@ export class Campaign {
     if (!this.mission) return;
     this.mode = "mission";
     this.game.hud.setObjective(`◈ ${def.title}`, def.brief, null);
-    this.note(`CONTRACT · ${def.title} · THREAT ${this.threat.rating} · ${this.mission.spawned.wasps} WASPS ${this.mission.spawned.mechs} MECHS`);
+    this.note(`CONTRACT · ${def.title} · THREAT ${this.threat.rating} · ${waspsWord(this.mission.spawned.wasps)} ${this.mission.spawned.mechs} MECHS`);
     this.game.audio.pa();
     this.syncFx();
   }
@@ -178,7 +183,7 @@ export class Campaign {
         this.game.audio.objective();
         break;
       case "wave":
-        hud.alert(`◆ VANTAGE RESPONDS — ${ev.count} WASPS`, true, 3);
+        hud.alert(`◆ VANTAGE RESPONDS — ${waspsWord(ev.count)}`, true, 3);
         this.game.audio.siren(0.5);
         break;
       case "escort":

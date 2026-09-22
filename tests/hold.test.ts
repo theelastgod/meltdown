@@ -8,7 +8,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { holdClock } from "../client/campaign";
+import { holdClock, waspsWord } from "../client/campaign";
 import { World } from "../shared/sim/world";
 import { levelById } from "../shared/sim/level";
 import { createMission, missionView, resolveDialogue, stepMission } from "../shared/campaign/runtime";
@@ -107,6 +107,19 @@ describe("every survive/hold names a place", () => {
     } finally {
       hold.at = keep;
     }
+  });
+});
+
+describe("the wasp count", () => {
+  it("one wasp is WASP, not WASPS", () => {
+    expect(waspsWord(1)).toBe("1 WASP");
+    expect(waspsWord(2)).toBe("2 WASPS");
+    expect(waspsWord(0)).toBe("0 WASPS");
+    expect(waspsWord(1)).not.toBe("1 WASPS");
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/waspsWord\(ev\.count\)/);
+    expect(src).toMatch(/waspsWord\(t\.wasps\)/);
+    expect(src).not.toMatch(/ev\.count\} WASPS/);
   });
 });
 

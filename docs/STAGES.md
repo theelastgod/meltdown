@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 343 — One wasp was WASPS
+
+**Goal.** Stage 342 taught `1 FILE`. A wave still stamped `◆ VANTAGE RESPONDS — 1 WASPS`.
+
+**What changed.** `waspsWord`: `1 WASP`, `2 WASPS`. The stamp and the threat/contract
+notes call it.
+
+**Proof.** `tests/hold.test.ts`: `waspsWord(1)` is `1 WASP`. campaign.ts must
+`waspsWord(ev.count)` and must not `ev.count} WASPS`. Mutation: always WASPS — 1 fail.
+`npm test` 1115/1115.
+
 ## Stage 342 — One file was FILES
 
 **Goal.** Stage 338 taught `1 DEATH`. A Debt still said `1 FILES ON YOU` on the
