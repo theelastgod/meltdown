@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- WAKE TRIM's market line still says mixed-case `green edge-light on wet steel`
+  → Stage 497
 - DEADLETTER WHITE's market line still says mixed-case `the office's own paint`
   → Stage 496
 - KERNEL PLATE's market line still says mixed-case `red filament without the filament`

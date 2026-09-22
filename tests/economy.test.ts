@@ -109,4 +109,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(4, "skin_deadletter", "DEADLETTER WHITE", "THE OFFICE'S OWN PAINT, CUT FROM A SEALED DOOR"/);
     expect(src).not.toMatch(/skin\(4, "skin_deadletter", "DEADLETTER WHITE", "the office's own paint, cut from a sealed door"/);
   });
+
+  it("WAKE TRIM's market line is CRT, not green edge-light on wet steel", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_wake")!.line;
+    expect(line).toBe("GREEN EDGE-LIGHT ON WET STEEL, THE COLOUR A NODE GOES WHEN IT FLIPS");
+    expect(line).not.toBe("green edge-light on wet steel, the colour a node goes when it flips");
+    expect(src).toMatch(/skin\(5, "skin_wake", "WAKE TRIM", "GREEN EDGE-LIGHT ON WET STEEL, THE COLOUR A NODE GOES WHEN IT FLIPS"/);
+    expect(src).not.toMatch(/skin\(5, "skin_wake", "WAKE TRIM", "green edge-light on wet steel, the colour a node goes when it flips"/);
+  });
 });
