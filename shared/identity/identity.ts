@@ -35,6 +35,11 @@ export interface PublicIdentity {
 /** The only keys an identity may carry on the wire. */
 export const IDENTITY_KEYS: readonly string[] = ["id", "team", "glyph", "chapter", "moniker", "display", "stamps", "debt", "skin"];
 
+/** One file is FILE, not FILES. */
+export function filesWord(n: number): string {
+  return `${n} FILE${n === 1 ? "" : "S"}`;
+}
+
 export function displayName(a: Account | null, handle: string): string {
   if (!a) return handle;
   if (chapterFor(a.depth) >= 3) return a.name || handle;

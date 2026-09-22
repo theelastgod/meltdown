@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 342 — One file was FILES
+
+**Goal.** Stage 338 taught `1 DEATH`. A Debt still said `1 FILES ON YOU` on the
+banner, the log and the ledger.
+
+**What changed.** `filesWord`: `1 FILE`, `2 FILES`. HUD and room both call it.
+
+**Proof.** `tests/identity.test.ts`: `filesWord(1)` is `1 FILE`. game.ts must
+`filesWord(m.kills)` and must not `m.kills} FILES`. Mutation: always FILES — 1 fail.
+`npm test` 1114/1114.
+
 ## Stage 341 — A dummy re-lease quoted the rest in sentence case
 
 **Goal.** Stage 320 CRT-cased the private-room admit line. A dummy coming back still

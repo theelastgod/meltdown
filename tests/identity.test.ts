@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { glyphFor, glyphSeed, glyphSvg, layersForDepth } from "../shared/identity/glyph";
 import { CHAPTERS, chapterFor, MONIKERS, monikerUnlocked, unlockedMonikers, wornMoniker } from "../shared/identity/monikers";
-import { assertClean, displayName, IDENTITY_KEYS, identityTag, mechanicalLeaks, parseTag, publicIdentity } from "../shared/identity/identity";
+import { assertClean, displayName, filesWord, IDENTITY_KEYS, identityTag, mechanicalLeaks, parseTag, publicIdentity } from "../shared/identity/identity";
 import { createAccount, rangeCourseName, recordGhost, sandboxAccount, upgradeAccount, validGhost } from "../shared/progression/account";
 import { totalXpToReach } from "../shared/progression/depth";
 import { deadletterOffice, HUB_LEVEL_ID, overPad } from "../shared/sim/hub";
@@ -83,6 +83,20 @@ describe("public identity", () => {
     expect(back.chapter).toBe(3);
     expect(back.moniker).toBe("divergent");
   });
+  it("one file is FILE, not FILES", () => {
+    expect(filesWord(1)).toBe("1 FILE");
+    expect(filesWord(2)).toBe("2 FILES");
+    expect(filesWord(0)).toBe("0 FILES");
+    expect(filesWord(1)).not.toBe("1 FILES");
+    const hud = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/filesWord\(m\.kills\)/);
+    expect(hud).not.toMatch(/m\.kills\} FILES/);
+    const room = readFileSync(new URL("../server/room.ts", import.meta.url), "utf8");
+    expect(room).toMatch(/filesWord\(topKills\)/);
+    expect(room).toMatch(/filesWord\(rec\.account\.debt\.kills\)/);
+    expect(room).not.toMatch(/topKills\} FILES ON YOU/);
+  });
+
   it("the leak scanner catches loadouts, items, chips, firmwares, weapons and stats — and passes a clean identity", () => {
     const sb = sandboxAccount("sandbox:3");
     expect(mechanicalLeaks(publicIdentity(sb, "X"))).toEqual([]);

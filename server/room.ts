@@ -48,7 +48,7 @@ import { DEFAULT_LOADOUT, validateLoadout, type Loadout, stripCampaignFields } f
 import { applyMatch, ranksOf, type Account } from "../shared/progression/account";
 import { stampLine } from "../shared/progression/stamps";
 import { ProgressionTracker, type ProgressNote } from "./progression";
-import { assertClean, displayName, identityTag, publicIdentity, type PublicIdentity } from "../shared/identity/identity";
+import { assertClean, displayName, filesWord, identityTag, publicIdentity, type PublicIdentity } from "../shared/identity/identity";
 import { CHAPTERS, chapterFor, unlockedMonikers, wornMoniker } from "../shared/identity/monikers";
 import { glyphSeed } from "../shared/identity/glyph";
 import type { AccountStore } from "./accounts";
@@ -794,7 +794,7 @@ export class Room {
     }
     if (top && topKills > 0) {
       a.debt = { account: top.account!.id, display: top.identity.display, kills: topKills };
-      a.ledger.push(`DEBT · ${top.identity.display} · ${topKills} FILES ON YOU`);
+      a.ledger.push(`DEBT · ${top.identity.display} · ${filesWord(topKills)} ON YOU`);
     }
     rec.killedBy = new Map();
     rec.debtClearedThisRound = false;
@@ -868,7 +868,7 @@ export class Room {
       const note = rec.progress.onRoundEnd(p, contribution.won, contribution.seconds, p.stats.kills === top, this.world.level.name);
       for (const id of note.stamps) entry.lines.push(`STAMP · ${stampLine(id)}`);
       this.rituals(rec, entry.depthBefore, entry.depthAfter);
-      if (rec.account.debt) entry.lines.push(`DEBT · ${rec.account.debt.display} · ${rec.account.debt.kills} FILES ON YOU`);
+      if (rec.account.debt) entry.lines.push(`DEBT · ${rec.account.debt.display} · ${filesWord(rec.account.debt.kills)} ON YOU`);
       this.saveAccount(rec.account, (err) => this.opts.onLog(`file save failed for ${rec.account?.id}: ${String(err)}`));
       this.opts.onLog(`settled ${rec.account.id}: xp +${entry.xp.total} (obj ${entry.xp.objective} / combat ${entry.xp.combat} / support ${entry.xp.support}) scrip +${entry.scrip} depth ${entry.depthBefore}→${entry.depthAfter}`);
       rec.conn?.send(encodeFile(this.fileMsg(rec, entry.lines, "settle", note)));

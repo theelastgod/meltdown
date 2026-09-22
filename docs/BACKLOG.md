@@ -372,3 +372,5 @@ one stage.
   → Stage 340
 - A dummy re-lease quoted the rest in sentence case  
   → Stage 341
+- One file was FILES  
+  → Stage 342

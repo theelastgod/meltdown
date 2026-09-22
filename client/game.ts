@@ -51,6 +51,7 @@ import { AUDITS } from "@shared/endgame/audits";
 import { emptyInput } from "@shared/sim/input";
 import { trophiesFromLedger } from "./render/hub";
 import { monikerById } from "@shared/identity/monikers";
+import { filesWord } from "@shared/identity/identity";
 import type { NodeView } from "./render/wake";
 import { GRENADE_LIST, WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
 import { modsFor, weaponDefOf } from "@shared/sim/player";
@@ -344,9 +345,9 @@ export class Game {
       case "debt":
         if (m.event === "owed") {
           this.debtTargetId = m.id;
-          this.hud.debt("owed", m.display, `${m.kills} FILES`);
+          this.hud.debt("owed", m.display, filesWord(m.kills));
           this.audio.debtOwed();
-          this.hud.push(`DEBT · ${m.display} · ${m.kills} FILES ON YOU`, "mg");
+          this.hud.push(`DEBT · ${m.display} · ${filesWord(m.kills)} ON YOU`, "mg");
         } else {
           this.debtTargetId = -1;
           this.hud.debt("cleared", m.display, m.capped ? "CAPPED" : `+${m.credit} WAKELIGHT`);
