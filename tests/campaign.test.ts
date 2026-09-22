@@ -120,6 +120,12 @@ describe("an empty fixer board is CRT", () => {
     expect(src).toMatch(/OR RUN WITH A CREW ON A CONTRACT ABOVE AND READ THE CODE OUT/);
     expect(src).not.toMatch(/or RUN WITH A CREW on a contract above and read the code out/);
   });
+
+  it("a crew host is YOU HOLD THE TERMINALS, not you hold the terminals", () => {
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/YOU HOLD THE TERMINALS/);
+    expect(src).not.toMatch(/"you hold the terminals"/);
+  });
 });
 
 describe("picking a house writes the name, not the id", () => {

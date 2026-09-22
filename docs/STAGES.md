@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 386 — A crew host said you hold the terminals
+
+**Goal.** Stage 385 taught the join how-to. A crew host still dimmed
+`you hold the terminals`.
+
+**What changed.** `YOU HOLD THE TERMINALS`.
+
+**Proof.** `tests/campaign.test.ts`: campaign.ts must `YOU HOLD THE TERMINALS`
+and must not `"you hold the terminals"`. Mutation: lowercase again — 1 fail.
+`npm test` 1155/1155.
+
 ## Stage 385 — The crew how-to said or RUN WITH A CREW on a contract
 
 **Goal.** Stage 384 taught the sandbox graph footer. Joining a crew still dimmed
