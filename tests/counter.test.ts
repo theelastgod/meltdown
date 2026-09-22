@@ -9,7 +9,7 @@ import { ARTIFACTS } from "../server/chain/deploy";
 import { economyManifest, SKINS, skinByToken } from "../shared/economy/catalog";
 import { lintEconomy } from "../shared/economy/lint";
 import { counterRequest } from "../shared/economy/endpoint";
-import { NAME_DEPTH, SIWE_STATEMENT, LAUNCH_GRANT, nameFee, wearSkin } from "../shared/economy/counter";
+import { NAME_DEPTH, SIWE_STATEMENT, LAUNCH_GRANT, nameFee, wearSkin, emptyCounter } from "../shared/economy/counter";
 import { createAccount } from "../shared/progression/account";
 import { devSeed, MemoryAccountStore } from "../server/accounts";
 import { identityTag, parseTag, publicIdentity } from "../shared/identity/identity";
@@ -138,6 +138,15 @@ describe("wearing a skin CRT-cases a miss", () => {
     const src = readFileSync(new URL("../shared/economy/counter.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "NOT ON YOUR RIG"/);
     expect(src).not.toMatch(/reason: "not on your rig"/);
+  });
+
+  it("a token the catalogue does not have is UNKNOWN SKIN, not unknown skin", () => {
+    const a = createAccount("ghost", "G");
+    a.counter = { ...emptyCounter(), rig: [99999] };
+    expect(wearSkin(a, 99999)).toEqual({ ok: false, reason: "UNKNOWN SKIN" });
+    const src = readFileSync(new URL("../shared/economy/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "UNKNOWN SKIN"/);
+    expect(src).not.toMatch(/reason: "unknown skin"/);
   });
 });
 

@@ -48,7 +48,7 @@ import { RUN_DEPTH } from "../sim/run";
 export function wearSkin(a: Account, token: number): { ok: boolean; reason?: string } {
   const c = a.counter ?? emptyCounter();
   if (token !== 0 && !c.rig.includes(token)) return { ok: false, reason: "NOT ON YOUR RIG" };
-  if (token !== 0 && !skinByToken(token)) return { ok: false, reason: "unknown skin" };
+  if (token !== 0 && !skinByToken(token)) return { ok: false, reason: "UNKNOWN SKIN" };
   a.counter = { ...c, worn: token };
   return { ok: true };
 }

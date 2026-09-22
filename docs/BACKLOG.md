@@ -556,3 +556,5 @@ one stage.
   → Stage 432
 - A token not on the rig said not on your rig  
   → Stage 433
+- A ghost token said unknown skin  
+  → Stage 434

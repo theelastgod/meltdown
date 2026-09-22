@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 434 — A ghost token said unknown skin
+
+**Goal.** Stage 433 taught `NOT ON YOUR RIG`. Wearing a token the catalogue
+does not have, already on the rig, still returned `unknown skin`.
+
+**What changed.** `UNKNOWN SKIN`.
+
+**Proof.** `tests/counter.test.ts`: wearSkin of 99999 on a rig that holds
+it is `UNKNOWN SKIN`. counter.ts must `reason: "UNKNOWN SKIN"` and must not
+`reason: "unknown skin"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 433 — A token not on the rig said not on your rig
 
 **Goal.** Stage 432 taught `NOT IN YOUR FILE`. Wearing a token the file's
