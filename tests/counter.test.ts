@@ -34,6 +34,12 @@ describe("the counter-ledger FILE line", () => {
     expect(src).not.toMatch(/\(local account\)/);
   });
 
+  it("NO WALLET CRT-cases the rest, not a sentence-case how-to", () => {
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/NO WALLET: OPEN IN A BROWSER WITH ROBINHOOD WALLET, METAMASK OR RABBY, OR LINK OVER WALLETCONNECT/);
+    expect(src).not.toMatch(/NO WALLET: open in a browser/);
+  });
+
   it("WALLET REFUSED CRT-cases the provider's reason", () => {
     expect(crtPhrase("User rejected the request.")).toBe("USER REJECTED THE REQUEST.");
     expect(crtPhrase("User rejected the request.")).not.toBe("User rejected the request.");

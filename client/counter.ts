@@ -102,7 +102,7 @@ export class CounterClient {
     }
     const eth = (window as unknown as { ethereum?: Eip1193 }).ethereum;
     if (!eth) {
-      this.say("NO WALLET: open in a browser with Robinhood Wallet, MetaMask or Rabby, or link over WalletConnect");
+      this.say("NO WALLET: OPEN IN A BROWSER WITH ROBINHOOD WALLET, METAMASK OR RABBY, OR LINK OVER WALLETCONNECT");
       return false;
     }
     try {

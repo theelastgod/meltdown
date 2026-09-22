@@ -304,3 +304,5 @@ one stage.
   → Stage 306
 - The wallet line said local account  
   → Stage 307
+- NO WALLET left a sentence-case how-to  
+  → Stage 308

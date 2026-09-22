@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 308 — NO WALLET left a sentence-case how-to
+
+**Goal.** Stage 307 CRT-cased `(LOCAL ACCOUNT)`. Connecting with no injected
+provider still said `NO WALLET: open in a browser with Robinhood Wallet…`.
+
+**What changed.** `NO WALLET: OPEN IN A BROWSER WITH ROBINHOOD WALLET, METAMASK OR RABBY, OR LINK OVER WALLETCONNECT`.
+
+**Proof.** `tests/counter.test.ts`: source must that CRT line and must not
+`NO WALLET: open in a browser`. Mutation: sentence-case rest again — 1 fail.
+`npm test` 1080/1080. Typecheck and the four lints green.
+
 ## Stage 307 — The wallet line said local account
 
 **Goal.** Stage 306 CRT-cased `WALLET REFUSED`. A local-key wallet still said
