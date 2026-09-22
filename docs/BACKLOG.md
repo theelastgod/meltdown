@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- STACK PLATE's market line still says mixed-case `stacked polymer, the SMG's own rain`
+  → Stage 513
 - BATON VIOLET's market line still says mixed-case `shock-violet trim on a close-in stick`
   → Stage 512
 - HAMMER RUST's market line still says mixed-case `shotgun steel that never left the rain`

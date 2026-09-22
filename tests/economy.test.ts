@@ -253,4 +253,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(20, "skin_baton", "BATON VIOLET", "SHOCK-VIOLET TRIM ON A CLOSE-IN STICK"/);
     expect(src).not.toMatch(/skin\(20, "skin_baton", "BATON VIOLET", "shock-violet trim on a close-in stick"/);
   });
+
+  it("STACK PLATE's market line is CRT, not stacked polymer", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_stack")!.line;
+    expect(line).toBe("STACKED POLYMER, THE SMG'S OWN RAIN");
+    expect(line).not.toBe("stacked polymer, the SMG's own rain");
+    expect(src).toMatch(/skin\(21, "skin_stack", "STACK PLATE", "STACKED POLYMER, THE SMG'S OWN RAIN"/);
+    expect(src).not.toMatch(/skin\(21, "skin_stack", "STACK PLATE", "stacked polymer, the SMG's own rain"/);
+  });
 });
