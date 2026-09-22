@@ -8,7 +8,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { holdClock, waspsWord } from "../client/campaign";
+import { holdClock, mechsWord, waspsWord } from "../client/campaign";
 import { World } from "../shared/sim/world";
 import { levelById } from "../shared/sim/level";
 import { createMission, missionView, resolveDialogue, stepMission } from "../shared/campaign/runtime";
@@ -107,6 +107,19 @@ describe("every survive/hold names a place", () => {
     } finally {
       hold.at = keep;
     }
+  });
+});
+
+describe("the mech count", () => {
+  it("one mech is MECH, not MECHS", () => {
+    expect(mechsWord(1)).toBe("1 MECH");
+    expect(mechsWord(2)).toBe("2 MECHS");
+    expect(mechsWord(0)).toBe("0 MECHS");
+    expect(mechsWord(1)).not.toBe("1 MECHS");
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/mechsWord\(t\.mechs\)/);
+    expect(src).toMatch(/mechsWord\(this\.mission\.spawned\.mechs\)/);
+    expect(src).not.toMatch(/t\.mechs\} MECHS/);
   });
 });
 

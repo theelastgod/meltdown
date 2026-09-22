@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 344 — One mech was MECHS
+
+**Goal.** Stage 343 taught `1 WASP`. Threat and contract notes still said
+`1 MECHS`.
+
+**What changed.** `mechsWord`: `1 MECH`, `2 MECHS`. Both notes call it.
+
+**Proof.** `tests/hold.test.ts`: `mechsWord(1)` is `1 MECH`. campaign.ts must
+`mechsWord(t.mechs)` and must not `t.mechs} MECHS`. Mutation: always MECHS — 1 fail.
+`npm test` 1116/1116.
+
 ## Stage 343 — One wasp was WASPS
 
 **Goal.** Stage 342 taught `1 FILE`. A wave still stamped `◆ VANTAGE RESPONDS — 1 WASPS`.

@@ -38,6 +38,11 @@ export function waspsWord(n: number): string {
   return `${n} WASP${n === 1 ? "" : "S"}`;
 }
 
+/** One mech is MECH, not MECHS. */
+export function mechsWord(n: number): string {
+  return `${n} MECH${n === 1 ? "" : "S"}`;
+}
+
 interface Playing {
   script: string;
   node: ScriptNode;
@@ -128,7 +133,7 @@ export class Campaign {
     else if (this.explore) {
       this.mode = "explore";
       const t = spawnThreat(this.game.world, this.threat);
-      this.note(`THREAT ${this.threat.rating} · ${this.threat.line} · +${waspsWord(t.wasps)} +${t.mechs} MECHS`);
+      this.note(`THREAT ${this.threat.rating} · ${this.threat.line} · +${waspsWord(t.wasps)} +${mechsWord(t.mechs)}`);
       this.game.hud.setObjective(`◈ ${this.game.world.level.displayName ?? this.game.levelId} · EXPLORING`, this.threat.line, null);
     }
     this.applyProtocols();
@@ -155,7 +160,7 @@ export class Campaign {
     if (!this.mission) return;
     this.mode = "mission";
     this.game.hud.setObjective(`◈ ${def.title}`, def.brief, null);
-    this.note(`CONTRACT · ${def.title} · THREAT ${this.threat.rating} · ${waspsWord(this.mission.spawned.wasps)} ${this.mission.spawned.mechs} MECHS`);
+    this.note(`CONTRACT · ${def.title} · THREAT ${this.threat.rating} · ${waspsWord(this.mission.spawned.wasps)} ${mechsWord(this.mission.spawned.mechs)}`);
     this.game.audio.pa();
     this.syncFx();
   }

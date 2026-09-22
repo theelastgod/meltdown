@@ -376,3 +376,5 @@ one stage.
   → Stage 342
 - One wasp was WASPS  
   → Stage 343
+- One mech was MECHS  
+  → Stage 344
