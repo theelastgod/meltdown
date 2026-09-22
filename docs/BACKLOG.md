@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- An unknown firmware still kicks the raw id
+  → Stage 467
 - An unknown chip still kicks the raw id
   → Stage 466
 - A firmware map keyed on an unknown weapon still kicks mixed-case `unknown weapon`

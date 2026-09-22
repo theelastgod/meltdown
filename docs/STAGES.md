@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 467 — An unknown firmware said only the raw id
+
+**Goal.** Stage 466 taught `UNKNOWN CHIP`. A firmware id of `nope`
+still kicked the raw id `nope`.
+
+**What changed.** `UNKNOWN FIRMWARE ${id}`.
+
+**Proof.** Measured kick was the bare id. After the fix:
+`UNKNOWN FIRMWARE nope`. `tests/mastery.test.ts` asserts that sentence
+and that loadout.ts must the CRT template and must not `detail: id`.
+Mutation: raw id again — 1 fail.
+
 ## Stage 466 — An unknown chip said only the raw id
 
 **Goal.** Stage 465 taught firmware `UNKNOWN WEAPON`. A muzzle slot
