@@ -407,7 +407,7 @@ export class Game {
         // an Audit room: the same symmetric rules the room runs, so prediction agrees
         if (mode === "run") {
           this.runMode = true;
-          this.hud.push("THE RUN · carry the claims to a gate; die and they drop", "am");
+          this.hud.push("THE RUN · CARRY THE CLAIMS TO A GATE; DIE AND THEY DROP", "am");
         }
         const am = mode.match(/^audit:([a-z_]+):(\d+)$/);
         const audit = am ? AUDITS.find((x) => x.id === am[1]) : undefined;

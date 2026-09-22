@@ -93,6 +93,12 @@ describe("the room's name in the join line", () => {
     expect(roomName("ws://h/room/100%")).toBe("100%"); // a malformed escape is a name like any other
   });
 
+  it("THE RUN admit line is CRT, not carry the claims", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/THE RUN · CARRY THE CLAIMS TO A GATE; DIE AND THEY DROP/);
+    expect(src).not.toMatch(/THE RUN · carry the claims/);
+  });
+
   it("the private-room admit line is CRT, not the buyer's rules", () => {
     const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(src).toMatch(/PRIVATE ROOM · THE BUYER'S RULES AND INVITE LIST · BANKS SCRIP, NEVER \$CAPITAL/);

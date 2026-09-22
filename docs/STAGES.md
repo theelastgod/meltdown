@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 321 — THE RUN quoted the rest in sentence case
+
+**Goal.** Stage 320 CRT-cased the private-room admit line. Joining THE RUN still
+pushed `THE RUN · carry the claims to a gate; die and they drop`.
+
+**What changed.** `THE RUN · CARRY THE CLAIMS TO A GATE; DIE AND THEY DROP`.
+
+**Proof.** `tests/roomlabel.test.ts`: source must that CRT line and must not
+`THE RUN · carry the claims`. Mutation: sentence-case rest again — 1 fail.
+`npm test` 1093/1093.
+
 ## Stage 320 — PRIVATE ROOM quoted the rest in sentence case
 
 **Goal.** Stage 298 CRT-cased the drop line. Joining a private room still pushed
