@@ -58,7 +58,7 @@ const SOCKETS: Socket[] = ["muzzle", "kinetic", "protocol"];
 export function validateLoadout(raw: unknown, owned: readonly string[], depth: number, ranks: Ranks = {}): { ok: boolean; errors: LoadoutError[]; loadout: Loadout } {
   const errors: LoadoutError[] = [];
   const lo = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  for (const k of Object.keys(lo)) if (!KNOWN_FIELDS.has(k)) errors.push({ rule: "unknown-field", detail: `field "${k}" is not part of a PvP loadout` });
+  for (const k of Object.keys(lo)) if (!KNOWN_FIELDS.has(k)) errors.push({ rule: "unknown-field", detail: `FIELD "${k}" IS NOT PART OF A PVP LOADOUT` });
   const primary = typeof lo.primary === "string" && lo.primary in WEAPONS ? (lo.primary as WeaponId) : null;
   const secondary = typeof lo.secondary === "string" && lo.secondary in WEAPONS ? (lo.secondary as WeaponId) : null;
   const gun = (id: WeaponId) => WEAPONS[id]?.name ?? id;

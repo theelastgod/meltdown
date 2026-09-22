@@ -60,6 +60,11 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(src).not.toMatch(/reachable from \$\{start\}/);
     const smuggled = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: null, protocols: ["kp_filament_01"] }, owned, 10);
     expect(smuggled.errors.map((e) => e.rule)).toContain("unknown-field");
+    const fieldKick = smuggled.errors.find((e) => e.rule === "unknown-field")!;
+    expect(fieldKick.detail).toBe('FIELD "protocols" IS NOT PART OF A PVP LOADOUT');
+    expect(fieldKick.detail).not.toBe('field "protocols" is not part of a PvP loadout');
+    expect(src).toMatch(/unknown-field", detail: `FIELD "\$\{k\}" IS NOT PART OF A PVP LOADOUT`/);
+    expect(src).not.toMatch(/unknown-field", detail: `field "\$\{k\}" is not part of a PvP loadout`/);
     const gated = validateLoadout({ primary: "phage", secondary: "stack_smg", attested: [], keystone: null }, owned, 2);
     expect(gated.errors.map((e) => e.rule)).toContain("weapon-depth");
     expect(gated.errors.find((e) => e.rule === "weapon-depth")!.detail).toMatch(/^PHAGE LAUNCHER NEEDS DEPTH/);

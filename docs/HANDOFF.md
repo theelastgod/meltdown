@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 470, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 471, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 470 on this branch (NO SOCKET) |
-| Next stage number | **471** |
+| HEAD | Stage 471 on this branch (UNKNOWN FIELD) |
+| Next stage number | **472** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,12 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 471 is next
+## 6. Stage 472 is next
 
-Stage 470 CRT-cased `NO SOCKET`. An unknown PvP field still kicks
-mixed-case `is not part of a PvP loadout`. Do not loosen fairness. Do
-not plate viewmodel or remote strips. The join line still prints the
-socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 471 CRT-cased `FIELD … IS NOT PART OF A PVP LOADOUT`. A
+keystone list still kicks mixed-case `max N KEYSTONE`. Do not loosen
+fairness. Do not plate viewmodel or remote strips. The join line still
+prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

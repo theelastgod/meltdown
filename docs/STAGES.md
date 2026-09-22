@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 471 — An unknown field said is not part of a PvP loadout
+
+**Goal.** Stage 470 taught `NO SOCKET`. A smuggled `protocols` field
+still kicked `field "protocols" is not part of a PvP loadout`.
+
+**What changed.** `FIELD "${k}" IS NOT PART OF A PVP LOADOUT`.
+
+**Proof.** Measured kick was mixed-case. After the fix:
+`FIELD "protocols" IS NOT PART OF A PVP LOADOUT`. Join kick for
+`kernel` is `unknown-field: FIELD "kernel"`. `tests/fairness.test.ts`
+and `tests/room.test.ts` assert those sentences and that loadout.ts
+must the CRT template and must not the mixed-case template. Mutation:
+mixed case again — fairness 1 fail, room 1 fail.
+
 ## Stage 470 — A missing socket said no socket
 
 **Goal.** Stage 469 taught `UNKNOWN NODE`. A chip keyed on socket

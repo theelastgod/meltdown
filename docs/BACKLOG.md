@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- An unknown PvP field still kicks mixed-case `is not part of a PvP loadout`
+  → Stage 471
 - A missing socket still kicks mixed-case `no socket`
   → Stage 470
 - An unknown node still kicks the raw id

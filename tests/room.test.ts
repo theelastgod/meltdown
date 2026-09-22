@@ -101,7 +101,7 @@ describe("room — loadout validation at spawn", () => {
     const admitted = c.file()[0]!.file.loadout as unknown as Record<string, unknown>;
     expect(admitted["protocols"]).toBeUndefined();
     const d = join(room, "Y", "sandbox-e", { ...legal, kernel: ["filament_core"] });
-    expect(d.kick()?.reason).toMatch(/unknown-field: field "kernel"/);
+    expect(d.kick()?.reason).toMatch(/unknown-field: FIELD "kernel"/);
     expect(room.loadoutRejections.length).toBe(1);
   });
   it("a guest with no file and no loadout spawns the default build", () => {
