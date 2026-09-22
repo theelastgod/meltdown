@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { lintEconomy, lintTokenConstants } from "../shared/economy/lint";
 import type { EconomyItem } from "../shared/economy/manifest";
 import { itemName } from "../shared/manifest/items";
+import { SKINS } from "../shared/economy/catalog";
 
 const cosmetic = (id: string, extra: Partial<EconomyItem> = {}): EconomyItem => ({
   id,
@@ -69,5 +70,16 @@ describe("the join line names the ledger, not the id", () => {
     expect(src).toMatch(/attested\.map\(itemName\)/);
     expect(src).toMatch(/itemName\(f\.loadout\.keystone\)/);
     expect(src).not.toMatch(/keystone\.toUpperCase\(\)/);
+  });
+});
+
+describe("the Ledger Market names the skins in CRT", () => {
+  it("RUST LEASE's market line is CRT, not a rig that has been rained on", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_rust")!.line;
+    expect(line).toBe("A RIG THAT HAS BEEN RAINED ON SINCE THE ESTATE STOPPED COUNTING");
+    expect(line).not.toBe("a rig that has been rained on since the Estate stopped counting");
+    expect(src).toMatch(/skin\(1, "skin_rust", "RUST LEASE", "A RIG THAT HAS BEEN RAINED ON SINCE THE ESTATE STOPPED COUNTING"/);
+    expect(src).not.toMatch(/skin\(1, "skin_rust", "RUST LEASE", "a rig that has been rained on since the Estate stopped counting"/);
   });
 });

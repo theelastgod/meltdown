@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 492 — RUST LEASE's market line said a rig that has been rained on
+
+**Goal.** Stage 491 closed the last mixed-case Wakelight shop slot.
+The Ledger Market still printed RUST LEASE as mixed-case `a rig that
+has been rained on since the Estate stopped counting`.
+
+**What changed.** `A RIG THAT HAS BEEN RAINED ON SINCE THE ESTATE
+STOPPED COUNTING`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 491 — PRESET SLOT V's shop line said a fifth
 
 **Goal.** Stage 490 taught PRESET SLOT IV. PRESET SLOT V still said

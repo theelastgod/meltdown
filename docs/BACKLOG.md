@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- RUST LEASE's market line still says mixed-case `a rig that has been rained on`
+  → Stage 492
 - PRESET SLOT V's shop line still says mixed-case `a fifth`
   → Stage 491
 - PRESET SLOT IV's shop line still says mixed-case `a fourth`
