@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- BLACK LEASE's market line still says mixed-case `CRT phosphor on a sealed file`
+  → Stage 508
 - ESTATE GRID's market line still says mixed-case `cyan monitor grid`
   → Stage 507
 - FORGED TRIM's market line still says mixed-case `amber servo light on wet steel`

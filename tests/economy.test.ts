@@ -208,4 +208,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(15, "skin_grid", "ESTATE GRID", "CYAN MONITOR GRID"/);
     expect(src).not.toMatch(/skin\(15, "skin_grid", "ESTATE GRID", "cyan monitor grid"/);
   });
+
+  it("BLACK LEASE's market line is CRT, not CRT phosphor on a sealed file", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_black_lease")!.line;
+    expect(line).toBe("CRT PHOSPHOR ON A SEALED FILE");
+    expect(line).not.toBe("CRT phosphor on a sealed file");
+    expect(src).toMatch(/skin\(16, "skin_black_lease", "BLACK LEASE", "CRT PHOSPHOR ON A SEALED FILE"/);
+    expect(src).not.toMatch(/skin\(16, "skin_black_lease", "BLACK LEASE", "CRT phosphor on a sealed file"/);
+  });
 });
