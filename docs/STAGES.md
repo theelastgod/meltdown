@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 349 — One owed was UNITS
+
+**Goal.** Stage 346 taught `1 UNIT DROPPED`. THE RUN strip and FILE still wrote
+`OWED 1 UNITS`.
+
+**What changed.** `unitsLabel`: `UNIT` / `UNITS`. The strip and the FILE tab call it.
+
+**Proof.** `tests/runcue.test.ts`: `unitsLabel(1)` is `UNIT`. hud.ts must
+`unitsLabel(v.owed)` and must not `v.owed}</b> UNITS`. Mutation: always UNITS —
+1 fail.
+`npm test` 1120/1120.
+
 ## Stage 348 — One try was TRIES
 
 **Goal.** Stage 347 taught `1 STAMP`. Giving up the seat still said

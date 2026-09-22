@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { claimsWord, momentLine, runMoments } from "../client/runcue";
+import { claimsWord, momentLine, runMoments, unitsLabel } from "../client/runcue";
 
 describe("runMoments", () => {
   it("a rise in carried is a pickup, with the new total", () => {
@@ -36,6 +36,21 @@ describe("momentLine", () => {
     const src = readFileSync(new URL("../client/runcue.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNIT\$\{m\.value === 1 \? "" : "S"\} DROPPED/);
     expect(src).not.toMatch(/\$\{m\.value\} UNITS DROPPED/);
+  });
+});
+
+describe("owed units", () => {
+  it("one owed is UNIT, not UNITS", () => {
+    expect(unitsLabel(1)).toBe("UNIT");
+    expect(unitsLabel(2)).toBe("UNITS");
+    expect(unitsLabel(0)).toBe("UNITS");
+    expect(unitsLabel(1)).not.toBe("UNITS");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/unitsLabel\(v\.owed\)/);
+    expect(hud).not.toMatch(/v\.owed\}<\/b> UNITS/);
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(file).toMatch(/unitsLabel\(run\.owed\)/);
+    expect(file).not.toMatch(/run\.owed\}<\/b> UNITS/);
   });
 });
 

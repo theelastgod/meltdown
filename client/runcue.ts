@@ -50,3 +50,8 @@ export function momentLine(m: RunMoment, zone: string | null): string {
 export function claimsWord(n: number): string {
   return `${n} CLAIM${n === 1 ? "" : "S"} OUT`;
 }
+
+/** One owed unit is UNIT, not UNITS. */
+export function unitsLabel(n: number): string {
+  return n === 1 ? "UNIT" : "UNITS";
+}
