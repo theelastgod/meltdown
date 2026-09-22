@@ -94,6 +94,7 @@ export class WakeFx {
         fill.rotation.x = -Math.PI / 2;
         fill.position.y = 0.02;
         const colMat = new THREE.MeshBasicMaterial({ color: VIOLET, transparent: true, opacity: 0.035, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+        bindPlate(colMat, "tex_lamp");
         const column = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.9, 12, 12, 1, true), colMat);
         column.position.y = 7;
         // no per-node point light: every point light multiplies shader cost on every lit surface; the pad reads by emissives

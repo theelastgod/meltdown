@@ -238,3 +238,5 @@ one stage.
   → Stage 273
 - THE WAKE hex fill was a flat violet disc  
   → Stage 274
+- THE WAKE light column was a flat violet tube  
+  → Stage 275

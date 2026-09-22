@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 275 — THE WAKE light column was a flat violet tube
+
+**Goal.** Stage 272 plated THE RUN's 9 m column. THE WAKE's 12 m column of light
+above each hex pad was still unmapped additive `MeshBasicMaterial` violet at
+0.035 opacity.
+
+**What changed.** `bindPlate(colMat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `wake.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 274 — THE WAKE hex fill was a flat violet disc
 
 **Goal.** Stage 273 plated the hex ring. The fill inside it — the pad that lerps
