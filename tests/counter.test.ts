@@ -14,8 +14,20 @@ import { devSeed, MemoryAccountStore } from "../server/accounts";
 import { identityTag, parseTag, publicIdentity } from "../shared/identity/identity";
 import { Room, type Conn } from "../server/room";
 import { decodeServerMessage, encodeJoin } from "../shared/net/protocol";
+import { counterOpLine } from "../client/counter";
 
 type Boot = Awaited<ReturnType<typeof bootDevnetLedger>>;
+
+describe("the counter-ledger FILE line", () => {
+  it("CRT-cases the op and the reason, not WEAR · ok", () => {
+    expect(counterOpLine("wear", true)).toBe("WEAR · OK");
+    expect(counterOpLine("reconcile", false, "needs Depth 10")).toBe("RECONCILE · NEEDS DEPTH 10");
+    expect(counterOpLine("wear", true)).not.toBe("WEAR · ok");
+    const src = readFileSync(new URL("../client/counter.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/counterOpLine\(op, r\.ok, r\.reason\)/);
+    expect(src).not.toMatch(/op\.toUpperCase\(\)\} · ok/);
+  });
+});
 
 describe("the counter-ledger on the devnet", () => {
   let b: Boot;

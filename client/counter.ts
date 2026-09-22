@@ -32,6 +32,11 @@ export interface CounterInfo {
 
 export type CounterView = ReturnType<typeof counterView>;
 
+/** CRT line for a counter-ledger op. `WEAR · ok` was reaching the FILE tab as written. */
+export function counterOpLine(op: string, ok: boolean, reason?: string): string {
+  return ok ? `${op.toUpperCase()} · OK` : `${op.toUpperCase()} · ${(reason ?? "").toUpperCase()}`;
+}
+
 interface Eip1193 {
   request(args: { method: string; params?: unknown[] }): Promise<unknown>;
 }
@@ -143,7 +148,7 @@ export class CounterClient {
       const r = (await (await fetch(`${this.shop}/file/${encodeURIComponent(this.account)}/counter`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op, ...body, secret: this.secret }) })).json()) as { ok: boolean; reason?: string; counter: CounterRecord | null; view: CounterView; voucher?: { name: string; nonce: string; deadline: string; signature: Hex; fee: number }; prizes?: CounterClient["prizes"] };
       if (r.prizes) this.prizes = r.prizes;
       this.applyCounter(r.counter, r.view);
-      if (op !== "view") this.say(r.ok ? `${op.toUpperCase()} · ok` : `${op.toUpperCase()} · ${r.reason}`);
+      if (op !== "view") this.say(counterOpLine(op, r.ok, r.reason));
       return r;
     } catch (e) {
       const reason = String(e).slice(0, 100);

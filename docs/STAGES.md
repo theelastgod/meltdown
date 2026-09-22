@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 302 — The FILE tab printed WEAR · ok
+
+**Goal.** Stage 298 CRT-cased kick reasons. The counter-ledger line on FILE
+still said `WEAR · ok` and left a refusal in sentence case.
+
+**What changed.** `counterOpLine()` CRT-cases the op, `OK`, and the reason.
+
+**Proof.** `tests/counter.test.ts`: `counterOpLine("wear", true)` is `WEAR · OK`.
+Source must call it. Mutation: `ok` left lowercase — 1 fail.
+
 ## Stage 301 — FILE PRIMARY fell back to the id
 
 **Goal.** The kill log, the Audit line and the campaign card all call `weaponName`. FILE's

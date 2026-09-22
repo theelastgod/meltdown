@@ -292,3 +292,5 @@ one stage.
   → Stage 300
 - FILE PRIMARY fell back to the id  
   → Stage 301
+- The FILE tab printed WEAR · ok  
+  → Stage 302
