@@ -44,7 +44,8 @@ describe("loadout legality (validated server-side at spawn)", () => {
     const disconnected = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "wake_lung"], keystone: null }, owned, 10);
     expect(disconnected.errors.map((e) => e.rule)).toContain("connected");
     const connKick = disconnected.errors.find((e) => e.rule === "connected")!;
-    expect(connKick.detail).toBe("attestation is not a connected subgraph (1 of 2 reachable from SLIPFILE)");
+    expect(connKick.detail).toBe("ATTESTATION IS NOT A CONNECTED SUBGRAPH (1 OF 2 REACHABLE FROM SLIPFILE)");
+    expect(connKick.detail).not.toBe("attestation is not a connected subgraph (1 of 2 reachable from SLIPFILE)");
     expect(connKick.detail).not.toMatch(/from slipfile/);
     const src = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
     expect(src).toMatch(/\$\{attested\.length\} ATTESTED, MAX \$\{MAX_ATTESTED\}/);
@@ -54,7 +55,8 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(dup.errors.find((e) => e.rule === "duplicate")!.detail).not.toBe("SLIPFILE attested twice");
     expect(src).toMatch(/\$\{itemName\(id\)\} ATTESTED TWICE/);
     expect(src).not.toMatch(/\$\{itemName\(id\)\} attested twice/);
-    expect(src).toMatch(/reachable from \$\{itemName\(start\)\}/);
+    expect(src).toMatch(/ATTESTATION IS NOT A CONNECTED SUBGRAPH \(\$\{reach\.size\} OF \$\{set\.size\} REACHABLE FROM \$\{itemName\(start\)\}\)/);
+    expect(src).not.toMatch(/attestation is not a connected subgraph \(\$\{reach\.size\} of \$\{set\.size\} reachable from \$\{itemName\(start\)\}\)/);
     expect(src).not.toMatch(/reachable from \$\{start\}/);
     const smuggled = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: null, protocols: ["kp_filament_01"] }, owned, 10);
     expect(smuggled.errors.map((e) => e.rule)).toContain("unknown-field");

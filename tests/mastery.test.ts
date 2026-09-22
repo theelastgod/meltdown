@@ -52,7 +52,8 @@ describe("the Ledger Graph at launch size", () => {
     expect(r.errors).toEqual([]);
     const split = validateLoadout({ ...DEFAULT_LOADOUT, attested: ["slipfile", "black_swan"] }, owned, 50);
     expect(split.errors.map((e) => e.rule)).toContain("connected");
-    expect(split.errors.find((e) => e.rule === "connected")!.detail).toMatch(/from SLIPFILE/);
+    expect(split.errors.find((e) => e.rule === "connected")!.detail).toMatch(/FROM SLIPFILE/);
+    expect(split.errors.find((e) => e.rule === "connected")!.detail).not.toMatch(/from SLIPFILE/);
     expect(split.errors.find((e) => e.rule === "connected")!.detail).not.toMatch(/from slipfile/);
   });
 });

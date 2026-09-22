@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 454 — A disconnected attestation said connected subgraph
+
+**Goal.** Stage 453 taught `ATTESTED TWICE`. Attesting SLIPFILE and WAKE
+LUNG with no edge still kicked `attestation is not a connected subgraph
+(1 of 2 reachable from SLIPFILE)`.
+
+**What changed.** `ATTESTATION IS NOT A CONNECTED SUBGRAPH (N OF M
+REACHABLE FROM NAME)`.
+
+**Proof.** `tests/fairness.test.ts`: the kick is that CRT sentence.
+loadout.ts must the CRT template and must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 453 — The same node twice said attested twice
 
 **Goal.** Stage 452 taught `N ATTESTED, MAX M`. Attesting SLIPFILE twice

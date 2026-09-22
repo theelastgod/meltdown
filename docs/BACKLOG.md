@@ -596,3 +596,5 @@ one stage.
   → Stage 452
 - The same node twice said attested twice  
   → Stage 453
+- A disconnected attestation said connected subgraph  
+  → Stage 454
