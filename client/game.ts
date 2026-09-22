@@ -904,7 +904,7 @@ export class Game {
   private fileClosed(killerId: number): void {
     const who = this.closedBy(killerId);
     const d = who.at ? Math.hypot(who.at.x - this.player.pos.x, who.at.z - this.player.pos.z) : 0;
-    this.hud.alert(who.name ? `◆ FILE CLOSED BY ${who.name}${who.at ? ` · ${d.toFixed(0)} m` : ""} — RE-LEASING IN 3s` : "◆ FILE CLOSED — RE-LEASING IN 3s", true, 3);
+    this.hud.alert(who.name ? `◆ FILE CLOSED BY ${who.name}${who.at ? ` · ${d.toFixed(0)} M` : ""} — RE-LEASING IN 3s` : "◆ FILE CLOSED — RE-LEASING IN 3s", true, 3);
     this.renderer.post.kick(1);
     this.renderer.die(who.at);
     this.closedByLast.name = who.name;

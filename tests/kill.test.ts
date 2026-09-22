@@ -87,6 +87,12 @@ describe("what it is called", () => {
     expect(stampTitle("wasp")).toBe("KILL CONFIRMED");
   });
 
+  it("FILE CLOSED BY suffixes metres as M, not 12 m", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/d\.toFixed\(0\)\} M/);
+    expect(src).not.toMatch(/d\.toFixed\(0\)\} m/);
+  });
+
   it("and does not put the range on the ledger", () => {
     expect(ledgered("dummy")).toBe(false);
     expect(ledgered("player")).toBe(true);

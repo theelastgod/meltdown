@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 333 — FILE CLOSED BY suffixed metres as m
+
+**Goal.** Stage 332 CRT-cased the nodefoot as `M`. The death stamp still said
+`◆ FILE CLOSED BY VANTAGE-04 · 12 m — RE-LEASING IN 3s`.
+
+**What changed.** `${d.toFixed(0)} M`.
+
+**Proof.** `tests/kill.test.ts`: game.ts must `} M` and must not `} m` on that
+distance. Mutation: lowercase m again — 1 fail.
+`npm test` 1105/1105.
+
 ## Stage 332 — The nodefoot suffixed distance as m
 
 **Goal.** Stage 266 CRT-cased WASP LIVE as `M`. Approaching a node still wrote
