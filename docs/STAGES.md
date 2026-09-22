@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 277 — The campaign objective beam was a flat cyan tube
+
+**Goal.** Stage 276 plated the floor ring. The 40 m cyan cylinder above it — and the 14 m red
+beams over destroy targets, which share the same helper — were still unmapped additive
+`MeshBasicMaterial`.
+
+**What changed.** `beam()` binds `tex_lamp` on its material, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires `bindPlate(mat, "tex_lamp")` in `campaign.ts`. Mutation:
+the call omitted — 1 fail.
+
 ## Stage 276 — The campaign objective ring was a flat cyan hoop
 
 **Goal.** Stage 269 plated THE RUN's ground ring. The campaign marker's floor

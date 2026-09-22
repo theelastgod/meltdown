@@ -11,7 +11,9 @@ import { bindPlate, PALETTE } from "./city";
 const RED = 0xff1e3c;
 
 function beam(color: number, height = 40, radius = 0.25): THREE.Mesh {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, 8, 1, true), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+  bindPlate(mat, "tex_lamp");
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, 8, 1, true), mat);
   m.position.y = height / 2;
   return m;
 }

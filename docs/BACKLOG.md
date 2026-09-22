@@ -242,3 +242,5 @@ one stage.
   → Stage 275
 - The campaign objective ring was a flat cyan hoop  
   → Stage 276
+- The campaign objective beam was a flat cyan tube  
+  → Stage 277

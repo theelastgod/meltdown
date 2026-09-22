@@ -156,6 +156,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     const campaign = readFileSync(new URL("../client/render/campaign.ts", import.meta.url), "utf8");
     expect(campaign).toMatch(/bindPlate\(hoodMat, "tex_cloak"\)/);
     expect(campaign).toMatch(/bindPlate\(ringMat, "tex_lamp"\)/);
+    expect(campaign).toMatch(/bindPlate\(mat, "tex_lamp"\)/);
     const weapons = readFileSync(new URL("../client/render/weapons.ts", import.meta.url), "utf8");
     expect(weapons).toMatch(/bindPlate\(this\.projMats\.frag, "tex_weapon_dark"\)/);
     expect(weapons).toMatch(/bindPlate\(this\.projMats\.phage, "skin_phage_plate"\)/);
