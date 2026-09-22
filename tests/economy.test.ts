@@ -127,4 +127,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(6, "skin_estate", "ESTATE PLATE", "CYAN ANODIZED LEDGER-GRID, THE CONTRACTOR'S OWN PAINT"/);
     expect(src).not.toMatch(/skin\(6, "skin_estate", "ESTATE PLATE", "cyan anodized ledger-grid, the contractor's own paint"/);
   });
+
+  it("CLOCKEATER BRASS's market line is CRT, not gears that run faster", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_clockeater")!.line;
+    expect(line).toBe("GEARS THAT RUN FASTER THAN THE CITY CAN COUNT");
+    expect(line).not.toBe("gears that run faster than the city can count");
+    expect(src).toMatch(/skin\(7, "skin_clockeater", "CLOCKEATER BRASS", "GEARS THAT RUN FASTER THAN THE CITY CAN COUNT"/);
+    expect(src).not.toMatch(/skin\(7, "skin_clockeater", "CLOCKEATER BRASS", "gears that run faster than the city can count"/);
+  });
 });

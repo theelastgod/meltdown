@@ -42,7 +42,7 @@ export const SKINS: readonly SkinDef[] = [
   skin(4, "skin_deadletter", "DEADLETTER WHITE", "THE OFFICE'S OWN PAINT, CUT FROM A SEALED DOOR", 200, 0x0c02, "#f2f4ff", "skin_deadletter_plate"),
   skin(5, "skin_wake", "WAKE TRIM", "GREEN EDGE-LIGHT ON WET STEEL, THE COLOUR A NODE GOES WHEN IT FLIPS", 50, 0x3e91, "#37ff8b", "skin_wake_plate"),
   skin(6, "skin_estate", "ESTATE PLATE", "CYAN ANODIZED LEDGER-GRID, THE CONTRACTOR'S OWN PAINT", 70, 0x11d8, "#35f2ff", "skin_estate_plate"),
-  skin(7, "skin_clockeater", "CLOCKEATER BRASS", "gears that run faster than the city can count", 90, 0xa2c4, "#ffd27a", "skin_clockeater_plate"),
+  skin(7, "skin_clockeater", "CLOCKEATER BRASS", "GEARS THAT RUN FASTER THAN THE CITY CAN COUNT", 90, 0xa2c4, "#ffd27a", "skin_clockeater_plate"),
   skin(8, "skin_ledger", "LEDGER BREAK", "magenta stamp over a CRT that still says pending", 110, 0x6f0b, "#ff3ec9", "skin_ledger_plate"),
   skin(9, "skin_vantage", "VANTAGE AMBER", "contractor chevrons, the colour of a searchlight", 80, 0x4c2a, "#ffb02e", "skin_vantage_plate"),
   skin(10, "skin_blank", "UNLISTED BLACK", "near-black, one pinhole of cyan", 45, 0x90e1, "#35f2ff", "skin_blank_plate"),

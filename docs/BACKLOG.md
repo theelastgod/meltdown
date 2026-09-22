@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- CLOCKEATER BRASS's market line still says mixed-case `gears that run faster than the city can count`
+  → Stage 499
 - ESTATE PLATE's market line still says mixed-case `cyan anodized ledger-grid`
   → Stage 498
 - WAKE TRIM's market line still says mixed-case `green edge-light on wet steel`
