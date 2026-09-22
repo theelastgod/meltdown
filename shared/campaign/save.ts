@@ -54,7 +54,7 @@ export function canLaunch(a: Account, c: CampaignSave, id: string): { ok: boolea
     if (next.id !== id) return { ok: false, reason: `${next.title} COMES FIRST` };
     return { ok: true };
   }
-  if (!gigsOnOffer(a, c).some((g) => g.id === id)) return { ok: false, reason: c.gigsDone.includes(id) ? "ALREADY CLOSED" : "not on offer yet" };
+  if (!gigsOnOffer(a, c).some((g) => g.id === id)) return { ok: false, reason: c.gigsDone.includes(id) ? "ALREADY CLOSED" : "NOT ON OFFER YET" };
   return { ok: true };
 }
 

@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 425 — A locked gig said not on offer yet
+
+**Goal.** Stage 424 taught `ALREADY CLOSED`. A Threat-locked gig still returned
+`not on offer yet`.
+
+**What changed.** `NOT ON OFFER YET`.
+
+**Proof.** `tests/campaign.test.ts`: canLaunch of g_escrow_depot is
+`NOT ON OFFER YET`. save.ts must `"NOT ON OFFER YET"`. Mutation: lowercase
+again — 1 fail.
+
 ## Stage 424 — A finished gig said already closed
 
 **Goal.** Stage 423 taught `COMES FIRST`. Re-launching a gig already on the

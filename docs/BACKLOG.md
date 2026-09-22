@@ -538,3 +538,5 @@ one stage.
   → Stage 423
 - A finished gig said already closed  
   → Stage 424
+- A locked gig said not on offer yet  
+  → Stage 425

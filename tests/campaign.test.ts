@@ -153,6 +153,12 @@ describe("an empty fixer board is CRT", () => {
 });
 
 describe("picking a house writes the name, not the id", () => {
+  it("a locked gig is NOT ON OFFER YET, not not on offer yet", () => {
+    const src = readFileSync(new URL("../shared/campaign/save.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/"NOT ON OFFER YET"/);
+    expect(src).not.toMatch(/"not on offer yet"/);
+  });
+
   it("a finished gig is ALREADY CLOSED, not already closed", () => {
     const src = readFileSync(new URL("../shared/campaign/save.ts", import.meta.url), "utf8");
     expect(src).toMatch(/"ALREADY CLOSED"/);
@@ -234,7 +240,7 @@ describe("campaign save", () => {
     expect(gigsOnOffer(a, c).map((g) => g.id)).toContain("g_escrow_row");
     expect(gigsOnOffer(a, c).map((g) => g.id)).toContain("g_rescue_depot");
     expect(gigsOnOffer(a, c).map((g) => g.id)).not.toContain("g_escrow_depot");
-    expect(canLaunch(a, c, "g_escrow_depot").reason).toBe("not on offer yet");
+    expect(canLaunch(a, c, "g_escrow_depot").reason).toBe("NOT ON OFFER YET");
     // the Directive unlocks with THE LEAK; a protocol with the run
     for (const id of ["m2_deadletter_run", "m3_repo_volatility"]) completeContract(a, id, {});
     expect(c.protocols).toEqual(["red_lease", "filament_core"]);
