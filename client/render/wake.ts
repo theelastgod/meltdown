@@ -142,6 +142,7 @@ export class WakeFx {
   flip(pos: Vec3, team: number): void {
     const color = team === 1 ? PALETTE.green : team === 2 ? PALETTE.cyan : PALETTE.violet;
     const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
+    bindPlate(mat, "tex_lamp");
     const mesh = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.2, 6, 1), mat);
     mesh.rotation.x = -Math.PI / 2;
     mesh.rotation.z = Math.PI / 6;

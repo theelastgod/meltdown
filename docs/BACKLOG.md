@@ -248,3 +248,5 @@ one stage.
   → Stage 278
 - The player's cloak was an unplated silhouette  
   → Stage 279
+- THE WAKE flip ring was a flat hex pulse  
+  → Stage 280
