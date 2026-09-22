@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- CLOCK GEAR's market line still says mixed-case `brass gears on wet steel`
+  → Stage 520
 - PHAGE VEIN's market line still says mixed-case `iridescent spore-vein polymer`
   → Stage 519
 - LONGWAVE FILAMENT's market line still says mixed-case `cyan wave-traces on black alloy`

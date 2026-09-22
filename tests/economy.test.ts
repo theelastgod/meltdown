@@ -316,4 +316,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(27, "skin_vein", "PHAGE VEIN", "IRIDESCENT SPORE-VEIN POLYMER, THE LAUNCHER'S OWN STAIN"/);
     expect(src).not.toMatch(/skin\(27, "skin_vein", "PHAGE VEIN", "iridescent spore-vein polymer, the launcher's own stain"/);
   });
+
+  it("CLOCK GEAR's market line is CRT, not brass gears on wet steel", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_gear")!.line;
+    expect(line).toBe("BRASS GEARS ON WET STEEL, FASTER THAN THE CITY CAN COUNT");
+    expect(line).not.toBe("brass gears on wet steel, faster than the city can count");
+    expect(src).toMatch(/skin\(28, "skin_gear", "CLOCK GEAR", "BRASS GEARS ON WET STEEL, FASTER THAN THE CITY CAN COUNT"/);
+    expect(src).not.toMatch(/skin\(28, "skin_gear", "CLOCK GEAR", "brass gears on wet steel, faster than the city can count"/);
+  });
 });

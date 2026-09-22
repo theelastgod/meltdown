@@ -63,7 +63,7 @@ export const SKINS: readonly SkinDef[] = [
   skin(25, "skin_chevron", "REPO CHEVRON", "CONTRACTOR HAZARD STRIPES, THE SHOTGUN'S OWN RAIN", 76, 0x51c8, "#ffb02e", "tex_repo_chevron"),
   skin(26, "skin_filament", "LONGWAVE FILAMENT", "CYAN WAVE-TRACES ON BLACK ALLOY, THE RAIL'S OWN HOWL", 108, 0x0af3, "#35f2ff", "tex_longwave_filament"),
   skin(27, "skin_vein", "PHAGE VEIN", "IRIDESCENT SPORE-VEIN POLYMER, THE LAUNCHER'S OWN STAIN", 92, 0x7e46, "#37ff8b", "tex_phage_vein"),
-  skin(28, "skin_gear", "CLOCK GEAR", "brass gears on wet steel, faster than the city can count", 98, 0x2d9b, "#ffd27a", "tex_clock_gear"),
+  skin(28, "skin_gear", "CLOCK GEAR", "BRASS GEARS ON WET STEEL, FASTER THAN THE CITY CAN COUNT", 98, 0x2d9b, "#ffd27a", "tex_clock_gear"),
 ];
 
 /**
