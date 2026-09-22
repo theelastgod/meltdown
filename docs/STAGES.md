@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 285 — TESTIMONY printed m1:lease
+
+**Goal.** The contracts panel promised to strip the mission prefix the file
+stores. It used `/^m\\d:/`, which matches a backslash, not a digit, so
+`m1:lease=burn` reached the CRT as written.
+
+**What changed.** `testimonyKey()` in `shared/campaign/testimony.ts` strips
+`/^m\d+:/`. The panel calls it.
+
+**Proof.** `tests/campaign.test.ts`: `testimonyKey("m1:lease")` is `lease`;
+`client/campaign.ts` calls `testimonyKey(k)`. Mutations: the regex reverted to
+`/^m\\d:/` — 1 fail; the panel call omitted — 1 fail.
+
 ## Stage 284 — Explosion spheres were unplated additive balls
 
 **Goal.** Stage 283 plated hitscan beams. Nade and emp blasts — the expanding additive sphere —

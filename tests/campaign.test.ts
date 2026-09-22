@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { FACTIONS, factionName, HANDLERS } from "../shared/campaign/factions";
-import { ENDINGS, endingsFor, gateOpen, handlersAlive, type Testimony } from "../shared/campaign/testimony";
+import { ENDINGS, endingsFor, gateOpen, handlersAlive, testimonyKey, type Testimony } from "../shared/campaign/testimony";
 import { campaignErrors, lintCampaign, producibleTestimony, reachableNodes } from "../shared/campaign/lint";
 import { threatProfile, threatRating } from "../shared/campaign/threat";
 import { MAX_PROTOCOLS, PROTOCOLS, protocolMods } from "../shared/campaign/protocols";
@@ -29,6 +29,14 @@ describe("campaign data", () => {
       if (n.next) expect(s.nodes.some((x) => x.id === n.next), `${s.id}:${n.id} → ${n.next}`).toBe(true);
       for (const c of n.choices ?? []) if (c.next) expect(s.nodes.some((x) => x.id === c.next), `${s.id}:${n.id} choice → ${c.next}`).toBe(true);
     }
+  });
+  it("the contracts panel does not print the mN: prefix the file stores", () => {
+    expect(testimonyKey("m1:lease")).toBe("lease");
+    expect(testimonyKey("m7:ending")).toBe("ending");
+    expect(testimonyKey("m1:lease")).not.toBe("m1:lease");
+    const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/testimonyKey\(k\)/);
+    expect(src).not.toMatch(/k\.replace\(\/\^m\\\\d:\/,/);
   });
   it("testimony gates, survivors, endings", () => {
     expect(gateOpen({ all: { "m4:directive": "kept" } }, { "m4:directive": "kept" }, null)).toBe(true);

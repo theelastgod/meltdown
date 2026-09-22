@@ -76,6 +76,11 @@ export function endingTitle(id: string | null | undefined): string {
   return ENDINGS.find((e) => e.id === id)?.title ?? (id ?? "").replace(/_/g, " ").toUpperCase();
 }
 
+/** Strip the mission prefix the file stores. The panel was using `/^m\\d:/`, which never matches `m1:`. */
+export function testimonyKey(k: string): string {
+  return k.replace(/^m\d+:/, "");
+}
+
 /**
  * The ending the white office actually delivers (Stage 174).
  *
