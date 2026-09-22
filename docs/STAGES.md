@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 417 — A second house said house already picked
+
+**Goal.** Stage 416 taught `UNKNOWN HOUSE`. Picking a house when one is already
+on the file still returned `house already picked`.
+
+**What changed.** `HOUSE ALREADY PICKED`.
+
+**Proof.** `tests/campaign.test.ts`: campaign endpoint must `HOUSE ALREADY PICKED`
+and must not `house already picked`. Mutation: mixed case again — 1 fail.
+
 ## Stage 416 — An unknown house said unknown house
 
 **Goal.** Stage 414 taught campaign `UNKNOWN OP`. Picking a house that is not

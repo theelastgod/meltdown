@@ -153,6 +153,12 @@ describe("an empty fixer board is CRT", () => {
 });
 
 describe("picking a house writes the name, not the id", () => {
+  it("a second house is HOUSE ALREADY PICKED, not house already picked", () => {
+    const src = readFileSync(new URL("../shared/campaign/endpoint.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/HOUSE ALREADY PICKED/);
+    expect(src).not.toMatch(/house already picked/);
+  });
+
   it("an unknown house is UNKNOWN HOUSE, not unknown house", () => {
     const src = readFileSync(new URL("../shared/campaign/endpoint.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "UNKNOWN HOUSE"/);

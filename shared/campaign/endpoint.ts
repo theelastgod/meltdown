@@ -42,7 +42,7 @@ export function campaignRequest(a: Account, body: unknown, opts: CampaignOptions
       const f = String((req as { faction?: unknown }).faction ?? "");
       if (!FACTIONS.some((x) => x.id === f)) return { ok: false, reason: "UNKNOWN HOUSE", campaign: campaignOf(a) };
       const ok = pickFaction(a, f as FactionId);
-      return { ok, reason: ok ? undefined : "house already picked", campaign: campaignOf(a) };
+      return { ok, reason: ok ? undefined : "HOUSE ALREADY PICKED", campaign: campaignOf(a) };
     }
     case "complete": {
       if (!opts.trustCompletion) return { ok: false, reason: "a contract is closed by the room that ran it, not by asking", campaign: campaignOf(a) };

@@ -522,3 +522,5 @@ one stage.
   → Stage 415
 - An unknown house said unknown house  
   → Stage 416
+- A second house said house already picked  
+  → Stage 417
