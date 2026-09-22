@@ -27,7 +27,7 @@ export class PerfMonitor {
     this.host = q.get("shop") ?? game.file.shop ?? (HOSTS.build !== "dev" ? HOSTS.ledger : null);
     this.el = document.createElement("div");
     this.el.className = "p cy perf";
-    this.el.textContent = "PERF · sampling…";
+    this.el.textContent = "PERF · SAMPLING…";
     hud.appendChild(this.el);
   }
 

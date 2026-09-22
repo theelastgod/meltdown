@@ -564,3 +564,5 @@ one stage.
   → Stage 436
 - A waiting perf overlay said report in N s  
   → Stage 437
+- A booting perf overlay said sampling  
+  → Stage 438

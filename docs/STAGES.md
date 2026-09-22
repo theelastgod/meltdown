@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 438 — A booting perf overlay said sampling
+
+**Goal.** Stage 437 taught `REPORT IN N S`. The overlay still booted with
+`PERF · sampling…`.
+
+**What changed.** `PERF · SAMPLING…`.
+
+**Proof.** `tests/endgame.test.ts`: perf.ts must `textContent = "PERF · SAMPLING…"`
+and must not `textContent = "PERF · sampling…"`. Mutation: lowercase
+again — 1 fail.
+
 ## Stage 437 — A waiting perf overlay said report in N s
 
 **Goal.** Stage 436 taught `NO LEDGER HOST`. Before the report posts, the

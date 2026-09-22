@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 437, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 438, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,10 +13,10 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 437 on this branch (REPORT IN N S) |
-| Next stage number | **438** |
+| HEAD | Stage 438 on this branch (SAMPLING) |
+| Next stage number | **439** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1205 across 117 files, `npm test` |
+| Unit tests | 1206 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
 | Lints | four: `fairness`, `campaign`, `economy`, `assets` |
 | Working tree | clean |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 438 is next
+## 6. Stage 439 is next
 
-Stage 437 CRT-cased `REPORT IN N S`. The overlay still boots with
-`PERF · sampling…`. Do not loosen fairness. Do not plate viewmodel or remote
+Stage 438 CRT-cased `PERF · SAMPLING…`. The overlay still names a hidden
+GPU `unknown`. Do not loosen fairness. Do not plate viewmodel or remote
 strips. The join line still prints the socket name — `probe:net` asserts
 `probe-join-31`; leave it.
 
