@@ -42,6 +42,10 @@ describe("campaign data", () => {
     expect(testimonyLine("m1:lease", "burn")).toBe("LEASE=BURN");
     expect(testimonyLine("m5:lattice", "spare_docks")).toBe("LATTICE=SPARE DOCKS");
     expect(testimonyLine("m1:lease", "burn")).not.toBe("lease=burn");
+    expect(testimonyLine("m7:ending", "chair_clockeater")).toBe("ENDING=THE CLOCKEATER'S CHAIR");
+    expect(testimonyLine("m7:ending", "chair_clockeater")).not.toBe("ENDING=CHAIR CLOCKEATER");
+    const src = readFileSync(new URL("../shared/campaign/testimony.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/endingTitle\(v\)/);
   });
   it("testimony gates, survivors, endings", () => {
     expect(gateOpen({ all: { "m4:directive": "kept" } }, { "m4:directive": "kept" }, null)).toBe(true);

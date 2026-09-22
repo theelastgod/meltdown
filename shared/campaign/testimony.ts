@@ -81,10 +81,11 @@ export function testimonyKey(k: string): string {
   return k.replace(/^m\d+:/, "");
 }
 
-/** CRT line for one testimony pair: LEASE=BURN, not lease=burn. */
+/** CRT line for one testimony pair: LEASE=BURN, not lease=burn. Ending values are titles. */
 export function testimonyLine(k: string, v: string): string {
-  const key = testimonyKey(k).replace(/_/g, " ").toUpperCase();
-  const val = v.replace(/_/g, " ").toUpperCase();
+  const stripped = testimonyKey(k);
+  const key = stripped.replace(/_/g, " ").toUpperCase();
+  const val = stripped === "ending" ? endingTitle(v) : v.replace(/_/g, " ").toUpperCase();
   return `${key}=${val}`;
 }
 

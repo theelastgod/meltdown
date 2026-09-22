@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 289 — TESTIMONY printed CHAIR CLOCKEATER
+
+**Goal.** Stage 222 taught the completed-arc line THE CLOCKEATER'S CHAIR. Stage 286 CRT-cased
+testimony values, so `m7:ending=chair_clockeater` became `ENDING=CHAIR CLOCKEATER` — still the
+id, not the title.
+
+**What changed.** `testimonyLine` interpolates `endingTitle(v)` when the stripped key is `ending`.
+
+**Proof.** `tests/campaign.test.ts`: `testimonyLine("m7:ending", "chair_clockeater")` is
+`ENDING=THE CLOCKEATER'S CHAIR`. Source must `endingTitle(v)`. Mutation: uppercase the id
+again — 1 fail.
+
 ## Stage 288 — The mobile wet floor was an unplated sheen
 
 **Goal.** Sidewalks already wear `tex_wet_cobble`. The phone's fake wet floor
