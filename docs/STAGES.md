@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 493 — PHOSPHOR TRIM's market line said the first CRT's green
+
+**Goal.** Stage 492 taught RUST LEASE. PHOSPHOR TRIM still said
+mixed-case `the first CRT's green on every edge`.
+
+**What changed.** `THE FIRST CRT'S GREEN ON EVERY EDGE`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 492 — RUST LEASE's market line said a rig that has been rained on
 
 **Goal.** Stage 491 closed the last mixed-case Wakelight shop slot.

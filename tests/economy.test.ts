@@ -82,4 +82,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(1, "skin_rust", "RUST LEASE", "A RIG THAT HAS BEEN RAINED ON SINCE THE ESTATE STOPPED COUNTING"/);
     expect(src).not.toMatch(/skin\(1, "skin_rust", "RUST LEASE", "a rig that has been rained on since the Estate stopped counting"/);
   });
+
+  it("PHOSPHOR TRIM's market line is CRT, not the first CRT's green on every edge", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_phosphor")!.line;
+    expect(line).toBe("THE FIRST CRT'S GREEN ON EVERY EDGE");
+    expect(line).not.toBe("the first CRT's green on every edge");
+    expect(src).toMatch(/skin\(2, "skin_phosphor", "PHOSPHOR TRIM", "THE FIRST CRT'S GREEN ON EVERY EDGE"/);
+    expect(src).not.toMatch(/skin\(2, "skin_phosphor", "PHOSPHOR TRIM", "the first CRT's green on every edge"/);
+  });
 });

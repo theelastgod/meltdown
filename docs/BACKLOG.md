@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- PHOSPHOR TRIM's market line still says mixed-case `the first CRT's green on every edge`
+  → Stage 493
 - RUST LEASE's market line still says mixed-case `a rig that has been rained on`
   → Stage 492
 - PRESET SLOT V's shop line still says mixed-case `a fifth`
