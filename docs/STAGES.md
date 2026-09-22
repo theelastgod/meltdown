@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 326 — The RANGE log suffixed times as s
+
+**Goal.** Stage 323 CRT-cased `1h` as `1H`. Finishing a range ghost still pushed
+`RANGE · 5.55s · NEW BEST`.
+
+**What changed.** `${run.seconds.toFixed(2)}S` and the BEST time the same way.
+
+**Proof.** `tests/roomlabel.test.ts`: source must `RANGE · ${run.seconds.toFixed(2)}S`
+and must not `}s` on that line. Mutation: lowercase s again — 1 fail.
+`npm test` 1098/1098.
+
 ## Stage 325 — An Audit playlist quoted its line in sentence case
 
 **Goal.** Stage 321 CRT-cased THE RUN's admit line. Joining PELLET WEEK still

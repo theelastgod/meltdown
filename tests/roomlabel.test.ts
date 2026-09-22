@@ -93,6 +93,14 @@ describe("the room's name in the join line", () => {
     expect(roomName("ws://h/room/100%")).toBe("100%"); // a malformed escape is a name like any other
   });
 
+  it("the RANGE log suffixes seconds as S, not 5.55s", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/RANGE · \$\{run\.seconds\.toFixed\(2\)\}S/);
+    expect(src).not.toMatch(/RANGE · \$\{run\.seconds\.toFixed\(2\)\}s/);
+    expect(src).toMatch(/BEST \$\{this\.ghost!\.best!\.seconds\.toFixed\(2\)\}S/);
+    expect(src).not.toMatch(/BEST \$\{this\.ghost!\.best!\.seconds\.toFixed\(2\)\}s/);
+  });
+
   it("an empty attested list prints NONE, not none", () => {
     const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(src).toMatch(/attested\.map\(itemName\)\.join\(", "\) \|\| "NONE"/);
