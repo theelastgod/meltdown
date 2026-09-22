@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- DOUBLE BARREL's FILE line still says mixed-case `two shells per trigger`
+  → Stage 526
 - LONG LEASE's FILE line still says mixed-case `slower, heavier rounds`
   → Stage 525
 - THREE-COUNT's FILE line still says mixed-case `three-round bursts at 900 rpm`

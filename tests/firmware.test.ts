@@ -121,6 +121,15 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(src).not.toMatch(/line: "slower, heavier rounds: −18% rate, \+19% damage, −25% spread"/);
   });
 
+  it("DOUBLE BARREL's FILE line is CRT, not two shells per trigger", () => {
+    const src = readFileSync(new URL("../shared/manifest/firmwares.ts", import.meta.url), "utf8");
+    const line = FIRMWARES.find((f) => f.id === "repo_hammer:double_barrel")!.line;
+    expect(line).toBe("TWO SHELLS PER TRIGGER 0.7 S APART, THEN A LONG RESET; −10% PELLET DAMAGE, MAGAZINE 4");
+    expect(line).not.toBe("two shells per trigger 0.7 s apart, then a long reset; −10% pellet damage, magazine 4");
+    expect(src).toMatch(/id: "repo_hammer:double_barrel".*line: "TWO SHELLS PER TRIGGER 0\.7 S APART, THEN A LONG RESET; −10% PELLET DAMAGE, MAGAZINE 4"/s);
+    expect(src).not.toMatch(/line: "two shells per trigger 0\.7 s apart, then a long reset; −10% pellet damage, magazine 4"/);
+  });
+
   it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
     const pct = (from: number, to: number) => ((to - from) / from) * 100;
     for (const f of FIRMWARES) {
@@ -145,7 +154,7 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(p.damage).toBe(9);
     expect(p.magSize).toBe(4);
     expect(f.line).toMatch(/−10%/);
-    expect(f.line).toMatch(/magazine 4/);
+    expect(f.line).toMatch(/magazine 4/i);
     expect(f.line).not.toMatch(/−8%/);
   });
 

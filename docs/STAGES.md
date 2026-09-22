@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 526 — DOUBLE BARREL's FILE line said two shells per trigger
+
+**Goal.** Stage 525 taught LONG LEASE. DOUBLE BARREL still said
+mixed-case `two shells per trigger 0.7 s apart… magazine 4`.
+
+**What changed.** `TWO SHELLS PER TRIGGER 0.7 S APART, THEN A LONG
+RESET; −10% PELLET DAMAGE, MAGAZINE 4`. The magazine-4 check is
+case-insensitive.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/firmware.test.ts` asserts that sentence and
+that firmwares.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 525 — LONG LEASE's FILE line said slower, heavier rounds
 
 **Goal.** Stage 524 taught THREE-COUNT. LONG LEASE still said
