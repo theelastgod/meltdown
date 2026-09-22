@@ -420,3 +420,5 @@ one stage.
   → Stage 364
 - A written name said written where they can't redact it  
   → Stage 365
+- A closed name registry said the registry opens at Depth  
+  → Stage 366

@@ -219,6 +219,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/written where they can't redact it/);
   });
 
+  it("a closed name registry is THE REGISTRY OPENS AT DEPTH, not sentence case", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/THE REGISTRY OPENS AT DEPTH \$\{NAME_DEPTH\}/);
+    expect(src).not.toMatch(/the registry opens at Depth \$\{NAME_DEPTH\}/);
+  });
+
   it("a waiting counter is FETCHING THE CHAIN CLIENT, not fetching the chain client", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/COUNTER-LEDGER \/\/ FETCHING THE CHAIN CLIENT…/);

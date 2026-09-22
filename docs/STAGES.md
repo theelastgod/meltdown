@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 366 — A closed name registry said the registry opens at Depth
+
+**Goal.** Stage 365 taught `WRITTEN WHERE THEY CAN'T REDACT IT`. A linked
+file below Depth 50 still dimmed `the registry opens at Depth 50`.
+
+**What changed.** `THE REGISTRY OPENS AT DEPTH ${NAME_DEPTH}`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not the
+sentence-case line. Mutation: lowercase again — 1 fail.
+`npm test` 1136/1136.
+
 ## Stage 365 — A written name said written where they can't redact it
 
 **Goal.** Stage 364 taught `ONE SIWE STATEMENT; THE GHOSTFILE MINTS WITH
