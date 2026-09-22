@@ -271,4 +271,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(22, "skin_directive", "DIRECTIVE CORE", "RED FILAMENT ON THE OPTIC, THE LEASE THAT NEVER MISSED"/);
     expect(src).not.toMatch(/skin\(22, "skin_directive", "DIRECTIVE CORE", "red filament on the optic, the lease that never missed"/);
   });
+
+  it("LEASE STEEL's market line is CRT, not anodized shotgun steel", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_breaker")!.line;
+    expect(line).toBe("ANODIZED SHOTGUN STEEL, AMBER CHEVRONS IN THE RAIN");
+    expect(line).not.toBe("anodized shotgun steel, amber chevrons in the rain");
+    expect(src).toMatch(/skin\(23, "skin_breaker", "LEASE STEEL", "ANODIZED SHOTGUN STEEL, AMBER CHEVRONS IN THE RAIN"/);
+    expect(src).not.toMatch(/skin\(23, "skin_breaker", "LEASE STEEL", "anodized shotgun steel, amber chevrons in the rain"/);
+  });
 });

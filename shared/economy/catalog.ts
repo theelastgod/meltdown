@@ -58,7 +58,7 @@ export const SKINS: readonly SkinDef[] = [
   skin(20, "skin_baton", "BATON VIOLET", "SHOCK-VIOLET TRIM ON A CLOSE-IN STICK", 68, 0x91d4, "#8f4dff", "skin_baton_plate"),
   skin(21, "skin_stack", "STACK PLATE", "STACKED POLYMER, THE SMG'S OWN RAIN", 58, 0x3a55, "#37ff8b", "tex_smg_stack"),
   skin(22, "skin_directive", "DIRECTIVE CORE", "RED FILAMENT ON THE OPTIC, THE LEASE THAT NEVER MISSED", 130, 0x8c12, "#ff2a4a", "tex_directive_core"),
-  skin(23, "skin_breaker", "LEASE STEEL", "anodized shotgun steel, amber chevrons in the rain", 78, 0x1f70, "#ffb02e", "tex_lease_steel"),
+  skin(23, "skin_breaker", "LEASE STEEL", "ANODIZED SHOTGUN STEEL, AMBER CHEVRONS IN THE RAIN", 78, 0x1f70, "#ffb02e", "tex_lease_steel"),
   skin(24, "skin_arc", "ARC VIOLET", "shock-arc plate, the baton's own light", 82, 0x62aa, "#8f4dff", "tex_shock_arc"),
   skin(25, "skin_chevron", "REPO CHEVRON", "contractor hazard stripes, the shotgun's own rain", 76, 0x51c8, "#ffb02e", "tex_repo_chevron"),
   skin(26, "skin_filament", "LONGWAVE FILAMENT", "cyan wave-traces on black alloy, the rail's own howl", 108, 0x0af3, "#35f2ff", "tex_longwave_filament"),

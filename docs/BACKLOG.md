@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- LEASE STEEL's market line still says mixed-case `anodized shotgun steel, amber chevrons in the rain`
+  → Stage 515
 - DIRECTIVE CORE's market line still says mixed-case `red filament on the optic`
   → Stage 514
 - STACK PLATE's market line still says mixed-case `stacked polymer, the SMG's own rain`
