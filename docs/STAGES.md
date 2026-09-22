@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 282 — Smoke clouds were unplated grey spheres
+
+**Goal.** Stage 203 plated the thrown nade's body with `tex_weapon_dark`. The
+fourteen lingering smoke volumes after a smoke nade were still unmapped
+`MeshBasicMaterial` grey.
+
+**What changed.** `bindPlate(mat, "tex_weapon_dark")` on each cloud sphere, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `weapons.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 281 — The mech searchlight cone was a flat amber volume
 
 **Goal.** Stage 253 plated the searchlight lens. The 30 m additive cone that

@@ -157,6 +157,7 @@ export class ArsenalFx {
     const rnd = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 0xffffffff);
     for (let i = 0; i < 14; i++) {
       const mat = new THREE.MeshBasicMaterial({ color: 0x8a97a8, transparent: true, opacity: 0.0, depthWrite: false });
+      bindPlate(mat, "tex_weapon_dark");
       const m = new THREE.Mesh(new THREE.SphereGeometry(radius * (0.35 + rnd() * 0.3), 8, 6), mat);
       const a = rnd() * Math.PI * 2;
       const r = rnd() * radius * 0.6;

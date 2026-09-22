@@ -252,3 +252,5 @@ one stage.
   → Stage 280
 - The mech searchlight cone was a flat amber volume  
   → Stage 281
+- Smoke clouds were unplated grey spheres  
+  → Stage 282
