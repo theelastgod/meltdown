@@ -582,3 +582,5 @@ one stage.
   → Stage 445
 - A wrong-weapon chip said is a chip  
   → Stage 446
+- A wrong-socket chip said is a chip, not  
+  → Stage 447

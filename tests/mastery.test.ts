@@ -65,6 +65,7 @@ describe("chips and firmwares", () => {
     expect(new Set(CHIPS.map((c) => c.socket)).size).toBe(3);
   });
   it("chips are validated: one per socket, right weapon, right socket, unlocked by rank", () => {
+    const src = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
     const ranks = { lease_breaker: 12 };
     const ok = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { muzzle: "lease_breaker:long_barrel", kinetic: "lease_breaker:sling" } } }, owned, 50, ranks);
     expect(ok.errors).toEqual([]);
@@ -79,9 +80,12 @@ describe("chips and firmwares", () => {
     const wrongSocket = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { kinetic: "lease_breaker:long_barrel" } } }, owned, 50, ranks);
     expect(wrongSocket.errors.map((e) => e.rule)).toContain("chip-socket");
     const socketKick = wrongSocket.errors.find((e) => e.rule === "chip-socket")!;
-    expect(socketKick.detail).toMatch(/LEASE-BREAKER LONG BARREL is a MUZZLE chip, not KINETIC/);
+    expect(socketKick.detail).toMatch(/LEASE-BREAKER LONG BARREL IS A MUZZLE CHIP, NOT KINETIC/);
+    expect(socketKick.detail).not.toMatch(/is a MUZZLE chip, not KINETIC/);
     expect(socketKick.detail).not.toMatch(/not kinetic/);
     expect(socketKick.detail).not.toMatch(/lease_breaker:long_barrel/);
+    expect(src).toMatch(/chip-socket", detail: `\$\{c\.name\} IS A \$\{c\.socket\.toUpperCase\(\)\} CHIP, NOT/);
+    expect(src).not.toMatch(/chip-socket", detail: `\$\{c\.name\} is a \$\{c\.socket\.toUpperCase\(\)\} chip, not/);
     const locked = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { muzzle: "lease_breaker:flash_cut" } } }, owned, 50, ranks); // rank 22
     expect(locked.errors.map((e) => e.rule)).toContain("chip-rank");
     const rankKick = locked.errors.find((e) => e.rule === "chip-rank")!;
@@ -91,7 +95,6 @@ describe("chips and firmwares", () => {
     expect(rankKick.detail).not.toMatch(/lease_breaker:flash_cut/);
     expect(rankKick.detail).not.toMatch(/needs lease_breaker mastery/);
     expect(rankKick.detail).not.toMatch(/LEASE-BREAKER mastery/);
-    const src = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
     expect(src).toMatch(/chip-rank", detail: `\$\{c\.name\} NEEDS \$\{gun\(wid as WeaponId\)\} MASTERY/);
     expect(src).not.toMatch(/chip-rank", detail: `\$\{c\.name\} needs \$\{gun\(wid as WeaponId\)\} mastery/);
     expect(src).not.toMatch(/chip-rank", detail: `\$\{id\} needs \$\{wid\}/);

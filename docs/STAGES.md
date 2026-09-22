@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 447 — A wrong-socket chip said is a chip, not
+
+**Goal.** Stage 446 taught `IS A … CHIP`. Putting LONG BARREL in Kinetic
+still kicked `LEASE-BREAKER LONG BARREL is a MUZZLE chip, not KINETIC`.
+
+**What changed.** `IS A … CHIP, NOT …`.
+
+**Proof.** `tests/mastery.test.ts`: the kick matches `IS A MUZZLE CHIP, NOT
+KINETIC`. loadout.ts must the CRT chip-socket template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 446 — A wrong-weapon chip said is a chip
 
 **Goal.** Stage 235 taught the names. Putting STACK LONG BARREL on the
