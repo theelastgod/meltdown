@@ -508,3 +508,5 @@ one stage.
   → Stage 408
 - Buying a slot out of order said needs first  
   → Stage 409
+- An empty alias said empty alias  
+  → Stage 410

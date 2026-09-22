@@ -263,6 +263,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/needs \$\{c\.kind\} slot \$\{n - 1\} first/);
   });
 
+  it("an empty alias is EMPTY ALIAS, not empty alias", () => {
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "EMPTY ALIAS"/);
+    expect(src).not.toMatch(/reason: "empty alias"/);
+  });
+
   it("buying a cosmetic twice is ALREADY OWNED, not already owned", () => {
     const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "ALREADY OWNED"/);

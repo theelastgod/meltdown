@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 410 — An empty alias said empty alias
+
+**Goal.** Stage 409 taught `NEEDS SLOT N FIRST`. Setting a blank alias still
+returned `empty alias`.
+
+**What changed.** `EMPTY ALIAS`.
+
+**Proof.** `tests/endgame.test.ts`: rewrite.ts must `reason: "EMPTY ALIAS"` and
+must not `reason: "empty alias"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 409 — Buying a slot out of order said needs first
 
 **Goal.** Stage 408 taught `SLOT N ALREADY OWNED`. Buying slot 3 before

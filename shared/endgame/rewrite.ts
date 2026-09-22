@@ -123,7 +123,7 @@ export function setAlias(a: Account, slot: number, alias: string): { ok: boolean
   const slots = slotsOf(a).aliases;
   if (slot < 1 || slot > slots) return { ok: false, reason: `slot ${slot} not owned (${slots} slots)` };
   const clean = alias.replace(/[^\x20-\x7e]/g, "").trim().slice(0, 16).toUpperCase();
-  if (!clean) return { ok: false, reason: "empty alias" };
+  if (!clean) return { ok: false, reason: "EMPTY ALIAS" };
   a.aliases = a.aliases ?? [];
   a.aliases[slot - 1] = clean;
   return { ok: true };
