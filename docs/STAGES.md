@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 299 — The HUD zone line duplicated the district helper
+
+**Goal.** Wake lines, the PA and BACK ON THE LEDGER call `districtName`. The
+status bar still inlined `displayName ?? name.replace`, the same fallback
+that printed `LEASE_ROW` before Stage 292.
+
+**What changed.** `this.zone = districtName(level)`.
+
+**Proof.** `tests/district.test.ts` requires that call and refuses the inline
+fallback. Mutation: the replace restored — 1 fail.
+
 ## Stage 298 — The drop line printed room full
 
 **Goal.** The log CRT-cases the link status (`LINK CLOSED`). The kick reason

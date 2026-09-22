@@ -5,6 +5,7 @@ import { GRENADE_LIST, WEAPON_LIST } from "@shared/weapons/manifest";
 import type { Dummy } from "@shared/sim/world";
 import type { FileView } from "../file";
 import { LEVEL_INFO, levelDisplayName, type LevelDef } from "@shared/sim/level";
+import { districtName } from "./district";
 import { houseName } from "@shared/endgame/season";
 import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead } from "./ammo";
@@ -178,7 +179,7 @@ export class Hud {
   /** Zone label, mission title, radar scale, and the MAP tab's district list. */
   setLevel(level: LevelDef, onTravel: (id: string) => void): void {
     this.bounds = level.bounds ?? 32;
-    this.zone = (level.displayName ?? level.name.replace(/_/g, " ")).toUpperCase();
+    this.zone = districtName(level);
     const cast = (level.district ?? "magenta").toUpperCase();
     this.q(".status .dim").textContent = this.zone;
     this.q(".status .house").textContent = ` (${cast})`;

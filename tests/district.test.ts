@@ -35,6 +35,11 @@ describe("a contract names the district the city does", () => {
     expect(src).toMatch(/TRAVELLING — \$\{levelDisplayName\(net\.levelName\)\}/);
     expect(src).not.toMatch(/TRAVELLING — \$\{net\.levelName\.replace/);
   });
+  it("the HUD zone line calls districtName, not the level id", () => {
+    const src = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/this\.zone = districtName\(level\)/);
+    expect(src).not.toMatch(/this\.zone = \(level\.displayName \?\? level\.name\.replace/);
+  });
   it("the PA and the ledger line call districtName, not the level id", () => {
     const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(src).toMatch(/const district = districtName\(this\.world\.level\)/);

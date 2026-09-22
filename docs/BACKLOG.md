@@ -286,3 +286,5 @@ one stage.
   → Stage 297
 - The drop line printed room full  
   → Stage 298
+- The HUD zone line duplicated the district helper  
+  → Stage 299
