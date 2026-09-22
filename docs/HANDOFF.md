@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 500, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 501, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 500 on this branch (LEDGER BREAK market line) |
-| Next stage number | **501** |
+| HEAD | Stage 501 on this branch (VANTAGE AMBER market line) |
+| Next stage number | **502** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 501 is next
+## 6. Stage 502 is next
 
-Stage 500 CRT-cased LEDGER BREAK's market line. VANTAGE AMBER still
-says mixed-case `contractor chevrons, the colour of a searchlight`. Title cards stay
+Stage 501 CRT-cased VANTAGE AMBER's market line. UNLISTED BLACK still
+says mixed-case `near-black, one pinhole of cyan`. Title cards stay
 prose (probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints

@@ -44,7 +44,7 @@ export const SKINS: readonly SkinDef[] = [
   skin(6, "skin_estate", "ESTATE PLATE", "CYAN ANODIZED LEDGER-GRID, THE CONTRACTOR'S OWN PAINT", 70, 0x11d8, "#35f2ff", "skin_estate_plate"),
   skin(7, "skin_clockeater", "CLOCKEATER BRASS", "GEARS THAT RUN FASTER THAN THE CITY CAN COUNT", 90, 0xa2c4, "#ffd27a", "skin_clockeater_plate"),
   skin(8, "skin_ledger", "LEDGER BREAK", "MAGENTA STAMP OVER A CRT THAT STILL SAYS PENDING", 110, 0x6f0b, "#ff3ec9", "skin_ledger_plate"),
-  skin(9, "skin_vantage", "VANTAGE AMBER", "contractor chevrons, the colour of a searchlight", 80, 0x4c2a, "#ffb02e", "skin_vantage_plate"),
+  skin(9, "skin_vantage", "VANTAGE AMBER", "CONTRACTOR CHEVRONS, THE COLOUR OF A SEARCHLIGHT", 80, 0x4c2a, "#ffb02e", "skin_vantage_plate"),
   skin(10, "skin_blank", "UNLISTED BLACK", "near-black, one pinhole of cyan", 45, 0x90e1, "#35f2ff", "skin_blank_plate"),
   skin(11, "skin_rain", "RAIN LEASE", "anodized black that never dried", 55, 0x2b17, "#8fd8ff", "skin_rain_plate"),
   skin(12, "skin_metro", "METRO PLATE", "grey-green tunnel tile, cyan bars", 75, 0x71a0, "#37ff8b", "skin_metro_plate"),

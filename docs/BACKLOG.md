@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- VANTAGE AMBER's market line still says mixed-case `contractor chevrons, the colour of a searchlight`
+  → Stage 501
 - LEDGER BREAK's market line still says mixed-case `magenta stamp over a CRT that still says pending`
   → Stage 500
 - CLOCKEATER BRASS's market line still says mixed-case `gears that run faster than the city can count`
