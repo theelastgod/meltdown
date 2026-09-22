@@ -139,15 +139,16 @@ export class ArsenalFx {
 
   explosion(pos: Vec3, radius: number, color: number, big = true): void {
     const c = new THREE.Color(color);
-    const mat = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), mat);
+    const blastMat = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+    bindPlate(blastMat, "tex_lamp");
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), blastMat);
     mesh.position.set(pos.x, pos.y, pos.z);
     mesh.scale.setScalar(0.2);
     const peak = big ? 120 : 40;
     const light = new THREE.PointLight(color, peak, radius * 4, 1.6);
     light.position.set(pos.x, pos.y + 0.3, pos.z);
     this.scene.add(mesh, light);
-    this.blasts.push({ mesh, light, born: this.clock, life: big ? 0.45 : 0.3, peak, mat, color: c });
+    this.blasts.push({ mesh, light, born: this.clock, life: big ? 0.45 : 0.3, peak, mat: blastMat, color: c });
   }
 
   cloud(id: number, pos: Vec3, radius: number): void {

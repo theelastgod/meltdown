@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 283, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 284, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 283 on this branch (hitscan beams wear tex_lamp) |
-| Next stage number | **284** |
+| HEAD | Stage 284 on this branch (explosion spheres wear tex_lamp) |
+| Next stage number | **285** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1067 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 284 is next
+## 6. Stage 285 is next
 
-Stage 283 put `tex_lamp` on hitscan beams. Explosion spheres are still unplated. Do not loosen
-fairness.
+Stage 284 put `tex_lamp` on explosion spheres. Do not loosen fairness. Do not plate viewmodel
+or remote strips (skin maps overwrite those).
 
 ---
 

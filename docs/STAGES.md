@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 284 — Explosion spheres were unplated additive balls
+
+**Goal.** Stage 283 plated hitscan beams. Nade and emp blasts — the expanding additive sphere —
+were still unmapped `MeshBasicMaterial`.
+
+**What changed.** `bindPlate(blastMat, "tex_lamp")`, fail-soft. The blast colour stays.
+
+**Proof.** `tests/assets.test.ts` requires that call in `weapons.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 283 — Hitscan beams were unplated additive tubes
 
 **Goal.** Stage 277 plated campaign objective beams. Hitscan tracers — the cylinder from muzzle

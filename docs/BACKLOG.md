@@ -256,3 +256,5 @@ one stage.
   → Stage 282
 - Hitscan beams were unplated additive tubes  
   → Stage 283
+- Explosion spheres were unplated additive balls  
+  → Stage 284
