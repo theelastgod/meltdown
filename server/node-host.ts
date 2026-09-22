@@ -560,7 +560,7 @@ const http = createServer((req, res) => {
           let r: { ok: boolean; reason?: string };
           if (file[3] === "claim") r = claimContract(a, String(body.id ?? ""));
           else if (file[3] === "rewrite") r = rewrite(a);
-          else r = body.op === "buy" ? buyCosmetic(a, String(body.id ?? "")) : body.op === "theme" ? { ok: setTheme(a, body.id ? String(body.id) : null), reason: "NOT OWNED" } : body.op === "preset" ? savePreset(a, Number(body.slot ?? 0), String(body.name ?? ""), body.loadout) : body.op === "alias" ? setAlias(a, Number(body.slot ?? 0), String(body.alias ?? "")) : { ok: false, reason: "unknown op" };
+          else r = body.op === "buy" ? buyCosmetic(a, String(body.id ?? "")) : body.op === "theme" ? { ok: setTheme(a, body.id ? String(body.id) : null), reason: "NOT OWNED" } : body.op === "preset" ? savePreset(a, Number(body.slot ?? 0), String(body.name ?? ""), body.loadout) : body.op === "alias" ? setAlias(a, Number(body.slot ?? 0), String(body.alias ?? "")) : { ok: false, reason: "UNKNOWN OP" };
           if (r.ok) accounts.save(a);
           log(`[file] ${id} ${file[3]} ${body.op ?? body.id ?? ""}: ${r.ok ? "ok" : r.reason}`);
           res.setHeader("content-type", "application/json");

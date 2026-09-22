@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 413 — An unknown cosmetic op said unknown op
+
+**Goal.** Stage 412 taught `NOT OWNED`. A cosmetic post with an op the host
+does not recognise still returned `unknown op`.
+
+**What changed.** `UNKNOWN OP` on both hosts. Campaign and economy
+endpoints stay mixed case.
+
+**Proof.** `tests/endgame.test.ts`: both hosts must `reason: "UNKNOWN OP"` and
+must not `reason: "unknown op"`. Mutation: player-do mixed case again — 1 fail.
+
 ## Stage 412 — Wearing a theme you do not own said not owned
 
 **Goal.** Stage 411 taught `SLOT N NOT OWNED`. Setting a theme the file
