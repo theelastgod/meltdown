@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 391 — The graph hint said G opens the whole graph
+
+**Goal.** Stage 390 taught the EXPLORE how-to. FILE still dimmed
+`(G opens the whole graph)`.
+
+**What changed.** `(G OPENS THE WHOLE GRAPH)`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `(G OPENS THE WHOLE GRAPH)`
+and must not `(G opens the whole graph)`. Mutation: lowercase again — 1 fail.
+`npm test` 1160/1160.
+
 ## Stage 390 — EXPLORE said travel to a district
 
 **Goal.** Stage 389 taught `NOTHING ON THE RECORD`. The EXPLORE row still

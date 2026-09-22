@@ -791,7 +791,7 @@ export class GhostFile {
       <div class="ln dim">RITES ${CHAPTERS.map((c) => `${v.identity.chapters.includes(c.chapter) ? "▣" : "▢"} ${c.numeral} ${c.title} (D${c.depth})`).join(" · ")} · ${v.identity.unlocked.length}/${MONIKERS.length} MONIKERS EARNED</div>
       <div class="ln">PRIMARY <span class="wp" data-act="primary">[${wname(this.raw.primary)}]</span> · SECONDARY <span class="wp" data-act="secondary">[${wname(this.raw.secondary)}]</span> <span class="dim">(D${WEAPON_DEPTH[this.raw.primary as WeaponId] ?? "?"} / D${WEAPON_DEPTH[this.raw.secondary as WeaponId] ?? "?"})</span></div>
       <div class="cols">
-        <div><div class="sh">ATTESTED NODES · ≤ ${MAX_ATTESTED} · CONNECTED <span class="dim">(G opens the whole graph)</span></div>${LEDGER_ITEMS.filter((n) => this.owned.includes(n.id) && (attested.includes(n.id) || n.ring === 1)).map(row).join("")}
+        <div><div class="sh">ATTESTED NODES · ≤ ${MAX_ATTESTED} · CONNECTED <span class="dim">(G OPENS THE WHOLE GRAPH)</span></div>${LEDGER_ITEMS.filter((n) => this.owned.includes(n.id) && (attested.includes(n.id) || n.ring === 1)).map(row).join("")}
           <div class="sh">KEYSTONE · ONE · LINKED</div>${KEYSTONES.map(row).join("")}</div>
         <div><div class="sh">WEAPON MASTERY · CHIPS · FIRMWARE</div><div class="kit">${kit}</div>
           <div class="sh">ATTESTATION STAMPS · ${this.stamps.length}/${STAMPS.length}</div><div class="stamps">${stampRows}</div>

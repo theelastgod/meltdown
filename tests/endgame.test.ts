@@ -281,6 +281,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/sandbox: every node is in the file — click to attest/);
   });
 
+  it("the graph hint is G OPENS THE WHOLE GRAPH, not G opens the whole graph", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/\(G OPENS THE WHOLE GRAPH\)/);
+    expect(src).not.toMatch(/\(G opens the whole graph\)/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);

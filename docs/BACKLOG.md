@@ -470,3 +470,5 @@ one stage.
   → Stage 389
 - EXPLORE said travel to a district  
   → Stage 390
+- The graph hint said G opens the whole graph  
+  → Stage 391
