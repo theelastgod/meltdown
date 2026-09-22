@@ -536,3 +536,5 @@ one stage.
   → Stage 422
 - Skipping a mission said comes first  
   → Stage 423
+- A finished gig said already closed  
+  → Stage 424

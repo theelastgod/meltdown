@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 424 — A finished gig said already closed
+
+**Goal.** Stage 423 taught `COMES FIRST`. Re-launching a gig already on the
+file still returned `already closed`.
+
+**What changed.** `ALREADY CLOSED`.
+
+**Proof.** `tests/campaign.test.ts`: save.ts must `"ALREADY CLOSED"` and must not
+`"already closed"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 423 — Skipping a mission said comes first
 
 **Goal.** Stage 421 taught `THE ARC IS COMPLETE`. Launching m2 before m1 still

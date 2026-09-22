@@ -153,6 +153,12 @@ describe("an empty fixer board is CRT", () => {
 });
 
 describe("picking a house writes the name, not the id", () => {
+  it("a finished gig is ALREADY CLOSED, not already closed", () => {
+    const src = readFileSync(new URL("../shared/campaign/save.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/"ALREADY CLOSED"/);
+    expect(src).not.toMatch(/"already closed"/);
+  });
+
   it("skipping a mission is TITLE COMES FIRST, not comes first", () => {
     const src = readFileSync(new URL("../shared/campaign/save.ts", import.meta.url), "utf8");
     expect(src).toMatch(/\$\{next\.title\} COMES FIRST/);

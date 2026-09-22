@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 423, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 424, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 423 on this branch (COMES FIRST) |
-| Next stage number | **424** |
+| HEAD | Stage 424 on this branch (ALREADY CLOSED) |
+| Next stage number | **425** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1190 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,12 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 424 is next
+## 6. Stage 425 is next
 
-Stage 423 CRT-cased `COMES FIRST`. Gigs still return `already closed` /
-`not on offer yet`. Do not loosen fairness. Do not plate viewmodel or remote
-strips. The join line still prints the socket name — `probe:net` asserts
-`probe-join-31`; leave it.
+Stage 424 CRT-cased `ALREADY CLOSED`. Gigs still return `not on offer yet`.
+Do not loosen fairness. Do not plate viewmodel or remote strips. The join line
+still prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 
