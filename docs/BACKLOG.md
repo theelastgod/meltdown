@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- ESTATE PLATE's market line still says mixed-case `cyan anodized ledger-grid`
+  → Stage 498
 - WAKE TRIM's market line still says mixed-case `green edge-light on wet steel`
   → Stage 497
 - DEADLETTER WHITE's market line still says mixed-case `the office's own paint`

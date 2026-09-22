@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 498 — ESTATE PLATE's market line said cyan anodized ledger-grid
+
+**Goal.** Stage 497 taught WAKE TRIM. ESTATE PLATE still said
+mixed-case `cyan anodized ledger-grid, the contractor's own paint`.
+
+**What changed.** `CYAN ANODIZED LEDGER-GRID, THE CONTRACTOR'S OWN
+PAINT`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 497 — WAKE TRIM's market line said green edge-light on wet steel
 
 **Goal.** Stage 496 taught DEADLETTER WHITE. WAKE TRIM still said

@@ -118,4 +118,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(5, "skin_wake", "WAKE TRIM", "GREEN EDGE-LIGHT ON WET STEEL, THE COLOUR A NODE GOES WHEN IT FLIPS"/);
     expect(src).not.toMatch(/skin\(5, "skin_wake", "WAKE TRIM", "green edge-light on wet steel, the colour a node goes when it flips"/);
   });
+
+  it("ESTATE PLATE's market line is CRT, not cyan anodized ledger-grid", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_estate")!.line;
+    expect(line).toBe("CYAN ANODIZED LEDGER-GRID, THE CONTRACTOR'S OWN PAINT");
+    expect(line).not.toBe("cyan anodized ledger-grid, the contractor's own paint");
+    expect(src).toMatch(/skin\(6, "skin_estate", "ESTATE PLATE", "CYAN ANODIZED LEDGER-GRID, THE CONTRACTOR'S OWN PAINT"/);
+    expect(src).not.toMatch(/skin\(6, "skin_estate", "ESTATE PLATE", "cyan anodized ledger-grid, the contractor's own paint"/);
+  });
 });

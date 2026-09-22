@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 497, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 498, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 497 on this branch (WAKE TRIM market line) |
-| Next stage number | **498** |
+| HEAD | Stage 498 on this branch (ESTATE PLATE market line) |
+| Next stage number | **499** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 498 is next
+## 6. Stage 499 is next
 
-Stage 497 CRT-cased WAKE TRIM's market line. ESTATE PLATE still
-says mixed-case `cyan anodized ledger-grid`. Title cards stay
+Stage 498 CRT-cased ESTATE PLATE's market line. CLOCKEATER BRASS still
+says mixed-case `gears that run faster than the city can count`. Title cards stay
 prose (probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints
