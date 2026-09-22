@@ -455,7 +455,7 @@ export class Game {
       return;
     }
     this.rejoins++;
-    this.hud.push(`LINK LOST · REJOINING IN ${(wait / 1000).toFixed(1)}s · TRY ${this.rejoins} OF ${rejoinTries()}`, "am");
+    this.hud.push(`LINK LOST · REJOINING IN ${(wait / 1000).toFixed(1)}S · TRY ${this.rejoins} OF ${rejoinTries()}`, "am");
     this.knockTimer = setTimeout(() => {
       this.knockTimer = null;
       this.reconnect();

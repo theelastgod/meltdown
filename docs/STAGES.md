@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 328 — REJOINING IN suffixed the wait as s
+
+**Goal.** Stage 327 CRT-cased the RANGE alert. Knocking after a drop still
+pushed `LINK LOST · REJOINING IN 0.5s · TRY 1 OF 6`.
+
+**What changed.** `${(wait / 1000).toFixed(1)}S`.
+
+**Proof.** `tests/roomlabel.test.ts`: source must `REJOINING IN ${(wait / 1000).toFixed(1)}S`
+and must not `}s` on that line. Mutation: lowercase s again — 1 fail.
+`npm test` 1100/1100.
+
 ## Stage 327 — The RANGE alert suffixed times as s
 
 **Goal.** Stage 326 CRT-cased the RANGE log. The stamp still said

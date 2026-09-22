@@ -93,6 +93,12 @@ describe("the room's name in the join line", () => {
     expect(roomName("ws://h/room/100%")).toBe("100%"); // a malformed escape is a name like any other
   });
 
+  it("REJOINING IN suffixes seconds as S, not 1.0s", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/REJOINING IN \$\{\(wait \/ 1000\)\.toFixed\(1\)\}S/);
+    expect(src).not.toMatch(/REJOINING IN \$\{\(wait \/ 1000\)\.toFixed\(1\)\}s/);
+  });
+
   it("the RANGE alert suffixes seconds as S, not 5.55s", () => {
     const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(src).toMatch(/RANGE RECORD — \$\{run\.seconds\.toFixed\(2\)\}S/);
