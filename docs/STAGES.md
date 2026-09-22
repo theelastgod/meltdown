@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 379 — The prizes how-to said THE RUN settles nightly
+
+**Goal.** Stage 378 taught the Ledger Market heading. PRIZES still dimmed
+`THE RUN settles nightly, Audit placements weekly, Deep Wake contributions
+at season end; claims are sponsored`.
+
+**What changed.** The same sentence, CRT.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not
+`THE RUN settles nightly, Audit placements weekly`. Mutation: lowercase
+again — 1 fail.
+`npm test` 1148/1148.
+
 ## Stage 378 — The Ledger Market heading said settles only in
 
 **Goal.** Stage 377 taught `LISTED BY`. The market heading still wrote

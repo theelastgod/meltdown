@@ -257,6 +257,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/LEDGER MARKET · settles only in \$CAPITAL/);
   });
 
+  it("the prizes how-to is CRT, not THE RUN settles nightly", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/THE RUN SETTLES NIGHTLY, AUDIT PLACEMENTS WEEKLY, DEEP WAKE CONTRIBUTIONS AT SEASON END; CLAIMS ARE SPONSORED/);
+    expect(src).not.toMatch(/THE RUN settles nightly, Audit placements weekly/);
+  });
+
   it("units settle nightly is CRT, not sentence case", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/UNITS SETTLE NIGHTLY AT UP TO \$\{MAX_CAPITAL_PER_UNIT\} \$CAPITAL EACH/);

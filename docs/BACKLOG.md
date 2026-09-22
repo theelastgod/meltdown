@@ -446,3 +446,5 @@ one stage.
   → Stage 377
 - The Ledger Market heading said settles only in  
   → Stage 378
+- The prizes how-to said THE RUN settles nightly  
+  → Stage 379
