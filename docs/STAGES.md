@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 262 — Spawn pads were flat green and magenta boxes
+
+**Goal.** `tex_wet_asphalt` has been in the manifest since the city pack and never reached a mesh.
+`pad_start` / `pad_end` — the floor a player stands on at every spawn — were still unmapped
+`MeshBasicMaterial` green and magenta.
+
+**What changed.** `bindPlate(M.padStart, "tex_wet_asphalt")` and the same on `M.padEnd`, fail-soft.
+The pad colours stay; the leftover wet-road plate is the map.
+
+**Proof.** `tests/assets.test.ts` requires both calls in `city.ts` and lists `tex_wet_asphalt` among
+the leftover ids. Mutation: the `padStart` call omitted — 1 fail.
+
 ## Stage 261 — Parked-car headlamps were a flat cream strip
 
 **Goal.** Street lamps already wear `tex_lamp`. Each parked car still had a cream

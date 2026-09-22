@@ -148,7 +148,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
       "tex_lamp", "tex_nameplate", "tex_pavement", "tex_rug", "tex_scaffold", "tex_tile_metro",
       "tex_vent", "tex_asphalt_2", "tex_pipe", "tex_grate", "tex_cone_alt",
       "tex_wasp_hull", "tex_mech_hull", "tex_kiosk_crt", "tex_wet_cobble", "tex_cloak",
-      "tex_cable",
+      "tex_cable", "tex_wet_asphalt",
     ]) {
       expect(src, id).toContain(`"${id}"`);
     }
@@ -166,6 +166,8 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(city).toMatch(/bindPlate\(M\.railMg, "tex_cable"\)/);
     expect(city).toMatch(/bindPlate\(stripMat, "tex_lamp"\)/);
     expect(city).toMatch(/bindPlate\(M\.head, "tex_lamp"\)/);
+    expect(city).toMatch(/bindPlate\(M\.padStart, "tex_wet_asphalt"\)/);
+    expect(city).toMatch(/bindPlate\(M\.padEnd, "tex_wet_asphalt"\)/);
     const hub = readFileSync(new URL("../client/render/hub.ts", import.meta.url), "utf8");
     expect(hub).toMatch(/bindPlate\(m, "tex_nameplate"\)/);
     const life = readFileSync(new URL("../client/render/life.ts", import.meta.url), "utf8");

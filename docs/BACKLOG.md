@@ -212,3 +212,5 @@ one stage.
   → Stage 260
 - Parked-car headlamps were a flat cream strip  
   → Stage 261
+- Spawn pads were flat green and magenta boxes  
+  → Stage 262
