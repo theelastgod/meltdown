@@ -598,3 +598,5 @@ one stage.
   → Stage 453
 - A disconnected attestation said connected subgraph  
   → Stage 454
+- A non-string keystone said must be an id  
+  → Stage 455

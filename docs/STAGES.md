@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 455 — A non-string keystone said must be an id
+
+**Goal.** Stage 248 taught `KEYSTONE` on that kick. A numeric keystone still
+kicked `KEYSTONE must be an id`.
+
+**What changed.** `KEYSTONE MUST BE AN ID`.
+
+**Proof.** `tests/fairness.test.ts`: the kick is `KEYSTONE MUST BE AN ID`.
+loadout.ts must that CRT string and must not `KEYSTONE must be an id`.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 454 — A disconnected attestation said connected subgraph
 
 **Goal.** Stage 453 taught `ATTESTED TWICE`. Attesting SLIPFILE and WAKE

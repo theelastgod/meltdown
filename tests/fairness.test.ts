@@ -82,10 +82,10 @@ describe("loadout legality (validated server-side at spawn)", () => {
     expect(src).not.toMatch(/max \$\{MAX_KEYSTONES\} keystone/);
     const ksShape = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: [], keystone: 1 }, owned, 10);
     expect(ksShape.errors.map((e) => e.rule)).toContain("keystone-shape");
-    expect(ksShape.errors.find((e) => e.rule === "keystone-shape")!.detail).toBe("KEYSTONE must be an id");
-    expect(ksShape.errors.find((e) => e.rule === "keystone-shape")!.detail).not.toBe("keystone must be an id");
-    expect(src).toMatch(/keystone-shape", detail: "KEYSTONE must be an id"/);
-    expect(src).not.toMatch(/keystone-shape", detail: "keystone must be an id"/);
+    expect(ksShape.errors.find((e) => e.rule === "keystone-shape")!.detail).toBe("KEYSTONE MUST BE AN ID");
+    expect(ksShape.errors.find((e) => e.rule === "keystone-shape")!.detail).not.toBe("KEYSTONE must be an id");
+    expect(src).toMatch(/keystone-shape", detail: "KEYSTONE MUST BE AN ID"/);
+    expect(src).not.toMatch(/keystone-shape", detail: "KEYSTONE must be an id"/);
   });
   it("every legal build reconciles: NET DELTA 0 on the Auditor's ledger within tolerance", () => {
     const lo = validateLoadout({ primary: "lease_breaker", secondary: "stack_smg", attested: ["slipfile", "static_skin", "contagion_rider"], keystone: null }, owned, 10).loadout;
