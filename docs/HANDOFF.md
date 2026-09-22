@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 531, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 532, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 531 on this branch (OVERCHARGE FILE line) |
-| Next stage number | **532** |
+| HEAD | Stage 532 on this branch (CLUSTER FILE line) |
+| Next stage number | **533** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 532 is next
+## 6. Stage 533 is next
 
-Stage 531 CRT-cased OVERCHARGE's FILE line. CLUSTER still says
-mixed-case `+25% burst radius, −15% damage`. Title cards stay prose
+Stage 532 CRT-cased CLUSTER's FILE line. LONG FUSE still says
+mixed-case `faster, flatter rounds`. Title cards stay prose
 (probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints

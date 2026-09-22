@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- CLUSTER's FILE line still says mixed-case `+25% burst radius, −15% damage`
+  → Stage 532
 - OVERCHARGE's FILE line still says mixed-case `+8% charge time, +8% damage`
   → Stage 531
 - CAPACITOR's FILE line still says mixed-case `−15% charge time, −7% damage`

@@ -175,6 +175,15 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(src).not.toMatch(/line: "\+8% charge time, \+8% damage"/);
   });
 
+  it("CLUSTER's FILE line is CRT, not +25% burst radius", () => {
+    const src = readFileSync(new URL("../shared/manifest/firmwares.ts", import.meta.url), "utf8");
+    const line = FIRMWARES.find((f) => f.id === "phage:cluster")!.line;
+    expect(line).toBe("+25% BURST RADIUS, −15% DAMAGE");
+    expect(line).not.toBe("+25% burst radius, −15% damage");
+    expect(src).toMatch(/id: "phage:cluster".*line: "\+25% BURST RADIUS, −15% DAMAGE"/s);
+    expect(src).not.toMatch(/line: "\+25% burst radius, −15% damage"/);
+  });
+
   it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
     const pct = (from: number, to: number) => ((to - from) / from) * 100;
     for (const f of FIRMWARES) {
