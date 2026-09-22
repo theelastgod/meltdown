@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 400 — Rewrite too early said Depth
+
+**Goal.** Stage 399 taught `NO FILE`. Below Depth 50, Rewrite still dimmed
+`Depth 12 — Rewrite opens at 50`.
+
+**What changed.** `DEPTH ${a.depth} — REWRITE OPENS AT ${MAX_DEPTH}`.
+
+**Proof.** `tests/endgame.test.ts`: rewrite.ts must the CRT template and must not
+`Depth ${a.depth} — Rewrite opens at`. Mutation: mixed case again — 1 fail.
+
 ## Stage 399 — Rewrite without a file said no file
 
 **Goal.** Stage 395 taught `NOT IN YOUR FILE`. Opening Rewrite with no account still

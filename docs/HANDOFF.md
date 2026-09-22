@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 399, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 400, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 399 on this branch (rewrite NO FILE) |
-| Next stage number | **400** |
+| HEAD | Stage 400 on this branch (REWRITE OPENS AT) |
+| Next stage number | **401** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1167 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,12 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 400 is next
+## 6. Stage 401 is next
 
-Stage 399 CRT-cased rewrite `NO FILE`. `canRewrite` still returns
-`Depth N — Rewrite opens at 50`. Do not loosen fairness. Do not plate viewmodel
-or remote strips. The join line still prints the socket name — `probe:net`
-asserts `probe-join-31`; leave it.
+Stage 400 CRT-cased `DEPTH N — REWRITE OPENS AT 50`. Do not loosen fairness. Do
+not plate viewmodel or remote strips. The join line still prints the socket
+name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

@@ -239,6 +239,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/Robinhood Wallet · WalletConnect · injected/);
   });
 
+  it("rewrite too early is DEPTH N — REWRITE OPENS AT, not Depth", () => {
+    const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/DEPTH \$\{a\.depth\} — REWRITE OPENS AT \$\{MAX_DEPTH\}/);
+    expect(src).not.toMatch(/Depth \$\{a\.depth\} — Rewrite opens at \$\{MAX_DEPTH\}/);
+  });
+
   it("rewrite without a file is NO FILE, not no file", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "NO FILE"/);
@@ -406,6 +412,8 @@ describe("rewrite and the Wakelight shop", () => {
   it("opens at Depth 50, burns the file, keeps stamps and the glyph's age, pays Wakelight; cosmetics are slots and themes, never power", () => {
     const fresh = createAccount("r:1", "R");
     expect(canRewrite(fresh).ok).toBe(false);
+    expect(canRewrite(fresh).reason).toMatch(/^DEPTH \d+ — REWRITE OPENS AT /);
+    expect(canRewrite(fresh).reason).not.toMatch(/^Depth /);
     const a = sandboxAccount("r:2");
     a.stamps.push("first_kill:lease_breaker");
     a.counters["kills"] = 400;

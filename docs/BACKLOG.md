@@ -488,3 +488,5 @@ one stage.
   → Stage 398
 - Rewrite without a file said no file  
   → Stage 399
+- Rewrite too early said Depth  
+  → Stage 400

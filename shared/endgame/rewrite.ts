@@ -38,7 +38,7 @@ export const COSMETICS: readonly CosmeticDef[] = [
 export const cosmeticById = (id: string): CosmeticDef | undefined => COSMETICS.find((c) => c.id === id);
 
 export function canRewrite(a: Account): { ok: boolean; reason?: string } {
-  if (a.depth < MAX_DEPTH) return { ok: false, reason: `Depth ${a.depth} — Rewrite opens at ${MAX_DEPTH}` };
+  if (a.depth < MAX_DEPTH) return { ok: false, reason: `DEPTH ${a.depth} — REWRITE OPENS AT ${MAX_DEPTH}` };
   return { ok: true };
 }
 
