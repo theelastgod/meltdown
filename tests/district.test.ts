@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { districtName, enteredLine, fullWakeLine, roundOverLine, wakeBeginsLine } from "../client/hud/district";
+import { districtPickLine } from "../client/menu";
 import { levelDisplayName } from "../shared/sim/level";
 import { MISSIONS } from "../shared/campaign/missions";
 
@@ -55,5 +56,19 @@ describe("the wake's lines name their district", () => {
   });
   it("never says the yard for a district that is not one", () => {
     for (const line of [roundOverLine(1, "LEASE ROW"), roundOverLine(0, "LEASE ROW"), fullWakeLine("LEASE ROW"), enteredLine(1, "A", "LEASE ROW")]) expect(line).not.toMatch(/THE YARD/);
+  });
+});
+
+describe("the WAKE picker names the district, not the room", () => {
+  it("prints LEASE ROW, not neochina-lease_row", () => {
+    const row = { displayName: "LEASE ROW", cast: "magenta" };
+    expect(districtPickLine("wake", row)).toBe("MAGENTA CAST · LEASE ROW");
+    expect(districtPickLine("wake", row)).not.toMatch(/neochina/);
+    expect(districtPickLine("wake", row)).not.toMatch(/lease_row/);
+    expect(districtPickLine("run", row)).toBe("MAGENTA CAST · PVP ZONE WITH TWO GATES · LEASE ROW");
+    expect(districtPickLine("run", row)).not.toMatch(/neochina/);
+    const src = readFileSync(new URL("../client/menu.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/districtPickLine\(this\.pick, l\)/);
+    expect(src).not.toMatch(/public room \$\{HOSTS\.publicRoom\}/);
   });
 });

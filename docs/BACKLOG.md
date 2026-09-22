@@ -282,3 +282,5 @@ one stage.
   → Stage 295
 - City neon tubes were unplated boxes  
   → Stage 296
+- The WAKE picker printed neochina-lease_row  
+  → Stage 297

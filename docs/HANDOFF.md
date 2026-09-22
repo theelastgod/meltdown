@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 296, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 297, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 296 on this branch (city neon wears tex_lamp) |
-| Next stage number | **297** |
+| HEAD | Stage 297 on this branch (WAKE picker names LEASE ROW) |
+| Next stage number | **298** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1070 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 297 is next
+## 6. Stage 298 is next
 
-Stage 296 put `tex_lamp` on every `NeonBatch` tube. The WAKE district picker still
-prints `neochina-lease_row`. Do not loosen fairness. Do not plate viewmodel or
-remote strips (skin maps overwrite those).
+Stage 297 made the WAKE picker print MAGENTA CAST · LEASE ROW. Do not loosen fairness. Do
+not plate viewmodel or remote strips (skin maps overwrite those).
 
 ---
 

@@ -78,6 +78,12 @@ export function menuWanted(q: URLSearchParams): boolean {
   return !q.has("net") && !q.has("mission") && !q.has("level") && !q.has("explore");
 }
 
+/** The line under a district pick: the city's name, not the room id (Stage 297). */
+export function districtPickLine(pick: "wake" | "run", l: { displayName: string; cast: string }): string {
+  const cast = l.cast.toUpperCase();
+  return pick === "run" ? `${cast} CAST · PVP ZONE WITH TWO GATES · ${l.displayName}` : `${cast} CAST · ${l.displayName}`;
+}
+
 /** The URL a choice loads: the mode as a query, like district travel. */
 export function choiceUrl(id: string, base: string, opts: { level?: string; account?: string } = {}): string | null {
   const u = new URL(base);
@@ -246,7 +252,7 @@ export class Menu {
       case "pause":
         return PAUSE;
       case "wake":
-        return [...LEVEL_INFO.filter((l) => l.kind === "district").map((l) => ({ id: `${this.pick}:${l.id}`, label: l.displayName, line: this.pick === "run" ? `${l.cast.toUpperCase()} cast · PvP zone with two gates · room ${HOSTS.publicRoom}-run-${l.id}` : `${l.cast.toUpperCase()} cast · public room ${HOSTS.publicRoom}-${l.id}` })), { id: "back", label: "BACK", line: "" }];
+        return [...LEVEL_INFO.filter((l) => l.kind === "district").map((l) => ({ id: `${this.pick}:${l.id}`, label: l.displayName, line: districtPickLine(this.pick, l) })), { id: "back", label: "BACK", line: "" }];
       case "settings":
         return [...(Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]).map((k) => ({ id: `set:${k}`, label: SETTING_LABELS[k], line: formatSetting(this.host.settings, k) })), { id: "back", label: "BACK", line: "" }];
       default:

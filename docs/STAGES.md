@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 297 — The WAKE picker printed neochina-lease_row
+
+**Goal.** The district list labels LEASE ROW. The line under a pick still said
+`MAGENTA cast · public room neochina-lease_row`. The city does not call a district by its
+socket name.
+
+**What changed.** `districtPickLine` prints `MAGENTA CAST · LEASE ROW`. The room id stays on
+the URL.
+
+**Proof.** `tests/district.test.ts`: wake line is `MAGENTA CAST · LEASE ROW` and has no
+`neochina`. Source must `districtPickLine(this.pick, l)` and must not interpolate
+`HOSTS.publicRoom`. Mutation: the room id in the line again — 1 fail.
+
 ## Stage 296 — City neon tubes were unplated boxes
 
 **Goal.** Street lamps, KERNEL bars and the metro lock already wear `tex_lamp`.
