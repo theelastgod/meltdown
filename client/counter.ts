@@ -12,6 +12,10 @@ import type { CounterRecord } from "@shared/progression/account";
 import type { counterView } from "@shared/economy/counter";
 import artifacts from "../contracts/out/artifacts.json";
 
+import { crtPhrase } from "./crt";
+
+export { crtPhrase };
+
 type Abi = readonly unknown[];
 const ABI = artifacts as Record<string, { abi: Abi }>;
 
@@ -35,11 +39,6 @@ export type CounterView = ReturnType<typeof counterView>;
 /** CRT line for a counter-ledger op. `WEAR · ok` was reaching the FILE tab as written. */
 export function counterOpLine(op: string, ok: boolean, reason?: string): string {
   return ok ? `${op.toUpperCase()} · OK` : `${op.toUpperCase()} · ${crtPhrase(reason ?? "")}`;
-}
-
-/** CRT-case a reason or tag: NO WALLET, not no wallet. */
-export function crtPhrase(s: string): string {
-  return s.replace(/_/g, " ").toUpperCase();
 }
 
 interface Eip1193 {

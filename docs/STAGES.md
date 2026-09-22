@@ -1641,6 +1641,23 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 494 — FILE pulled viem into the first download
+
+**Goal.** Stage 481 CRT-cased the FILE chain miss by value-importing
+`crtPhrase` from `client/counter.ts`. That file imports viem. The
+static graph from `client/main.ts` reached the chain client, so the
+first download carried a quarter of the bundle a player does not need
+to wake, walk or shoot. `tests/bundle.test.ts` was red.
+
+**What changed.** `crtPhrase` lives in `client/crt.ts`. FILE imports
+it from there. `counter.ts` re-exports it. The chain client stays a
+dynamic import.
+
+**Proof.** Measured graph listed `client/counter.ts`. After the fix
+bundle.test.ts is green: the entry's static graph never reaches a
+module that imports viem, and FILE must `from "./crt"`. Mutation:
+value-import `crtPhrase` from `./counter` again — 2 fail.
+
 ## Stage 493 — PHOSPHOR TRIM's market line said the first CRT's green
 
 **Goal.** Stage 492 taught RUST LEASE. PHOSPHOR TRIM still said

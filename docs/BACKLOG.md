@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- FILE value-imported crtPhrase from the chain client, so the first download carried viem
+  → Stage 494
 - PHOSPHOR TRIM's market line still says mixed-case `the first CRT's green on every edge`
   → Stage 493
 - RUST LEASE's market line still says mixed-case `a rig that has been rained on`

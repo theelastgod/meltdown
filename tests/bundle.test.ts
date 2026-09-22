@@ -32,6 +32,8 @@ describe("the first download does not carry the chain client", () => {
   it("the chain client is still reachable — through a dynamic import, from the file that owns it", () => {
     const file = readFileSync("client/file.ts", "utf8");
     expect(file).toMatch(/import\("\.\/counter"\)/);
+    expect(file).toMatch(/import \{ crtPhrase \} from "\.\/crt"/);
+    expect(file).not.toMatch(/import \{ crtPhrase, type CounterClient, type CounterView \} from "\.\/counter"/);
     expect(importsChain("client/counter.ts")).toBe(true); // the walk's negative above is not because viem moved
   });
 
