@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 336 — NEXT ROUND IN suffixed the wait as s
+
+**Goal.** Stage 335 CRT-cased the hold clock. The results card still wrote
+`NEXT ROUND IN 13s`. `probe:stage5` asserted that lowercase form.
+
+**What changed.** `nextRoundLine` prints `NEXT ROUND IN 13S`. The card calls it.
+The probe now expects `S`.
+
+**Proof.** `tests/round.test.ts`: `nextRoundLine(13)` is `NEXT ROUND IN 13S`.
+round.ts must `nextRoundLine(left)`. `probe:stage5` expects `S`. Mutation:
+lowercase s again — 1 fail.
+`npm test` 1108/1108.
+
 ## Stage 335 — Campaign hold/survive suffixed the clock as s
 
 **Goal.** Stage 334 CRT-cased `RE-LEASING IN 3S`. A hold still wrote `12s / 20s`

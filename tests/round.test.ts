@@ -1,6 +1,7 @@
 /** The round ended with a line (Stage 121): the card for the results phase. */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { roundCard, roundWinner } from "../client/hud/round";
+import { nextRoundLine, roundCard, roundWinner } from "../client/hud/round";
 
 const stats = { kills: 3, deaths: 1, flips: 2, nodeSeconds: 41.4 };
 
@@ -23,7 +24,7 @@ describe("roundCard", () => {
   it("names the cell that woke the district, lays out the score, your line and the countdown", () => {
     const c = roundCard({ phase: "results", timeLeft: 12.4, score: [0, 40, 12], winner: 1 }, 1, "DRAINAGE YARD", stats)!;
     expect(c.title).toBe("ROUND OVER");
-    expect(c.lines).toEqual(["CELL ONE WOKE DRAINAGE YARD", "CELL ONE 40 · CELL TWO 12", "YOU · CELL ONE · 3 KILLS · 1 DEATHS · 2 PULLS · 41 s ON NODES", "NEXT ROUND IN 13s"]);
+    expect(c.lines).toEqual(["CELL ONE WOKE DRAINAGE YARD", "CELL ONE 40 · CELL TWO 12", "YOU · CELL ONE · 3 KILLS · 1 DEATHS · 2 PULLS · 41 s ON NODES", "NEXT ROUND IN 13S"]);
     expect(c.color).toBe("cy");
   });
   it("is magenta for the cell that lost and amber when no one woke or you are on no cell", () => {
@@ -43,6 +44,18 @@ describe("roundCard", () => {
     expect(a.key).not.toBe(c.key);
   });
   it("never counts below zero", () => {
-    expect(roundCard({ phase: "results", timeLeft: -0.3, score: [0, 1, 0], winner: 1 }, 1, "Z", stats)!.lines.at(-1)).toBe("NEXT ROUND IN 0s");
+    expect(roundCard({ phase: "results", timeLeft: -0.3, score: [0, 1, 0], winner: 1 }, 1, "Z", stats)!.lines.at(-1)).toBe("NEXT ROUND IN 0S");
+  });
+
+  it("NEXT ROUND IN suffixes seconds as S, not 13s", () => {
+    expect(nextRoundLine(13)).toBe("NEXT ROUND IN 13S");
+    expect(nextRoundLine(0)).toBe("NEXT ROUND IN 0S");
+    expect(nextRoundLine(13)).not.toBe("NEXT ROUND IN 13s");
+    const src = readFileSync(new URL("../client/hud/round.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/nextRoundLine\(left\)/);
+    expect(src).not.toMatch(/NEXT ROUND IN \$\{left\}s/);
+    const probe = readFileSync(new URL("../probe/stage5.ts", import.meta.url), "utf8");
+    expect(probe).toMatch(/NEXT ROUND IN 1\[23\]S/);
+    expect(probe).not.toMatch(/NEXT ROUND IN 1\[23\]s/);
   });
 });

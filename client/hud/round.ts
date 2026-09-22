@@ -31,6 +31,11 @@ export interface RoundCard {
 
 const cell = (t: number): string => (t === 1 ? "CELL ONE" : "CELL TWO");
 
+/** The results-card countdown: CRT, not `NEXT ROUND IN 13s`. */
+export function nextRoundLine(left: number): string {
+  return `NEXT ROUND IN ${left}S`;
+}
+
 /** which cell the round went to: the full wake's winner, else the score, else nobody */
 export function roundWinner(w: RoundView): number {
   if (w.winner === 1 || w.winner === 2) return w.winner;
@@ -48,7 +53,7 @@ export function roundCard(w: RoundView, myTeam: number, zone: string, stats: Rou
     `CELL ONE ${s1} · CELL TWO ${s2}`,
   ];
   if (myTeam === 1 || myTeam === 2) lines.push(`YOU · ${cell(myTeam)} · ${stats.kills} KILLS · ${stats.deaths} DEATHS · ${stats.flips} PULLS · ${Math.round(stats.nodeSeconds)} s ON NODES`);
-  lines.push(`NEXT ROUND IN ${left}s`);
+  lines.push(nextRoundLine(left));
   const color = !winner || !(myTeam === 1 || myTeam === 2) ? "am" : winner === myTeam ? "cy" : "mg";
   return { title: "ROUND OVER", lines, color, key: `${winner}|${s1}|${s2}|${myTeam}|${stats.kills}|${stats.deaths}|${stats.flips}|${Math.round(stats.nodeSeconds)}|${left}` };
 }
