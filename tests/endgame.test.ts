@@ -231,6 +231,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/\$CAPITAL by length, burned/);
   });
 
+  it("an unlinked wallet how-to is CRT, not Robinhood Wallet · WalletConnect · injected", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/ROBINHOOD WALLET · WALLETCONNECT · INJECTED/);
+    expect(src).not.toMatch(/Robinhood Wallet · WalletConnect · injected/);
+  });
+
   it("a waiting counter is FETCHING THE CHAIN CLIENT, not fetching the chain client", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/COUNTER-LEDGER \/\/ FETCHING THE CHAIN CLIENT…/);

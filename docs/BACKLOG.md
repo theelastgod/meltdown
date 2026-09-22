@@ -424,3 +424,5 @@ one stage.
   → Stage 366
 - A name fee said by length, burned  
   → Stage 367
+- An unlinked wallet how-to was sentence case  
+  → Stage 368

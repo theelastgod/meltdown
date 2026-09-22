@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 368 — An unlinked wallet how-to was sentence case
+
+**Goal.** Stage 367 taught `$CAPITAL BY LENGTH, BURNED`. `[LINK A WALLET]`
+still dimmed `Robinhood Wallet · WalletConnect · injected`.
+
+**What changed.** `ROBINHOOD WALLET · WALLETCONNECT · INJECTED`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must the CRT line and must not the
+sentence-case line. Mutation: lowercase again — 1 fail.
+`npm test` 1138/1138.
+
 ## Stage 367 — A name fee said by length, burned
 
 **Goal.** Stage 366 taught `THE REGISTRY OPENS AT DEPTH`. Writing a name
