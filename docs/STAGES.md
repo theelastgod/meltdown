@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 480 — The settings line said applied live
+
+**Goal.** Stage 479 finished the main-menu row mill. The line under a
+settings row still printed mixed-case `← → adjusts · applied live ·
+kept in this browser` (phone: `tap [−] [+]`).
+
+**What changed.** `← → ADJUSTS · APPLIED LIVE · KEPT IN THIS BROWSER`
+and `TAP [−] [+] · APPLIED LIVE · KEPT IN THIS BROWSER`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentences
+are the source. `tests/keyhint.test.ts` asserts those sentences and that
+keyhint.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 479 — SETTINGS's subtitle said sensitivity
 
 **Goal.** Stage 478 taught FILE's subtitle. SETTINGS's row still

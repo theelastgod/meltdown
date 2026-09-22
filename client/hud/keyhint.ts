@@ -43,5 +43,5 @@ export function menuFooter(touch: boolean, adjustable: boolean, canBack: boolean
 
 /** the line under a settings row, which names the same two chips (Stage 152) */
 export function settingsLine(touch: boolean): string {
-  return `${touch ? "tap [−] [+]" : "← → adjusts"} · applied live · kept in this browser`;
+  return `${touch ? "TAP [−] [+]" : "← → ADJUSTS"} · APPLIED LIVE · KEPT IN THIS BROWSER`;
 }

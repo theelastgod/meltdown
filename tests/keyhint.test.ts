@@ -1,6 +1,7 @@
 /**
  * The words a control uses for itself (Stage 145): the key on a keyboard, the gesture on a phone.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { closeHint, menuFooter, openHint, settingsLine } from "../client/hud/keyhint";
 
@@ -65,9 +66,14 @@ describe("the menu's footer (Stages 152, 163)", () => {
   });
 
   it("and the settings line follows it", () => {
-    expect(settingsLine(false)).toBe("← → adjusts · applied live · kept in this browser");
-    expect(settingsLine(true)).toBe("tap [−] [+] · applied live · kept in this browser");
+    expect(settingsLine(false)).toBe("← → ADJUSTS · APPLIED LIVE · KEPT IN THIS BROWSER");
+    expect(settingsLine(true)).toBe("TAP [−] [+] · APPLIED LIVE · KEPT IN THIS BROWSER");
+    expect(settingsLine(false)).not.toBe("← → adjusts · applied live · kept in this browser");
+    expect(settingsLine(true)).not.toBe("tap [−] [+] · applied live · kept in this browser");
     expect(settingsLine(true)).not.toMatch(/\u2190|\u2192/);
+    const src = readFileSync(new URL("../client/hud/keyhint.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/APPLIED LIVE · KEPT IN THIS BROWSER/);
+    expect(src).not.toMatch(/applied live · kept in this browser/);
   });
 
   it("keeps the two chips a thumb actually presses where there is anything to adjust", () => {

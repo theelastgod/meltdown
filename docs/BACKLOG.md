@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- The settings line still says mixed-case `applied live · kept in this browser`
+  → Stage 480
 - SETTINGS's menu subtitle still says mixed-case `sensitivity, field of view`
   → Stage 479
 - FILE's menu subtitle still says mixed-case `the Ghostfile`
