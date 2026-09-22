@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 518, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 519, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 518 on this branch (LONGWAVE FILAMENT market line) |
-| Next stage number | **519** |
+| HEAD | Stage 519 on this branch (PHAGE VEIN market line) |
+| Next stage number | **520** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 519 is next
+## 6. Stage 520 is next
 
-Stage 518 CRT-cased LONGWAVE FILAMENT's market line. PHAGE VEIN still
-says mixed-case `iridescent spore-vein polymer`. Title cards stay
-prose (probe:ship asserts them). Crew-code reasons stay mixed-case
+Stage 519 CRT-cased PHAGE VEIN's market line. CLOCK GEAR still says
+mixed-case `brass gears on wet steel`. Title cards stay prose
+(probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints
 the socket name — `probe:net` asserts `probe-join-31`; leave it.

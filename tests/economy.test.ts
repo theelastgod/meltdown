@@ -307,4 +307,13 @@ describe("the Ledger Market names the skins in CRT", () => {
     expect(src).toMatch(/skin\(26, "skin_filament", "LONGWAVE FILAMENT", "CYAN WAVE-TRACES ON BLACK ALLOY, THE RAIL'S OWN HOWL"/);
     expect(src).not.toMatch(/skin\(26, "skin_filament", "LONGWAVE FILAMENT", "cyan wave-traces on black alloy, the rail's own howl"/);
   });
+
+  it("PHAGE VEIN's market line is CRT, not iridescent spore-vein polymer", () => {
+    const src = readFileSync(new URL("../shared/economy/catalog.ts", import.meta.url), "utf8");
+    const line = SKINS.find((s) => s.id === "skin_vein")!.line;
+    expect(line).toBe("IRIDESCENT SPORE-VEIN POLYMER, THE LAUNCHER'S OWN STAIN");
+    expect(line).not.toBe("iridescent spore-vein polymer, the launcher's own stain");
+    expect(src).toMatch(/skin\(27, "skin_vein", "PHAGE VEIN", "IRIDESCENT SPORE-VEIN POLYMER, THE LAUNCHER'S OWN STAIN"/);
+    expect(src).not.toMatch(/skin\(27, "skin_vein", "PHAGE VEIN", "iridescent spore-vein polymer, the launcher's own stain"/);
+  });
 });

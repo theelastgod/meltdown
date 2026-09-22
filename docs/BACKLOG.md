@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- PHAGE VEIN's market line still says mixed-case `iridescent spore-vein polymer`
+  → Stage 519
 - LONGWAVE FILAMENT's market line still says mixed-case `cyan wave-traces on black alloy`
   → Stage 518
 - REPO CHEVRON's market line still says mixed-case `contractor hazard stripes, the shotgun's own rain`
