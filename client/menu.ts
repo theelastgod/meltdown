@@ -34,7 +34,7 @@ const MAIN: MenuEntry[] = [
   { id: "campaign", label: "CAMPAIGN", line: "THE DESK AT THE DEADLETTER OFFICE: FIXERS, GIGS, THE SEVEN-MISSION ARC" },
   { id: "office", label: "THE OFFICE", line: "THE HUB: YOUR FILE ON THE WALL, THE RANGE GHOSTS, THE DOSSIER" },
   { id: "range", label: "THE RANGE", line: "THE DRAINAGE YARD, OFFLINE, WITH DUMMIES" },
-  { id: "file", label: "FILE", line: "the Ghostfile: nodes, mastery, stamps, the counter-ledger" },
+  { id: "file", label: "FILE", line: "THE GHOSTFILE: NODES, MASTERY, STAMPS, THE COUNTER-LEDGER" },
   { id: "settings", label: "SETTINGS", line: "sensitivity, field of view, volumes, the CRT" },
 ];
 

@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 478 — FILE's subtitle said the Ghostfile
+
+**Goal.** Stage 477 taught THE RANGE's subtitle. FILE's row still
+printed mixed-case `the Ghostfile: nodes, mastery, stamps, the
+counter-ledger`.
+
+**What changed.** `THE GHOSTFILE: NODES, MASTERY, STAMPS, THE
+COUNTER-LEDGER`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the source. `tests/district.test.ts` asserts that sentence and that
+menu.ts must not the mixed-case template. Mutation: mixed case again —
+1 fail.
+
 ## Stage 477 — THE RANGE's subtitle said the drainage yard
 
 **Goal.** Stage 476 taught THE OFFICE's subtitle. THE RANGE's row still

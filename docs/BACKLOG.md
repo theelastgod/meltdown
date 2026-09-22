@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- FILE's menu subtitle still says mixed-case `the Ghostfile`
+  → Stage 478
 - THE RANGE's menu subtitle still says mixed-case `the drainage yard`
   → Stage 477
 - THE OFFICE's menu subtitle still says mixed-case `the hub`

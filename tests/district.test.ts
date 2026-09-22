@@ -104,4 +104,9 @@ describe("the main menu CRT-cases its lines", () => {
     expect(src).toMatch(/id: "range", label: "THE RANGE", line: "THE DRAINAGE YARD, OFFLINE, WITH DUMMIES"/);
     expect(src).not.toMatch(/id: "range", label: "THE RANGE", line: "the drainage yard,/);
   });
+  it("FILE's subtitle is the Ghostfile in CRT", () => {
+    const src = readFileSync(new URL("../client/menu.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/id: "file", label: "FILE", line: "THE GHOSTFILE: NODES, MASTERY, STAMPS, THE COUNTER-LEDGER"/);
+    expect(src).not.toMatch(/id: "file", label: "FILE", line: "the Ghostfile:/);
+  });
 });
