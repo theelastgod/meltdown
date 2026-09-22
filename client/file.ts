@@ -617,7 +617,7 @@ export class GhostFile {
     const t = info?.treasury;
     const delta = t ? `SUPPLY ${Number(t.supply).toLocaleString()} · BURNED <b>${Number(t.burned).toFixed(0)}</b> · MARKET VOLUME ${Number(t.volume).toFixed(0)} · <span class="gr">NET DELTA: 0.000 — RECONCILED</span>` : info?.reason ?? "LOADING…";
     return `<div class="sh">COUNTER-LEDGER // $CAPITAL <span class="dim">${info ? (info.devnet ? "DEVNET" : "ROBINHOOD CHAIN") + " · chain " + info.chainId : ""}</span></div>
-      <div class="ln dim">VANTAGE priced you. This is the other book. It does not buy damage. It does not buy armor. It does not buy a node.</div>
+      <div class="ln dim">VANTAGE PRICED YOU. THIS IS THE OTHER BOOK. IT DOES NOT BUY DAMAGE. IT DOES NOT BUY ARMOR. IT DOES NOT BUY A NODE.</div>
       <div class="ln">${wallet}${linked ? " · " + linked : ""}</div>
       ${name ? `<div class="ln">${name}</div>` : ""}${rig ? `<div class="ln">${rig}</div>` : ""}
       ${runBlock}

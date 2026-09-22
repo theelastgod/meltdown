@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 376 — The other book was sentence case
+
+**Goal.** Stage 375 taught `UNITS SETTLE NIGHTLY`. The manifesto still dimmed
+`VANTAGE priced you. This is the other book.`
+
+**What changed.** The same four sentences, CRT.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `VANTAGE PRICED YOU. THIS IS THE OTHER BOOK.`
+and must not the sentence-case pair. Mutation: lowercase again — 1 fail.
+
 ## Stage 375 — Units settle nightly was sentence case
 
 **Goal.** Stage 374 taught `BELOW DEPTH ${RUN_DEPTH} THE RUN PAYS SCRIP`. The

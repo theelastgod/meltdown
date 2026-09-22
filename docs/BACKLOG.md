@@ -440,3 +440,5 @@ one stage.
   → Stage 374
 - Units settle nightly was sentence case  
   → Stage 375
+- The other book was sentence case  
+  → Stage 376
