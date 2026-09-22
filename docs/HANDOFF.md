@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 527, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 528, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 527 on this branch (SLAM FIRE FILE line) |
-| Next stage number | **528** |
+| HEAD | Stage 528 on this branch (DUMP STAGE FILE line) |
+| Next stage number | **529** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 528 is next
+## 6. Stage 529 is next
 
-Stage 527 CRT-cased SLAM FIRE's FILE line. DUMP STAGE still says
-mixed-case `+18% rate, −15% magazine`. Title cards stay prose
+Stage 528 CRT-cased DUMP STAGE's FILE line. MEASURED still says
+mixed-case `−22% rate, +22% damage`. Title cards stay prose
 (probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints

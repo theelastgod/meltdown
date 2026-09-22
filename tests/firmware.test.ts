@@ -139,6 +139,15 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(src).not.toMatch(/line: "\+20% rate, −10% pellet damage, a little wider"/);
   });
 
+  it("DUMP STAGE's FILE line is CRT, not +18% rate", () => {
+    const src = readFileSync(new URL("../shared/manifest/firmwares.ts", import.meta.url), "utf8");
+    const line = FIRMWARES.find((f) => f.id === "stack_smg:dump_stage")!.line;
+    expect(line).toBe("+18% RATE, −15% MAGAZINE, −11% DAMAGE, +30% RECOIL");
+    expect(line).not.toBe("+18% rate, −15% magazine, −11% damage, +30% recoil");
+    expect(src).toMatch(/id: "stack_smg:dump_stage".*line: "\+18% RATE, −15% MAGAZINE, −11% DAMAGE, \+30% RECOIL"/s);
+    expect(src).not.toMatch(/line: "\+18% rate, −15% magazine, −11% damage, \+30% recoil"/);
+  });
+
   it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
     const pct = (from: number, to: number) => ((to - from) / from) * 100;
     for (const f of FIRMWARES) {
