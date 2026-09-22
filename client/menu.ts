@@ -33,7 +33,7 @@ const MAIN: MenuEntry[] = [
   { id: "run", label: "THE RUN", line: "PLAY TO EARN: CARRY $CAPITAL CLAIMS OUT OF THE PVP ZONE TO A GATE; DIE AND THEY DROP" },
   { id: "campaign", label: "CAMPAIGN", line: "THE DESK AT THE DEADLETTER OFFICE: FIXERS, GIGS, THE SEVEN-MISSION ARC" },
   { id: "office", label: "THE OFFICE", line: "THE HUB: YOUR FILE ON THE WALL, THE RANGE GHOSTS, THE DOSSIER" },
-  { id: "range", label: "THE RANGE", line: "the drainage yard, offline, with dummies" },
+  { id: "range", label: "THE RANGE", line: "THE DRAINAGE YARD, OFFLINE, WITH DUMMIES" },
   { id: "file", label: "FILE", line: "the Ghostfile: nodes, mastery, stamps, the counter-ledger" },
   { id: "settings", label: "SETTINGS", line: "sensitivity, field of view, volumes, the CRT" },
 ];

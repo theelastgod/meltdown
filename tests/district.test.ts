@@ -99,4 +99,9 @@ describe("the main menu CRT-cases its lines", () => {
     expect(src).toMatch(/id: "office", label: "THE OFFICE", line: "THE HUB: YOUR FILE ON THE WALL, THE RANGE GHOSTS, THE DOSSIER"/);
     expect(src).not.toMatch(/id: "office", label: "THE OFFICE", line: "the hub:/);
   });
+  it("THE RANGE's subtitle is the drainage yard in CRT", () => {
+    const src = readFileSync(new URL("../client/menu.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/id: "range", label: "THE RANGE", line: "THE DRAINAGE YARD, OFFLINE, WITH DUMMIES"/);
+    expect(src).not.toMatch(/id: "range", label: "THE RANGE", line: "the drainage yard,/);
+  });
 });

@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- THE RANGE's menu subtitle still says mixed-case `the drainage yard`
+  → Stage 477
 - THE OFFICE's menu subtitle still says mixed-case `the hub`
   → Stage 476
 - CAMPAIGN's menu subtitle still says mixed-case `the desk at the Deadletter Office`
