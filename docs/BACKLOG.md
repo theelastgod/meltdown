@@ -232,3 +232,5 @@ one stage.
   → Stage 270
 - THE DIRECTIVE's optic cube was a flat red box  
   → Stage 271
+- THE RUN's safe-zone column was a flat cyan tube  
+  → Stage 272

@@ -64,6 +64,7 @@ export class RunFx {
       ring.position.y = 0.03;
       group.add(ring);
       const colMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.06, depthWrite: false, side: THREE.DoubleSide });
+      bindPlate(colMat, "tex_lamp");
       const column = new THREE.Mesh(new THREE.CylinderGeometry(z.radius, z.radius, 9, 32, 1, true), colMat);
       column.position.y = 4.5;
       group.add(column);

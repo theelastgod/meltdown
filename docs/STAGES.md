@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 272 — THE RUN's safe-zone column was a flat cyan tube
+
+**Goal.** Stage 269 plated the ground ring. The 9 m column of light above it was still
+unmapped `MeshBasicMaterial` cyan at 0.06 opacity.
+
+**What changed.** `bindPlate(colMat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `run.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 271 — THE DIRECTIVE's optic cube was a flat red box
 
 **Goal.** Stage 270 plated LEASE-BREAKER's magenta rail. THE DIRECTIVE still had a 3 cm red

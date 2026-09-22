@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-21, at Stage 271, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-21, at Stage 272, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 271 on this branch (DIRECTIVE optic wears tex_lamp) |
-| Next stage number | **272** |
+| HEAD | Stage 272 on this branch (RUN column wears tex_lamp) |
+| Next stage number | **273** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1067 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,9 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 272 is next
+## 6. Stage 273 is next
 
-Stage 271 put `tex_lamp` on THE DIRECTIVE's optic cube. THE RUN's safe-zone column is still
-unplated. Do not loosen fairness.
+Stage 272 put `tex_lamp` on THE RUN's safe-zone column. Do not loosen fairness.
 
 ---
 
