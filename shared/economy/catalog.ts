@@ -54,7 +54,7 @@ export const SKINS: readonly SkinDef[] = [
   skin(16, "skin_black_lease", "BLACK LEASE", "CRT PHOSPHOR ON A SEALED FILE", 100, 0x6a0b, "#7dffb0", "skin_black_lease"),
   skin(17, "skin_phage", "PHAGE PLATE", "GREEN-BLACK CONTAGION PAINT, THE LAUNCHER'S OWN STAIN", 88, 0x4e2c, "#37ff8b", "skin_phage_plate"),
   skin(18, "skin_longwave", "LONGWAVE ICE", "COLD CYAN RAIL, THE COLOUR A CHARGE HOWLS", 105, 0x7b19, "#8fd8ff", "skin_longwave_plate"),
-  skin(19, "skin_hammer", "HAMMER RUST", "shotgun steel that never left the rain", 72, 0x2c80, "#e0561e", "skin_hammer_plate"),
+  skin(19, "skin_hammer", "HAMMER RUST", "SHOTGUN STEEL THAT NEVER LEFT THE RAIN", 72, 0x2c80, "#e0561e", "skin_hammer_plate"),
   skin(20, "skin_baton", "BATON VIOLET", "shock-violet trim on a close-in stick", 68, 0x91d4, "#8f4dff", "skin_baton_plate"),
   skin(21, "skin_stack", "STACK PLATE", "stacked polymer, the SMG's own rain", 58, 0x3a55, "#37ff8b", "tex_smg_stack"),
   skin(22, "skin_directive", "DIRECTIVE CORE", "red filament on the optic, the lease that never missed", 130, 0x8c12, "#ff2a4a", "tex_directive_core"),

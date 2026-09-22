@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- HAMMER RUST's market line still says mixed-case `shotgun steel that never left the rain`
+  → Stage 511
 - LONGWAVE ICE's market line still says mixed-case `cold cyan rail, the colour a charge howls`
   → Stage 510
 - PHAGE PLATE's market line still says mixed-case `green-black contagion paint`

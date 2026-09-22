@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 511 — HAMMER RUST's market line said shotgun steel that never left the rain
+
+**Goal.** Stage 510 taught LONGWAVE ICE. HAMMER RUST still said
+mixed-case `shotgun steel that never left the rain`.
+
+**What changed.** `SHOTGUN STEEL THAT NEVER LEFT THE RAIN`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 510 — LONGWAVE ICE's market line said cold cyan rail
 
 **Goal.** Stage 509 taught PHAGE PLATE. LONGWAVE ICE still said
