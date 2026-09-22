@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 294 — Traffic streaks were unplated lines
+
+**Goal.** Stage 291 plated hitscan `LineBasicMaterial`. The horizon traffic —
+warm head-lights and red tails sliding past the facades — was still unmapped
+`LineBasicMaterial`.
+
+**What changed.** `bindPlate(trafficMat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `city.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 293 — THE WAKE link lines were unplated dashes
 
 **Goal.** Stage 291 plated hitscan `LineBasicMaterial`. THE WAKE's dashed edges between hexes

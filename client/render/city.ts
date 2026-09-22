@@ -814,7 +814,9 @@ export class Traffic {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(this.pos, 3));
     geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-    this.object = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9 }));
+    const trafficMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9 });
+    bindPlate(trafficMat, "tex_lamp");
+    this.object = new THREE.LineSegments(geo, trafficMat);
     this.object.frustumCulled = false;
     this.update(0);
   }

@@ -276,3 +276,5 @@ one stage.
   → Stage 292
 - THE WAKE link lines were unplated dashes  
   → Stage 293
+- Traffic streaks were unplated lines  
+  → Stage 294
