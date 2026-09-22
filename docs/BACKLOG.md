@@ -320,3 +320,5 @@ one stage.
   → Stage 314
 - NAME FAILED quoted the caught error in sentence case  
   → Stage 315
+- A thrown counter op quoted FAILED in sentence case  
+  → Stage 316

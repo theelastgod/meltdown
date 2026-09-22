@@ -157,7 +157,7 @@ export class CounterClient {
       return r;
     } catch (e) {
       const reason = String(e).slice(0, 100);
-      this.say(`${op.toUpperCase()} FAILED: ${reason}`);
+      this.say(`${op.toUpperCase()} FAILED: ${crtPhrase(reason)}`);
       return { ok: false, reason };
     }
   }
