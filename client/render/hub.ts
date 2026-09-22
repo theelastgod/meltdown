@@ -63,6 +63,7 @@ export class HubDressing {
         else if (tag === "crates" && m instanceof THREE.MeshStandardMaterial) bindPlate(m, "tex_crate");
         else if (tag === "shelf" && m instanceof THREE.MeshStandardMaterial) bindPlate(m, "tex_metal");
         else if (tag === "rug" && m instanceof THREE.MeshBasicMaterial) bindPlate(m, "tex_rug");
+        else if (tag === "window_glow" && m instanceof THREE.MeshBasicMaterial) bindPlate(m, "tex_glass");
         else if (tag === "desk" && m instanceof THREE.MeshStandardMaterial) bindPlate(m, "tex_desk");
         else if (tag === "nameplate" && m instanceof THREE.MeshStandardMaterial) bindPlate(m, "tex_nameplate");
         mats.set(tag, m);

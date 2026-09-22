@@ -1641,6 +1641,19 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 264 — Chapter III window glow was a flat cyan slab
+
+**Goal.** Stage 208 plated the Chapter III desk nameplate. The other Chapter III
+renovation — `window_glow`, a 8 m × 1 m floor-level pane in the Deadletter Office —
+was still `MeshBasicMaterial` at `0x0b2a30` with no map. Street glass already wears
+`tex_glass`.
+
+**What changed.** `bindPlate(m, "tex_glass")` on the `window_glow` tag, fail-soft.
+The cyan tint stays; the glass plate is the map.
+
+**Proof.** `tests/assets.test.ts` requires the `window_glow` bind in `hub.ts`.
+Mutation: the call omitted — 1 fail.
+
 ## Stage 263 — Lamp pools and vending fronts were a flat cyan wash
 
 **Goal.** Street lamps already wear `tex_lamp`. The ground-pool under each lamp and the lit

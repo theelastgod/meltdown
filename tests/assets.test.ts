@@ -171,6 +171,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(city).toMatch(/bindPlate\(M\.glow, "tex_lamp"\)/);
     const hub = readFileSync(new URL("../client/render/hub.ts", import.meta.url), "utf8");
     expect(hub).toMatch(/bindPlate\(m, "tex_nameplate"\)/);
+    expect(hub).toMatch(/else if \(tag === "window_glow" && m instanceof THREE\.MeshBasicMaterial\) bindPlate\(m, "tex_glass"\)/);
     const life = readFileSync(new URL("../client/render/life.ts", import.meta.url), "utf8");
     expect(life).toMatch(/bindPlate\(panelMat, "tex_billboard_mg"\)/);
     expect(life).toMatch(/bindPlate\(windowMat, "tex_glass"\)/);

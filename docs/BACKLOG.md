@@ -216,5 +216,5 @@ one stage.
   → Stage 262
 - Lamp pools and vending fronts were a flat cyan wash  
   → Stage 263
-- Lamp pools and vending fronts were a flat cyan wash  
-  → Stage 263
+- The Chapter III office window was a flat cyan slab  
+  → Stage 264
