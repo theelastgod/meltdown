@@ -170,6 +170,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/slots\.presets\} SLOTS/);
     expect(src).not.toMatch(/slots\.aliases\} SLOTS/);
   });
+
+  it("an empty preset or alias is EMPTY, not empty", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/class='dim'>EMPTY/);
+    expect(src).not.toMatch(/class='dim'>empty/);
+  });
 });
 
 describe("rewrite and the Wakelight shop", () => {

@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 351, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 352, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 351 on this branch (1 SLOT not SLOTS) |
-| Next stage number | **352** |
+| HEAD | Stage 352 on this branch (EMPTY not empty) |
+| Next stage number | **353** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1121 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 352 is next
+## 6. Stage 353 is next
 
-Stage 351 CRT-cased `1 SLOT`. Empty preset/alias rows still say `empty`. Do not
-loosen fairness. Do not plate viewmodel or remote strips. The join line still
-prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 352 CRT-cased empty preset/alias rows as `EMPTY`. Do not loosen fairness.
+Do not plate viewmodel or remote strips. The join line still prints the socket
+name — `probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

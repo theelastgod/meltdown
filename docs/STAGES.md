@@ -1641,6 +1641,15 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 352 — An empty preset said empty
+
+**Goal.** Stage 351 taught `1 SLOT`. An unused preset or alias still dimmed `empty`.
+
+**What changed.** `EMPTY`.
+
+**Proof.** `tests/endgame.test.ts`: file.ts must `class='dim'>EMPTY` and must not
+`class='dim'>empty`. Mutation: lowercase empty again — 1 fail.
+
 ## Stage 351 — One shop slot was SLOTS
 
 **Goal.** Stage 347 taught `1 STAMP`. FILE still headed `PRESETS · 1 SLOTS` and

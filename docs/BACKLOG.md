@@ -392,3 +392,5 @@ one stage.
   → Stage 350
 - One shop slot was SLOTS  
   → Stage 351
+- An empty preset said empty  
+  → Stage 352
