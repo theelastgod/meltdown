@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 295 — The metro lock glyph was a flat green hex
+
+**Goal.** Stage 273 plated THE WAKE's hex ring. The tunnel mouth's hex lock
+— a 6-sided green ring over the dark door — was still unmapped
+`MeshBasicMaterial`.
+
+**What changed.** `bindPlate(lockMat, "tex_lamp")`, fail-soft.
+
+**Proof.** `tests/assets.test.ts` requires that call in `city.ts`. Mutation: the call omitted —
+1 fail.
+
 ## Stage 294 — Traffic streaks were unplated lines
 
 **Goal.** Stage 291 plated hitscan `LineBasicMaterial`. The horizon traffic —

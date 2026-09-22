@@ -605,7 +605,9 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
         neon.box(0.06, 2.6, 0.06, cx + 1.3, 1.3, b.max.z + 0.04, PALETTE.green);
         const hex = new THREE.RingGeometry(0.42, 0.5, 6);
         hex.translate(cx, 1.5, b.max.z + 0.05);
-        batch.add(hex, basic(PALETTE.green));
+        const lockMat = basic(PALETTE.green);
+        bindPlate(lockMat, "tex_lamp");
+        batch.add(hex, lockMat);
         break;
       }
       case "barrel": {

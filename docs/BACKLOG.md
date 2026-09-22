@@ -278,3 +278,5 @@ one stage.
   → Stage 293
 - Traffic streaks were unplated lines  
   → Stage 294
+- The metro lock glyph was a flat green hex  
+  → Stage 295
