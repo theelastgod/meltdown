@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- ECHO VIOLET's market line still says mixed-case `ghosting plate, short-range wallsense look`
+  → Stage 505
 - METRO PLATE's market line still says mixed-case `grey-green tunnel tile, cyan bars`
   → Stage 504
 - RAIN LEASE's market line still says mixed-case `anodized black that never dried`

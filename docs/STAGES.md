@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 505 — ECHO VIOLET's market line said ghosting plate
+
+**Goal.** Stage 504 taught METRO PLATE. ECHO VIOLET still said
+mixed-case `ghosting plate, short-range wallsense look`.
+
+**What changed.** `GHOSTING PLATE, SHORT-RANGE WALLSENSE LOOK`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/economy.test.ts` asserts that sentence and
+that catalog.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 504 — METRO PLATE's market line said grey-green tunnel tile
 
 **Goal.** Stage 503 taught RAIN LEASE. METRO PLATE still said
