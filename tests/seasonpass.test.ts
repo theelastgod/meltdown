@@ -116,7 +116,7 @@ describe("the shop — a slot the file already has is not for sale", () => {
     const before = a.wallet.wakelight;
     const r = buyCosmetic(a, "alias_2");
     expect(r.ok).toBe(false);
-    expect(r.reason).toContain("already owned");
+    expect(r.reason).toContain("ALREADY OWNED");
     expect(a.wallet.wakelight, "Wakelight was spent on a slot the file already had").toBe(before);
   });
 

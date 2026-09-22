@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 408 — A granted slot said already owned
+
+**Goal.** Stage 407 taught `UNKNOWN COSMETIC`. A Deep Wake pass holder
+buying a slot they already have still returned `alias slot 2 already owned
+(4 slots)`.
+
+**What changed.** `${c.kind.toUpperCase()} SLOT ${n} ALREADY OWNED (${have} SLOTS)`.
+`tests/seasonpass.test.ts` now expects `ALREADY OWNED`.
+
+**Proof.** `tests/endgame.test.ts`: rewrite.ts must `SLOT ${n} ALREADY OWNED`
+and must not `slot ${n} already owned`. Mutation: mixed case again — 1 fail.
+
 ## Stage 407 — An unknown shop id said unknown cosmetic
 
 **Goal.** Stage 406 taught `NEEDS N WAKELIGHT`. Buying an id the catalogue

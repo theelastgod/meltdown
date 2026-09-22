@@ -504,3 +504,5 @@ one stage.
   → Stage 406
 - An unknown shop id said unknown cosmetic  
   → Stage 407
+- A granted slot said already owned  
+  → Stage 408
