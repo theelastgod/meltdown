@@ -1392,7 +1392,7 @@ export class Game {
         break;
       case "dummyRespawn":
         this.hud.push(`DUMMY-${String(ev.dummyId).padStart(2, "0")} RE-LEASED`, "am");
-        this.hud.alert(`◆ VANTAGE RE-LEASE — DUMMY-${String(ev.dummyId).padStart(2, "0")} back on the ledger`, true);
+        this.hud.alert(`◆ VANTAGE RE-LEASE — DUMMY-${String(ev.dummyId).padStart(2, "0")} BACK ON THE LEDGER`, true);
         break;
       case "death":
         if (ev.playerId === this.player.id) this.fileClosed(ev.killerId);

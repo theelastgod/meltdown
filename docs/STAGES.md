@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 341 — A dummy re-lease quoted the rest in sentence case
+
+**Goal.** Stage 320 CRT-cased the private-room admit line. A dummy coming back still
+stamped `◆ VANTAGE RE-LEASE — DUMMY-00 back on the ledger`.
+
+**What changed.** `BACK ON THE LEDGER`.
+
+**Proof.** `tests/kill.test.ts`: source must `BACK ON THE LEDGER` on that stamp and
+must not `back on the ledger`. Mutation: sentence-case rest again — 1 fail.
+`npm test` 1113/1113.
+
 ## Stage 340 — One pull was PULLS
 
 **Goal.** Stage 339 taught `1 KILL`. The same YOU line still said `1 PULLS`.

@@ -93,6 +93,12 @@ describe("what it is called", () => {
     expect(src).not.toMatch(/d\.toFixed\(0\)\} m/);
   });
 
+  it("a dummy re-lease stamp is CRT, not back on the ledger", () => {
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/VANTAGE RE-LEASE — DUMMY-\$\{String\(ev\.dummyId\)\.padStart\(2, "0"\)\} BACK ON THE LEDGER/);
+    expect(src).not.toMatch(/back on the ledger/);
+  });
+
   it("RE-LEASING IN suffixes the wait as S, not 3s", () => {
     const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(src).toMatch(/RE-LEASING IN 3S/);
