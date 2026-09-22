@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 324 — LINKING wrote sim / ms rtt / loss
+
+**Goal.** Stage 298 CRT-cased the drop line. A simulated link still wrote
+`LINKING ws://… (sim 80ms rtt, 5% loss)`. The URL is the path, not the join line;
+the suffix is CRT.
+
+**What changed.** `linkingSimNote` prints ` (SIM 80MS RTT, 5% LOSS)`.
+
+**Proof.** `tests/roomlabel.test.ts`: latency 50 / loss 0.1 is ` (SIM 100MS RTT, 10% LOSS)`.
+game.ts must `linkingSimNote(cfg.sim)` and must not interpolate `(sim ${cfg.sim.latencyMs`.
+Mutation: the lowercase suffix again — 1 fail.
+
 ## Stage 323 — PRIVATE ROOM · CODE suffixed hours as h
 
 **Goal.** Stage 320 CRT-cased the private-room admit line. Opening one still

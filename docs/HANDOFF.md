@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 323, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 324, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 323 on this branch (PRIVATE ROOM hours is H) |
-| Next stage number | **324** |
+| HEAD | Stage 324 on this branch (LINKING sim suffix is CRT) |
+| Next stage number | **325** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1095 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,12 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 324 is next
+## 6. Stage 325 is next
 
-Stage 323 CRT-cased `PRIVATE ROOM · CODE · ${hours}H`. The `LINKING` line still
-writes `(sim Nms rtt, N% loss)`. Do not loosen fairness. Do not plate viewmodel
-or remote strips. The join line still prints the socket name — `probe:net`
-asserts `probe-join-31`; leave it. The LINKING URL is not the join line.
+Stage 324 CRT-cased the `LINKING` sim suffix. Do not loosen fairness. Do not plate
+viewmodel or remote strips. The join line still prints the socket name —
+`probe:net` asserts `probe-join-31`; leave it.
 
 ---
 

@@ -336,3 +336,5 @@ one stage.
   → Stage 322
 - PRIVATE ROOM · CODE suffixed hours as h  
   → Stage 323
+- LINKING wrote sim / ms rtt / loss  
+  → Stage 324

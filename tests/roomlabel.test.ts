@@ -4,7 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { LINK_BAD_MS, LINK_SLOW_MS, linkLabel, linkStatusLine, linkTone, roomLabel, roomName } from "../client/hud/room";
+import { LINK_BAD_MS, LINK_SLOW_MS, linkLabel, linkStatusLine, linkingSimNote, linkTone, roomLabel, roomName } from "../client/hud/room";
 
 describe("the room's label", () => {
   it("says offline when there is no room, whatever the count says", () => {
@@ -125,5 +125,16 @@ describe("the room's name in the join line", () => {
     for (const url of ["", "ws://h", "ws://h/", "?only=query"]) {
       expect(roomName(url).length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("the LINKING sim suffix is CRT", () => {
+  it("prints SIM / MS RTT / LOSS, not sim / ms rtt / loss", () => {
+    expect(linkingSimNote({ latencyMs: 50, loss: 0.1 })).toBe(" (SIM 100MS RTT, 10% LOSS)");
+    expect(linkingSimNote({ latencyMs: 50, loss: 0.1 })).not.toMatch(/sim /);
+    expect(linkingSimNote({ latencyMs: 50, loss: 0.1 })).not.toMatch(/rtt/);
+    const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/linkingSimNote\(cfg\.sim\)/);
+    expect(src).not.toMatch(/\(sim \$\{cfg\.sim\.latencyMs/);
   });
 });

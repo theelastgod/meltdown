@@ -72,3 +72,8 @@ export function roomName(url: string): string {
 export function linkStatusLine(st: string, reason?: string): string {
   return `LINK ${st.toUpperCase()}${reason ? " · " + reason.toUpperCase() : ""}`;
 }
+
+/** The LINKING log's sim suffix. The URL stays as written (that is not the join line). */
+export function linkingSimNote(sim: { latencyMs: number; loss: number }): string {
+  return ` (SIM ${sim.latencyMs * 2}MS RTT, ${(sim.loss * 100).toFixed(0)}% LOSS)`;
+}

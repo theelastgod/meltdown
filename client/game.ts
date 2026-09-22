@@ -55,7 +55,7 @@ import type { NodeView } from "./render/wake";
 import { GRENADE_LIST, WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
 import { modsFor, weaponDefOf } from "@shared/sim/player";
 import { rejoinDelay, rejoinTries } from "@shared/net/rejoin";
-import { linkStatusLine, roomName } from "./hud/room";
+import { linkStatusLine, linkingSimNote, roomName } from "./hud/room";
 
 export interface NetConfig {
   url: string;
@@ -429,7 +429,7 @@ export class Game {
       }
     };
     net.onSnapshot = (snap) => this.onSnapshot(snap);
-    this.hud.push(`LINKING ${cfg.url}${cfg.sim ? ` (sim ${cfg.sim.latencyMs * 2}ms rtt, ${(cfg.sim.loss * 100).toFixed(0)}% loss)` : ""}`, "k");
+    this.hud.push(`LINKING ${cfg.url}${cfg.sim ? linkingSimNote(cfg.sim) : ""}`, "k");
   }
 
   /** Travel to another district: the world and renderer are built per level, so the page reloads with `?level=`. */
