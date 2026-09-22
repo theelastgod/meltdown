@@ -1641,6 +1641,17 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 414 — An unknown campaign op said unknown op
+
+**Goal.** Stage 413 taught cosmetic `UNKNOWN OP`. A campaign post the
+endpoint does not recognise still returned `unknown op`.
+
+**What changed.** `UNKNOWN OP` in `shared/campaign/endpoint.ts`. Economy
+stays mixed case.
+
+**Proof.** `tests/endgame.test.ts`: campaign endpoint must `reason: "UNKNOWN OP"`
+and must not `reason: "unknown op"`. Mutation: mixed case again — 1 fail.
+
 ## Stage 413 — An unknown cosmetic op said unknown op
 
 **Goal.** Stage 412 taught `NOT OWNED`. A cosmetic post with an op the host

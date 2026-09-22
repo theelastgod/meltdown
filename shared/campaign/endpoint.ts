@@ -60,6 +60,6 @@ export function campaignRequest(a: Account, body: unknown, opts: CampaignOptions
     case "state":
       return { ok: true, campaign: campaignOf(a) };
     default:
-      return { ok: false, reason: "unknown op", campaign: campaignOf(a) };
+      return { ok: false, reason: "UNKNOWN OP", campaign: campaignOf(a) };
   }
 }

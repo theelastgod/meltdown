@@ -264,6 +264,12 @@ describe("the FILE shop counts slots", () => {
     }
   });
 
+  it("an unknown campaign op is UNKNOWN OP, not unknown op", () => {
+    const src = readFileSync(new URL("../shared/campaign/endpoint.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/reason: "UNKNOWN OP"/);
+    expect(src).not.toMatch(/reason: "unknown op"/);
+  });
+
   it("a poor shop is NEEDS N WAKELIGHT, not needs N Wakelight", () => {
     const src = readFileSync(new URL("../shared/endgame/rewrite.ts", import.meta.url), "utf8");
     expect(src).toMatch(/NEEDS \$\{c\.wakelight\} WAKELIGHT/);
