@@ -566,3 +566,5 @@ one stage.
   → Stage 437
 - A booting perf overlay said sampling  
   → Stage 438
+- A hidden GPU said unknown  
+  → Stage 439

@@ -37,9 +37,9 @@ export class PerfMonitor {
       const gl = this.game.renderer.renderer.getContext();
       const ext = gl.getExtension("WEBGL_debug_renderer_info");
       const s = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : "";
-      return s || "unknown";
+      return s || "UNKNOWN";
     } catch {
-      return "unknown";
+      return "UNKNOWN";
     }
   }
 

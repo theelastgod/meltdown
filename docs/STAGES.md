@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 439 — A hidden GPU said unknown
+
+**Goal.** Stage 438 taught `SAMPLING`. A browser that hides the renderer
+still named it `unknown` on the overlay.
+
+**What changed.** `UNKNOWN`.
+
+**Proof.** `tests/endgame.test.ts`: perf.ts must `return s || "UNKNOWN"`
+and must not `return s || "unknown"`. Mutation: lowercase again — 1 fail.
+
 ## Stage 438 — A booting perf overlay said sampling
 
 **Goal.** Stage 437 taught `REPORT IN N S`. The overlay still booted with

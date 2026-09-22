@@ -355,6 +355,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/textContent = "PERF · sampling…"/);
   });
 
+  it("a hidden GPU is UNKNOWN, not unknown", () => {
+    const src = readFileSync(new URL("../client/perf.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/return s \|\| "UNKNOWN"/);
+    expect(src).not.toMatch(/return (s \|\| )?"unknown"/);
+  });
+
   it("a FILE op with no shop is NO LEDGER HOST LINKED, not no ledger host linked", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/reason: "NO LEDGER HOST LINKED"/);
