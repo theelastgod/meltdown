@@ -159,7 +159,7 @@ export const MISSIONS: readonly MissionDef[] = [
     title: "THE WHITE OFFICE",
     level: "white_office",
     fixer: "wern",
-    brief: "Wern doesn't fight. He offers you the lease system itself. The final input is a choice.",
+    brief: "WERN DOESN'T FIGHT. HE OFFERS YOU THE LEASE SYSTEM ITSELF. THE FINAL INPUT IS A CHOICE.",
     objectives: [reach({ x: 0, z: -4 }, "APPROACH THE DESK", 2.5), D("m7_office", "THE OFFER")],
     reward: { scrip: 0, xp: 3000, protocol: "directive_optic", stamp: "arc:complete" },
     wasps: 0,

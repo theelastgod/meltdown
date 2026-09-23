@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- THE WHITE OFFICE's brief still says mixed-case `Wern doesn't fight`
+  → Stage 591
 - TRIAL BY DATA's brief still says mixed-case `Hold the broadcast tower on the plaza`
   → Stage 590
 - BLIND THE MODEL's brief still says mixed-case `Destroy the sensor lattice district by district`

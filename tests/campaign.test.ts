@@ -186,6 +186,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "HOLD THE BROADCAST TOWER ON THE PLAZA WHILE THE DIRECTIVE GOES OUT ON EVERY LEASED FEED AND THE CITY WAKES LIVE AROUND YOU\."/);
     expect(src).not.toMatch(/brief: "Hold the broadcast tower on the plaza while the Directive goes out on every leased feed and the city wakes live around you\."/);
   });
+
+  it("THE WHITE OFFICE's brief is CRT, not Wern doesn't fight", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "m7_white_office")!.brief;
+    expect(brief).toBe("WERN DOESN'T FIGHT. HE OFFERS YOU THE LEASE SYSTEM ITSELF. THE FINAL INPUT IS A CHOICE.");
+    expect(brief).not.toBe("Wern doesn't fight. He offers you the lease system itself. The final input is a choice.");
+    expect(src).toMatch(/brief: "WERN DOESN'T FIGHT\. HE OFFERS YOU THE LEASE SYSTEM ITSELF\. THE FINAL INPUT IS A CHOICE\."/);
+    expect(src).not.toMatch(/brief: "Wern doesn't fight\. He offers you the lease system itself\. The final input is a choice\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
