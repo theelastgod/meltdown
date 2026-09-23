@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 536 — CONTAGION ROUND's FILE lead said kills pull the nearest node
+
+**Goal.** Stage 535 closed the last mixed-case firmware line. The FILE
+kit still printed CONTAGION ROUND as mixed-case `kills pull the nearest
+node for 4 s` (the mechanic lead, which is what `formatChipLine`
+interpolates).
+
+**What changed.** `KILLS PULL THE NEAREST NODE FOR 4 S`.
+
+**Proof.** Measured rebuilt line was mixed-case. After the fix the CRT
+lead is MECHANIC_LEAD. `tests/chiptrade.test.ts` asserts the rebuilt
+line and that chips.ts must not the mixed-case template. Mutation:
+mixed case again — 1 fail.
+
 ## Stage 535 — HEAVY HAFT's FILE line said stuns longer
 
 **Goal.** Stage 534 taught ARC RELAY. HEAVY HAFT still said mixed-case

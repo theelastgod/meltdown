@@ -132,7 +132,7 @@ function fmtMods(mods: readonly StatMod[]): string {
 }
 
 const MECHANIC_LEAD: Record<ChipMechanic, string> = {
-  contagion_kill: "kills pull the nearest node for 4 s",
+  contagion_kill: "KILLS PULL THE NEAREST NODE FOR 4 S",
   escrow_kill: "kills restore 10 shield",
   vantage_bane: "bonus damage to VANTAGE units",
 };

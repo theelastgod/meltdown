@@ -115,6 +115,15 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(lintChipSchema().filter((v) => v.rule === "line-matches-mods")).toEqual([]);
   });
 
+  it("CONTAGION ROUND's FILE lead is CRT, not kills pull the nearest node", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = CHIPS.find((c) => c.id === "lease_breaker:contagion_round")!.line;
+    expect(line.startsWith("CONTAGION ROUND: KILLS PULL THE NEAREST NODE FOR 4 S,")).toBe(true);
+    expect(line).not.toMatch(/kills pull the nearest node for 4 s/);
+    expect(src).toMatch(/contagion_kill: "KILLS PULL THE NEAREST NODE FOR 4 S"/);
+    expect(src).not.toMatch(/contagion_kill: "kills pull the nearest node for 4 s"/);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };

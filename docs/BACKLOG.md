@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- CONTAGION ROUND's FILE lead still says mixed-case `kills pull the nearest node`
+  → Stage 536
 - HEAVY HAFT's FILE line still says mixed-case `+25% damage, −7% swing rate, stuns longer`
   → Stage 535
 - ARC RELAY's FILE line still says mixed-case `chain reaches 50% further`
