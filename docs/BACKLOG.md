@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- DRONE CONVOY · DEPOT's brief still says mixed-case `The depot convoy flies with a mech escort`
+  → Stage 601
 - ESCROW HEIST · DOCKS's brief still says mixed-case `The harbour escrow at C`
   → Stage 600
 - SENSOR SABOTAGE · DOCKS's brief still says mixed-case `Three lattice posts along the crane line`

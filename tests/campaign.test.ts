@@ -276,6 +276,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "THE HARBOUR ESCROW AT C PAYS IN CLOCKEATER TIME\."/);
     expect(src).not.toMatch(/brief: "The harbour escrow at C pays in Clockeater time\."/);
   });
+
+  it("DRONE CONVOY · DEPOT's brief is CRT, not the depot convoy", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_convoy_depot")!.brief;
+    expect(brief).toBe("THE DEPOT CONVOY FLIES WITH A MECH ESCORT.");
+    expect(brief).not.toBe("The depot convoy flies with a mech escort.");
+    expect(src).toMatch(/brief: "THE DEPOT CONVOY FLIES WITH A MECH ESCORT\."/);
+    expect(src).not.toMatch(/brief: "The depot convoy flies with a mech escort\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
