@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 549 — the FILE kit said flip
+
+**Goal.** Stage 548 taught FOOTSTEPS. `formatChipLine` still printed
+`flip` from STAT_LINE.
+
+**What changed.** `flipRate: "FLIP"`.
+
+**Proof.** Measured WAKE-TUNED line was mixed-case. After the fix the
+CRT label is the kit. `tests/chiptrade.test.ts` asserts that sentence
+and that chips.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 548 — the FILE kit said footsteps
 
 **Goal.** Stage 547 taught MOVE. `formatChipLine` still printed

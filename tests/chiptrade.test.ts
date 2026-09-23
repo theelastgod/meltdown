@@ -250,6 +250,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(lintItemSchema()).toEqual([]);
   });
 
+  it("the FILE kit names FLIP, not flip", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("WAKE-TUNED", [{ stat: "flipRate", delta: 0.12 }], [{ stat: "shieldRegen", delta: -0.24 }]);
+    expect(line).toBe("WAKE-TUNED: +12% FLIP / −24% regen");
+    expect(line).not.toMatch(/flip/);
+    expect(src).toMatch(/flipRate: "FLIP"/);
+    expect(src).not.toMatch(/flipRate: "flip"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };

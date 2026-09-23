@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- the FILE kit still says mixed-case `flip`
+  → Stage 549
 - the FILE kit still says mixed-case `footsteps`
   → Stage 548
 - the FILE kit still says mixed-case `move`
