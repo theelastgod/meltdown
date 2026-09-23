@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- LONG FUSE's FILE line still says mixed-case `faster, flatter rounds`
+  → Stage 533
 - CLUSTER's FILE line still says mixed-case `+25% burst radius, −15% damage`
   → Stage 532
 - OVERCHARGE's FILE line still says mixed-case `+8% charge time, +8% damage`

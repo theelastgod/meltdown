@@ -184,6 +184,15 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(src).not.toMatch(/line: "\+25% burst radius, −15% damage"/);
   });
 
+  it("LONG FUSE's FILE line is CRT, not faster, flatter rounds", () => {
+    const src = readFileSync(new URL("../shared/manifest/firmwares.ts", import.meta.url), "utf8");
+    const line = FIRMWARES.find((f) => f.id === "phage:long_fuse")!.line;
+    expect(line).toBe("FASTER, FLATTER ROUNDS, +8% DAMAGE, LONGER FUSE");
+    expect(line).not.toBe("faster, flatter rounds, +8% damage, longer fuse");
+    expect(src).toMatch(/id: "phage:long_fuse".*line: "FASTER, FLATTER ROUNDS, \+8% DAMAGE, LONGER FUSE"/s);
+    expect(src).not.toMatch(/line: "faster, flatter rounds, \+8% damage, longer fuse"/);
+  });
+
   it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
     const pct = (from: number, to: number) => ((to - from) / from) * 100;
     for (const f of FIRMWARES) {

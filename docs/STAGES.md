@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 533 — LONG FUSE's FILE line said faster, flatter rounds
+
+**Goal.** Stage 532 taught CLUSTER. LONG FUSE still said mixed-case
+`faster, flatter rounds, +8% damage, longer fuse`.
+
+**What changed.** `FASTER, FLATTER ROUNDS, +8% DAMAGE, LONGER FUSE`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/firmware.test.ts` asserts that sentence and
+that firmwares.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 532 — CLUSTER's FILE line said +25% burst radius
 
 **Goal.** Stage 531 taught OVERCHARGE. CLUSTER still said mixed-case
