@@ -429,6 +429,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "ALL OF IT\. BLIND THE MODEL EVERYWHERE\."/);
     expect(src).not.toMatch(/text: "ALL OF IT\. Blind the model everywhere\."/);
   });
+
+  it("m5 SPARE THE DOCKS is CRT, not someone has to see the ships come in", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m5_lattice")!.nodes.find((n) => n.id === "a")!.choices!.find((c) => c.set?.["m5:lattice"] === "spare_docks")!.text;
+    expect(text).toBe("SPARE THE DOCKS. SOMEONE HAS TO SEE THE SHIPS COME IN.");
+    expect(text).not.toBe("SPARE THE DOCKS. Someone has to see the ships come in.");
+    expect(src).toMatch(/text: "SPARE THE DOCKS\. SOMEONE HAS TO SEE THE SHIPS COME IN\."/);
+    expect(src).not.toMatch(/text: "SPARE THE DOCKS\. Someone has to see the ships come in\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

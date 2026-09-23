@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-23, at Stage 617, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-23, at Stage 618, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 617 on this branch (m5 ALL OF IT) |
-| Next stage number | **618** |
+| HEAD | Stage 618 on this branch (m5 SPARE THE DOCKS) |
+| Next stage number | **619** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 618 is next
+## 6. Stage 619 is next
 
-Stage 617 CRT-cased m5 ALL OF IT. m5 SPARE THE DOCKS still says
-mixed-case `Someone has to see the ships come in`. Title cards stay
-prose (probe:ship asserts them). Crew-code reasons stay mixed-case
+Stage 618 CRT-cased m5 SPARE THE DOCKS. m6 FULL BROADCAST still says
+mixed-case `Let them read the fire too`. Title cards stay prose
+(probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints
 the socket name — `probe:net` asserts `probe-join-31`; leave it.

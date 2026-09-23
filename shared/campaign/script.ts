@@ -131,7 +131,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       n("a", "terminal", ["THE SENSOR LATTICE IS THE MODEL'S EYES. DISTRICT BY DISTRICT, PUT THEM OUT.", "VANTAGE WILL RESPOND LIKE AN IMMUNE SYSTEM. THIS IS THE HARDEST NIGHT OF YOUR FILE."], {
         choices: [
           { text: "ALL OF IT. BLIND THE MODEL EVERYWHERE.", set: { "m5:lattice": "all" }, next: "all" },
-          { text: "SPARE THE DOCKS. Someone has to see the ships come in.", set: { "m5:lattice": "spare_docks" }, next: "spare" },
+          { text: "SPARE THE DOCKS. SOMEONE HAS TO SEE THE SHIPS COME IN.", set: { "m5:lattice": "spare_docks" }, next: "spare" },
         ],
       }),
       n("all", "you", ["Everything. Tonight the city closes its eyes."]),
