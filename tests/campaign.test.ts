@@ -204,6 +204,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "CRACK THE ESCROW TERMINAL AT D AND GET THE SLEEP CREDIT OUT BEFORE THE PATROL TURNS\."/);
     expect(src).not.toMatch(/brief: "Crack the escrow terminal at D and get the sleep credit out before the patrol turns\."/);
   });
+
+  it("DRONE CONVOY · DOCKS's brief is CRT, not a wasp convoy", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_convoy_docks")!.brief;
+    expect(brief).toBe("A WASP CONVOY CROSSES THE DOCKS AT HEIGHT. AMBUSH IT FROM THE WALKWAY.");
+    expect(brief).not.toBe("A wasp convoy crosses the docks at height. Ambush it from the walkway.");
+    expect(src).toMatch(/brief: "A WASP CONVOY CROSSES THE DOCKS AT HEIGHT\. AMBUSH IT FROM THE WALKWAY\."/);
+    expect(src).not.toMatch(/brief: "A wasp convoy crosses the docks at height\. Ambush it from the walkway\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

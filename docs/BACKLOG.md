@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- DRONE CONVOY · DOCKS's brief still says mixed-case `A wasp convoy crosses the docks`
+  → Stage 593
 - ESCROW HEIST · LEASE ROW's brief still says mixed-case `Crack the escrow terminal at D`
   → Stage 592
 - THE WHITE OFFICE's brief still says mixed-case `Wern doesn't fight`

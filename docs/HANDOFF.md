@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-23, at Stage 592, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-23, at Stage 593, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
