@@ -173,6 +173,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(lintItemSchema()).toEqual([]);
   });
 
+  it("the FILE kit names REGEN DELAY, not regen delay", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("COLD FILE", [{ stat: "shieldDelay", delta: -0.2 }], [{ stat: "shieldRegen", delta: -0.15 }]);
+    expect(line).toBe("COLD FILE: −20% REGEN DELAY / −15% regen");
+    expect(line).not.toMatch(/regen delay/);
+    expect(src).toMatch(/shieldDelay: "REGEN DELAY"/);
+    expect(src).not.toMatch(/shieldDelay: "regen delay"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };
