@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 562 — RED LEASE's protocol line said Wern's ink
+
+**Goal.** Stage 561 taught FILAMENT CORE. RED LEASE still said
+mixed-case `+35 health. Your file is written in Wern's ink now.`
+
+**What changed.** `+35 HEALTH. YOUR FILE IS WRITTEN IN WERN'S INK NOW.`
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/campaign.test.ts` asserts that sentence and
+that protocols.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 561 — FILAMENT CORE's protocol line said the filament runs down the barrel
 
 **Goal.** Stage 560 taught WERN PULSE. FILAMENT CORE still said

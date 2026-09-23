@@ -21,7 +21,7 @@ const p = (id: string, name: string, line: string, mods: ProtocolDef["mods"]): P
 
 export const PROTOCOLS: readonly ProtocolDef[] = [
   p("filament_core", "FILAMENT CORE", "+15% DAMAGE. THE FILAMENT RUNS DOWN THE BARREL AND INTO YOUR WRIST.", { damage: 1.15 }),
-  p("red_lease", "RED LEASE", "+35 health. Your file is written in Wern's ink now.", { maxHealth: 35 }),
+  p("red_lease", "RED LEASE", "+35 HEALTH. YOUR FILE IS WRITTEN IN WERN'S INK NOW.", { maxHealth: 35 }),
   p("wern_pulse", "WERN PULSE", "+12% FIRE RATE, +10% RELOAD. THE RHYTHM OF THE DIRECTIVE.", { fireRate: 1.12, reloadSpeed: 1.1 }),
   p("blood_ledger", "BLOOD LEDGER", "shield regen ×1.5. The model heals what it prices.", { shieldRegen: 1.5 }),
   p("directive_optic", "DIRECTIVE OPTIC", "+15% range, +20% headshot multiplier. See the city the way the Kernel does.", { range: 1.15, headMult: 1.2 }),

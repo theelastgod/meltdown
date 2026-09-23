@@ -105,6 +105,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/p\("filament_core", "FILAMENT CORE", "\+15% DAMAGE\. THE FILAMENT RUNS DOWN THE BARREL AND INTO YOUR WRIST\."/);
     expect(src).not.toMatch(/p\("filament_core", "FILAMENT CORE", "\+15% damage\. The filament runs down the barrel and into your wrist\."/);
   });
+
+  it("RED LEASE's protocol line is CRT, not Wern's ink", () => {
+    const src = readFileSync(new URL("../shared/campaign/protocols.ts", import.meta.url), "utf8");
+    const line = PROTOCOLS.find((p) => p.id === "red_lease")!.line;
+    expect(line).toBe("+35 HEALTH. YOUR FILE IS WRITTEN IN WERN'S INK NOW.");
+    expect(line).not.toBe("+35 health. Your file is written in Wern's ink now.");
+    expect(src).toMatch(/p\("red_lease", "RED LEASE", "\+35 HEALTH\. YOUR FILE IS WRITTEN IN WERN'S INK NOW\."/);
+    expect(src).not.toMatch(/p\("red_lease", "RED LEASE", "\+35 health\. Your file is written in Wern's ink now\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
