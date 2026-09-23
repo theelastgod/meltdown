@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- TRIAL BY DATA's brief still says mixed-case `Hold the broadcast tower on the plaza`
+  → Stage 590
 - BLIND THE MODEL's brief still says mixed-case `Destroy the sensor lattice district by district`
   → Stage 589
 - THE LEAK's brief still says mixed-case `An Estate defector hands you the Directive`

@@ -143,7 +143,7 @@ export const MISSIONS: readonly MissionDef[] = [
     title: "TRIAL BY DATA",
     level: "repo_depot",
     fixer: "deacon",
-    brief: "Hold the broadcast tower on the plaza while the Directive goes out on every leased feed and the city wakes live around you.",
+    brief: "HOLD THE BROADCAST TOWER ON THE PLAZA WHILE THE DIRECTIVE GOES OUT ON EVERY LEASED FEED AND THE CITY WAKES LIVE AROUND YOU.",
     objectives: [{ kind: "hold", at: { node: "A" }, radius: 8, seconds: 45, text: "HOLD THE TOWER — THE DIRECTIVE IS BROADCASTING", waves: 3 }, D("m6_broadcast", "THE UPLINK"), { kind: "hold", at: { node: "A" }, radius: 8, seconds: 30, text: "HOLD UNTIL THE UPLINK CLOSES", waves: 2 }],
     // "Evidence is a weapon" — m1's kept lease file is the proof the broadcast can attach, and a city
     // that is shown the paper believes faster than one that is only told. Half the closing hold.

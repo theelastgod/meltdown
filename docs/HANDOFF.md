@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-23, at Stage 589, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-23, at Stage 590, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 589 on this branch (BLIND THE MODEL brief) |
-| Next stage number | **590** |
+| HEAD | Stage 590 on this branch (TRIAL BY DATA brief) |
+| Next stage number | **591** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 590 is next
+## 6. Stage 591 is next
 
-Stage 589 CRT-cased BLIND THE MODEL's brief. TRIAL BY DATA still says
-mixed-case `Hold the broadcast tower on the plaza`. Title cards stay
-prose (probe:ship asserts them). Crew-code reasons stay mixed-case
+Stage 590 CRT-cased TRIAL BY DATA's brief. THE WHITE OFFICE still
+says mixed-case `Wern doesn't fight`. Title cards stay prose
+(probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints
 the socket name — `probe:net` asserts `probe-join-31`; leave it.

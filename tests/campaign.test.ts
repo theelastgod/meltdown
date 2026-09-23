@@ -177,6 +177,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "DESTROY THE SENSOR LATTICE DISTRICT BY DISTRICT\. VANTAGE RESPONDS LIKE AN IMMUNE SYSTEM — THE HARDEST COMBAT IN THE ARC\."/);
     expect(src).not.toMatch(/brief: "Destroy the sensor lattice district by district\. VANTAGE responds like an immune system — the hardest combat in the arc\."/);
   });
+
+  it("TRIAL BY DATA's brief is CRT, not hold the broadcast tower", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "m6_trial_by_data")!.brief;
+    expect(brief).toBe("HOLD THE BROADCAST TOWER ON THE PLAZA WHILE THE DIRECTIVE GOES OUT ON EVERY LEASED FEED AND THE CITY WAKES LIVE AROUND YOU.");
+    expect(brief).not.toBe("Hold the broadcast tower on the plaza while the Directive goes out on every leased feed and the city wakes live around you.");
+    expect(src).toMatch(/brief: "HOLD THE BROADCAST TOWER ON THE PLAZA WHILE THE DIRECTIVE GOES OUT ON EVERY LEASED FEED AND THE CITY WAKES LIVE AROUND YOU\."/);
+    expect(src).not.toMatch(/brief: "Hold the broadcast tower on the plaza while the Directive goes out on every leased feed and the city wakes live around you\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
