@@ -283,6 +283,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(lintItemSchema()).toEqual([]);
   });
 
+  it("the FILE kit names GRENADE, not grenade", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("ESCROW", [{ stat: "grenades", delta: 1 }], [{ stat: "throwSpeed", delta: -0.1 }]);
+    expect(line).toBe("ESCROW: +1 GRENADE / −10% throw");
+    expect(line).not.toMatch(/grenade/);
+    expect(src).toMatch(/grenades: "GRENADE"/);
+    expect(src).not.toMatch(/grenades: "grenade"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };

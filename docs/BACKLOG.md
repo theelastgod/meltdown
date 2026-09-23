@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- the FILE kit still says mixed-case `grenade`
+  → Stage 552
 - the FILE kit still says mixed-case `headshot`
   → Stage 551
 - the FILE kit still says mixed-case `regen`
