@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 626 — Marrow's first line said don't say your name
+
+**Goal.** Stage 625 taught Ida's second line. Marrow's first still
+said mixed-case `Marrow. Don't say your name — you haven't got one and
+that's the point.`
+
+**What changed.** `MARROW. DON'T SAY YOUR NAME — YOU HAVEN'T GOT ONE
+AND THAT'S THE POINT.`
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/campaign.test.ts` asserts that sentence and
+that script.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 625 — Ida's second line said come to the Office
 
 **Goal.** Stage 624 taught Ida's first line. Her second still said

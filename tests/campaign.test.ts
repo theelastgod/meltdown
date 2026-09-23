@@ -501,6 +501,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"COME TO THE OFFICE\. BRING THE BLANK YOU WOKE AS\."/);
     expect(src).not.toMatch(/"Come to the Office\. Bring the Blank you woke as\."/);
   });
+
+  it("creation Marrow line 1 is CRT, not don't say your name", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "creation")!.nodes.find((n) => n.id === "clockeaters")!.lines[0];
+    expect(line).toBe("MARROW. DON'T SAY YOUR NAME — YOU HAVEN'T GOT ONE AND THAT'S THE POINT.");
+    expect(line).not.toBe("Marrow. Don't say your name — you haven't got one and that's the point.");
+    expect(src).toMatch(/"MARROW\. DON'T SAY YOUR NAME — YOU HAVEN'T GOT ONE AND THAT'S THE POINT\."/);
+    expect(src).not.toMatch(/"Marrow\. Don't say your name — you haven't got one and that's the point\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

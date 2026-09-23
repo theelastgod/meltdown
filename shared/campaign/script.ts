@@ -47,7 +47,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
         ],
       }),
       n("estate", "vessel", ["IDA VESSEL. I AUDITED LEASES FOR ELEVEN YEARS BEFORE I READ ONE OF MY OWN.", "COME TO THE OFFICE. BRING THE BLANK YOU WOKE AS."]),
-      n("clockeaters", "marrow", ["Marrow. Don't say your name — you haven't got one and that's the point.", "We meet where the clocks are broken. Office. Now."]),
+      n("clockeaters", "marrow", ["MARROW. DON'T SAY YOUR NAME — YOU HAVEN'T GOT ONE AND THAT'S THE POINT.", "We meet where the clocks are broken. Office. Now."]),
       n("cells", "deacon", ["The Deacon keeps the ledger of the woken. Your line is blank. Good.", "Nodes first. Names later. Come to the Office."]),
     ],
   },

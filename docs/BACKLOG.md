@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- Marrow's first creation line still says mixed-case `Don't say your name`
+  → Stage 626
 - Ida's second creation line still says mixed-case `Come to the Office. Bring the Blank you woke as.`
   → Stage 625
 - Ida's first creation line still says mixed-case `I audited leases for eleven years`
