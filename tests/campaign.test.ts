@@ -249,6 +249,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "FOUR WASPS RUN THE PLAZA LOOP EVERY NIGHT\. BREAK THE LOOP\."/);
     expect(src).not.toMatch(/brief: "Four wasps run the plaza loop every night\. Break the loop\."/);
   });
+
+  it("WAKE-CELL RESCUE · DOCKS's brief is CRT, not a cell went dark at E", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_rescue_docks")!.brief;
+    expect(brief).toBe("A CELL WENT DARK AT E. BRING WHOEVER IS LEFT TO THE PLAZA.");
+    expect(brief).not.toBe("A cell went dark at E. Bring whoever is left to the plaza.");
+    expect(src).toMatch(/brief: "A CELL WENT DARK AT E\. BRING WHOEVER IS LEFT TO THE PLAZA\."/);
+    expect(src).not.toMatch(/brief: "A cell went dark at E\. Bring whoever is left to the plaza\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
