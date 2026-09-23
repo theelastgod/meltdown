@@ -402,6 +402,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "GIVE IT TO IDA\. THE ESTATE SHOULD HAVE TO READ ITS OWN HAND\."/);
     expect(src).not.toMatch(/text: "GIVE IT TO IDA\. The Estate should have to read its own hand\."/);
   });
+
+  it("m4 SHIELD HER is CRT, not take the light", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "vessel")!.choices!.find((c) => c.set?.["m4:vessel"] === "shield")!.text;
+    expect(text).toBe("SHIELD HER. TAKE THE LIGHT.");
+    expect(text).not.toBe("SHIELD HER. Take the light.");
+    expect(src).toMatch(/text: "SHIELD HER\. TAKE THE LIGHT\."/);
+    expect(src).not.toMatch(/text: "SHIELD HER\. Take the light\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

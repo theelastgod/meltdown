@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- m4 SHIELD HER still says mixed-case `Take the light`
+  → Stage 615
 - m4 GIVE IT TO IDA still says mixed-case `The Estate should have to read its own hand`
   → Stage 614
 - m4 KEEP THE DIRECTIVE still says mixed-case `If it's a weapon, it's mine now`

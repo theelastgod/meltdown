@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 615 — m4 SHIELD HER said take the light
+
+**Goal.** Stage 614 taught GIVE IT TO IDA. m4's SHIELD HER choice still
+said mixed-case `SHIELD HER. Take the light.`
+
+**What changed.** `SHIELD HER. TAKE THE LIGHT.`
+
+**Proof.** Measured choice was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that script.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 614 — m4 GIVE IT TO IDA said the Estate should have to read its own hand
 
 **Goal.** Stage 613 taught KEEP THE DIRECTIVE. m4's GIVE IT TO IDA

@@ -116,7 +116,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       }),
       n("vessel", "terminal", ["A VANTAGE SWEEP TAKES THE STREET. IDA VESSEL IS THE ONLY NAMED FILE ON IT.", "THE SEARCHLIGHT WANTS ONE OF YOU."], {
         choices: [
-          { text: "SHIELD HER. Take the light.", set: { "m4:vessel": "shield" }, next: "shield" },
+          { text: "SHIELD HER. TAKE THE LIGHT.", set: { "m4:vessel": "shield" }, next: "shield" },
           { text: "EXPOSE HER. She's the defector; you're the Blank.", set: { "m4:vessel": "expose" }, next: "expose" },
         ],
       }),
