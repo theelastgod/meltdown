@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 551 — the FILE kit said headshot
+
+**Goal.** Stage 550 taught REGEN. `formatChipLine` still printed
+`headshot` from STAT_LINE.
+
+**What changed.** `headMult: "HEADSHOT"`.
+
+**Proof.** Measured SPITE CLAUSE line was mixed-case. After the fix the
+CRT label is the kit. `tests/chiptrade.test.ts` asserts that sentence
+and that chips.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 550 — the FILE kit said regen
 
 **Goal.** Stage 549 taught FLIP. `formatChipLine` still printed `regen`

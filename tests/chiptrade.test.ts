@@ -272,6 +272,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(lintItemSchema()).toEqual([]);
   });
 
+  it("the FILE kit names HEADSHOT, not headshot", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("SPITE CLAUSE", [{ stat: "headMult", delta: 0.12 }], [{ stat: "reloadSpeed", delta: -0.1 }]);
+    expect(line).toBe("SPITE CLAUSE: +12% HEADSHOT / −10% RELOAD");
+    expect(line).not.toMatch(/headshot/);
+    expect(src).toMatch(/headMult: "HEADSHOT"/);
+    expect(src).not.toMatch(/headMult: "headshot"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };

@@ -106,7 +106,7 @@ const STAT_LINE: Partial<Record<StatKey, string>> = {
   footstep: "FOOTSTEPS",
   flipRate: "FLIP",
   shieldRegen: "REGEN",
-  headMult: "headshot",
+  headMult: "HEADSHOT",
   grenades: "grenade",
   mantleTime: "mantle",
   shieldDelay: "REGEN DELAY",
