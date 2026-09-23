@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- WERN PULSE's protocol line still says mixed-case `+12% fire rate`
+  → Stage 560
 - BAD DEBT's FILE line still says mixed-case `loud on the model`
   → Stage 559
 - DEBTLESS's FILE line still says mixed-case `no shield`

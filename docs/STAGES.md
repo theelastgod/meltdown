@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 560 — WERN PULSE's protocol line said fire rate
+
+**Goal.** Stage 559 closed the last mixed-case keystone FILE line.
+WERN PULSE still said mixed-case `+12% fire rate, +10% reload. The
+rhythm of the Directive.` on the campaign protocol row.
+
+**What changed.** `+12% FIRE RATE, +10% RELOAD. THE RHYTHM OF THE
+DIRECTIVE.`
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/campaign.test.ts` asserts that sentence and
+that protocols.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 559 — BAD DEBT's FILE line said loud on the model
 
 **Goal.** Stage 558 taught DEBTLESS. BAD DEBT still said mixed-case

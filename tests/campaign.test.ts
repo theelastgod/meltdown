@@ -87,6 +87,15 @@ describe("campaign data", () => {
     expect(m.shieldRegen).toBeUndefined(); // the fourth is not worn
     expect(MAX_PROTOCOLS).toBe(3);
   });
+
+  it("WERN PULSE's protocol line is CRT, not fire rate", () => {
+    const src = readFileSync(new URL("../shared/campaign/protocols.ts", import.meta.url), "utf8");
+    const line = PROTOCOLS.find((p) => p.id === "wern_pulse")!.line;
+    expect(line).toBe("+12% FIRE RATE, +10% RELOAD. THE RHYTHM OF THE DIRECTIVE.");
+    expect(line).not.toBe("+12% fire rate, +10% reload. The rhythm of the Directive.");
+    expect(src).toMatch(/p\("wern_pulse", "WERN PULSE", "\+12% FIRE RATE, \+10% RELOAD\. THE RHYTHM OF THE DIRECTIVE\."/);
+    expect(src).not.toMatch(/p\("wern_pulse", "WERN PULSE", "\+12% fire rate, \+10% reload\. The rhythm of the Directive\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
