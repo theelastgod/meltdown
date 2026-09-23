@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- DEBTLESS's FILE line still says mixed-case `no shield`
+  → Stage 558
 - AUDITOR's FILE line still says mixed-case `fire rate`
   → Stage 557
 - the FILE kit still says mixed-case `range`

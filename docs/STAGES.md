@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 558 — DEBTLESS's FILE line said no shield
+
+**Goal.** Stage 557 taught AUDITOR. DEBTLESS still said mixed-case
+`no shield; +12% move, +25% slide, silent`.
+
+**What changed.** `DEBTLESS: NO SHIELD; +12% MOVE, +25% SLIDE, SILENT`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/chiptrade.test.ts` asserts that sentence and
+that items.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 557 — AUDITOR's FILE line said fire rate
 
 **Goal.** Stage 556 closed STAT_LINE. AUDITOR's authored FILE line

@@ -382,6 +382,16 @@ describe("a ledger node line is the mods after reconciliation (Stage 190)", () =
     expect(src).toMatch(/line: "AUDITOR: \+25% HEADSHOT, \+5% RANGE \/ −8% FIRE RATE, −3% MOVE, −10% RELOAD"/);
     expect(src).not.toMatch(/line: "AUDITOR: \+25% headshot, \+5% range \/ −8% fire rate, −3% move, −10% reload"/);
   });
+
+  it("DEBTLESS's FILE line is CRT, not no shield", () => {
+    const src = readFileSync(new URL("../shared/manifest/items.ts", import.meta.url), "utf8");
+    const it = KEYSTONES.find((x) => x.id === "debtless")!;
+    expect(it.line).toBe("DEBTLESS: NO SHIELD; +12% MOVE, +25% SLIDE, SILENT");
+    expect(ledgerTradeText(it)).toBe("NO SHIELD; +12% MOVE, +25% SLIDE, SILENT");
+    expect(it.line).not.toMatch(/no shield/);
+    expect(src).toMatch(/line: "DEBTLESS: NO SHIELD; \+12% MOVE, \+25% SLIDE, SILENT"/);
+    expect(src).not.toMatch(/line: "DEBTLESS: no shield; \+12% move, \+25% slide, silent"/);
+  });
 });
 
 describe("the FILE panel reads ledgerTradeText", () => {
