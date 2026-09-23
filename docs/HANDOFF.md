@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-23, at Stage 610, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-23, at Stage 611, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 610 on this branch (m2 TURN HIM IN) |
-| Next stage number | **611** |
+| HEAD | Stage 611 on this branch (m3 PUBLISH IT) |
+| Next stage number | **612** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,14 +191,14 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 611 is next
+## 6. Stage 612 is next
 
-Stage 610 CRT-cased m2 TURN HIM IN. m3 PUBLISH IT still says mixed-case
-`on every leased feed tonight`. Title cards stay prose (probe:ship
-asserts them). Crew-code reasons stay mixed-case (`probe:campaign`
-asserts `not a crew code`). Do not loosen fairness. Do not plate
-viewmodel or remote strips. The join line still prints the socket
-name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 611 CRT-cased m3 PUBLISH IT. m3 HOLD IT still says mixed-case
+`A truth spent early buys nothing`. Title cards stay prose
+(probe:ship asserts them). Crew-code reasons stay mixed-case
+(`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
+Do not plate viewmodel or remote strips. The join line still prints
+the socket name — `probe:net` asserts `probe-join-31`; leave it.
 
 City path tests can time out
 under a full `npm test` (the walkway case has taken ~8 s on this

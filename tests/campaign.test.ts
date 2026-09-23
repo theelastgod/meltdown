@@ -366,6 +366,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "TURN HIM IN TO MARROW'S PEOPLE\. THE CLOCKEATERS SETTLE THEIR OWN\."/);
     expect(src).not.toMatch(/text: "TURN HIM IN to Marrow's people\. The Clockeaters settle their own\."/);
   });
+
+  it("m3 PUBLISH IT is CRT, not on every leased feed tonight", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m3_volatility")!.nodes.find((n) => n.id === "a")!.choices!.find((c) => c.set?.["m3:volatility"] === "publish")!.text;
+    expect(text).toBe("PUBLISH IT ON EVERY LEASED FEED TONIGHT.");
+    expect(text).not.toBe("PUBLISH IT on every leased feed tonight.");
+    expect(src).toMatch(/text: "PUBLISH IT ON EVERY LEASED FEED TONIGHT\."/);
+    expect(src).not.toMatch(/text: "PUBLISH IT on every leased feed tonight\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
