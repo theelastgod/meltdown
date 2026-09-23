@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 585 — WAKE UNLISTED's brief said steal your own lease file
+
+**Goal.** Stage 584 closed the moniker mill. WAKE UNLISTED's contract
+row still printed mixed-case `Steal your own lease file from the
+escrow terminal at the B intersection.`
+
+**What changed.** `STEAL YOUR OWN LEASE FILE FROM THE ESCROW TERMINAL
+AT THE B INTERSECTION. FIND OUT WHY YOU WERE FLAGGED.`
+
+**Proof.** Measured brief was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that missions.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 584 — WERN CASE's how said twenty-five wakes won
 
 **Goal.** Stage 583 taught NAMED. WERN CASE still said mixed-case

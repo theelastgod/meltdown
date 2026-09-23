@@ -132,6 +132,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/p\("directive_optic", "DIRECTIVE OPTIC", "\+15% RANGE, \+20% HEADSHOT MULTIPLIER\. SEE THE CITY THE WAY THE KERNEL DOES\."/);
     expect(src).not.toMatch(/p\("directive_optic", "DIRECTIVE OPTIC", "\+15% range, \+20% headshot multiplier\. See the city the way the Kernel does\."/);
   });
+
+  it("WAKE UNLISTED's brief is CRT, not steal your own lease file", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "m1_wake_unlisted")!.brief;
+    expect(brief).toBe("STEAL YOUR OWN LEASE FILE FROM THE ESCROW TERMINAL AT THE B INTERSECTION. FIND OUT WHY YOU WERE FLAGGED.");
+    expect(brief).not.toBe("Steal your own lease file from the escrow terminal at the B intersection. Find out why you were flagged.");
+    expect(src).toMatch(/brief: "STEAL YOUR OWN LEASE FILE FROM THE ESCROW TERMINAL AT THE B INTERSECTION\. FIND OUT WHY YOU WERE FLAGGED\."/);
+    expect(src).not.toMatch(/brief: "Steal your own lease file from the escrow terminal at the B intersection\. Find out why you were flagged\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

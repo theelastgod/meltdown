@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-23, at Stage 584, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-23, at Stage 585, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 584 on this branch (WERN CASE how) |
-| Next stage number | **585** |
+| HEAD | Stage 585 on this branch (WAKE UNLISTED brief) |
+| Next stage number | **586** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,12 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 585 is next
+## 6. Stage 586 is next
 
-Stage 584 CRT-cased WERN CASE's how. All moniker `how` lines are CRT.
-Chip template `line` fields still print mixed-case (`+3% range / +4%
-recoil` on LONG BARREL) but FILE rebuilds from STAT_LINE. Measure a
-new player-visible leftover. Title cards stay prose (probe:ship
+Stage 585 CRT-cased WAKE UNLISTED's brief. DEADLETTER RUN still says
+mixed-case `Work the docks`. Title cards stay prose (probe:ship
 asserts them). Crew-code reasons stay mixed-case (`probe:campaign`
 asserts `not a crew code`). Do not loosen fairness. Do not plate
 viewmodel or remote strips. The join line still prints the socket

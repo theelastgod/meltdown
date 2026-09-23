@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- WAKE UNLISTED's brief still says mixed-case `Steal your own lease file`
+  → Stage 585
 - WERN CASE's how still says mixed-case `twenty-five wakes won`
   → Stage 584
 - NAMED's how still says mixed-case `Chapter III — Depth 50`
