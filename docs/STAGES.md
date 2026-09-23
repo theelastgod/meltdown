@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 596 — ESCROW HEIST · DEPOT's brief said the impound lot
+
+**Goal.** Stage 595 taught SENSOR SABOTAGE · LEASE ROW. ESCROW HEIST ·
+DEPOT still said mixed-case `The impound lot keeps a second escrow.
+Take it while the mech is at the far fence.`
+
+**What changed.** `THE IMPOUND LOT KEEPS A SECOND ESCROW. TAKE IT WHILE
+THE MECH IS AT THE FAR FENCE.`
+
+**Proof.** Measured brief was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that missions.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 595 — SENSOR SABOTAGE · LEASE ROW's brief said two lattice posts
 
 **Goal.** Stage 594 taught WAKE-CELL RESCUE · DEPOT. SENSOR SABOTAGE ·

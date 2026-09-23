@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- ESCROW HEIST · DEPOT's brief still says mixed-case `The impound lot keeps a second escrow`
+  → Stage 596
 - SENSOR SABOTAGE · LEASE ROW's brief still says mixed-case `Two lattice posts on the walkway street`
   → Stage 595
 - WAKE-CELL RESCUE · DEPOT's brief still says mixed-case `A cell is pinned under the impound searchlight`

@@ -231,6 +231,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "TWO LATTICE POSTS ON THE WALKWAY STREET\. THE ESTATE WANTS THEM DARK BEFORE THE AUDIT\."/);
     expect(src).not.toMatch(/brief: "Two lattice posts on the walkway street\. The Estate wants them dark before the audit\."/);
   });
+
+  it("ESCROW HEIST · DEPOT's brief is CRT, not the impound lot", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_escrow_depot")!.brief;
+    expect(brief).toBe("THE IMPOUND LOT KEEPS A SECOND ESCROW. TAKE IT WHILE THE MECH IS AT THE FAR FENCE.");
+    expect(brief).not.toBe("The impound lot keeps a second escrow. Take it while the mech is at the far fence.");
+    expect(src).toMatch(/brief: "THE IMPOUND LOT KEEPS A SECOND ESCROW\. TAKE IT WHILE THE MECH IS AT THE FAR FENCE\."/);
+    expect(src).not.toMatch(/brief: "The impound lot keeps a second escrow\. Take it while the mech is at the far fence\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-23, at Stage 595, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-23, at Stage 596, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 595 on this branch (SENSOR SABOTAGE · LEASE ROW brief) |
-| Next stage number | **596** |
+| HEAD | Stage 596 on this branch (ESCROW HEIST · DEPOT brief) |
+| Next stage number | **597** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 596 is next
+## 6. Stage 597 is next
 
-Stage 595 CRT-cased SENSOR SABOTAGE · LEASE ROW's brief. ESCROW HEIST ·
-DEPOT still says mixed-case `The impound lot keeps a second escrow`.
+Stage 596 CRT-cased ESCROW HEIST · DEPOT's brief. DRONE CONVOY · LEASE
+ROW still says mixed-case `Four wasps run the plaza loop every night`.
 Title cards stay prose (probe:ship asserts them). Crew-code reasons
 stay mixed-case (`probe:campaign` asserts `not a crew code`). Do not
 loosen fairness. Do not plate viewmodel or remote strips. The join
