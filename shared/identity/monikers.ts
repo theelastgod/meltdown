@@ -40,7 +40,7 @@ export const MONIKERS: readonly MonikerDef[] = [
   m("mech_breaker", "MECH BREAKER", { kind: "counter", counter: "mechKills", need: 1 }, "A REPO MECH DISABLED"),
   m("debt_collector", "DEBT COLLECTOR", { kind: "counter", counter: "debtsCleared", need: 1 }, "A DEBT CLEARED"),
   m("nine_lives", "NINE LIVES", { kind: "counter", counter: "noDeathRounds", need: 1 }, "A ROUND WITHOUT A DEATH"),
-  m("citizen", "CITIZEN", { kind: "counter", counter: "districts", need: 3 }, "all three districts played"),
+  m("citizen", "CITIZEN", { kind: "counter", counter: "districts", need: 3 }, "ALL THREE DISTRICTS PLAYED"),
   m("listed", "LISTED", { kind: "chapter", chapter: 1 }, "Chapter I — Depth 10"),
   m("divergent", "DIVERGENT", { kind: "chapter", chapter: 2 }, "Chapter II — Depth 25"),
   m("named", "NAMED", { kind: "chapter", chapter: 3 }, "Chapter III — Depth 50"),

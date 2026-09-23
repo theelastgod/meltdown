@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- CITIZEN's how still says mixed-case `all three districts played`
+  → Stage 580
 - NINE LIVES's how still says mixed-case `a round without a death`
   → Stage 579
 - DEBT COLLECTOR's how still says mixed-case `a Debt cleared`

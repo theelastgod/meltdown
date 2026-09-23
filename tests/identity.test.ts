@@ -332,4 +332,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("nine_lives", "NINE LIVES", \{ kind: "counter", counter: "noDeathRounds", need: 1 \}, "A ROUND WITHOUT A DEATH"\)/);
     expect(src).not.toMatch(/m\("nine_lives", "NINE LIVES", \{ kind: "counter", counter: "noDeathRounds", need: 1 \}, "a round without a death"\)/);
   });
+
+  it("CITIZEN's how is CRT, not all three districts played", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "citizen")!.how;
+    expect(how).toBe("ALL THREE DISTRICTS PLAYED");
+    expect(how).not.toBe("all three districts played");
+    expect(src).toMatch(/m\("citizen", "CITIZEN", \{ kind: "counter", counter: "districts", need: 3 \}, "ALL THREE DISTRICTS PLAYED"\)/);
+    expect(src).not.toMatch(/m\("citizen", "CITIZEN", \{ kind: "counter", counter: "districts", need: 3 \}, "all three districts played"\)/);
+  });
 });
