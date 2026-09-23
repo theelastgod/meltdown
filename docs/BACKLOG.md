@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- LIVE WIRE's how still says mixed-case `first file closed with the Shock Baton`
+  → Stage 572
 - CARRIER's how still says mixed-case `first file closed with the Phage`
   → Stage 571
 - LONGWAVE's how still says mixed-case `first file closed with the Longwave`

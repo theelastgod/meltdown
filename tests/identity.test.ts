@@ -260,4 +260,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("carrier", "CARRIER", \{ kind: "stamp", stamp: "first_kill:phage" \}, "FIRST FILE CLOSED WITH THE PHAGE"\)/);
     expect(src).not.toMatch(/m\("carrier", "CARRIER", \{ kind: "stamp", stamp: "first_kill:phage" \}, "first file closed with the Phage"\)/);
   });
+
+  it("LIVE WIRE's how is CRT, not first file closed with the Shock Baton", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "live_wire")!.how;
+    expect(how).toBe("FIRST FILE CLOSED WITH THE SHOCK BATON");
+    expect(how).not.toBe("first file closed with the Shock Baton");
+    expect(src).toMatch(/m\("live_wire", "LIVE WIRE", \{ kind: "stamp", stamp: "first_kill:shock_baton" \}, "FIRST FILE CLOSED WITH THE SHOCK BATON"\)/);
+    expect(src).not.toMatch(/m\("live_wire", "LIVE WIRE", \{ kind: "stamp", stamp: "first_kill:shock_baton" \}, "first file closed with the Shock Baton"\)/);
+  });
 });
