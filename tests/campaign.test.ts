@@ -438,6 +438,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "SPARE THE DOCKS\. SOMEONE HAS TO SEE THE SHIPS COME IN\."/);
     expect(src).not.toMatch(/text: "SPARE THE DOCKS\. Someone has to see the ships come in\."/);
   });
+
+  it("m6 FULL BROADCAST is CRT, not let them read the fire too", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m6_broadcast")!.nodes.find((n) => n.id === "a")!.choices!.find((c) => c.set?.["m6:broadcast"] === "full")!.text;
+    expect(text).toBe("FULL BROADCAST. LET THEM READ THE FIRE TOO.");
+    expect(text).not.toBe("FULL BROADCAST. Let them read the fire too.");
+    expect(src).toMatch(/text: "FULL BROADCAST\. LET THEM READ THE FIRE TOO\."/);
+    expect(src).not.toMatch(/text: "FULL BROADCAST\. Let them read the fire too\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

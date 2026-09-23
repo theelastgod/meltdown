@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- m6 FULL BROADCAST still says mixed-case `Let them read the fire too`
+  → Stage 619
 - m5 SPARE THE DOCKS still says mixed-case `Someone has to see the ships come in`
   → Stage 618
 - m5 ALL OF IT still says mixed-case `Blind the model everywhere`

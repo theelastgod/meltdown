@@ -144,7 +144,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
     nodes: [
       n("a", "terminal", ["THE DIRECTIVE IS ON EVERY LEASED FEED. THE CITY IS WAKING LIVE AROUND YOU.", "THE UPLINK CAN CARRY THE WHOLE DOCUMENT OR A REDACTED CUT WITH THE FORECAST REMOVED."], {
         choices: [
-          { text: "FULL BROADCAST. Let them read the fire too.", set: { "m6:broadcast": "full" }, next: "full" },
+          { text: "FULL BROADCAST. LET THEM READ THE FIRE TOO.", set: { "m6:broadcast": "full" }, next: "full" },
           { text: "REDACTED. Wake them without the terror.", set: { "m6:broadcast": "redacted" }, next: "redacted" },
         ],
       }),
