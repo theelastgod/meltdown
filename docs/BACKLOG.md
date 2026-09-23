@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- BAD DEBT's FILE line still says mixed-case `loud on the model`
+  → Stage 559
 - DEBTLESS's FILE line still says mixed-case `no shield`
   → Stage 558
 - AUDITOR's FILE line still says mixed-case `fire rate`

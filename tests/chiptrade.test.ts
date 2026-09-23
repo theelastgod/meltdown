@@ -392,6 +392,16 @@ describe("a ledger node line is the mods after reconciliation (Stage 190)", () =
     expect(src).toMatch(/line: "DEBTLESS: NO SHIELD; \+12% MOVE, \+25% SLIDE, SILENT"/);
     expect(src).not.toMatch(/line: "DEBTLESS: no shield; \+12% move, \+25% slide, silent"/);
   });
+
+  it("BAD DEBT's FILE line is CRT, not loud on the model", () => {
+    const src = readFileSync(new URL("../shared/manifest/items.ts", import.meta.url), "utf8");
+    const it = KEYSTONES.find((x) => x.id === "bad_debt")!;
+    expect(it.line).toBe("BAD DEBT: +15% FLIP, +1 GRENADE, +20% RELOAD / −8% MOVE, LOUD ON THE MODEL");
+    expect(ledgerTradeText(it)).toBe("+15% FLIP, +1 GRENADE, +20% RELOAD / −8% MOVE, LOUD ON THE MODEL");
+    expect(it.line).not.toMatch(/loud on the model/);
+    expect(src).toMatch(/line: "BAD DEBT: \+15% FLIP, \+1 GRENADE, \+20% RELOAD \/ −8% MOVE, LOUD ON THE MODEL"/);
+    expect(src).not.toMatch(/line: "BAD DEBT: \+15% flip, \+1 grenade, \+20% reload \/ −8% move, loud on the model"/);
+  });
 });
 
 describe("the FILE panel reads ledgerTradeText", () => {
