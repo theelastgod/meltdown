@@ -80,7 +80,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       n("a", "terminal", ["THE DOCKS INFORMANT KNEELS BY THE C NODE. HE HAS A CLOCKEATER MARK ON HIS WRIST AND A VANTAGE SPEAKER IN HIS EAR.", "HE HAS BEEN SELLING WAKE CELL ROUTES FOR SLEEP CREDIT."], {
         choices: [
           { text: "SPARE HIM. TURN THE SPEAKER OFF AND LET HIM RUN.", set: { "m2:informant": "spare" }, next: "spare" },
-          { text: "TURN HIM IN to Marrow's people. The Clockeaters settle their own.", set: { "m2:informant": "turn" }, next: "turn" },
+          { text: "TURN HIM IN TO MARROW'S PEOPLE. THE CLOCKEATERS SETTLE THEIR OWN.", set: { "m2:informant": "turn" }, next: "turn" },
         ],
       }),
       n("spare", "deacon", ["Mercy is a line item too. I'll log it."]),

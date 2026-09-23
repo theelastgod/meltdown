@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- m2 TURN HIM IN still says mixed-case `to Marrow's people`
+  → Stage 610
 - m2 SPARE HIM still says mixed-case `Turn the speaker off and let him run`
   → Stage 609
 - m1 KEEP IT still says mixed-case `Evidence is a weapon`

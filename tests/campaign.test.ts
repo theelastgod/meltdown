@@ -357,6 +357,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "SPARE HIM\. TURN THE SPEAKER OFF AND LET HIM RUN\."/);
     expect(src).not.toMatch(/text: "SPARE HIM\. Turn the speaker off and let him run\."/);
   });
+
+  it("m2 TURN HIM IN is CRT, not to Marrow's people", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m2_informant")!.nodes.find((n) => n.id === "a")!.choices!.find((c) => c.set?.["m2:informant"] === "turn")!.text;
+    expect(text).toBe("TURN HIM IN TO MARROW'S PEOPLE. THE CLOCKEATERS SETTLE THEIR OWN.");
+    expect(text).not.toBe("TURN HIM IN to Marrow's people. The Clockeaters settle their own.");
+    expect(src).toMatch(/text: "TURN HIM IN TO MARROW'S PEOPLE\. THE CLOCKEATERS SETTLE THEIR OWN\."/);
+    expect(src).not.toMatch(/text: "TURN HIM IN to Marrow's people\. The Clockeaters settle their own\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
