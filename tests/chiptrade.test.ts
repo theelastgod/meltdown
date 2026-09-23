@@ -11,7 +11,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { CHIPS, formatChipLine, lintChipSchema, type ChipDef } from "../shared/manifest/chips";
-import { LEDGER_ITEMS, ledgerTradeText, lintItemSchema, type LedgerItem } from "../shared/manifest/items";
+import { KEYSTONES, LEDGER_ITEMS, ledgerTradeText, lintItemSchema, type LedgerItem } from "../shared/manifest/items";
 
 describe("a chip is named by the weapon, not its article", () => {
   it("THE DIRECTIVE's CHOKE is DIRECTIVE CHOKE, not THE CHOKE", () => {
@@ -371,6 +371,16 @@ describe("a ledger node line is the mods after reconciliation (Stage 190)", () =
     expect(ledgerTradeText(it)).toBe("+40% REGEN / −2.25% MOVE, −23.5% RELOAD");
     expect(ledgerTradeText(it)).not.toMatch(/reloadSpeed/);
     expect(ledgerTradeText(it)).not.toMatch(/−24%/);
+  });
+
+  it("AUDITOR's FILE line is CRT, not fire rate", () => {
+    const src = readFileSync(new URL("../shared/manifest/items.ts", import.meta.url), "utf8");
+    const it = KEYSTONES.find((x) => x.id === "auditor")!;
+    expect(it.line).toBe("AUDITOR: +25% HEADSHOT, +5% RANGE / −8% FIRE RATE, −3% MOVE, −10% RELOAD");
+    expect(ledgerTradeText(it)).toBe("+25% HEADSHOT, +5% RANGE / −8% FIRE RATE, −3% MOVE, −10% RELOAD");
+    expect(it.line).not.toMatch(/fire rate/);
+    expect(src).toMatch(/line: "AUDITOR: \+25% HEADSHOT, \+5% RANGE \/ −8% FIRE RATE, −3% MOVE, −10% RELOAD"/);
+    expect(src).not.toMatch(/line: "AUDITOR: \+25% headshot, \+5% range \/ −8% fire rate, −3% move, −10% reload"/);
   });
 });
 

@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- AUDITOR's FILE line still says mixed-case `fire rate`
+  → Stage 557
 - the FILE kit still says mixed-case `range`
   → Stage 556
 - the FILE kit still says mixed-case `throw`

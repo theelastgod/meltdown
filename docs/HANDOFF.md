@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 556, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 557, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 556 on this branch (RANGE STAT_LINE) |
-| Next stage number | **557** |
+| HEAD | Stage 557 on this branch (AUDITOR FILE line) |
+| Next stage number | **558** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,15 +191,14 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 557 is next
+## 6. Stage 558 is next
 
-Stage 556 CRT-cased STAT_LINE `RANGE`. All STAT_LINE labels are CRT.
-Keystone authored FILE lines still print mixed-case (`fire rate` on
-AUDITOR). Title cards stay prose (probe:ship asserts them). Crew-code
-reasons stay mixed-case (`probe:campaign` asserts `not a crew code`).
-Do not loosen fairness. Do not plate viewmodel or remote strips. The
-join line still prints the socket name — `probe:net` asserts
-`probe-join-31`; leave it.
+Stage 557 CRT-cased AUDITOR's FILE line. DEBTLESS still says mixed-case
+`no shield; +12% move`. Title cards stay prose (probe:ship asserts
+them). Crew-code reasons stay mixed-case (`probe:campaign` asserts
+`not a crew code`). Do not loosen fairness. Do not plate viewmodel or
+remote strips. The join line still prints the socket name —
+`probe:net` asserts `probe-join-31`; leave it.
 
 City path tests can time out
 under a full `npm test` (the walkway case has taken ~8 s on this

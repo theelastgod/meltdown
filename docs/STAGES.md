@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 557 — AUDITOR's FILE line said fire rate
+
+**Goal.** Stage 556 closed STAT_LINE. AUDITOR's authored FILE line
+still said mixed-case `+25% headshot, +5% range / −8% fire rate, −3%
+move, −10% reload`.
+
+**What changed.** `AUDITOR: +25% HEADSHOT, +5% RANGE / −8% FIRE RATE,
+−3% MOVE, −10% RELOAD`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/chiptrade.test.ts` asserts that sentence and
+that items.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 556 — the FILE kit said range
 
 **Goal.** Stage 555 taught THROW. `formatChipLine` still printed
