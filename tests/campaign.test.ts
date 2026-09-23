@@ -474,6 +474,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "TAKE THE CHAIR — AND SET THE MODEL TO FORGET\."/);
     expect(src).not.toMatch(/text: "TAKE THE CHAIR — and set the model to forget\."/);
   });
+
+  it("m7 TAKE THE CHAIR (Estate) is CRT, not with Ida at your shoulder", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "c")!.choices!.find((c) => c.set?.["m7:ending"] === "chair_estate")!.text;
+    expect(text).toBe("TAKE THE CHAIR — WITH IDA AT YOUR SHOULDER.");
+    expect(text).not.toBe("TAKE THE CHAIR — with Ida at your shoulder.");
+    expect(src).toMatch(/text: "TAKE THE CHAIR — WITH IDA AT YOUR SHOULDER\."/);
+    expect(src).not.toMatch(/text: "TAKE THE CHAIR — with Ida at your shoulder\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
