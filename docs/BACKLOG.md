@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- the FILE kit still says mixed-case `reload`
+  → Stage 546
 - the FILE kit still says mixed-case `recoil`
   → Stage 545
 - the FILE kit still says mixed-case `spread`

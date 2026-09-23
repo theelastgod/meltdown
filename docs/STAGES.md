@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 546 — the FILE kit said reload
+
+**Goal.** Stage 545 taught RECOIL. `formatChipLine` still printed
+`reload` from STAT_LINE.
+
+**What changed.** `reloadSpeed: "RELOAD"`.
+
+**Proof.** Measured FAST MAG line was mixed-case. After the fix the CRT
+label is the kit. `tests/chiptrade.test.ts` asserts that sentence and
+that chips.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 545 — the FILE kit said recoil
 
 **Goal.** Stage 544 taught SPREAD. `formatChipLine` still printed

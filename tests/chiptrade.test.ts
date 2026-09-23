@@ -165,7 +165,7 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
   it("the FILE kit names DETECTION, not detection", () => {
     const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
     const line = formatChipLine("SUPPRESSOR", [{ stat: "droneDetect", delta: -0.2 }], [{ stat: "range", delta: -0.03 }, { stat: "reloadSpeed", delta: -0.08 }]);
-    expect(line).toBe("SUPPRESSOR: −20% DETECTION / −3% range, −8% reload");
+    expect(line).toBe("SUPPRESSOR: −20% DETECTION / −3% range, −8% RELOAD");
     expect(line).not.toMatch(/−20% detection/);
     expect(src).toMatch(/droneDetect: "DETECTION"/);
     expect(src).not.toMatch(/droneDetect: "detection"/);
@@ -217,6 +217,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(lintItemSchema()).toEqual([]);
   });
 
+  it("the FILE kit names RELOAD, not reload", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("FAST MAG", [{ stat: "reloadSpeed", delta: 0.12 }], [{ stat: "spread", delta: 0.14 }]);
+    expect(line).toBe("FAST MAG: +12% RELOAD / +14% SPREAD");
+    expect(line).not.toMatch(/reload/);
+    expect(src).toMatch(/reloadSpeed: "RELOAD"/);
+    expect(src).not.toMatch(/reloadSpeed: "reload"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };
@@ -228,7 +239,7 @@ describe("a ledger node line is the mods after reconciliation (Stage 190)", () =
   it("COLLATERAL prints −23.5% reload, not the authored −20%", () => {
     const it = LEDGER_ITEMS.find((x) => x.id === "collateral")!;
     expect(it.costs.find((c) => c.stat === "reloadSpeed")!.delta).toBeCloseTo(-0.235, 5);
-    expect(it.line).toMatch(/−23\.5% reload/);
+    expect(it.line).toMatch(/−23\.5% RELOAD/);
     expect(it.line).not.toMatch(/−20% reload/);
   });
 
@@ -247,7 +258,7 @@ describe("a ledger node line is the mods after reconciliation (Stage 190)", () =
 
   it("the Ghostfile row quotes that same trade, not a rounded camelCase second copy", () => {
     const it = LEDGER_ITEMS.find((x) => x.id === "collateral")!;
-    expect(ledgerTradeText(it)).toBe("+40% regen / −2.25% move, −23.5% reload");
+    expect(ledgerTradeText(it)).toBe("+40% regen / −2.25% move, −23.5% RELOAD");
     expect(ledgerTradeText(it)).not.toMatch(/reloadSpeed/);
     expect(ledgerTradeText(it)).not.toMatch(/−24%/);
   });
