@@ -285,6 +285,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "THE DEPOT CONVOY FLIES WITH A MECH ESCORT\."/);
     expect(src).not.toMatch(/brief: "The depot convoy flies with a mech escort\."/);
   });
+
+  it("WAKE-CELL RESCUE · LEASE ROW's brief is CRT, not the last cell on the Row", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_rescue_row")!.brief;
+    expect(brief).toBe("THE LAST CELL ON THE ROW IS PINNED AT D WITH A MECH ON THEM.");
+    expect(brief).not.toBe("The last cell on the Row is pinned at D with a mech on them.");
+    expect(src).toMatch(/brief: "THE LAST CELL ON THE ROW IS PINNED AT D WITH A MECH ON THEM\."/);
+    expect(src).not.toMatch(/brief: "The last cell on the Row is pinned at D with a mech on them\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
