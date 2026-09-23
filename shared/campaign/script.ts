@@ -42,7 +42,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       n("wake", "terminal", ["FILE OPENED. NAME FIELD: EMPTY.", "YOU WOKE UNLISTED. THREE HOUSES WILL WANT TO KNOW WHY.", "WHO DO YOU ANSWER TO?"], {
         choices: [
           { text: "THE ESTATE — SOMEONE HAS TO HOLD THE PEN.", set: { faction: "estate" }, next: "estate" },
-          { text: "THE CLOCKEATERS — eat the hours the model cannot see.", set: { faction: "clockeaters" }, next: "clockeaters" },
+          { text: "THE CLOCKEATERS — EAT THE HOURS THE MODEL CANNOT SEE.", set: { faction: "clockeaters" }, next: "clockeaters" },
           { text: "THE WAKE CELLS — every node off the model is a mind off the lease.", set: { faction: "cells" }, next: "cells" },
         ],
       }),

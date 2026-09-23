@@ -312,6 +312,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "THE ESTATE — SOMEONE HAS TO HOLD THE PEN\."/);
     expect(src).not.toMatch(/text: "THE ESTATE — someone has to hold the pen\."/);
   });
+
+  it("THE CLOCKEATERS' house pick is CRT, not eat the hours the model cannot see", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "creation")!.nodes.find((n) => n.id === "wake")!.choices!.find((c) => c.set?.faction === "clockeaters")!.text;
+    expect(text).toBe("THE CLOCKEATERS — EAT THE HOURS THE MODEL CANNOT SEE.");
+    expect(text).not.toBe("THE CLOCKEATERS — eat the hours the model cannot see.");
+    expect(src).toMatch(/text: "THE CLOCKEATERS — EAT THE HOURS THE MODEL CANNOT SEE\."/);
+    expect(src).not.toMatch(/text: "THE CLOCKEATERS — eat the hours the model cannot see\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

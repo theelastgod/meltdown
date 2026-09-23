@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-23, at Stage 604, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-23, at Stage 605, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 604 on this branch (THE ESTATE house pick) |
-| Next stage number | **605** |
+| HEAD | Stage 605 on this branch (THE CLOCKEATERS house pick) |
+| Next stage number | **606** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,14 +191,15 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 605 is next
+## 6. Stage 606 is next
 
-Stage 604 CRT-cased THE ESTATE's house pick. THE CLOCKEATERS' house
-pick still says mixed-case `eat the hours the model cannot see`. Title
-cards stay prose (probe:ship asserts them). Crew-code reasons stay
-mixed-case (`probe:campaign` asserts `not a crew code`). Do not loosen
-fairness. Do not plate viewmodel or remote strips. The join line still
-prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
+Stage 605 CRT-cased THE CLOCKEATERS' house pick. THE WAKE CELLS' house
+pick still says mixed-case `every node off the model is a mind off
+the lease`. Title cards stay prose (probe:ship asserts them). Crew-code
+reasons stay mixed-case (`probe:campaign` asserts `not a crew code`).
+Do not loosen fairness. Do not plate viewmodel or remote strips. The
+join line still prints the socket name — `probe:net` asserts
+`probe-join-31`; leave it.
 
 City path tests can time out
 under a full `npm test` (the walkway case has taken ~8 s on this

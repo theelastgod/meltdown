@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 605 — THE CLOCKEATERS' house pick said eat the hours
+
+**Goal.** Stage 604 taught THE ESTATE. THE CLOCKEATERS' house-pick
+choice still said mixed-case `THE CLOCKEATERS — eat the hours the
+model cannot see.`
+
+**What changed.** `THE CLOCKEATERS — EAT THE HOURS THE MODEL CANNOT
+SEE.`
+
+**Proof.** Measured choice was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that script.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 604 — THE ESTATE's house pick said someone has to hold the pen
 
 **Goal.** Stage 603 closed the gig briefs. THE ESTATE's house-pick

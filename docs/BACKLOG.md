@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- THE CLOCKEATERS' house pick still says mixed-case `eat the hours the model cannot see`
+  → Stage 605
 - THE ESTATE's house pick still says mixed-case `someone has to hold the pen`
   → Stage 604
 - SENSOR SABOTAGE · DEPOT's brief still says mixed-case `The depot lattice is the last one the Estate audit can see through`
