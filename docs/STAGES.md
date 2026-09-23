@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 556 — the FILE kit said range
+
+**Goal.** Stage 555 taught THROW. `formatChipLine` still printed
+`range` from STAT_LINE.
+
+**What changed.** `range: "RANGE"`.
+
+**Proof.** Measured LONG BARREL line was mixed-case. After the fix the
+CRT label is the kit. `tests/chiptrade.test.ts` asserts that sentence
+and that chips.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 555 — the FILE kit said throw
 
 **Goal.** Stage 554 taught SLIDE. `formatChipLine` still printed

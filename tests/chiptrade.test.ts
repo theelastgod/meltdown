@@ -165,7 +165,7 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
   it("the FILE kit names DETECTION, not detection", () => {
     const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
     const line = formatChipLine("SUPPRESSOR", [{ stat: "droneDetect", delta: -0.2 }], [{ stat: "range", delta: -0.03 }, { stat: "reloadSpeed", delta: -0.08 }]);
-    expect(line).toBe("SUPPRESSOR: −20% DETECTION / −3% range, −8% RELOAD");
+    expect(line).toBe("SUPPRESSOR: −20% DETECTION / −3% RANGE, −8% RELOAD");
     expect(line).not.toMatch(/−20% detection/);
     expect(src).toMatch(/droneDetect: "DETECTION"/);
     expect(src).not.toMatch(/droneDetect: "detection"/);
@@ -323,6 +323,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(line).not.toMatch(/throw/);
     expect(src).toMatch(/throwSpeed: "THROW"/);
     expect(src).not.toMatch(/throwSpeed: "throw"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
+  it("the FILE kit names RANGE, not range", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("LONG BARREL", [{ stat: "range", delta: 0.03 }], [{ stat: "recoil", delta: 0.04 }]);
+    expect(line).toBe("LONG BARREL: +3% RANGE / +4% RECOIL");
+    expect(line).not.toMatch(/range/);
+    expect(src).toMatch(/range: "RANGE"/);
+    expect(src).not.toMatch(/range: "range"/);
     expect(lintChipSchema()).toEqual([]);
     expect(lintItemSchema()).toEqual([]);
   });

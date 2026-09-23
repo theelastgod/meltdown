@@ -97,7 +97,7 @@ function settle(benefits: StatMod[], costs: StatMod[], mechanic: boolean): StatM
 const STAT_LINE: Partial<Record<StatKey, string>> = {
   spread: "SPREAD",
   recoil: "RECOIL",
-  range: "range",
+  range: "RANGE",
   adsMove: "ADS STRAFE",
   reloadSpeed: "RELOAD",
   fireRate: "FIRE RATE",

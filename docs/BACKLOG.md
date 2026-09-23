@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- the FILE kit still says mixed-case `range`
+  → Stage 556
 - the FILE kit still says mixed-case `throw`
   → Stage 555
 - the FILE kit still says mixed-case `slide`
