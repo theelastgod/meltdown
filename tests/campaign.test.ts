@@ -483,6 +483,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "TAKE THE CHAIR — WITH IDA AT YOUR SHOULDER\."/);
     expect(src).not.toMatch(/text: "TAKE THE CHAIR — with Ida at your shoulder\."/);
   });
+
+  it("creation Ida line 1 is CRT, not I audited leases", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "creation")!.nodes.find((n) => n.id === "estate")!.lines[0];
+    expect(line).toBe("IDA VESSEL. I AUDITED LEASES FOR ELEVEN YEARS BEFORE I READ ONE OF MY OWN.");
+    expect(line).not.toBe("Ida Vessel. I audited leases for eleven years before I read one of my own.");
+    expect(src).toMatch(/"IDA VESSEL\. I AUDITED LEASES FOR ELEVEN YEARS BEFORE I READ ONE OF MY OWN\."/);
+    expect(src).not.toMatch(/"Ida Vessel\. I audited leases for eleven years before I read one of my own\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

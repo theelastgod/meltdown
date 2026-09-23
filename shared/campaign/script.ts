@@ -46,7 +46,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
           { text: "THE WAKE CELLS — EVERY NODE OFF THE MODEL IS A MIND OFF THE LEASE.", set: { faction: "cells" }, next: "cells" },
         ],
       }),
-      n("estate", "vessel", ["Ida Vessel. I audited leases for eleven years before I read one of my own.", "Come to the Office. Bring the Blank you woke as."]),
+      n("estate", "vessel", ["IDA VESSEL. I AUDITED LEASES FOR ELEVEN YEARS BEFORE I READ ONE OF MY OWN.", "Come to the Office. Bring the Blank you woke as."]),
       n("clockeaters", "marrow", ["Marrow. Don't say your name — you haven't got one and that's the point.", "We meet where the clocks are broken. Office. Now."]),
       n("cells", "deacon", ["The Deacon keeps the ledger of the woken. Your line is blank. Good.", "Nodes first. Names later. Come to the Office."]),
     ],

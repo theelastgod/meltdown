@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- Ida's first creation line still says mixed-case `I audited leases for eleven years`
+  → Stage 624
 - m7 TAKE THE CHAIR (Estate) still says mixed-case `with Ida at your shoulder`
   → Stage 623
 - m7 TAKE THE CHAIR (Clockeater) still says mixed-case `and set the model to forget`
