@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- m7 TAKE THE CHAIR (Clockeater) still says mixed-case `and set the model to forget`
+  → Stage 622
 - m7 WIPE THE LEDGER still says mixed-case `Walk out free`
   → Stage 621
 - m6 REDACTED still says mixed-case `Wake them without the terror`

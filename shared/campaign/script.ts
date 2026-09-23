@@ -162,7 +162,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
         choices: [
           { text: "WIPE THE LEDGER. WALK OUT FREE.", set: { "m7:ending": "wipe" }, next: null },
           { text: "TAKE THE CHAIR.", set: { "m7:ending": "chair" }, next: null, gate: { all: { "m4:directive": "kept" } } },
-          { text: "TAKE THE CHAIR — and set the model to forget.", set: { "m7:ending": "chair_clockeater" }, next: null, gate: { all: { "m4:directive": "kept", "m3:volatility": "hold" }, faction: ["clockeaters"] } },
+          { text: "TAKE THE CHAIR — AND SET THE MODEL TO FORGET.", set: { "m7:ending": "chair_clockeater" }, next: null, gate: { all: { "m4:directive": "kept", "m3:volatility": "hold" }, faction: ["clockeaters"] } },
           { text: "TAKE THE CHAIR — with Ida at your shoulder.", set: { "m7:ending": "chair_estate" }, next: null, gate: { all: { "m4:directive": "kept", "m4:vessel": "shield" }, faction: ["estate"] } },
         ],
       }),

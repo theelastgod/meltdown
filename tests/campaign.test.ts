@@ -465,6 +465,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "WIPE THE LEDGER\. WALK OUT FREE\."/);
     expect(src).not.toMatch(/text: "WIPE THE LEDGER\. Walk out free\."/);
   });
+
+  it("m7 TAKE THE CHAIR (Clockeater) is CRT, not and set the model to forget", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "c")!.choices!.find((c) => c.set?.["m7:ending"] === "chair_clockeater")!.text;
+    expect(text).toBe("TAKE THE CHAIR — AND SET THE MODEL TO FORGET.");
+    expect(text).not.toBe("TAKE THE CHAIR — and set the model to forget.");
+    expect(src).toMatch(/text: "TAKE THE CHAIR — AND SET THE MODEL TO FORGET\."/);
+    expect(src).not.toMatch(/text: "TAKE THE CHAIR — and set the model to forget\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
