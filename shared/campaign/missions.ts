@@ -81,7 +81,7 @@ export const MISSIONS: readonly MissionDef[] = [
     title: "DEADLETTER RUN",
     level: "deadletter_docks",
     fixer: "deacon",
-    brief: "Work the docks. Clear the drone patrols off the wake cell's routes and find the informant at C.",
+    brief: "WORK THE DOCKS. CLEAR THE DRONE PATROLS OFF THE WAKE CELL'S ROUTES AND FIND THE INFORMANT AT C.",
     objectives: [{ kind: "kill", target: "wasp", count: 4, text: "DOWN 4 WASPS ON THE DOCK ROUTES" }, reach({ node: "C" }, "FIND THE INFORMANT AT C"), D("m2_informant", "THE INFORMANT"), { kind: "destroy", spots: [{ node: "D" }, { node: "B" }], label: "RELAY", text: "BREAK THE TWO VANTAGE RELAYS" }],
     // the cost of keeping the lease file in m1: the model knows a copy walked out of Lease Row and
     // it is looking for whoever is carrying it. Burning it is the quiet run.

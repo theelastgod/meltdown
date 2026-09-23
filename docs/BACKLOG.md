@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- DEADLETTER RUN's brief still says mixed-case `Work the docks`
+  → Stage 586
 - WAKE UNLISTED's brief still says mixed-case `Steal your own lease file`
   → Stage 585
 - WERN CASE's how still says mixed-case `twenty-five wakes won`

@@ -141,6 +141,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "STEAL YOUR OWN LEASE FILE FROM THE ESCROW TERMINAL AT THE B INTERSECTION\. FIND OUT WHY YOU WERE FLAGGED\."/);
     expect(src).not.toMatch(/brief: "Steal your own lease file from the escrow terminal at the B intersection\. Find out why you were flagged\."/);
   });
+
+  it("DEADLETTER RUN's brief is CRT, not work the docks", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "m2_deadletter_run")!.brief;
+    expect(brief).toBe("WORK THE DOCKS. CLEAR THE DRONE PATROLS OFF THE WAKE CELL'S ROUTES AND FIND THE INFORMANT AT C.");
+    expect(brief).not.toBe("Work the docks. Clear the drone patrols off the wake cell's routes and find the informant at C.");
+    expect(src).toMatch(/brief: "WORK THE DOCKS\. CLEAR THE DRONE PATROLS OFF THE WAKE CELL'S ROUTES AND FIND THE INFORMANT AT C\."/);
+    expect(src).not.toMatch(/brief: "Work the docks\. Clear the drone patrols off the wake cell's routes and find the informant at C\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
