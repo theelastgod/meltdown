@@ -305,4 +305,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("drone_bane", "DRONE BANE", \{ kind: "counter", counter: "waspKills", need: 10 \}, "TEN WASPS DOWNED"\)/);
     expect(src).not.toMatch(/m\("drone_bane", "DRONE BANE", \{ kind: "counter", counter: "waspKills", need: 10 \}, "ten wasps downed"\)/);
   });
+
+  it("MECH BREAKER's how is CRT, not a repo mech disabled", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "mech_breaker")!.how;
+    expect(how).toBe("A REPO MECH DISABLED");
+    expect(how).not.toBe("a repo mech disabled");
+    expect(src).toMatch(/m\("mech_breaker", "MECH BREAKER", \{ kind: "counter", counter: "mechKills", need: 1 \}, "A REPO MECH DISABLED"\)/);
+    expect(src).not.toMatch(/m\("mech_breaker", "MECH BREAKER", \{ kind: "counter", counter: "mechKills", need: 1 \}, "a repo mech disabled"\)/);
+  });
 });

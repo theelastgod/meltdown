@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- MECH BREAKER's how still says mixed-case `a repo mech disabled`
+  → Stage 577
 - DRONE BANE's how still says mixed-case `ten wasps downed`
   → Stage 576
 - FULL WAKE's how still says mixed-case `a district fully woken`
