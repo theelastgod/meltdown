@@ -28,7 +28,7 @@ export const MONIKERS: readonly MonikerDef[] = [
   m("unlisted", "UNLISTED", { kind: "free" }, "EVERY FILE STARTS HERE"),
   m("tenant", "TENANT", { kind: "counter", counter: "matches", need: 1 }, "PLAY A MATCH"),
   m("the_breaker", "LEASE-BREAKER", { kind: "stamp", stamp: "first_kill:lease_breaker" }, "FIRST FILE CLOSED WITH THE LEASE-BREAKER"),
-  m("repo_man", "REPO MAN", { kind: "stamp", stamp: "first_kill:repo_hammer" }, "first file closed with the Repo Hammer"),
+  m("repo_man", "REPO MAN", { kind: "stamp", stamp: "first_kill:repo_hammer" }, "FIRST FILE CLOSED WITH THE REPO HAMMER"),
   m("stacker", "STACKER", { kind: "stamp", stamp: "first_kill:stack_smg" }, "first file closed with the Stack"),
   m("the_longwave", "LONGWAVE", { kind: "stamp", stamp: "first_kill:longwave" }, "first file closed with the Longwave"),
   m("carrier", "CARRIER", { kind: "stamp", stamp: "first_kill:phage" }, "first file closed with the Phage"),
