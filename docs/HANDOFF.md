@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-23, at Stage 599, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-23, at Stage 600, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 599 on this branch (SENSOR SABOTAGE · DOCKS brief) |
-| Next stage number | **600** |
+| HEAD | Stage 600 on this branch (ESCROW HEIST · DOCKS brief) |
+| Next stage number | **601** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,12 +191,12 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 600 is next
+## 6. Stage 601 is next
 
-Stage 599 CRT-cased SENSOR SABOTAGE · DOCKS's brief. ESCROW HEIST ·
-DOCKS still says mixed-case `The harbour escrow at C`. Title cards
-stay prose (probe:ship asserts them). Crew-code reasons stay
-mixed-case (`probe:campaign` asserts `not a crew code`). Do not
+Stage 600 CRT-cased ESCROW HEIST · DOCKS's brief. DRONE CONVOY · DEPOT
+still says mixed-case `The depot convoy flies with a mech escort`.
+Title cards stay prose (probe:ship asserts them). Crew-code reasons
+stay mixed-case (`probe:campaign` asserts `not a crew code`). Do not
 loosen fairness. Do not plate viewmodel or remote strips. The join
 line still prints the socket name — `probe:net` asserts
 `probe-join-31`; leave it.

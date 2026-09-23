@@ -267,6 +267,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "THREE LATTICE POSTS ALONG THE CRANE LINE\."/);
     expect(src).not.toMatch(/brief: "Three lattice posts along the crane line\."/);
   });
+
+  it("ESCROW HEIST · DOCKS's brief is CRT, not the harbour escrow", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_escrow_docks")!.brief;
+    expect(brief).toBe("THE HARBOUR ESCROW AT C PAYS IN CLOCKEATER TIME.");
+    expect(brief).not.toBe("The harbour escrow at C pays in Clockeater time.");
+    expect(src).toMatch(/brief: "THE HARBOUR ESCROW AT C PAYS IN CLOCKEATER TIME\."/);
+    expect(src).not.toMatch(/brief: "The harbour escrow at C pays in Clockeater time\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
