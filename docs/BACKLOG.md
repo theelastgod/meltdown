@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- LISTED's how still says mixed-case `Chapter I — Depth 10`
+  → Stage 581
 - CITIZEN's how still says mixed-case `all three districts played`
   → Stage 580
 - NINE LIVES's how still says mixed-case `a round without a death`

@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-23, at Stage 580, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-23, at Stage 581, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 580 on this branch (CITIZEN how) |
-| Next stage number | **581** |
+| HEAD | Stage 581 on this branch (LISTED how) |
+| Next stage number | **582** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 581 is next
+## 6. Stage 582 is next
 
-Stage 580 CRT-cased CITIZEN's how. LISTED still says mixed-case
-`Chapter I — Depth 10`. Title cards stay prose (probe:ship asserts
+Stage 581 CRT-cased LISTED's how. DIVERGENT still says mixed-case
+`Chapter II — Depth 25`. Title cards stay prose (probe:ship asserts
 them). Crew-code reasons stay mixed-case (`probe:campaign` asserts
 `not a crew code`). Do not loosen fairness. Do not plate viewmodel or
 remote strips. The join line still prints the socket name —
