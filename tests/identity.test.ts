@@ -233,4 +233,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("repo_man", "REPO MAN", \{ kind: "stamp", stamp: "first_kill:repo_hammer" \}, "FIRST FILE CLOSED WITH THE REPO HAMMER"\)/);
     expect(src).not.toMatch(/m\("repo_man", "REPO MAN", \{ kind: "stamp", stamp: "first_kill:repo_hammer" \}, "first file closed with the Repo Hammer"\)/);
   });
+
+  it("STACKER's how is CRT, not first file closed with the Stack", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "stacker")!.how;
+    expect(how).toBe("FIRST FILE CLOSED WITH THE STACK");
+    expect(how).not.toBe("first file closed with the Stack");
+    expect(src).toMatch(/m\("stacker", "STACKER", \{ kind: "stamp", stamp: "first_kill:stack_smg" \}, "FIRST FILE CLOSED WITH THE STACK"\)/);
+    expect(src).not.toMatch(/m\("stacker", "STACKER", \{ kind: "stamp", stamp: "first_kill:stack_smg" \}, "first file closed with the Stack"\)/);
+  });
 });

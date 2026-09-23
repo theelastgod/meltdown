@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- STACKER's how still says mixed-case `first file closed with the Stack`
+  → Stage 569
 - REPO MAN's how still says mixed-case `first file closed with the Repo Hammer`
   → Stage 568
 - LEASE-BREAKER's how still says mixed-case `first file closed with the Lease-Breaker`
