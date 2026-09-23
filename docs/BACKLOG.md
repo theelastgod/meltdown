@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- Ida's second creation line still says mixed-case `Come to the Office. Bring the Blank you woke as.`
+  → Stage 625
 - Ida's first creation line still says mixed-case `I audited leases for eleven years`
   → Stage 624
 - m7 TAKE THE CHAIR (Estate) still says mixed-case `with Ida at your shoulder`

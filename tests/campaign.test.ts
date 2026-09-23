@@ -492,6 +492,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"IDA VESSEL\. I AUDITED LEASES FOR ELEVEN YEARS BEFORE I READ ONE OF MY OWN\."/);
     expect(src).not.toMatch(/"Ida Vessel\. I audited leases for eleven years before I read one of my own\."/);
   });
+
+  it("creation Ida line 2 is CRT, not come to the Office", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "creation")!.nodes.find((n) => n.id === "estate")!.lines[1];
+    expect(line).toBe("COME TO THE OFFICE. BRING THE BLANK YOU WOKE AS.");
+    expect(line).not.toBe("Come to the Office. Bring the Blank you woke as.");
+    expect(src).toMatch(/"COME TO THE OFFICE\. BRING THE BLANK YOU WOKE AS\."/);
+    expect(src).not.toMatch(/"Come to the Office\. Bring the Blank you woke as\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

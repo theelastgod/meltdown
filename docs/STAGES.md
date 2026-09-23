@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 625 — Ida's second line said come to the Office
+
+**Goal.** Stage 624 taught Ida's first line. Her second still said
+mixed-case `Come to the Office. Bring the Blank you woke as.`
+
+**What changed.** `COME TO THE OFFICE. BRING THE BLANK YOU WOKE AS.`
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/campaign.test.ts` asserts that sentence and
+that script.ts must not the mixed-case template. Mutation: mixed case
+again — 1 fail.
+
 ## Stage 624 — Ida's first line said I audited leases
 
 **Goal.** Stage 623 closed the last campaign *choice*. Ida's first
