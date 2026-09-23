@@ -66,7 +66,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       n("a", "terminal", ["THE FILE IS IN YOUR HANDS. IT IS WARM.", "ONE PAGE. YOUR SLEEP, YOUR DEBTS, YOUR NAME REDACTED, AND A FORECAST WITH YOUR GLYPH IN IT."], {
         choices: [
           { text: "BURN IT. THE MODEL KEEPS NO COPY IT CAN TRUST.", set: { "m1:lease": "burn" }, next: "burn" },
-          { text: "KEEP IT. Evidence is a weapon.", set: { "m1:lease": "keep" }, next: "keep" },
+          { text: "KEEP IT. EVIDENCE IS A WEAPON.", set: { "m1:lease": "keep" }, next: "keep" },
         ],
       }),
       n("burn", "you", ["The page goes up cyan, then black. Somewhere a ledger line becomes a question mark."]),

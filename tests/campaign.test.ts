@@ -339,6 +339,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "BURN IT\. THE MODEL KEEPS NO COPY IT CAN TRUST\."/);
     expect(src).not.toMatch(/text: "BURN IT\. The model keeps no copy it can trust\."/);
   });
+
+  it("m1 KEEP IT is CRT, not evidence is a weapon", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m1_file")!.nodes.find((n) => n.id === "a")!.choices!.find((c) => c.set?.["m1:lease"] === "keep")!.text;
+    expect(text).toBe("KEEP IT. EVIDENCE IS A WEAPON.");
+    expect(text).not.toBe("KEEP IT. Evidence is a weapon.");
+    expect(src).toMatch(/text: "KEEP IT\. EVIDENCE IS A WEAPON\."/);
+    expect(src).not.toMatch(/text: "KEEP IT\. Evidence is a weapon\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
