@@ -350,4 +350,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("listed", "LISTED", \{ kind: "chapter", chapter: 1 \}, "CHAPTER I — DEPTH 10"\)/);
     expect(src).not.toMatch(/m\("listed", "LISTED", \{ kind: "chapter", chapter: 1 \}, "Chapter I — Depth 10"\)/);
   });
+
+  it("DIVERGENT's how is CRT, not Chapter II — Depth 25", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "divergent")!.how;
+    expect(how).toBe("CHAPTER II — DEPTH 25");
+    expect(how).not.toBe("Chapter II — Depth 25");
+    expect(src).toMatch(/m\("divergent", "DIVERGENT", \{ kind: "chapter", chapter: 2 \}, "CHAPTER II — DEPTH 25"\)/);
+    expect(src).not.toMatch(/m\("divergent", "DIVERGENT", \{ kind: "chapter", chapter: 2 \}, "Chapter II — Depth 25"\)/);
+  });
 });

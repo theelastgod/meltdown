@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- DIVERGENT's how still says mixed-case `Chapter II — Depth 25`
+  → Stage 582
 - LISTED's how still says mixed-case `Chapter I — Depth 10`
   → Stage 581
 - CITIZEN's how still says mixed-case `all three districts played`

@@ -42,7 +42,7 @@ export const MONIKERS: readonly MonikerDef[] = [
   m("nine_lives", "NINE LIVES", { kind: "counter", counter: "noDeathRounds", need: 1 }, "A ROUND WITHOUT A DEATH"),
   m("citizen", "CITIZEN", { kind: "counter", counter: "districts", need: 3 }, "ALL THREE DISTRICTS PLAYED"),
   m("listed", "LISTED", { kind: "chapter", chapter: 1 }, "CHAPTER I — DEPTH 10"),
-  m("divergent", "DIVERGENT", { kind: "chapter", chapter: 2 }, "Chapter II — Depth 25"),
+  m("divergent", "DIVERGENT", { kind: "chapter", chapter: 2 }, "CHAPTER II — DEPTH 25"),
   m("named", "NAMED", { kind: "chapter", chapter: 3 }, "Chapter III — Depth 50"),
   m("wern_case", "WERN CASE", { kind: "counter", counter: "wins", need: 25 }, "twenty-five wakes won"),
 ];
