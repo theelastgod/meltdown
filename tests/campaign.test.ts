@@ -321,6 +321,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "THE CLOCKEATERS — EAT THE HOURS THE MODEL CANNOT SEE\."/);
     expect(src).not.toMatch(/text: "THE CLOCKEATERS — eat the hours the model cannot see\."/);
   });
+
+  it("THE WAKE CELLS' house pick is CRT, not every node off the model", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "creation")!.nodes.find((n) => n.id === "wake")!.choices!.find((c) => c.set?.faction === "cells")!.text;
+    expect(text).toBe("THE WAKE CELLS — EVERY NODE OFF THE MODEL IS A MIND OFF THE LEASE.");
+    expect(text).not.toBe("THE WAKE CELLS — every node off the model is a mind off the lease.");
+    expect(src).toMatch(/text: "THE WAKE CELLS — EVERY NODE OFF THE MODEL IS A MIND OFF THE LEASE\."/);
+    expect(src).not.toMatch(/text: "THE WAKE CELLS — every node off the model is a mind off the lease\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

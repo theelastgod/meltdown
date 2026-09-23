@@ -43,7 +43,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
         choices: [
           { text: "THE ESTATE — SOMEONE HAS TO HOLD THE PEN.", set: { faction: "estate" }, next: "estate" },
           { text: "THE CLOCKEATERS — EAT THE HOURS THE MODEL CANNOT SEE.", set: { faction: "clockeaters" }, next: "clockeaters" },
-          { text: "THE WAKE CELLS — every node off the model is a mind off the lease.", set: { faction: "cells" }, next: "cells" },
+          { text: "THE WAKE CELLS — EVERY NODE OFF THE MODEL IS A MIND OFF THE LEASE.", set: { faction: "cells" }, next: "cells" },
         ],
       }),
       n("estate", "vessel", ["Ida Vessel. I audited leases for eleven years before I read one of my own.", "Come to the Office. Bring the Blank you woke as."]),
