@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- LEDGER HAND's how still says mixed-case `ten nodes pulled off the model`
+  → Stage 574
 - SLIDER's how still says mixed-case `a slide-jump kill`
   → Stage 573
 - LIVE WIRE's how still says mixed-case `first file closed with the Shock Baton`

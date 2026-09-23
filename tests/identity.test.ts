@@ -278,4 +278,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("slider", "SLIDER", \{ kind: "counter", counter: "slideJumpKills", need: 1 \}, "A SLIDE-JUMP KILL"\)/);
     expect(src).not.toMatch(/m\("slider", "SLIDER", \{ kind: "counter", counter: "slideJumpKills", need: 1 \}, "a slide-jump kill"\)/);
   });
+
+  it("LEDGER HAND's how is CRT, not ten nodes pulled off the model", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "ledger_hand")!.how;
+    expect(how).toBe("TEN NODES PULLED OFF THE MODEL");
+    expect(how).not.toBe("ten nodes pulled off the model");
+    expect(src).toMatch(/m\("ledger_hand", "LEDGER HAND", \{ kind: "counter", counter: "flips", need: 10 \}, "TEN NODES PULLED OFF THE MODEL"\)/);
+    expect(src).not.toMatch(/m\("ledger_hand", "LEDGER HAND", \{ kind: "counter", counter: "flips", need: 10 \}, "ten nodes pulled off the model"\)/);
+  });
 });
