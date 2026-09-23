@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 539 — the FILE kit said ADS strafe
+
+**Goal.** Stage 538 closed the last mixed-case chip mechanic lead.
+`formatChipLine` still printed `ADS strafe` from STAT_LINE.
+
+**What changed.** `adsMove: "ADS STRAFE"`.
+
+**Proof.** Measured STACK SMG CHOKE line was mixed-case. After the fix
+the CRT label is the kit. `tests/chiptrade.test.ts` asserts that
+sentence and that chips.ts must not the mixed-case template. Mutation:
+mixed case again — 1 fail.
+
 ## Stage 538 — VANTAGE BANE's FILE lead said bonus damage to VANTAGE units
 
 **Goal.** Stage 537 taught ESCROW LOCK. VANTAGE BANE still said

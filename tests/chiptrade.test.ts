@@ -78,7 +78,7 @@ describe("the conversion is scoped to the weapon that needs it", () => {
     expect(choke.costs).toEqual([{ stat: "adsMove", delta: -0.12 }]);
     expect(comp.costs).toEqual([{ stat: "spread", delta: 0.12 }]);
     expect(choke.costs).not.toEqual(comp.costs);
-    expect(choke.line).toBe("CHOKE: −12% recoil / −12% ADS strafe");
+    expect(choke.line).toBe("CHOKE: −12% recoil / −12% ADS STRAFE");
   });
 
   it("keeps a multi-part chip's other half intact", () => {
@@ -100,7 +100,7 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
 
   it("the SMG's CHOKE names recoil, not the spread it no longer has", () => {
     const c = CHIPS.find((x) => x.id === "stack_smg:choke")!;
-    expect(c.line).toBe("CHOKE: −12% recoil / −12% ADS strafe");
+    expect(c.line).toBe("CHOKE: −12% recoil / −12% ADS STRAFE");
     expect(c.line).not.toMatch(/spread/);
   });
 
@@ -140,6 +140,15 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(line).not.toMatch(/bonus damage to VANTAGE units/);
     expect(src).toMatch(/vantage_bane: "BONUS DAMAGE TO VANTAGE UNITS"/);
     expect(src).not.toMatch(/vantage_bane: "bonus damage to VANTAGE units"/);
+  });
+
+  it("the FILE kit names ADS STRAFE, not ADS strafe", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = CHIPS.find((c) => c.id === "stack_smg:choke")!.line;
+    expect(line).toBe("CHOKE: −12% recoil / −12% ADS STRAFE");
+    expect(line).not.toMatch(/ADS strafe/);
+    expect(src).toMatch(/adsMove: "ADS STRAFE"/);
+    expect(src).not.toMatch(/adsMove: "ADS strafe"/);
   });
 
   it("and the lint fires when a line is the template the mods left behind", () => {

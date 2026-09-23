@@ -98,7 +98,7 @@ const STAT_LINE: Partial<Record<StatKey, string>> = {
   spread: "spread",
   recoil: "recoil",
   range: "range",
-  adsMove: "ADS strafe",
+  adsMove: "ADS STRAFE",
   reloadSpeed: "reload",
   fireRate: "fire rate",
   moveSpeed: "move",
