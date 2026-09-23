@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 584 — WERN CASE's how said twenty-five wakes won
+
+**Goal.** Stage 583 taught NAMED. WERN CASE still said mixed-case
+`twenty-five wakes won`.
+
+**What changed.** `TWENTY-FIVE WAKES WON`.
+
+**Proof.** Measured how was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/identity.test.ts` asserts that sentence and
+that monikers.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 583 — NAMED's how said Chapter III — Depth 50
 
 **Goal.** Stage 582 taught DIVERGENT. NAMED still said mixed-case

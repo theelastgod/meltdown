@@ -368,4 +368,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("named", "NAMED", \{ kind: "chapter", chapter: 3 \}, "CHAPTER III — DEPTH 50"\)/);
     expect(src).not.toMatch(/m\("named", "NAMED", \{ kind: "chapter", chapter: 3 \}, "Chapter III — Depth 50"\)/);
   });
+
+  it("WERN CASE's how is CRT, not twenty-five wakes won", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "wern_case")!.how;
+    expect(how).toBe("TWENTY-FIVE WAKES WON");
+    expect(how).not.toBe("twenty-five wakes won");
+    expect(src).toMatch(/m\("wern_case", "WERN CASE", \{ kind: "counter", counter: "wins", need: 25 \}, "TWENTY-FIVE WAKES WON"\)/);
+    expect(src).not.toMatch(/m\("wern_case", "WERN CASE", \{ kind: "counter", counter: "wins", need: 25 \}, "twenty-five wakes won"\)/);
+  });
 });

@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- WERN CASE's how still says mixed-case `twenty-five wakes won`
+  → Stage 584
 - NAMED's how still says mixed-case `Chapter III — Depth 50`
   → Stage 583
 - DIVERGENT's how still says mixed-case `Chapter II — Depth 25`

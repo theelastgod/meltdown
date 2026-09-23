@@ -44,7 +44,7 @@ export const MONIKERS: readonly MonikerDef[] = [
   m("listed", "LISTED", { kind: "chapter", chapter: 1 }, "CHAPTER I — DEPTH 10"),
   m("divergent", "DIVERGENT", { kind: "chapter", chapter: 2 }, "CHAPTER II — DEPTH 25"),
   m("named", "NAMED", { kind: "chapter", chapter: 3 }, "CHAPTER III — DEPTH 50"),
-  m("wern_case", "WERN CASE", { kind: "counter", counter: "wins", need: 25 }, "twenty-five wakes won"),
+  m("wern_case", "WERN CASE", { kind: "counter", counter: "wins", need: 25 }, "TWENTY-FIVE WAKES WON"),
 ];
 
 export interface ChapterDef {
