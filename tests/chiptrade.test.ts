@@ -228,6 +228,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(lintItemSchema()).toEqual([]);
   });
 
+  it("the FILE kit names MOVE, not move", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("SLING", [{ stat: "moveSpeed", delta: 0.015 }], [{ stat: "reloadSpeed", delta: -0.035 }]);
+    expect(line).toBe("SLING: +1.5% MOVE / −3.5% RELOAD");
+    expect(line).not.toMatch(/move/);
+    expect(src).toMatch(/moveSpeed: "MOVE"/);
+    expect(src).not.toMatch(/moveSpeed: "move"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };
@@ -258,7 +269,7 @@ describe("a ledger node line is the mods after reconciliation (Stage 190)", () =
 
   it("the Ghostfile row quotes that same trade, not a rounded camelCase second copy", () => {
     const it = LEDGER_ITEMS.find((x) => x.id === "collateral")!;
-    expect(ledgerTradeText(it)).toBe("+40% regen / −2.25% move, −23.5% RELOAD");
+    expect(ledgerTradeText(it)).toBe("+40% regen / −2.25% MOVE, −23.5% RELOAD");
     expect(ledgerTradeText(it)).not.toMatch(/reloadSpeed/);
     expect(ledgerTradeText(it)).not.toMatch(/−24%/);
   });

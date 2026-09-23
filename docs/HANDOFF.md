@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 546, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 547, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 546 on this branch (RELOAD STAT_LINE) |
-| Next stage number | **547** |
+| HEAD | Stage 547 on this branch (MOVE STAT_LINE) |
+| Next stage number | **548** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,16 +191,15 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 547 is next
+## 6. Stage 548 is next
 
-Stage 546 CRT-cased STAT_LINE `RELOAD`. Remaining STAT_LINE
-labels still print mixed-case (`move`,
-`footsteps`, `flip`, `regen`, `headshot`, `grenade`, `mantle`,
-`slide`, `throw`, `range`). Title cards stay prose (probe:ship asserts
-them). Crew-code reasons stay mixed-case (`probe:campaign` asserts
-`not a crew code`). Do not loosen fairness. Do not plate viewmodel or
-remote strips. The join line still prints the socket name —
-`probe:net` asserts `probe-join-31`; leave it.
+Stage 547 CRT-cased STAT_LINE `MOVE`. Remaining STAT_LINE
+labels still print mixed-case (`footsteps`, `flip`, `regen`,
+`headshot`, `grenade`, `mantle`, `slide`, `throw`, `range`). Title
+cards stay prose (probe:ship asserts them). Crew-code reasons stay
+mixed-case (`probe:campaign` asserts `not a crew code`). Do not loosen
+fairness. Do not plate viewmodel or remote strips. The join line still
+prints the socket name — `probe:net` asserts `probe-join-31`; leave it.
 
 City path tests can time out
 under a full `npm test` (the walkway case has taken ~8 s on this
