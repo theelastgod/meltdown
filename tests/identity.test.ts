@@ -296,4 +296,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("full_wake", "FULL WAKE", \{ kind: "counter", counter: "fullWakes", need: 1 \}, "A DISTRICT FULLY WOKEN"\)/);
     expect(src).not.toMatch(/m\("full_wake", "FULL WAKE", \{ kind: "counter", counter: "fullWakes", need: 1 \}, "a district fully woken"\)/);
   });
+
+  it("DRONE BANE's how is CRT, not ten wasps downed", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "drone_bane")!.how;
+    expect(how).toBe("TEN WASPS DOWNED");
+    expect(how).not.toBe("ten wasps downed");
+    expect(src).toMatch(/m\("drone_bane", "DRONE BANE", \{ kind: "counter", counter: "waspKills", need: 10 \}, "TEN WASPS DOWNED"\)/);
+    expect(src).not.toMatch(/m\("drone_bane", "DRONE BANE", \{ kind: "counter", counter: "waspKills", need: 10 \}, "ten wasps downed"\)/);
+  });
 });
