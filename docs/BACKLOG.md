@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- LEASE-BREAKER's how still says mixed-case `first file closed with the Lease-Breaker`
+  → Stage 567
 - TENANT's how still says mixed-case `play a match`
   → Stage 566
 - UNLISTED's how still says mixed-case `every file starts here`

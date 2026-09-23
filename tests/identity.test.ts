@@ -215,4 +215,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("tenant", "TENANT", \{ kind: "counter", counter: "matches", need: 1 \}, "PLAY A MATCH"\)/);
     expect(src).not.toMatch(/m\("tenant", "TENANT", \{ kind: "counter", counter: "matches", need: 1 \}, "play a match"\)/);
   });
+
+  it("LEASE-BREAKER's how is CRT, not first file closed with the Lease-Breaker", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "the_breaker")!.how;
+    expect(how).toBe("FIRST FILE CLOSED WITH THE LEASE-BREAKER");
+    expect(how).not.toBe("first file closed with the Lease-Breaker");
+    expect(src).toMatch(/m\("the_breaker", "LEASE-BREAKER", \{ kind: "stamp", stamp: "first_kill:lease_breaker" \}, "FIRST FILE CLOSED WITH THE LEASE-BREAKER"\)/);
+    expect(src).not.toMatch(/m\("the_breaker", "LEASE-BREAKER", \{ kind: "stamp", stamp: "first_kill:lease_breaker" \}, "first file closed with the Lease-Breaker"\)/);
+  });
 });
