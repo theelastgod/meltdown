@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 595 — SENSOR SABOTAGE · LEASE ROW's brief said two lattice posts
+
+**Goal.** Stage 594 taught WAKE-CELL RESCUE · DEPOT. SENSOR SABOTAGE ·
+LEASE ROW still said mixed-case `Two lattice posts on the walkway
+street. The Estate wants them dark before the audit.`
+
+**What changed.** `TWO LATTICE POSTS ON THE WALKWAY STREET. THE ESTATE
+WANTS THEM DARK BEFORE THE AUDIT.`
+
+**Proof.** Measured brief was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that missions.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 594 — WAKE-CELL RESCUE · DEPOT's brief said a cell is pinned
 
 **Goal.** Stage 593 taught DRONE CONVOY · DOCKS. WAKE-CELL RESCUE ·

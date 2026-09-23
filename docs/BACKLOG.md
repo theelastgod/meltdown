@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- SENSOR SABOTAGE · LEASE ROW's brief still says mixed-case `Two lattice posts on the walkway street`
+  → Stage 595
 - WAKE-CELL RESCUE · DEPOT's brief still says mixed-case `A cell is pinned under the impound searchlight`
   → Stage 594
 - DRONE CONVOY · DOCKS's brief still says mixed-case `A wasp convoy crosses the docks`

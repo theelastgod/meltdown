@@ -222,6 +222,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "A CELL IS PINNED UNDER THE IMPOUND SEARCHLIGHT AT C\. GET THEM OUT\."/);
     expect(src).not.toMatch(/brief: "A cell is pinned under the impound searchlight at C\. Get them out\."/);
   });
+
+  it("SENSOR SABOTAGE · LEASE ROW's brief is CRT, not two lattice posts", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_lattice_row")!.brief;
+    expect(brief).toBe("TWO LATTICE POSTS ON THE WALKWAY STREET. THE ESTATE WANTS THEM DARK BEFORE THE AUDIT.");
+    expect(brief).not.toBe("Two lattice posts on the walkway street. The Estate wants them dark before the audit.");
+    expect(src).toMatch(/brief: "TWO LATTICE POSTS ON THE WALKWAY STREET\. THE ESTATE WANTS THEM DARK BEFORE THE AUDIT\."/);
+    expect(src).not.toMatch(/brief: "Two lattice posts on the walkway street\. The Estate wants them dark before the audit\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
