@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- VARIANCE's brief still says mixed-case `Pull the depot's logs`
+  → Stage 587
 - DEADLETTER RUN's brief still says mixed-case `Work the docks`
   → Stage 586
 - WAKE UNLISTED's brief still says mixed-case `Steal your own lease file`

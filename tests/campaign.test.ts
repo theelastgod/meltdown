@@ -150,6 +150,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "WORK THE DOCKS\. CLEAR THE DRONE PATROLS OFF THE WAKE CELL'S ROUTES AND FIND THE INFORMANT AT C\."/);
     expect(src).not.toMatch(/brief: "Work the docks\. Clear the drone patrols off the wake cell's routes and find the informant at C\."/);
   });
+
+  it("VARIANCE's brief is CRT, not pull the depot's logs", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "m3_repo_volatility")!.brief;
+    expect(brief).toBe("PULL THE DEPOT'S LOGS. HOLD THE PLAZA WHILE THEY COPY, AND DISABLE THE MECH VANTAGE SENDS TO STOP YOU.");
+    expect(brief).not.toBe("Pull the depot's logs. Hold the plaza while they copy, and disable the mech VANTAGE sends to stop you.");
+    expect(src).toMatch(/brief: "PULL THE DEPOT'S LOGS\. HOLD THE PLAZA WHILE THEY COPY, AND DISABLE THE MECH VANTAGE SENDS TO STOP YOU\."/);
+    expect(src).not.toMatch(/brief: "Pull the depot's logs\. Hold the plaza while they copy, and disable the mech VANTAGE sends to stop you\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

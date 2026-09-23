@@ -97,7 +97,7 @@ export const MISSIONS: readonly MissionDef[] = [
     title: "VARIANCE",
     level: "repo_depot",
     fixer: "marrow",
-    brief: "Pull the depot's logs. Hold the plaza while they copy, and disable the mech VANTAGE sends to stop you.",
+    brief: "PULL THE DEPOT'S LOGS. HOLD THE PLAZA WHILE THEY COPY, AND DISABLE THE MECH VANTAGE SENDS TO STOP YOU.",
     objectives: [{ kind: "hold", at: { node: "A" }, radius: 7, seconds: 30, text: "HOLD THE PLAZA WHILE THE LOGS COPY", waves: 2 }, { kind: "kill", target: "mech", count: 1, text: "DISABLE THE REPO MECH" }, D("m3_volatility", "THE LOGS")],
     reward: { scrip: 500, xp: 1300, protocol: "filament_core" },
     wasps: 3,
