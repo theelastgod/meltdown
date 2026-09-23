@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- SLIDER's how still says mixed-case `a slide-jump kill`
+  → Stage 573
 - LIVE WIRE's how still says mixed-case `first file closed with the Shock Baton`
   → Stage 572
 - CARRIER's how still says mixed-case `first file closed with the Phage`

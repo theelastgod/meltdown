@@ -269,4 +269,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("live_wire", "LIVE WIRE", \{ kind: "stamp", stamp: "first_kill:shock_baton" \}, "FIRST FILE CLOSED WITH THE SHOCK BATON"\)/);
     expect(src).not.toMatch(/m\("live_wire", "LIVE WIRE", \{ kind: "stamp", stamp: "first_kill:shock_baton" \}, "first file closed with the Shock Baton"\)/);
   });
+
+  it("SLIDER's how is CRT, not a slide-jump kill", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "slider")!.how;
+    expect(how).toBe("A SLIDE-JUMP KILL");
+    expect(how).not.toBe("a slide-jump kill");
+    expect(src).toMatch(/m\("slider", "SLIDER", \{ kind: "counter", counter: "slideJumpKills", need: 1 \}, "A SLIDE-JUMP KILL"\)/);
+    expect(src).not.toMatch(/m\("slider", "SLIDER", \{ kind: "counter", counter: "slideJumpKills", need: 1 \}, "a slide-jump kill"\)/);
+  });
 });

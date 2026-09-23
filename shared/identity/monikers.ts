@@ -33,7 +33,7 @@ export const MONIKERS: readonly MonikerDef[] = [
   m("the_longwave", "LONGWAVE", { kind: "stamp", stamp: "first_kill:longwave" }, "FIRST FILE CLOSED WITH THE LONGWAVE"),
   m("carrier", "CARRIER", { kind: "stamp", stamp: "first_kill:phage" }, "FIRST FILE CLOSED WITH THE PHAGE"),
   m("live_wire", "LIVE WIRE", { kind: "stamp", stamp: "first_kill:shock_baton" }, "FIRST FILE CLOSED WITH THE SHOCK BATON"),
-  m("slider", "SLIDER", { kind: "counter", counter: "slideJumpKills", need: 1 }, "a slide-jump kill"),
+  m("slider", "SLIDER", { kind: "counter", counter: "slideJumpKills", need: 1 }, "A SLIDE-JUMP KILL"),
   m("ledger_hand", "LEDGER HAND", { kind: "counter", counter: "flips", need: 10 }, "ten nodes pulled off the model"),
   m("full_wake", "FULL WAKE", { kind: "counter", counter: "fullWakes", need: 1 }, "a district fully woken"),
   m("drone_bane", "DRONE BANE", { kind: "counter", counter: "waspKills", need: 10 }, "ten wasps downed"),
