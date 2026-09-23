@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- WAKE-CELL RESCUE · DEPOT's brief still says mixed-case `A cell is pinned under the impound searchlight`
+  → Stage 594
 - DRONE CONVOY · DOCKS's brief still says mixed-case `A wasp convoy crosses the docks`
   → Stage 593
 - ESCROW HEIST · LEASE ROW's brief still says mixed-case `Crack the escrow terminal at D`

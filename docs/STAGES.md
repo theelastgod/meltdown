@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 594 — WAKE-CELL RESCUE · DEPOT's brief said a cell is pinned
+
+**Goal.** Stage 593 taught DRONE CONVOY · DOCKS. WAKE-CELL RESCUE ·
+DEPOT still said mixed-case `A cell is pinned under the impound
+searchlight at C. Get them out.`
+
+**What changed.** `A CELL IS PINNED UNDER THE IMPOUND SEARCHLIGHT AT C.
+GET THEM OUT.`
+
+**Proof.** Measured brief was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that missions.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 593 — DRONE CONVOY · DOCKS's brief said a wasp convoy
 
 **Goal.** Stage 592 taught ESCROW HEIST · LEASE ROW. DRONE CONVOY ·

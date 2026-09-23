@@ -213,6 +213,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "A WASP CONVOY CROSSES THE DOCKS AT HEIGHT\. AMBUSH IT FROM THE WALKWAY\."/);
     expect(src).not.toMatch(/brief: "A wasp convoy crosses the docks at height\. Ambush it from the walkway\."/);
   });
+
+  it("WAKE-CELL RESCUE · DEPOT's brief is CRT, not a cell is pinned", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_rescue_depot")!.brief;
+    expect(brief).toBe("A CELL IS PINNED UNDER THE IMPOUND SEARCHLIGHT AT C. GET THEM OUT.");
+    expect(brief).not.toBe("A cell is pinned under the impound searchlight at C. Get them out.");
+    expect(src).toMatch(/brief: "A CELL IS PINNED UNDER THE IMPOUND SEARCHLIGHT AT C\. GET THEM OUT\."/);
+    expect(src).not.toMatch(/brief: "A cell is pinned under the impound searchlight at C\. Get them out\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
