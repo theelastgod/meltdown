@@ -206,4 +206,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("unlisted", "UNLISTED", \{ kind: "free" \}, "EVERY FILE STARTS HERE"\)/);
     expect(src).not.toMatch(/m\("unlisted", "UNLISTED", \{ kind: "free" \}, "every file starts here"\)/);
   });
+
+  it("TENANT's how is CRT, not play a match", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "tenant")!.how;
+    expect(how).toBe("PLAY A MATCH");
+    expect(how).not.toBe("play a match");
+    expect(src).toMatch(/m\("tenant", "TENANT", \{ kind: "counter", counter: "matches", need: 1 \}, "PLAY A MATCH"\)/);
+    expect(src).not.toMatch(/m\("tenant", "TENANT", \{ kind: "counter", counter: "matches", need: 1 \}, "play a match"\)/);
+  });
 });

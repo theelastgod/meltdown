@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- TENANT's how still says mixed-case `play a match`
+  → Stage 566
 - UNLISTED's how still says mixed-case `every file starts here`
   → Stage 565
 - DIRECTIVE OPTIC's protocol line still says mixed-case `+15% range`

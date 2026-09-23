@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 566 — TENANT's how said play a match
+
+**Goal.** Stage 565 taught UNLISTED. TENANT still said mixed-case
+`play a match`.
+
+**What changed.** `PLAY A MATCH`.
+
+**Proof.** Measured how was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/identity.test.ts` asserts that sentence and
+that monikers.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 565 — UNLISTED's how said every file starts here
 
 **Goal.** Stage 564 closed the Kernel protocol mill. The FILE still
