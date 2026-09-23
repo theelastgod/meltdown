@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 561 — FILAMENT CORE's protocol line said the filament runs down the barrel
+
+**Goal.** Stage 560 taught WERN PULSE. FILAMENT CORE still said
+mixed-case `+15% damage. The filament runs down the barrel and into
+your wrist.`
+
+**What changed.** `+15% DAMAGE. THE FILAMENT RUNS DOWN THE BARREL AND
+INTO YOUR WRIST.`
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/campaign.test.ts` asserts that sentence and
+that protocols.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 560 — WERN PULSE's protocol line said fire rate
 
 **Goal.** Stage 559 closed the last mixed-case keystone FILE line.

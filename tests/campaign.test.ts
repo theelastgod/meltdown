@@ -96,6 +96,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/p\("wern_pulse", "WERN PULSE", "\+12% FIRE RATE, \+10% RELOAD\. THE RHYTHM OF THE DIRECTIVE\."/);
     expect(src).not.toMatch(/p\("wern_pulse", "WERN PULSE", "\+12% fire rate, \+10% reload\. The rhythm of the Directive\."/);
   });
+
+  it("FILAMENT CORE's protocol line is CRT, not the filament runs down the barrel", () => {
+    const src = readFileSync(new URL("../shared/campaign/protocols.ts", import.meta.url), "utf8");
+    const line = PROTOCOLS.find((p) => p.id === "filament_core")!.line;
+    expect(line).toBe("+15% DAMAGE. THE FILAMENT RUNS DOWN THE BARREL AND INTO YOUR WRIST.");
+    expect(line).not.toBe("+15% damage. The filament runs down the barrel and into your wrist.");
+    expect(src).toMatch(/p\("filament_core", "FILAMENT CORE", "\+15% DAMAGE\. THE FILAMENT RUNS DOWN THE BARREL AND INTO YOUR WRIST\."/);
+    expect(src).not.toMatch(/p\("filament_core", "FILAMENT CORE", "\+15% damage\. The filament runs down the barrel and into your wrist\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

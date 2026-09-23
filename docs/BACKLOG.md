@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- FILAMENT CORE's protocol line still says mixed-case `the filament runs down the barrel`
+  → Stage 561
 - WERN PULSE's protocol line still says mixed-case `+12% fire rate`
   → Stage 560
 - BAD DEBT's FILE line still says mixed-case `loud on the model`
