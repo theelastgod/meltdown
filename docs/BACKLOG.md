@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- m5 ALL OF IT still says mixed-case `Blind the model everywhere`
+  → Stage 617
 - m4 EXPOSE HER still says mixed-case `She's the defector; you're the Blank`
   → Stage 616
 - m4 SHIELD HER still says mixed-case `Take the light`

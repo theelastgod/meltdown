@@ -420,6 +420,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "EXPOSE HER\. SHE'S THE DEFECTOR; YOU'RE THE BLANK\."/);
     expect(src).not.toMatch(/text: "EXPOSE HER\. She's the defector; you're the Blank\."/);
   });
+
+  it("m5 ALL OF IT is CRT, not blind the model everywhere", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m5_lattice")!.nodes.find((n) => n.id === "a")!.choices!.find((c) => c.set?.["m5:lattice"] === "all")!.text;
+    expect(text).toBe("ALL OF IT. BLIND THE MODEL EVERYWHERE.");
+    expect(text).not.toBe("ALL OF IT. Blind the model everywhere.");
+    expect(src).toMatch(/text: "ALL OF IT\. BLIND THE MODEL EVERYWHERE\."/);
+    expect(src).not.toMatch(/text: "ALL OF IT\. Blind the model everywhere\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

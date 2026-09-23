@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 617 — m5 ALL OF IT said blind the model everywhere
+
+**Goal.** Stage 616 taught EXPOSE HER. m5's ALL OF IT choice still said
+mixed-case `ALL OF IT. Blind the model everywhere.`
+
+**What changed.** `ALL OF IT. BLIND THE MODEL EVERYWHERE.`
+
+**Proof.** Measured choice was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that script.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 616 — m4 EXPOSE HER said she's the defector
 
 **Goal.** Stage 615 taught SHIELD HER. m4's EXPOSE HER choice still
