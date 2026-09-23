@@ -287,4 +287,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("ledger_hand", "LEDGER HAND", \{ kind: "counter", counter: "flips", need: 10 \}, "TEN NODES PULLED OFF THE MODEL"\)/);
     expect(src).not.toMatch(/m\("ledger_hand", "LEDGER HAND", \{ kind: "counter", counter: "flips", need: 10 \}, "ten nodes pulled off the model"\)/);
   });
+
+  it("FULL WAKE's how is CRT, not a district fully woken", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "full_wake")!.how;
+    expect(how).toBe("A DISTRICT FULLY WOKEN");
+    expect(how).not.toBe("a district fully woken");
+    expect(src).toMatch(/m\("full_wake", "FULL WAKE", \{ kind: "counter", counter: "fullWakes", need: 1 \}, "A DISTRICT FULLY WOKEN"\)/);
+    expect(src).not.toMatch(/m\("full_wake", "FULL WAKE", \{ kind: "counter", counter: "fullWakes", need: 1 \}, "a district fully woken"\)/);
+  });
 });

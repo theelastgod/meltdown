@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- FULL WAKE's how still says mixed-case `a district fully woken`
+  → Stage 575
 - LEDGER HAND's how still says mixed-case `ten nodes pulled off the model`
   → Stage 574
 - SLIDER's how still says mixed-case `a slide-jump kill`

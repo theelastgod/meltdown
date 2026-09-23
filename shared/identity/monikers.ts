@@ -35,7 +35,7 @@ export const MONIKERS: readonly MonikerDef[] = [
   m("live_wire", "LIVE WIRE", { kind: "stamp", stamp: "first_kill:shock_baton" }, "FIRST FILE CLOSED WITH THE SHOCK BATON"),
   m("slider", "SLIDER", { kind: "counter", counter: "slideJumpKills", need: 1 }, "A SLIDE-JUMP KILL"),
   m("ledger_hand", "LEDGER HAND", { kind: "counter", counter: "flips", need: 10 }, "TEN NODES PULLED OFF THE MODEL"),
-  m("full_wake", "FULL WAKE", { kind: "counter", counter: "fullWakes", need: 1 }, "a district fully woken"),
+  m("full_wake", "FULL WAKE", { kind: "counter", counter: "fullWakes", need: 1 }, "A DISTRICT FULLY WOKEN"),
   m("drone_bane", "DRONE BANE", { kind: "counter", counter: "waspKills", need: 10 }, "ten wasps downed"),
   m("mech_breaker", "MECH BREAKER", { kind: "counter", counter: "mechKills", need: 1 }, "a repo mech disabled"),
   m("debt_collector", "DEBT COLLECTOR", { kind: "counter", counter: "debtsCleared", need: 1 }, "a Debt cleared"),
