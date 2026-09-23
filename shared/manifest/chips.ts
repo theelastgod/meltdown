@@ -112,7 +112,7 @@ const STAT_LINE: Partial<Record<StatKey, string>> = {
   shieldDelay: "REGEN DELAY",
   slideBoost: "SLIDE",
   slideFriction: "SLIDE DECAY",
-  throwSpeed: "throw",
+  throwSpeed: "THROW",
 };
 
 function fmtPct(delta: number): string {

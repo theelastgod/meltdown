@@ -286,7 +286,7 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
   it("the FILE kit names GRENADE, not grenade", () => {
     const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
     const line = formatChipLine("ESCROW", [{ stat: "grenades", delta: 1 }], [{ stat: "throwSpeed", delta: -0.1 }]);
-    expect(line).toBe("ESCROW: +1 GRENADE / −10% throw");
+    expect(line).toBe("ESCROW: +1 GRENADE / −10% THROW");
     expect(line).not.toMatch(/grenade/);
     expect(src).toMatch(/grenades: "GRENADE"/);
     expect(src).not.toMatch(/grenades: "grenade"/);
@@ -312,6 +312,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(line).not.toMatch(/slide/);
     expect(src).toMatch(/slideBoost: "SLIDE"/);
     expect(src).not.toMatch(/slideBoost: "slide"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
+  it("the FILE kit names THROW, not throw", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("ESCROW", [{ stat: "grenades", delta: 1 }], [{ stat: "throwSpeed", delta: -0.1 }]);
+    expect(line).toBe("ESCROW: +1 GRENADE / −10% THROW");
+    expect(line).not.toMatch(/throw/);
+    expect(src).toMatch(/throwSpeed: "THROW"/);
+    expect(src).not.toMatch(/throwSpeed: "throw"/);
     expect(lintChipSchema()).toEqual([]);
     expect(lintItemSchema()).toEqual([]);
   });
