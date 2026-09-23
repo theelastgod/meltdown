@@ -251,4 +251,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("the_longwave", "LONGWAVE", \{ kind: "stamp", stamp: "first_kill:longwave" \}, "FIRST FILE CLOSED WITH THE LONGWAVE"\)/);
     expect(src).not.toMatch(/m\("the_longwave", "LONGWAVE", \{ kind: "stamp", stamp: "first_kill:longwave" \}, "first file closed with the Longwave"\)/);
   });
+
+  it("CARRIER's how is CRT, not first file closed with the Phage", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "carrier")!.how;
+    expect(how).toBe("FIRST FILE CLOSED WITH THE PHAGE");
+    expect(how).not.toBe("first file closed with the Phage");
+    expect(src).toMatch(/m\("carrier", "CARRIER", \{ kind: "stamp", stamp: "first_kill:phage" \}, "FIRST FILE CLOSED WITH THE PHAGE"\)/);
+    expect(src).not.toMatch(/m\("carrier", "CARRIER", \{ kind: "stamp", stamp: "first_kill:phage" \}, "first file closed with the Phage"\)/);
+  });
 });

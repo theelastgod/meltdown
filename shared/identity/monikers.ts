@@ -31,7 +31,7 @@ export const MONIKERS: readonly MonikerDef[] = [
   m("repo_man", "REPO MAN", { kind: "stamp", stamp: "first_kill:repo_hammer" }, "FIRST FILE CLOSED WITH THE REPO HAMMER"),
   m("stacker", "STACKER", { kind: "stamp", stamp: "first_kill:stack_smg" }, "FIRST FILE CLOSED WITH THE STACK"),
   m("the_longwave", "LONGWAVE", { kind: "stamp", stamp: "first_kill:longwave" }, "FIRST FILE CLOSED WITH THE LONGWAVE"),
-  m("carrier", "CARRIER", { kind: "stamp", stamp: "first_kill:phage" }, "first file closed with the Phage"),
+  m("carrier", "CARRIER", { kind: "stamp", stamp: "first_kill:phage" }, "FIRST FILE CLOSED WITH THE PHAGE"),
   m("live_wire", "LIVE WIRE", { kind: "stamp", stamp: "first_kill:shock_baton" }, "first file closed with the Shock Baton"),
   m("slider", "SLIDER", { kind: "counter", counter: "slideJumpKills", need: 1 }, "a slide-jump kill"),
   m("ledger_hand", "LEDGER HAND", { kind: "counter", counter: "flips", need: 10 }, "ten nodes pulled off the model"),

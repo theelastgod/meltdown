@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- CARRIER's how still says mixed-case `first file closed with the Phage`
+  → Stage 571
 - LONGWAVE's how still says mixed-case `first file closed with the Longwave`
   → Stage 570
 - STACKER's how still says mixed-case `first file closed with the Stack`
