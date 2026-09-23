@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- LONGWAVE's how still says mixed-case `first file closed with the Longwave`
+  → Stage 570
 - STACKER's how still says mixed-case `first file closed with the Stack`
   → Stage 569
 - REPO MAN's how still says mixed-case `first file closed with the Repo Hammer`

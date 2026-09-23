@@ -30,7 +30,7 @@ export const MONIKERS: readonly MonikerDef[] = [
   m("the_breaker", "LEASE-BREAKER", { kind: "stamp", stamp: "first_kill:lease_breaker" }, "FIRST FILE CLOSED WITH THE LEASE-BREAKER"),
   m("repo_man", "REPO MAN", { kind: "stamp", stamp: "first_kill:repo_hammer" }, "FIRST FILE CLOSED WITH THE REPO HAMMER"),
   m("stacker", "STACKER", { kind: "stamp", stamp: "first_kill:stack_smg" }, "FIRST FILE CLOSED WITH THE STACK"),
-  m("the_longwave", "LONGWAVE", { kind: "stamp", stamp: "first_kill:longwave" }, "first file closed with the Longwave"),
+  m("the_longwave", "LONGWAVE", { kind: "stamp", stamp: "first_kill:longwave" }, "FIRST FILE CLOSED WITH THE LONGWAVE"),
   m("carrier", "CARRIER", { kind: "stamp", stamp: "first_kill:phage" }, "first file closed with the Phage"),
   m("live_wire", "LIVE WIRE", { kind: "stamp", stamp: "first_kill:shock_baton" }, "first file closed with the Shock Baton"),
   m("slider", "SLIDER", { kind: "counter", counter: "slideJumpKills", need: 1 }, "a slide-jump kill"),

@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 569, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 570, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 569 on this branch (STACKER how) |
-| Next stage number | **570** |
+| HEAD | Stage 570 on this branch (LONGWAVE how) |
+| Next stage number | **571** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 570 is next
+## 6. Stage 571 is next
 
-Stage 569 CRT-cased STACKER's how. LONGWAVE still says mixed-case
-`first file closed with the Longwave`. Title cards stay prose
+Stage 570 CRT-cased LONGWAVE's how. CARRIER still says mixed-case
+`first file closed with the Phage`. Title cards stay prose
 (probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints
