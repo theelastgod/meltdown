@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- VANTAGE BANE's FILE lead still says mixed-case `bonus damage to VANTAGE units`
+  → Stage 538
 - ESCROW LOCK's FILE lead still says mixed-case `kills restore 10 shield`
   → Stage 537
 - CONTAGION ROUND's FILE lead still says mixed-case `kills pull the nearest node`

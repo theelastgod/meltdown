@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 538 — VANTAGE BANE's FILE lead said bonus damage to VANTAGE units
+
+**Goal.** Stage 537 taught ESCROW LOCK. VANTAGE BANE still said
+mixed-case `bonus damage to VANTAGE units`.
+
+**What changed.** `BONUS DAMAGE TO VANTAGE UNITS`.
+
+**Proof.** Measured rebuilt line was mixed-case. After the fix the CRT
+lead is MECHANIC_LEAD. `tests/chiptrade.test.ts` asserts the rebuilt
+line and that chips.ts must not the mixed-case template. Mutation:
+mixed case again — 1 fail.
+
 ## Stage 537 — ESCROW LOCK's FILE lead said kills restore 10 shield
 
 **Goal.** Stage 536 taught CONTAGION ROUND. ESCROW LOCK still said

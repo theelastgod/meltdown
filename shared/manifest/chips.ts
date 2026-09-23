@@ -134,7 +134,7 @@ function fmtMods(mods: readonly StatMod[]): string {
 const MECHANIC_LEAD: Record<ChipMechanic, string> = {
   contagion_kill: "KILLS PULL THE NEAREST NODE FOR 4 S",
   escrow_kill: "KILLS RESTORE 10 SHIELD",
-  vantage_bane: "bonus damage to VANTAGE units",
+  vantage_bane: "BONUS DAMAGE TO VANTAGE UNITS",
 };
 
 /** The kit panel reads this. It is built from the settled mods, never from the template. */

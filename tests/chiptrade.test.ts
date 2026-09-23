@@ -133,6 +133,15 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(src).not.toMatch(/escrow_kill: "kills restore 10 shield"/);
   });
 
+  it("VANTAGE BANE's FILE lead is CRT, not bonus damage to VANTAGE units", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = CHIPS.find((c) => c.id === "lease_breaker:vantage_bane")!.line;
+    expect(line.startsWith("VANTAGE BANE: BONUS DAMAGE TO VANTAGE UNITS,")).toBe(true);
+    expect(line).not.toMatch(/bonus damage to VANTAGE units/);
+    expect(src).toMatch(/vantage_bane: "BONUS DAMAGE TO VANTAGE UNITS"/);
+    expect(src).not.toMatch(/vantage_bane: "bonus damage to VANTAGE units"/);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };
