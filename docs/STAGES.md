@@ -1641,6 +1641,21 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 589 — BLIND THE MODEL's brief said destroy the sensor lattice
+
+**Goal.** Stage 588 taught THE LEAK. BLIND THE MODEL still said
+mixed-case `Destroy the sensor lattice district by district. VANTAGE
+responds like an immune system — the hardest combat in the arc.`
+
+**What changed.** `DESTROY THE SENSOR LATTICE DISTRICT BY DISTRICT.
+VANTAGE RESPONDS LIKE AN IMMUNE SYSTEM — THE HARDEST COMBAT IN THE
+ARC.`
+
+**Proof.** Measured brief was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that missions.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 588 — THE LEAK's brief said an Estate defector
 
 **Goal.** Stage 587 taught VARIANCE. THE LEAK still said mixed-case

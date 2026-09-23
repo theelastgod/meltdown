@@ -123,7 +123,7 @@ export const MISSIONS: readonly MissionDef[] = [
     title: "BLIND THE MODEL",
     level: "lease_row",
     fixer: "deacon",
-    brief: "Destroy the sensor lattice district by district. VANTAGE responds like an immune system — the hardest combat in the arc.",
+    brief: "DESTROY THE SENSOR LATTICE DISTRICT BY DISTRICT. VANTAGE RESPONDS LIKE AN IMMUNE SYSTEM — THE HARDEST COMBAT IN THE ARC.",
     // The four inner nodes are the district generator's own, which are always on open ground. The
     // two outer posts were written as (0, ±30) and both landed inside a 4.2 m building on LEASE
     // ROW, sealing a 1.8 m lattice node in concrete where nothing could shoot it (Stage 175).

@@ -168,6 +168,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "AN ESTATE DEFECTOR HANDS YOU THE DIRECTIVE\. WALK HER FROM B TO D UNDER A VANTAGE SWEEP WHILE WERN ARGUES HIS CASE\."/);
     expect(src).not.toMatch(/brief: "An Estate defector hands you the Directive\. Walk her from B to D under a VANTAGE sweep while Wern argues his case\."/);
   });
+
+  it("BLIND THE MODEL's brief is CRT, not destroy the sensor lattice", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "m5_blind_the_model")!.brief;
+    expect(brief).toBe("DESTROY THE SENSOR LATTICE DISTRICT BY DISTRICT. VANTAGE RESPONDS LIKE AN IMMUNE SYSTEM — THE HARDEST COMBAT IN THE ARC.");
+    expect(brief).not.toBe("Destroy the sensor lattice district by district. VANTAGE responds like an immune system — the hardest combat in the arc.");
+    expect(src).toMatch(/brief: "DESTROY THE SENSOR LATTICE DISTRICT BY DISTRICT\. VANTAGE RESPONDS LIKE AN IMMUNE SYSTEM — THE HARDEST COMBAT IN THE ARC\."/);
+    expect(src).not.toMatch(/brief: "Destroy the sensor lattice district by district\. VANTAGE responds like an immune system — the hardest combat in the arc\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

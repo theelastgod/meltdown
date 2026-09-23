@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- BLIND THE MODEL's brief still says mixed-case `Destroy the sensor lattice district by district`
+  → Stage 589
 - THE LEAK's brief still says mixed-case `An Estate defector hands you the Directive`
   → Stage 588
 - VARIANCE's brief still says mixed-case `Pull the depot's logs`
