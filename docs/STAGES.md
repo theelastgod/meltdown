@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 564 — DIRECTIVE OPTIC's protocol line said +15% range
+
+**Goal.** Stage 563 taught BLOOD LEDGER. DIRECTIVE OPTIC still said
+mixed-case `+15% range, +20% headshot multiplier. See the city the way
+the Kernel does.`
+
+**What changed.** `+15% RANGE, +20% HEADSHOT MULTIPLIER. SEE THE CITY
+THE WAY THE KERNEL DOES.`
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/campaign.test.ts` asserts that sentence and
+that protocols.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 563 — BLOOD LEDGER's protocol line said shield regen
 
 **Goal.** Stage 562 taught RED LEASE. BLOOD LEDGER still said

@@ -123,6 +123,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/p\("blood_ledger", "BLOOD LEDGER", "SHIELD REGEN ×1\.5\. THE MODEL HEALS WHAT IT PRICES\."/);
     expect(src).not.toMatch(/p\("blood_ledger", "BLOOD LEDGER", "shield regen ×1\.5\. The model heals what it prices\."/);
   });
+
+  it("DIRECTIVE OPTIC's protocol line is CRT, not +15% range", () => {
+    const src = readFileSync(new URL("../shared/campaign/protocols.ts", import.meta.url), "utf8");
+    const line = PROTOCOLS.find((p) => p.id === "directive_optic")!.line;
+    expect(line).toBe("+15% RANGE, +20% HEADSHOT MULTIPLIER. SEE THE CITY THE WAY THE KERNEL DOES.");
+    expect(line).not.toBe("+15% range, +20% headshot multiplier. See the city the way the Kernel does.");
+    expect(src).toMatch(/p\("directive_optic", "DIRECTIVE OPTIC", "\+15% RANGE, \+20% HEADSHOT MULTIPLIER\. SEE THE CITY THE WAY THE KERNEL DOES\."/);
+    expect(src).not.toMatch(/p\("directive_optic", "DIRECTIVE OPTIC", "\+15% range, \+20% headshot multiplier\. See the city the way the Kernel does\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

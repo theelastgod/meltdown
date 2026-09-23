@@ -24,7 +24,7 @@ export const PROTOCOLS: readonly ProtocolDef[] = [
   p("red_lease", "RED LEASE", "+35 HEALTH. YOUR FILE IS WRITTEN IN WERN'S INK NOW.", { maxHealth: 35 }),
   p("wern_pulse", "WERN PULSE", "+12% FIRE RATE, +10% RELOAD. THE RHYTHM OF THE DIRECTIVE.", { fireRate: 1.12, reloadSpeed: 1.1 }),
   p("blood_ledger", "BLOOD LEDGER", "SHIELD REGEN ×1.5. THE MODEL HEALS WHAT IT PRICES.", { shieldRegen: 1.5 }),
-  p("directive_optic", "DIRECTIVE OPTIC", "+15% range, +20% headshot multiplier. See the city the way the Kernel does.", { range: 1.15, headMult: 1.2 }),
+  p("directive_optic", "DIRECTIVE OPTIC", "+15% RANGE, +20% HEADSHOT MULTIPLIER. SEE THE CITY THE WAY THE KERNEL DOES.", { range: 1.15, headMult: 1.2 }),
 ];
 
 export const protocolById = (id: string): ProtocolDef | undefined => PROTOCOLS.find((x) => x.id === id);
