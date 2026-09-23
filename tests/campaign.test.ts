@@ -303,6 +303,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "THE DEPOT LATTICE IS THE LAST ONE THE ESTATE AUDIT CAN SEE THROUGH\."/);
     expect(src).not.toMatch(/brief: "The depot lattice is the last one the Estate audit can see through\."/);
   });
+
+  it("THE ESTATE's house pick is CRT, not someone has to hold the pen", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "creation")!.nodes.find((n) => n.id === "wake")!.choices!.find((c) => c.set?.faction === "estate")!.text;
+    expect(text).toBe("THE ESTATE — SOMEONE HAS TO HOLD THE PEN.");
+    expect(text).not.toBe("THE ESTATE — someone has to hold the pen.");
+    expect(src).toMatch(/text: "THE ESTATE — SOMEONE HAS TO HOLD THE PEN\."/);
+    expect(src).not.toMatch(/text: "THE ESTATE — someone has to hold the pen\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

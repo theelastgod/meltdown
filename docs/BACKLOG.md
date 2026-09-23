@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- THE ESTATE's house pick still says mixed-case `someone has to hold the pen`
+  → Stage 604
 - SENSOR SABOTAGE · DEPOT's brief still says mixed-case `The depot lattice is the last one the Estate audit can see through`
   → Stage 603
 - WAKE-CELL RESCUE · LEASE ROW's brief still says mixed-case `The last cell on the Row is pinned`
