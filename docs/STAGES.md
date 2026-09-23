@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 612 — m3 HOLD IT said a truth spent early
+
+**Goal.** Stage 611 taught PUBLISH IT. m3's HOLD IT choice still said
+mixed-case `HOLD IT. A truth spent early buys nothing.`
+
+**What changed.** `HOLD IT. A TRUTH SPENT EARLY BUYS NOTHING.`
+
+**Proof.** Measured choice was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that script.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 611 — m3 PUBLISH IT said on every leased feed tonight
 
 **Goal.** Stage 610 taught TURN HIM IN. m3's PUBLISH IT choice still

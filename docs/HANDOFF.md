@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-23, at Stage 611, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-23, at Stage 612, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 611 on this branch (m3 PUBLISH IT) |
-| Next stage number | **612** |
+| HEAD | Stage 612 on this branch (m3 HOLD IT) |
+| Next stage number | **613** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 612 is next
+## 6. Stage 613 is next
 
-Stage 611 CRT-cased m3 PUBLISH IT. m3 HOLD IT still says mixed-case
-`A truth spent early buys nothing`. Title cards stay prose
+Stage 612 CRT-cased m3 HOLD IT. m4 KEEP THE DIRECTIVE still says
+mixed-case `If it's a weapon, it's mine now`. Title cards stay prose
 (probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints

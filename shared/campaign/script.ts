@@ -94,7 +94,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       n("a", "terminal", ["THE DEPOT LOGS DO NOT DESCRIBE CRIME. THEY DESCRIBE VARIANCE.", "EVERY WAKE, EVERY PULLED NODE, DEGRADES THE MODEL'S CONFIDENCE BY A FRACTION OF A PERCENT.", "VANTAGE IS NOT POLICING THE CITY. IT IS STEADYING A FORECAST."], {
         choices: [
           { text: "PUBLISH IT ON EVERY LEASED FEED TONIGHT.", set: { "m3:volatility": "publish" }, next: "publish" },
-          { text: "HOLD IT. A truth spent early buys nothing.", set: { "m3:volatility": "hold" }, next: "hold" },
+          { text: "HOLD IT. A TRUTH SPENT EARLY BUYS NOTHING.", set: { "m3:volatility": "hold" }, next: "hold" },
         ],
       }),
       n("publish", "deacon", ["The feeds carry it for nine minutes before VANTAGE cuts them. Nine minutes woke more people than a year of nodes."]),

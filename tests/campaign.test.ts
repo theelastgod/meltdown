@@ -375,6 +375,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "PUBLISH IT ON EVERY LEASED FEED TONIGHT\."/);
     expect(src).not.toMatch(/text: "PUBLISH IT on every leased feed tonight\."/);
   });
+
+  it("m3 HOLD IT is CRT, not a truth spent early", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m3_volatility")!.nodes.find((n) => n.id === "a")!.choices!.find((c) => c.set?.["m3:volatility"] === "hold")!.text;
+    expect(text).toBe("HOLD IT. A TRUTH SPENT EARLY BUYS NOTHING.");
+    expect(text).not.toBe("HOLD IT. A truth spent early buys nothing.");
+    expect(src).toMatch(/text: "HOLD IT\. A TRUTH SPENT EARLY BUYS NOTHING\."/);
+    expect(src).not.toMatch(/text: "HOLD IT\. A truth spent early buys nothing\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
