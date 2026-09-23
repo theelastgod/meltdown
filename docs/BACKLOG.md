@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- m2 SPARE HIM still says mixed-case `Turn the speaker off and let him run`
+  → Stage 609
 - m1 KEEP IT still says mixed-case `Evidence is a weapon`
   → Stage 608
 - m1 BURN IT still says mixed-case `The model keeps no copy it can trust`

@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 609 — m2 SPARE HIM said turn the speaker off
+
+**Goal.** Stage 608 taught KEEP IT. m2's SPARE HIM choice still said
+mixed-case `SPARE HIM. Turn the speaker off and let him run.`
+
+**What changed.** `SPARE HIM. TURN THE SPEAKER OFF AND LET HIM RUN.`
+
+**Proof.** Measured choice was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that script.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 608 — m1 KEEP IT said evidence is a weapon
 
 **Goal.** Stage 607 taught BURN IT. m1's KEEP IT choice still said

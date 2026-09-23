@@ -348,6 +348,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "KEEP IT\. EVIDENCE IS A WEAPON\."/);
     expect(src).not.toMatch(/text: "KEEP IT\. Evidence is a weapon\."/);
   });
+
+  it("m2 SPARE HIM is CRT, not turn the speaker off", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m2_informant")!.nodes.find((n) => n.id === "a")!.choices!.find((c) => c.set?.["m2:informant"] === "spare")!.text;
+    expect(text).toBe("SPARE HIM. TURN THE SPEAKER OFF AND LET HIM RUN.");
+    expect(text).not.toBe("SPARE HIM. Turn the speaker off and let him run.");
+    expect(src).toMatch(/text: "SPARE HIM\. TURN THE SPEAKER OFF AND LET HIM RUN\."/);
+    expect(src).not.toMatch(/text: "SPARE HIM\. Turn the speaker off and let him run\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
