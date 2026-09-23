@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- ESCROW LOCK's FILE lead still says mixed-case `kills restore 10 shield`
+  → Stage 537
 - CONTAGION ROUND's FILE lead still says mixed-case `kills pull the nearest node`
   → Stage 536
 - HEAVY HAFT's FILE line still says mixed-case `+25% damage, −7% swing rate, stuns longer`

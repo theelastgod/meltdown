@@ -124,6 +124,15 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(src).not.toMatch(/contagion_kill: "kills pull the nearest node for 4 s"/);
   });
 
+  it("ESCROW LOCK's FILE lead is CRT, not kills restore 10 shield", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = CHIPS.find((c) => c.id === "lease_breaker:escrow_lock")!.line;
+    expect(line.startsWith("ESCROW LOCK: KILLS RESTORE 10 SHIELD,")).toBe(true);
+    expect(line).not.toMatch(/kills restore 10 shield/);
+    expect(src).toMatch(/escrow_kill: "KILLS RESTORE 10 SHIELD"/);
+    expect(src).not.toMatch(/escrow_kill: "kills restore 10 shield"/);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };
