@@ -195,6 +195,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "WERN DOESN'T FIGHT\. HE OFFERS YOU THE LEASE SYSTEM ITSELF\. THE FINAL INPUT IS A CHOICE\."/);
     expect(src).not.toMatch(/brief: "Wern doesn't fight\. He offers you the lease system itself\. The final input is a choice\."/);
   });
+
+  it("ESCROW HEIST · LEASE ROW's brief is CRT, not crack the escrow terminal at D", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_escrow_row")!.brief;
+    expect(brief).toBe("CRACK THE ESCROW TERMINAL AT D AND GET THE SLEEP CREDIT OUT BEFORE THE PATROL TURNS.");
+    expect(brief).not.toBe("Crack the escrow terminal at D and get the sleep credit out before the patrol turns.");
+    expect(src).toMatch(/brief: "CRACK THE ESCROW TERMINAL AT D AND GET THE SLEEP CREDIT OUT BEFORE THE PATROL TURNS\."/);
+    expect(src).not.toMatch(/brief: "Crack the escrow terminal at D and get the sleep credit out before the patrol turns\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

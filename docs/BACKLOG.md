@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- ESCROW HEIST · LEASE ROW's brief still says mixed-case `Crack the escrow terminal at D`
+  → Stage 592
 - THE WHITE OFFICE's brief still says mixed-case `Wern doesn't fight`
   → Stage 591
 - TRIAL BY DATA's brief still says mixed-case `Hold the broadcast tower on the plaza`
