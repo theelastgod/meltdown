@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- SENSOR SABOTAGE · DEPOT's brief still says mixed-case `The depot lattice is the last one the Estate audit can see through`
+  → Stage 603
 - WAKE-CELL RESCUE · LEASE ROW's brief still says mixed-case `The last cell on the Row is pinned`
   → Stage 602
 - DRONE CONVOY · DEPOT's brief still says mixed-case `The depot convoy flies with a mech escort`

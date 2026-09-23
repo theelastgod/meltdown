@@ -294,6 +294,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "THE LAST CELL ON THE ROW IS PINNED AT D WITH A MECH ON THEM\."/);
     expect(src).not.toMatch(/brief: "The last cell on the Row is pinned at D with a mech on them\."/);
   });
+
+  it("SENSOR SABOTAGE · DEPOT's brief is CRT, not the depot lattice", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_lattice_depot")!.brief;
+    expect(brief).toBe("THE DEPOT LATTICE IS THE LAST ONE THE ESTATE AUDIT CAN SEE THROUGH.");
+    expect(brief).not.toBe("The depot lattice is the last one the Estate audit can see through.");
+    expect(src).toMatch(/brief: "THE DEPOT LATTICE IS THE LAST ONE THE ESTATE AUDIT CAN SEE THROUGH\."/);
+    expect(src).not.toMatch(/brief: "The depot lattice is the last one the Estate audit can see through\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
