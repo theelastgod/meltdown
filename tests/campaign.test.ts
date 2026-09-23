@@ -384,6 +384,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "HOLD IT\. A TRUTH SPENT EARLY BUYS NOTHING\."/);
     expect(src).not.toMatch(/text: "HOLD IT\. A truth spent early buys nothing\."/);
   });
+
+  it("m4 KEEP THE DIRECTIVE is CRT, not if it's a weapon", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "w3")!.choices!.find((c) => c.set?.["m4:directive"] === "kept")!.text;
+    expect(text).toBe("KEEP THE DIRECTIVE. IF IT'S A WEAPON, IT'S MINE NOW.");
+    expect(text).not.toBe("KEEP THE DIRECTIVE. If it's a weapon, it's mine now.");
+    expect(src).toMatch(/text: "KEEP THE DIRECTIVE\. IF IT'S A WEAPON, IT'S MINE NOW\."/);
+    expect(src).not.toMatch(/text: "KEEP THE DIRECTIVE\. If it's a weapon, it's mine now\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

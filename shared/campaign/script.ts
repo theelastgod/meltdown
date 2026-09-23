@@ -110,7 +110,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       n("w2", "wern", ["So I froze it. A permanent lease. No one dreams, no one wakes, no one dies in the fire that was coming.", "You call it a cage. Ask the people in it whether they'd like the fire back."], { next: "w3" }),
       n("w3", "wern", ["I'm not asking you to agree. I'm asking you to notice that you almost do."], {
         choices: [
-          { text: "KEEP THE DIRECTIVE. If it's a weapon, it's mine now.", set: { "m4:directive": "kept" }, next: "vessel" },
+          { text: "KEEP THE DIRECTIVE. IF IT'S A WEAPON, IT'S MINE NOW.", set: { "m4:directive": "kept" }, next: "vessel" },
           { text: "GIVE IT TO IDA. The Estate should have to read its own hand.", set: { "m4:directive": "given" }, next: "vessel" },
         ],
       }),
