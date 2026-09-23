@@ -162,6 +162,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(lintItemSchema()).toEqual([]);
   });
 
+  it("the FILE kit names DETECTION, not detection", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("SUPPRESSOR", [{ stat: "droneDetect", delta: -0.2 }], [{ stat: "range", delta: -0.03 }, { stat: "reloadSpeed", delta: -0.08 }]);
+    expect(line).toBe("SUPPRESSOR: −20% DETECTION / −3% range, −8% reload");
+    expect(line).not.toMatch(/−20% detection/);
+    expect(src).toMatch(/droneDetect: "DETECTION"/);
+    expect(src).not.toMatch(/droneDetect: "detection"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };

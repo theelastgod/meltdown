@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- the FILE kit still says mixed-case `detection`
+  → Stage 541
 - the FILE kit still says mixed-case `fire rate`
   → Stage 540
 - the FILE kit still says mixed-case `ADS strafe`
