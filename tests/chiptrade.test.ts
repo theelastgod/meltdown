@@ -239,6 +239,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(lintItemSchema()).toEqual([]);
   });
 
+  it("the FILE kit names FOOTSTEPS, not footsteps", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("SILENT LEASE", [{ stat: "footstep", delta: -0.3 }], [{ stat: "reloadSpeed", delta: -0.15 }]);
+    expect(line).toBe("SILENT LEASE: −30% FOOTSTEPS / −15% RELOAD");
+    expect(line).not.toMatch(/footsteps/);
+    expect(src).toMatch(/footstep: "FOOTSTEPS"/);
+    expect(src).not.toMatch(/footstep: "footsteps"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };

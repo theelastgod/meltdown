@@ -103,7 +103,7 @@ const STAT_LINE: Partial<Record<StatKey, string>> = {
   fireRate: "FIRE RATE",
   moveSpeed: "MOVE",
   droneDetect: "DETECTION",
-  footstep: "footsteps",
+  footstep: "FOOTSTEPS",
   flipRate: "flip",
   shieldRegen: "regen",
   headMult: "headshot",
