@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- BLOOD LEDGER's protocol line still says mixed-case `shield regen`
+  → Stage 563
 - RED LEASE's protocol line still says mixed-case `Wern's ink`
   → Stage 562
 - FILAMENT CORE's protocol line still says mixed-case `the filament runs down the barrel`

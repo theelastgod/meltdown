@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 563 — BLOOD LEDGER's protocol line said shield regen
+
+**Goal.** Stage 562 taught RED LEASE. BLOOD LEDGER still said
+mixed-case `shield regen ×1.5. The model heals what it prices.`
+
+**What changed.** `SHIELD REGEN ×1.5. THE MODEL HEALS WHAT IT PRICES.`
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/campaign.test.ts` asserts that sentence and
+that protocols.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 562 — RED LEASE's protocol line said Wern's ink
 
 **Goal.** Stage 561 taught FILAMENT CORE. RED LEASE still said

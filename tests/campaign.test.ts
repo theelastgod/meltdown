@@ -114,6 +114,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/p\("red_lease", "RED LEASE", "\+35 HEALTH\. YOUR FILE IS WRITTEN IN WERN'S INK NOW\."/);
     expect(src).not.toMatch(/p\("red_lease", "RED LEASE", "\+35 health\. Your file is written in Wern's ink now\."/);
   });
+
+  it("BLOOD LEDGER's protocol line is CRT, not shield regen", () => {
+    const src = readFileSync(new URL("../shared/campaign/protocols.ts", import.meta.url), "utf8");
+    const line = PROTOCOLS.find((p) => p.id === "blood_ledger")!.line;
+    expect(line).toBe("SHIELD REGEN ×1.5. THE MODEL HEALS WHAT IT PRICES.");
+    expect(line).not.toBe("shield regen ×1.5. The model heals what it prices.");
+    expect(src).toMatch(/p\("blood_ledger", "BLOOD LEDGER", "SHIELD REGEN ×1\.5\. THE MODEL HEALS WHAT IT PRICES\."/);
+    expect(src).not.toMatch(/p\("blood_ledger", "BLOOD LEDGER", "shield regen ×1\.5\. The model heals what it prices\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
