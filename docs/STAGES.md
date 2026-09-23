@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 616 — m4 EXPOSE HER said she's the defector
+
+**Goal.** Stage 615 taught SHIELD HER. m4's EXPOSE HER choice still
+said mixed-case `EXPOSE HER. She's the defector; you're the Blank.`
+
+**What changed.** `EXPOSE HER. SHE'S THE DEFECTOR; YOU'RE THE BLANK.`
+
+**Proof.** Measured choice was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that script.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 615 — m4 SHIELD HER said take the light
 
 **Goal.** Stage 614 taught GIVE IT TO IDA. m4's SHIELD HER choice still

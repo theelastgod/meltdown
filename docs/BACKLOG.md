@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- m4 EXPOSE HER still says mixed-case `She's the defector; you're the Blank`
+  → Stage 616
 - m4 SHIELD HER still says mixed-case `Take the light`
   → Stage 615
 - m4 GIVE IT TO IDA still says mixed-case `The Estate should have to read its own hand`

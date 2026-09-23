@@ -411,6 +411,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "SHIELD HER\. TAKE THE LIGHT\."/);
     expect(src).not.toMatch(/text: "SHIELD HER\. Take the light\."/);
   });
+
+  it("m4 EXPOSE HER is CRT, not she's the defector", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "vessel")!.choices!.find((c) => c.set?.["m4:vessel"] === "expose")!.text;
+    expect(text).toBe("EXPOSE HER. SHE'S THE DEFECTOR; YOU'RE THE BLANK.");
+    expect(text).not.toBe("EXPOSE HER. She's the defector; you're the Blank.");
+    expect(src).toMatch(/text: "EXPOSE HER\. SHE'S THE DEFECTOR; YOU'RE THE BLANK\."/);
+    expect(src).not.toMatch(/text: "EXPOSE HER\. She's the defector; you're the Blank\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
