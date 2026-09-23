@@ -187,7 +187,7 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
   it("the FILE kit names SLIDE DECAY, not slide decay", () => {
     const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
     const line = formatChipLine("SLIPFILE", [{ stat: "slideBoost", delta: 0.1 }, { stat: "slideFriction", delta: -0.1 }], [{ stat: "adsMove", delta: -0.12 }]);
-    expect(line).toBe("SLIPFILE: +10% slide, −10% SLIDE DECAY / −12% ADS STRAFE");
+    expect(line).toBe("SLIPFILE: +10% SLIDE, −10% SLIDE DECAY / −12% ADS STRAFE");
     expect(line).not.toMatch(/slide decay/);
     expect(src).toMatch(/slideFriction: "SLIDE DECAY"/);
     expect(src).not.toMatch(/slideFriction: "slide decay"/);
@@ -297,10 +297,21 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
   it("the FILE kit names MANTLE, not mantle", () => {
     const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
     const line = formatChipLine("QUICK MANTLE", [{ stat: "mantleTime", delta: -0.15 }], [{ stat: "slideBoost", delta: -0.08 }]);
-    expect(line).toBe("QUICK MANTLE: −15% MANTLE / −8% slide");
+    expect(line).toBe("QUICK MANTLE: −15% MANTLE / −8% SLIDE");
     expect(line).not.toMatch(/mantle/);
     expect(src).toMatch(/mantleTime: "MANTLE"/);
     expect(src).not.toMatch(/mantleTime: "mantle"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
+  it("the FILE kit names SLIDE, not slide", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("SLIPFILE", [{ stat: "slideBoost", delta: 0.1 }], [{ stat: "adsMove", delta: -0.12 }]);
+    expect(line).toBe("SLIPFILE: +10% SLIDE / −12% ADS STRAFE");
+    expect(line).not.toMatch(/slide/);
+    expect(src).toMatch(/slideBoost: "SLIDE"/);
+    expect(src).not.toMatch(/slideBoost: "slide"/);
     expect(lintChipSchema()).toEqual([]);
     expect(lintItemSchema()).toEqual([]);
   });

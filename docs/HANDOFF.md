@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 553, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 554, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 553 on this branch (MANTLE STAT_LINE) |
-| Next stage number | **554** |
+| HEAD | Stage 554 on this branch (SLIDE STAT_LINE) |
+| Next stage number | **555** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 554 is next
+## 6. Stage 555 is next
 
-Stage 553 CRT-cased STAT_LINE `MANTLE`. Remaining STAT_LINE labels
-still print mixed-case (`slide`, `throw`, `range`). Title
+Stage 554 CRT-cased STAT_LINE `SLIDE`. Remaining STAT_LINE labels
+still print mixed-case (`throw`, `range`). Title
 cards stay prose (probe:ship asserts them). Crew-code reasons stay
 mixed-case (`probe:campaign` asserts `not a crew code`). Do not loosen
 fairness. Do not plate viewmodel or remote strips. The join line still
