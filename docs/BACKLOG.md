@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- NINE LIVES's how still says mixed-case `a round without a death`
+  → Stage 579
 - DEBT COLLECTOR's how still says mixed-case `a Debt cleared`
   → Stage 578
 - MECH BREAKER's how still says mixed-case `a repo mech disabled`

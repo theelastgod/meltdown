@@ -323,4 +323,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("debt_collector", "DEBT COLLECTOR", \{ kind: "counter", counter: "debtsCleared", need: 1 \}, "A DEBT CLEARED"\)/);
     expect(src).not.toMatch(/m\("debt_collector", "DEBT COLLECTOR", \{ kind: "counter", counter: "debtsCleared", need: 1 \}, "a Debt cleared"\)/);
   });
+
+  it("NINE LIVES's how is CRT, not a round without a death", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "nine_lives")!.how;
+    expect(how).toBe("A ROUND WITHOUT A DEATH");
+    expect(how).not.toBe("a round without a death");
+    expect(src).toMatch(/m\("nine_lives", "NINE LIVES", \{ kind: "counter", counter: "noDeathRounds", need: 1 \}, "A ROUND WITHOUT A DEATH"\)/);
+    expect(src).not.toMatch(/m\("nine_lives", "NINE LIVES", \{ kind: "counter", counter: "noDeathRounds", need: 1 \}, "a round without a death"\)/);
+  });
 });

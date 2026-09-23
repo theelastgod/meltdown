@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 578, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 579, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 578 on this branch (DEBT COLLECTOR how) |
-| Next stage number | **579** |
+| HEAD | Stage 579 on this branch (NINE LIVES how) |
+| Next stage number | **580** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 579 is next
+## 6. Stage 580 is next
 
-Stage 578 CRT-cased DEBT COLLECTOR's how. NINE LIVES still says mixed-case
-`a round without a death`. Title cards stay prose (probe:ship asserts them).
+Stage 579 CRT-cased NINE LIVES's how. CITIZEN still says mixed-case
+`all three districts played`. Title cards stay prose (probe:ship asserts them).
 Crew-code reasons stay mixed-case (`probe:campaign` asserts `not a
 crew code`). Do not loosen fairness. Do not plate viewmodel or remote
 strips. The join line still prints the socket name — `probe:net`
