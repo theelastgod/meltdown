@@ -176,7 +176,7 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
   it("the FILE kit names REGEN DELAY, not regen delay", () => {
     const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
     const line = formatChipLine("COLD FILE", [{ stat: "shieldDelay", delta: -0.2 }], [{ stat: "shieldRegen", delta: -0.15 }]);
-    expect(line).toBe("COLD FILE: −20% REGEN DELAY / −15% regen");
+    expect(line).toBe("COLD FILE: −20% REGEN DELAY / −15% REGEN");
     expect(line).not.toMatch(/regen delay/);
     expect(src).toMatch(/shieldDelay: "REGEN DELAY"/);
     expect(src).not.toMatch(/shieldDelay: "regen delay"/);
@@ -253,10 +253,21 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
   it("the FILE kit names FLIP, not flip", () => {
     const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
     const line = formatChipLine("WAKE-TUNED", [{ stat: "flipRate", delta: 0.12 }], [{ stat: "shieldRegen", delta: -0.24 }]);
-    expect(line).toBe("WAKE-TUNED: +12% FLIP / −24% regen");
+    expect(line).toBe("WAKE-TUNED: +12% FLIP / −24% REGEN");
     expect(line).not.toMatch(/flip/);
     expect(src).toMatch(/flipRate: "FLIP"/);
     expect(src).not.toMatch(/flipRate: "flip"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
+  it("the FILE kit names REGEN, not regen", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("WAKE-TUNED", [{ stat: "flipRate", delta: 0.12 }], [{ stat: "shieldRegen", delta: -0.24 }]);
+    expect(line).toBe("WAKE-TUNED: +12% FLIP / −24% REGEN");
+    expect(line).not.toMatch(/regen/);
+    expect(src).toMatch(/shieldRegen: "REGEN"/);
+    expect(src).not.toMatch(/shieldRegen: "regen"/);
     expect(lintChipSchema()).toEqual([]);
     expect(lintItemSchema()).toEqual([]);
   });
@@ -291,7 +302,7 @@ describe("a ledger node line is the mods after reconciliation (Stage 190)", () =
 
   it("the Ghostfile row quotes that same trade, not a rounded camelCase second copy", () => {
     const it = LEDGER_ITEMS.find((x) => x.id === "collateral")!;
-    expect(ledgerTradeText(it)).toBe("+40% regen / −2.25% MOVE, −23.5% RELOAD");
+    expect(ledgerTradeText(it)).toBe("+40% REGEN / −2.25% MOVE, −23.5% RELOAD");
     expect(ledgerTradeText(it)).not.toMatch(/reloadSpeed/);
     expect(ledgerTradeText(it)).not.toMatch(/−24%/);
   });
