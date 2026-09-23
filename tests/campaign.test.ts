@@ -240,6 +240,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "THE IMPOUND LOT KEEPS A SECOND ESCROW\. TAKE IT WHILE THE MECH IS AT THE FAR FENCE\."/);
     expect(src).not.toMatch(/brief: "The impound lot keeps a second escrow\. Take it while the mech is at the far fence\."/);
   });
+
+  it("DRONE CONVOY · LEASE ROW's brief is CRT, not four wasps run the plaza loop", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_convoy_row")!.brief;
+    expect(brief).toBe("FOUR WASPS RUN THE PLAZA LOOP EVERY NIGHT. BREAK THE LOOP.");
+    expect(brief).not.toBe("Four wasps run the plaza loop every night. Break the loop.");
+    expect(src).toMatch(/brief: "FOUR WASPS RUN THE PLAZA LOOP EVERY NIGHT\. BREAK THE LOOP\."/);
+    expect(src).not.toMatch(/brief: "Four wasps run the plaza loop every night\. Break the loop\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

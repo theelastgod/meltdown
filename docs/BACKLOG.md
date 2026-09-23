@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- DRONE CONVOY · LEASE ROW's brief still says mixed-case `Four wasps run the plaza loop every night`
+  → Stage 597
 - ESCROW HEIST · DEPOT's brief still says mixed-case `The impound lot keeps a second escrow`
   → Stage 596
 - SENSOR SABOTAGE · LEASE ROW's brief still says mixed-case `Two lattice posts on the walkway street`
