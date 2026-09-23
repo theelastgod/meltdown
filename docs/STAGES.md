@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 540 — the FILE kit said fire rate
+
+**Goal.** Stage 539 taught ADS STRAFE. `formatChipLine` still printed
+`fire rate` from STAT_LINE.
+
+**What changed.** `fireRate: "FIRE RATE"`.
+
+**Proof.** Measured BUMP STOCK line was mixed-case. After the fix the
+CRT label is the kit. `tests/chiptrade.test.ts` asserts that sentence
+and that chips.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 539 — the FILE kit said ADS strafe
 
 **Goal.** Stage 538 closed the last mixed-case chip mechanic lead.

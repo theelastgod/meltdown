@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- the FILE kit still says mixed-case `fire rate`
+  → Stage 540
 - the FILE kit still says mixed-case `ADS strafe`
   → Stage 539
 - VANTAGE BANE's FILE lead still says mixed-case `bonus damage to VANTAGE units`

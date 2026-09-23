@@ -100,7 +100,7 @@ const STAT_LINE: Partial<Record<StatKey, string>> = {
   range: "range",
   adsMove: "ADS STRAFE",
   reloadSpeed: "reload",
-  fireRate: "fire rate",
+  fireRate: "FIRE RATE",
   moveSpeed: "move",
   droneDetect: "detection",
   footstep: "footsteps",

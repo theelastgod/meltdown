@@ -151,6 +151,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(src).not.toMatch(/adsMove: "ADS strafe"/);
   });
 
+  it("the FILE kit names FIRE RATE, not fire rate", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("BUMP STOCK", [{ stat: "fireRate", delta: 0.02 }], [{ stat: "spread", delta: 0.045 }, { stat: "recoil", delta: 0.03 }]);
+    expect(line).toBe("BUMP STOCK: +2% FIRE RATE / +4.5% spread, +3% recoil");
+    expect(line).not.toMatch(/fire rate/);
+    expect(src).toMatch(/fireRate: "FIRE RATE"/);
+    expect(src).not.toMatch(/fireRate: "fire rate"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };
