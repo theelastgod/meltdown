@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 578 — DEBT COLLECTOR's how said a Debt cleared
+
+**Goal.** Stage 577 taught MECH BREAKER. DEBT COLLECTOR still said mixed-case
+`a Debt cleared`.
+
+**What changed.** `A DEBT CLEARED`.
+
+**Proof.** Measured how was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/identity.test.ts` asserts that sentence and
+that monikers.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 577 — MECH BREAKER's how said a repo mech disabled
 
 **Goal.** Stage 576 taught DRONE BANE. MECH BREAKER still said mixed-case

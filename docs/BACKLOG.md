@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- DEBT COLLECTOR's how still says mixed-case `a Debt cleared`
+  → Stage 578
 - MECH BREAKER's how still says mixed-case `a repo mech disabled`
   → Stage 577
 - DRONE BANE's how still says mixed-case `ten wasps downed`

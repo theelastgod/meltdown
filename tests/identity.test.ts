@@ -314,4 +314,13 @@ describe("the FILE names how a moniker was earned in CRT", () => {
     expect(src).toMatch(/m\("mech_breaker", "MECH BREAKER", \{ kind: "counter", counter: "mechKills", need: 1 \}, "A REPO MECH DISABLED"\)/);
     expect(src).not.toMatch(/m\("mech_breaker", "MECH BREAKER", \{ kind: "counter", counter: "mechKills", need: 1 \}, "a repo mech disabled"\)/);
   });
+
+  it("DEBT COLLECTOR's how is CRT, not a Debt cleared", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "debt_collector")!.how;
+    expect(how).toBe("A DEBT CLEARED");
+    expect(how).not.toBe("a Debt cleared");
+    expect(src).toMatch(/m\("debt_collector", "DEBT COLLECTOR", \{ kind: "counter", counter: "debtsCleared", need: 1 \}, "A DEBT CLEARED"\)/);
+    expect(src).not.toMatch(/m\("debt_collector", "DEBT COLLECTOR", \{ kind: "counter", counter: "debtsCleared", need: 1 \}, "a Debt cleared"\)/);
+  });
 });
