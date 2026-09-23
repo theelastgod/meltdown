@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 544, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 545, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 544 on this branch (SPREAD STAT_LINE) |
-| Next stage number | **545** |
+| HEAD | Stage 545 on this branch (RECOIL STAT_LINE) |
+| Next stage number | **546** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,10 +191,10 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 545 is next
+## 6. Stage 546 is next
 
-Stage 544 CRT-cased STAT_LINE `SPREAD`. Remaining STAT_LINE
-labels still print mixed-case (`recoil`, `reload`, `move`,
+Stage 545 CRT-cased STAT_LINE `RECOIL`. Remaining STAT_LINE
+labels still print mixed-case (`reload`, `move`,
 `footsteps`, `flip`, `regen`, `headshot`, `grenade`, `mantle`,
 `slide`, `throw`, `range`). Title cards stay prose (probe:ship asserts
 them). Crew-code reasons stay mixed-case (`probe:campaign` asserts

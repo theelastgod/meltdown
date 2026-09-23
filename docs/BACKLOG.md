@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- the FILE kit still says mixed-case `recoil`
+  → Stage 545
 - the FILE kit still says mixed-case `spread`
   → Stage 544
 - the FILE kit still says mixed-case `slide decay`

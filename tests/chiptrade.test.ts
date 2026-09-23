@@ -78,7 +78,7 @@ describe("the conversion is scoped to the weapon that needs it", () => {
     expect(choke.costs).toEqual([{ stat: "adsMove", delta: -0.12 }]);
     expect(comp.costs).toEqual([{ stat: "spread", delta: 0.12 }]);
     expect(choke.costs).not.toEqual(comp.costs);
-    expect(choke.line).toBe("CHOKE: −12% recoil / −12% ADS STRAFE");
+    expect(choke.line).toBe("CHOKE: −12% RECOIL / −12% ADS STRAFE");
   });
 
   it("keeps a multi-part chip's other half intact", () => {
@@ -94,13 +94,13 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     expect(c.benefits).toEqual([{ stat: "spread", delta: -0.085 }]);
     expect(c.costs).toEqual([{ stat: "recoil", delta: 0.085 }]);
-    expect(c.line).toBe("CHOKE: −8.5% SPREAD / +8.5% recoil");
+    expect(c.line).toBe("CHOKE: −8.5% SPREAD / +8.5% RECOIL");
     expect(c.line).not.toMatch(/−12%/);
   });
 
   it("the SMG's CHOKE names recoil, not the spread it no longer has", () => {
     const c = CHIPS.find((x) => x.id === "stack_smg:choke")!;
-    expect(c.line).toBe("CHOKE: −12% recoil / −12% ADS STRAFE");
+    expect(c.line).toBe("CHOKE: −12% RECOIL / −12% ADS STRAFE");
     expect(c.line).not.toMatch(/spread/);
   });
 
@@ -108,7 +108,7 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     const c = CHIPS.find((x) => x.id === "stack_smg:counterweight")!;
     expect(c.benefits.every((b) => b.stat === "recoil")).toBe(true);
     expect(c.line).not.toMatch(/spread/);
-    expect(c.line).toMatch(/recoil/);
+    expect(c.line).toMatch(/RECOIL/);
   });
 
   it("every shipped line rebuilds from the settled mods", () => {
@@ -145,7 +145,7 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
   it("the FILE kit names ADS STRAFE, not ADS strafe", () => {
     const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
     const line = CHIPS.find((c) => c.id === "stack_smg:choke")!.line;
-    expect(line).toBe("CHOKE: −12% recoil / −12% ADS STRAFE");
+    expect(line).toBe("CHOKE: −12% RECOIL / −12% ADS STRAFE");
     expect(line).not.toMatch(/ADS strafe/);
     expect(src).toMatch(/adsMove: "ADS STRAFE"/);
     expect(src).not.toMatch(/adsMove: "ADS strafe"/);
@@ -154,7 +154,7 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
   it("the FILE kit names FIRE RATE, not fire rate", () => {
     const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
     const line = formatChipLine("BUMP STOCK", [{ stat: "fireRate", delta: 0.02 }], [{ stat: "spread", delta: 0.045 }, { stat: "recoil", delta: 0.03 }]);
-    expect(line).toBe("BUMP STOCK: +2% FIRE RATE / +4.5% SPREAD, +3% recoil");
+    expect(line).toBe("BUMP STOCK: +2% FIRE RATE / +4.5% SPREAD, +3% RECOIL");
     expect(line).not.toMatch(/fire rate/);
     expect(src).toMatch(/fireRate: "FIRE RATE"/);
     expect(src).not.toMatch(/fireRate: "fire rate"/);
@@ -198,10 +198,21 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
   it("the FILE kit names SPREAD, not spread", () => {
     const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
     const line = formatChipLine("CHOKE", [{ stat: "spread", delta: -0.12 }], [{ stat: "recoil", delta: 0.12 }]);
-    expect(line).toBe("CHOKE: −12% SPREAD / +12% recoil");
+    expect(line).toBe("CHOKE: −12% SPREAD / +12% RECOIL");
     expect(line).not.toMatch(/−12% spread/);
     expect(src).toMatch(/spread: "SPREAD"/);
     expect(src).not.toMatch(/spread: "spread"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
+  it("the FILE kit names RECOIL, not recoil", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("CHOKE", [{ stat: "spread", delta: -0.12 }], [{ stat: "recoil", delta: 0.12 }]);
+    expect(line).toBe("CHOKE: −12% SPREAD / +12% RECOIL");
+    expect(line).not.toMatch(/recoil/);
+    expect(src).toMatch(/recoil: "RECOIL"/);
+    expect(src).not.toMatch(/recoil: "recoil"/);
     expect(lintChipSchema()).toEqual([]);
     expect(lintItemSchema()).toEqual([]);
   });
