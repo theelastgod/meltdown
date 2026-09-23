@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- HEAVY HAFT's FILE line still says mixed-case `+25% damage, −7% swing rate, stuns longer`
+  → Stage 535
 - ARC RELAY's FILE line still says mixed-case `chain reaches 50% further`
   → Stage 534
 - LONG FUSE's FILE line still says mixed-case `faster, flatter rounds`

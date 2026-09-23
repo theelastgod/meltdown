@@ -29,7 +29,7 @@ export const FIRMWARES: FirmwareDef[] = [
   { id: "phage:cluster", weapon: "phage", rank: 20, name: "CLUSTER", line: "+25% BURST RADIUS, −15% DAMAGE", patch: (d) => ({ ...d, projectile: { ...d.projectile!, radius: d.projectile!.radius * 1.25, damage: Math.round(d.projectile!.damage * 0.85), edgeDamage: Math.round(d.projectile!.edgeDamage * 0.85) } }) },
   { id: "phage:long_fuse", weapon: "phage", rank: 28, name: "LONG FUSE", line: "FASTER, FLATTER ROUNDS, +8% DAMAGE, LONGER FUSE", patch: (d) => ({ ...d, projectile: { ...d.projectile!, speed: d.projectile!.speed * 1.2, gravity: d.projectile!.gravity * 0.8, fuse: d.projectile!.fuse * 1.3, damage: Math.round(d.projectile!.damage * 1.08) } }) },
   { id: "shock_baton:arc_relay", weapon: "shock_baton", rank: 20, name: "ARC RELAY", line: "CHAIN REACHES 50% FURTHER, −5% DAMAGE", patch: (d) => ({ ...d, damage: Math.round(d.damage * 0.95), melee: { ...d.melee!, chainRange: d.melee!.chainRange * 1.5 } }) },
-  { id: "shock_baton:heavy_haft", weapon: "shock_baton", rank: 28, name: "HEAVY HAFT", line: "+25% damage, −7% swing rate, stuns longer", patch: (d) => ({ ...d, damage: Math.round(d.damage * 1.25), rpm: Math.round(d.rpm * 0.93), melee: { ...d.melee!, stun: d.melee!.stun * 1.3 } }) },
+  { id: "shock_baton:heavy_haft", weapon: "shock_baton", rank: 28, name: "HEAVY HAFT", line: "+25% DAMAGE, −7% SWING RATE, STUNS LONGER", patch: (d) => ({ ...d, damage: Math.round(d.damage * 1.25), rpm: Math.round(d.rpm * 0.93), melee: { ...d.melee!, stun: d.melee!.stun * 1.3 } }) },
 ];
 
 export const firmwareById = (id: string): FirmwareDef | undefined => FIRMWARES.find((f) => f.id === id);

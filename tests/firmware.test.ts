@@ -202,6 +202,15 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(src).not.toMatch(/line: "chain reaches 50% further, −5% damage"/);
   });
 
+  it("HEAVY HAFT's FILE line is CRT, not stuns longer", () => {
+    const src = readFileSync(new URL("../shared/manifest/firmwares.ts", import.meta.url), "utf8");
+    const line = FIRMWARES.find((f) => f.id === "shock_baton:heavy_haft")!.line;
+    expect(line).toBe("+25% DAMAGE, −7% SWING RATE, STUNS LONGER");
+    expect(line).not.toBe("+25% damage, −7% swing rate, stuns longer");
+    expect(src).toMatch(/id: "shock_baton:heavy_haft".*line: "\+25% DAMAGE, −7% SWING RATE, STUNS LONGER"/s);
+    expect(src).not.toMatch(/line: "\+25% damage, −7% swing rate, stuns longer"/);
+  });
+
   it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
     const pct = (from: number, to: number) => ((to - from) / from) * 100;
     for (const f of FIRMWARES) {
