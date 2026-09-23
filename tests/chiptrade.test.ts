@@ -294,6 +294,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(lintItemSchema()).toEqual([]);
   });
 
+  it("the FILE kit names MANTLE, not mantle", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("QUICK MANTLE", [{ stat: "mantleTime", delta: -0.15 }], [{ stat: "slideBoost", delta: -0.08 }]);
+    expect(line).toBe("QUICK MANTLE: −15% MANTLE / −8% slide");
+    expect(line).not.toMatch(/mantle/);
+    expect(src).toMatch(/mantleTime: "MANTLE"/);
+    expect(src).not.toMatch(/mantleTime: "mantle"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };
