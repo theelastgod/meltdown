@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 620 — m6 REDACTED said wake them without the terror
+
+**Goal.** Stage 619 taught FULL BROADCAST. m6's REDACTED choice still
+said mixed-case `REDACTED. Wake them without the terror.`
+
+**What changed.** `REDACTED. WAKE THEM WITHOUT THE TERROR.`
+
+**Proof.** Measured choice was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that script.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 619 — m6 FULL BROADCAST said let them read the fire too
 
 **Goal.** Stage 618 taught SPARE THE DOCKS. m6's FULL BROADCAST choice

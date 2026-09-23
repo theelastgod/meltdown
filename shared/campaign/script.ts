@@ -145,7 +145,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       n("a", "terminal", ["THE DIRECTIVE IS ON EVERY LEASED FEED. THE CITY IS WAKING LIVE AROUND YOU.", "THE UPLINK CAN CARRY THE WHOLE DOCUMENT OR A REDACTED CUT WITH THE FORECAST REMOVED."], {
         choices: [
           { text: "FULL BROADCAST. LET THEM READ THE FIRE TOO.", set: { "m6:broadcast": "full" }, next: "full" },
-          { text: "REDACTED. Wake them without the terror.", set: { "m6:broadcast": "redacted" }, next: "redacted" },
+          { text: "REDACTED. WAKE THEM WITHOUT THE TERROR.", set: { "m6:broadcast": "redacted" }, next: "redacted" },
         ],
       }),
       n("full", "deacon", ["They're reading the Meltdown with their own eyes. Some of them are laughing. That's new."]),

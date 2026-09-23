@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- m6 REDACTED still says mixed-case `Wake them without the terror`
+  → Stage 620
 - m6 FULL BROADCAST still says mixed-case `Let them read the fire too`
   → Stage 619
 - m5 SPARE THE DOCKS still says mixed-case `Someone has to see the ships come in`

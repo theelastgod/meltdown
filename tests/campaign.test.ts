@@ -447,6 +447,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "FULL BROADCAST\. LET THEM READ THE FIRE TOO\."/);
     expect(src).not.toMatch(/text: "FULL BROADCAST\. Let them read the fire too\."/);
   });
+
+  it("m6 REDACTED is CRT, not wake them without the terror", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m6_broadcast")!.nodes.find((n) => n.id === "a")!.choices!.find((c) => c.set?.["m6:broadcast"] === "redacted")!.text;
+    expect(text).toBe("REDACTED. WAKE THEM WITHOUT THE TERROR.");
+    expect(text).not.toBe("REDACTED. Wake them without the terror.");
+    expect(src).toMatch(/text: "REDACTED\. WAKE THEM WITHOUT THE TERROR\."/);
+    expect(src).not.toMatch(/text: "REDACTED\. Wake them without the terror\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
