@@ -95,7 +95,7 @@ function settle(benefits: StatMod[], costs: StatMod[], mechanic: boolean): StatM
 
 /** Player-facing names for the stats a chip line is allowed to quote. */
 const STAT_LINE: Partial<Record<StatKey, string>> = {
-  spread: "spread",
+  spread: "SPREAD",
   recoil: "recoil",
   range: "range",
   adsMove: "ADS STRAFE",

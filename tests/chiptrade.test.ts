@@ -94,7 +94,7 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     expect(c.benefits).toEqual([{ stat: "spread", delta: -0.085 }]);
     expect(c.costs).toEqual([{ stat: "recoil", delta: 0.085 }]);
-    expect(c.line).toBe("CHOKE: −8.5% spread / +8.5% recoil");
+    expect(c.line).toBe("CHOKE: −8.5% SPREAD / +8.5% recoil");
     expect(c.line).not.toMatch(/−12%/);
   });
 
@@ -154,7 +154,7 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
   it("the FILE kit names FIRE RATE, not fire rate", () => {
     const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
     const line = formatChipLine("BUMP STOCK", [{ stat: "fireRate", delta: 0.02 }], [{ stat: "spread", delta: 0.045 }, { stat: "recoil", delta: 0.03 }]);
-    expect(line).toBe("BUMP STOCK: +2% FIRE RATE / +4.5% spread, +3% recoil");
+    expect(line).toBe("BUMP STOCK: +2% FIRE RATE / +4.5% SPREAD, +3% recoil");
     expect(line).not.toMatch(/fire rate/);
     expect(src).toMatch(/fireRate: "FIRE RATE"/);
     expect(src).not.toMatch(/fireRate: "fire rate"/);
@@ -191,6 +191,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(line).not.toMatch(/slide decay/);
     expect(src).toMatch(/slideFriction: "SLIDE DECAY"/);
     expect(src).not.toMatch(/slideFriction: "slide decay"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
+  it("the FILE kit names SPREAD, not spread", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("CHOKE", [{ stat: "spread", delta: -0.12 }], [{ stat: "recoil", delta: 0.12 }]);
+    expect(line).toBe("CHOKE: −12% SPREAD / +12% recoil");
+    expect(line).not.toMatch(/−12% spread/);
+    expect(src).toMatch(/spread: "SPREAD"/);
+    expect(src).not.toMatch(/spread: "spread"/);
     expect(lintChipSchema()).toEqual([]);
     expect(lintItemSchema()).toEqual([]);
   });
