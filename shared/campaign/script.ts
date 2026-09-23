@@ -160,7 +160,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       n("b", "wern", ["The lease system needs an author. I have been that author for twelve years and I am tired.", "Wipe the ledger and the city remembers nothing — not the fire, not the cage, not you.", "Or take the chair. Freeze what you must. Thaw what you dare."], { next: "c" }),
       n("c", "terminal", ["THE FINAL INPUT IS A CHOICE. THERE IS NO TRIGGER TO PULL."], {
         choices: [
-          { text: "WIPE THE LEDGER. Walk out free.", set: { "m7:ending": "wipe" }, next: null },
+          { text: "WIPE THE LEDGER. WALK OUT FREE.", set: { "m7:ending": "wipe" }, next: null },
           { text: "TAKE THE CHAIR.", set: { "m7:ending": "chair" }, next: null, gate: { all: { "m4:directive": "kept" } } },
           { text: "TAKE THE CHAIR — and set the model to forget.", set: { "m7:ending": "chair_clockeater" }, next: null, gate: { all: { "m4:directive": "kept", "m3:volatility": "hold" }, faction: ["clockeaters"] } },
           { text: "TAKE THE CHAIR — with Ida at your shoulder.", set: { "m7:ending": "chair_estate" }, next: null, gate: { all: { "m4:directive": "kept", "m4:vessel": "shield" }, faction: ["estate"] } },

@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- m7 WIPE THE LEDGER still says mixed-case `Walk out free`
+  → Stage 621
 - m6 REDACTED still says mixed-case `Wake them without the terror`
   → Stage 620
 - m6 FULL BROADCAST still says mixed-case `Let them read the fire too`

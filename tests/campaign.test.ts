@@ -456,6 +456,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "REDACTED\. WAKE THEM WITHOUT THE TERROR\."/);
     expect(src).not.toMatch(/text: "REDACTED\. Wake them without the terror\."/);
   });
+
+  it("m7 WIPE THE LEDGER is CRT, not walk out free", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "c")!.choices!.find((c) => c.set?.["m7:ending"] === "wipe")!.text;
+    expect(text).toBe("WIPE THE LEDGER. WALK OUT FREE.");
+    expect(text).not.toBe("WIPE THE LEDGER. Walk out free.");
+    expect(src).toMatch(/text: "WIPE THE LEDGER\. WALK OUT FREE\."/);
+    expect(src).not.toMatch(/text: "WIPE THE LEDGER\. Walk out free\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
