@@ -159,6 +159,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "PULL THE DEPOT'S LOGS\. HOLD THE PLAZA WHILE THEY COPY, AND DISABLE THE MECH VANTAGE SENDS TO STOP YOU\."/);
     expect(src).not.toMatch(/brief: "Pull the depot's logs\. Hold the plaza while they copy, and disable the mech VANTAGE sends to stop you\."/);
   });
+
+  it("THE LEAK's brief is CRT, not an Estate defector", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "m4_the_leak")!.brief;
+    expect(brief).toBe("AN ESTATE DEFECTOR HANDS YOU THE DIRECTIVE. WALK HER FROM B TO D UNDER A VANTAGE SWEEP WHILE WERN ARGUES HIS CASE.");
+    expect(brief).not.toBe("An Estate defector hands you the Directive. Walk her from B to D under a VANTAGE sweep while Wern argues his case.");
+    expect(src).toMatch(/brief: "AN ESTATE DEFECTOR HANDS YOU THE DIRECTIVE\. WALK HER FROM B TO D UNDER A VANTAGE SWEEP WHILE WERN ARGUES HIS CASE\."/);
+    expect(src).not.toMatch(/brief: "An Estate defector hands you the Directive\. Walk her from B to D under a VANTAGE sweep while Wern argues his case\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

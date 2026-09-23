@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 588 — THE LEAK's brief said an Estate defector
+
+**Goal.** Stage 587 taught VARIANCE. THE LEAK still said mixed-case
+`An Estate defector hands you the Directive. Walk her from B to D
+under a VANTAGE sweep while Wern argues his case.`
+
+**What changed.** `AN ESTATE DEFECTOR HANDS YOU THE DIRECTIVE. WALK
+HER FROM B TO D UNDER A VANTAGE SWEEP WHILE WERN ARGUES HIS CASE.`
+
+**Proof.** Measured brief was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that missions.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 587 — VARIANCE's brief said pull the depot's logs
 
 **Goal.** Stage 586 taught DEADLETTER RUN. VARIANCE still said

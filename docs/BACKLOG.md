@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- THE LEAK's brief still says mixed-case `An Estate defector hands you the Directive`
+  → Stage 588
 - VARIANCE's brief still says mixed-case `Pull the depot's logs`
   → Stage 587
 - DEADLETTER RUN's brief still says mixed-case `Work the docks`

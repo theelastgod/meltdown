@@ -110,7 +110,7 @@ export const MISSIONS: readonly MissionDef[] = [
     title: "THE LEAK",
     level: "deadletter_docks",
     fixer: "vessel",
-    brief: "An Estate defector hands you the Directive. Walk her from B to D under a VANTAGE sweep while Wern argues his case.",
+    brief: "AN ESTATE DEFECTOR HANDS YOU THE DIRECTIVE. WALK HER FROM B TO D UNDER A VANTAGE SWEEP WHILE WERN ARGUES HIS CASE.",
     objectives: [D("m4_leak", "THE DIRECTIVE"), { kind: "escort", path: [{ node: "B" }, { node: "A" }, { node: "D" }], speed: 2.2, leash: 8, text: "WALK IDA VESSEL FROM B TO D" }, { kind: "kill", target: "wasp", count: 3, text: "CLEAR THE SWEEP" }],
     reward: { scrip: 600, xp: 1600, weapon: "directive" },
     wasps: 4,
