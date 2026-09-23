@@ -393,6 +393,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "KEEP THE DIRECTIVE\. IF IT'S A WEAPON, IT'S MINE NOW\."/);
     expect(src).not.toMatch(/text: "KEEP THE DIRECTIVE\. If it's a weapon, it's mine now\."/);
   });
+
+  it("m4 GIVE IT TO IDA is CRT, not the Estate should have to read its own hand", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "w3")!.choices!.find((c) => c.set?.["m4:directive"] === "given")!.text;
+    expect(text).toBe("GIVE IT TO IDA. THE ESTATE SHOULD HAVE TO READ ITS OWN HAND.");
+    expect(text).not.toBe("GIVE IT TO IDA. The Estate should have to read its own hand.");
+    expect(src).toMatch(/text: "GIVE IT TO IDA\. THE ESTATE SHOULD HAVE TO READ ITS OWN HAND\."/);
+    expect(src).not.toMatch(/text: "GIVE IT TO IDA\. The Estate should have to read its own hand\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

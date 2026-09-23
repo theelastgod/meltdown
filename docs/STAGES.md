@@ -1641,6 +1641,20 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 614 — m4 GIVE IT TO IDA said the Estate should have to read its own hand
+
+**Goal.** Stage 613 taught KEEP THE DIRECTIVE. m4's GIVE IT TO IDA
+choice still said mixed-case `GIVE IT TO IDA. The Estate should have
+to read its own hand.`
+
+**What changed.** `GIVE IT TO IDA. THE ESTATE SHOULD HAVE TO READ ITS
+OWN HAND.`
+
+**Proof.** Measured choice was mixed-case. After the fix the CRT
+sentence is the catalogue. `tests/campaign.test.ts` asserts that
+sentence and that script.ts must not the mixed-case template.
+Mutation: mixed case again — 1 fail.
+
 ## Stage 613 — m4 KEEP THE DIRECTIVE said if it's a weapon
 
 **Goal.** Stage 612 taught HOLD IT. m4's KEEP THE DIRECTIVE choice

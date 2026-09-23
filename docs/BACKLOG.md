@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- m4 GIVE IT TO IDA still says mixed-case `The Estate should have to read its own hand`
+  → Stage 614
 - m4 KEEP THE DIRECTIVE still says mixed-case `If it's a weapon, it's mine now`
   → Stage 613
 - m3 HOLD IT still says mixed-case `A truth spent early buys nothing`

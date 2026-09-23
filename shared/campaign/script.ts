@@ -111,7 +111,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       n("w3", "wern", ["I'm not asking you to agree. I'm asking you to notice that you almost do."], {
         choices: [
           { text: "KEEP THE DIRECTIVE. IF IT'S A WEAPON, IT'S MINE NOW.", set: { "m4:directive": "kept" }, next: "vessel" },
-          { text: "GIVE IT TO IDA. The Estate should have to read its own hand.", set: { "m4:directive": "given" }, next: "vessel" },
+          { text: "GIVE IT TO IDA. THE ESTATE SHOULD HAVE TO READ ITS OWN HAND.", set: { "m4:directive": "given" }, next: "vessel" },
         ],
       }),
       n("vessel", "terminal", ["A VANTAGE SWEEP TAKES THE STREET. IDA VESSEL IS THE ONLY NAMED FILE ON IT.", "THE SEARCHLIGHT WANTS ONE OF YOU."], {
