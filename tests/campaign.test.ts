@@ -330,6 +330,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/text: "THE WAKE CELLS — EVERY NODE OFF THE MODEL IS A MIND OFF THE LEASE\."/);
     expect(src).not.toMatch(/text: "THE WAKE CELLS — every node off the model is a mind off the lease\."/);
   });
+
+  it("m1 BURN IT is CRT, not the model keeps no copy", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const text = SCRIPTS.find((s) => s.id === "m1_file")!.nodes.find((n) => n.id === "a")!.choices!.find((c) => c.set?.["m1:lease"] === "burn")!.text;
+    expect(text).toBe("BURN IT. THE MODEL KEEPS NO COPY IT CAN TRUST.");
+    expect(text).not.toBe("BURN IT. The model keeps no copy it can trust.");
+    expect(src).toMatch(/text: "BURN IT\. THE MODEL KEEPS NO COPY IT CAN TRUST\."/);
+    expect(src).not.toMatch(/text: "BURN IT\. The model keeps no copy it can trust\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

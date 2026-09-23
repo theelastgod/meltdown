@@ -65,7 +65,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
     nodes: [
       n("a", "terminal", ["THE FILE IS IN YOUR HANDS. IT IS WARM.", "ONE PAGE. YOUR SLEEP, YOUR DEBTS, YOUR NAME REDACTED, AND A FORECAST WITH YOUR GLYPH IN IT."], {
         choices: [
-          { text: "BURN IT. The model keeps no copy it can trust.", set: { "m1:lease": "burn" }, next: "burn" },
+          { text: "BURN IT. THE MODEL KEEPS NO COPY IT CAN TRUST.", set: { "m1:lease": "burn" }, next: "burn" },
           { text: "KEEP IT. Evidence is a weapon.", set: { "m1:lease": "keep" }, next: "keep" },
         ],
       }),

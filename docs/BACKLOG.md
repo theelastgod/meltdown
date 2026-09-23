@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- m1 BURN IT still says mixed-case `The model keeps no copy it can trust`
+  → Stage 607
 - THE WAKE CELLS' house pick still says mixed-case `every node off the model is a mind off the lease`
   → Stage 606
 - THE CLOCKEATERS' house pick still says mixed-case `eat the hours the model cannot see`
