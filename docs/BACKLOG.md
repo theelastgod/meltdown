@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- NAMED's how still says mixed-case `Chapter III — Depth 50`
+  → Stage 583
 - DIVERGENT's how still says mixed-case `Chapter II — Depth 25`
   → Stage 582
 - LISTED's how still says mixed-case `Chapter I — Depth 10`

@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 583 — NAMED's how said Chapter III — Depth 50
+
+**Goal.** Stage 582 taught DIVERGENT. NAMED still said mixed-case
+`Chapter III — Depth 50`.
+
+**What changed.** `CHAPTER III — DEPTH 50`.
+
+**Proof.** Measured how was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/identity.test.ts` asserts that sentence and
+that monikers.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 582 — DIVERGENT's how said Chapter II — Depth 25
 
 **Goal.** Stage 581 taught LISTED. DIVERGENT still said mixed-case
