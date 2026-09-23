@@ -258,6 +258,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/brief: "A CELL WENT DARK AT E\. BRING WHOEVER IS LEFT TO THE PLAZA\."/);
     expect(src).not.toMatch(/brief: "A cell went dark at E\. Bring whoever is left to the plaza\."/);
   });
+
+  it("SENSOR SABOTAGE · DOCKS's brief is CRT, not three lattice posts", () => {
+    const src = readFileSync(new URL("../shared/campaign/missions.ts", import.meta.url), "utf8");
+    const brief = MISSIONS.find((m) => m.id === "g_lattice_docks")!.brief;
+    expect(brief).toBe("THREE LATTICE POSTS ALONG THE CRANE LINE.");
+    expect(brief).not.toBe("Three lattice posts along the crane line.");
+    expect(src).toMatch(/brief: "THREE LATTICE POSTS ALONG THE CRANE LINE\."/);
+    expect(src).not.toMatch(/brief: "Three lattice posts along the crane line\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

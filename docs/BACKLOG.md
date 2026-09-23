@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- SENSOR SABOTAGE · DOCKS's brief still says mixed-case `Three lattice posts along the crane line`
+  → Stage 599
 - WAKE-CELL RESCUE · DOCKS's brief still says mixed-case `A cell went dark at E`
   → Stage 598
 - DRONE CONVOY · LEASE ROW's brief still says mixed-case `Four wasps run the plaza loop every night`
