@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- the FILE kit still says mixed-case `slide decay`
+  → Stage 543
 - the FILE kit still says mixed-case `regen delay`
   → Stage 542
 - the FILE kit still says mixed-case `detection`

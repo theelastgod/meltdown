@@ -184,6 +184,17 @@ describe("a chip line is the mods it applies (Stage 188)", () => {
     expect(lintItemSchema()).toEqual([]);
   });
 
+  it("the FILE kit names SLIDE DECAY, not slide decay", () => {
+    const src = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    const line = formatChipLine("SLIPFILE", [{ stat: "slideBoost", delta: 0.1 }, { stat: "slideFriction", delta: -0.1 }], [{ stat: "adsMove", delta: -0.12 }]);
+    expect(line).toBe("SLIPFILE: +10% slide, −10% SLIDE DECAY / −12% ADS STRAFE");
+    expect(line).not.toMatch(/slide decay/);
+    expect(src).toMatch(/slideFriction: "SLIDE DECAY"/);
+    expect(src).not.toMatch(/slideFriction: "slide decay"/);
+    expect(lintChipSchema()).toEqual([]);
+    expect(lintItemSchema()).toEqual([]);
+  });
+
   it("and the lint fires when a line is the template the mods left behind", () => {
     const c = CHIPS.find((x) => x.id === "repo_hammer:choke")!;
     const lying: ChipDef = { ...c, line: "CHOKE: −12% spread / +12% recoil" };

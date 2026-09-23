@@ -111,7 +111,7 @@ const STAT_LINE: Partial<Record<StatKey, string>> = {
   mantleTime: "mantle",
   shieldDelay: "REGEN DELAY",
   slideBoost: "slide",
-  slideFriction: "slide decay",
+  slideFriction: "SLIDE DECAY",
   throwSpeed: "throw",
 };
 
