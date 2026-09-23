@@ -196,3 +196,14 @@ describe("the Deadletter Office", () => {
     expect(hub.renovation.filter((r) => r.chapter <= 1).length).toBe(2);
   });
 });
+
+describe("the FILE names how a moniker was earned in CRT", () => {
+  it("UNLISTED's how is CRT, not every file starts here", () => {
+    const src = readFileSync(new URL("../shared/identity/monikers.ts", import.meta.url), "utf8");
+    const how = MONIKERS.find((m) => m.id === "unlisted")!.how;
+    expect(how).toBe("EVERY FILE STARTS HERE");
+    expect(how).not.toBe("every file starts here");
+    expect(src).toMatch(/m\("unlisted", "UNLISTED", \{ kind: "free" \}, "EVERY FILE STARTS HERE"\)/);
+    expect(src).not.toMatch(/m\("unlisted", "UNLISTED", \{ kind: "free" \}, "every file starts here"\)/);
+  });
+});

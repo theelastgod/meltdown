@@ -25,7 +25,7 @@ export interface MonikerDef {
 const m = (id: string, text: string, unlock: MonikerUnlock, how: string): MonikerDef => ({ id, text, unlock, how });
 
 export const MONIKERS: readonly MonikerDef[] = [
-  m("unlisted", "UNLISTED", { kind: "free" }, "every file starts here"),
+  m("unlisted", "UNLISTED", { kind: "free" }, "EVERY FILE STARTS HERE"),
   m("tenant", "TENANT", { kind: "counter", counter: "matches", need: 1 }, "play a match"),
   m("the_breaker", "LEASE-BREAKER", { kind: "stamp", stamp: "first_kill:lease_breaker" }, "first file closed with the Lease-Breaker"),
   m("repo_man", "REPO MAN", { kind: "stamp", stamp: "first_kill:repo_hammer" }, "first file closed with the Repo Hammer"),
