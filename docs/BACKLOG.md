@@ -12,6 +12,8 @@ one stage.
 
 ## Closed
 
+- ARC RELAY's FILE line still says mixed-case `chain reaches 50% further`
+  → Stage 534
 - LONG FUSE's FILE line still says mixed-case `faster, flatter rounds`
   → Stage 533
 - CLUSTER's FILE line still says mixed-case `+25% burst radius, −15% damage`

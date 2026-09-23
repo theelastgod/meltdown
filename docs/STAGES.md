@@ -1641,6 +1641,18 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 534 — ARC RELAY's FILE line said chain reaches 50% further
+
+**Goal.** Stage 533 taught LONG FUSE. ARC RELAY still said mixed-case
+`chain reaches 50% further, −5% damage`.
+
+**What changed.** `CHAIN REACHES 50% FURTHER, −5% DAMAGE`.
+
+**Proof.** Measured line was mixed-case. After the fix the CRT sentence
+is the catalogue. `tests/firmware.test.ts` asserts that sentence and
+that firmwares.ts must not the mixed-case template. Mutation: mixed
+case again — 1 fail.
+
 ## Stage 533 — LONG FUSE's FILE line said faster, flatter rounds
 
 **Goal.** Stage 532 taught CLUSTER. LONG FUSE still said mixed-case

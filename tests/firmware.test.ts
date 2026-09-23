@@ -193,6 +193,15 @@ describe("a flashed firmware reaches the round it fires", () => {
     expect(src).not.toMatch(/line: "faster, flatter rounds, \+8% damage, longer fuse"/);
   });
 
+  it("ARC RELAY's FILE line is CRT, not chain reaches 50% further", () => {
+    const src = readFileSync(new URL("../shared/manifest/firmwares.ts", import.meta.url), "utf8");
+    const line = FIRMWARES.find((f) => f.id === "shock_baton:arc_relay")!.line;
+    expect(line).toBe("CHAIN REACHES 50% FURTHER, −5% DAMAGE");
+    expect(line).not.toBe("chain reaches 50% further, −5% damage");
+    expect(src).toMatch(/id: "shock_baton:arc_relay".*line: "CHAIN REACHES 50% FURTHER, −5% DAMAGE"/s);
+    expect(src).not.toMatch(/line: "chain reaches 50% further, −5% damage"/);
+  });
+
   it("a firmware line quotes the integer the patch produces, not the multiplier", () => {
     const pct = (from: number, to: number) => ((to - from) / from) * 100;
     for (const f of FIRMWARES) {

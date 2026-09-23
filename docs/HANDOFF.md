@@ -1,6 +1,6 @@
 # Handoff — picking up the stage loop
 
-Written 2026-09-22, at Stage 533, for whoever works this next. It is deliberately not addressed to
+Written 2026-09-22, at Stage 534, for whoever works this next. It is deliberately not addressed to
 a particular agent: everything here holds for anyone who picks the branch up.
 
 Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
@@ -13,8 +13,8 @@ twenty minutes and it is the whole job.
 | | |
 | --- | --- |
 | Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 533 on this branch (LONG FUSE FILE line) |
-| Next stage number | **534** |
+| HEAD | Stage 534 on this branch (ARC RELAY FILE line) |
+| Next stage number | **535** |
 | CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
 | Unit tests | 1208 across 117 files, `npm test` |
 | Probes | 23, 523 checks, ~35–40 min for the full sweep |
@@ -191,11 +191,11 @@ New defects still follow the same method.
 
 ---
 
-## 6. Stage 534 is next
+## 6. Stage 535 is next
 
-Stage 533 CRT-cased LONG FUSE's FILE line. ARC RELAY still says
-mixed-case `chain reaches 50% further`. Title cards stay prose
-(probe:ship asserts them). Crew-code reasons stay mixed-case
+Stage 534 CRT-cased ARC RELAY's FILE line. HEAVY HAFT still says
+mixed-case `+25% damage, −7% swing rate, stuns longer`. Title cards
+stay prose (probe:ship asserts them). Crew-code reasons stay mixed-case
 (`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
 Do not plate viewmodel or remote strips. The join line still prints
 the socket name — `probe:net` asserts `probe-join-31`; leave it.
