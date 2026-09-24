@@ -1,3 +1,10 @@
+> Release audit, 2026-09-24: Stage 627 fixes offline art installation. GitHub and
+> production Pages were both at `dd2f8d6` when this work began. The latest CI run
+> was **red**, not verified green; see the release findings in `docs/BACKLOG.md`.
+> Cloudflare CLI access works here. The older deployment-block and no-open-findings
+> statements below are historical. Prioritize the release failures over the next
+> uppercase-copy edit. The next stage number after this release is **628**.
+
 # Handoff — picking up the stage loop
 
 Written 2026-09-23, at Stage 626, for whoever works this next. It is deliberately not addressed to

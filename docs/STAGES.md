@@ -1641,6 +1641,38 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 627 — First-visit offline art
+
+**Problem.** Stage 626's GitHub verification reported 57 failed art requests when
+opening the game after the origin stopped. The service worker precached only URLs
+in HTML; textures requested by the renderer before worker control never reached
+its cache. Production Pages and GitHub both referenced `dd2f8d6` at the audit.
+
+**Change.** Vite injects the reviewed art manifest into the built service worker.
+Installation now caches all 183 art files (29,240,401 bytes) alongside the shell's
+references. A release fingerprint changes with bundle names and reviewed art hashes,
+so a new release retriggers installation. No gameplay bundle, Worker, or economy
+code changes. This adds about 29 MB to the first installation's background download.
+
+**Proof.** `npm run build` and both TypeScript projects passed. The existing nine
+PWA tests passed. `node docs/proof/stage627/offline-install.mjs` runs against the
+built site with fresh browser contexts: 183/183 cached, 0/183 after removing the
+injected list, then 183/183 restored. The restored game boots with networking
+disabled, advances 60 simulation ticks, and makes zero failed art requests.
+The script restores the built worker in its finally block; JSON results are beside it.
+Before deployment, the live multiplayer check joined with 769 snapshots, tick 1748,
+33 ms RTT and no page errors. Built JS/CSS hashes matched production.
+
+**Limits.** This is not a green full-suite release. The full local unit run had
+1357 passing and five failing tests, plus a worker RPC timeout. A serial rerun of
+the four affected files passed 29/31; only the two city-path timeouts remained.
+Standard smoke twice timed out starting the local backend. A diagnostic copy with
+only its startup wait increased to 180 seconds booted, joined and advanced 90 ticks
+in 1.5 seconds, then failed performance reporting and timed out opening the menu.
+The full probe sweep was not rerun; the prior CI failures are recorded in BACKLOG.
+The independent offline game and mutation checks above verify this change without
+relaxing those failing checks.
+
 ## Stage 626 — Marrow's first line said don't say your name
 
 **Goal.** Stage 625 taught Ida's second line. Marrow's first still

@@ -5,9 +5,26 @@ independent adversarial verification that defaulted to *refuted*, and **32 survi
 turned out to be the same finding reported twice. All of them have since been fixed (Stages 168–195)
 and are listed at the foot of this file with the commit that closed them.
 
-**None are open.** The standing method still holds for whatever turns up next: take one,
-verify it yourself before building anything, guard it with a mutation-tested check, ship it as
-one stage.
+## Release verification findings — 2026-09-24
+
+GitHub verification of Stage 626 failed: https://github.com/theelastgod/meltdown/actions/runs/35926225284.
+The earlier “none open” statement did not include these release checks. These are observed
+failures, not all diagnosed gameplay defects:
+
+- Offline first visit: 57 art requests failed after the origin stopped. **Fixed in Stage 627:**
+  183/183 art files cached, offline boot advances 60 ticks with no failed art requests.
+- Wake, mastery and mobile probes still expect mixed-case copy that recent stages uppercased.
+- Campaign probe remains at the first hold objective, preventing completion, settlement and
+  downstream protocol/Threat checks; the crew leg also does not complete.
+- Endgame and counter probes time out.
+- THE RUN death check finds no expected log line after dropping the carried claim.
+- Frame probe sees textures 49 → 50 and shader programs 52 → 54 during sustained fire.
+- Third-person landing check measures no camera dip; remote-body walking check measures no
+  alternating leg poses.
+
+Reproduce and diagnose these individually; do not relax the assertions to make a release green.
+The standing method still holds: verify the cause, fix it, and prove the regression check fails
+when that fix is removed.
 
 
 ## Closed

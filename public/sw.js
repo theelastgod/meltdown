@@ -15,6 +15,8 @@
  */
 const SHELL = "meltdown-shell-v1";
 const RUNTIME = "meltdown-runtime-v1";
+// Vite fills this from the reviewed asset manifest for each production build.
+const ART = [];
 
 /**
  * Install precaches the shell AND everything the shell references (Stage 46). On a player's first
@@ -29,6 +31,7 @@ async function precache() {
   const html = await shell.clone().text();
   await caches.open(SHELL).then((c) => c.put("/", shell));
   const refs = [...html.matchAll(/(?:src|href)="(\/(?:assets|icons)\/[^"]+)"/g)].map((m) => m[1]);
+  refs.push(...ART);
   await caches.open(RUNTIME).then((c) => c.addAll(refs));
 }
 
