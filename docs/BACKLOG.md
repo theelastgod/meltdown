@@ -13,7 +13,9 @@ failures, not all diagnosed gameplay defects:
 
 - Offline first visit: 57 art requests failed after the origin stopped. **Fixed in Stage 627:**
   183/183 art files cached, offline boot advances 60 ticks with no failed art requests.
-- Wake, mastery and mobile probes still expect mixed-case copy that recent stages uppercased.
+- **Stage 628 fixes five stale expectations** in wake, mastery and mobile probes.
+  Predicate and negative-case checks pass; complete browser acceptance awaits CI.
+  Local wake/mastery runs timed out on backend startup (mastery fairness and firmware checks passed).
 - Campaign probe remains at the first hold objective, preventing completion, settlement and
   downstream protocol/Threat checks; the crew leg also does not complete.
 - Endgame and counter probes time out.

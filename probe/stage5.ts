@@ -129,7 +129,7 @@ async function main(): Promise<void> {
       }
       const panel = document.querySelector("#hud .nodefoot") as HTMLElement | null;
       const said = panel && !panel.hidden ? (panel.textContent ?? "") : "";
-      const m = /FLIP IN ([0-9.]+)s/.exec(said);
+      const m = /FLIP IN ([0-9]+\.[0-9])S\b/.exec(said);
       const predicted = m ? Number(m[1]) : -1;
       return { said, predicted, holdAt: n.hold, label: n.label };
     });

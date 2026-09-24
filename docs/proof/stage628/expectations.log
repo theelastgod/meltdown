@@ -1,0 +1,5 @@
+PASS countdown: reads 1.7; old lowercase parser fails; invalid unit rejected
+PASS poor: observed refusal accepted; old expectation fails; success and wrong reason rejected
+PASS deep: observed refusal accepted; old expectation fails; success and wrong reason rejected
+PASS twice: observed refusal accepted; old expectation fails; success and wrong reason rejected
+PASS touch: observed instructions accepted; old expectation fails; missing chips and keyboard instructions rejected

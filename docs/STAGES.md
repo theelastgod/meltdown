@@ -1641,6 +1641,36 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 628 — Release probes read the shipped CRT text
+
+**Problem.** CI on `bcb41d6` failed five checks because the game had moved to
+uppercase CRT copy while their probes still expected lowercase text. The wake
+readout printed `FLIP IN 1.7S`, but its parser returned -1 for the displayed time.
+The three mastery refusals were `NEEDS 400 SCRIP`, `NEEDS DEPTH 30`, and
+`ALREADY IN YOUR FILE`. Mobile settings printed `TAP [−] [+] · APPLIED LIVE ·
+KEPT IN THIS BROWSER` while the check searched for lowercase `tap`.
+
+**Change.** The countdown parser accepts the rendered one-decimal uppercase-S
+format and rejects an extended unit such as SECONDS. The other four checks require
+the complete expected text. Their behavior predicates remain: purchases must fail,
+touch adjustment chips must exist, keyboard-only instructions must be absent,
+and the parsed countdown must still agree with the measured simulation duration.
+Only probes change; the production client and Workers do not require deployment.
+
+**Proof.** `node docs/proof/stage628/expectations.mjs` extracts the edited predicates
+from the actual probe files. All five accept CI's observed output; all five old
+expectations fail against the same output. Mutations also reject the wrong price,
+wrong Depth, a wrong refusal, a successful purchase, an invalid unit, missing
+adjustment chips, and keyboard instructions. Output is stored alongside the script.
+The focused unit run passed 48/49; the remaining failure was the existing fairness
+duel's five-second timeout. The mastery probe passed its 366-build quick fairness
+lint and all twelve firmware certifications, then hit the backend startup timeout.
+The wake probe also timed out starting its backend; mobile navigation hit its
+30-second limit. Both TypeScript projects passed. These runs do not count as
+completed browser acceptance checks; the full verification suite remains red on
+other recorded findings. Stage 627's GitHub unit, typecheck and production smoke
+steps were separately confirmed green in run 36024163758.
+
 ## Stage 627 — First-visit offline art
 
 **Problem.** Stage 626's GitHub verification reported 57 failed art requests when

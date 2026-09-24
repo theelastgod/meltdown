@@ -1,0 +1,10 @@
+
+> meltdown@0.1.0 probe:mastery
+> tsx probe/stage7.ts
+
+PASS  lint: 48 nodes, 120 chips, 12 firmwares pass the Fairness Lint  — FAIRNESS LINT PASS — 366 builds, 36 baseline duels, 344.509s
+PASS  harness: every firmware is certified inside the TTK band at its ideal range  — three_count 0.65s, long_lease 0.72s, double_barrel 0.72s, slam_fire 0.70s, dump_stage 0.67s, measured 0.77s, capacitor 0.77s, overcharge 0.98s, cluster 0.87s, long_fuse 0.83s, arc_relay 0.92s, heavy_haft 0.98s
+Error: node host did not start
+    at Timeout._onTimeout (/Users/wendellphillips/meltdown/probe/stage7.ts:40:36)
+    at listOnTimeout (node:internal/timers:585:17)
+    at process.processTimers (node:internal/timers:521:7)

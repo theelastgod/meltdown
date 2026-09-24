@@ -1,3 +1,8 @@
+> Stage 628 updates five stale release-probe expectations; no game bundle changed.
+> Predicate proof is in `docs/proof/stage628/`. Browser acceptance remains limited
+> by local startup timeouts; inspect the new CI run before marking those probes green.
+> Next stage: **629**. Continue with verified campaign/rendering failures in BACKLOG.
+
 > Release audit, 2026-09-24: Stage 627 fixes offline art installation. GitHub and
 > production Pages were both at `dd2f8d6` when this work began. The latest CI run
 > was **red**, not verified green; see the release findings in `docs/BACKLOG.md`.

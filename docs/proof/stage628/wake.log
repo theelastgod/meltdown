@@ -1,0 +1,8 @@
+
+> meltdown@0.1.0 probe:wake
+> tsx probe/stage5.ts
+
+Error: node host did not start
+    at Timeout._onTimeout (/Users/wendellphillips/meltdown/probe/stage5.ts:34:36)
+    at listOnTimeout (node:internal/timers:585:17)
+    at process.processTimers (node:internal/timers:521:7)

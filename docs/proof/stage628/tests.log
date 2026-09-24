@@ -1,0 +1,45 @@
+
+ RUN  v3.2.7 /Users/wendellphillips/meltdown
+
+ ❯ tests/fairness.test.ts (19 tests | 1 failed) 16376ms
+   ✓ manifest schema — a trade-less buff cannot ship > the shipped catalogue is clean 14ms
+   ✓ manifest schema — a trade-less buff cannot ship > an item with no costs fails 6ms
+   ✓ manifest schema — a trade-less buff cannot ship > an item whose benefits outweigh its costs fails reconciliation 2ms
+   ✓ manifest schema — a trade-less buff cannot ship > a mislabelled cost fails 1ms
+   ✓ loadout legality (validated server-side at spawn) > accepts a connected attestation of 7 with a linked keystone 12ms
+   ✓ loadout legality (validated server-side at spawn) > rejects more than 7, unowned, disconnected, unknown fields, and depth-gated weapons 159ms
+   ✓ loadout legality (validated server-side at spawn) > every legal build reconciles: NET DELTA 0 on the Auditor's ledger within tolerance 4ms
+   ✓ fairness lint — simulation, not arithmetic > baseline duel TTK sits in the band at the rifle's ideal range and shields soak first 283ms
+   × fairness lint — simulation, not arithmetic > a reconciled-on-paper damage node still fails the duel lint (net power) 6567ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   ✓ fairness lint — simulation, not arithmetic > the mobility course is deterministic and a +12% move keystone breaks the ±5% bar without its shield cost... but passes the duel 184ms
+   ✓ fairness lint — simulation, not arithmetic > the shipped catalogue passes the quick lint  9074ms
+   ✓ progression > Depth curve: 50 takes 55–75 h of strong matches 10ms
+   ✓ progression > XP is objective-weighted: flips out-earn kills for the same effort 1ms
+   ✓ progression > accounts apply matches, buy and refund nodes, and craft deterministically 24ms
+   ✓ the ledger shop CRT-cases a miss > an unknown node is UNKNOWN ITEM, not unknown item 4ms
+   ✓ the ledger shop CRT-cases a miss > a poor buy is NEEDS N SCRIP, not needs N Scrip 6ms
+   ✓ the ledger shop CRT-cases a miss > a Depth-gated buy is NEEDS DEPTH, not needs Depth 3ms
+   ✓ the ledger shop CRT-cases a miss > a node the file already holds is ALREADY IN YOUR FILE, not already in your file 2ms
+   ✓ the ledger shop CRT-cases a miss > a refund of an unowned node is NOT IN YOUR FILE, not not in your file 2ms
+ ✓ tests/node.test.ts (15 tests) 60ms
+ ✓ tests/verify.test.ts (5 tests) 51ms
+ ✓ tests/keyhint.test.ts (10 tests) 30ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/fairness.test.ts > fairness lint — simulation, not arithmetic > a reconciled-on-paper damage node still fails the duel lint (net power)
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ tests/fairness.test.ts:142:3
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 48 passed (49)
+   Start at  13:59:30
+   Duration  37.54s (transform 3.36s, setup 0ms, collect 4.77s, tests 16.52s, environment 6ms, prepare 4.65s)
+

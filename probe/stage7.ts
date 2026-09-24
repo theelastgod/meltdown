@@ -168,7 +168,7 @@ async function main(): Promise<void> {
 
     // ---------------- ledger shop ----------------
     const poor = await fetch(`http://127.0.0.1:${HOST_PORT}/file/fresh-poor/buy`, { method: "POST", body: JSON.stringify({ node: "slipfile" }) }).then((r) => r.json()) as { ok: boolean; reason?: string };
-    check("shop: a fresh Blank cannot afford a node", !poor.ok && /Scrip/.test(poor.reason ?? ""), poor.reason ?? "bought?!");
+    check("shop: a fresh Blank cannot afford a node", !poor.ok && poor.reason === "NEEDS 400 SCRIP", poor.reason ?? "bought?!");
     // ALPHA has taken its screenshot and is only holding a room slot from here on. Two 1280x720
     // SwiftShader contexts on the same box put RICH's readiness at 19 s against ALPHA's 0.9 s, and
     // on a CI runner that crossed the wait and failed the probe. Shrink ALPHA while RICH lives.
@@ -184,9 +184,9 @@ async function main(): Promise<void> {
     await shotCheck(r, "stage7-graph-after.png", "#hud .graph");
     check("shop: a Depth-10 file with Scrip buys SLIPFILE and the hex turns green on the graph", bought.ok && after.owned.includes("slipfile") && after.scrip === before.scrip - 400 && after.green && after.own === before.own + 1, `owned ${before.owned}→${after.owned.length} · scrip ${before.scrip}→${after.scrip} · green hexes ${before.own}→${after.own}`);
     const deep = await r.evaluate(() => window.__game.buy("black_swan"));
-    check("shop: ring III is gated on Depth (BLACK SWAN needs 30)", !deep.ok && /Depth/.test(deep.reason ?? ""), deep.reason ?? "bought?!");
+    check("shop: ring III is gated on Depth (BLACK SWAN needs 30)", !deep.ok && deep.reason === "NEEDS DEPTH 30", deep.reason ?? "bought?!");
     const twice = await r.evaluate(() => window.__game.buy("slipfile"));
-    check("shop: ownership is permanent — buying a node twice is refused", !twice.ok && /already/.test(twice.reason ?? ""), twice.reason ?? "bought?!");
+    check("shop: ownership is permanent — buying a node twice is refused", !twice.ok && twice.reason === "ALREADY IN YOUR FILE", twice.reason ?? "bought?!");
     await r.evaluate(() => window.__game.setLoadout({ primary: "lease_breaker", secondary: "shock_baton", attested: ["slipfile"] }));
     const refund = await r.evaluate(() => window.__game.buy("slipfile", true));
     const afterRefund = await r.evaluate(() => ({ owned: window.__game.file().owned, scrip: window.__game.file().scrip }));
