@@ -40,6 +40,8 @@ export class VfxPool {
   private sparkNext = 0;
   /** drawn frames left before the pools may hide (Stage 158): their shaders compile on a drawn frame */
   private warming = WARM_FRAMES;
+  private tracerVersion = 0;
+  private sparkVersion = 0;
   private m = new THREE.Matrix4();
   private c = new THREE.Color();
 
@@ -121,6 +123,15 @@ export class VfxPool {
    * common case to get better in the rare one) and a frame full of tracers costs one.
    */
   update(clock: number): void {
+    // Art can arrive after the initial warm frames. A new material version needs
+    // another draw while empty, or the first shot pays for its mapped shader.
+    const tracerVersion = (this.tracers.material as THREE.Material).version;
+    const sparkVersion = (this.sparks.material as THREE.Material).version;
+    if (tracerVersion !== this.tracerVersion || sparkVersion !== this.sparkVersion) {
+      this.warming = WARM_FRAMES;
+      this.tracerVersion = tracerVersion;
+      this.sparkVersion = sparkVersion;
+    }
     let anyTracer = false;
     for (let i = 0; i < MAX_TRACERS; i++) {
       const age = clock - this.tracerBorn[i]!;

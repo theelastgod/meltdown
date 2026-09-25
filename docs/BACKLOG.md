@@ -14,13 +14,13 @@ failures, not all diagnosed gameplay defects:
 - Offline first visit: 57 art requests failed after the origin stopped. **Fixed in Stage 627:**
   183/183 art files cached, offline boot advances 60 ticks with no failed art requests.
 - **Stage 628 fixes five stale expectations** in wake, mastery and mobile probes.
-  Predicate and negative-case checks pass; complete browser acceptance awaits CI.
-  Local wake/mastery runs timed out on backend startup (mastery fairness and firmware checks passed).
+  All three browser probes passed in GitHub run 36059616253.
 - Campaign probe remains at the first hold objective, preventing completion, settlement and
   downstream protocol/Threat checks; the crew leg also does not complete.
 - Endgame and counter probes time out.
 - THE RUN death check finds no expected log line after dropping the carried claim.
-- Frame probe sees textures 49 → 50 and shader programs 52 → 54 during sustained fire.
+- **Fixed in Stage 629:** late effect textures now restart shader warm-up. The diagnostic
+  frame probe passes 8/8: textures 50 → 50 and programs 54 → 54 over 30 shots.
 - Third-person landing check measures no camera dip; remote-body walking check measures no
   alternating leg poses.
 

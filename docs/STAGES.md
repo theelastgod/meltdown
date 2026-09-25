@@ -1641,6 +1641,34 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 629 — Warm the effect material after its art arrives
+
+**Problem.** CI's first-burst check measured textures 49 → 50 and shader programs
+52 → 54. Tracer and spark pools warmed for two frames at construction, but their
+asynchronous plate bindings could arrive later. Empty pools were then hidden, so
+the first shot had to upload the texture and compile the mapped shader.
+
+**Change.** `VfxPool.update` tracks both materials' Three.js version counters. A
+changed material restarts the two-frame warm-up, drawing the empty pools against
+the actual scene before firing. Stable materials stop warming; no extra effect
+geometry or permanent idle draw calls are introduced.
+
+**Proof.** Two regression cases use the real pool and real plate binder with
+controlled asset arrival, after the original warm-up has expired. Both fail on
+the old code (the newly mapped effect remains hidden). Both pass with the fix,
+and assert that the pools hide again after exactly the warm-up window. The focused
+warm-up/asset suite passes 27/27, both TypeScript projects pass, and the production
+build passes.
+
+The standard frame probe hit its 30-second navigation timeout locally. A diagnostic
+copy changed only navigation/readiness startup waits to 120 seconds; all eight
+original performance and behavior checks passed. Across 30 shots: geometries
+62 → 62, textures 50 → 50, programs 54 → 54. Worst/median frame ratios were 1.2
+idle and 1.0 firing; these software-GPU timings are not a real-device benchmark.
+The HUD rate check and clean-console check also passed. Logs are in
+`docs/proof/stage629/`. The entire unit/probe sweep was not rerun; campaign,
+landing-camera, remote-pose and other recorded release failures remain open.
+
 ## Stage 628 — Release probes read the shipped CRT text
 
 **Problem.** CI on `bcb41d6` failed five checks because the game had moved to

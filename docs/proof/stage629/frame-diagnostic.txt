@@ -1,0 +1,10 @@
+PASS  idle: the scene drifts by only a handful of registrations, not a stream of them  — geometries 62 → 62 (+0 over 6s) · textures 50 · programs 54
+PASS  sustained fire creates nothing per shot: the tracers and sparks come from fixed pools  — 30 shots · geometries 62 → 62 (0.000 per shot, was ~1.0) · textures 50 → 50 · 26 effects live
+PASS  the first burst of a session compiles no shader: the pooled effects were warmed against the scene the game actually draws  — programs 54 → 54 over 30 shots · geometries 62 → 62
+PASS  the effects cost two draw calls in total, not one each  — 135 → 139 calls (+4, rig 0→0) with 26 effects live · 25k triangles · tracers 0→1, sparks 0→1
+PASS  no hitch while idle: the worst frame in five seconds is within 4× the median  — p50 2074.7 p95 2393.5 p99 2393.5 max 2394 ms · 1.2× · 0.6 fps on software GL
+PASS  nor under sustained fire, which is the frame that used to allocate  — p50 2964.2 p95 3012.0 p99 3012.0 max 3012 ms · 1.0×
+PASS  the band's own two numbers are the ones a stopwatch gets: the sim's rate for the time it was given, and the frames the renderer actually drew  — band said 2.3 FPS · SIM 60.2 Hz over 36 readings; the counters say 2.0 fps · 60.0 Hz over 51.1s (off by 18% and 0%) · last read "4 FPS · SIM 60 Hz"
+PASS  no page errors  — clean console
+
+8/8 checks passed.

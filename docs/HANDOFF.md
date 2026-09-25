@@ -1,3 +1,8 @@
+> Stage 629 fixes effect shader warm-up after asynchronous art loading. Focused
+> tests pass 27/27; diagnostic frame probe passes 8/8 with longer startup waits.
+> Stage 628 wake, mastery, and mobile probes all passed GitHub CI. Next stage: **630**.
+> Campaign completion, landing-camera, and remote-pose failures remain open.
+
 > Stage 628 updates five stale release-probe expectations; no game bundle changed.
 > Predicate proof is in `docs/proof/stage628/`. Browser acceptance remains limited
 > by local startup timeouts; inspect the new CI run before marking those probes green.

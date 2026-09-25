@@ -1,0 +1,37 @@
+
+ RUN  v3.2.7 /Users/wendellphillips/meltdown
+
+ ❯ tests/vfxplates.test.ts (2 tests | 2 failed) 118ms
+   × late art on pooled effects > warms tex_lamp after it arrives without waiting for a shot 102ms
+     → draw the new mapped material before firing: expected false to be true // Object.is equality
+   × late art on pooled effects > warms tex_spark after it arrives without waiting for a shot 9ms
+     → draw the new mapped material before firing: expected false to be true // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/vfxplates.test.ts > late art on pooled effects > warms tex_lamp after it arrives without waiting for a shot
+ FAIL  tests/vfxplates.test.ts > late art on pooled effects > warms tex_spark after it arrives without waiting for a shot
+AssertionError: draw the new mapped material before firing: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ tests/vfxplates.test.ts:29:78
+     27|       for (let i = 0; i < WARM_FRAMES; i++) {
+     28|         pool.update(1);
+     29|         expect(effect.visible, "draw the new mapped material before fi…
+       |                                                                              ^
+     30|       }
+     31|       pool.update(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  18:48:50
+   Duration  7.20s (transform 1.31s, setup 0ms, collect 1.77s, tests 118ms, environment 4ms, prepare 865ms)
+

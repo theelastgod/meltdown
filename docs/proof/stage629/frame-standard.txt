@@ -1,0 +1,11 @@
+
+> meltdown@0.1.0 probe:frame
+> tsx probe/stage21.ts
+
+page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:5191/?headless=1&nonav=1&crawl=0&ai=0&level=drainage_yard&account=sandbox-frame&view=first", waiting until "load"[22m
+
+    at main (/Users/wendellphillips/meltdown/probe/stage21.ts:106:14) {
+  name: 'TimeoutError'
+}
