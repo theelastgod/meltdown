@@ -11,7 +11,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
-import { TITLE_CARDS } from "../client/menu";
+import { CARD_GAP, CARD_SECONDS, TITLE_CARDS } from "../client/menu";
 import { DEFAULT_SETTINGS } from "../client/settings";
 
 const VITE_PORT = 5209;
@@ -63,28 +63,63 @@ async function main(): Promise<void> {
   try {
     // ---------------- the title cards ----------------
     const a = await newPage("menu");
-    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&menu=1&crawl=0&nonav=1&menuspeed=1.5&level=drainage_yard&account=sandbox-ship`, { waitUntil: "load" });
-    await a.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "cards", null, { timeout: 40000, polling: 30 });
+    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&menu=1&crawl=0&nonav=1&menuspeed=1.5&menufreeze=1&level=drainage_yard&account=sandbox-ship`, { waitUntil: "load" });
+    // The cards are frozen from before their first frame (menufreeze) and stepped one at a time.
+    // Polling the DOM while they ran lost a card on a slow box: the scene's first frame compiles
+    // every shader synchronously under SwiftShader, and the probe's own evaluate cannot be serviced
+    // until that frame ends — by then the card it meant to read has been replaced. A card is 1.9 s
+    // here. Holding the clock makes the walk independent of how fast the machine is.
+    await a.waitForFunction(() => window.__game?.ready === true && !!window.__game.menu()?.cardText, null, { timeout: 40000, polling: 30 });
     const cards: string[] = [];
-    const t0 = Date.now();
-    while (Date.now() - t0 < 30000) {
+    const dwell: number[] = []; // how long each card ran once the freeze let it go
+    let firstCardT: number | null = null; // where on its own clock the freeze caught the first card
+    for (let i = 0; i < TITLE_CARDS.length + 2; i++) {
       const v = await a.evaluate(() => window.__game.menu()!);
-      if (v.screen !== "cards") break;
-      if (v.cardText && cards[cards.length - 1] !== v.cardText) {
-        cards.push(v.cardText);
-        await a.waitForTimeout(260); // past the card's snap-in (its first step is dark)
-        await a.evaluate(() => window.__game.menuPause(true)); // hold the card clock for the shot
-        await a.screenshot({ path: `${OUT}/stage13-card${cards.length}.png` });
-        await a.evaluate(() => window.__game.menuPause(false));
-      }
-      await a.waitForTimeout(20);
+      if (v.screen !== "cards" || !v.cardText) break;
+      if (firstCardT === null) firstCardT = v.cardT;
+      cards.push(v.cardText);
+      await a.waitForTimeout(260); // the snap-in is a CSS animation on wall time; its first step is dark
+      await a.screenshot({ path: `${OUT}/stage13-card${cards.length}.png` });
+      // let the clock run only until the next card is up, then hold it again
+      const released = Date.now();
+      await a.evaluate(() => window.__game.menuPause(false));
+      await a.waitForFunction(
+        (n) => {
+          const m = window.__game.menu();
+          return !m || m.screen !== "cards" || (m.card !== n && !!m.cardText);
+        },
+        v.card,
+        { timeout: 20000, polling: 16 },
+      );
+      dwell.push((Date.now() - released) / 1000);
+      await a.evaluate(() => window.__game.menuPause(true));
     }
+    await a.evaluate(() => window.__game.menuPause(false));
     const look = await a.evaluate(() => {
       const root = document.getElementById("menu")!;
       const rs = getComputedStyle(root);
       return { bg: rs.backgroundColor, font: rs.fontFamily, scan: getComputedStyle(root.querySelector(".scan")!).animationName, z: rs.zIndex };
     });
     check("the two title cards, in order, CRT chrome (black, terminal type, a scanline pass), then the menu", cards.length === 2 && cards[0] === TITLE_CARDS[0] && cards[1] === TITLE_CARDS[1] && /rgb\(0,\s*0,\s*0\)/.test(look.bg) && look.scan === "crawl-flicker" && Number(look.z) >= 900, `cards [${cards.map((c) => `"${c}"`).join(", ")}] · bg ${look.bg} · scan ${look.scan}`);
+
+    /**
+     * And the freeze holds a card rather than expiring it. A card's clock starts on the frame it
+     * appears, so one frozen from that frame still owes its whole length when released; the walk
+     * above would not notice it being skipped, because it steps the cards itself and would simply
+     * read the next one. Timing the release pins it: a card whose clock never started reads ~0 s.
+     * Read off the card's own clock rather than timed with a wall clock. Timing the release cannot
+     * see this: the first card is released while the scene still compiles its shaders, which blocks
+     * rAF, and that swamped the shortfall — 5.92 s for the same card whether or not the bug was in.
+     * The clock itself is exact. Frozen from before its first frame, the first card must read the
+     * very start of its own length; a clock that had not been started when the freeze landed reads
+     * however long the page took to boot instead, and the card is that much shorter, or gone.
+     */
+    const cardLen = (CARD_SECONDS + CARD_GAP) / 1.5; // the page runs at menuspeed=1.5
+    check(
+      "a card's clock starts on the frame it appears, frozen or not: the freeze catches the first card at the very start of its length",
+      firstCardT !== null && firstCardT < 0.1,
+      `the first card read ${firstCardT === null ? "no clock" : `${firstCardT.toFixed(2)}s`} of its ${(CARD_SECONDS + CARD_GAP).toFixed(1)}s when the freeze caught it · released dwell [${dwell.map((d) => `${d.toFixed(2)}s`).join(", ")}] against ${cardLen.toFixed(2)}s of wall clock`,
+    );
 
     // ---------------- the main menu and the keys ----------------
     await a.waitForFunction(() => window.__game.menu()?.screen === "main", null, { timeout: 20000, polling: 30 });

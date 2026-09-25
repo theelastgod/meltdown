@@ -425,6 +425,9 @@ const menu = menuWanted(bootQ)
     )
   : null;
 if (menu) {
+  // Probes step the title cards themselves. The freeze has to be set before the first card frame,
+  // which is earlier than any script the harness can inject once the page has loaded.
+  if (bootQ.get("menufreeze") === "1") menu.paused = true;
   if (crawl) crawl.onFinish = () => menu.start();
   else menu.start();
   game.onLockLost = () => {

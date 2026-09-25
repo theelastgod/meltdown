@@ -1641,6 +1641,51 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 641 — The probe's own evidence was making it miss the card it came for
+
+**The defect.** `probe:ship` kept failing its title-card check, in CI and then
+here: `cards ["You woke free."]` — the first of the two cards missing outright.
+It reproduced 3/3 locally at commits CI had *passed*, which is the shape of a
+race rather than a regression, so three hypotheses about recent commits (the
+video decoders, the menu backdrop, Stage 636's camera change) were each tested
+by reverting them and each disproved.
+
+**What it actually was.** The walk polled the DOM while the cards ran, and took
+its screenshot *inside* the polling loop — a 260 ms wait, two evaluates and a
+screenshot, per card. A card is 1.93 s at `menuspeed=1.5`. On a slow box that
+work outlasts the next card, so gathering the evidence for card 1 is precisely
+what lost card 2. Underneath it, the page's first frame compiles every shader
+synchronously under SwiftShader; the probe's own `evaluate` cannot be serviced
+until that frame ends, by which time the card it meant to read has already been
+replaced. The observation was destroying what it observed.
+
+**The fix.** The cards are frozen from before their first frame and stepped one
+at a time. The freeze is a `menufreeze` boot flag rather than an injected
+script, because it has to be set earlier than anything the harness can run once
+the page has loaded. Two defects in the freeze itself had to be fixed first,
+both found by the fix rather than assumed:
+
+  - a card's clock was started *after* the pause branch, so freezing before the
+    first frame left it at zero and the release added the held span to nothing.
+    The card was then already past its own end: it forfeited however long the
+    page took to boot — 0.88 s of its 2.9 s here — and on a box that reaches
+    the menu later than ~1.9 s it forfeits the whole card.
+  - the pause branch returned before the card was drawn, so a card frozen from
+    its first frame held a blank screen instead of itself.
+
+**The guard.** Read off the card's own clock (`cardT`), not timed with a wall
+clock. Timing the release cannot see the first defect: the first card is
+released into the shader compile, and that stall swamps the shortfall — the
+same card measured 5.92 s whether or not the bug was in. The clock is exact:
+0.00 s clean, 0.88 s with the bug.
+
+**Mutation-tested**, three ways, each failing for its own reason: start on the
+second card (one card seen), revert the clock's start order (0.88 s), gate the
+render on the clock again (no cards at all). An earlier wall-clock version of
+this guard passed two of those three and was thrown away rather than kept.
+
+12/12 checks, 1387 tests, 0 asset violations.
+
 ## Stage 640 — The trailer, cut again with a climax in it
 
 **Problem.** Stage 639's trailer was seventy seconds of good shots in a flat line.

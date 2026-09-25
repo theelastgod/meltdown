@@ -52,6 +52,8 @@ export interface MenuView {
   screen: MenuScreen;
   card: number;
   cardText: string;
+  /** the current card's own elapsed seconds, held where a freeze caught it */
+  cardT: number;
   cursor: number;
   entries: string[];
   settings: Settings;
@@ -194,20 +196,26 @@ export class Menu {
   /** the probe's freeze: the card clock holds while paused (screenshots under SwiftShader are slow) */
   paused = false;
   private pausedAt = 0;
+  /** The card's own elapsed seconds: wall time since the frame it appeared, held while frozen. */
+  private cardClock(now: number): number {
+    return (((this.pausedAt || now) - this.cardStart) / 1000) * this.speed;
+  }
   private tick = (now: number): void => {
     if (this.screen !== "cards") return;
+    // A card's clock starts on the frame it appears, and it starts whether or not the menu is frozen:
+    // freezing before that first frame used to leave cardStart at 0, so the release added the held
+    // span to nothing and the card was already seconds past its own end — the first card vanished.
+    if (!this.cardStart) this.cardStart = now;
     if (this.paused) {
       if (!this.pausedAt) this.pausedAt = now;
-      this.raf = requestAnimationFrame(this.tick);
-      return;
-    }
-    if (this.pausedAt) {
+    } else if (this.pausedAt) {
       this.cardStart += now - this.pausedAt;
       this.pausedAt = 0;
     }
-    if (!this.cardStart) this.cardStart = now;
-    const t = ((now - this.cardStart) / 1000) * this.speed;
-    if (t >= CARD_SECONDS + CARD_GAP) {
+    // The card's own clock, held where the freeze caught it. Only the advance is gated on it — the
+    // card still draws while frozen, or freezing one before its first frame would hold a blank screen.
+    const t = this.cardClock(now);
+    if (!this.paused && t >= CARD_SECONDS + CARD_GAP) {
       if (this.card + 1 >= TITLE_CARDS.length) {
         this.showMain();
         return;
@@ -427,7 +435,7 @@ export class Menu {
   }
 
   view(): MenuView {
-    return { matched: !!this.matched, screen: this.screen, card: this.card, cardText: (this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen };
+    return { matched: !!this.matched, screen: this.screen, card: this.card, cardT: this.cardClock(performance.now()), cardText:(this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen };
   }
 
   static settingsOf(): Settings {
