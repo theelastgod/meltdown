@@ -1641,6 +1641,53 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 638 — The counter probe was not slow, it was the third renderer
+
+**Problem.** `probe:counter` printed thirteen passing checks and then threw
+`page.goto: Timeout 30000ms exceeded` at `probe/stage11b.ts:272` — a **navigation**
+timeout, on the page that tests what the client does while the chain is down.
+
+The standing theory was payload: the service worker precaches 183 art files and
+about 28 MB, and `waitUntil: "load"` waits for all of it. The proposed fix was to
+stop the art holding the load event. That would have been a loosening wearing a
+production-code disguise — after it, `waitUntil: "load"` would cover the module
+graph and a stylesheet and nothing else, across forty goto sites at once.
+
+So it was measured first, on the software renderer CI uses, opening the same page
+repeatedly and keeping each one alive:
+
+| live pages | DOMContentLoaded | load | navigation |
+| --- | --- | --- | --- |
+| 1 | 654 ms | 1412 ms | 1416 ms |
+| 2 | 1689 ms | 14446 ms | 14449 ms |
+| 3 | 3006 ms | 23033 ms | 23034 ms |
+| 4 | 5046 ms | 34191 ms | 34192 ms |
+
+**The resource set is identical on every one of those pages** — 211 requests, 63 art
+files, 8875 KB — so the download is not the variable. What grows is the gap between
+DOMContentLoaded and load: 0.8 s with one page live, 20 s with three. That is the
+renderer's synchronous full-scene shader compile, contending for one software GPU
+across live WebGL contexts. The art was never holding the load event; the other two
+renderers were.
+
+**Change.** The probe closes BRAVO before opening the outage page. It was sitting
+idle and is re-navigated from scratch a dozen lines later anyway, so nothing is lost
+by closing it, and the outage page boots against two contexts instead of three. A
+check now asserts that count, so the next page added to this probe cannot quietly
+put the third one back.
+
+Nothing in the client or the service worker changed. `waitUntil: "load"` still means
+what it says at all forty of its call sites.
+
+**Proof.** `probe:counter` is 17/17, and the new check reports `2 renderer page(s)
+live while the outage page navigated`.
+
+Mutation, reverted after: leave BRAVO open, so the outage page is the third renderer
+again. The probe fails with `page.goto: Timeout 30000ms exceeded` — the CI symptom
+reproduced exactly, from the cause rather than from the payload.
+
+This closes the last of the six probes CI had been failing on since Stage 449.
+
 ## Stage 637 — A kick the probe could not see, and fourteen checks behind it
 
 **Problem.** `probe:endgame` printed five passing checks and then threw

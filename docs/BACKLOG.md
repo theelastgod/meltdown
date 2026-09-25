@@ -86,7 +86,7 @@ failures, not all diagnosed gameplay defects:
 - **Endgame fixed in Stage 637:** it was not hanging, it was being kicked. A Blank file was handed
   PELLET WEEK's Depth-2 REPO HAMMER, and the probe's wait named only `joined`, so a clean refusal
   burned the 40 s timeout. Calendar-gated — two weeks in eight. 19/19 now, up from 5 checks and a
-  stack trace. The counter probe's navigation timeout is still open.
+  stack trace. **Counter fixed in Stage 638:** measured, the navigation cost is superlinear in live WebGL contexts and flat in payload — identical 211-request resource sets at 1.4 s, 14.4 s and 23.0 s for one, two and three live pages. The art never held the load event; the other renderers did. The probe now closes the idle page first. **All six probes green.**
 - **Fixed in Stage 631:** the probe searched for the pre-Stage-346 plural `UNITS DROPPED`. One
   dropped unit has read `1 UNIT DROPPED WHERE YOU FELL` since then, so the find returned nothing
   and the check failed on an empty string. It now pins the whole shipped line. 27/27.

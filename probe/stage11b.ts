@@ -213,7 +213,7 @@ async function main(): Promise<void> {
 
     // ---------------- the match: the skin travels as an ID ----------------
     const roomUrl = (room: string) => `ws://127.0.0.1:${HOST_PORT}/room/${room}?warmup=0.5&round=6&ai=0&level=drainage_yard`;
-    const b = await newPage({ width: 800, height: 450 }, "B");
+    let b = await newPage({ width: 800, height: 450 }, "B");
     await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl&secret=${SECRET}&name=BRAVO&net=${encodeURIComponent(roomUrl("cl"))}`, { waitUntil: "load" });
     await a.evaluate(() => window.__game.toggleFile(false));
     await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&name=ALPHA&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl("cl"))}`, { waitUntil: "load" });
@@ -268,7 +268,17 @@ async function main(): Promise<void> {
     const rec = await a.evaluate(() => window.__game.reconcile());
     const off = await a.evaluate(() => window.__game.wearSkin(0));
     const on = await a.evaluate(() => window.__game.wearSkin(1));
+    // BRAVO is re-navigated from scratch a dozen lines below, so it is closed rather than left
+    // sitting idle while the outage page boots. That matters more than it looks: on the software
+    // renderer CI uses, `load` does not fire until the scene's shaders are compiled, and that work
+    // contends across live GL contexts. Measured on this machine with an identical resource set
+    // (211 requests, 63 art files, 8.9 MB every time), the navigation cost is 1.4 s with one page
+    // live, 14.4 s with two and 23.0 s with three — the DOMContentLoaded-to-load gap growing from
+    // 0.8 s to 20 s while nothing about the download changes. The third context is what pushed this
+    // goto past its timeout, not the payload (Stage 638).
+    await b.close();
     const c2 = await newPage({ width: 640, height: 360 }, "outage");
+    const liveAtOutage = browser.contexts().reduce((n, c) => n + c.pages().length, 0);
     await c2.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl3&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player2}`, { waitUntil: "load" });
     await c2.waitForFunction(() => window.__game?.ready === true && !!window.__game.counter().info, null, { timeout: 90000, polling: 100 }).catch(async (e) => {
       console.log("outage page state:", JSON.stringify(await c2.evaluate(() => ({ ready: window.__game?.ready, counter: window.__game?.counter() }))).slice(0, 600), "errors:", errors.slice(-3).join(" | "));
@@ -276,6 +286,8 @@ async function main(): Promise<void> {
     });
     const linkDown = await c2.evaluate(() => window.__game.link());
     await c2.close();
+    check("the outage page boots against at most two live renderers: on a software GPU `load` waits for shader compilation, and that contends across contexts", liveAtOutage <= 2, `${liveAtOutage} renderer page(s) live while the outage page navigated`);
+    b = await newPage({ width: 800, height: 450 }, "B");
     const xpBefore = (await file(acct)).xp;
     // both files into a fresh room together (a late joiner would miss the round BRAVO alone would settle)
     await Promise.all([
