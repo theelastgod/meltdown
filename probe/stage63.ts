@@ -195,40 +195,58 @@ async function main(): Promise<void> {
     // ---------------- 3. a remote from the wire's fields ----------------
     const remoteRun = await pg.evaluate(async () => {
       const samples: Rig[] = [];
-      // walk it until its legs have alternated, not for a fixed count: how much stride a frame
-      // carries depends on the frame rate (Stage 67)
+      // The wire carries a position continuous in time — netclient interpolates every remote at
+      // serverTickNow() - INTERP_DELAY_TICKS, and syncRemotes runs once per drawn frame. So walk it
+      // by the clock and re-inject every frame. Stepping it by a fixed 5.2/60 per frame instead
+      // feeds the renderer a 60 fps lie: below ~6 fps that step is under the 0.5 m/s walk
+      // threshold, the body idles, and what is left to count is eased-pose jitter (Stage 630).
+      const t0 = performance.now();
+      let walkX = 3;
       for (let i = 0; i < 300; i++) {
-        window.__game.injectRemote([{ id: 99, name: "REMOTE", tag: "", x: 3 + (i * 5.2) / 60, y: 0, z: -4, yaw: 0, pitch: 0.4, height: 1.8, alive: true, stance: "stand", vx: 5.2, vy: 0, vz: 0, grounded: true, slot: 3 }]);
-        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        walkX = 3 + 5.2 * ((performance.now() - t0) / 1000);
+        window.__game.injectRemote([{ id: 99, name: "REMOTE", tag: "", x: walkX, y: 0, z: -4, yaw: 0, pitch: 0.4, height: 1.8, alive: true, stance: "stand", vx: 5.2, vy: 0, vz: 0, grounded: true, slot: 3 }]);
+        await new Promise((r) => requestAnimationFrame(r));
         samples.push(window.__game.rig(99));
         let flips = 0, last = 0;
         for (const r of samples.slice(6)) {
-          const sgn = Math.sign((r.out?.legL.rx ?? 0) - (r.out?.legR.rx ?? 0));
+          const sgn = Math.abs((r.out?.legL.rx ?? 0) - (r.out?.legR.rx ?? 0)) >= 0.25 ? Math.sign((r.out?.legL.rx ?? 0) - (r.out?.legR.rx ?? 0)) : 0;
           if (last !== 0 && sgn !== 0 && sgn !== last) flips++;
           last = sgn || last;
         }
         if (flips >= 3 && samples.length > 12) break;
       }
-      const hold = samples.length - 1;
+      // then hold it at the last position it reached, with the wire still claiming 5.2 m/s
       for (let i = 0; i < 20; i++) {
-        window.__game.injectRemote([{ id: 99, name: "REMOTE", tag: "", x: 3 + (hold * 5.2) / 60, y: 0, z: -4, yaw: 0, pitch: 0.4, height: 1.8, alive: true, stance: "stand", vx: 5.2, vy: 0, vz: 0, grounded: true, slot: 3 }]);
-        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        window.__game.injectRemote([{ id: 99, name: "REMOTE", tag: "", x: walkX, y: 0, z: -4, yaw: 0, pitch: 0.4, height: 1.8, alive: true, stance: "stand", vx: 5.2, vy: 0, vz: 0, grounded: true, slot: 3 }]);
+        await new Promise((r) => requestAnimationFrame(r));
       }
       const held = window.__game.rig(99);
       return { samples, held };
     });
-    const flipsOf = (rs: Rig[]) => {
-      let flips = 0, last = 0;
+    // A stride is counted only where the legs are actually split. A body whose estimated speed
+    // hovers at the 0.5 m/s walk threshold flickers between walk and idle and leaves the two legs
+    // disagreeing by up to 0.079 rad (tests/pose.test.ts measures it); a body actually walking at
+    // 5.2 m/s splits them by 0.84-0.95 rad. The floor sits between the two, 3x clear of each.
+    // Without it, counting bare sign changes passes on a body that never took a step — which is
+    // what this check did until Stage 630.
+    const STRIDE_FLOOR = 0.25;
+    const strideOf = (rs: Rig[]) => {
+      let flips = 0, last = 0, amp = 0;
       for (const r of rs) {
-        const s = Math.sign((r.out?.legL.rx ?? 0) - (r.out?.legR.rx ?? 0));
+        const d = (r.out?.legL.rx ?? 0) - (r.out?.legR.rx ?? 0);
+        amp = Math.max(amp, Math.abs(d));
+        const s = Math.abs(d) >= STRIDE_FLOOR ? Math.sign(d) : 0;
         if (last !== 0 && s !== 0 && s !== last) flips++;
         last = s || last;
       }
-      return flips;
+      return { flips, amp };
     };
     const rs = remoteRun.samples.slice(6);
     const last = rs[rs.length - 1]!;
-    check("a remote walks from what the wire carries — position, velocity, footing, pitch, slot: its legs alternate, its socket takes its pitch, it holds the weapon of its slot, at four draw calls", flipsOf(rs) >= 2 && Math.abs(last.socketPitch - 0.4) < 0.02 && last.stripColor === WEAPON_LIST[2]!.tracer && (last.calls ?? 0) <= 4 && (last.calls ?? 0) >= 3, `flips ${flipsOf(rs)} · socket pitch ${last.socketPitch.toFixed(3)} · strip ${last.stripColor?.toString(16)} (slot 3 = ${WEAPON_LIST[2]!.id} ${WEAPON_LIST[2]!.tracer.toString(16)}) · ${last.calls} drawables`);
+    const stride = strideOf(rs);
+    const walked = rs.filter((r) => r.out?.state === "walk").length;
+    const topSpeed = Math.max(...rs.map((r) => r.out?.speed ?? 0));
+    check("a remote walks from what the wire carries — position, velocity, footing, pitch, slot: it reads as walking at the wire's speed, its legs alternate at a real stride, its socket takes its pitch, it holds the weapon of its slot, at four draw calls", walked >= 5 && topSpeed >= 4.5 && stride.flips >= 2 && stride.amp >= 0.5 && Math.abs(last.socketPitch - 0.4) < 0.02 && last.stripColor === WEAPON_LIST[2]!.tracer && (last.calls ?? 0) <= 4 && (last.calls ?? 0) >= 3, `${walked}/${rs.length} sampled frames posed "walk" · top speed ${topSpeed.toFixed(2)} of the wire's 5.20 · ${stride.flips} strides at ${stride.amp.toFixed(3)} rad of leg split (floor ${STRIDE_FLOOR}) · socket pitch ${last.socketPitch.toFixed(3)} · strip ${last.stripColor?.toString(16)} (slot 3 = ${WEAPON_LIST[2]!.id} ${WEAPON_LIST[2]!.tracer.toString(16)}) · ${last.calls} drawables`);
     check("and a held sample with a stale velocity stops its feet: speed is the lesser of the wire's and what the position actually did", (remoteRun.held.out?.speed ?? 9) <= 0.3, `speed ${remoteRun.held.out?.speed.toFixed(2)} after 20 frames at the same position with vx 5.2 on the wire`);
     const geoBefore = await pg.evaluate(() => ({ g: window.__game.state().render.geometries, t: window.__game.state().render.textures }));
     await pg.evaluate(() => window.__game.injectRemote(null));

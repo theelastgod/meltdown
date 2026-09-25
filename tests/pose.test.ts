@@ -46,6 +46,36 @@ describe("standing, walking, sprinting", () => {
     expect(peak).toBeLessThanOrEqual(0.7 * (5.2 / 7.2) + 0.01);
   });
 
+  // probe:body tells "a remote is walking" from "a remote is standing still" by the size of the
+  // split between its legs, over a floor of 0.25 rad. That only works while the two stay far
+  // apart. Until Stage 630 the probe counted bare sign changes with no floor at all, and a remote
+  // whose estimated speed sat on the 0.5 m/s walk threshold — flickering between walk and idle,
+  // never taking a step — read as three strides on one machine and none on another.
+  it("a body flickering at the walk threshold never splits its legs as far as the stride check's floor, and a real walk clears the floor three times over", () => {
+    // the estimator's output when the probe fed it a 60 fps lie at ~5 fps: 0.66 m/s, then nothing
+    let flicker = 0;
+    for (const dt of [1 / 60, 1 / 8, 1 / 5]) {
+      const st = createPoseState();
+      let phase = 0;
+      for (let i = 0; i < 80; i++) {
+        const speed = i % 2 === 0 ? 0.66 : 0;
+        if (speed >= 0.5) phase += dt * (6 + speed * 0.9);
+        const out = poseBody(base({ speed, phase, clock: i * dt }), st, dt);
+        if (i > 10) flicker = Math.max(flicker, Math.abs(out.legL.rx - out.legR.rx));
+      }
+    }
+    expect(flicker).toBeLessThan(0.083); // measured 0.079 rad, and the floor is 0.25
+
+    const stw = createPoseState();
+    let walked = 0;
+    for (let i = 0; i < 120; i++) {
+      const out = poseBody(base({ speed: 5.2, phase: (i / 60) * (6 + 5.2 * 0.9), clock: i / 60 }), stw, 1 / 60);
+      if (i > 30) walked = Math.max(walked, Math.abs(out.legL.rx - out.legR.rx));
+    }
+    expect(walked).toBeGreaterThan(0.75); // and the probe asks for 0.5
+    expect(walked / flicker).toBeGreaterThan(9);
+  });
+
   it("sprinting carries the rifle low; walking does not", () => {
     const sprint = settle(base({ speed: 7.2 })).out;
     const walk = settle(base({ speed: 5 })).out;

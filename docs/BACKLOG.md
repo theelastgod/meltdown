@@ -21,8 +21,13 @@ failures, not all diagnosed gameplay defects:
 - THE RUN death check finds no expected log line after dropping the carried claim.
 - **Fixed in Stage 629:** late effect textures now restart shader warm-up. The diagnostic
   frame probe passes 8/8: textures 50 → 50 and programs 54 → 54 over 30 shots.
-- Third-person landing check measures no camera dip; remote-body walking check measures no
-  alternating leg poses.
+- Third-person landing check measures no camera dip.
+- **Fixed in Stage 630:** the remote-body walking check never watched a remote walk. Its probe
+  stepped the injected position by one 60 fps frame per drawn frame, which is 0.43 m/s on a 5 fps
+  machine — under the walk threshold — so the body posed `idle` on every sampled frame and the
+  "alternating legs" it counted were 1e-2 rad of eased-pose jitter. The probe now walks the
+  position by the clock, and the check requires the pose to read `walk` at the wire's speed with a
+  0.5 rad stride counted over a 0.25 rad floor. 21/21, and four mutations fail it.
 
 Reproduce and diagnose these individually; do not relax the assertions to make a release green.
 The standing method still holds: verify the cause, fix it, and prove the regression check fails

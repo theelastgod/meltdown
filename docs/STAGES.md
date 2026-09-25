@@ -1641,6 +1641,64 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 630 — The remote body check had never once watched a remote walk
+
+**Problem.** CI's `probe:body` failed 20/21 on `a remote walks from what the wire
+carries … — flips 0`, while the local-body walk check passed in the same run with
+`flips 3`. The check counted sign changes in `legL.rx - legR.rx` and asked for two.
+
+It was not a slow machine losing a stride. The walk loop stepped the injected
+position by `(i * 5.2) / 60` — one 60 fps frame's worth of travel per drawn frame.
+This machine draws that page at 5.0 fps, so the position actually advanced at
+0.43 m/s, under the 0.5 m/s the pose needs to call a body walking. Worse, the loop
+awaited two `requestAnimationFrame`s per injection while `syncRemotes` runs on every
+frame, so the second frame saw the body standing still; with the estimator's
+smoothing at `min(1, 12·dt)` — exactly 1 at these frame times — `speedEst` snapped
+to zero on every sampled frame. Instrumenting the run: all 15 samples posed `idle`,
+every one reported `speed 0.000`, and the legs disagreed by 2.6e-3 to 4.97e-2 rad.
+The three "strides" the check counted were sign changes in that residue — a
+hundredth of a degree of eased-pose jitter. The check had verified a walking remote
+on no machine ever; it passed or failed on which side the jitter landed.
+
+**Change.** The probe walks the injected position by the clock, `3 + 5.2·t`, and
+injects once per frame — which is what production does: `netclient.remoteViews()`
+interpolates every remote at the continuous `serverTickNow() - INTERP_DELAY_TICKS`
+and `game.ts` hands the result to `syncRemotes` on each drawn frame. The check now
+requires the body to read as walking rather than to jitter: at least five of the
+sampled frames posed `walk`, a top speed within 0.7 m/s of the wire's 5.2, at least
+two strides, and at least 0.5 rad of leg split. Strides are counted only across a
+0.25 rad floor.
+
+The floor is measured, not picked. A body whose estimated speed sits on the 0.5 m/s
+threshold flickers between `walk` and `idle` without taking a step, and splits its
+legs by at most 0.079 rad — across frame times from 1/60 s to 1/5 s. A body actually
+walking at 5.2 m/s splits them 0.84–0.95 rad. The floor sits 3.2× above the first and
+3.4× below the second, and `tests/pose.test.ts` pins both numbers so the separation
+cannot quietly close.
+
+**Proof.** With the fix, `probe:body` is 21/21 and the check reports `8/8 sampled
+frames posed "walk" · top speed 5.20 of the wire's 5.20 · 3 strides at 0.950 rad of
+leg split (floor 0.25)`. Under a 4× CPU throttle the same page draws at 3.3 fps and
+still reports top speed 5.20 and 0.836 rad — the scenario no longer depends on the
+frame rate.
+
+Four mutations, each reverted after:
+
+- Restore the `(i * 5.2) / 60` step: `top speed 0.93 of the wire's 5.20 · 0 strides
+  at 0.134 rad`, FAIL — the same failure CI hit, now with the reason printed.
+- Raise the remote stride threshold in `poseRemotes` from 0.5 to 50 m/s so the phase
+  never advances: `0 strides at 0.000 rad`, FAIL.
+- Freeze `stridePhase` to 1 in `poseBody`, splitting the legs wide but never
+  alternating them: `0 strides at 0.998 rad`, FAIL — the amplitude alone would have
+  passed; the floor plus the flip count is what catches it.
+- Drop the speed scaling from `stride`, which is what would reopen the gap between a
+  flickering body and a walking one: the new unit case fails at 0.860 rad against its
+  0.083 limit.
+
+`npx vitest run` is 1365 tests across 118 files, green, on a tree with nothing else
+modified. This closes the `probe:body` entry in the 2026-09-24 release-verification
+list; the campaign, endgame, counter, run and landing-camera failures remain open.
+
 ## Stage 629 — Warm the effect material after its art arrives
 
 **Problem.** CI's first-burst check measured textures 49 → 50 and shader programs
