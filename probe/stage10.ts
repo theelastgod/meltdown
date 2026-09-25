@@ -375,14 +375,35 @@ async function main(): Promise<void> {
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     });
     check("and in a 480 \u00d7 270 window, where the stack leaves the log one row, it keeps that row \u2014 the newest \u2014 and stays clear of the stack rather than printing through it", logShort.entries >= 1 && logShort.entries <= 5 && logShort.top >= logShort.alertBottom + 4 && /LINE 5$/.test(logShort.last), `480\u00d7270: ${logShort.entries} of 5 entries \u00b7 log ${logShort.top.toFixed(0)}\u2013${logShort.bottom.toFixed(0)} with the stack ending ${logShort.alertBottom.toFixed(0)} \u00b7 first "${logShort.first}" \u00b7 last "${logShort.last}"`);
-    // hold at B: 21 s of sim; a wave lands halfway
+    // Hold at B. Stage 180 anchored this objective to node B with a 6 m radius, and `stepMission`
+    // only banks SIM_DT while a LIVE Blank is inside it. Before that anchor the clock ran anywhere,
+    // including while the Blank was dead or 70 m away, so a bot that parked and idled satisfied it.
+    // It does not now: Lease Row's three patrols plus m1's own two — one of which spawns AT node B —
+    // put a stationary Blank down at ~9 s of banked hold, just short of the 10 s first-wave trigger,
+    // which is exactly why the failing run read `wasps 5 → 5`. So the Blank defends the terminal,
+    // and when it does die it re-routes over the nav grid: a bare `goto` from a PvP spawn 65-75 m
+    // away cannot find its way back and strands it there for the rest of the run.
     const waspsBefore = await hub.evaluate(() => window.__game.game.world.wasps.length);
-    await hub.evaluate((b) => window.__game.setBot([{ kind: "goto", x: b.x, z: b.z, sprint: false, radius: 0.8, timeoutTicks: 60, stop: true }, { kind: "hold", ticks: 60 * 22 }]), B);
-    for (let i = 0; i < 70; i++) {
-      await advance(hub, 20);
-      const st = await hub.evaluate(() => ({ kind: window.__game.campaign().mission?.kind, alive: window.__game.state().health > 0, pos: window.__game.state().pos }));
+    for (let i = 0; i < 700; i++) {
+      const st = await hub.evaluate((b) => {
+        const g = window.__game;
+        const p = g.state().pos;
+        let near: { x: number; y: number; z: number } | null = null;
+        let best = Infinity;
+        for (const w of g.game.world.wasps) {
+          if (!w.alive) continue;
+          const d = Math.hypot(w.pos.x - p.x, w.pos.z - p.z);
+          if (d < best) {
+            best = d;
+            near = { x: w.pos.x, y: w.pos.y - 0.3, z: w.pos.z };
+          }
+        }
+        return { kind: g.campaign().mission?.kind, alive: g.state().health > 0, pos: p, dist: Math.hypot(p.x - b.x, p.z - b.z), near, nearD: best };
+      }, B);
       if (st.kind !== "survive") break;
-      if (Math.hypot(st.pos.x - B.x, st.pos.z - B.z) > 5 && st.alive) await hub.evaluate((b) => window.__game.setBot([{ kind: "goto", x: b.x, z: b.z, sprint: true, radius: 0.8, timeoutTicks: 400, stop: true }, { kind: "hold", ticks: 60 * 22 }]), B);
+      if (st.alive && st.dist > 2) await hub.evaluate((q) => window.__game.setBot(q), [...route("lease_row", st.pos, B, 0.8), { kind: "hold", ticks: 60 }] as BotStep[]);
+      else if (st.alive && st.near && st.nearD <= 45) await hub.evaluate((q) => window.__game.setBot(q), [{ kind: "fire", ticks: 24, aimAt: st.near }] as BotStep[]);
+      await advance(hub, 20);
     }
     const m3 = await hub.evaluate(() => ({ m: window.__game.campaign().mission, wasps: window.__game.game.world.wasps.length, log: window.__game.campaign().log }));
     check("the hold completes and VANTAGE responded with a wave during it; next: the file at E", m3.m?.kind === "reach" && /CABINET AT E/.test(m3.m.objective) && m3.wasps > waspsBefore && m3.m.spawned.wasps >= 4, `objective "${m3.m?.objective}" · wasps ${waspsBefore} → ${m3.wasps} · ${m3.log.filter((l) => /WAVE|OBJECTIVE/.test(l)).slice(-2).join(" | ")}`);

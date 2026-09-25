@@ -1641,6 +1641,58 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 635 — The first mission's hold could not be held standing still
+
+**Problem.** `probe:campaign` failed 39/46. Seven checks, one cause: m1's
+`HOLD THE TERMINAL WHILE THE FILE DECRYPTS` never completed, so the file at E, the
+contract settling, the card, the endpoint's arc order, the Kernel Protocols and the
+district's Threat were all checked against a mission still stuck on objective 3.
+
+Stage 180 anchored that objective — `{ node: "B" }, radius: 6` — because it had
+been a timer that ran anywhere in Lease Row. The anchor is correct and this stage
+does not touch it. What it changed is what the twenty seconds *mean*:
+`stepMission` banks `SIM_DT` only while `nearAny(world, at, 6)` finds a **live**
+Blank inside the radius, so the clock now stops both when the Blank leaves and when
+it dies.
+
+The probe's solo driver was still the one written for the unanchored version. It
+parked the Blank at B with `{ kind: "hold", ticks: 60 * 22 }` — never returning
+fire — inside a fixed 70 × 20-tick window, 23.3 s of sim against a 20 s hold.
+Instrumenting the failing run: the Blank stands 0.11 m from B and its health walks
+down 70 → 65 → 60 → … at a steady 5 every half second from Lease Row's three
+patrols plus m1's own two, one of which spawns at node B. It dies at about 9 s of
+banked hold — short of the 10 s first-wave trigger, which is precisely why the
+failure read `wasps 5 → 5` with no wave ever spawning. It then respawns 65–75 m
+away at a PvP spawn, and the driver's recovery was a bare `goto`, which has no path
+and strands it: the trace ends with the Blank 17–25 m from B and the clock frozen
+at 8.38/20.
+
+**Change.** The probe's driver only. The Blank defends the terminal — it fires at
+the nearest live wasp within 45 m while it is standing on B — and when it does die
+it re-routes over the nav grid with the probe's existing `route()` helper, the same
+way the co-op leg of this probe has done since Stage 47. The window is sized to an
+anchored hold rather than an unanchored one.
+
+Nothing in `shared/campaign` changed. The anchor, the radius, the wave schedule and
+the check's expression are all untouched, because none of them was wrong.
+
+**Proof.** `probe:campaign` is 46/46, twice in a row on a still tree. The hold check
+now reports `objective "TAKE THE FILE FROM THE CABINET AT E" · wasps 5 → 7`, and the
+six checks that were cascading off it report real values for the first time:
+dialogue `m1_file:a` with 2 choices; `status complete · settled true · card
+"CONTRACT CLOSED · WAKE UNLISTED" · scrip 300`; Kernel Protocols `maxHealth 105 ·
+damage ×1.15 · filament true`; Threat `3 "NAMED · THE PA KNOWS YOUR MONIKER"`.
+
+Mutation, reverted after: leave the re-routing in place but replace the return fire
+with a hold, so the Blank stands on the terminal and takes it. The hold stalls again
+and all seven checks fail together — `objective "HOLD THE TERMINAL WHILE THE FILE
+DECRYPTS"`, dialogue `undefined`, `status running`, `scrip 0`. The Blank's returning
+fire is load-bearing, not decoration: this objective asks a player to hold a place
+under fire, and the probe now asks the same of its bot.
+
+`npx vitest run` is 1387 tests across 120 files, green; `lint:campaign` 0 errors;
+`lint:assets` 0 violations.
+
 ## Stage 634 — Fifteen tiles, and the reason the floor never changed
 
 **Problem.** Stage 632 bound the kerbs, pads, gratings, vents and shutters to plate

@@ -78,8 +78,11 @@ failures, not all diagnosed gameplay defects:
   183/183 art files cached, offline boot advances 60 ticks with no failed art requests.
 - **Stage 628 fixes five stale expectations** in wake, mastery and mobile probes.
   All three browser probes passed in GitHub run 36059616253.
-- Campaign probe remains at the first hold objective, preventing completion, settlement and
-  downstream protocol/Threat checks; the crew leg also does not complete.
+- **Fixed in Stage 635:** the campaign probe's solo driver was written for the pre-Stage-180
+  unanchored hold. Anchored, the clock only banks while a live Blank is within 6 m of node B, and a
+  Blank that stands there without returning fire dies at ~9 s — short of the 10 s wave trigger,
+  hence `wasps 5 → 5`. It now defends the terminal and re-routes over the nav grid after a death.
+  46/46, twice. The anchor, radius and assertions were not touched.
 - Endgame and counter probes time out.
 - **Fixed in Stage 631:** the probe searched for the pre-Stage-346 plural `UNITS DROPPED`. One
   dropped unit has read `1 UNIT DROPPED WHERE YOU FELL` since then, so the find returned nothing
