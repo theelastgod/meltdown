@@ -1641,6 +1641,47 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 640 — The trailer, cut again with a climax in it
+
+**Problem.** Stage 639's trailer was seventy seconds of good shots in a flat line.
+It established the world, showed the game, escalated a little, and then put a title
+on the end. Nothing in it built, and nothing in it broke — the cut held every shot
+for roughly the same time from the first frame to the last, so the ending arrived
+because the footage ran out rather than because the trailer had been going somewhere.
+
+**Change.** Six more cinematics, chosen for the three things the first cut had no
+shot for: **scale** (an aerial across the whole city), **how many of them there are**
+(a plaza of hundreds of identical hooded Blanks), and **a climax** (THE KERNEL
+firing a column of red light into the storm). Plus a wall of drones filling a street,
+the hero walking toward camera through a burning one, and two silhouettes on a
+rooftop under the opening iris.
+
+The cut now accelerates and then stops. Act 0 holds a shot for 4.5 seconds; act 4
+holds one for 2.0. Then at 66 s the kick and the hats drop out entirely for the hero
+walk, a riser runs underneath it, and the only hit in the last seventeen seconds is
+the boom on the beam at 69.5 s, decaying across the whole title.
+
+The audio was rewritten to those timings rather than laid under them. Its impacts
+are at 11.5 s, 31.0 s and 50.8 s, which are exactly the three act boundaries; the
+half-time hat enters at 50.8 s, which is where the cutting speeds up; the riser
+starts at 64 s, which is two shots before the walk. `tools/trailer/audio.txt` is
+committed beside the cut for that reason — moving a shot means moving a beat, and
+the two files have to be edited together.
+
+**Proof.** 83.4 seconds, 28 cuts, 1280×720. Twenty-one of those seconds are the real
+client behind its `ACTUAL GAMEPLAY / CAPTURED IN A BROWSER` card, up from twenty;
+eight are the city's own advertisements; fifty-four are generated, and all eighteen
+prompts are now in `docs/TRAILER.md`.
+
+Every new prompt carries the same clause as the first twelve — no text, no logos, no
+brands, no visible face. The lettering is still drawn in the edit, where MELTDOWN and
+$CAPITAL can be spelled correctly and a logotype cannot accidentally resemble a real
+company's.
+
+The finished file is still not committed: 26 MB, still not a game asset. `npx vitest
+run` is 1387 tests across 120 files, green, and nothing under `client/`, `shared/` or
+`server/` was touched by this stage either.
+
 ## Stage 639 — A trailer, and a way to record the game that is in it
 
 **Problem.** The game had no trailer, and the twelve clips Stage 633 put on the
