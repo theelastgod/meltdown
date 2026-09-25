@@ -1641,6 +1641,32 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 642 — The crew walked to the terminal and stood there while it killed them
+
+**The defect.** `probe:campaign` failed in CI at 44/46, the co-op leg stuck at
+`HOLD THE TERMINAL WHILE THE FILE DECRYPTS` until its 180 s deadline ran out.
+Stage 635 had fixed exactly this for the solo leg and stopped there; the crew
+leg was never touched.
+
+**What it actually was.** That objective is `kind: "survive"` with `waves: 1` —
+VANTAGE answers it with a wasp wave, and it is survived, not stood through. The
+co-op drive loop read the room's objective, walked both Blanks to its spot, and
+then did nothing else: no weapon was ever fired. The wave killed them, the
+survive timer reset on each death, and the leg could not end. The two Blanks
+finish 45.6 m and 61.1 m from the spot with the room still `running`.
+
+**The fix.** The crew loop now scans for the nearest live wasp the same way the
+solo driver does, and a Blank that is *at* the spot with an enemy inside 45 m
+fires at it instead of holding. The walk branch is unchanged, so a Blank that is
+still far from the spot keeps routing; only the standing case gained a weapon.
+
+**Proof.** 46/46 with the fix. Mutation-tested by disabling just the fire branch:
+44/46, room `running` at `HOLD THE TERMINAL WHILE THE FILE DECRYPTS`, legs
+`[reach the escrow 4.5s, hold the terminal 175.8s]` — the same two checks CI was
+failing, for the same reason, with the hold burning 175.8 s of its 180 s budget.
+The second failing check (`the pick reached the guest by text`) falls out of the
+first: the contract never reaches the file, so there is no pick to mirror.
+
 ## Stage 641 — The probe's own evidence was making it miss the card it came for
 
 **The defect.** `probe:ship` kept failing its title-card check, in CI and then

@@ -602,7 +602,21 @@ async function main(): Promise<void> {
         for (let i = 0; i < pages.length; i++) {
           const pg = pages[i]!;
           const t = track[i]!;
-          const s = await pg.evaluate(() => ({ pos: window.__game.state().pos, alive: window.__game.state().health > 0, done: window.__game.botStatus()?.done ?? true }));
+          const s = await pg.evaluate(() => {
+            const g = window.__game;
+            const p = g.state().pos;
+            let near: { x: number; y: number; z: number } | null = null;
+            let best = Infinity;
+            for (const w of g.game.world.wasps) {
+              if (!w.alive) continue;
+              const d = Math.hypot(w.pos.x - p.x, w.pos.z - p.z);
+              if (d < best) {
+                best = d;
+                near = { x: w.pos.x, y: w.pos.y - 0.3, z: w.pos.z };
+              }
+            }
+            return { pos: p, alive: g.state().health > 0, done: g.botStatus()?.done ?? true, near, nearD: best };
+          });
           const moved = Math.hypot(s.pos.x - t.pos.x, s.pos.z - t.pos.z) > 0.5;
           if (moved || Number.isNaN(t.pos.x)) t.movedAt = Date.now();
           t.pos = { x: s.pos.x, z: s.pos.z };
@@ -613,6 +627,12 @@ async function main(): Promise<void> {
           if (s.alive && far && (s.done || revived || stalled)) {
             await coopWalk(pg, target, 1.5);
             t.movedAt = Date.now();
+          } else if (s.alive && !far && s.near && s.nearD <= 45) {
+            // A hold is survived, not stood through (Stage 642). VANTAGE answers it with a wave, and
+            // a Blank that walks to the terminal and never shoots back dies to that wave — which
+            // resets the timer for the whole crew, so the leg never ended. The solo leg learned this
+            // in Stage 635; the crew leg was still only walking.
+            await pg.evaluate((q) => window.__game.setBot(q), [{ kind: "fire", ticks: 24, aimAt: s.near }] as BotStep[]);
           }
         }
       }
