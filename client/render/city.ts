@@ -4,6 +4,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { brickTexture, facadeTextures, hazardTexture, shutterTexture } from "./textures";
 import { texture as assetTexture } from "./assets";
 import { platePick } from "../../shared/assets/plates";
+import type { ScreenPool } from "./screens";
 
 export const PALETTE = {
   bg: 0x04050a,
@@ -208,7 +209,7 @@ export class SignAtlas {
 }
 
 /** Dress a level's collision boxes and decor with the clip's kitbash vocabulary. Returns the draw-call count it added and the sign material (for flicker). */
-export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number; signMat: THREE.MeshBasicMaterial | null } {
+export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: ScreenPool): { calls: number; signMat: THREE.MeshBasicMaterial | null } {
   const group = new THREE.Group();
   group.name = "dressing";
   scene.add(group);
@@ -719,6 +720,12 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
   neon.flush();
   const calls = batch.flush();
   void signsPlaced;
+  // The shop fronts are one batched mesh per material, so a clip on M.shopA plays on every
+  // shopA front in the district for one texture and no extra draw call. The pool decides how
+  // many of the three ever get a decoder; a district that is refused keeps its plates.
+  screens?.attach(M.shopA, "shop_a", seed);
+  screens?.attach(M.shopB, "shop_b", seed + 1);
+  screens?.attach(M.shopC, "shop_c", seed + 2);
   return { calls, signMat };
 }
 

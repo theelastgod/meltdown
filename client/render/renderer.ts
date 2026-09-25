@@ -30,6 +30,7 @@ import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_AD
 import { arcPoint, type ArcSpec } from "./ballistic";
 import { DEATH_TURN, fallSpeed, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
+import { screens as screenPool } from "./screens";
 
 /** Interpolated view state handed to the renderer each frame. */
 export interface ViewState {
@@ -280,7 +281,7 @@ export class Renderer {
     this.camera.name = "viewmodel";
     this.scene.add(this.camera);
 
-    const dressed = dressLevel(this.scene, level);
+    const dressed = dressLevel(this.scene, level, this.screens);
     this.levelCalls = dressed.calls;
     if (dressed.signMat) this.signFlicker = flickerMaterial(dressed.signMat);
     const skyline = buildSkyline(this.scene, level.skylineSeed ?? 42, (level.bounds ?? 32) + 44, district);
@@ -493,6 +494,8 @@ export class Renderer {
     }
   }
 
+  /** the city's moving signs; a process-wide capped pool, every failure keeping a still plate (Stage 633) */
+  readonly screens = screenPool;
   private remoteMeshes = new Map<number, { group: THREE.Group; rig: Rig; strip: THREE.Mesh; stripMat: THREE.MeshBasicMaterial; slot: number; skin: number; plateId: string | null; tint: string | null; tag: THREE.Sprite; tagKey: string; canvas: HTMLCanvasElement; view: RemoteBodyView | null; prev: { x: number; y: number; z: number; yaw: number } | null; speedEst: number; phase: number; kick: number; flash: number; hurt: number; hurtFrom: number }>();
   /** the local rig's worn skin tint (null: stock) */
   skinTint: string | null = null;

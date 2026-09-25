@@ -5,6 +5,29 @@ independent adversarial verification that defaulted to *refuted*, and **32 survi
 turned out to be the same finding reported twice. All of them have since been fixed (Stages 168–195)
 and are listed at the foot of this file with the commit that closed them.
 
+## Moving signs — where they should go next (2026-09-25)
+
+Stage 633 put twelve clips on the shop fronts, the market kiosk and the title screen. Measured: with
+the camera frozen, 1.7% of a street frame changes between two samples 1.5 s apart. The motion is
+real and it is small, because a shop front is 2.4 m wide and the camera is usually not looking at
+one.
+
+- **Put the clips on the big surfaces.** The skyline billboards and the large facade panels are
+  where an advertisement would actually read as an advertisement. The pool and the manifest already
+  support it; what is missing is a screen family attached to those materials, and a decision about
+  whether they are worth a decoder slot more than the shop fronts are.
+- **The decode ceiling is 4 and was not derived from a measurement.** Stage 21–22 set a frame budget
+  by measuring; this number was chosen. Measure the frame cost of the 4th and 5th decoder on the
+  software renderer before raising it.
+- **R2 is not enabled on the Cloudflare account** (`error 10042: Please enable R2 through the
+  Cloudflare Dashboard`, from both API tokens; the S3 endpoint does not complete a TLS handshake
+  because no bucket subdomain is provisioned). The clips ship from `public/video` instead, 1.5 MB,
+  excluded from the service-worker precache. `VITE_VIDEO_BASE` moves them to a bucket with no code
+  change once R2 is turned on.
+- **One generated clip per screen family is a single point of monotony.** `shop_a` has three and
+  cycles by district seed; `kiosk` has two; `backdrop` has one, so every title screen is the same
+  skyline.
+
 ## Art that ships and is drawn on nothing — 2026-09-25
 
 Stage 632 found 81 of 143 generated plates bound to no material: ~12 MB in every download that no

@@ -12,6 +12,7 @@ import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { ASSETS, ASSET_BUDGET_BYTES, MAX_ASSET_BYTES, MAX_TEXTURE_EDGE, type AssetDef } from "./manifest";
 import { PLATE_POOLS, pooledPlates, reachablePlates, UNDRAWN_PLATES } from "./plates";
+import { MAX_VIDEO_BYTES, MAX_VIDEO_EDGE, VIDEO_BUDGET_BYTES, VIDEOS, type VideoDef } from "./video";
 
 /** Every file that may name a plate: the renderer, and the cosmetics catalog a player's equipped
  *  skin is bound from. Read as text, never imported, so listing the catalog here does not put
@@ -29,6 +30,7 @@ export const CLIENT_RENDER_SOURCES: readonly string[] = [
   "client/render/wake.ts",
   "client/render/weapons.ts",
   "shared/economy/catalog.ts",
+  "client/menu.ts",
 ];
 
 export interface AssetViolation {
@@ -135,5 +137,60 @@ export function lintPlatesAreDrawn(assets: readonly AssetDef[] = ASSETS, sources
 
   const ids = new Set(assets.map((a) => a.id));
   for (const id of recorded) if (!ids.has(id)) out.push({ asset: id, rule: "undrawn-ghost", detail: "is on UNDRAWN_PLATES but is not an asset any more" });
+  return out;
+}
+
+/**
+ * The clips, against the files on disk and against what plays them (Stage 633).
+ *
+ * Same shape as the picture rules, because a clip that has drifted from its file or that ships with
+ * no screen to play on is the same failure: bytes in every download that the game never asks for.
+ */
+export function lintVideos(videos: readonly VideoDef[] = VIDEOS, sources = CLIENT_RENDER_SOURCES, root = "."): AssetViolation[] {
+  const out: AssetViolation[] = [];
+  let text = "";
+  for (const rel of sources) {
+    try {
+      text += readFileSync(resolve(root, rel), "utf8");
+    } catch {
+      out.push({ asset: "(all)", rule: "clip-source", detail: `${rel} is not there, so the lint cannot tell what plays` });
+      return out;
+    }
+  }
+  const seen = new Set<string>();
+  let total = 0;
+  for (const v of videos) {
+    if (seen.has(v.id)) out.push({ asset: v.id, rule: "unique-id", detail: "declared twice" });
+    seen.add(v.id);
+    if (!v.provenance.trim()) out.push({ asset: v.id, rule: "provenance", detail: "no note on where it came from" });
+
+    const path = resolve(root, "public/video", v.file);
+    let buf: Buffer;
+    try {
+      buf = readFileSync(path);
+    } catch {
+      out.push({ asset: v.id, rule: "file-exists", detail: `${path} is not there` });
+      continue;
+    }
+    total += buf.length;
+    if (buf.length !== v.bytes) out.push({ asset: v.id, rule: "declared-bytes", detail: `manifest says ${v.bytes}, the file is ${buf.length}` });
+    if (buf.length > MAX_VIDEO_BYTES) out.push({ asset: v.id, rule: "per-clip-budget", detail: `${buf.length} bytes over the ${MAX_VIDEO_BYTES} ceiling` });
+    const sha = createHash("sha256").update(buf).digest("hex");
+    if (sha !== v.sha256) out.push({ asset: v.id, rule: "sha256", detail: `manifest says ${v.sha256.slice(0, 12)}…, the file is ${sha.slice(0, 12)}…` });
+    // EBML magic — a clip the codec-free CI browser cannot decode is a clip nothing can check
+    if (buf.length < 4 || buf[0] !== 0x1a || buf[1] !== 0x45 || buf[2] !== 0xdf || buf[3] !== 0xa3) {
+      out.push({ asset: v.id, rule: "clip-webm", detail: "is not a WebM; H.264 in MP4 cannot be decoded by the browser CI runs" });
+    }
+    if (Math.max(v.width, v.height) > MAX_VIDEO_EDGE) out.push({ asset: v.id, rule: "clip-edge", detail: `${v.width}×${v.height} over the ${MAX_VIDEO_EDGE} edge` });
+  }
+  if (total > VIDEO_BUDGET_BYTES) out.push({ asset: "(all)", rule: "clip-budget", detail: `${total} bytes over the ${VIDEO_BUDGET_BYTES} budget` });
+
+  // Every screen family the manifest names must be one something actually attaches a clip to.
+  // A family nothing plays is the picture problem again, in a heavier format.
+  for (const screen of new Set(videos.map((v) => v.screen))) {
+    if (!new RegExp(`["'\`]${screen}["'\`]`).test(text)) {
+      out.push({ asset: screen, rule: "screen-not-played", detail: `no renderer attaches a clip to "${screen}", so its clips ship and never play` });
+    }
+  }
   return out;
 }

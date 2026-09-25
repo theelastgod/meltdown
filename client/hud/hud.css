@@ -519,3 +519,18 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 /* the frame monitor (Stage 50): only with ?perf=1 */
 #hud .perf { right: 14px; bottom: 14px; max-width: 420px; line-height: 1.5; }
 #hud .perf .dim { color: rgba(53,242,255,0.65); font-weight: normal; }
+
+/* The title screen's backdrop clip (Stage 633): behind everything, dimmed hard so the CRT panel
+   stays the thing you read, and absent entirely when the clip does not load. */
+#menu video.bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.28;
+  filter: saturate(1.2) contrast(1.1);
+  pointer-events: none;
+  z-index: 0;
+}
+#menu .card, #menu .panel, #menu .scan { position: relative; z-index: 1; }

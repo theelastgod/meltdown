@@ -15,6 +15,7 @@ import type { SimEvent } from "@shared/sim/world";
 import type { FileView } from "./file";
 import type { SocialMsg } from "@shared/net/protocol";
 import { modsFor, weaponDefOf } from "@shared/sim/player";
+import type { ScreenStats } from "./render/screens";
 
 /** Headless/state hook used by probes and CI. Everything here is read-only or deterministic. */
 export interface GameHook {
@@ -123,6 +124,8 @@ export interface GameHook {
   crawl: () => CrawlView | null;
   /** Whether audio is actually live, and whether the crawl's hum is actually sounding (Stage 177). */
   audioLive: () => { ready: boolean; humming: boolean };
+  /** The city's moving signs: how many hold a decoder, how many are advancing (Stage 633). */
+  screens: () => ScreenStats;
   crawlSkip: () => boolean;
   crawlFinish: () => void;
   crawlPause: (on: boolean) => void;
@@ -305,6 +308,7 @@ window.__game = {
   // `crawl().hum` is the crawl's own request latch; this is the other half — whether a context
   // exists and whether the oscillator is running. The two came apart for the whole crawl.
   audioLive: () => ({ ready: game.audio.ready, humming: game.audio.crawlHumming }),
+  screens: () => game.renderer.screens.stats(),
   crawlSkip: () => crawl?.skip() ?? false,
   crawlFinish: () => crawl?.finish(true),
   crawlPause: (on) => {

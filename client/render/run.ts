@@ -6,6 +6,7 @@
 import * as THREE from "three";
 import { markShared, release } from "./dispose";
 import { bindPlate, PALETTE } from "./city";
+import { screens } from "./screens";
 
 export interface RunClaimView {
   id: number;
@@ -78,6 +79,9 @@ export class RunFx {
       kiosk.add(new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.1, 0.7), kioskMat));
       const screenMat = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
       bindPlate(screenMat, "tex_kiosk_crt");
+      // the one screen a player walks up to and reads, so it is worth a decoder; if the pool is
+      // already full the kiosk keeps its plate and nothing about the safe zone changes (Stage 633)
+      screens.attach(screenMat, "kiosk", 0);
       const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.7), screenMat);
       screen.position.set(0, 1.25, 0.36);
       kiosk.add(screen);

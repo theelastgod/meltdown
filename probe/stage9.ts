@@ -18,6 +18,7 @@ import { levelById } from "../shared/sim/level";
 import { DISTRICT_SPECS } from "../shared/sim/city";
 import { buildNav, findPath } from "../shared/sim/nav";
 import { computeLookStatsSource, type LookStats } from "./look-metrics";
+import { MAX_LIVE_SCREENS } from "../shared/assets/video";
 
 const VITE_PORT = 5193;
 const HOST_PORT = 8796;
@@ -274,6 +275,37 @@ async function main(): Promise<void> {
     check("online: a client that arrives for the wrong district travels to the room's and rejoins", sb.level === "deadletter_docks" && /token=/.test(sb.url) && stats2.rooms["city"]!.players === 2, `BRAVO now in ${sb.level} as file #${sb.id} · room players ${stats2.rooms["city"]!.players} (${stats2.rooms["city"]!.connected} connected)`);
     await a.close();
     await b.close();
+
+    // ---------------- the city's signs move (Stage 633) ----------------
+    // A still plate costs one upload; a clip costs a decode every visible frame. These check that a
+    // clip is genuinely playing (its currentTime advances between two real samples), that the pool
+    // never opens more decoders than its ceiling however many screens ask, and — the one that keeps
+    // a player on a plane from seeing a broken city — that a clip which cannot be fetched leaves
+    // the material wearing the plate it already had.
+    const scr = await browser.newPage({ viewport: { width: 640, height: 360 } });
+    await scr.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=0&level=lease_row&ai=0&wake=0`, { waitUntil: "load" });
+    await scr.waitForFunction(() => window.__game?.ready === true, null, { timeout: 60000, polling: 100 });
+    await scr.waitForFunction(() => window.__game.screens().playing > 0, null, { timeout: 30000, polling: 150 }).catch(() => undefined);
+    const s0 = await scr.evaluate(() => window.__game.screens());
+    await scr.evaluate(() => new Promise((r) => setTimeout(r, 1200)));
+    const s1 = await scr.evaluate(() => window.__game.screens());
+    const advanced = s1.times.filter((t, i) => t > (s0.times[i] ?? 0)).length;
+    check("the city's signs are moving pictures, not plates: a clip holds a decoder and its playhead advances between two samples", s1.live >= 1 && s1.playing >= 1 && advanced >= 1 && s1.failed === 0, `${s1.live} live · ${s1.playing} playing · ${advanced} of ${s1.times.length} advanced over 1.2 s · ${s1.failed} failed · ${s1.ids.join(", ")}`);
+    // The district asks for three screens and the cap is three, so a refusal cannot happen here —
+    // that path is proved in tests/screens.test.ts, which asks for more than the cap allows. What
+    // this check is for is the ceiling itself: a district must never exceed it.
+    check("and the decode budget is a ceiling: a district never holds more decoders than the cap allows", s1.live <= MAX_LIVE_SCREENS && s1.live === s1.ids.length, `${s1.live} decoders of the ${MAX_LIVE_SCREENS} allowed · ${s1.refused} refused a slot`);
+    await scr.close();
+
+    // a base that resolves to nothing is the offline player, the blocked CDN, and the 404 at once
+    const fall = await browser.newPage({ viewport: { width: 640, height: 360 } });
+    await fall.route("**/video/*.webm", (r) => r.abort());
+    await fall.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=0&level=lease_row&ai=0&wake=0`, { waitUntil: "load" });
+    await fall.waitForFunction(() => window.__game?.ready === true, null, { timeout: 60000, polling: 100 });
+    await fall.waitForFunction(() => window.__game.screens().failed > 0, null, { timeout: 30000, polling: 150 }).catch(() => undefined);
+    const sf = await fall.evaluate(() => ({ ...window.__game.screens(), calls: window.__game.view().calls, err: window.__game.state().render.programs }));
+    check("a clip that never arrives is not an error a player can see: the sign keeps its plate, nothing is live, and the city still draws", sf.live === 0 && sf.playing === 0 && sf.failed >= 1 && sf.calls > 0, `${sf.failed} clips refused by the network · ${sf.live} live · the district still draws ${sf.calls} calls`);
+    await fall.close();
 
     writeFileSync(`${OUT}/stage9.json`, JSON.stringify({ results, simHz: hz, checks }, null, 2));
     const failed = checks.filter((c) => !c.pass);

@@ -15,6 +15,7 @@ import { DEFAULT_SETTINGS, formatSetting, loadSettings, saveSettings, SETTING_LA
 import { wantsTouch } from "./touch";
 import { menuFooter, settingsLine } from "./hud/keyhint";
 import type { GameAudio } from "./audio";
+import { clipsFor, videoUrl } from "../shared/assets/video";
 
 export const TITLE_CARDS: readonly string[] = ["Every mind in Neo-China is leased.", "You woke free."];
 export const CARD_SECONDS = 2.4;
@@ -150,7 +151,17 @@ export class Menu {
     const root = document.createElement("div");
     root.id = "menu";
     root.hidden = true;
-    root.innerHTML = `<div class="card"></div><div class="panel"><div class="hd"><span class="word">MELTDOWN</span><span class="who"></span></div><div class="list"></div><div class="line"></div><div class="ft"><span class="hint"></span> · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
+    root.innerHTML = `<video class="bg" muted loop playsinline preload="auto"></video><div class="card"></div><div class="panel"><div class="hd"><span class="word">MELTDOWN</span><span class="who"></span></div><div class="list"></div><div class="line"></div><div class="ft"><span class="hint"></span> · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
+    // The title sits over the city rather than over black (Stage 633). A DOM video, not a pooled
+    // one: the menu is not a scene and this costs no material. It fails soft in the strongest
+    // sense — the element simply never plays and the menu is the flat panel it has always been.
+    const bg = root.querySelector("video.bg") as HTMLVideoElement | null;
+    const clip = clipsFor("backdrop")[0];
+    if (bg && clip) {
+      bg.src = videoUrl(clip);
+      bg.onerror = () => bg.remove();
+      void bg.play().catch(() => undefined);
+    }
     document.body.appendChild(root);
     this.root = root;
     document.addEventListener("keydown", this.onKey);

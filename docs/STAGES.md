@@ -1641,6 +1641,79 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 633 — The city's signs start moving
+
+**Problem.** Every sign in Lethe has been a still picture since Stage 43. The city
+bible asked for ad tickers and animated signage from the beginning, and what
+shipped was a material whose opacity was pulsed to fake a flicker — the picture
+itself never moved. A district full of shop fronts advertised nothing.
+
+**Change.** Twelve five-second clips, generated for this stage, and the three
+pieces needed to put them on a wall without wrecking the frame budget.
+
+`shared/assets/video.ts` is the manifest, under the rules
+`shared/assets/manifest.ts` already sets for pictures: declared bytes and hash so
+a silent bloat fails the lint rather than a player's data plan, no stat field and
+no path into the sim, and every clip optional. VP9 in WebM rather than H.264 —
+a third of the bytes at this quality, and, decisively, the codec a Chromium built
+without proprietary codecs can decode. That is the difference between a probe that
+checks these clips play and a probe that takes it on faith: the source clips are
+H.264, and the browser CI runs cannot open them at all.
+
+`client/render/screens.ts` is a pool with a hard ceiling. A still plate is uploaded
+once and then costs nothing; a clip is decoded on the CPU every visible frame,
+beside a sim that owes the player 60 Hz. So `MAX_LIVE_SCREENS` clips may decode at
+once **across the process** — a district's shop fronts and a safe zone's kiosk
+compete for the same cores — and the pool refuses the next one rather than letting
+a district with nine shop fronts open nine decoders. The shop fronts are already
+batched one mesh per material, so a clip on `M.shopA` plays on every shopA front in
+the district for one texture and no extra draw call.
+
+Everything fails soft in the sense the asset doctrine means it. A clip that 404s,
+that the codec refuses, that autoplay blocks, or that simply has not arrived leaves
+the material wearing the still plate Stage 632 dealt it. There is no error state a
+player can see, only a sign that is not moving. This is also why the clips are
+deliberately **not** precached: an offline install stays 28 MB of art rather than
+becoming 30 MB and a video decoder.
+
+`lintVideos` extends `lint:assets` with the same rules plus one the picture side
+learned the hard way last stage — a screen family nothing attaches a clip to fails,
+because a clip that ships and never plays is the orphan problem again in a heavier
+format. It caught two the moment it was written: `kiosk` and `backdrop` were
+declared and wired to nothing.
+
+**Proof.** `probe:city` is 48/48 with three new checks, all measured in a browser
+rather than inferred from source:
+
+- `3 live · 3 playing · 3 of 3 advanced over 1.2 s · 0 failed` — the playheads move
+  between two real samples, so the picture is running, not merely bound.
+- `3 decoders of the 4 allowed` — the ceiling holds.
+- With every `/video/*.webm` request aborted: `3 clips refused by the network · 0
+  live · the district still draws 136 calls`. The offline player gets the city.
+
+Three mutations, each reverted after:
+
+- Stop attaching clips to the shop fronts: the lint fails three families with
+  `screen-not-played`.
+- Append one byte to a clip: `declared-bytes` and `sha256` both fail.
+- Bind the texture but never call `play()`: the probe fails with `0 playing · 0 of
+  3 advanced` — the check is about motion, not about a texture existing.
+
+`tests/screens.test.ts` adds 10 cases, including the refusal past the cap that the
+probe cannot reach (a district asks for exactly the cap) and a guard that the
+service worker never learns to precache `/video/`. `npx vitest run` is 1387 tests
+across 120 files, green; `lint:assets` reports `12 clip(s), 1519.7 KB not
+precached · 0 violations`; the production build passes.
+
+Two honest limits, measured rather than assumed. Between two screenshots 1.5 s
+apart with the camera frozen, **1.7% of the frame changed by more than 18/255** —
+the signs are genuinely moving, and they are also a small part of a street view. At
+that distance the ad content reads as texture rather than as readable signage; it
+would read as an advertisement on the large billboards and the skyline panels,
+which is where this should go next and is in `docs/BACKLOG.md`. And R2 is not
+enabled on the account, so the clips ship from `public/video` for now;
+`VITE_VIDEO_BASE` points the same manifest at a bucket with no code change.
+
 ## Stage 632 — Eighty-one plates shipped in every download and were drawn on nothing
 
 **Problem.** The art mill produced 143 plates. `public/assets` carries 183 files,
