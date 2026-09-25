@@ -1641,6 +1641,58 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 639 — A trailer, and a way to record the game that is in it
+
+**Problem.** The game had no trailer, and the twelve clips Stage 633 put on the
+city's signs were the only moving footage of it that existed. A trailer assembled
+only from generated footage is a picture of a game that does not exist — the thing
+being sold has to appear in it.
+
+**Change.** `tools/trailer/capture.ts` records real gameplay out of the running
+client: it boots headless at 1280×720 on the real levels, drives the same bot plans
+the probes use, and pulls frames off a CDP screencast while advancing the sim in
+lockstep between them.
+
+Both of those choices are the same choice the probes already make. A screenshot
+forces a fresh raster per call and cannot keep up with a moving camera, so the
+stream is taken from the frames the compositor already produced. And the sim is
+stepped between frames rather than left in real time, so the motion recorded is the
+game's own rather than an artefact of how fast the harness happened to run — the
+capture is reproducible in the way `advance()` makes a probe reproducible.
+
+`tools/trailer/build.sh` is the cut: twenty-two segments written out and
+concatenated rather than assembled in one filter graph, so a shot can be replaced
+without re-rendering the other twenty-one. `docs/TRAILER.md` records every
+generated prompt, the act structure and the timings.
+
+**Proof.** Seventy seconds at 1280×720. Twenty of them are the real client — its own
+frame rate, its own levels, its own HUD — announced on screen with an `ACTUAL
+GAMEPLAY / CAPTURED IN A BROWSER` card so nobody has to guess which footage is
+which. Ten are the city's own advertisements, the same WebM clips the shop fronts
+play in Lease Row. Forty are generated cinematics, and all twelve prompts are in the
+docs beside the shot list.
+
+Six gameplay shots were captured, 226–300 frames each: `run_street`, `wake`,
+`fight`, `slide`, `docks`, `city_vista`. The only treatment applied to them is a
+grade on the way in — brightness +0.06, contrast ×1.18, saturation ×1.28 — because
+MELTDOWN is a genuinely dark game and the raw capture reads as black on a phone. No
+speed ramp, no added effects, no cuts inside a shot.
+
+The audio is synthesised in ffmpeg rather than generated: a 41 Hz drone with a fifth
+above it, a kick on 0.75 s through the middle, a half-time hat under the fourth act,
+four impacts, a riser and a boom. It was written to the cut, which is why the
+impacts land on 12.2 s, 23.1 s, 45.1 s and 56.3 s.
+
+Every cinematic prompt carries "no text, no logos, no brands, no visible face". The
+lettering — MELTDOWN, $CAPITAL, THE COUNTER-LEDGER IS LIVE — is drawn in the edit
+where it can be spelled correctly and where a logotype cannot accidentally resemble
+a real company's.
+
+The finished file is not committed. It is 23 MB, it is not a game asset, and
+`lint:assets` would be right to complain about it: that budget is for things the
+renderer loads. `npx vitest run` is 1387 tests across 120 files, green, and nothing
+in `client/`, `shared/` or `server/` was touched.
+
 ## Stage 638 — The counter probe was not slow, it was the third renderer
 
 **Problem.** `probe:counter` printed thirteen passing checks and then threw

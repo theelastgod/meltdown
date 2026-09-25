@@ -83,7 +83,7 @@ client/     Vite + Three.js presentation: input, renderer (post chain, rain, wet
 server/     authoritative room (transport-agnostic), Node host, Cloudflare Durable Object host, PlayerFile DO + D1 schema
 probe/      headless acceptance probes (one per stage)
 tests/      vitest unit tests for the simulation
-docs/       HANDOFF.md, STAGES.md, BACKLOG.md, ART_BIBLE.md, proof/ artifacts per stage
+docs/       HANDOFF.md, STAGES.md, BACKLOG.md, ART_BIBLE.md, TRAILER.md, proof/ artifacts per stage
 ```
 
 Picking this up? Start at `docs/HANDOFF.md` — the method, the rules, and what is open.
