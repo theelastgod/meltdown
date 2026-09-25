@@ -83,7 +83,10 @@ failures, not all diagnosed gameplay defects:
   Blank that stands there without returning fire dies at ~9 s — short of the 10 s wave trigger,
   hence `wasps 5 → 5`. It now defends the terminal and re-routes over the nav grid after a death.
   46/46, twice. The anchor, radius and assertions were not touched.
-- Endgame and counter probes time out.
+- **Endgame fixed in Stage 637:** it was not hanging, it was being kicked. A Blank file was handed
+  PELLET WEEK's Depth-2 REPO HAMMER, and the probe's wait named only `joined`, so a clean refusal
+  burned the 40 s timeout. Calendar-gated — two weeks in eight. 19/19 now, up from 5 checks and a
+  stack trace. The counter probe's navigation timeout is still open.
 - **Fixed in Stage 631:** the probe searched for the pre-Stage-346 plural `UNITS DROPPED`. One
   dropped unit has read `1 UNIT DROPPED WHERE YOU FELL` since then, so the find returned nothing
   and the check failed on an empty string. It now pins the whole shipped line. 27/27.

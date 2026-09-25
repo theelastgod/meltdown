@@ -23,6 +23,8 @@ import { levelById } from "../shared/sim/level";
 import { buildNav, findPath } from "../shared/sim/nav";
 import { LEDGER_ITEMS } from "../shared/manifest/items";
 import type { AuditDef } from "../shared/endgame/audits";
+import { WEAPON_DEPTH } from "../shared/manifest/loadout";
+import { CAMPAIGN_WEAPONS } from "../shared/weapons/manifest";
 
 const VITE_PORT = 5205;
 const HOST_PORT = 8808;
@@ -62,6 +64,7 @@ interface Endgame {
 }
 interface FileRec {
   depth: number;
+  owned: string[];
   xp: number;
   wallet: { scrip: number; wakelight: number };
   stamps: string[];
@@ -139,17 +142,32 @@ async function main(): Promise<void> {
     // ---------------- the Audit room ----------------
     const nav = buildNav(levelById("lease_row"));
     const B = levelById("lease_row").nodes.find((n) => n.label === "B")!.pos;
-    const legal = (): Record<string, unknown> => {
-      const primary = au.weapons.length ? au.weapons[0] : "lease_breaker";
-      const secondary = au.weapons.length ? au.weapons[au.weapons.length - 1] : "shock_baton";
+    // the two files that will join, read before any loadout is built from them
+    const [ra, rb] = await Promise.all([file(acct), file("fresh-eg")]);
+    /**
+     * A playlist weapon this FILE can actually field.
+     *
+     * The room validates Depth and the campaign unlocks (`validateLoadout`) BEFORE it applies the
+     * playlist's own rules, so handing every client `au.weapons[0]` blindly is only safe in the
+     * weeks whose first weapon happens to be free. In PELLET WEEK it is REPO HAMMER at Depth 2 and
+     * a Blank file is refused the room outright. Every weapon-restricted playlist ends in SHOCK
+     * BATON precisely so there is always something a Depth-1 file can bring (Stage 637).
+     *
+     * The campaign clause is not belt-and-braces: CLOCKEATER is Depth 1 but campaign-locked, so a
+     * depth-only filter would hand a Blank file a `weapon-locked` kick instead.
+     */
+    const legalFor = (rec: FileRec): Record<string, unknown> => {
+      const pool = au.weapons.filter((w) => (WEAPON_DEPTH[w] ?? 1) <= rec.depth && (!CAMPAIGN_WEAPONS.includes(w) || (rec.owned ?? []).includes(`weapon:${w}`)));
+      const primary = pool[0] ?? "lease_breaker";
+      const secondary = pool[pool.length - 1] ?? "shock_baton";
       return { primary, secondary, attested: [], keystone: null };
     };
     const banned = (): { loadout: Record<string, unknown>; rule: string } | null => {
-      if (au.weapons.length) return { loadout: { ...legal(), primary: au.weapons.includes("lease_breaker") ? "phage" : "lease_breaker" }, rule: "audit-weapon" };
-      if (au.noKeystone) return { loadout: { ...legal(), keystone: "debtless" }, rule: "audit-keystone" };
+      if (au.weapons.length) return { loadout: { ...legalFor(ra), primary: au.weapons.includes("lease_breaker") ? "phage" : "lease_breaker" }, rule: "audit-weapon" };
+      if (au.noKeystone) return { loadout: { ...legalFor(ra), keystone: "debtless" }, rule: "audit-keystone" };
       if (au.ringOnly) {
         const other = LEDGER_ITEMS.find((i) => i.ring !== au.ringOnly)!;
-        return { loadout: { ...legal(), attested: [other.id] }, rule: "audit-ring" };
+        return { loadout: { ...legalFor(ra), attested: [other.id] }, rule: "audit-ring" };
       }
       return null;
     };
@@ -167,8 +185,13 @@ async function main(): Promise<void> {
       await kicked.close();
       check(`the playlist's rules refuse a loadout it bans at join (${au.name})`, reason.includes(bad.rule), `kick: "${reason}"`);
     } else check(`the playlist has no loadout rule this week (${au.name}); its mutators are on the sheet and gravity`, true, `${au.line}`);
-    const [a, b] = await Promise.all([open("ALPHA", acct, legal(), { width: 960, height: 540 }), open("BRAVO", "fresh-eg", legal(), null)]);
-    for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 });
+    const [a, b] = await Promise.all([open("ALPHA", acct, legalFor(ra), { width: 960, height: 540 }), open("BRAVO", "fresh-eg", legalFor(rb), null)]);
+    // Wait for "settled", not for "joined". A client the room refuses never reaches joined, and a
+    // predicate that only names the happy state turns a kick into the full 40 s timeout and a stack
+    // trace — which is how a Depth-gated loadout read as a hang for two weeks in eight (Stage 637).
+    for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && ((window.__game.net()?.status === "joined" && window.__game.net()?.synced === true) || window.__game.net()?.status === "kicked" || window.__game.net()?.status === "closed"), null, { timeout: 40000, polling: 100 });
+    const joins = await Promise.all([a, b].map(async (p) => await p.evaluate(() => ({ status: window.__game.net()?.status ?? "none", why: window.__game.net()?.kickReason ?? "" }))));
+    check("both files are admitted to the Audit with a loadout its playlist and their Depth both allow", joins.every((j) => j.status === "joined"), `ALPHA ${ra.depth === undefined ? "?" : `D${ra.depth}`} ${JSON.stringify(legalFor(ra).primary)} → ${joins[0]!.status}${joins[0]!.why ? ` ("${joins[0]!.why}")` : ""} · BRAVO D${rb.depth} ${JSON.stringify(legalFor(rb).primary)} → ${joins[1]!.status}${joins[1]!.why ? ` ("${joins[1]!.why}")` : ""}`);
     await a.waitForTimeout(300);
     const w0 = await a.evaluate(() => ({ eg: window.__game.endgame(), maxShield: window.__game.game.player.maxShield, maxHealth: window.__game.state().maxHealth, mods: window.__game.state().mods, log: [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "") }));
     const wantShield = au.sheet.maxShield !== undefined ? Math.max(0, 30 + au.sheet.maxShield) : null;
@@ -261,7 +284,10 @@ async function main(): Promise<void> {
     const afterView = await rw.evaluate(() => ({ eg: window.__game.endgame(), file: window.__game.file() }));
     check("REWRITE at Depth 50 burns the file — Depth 1, XP 0, Scrip 0, nodes gone — keeps the stamps and the counters (the glyph's age) and pays 500 Wakelight", before.depth === 50 && r1.ok && after.depth === 1 && after.xp === 0 && after.wallet.scrip === 0 && after.stamps.length === before.stamps.length && (after.counters["kills"] ?? 0) === (before.counters["kills"] ?? 0) && after.wallet.wakelight === before.wallet.wakelight + 500 && after.rewrites === 1 && afterView.file.depth === 1 && afterView.eg.rewrites === 1 && after.ledger.some((l) => l.startsWith("REWRITE 1")), `depth ${before.depth} → ${after.depth} · stamps ${before.stamps.length} → ${after.stamps.length} · wakelight ${before.wallet.wakelight} → ${after.wallet.wakelight}`);
     const r2 = await rw.evaluate(() => window.__game.rewrite());
-    check("a second Rewrite waits for Depth 50 again", !r2.ok && /Depth 1/.test(r2.reason ?? ""), `${r2.reason}`);
+    // Pinned whole, not matched by substring. This asked for /Depth 1/ against a refusal the game
+    // has printed in uppercase for a long time, and never once reported it, because the probe was
+    // timing out in the Audit room forty lines above and never reached here (Stage 637).
+    check("a second Rewrite waits for Depth 50 again", !r2.ok && r2.reason === "DEPTH 1 — REWRITE OPENS AT 50", `"${r2.reason}"`);
     const buy = await rw.evaluate(() => window.__game.cosmetic({ op: "buy", id: "theme_amber" }));
     const wear = await rw.evaluate(() => window.__game.cosmetic({ op: "theme", id: "theme_amber" }));
     await rw.evaluate(() => window.__game.toggleFile(true));

@@ -1641,6 +1641,54 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 637 — A kick the probe could not see, and fourteen checks behind it
+
+**Problem.** `probe:endgame` printed five passing checks and then threw
+`page.waitForFunction: Timeout 40000ms exceeded` at `probe/stage11.ts:171`. A hang,
+with no failing assertion to read.
+
+BRAVO was not hanging. It was being **kicked**, and the probe had no way to notice.
+
+The Audit leg opens two clients: ALPHA on `sandbox-eg`, which the dev seeding gives
+Depth 50 and every unlock, and BRAVO on `fresh-eg`, which matches no `sandbox`
+prefix and is therefore a Blank file at Depth 1 owning nothing. Both were handed the
+same loadout, built from the playlist alone as `au.weapons[0]`. This week is week
+2960, `2960 % 8 === 0`, which is PELLET WEEK — `["repo_hammer", "clockeater",
+"shock_baton"]` — and `WEAPON_DEPTH.repo_hammer` is 2. `validateLoadout` runs before
+the playlist's own rules are consulted, so the room answered BRAVO `LOADOUT
+REJECTED: weapon-depth: REPO HAMMER NEEDS DEPTH 2 (YOU ARE 1)`.
+
+The wait then named only the happy state — `status === "joined" && synced` — which a
+kicked client can never reach, so a clean refusal spent the full timeout and died in
+a stack trace. It is calendar-gated: it bites in the weeks whose playlist leads with
+a Depth-gated weapon, PELLET WEEK and LONG LEASE, two weeks in eight.
+
+**Change.** The probe builds each client's loadout from the file that will carry it:
+a playlist weapon whose Depth that file has, and which it owns if the campaign locks
+it. The ownership clause is load-bearing rather than defensive — CLOCKEATER is Depth
+1 but campaign-locked, so filtering on Depth alone would swap a `weapon-depth` kick
+for a `weapon-locked` one. Every weapon-restricted playlist ends in SHOCK BATON
+precisely so a Depth-1 file always has something to bring.
+
+And the wait now settles on joined **or** kicked **or** closed, with a check that
+reads the outcome. A probe that can only recognise success reports every failure as
+a timeout.
+
+**Proof.** `probe:endgame` is 19/19 — it was printing 5 checks and a stack trace, so
+fourteen checks had not been running at all. The new check reports `ALPHA D50
+"repo_hammer" → joined · BRAVO D1 "shock_baton" → joined`.
+
+One of those fourteen was failing on its own account and is fixed here too: `a
+second Rewrite waits for Depth 50 again` tested `/Depth 1/` against a refusal the
+game prints as `DEPTH 1 — REWRITE OPENS AT 50`. Pinned whole now, the way Stage 631
+pinned the drop line.
+
+Mutation, reverted after: hand every file the playlist blindly again. The check fails
+with `BRAVO D1 "repo_hammer" → kicked ("LOADOUT REJECTED: weapon-depth: REPO HAMMER
+NEEDS DEPTH 2 (YOU ARE 1)")` — the root cause printed on the failure line, where the
+same condition used to produce a forty-second timeout. `npx vitest run` is 1387 tests
+across 120 files, green.
+
 ## Stage 636 — The camera took the landing off the wrong clock
 
 **Problem.** `probe:tps` failed 49/50: a drop that ends at 19 m/s put **0.000 m**
