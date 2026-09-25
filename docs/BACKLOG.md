@@ -18,7 +18,9 @@ failures, not all diagnosed gameplay defects:
 - Campaign probe remains at the first hold objective, preventing completion, settlement and
   downstream protocol/Threat checks; the crew leg also does not complete.
 - Endgame and counter probes time out.
-- THE RUN death check finds no expected log line after dropping the carried claim.
+- **Fixed in Stage 631:** the probe searched for the pre-Stage-346 plural `UNITS DROPPED`. One
+  dropped unit has read `1 UNIT DROPPED WHERE YOU FELL` since then, so the find returned nothing
+  and the check failed on an empty string. It now pins the whole shipped line. 27/27.
 - **Fixed in Stage 629:** late effect textures now restart shader warm-up. The diagnostic
   frame probe passes 8/8: textures 50 → 50 and programs 54 → 54 over 30 shots.
 - Third-person landing check measures no camera dip.

@@ -1641,6 +1641,39 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 631 — The drop line check had been reading an empty string for 280 stages
+
+**Problem.** `probe:run` failed 26/27 on `the money moments are heard offline …`,
+printing `after the death: fall ×1, "", carrying 0` — an empty string where the HUD
+line should be. The drop itself was correct: the cue fired once, nothing was left
+carried, and the claim was on the street.
+
+The probe found the line with `/UNITS DROPPED/`. Stage 346 made one dropped unit
+read `1 UNIT DROPPED WHERE YOU FELL` instead of `1 UNITS`, and this scenario carries
+exactly one unit. From that stage the `find` matched nothing, `dropLine` fell back
+to `""`, and the check failed on a conjunct about text while reporting no text at
+all. `client/runcue.ts` was right and `tests/runcue.test.ts` had pinned it both
+ways since Stage 346; only the probe was still reading the old grammar.
+
+**Change.** The probe finds the line by the part that does not inflect,
+`/DROPPED WHERE YOU FELL/`, so a wrong line lands in the failure message instead of
+collapsing to nothing. The assertion then pins the whole shipped string —
+`» ◈ 1 UNIT DROPPED WHERE YOU FELL` — and asserts alongside it that the scenario
+carried exactly one unit, which is what makes the singular the right expectation.
+Substring matching is what let this drift; `/UNITS DROPPED/` would have accepted
+the wrong line as readily as the right one.
+
+**Proof.** `probe:run` is 27/27 and the check reports `fall ×1, "» ◈ 1 UNIT DROPPED
+WHERE YOU FELL", carrying 0, dropped claim on the street true, alive false`.
+
+Mutation, reverted after: make `momentLine` always plural. `tests/runcue.test.ts`
+fails 1 of 8, and the probe fails with `"» ◈ 1 UNITS DROPPED WHERE YOU FELL"` —
+the wrong line, printed. The old substring check would have passed this mutation,
+which is the second half of the finding: the check was not only broken, it was the
+weaker of the two things it could have been.
+
+`npx vitest run` is 1365 tests across 118 files, green. Production is untouched.
+
 ## Stage 630 — The remote body check had never once watched a remote walk
 
 **Problem.** CI's `probe:body` failed 20/21 on `a remote walks from what the wire
