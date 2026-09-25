@@ -17,6 +17,7 @@ import { readFileSync } from "node:fs";
 import { reachable } from "./helpers/imports";
 import { ASSETS, ASSET_BUDGET_BYTES, MAX_ASSET_BYTES, MAX_TEXTURE_EDGE, assetById, assetUrl, totalAssetBytes, type AssetDef } from "../shared/assets/manifest";
 import { lintAssets, pngSize } from "../shared/assets/lint";
+import { reachablePlates } from "../shared/assets/plates";
 import { SKINS } from "../shared/economy/catalog";
 import { disposeAssets, texture } from "../client/render/assets";
 
@@ -167,7 +168,10 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
       "tex_cable", "tex_wet_asphalt",
       "tex_tracer", "tex_blast", "tex_spark", "tex_wake_hex", "tex_directive_core",
     ]) {
-      expect(src, id).toContain(`"${id}"`);
+      // A plate is bound either by name here or by being in a surface family a shipped district
+      // deals from (Stage 632). The family is the stronger of the two — `lintPlatesAreDrawn` also
+      // requires some seed to actually reach it — so accepting it does not weaken this check.
+      expect(src.includes(`"${id}"`) || reachablePlates().includes(id), id).toBe(true);
     }
     const campaign = readFileSync(new URL("../client/render/campaign.ts", import.meta.url), "utf8");
     expect(campaign).toMatch(/bindPlate\(hoodMat, "tex_cloak"\)/);
@@ -192,8 +196,9 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(city).toMatch(/bindPlate\(M\.railMg, "tex_cable"\)/);
     expect(city).toMatch(/bindPlate\(stripMat, "tex_lamp"\)/);
     expect(city).toMatch(/bindPlate\(M\.head, "tex_lamp"\)/);
-    expect(city).toMatch(/bindPlate\(M\.padStart, "tex_wet_asphalt"\)/);
-    expect(city).toMatch(/bindPlate\(M\.padEnd, "tex_wet_asphalt"\)/);
+    // the pads take whichever paving this district was dealt; tex_wet_asphalt is that family's first
+    expect(city).toMatch(/bindPlate\(M\.padStart, platePick\("paving", seed\)\)/);
+    expect(city).toMatch(/bindPlate\(M\.padEnd, platePick\("paving", seed\)\)/);
     expect(city).toMatch(/bindPlate\(M\.glow, "tex_lamp"\)/);
     expect(city).toMatch(/bindPlate\(haloMat, "tex_lamp"\)/);
     expect(city).toMatch(/bindPlate\(trafficMat, "tex_lamp"\)/);

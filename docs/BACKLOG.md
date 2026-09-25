@@ -5,6 +5,27 @@ independent adversarial verification that defaulted to *refuted*, and **32 survi
 turned out to be the same finding reported twice. All of them have since been fixed (Stages 168–195)
 and are listed at the foot of this file with the commit that closed them.
 
+## Art that ships and is drawn on nothing — 2026-09-25
+
+Stage 632 found 81 of 143 generated plates bound to no material: ~12 MB in every download that no
+surface sampled. Fifteen now go on kerbs, pads, gratings, vents, shutters and roads, dealt per
+district. **66 are still owed** and `shared/assets/plates.ts` records them; `lintPlatesAreDrawn`
+fails if that list grows, and fails again if an entry turns out to be drawn after all.
+
+What is left needs surfaces built for it rather than a family to drop into:
+
+- ~31 facade, window, signage and interior plates — the facade pools take three per cast and are
+  full; more would need more facade materials, which costs draw calls.
+- ~21 metal, bulkhead, pipe and machinery plates, including two sets of brass and gold gears that
+  belong on CLOCKEATER surfaces and a security-camera dome with nothing to sit on.
+- ~12 vista plates (wet alleys, stairs, hanging banners) that read as scenery, not as tiles — these
+  want a backdrop plane, not a material.
+- one character plate: a hooded figure in a wet coat, which is the Blank and has no surface at all.
+
+Also measured and not fixed: the surface filling most of a street camera is the plaza floor
+(`M.base`, `M.concrete`). It is plated, but it reads flat and pale next to the art. Whether that is
+the plate, the material colour or the lighting is not yet established — measure before changing it.
+
 ## Release verification findings — 2026-09-24
 
 GitHub verification of Stage 626 failed: https://github.com/theelastgod/meltdown/actions/runs/35926225284.

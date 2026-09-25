@@ -1641,6 +1641,75 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 632 — Eighty-one plates shipped in every download and were drawn on nothing
+
+**Problem.** The art mill produced 143 plates. `public/assets` carries 183 files,
+28.5 MB, and the service worker precaches all of them so the game works offline.
+Of the 93 `tex_var_*` plates, **12 were bound to a material and 81 were not**:
+every player downloaded roughly 12 MB of texture that no surface ever sampled.
+
+The asset lint already checked that a plate is a square power of two, weighs what
+the manifest says, hashes to what was reviewed and fits the download budget. None
+of those rules is about whether anything draws it, so the one failure an art
+pipeline actually has went unmeasured. Some of the art is the best in the game —
+wet cobble and drain covers, tread plate and extract grilles, hazard chevrons,
+corrugated shutter — and it was sitting in the download unseen.
+
+**Change.** `shared/assets/plates.ts` groups surfaces that can take more than one
+look into families — road, cobble, drain, paving, tread, vent, hazard, shutter —
+and gives each family a pool. `dressLevel` picks a district's plate per family
+instead of binding one fixed id, so Lease Row's stone is not the Depot's stone.
+
+The pick is a deal, not a draw: a district takes its plate by its rank in the
+shipped seed list, offset by the family name. Seven districts therefore show
+`min(7, poolSize)` distinct plates per family rather than however many a hash
+happens to land on, and with pools of at most four, **every pooled plate is on a
+surface in some district**. Picking never changes how many textures a material
+holds — `bindPlate` swaps `mat.map`, it does not add one — so the frame budget is
+untouched.
+
+`lintPlatesAreDrawn` is the rule that was missing, and it holds in both
+directions. A plate that ships undrawn fails unless it is written down as owed. A
+plate written down as owed that turns out to be drawn also fails, so the list can
+only shrink. A family nothing calls `platePick` for fails, because a pool no
+surface reads is the same parking lot in a different file. And a plate that is
+pooled but that no shipped seed can deal fails too — being in a pool is not being
+in the game.
+
+**Proof.** `npm run lint:assets` reports `183 asset(s) · 28555.1 KB of 65536.0 KB ·
+117 plate(s) drawn, 66 recorded undrawn · 0 violations`. It was 102 drawn and 81
+undrawn: fifteen plates that no player could see are now on surfaces.
+
+Measured in a running browser rather than inferred from source — walking the scene
+graph for materials whose map resolves under `/assets/`:
+
+- `lease_row` draws `tex_var_049 tex_var_050 tex_var_057 tex_var_090` beside its
+  four facade plates
+- `repo_depot` draws `tex_var_039 tex_var_050 tex_var_062 tex_var_090`
+- `deadletter_docks` draws `tex_var_025 tex_var_026 tex_var_028 tex_var_081`
+
+Three mutations, each reverted after:
+
+- Bind one surface back to its single id (`M.road`): the lint fails
+  `road [pool-not-picked]`, and `tests/plates.test.ts` fails with it.
+- Add five plates to a pool so it is larger than the district list can cover: the
+  lint fails `tex_var_016 [plate-unreachable]` for the one no seed deals, and
+  `[stale-undrawn]` for the four that are now drawn but still recorded as owed —
+  the ratchet firing in both directions at once.
+- Point the lint at a file that names no plate: it reports every texture as
+  undrawn, so the check is reading the real client and not a stale copy.
+
+`tests/plates.test.ts` adds 12 cases. `npx vitest run` is 1377 tests across 119
+files, green; `probe:city` 45/45 and `probe:look` 18/18 on the changed dressing.
+
+Two things this stage did **not** do, measured rather than assumed. Screenshots of
+Lease Row before and after are all but identical, because the surface that fills
+most of that camera is the plaza floor (`M.base`, `M.concrete`), which was already
+plated and is not in a family — the fifteen new plates are on kerbs, pads,
+gratings, vents and shutters, which is dressing rather than the dominant read. And
+66 plates are still owed: facades, machinery, vistas and one character plate that
+need surfaces built for them, not a family to be dropped into.
+
 ## Stage 631 — The drop line check had been reading an empty string for 280 stages
 
 **Problem.** `probe:run` failed 26/27 on `the money moments are heard offline …`,

@@ -3,6 +3,7 @@ import type { Box, LevelDef, SignDef, TrafficLane } from "@shared/sim/level";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { brickTexture, facadeTextures, hazardTexture, shutterTexture } from "./textures";
 import { texture as assetTexture } from "./assets";
+import { platePick } from "../../shared/assets/plates";
 
 export const PALETTE = {
   bg: 0x04050a,
@@ -284,19 +285,19 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
   }
   bindPlate(M.brick, cast === "amber" ? "tex_brick_amber" : cast === "cyan" ? "tex_brick_cyan" : "tex_neon_brick");
   bindPlate(M.brickDark, "tex_bulkhead");
-  bindPlate(M.hazard, "tex_vantage_hazard");
-  bindPlate(M.sidewalk, "tex_wet_cobble");
+  bindPlate(M.hazard, platePick("hazard", seed));
+  bindPlate(M.sidewalk, platePick("cobble", seed));
   bindPlate(M.white, "tex_white_office");
   bindPlate(M.whiteFloor, "tex_white_office");
-  bindPlate(M.shutter, "tex_shutter");
+  bindPlate(M.shutter, platePick("shutter", seed));
   bindPlate(M.fenceMat, "tex_chainlink");
   bindPlate(M.crate, "tex_crate");
   bindPlate(M.stall, "tex_crate");
   bindPlate(M.dumpster, "tex_dumpster");
   bindPlate(M.concrete, "tex_concrete");
   bindPlate(M.base, "tex_pavement");
-  bindPlate(M.metal, "tex_metal");
-  bindPlate(M.vending, "tex_vent");
+  bindPlate(M.metal, platePick("tread", seed));
+  bindPlate(M.vending, platePick("vent", seed));
   bindPlate(M.metro, "tex_tile_metro");
   bindPlate(M.containerA, "tex_container");
   bindPlate(M.containerB, "tex_container");
@@ -318,16 +319,16 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef): { calls: number
   bindPlate(M.shopB, "tex_billboard_cy");
   bindPlate(M.shopC, "tex_billboard_ye");
   bindPlate(M.page, "tex_nameplate");
-  bindPlate(M.road, "tex_asphalt_2");
+  bindPlate(M.road, platePick("road", seed));
   bindPlate(M.desk, "tex_desk");
   bindPlate(M.scaffold, "tex_scaffold");
   bindPlate(M.pipe, "tex_pipe");
-  bindPlate(M.grate, "tex_grate");
+  bindPlate(M.grate, platePick("drain", seed));
   bindPlate(M.coneAlt, "tex_cone_alt");
   bindPlate(M.railMg, "tex_cable");
   bindPlate(M.head, "tex_lamp");
-  bindPlate(M.padStart, "tex_wet_asphalt");
-  bindPlate(M.padEnd, "tex_wet_asphalt");
+  bindPlate(M.padStart, platePick("paving", seed));
+  bindPlate(M.padEnd, platePick("paving", seed));
   bindPlate(M.glow, "tex_lamp");
   const facadeIds =
     cast === "amber" ? (["tex_facade_amber", "tex_var_000", "tex_var_001"] as const)
