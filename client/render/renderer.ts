@@ -28,7 +28,7 @@ import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hi
 import { spawnCurve, spawnEdge, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import { arcPoint, type ArcSpec } from "./ballistic";
-import { DEATH_TURN, fallSpeed, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
+import { DEATH_TURN, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
 import { screens as screenPool } from "./screens";
 
@@ -43,6 +43,8 @@ export interface ViewState {
   kickPitch: number;
   kickYaw: number;
   speed: number;
+  /** the sim's own vertical velocity, m/s, down negative — a landing is the sim's fall, never a render-clock difference (Stage 636) */
+  vy: number;
   grounded: boolean;
   stance: string;
   reloading: number; // 0..1 progress, 0 when idle
@@ -248,7 +250,6 @@ export class Renderer {
   private landHard = 0;
   private fallSpeed = 0;
   private wasAir = false;
-  private lastY: number | null = null;
   private rollNow = 0;
   private dipNow = 0;
   private vmKick = 0;
@@ -852,7 +853,7 @@ export class Renderer {
     g.position.set(v.x, v.y, v.z);
     g.rotation.y = v.yaw;
     // the pose (Stage 63): everything the body does comes from pose.ts, from what this frame knows
-    const vy = Number.isNaN(this.lastViewY) ? 0 : clamp((v.y - this.lastViewY) / Math.max(1e-4, rawDt), -12, 12);
+    const vy = clamp(v.vy, -12, 12); // the sim's fall, for the same reason the camera's is (Stage 636)
     const turnRate = Number.isNaN(this.lastViewYaw) ? 0 : clamp(wrapAngle(v.yaw - this.lastViewYaw) / Math.max(1e-4, rawDt), -20, 20);
     this.lastViewY = v.y;
     this.lastViewYaw = v.yaw;
@@ -901,14 +902,17 @@ export class Renderer {
     // the camera takes the landing the legs have been taking since Stage 63. The fall speed is the
     // frame before touchdown, because on the frame itself the sim has already stopped the file
     // (Stage 79)
-    const fell = this.lastY === null ? 0 : fallSpeed(this.lastY, v.y, rawDt);
     if (v.grounded && this.wasAir && v.alive) {
       this.landHard = landHardness(this.fallSpeed);
       this.landT = this.landHard > 0 ? LAND_TIME : 0;
     }
-    if (!v.grounded) this.fallSpeed = fell;
+    // How fast the sim was falling, not how far the view moved between two drawn frames. Those are
+    // the same number only while one frame is drawn per tick; a slow machine covers several ticks in
+    // a frame and averages the impact away, and a probe that steps the sim by hand decouples them
+    // entirely (Stage 636). Stage 193 was right that the hitch-capped dt was the wrong divisor and
+    // wrong that the fix was the raw one — the render clock was never the right clock for this.
+    if (!v.grounded) this.fallSpeed = v.vy;
     this.wasAir = !v.grounded;
-    this.lastY = v.y;
     this.landT = Math.max(0, this.landT - rawDt);
     const dip = this.landT > 0 ? landDip(this.landHard, LAND_TIME - this.landT) : 0;
     this.dipNow = dip;

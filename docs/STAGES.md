@@ -1641,6 +1641,53 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 636 — The camera took the landing off the wrong clock
+
+**Problem.** `probe:tps` failed 49/50: a drop that ends at 19 m/s put **0.000 m**
+into the camera, and the landing dip was gone. The check beside it — "a step off a
+kerb is not a landing" — passed, because a kerb also put 0.000 m in. Both halves of
+a discrimination had collapsed to the same number and only one of them noticed.
+
+How fast the file fell was being inferred from the *render* clock:
+
+```ts
+const fell = this.lastY === null ? 0 : fallSpeed(this.lastY, v.y, rawDt);
+```
+
+That ratio is the true fall speed only while exactly one frame is drawn per sim
+tick. It is the same struct that already takes horizontal speed straight from the
+sim — `speed: lenXZ(p.vel)` — so the two velocities in one `ViewState` were coming
+from two different clocks. A machine that draws slower than it simulates covers
+several ticks in one frame and averages the impact away; the probe, which steps the
+sim by hand at 1/60 s while headless Chromium draws at about 8 fps, decouples them
+entirely and turns a 19.4 m/s landing into 2.7.
+
+Stage 193 introduced it, and was half right: it correctly stopped dividing by the
+hitch-capped `min(rawDt, 1/30)`, then swapped in the raw render clock rather than
+asking the sim. The cap had been masking the mismatch by a factor of two, which
+still left a dip; removing it exposed the whole error.
+
+**Change.** `ViewState` carries `vy` from `p.vel.y`, and the camera reads the fall
+from it. The body's pose had the identical defect three hundred lines away —
+`clamp((v.y - this.lastViewY) / Math.max(1e-4, rawDt), -12, 12)` — and now reads
+the same field. `this.lastY` and the `fallSpeed` import are gone. The dip's *drain*
+still runs on `rawDt`, because how long an animation has been playing is a fact
+about real time even when how fast something fell is not.
+
+**Proof.** `probe:tps` is 50/50. The drop now reports `the camera went 0.204 m down
+(0.082 m below its anchor) and was level again 2 frames later` against 0.000 m
+before. `probe:body` is 21/21 with the pose change. `npx vitest run` is 1387 tests
+across 120 files.
+
+Mutation, reverted after: put the fall back on the render clock. The drop returns to
+`0.000 m down · level again 0 frames later` — and the kerb check passes at
+`0.000 m`, which is the second finding of this stage. A ceiling on its own cannot
+tell "a kerb is gentle" from "nothing works", and it read PASS through the entire
+Stage 193 regression. It now asserts the separation as well: `a 0.35 m step put
+0.008 m in the camera against the drop's 0.210 m — 25x`. The source guard in
+`tests/feel.test.ts` was re-pinned the same way — it had been asserting the exact
+line this stage removes, so it would have failed the fix and passed the bug.
+
 ## Stage 635 — The first mission's hold could not be held standing still
 
 **Problem.** `probe:campaign` failed 39/46. Seven checks, one cause: m1's

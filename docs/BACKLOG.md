@@ -89,7 +89,10 @@ failures, not all diagnosed gameplay defects:
   and the check failed on an empty string. It now pins the whole shipped line. 27/27.
 - **Fixed in Stage 629:** late effect textures now restart shader warm-up. The diagnostic
   frame probe passes 8/8: textures 50 → 50 and programs 54 → 54 over 30 shots.
-- Third-person landing check measures no camera dip.
+- **Fixed in Stage 636:** the camera derived the fall speed from the render clock, not the sim, so a
+  machine drawing slower than it simulated landed every drop like a step off a kerb. `ViewState` now
+  carries `vy` from `p.vel.y` and both the camera and the body pose read it. 0.000 m → 0.204 m;
+  probe:tps 50/50. The kerb check beside it was passing at 0.000 m and now asserts the separation.
 - **Fixed in Stage 630:** the remote-body walking check never watched a remote walk. Its probe
   stepped the injected position by one 60 fps frame per drawn frame, which is 0.43 m/s on a 5 fps
   machine — under the walk threshold — so the body posed `idle` on every sampled frame and the

@@ -696,7 +696,11 @@ async function main(): Promise<void> {
       }
       return peak;
     });
-    check("and a step off a kerb is not a landing", kerb < 0.02, `a 0.35 m step put ${kerb.toFixed(3)} m in the camera`);
+    // A ceiling alone passes when nothing dips at all, which is how this read PASS through the whole
+    // of the Stage 193 regression while the drop beside it measured 0.000 m. What it is actually for
+    // is the separation: a kerb must stay under the bar AND be an order of magnitude shallower than
+    // the drop, so a camera that has stopped responding to height fails here too (Stage 636).
+    check("and a step off a kerb is not a landing, by an order of magnitude and not by both being nothing", kerb < 0.02 && fall.peak > kerb * 10, `a 0.35 m step put ${kerb.toFixed(3)} m in the camera against the drop's ${fall.peak.toFixed(3)} m — ${(fall.peak / Math.max(kerb, 1e-4)).toFixed(0)}x`);
     // the slide leans the view — in this one it never did at all
     const slid = await pg.evaluate(async () => {
       const p = window.__game.game.player;

@@ -29,10 +29,15 @@ describe("how hard a landing was", () => {
   });
 });
 
-describe("the renderer divides the fall by the real frame", () => {
-  it("uses rawDt for fallSpeed and drains the dip on rawDt", () => {
+describe("the renderer takes the fall from the sim and the dip from the real frame", () => {
+  it("reads fallSpeed from the sim's vy, never from a view-height difference, and still drains the dip on rawDt", () => {
     const src = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
-    expect(src).toMatch(/fallSpeed\(this\.lastY, v\.y, rawDt\)/);
+    // How fast the file fell is a fact about the simulation. How long the dip has been draining is
+    // a fact about real time. Stage 636 separated them; before it, both came off the render clock
+    // and a machine drawing slower than it simulated landed every drop like a step off a kerb.
+    expect(src).toMatch(/this\.fallSpeed = v\.vy/);
+    expect(src).not.toMatch(/fallSpeed\(this\.lastY/);
+    expect(src).not.toMatch(/\(v\.y - this\.lastViewY\) \/ Math\.max/);
     expect(src).toMatch(/this\.landT = Math.max\(0, this\.landT - rawDt\)/);
     expect(src).toMatch(/placeThirdPerson\(v, dt, bobY - dip, rawDt\)/);
     expect(src).toMatch(/this\.poseRemotes\(rawDt\)/);
