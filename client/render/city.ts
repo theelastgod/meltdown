@@ -284,24 +284,24 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.needsUpdate = true;
   }
-  bindPlate(M.brick, cast === "amber" ? "tex_brick_amber" : cast === "cyan" ? "tex_brick_cyan" : "tex_neon_brick");
-  bindPlate(M.brickDark, "tex_bulkhead");
+  bindPlate(M.brick, cast === "amber" ? "tex_brick_amber" : cast === "cyan" ? "tex_brick_cyan" : platePick("brick", seed));
+  bindPlate(M.brickDark, platePick("bulkhead", seed));
   bindPlate(M.hazard, platePick("hazard", seed));
   bindPlate(M.sidewalk, platePick("cobble", seed));
-  bindPlate(M.white, "tex_white_office");
-  bindPlate(M.whiteFloor, "tex_white_office");
+  bindPlate(M.white, platePick("officewall", seed));
+  bindPlate(M.whiteFloor, platePick("officefloor", seed));
   bindPlate(M.shutter, platePick("shutter", seed));
   bindPlate(M.fenceMat, "tex_chainlink");
   bindPlate(M.crate, "tex_crate");
   bindPlate(M.stall, "tex_crate");
   bindPlate(M.dumpster, "tex_dumpster");
-  bindPlate(M.concrete, "tex_concrete");
-  bindPlate(M.base, "tex_pavement");
+  bindPlate(M.concrete, platePick("concrete", seed));
+  bindPlate(M.base, platePick("plaza", seed));
   bindPlate(M.metal, platePick("tread", seed));
   bindPlate(M.vending, platePick("vent", seed));
   bindPlate(M.metro, "tex_tile_metro");
-  bindPlate(M.containerA, "tex_container");
-  bindPlate(M.containerB, "tex_container");
+  bindPlate(M.containerA, platePick("container", seed));
+  bindPlate(M.containerB, platePick("container", seed + 1));
   bindPlate(M.containerC, "tex_bulkhead");
   bindPlate(M.barrel, "tex_barrel");
   bindPlate(M.cone, "tex_cone");
@@ -780,7 +780,7 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
 
   // THE KERNEL: blood-red data-center megastructure on the horizon, immune to fog so it always reads.
   const kernelMat = new THREE.MeshBasicMaterial({ color: 0x120307, fog: false });
-  bindPlate(kernelMat, "tex_kernel_hull");
+  bindPlate(kernelMat, platePick("kernel", seed));
   const kernel = new THREE.Mesh(new THREE.BoxGeometry(180, 260, 120), kernelMat);
   kernel.position.set(-60, 120, -420);
   group.add(kernel);

@@ -1465,5 +1465,140 @@
     "bytes": 168889,
     "sha256": "047300d193fe8859c8e839847a7bd2b95dc441be690101fa2e5ea48a7554abc7",
     "provenance": "generated (Imagine, 2026-09-22), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_plaza_asphalt",
+    "kind": "texture",
+    "file": "tex_plaza_asphalt.png",
+    "size": 256,
+    "bytes": 150415,
+    "sha256": "b57156b8d479a5a663458c8afb77badb558fbfd10f89e44642c9cca7445831b6",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_plaza_slab",
+    "kind": "texture",
+    "file": "tex_plaza_slab.png",
+    "size": 256,
+    "bytes": 147987,
+    "sha256": "d4ba789cd8764465c7ded7ee05c27d8e1ba9f9d4c2855aa204d65446de93b55a",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_plaza_terrazzo",
+    "kind": "texture",
+    "file": "tex_plaza_terrazzo.png",
+    "size": 256,
+    "bytes": 163680,
+    "sha256": "5f771c4e6ed799a7f5fb784ccf8f8c8f559d785f610d26bf1693af2f84f915b6",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_plaza_hexstone",
+    "kind": "texture",
+    "file": "tex_plaza_hexstone.png",
+    "size": 256,
+    "bytes": 169571,
+    "sha256": "f32f5d42b403aadfa8704de300d2c466e91fe3eeea73a54335e0c9435236f1ce",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_plaza_tread",
+    "kind": "texture",
+    "file": "tex_plaza_tread.png",
+    "size": 256,
+    "bytes": 187868,
+    "sha256": "76e050769ba7349bf93ce5dc1f44a25ab8c2a3252ef69c60feb7d338fcffb988",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_office_tile",
+    "kind": "texture",
+    "file": "tex_office_tile.png",
+    "size": 256,
+    "bytes": 85917,
+    "sha256": "ea93be1b8620a4dda43aa89adad073ce659eb62b40679d80214588d4ef643af7",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_office_acoustic",
+    "kind": "texture",
+    "file": "tex_office_acoustic.png",
+    "size": 256,
+    "bytes": 136592,
+    "sha256": "bf9c6523cdcb6af7ed21aed6a0aa945ea1de56785f66b3602bc56e8000f64ee3",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_office_carpet",
+    "kind": "texture",
+    "file": "tex_office_carpet.png",
+    "size": 256,
+    "bytes": 155879,
+    "sha256": "d35a402ebc0bfe287ab1d8c3f4abbc69c81b82579d457d0048286446f6c5d2ce",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_office_steel",
+    "kind": "texture",
+    "file": "tex_office_steel.png",
+    "size": 256,
+    "bytes": 140586,
+    "sha256": "10abd9dd575af0f8384754d5148588012198403a0d42f7f7a54aa8db153fb046",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_kernel_filament",
+    "kind": "texture",
+    "file": "tex_kernel_filament.png",
+    "size": 256,
+    "bytes": 140551,
+    "sha256": "de21fcf26cd12f30323809a2bcab94baee23b8c341cdf776263f3631bffd9559",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_wall_boardform",
+    "kind": "texture",
+    "file": "tex_wall_boardform.png",
+    "size": 256,
+    "bytes": 137551,
+    "sha256": "37119de41bd900d4646046b201516e05a8be0a1826dee9eddcdcfe049ea49a48",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_wall_neonbrick",
+    "kind": "texture",
+    "file": "tex_wall_neonbrick.png",
+    "size": 256,
+    "bytes": 163016,
+    "sha256": "55c57c27c4e435c1d81f46f96525f574548a537506eb065a43ab5a236945be10",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_wall_shutter",
+    "kind": "texture",
+    "file": "tex_wall_shutter.png",
+    "size": 256,
+    "bytes": 116170,
+    "sha256": "0daff13b5c3323f561ad06883f4d04838ef3648f15771ddcfdb4779085b84d9a",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_wall_container",
+    "kind": "texture",
+    "file": "tex_wall_container.png",
+    "size": 256,
+    "bytes": 141293,
+    "sha256": "ef8c27bc4a86d2f2b78de052fc464a40a5f631044d9b6c9314eb881924537fba",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "tex_wall_conduit",
+    "kind": "texture",
+    "file": "tex_wall_conduit.png",
+    "size": 256,
+    "bytes": 154171,
+    "sha256": "ceec93140bbda8be7b6c019c9b8ecb97af0b6c9a2c1d3489bf367ab4375de719",
+    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
   }
 ]

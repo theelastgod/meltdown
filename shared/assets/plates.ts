@@ -20,19 +20,41 @@ export const PLATE_POOLS = {
   /** the road deck itself: wet asphalt, worn and puddled */
   road: ["tex_asphalt_2", "tex_var_028", "tex_var_039"],
   /** kerbs and walkways: laid stone, wet */
-  cobble: ["tex_wet_cobble", "tex_var_057", "tex_var_026"],
+  cobble: ["tex_wet_cobble", "tex_var_057", "tex_var_026", "tex_plaza_hexstone"],
   /** drain covers and inspection plates set into the deck */
   drain: ["tex_grate", "tex_var_025", "tex_var_062", "tex_var_076"],
   /** the flat pads a player actually stands on between the kerbs */
   paving: ["tex_wet_asphalt", "tex_var_071", "tex_var_077", "tex_var_027"],
   /** walkable metal: tread plate and mesh decking */
-  tread: ["tex_metal", "tex_var_049", "tex_var_081"],
+  tread: ["tex_metal", "tex_var_049", "tex_var_081", "tex_plaza_tread"],
   /** extract fans and wall vents */
   vent: ["tex_vent", "tex_var_050"],
   /** painted hazard, at the edges a player is not meant to cross */
   hazard: ["tex_vantage_hazard", "tex_var_041"],
   /** roller shutters and corrugated sheet */
-  shutter: ["tex_shutter", "tex_var_090"],
+  shutter: ["tex_shutter", "tex_var_090", "tex_wall_shutter"],
+  /**
+   * The plaza deck — the surface that fills most of a street camera.
+   *
+   * Stage 632 measured that binding the kerbs and gratings changed almost nothing about how a
+   * street reads, because this is what the player is actually looking at and it was still the one
+   * flat plate it shipped with. These are the tiles generated for it (Stage 634).
+   */
+  plaza: ["tex_pavement", "tex_plaza_terrazzo", "tex_plaza_slab", "tex_plaza_asphalt"],
+  /** poured walls and the mass behind the dressing */
+  concrete: ["tex_concrete", "tex_wall_boardform"],
+  /** the dark bulkhead behind the neon: pipework, looms, conduit */
+  bulkhead: ["tex_bulkhead", "tex_wall_conduit"],
+  /** stacked containers in the yards */
+  container: ["tex_container", "tex_wall_container"],
+  /** a magenta district's brick; the amber and cyan casts keep their own */
+  brick: ["tex_neon_brick", "tex_wall_neonbrick"],
+  /** what the Deadletter Office and the hub are floored with */
+  officefloor: ["tex_white_office", "tex_office_tile", "tex_office_carpet"],
+  /** and walled with */
+  officewall: ["tex_white_office", "tex_office_acoustic", "tex_office_steel"],
+  /** THE KERNEL on the horizon, and the filament that runs through it */
+  kernel: ["tex_kernel_hull", "tex_kernel_filament"],
 } as const satisfies Record<string, readonly [string, ...string[]]>;
 
 export type PlateFamily = keyof typeof PLATE_POOLS;

@@ -1641,6 +1641,62 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 634 — Fifteen tiles, and the reason the floor never changed
+
+**Problem.** Stage 632 bound the kerbs, pads, gratings, vents and shutters to plate
+pools and measured almost no visible difference. The finding recorded then was
+that the surface filling most of a street camera is the plaza floor and it was
+still wearing one flat plate. That turned out to be half right and half wrong, and
+the wrong half is the interesting one.
+
+The other thing Stage 632 found was that the existing library could not fill the
+gap anyway. Of the 81 plates shipping undrawn, most are **perspective scenes** —
+an alley receding, a staircase, hanging banners. A scene cannot tile onto a
+surface, which is exactly why they were never bound to one. What the game was
+short of was not art, it was *tiles*.
+
+**Change.** Fifteen seamless tiles, generated for named surfaces and wired in the
+same commit, with no new entry on the undrawn list. They join the Stage 632 deal,
+so a district takes its plate by rank and seven districts cover every pool:
+
+- `plaza` — the deck itself: terrazzo with cyan inlay, wet slabs, wet asphalt
+- `cobble`, `tread` — hex paving and diamond tread plate join the existing pools
+- `concrete`, `bulkhead`, `container`, `brick`, `shutter` — board-formed concrete,
+  a cable-and-conduit wall, container steel, neon-washed brick, roller shutter
+- `officefloor`, `officewall` — the Deadletter Office and the hub: ceramic tile,
+  dark carpet, perforated acoustic panel, brushed steel
+- `kernel` — a blood-red filament conduit for THE KERNEL on the horizon
+
+Four more were generated and **are not shipped**: the wake hex cell, the mech
+armour, the wasp carapace and the weapon receiver. Their surfaces are built in
+`wake.ts` and `weapons.ts` per entity, with no district seed in scope, so they
+cannot be dealt and would fail the reachability rule. Stage 632's rule says a
+plate arrives with the surface it belongs on or it does not ship, and adding them
+to `UNDRAWN_PLATES` would be adding to a list that may only shrink. They wait.
+
+**Proof.** `lint:assets` reports `198 asset(s) · 30695.0 KB of 65536.0 KB · 132
+plate(s) drawn, 66 recorded undrawn · 12 clip(s), 1519.7 KB not precached · 0
+violations`. It was 117 drawn. All 45 pooled plates are reachable by a shipped
+district seed — the deal gives Lease Row terrazzo, the Depot slabs, the Docks wet
+asphalt. Confirmed in a running browser by walking the scene graph for materials
+whose map resolves under `/assets/`: `repo_depot` draws `tex_plaza_hexstone
+tex_plaza_slab tex_wall_boardform tex_kernel_filament`.
+
+`probe:city` 48/48, `probe:look` 18/18, `npx vitest run` 1387 tests across 120
+files, all green.
+
+**And the reason the floor never changed.** It is not `M.base`, and no plate
+binding anywhere was ever going to alter it. The surface a player stands on is
+`makeWetFloor` in `client/render/wetfloor.ts` — a Three.js `Reflector` with a
+custom shader whose only sampler is `tDiffuse`, the reflection render target. It
+has **no albedo texture at all**; what reads as pale flat tiling is the mirrored
+scene plus fog, and the seams are geometry. The mobile path `makeFlatWetFloor`
+does bind a plate, which is why the two look different and why binding more plates
+kept changing nothing on desktop. Giving that shader an albedo term is a real
+change to the effect Stage 22 measured as the largest single line in the draw-call
+budget, so it is written up in `docs/BACKLOG.md` rather than rushed here. Stage
+632's open question now has an answer.
+
 ## Stage 633 — The city's signs start moving
 
 **Problem.** Every sign in Lethe has been a still picture since Stage 43. The city
