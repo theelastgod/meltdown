@@ -1641,6 +1641,55 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 657 — The street was the brightest thing in a drowned city at night
+
+**The defect, measured.** `docs/ART_BIBLE.md` asks for a ground that is "very
+dark with a sheen". The probe measures the street on its own — a crop that
+excludes the skyline, added in Stage 647 precisely so the two could not average
+each other out — and it read **18.0% dark at mean luma 0.151**, against the
+reference clip's whole-frame 62%. Worse than the absolute number is the ratio:
+the street was **3.11x the luma of the skyline behind it**, which made tarmac
+the brightest large surface in the frame. The sheen was not the problem; the
+bed under it was. Rain-slick asphalt is dark *and* mirrored, and this was
+neither — it was evenly lit.
+
+**The fix.** Three numbers in the wet-floor fragment shader, all magnitude, no
+hue: the base tone from `(0.028, 0.034, 0.048)` to `(0.024, 0.029, 0.041)` (the
+channel ratio preserved, so the district casts still tint it as before); the
+wet mask from `0.22 + 0.78 * pud` to `0.15 + 0.85 * pud`, so dry tarmac keeps
+less of the reflection and puddles keep more; and the reflection multiplier
+from 0.7 to 0.95 to pay the sheen back what the darker bed took. The result is
+a dark street with bright smears on it rather than a uniformly grey one: **35.0%
+dark at luma 0.136, 2.73x the skyline**, and the whole frame at 66% against the
+clip's 62%.
+
+**The overshoot, and what it taught.** The first attempt took the base to 0.015
+and produced a 91.7% dark street and an 89% frame — a black hole, not a city.
+`darkFrac` counts pixels under luma 0.12 and the street now sits at 0.136, right
+against that threshold, so the metric is hypersensitive here: a 0.009 move in the
+base swings the fraction by fifty points. That is a property of the measurement,
+not of the picture, and it is the reason this stage reports the *luma* and the
+*split* alongside the fraction. A number that moves fifty points for a change
+you cannot see is not on its own evidence of anything.
+
+**The guard.** `probe/stage3.ts` ratchets its bounds to what the street actually
+does now — `roadLuma <= 0.145` and `split <= 2.95`, down from 0.24 and 3.45 —
+keeping the ~7% headroom Stage 647 allowed for machine variance and no more.
+The old shader reads 0.151 and 0.152 across runs, so the measurement is stable
+to under a percent and the headroom is not slack. Mutation: restoring the old
+base tone alone fails the check at **3.10x against the 2.95 bound**, which is
+the point — the split cannot widen again unnoticed.
+
+**Verified on a still tree.** `probe:look` 19/19, `probe:city` 51/51,
+`probe:cityLife` 21/21, `probe:frame` 8/8, tsc clean, 1398 unit tests, the
+campaign and asset lints, and the production build.
+
+**Still open.** The other half of Stage 647's cancelling errors: everything but
+the street is 72% dark against the clip's 62%, i.e. the rest of the frame is
+now *darker* than the reference while the street is lighter. Bringing the
+skyline up is the next move, and it would let the street go darker still
+without the frame going black.
+
 ## Stage 656 — Three of the seven choices never reached the ending
 
 *First stage under the owner's new brief: campaign, storyline, narrative

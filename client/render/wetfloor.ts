@@ -71,14 +71,21 @@ export function makeWetFloor(width: number, depth: number, y: number, fogColor: 
         vec2 ft = fract(tile);
         float grout = 1.0 - smoothstep(0.0, 0.04, min(min(ft.x, 1.0 - ft.x), min(ft.y, 1.0 - ft.y)));
         float tone = 0.85 + 0.3 * hash(floor(tile));
-        vec3 base = vec3(0.028, 0.034, 0.048) * tone * (1.0 - grout * 0.6);
+        // "The ground is very dark with a sheen" (docs/ART_BIBLE.md). It was not: measured at
+        // 18.0% dark against the reference clip's 62%, and 3.11x the luma of the skyline behind it,
+        // which made the street the brightest large surface in a game about a drowned city at
+        // night. The hue ratio is kept; only the magnitude moves, so the sheen below is unchanged
+        // and reads harder against a darker bed (Stage 657).
+        vec3 base = vec3(0.024, 0.029, 0.041) * tone * (1.0 - grout * 0.6);
         // puddle mask
         float pud = smoothstep(0.35, 0.75, noise(vWorld.xz * 0.18 + vec2(3.1, 7.7)));
-        float wet = 0.22 + 0.78 * pud;
+        // dry tarmac keeps less of the reflection and the puddles keep more, so the street
+        // reads as a dark bed with bright smears on it rather than an evenly lit one
+        float wet = 0.15 + 0.85 * pud;
         // fresnel-ish: more reflection at grazing angles
         vec3 v = normalize(camPos - vWorld);
         float fres = pow(1.0 - max(v.y, 0.0), 2.0);
-        vec3 c = base + refl * wet * (0.25 + 0.75 * fres) * 0.7;
+        vec3 c = base + refl * wet * (0.25 + 0.75 * fres) * 0.95;
         // cyan lane lines along the probe lane and the plaza
         float laneA = 1.0 - smoothstep(0.0, 0.08, abs(abs(vWorld.x) - 4.6));
         float laneB = (1.0 - smoothstep(0.0, 0.08, abs(vWorld.z - 6.0))) * step(6.0, abs(vWorld.x));

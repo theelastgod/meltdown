@@ -153,7 +153,12 @@ async function main(): Promise<void> {
     const split = roadLuma / sky.meanLuma;
     check(
       "the street is measured on its own rather than averaged into the skyline, and has not drifted further from the clip",
-      roadDark >= 0.08 && roadDark <= 0.45 && roadLuma <= 0.24 && split <= 3.45,
+      // Ratcheted to what the street actually does after Stage 657 darkened it: 35.0% dark at
+      // luma 0.136, 2.73x the skyline, from 18.0% at 0.151 and 3.11x. The bounds carry the same
+      // ~7% headroom Stage 647 allowed for machine variance (the luma reads 0.151 and 0.152 on two
+      // different runs of the old shader, so it is stable to under a percent) and no more, because
+      // the whole point of the number is that the split cannot widen again unseen.
+      roadDark >= 0.08 && roadDark <= 0.60 && roadLuma <= 0.145 && split <= 2.95,
       `street dark ${(roadDark * 100).toFixed(1)}% luma ${roadLuma.toFixed(3)} · skyline luma ${sky.meanLuma.toFixed(3)} · street is ${split.toFixed(2)}x the skyline · whole frame ${(shots["lane"]!.darkFrac * 100).toFixed(0)}% against the clip's 62%`,
     );
 
