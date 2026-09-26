@@ -171,7 +171,11 @@ async function main(): Promise<void> {
       }
       return null;
     };
-    const roomQ = `audit-${au.week}?audit=1&warmup=14&round=12&ai=0`;
+    // A long warmup, because the walk to B has to finish inside it (Stage 643). ALPHA spawns ~65 m
+    // from the node and takes ~550 ticks to reach it; at 14 s of warmup that walk spilled into the
+    // 12 s round and raced its clock, so on a loaded box the round ended before the flip and the
+    // Deep Wake had nothing to write. The round is still 12 s — only the approach got its own time.
+    const roomQ = `audit-${au.week}?audit=1&warmup=45&round=12&ai=0`;
     const open = async (name: string, account: string, loadout: Record<string, unknown>, render: { width: number; height: number } | null): Promise<Page> => {
       const p = await newPage(render ?? { width: 320, height: 180 }, name);
       await p.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&${render ? "" : "norender=1&"}level=lease_row&account=${account}&secret=${SECRET}&loadout=${encodeURIComponent(JSON.stringify(loadout))}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(roomQ)}%26level=lease_row&name=${name}`, { waitUntil: "load" });
@@ -203,6 +207,16 @@ async function main(): Promise<void> {
     await a.evaluate((plan) => window.__game.setBot(plan), [...route(pa, { x: B.x, z: B.z }), { kind: "hold", ticks: 9000 }] as BotStep[]);
     await b.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 9000 }]));
     for (const p of [a, b]) await p.evaluate(() => window.__game.setRealtime(true));
+    // Standing on the node before the round opens, rather than still walking to it when it does.
+    const arriveBy = Date.now() + 40000;
+    let standing = { dist: Infinity, phase: "" };
+    while (Date.now() < arriveBy) {
+      const pos = await a.evaluate(() => window.__game.state().pos);
+      standing = { dist: Math.hypot(pos.x - B.x, pos.z - B.z), phase: (await stats()).rooms[`audit-${au.week}`]?.match?.phase ?? "" };
+      if (standing.dist <= 1.5 || standing.phase === "results") break;
+      await a.waitForTimeout(250);
+    }
+    check("ALPHA is standing on the node before the round opens, not still walking to it when it does", standing.dist <= 1.5 && standing.phase === "warmup", `ALPHA ${standing.dist.toFixed(1)} m from B with ${standing.phase || "no"} phase running`);
     const t0 = Date.now();
     let phase = "";
     while (Date.now() - t0 < 60000 && phase !== "results") {

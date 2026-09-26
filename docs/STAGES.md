@@ -1641,6 +1641,40 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 643 — The walk to the node was being timed against the round it was supposed to play
+
+**The defect.** `probe:endgame` failed intermittently in CI on the Deep Wake check:
+`ALPHA flips 0 · B leader unaligned +0 · "null"` — the round settled, both files
+scored, and not one node changed hands, so the season had nothing to write.
+
+**What it actually was.** Measured rather than guessed: the room was opened with
+`warmup=14&round=12`, and the phase timeline read `warmup` at 0.5 s, `wake` at
+6.1 s, `results` at 18.1 s. ALPHA spawns about 65 m from node B and its walk
+takes ~554 ticks — about 9.2 s. The warmup was already partly spent when the
+clients joined, so the walk ran past it and finished roughly 3 s into a 12 s
+round, leaving a few seconds to capture. That is fine on an idle box. Under CI
+contention the client's realtime tick rate falls below 60 Hz while the room's
+phase clock keeps running on wall time, so the same 554 ticks take longer than
+the whole round and ALPHA is still walking when the round ends.
+
+The probe was timing the approach against the round the approach was supposed
+to play in.
+
+**The fix.** The warmup goes to 45 s. The round is untouched at 12 s — only the
+approach got its own time, so the flip now depends on the capture mechanic
+rather than on how fast the machine is.
+
+**The guard.** A new check: ALPHA is standing on the node *before* the round
+opens. It waits for the walk to finish and asserts both that ALPHA is within
+1.5 m of B and that the phase is still `warmup` at that moment, which is the
+thing that was silently untrue.
+
+**Proof.** 20/20, ALPHA 0.9 m from B with warmup still running, `ALPHA flips 1 ·
+B leader cells +1 · "S740 W1 · LEASE ROW · 1 FLIPS"`. Mutation-tested by cutting
+the warmup to 2 s: 18/20, `ALPHA 54.8 m from B with results phase running` and
+`ALPHA flips 0 · B leader unaligned +0 · "null"` — character for character the
+failure CI was showing.
+
 ## Stage 642 — The crew walked to the terminal and stood there while it killed them
 
 **The defect.** `probe:campaign` failed in CI at 44/46, the co-op leg stuck at
