@@ -248,6 +248,8 @@ export class World {
 
   /** Advance exactly one tick. */
   step(inputs: ReadonlyMap<number, TickInput | TickInput[]>, opts: StepOpts = {}): void {
+    // Every player moves and pulls their trigger first, while they are all still standing.
+    const shots: { p: PlayerState; r: FireRequest; viewTick: number; viewFrac: number }[] = [];
     for (const p of this.players.values()) {
       const raw = inputs.get(p.id);
       const list: TickInput[] = raw === undefined ? [] : Array.isArray(raw) ? raw : [raw];
@@ -255,8 +257,16 @@ export class World {
         if (opts.online) continue;
         list.push({ ...emptyInput(this.tick), yaw: p.yaw, pitch: p.pitch });
       }
-      for (const input of list) this.applyInput(p, input, opts);
+      for (const input of list) {
+        for (const r of this.stepOne(p, input, opts)) shots.push({ p, r, viewTick: input.viewTick ?? this.tick, viewFrac: input.viewFrac ?? 0 });
+      }
     }
+    // Only now does any of it land. Resolving each player's fire inside their own sub-step made a
+    // tick sequential rather than simultaneous: the player earliest in the map killed the later one
+    // before the later one's trigger was ever read, and `applyInput`'s `if (!p.alive) return` threw
+    // that shot away. A symmetric duel was decided by join order and a trade kill was impossible
+    // (Stage 653).
+    for (const s of shots) this.resolveRequest(s.p, s.r, s.viewTick, s.viewFrac, opts);
     for (const p of this.players.values()) {
       if (p.pos.y < this.level.killY && p.alive) this.killPlayer(p, -1, "fall", opts);
       if (!p.alive && !opts.predictOnly) {
@@ -294,13 +304,18 @@ export class World {
     for (const e of events) this.emit({ tick: this.tick, playerId: -1, ...e }, opts);
   }
 
-  /** Apply one input to one player: movement + weapon; resolve its fire requests. */
-  applyInput(p: PlayerState, input: TickInput, opts: StepOpts = {}): void {
+  /** Movement + weapon for one player: the shots it asks for, not yet fired at anybody. */
+  private stepOne(p: PlayerState, input: TickInput, opts: StepOpts): FireRequest[] {
     const events: PlayerEvent[] = [];
     const reqs = stepPlayer(p, input, this.level.boxes, events, this.seed, this.gravityMult);
     for (const ev of events) this.emit({ tick: this.tick, playerId: p.id, ...ev }, opts);
-    if (!p.alive) return;
-    for (const r of reqs) this.resolveRequest(p, r, input.viewTick ?? this.tick, input.viewFrac ?? 0, opts);
+    // already dead when the tick began; dying *during* it is settled by the order of `step`
+    return p.alive ? reqs : [];
+  }
+
+  /** Apply one input to one player: movement + weapon; resolve its fire requests at once. */
+  applyInput(p: PlayerState, input: TickInput, opts: StepOpts = {}): void {
+    for (const r of this.stepOne(p, input, opts)) this.resolveRequest(p, r, input.viewTick ?? this.tick, input.viewFrac ?? 0, opts);
   }
 
   private resolveRequest(p: PlayerState, r: FireRequest, viewTick: number, viewFrac: number, opts: StepOpts): void {

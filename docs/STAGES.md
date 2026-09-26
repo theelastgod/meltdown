@@ -1641,6 +1641,68 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 653 — A tick was a queue, and the file that joined first won the duel
+
+**The defect, measured.** Two files with the same loadout, six metres apart,
+both holding fire from tick 1. Whoever was added to the world first kills the
+other on tick 44 and walks away on **exactly 4.0 health** — one shot from dead,
+never allowed to take it:
+
+```
+added 1 then 2 : tick 44: p1 killed p2 · both died same tick: false · a hp 4.0 b hp 0.0
+added 2 then 1 : tick 44: p2 killed p1 · both died same tick: false · a hp 4.0 b hp 0.0
+```
+
+Same tick, same surviving health, opposite winner. A perfectly symmetric duel
+was decided by join order, and a trade kill could not happen at all.
+
+**How it was found.** By the small end, which is the part worth keeping. A
+seeded fuzz of two players fighting flagged seven ticks where a `hurt` event
+reported more damage than the health-plus-shield pool actually lost — always by
+exactly `0.25`, and always to p1, never p2. `0.25` is `SHIELD_REGEN_RATE` (15)
+over one tick. That tiny asymmetry *was* the ordering bug seen from a long way
+off; following it rather than writing it off as rounding is what produced the
+duel above.
+
+**The cause.** `World.step` walked `players.values()` and called `applyInput`,
+which resolved that player's fire requests inside that player's own sub-step:
+
+```ts
+const reqs = stepPlayer(...);   // movement + weapon
+if (!p.alive) return;           // <- killed earlier THIS TICK: shot thrown away
+for (const r of reqs) this.resolveRequest(...);
+```
+
+So the first player in the map moved, shot, and killed the second before the
+second player's trigger had been read — and then that `return` discarded the
+second player's shot. The same sequencing gave p1 a tick of shield regen that
+p2 never got, and pointed p1's shot at p2's *previous* position while p2's shot
+was aimed at p1's *current* one.
+
+**The fix.** Every player moves and pulls their trigger while they are all still
+standing, and only then does any of it land: `step` collects each player's fire
+requests in a first pass and resolves them all in a second. `stepOne` is the
+first half split out; `applyInput` keeps its old meaning for client prediction,
+which steps a single player and has no ordering question to answer. Dying
+*during* a tick no longer voids a shot already fired; being dead when the tick
+began still does.
+
+**Proof.** The same duel now trades, identically from either end: `tick 44: p1
+killed p2 + p2 killed p1 · both died same tick: true`, both files on 0.0. The
+regen discrepancy now falls on p1 and p2 alike instead of only p1 — still there,
+because regen belongs to a player's own step and damage lands after it, but no
+longer an unfairness. 1392 unit tests green (the 2 new ones), four lints clean
+with the fairness debt unmoved at 89 — the change does not shift TTK — build
+clean, and `probe:arsenal` 32/32, `probe:net` 27/27, `probe:wake` 27/27.
+
+**Mutation, and a hole it caught.** Restoring the old line fails both new tests:
+`expected 1 to be 2` for the trade, and `survivor: 2` vs `survivor: 1` for the
+order. The second one did **not** fail at first. It had compared two duels by
+"the file added first", and a world where the first player always wins looks
+perfectly self-consistent read from either end, so the mutation slipped through
+it. Keying the result on the player's *id* closed it. A guard that cannot see
+the bug it was written for is worth more attention than the bug.
+
 ## Stage 652 — "Volumes reach the buses" was the settings reading back their own echo
 
 **How it was found.** Not from a red gate. `probe:ship` passes 12/12, and the
