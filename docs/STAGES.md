@@ -1641,6 +1641,80 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 662 — The crew never heard the recall, and the test said they did
+
+**What CI caught.** Run 659 (Stage 661) went red on `typecheck`.
+`server/campaign-room.ts` relays the host's terminal to the crew by rebuilding the
+event field by field, and it never copied Stage 661's new `recall` index. So in
+co-op the room stripped the index on the way through, and **every guest read the
+plain node while the host read its recall** — exactly the divergence Stage 52
+exists to prevent, and exactly what Stage 661 claimed to have handled.
+
+**Why my own verification missed it.** I ran `npx tsc --noEmit`, which checks only
+the root `tsconfig.json`. The repo's `npm run typecheck` also runs
+`tsconfig.server.json`, and that is where the room lives. I verified with an
+approximation of the project's check rather than the check itself. From here on
+the stage method's "typecheck" means `npm run typecheck`, verbatim.
+
+**Why Stage 661's co-op test missed it, which is the worse half.** That test
+called `linesAt` with an index it had computed itself and asserted the lines came
+out right. It never went near the room. It proved the *function* and said nothing
+about the *relay* — a guard that could not see the thing it guarded, one stage
+after the entry that named the pattern. The type error was the only thing
+standing between that and a shipped co-op regression.
+
+**The fix.** One field: the room's event now carries `recall: msg.recall`.
+
+**The guard that can see it.** `tests/recallrelay.test.ts` builds a real campaign
+room, joins a host, sends a real `encodeTerminal` message through
+`room.onMessage` from the host's connection, joins a guest, and decodes what the
+room actually sends that guest. It prints whether the path ran at all — a guest
+that is sent no terminal event fails as "the guest was never sent the host's
+terminal", not as a vacuous pass. It also sends `recall: 9999` and checks the
+decoder's clamp holds before the room ever sees it.
+
+**Mutation.** Restoring the field-by-field rebuild without `recall` fails all
+three tests, the first with *"the room stripped the host's recall index on the
+way to the crew: expected undefined to be 1"*.
+
+**The other red: new evidence on `probe:net`.** Run 656 (Stage 658) failed on
+`probe:net` alone, on a diff that touched only firmwares and the fairness lint,
+with 659, 660 and 661 green on the same step either side. That is the known
+~9% intermittent. What is new is that Stage 654's instrumentation finally fired
+on a real failure, and it answers the question it was built for:
+
+```
+6 rounds fired (the driver pulled the trigger 0x with a target aimed and visible)
+in 120.1 s from 17.1-34.5 m, re-armed 3x · clock 60.0/s
+```
+
+Six rounds were server-confirmed and **not one** was fired with BRAVO aimed and
+visible. Stage 654 split the open cause into "never took the shot" versus "took
+it and the round died in transit". This is the first branch: the rounds arrived;
+they were aimed at nothing. The three re-arms, where every healthy baseline shows
+none, say the driver kept losing its target. So the intermittent lives in the
+probe's bot driver, not in netcode, which is the reassuring direction for players.
+
+One number in that log is a trap and I nearly fell in. The flinch check printed
+*"ALPHA was 3.14 rad off that bearing"* — π, as if ALPHA were aiming exactly
+backwards. It is not a measurement. `bearErr` defaults to `Math.PI` when there is
+no hit sample to measure from. A sentinel read as a finding is how Stage 645
+shipped a wrong diagnosis, and it is worth a line here so nobody reads that
+number again. Not chased further this stage: it is a test-harness fault, it is
+low priority by the owner's brief, and the next step is in the driver.
+
+**Verified on a still tree.** `npm run typecheck` (both configs), 1433 unit tests,
+the campaign, progression, economy and asset lints, `probe:campaign` 47/47 with
+its co-op crew, and the production build.
+
+**Also measured this cycle, all non-findings.** Three hypotheses about the arc's
+escalation died before any code was written: the seven missions *do* escalate
+(weighted pressure 2 → 4 → 7 → 8 → 11 → 14 with a mech counted as three wasps);
+the apparent dip at mission 3 was an artifact of counting wasps alone; and the
+white office's "no guards" finale is safe because `m7_white_office` already sets
+`noThreat: true`. Higgsfield is still at 0.55 credits against 7.5 for the
+cheapest generation, so no campaign art again.
+
 ## Stage 661 — Nobody ever mentioned the choice you made an hour ago
 
 **The defect, measured.** Stage 656 made the *ending* answer every choice. This

@@ -68,7 +68,9 @@ export function createCampaignRoom(opts: CampaignRoomOptions): CampaignRoomHandl
       if (!st || playerId !== hostId) return;
       // the host's screen, node by node, for the crew to read (Stage 52); a guest's is ignored
       if (msg.type === "terminal") {
-        const ev = { type: "terminal" as const, script: msg.script, node: msg.node, choices: msg.choices, picked: msg.picked };
+        // every field the host sent, recall included: rebuilding the event field by field once dropped it
+        // and every guest read the plain node while the host read its recall (Stage 662)
+        const ev = { type: "terminal" as const, script: msg.script, node: msg.node, choices: msg.choices, picked: msg.picked, recall: msg.recall };
         terminal = msg.node ? ev : null;
         st.events.push(ev);
         return;
