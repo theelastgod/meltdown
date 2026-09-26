@@ -1641,6 +1641,40 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 645 — The city probe was 5.4x from the edge, and a slower runner spent it
+
+**The defect.** `probe:city` failed in CI in two consecutive runs, at 51 s both
+times, while passing 48/48 here — including under six spinning CPU hogs on four
+cores, which did not reproduce it.
+
+**What it actually was.** Measured rather than assumed, and the first guess was
+wrong: the probe holds a `helper` page open for its whole run, which looked like
+a live renderer contending with every later navigation. It is not — `helper`
+never navigates to the game at all, it is a blank page used to decode PNGs
+through a 2D canvas, and the two district pages run `norender=1`. So the probe
+is not renderer-contended.
+
+Timing the navigations gave the real number. The first one — cold, with the
+scene's shaders compiling under SwiftShader — is **5.6 s** on this box, and
+**7.5 s** on the next run of the same code; the warm ones are 2.9 s. Against
+Playwright's 30 s default that is 5.4x of headroom on an idle developer machine,
+and the observed failure is 51 s, which is a 30 s navigation timeout plus the
+~21 s of vite and host startup ahead of it. A runner 4-5x slower spends the
+headroom. That is the same arithmetic that took `counter` and `run` down, and
+the same fix cured those in run 642.
+
+**The fix.** `NAV_MS = 120000` on all five navigations, through a `navigate()`
+helper that also prints what each one cost. The printing is the point as much as
+the timeout: the next failure in this probe will say outright whether the
+navigation was the slow part, instead of costing another round of guessing.
+
+**Proof.** 48/48 with the navigations printed — `lease_row 7.5s`,
+`deadletter_docks 3.0s`, `repo_depot 2.9s`, `crowd ALPHA 0.7s`, `BRAVO 1.4s`,
+`vista 2.9s`, `fallback 2.9s`. Mutation-tested by setting the constant to 1 ms:
+`page.goto ... Timeout 1ms exceeded`. As with Stage 644 this is a fix whose
+absence cannot be reproduced locally, so CI is the verdict; unlike Stage 644 the
+probe now reports the quantity the diagnosis rests on, every run.
+
 ## Stage 644 — Thirty seconds was never the cost of loading two renderers at once
 
 **The defect.** `probe:counter` and `probe:run` were the last two red steps in CI,

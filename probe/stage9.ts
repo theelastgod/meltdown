@@ -21,6 +21,21 @@ import { computeLookStatsSource, type LookStats } from "./look-metrics";
 import { MAX_LIVE_SCREENS } from "../shared/assets/video";
 
 const VITE_PORT = 5193;
+/**
+ * Every navigation, timed and given a budget that matches what one costs. Not the default 30 s: on a
+ * software GPU `load` waits for the scene's shaders to compile, and that cost contends across live
+ * WebGL contexts — 1.4 s, 14.4 s, 23.0 s, 34.2 s for the same page with 1, 2, 3, 4 renderers live
+ * (Stage 638). This probe's first navigation is 5.6 s cold on a developer box and 2.9 s warm, so the
+ * default left only 5.4x of headroom and a slower runner spent it: the step died at 51 s, which is a
+ * 30 s navigation timeout plus the server startup ahead of it. The duration is printed so that the
+ * next failure here says outright whether the navigation was the slow part.
+ */
+const NAV_MS = 120000;
+async function navigate(pg: Page, url: string, label: string): Promise<void> {
+  const t = Date.now();
+  await pg.goto(url, { waitUntil: "load", timeout: NAV_MS });
+  console.log(`  nav ${label} ${((Date.now() - t) / 1000).toFixed(1)}s`);
+}
 const HOST_PORT = 8796;
 const OUT = "probe/out";
 
@@ -99,7 +114,7 @@ async function main(): Promise<void> {
       const id = spec.id;
       const L = levelById(id);
       const nav = buildNav(L);
-      await page.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&ai=0&level=${id}`, { waitUntil: "load" });
+      await navigate(page, `http://127.0.0.1:${VITE_PORT}/?headless=1&ai=0&level=${id}`, id);
       await page.waitForFunction(() => window.__game?.ready === true, null, { timeout: 60000, polling: 100 });
       const st0 = await page.evaluate(() => ({ level: window.__game.state().level, zone: document.querySelector("#hud .status .dim")?.textContent ?? "", boxes: window.__game.game.world.level.boxes.length, wasps: window.__game.game.world.wasps.length, mechs: window.__game.game.world.mechs.length, district: window.__game.state().render.district }));
       check(`${id}: loads as ${spec.displayName} with the ${spec.cast} cast`, st0.level === id && st0.zone.includes(spec.displayName) && st0.district === spec.cast, `${st0.boxes} boxes · ${st0.wasps} wasps · ${st0.mechs} mechs · HUD "${st0.zone}"`);
@@ -258,7 +273,7 @@ async function main(): Promise<void> {
     const room = `city?ai=0&level=deadletter_docks`;
     const open = async (name: string, level: string): Promise<Page> => {
       const pg = await browser.newPage({ viewport: { width: 480, height: 270 } });
-      await pg.goto(`http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&level=${level}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&name=${name}`, { waitUntil: "load" });
+      await navigate(pg, `http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&level=${level}&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&name=${name}`, `crowd ${name}`);
       await pg.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true && !new URLSearchParams(location.search).has("token"), null, { timeout: 40000, polling: 100 });
       return pg;
     };
@@ -268,7 +283,7 @@ async function main(): Promise<void> {
     check("online: a room built with ?level= plays that district", stats.rooms["city"]?.level === "deadletter_docks" && sa.level === "deadletter_docks", `room level ${stats.rooms["city"]?.level} · ALPHA client level ${sa.level}`);
     // BRAVO arrives for Lease Row: the Welcome names the docks, so the client travels there and rejoins by token
     const b = await browser.newPage({ viewport: { width: 480, height: 270 } });
-    await b.goto(`http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&level=lease_row&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&name=BRAVO`, { waitUntil: "load" });
+    await navigate(b, `http://127.0.0.1:${VITE_PORT}/?crawl=0&norender=1&level=lease_row&net=ws://127.0.0.1:${HOST_PORT}/room/${encodeURIComponent(room)}&name=BRAVO`, "BRAVO");
     await b.waitForFunction(() => window.__game?.ready === true && new URLSearchParams(location.search).get("level") === "deadletter_docks" && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 });
     const sb = await b.evaluate(() => ({ level: window.__game.state().level, url: location.search, id: window.__game.net()!.playerId }));
     const stats2 = (await (await fetch(`http://127.0.0.1:${HOST_PORT}/stats`)).json()) as { rooms: Record<string, { level: string; players: number; connected: number }> };
@@ -283,7 +298,7 @@ async function main(): Promise<void> {
     // a player on a plane from seeing a broken city — that a clip which cannot be fetched leaves
     // the material wearing the plate it already had.
     const scr = await browser.newPage({ viewport: { width: 640, height: 360 } });
-    await scr.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=0&level=lease_row&ai=0&wake=0`, { waitUntil: "load" });
+    await navigate(scr, `http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=0&level=lease_row&ai=0&wake=0`, "vista");
     await scr.waitForFunction(() => window.__game?.ready === true, null, { timeout: 60000, polling: 100 });
     await scr.waitForFunction(() => window.__game.screens().playing > 0, null, { timeout: 30000, polling: 150 }).catch(() => undefined);
     const s0 = await scr.evaluate(() => window.__game.screens());
@@ -300,7 +315,7 @@ async function main(): Promise<void> {
     // a base that resolves to nothing is the offline player, the blocked CDN, and the 404 at once
     const fall = await browser.newPage({ viewport: { width: 640, height: 360 } });
     await fall.route("**/video/*.webm", (r) => r.abort());
-    await fall.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=0&level=lease_row&ai=0&wake=0`, { waitUntil: "load" });
+    await navigate(fall, `http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=0&level=lease_row&ai=0&wake=0`, "fallback");
     await fall.waitForFunction(() => window.__game?.ready === true, null, { timeout: 60000, polling: 100 });
     await fall.waitForFunction(() => window.__game.screens().failed > 0, null, { timeout: 30000, polling: 150 }).catch(() => undefined);
     const sf = await fall.evaluate(() => ({ ...window.__game.screens(), calls: window.__game.view().calls, err: window.__game.state().render.programs }));
