@@ -112,6 +112,12 @@ export interface CameraView {
   fov: number;
   /** how far the landing has the camera down, in metres, and the lean of a slide (Stage 79) */
   dip: number;
+  /**
+   * How hard the landing was read as, 0..1 — the dip's depth before any frame clock samples it.
+   * `dip` is the curve caught at one instant, so on a machine drawing a frame every quarter second
+   * it reads shallow however hard the file fell; this does not (Stage 650).
+   */
+  hard: number;
   roll: number;
   /** where the camera is looking, which is the player's aim until the file is closed (Stage 83) */
   look: { yaw: number; pitch: number };
@@ -182,7 +188,7 @@ export class Renderer {
   private camSmooth = { d: TPS_DEFAULT.distance, x: 0, y: 0, z: 0, set: false };
   /** the eased shoulder offset: pulling in against a wall beside the player is immediate, sliding back out is not */
   private shoulderSmooth = 0;
-  private lastView: CameraView = { third: true, fov: 80, dip: 0, roll: 0, look: { yaw: 0, pitch: 0 }, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false, arc: false, point: { x: 0, y: 0, z: 0 } } };
+  private lastView: CameraView = { third: true, fov: 80, dip: 0, hard: 0, roll: 0, look: { yaw: 0, pitch: 0 }, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false, arc: false, point: { x: 0, y: 0, z: 0 } } };
   private tmpProj = new THREE.Vector3();
   private vmSlot = 1;
   private vmSwap = 0;
@@ -871,7 +877,7 @@ export class Renderer {
     const visible = this.tmpProj.z < 1 && Math.abs(this.tmpProj.x) <= 1.2 && Math.abs(this.tmpProj.y) <= 1.2;
     const rx = (this.tmpProj.x + 1) * 0.5 * window.innerWidth;
     const ry = (1 - this.tmpProj.y) * 0.5 * window.innerHeight;
-    this.lastView = { third: true, fov: this.camera.fov, dip: this.dipNow, roll: this.rollNow, look: { yaw: look.yaw, pitch: look.pitch }, anchor: { x: anchor.x, y: anchor.y, z: anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget, arc: !!v.arc, point: { x: aim.point.x, y: aim.point.y, z: aim.point.z } } };
+    this.lastView = { third: true, fov: this.camera.fov, dip: this.dipNow, hard: this.landHard, roll: this.rollNow, look: { yaw: look.yaw, pitch: look.pitch }, anchor: { x: anchor.x, y: anchor.y, z: anchor.z }, camera: { x: ax, y: ay, z: az }, distance: this.camSmooth.d, blocked: cam.blocked, bodyVisible: g.visible, reticle: { x: rx, y: ry, visible }, aim: { distance: aim.distance, hit: aim.hit, onTarget: aim.onTarget, arc: !!v.arc, point: { x: aim.point.x, y: aim.point.y, z: aim.point.z } } };
   }
 
   /**
@@ -960,7 +966,7 @@ export class Renderer {
         mark = { x: (this.tmpProj.x + 1) * 0.5 * window.innerWidth, y: (1 - this.tmpProj.y) * 0.5 * window.innerHeight, visible: this.tmpProj.z < 1 && Math.abs(this.tmpProj.x) <= 1.2 && Math.abs(this.tmpProj.y) <= 1.2 };
         fired = { distance: a.distance, hit: a.hit, onTarget: a.onTarget, arc: true, point: { x: a.point.x, y: a.point.y, z: a.point.z } };
       }
-      this.lastView = { third: false, fov: this.camera.fov, dip: this.dipNow, roll: this.rollNow, look: { yaw: v.yaw, pitch: v.pitch }, anchor: { x: 0, y: 0, z: 0 }, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: mark, aim: fired };
+      this.lastView = { third: false, fov: this.camera.fov, dip: this.dipNow, hard: this.landHard, roll: this.rollNow, look: { yaw: v.yaw, pitch: v.pitch }, anchor: { x: 0, y: 0, z: 0 }, camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z }, distance: 0, blocked: false, bodyVisible: false, reticle: mark, aim: fired };
     }
     // the viewmodel is the first-person weapon; behind the body the hand holds it instead
     this.viewmodel.visible = !this.thirdPerson;

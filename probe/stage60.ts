@@ -659,16 +659,24 @@ async function main(): Promise<void> {
       p.pos.z = 6;
       p.pos.y = 9;
       p.vel.x = p.vel.y = p.vel.z = 0;
+      let hard = 0;
       let peak = 0;
       let peakDrop = 0;
       let landedAt = -1;
+      let landAt = 0;
       let after = 0;
+      let ms = 0;
       for (let i = 0; i < 400; i++) {
         window.__game.advance(1);
         await new Promise((r) => requestAnimationFrame(r));
         const v = window.__game.view();
         const s = window.__game.state();
-        if (s.grounded && landedAt < 0) landedAt = i;
+        if (s.grounded && landedAt < 0) {
+          landedAt = i;
+          landAt = performance.now();
+        }
+        // how hard the landing was read as, which is a fact about the fall
+        if (v.hard > hard) hard = v.hard;
         if (v.dip > peak) {
           peak = v.dip;
           // and the dip is applied, not merely reported: the camera is that much lower than the
@@ -677,12 +685,18 @@ async function main(): Promise<void> {
         }
         if (landedAt >= 0 && peak > 0 && v.dip === 0) {
           after = i - landedAt;
+          ms = performance.now() - landAt;
           break;
         }
       }
-      return { peak, peakDrop, landedAt, after, y: window.__game.state().pos.y };
+      return { hard, peak, peakDrop, landedAt, after, ms, y: window.__game.state().pos.y };
     });
-    check("a drop puts the landing in the camera, and the camera stands back up", fall.landedAt > 0 && fall.peak > 0.1 && fall.peakDrop > 0.05 && fall.after > 0 && fall.after < 120, `landed on frame ${fall.landedAt} at y ${fall.y.toFixed(2)} · the camera went ${fall.peak.toFixed(3)} m down (${fall.peakDrop.toFixed(3)} m below its anchor) and was level again ${fall.after} frames later`);
+    // The depth belongs to the fall; which point of the curve got drawn belongs to the machine. A
+    // 9 m drop arrives at about 20 m/s, past LAND_CEIL, so the landing reads as hard as they come
+    // on any machine — but the dip lives 0.34 s, and a runner drawing a frame every quarter second
+    // samples it once, late, and caught 0.114 m of a 0.22 m dip. Assert the reading, and of the
+    // drawn frames only that the dip reached the camera and let it back up (Stage 650).
+    check("a drop puts the landing in the camera, deep as the fall was rather than as the machine drew it", fall.landedAt > 0 && fall.hard > 0.9 && fall.peak > 0 && fall.peakDrop > 0 && fall.after > 0 && fall.after < 120, `landed on frame ${fall.landedAt} at y ${fall.y.toFixed(2)} · read the fall as ${fall.hard.toFixed(2)} hard · deepest frame drawn had the camera ${fall.peak.toFixed(3)} m down (${fall.peakDrop.toFixed(3)} m below its anchor) · level again ${fall.after} frame(s) / ${fall.ms.toFixed(0)} ms later`);
     // and a step down is not a landing: the camera does not lurch every time the file leaves a kerb
     const kerb = await pg.evaluate(async () => {
       const p = window.__game.game.player;

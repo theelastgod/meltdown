@@ -1641,6 +1641,42 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 650 — The landing is as deep as the fall, not as deep as the machine drew it
+
+**The defect, measured.** `probe:tps` failed in run 646 with the camera going
+`0.114 m` down where the same drop measures `0.213 m` locally — and it failed
+*with* Stage 646's latched impact speed already in the tree, which is what made
+it worth reading rather than re-running.
+
+The two numbers CI printed agree on the cause. `LAND_DIP` is `0.22`, so `0.114`
+is 51.8% of the full dip; on `landDip`'s curve that value sits at
+`t = 0.245 s` after touchdown. The same line reported the dip already gone "1
+frame later", and `0.245 + 0.245 > LAND_TIME` (`0.34 s`). Both say the runner
+drew **one frame every ~245 ms**. The check asked for the peak of a 0.34 s
+animation off a machine that could sample it once, late.
+
+**The family.** The same one as Stages 643, 648 and 649: a quantity read in a
+clock other than the one it lives in. How hard the file hit the ground is a
+fact about the fall. Which point of the dip's curve got drawn is a fact about
+the machine. `peak > 0.1` asked the second question and reported it as the
+first — and it passes or fails on frame rate alone, which is why it went green
+in run 644 and red in run 646 with identical code.
+
+**The fix.** `CameraView` now carries `hard`, the hardness the renderer read
+off the landing, beside the `dip` it sampled. The probe asserts on `hard`: a
+9 m drop arrives at about 20 m/s, past `LAND_CEIL` (13), so it reads 1.00 on
+any machine at any frame rate. Of the frames that were actually drawn it asks
+only what they can honestly answer — that the dip reached the camera
+(`peak > 0`), that the camera really went below its shoulder anchor
+(`peakDrop > 0`), and that it stood back up. The failure line now prints the
+frame spacing, so the next machine-speed failure explains itself.
+
+**Mutation.** Reverting Stage 646 (`landHardness(v.vy)` for
+`landHardness(v.landVy)`) takes the reading from `1.00` to `0.00` and the check
+fails — the guard still covers the bug it was built for, and now covers it
+without depending on where the frames landed. `npx tsc --noEmit` clean, 1390
+unit tests green, `probe:tps` 50/50.
+
 ## Stage 649 — The pulse fades on frames, and Stage 645 blamed the navigation
 
 **Stage 645 was wrong, and the instrumentation it shipped is what proved it.**
