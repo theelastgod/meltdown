@@ -29,6 +29,16 @@ import { ROOM_HOUR_PRICE, SEASON_PASS_PRICE } from "../shared/economy/sinks";
 import { SEASON_PASS_GRANTS } from "../shared/economy/catalog";
 
 const VITE_PORT = 5211;
+/**
+ * How long a navigation may take. Not the default 30 s: on a software GPU `load` waits for the whole
+ * scene's shaders to compile, and that contends across live contexts — Stage 638 measured 1.4 s,
+ * 14.4 s, 23.0 s and 34.2 s for the same page with 1, 2, 3 and 4 renderers live, on identical
+ * payloads. A CI runner is slower again, and this probe deliberately navigates two pages at once so
+ * neither file joins the room late. The product assertions are untouched; this is only how long the
+ * harness waits for a step it knows to be slow.
+ */
+const NAV_MS = 120000;
+
 const HOST_PORT = 8813;
 const OUT = "probe/out";
 const HOST = `http://127.0.0.1:${HOST_PORT}`;
@@ -121,9 +131,9 @@ async function main(): Promise<void> {
     const roomUrl = `ws://127.0.0.1:${HOST_PORT}/room/run-yard?mode=run&ai=0&level=drainage_yard`;
     const acct = "sandbox-run";
     const a = await newPage({ width: 960, height: 540 }, "A");
-    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&account=${acct}&secret=${SECRET}&name=ALPHA&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
+    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&account=${acct}&secret=${SECRET}&name=ALPHA&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load", timeout: NAV_MS });
     const b = await newPage({ width: 640, height: 360 }, "B");
-    await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&account=fresh-runb&secret=${SECRET}&name=BRAVO&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load" });
+    await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&account=fresh-runb&secret=${SECRET}&name=BRAVO&net=${encodeURIComponent(roomUrl)}`, { waitUntil: "load", timeout: NAV_MS });
     for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 40000, polling: 100 });
     await a.waitForFunction(() => !!window.__game.run(), null, { timeout: 20000, polling: 100 });
     const mode = await a.evaluate(() => window.__game.endgame().mode);
@@ -461,7 +471,7 @@ async function main(): Promise<void> {
 
     // ---- offline: the same sim, and the menu ----
     const c = await newPage({ width: 800, height: 450 }, "offline");
-    await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&ai=0&account=sandbox-off&secret=${SECRET}`, { waitUntil: "load" });
+    await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&mode=run&ai=0&account=sandbox-off&secret=${SECRET}`, { waitUntil: "load", timeout: NAV_MS });
     await c.waitForFunction(() => window.__game?.ready === true && !!window.__game.run(), null, { timeout: 40000, polling: 100 });
     const off = await c.evaluate(() => window.__game.run()!);
     // and with no room at all they do not claim one file is online in it (Stage 149)
@@ -502,7 +512,7 @@ async function main(): Promise<void> {
     // substring test stopped matching then and silently fell back to "", which is how this check
     // spent 280 stages reporting an empty line instead of a wrong one (Stage 631).
     check("the money moments are heard offline: the claim in its own voice with a line, and a death with it carried drops it to the street — one fall, a line, nothing carried, the claim lying where the file fell", moments.carried > 0 && moments.claim >= 1 && moments.flips === 0 && /CLAIM \+/.test(moments.pickLine) && moments.carried === 1 && moments.drops === 1 && moments.dropLine.trim() === "» ◈ 1 UNIT DROPPED WHERE YOU FELL" && moments.after === 0 && moments.onStreet && !moments.alive, `carried ${moments.carried} · claim cue ×${moments.claim}, node flips ×${moments.flips}, "${moments.pickLine.trim()}" · after the death: fall ×${moments.drops}, "${moments.dropLine.trim()}", carrying ${moments.after}, dropped claim on the street ${moments.onStreet}, alive ${moments.alive}`);
-    await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&menu=1&crawl=0&nonav=1&menuspeed=8&level=drainage_yard`, { waitUntil: "load" });
+    await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&menu=1&crawl=0&nonav=1&menuspeed=8&level=drainage_yard`, { waitUntil: "load", timeout: NAV_MS });
     await c.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "main", null, { timeout: 40000, polling: 50 });
     const entries = await c.evaluate(() => window.__game.menu()!.entries);
     await c.evaluate(() => window.__game.menuChoose("run"));

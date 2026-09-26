@@ -27,6 +27,16 @@ import { lintEconomy } from "../shared/economy/lint";
 import { LAUNCH_GRANT, nameFee } from "../shared/economy/counter";
 
 const VITE_PORT = 5206;
+/**
+ * How long a navigation may take. Not the default 30 s: on a software GPU `load` waits for the whole
+ * scene's shaders to compile, and that contends across live contexts — Stage 638 measured 1.4 s,
+ * 14.4 s, 23.0 s and 34.2 s for the same page with 1, 2, 3 and 4 renderers live, on identical
+ * payloads. A CI runner is slower again, and this probe deliberately navigates two pages at once so
+ * neither file joins the room late. The product assertions are untouched; this is only how long the
+ * harness waits for a step it knows to be slow.
+ */
+const NAV_MS = 120000;
+
 const HOST_PORT = 8809;
 const OUT = "probe/out";
 const HOST = `http://127.0.0.1:${HOST_PORT}`;
@@ -134,7 +144,7 @@ async function main(): Promise<void> {
     // ---------------- the link ----------------
     const acct = "sandbox-cl";
     const a = await newPage({ width: 960, height: 560 }, "A");
-    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}`, { waitUntil: "load" });
+    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}`, { waitUntil: "load", timeout: NAV_MS });
     await a.waitForFunction(() => window.__game?.ready === true && !!window.__game.counter().info, null, { timeout: 40000, polling: 100 });
     await a.evaluate(() => window.__game.toggleFile(true));
     await a.waitForTimeout(300);
@@ -154,7 +164,7 @@ async function main(): Promise<void> {
       soulbound = true;
     }
     const twice = await newPage({ width: 640, height: 360 }, "twice");
-    await twice.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl2&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}`, { waitUntil: "load" });
+    await twice.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl2&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}`, { waitUntil: "load", timeout: NAV_MS });
     await twice.waitForFunction(() => window.__game?.ready === true && !!window.__game.counter().info, null, { timeout: 40000, polling: 100 });
     const link2 = await twice.evaluate(() => window.__game.link());
     await twice.close();
@@ -214,9 +224,9 @@ async function main(): Promise<void> {
     // ---------------- the match: the skin travels as an ID ----------------
     const roomUrl = (room: string) => `ws://127.0.0.1:${HOST_PORT}/room/${room}?warmup=0.5&round=6&ai=0&level=drainage_yard`;
     let b = await newPage({ width: 800, height: 450 }, "B");
-    await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl&secret=${SECRET}&name=BRAVO&net=${encodeURIComponent(roomUrl("cl"))}`, { waitUntil: "load" });
+    await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl&secret=${SECRET}&name=BRAVO&net=${encodeURIComponent(roomUrl("cl"))}`, { waitUntil: "load", timeout: NAV_MS });
     await a.evaluate(() => window.__game.toggleFile(false));
-    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&name=ALPHA&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl("cl"))}`, { waitUntil: "load" });
+    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&name=ALPHA&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl("cl"))}`, { waitUntil: "load", timeout: NAV_MS });
     for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined", null, { timeout: 40000, polling: 100 });
     await b.waitForFunction(() => window.__game.counter().remotes.length >= 1, null, { timeout: 20000, polling: 100 });
     await a.waitForFunction(() => window.__game.counter().remotes.length >= 1, null, { timeout: 20000, polling: 100 });
@@ -279,7 +289,7 @@ async function main(): Promise<void> {
     await b.close();
     const c2 = await newPage({ width: 640, height: 360 }, "outage");
     const liveAtOutage = browser.contexts().reduce((n, c) => n + c.pages().length, 0);
-    await c2.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl3&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player2}`, { waitUntil: "load" });
+    await c2.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl3&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player2}`, { waitUntil: "load", timeout: NAV_MS });
     await c2.waitForFunction(() => window.__game?.ready === true && !!window.__game.counter().info, null, { timeout: 90000, polling: 100 }).catch(async (e) => {
       console.log("outage page state:", JSON.stringify(await c2.evaluate(() => ({ ready: window.__game?.ready, counter: window.__game?.counter() }))).slice(0, 600), "errors:", errors.slice(-3).join(" | "));
       throw e;
@@ -291,8 +301,8 @@ async function main(): Promise<void> {
     const xpBefore = (await file(acct)).xp;
     // both files into a fresh room together (a late joiner would miss the round BRAVO alone would settle)
     await Promise.all([
-      b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl&secret=${SECRET}&name=BRAVO&net=${encodeURIComponent(roomUrl("cl2"))}`, { waitUntil: "load" }),
-      a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&name=ALPHA&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl("cl2"))}`, { waitUntil: "load" }),
+      b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=fresh-cl&secret=${SECRET}&name=BRAVO&net=${encodeURIComponent(roomUrl("cl2"))}`, { waitUntil: "load", timeout: NAV_MS }),
+      a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=${acct}&name=ALPHA&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}&net=${encodeURIComponent(roomUrl("cl2"))}`, { waitUntil: "load", timeout: NAV_MS }),
     ]);
     for (const p of [a, b]) await p.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined", null, { timeout: 40000, polling: 100 });
     await b.waitForFunction(() => window.__game.counter().remotes.length >= 1, null, { timeout: 20000, polling: 100 });

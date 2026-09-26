@@ -1641,6 +1641,43 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 644 — Thirty seconds was never the cost of loading two renderers at once
+
+**The defect.** `probe:counter` and `probe:run` were the last two red steps in CI,
+both dying the same way: `page.goto: Timeout 30000ms exceeded`, 37 s into a step
+that passes locally every time. Neither is reproducible here — both are green on
+this box (17/17 and 27/27) — so the failure is the environment, and the question
+is which part of it.
+
+**What it actually was.** Stage 638 already measured the mechanism and did not
+finish applying it. On a software GPU `load` waits for the whole scene's shaders
+to compile, and that cost contends across live contexts: the same page, on
+identical payloads, took 1.4 s, 14.4 s, 23.0 s and 34.2 s with 1, 2, 3 and 4
+renderers live. A CI runner is slower again. `probe:counter` then does this:
+
+    await Promise.all([b.goto(...), a.goto(...)])
+
+— two pages compiling the whole scene at the same time, which is the two-context
+number at best. That concurrency is deliberate and correct: the room it joins is
+opened with `warmup=0.5&round=6`, so a file that navigates second joins after the
+round BRAVO would settle alone. The pages must arrive together.
+
+So the navigation is known-slow, by a measured amount, for a reason that should
+not change. Thirty seconds was simply never the right budget for it — it is
+Playwright's default, not a number anybody chose against this cost.
+
+**The fix.** A named `NAV_MS = 120000` on every navigation in both probes, with
+the measurement written next to it. No check was touched: the probes still assert
+exactly what they asserted, and the outage-page check Stage 638 added still pins
+the live-renderer count at ≤ 2. This only changes how long the harness waits for
+a step it knows to be slow.
+
+**Proof.** 17/17 and 27/27 locally, unchanged. This is the one stage whose fix
+cannot be confirmed by a local run, because the failure it removes does not
+happen here; what is proven locally is that the constant governs the navigations,
+by setting it to 1 ms and getting `page.goto ... Timeout 1ms exceeded`. CI is the
+real verdict.
+
 ## Stage 643 — The walk to the node was being timed against the round it was supposed to play
 
 **The defect.** `probe:endgame` failed intermittently in CI on the Deep Wake check:
