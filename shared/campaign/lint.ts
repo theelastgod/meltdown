@@ -193,6 +193,8 @@ export function lintCampaign(): CampaignViolation[] {
     for (const v of vals) if (!said.has(v)) out.push({ where: `testimony ${k}`, rule: "choice-is-spoken-to", detail: `"${k}" can be written "${v}", and no node has a line for it`, severity: "error" });
   }
 
+  out.push(...lintChoicesChangeTheArc(producible));
+
   out.push(...lintSpotsAreInTheOpen());
   out.push(...lintHoldsAreAnchored());
 
@@ -336,6 +338,69 @@ export function lintSpotsAreInTheOpen(): CampaignViolation[] {
           }
         }
       }
+    }
+  }
+  return out;
+}
+
+/** Every key a gate names, faction included. */
+function keysOfGate(g: Gate | undefined): string[] {
+  if (!g) return [];
+  return [...Object.keys(g.all ?? {}), ...Object.keys(g.not ?? {}), ...Object.keys((g as { any?: Record<string, string> }).any ?? {}), ...(g.faction ? ["faction"] : [])];
+}
+
+/** The dialogue scripts a mission can open, base objectives and every variant's. */
+function scriptsOf(m: MissionDef): string[] {
+  const objs = [...m.objectives, ...(m.variants ?? []).flatMap((v) => v.objectives ?? [])];
+  return objs.filter((o): o is Extract<Objective, { kind: "dialogue" }> => o.kind === "dialogue").map((o) => o.script);
+}
+
+/**
+ * A choice made in a mission changes something that happens later in the arc (Stage 663).
+ *
+ * Stage 656 made the ending answer every choice and Stage 661 made someone say something about it.
+ * Neither asks whether the choice changes what you PLAY. Measured before this stage, two did not:
+ * `m2:informant` and `m5:lattice` were read by no later mission and no ending — only by optional
+ * gigs and, since 661, a line of dialogue. Sparing the docks informant and handing him to the
+ * Clockeaters produced the same mission 4.
+ *
+ * A reader here is mechanical: a later mission's variant or requirement, a gated choice in a later
+ * mission's dialogue, or an ending gate. Gigs do not count, because nothing makes a player take
+ * one; recall does not count, because a sentence is not a consequence.
+ */
+export function lintChoicesChangeTheArc(producible: Map<string, Set<string>> = producibleTestimony()): CampaignViolation[] {
+  const out: CampaignViolation[] = [];
+  const missions = MISSIONS.filter((m) => m.kind === "mission");
+  const scriptWrites = new Map<string, Set<string>>();
+  for (const s of SCRIPTS) {
+    const keys = new Set<string>();
+    for (const n of s.nodes) for (const c of n.choices ?? []) for (const k of Object.keys(c.set ?? {})) keys.add(k);
+    scriptWrites.set(s.id, keys);
+  }
+  const writtenAt = new Map<string, number>();
+  for (const m of missions) {
+    for (const sid of scriptsOf(m)) {
+      for (const k of scriptWrites.get(sid) ?? []) writtenAt.set(k, Math.min(writtenAt.get(k) ?? Infinity, m.order));
+    }
+  }
+  const scriptById = new Map(SCRIPTS.map((s) => [s.id, s] as const));
+  const endingKeys = new Set(ENDINGS.flatMap((e) => keysOfGate(e.gate)));
+  for (const [k] of producible) {
+    if (k.endsWith(":ending") || k === "faction") continue;
+    const at = writtenAt.get(k);
+    if (at === undefined) continue; // written only outside the arc (a gig); the arc cannot owe it anything
+    const readers: string[] = [];
+    for (const m of missions) {
+      if (m.order <= at) continue;
+      for (const v of m.variants ?? []) if (keysOfGate(v.gate).includes(k)) readers.push(`${m.id} variant`);
+      if (keysOfGate(m.requires?.gate).includes(k)) readers.push(`${m.id} requirement`);
+      for (const sid of scriptsOf(m)) {
+        for (const n of scriptById.get(sid)?.nodes ?? []) for (const c of n.choices ?? []) if (keysOfGate(c.gate).includes(k)) readers.push(`${sid} choice`);
+      }
+    }
+    if (endingKeys.has(k)) readers.push("an ending");
+    if (readers.length === 0) {
+      out.push({ where: `testimony ${k}`, rule: "choice-changes-the-arc", detail: `"${k}" is written in mission ${at} and no later mission or ending reads it, so every answer plays the same`, severity: "error" });
     }
   }
   return out;

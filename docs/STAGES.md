@@ -1641,6 +1641,98 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 663 — Mercy and betrayal played the same mission
+
+**The defect, measured.** Stage 656 made the ending answer every choice; Stage 661
+made someone *say* something about each one. Neither asked whether a choice
+changes what you **play**. Walking every testimony key a mission writes against
+every mechanical reader after it — a later mission's variant or requirement, a
+gated choice in a later mission's dialogue, an ending gate — two had none:
+
+```
+m2:informant   written in mission 2   read by: one optional gig
+m5:lattice     written in mission 5   read by: optional gigs, and (since 661) a line of dialogue
+```
+
+Sparing the docks informant and handing him to the Clockeaters produced the same
+mission 4. Blinding the whole sensor lattice and sparing the docks produced the
+same mission 6. Gigs do not count as a consequence, because nothing makes a
+player take one; a line of dialogue does not count, because a sentence is not
+play.
+
+**The fix: mission 4, on the informant's own docks.** The escort still runs
+B → A → D through the plaza under a VANTAGE sweep, and each answer now makes it a
+different mission:
+
+| m2:informant | mission 4 |
+| --- | --- |
+| **spare** | He repays it. A new objective first — *THE INFORMANT LEFT HIS SPEAKER AT C. KILL IT AND THE SWEEP GOES DEAF* — then the walk, then **1** straggler to clear instead of 3. |
+| **turn** | The routes he had already sold are still live: **+2** drones, **5** to clear, *IT IS RUNNING THE ROUTES HE SOLD*. |
+| neither (never reached) | Unchanged. |
+
+The spared version is shorter on combat and longer on route, and the betrayed one
+is the reverse. Neither is a reward or a punishment dressed as a story. They
+continue the two outcomes Stage 661's recall already named: spared, *"his routes
+went quiet"*; turned, *"his file closed eleven hours after you handed him over"*.
+
+**Mission 6, and the weaker of the two consequences, named as such.** Blinding the
+entire lattice leaves the model nothing to route a response by, so the tower
+draws **two fewer drones**. It is a numbers change, the same kind as mission 2's
+`+2` for keeping the lease file, which Stage 656 called the weakest form a
+consequence takes. It is the right size here: mission 6's objectives already
+carry the lease variant, and a lattice variant that also rewrote objectives would
+overwrite it, since the last open variant's objectives win. Wasps compose and
+objectives do not, so this one carries wasps only. Wern then names what the same
+blindness cost him in the white office. The drones and the line are one
+consequence played twice.
+
+**The guard.** `lint:campaign` gains `choice-changes-the-arc`: every key a mission
+writes, other than the ending id and the faction, must have a mechanical reader
+in a *later* mission or an ending. The mission a key is written in is derived by
+walking each mission's dialogue objectives — base and variant — to the scripts
+they open and the keys those scripts write, not by trusting the key's `mN:`
+prefix.
+
+Two mutations, one on the data and one on the runtime:
+
+- **Removing both new variants** fails the lint with exactly the two keys
+  measured above — *"m2:informant is written in mission 2 and no later mission or
+  ending reads it, so every answer plays the same"*, and the same for
+  `m5:lattice` — and no others. The rule reproduces the measurement.
+- **Making `createMission` ignore variants** (manifest untouched) fails both
+  behavioural tests in `tests/arcconsequence.test.ts`. They build each mission on
+  a real `World` through the function the client and the co-op room both call,
+  and read what actually spawned and what the file is told to do. A test that
+  read the variant list would stay green against a runtime that never applied it,
+  which is the relay lesson from Stage 662 one layer down. A separate test checks
+  the betrayed sweep never asks for more kills than it spawns drones, so the
+  harder mission stays winnable.
+
+**Verified on a still tree.** `npm run typecheck` (both configs), 1437 unit tests,
+the campaign, progression, economy and asset lints, `probe:campaign` 47/47, and
+the production build.
+
+**Graphics this cycle: two hypotheses dead, one lead kept.** Stage 657 queued
+"bring the skyline up", because the frame outside the street is darker than the
+reference. Measured before any change:
+
+- **The skyline is already right.** Its neon coverage is **4.4% against the
+  clip's 4.1%**, and the art bible is explicit: *"Sky is pure black"* and *"World
+  albedo is near-black; surfaces read only where a neon strip lights them"* —
+  *"glowing wireframe on near-black"*. Lifting the base would trade a number for a
+  breach of the reference. Dropped.
+- **Green is not over-used.** Green is 17.7–23.4% of neon in every shot, against
+  a rule that reserves it for the wake. A 5° hue histogram of the probe's own
+  frames puts it in one sharp spike at 145–150° — the wake's #37FF8B, not cyan
+  bleeding across the classifier's 165° boundary, which is only ~1%. The
+  reference clip itself is **29.9% green**, so the game is under it. Dropped.
+- **Lead, not yet investigated:** the distant shots read **mean luma 0.067
+  against the clip's 0.133** while neon coverage matches. The clip's extra light
+  is not neon, and the art bible's *"haze softens everything past ~200 m"* is the
+  likeliest source. That is where the next graphics stage should look.
+
+Higgsfield is still at 0.55 credits against 7.5 for the cheapest generation.
+
 ## Stage 662 — The crew never heard the recall, and the test said they did
 
 **What CI caught.** Run 659 (Stage 661) went red on `typecheck`.

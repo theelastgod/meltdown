@@ -112,6 +112,30 @@ export const MISSIONS: readonly MissionDef[] = [
     fixer: "vessel",
     brief: "AN ESTATE DEFECTOR HANDS YOU THE DIRECTIVE. WALK HER FROM B TO D UNDER A VANTAGE SWEEP WHILE WERN ARGUES HIS CASE.",
     objectives: [D("m4_leak", "THE DIRECTIVE"), { kind: "escort", path: [{ node: "B" }, { node: "A" }, { node: "D" }], speed: 2.2, leash: 8, text: "WALK IDA VESSEL FROM B TO D" }, { kind: "kill", target: "wasp", count: 3, text: "CLEAR THE SWEEP" }],
+    // The docks informant's two endings, played out on his own docks (Stage 663). Before this the
+    // choice in mission 2 was read by nothing in the arc — one optional gig — so mercy and betrayal
+    // produced the same mission. Now they produce different ones: spared, he repays it with the
+    // sweep's ears; handed over, the routes he had already sold are still live.
+    variants: [
+      {
+        gate: { all: { "m2:informant": "spare" } },
+        objectives: [
+          D("m4_leak", "THE DIRECTIVE"),
+          { kind: "destroy", spots: [{ node: "C" }], label: "VANTAGE SPEAKER", text: "THE INFORMANT LEFT HIS SPEAKER AT C. KILL IT AND THE SWEEP GOES DEAF" },
+          { kind: "escort", path: [{ node: "B" }, { node: "A" }, { node: "D" }], speed: 2.2, leash: 8, text: "WALK IDA VESSEL FROM B TO D WHILE THE SWEEP IS DEAF" },
+          { kind: "kill", target: "wasp", count: 1, text: "CLEAR WHAT IS LEFT OF THE SWEEP" },
+        ],
+      },
+      {
+        gate: { all: { "m2:informant": "turn" } },
+        extraWasps: 2,
+        objectives: [
+          D("m4_leak", "THE DIRECTIVE"),
+          { kind: "escort", path: [{ node: "B" }, { node: "A" }, { node: "D" }], speed: 2.2, leash: 8, text: "WALK IDA VESSEL FROM B TO D" },
+          { kind: "kill", target: "wasp", count: 5, text: "CLEAR THE SWEEP — IT IS RUNNING THE ROUTES HE SOLD" },
+        ],
+      },
+    ],
     reward: { scrip: 600, xp: 1600, weapon: "directive" },
     wasps: 4,
     mechs: 1,
@@ -147,7 +171,14 @@ export const MISSIONS: readonly MissionDef[] = [
     objectives: [{ kind: "hold", at: { node: "A" }, radius: 8, seconds: 45, text: "HOLD THE TOWER — THE DIRECTIVE IS BROADCASTING", waves: 3 }, D("m6_broadcast", "THE UPLINK"), { kind: "hold", at: { node: "A" }, radius: 8, seconds: 30, text: "HOLD UNTIL THE UPLINK CLOSES", waves: 2 }],
     // "Evidence is a weapon" — m1's kept lease file is the proof the broadcast can attach, and a city
     // that is shown the paper believes faster than one that is only told. Half the closing hold.
-    variants: [{ gate: { all: { "m1:lease": "keep" } }, objectives: [{ kind: "hold", at: { node: "A" }, radius: 8, seconds: 45, text: "HOLD THE TOWER — THE DIRECTIVE IS BROADCASTING", waves: 3 }, D("m6_broadcast", "THE UPLINK"), { kind: "hold", at: { node: "A" }, radius: 8, seconds: 15, text: "HOLD UNTIL THE UPLINK CLOSES — THE LEASE FILE IS GOING OUT WITH IT", waves: 1 }] }],
+    variants: [
+      { gate: { all: { "m1:lease": "keep" } }, objectives: [{ kind: "hold", at: { node: "A" }, radius: 8, seconds: 45, text: "HOLD THE TOWER — THE DIRECTIVE IS BROADCASTING", waves: 3 }, D("m6_broadcast", "THE UPLINK"), { kind: "hold", at: { node: "A" }, radius: 8, seconds: 15, text: "HOLD UNTIL THE UPLINK CLOSES — THE LEASE FILE IS GOING OUT WITH IT", waves: 1 }] },
+      // Blinding the whole lattice in mission 5 left the model with nothing to route a response
+      // by, so the tower draws two fewer drones (Stage 663). Wasps only, never objectives, so this
+      // composes with the lease variant above instead of overwriting it; Wern names the cost of the
+      // same blindness in the white office.
+      { gate: { all: { "m5:lattice": "all" } }, extraWasps: -2 },
+    ],
     reward: { scrip: 1000, xp: 2400, protocol: "blood_ledger", stamp: "mission:trial" },
     wasps: 6,
     mechs: 2,
