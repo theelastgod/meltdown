@@ -1641,6 +1641,58 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 647 — The look check was satisfied by two errors cancelling
+
+**The defect.** Not a red gate — a green one. `probe:look` compares every frame
+against statistics taken from the reference clip and passes 18/18. The frame it
+passes is this: the street is the **brightest large surface in a game about a
+drowned city at night**.
+
+**Measured, from the probe's own artifact.** `probe/out/stage3-lane.png`, using
+the probe's own definitions (luma < 0.12 is "dark"):
+
+| region | share of frame | mean luma | dark |
+| --- | --- | --- | --- |
+| the street | 21% | 0.152 | **19%** |
+| everything else | 74% | 0.083 | **72%** |
+| whole frame | 100% | 0.100 | 60% |
+| the reference clip | — | 0.133 | 62% |
+
+The whole frame lands on the clip's number almost exactly. It gets there by
+being far too bright in one place and too dark in another, and the average
+never shows it. That is what a whole-frame statistic is for and what it cannot
+do: the checks are green, and they would stay green if the street went brighter
+still, because the skyline has darkness to spare.
+
+The brightness is not the reflection. Measured by distance band the street is
+flat — 0.133 near the horizon, 0.149 at the file's feet — so it is not fog, and
+its colour ratio (1 : 1.35 : 1.70) is the shader's own `base` term
+(1 : 1.21 : 1.71) at about four times the magnitude, which is tone mapping
+lifting a near-black. The pipeline is working as designed. What is missing is
+anyone looking at the result.
+
+**The fix is a measurement, not a repaint.** Two strips of road either side of
+where the file stands, measured on their own, plus the ratio of street to
+skyline within the same frame. A ratio because exposure and tone mapping move
+both regions together, so it survives a different machine while still resolving
+a change to the floor alone.
+
+**What this stage deliberately does not do** is decide what the street should
+look like. The clip's own frames are not in the repository — `reference-stats.ts`
+says so, and only the aggregates survive — so there is no road number to aim at,
+and the answer is the owner's. The bounds are a ratchet on what the game does
+today (street 3.0x the skyline, bound at 3.45): they stop the split widening
+unseen. They do not bless it.
+
+**Proof.** 19/19. Mutation-tested by tripling the floor's base colour: the new
+check fails on all three counts — street 5.5% dark, luma 0.328, 6.78x the
+skyline — while `lane: near-black base like the clip` and `lane: mean luma in
+the clip's band` both still **pass**, which is the blindness this closes, shown
+rather than argued. Stated limit, measured not assumed: a 2.4x change to the
+reflection term moves the street only from 3.00x to 3.29x and is below what this
+resolves; the bound is set for stability across machines instead, since a red
+gate costs more than that change is worth.
+
 ## Stage 646 — The landing was as hard as the frame rate, and the sim knew better
 
 **The defect.** `probe:tps` failed in CI on the landing check: the camera dipped

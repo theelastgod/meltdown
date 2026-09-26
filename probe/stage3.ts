@@ -59,6 +59,29 @@ async function statsOf(page: Page, png: Buffer): Promise<LookStats> {
   );
 }
 
+/**
+ * The same metrics over one rectangle of the frame. The whole-frame numbers the clip gives are an
+ * average, and an average is satisfied by errors that cancel: the street reads far brighter than the
+ * clip while the skyline reads darker, and together they land inside the band (Stage 647).
+ */
+async function statsOfRegion(page: Page, png: Buffer, rect: { x: number; y: number; w: number; h: number }): Promise<LookStats> {
+  return page.evaluate(
+    async ({ src, fn, r }) => {
+      const compute = new Function("return " + fn)() as (i: ImageData) => LookStats;
+      const img = new Image();
+      img.src = "data:image/png;base64," + src;
+      await img.decode();
+      const c = document.createElement("canvas");
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const ctx = c.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      return compute(ctx.getImageData(r.x, r.y, r.w, r.h));
+    },
+    { src: png.toString("base64"), fn: computeLookStatsSource, r: rect },
+  );
+}
+
 async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });
   const ref = JSON.parse(readFileSync("docs/proof/stage3/reference-stats.json", "utf8")) as LookStats & { frames: number };
@@ -101,7 +124,38 @@ async function main(): Promise<void> {
     // Vantage 1: spawn, looking down the lane through the light gantry.
     await page.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 40 }]));
     await page.evaluate(() => window.__game.advance(40));
-    await capture("lane");
+    const lanePng = await (async () => {
+      await capture("lane");
+      return readFileSync(`${OUT}/stage3-lane.png`);
+    })();
+    /**
+     * The street, measured on its own. Two strips of road either side of where the file stands, so
+     * neither its dark cloak nor the HUD is counted. The clip's figures are whole-frame averages and
+     * the frame passes them: 60% dark against the clip's 62%. The street inside that same frame is
+     * 21.3% and 13.3% dark — it is the brightest large surface in a game about a drowned city at
+     * night — and the skyline around it is 72%, so the two cancel and the average never shows it.
+     *
+     * The bounds below are a ratchet on what the game does today, not a claim that today is right:
+     * the clip's own frames are not in the repository (see reference-stats.ts), so there is no road
+     * number to aim at, and what the street should read is the owner's call. What this stops is the
+     * split widening any further without anyone seeing it.
+     */
+    const roadL = await statsOfRegion(helper, lanePng, { x: 150, y: 400, w: 290, h: 220 });
+    const roadR = await statsOfRegion(helper, lanePng, { x: 660, y: 400, w: 290, h: 220 });
+    const sky = await statsOfRegion(helper, lanePng, { x: 0, y: 160, w: 1280, h: 180 });
+    const roadDark = (roadL.darkFrac + roadR.darkFrac) / 2;
+    const roadLuma = (roadL.meanLuma + roadR.meanLuma) / 2;
+    // Street against skyline in the same frame. A ratio rather than a level on purpose: exposure and
+    // tone mapping move both regions together, so this survives a different machine while still
+    // resolving a change to the floor alone. Today the street is 3.1x the skyline; the bound leaves 10%
+    // of headroom, which resolves a floor that has been lifted outright but not a small trim to the
+    // reflection term (2.4x on that moves the street to 3.3x, and is deliberately below this).
+    const split = roadLuma / sky.meanLuma;
+    check(
+      "the street is measured on its own rather than averaged into the skyline, and has not drifted further from the clip",
+      roadDark >= 0.08 && roadDark <= 0.45 && roadLuma <= 0.24 && split <= 3.45,
+      `street dark ${(roadDark * 100).toFixed(1)}% luma ${roadLuma.toFixed(3)} · skyline luma ${sky.meanLuma.toFixed(3)} · street is ${split.toFixed(2)}x the skyline · whole frame ${(shots["lane"]!.darkFrac * 100).toFixed(0)}% against the clip's 62%`,
+    );
 
     // Vantage 2: the deck after the Stage 1 run, facing the east arena.
     const plan: BotStep[] = [
