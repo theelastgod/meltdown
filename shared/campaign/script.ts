@@ -5,8 +5,8 @@
  * already given. Scripts are data; the client plays them, the co-op room
  * relays the host's choice.
  */
-import type { HandlerId } from "./factions";
-import type { Gate } from "./testimony";
+import type { FactionId, HandlerId } from "./factions";
+import { gateOpen, type Gate, type Testimony } from "./testimony";
 
 export interface Choice {
   text: string;
@@ -17,11 +17,29 @@ export interface Choice {
   gate?: Gate;
 }
 
+/**
+ * Lines a node adds when the player has already given the testimony the gate names (Stage 661).
+ *
+ * Before this, a `ScriptNode` had no gate of any kind: its `lines` were fixed, so nothing anyone
+ * said could depend on anything the player had done. Every reaction the campaign had was
+ * mechanical — a wasp count, a swapped objective, a gig that did or did not appear — or arrived at
+ * the very last screen. A handler could not so much as mention the choice you made an hour ago.
+ *
+ * These append to the node's own lines rather than replacing them, so the briefing a node exists to
+ * deliver is never lost to a variant, and they are spoken in that node's voice.
+ */
+export interface Recall {
+  gate: Gate;
+  lines: string[];
+}
+
 export interface ScriptNode {
   id: string;
   speaker: HandlerId | "you" | "terminal";
   lines: string[];
   choices?: Choice[];
+  /** what this node adds once the file has something to say back; the first open one wins */
+  recall?: Recall[];
   /** continue to this node when there are no choices (null: end) */
   next?: string | null;
 }
@@ -33,6 +51,44 @@ export interface ScriptDef {
 }
 
 const n = (id: string, speaker: ScriptNode["speaker"], lines: string[], rest: Partial<ScriptNode> = {}): ScriptNode => ({ id, speaker, lines, next: null, ...rest });
+
+/** Which recall on this node is open, or -1. */
+export function recallIndex(node: ScriptNode, t: Testimony, faction: FactionId | null): number {
+  return (node.recall ?? []).findIndex((r) => gateOpen(r.gate, t, faction));
+}
+
+/**
+ * A node's lines as actually spoken: its own, plus the recall at `index`.
+ *
+ * Co-op takes the index rather than the lines (Stage 661): the crew must read the screen the HOST's
+ * testimony produced, not each guest's own, and an index into the manifest every client already has
+ * cannot put text a host chose onto anyone else's terminal.
+ */
+export function linesAt(node: ScriptNode, index: number): string[] {
+  const hit = index >= 0 ? (node.recall ?? [])[index] : undefined;
+  return hit ? [...node.lines, ...hit.lines] : [...node.lines];
+}
+
+/** A node's lines as actually spoken for this file. */
+export function spokenLines(node: ScriptNode, t: Testimony, faction: FactionId | null): string[] {
+  return linesAt(node, recallIndex(node, t, faction));
+}
+
+/** Every value of every key any recall in the campaign reads, for the lint. */
+export function recalledTestimony(): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  for (const s of SCRIPTS) {
+    for (const n of s.nodes) {
+      for (const r of n.recall ?? []) {
+        for (const [k, v] of Object.entries(r.gate.all ?? {})) {
+          if (!out.has(k)) out.set(k, new Set());
+          out.get(k)!.add(v);
+        }
+      }
+    }
+  }
+  return out;
+}
 
 export const SCRIPTS: readonly ScriptDef[] = [
   {
@@ -78,6 +134,10 @@ export const SCRIPTS: readonly ScriptDef[] = [
     start: "a",
     nodes: [
       n("a", "terminal", ["THE DOCKS INFORMANT KNEELS BY THE C NODE. HE HAS A CLOCKEATER MARK ON HIS WRIST AND A VANTAGE SPEAKER IN HIS EAR.", "HE HAS BEEN SELLING WAKE CELL ROUTES FOR SLEEP CREDIT."], {
+        recall: [
+          { gate: { all: { "m1:lease": "keep" } }, lines: ["FILE NOTE: THE LEASE PAGE YOU CARRIED OUT OF LEASE ROW IS STILL ON YOU. IT IS STILL WARM."] },
+          { gate: { all: { "m1:lease": "burn" } }, lines: ["FILE NOTE: THE MODEL HAS A GAP WHERE YOUR FORECAST WAS. IT HAS BEEN QUERYING THAT GAP ALL NIGHT."] },
+        ],
         choices: [
           { text: "SPARE HIM. TURN THE SPEAKER OFF AND LET HIM RUN.", set: { "m2:informant": "spare" }, next: "spare" },
           { text: "TURN HIM IN TO MARROW'S PEOPLE. THE CLOCKEATERS SETTLE THEIR OWN.", set: { "m2:informant": "turn" }, next: "turn" },
@@ -92,6 +152,10 @@ export const SCRIPTS: readonly ScriptDef[] = [
     start: "a",
     nodes: [
       n("a", "terminal", ["THE DEPOT LOGS DO NOT DESCRIBE CRIME. THEY DESCRIBE VARIANCE.", "EVERY WAKE, EVERY PULLED NODE, DEGRADES THE MODEL'S CONFIDENCE BY A FRACTION OF A PERCENT.", "VANTAGE IS NOT POLICING THE CITY. IT IS STEADYING A FORECAST."], {
+        recall: [
+          { gate: { all: { "m2:informant": "spare" } }, lines: ["FILE NOTE: THE DOCKS INFORMANT IS STILL BREATHING. HIS ROUTES WENT QUIET THE NIGHT YOU LET HIM RUN."] },
+          { gate: { all: { "m2:informant": "turn" } }, lines: ["FILE NOTE: THE DOCKS INFORMANT'S FILE CLOSED ELEVEN HOURS AFTER YOU HANDED HIM OVER. CAUSE OF CLOSURE: NOT RECORDED."] },
+        ],
         choices: [
           { text: "PUBLISH IT ON EVERY LEASED FEED TONIGHT.", set: { "m3:volatility": "publish" }, next: "publish" },
           { text: "HOLD IT. A TRUTH SPENT EARLY BUYS NOTHING.", set: { "m3:volatility": "hold" }, next: "hold" },
@@ -105,7 +169,13 @@ export const SCRIPTS: readonly ScriptDef[] = [
     id: "m4_leak",
     start: "a",
     nodes: [
-      n("a", "vessel", ["This is it. The Directive. Wern's own hand.", "Read it while we walk. He argues better than any of us."], { next: "w1" }),
+      n("a", "vessel", ["This is it. The Directive. Wern's own hand.", "Read it while we walk. He argues better than any of us."], {
+        next: "w1",
+        recall: [
+          { gate: { all: { "m3:volatility": "publish" } }, lines: ["Half the Estate read your depot logs before VANTAGE cut the feeds. That is why I am standing here and not at my desk."] },
+          { gate: { all: { "m3:volatility": "hold" } }, lines: ["You sat on the depot logs. I would have published. I am not sure any more that I would have been right."] },
+        ],
+      }),
       n("w1", "wern", ["You've read the models by now. So you know I didn't invent the Meltdown. I forecast it.", "Twelve years of variance, compounding. A city that participates in history is a city that ends."], { next: "w2" }),
       n("w2", "wern", ["So I froze it. A permanent lease. No one dreams, no one wakes, no one dies in the fire that was coming.", "You call it a cage. Ask the people in it whether they'd like the fire back."], { next: "w3" }),
       n("w3", "wern", ["I'm not asking you to agree. I'm asking you to notice that you almost do."], {
@@ -129,6 +199,10 @@ export const SCRIPTS: readonly ScriptDef[] = [
     start: "a",
     nodes: [
       n("a", "terminal", ["THE SENSOR LATTICE IS THE MODEL'S EYES. DISTRICT BY DISTRICT, PUT THEM OUT.", "VANTAGE WILL RESPOND LIKE AN IMMUNE SYSTEM. THIS IS THE HARDEST NIGHT OF YOUR FILE."], {
+        recall: [
+          { gate: { all: { "m4:directive": "kept" } }, lines: ["FILE NOTE: THE DIRECTIVE IS IN YOUR FILE AND NOWHERE ELSE. NO HOUSE HAS READ IT BUT YOU."] },
+          { gate: { all: { "m4:directive": "given" } }, lines: ["FILE NOTE: THE ESTATE HAS BEEN READING ITS OWN HAND FOR SIX DAYS. IT HAS NOT ANSWERED."] },
+        ],
         choices: [
           { text: "ALL OF IT. BLIND THE MODEL EVERYWHERE.", set: { "m5:lattice": "all" }, next: "all" },
           { text: "SPARE THE DOCKS. SOMEONE HAS TO SEE THE SHIPS COME IN.", set: { "m5:lattice": "spare_docks" }, next: "spare" },
@@ -143,6 +217,10 @@ export const SCRIPTS: readonly ScriptDef[] = [
     start: "a",
     nodes: [
       n("a", "terminal", ["THE DIRECTIVE IS ON EVERY LEASED FEED. THE CITY IS WAKING LIVE AROUND YOU.", "THE UPLINK CAN CARRY THE WHOLE DOCUMENT OR A REDACTED CUT WITH THE FORECAST REMOVED."], {
+        recall: [
+          { gate: { all: { "m4:vessel": "shield" } }, lines: ["FILE NOTE: IDA VESSEL IS ON THE TOWER STAIR BEHIND YOU. SHE HAS NOT BEEN LISTED SINCE THE NIGHT YOU TOOK THE LIGHT."] },
+          { gate: { all: { "m4:vessel": "expose" } }, lines: ["FILE NOTE: IDA VESSEL IS RE-LEASED AND ASLEEP IN AN ESTATE WARD. YOUR GLYPH IS THE LAST LINE OF HER FILE."] },
+        ],
         choices: [
           { text: "FULL BROADCAST. LET THEM READ THE FIRE TOO.", set: { "m6:broadcast": "full" }, next: "full" },
           { text: "REDACTED. WAKE THEM WITHOUT THE TERROR.", set: { "m6:broadcast": "redacted" }, next: "redacted" },
@@ -156,8 +234,20 @@ export const SCRIPTS: readonly ScriptDef[] = [
     id: "m7_office",
     start: "a",
     nodes: [
-      n("a", "wern", ["No guards. You noticed. There's nothing left in this building that a gun can settle.", "Sit, if you like. Or don't. The chair is the offer."], { next: "b" }),
-      n("b", "wern", ["The lease system needs an author. I have been that author for twelve years and I am tired.", "Wipe the ledger and the city remembers nothing — not the fire, not the cage, not you.", "Or take the chair. Freeze what you must. Thaw what you dare."], { next: "c" }),
+      n("a", "wern", ["No guards. You noticed. There's nothing left in this building that a gun can settle.", "Sit, if you like. Or don't. The chair is the offer."], {
+        next: "b",
+        recall: [
+          { gate: { all: { "m5:lattice": "all" } }, lines: ["I have been blind for nine days. Do you know what a forecaster does with no instruments? He guesses. I had forgotten how."] },
+          { gate: { all: { "m5:lattice": "spare_docks" } }, lines: ["You left me the docks. One eye. I have watched the ships come in every night since and understood none of it."] },
+        ],
+      }),
+      n("b", "wern", ["The lease system needs an author. I have been that author for twelve years and I am tired.", "Wipe the ledger and the city remembers nothing — not the fire, not the cage, not you.", "Or take the chair. Freeze what you must. Thaw what you dare."], {
+        next: "c",
+        recall: [
+          { gate: { all: { "m6:broadcast": "full" } }, lines: ["They read the fire, you know. All of it. And they woke anyway. That is the part I could not forecast."] },
+          { gate: { all: { "m6:broadcast": "redacted" } }, lines: ["You cut the forecast out before you sent it. You woke them and spared them the reason. That is what an author does."] },
+        ],
+      }),
       n("c", "terminal", ["THE FINAL INPUT IS A CHOICE. THERE IS NO TRIGGER TO PULL."], {
         choices: [
           { text: "WIPE THE LEDGER. WALK OUT FREE.", set: { "m7:ending": "wipe" }, next: null },

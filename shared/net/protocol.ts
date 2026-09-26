@@ -429,6 +429,8 @@ export interface TerminalMsg {
   choices: string[];
   /** the text of the choice the host took to reach this node, if any */
   picked: string | null;
+  /** which of the node's recall variants the host's testimony opened, or -1 (Stage 661) */
+  recall: number;
 }
 export function encodeTerminal(m: TerminalMsg): ArrayBuffer {
   const w = new W();
@@ -610,7 +612,7 @@ export function encodeSnapshot(s: Omit<Snapshot, "bytes">, baseline: Snapshot | 
 export type ClientMessage =
   | { type: "join"; version: number; name: string; token: string; account: string; loadout: string; identity: string; secret: string }
   | { type: "choice"; script: string; testimony: Record<string, string> }
-  | { type: "terminal"; script: string; node: string; choices: string[]; picked: string | null }
+  | { type: "terminal"; script: string; node: string; choices: string[]; picked: string | null; recall: number }
   | { type: "input"; ackTick: number; inputs: NetInput[] }
   | { type: "ping"; clientTime: number };
 
@@ -637,10 +639,12 @@ export function decodeClientMessage(buf: ArrayBuffer): ClientMessage | null {
       return { type: "choice", script: String(c.script ?? "").slice(0, 48), testimony };
     }
     if (t === Msg.Terminal) {
-      const m = JSON.parse(r.str()) as { script?: unknown; node?: unknown; choices?: unknown; picked?: unknown };
+      const m = JSON.parse(r.str()) as { script?: unknown; node?: unknown; choices?: unknown; picked?: unknown; recall?: unknown };
       const text = (v: unknown, max: number) => String(typeof v === "string" ? v : "").slice(0, max);
       const choices = Array.isArray(m.choices) ? m.choices.slice(0, 4).map((c) => text(c, 160)) : [];
-      return { type: "terminal", script: text(m.script, 48), node: text(m.node, 48), choices, picked: typeof m.picked === "string" ? text(m.picked, 160) : null };
+      // an index, never lines: a host cannot put text of its own choosing on a guest's terminal
+      const recall = Number.isInteger(m.recall) ? Math.max(-1, Math.min(7, m.recall as number)) : -1;
+      return { type: "terminal", script: text(m.script, 48), node: text(m.node, 48), choices, picked: typeof m.picked === "string" ? text(m.picked, 160) : null, recall };
     }
     if (t === Msg.Input) {
       const ackTick = r.u32();

@@ -116,13 +116,16 @@ async function main(): Promise<void> {
     return pg;
   };
   /** play through an open terminal: skip typing, continue, pick `pick` when choices come (default the first) */
-  const playTerminal = async (pg: Page, picks: number[] = []): Promise<string[]> => {
+  const playTerminal = async (pg: Page, picks: number[] = [], said?: string[]): Promise<string[]> => {
     const seen: string[] = [];
     let n = 0;
     for (let i = 0; i < 40; i++) {
       const d = await pg.evaluate(() => window.__game.campaign().dialogue);
       if (!d) break;
       seen.push(`${d.script}:${d.node}`);
+      // what the screen actually reads, not what the model says it should (Stage 661): a recall
+      // line that never types is the same as no recall line
+      if (said && d.ready) said.push(await pg.evaluate(() => document.querySelector("#hud .terminal .tl")?.textContent ?? ""));
       if (!d.ready) {
         await pg.evaluate(() => window.__game.dialogueAdvance());
         await pg.waitForTimeout(60);
@@ -694,7 +697,18 @@ async function main(): Promise<void> {
     void sp;
     await advance(wo, 3);
     const w2 = await wo.evaluate(() => window.__game.campaign().dialogue);
-    const seenW = await playTerminal(wo, [1]); // take the chair
+    const saidW: string[] = [];
+    const seenW = await playTerminal(wo, [1], saidW); // take the chair
+    // Stage 661: this arc kept the Directive and broadcast in full, and the office is the first
+    // place anyone speaks to either. Before it, no node's lines could depend on any testimony at
+    // all, so Wern greeted a player who had blinded the whole city exactly as he greeted one who
+    // had not. The line has to be ON THE SCREEN, not merely in the manifest.
+    const wernSaid = saidW.join(" \u00b7 ");
+    check(
+      "the office speaks to the arc that got there: Wern's own lines carry what this file chose, typed onto the terminal",
+      /read the fire/i.test(wernSaid) && !/spared them the reason/i.test(wernSaid),
+      `terminal text across ${saidW.length} node(s): ${wernSaid.slice(0, 420)}`,
+    );
     await advance(wo, 3);
     await wo.waitForTimeout(800);
     const w3 = await wo.evaluate(() => ({ c: window.__game.campaign(), card: document.querySelector("#hud .card .ct")?.textContent ?? "", cardOpen: !(document.querySelector("#hud .card") as HTMLElement).hidden }));

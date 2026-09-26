@@ -123,7 +123,7 @@ export interface RoomHooks {
   /** a client was admitted (its player exists) */
   onAdmit?: (room: Room, playerId: number, account: Account | null) => void;
   /** a client message the room does not handle itself */
-  onClientMessage?: (room: Room, playerId: number, msg: { type: "choice"; script: string; testimony: Record<string, string> } | { type: "terminal"; script: string; node: string; choices: string[]; picked: string | null }) => void;
+  onClientMessage?: (room: Room, playerId: number, msg: { type: "choice"; script: string; testimony: Record<string, string> } | { type: "terminal"; script: string; node: string; choices: string[]; picked: string | null; recall: number }) => void;
 }
 
 export interface RoomOptions {

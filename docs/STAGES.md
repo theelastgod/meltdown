@@ -1641,6 +1641,88 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 661 — Nobody ever mentioned the choice you made an hour ago
+
+**The defect, measured.** Stage 656 made the *ending* answer every choice. This
+asks the same of the hours before it, and the answer was worse. Across the whole
+script graph:
+
+```
+scripts 10 · nodes 32 · spoken lines 54 · choices 21
+choices that WRITE testimony:            21
+choices GATED on prior testimony:         3 (14.3%)
+script nodes whose LINES vary on prior testimony:  0
+```
+
+Zero, and not by oversight: `ScriptNode` had **no gate field of any kind**. Its
+`lines` were fixed, so nothing anyone said could depend on anything the player
+had done. Every reaction the campaign had was mechanical — a wasp count, a
+swapped objective, a gig that did or did not appear — or waited for the final
+card. Ida Vessel could not mention the depot logs you published for her. Wern
+greeted a player who had blinded the entire sensor lattice exactly as he greeted
+one who had not.
+
+**A wrong measurement first, caught the same way as Stage 656's.** The first
+pass reported that `faction` — the opening choice of the game, WHO DO YOU
+ANSWER TO? — was read by **nothing**, which would have made character creation
+inert. That was a bug in my extractor: `Gate` carries `faction` in its own
+field, not in `all`/`not`/`any`, and I only walked those three. Corrected, it is
+read four times, including two faction-locked endings. There was no defect
+there, and a stage built on that reading would have been built on nothing.
+
+**The fix.** `ScriptNode` gains `recall?: { gate, lines }[]` — lines a node adds
+once the file has something to say back, appended to its own so a briefing is
+never lost to a variant, and spoken in that node's voice. Then fourteen of them,
+covering every value of all seven keys, each placed on the first node the player
+reaches *after* writing it:
+
+| said at | speaker | answers |
+| --- | --- | --- |
+| m2 briefing | terminal | `m1:lease` keep / burn |
+| m3 briefing | terminal | `m2:informant` spare / turn |
+| m4 opening | **Vessel** | `m3:volatility` publish / hold |
+| m5 briefing | terminal | `m4:directive` kept / given |
+| m6 briefing | terminal | `m4:vessel` shield / expose |
+| m7 office | **Wern** | `m5:lattice` all / spare_docks |
+| m7 office | **Wern** | `m6:broadcast` full / redacted |
+
+Five land in the terminal's clipped voice as a file note; four are a named
+character reacting, which is the half that actually plays. Wern to a player who
+blinded everything: *"I have been blind for nine days. Do you know what a
+forecaster does with no instruments? He guesses. I had forgotten how."*
+
+**Co-op sends an index, never lines.** The crew must read the screen the
+*host's* testimony produced (Stage 52), and a guest has its own. `TerminalMsg`
+gains `recall: number`, clamped to −1..7 on decode, and the guest renders
+`linesAt(node, ev.recall)` from its own copy of the manifest. Sending the text
+would have been simpler and would have let any host put words of its choosing
+on every other player's terminal.
+
+**The guard, and the one that matters.** `lint:campaign` gains
+`choice-is-spoken-to`: every key a choice can write, other than the ending id
+and the faction, has a line for every value it can take. Both mutation forms
+fail it — deleting one line gives *"m2:informant can be written turn, and no
+node has a line for it"*, deleting a key's whole recall gives *"nothing anyone
+says in the campaign depends on m5:lattice"*.
+
+But a lint reads the manifest, and the defect this project keeps producing is
+data that is computed and then dropped. So `probe:campaign` now reads the
+terminal's own typed text out of the DOM at every node it plays, and asserts
+Wern's broadcast line is **on the screen**. The mutation that proves it is worth
+having: rendering `n.lines` instead of `linesAt(n, recall)` — manifest untouched
+— leaves `lint:campaign` **green** and fails the probe. That is the Stage 654
+defect class caught for the first time by something that looks at the screen
+rather than at the source.
+
+**Verified on a still tree.** tsc, 1430 unit tests, `probe:campaign` 47/47, the
+campaign, progression, economy and asset lints, and the production build.
+
+**Still open.** Only 3 of 21 choices are gated on prior testimony, so the
+campaign now *acknowledges* what you did far more than it *offers* you anything
+different for it. Recall is one sentence; a branch is a scene. The next question
+worth asking is which of the seven choices deserves to change what a mission
+actually is, rather than what someone says about it.
+
 ## Stage 660 — The cap paid nothing, and one of the five gates paid nothing either
 
 **The defect, measured.** Stage 659 fixed the account ladder and recorded that

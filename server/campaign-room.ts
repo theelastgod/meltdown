@@ -31,7 +31,7 @@ export function createCampaignRoom(opts: CampaignRoomOptions): CampaignRoomHandl
   let hostId = -1;
   let choices = 0;
   /** where the host's terminal is right now, so a crew member who joins mid-terminal sees it too (Stage 52) */
-  let terminal: { type: "terminal"; script: string; node: string; choices: string[]; picked: string | null } | null = null;
+  let terminal: { type: "terminal"; script: string; node: string; choices: string[]; picked: string | null; recall: number } | null = null;
   const settled: { id: string; ok: boolean; reason?: string }[] = [];
   let ticks = 0;
   const hooks: RoomHooks = {

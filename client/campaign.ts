@@ -12,7 +12,7 @@ import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/camp
 import { ENDINGS, endingCoda, endingTitle, endingsFor, gateOpen, handlersAlive, resolveEnding, testimonyLine, type Testimony } from "@shared/campaign/testimony";
 import { threatProfile, threatRating, type ThreatProfile } from "@shared/campaign/threat";
 import { PROTOCOLS, protocolMods, MAX_PROTOCOLS } from "@shared/campaign/protocols";
-import { scriptById, type ScriptNode } from "@shared/campaign/script";
+import { linesAt, recallIndex, scriptById, type ScriptNode } from "@shared/campaign/script";
 import { GIGS, MAIN_ARC, missionById, type MissionDef } from "@shared/campaign/missions";
 import { campaignOf, canLaunch, completeContract, gigsOnOffer, nextMission, pickFaction, wearProtocols, type CampaignSave } from "@shared/campaign/save";
 import { createMission, drainMissionEvents, missionView, resolveDialogue, resolveSpot, spawnThreat, stepMission, type MissionState } from "@shared/campaign/runtime";
@@ -262,14 +262,16 @@ export class Campaign {
     const speaker = n.speaker === "you" ? { name: "YOU", sigil: "▸", color: "gr" } : n.speaker === "terminal" ? { name: "TERMINAL", sigil: "▮", color: "cy" } : { name: HANDLERS[n.speaker as HandlerId].name, sigil: HANDLERS[n.speaker as HandlerId].sigil, color: HANDLERS[n.speaker as HandlerId].color };
     const all = { ...this.save.testimony, ...p.testimony };
     const choices = (n.choices ?? []).filter((c) => gateOpen(c.gate, all, this.save.faction)).map((c) => c.text);
-    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, n.lines, choices.length ? choices : null);
+    // what the file has to say back about what this player already did (Stage 661)
+    const recall = recallIndex(n, all, this.save.faction);
+    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, recall), choices.length ? choices : null);
     // the crew reads the same screen (Stage 52): the host sends where it is; the room mirrors it to everyone
-    if (this.mode === "coop" && this.host && this.game.net) this.game.net.sendTerminal({ script: p.script, node: n.id, choices, picked: this.lastPick });
+    if (this.mode === "coop" && this.host && this.game.net) this.game.net.sendTerminal({ script: p.script, node: n.id, choices, picked: this.lastPick, recall });
     this.lastPick = null;
   }
 
   /** a guest's view of the host's terminal (Stage 52): the same lines and choices, no keys */
-  private onMirror(ev: { script: string; node: string; choices: string[]; picked: string | null }): void {
+  private onMirror(ev: { script: string; node: string; choices: string[]; picked: string | null; recall: number }): void {
     if (ev.picked) this.mirrorLog.push(ev.picked);
     if (!ev.node) {
       this.mirror = null;
@@ -281,7 +283,8 @@ export class Campaign {
     if (!n) return;
     const speaker = n.speaker === "you" ? { name: "THE HOST", sigil: "▸", color: "gr" } : n.speaker === "terminal" ? { name: "TERMINAL", sigil: "▮", color: "cy" } : { name: HANDLERS[n.speaker as HandlerId].name, sigil: HANDLERS[n.speaker as HandlerId].sigil, color: HANDLERS[n.speaker as HandlerId].color };
     this.mirror = { script: ev.script, node: ev.node, choices: ev.choices.slice(), picked: ev.picked };
-    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, n.lines, ev.choices.length ? ev.choices : null);
+    // the host's recall, not the guest's own testimony: the crew reads one screen (Stage 52 / 661)
+    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, ev.recall), ev.choices.length ? ev.choices : null);
     this.game.hud.terminalFooter(ev.choices.length ? "THE HOST IS CHOOSING" : "THE HOST READS ON");
     if (ev.picked) this.game.hud.alert(`◆ THE HOST CHOSE · ${ev.picked}`, false, 2.5);
   }
@@ -315,7 +318,7 @@ export class Campaign {
     } else {
       this.playing = null;
       this.game.hud.terminalClose();
-      if (this.mode === "coop" && this.host && this.game.net) this.game.net.sendTerminal({ script: p.script, node: "", choices: [], picked: this.lastPick });
+      if (this.mode === "coop" && this.host && this.game.net) this.game.net.sendTerminal({ script: p.script, node: "", choices: [], picked: this.lastPick, recall: -1 });
       this.lastPick = null;
       p.onDone(p.testimony);
     }

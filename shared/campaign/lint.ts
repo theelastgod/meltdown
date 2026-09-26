@@ -19,7 +19,7 @@
  */
 import { FACTIONS, type FactionId } from "./factions";
 import { MISSIONS, type MissionDef } from "./missions";
-import { SCRIPTS, type ScriptDef } from "./script";
+import { recalledTestimony, SCRIPTS, type ScriptDef } from "./script";
 import { ENDINGS, ENDING_CODA, endingGateKeys, type Gate } from "./testimony";
 import { resolveSpot } from "./runtime";
 import { levelById } from "../sim/level";
@@ -175,6 +175,22 @@ export function lintCampaign(): CampaignViolation[] {
       continue;
     }
     for (const v of vals) if (!coda[v]) out.push({ where: `testimony ${k}`, rule: "choice-is-answered-at-the-end", detail: `"${k}" can be written "${v}", which has no coda line`, severity: "error" });
+  }
+
+  // Stage 656 made the last screen answer every choice. This asks the same of the hours before it:
+  // measured then, 0 of 32 script nodes could vary a single spoken line on anything the player had
+  // done — `ScriptNode` had no gate at all — so every reaction the campaign had was mechanical (a
+  // wasp count, a swapped objective, a gig appearing) or waited for the ending. Nobody ever said
+  // anything about the choice you made an hour ago (Stage 661).
+  const recalled = recalledTestimony();
+  for (const [k, vals] of producible) {
+    if (k.endsWith(":ending") || k === "faction") continue;
+    const said = recalled.get(k);
+    if (!said) {
+      out.push({ where: `testimony ${k}`, rule: "choice-is-spoken-to", detail: `nothing anyone says in the campaign depends on "${k}", so the player is never told it landed`, severity: "error" });
+      continue;
+    }
+    for (const v of vals) if (!said.has(v)) out.push({ where: `testimony ${k}`, rule: "choice-is-spoken-to", detail: `"${k}" can be written "${v}", and no node has a line for it`, severity: "error" });
   }
 
   out.push(...lintSpotsAreInTheOpen());
