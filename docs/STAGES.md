@@ -1641,6 +1641,44 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 646 — The landing was as hard as the frame rate, and the sim knew better
+
+**The defect.** `probe:tps` failed in CI on the landing check: the camera dipped
+**0.123 m** where the same drop gives **0.169 m** here. Not a timeout and not a
+harness problem — a real difference in what the game drew.
+
+**What it actually was.** Stage 636 moved the landing dip off the render clock
+and onto the sim's `vy`. That was right about the clock and still wrong about
+the sampling: the renderer read `vy` *once per frame*, in `if (!v.grounded)
+this.fallSpeed = v.vy`. A frame that spans several ticks steps straight over the
+fastest part of the fall, so the impact speed it remembers is whatever the fall
+happened to be doing on the last frame before contact. On a loaded runner that
+is much slower than the truth, and the landing reads soft.
+
+The impact speed is not recoverable after the fact. The collision pass stops the
+file dead on contact and `vel.y` is zeroed, which is exactly why the old comment
+said to take "the frame before touchdown" — there was nothing else to take.
+
+**The fix.** The tick that lands latches it. `stepPlayer` captures the falling
+speed before the collision pass runs, and writes it to `PlayerState.landVy` on
+the grounded transition; the view carries it and the renderer reads
+`landHardness(v.landVy)`. `fallSpeed` is gone from the renderer entirely.
+
+**This is a player-facing fix, not a CI one.** With the sim's own number the dip
+is **0.213 m** — deeper than the 0.169 m that frame sampling produced at full
+speed on this box, let alone CI's 0.123 m. Every landing in the game has been
+landing softer than designed, and by a varying amount, because the number came
+from whenever a frame happened to fall. The kerb guard still separates the two
+cases by 13x (0.016 m against 0.213 m), so the fix did not simply make
+everything shake.
+
+**Proof.** 50/50 on `probe:tps`, 1390 unit tests, 0 asset violations. Three new
+sim tests pin the latch: it is the speed the fall actually reached, it is a fact
+of the tick rather than of the observer, and a file that has never fallen has
+none. Mutation-tested twice, each failing for its own reason — latch after the
+collision pass instead of before (`expected 0 to be less than -5`), and put the
+renderer back to sampling `vy` per frame (the source guard rejects it).
+
 ## Stage 645 — The city probe was 5.4x from the edge, and a slower runner spent it
 
 **The defect.** `probe:city` failed in CI in two consecutive runs, at 51 s both

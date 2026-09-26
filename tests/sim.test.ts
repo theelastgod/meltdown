@@ -5,6 +5,7 @@ import { hashWorld, World } from "../shared/sim/world";
 import { drainageYard } from "../shared/sim/level";
 import { capsuleBoxContact, rayBox, rayCapsule } from "../shared/sim/collision";
 import { v3 } from "../shared/math/vec3";
+import type { PlayerState } from "../shared/sim/player";
 
 describe("collision primitives", () => {
   const b = { min: v3(-1, 0, -1), max: v3(1, 2, 1) };
@@ -281,5 +282,48 @@ describe("world", () => {
     expect(w.time).toBeCloseTo(5);
     const d2 = w.dummies.find((d) => d.id === 2)!;
     expect(d2.pos.z).not.toBeCloseTo(-10, 1);
+  });
+});
+
+describe("the landing the camera is drawn from", () => {
+  /**
+   * The vertical speed at touchdown is latched by the tick that lands, because nothing downstream
+   * can recover it afterwards: `vel.y` is zeroed on contact, so a renderer sampling it once a frame
+   * reads whatever the fall happened to be doing on the last frame before it hit. At 60 fps that is
+   * close enough; on a machine drawing every third tick it is not, and the landing reads soft.
+   */
+  const drop = (): { player: PlayerState; fastest: number; landedOn: number } => {
+    const { world, player } = makeWorld();
+    player.pos.y += 6;
+    player.grounded = false;
+    let fastest = 0;
+    let landedOn = -1;
+    for (let t = 0; t < 240 && landedOn < 0; t++) {
+      const before = player.vel.y;
+      world.step(new Map([[player.id, { tick: world.tick, buttons: 0, yaw: player.yaw, pitch: player.pitch }]]));
+      world.drainEvents();
+      if (before < fastest) fastest = before;
+      if (player.grounded) landedOn = t;
+    }
+    return { player, fastest, landedOn };
+  };
+
+  it("latches the impact speed on the tick that lands, and it is the speed the fall actually reached", () => {
+    const { player, fastest, landedOn } = drop();
+    expect(landedOn).toBeGreaterThan(0);
+    // it fell, it landed, and what was latched is the fall's own speed — not zero, and not the
+    // post-contact value the sim writes immediately afterwards
+    expect(player.landVy).toBeLessThan(-5);
+    expect(player.vel.y).toBe(0);
+    expect(player.landVy).toBeLessThanOrEqual(fastest + 1e-6);
+  });
+
+  it("is a fact of the tick, so two identical drops latch the same speed", () => {
+    expect(drop().player.landVy).toBeCloseTo(drop().player.landVy, 9);
+  });
+
+  it("starts at nothing, so a file that has never fallen has no landing to draw", () => {
+    const { player } = makeWorld();
+    expect(player.landVy).toBe(0);
   });
 });

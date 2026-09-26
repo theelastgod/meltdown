@@ -1464,6 +1464,7 @@ export class Game {
       kickYaw: a.kickYaw + (b.kickYaw - a.kickYaw) * alpha,
       speed: lenXZ(p.vel),
       vy: p.vel.y,
+      landVy: p.landVy,
       grounded: p.grounded,
       stance: p.stance,
       reloading: p.weapon.reloadTimer > 0 && p.weapon.reloadTotal > 0 ? 1 - p.weapon.reloadTimer / p.weapon.reloadTotal : 0,

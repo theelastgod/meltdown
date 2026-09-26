@@ -131,6 +131,12 @@ export interface PlayerState {
   stance: Stance;
   height: number;
   grounded: boolean;
+  /**
+   * Vertical speed at the instant of the last landing, latched by the tick that landed. The camera's
+   * landing dip is made of this, and a renderer cannot recover it by watching `vel.y` frame by
+   * frame: a slow frame steps over the fastest part of the fall, and `vel.y` is zeroed on contact.
+   */
+  landVy: number;
   /** Seconds since last grounded (for coyote time). */
   airTime: number;
   jumpBuffer: number;
@@ -179,6 +185,7 @@ export function createPlayer(id: number, name: string, spawn: SpawnPoint): Playe
     stance: "stand",
     height: MOVE.standHeight,
     grounded: false,
+    landVy: 0,
     airTime: 0,
     jumpBuffer: 0,
     slideTime: 0,
@@ -540,6 +547,10 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
   if (!p.grounded) p.vel.y = Math.max(-MOVE.terminalVel, p.vel.y - MOVE.gravity * gravityMult * dt);
   else if (p.vel.y < 0) p.vel.y = 0;
 
+  // The speed this tick is falling at, taken before the collision pass below — that pass stops the
+  // file dead on contact, so by the time the ground state is worked out the impact is already gone.
+  const fallingAt = p.grounded ? 0 : p.vel.y;
+
   // ---- Integrate with collision (substeps + step-up) ----
   const sub = dt / MOVE_SUBSTEPS;
   for (let i = 0; i < MOVE_SUBSTEPS; i++) {
@@ -595,6 +606,8 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
   const g = groundContact(p.pos, r, p.height, boxes);
   const nowGrounded = !!g && p.vel.y <= 0.01;
   if (nowGrounded && !wasGrounded) {
+    // the speed it was falling at, captured before the collision pass stopped it
+    p.landVy = fallingAt;
     events.push({ type: "land", speed: lenXZ(p.vel) });
     p.fromSlideJump = false;
   }

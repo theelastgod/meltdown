@@ -45,6 +45,8 @@ export interface ViewState {
   speed: number;
   /** the sim's own vertical velocity, m/s, down negative — a landing is the sim's fall, never a render-clock difference (Stage 636) */
   vy: number;
+  /** the sim's own impact speed for the last landing, latched on the tick that landed */
+  landVy: number;
   grounded: boolean;
   stance: string;
   reloading: number; // 0..1 progress, 0 when idle
@@ -248,7 +250,6 @@ export class Renderer {
   /** the landing the camera is still taking, and the lean of a slide (Stage 79) */
   private landT = 0;
   private landHard = 0;
-  private fallSpeed = 0;
   private wasAir = false;
   private rollNow = 0;
   private dipNow = 0;
@@ -899,19 +900,17 @@ export class Renderer {
     const bobX = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase) * 0.008 * Math.min(1, v.speed / 5) : 0;
     this.vmKick = Math.max(0, this.vmKick - dt * 14);
     this.hurtT = Math.max(0, this.hurtT - dt * 3.5);
-    // the camera takes the landing the legs have been taking since Stage 63. The fall speed is the
-    // frame before touchdown, because on the frame itself the sim has already stopped the file
-    // (Stage 79)
+    // The camera takes the landing the legs have been taking since Stage 63, at the speed the sim
+    // says it landed at. Stage 636 moved this off the render clock and onto `vy`, which was right
+    // about the clock and still wrong about the sampling: `vy` was read once per frame, so a frame
+    // that spans several ticks steps over the fastest part of the fall and the landing reads soft —
+    // 0.123 m of dip where the same drop gives 0.169 m at speed. The impact speed is not something a
+    // renderer can recover after the fact: `vel.y` is zeroed on contact. So the tick that lands
+    // latches it, and this reads that (Stage 646).
     if (v.grounded && this.wasAir && v.alive) {
-      this.landHard = landHardness(this.fallSpeed);
+      this.landHard = landHardness(v.landVy);
       this.landT = this.landHard > 0 ? LAND_TIME : 0;
     }
-    // How fast the sim was falling, not how far the view moved between two drawn frames. Those are
-    // the same number only while one frame is drawn per tick; a slow machine covers several ticks in
-    // a frame and averages the impact away, and a probe that steps the sim by hand decouples them
-    // entirely (Stage 636). Stage 193 was right that the hitch-capped dt was the wrong divisor and
-    // wrong that the fix was the raw one — the render clock was never the right clock for this.
-    if (!v.grounded) this.fallSpeed = v.vy;
     this.wasAir = !v.grounded;
     this.landT = Math.max(0, this.landT - rawDt);
     const dip = this.landT > 0 ? landDip(this.landHard, LAND_TIME - this.landT) : 0;
