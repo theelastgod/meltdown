@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { ALL_ITEMS, KEYSTONES, LEDGER_ITEMS, lintItemSchema } from "../shared/manifest/items";
-import { CHIPS, lintChipSchema } from "../shared/manifest/chips";
+import { CHIPS, chipById, lintChipSchema } from "../shared/manifest/chips";
 import { FIRMWARES, FIRMWARE_RANKS, weaponWithFirmware } from "../shared/manifest/firmwares";
 import { DEFAULT_LOADOUT, kitFor, SANDBOX_RANKS, validateLoadout } from "../shared/manifest/loadout";
 import { addXp, bump, challengeClearedLine, CURRICULA, emptyMastery, GATES, masteryRankLine, rankFor, xpForRank } from "../shared/progression/mastery";
@@ -67,7 +67,11 @@ describe("chips and firmwares", () => {
   });
   it("chips are validated: one per socket, right weapon, right socket, unlocked by rank", () => {
     const src = readFileSync(new URL("../shared/manifest/loadout.ts", import.meta.url), "utf8");
-    const ranks = { lease_breaker: 12 };
+    // the file's mastery is derived from the two chips this case fits, not the literal 12 it was:
+    // that literal outlived the ladder it was written against and turned "a legal loadout" into a
+    // locked one the moment a chip moved a rank (Stage 660)
+    const fitted = ["lease_breaker:long_barrel", "lease_breaker:sling"].map((id) => chipById(id)!);
+    const ranks = { lease_breaker: Math.max(...fitted.map((c) => c.rank)) };
     const ok = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { muzzle: "lease_breaker:long_barrel", kinetic: "lease_breaker:sling" } } }, owned, 50, ranks);
     expect(ok.errors).toEqual([]);
     const wrongWeapon = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { muzzle: "stack_smg:long_barrel" } } }, owned, 50, ranks);
@@ -87,7 +91,9 @@ describe("chips and firmwares", () => {
     expect(socketKick.detail).not.toMatch(/lease_breaker:long_barrel/);
     expect(src).toMatch(/chip-socket", detail: `\$\{c\.name\} IS A \$\{c\.socket\.toUpperCase\(\)\} CHIP, NOT/);
     expect(src).not.toMatch(/chip-socket", detail: `\$\{c\.name\} is a \$\{c\.socket\.toUpperCase\(\)\} chip, not/);
-    const locked = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { muzzle: "lease_breaker:flash_cut" } } }, owned, 50, ranks); // rank 22
+    // and the locked case still means something: this chip sits above that rank
+    expect(chipById("lease_breaker:flash_cut")!.rank).toBeGreaterThan(ranks.lease_breaker);
+    const locked = validateLoadout({ ...DEFAULT_LOADOUT, chips: { lease_breaker: { muzzle: "lease_breaker:flash_cut" } } }, owned, 50, ranks);
     expect(locked.errors.map((e) => e.rule)).toContain("chip-rank");
     const rankKick = locked.errors.find((e) => e.rule === "chip-rank")!;
     expect(rankKick.detail).toMatch(/LEASE-BREAKER FLASH CUT/);

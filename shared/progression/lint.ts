@@ -12,6 +12,10 @@
  * them together, because the player does not experience them separately.
  */
 import { LEDGER_ITEMS } from "../manifest/items";
+import { CHIPS } from "../manifest/chips";
+import { FIRMWARES } from "../manifest/firmwares";
+import { GATES, MAX_RANK } from "./mastery";
+import { WEAPON_LIST, type WeaponId } from "../weapons/manifest";
 import { WEAPON_DEPTH } from "../manifest/loadout";
 import { MAX_DEPTH } from "./depth";
 import { chapterFor } from "../identity/monikers";
@@ -83,6 +87,46 @@ export function lintDepthLadder(grants: readonly Grant[] = depthGrants()): Ladde
   if (!grants.some((g) => g.depth === MAX_DEPTH)) out.push({ rule: "unpaid-cap", detail: `Depth ${MAX_DEPTH} — the cap — grants nothing` });
   for (const g of grants) {
     if (g.depth < 1 || g.depth > MAX_DEPTH) out.push({ rule: "grant-off-the-ladder", detail: `${g.what} needs Depth ${g.depth}, outside 1–${MAX_DEPTH}` });
+  }
+  return out;
+}
+
+/**
+ * The same question one ladder down: does a weapon's mastery ladder pay the whole way up
+ * (Stage 660)?
+ *
+ * Mastery runs rank 1–30 per weapon and has 22 things to give — 20 chips and the two firmwares —
+ * so 7 of the 29 ranks above the first are empty by arithmetic and no re-spacing can change that.
+ * The rule is therefore not "fill every rank", which is impossible, but "the empty ones may not be
+ * the ranks that matter": never a challenge gate, never the cap, never two in a row.
+ *
+ * Measured before this stage, all three were violated at once. Rank 30 — the cap, about 12.4 h of
+ * use on a single weapon — granted nothing on any of the eight. Rank 15 was a challenge gate that
+ * granted nothing, alone among the five gates, so a player finished a curriculum and received
+ * permission to keep ranking. Ranks 23 and 24 were empty back to back.
+ */
+export const MAX_EMPTY_RANK_RUN = 1;
+
+export function rankGrants(weapon: WeaponId): number[] {
+  return [...CHIPS.filter((c) => c.weapon === weapon).map((c) => c.rank), ...FIRMWARES.filter((f) => f.weapon === weapon).map((f) => f.rank)];
+}
+
+export function lintMasteryLadder(): LadderViolation[] {
+  const out: LadderViolation[] = [];
+  for (const w of WEAPON_LIST) {
+    const paid = new Set(rankGrants(w.id));
+    for (const g of GATES) {
+      if (!paid.has(g)) out.push({ rule: "unpaid-gate", detail: `${w.name} rank ${g} is a challenge gate that grants nothing` });
+    }
+    if (!paid.has(MAX_RANK)) out.push({ rule: "unpaid-cap", detail: `${w.name} rank ${MAX_RANK} — the cap — grants nothing` });
+    let run = 0;
+    for (let r = 2; r <= MAX_RANK; r++) {
+      run = paid.has(r) ? 0 : run + 1;
+      if (run > MAX_EMPTY_RANK_RUN) {
+        out.push({ rule: "dead-ranks", detail: `${w.name} ranks ${r - run + 1}–${r} grant nothing (limit ${MAX_EMPTY_RANK_RUN})` });
+        break;
+      }
+    }
   }
   return out;
 }

@@ -1,6 +1,8 @@
 /** `npm run lint:progression`: does the Depth ladder pay the whole way up? Exit 1 on any violation. */
 import { MAX_DEPTH, totalXpToReach } from "./depth";
-import { depthGrants, emptyDepths, lintDepthLadder, longestEmptyRun, MAX_EMPTY_RUN } from "./lint";
+import { depthGrants, emptyDepths, lintDepthLadder, lintMasteryLadder, longestEmptyRun, MAX_EMPTY_RUN, rankGrants } from "./lint";
+import { GATES, MAX_RANK } from "./mastery";
+import { WEAPON_LIST } from "../weapons/manifest";
 
 /** A ten-minute match at the XP a full match pays, so a stretch of Depths can be read as hours. */
 const XP_PER_MATCH = 4200;
@@ -8,7 +10,7 @@ const MINUTES_PER_MATCH = 10;
 const hoursTo = (d: number) => (totalXpToReach(d) / XP_PER_MATCH) * MINUTES_PER_MATCH / 60;
 
 const grants = depthGrants();
-const violations = lintDepthLadder(grants);
+const violations = [...lintDepthLadder(grants), ...lintMasteryLadder()];
 const empty = emptyDepths(grants);
 const run = longestEmptyRun(grants);
 
@@ -19,6 +21,12 @@ for (const d of [10, 20, 30, 40, MAX_DEPTH]) {
   const at = grants.filter((g) => g.depth <= d).length;
   console.log(`  by Depth ${String(d).padStart(2)}: ${String(at).padStart(3)} of ${grants.length} grants in hand (${((hoursTo(d) / hoursTo(MAX_DEPTH)) * 100).toFixed(0)}% of the climb)`);
 }
+const w = WEAPON_LIST[0]!.id;
+const paid = new Set(rankGrants(w));
+const deadRanks: number[] = [];
+for (let r = 2; r <= MAX_RANK; r++) if (!paid.has(r)) deadRanks.push(r);
+console.log(`  mastery: ${paid.size} of ${MAX_RANK - 1} ranks above the first grant something on each of the ${WEAPON_LIST.length} weapons · ${deadRanks.length} do not: ${deadRanks.join(", ")}`);
+console.log(`  the gates (${GATES.join(", ")}) and the cap (${MAX_RANK}) all pay: ${GATES.every((g) => paid.has(g)) && paid.has(MAX_RANK)}`);
 for (const v of violations) console.log(`  VIOLATION ${v.rule}: ${v.detail}`);
 if (empty.length) console.log(`  Depths granting nothing: ${empty.join(", ")}`);
 process.exit(violations.length ? 1 : 0);

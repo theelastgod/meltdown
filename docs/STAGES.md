@@ -1641,6 +1641,97 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 660 — The cap paid nothing, and one of the five gates paid nothing either
+
+**The defect, measured.** Stage 659 fixed the account ladder and recorded that
+the weapon ladder had the same shape of hole one level down. It did. Mastery
+runs rank 1–30 per weapon, about 12.4 h of use on a single gun, and per weapon:
+
+```
+  r14 chip:kinetic                     2.2 h
+  r15 — nothing —   [challenge gate]   2.5 h
+  ...
+  r23 — nothing —                      6.6 h
+  r24 — nothing —                      7.3 h
+  r25 chip:kinetic  [challenge gate]   8.1 h
+  ...
+  r29 — nothing —                     11.4 h
+  r30 — nothing —                     12.4 h
+
+ranks 2..30 granting nothing: 7 of 29 → 15,19,23,24,26,29,30
+rank 30 (the cap) grants: NOTHING
+longest empty run: 2 (r23-24)
+```
+
+Three things wrong at once, on all eight weapons. **Rank 30 — the cap, the end
+of the ladder — granted nothing.** **Rank 15 was a challenge gate that granted
+nothing**, alone among the five: you finish a curriculum and receive permission
+to keep ranking. And 23 and 24 were empty back to back.
+
+**Why the fix is not "fill the empty ranks".** There are 22 things to give per
+weapon — 20 chips and the two firmwares — across 29 ranks above the first.
+**Seven ranks are empty by arithmetic** and no re-spacing can change that. So
+the rule cannot be that every rank pays. It is that *the empty ones may not be
+the ranks that matter*: never a challenge gate, never the cap, never two in a
+row.
+
+**The fix.** The 20 chip templates are shared by all eight weapons, so twenty
+numbers re-space every ladder at once. Each chip keeps its socket and its place
+in the order — the ladder still climbs — and the seven forced gaps move to
+where they cost least:
+
+```
+              before                        after
+empty ranks   15,19,23,24,26,29,30          3,8,12,19,23,26,29
+gates paying  5,10,20,25 (not 15)           5,10,15,20,25
+cap (30)      nothing                       AUDIT TRAIL
+longest gap   2 (r23–24)                    1
+```
+
+**The guard.** `lintMasteryLadder` joins `lintDepthLadder` in
+`shared/progression/lint.ts`, under the same `npm run lint:progression` that
+Stage 659 wired into `verify` and CI. Three rules — `unpaid-gate`,
+`unpaid-cap`, `dead-ranks` — checked per weapon, which is why the arithmetic is
+written into the rule's own comment: a reader who tries to "fix" the seven gaps
+needs to know they are forced.
+
+The two ladders now answer to one file. That is the real result of this stage
+and the last: the project had many checks that a *reward* is correct and none
+that a *ladder* pays, and a rank or a Depth granting nothing has nothing to
+check.
+
+**Mutation.** Putting PORTED back off gate 15 and AUDIT TRAIL back off the cap
+fails `lint:progression` with exit 1 and 24 violations — all three rules, on all
+eight weapons:
+
+```
+VIOLATION unpaid-gate: LEASE-BREAKER rank 15 is a challenge gate that grants nothing
+VIOLATION unpaid-cap:  LEASE-BREAKER rank 30 — the cap — grants nothing
+VIOLATION dead-ranks:  LEASE-BREAKER ranks 29–30 grant nothing (limit 1)
+```
+
+**The fourth frozen literal.** `tests/mastery.test.ts` built its "a legal
+loadout" case from `const ranks = { lease_breaker: 12 }` and a chip that has
+just moved to rank 14, so a case asserting *no errors* started reporting one.
+It now derives the file's mastery from the chips the case actually fits, and
+asserts separately that the locked chip really does sit above that rank. That
+is four in three stages — `FIRMWARES.length === 12`, `NEEDS DEPTH 30`, and this
+— each a number copied out of the data it was meant to be checking. The tell is
+always the same: the literal agrees with the manifest on the day it is written
+and has no way to notice when it stops.
+
+**Verified on a still tree.** tsc, 1422 unit tests, the full fairness lint
+(**new 0, worse 0**, the recorded debt untouched at 89 — a chip's rank gates
+when it is unlocked, never what it does, so no duel moved), the economy,
+campaign, asset and progression lints, `probe:mastery` 23/23, `probe:file`
+20/20, and the production build.
+
+**Still open.** Both ladders now pay where it counts, but neither pays anything
+*new in kind* at the top: the last Depth grants are cosmetic and the last
+mastery grant is the twentieth chip. Whether Depth 50 and rank 30 deserve a
+distinct kind of reward rather than one more of the same is a design question,
+not a defect, and it is the next one worth asking.
+
 ## Stage 659 — The ladder was spent by Depth 30 and the last 19 levels paid nothing
 
 **The defect, measured.** Depth runs 1–50 and the climb is 1,475,292 XP —
