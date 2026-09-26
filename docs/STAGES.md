@@ -1641,6 +1641,78 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 656 — Three of the seven choices never reached the ending
+
+*First stage under the owner's new brief: campaign, storyline, narrative
+progression and graphics are the main line of work from here.*
+
+**The defect, measured.** An ending is named by `m7:ending` and sharpened by at
+most one refinement, and `resolveEnding` takes the first refinement whose gate is
+open. So a testimony key that no ending gate mentions never reaches the last
+screen at all. Derived from the gates themselves rather than by reading the
+files:
+
+```
+read by an ending gate: m3:volatility, m4:directive, m4:vessel, m6:broadcast
+SILENT at the ending  : m1:lease, m2:informant, m5:lattice
+```
+
+Three of the seven questions the campaign asks, and they are the three carrying
+the most weight: whether you kept the evidence of your own leasing, whether you
+gave up the woman who fed you the docks, whether you put the lattice out over the
+heads of the people living under it. A player could burn their own lease file in
+the first hour — the inciting choice of the whole game — and finish it without
+the ending noticing. `m1:lease` changed exactly one thing anywhere: two extra
+wasps in mission two.
+
+Worth recording how that number was got. A grep for testimony keys in
+`testimony.ts` said `m2:informant` *was* read, because it appears in a comment on
+`handlersAlive`. Walking `ENDINGS[].gate` in code said otherwise. The grep would
+have hidden one of the three.
+
+**Why not another ending.** The obvious fix — a refinement gated on `m1:lease` —
+does not work against this machinery. `resolveEnding` returns the *first* open
+refinement, so a new one either sits after the broadcast refinements and almost
+never fires, or sits before them and masks the better-developed, later-story
+endings. Layering the keys into combined gates would multiply the ending table
+for a decoration. The choice does not need to change which ending you get; it
+needs to be *acknowledged* by the one you got.
+
+**The fix.** A coda: the office answers the unread choices in a line each, after
+the ending's own lines. `ENDING_CODA` holds a line per key per value,
+`endingCoda(t)` reads them back in the order the campaign asked, and the white
+office prints them under the ending. It changes no ending and opens no gate — it
+is the record reading itself back.
+
+```
+YOUR OWN LEASE FILE IS STILL IN YOUR COAT — THE ONE COPY THE MODEL NEVER GOT BACK.
+THE DOCK ROUTES WENT QUIET THE WEEK AFTER YOU GAVE HER UP. THEY STAYED QUIET.
+YOU LEFT THE DOCKS NODE LIT. A FEW THOUSAND FILES SLEPT THROUGH THE WHOLE NIGHT.
+```
+
+**The rule, so this cannot come back.** `lint:campaign` gains
+`choice-is-answered-at-the-end`: every key a dialogue choice can write, other
+than the ending id and the faction, must either be read by an ending gate or have
+a coda line for every value it can take. A future choice that nothing reads now
+fails the build instead of going quietly unmentioned.
+
+**Proof.** Campaign lint 0 errors over 7 missions, 12 gigs, 10 scripts, 6 endings
+and 9 testimony keys. 1398 unit tests (5 new), four lints clean, build clean.
+
+**Mutation.** Deleting one coda line: `"m1:lease" can be written "burn", which
+has no coda line`. Deleting a whole key: `no ending gate reads "m5:lattice" and
+it has no coda, so the last screen never mentions it`. Both forms caught.
+
+One of the five tests exists only because of Stage 654: it pins that
+`client/campaign.ts` actually passes the coda into the card, rather than the coda
+being computed and dropped. A guard that never enters the path it guards proves
+nothing, and that has now cost this project three stages.
+
+**Noted, not done.** Higgsfield stands at 0.55 credits against a measured 7.5 for
+the cheapest clip, so no campaign art could be generated this stage; the 66
+recorded undrawn plates and the mission/ending art they imply are the first thing
+to spend on when credits exist.
+
 ## Stage 655 — An index clamp became a rate, and the schedule paid out for ever
 
 **The defect, measured.** The emission schedule is eight years totalling

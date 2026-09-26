@@ -9,7 +9,7 @@
 import type { Game } from "./game";
 import { closeHint } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
-import { ENDINGS, endingTitle, endingsFor, gateOpen, handlersAlive, resolveEnding, testimonyLine, type Testimony } from "@shared/campaign/testimony";
+import { ENDINGS, endingCoda, endingTitle, endingsFor, gateOpen, handlersAlive, resolveEnding, testimonyLine, type Testimony } from "@shared/campaign/testimony";
 import { threatProfile, threatRating, type ThreatProfile } from "@shared/campaign/threat";
 import { PROTOCOLS, protocolMods, MAX_PROTOCOLS } from "@shared/campaign/protocols";
 import { scriptById, type ScriptNode } from "@shared/campaign/script";
@@ -369,7 +369,10 @@ export class Campaign {
     if (id === "m7_white_office") {
       const e = resolveEnding(t, this.save.faction);
       this.ending = e.id;
-      this.game.hud.card(e.title, [...e.lines, "", "MELTDOWN", "[C] CONTRACTS"], "ye", 0);
+      // the coda after the ending's own lines: the choices no ending gate reads, answered rather
+      // than dropped (Stage 656)
+      const coda = endingCoda(t);
+      this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", "[C] CONTRACTS"], "ye", 0);
       this.game.audio.rite(3);
     } else this.game.hud.card(`CONTRACT CLOSED · ${def.title}`, lines, "am", 0);
     this.game.renderer.post.kick(1);

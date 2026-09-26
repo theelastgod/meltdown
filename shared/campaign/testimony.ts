@@ -103,6 +103,56 @@ export function testimonyLine(k: string, v: string): string {
  * its gate open, in which case that. The refinements of an ending are mutually exclusive by
  * construction, and the first open one wins if that is ever not true.
  */
+/**
+ * The file's own footnote.
+ *
+ * An ending is named by `m7:ending` and sharpened by at most one gate, which leaves choices the
+ * last screen never mentions. Measured against the ending gates themselves rather than by reading
+ * the file: of the seven questions the campaign asks, `m1:lease`, `m2:informant` and `m5:lattice`
+ * reached the white office and were not answered there. They are the three carrying the most
+ * weight — whether you kept the evidence of your own leasing, whether you gave up the woman who
+ * fed you the docks, whether you put the lattice out over the heads of the people living under it.
+ * A player could burn their own file in the first hour and finish the game without the ending ever
+ * noticing.
+ *
+ * So the office answers them, a line each, after the ending's own lines. The coda changes no
+ * ending and opens no gate; it is the record reading itself back (Stage 656).
+ */
+export const ENDING_CODA: Record<string, Record<string, string>> = {
+  "m1:lease": {
+    keep: "YOUR OWN LEASE FILE IS STILL IN YOUR COAT — THE ONE COPY THE MODEL NEVER GOT BACK.",
+    burn: "YOUR OWN LEASE FILE BURNED IN LEASE ROW. NOTHING ON RECORD SAYS WHAT YOU WERE LEASED FOR.",
+  },
+  "m2:informant": {
+    spare: "MARROW IS STILL WORKING THE DOCKS. SHE NEVER ASKS WHAT YOU WERE OFFERED FOR HER.",
+    turn: "THE DOCK ROUTES WENT QUIET THE WEEK AFTER YOU GAVE HER UP. THEY STAYED QUIET.",
+  },
+  "m5:lattice": {
+    all: "ALL SIX LATTICE NODES ARE DARK. THE DOCKS WENT DARK UNDER THEM.",
+    spare_docks: "YOU LEFT THE DOCKS NODE LIT. A FEW THOUSAND FILES SLEPT THROUGH THE WHOLE NIGHT.",
+  },
+};
+
+/** The coda for a file's testimony, in the order the campaign asked the questions. */
+export function endingCoda(t: Testimony): string[] {
+  const out: string[] = [];
+  for (const key of Object.keys(ENDING_CODA).sort()) {
+    const line = ENDING_CODA[key]![t[key] ?? ""];
+    if (line) out.push(line);
+  }
+  return out;
+}
+
+/** Every testimony key any ending gate reads — the keys the last screen already answers. */
+export function endingGateKeys(): Set<string> {
+  const keys = new Set<string>();
+  for (const e of ENDINGS) {
+    for (const k of Object.keys(e.gate.all ?? {})) keys.add(k);
+    for (const k of Object.keys(e.gate.not ?? {})) keys.add(k);
+  }
+  return keys;
+}
+
 export function resolveEnding(t: Testimony, faction: FactionId | null): EndingDef {
   const chosen = ENDINGS.find((e) => e.id === t["m7:ending"]) ?? ENDINGS[0]!;
   return ENDINGS.find((e) => e.refines === chosen.id && gateOpen(e.gate, t, faction)) ?? chosen;

@@ -20,7 +20,7 @@
 import { FACTIONS, type FactionId } from "./factions";
 import { MISSIONS, type MissionDef } from "./missions";
 import { SCRIPTS, type ScriptDef } from "./script";
-import { ENDINGS, type Gate } from "./testimony";
+import { ENDINGS, ENDING_CODA, endingGateKeys, type Gate } from "./testimony";
 import { resolveSpot } from "./runtime";
 import { levelById } from "../sim/level";
 import { canSee } from "../sim/ai";
@@ -158,6 +158,23 @@ export function lintCampaign(): CampaignViolation[] {
   for (const e of ENDINGS) {
     if (e.refines && !ENDINGS.some((x) => x.id === e.refines)) out.push({ where: `ending ${e.id}`, rule: "ending-refines-an-ending", detail: `refines "${e.refines}", which is not an ending`, severity: "error" });
     else if (!deliverable(e.id)) out.push({ where: `ending ${e.id}`, rule: "ending-is-deliverable", detail: "no choice writes this id and it refines nothing that is written — the office can never show it", severity: "error" });
+  }
+
+  // ---- no choice the player makes is silent at the end ----
+  // An ending is named by `m7:ending` and sharpened by at most one gate, so a key no gate reads
+  // never reaches the last screen. Three of the seven did: a player could burn their own lease file
+  // in the first hour, give up the docks informant, and finish the game without the ending noticing
+  // either. Every key a choice can write is now answered somewhere — by a gate, or by the coda
+  // (Stage 656).
+  const gated = endingGateKeys();
+  for (const [k, vals] of producible) {
+    if (k.endsWith(":ending") || k === "faction" || gated.has(k)) continue;
+    const coda = ENDING_CODA[k];
+    if (!coda) {
+      out.push({ where: `testimony ${k}`, rule: "choice-is-answered-at-the-end", detail: `no ending gate reads "${k}" and it has no coda, so the last screen never mentions it`, severity: "error" });
+      continue;
+    }
+    for (const v of vals) if (!coda[v]) out.push({ where: `testimony ${k}`, rule: "choice-is-answered-at-the-end", detail: `"${k}" can be written "${v}", which has no coda line`, severity: "error" });
   }
 
   out.push(...lintSpotsAreInTheOpen());
