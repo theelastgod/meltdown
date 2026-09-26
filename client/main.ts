@@ -136,7 +136,7 @@ export interface GameHook {
   menuChoose: (id: string) => string | null;
   pause: () => void;
   menuPause: (on: boolean) => void;
-  settings: () => Settings & { applied: { sensitivity: number; fov: number; crt: { grain: number; scanline: number; vignette: number; aberration: number }; volumes: { master: number; sfx: number; bed: number } } };
+  settings: () => Settings & { applied: { sensitivity: number; fov: number; crt: { grain: number; scanline: number; vignette: number; aberration: number }; volumes: { master: number; sfx: number; bed: number }; buses: { master: number; sfx: number; bed: number } | null } };
   setSetting: (key: keyof Settings, value: number | boolean) => Settings;
   audioCues: () => Record<string, number>;
   /** where the draw calls go, by scene group: the budget check names what blew it */
@@ -322,7 +322,7 @@ window.__game = {
   menuPause: (on) => {
     if (menu) menu.paused = on;
   },
-  settings: () => ({ ...game.settings, applied: { sensitivity: game.input.sensitivity, fov: game.renderer.fov, crt: game.renderer.crtLevel(), volumes: game.audio.getVolumes() } }),
+  settings: () => ({ ...game.settings, applied: { sensitivity: game.input.sensitivity, fov: game.renderer.fov, crt: game.renderer.crtLevel(), volumes: game.audio.getVolumes(), buses: game.audio.busGains() } }),
   setSetting: (key, value) => {
     const s = clampSettings({ ...game.settings, [key]: value });
     saveSettings(s);

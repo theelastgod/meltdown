@@ -1641,6 +1641,79 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 652 — "Volumes reach the buses" was the settings reading back their own echo
+
+**How it was found.** Not from a red gate. `probe:ship` passes 12/12, and the
+question asked of it was whether its audio checks would still pass with the
+audio engine dead — the Stage 647 shape, a green check satisfied without the
+thing it names. The engine was silenced at the root (`resume()` returns before
+building a context) and the probe re-run.
+
+The first hypothesis was wrong, and saying so is the useful part. The cue
+counters look blind — every cue calls `this.count(name)` *before* its
+`if (!this.ctx) return` — but that is Stage 177's deliberate design, pinned by
+`tests/crawlaudio.test.ts`: `fired` means "asked for", `crawlHumming` means
+"sounding", and the crawl stage needed exactly that distinction. The audio-pass
+check caught the mutation cleanly on its other half (`pulses undefined`).
+
+What the mutation did expose was a neighbour:
+
+```
+PASS  SETTINGS adjust live: ... volumes reach the buses  — master 0.3
+```
+
+Green, with the whole audio engine dead.
+
+**The defect.** `applied.volumes` is `getVolumes()`, which returns
+`{ ...this.volumes }` — the record of what was *asked for*. Every setter writes
+that record whether or not there is a bus to write to. The check sets `master`
+to `0.3` and, one line later, reads `0.3` back out of the thing it just wrote.
+Its three neighbours in the same assertion are honest — `applied.sensitivity`
+comes from the input system, `applied.fov` and `applied.crt` from the renderer —
+so only the volume quarter was an echo, which is why it survived.
+
+**And the claim was false, not merely untested.** Reporting the live gain nodes
+showed `buses NONE — no audio context` at that point in the run, on a clean
+tree. A browser will not build an `AudioContext` without a gesture, and the
+probe drives the menu by calling into it (`menuKey`) rather than by pressing
+keys, so nothing ever reaches the `pointerdown`/`keydown` listener that calls
+`resume()`. The check said volumes reach the buses at a moment when there were
+no buses.
+
+That is also the player's own path, which is what makes it worth a check rather
+than a deletion: move the volume slider on the title screen, before ever
+clicking into the game, and the value is stored somewhere no bus can receive it
+yet. It works today because `resume()` applies `this.volumes` when it finally
+builds the buses — an unguarded behaviour until now.
+
+**The fix.** `GameAudio.busGains()` reports what the gain nodes actually carry,
+or `null` before the context exists; `settings().applied` gains `buses` beside
+`volumes`. The check now walks the player's path: assert there is no context at
+the menu, set `master` to `0.3` into that nothing, cross the gesture, and assert
+the bus carries it. `fired` and `getVolumes()` are untouched — Stage 177's
+distinction stays exactly as it was.
+
+**Proof.** Clean tree 12/12: `master 0.3 asked with no context, and once the
+gesture built one the buses carry 0.30000001192092896 master / 1 sfx`. That
+float32 value is why the assertion uses a `1e-6` tolerance and not `===`: a
+`Number` written into a `GainNode` comes back quantised, and an equality test
+there would be a gate failing for a reason unrelated to any bug.
+
+**Mutation.** With `resume()` returning before it builds a context: 10/12, the
+check reporting `the buses carry NOTHING — no audio context`. The assertion it
+replaces passed under that same mutation, so this is strictly stronger than what
+was there.
+
+**Stated limit.** The bed is deliberately left out of the equality assertion: it
+arrives on a 2.5 s `linearRampToValueAtTime` from zero, so its gain immediately
+after the gesture legitimately reads 0, and asserting on it would be a flaky
+gate rather than a check. Separately noted and not acted on: `setBedLevel` — the
+bed's own level, "the city's loudness" — has had no call site since Stage 13
+introduced it, so the bed plays at 1 for the whole game. Wiring it is a design
+decision about when the city should get louder, which is the owner's, not a
+defect to fix quietly here. `npx tsc --noEmit` clean, four lints clean (recorded
+debt 89, new 0), 1390 unit tests green.
+
 ## Stage 651 — The crew was aiming at a list that is empty by construction
 
 **The defect, measured.** `probe:campaign`'s co-op leg failed in run 646 with

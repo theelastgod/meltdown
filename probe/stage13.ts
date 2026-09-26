@@ -196,9 +196,19 @@ async function main(): Promise<void> {
     const applied1 = await a.evaluate(() => window.__game.settings().applied);
     await a.evaluate(() => window.__game.setSetting("master", 0.3));
     const vol = await a.evaluate(() => window.__game.settings().applied.volumes);
+    // And what the buses actually carry, which is the half `vol` cannot see: the settings' own
+    // record is written whether or not there is a bus to write to, so reading it back after
+    // setting it is reading an echo (Stage 652). At the title menu there is no context at all —
+    // a browser will not build one without a gesture, and the probe drives the menu by calling
+    // into it rather than by pressing keys — so this is also the player's real path: move the
+    // slider on the title screen, then click into the game, and the bus must carry what was asked
+    // for before it existed.
+    const busesBefore = await a.evaluate(() => window.__game.settings().applied.buses);
+    await a.evaluate(() => window.__game.resumeAudio());
+    const buses = await a.evaluate(() => window.__game.settings().applied.buses);
     await a.screenshot({ path: `${OUT}/stage13-settings.png` });
     const stored = await a.evaluate(() => JSON.parse(localStorage.getItem("meltdown.settings") ?? "{}") as Record<string, number>);
-    check("SETTINGS adjust live: ← → step sensitivity and FOV, the CRT setting scales grain/scanline/vignette (0 is clean), volumes reach the buses; every change is kept in the browser", s0.screen === "settings" && s0.entries.length === Object.keys(DEFAULT_SETTINGS).length + 1 && Math.abs(s1.sensitivity - 1.05) < 1e-6 && Math.abs(s1.applied.sensitivity - 0.0022 * 1.05) < 1e-9 && s1.fov === DEFAULT_SETTINGS.fov + 5 && s1.applied.fov === DEFAULT_SETTINGS.fov + 5 && s2.crt === 0 && applied0.crt.scanline === 0 && applied0.crt.grain === 0 && applied1.crt.scanline > 0.2 && vol.master === 0.3 && stored.fov === DEFAULT_SETTINGS.fov + 5 && stored.crt === 1.5 && stored.master === 0.3, `sens ${s1.sensitivity} (${s1.applied.sensitivity.toFixed(5)}) · fov ${s1.fov} · crt 0 → scan ${applied0.crt.scanline}, 1.5 → scan ${applied1.crt.scanline.toFixed(3)} · master ${vol.master} · stored ${JSON.stringify(stored)}`);
+    check("SETTINGS adjust live: ← → step sensitivity and FOV, the CRT setting scales grain/scanline/vignette (0 is clean), volumes reach the buses; every change is kept in the browser", s0.screen === "settings" && s0.entries.length === Object.keys(DEFAULT_SETTINGS).length + 1 && Math.abs(s1.sensitivity - 1.05) < 1e-6 && Math.abs(s1.applied.sensitivity - 0.0022 * 1.05) < 1e-9 && s1.fov === DEFAULT_SETTINGS.fov + 5 && s1.applied.fov === DEFAULT_SETTINGS.fov + 5 && s2.crt === 0 && applied0.crt.scanline === 0 && applied0.crt.grain === 0 && applied1.crt.scanline > 0.2 && vol.master === 0.3 && busesBefore === null && !!buses && Math.abs(buses.master - 0.3) < 1e-6 && Math.abs(buses.sfx - vol.sfx) < 1e-6 && stored.fov === DEFAULT_SETTINGS.fov + 5 && stored.crt === 1.5 && stored.master === 0.3, `sens ${s1.sensitivity} (${s1.applied.sensitivity.toFixed(5)}) · fov ${s1.fov} · crt 0 → scan ${applied0.crt.scanline}, 1.5 → scan ${applied1.crt.scanline.toFixed(3)} · master ${vol.master} asked with no context, and once the gesture built one the buses carry ${buses ? `${buses.master} master / ${buses.sfx} sfx` : "NOTHING — no audio context"} · stored ${JSON.stringify(stored)}`);
     // a reload finds them applied
     await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=sandbox-ship`, { waitUntil: "load" });
     await a.waitForFunction(() => window.__game?.ready === true, null, { timeout: 40000, polling: 50 });

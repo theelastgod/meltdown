@@ -552,6 +552,18 @@ export class GameAudio {
   getVolumes(): { master: number; sfx: number; bed: number } {
     return { ...this.volumes };
   }
+  /**
+   * What the buses are actually carrying, or null before the context exists.
+   *
+   * `getVolumes` returns the record of what was ASKED FOR, which is a different thing: every
+   * setter writes it whether or not there is a bus to write to. A check that sets a volume and
+   * reads that record back is reading its own echo, and passes with the whole audio engine dead
+   * (Stage 652). This reads the gain nodes the sound is actually going through.
+   */
+  busGains(): { master: number; sfx: number; bed: number } | null {
+    if (!this.master || !this.sfx || !this.bed) return null;
+    return { master: this.master.gain.value, sfx: this.sfx.gain.value, bed: this.bed.gain.gain.value };
+  }
   /** The bed's own level (the city's loudness, 0..1) under the bed volume. */
   setBedLevel(level: number): void {
     this.bedLevel = level;
