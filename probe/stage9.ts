@@ -193,7 +193,24 @@ async function main(): Promise<void> {
         const wake = window.__game.game.renderer.wake as unknown as { flip: (p: { x: number; y: number; z: number }, team: number) => void; pulses: unknown[] };
         wake.flip(pos, 1);
       }, nodeB.pos);
-      await page.waitForFunction(() => (window.__game.game.renderer.wake as unknown as { pulses: unknown[] }).pulses.length === 0, null, { timeout: 30000, polling: 30 });
+      /**
+       * Waited on frames, not on a wall clock. The comment above says the pulse fades on the wake's
+       * clock and that that clock advances only with rendered frames — and then the wait asked for
+       * 30 seconds of wall time, which is a different quantity. In run 646 it timed out on a runner
+       * whose navigation had taken 4.8 s, so the renderer was fine and simply slow; Stage 645 read
+       * that 51 s step as a slow navigation and was wrong. The ceiling is generous and the cost is
+       * printed, so a pulse that genuinely never settles still fails, and says how many frames it
+       * was given to do it in.
+       */
+      const pulseT0 = Date.now();
+      let pulse = { pulses: 1, frames: 0 };
+      const frames0 = await page.evaluate(() => window.__game.game.renderer.frames);
+      while (Date.now() - pulseT0 < 120000) {
+        pulse = await page.evaluate(() => ({ pulses: (window.__game.game.renderer.wake as unknown as { pulses: unknown[] }).pulses.length, frames: window.__game.game.renderer.frames }));
+        if (pulse.pulses === 0) break;
+        await page.waitForTimeout(100);
+      }
+      check(`the flip's own ring dies before the shutter opens, on the frames the wake's clock actually runs on`, pulse.pulses === 0, `${pulse.pulses} pulse(s) left after ${pulse.frames - frames0} frames in ${((Date.now() - pulseT0) / 1000).toFixed(1)} s`);
       await capture("node");
 
       // the walkway, by its stairs (steps only): routed on a nav that treats the walkway as ground

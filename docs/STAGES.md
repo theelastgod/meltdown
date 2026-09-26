@@ -1641,6 +1641,46 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 649 — The pulse fades on frames, and Stage 645 blamed the navigation
+
+**Stage 645 was wrong, and the instrumentation it shipped is what proved it.**
+That stage read `probe:city`'s 51-second failures as a navigation timeout — 30 s
+of `page.goto` plus server startup — and gave the probe `NAV_MS = 120000` along
+with a print of what each navigation cost. Run 646 failed the same step at the
+same 51 s, which a 120 s navigation ceiling makes impossible, and the print said
+why:
+
+```
+nav lease_row 4.8s
+PASS  lease_row: a Blank sprints the streets ... and flips it
+page.waitForFunction: Timeout 30000ms exceeded.
+```
+
+The navigation took 4.8 seconds. The step died on a `waitForFunction`.
+
+**What it actually was.** After each district flips a node, the probe stages a
+liberation pulse and waits for it to fade before taking the shot. The comment
+directly above that wait already said the thing that matters — the pulse "fades
+over 1.4 s of the wake's clock, which advances only with rendered frames" — and
+the wait then asked for thirty seconds of *wall* time, which is a different
+quantity. Measured here, on an idle developer box: the pulse needs **43 frames,
+and those 43 frames take 17.4 s** under SwiftShader. Against a 30 s ceiling that
+is 1.7x of headroom, and a runner half this speed spends it.
+
+**The fix.** Wait on the frames the clock actually runs on: poll until the pulse
+list empties, with a ceiling instead of a budget, and turn the bare `await` into
+a check that prints the frames drawn and the seconds taken. A pulse that never
+settles still fails — and now says how many frames it was given to do it in,
+rather than dying with a stack trace that names the wrong cause.
+
+**Proof.** 51/51, three new checks, one per district: `0 pulse(s) left after 43
+frames in 17.4 s`, `16.8 s`, `17.9 s`. Mutation-tested by cutting the ceiling to
+2 s: 48/51, `2 pulse(s) left after 5 frames in 2.1 s` on all three.
+
+`NAV_MS` from Stage 645 stays. It is harmless, the navigation cost it prints is
+what caught this, and the same timeout genuinely did fix `counter` and `run` in
+run 642 — but this probe was never the case it was diagnosed as.
+
 ## Stage 648 — Thirty seconds of wall clock bought seven rounds
 
 **The defect.** `probe:net` failed in CI run 644 with three checks, of which only
