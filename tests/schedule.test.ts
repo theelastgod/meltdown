@@ -41,7 +41,11 @@ describe("the model's side of the schedule", () => {
       expect(epochCap("run", day), `day ${day}`).toBe(Math.ceil(runPot(day)));
       expect(epochCap("run", day)).toBeGreaterThanOrEqual(runPot(day));
     }
-    expect(channelCaps("run")).toEqual(emissionSchedule().map((y) => Math.ceil((y / 365) * RUN_EMISSION_SHARE)));
+    // the schedule's years and then a terminal zero: the contract clamps `capOf` to the last entry,
+    // so this is what stops an epoch past the schedule being funded at all (Stage 655)
+    expect(channelCaps("run")).toEqual([...emissionSchedule().map((y) => Math.ceil((y / 365) * RUN_EMISSION_SHARE)), 0]);
+    expect(epochCap("run", LAUNCH_DAY + 365 * emissionSchedule().length)).toBe(0);
+    expect(epochCap("run", LAUNCH_DAY + 365 * 40)).toBe(0);
     expect(channelCaps("audit")).toEqual([AUDIT_POOL]);
     expect(channelCaps("season")).toEqual([SEASON_POOL]);
     expect(epochCap("audit", 3000)).toBe(AUDIT_POOL);

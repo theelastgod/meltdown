@@ -26,7 +26,10 @@ export const kindOf = (epoch: number): EpochKind | null => (Object.entries(EPOCH
 
 /** the cap per schedule year, in whole $CAPITAL; a channel with one entry holds that cap in every year */
 export function channelCaps(kind: EpochKind): number[] {
-  if (kind === "run") return emissionSchedule().map((year) => Math.ceil((year / 365) * RUN_EMISSION_SHARE));
+  // A terminal zero after the schedule's years. The contract clamps `capOf` to the LAST entry, so
+  // this one line makes the chain's own clamp correct — past the schedule an epoch may be funded
+  // with nothing — without touching the contract (Stage 655).
+  if (kind === "run") return [...emissionSchedule().map((year) => Math.ceil((year / 365) * RUN_EMISSION_SHARE)), 0];
   if (kind === "audit") return [AUDIT_POOL];
   return [SEASON_POOL];
 }
@@ -34,7 +37,9 @@ export function channelCaps(kind: EpochKind): number[] {
 /** what the vault allows the epoch `kind`/`period` to be funded with, in whole $CAPITAL — the contract's `capOf` */
 export function epochCap(kind: EpochKind, period: number): number {
   const caps = channelCaps(kind);
-  const year = Math.min(caps.length - 1, scheduleYear(period * PERIOD_DAYS[kind]));
+  // the channel's own length, not the schedule's: `scheduleYear` must be able to reach the
+  // terminal zero above rather than stopping at the last funded year
+  const year = scheduleYear(period * PERIOD_DAYS[kind], caps.length);
   return caps[year]!;
 }
 

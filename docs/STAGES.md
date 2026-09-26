@@ -1641,6 +1641,72 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 655 — An index clamp became a rate, and the schedule paid out for ever
+
+**The defect, measured.** The emission schedule is eight years totalling
+349,156,188 $CAPITAL against an emissions allocation of 350,000,000 — sized to
+fit, with 843,812 of headroom (0.24%). But `dailyEmissionBudget` resolved its
+year through `scheduleYear`, which clamps to the last index, so from year nine
+the game paid the final year's rate for ever:
+
+```
++1 yr past schedule: over allocation by  12,104,125 (1.03x)
++10 yr:              over allocation by 128,635,558 (1.37x)
+day budget 50 yrs on: 35,473.80 · scheduleYear at +50 yrs: 7 of 7
+```
+
+Clamping is right for an *index* — a day before launch has no earlier year to
+fall into — and wrong as a *rate*. It turned a declared finite schedule into a
+perpetual one.
+
+**What it would have done to a player.** Not unbacked minting: `PrizeVault.post`
+funds the vault with `transferFrom`, so the treasury must actually hold the
+tokens. Worse for a player, in fact — the settlement would keep writing lines
+for banked units and the epoch that owed them could no longer be funded, so the
+payout simply never posts. A day's work owed and unclaimable, arriving on a
+known date.
+
+**Two enforced rules that disagreed.** `tests/model.test.ts` asserted the
+schedule sum fits the allocation, and the lint rule
+`emissions-within-allocation` asserted the same thing — both over the *schedule
+array*. A third test pinned the clamp, asserting the year-eight rate still paid
+274 years out, with the comment "past the schedule the rate does not fall off a
+cliff and does not restart". Each rule passed on its own terms. Nothing compared
+the function the settlement actually calls against the allocation over the whole
+life, which is where they contradict.
+
+**The fix.** `dailyEmissionBudget` returns 0 past the schedule's last year. The
+run channel's caps gain a terminal zero — and because the contract clamps
+`capOf` to the *last* entry, that one line makes the chain's own clamp correct
+with no contract change: past the schedule an epoch may be funded with nothing.
+`epochCap` now resolves the year against the channel's own length so it can
+reach that zero. Pre-launch behaviour is unchanged and stated as a limit below.
+
+**Proof.** Lifetime emission summed from the real function over 60 years is
+349,156,188 — exactly the schedule total, inside the allocation with 843,812
+unspent. Budget, pot and on-chain cap all fall to zero on the first day past the
+schedule (day 23,633) and agree at every day the tests probe, including the
+devnet test that deploys the vault and compares its `capOf` against `epochCap`
+30 years out. 1393 unit tests, four lints clean, build clean.
+
+**Mutation.** Restoring the clamp fails three guards: `expected 35473.8 to be
++0`; `expected 1022448911.99 to be less than or equal to 350000000` (2.9x the
+allocation); and the lint, `996553038 emitted over the schedule's life and 50
+years past it, against 350000000 allocated`.
+
+**A second bug the fix uncovered.** `tests/settle.test.ts` picked
+`LAUNCH_DAY + 8 * 365` as "a day in the schedule's last year". With eight years
+(indices 0-7) that is the first day *past* the schedule. It only behaved like the
+last year because the clamp held that rate for ever, so an off-by-one-year sat
+there unnoticed; it now uses the last funded day.
+
+**Stated limits.** Days before `LAUNCH_DAY` still resolve to year one in both the
+model and the chain, which is untouched here because the two must agree and no
+settlement runs before launch; it is emission outside the schedule by the same
+argument and worth a later look. And if perpetual tail emission was ever the
+intent, this stage makes the cost explicit rather than deciding it: the
+allocation would have to be resized, which is the owner's call.
+
 ## Stage 654 — Three hypotheses died, and the probe still cannot say why
 
 **Honest heading: the root cause is open.** This stage ships the instrument that

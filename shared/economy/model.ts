@@ -175,8 +175,21 @@ export function scheduleYear(day: number, years = emissionSchedule().length): nu
   return Math.min(years - 1, Math.max(0, Math.floor((day - LAUNCH_DAY) / 365)));
 }
 
+/**
+ * The schedule is finite and the allocation is sized to it — 8 years totalling 349,156,188 against
+ * an emissions allocation of 350,000,000, a headroom of 0.24%. Past its last year there is nothing
+ * left to pay from, so the budget is zero rather than the final year's rate repeated forever.
+ *
+ * `scheduleYear` clamps, which is right for an index and was wrong as a rate: it turned a declared
+ * eight-year schedule into a perpetual one. Measured before this stage, the clamp spent the whole
+ * remaining headroom in year 9 (over allocation by 12,104,125, 1.03x) and was 1.37x over ten years
+ * on. `post` funds the vault by `transferFrom`, so nothing unbacked could ever be minted; what
+ * happened instead is worse to a player — the settlement kept writing lines and the epoch that
+ * owed them could no longer be funded (Stage 655).
+ */
 export function dailyEmissionBudget(day: number): number {
   const schedule = emissionSchedule();
+  if (day >= LAUNCH_DAY + 365 * schedule.length) return 0;
   return schedule[scheduleYear(day, schedule.length)]! / 365;
 }
 

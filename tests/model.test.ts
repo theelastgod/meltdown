@@ -25,11 +25,27 @@ describe("the emission schedule", () => {
     for (let i = 1; i < s.length; i++) expect(s[i]!).toBeLessThan(s[i - 1]!);
   });
 
-  it("spreads a year evenly across its days, and holds the last year's rate afterwards", () => {
+  it("spreads a year evenly across its days, and stops when the schedule does", () => {
     expect(dailyEmissionBudget(LAUNCH_DAY) * 365).toBeCloseTo(emissionSchedule()[0]!, 6);
     expect(dailyEmissionBudget(LAUNCH_DAY + 400)).toBeCloseTo(emissionSchedule()[1]! / 365, 9);
-    // past the schedule the rate does not fall off a cliff and does not restart
-    expect(dailyEmissionBudget(LAUNCH_DAY + 99_999)).toBeCloseTo(emissionSchedule()[7]! / 365, 9);
+    const years = emissionSchedule().length;
+    expect(dailyEmissionBudget(LAUNCH_DAY + 365 * years - 1)).toBeCloseTo(emissionSchedule()[years - 1]! / 365, 9);
+    // Until Stage 655 this held the final year's rate for ever, because `scheduleYear` clamps — right
+    // for an index, wrong as a rate. It does not restart either; there is simply nothing left to pay
+    // from, and a line the treasury cannot fund is worse to a player than no line at all.
+    expect(dailyEmissionBudget(LAUNCH_DAY + 365 * years)).toBe(0);
+    expect(dailyEmissionBudget(LAUNCH_DAY + 99_999)).toBe(0);
+  });
+
+  it("never emits more over its whole life than the allocation that backs it", () => {
+    // summed from the function the settlement actually calls, not from the schedule array it is
+    // derived from — those were the two rules that disagreed past year 8 (Stage 655)
+    let life = 0;
+    for (let d = LAUNCH_DAY; d < LAUNCH_DAY + 365 * 60; d++) life += dailyEmissionBudget(d);
+    expect(life).toBeLessThanOrEqual(emissionsAllocation());
+    // to the cent: 2,920 daily divisions summed in doubles drift about 6e-6 on 349 million, which
+    // is 2e-14 relative — the tolerance is floating point, not slack in the claim
+    expect(life).toBeCloseTo(emissionSchedule().reduce((a, b) => a + b, 0), 2);
   });
 
   it("counts the schedule's years from the launch day, not from 1970 (Stage 59)", () => {

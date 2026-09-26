@@ -148,8 +148,11 @@ describe("the nightly settlement", () => {
   it("splits a day that outgrows its pot pro rata, and never mints past it", async () => {
     const r = await rig();
     const { a } = await r.link("sandbox-s7", DEV_KEYS.player);
-    // a day in the schedule's last year, where the pot is smallest and outgrowing it takes the fewest files
-    const LATE = LAUNCH_DAY + 8 * 365;
+    // The last funded day, where the pot is smallest and outgrowing it takes the fewest files. This
+    // read `LAUNCH_DAY + 8 * 365`, which with eight years (indices 0-7) is the first day PAST the
+    // schedule, not inside its last year; it only behaved like the last year because the old clamp
+    // held that rate for ever, so an off-by-one-year sat here unnoticed (Stage 655).
+    const LATE = LAUNCH_DAY + 8 * 365 - 1;
     r.bank(a, 200, LATE);
     // the rest of the population. Each file is held to the day's cap by the settlement itself, so
     // outgrowing the pot takes files, not one huge number — which is the anti-bot cap working.

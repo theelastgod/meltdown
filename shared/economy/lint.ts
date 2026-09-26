@@ -1,5 +1,5 @@
 import { ALLOCATION, PROGRESSION_KINDS, CAPITAL, CAPITAL_KINDS, type EconomyItem } from "./manifest";
-import { project, STRESS_POPULATION } from "./model";
+import { dailyEmissionBudget, LAUNCH_DAY, project, STRESS_POPULATION } from "./model";
 import { settleRun } from "./settlement";
 import { RUN_DAILY_CAP } from "../sim/run";
 
@@ -66,6 +66,14 @@ export function lintTokenConstants(): Violation[] {
   }
   const budget = (CAPITAL.cap * BigInt(ALLOCATION.emissions)) / 10_000n;
   if (total > budget) out.push({ itemId: "CAPITAL.emissions", rule: "emissions-within-allocation", detail: `${total / 10n ** 18n} > ${budget / 10n ** 18n}` });
+  // and the SAME rule over the function the settlement actually calls, not over the schedule it is
+  // derived from. Those two disagreed past the schedule's last year until Stage 655: the rule above
+  // passed on the eight scheduled years while `dailyEmissionBudget` clamped to the final year's
+  // rate and paid it for ever, busting the allocation in year 9.
+  let life = 0;
+  for (let d = LAUNCH_DAY; d < LAUNCH_DAY + 365 * (CAPITAL.emissions.years + 50); d++) life += dailyEmissionBudget(d);
+  const alloced = Number(budget / 10n ** 18n);
+  if (life > alloced) out.push({ itemId: "CAPITAL.emissions", rule: "lifetime-emission-within-allocation", detail: `${Math.round(life)} emitted over the schedule's life and 50 years past it, against ${alloced} allocated` });
 
   // THE RUN must settle inside the schedule at any population. A rate fixed per unit cannot: its
   // emission is the product of a constant and the player count, and the schedule is neither
