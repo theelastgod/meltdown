@@ -25,6 +25,7 @@ import type { BotStep } from "../client/bot";
 import { levelById } from "../shared/sim/level";
 import { MISSIONS } from "../shared/campaign/missions";
 import { crewRoomName } from "../shared/net/crew";
+import { ENT_WASP } from "../shared/net/protocol";
 import { validInviteCode } from "../shared/net/private";
 import { buildNav, findPath } from "../shared/sim/nav";
 import { HUB_LEVEL_ID } from "../shared/sim/hub";
@@ -579,7 +580,7 @@ async function main(): Promise<void> {
       await pg.evaluate((p) => window.__game.setBot(p), [...route("lease_row", from, to, radius), { kind: "hold", ticks: 60 }] as BotStep[]);
     };
     const pages = [ca, cb];
-    const track = pages.map(() => ({ pos: { x: NaN, z: NaN }, movedAt: Date.now(), dead: false }));
+    const track = pages.map(() => ({ pos: { x: NaN, z: NaN }, movedAt: Date.now(), dead: false, routes: 0, deaths: 0, fires: 0, closest: Infinity }));
     const legs: string[] = [];
     let lastObjective = "";
     let legStart = Date.now();
@@ -602,29 +603,41 @@ async function main(): Promise<void> {
         for (let i = 0; i < pages.length; i++) {
           const pg = pages[i]!;
           const t = track[i]!;
-          const s = await pg.evaluate(() => {
+          const s = await pg.evaluate((WASP) => {
             const g = window.__game;
             const p = g.state().pos;
+            // A contract played in a room runs its wave on the room's world, and the client's own
+            // `world.wasps` stays empty there — the wave arrives over the wire as entities and is
+            // spent on the renderer without ever being kept. Read both, or a crew Blank is aiming
+            // at a list that is empty by construction (Stage 651).
+            const live: { x: number; y: number; z: number }[] = [];
+            for (const w of g.game.world.wasps) if (w.alive) live.push({ x: w.pos.x, y: w.pos.y, z: w.pos.z });
+            for (const e of (g.game as unknown as { netEntities: { kind: number; a: number; x: number; y: number; z: number }[] }).netEntities) {
+              if (e.kind === WASP && e.a === 1) live.push({ x: e.x, y: e.y, z: e.z });
+            }
             let near: { x: number; y: number; z: number } | null = null;
             let best = Infinity;
-            for (const w of g.game.world.wasps) {
-              if (!w.alive) continue;
-              const d = Math.hypot(w.pos.x - p.x, w.pos.z - p.z);
+            for (const w of live) {
+              const d = Math.hypot(w.x - p.x, w.z - p.z);
               if (d < best) {
                 best = d;
-                near = { x: w.pos.x, y: w.pos.y - 0.3, z: w.pos.z };
+                near = { x: w.x, y: w.y - 0.3, z: w.z };
               }
             }
             return { pos: p, alive: g.state().health > 0, done: g.botStatus()?.done ?? true, near, nearD: best };
-          });
+          }, ENT_WASP);
           const moved = Math.hypot(s.pos.x - t.pos.x, s.pos.z - t.pos.z) > 0.5;
           if (moved || Number.isNaN(t.pos.x)) t.movedAt = Date.now();
           t.pos = { x: s.pos.x, z: s.pos.z };
           const revived = t.dead && s.alive;
+          if (!s.alive && !t.dead) t.deaths++;
           t.dead = !s.alive;
+          const dTarget = Math.hypot(s.pos.x - target.x, s.pos.z - target.z);
+          if (dTarget < t.closest) t.closest = dTarget;
           const far = Math.hypot(s.pos.x - target.x, s.pos.z - target.z) > 1.5;
           const stalled = Date.now() - t.movedAt > 4000;
           if (s.alive && far && (s.done || revived || stalled)) {
+            t.routes++;
             await coopWalk(pg, target, 1.5);
             t.movedAt = Date.now();
           } else if (s.alive && !far && s.near && s.nearD <= 45) {
@@ -632,6 +645,7 @@ async function main(): Promise<void> {
             // a Blank that walks to the terminal and never shoots back dies to that wave — which
             // resets the timer for the whole crew, so the leg never ended. The solo leg learned this
             // in Stage 635; the crew leg was still only walking.
+            t.fires++;
             await pg.evaluate((q) => window.__game.setBot(q), [{ kind: "fire", ticks: 24, aimAt: s.near }] as BotStep[]);
           }
         }
@@ -644,7 +658,7 @@ async function main(): Promise<void> {
     // where the two Blanks actually are when the drive ends, against the spot the last objective wanted
     const goal = target ?? nodePos("lease_row", "A");
     const where = await Promise.all(pages.map((pg) => pg.evaluate(() => ({ pos: window.__game.state().pos, health: window.__game.state().health, done: window.__game.botStatus()?.done ?? null }))));
-    const whereText = where.map((w, i) => `${i ? "B" : "A"} at (${w.pos.x.toFixed(1)},${w.pos.z.toFixed(1)}) d ${Math.hypot(w.pos.x - goal.x, w.pos.z - goal.z).toFixed(1)} hp ${w.health} bot done ${w.done}`).join(" · ");
+    const whereText = where.map((w, i) => `${i ? "B" : "A"} at (${w.pos.x.toFixed(1)},${w.pos.z.toFixed(1)}) d ${Math.hypot(w.pos.x - goal.x, w.pos.z - goal.z).toFixed(1)} hp ${w.health} bot done ${w.done} · got within ${track[i]!.closest.toFixed(1)} m, ${track[i]!.routes} route(s), ${track[i]!.fires} burst(s), ${track[i]!.deaths} death(s)`).join(" · ");
     const fa = await file("coop-a");
     const fb = await file("coop-b");
     const guestLog = await cb.evaluate(() => ({ log: window.__game.campaign().mirrorLog, mirror: window.__game.campaign().terminalMirror, shown: !(document.querySelector("#hud .terminal") as HTMLElement | null)?.hidden }));

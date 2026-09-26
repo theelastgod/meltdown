@@ -1641,6 +1641,61 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 651 — The crew was aiming at a list that is empty by construction
+
+**The defect, measured.** `probe:campaign`'s co-op leg failed in run 646 with
+the room still running at `HOLD THE TERMINAL WHILE THE FILE DECRYPTS` after
+`175.9 s` on a 20-second objective. It had failed differently before Stage 642
+(ALPHA 45.6 m from the spot), that stage sent the crew to the terminal and gave
+it a wave to shoot back at, and the leg still burned the probe's whole 180 s
+budget — so the fix went in and the symptom stayed. Worth reading rather than
+re-running.
+
+Instrumenting the drive loop with what it actually did, reproduced locally:
+
+```
+A ... got within 0.2 m, 13 route(s), 0 burst(s), 13 death(s)
+B ... got within 0.3 m, 11 route(s), 0 burst(s), 11 death(s)
+```
+
+Both Blanks reached the terminal. Neither fired a single shot, and between them
+they died 24 times. Stage 642's fire branch never ran once.
+
+**Why.** It scans `game.world.wasps`. A contract played solo runs its wave in
+the client's own world, where that list is right. A contract played in a *room*
+runs on the room's world: the wave crosses the wire as `ENT_WASP` entities, and
+`client/game.ts` turns them into a local `const wasps`, hands it to the renderer
+and the alarm, and drops it. The client's own `world.wasps` stays empty for the
+whole match. So the crew leg asked for the nearest wasp from a list that is
+empty by construction, got none, never entered the fire branch, and stood at the
+terminal being killed — which is also why the leg cost 121-176 s: `survive`
+accrues only while someone alive is inside the radius, so the hold advanced only
+in the gaps between deaths and long walks back.
+
+**The fix** is in the probe, not the game — the client's handling is correct for
+what the client needs. The scan now reads both sources: the local world's wasps
+and the live `ENT_WASP` entities off the wire, the same cast through
+`netEntities` that `probe/stage5.ts` already uses for nodes. The failure line now
+prints closest approach, routes, bursts and deaths per Blank, so the next
+failure of this leg says which of them it is.
+
+**Proof.** The hold leg goes from `175.7 s` to `20.0 s` — its nominal length,
+meaning the wave is being cleared rather than survived between respawns — and
+ALPHA from `0 bursts / 13 deaths` to `43 bursts / 0 deaths`. The whole contract
+now settles: `legs [reach the escrow 4.5s, hold the terminal 20.0s, take the
+file 9.0s, the file 0.7s, get out through 4.1s]`, 46/46.
+
+**Mutation.** The pre-fix probe *is* the mutation, run on this tree: without the
+`netEntities` half of the scan the leg reads `hold the terminal 175.7s`, `0
+burst(s)`, `24 death(s)` between the two Blanks, and the check fails 44/46.
+
+**Stated limit.** BRAVO still records `0 bursts`: it ends 6.2 m from the spot,
+and the fire branch only arms within 1.5 m of the objective, so the hold is
+carried by ALPHA alone. That is enough for the objective, which asks that
+*someone* alive holds the radius, and widening the branch is a change to what
+the leg tests rather than a fix to it. `npx tsc --noEmit` clean, four lints
+clean (recorded debt 89, new 0), 1390 unit tests green.
+
 ## Stage 650 — The landing is as deep as the fall, not as deep as the machine drew it
 
 **The defect, measured.** `probe:tps` failed in run 646 with the camera going
