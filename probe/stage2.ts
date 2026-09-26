@@ -499,15 +499,27 @@ async function main(): Promise<void> {
     const hits0 = await hitsOf();
     let landed = 0;
     let fired = 0;
-    while (Date.now() - impactT0 < 30000) {
+    /**
+     * Budgeted in rounds ALPHA actually got away, not in seconds. Its plan is a tick count and this
+     * loop was written in wall time, and those are the same thing only while the client simulates
+     * 60 ticks a second: in run 644 a contended runner spent the whole 30 s window on seven rounds,
+     * one of which landed, and the check read that as the feature being broken. So the window is a
+     * ceiling now rather than the budget, ALPHA is re-armed whenever its plan runs out, and the
+     * verdict waits until enough rounds have been fired for "3 landed" to mean anything.
+     */
+    const NEED_FIRED = 40;
+    while (Date.now() - impactT0 < 120000) {
       const at = await E.b.evaluate(() => ({ x: window.__game.state().pos.x, z: window.__game.state().pos.z }));
       if (Math.hypot(at.x - LANE.x, at.z - LANE.z) > 4) await E.b.evaluate((p) => window.__game.setBot(p), laneRoute(at, 30));
+      if (await E.a.evaluate(() => window.__game.botStatus()?.done ?? true)) await E.a.evaluate((id) => window.__game.setBot([{ kind: "killPlayer", targetId: id, ticks: 60 * 32 }]), E.idB);
       await E.a.waitForTimeout(500);
       im = await E.a.evaluate(() => (window as unknown as { __impact: Impact }).__impact);
       const now = await hitsOf();
       landed = now.hits - hits0.hits;
       fired = now.shots - hits0.shots;
       if (landed >= 3 && im.peak >= lit && im.peakHurt > 0 && im.after > 0) break;
+      // nothing landing is only news once ALPHA has had the chance to put rounds downrange
+      if (fired >= NEED_FIRED && landed >= 3) break;
     }
     await E.a.evaluate(() => clearInterval((window as unknown as { __impactTimer: number }).__impactTimer));
     // what ALPHA could see when the window closed, in ALPHA's own terms: this check can only fail

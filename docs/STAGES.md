@@ -1641,6 +1641,48 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 648 — Thirty seconds of wall clock bought seven rounds
+
+**The defect.** `probe:net` failed in CI run 644 with three checks, of which only
+the first is a cause:
+
+```
+FAIL  rounds landed on BRAVO while ALPHA was rendering
+      — 1 of 7 rounds landed, server-confirmed, in 30.1 s
+FAIL  a round that lands lights the body it landed on  — peak emissive 0.025 (wants 0.557)
+FAIL  and the body bends away from the muzzle        — flinch 0.00
+```
+
+The other two cascade: with no round landing there is no flash and no flinch to
+sample, so they report the absence of an event that never happened.
+
+**What it actually was.** Seven rounds. A lease-breaker fires ten a second, so
+thirty seconds should be hundreds. ALPHA is driven by `killPlayer` for `60 * 32`
+**ticks** and judged inside a **30 s wall-clock** window, and those are the same
+span only while the client simulates 60 ticks a second. A contended runner does
+not: it spent the whole window on seven rounds, one of which landed, and the
+check read that as the feature being broken rather than as never having been
+exercised. The same mistake as Stage 643 in a different probe — a budget kept in
+one clock for work done in another.
+
+**Not Stage 646, checked rather than assumed.** That stage added `landVy` to
+`PlayerState` in the same run. The field appears in six places, none of them
+`hashWorld` — which lists the fields it hashes explicitly — and none of them a
+wire encoder, so it cannot reach netcode at all; `probe:body`, which covers the
+rig this check samples, passed in the same run.
+
+**The fix.** The window becomes a ceiling instead of the budget: ALPHA is
+re-armed whenever its plan runs out, and the verdict waits until enough rounds
+have been fired for "3 landed" to mean anything. A healthy box never reaches the
+ceiling.
+
+**Proof.** 27/27, and it now exits in **6.8 s** with 7 of 10 landed — the longer
+ceiling costs a fast machine nothing. Mutation-tested by starving the window to
+1.2 s: 25/27. Stated honestly, the mutation breaks the two dependent checks
+rather than this one, because this box still lands rounds inside 1.2 s; what it
+demonstrates is that the window governs the outcome, not that this check's floor
+is tight. The number that established the cause is CI's own: 7 rounds in 30.1 s.
+
 ## Stage 647 — The look check was satisfied by two errors cancelling
 
 **The defect.** Not a red gate — a green one. `probe:look` compares every frame
