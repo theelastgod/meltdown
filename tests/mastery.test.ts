@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { ALL_ITEMS, KEYSTONES, LEDGER_ITEMS, lintItemSchema } from "../shared/manifest/items";
 import { CHIPS, lintChipSchema } from "../shared/manifest/chips";
-import { FIRMWARES, weaponWithFirmware } from "../shared/manifest/firmwares";
+import { FIRMWARES, FIRMWARE_RANKS, weaponWithFirmware } from "../shared/manifest/firmwares";
 import { DEFAULT_LOADOUT, kitFor, SANDBOX_RANKS, validateLoadout } from "../shared/manifest/loadout";
 import { addXp, bump, challengeClearedLine, CURRICULA, emptyMastery, GATES, masteryRankLine, rankFor, xpForRank } from "../shared/progression/mastery";
 import { redact, STAMPS, stampLine } from "../shared/progression/stamps";
@@ -206,7 +206,10 @@ describe("chips and firmwares", () => {
     expect(kitFor(DEFAULT_LOADOUT).lease_breaker.mechanics).toEqual([]);
   });
   it("every firmware is certified inside the TTK band at its weapon's ideal range", () => {
-    expect(FIRMWARES.length).toBe(12);
+    // derived, not the literal 12 it was: that literal was the arsenal's six-weapon count frozen
+    // into a test, and it stayed green for the whole time the two campaign weapons had none
+    // (Stage 658). A count that cannot tell "all of them" from "the ones that exist" guards nothing.
+    expect(FIRMWARES.length).toBe(WEAPON_LIST.length * FIRMWARE_RANKS.length);
     const certs = certifyFirmwares();
     for (const c of certs) expect(c.ok, `${c.firmware} ${c.seconds.toFixed(3)} s`).toBe(true);
   }, 60000);

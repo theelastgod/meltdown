@@ -15,7 +15,7 @@ import { WEAPONS, WEAPON_LIST, type WeaponId } from "../weapons/manifest";
 import { ALL_ITEMS, LEDGER_ITEMS, KEYSTONES, lintItemSchema, type LedgerItem } from "../manifest/items";
 import { SANDBOX_RANKS, validateLoadout, type Loadout } from "../manifest/loadout";
 import { CHIPS, lintChipSchema } from "../manifest/chips";
-import { FIRMWARES } from "../manifest/firmwares";
+import { FIRMWARES, lintFirmwareSchema } from "../manifest/firmwares";
 import { v3 } from "../math/vec3";
 import { Bot } from "../sim/bot";
 
@@ -237,7 +237,7 @@ export interface FairnessReport {
 
 export function runFairnessLint(opts: { weapons?: readonly WeaponId[]; builds?: Candidate[]; quick?: boolean } = {}): FairnessReport {
   const violations: LintViolation[] = [];
-  const schema = [...lintItemSchema(), ...lintChipSchema()];
+  const schema = [...lintItemSchema(), ...lintChipSchema(), ...lintFirmwareSchema()];
   for (const v of schema) violations.push({ build: v.itemId, rule: "schema:" + v.rule, detail: v.detail, key: `${v.itemId}|schema:${v.rule}`, magnitude: 0, slack: 0 });
   const quickWeapons = ["lease_breaker", "repo_hammer", "longwave"] as WeaponId[];
   const weapons = opts.weapons ?? (opts.quick ? quickWeapons : WEAPON_LIST.map((w) => w.id));

@@ -1641,6 +1641,94 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 658 — The weapons the story gives you were the only ones mastery never paid
+
+*Second stage under the owner's brief, which now also names character
+progression and weapons unlock.*
+
+**The defect, measured.** Every weapon's mastery ladder runs 1–30 and unlocks
+two fire-pattern firmwares, at rank 20 and rank 28 — `shared/manifest/firmwares.ts`
+says so in its first line: "two sidegrade fire-pattern variants per weapon". It
+was not per weapon. Counting unlocks against ranks:
+
+```
+weapon         chips  firmwares  ranks 2..30 that unlock something
+lease_breaker     20          2  22/29 · dead: 15,19,23,24,26,29,30
+repo_hammer       20          2  22/29
+stack_smg         20          2  22/29
+longwave          20          2  22/29
+phage             20          2  22/29
+shock_baton       20          2  22/29
+directive         20          0  20/29 · dead: 15,19,20,23,24,26,28,29,30
+clockeater        20          0  20/29 · dead: …
+```
+
+THE DIRECTIVE and CLOCKEATER are the campaign unlocks — the rifles the story
+hands the player for finishing THE LEAK and the depot heist. They were the only
+two weapons in the game whose ranks 20 and 28 paid nothing, so the reward
+weapons were the least rewarding to master, while every starting weapon paid
+out twice.
+
+**Why no existing check saw it.** All twelve firmwares that existed were
+individually correct — the schema tests, the TTK certification and the fairness
+duels each pass on a firmware, and a weapon with none has nothing to fail. The
+one assertion that could have caught it, in `tests/mastery.test.ts`, read
+`expect(FIRMWARES.length).toBe(12)`: the six-weapon count frozen into a test,
+green for exactly as long as the gap existed. A count that cannot tell "all of
+them" from "the ones that exist" guards nothing. It is now
+`WEAPON_LIST.length * FIRMWARE_RANKS.length`.
+
+**The fix.** Four firmwares, two per campaign weapon, inside the sidegrade
+rules rather than around them:
+
+| | rank | trade |
+| --- | --- | --- |
+| DIRECTIVE · STANDING ORDER | 20 | paired shots at 500 rpm, −43% cadence, +60% spread |
+| DIRECTIVE · MANDATE | 28 | +17.6% damage, −12% rate, −40% spread |
+| CLOCKEATER · SECOND HAND | 20 | no burst, continuous at 540 rpm, +30% spread, +30% recoil |
+| CLOCKEATER · OVERWIND | 28 | four-round bursts, +7.7% damage, −44% cadence, magazine 16 |
+
+THE DIRECTIVE holds full damage out to 45 m, past the duel's longest bracket at
+40 m, so **any** damage increase on it is a gain in every bracket by
+construction and cannot be a sidegrade. That is why STANDING ORDER changes no
+damage at all, and why MANDATE's +17.6% is priced so the body still takes three
+rounds — the gain lands only on the head, where two now kill.
+
+**Measurement killed two drafts.** SECOND HAND at 700 rpm was 28–34% faster
+than stock across every bracket — five `ttk-deviation` violations — and came
+down to 540. OVERWIND without its damage bump swung the other way, +43% at 25 m,
+because dropping to 13 damage put the falloff brackets back up a whole round;
+restoring +7.7% and cutting the cadence to 135 rpm landed it. The hand
+arithmetic that preceded both was wrong about burst timing, and the duel said
+so.
+
+**The guard.** `lintFirmwareSchema` in `shared/manifest/firmwares.ts`, wired
+into `runFairnessLint`'s schema pass so `npm run lint:fairness` enforces it:
+every weapon has exactly one firmware at each firmware rank, no firmware is a
+no-op, and an id names its own weapon. The rule is over the *set*, not over a
+firmware, because the defect was invisible from any one of them — a rule about
+a weapon's rewards cannot be written as a property of a reward. Mutation:
+deleting `directive:mandate` fails the lint with exit 1 and
+`schema:firmware-coverage: THE DIRECTIVE unlocks nothing at mastery rank 28`.
+
+**Verified on a still tree.** The full fairness lint: **new 0, worse 0**, the
+recorded debt untouched at 89, with the four new sidegrades at 6.3%, 12.5%,
+13.0% and 11.3% against the ±20% limit — tighter than several already shipped
+(THREE-COUNT sits at exactly 20.0%). The TTK harness certifies all sixteen
+inside the [0.6, 1.0] band at their ideal range. tsc, 1406 unit tests, the
+campaign and asset lints, and the production build.
+
+**Still open, and measured for the next stages.**
+
+1. **Rank 30 pays nothing, on every weapon.** Ranks 15, 19, 23, 24, 26, 29 and
+   30 unlock nothing for anyone; 15 and 25 are challenge gates, so the player
+   completes a curriculum and receives permission to keep ranking. The cap
+   itself is empty.
+2. **The account ladder flatlines at Depth 30.** The Ledger Graph's three rings
+   cover depths 1–30; depths 31–49 are **39.5 h of play, 68% of the climb to
+   50, with nothing in them**. The whole arsenal is in hand by depth 6 — 15,240
+   XP, 1.0% of the climb, about 36 minutes.
+
 ## Stage 657 — The street was the brightest thing in a drowned city at night
 
 **The defect, measured.** `docs/ART_BIBLE.md` asks for a ground that is "very
