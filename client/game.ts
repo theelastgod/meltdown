@@ -749,8 +749,11 @@ export class Game {
     }
   }
 
-  get botStatus(): { done: boolean; log: string[]; killed: boolean; current: BotStep | undefined } | null {
-    return this.bot ? { done: this.bot.done, log: this.bot.log, killed: this.bot.killed, current: this.bot.current } : null;
+  get botStatus(): { done: boolean; log: string[]; killed: boolean; current: BotStep | undefined; aimed: number } | null {
+    // `aimed` is the bot's own tally of triggers pulled while a killPlayer step had the crosshair on
+    // a target it could see. Against the server's count of rounds actually away it says which half
+    // of "nothing was fired" happened: the driver never took the shot, or the shot never landed.
+    return this.bot ? { done: this.bot.done, log: this.bot.log, killed: this.bot.killed, current: this.bot.current, aimed: this.bot.aimedShots } : null;
   }
 
   /** Run exactly n ticks now (deterministic; used by probes). */

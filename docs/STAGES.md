@@ -1641,6 +1641,100 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 654 — Three hypotheses died, and the probe still cannot say why
+
+**Honest heading: the root cause is open.** This stage ships the instrument that
+will name it, one certain bug, and one check that stops two different failures
+reading as the same one. It does not ship a fix for the failure it set out to
+fix, because everything built for that failed its own mutation.
+
+**The failure.** CI run 650 went red on `probe:net` alone — on a tree that
+touched only audio, and which had passed as run 649. It reproduces locally in
+about one run in ten — two failures in some twenty-three runs today, always the
+same three checks; an early "one in three" was one failure in the first three
+runs and a bad estimate — and the first captured instance read:
+
+```
+2 of 9 rounds landed, server-confirmed, in 120.3 s · the body sampled 14725 times
+```
+
+Nine rounds in two minutes from a weapon that fires ten a second, with the
+probe's own poll loop healthy at 14,725 samples. Stage 648 had already taken this
+budget from 30 s to 120 s and the rate per second got *worse* (0.23/s then,
+0.075/s here), so more wall time was demonstrably not the missing ingredient.
+
+**Hypothesis 1: the rendering client's clock is starved.** ALPHA is deliberately
+the client left drawing, its `killPlayer` plan is denominated in ticks, and a
+client's simulation only advances on frames it draws — the family of Stages 643,
+648, 649 and 650. Measured over five runs: **59.1, 59.9, 60.2, 60.1, 60.0 ticks
+per second** against a nominal 60, zero re-arms, the engagement settled inside
+four seconds. Dead.
+
+**Hypothesis 2: range.** A fuller capture showed ALPHA standing 21.9–39.0 m off,
+clock at 60.0/s, magazine full, no reload, no swap, bot step `killPlayer`, and
+**0 rounds away in 120.4 s** — while `killPlayer` turns and fires but never
+walks. The file already documents exactly this for BRAVO ("it has died twice and
+respawned wherever the level put it… ALPHA spent the whole window firing at
+nothing") and puts BRAVO back on the lane every iteration; ALPHA never got the
+same treatment and cannot walk itself back. So: walk ALPHA back to its mark.
+
+Six runs then passed 28/28 and proved nothing, which the instrument caught:
+`re-armed 0x (0 of them walked back to the mark)` on every one. Every engagement
+succeeded in under seven seconds, the 1920-tick plan never expired, the re-arm
+never fired, and the new branch never executed once. Displacing ALPHA down the
+lane first made it run — `24.8 m → 10.9 m, re-armed 1x (1 walked back), 12
+rounds, 28/28` — and made the mutation deterministic. The mutation then
+**passed**: with the walk-back disabled, ALPHA fired 14 rounds from 21.3–44.5 m
+and the probe went 28/28. Range is not the blocker. Dead, and the walk-back and
+the displacement were both removed rather than kept because they looked sensible.
+
+**Hypothesis 3: line of sight.** `killPlayer` fires only when `canSee` is clear,
+so a bad re-lease might leave ALPHA blind. Measured against the level's own
+geometry, every spawn can see the lane:
+
+```
+spawn 0 (0.0,24.0)  d 16.0 m · canSee lane: true
+spawn 1 (20.0,20.0) d 23.3 m · canSee lane: true
+spawn 2 (-20.0,0.0) d 21.5 m · canSee lane: true
+spawn 3 (0.0,-24.0) d 32.0 m · canSee lane: true
+```
+
+Dead.
+
+**What ships.**
+- `botStatus()` now reports `aimed`, the driver's own tally of triggers pulled
+  with a target aimed and visible. Against the server's confirmed rounds it
+  splits the only branch left: `aimed == 0` means the driver never took the shot,
+  so the gate is `err < 0.015` or `alive`; `aimed > 0` with nothing fired means
+  the rounds died between the client and the room. Healthy baseline, measured:
+  **82 triggers, 12 rounds, 6.5 s**.
+- The give-up exit is reachable. `if (fired >= NEED_FIRED && landed >= 3) break;`
+  contradicted its own comment — a run where nothing lands could never take it,
+  so every failure burned the full 120 s before reporting. Now `fired >=
+  NEED_FIRED`.
+- A new check, "the engagement formed at all", asserting rounds left the gun.
+  `0 of 0` and `2 of 9` previously failed the same assertion; they are different
+  bugs and now read differently.
+- The failure line prints ALPHA's tick rate against a nominal 60, re-arms, the
+  range band, its last bot step and its ammo/reload/swap.
+
+**Proof.** 28/28 on the shipped tree, with the baseline above. No mutation is
+claimed for the instrumentation, which is measurement rather than a guard; the
+give-up exit and the engagement check are asserted on numbers the run prints.
+
+**Stated limit.** The failure is not fixed and will recur. Eight runs on the
+shipped tree were green, which at a ~9% rate is worth almost nothing (0.91^8 is
+about even odds of seeing nothing) and is reported here as the non-evidence it
+is. That is the point of the stage: the next occurrence, here or in CI, will
+print which half of "nothing was fired" happened instead of leaving it to be
+guessed at a fourth time.
+
+**Baselines, for reading the next failure.** Eight healthy runs: 7-30 rounds
+away against 46-253 triggers pulled, engagements settled in 3.1-6.5 s at ranges
+from 0.8 m to 39.6 m, and not one re-arm. The trigger-to-round ratio is the
+weapon's cadence, not a fault; a failing run is one where the first of those two
+numbers is near zero.
+
 ## Stage 653 — A tick was a queue, and the file that joined first won the duel
 
 **The defect, measured.** Two files with the same loadout, six metres apart,

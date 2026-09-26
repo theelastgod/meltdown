@@ -508,10 +508,35 @@ async function main(): Promise<void> {
      * verdict waits until enough rounds have been fired for "3 landed" to mean anything.
      */
     const NEED_FIRED = 40;
+    // ALPHA is the client left drawing, so its simulation only advances on the frames it manages to
+    // draw. Record what its own clock actually did against the wall clock this loop is budgeted in.
+    const tickOf = async (): Promise<number> => await E.a.evaluate(() => window.__game.state().tick);
+    const tick0 = await tickOf();
+    let rearms = 0;
+    let minD = Infinity;
+    let maxD = 0;
+    let lastStep = "";
+    let aimed = 0;
+    let aState = "";
     while (Date.now() - impactT0 < 120000) {
       const at = await E.b.evaluate(() => ({ x: window.__game.state().pos.x, z: window.__game.state().pos.z }));
       if (Math.hypot(at.x - LANE.x, at.z - LANE.z) > 4) await E.b.evaluate((p) => window.__game.setBot(p), laneRoute(at, 30));
-      if (await E.a.evaluate(() => window.__game.botStatus()?.done ?? true)) await E.a.evaluate((id) => window.__game.setBot([{ kind: "killPlayer", targetId: id, ticks: 60 * 32 }]), E.idB);
+      if (await E.a.evaluate(() => window.__game.botStatus()?.done ?? true)) {
+        rearms++;
+        await E.a.evaluate((id) => window.__game.setBot([{ kind: "killPlayer", targetId: id, ticks: 60 * 32 }]), E.idB);
+      }
+      const a = await E.a.evaluate(() => {
+        const g = window.__game;
+        const st = g.state();
+        const w = g.game.player.weapon;
+        return { x: st.pos.x, z: st.pos.z, hp: st.health, step: g.botStatus()?.current?.kind ?? "-", aimed: g.botStatus()?.aimed ?? 0, ammo: w.ammo[w.slot] ?? 0, reload: +w.reloadTimer.toFixed(2), swap: +w.swapTimer.toFixed(2) };
+      });
+      const d = Math.hypot(a.x - at.x, a.z - at.z);
+      if (d < minD) minD = d;
+      if (d > maxD) maxD = d;
+      lastStep = a.step;
+      aState = `hp ${a.hp} ammo ${a.ammo} reload ${a.reload} swap ${a.swap}`;
+      aimed = a.aimed;
       await E.a.waitForTimeout(500);
       im = await E.a.evaluate(() => (window as unknown as { __impact: Impact }).__impact);
       const now = await hitsOf();
@@ -519,7 +544,7 @@ async function main(): Promise<void> {
       fired = now.shots - hits0.shots;
       if (landed >= 3 && im.peak >= lit && im.peakHurt > 0 && im.after > 0) break;
       // nothing landing is only news once ALPHA has had the chance to put rounds downrange
-      if (fired >= NEED_FIRED && landed >= 3) break;
+      if (fired >= NEED_FIRED) break;
     }
     await E.a.evaluate(() => clearInterval((window as unknown as { __impactTimer: number }).__impactTimer));
     // what ALPHA could see when the window closed, in ALPHA's own terms: this check can only fail
@@ -529,7 +554,13 @@ async function main(): Promise<void> {
       const r = n?.remotes.find((x) => x.id === id);
       return { online: !!n?.online, synced: !!n?.synced, remotes: n?.remotes.length ?? 0, calls: window.__game.view().calls, sees: r ? { alive: r.alive, x: +r.x.toFixed(1), z: +r.z.toFixed(1) } : null };
     }, E.idB);
-    check("the drawing client got a sample: rounds landed on BRAVO while ALPHA was rendering", landed >= 3, `${landed} of ${fired} rounds landed, server-confirmed, in ${((Date.now() - impactT0) / 1000).toFixed(1)} s · the body sampled ${im.samples} times · ALPHA ${JSON.stringify(sight)}`);
+    const tickN = await tickOf();
+    const wall = (Date.now() - impactT0) / 1000;
+    // Separate "never engaged" from "engaged and nothing landed". Before Stage 654 both read as the
+    // same failure, and the one that actually happened was the first: ALPHA stood where a re-lease
+    // had dropped it, 22-39 m away, and never pulled the trigger once in two minutes.
+    check("the engagement formed at all: ALPHA got rounds away at its target", fired >= 3, `${fired} rounds fired (the driver pulled the trigger ${aimed}x with a target aimed and visible) in ${wall.toFixed(1)} s from a range of ${minD === Infinity ? "?" : minD.toFixed(1)}-${maxD.toFixed(1)} m, re-armed ${rearms}x`);
+    check("the drawing client got a sample: rounds landed on BRAVO while ALPHA was rendering", landed >= 3, `${landed} of ${fired} rounds landed, server-confirmed, in ${wall.toFixed(1)} s · ALPHA's own clock advanced ${tickN - tick0} ticks in that time (${((tickN - tick0) / wall).toFixed(1)}/s against a nominal 60), re-armed ${rearms}x · range ${minD === Infinity ? "?" : minD.toFixed(1)}-${maxD.toFixed(1)} m, ALPHA's last step "${lastStep}" (${aState}) · the body sampled ${im.samples} times · ALPHA ${JSON.stringify(sight)}`);
     // Before this stage a round into a body ended in mid-air: the spark was drawn for world hits
     // only, the body never lit, and the flinch the pose rig has had since Stage 74 had never once
     // been handed to anybody but the local file.
