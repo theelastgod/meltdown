@@ -72,9 +72,17 @@ const m = (stat: StatMod["stat"], delta: number): StatMod => ({ stat, delta });
 /**
  * The Ledger Graph: 48 nodes in three rings. Ring 1 is the first district
  * (Depth 1–4), ring 2 the trades a working Blank makes (Depth 6–14), ring 3
- * the market's own language (Depth 16–30). Links are generated below as a
+ * the market's own language (Depth 16–48). Links are generated below as a
  * hex constellation: neighbours around each ring and the nearest nodes in
  * the adjacent rings, so path-carving is a real build decision.
+ *
+ * Ring 3 was written across Depth 16–30 and every gate the ladder has was
+ * spent by 30, leaving Depth 31–49 — 36.9 h of play, 68% of the climb to 50 —
+ * granting nothing whatsoever (Stage 659). It is spread across 16–48 now, one
+ * node every other Depth. This delays variety and not strength: every node is
+ * a reconciled paired trade held to ±4% TTK by the Fairness Lint, so a fully
+ * carved file is differently shaped rather than stronger, and a ladder should
+ * pay out shape slowly.
  */
 const RING1: LedgerItem[] = [
   // ordered so mobility trades alternate sign around the ring (chains of neighbours net out)
@@ -115,23 +123,23 @@ const RING2: LedgerItem[] = [
 
 const RING3: LedgerItem[] = [
   reconciled("meltdown_clause", "MELTDOWN CLAUSE", 3, 16, 1400, [m("flipRate", 0.3)], [m("shieldRegen", -0.35), m("droneDetect", 0.2), m("footstep", 0.15)], "MELTDOWN CLAUSE: +30% node flip / −35% regen, loud on the model"),
-  reconciled("acceleration", "ACCELERATION", 3, 18, 1500, [m("moveSpeed", 0.03)], [m("shieldRegen", -0.06), m("footstep", 0.05)], "ACCELERATION: +3% move / −6% regen, a little louder"),
-  reconciled("counterparty", "COUNTERPARTY", 3, 16, 1400, [m("shieldRegen", 0.4), m("shieldDelay", -0.1)], [m("moveSpeed", -0.02), m("slideBoost", -0.06), m("reloadSpeed", -0.18), m("spread", 0.06), m("throwSpeed", -0.08)], "COUNTERPARTY: shield like a wall / −2% move, −6% slide, −18% reload, +6% spread, weak throw"),
-  reconciled("runaway", "RUNAWAY", 3, 17, 1450, [m("slideBoost", 0.15), m("slideFriction", -0.15)], [m("adsMove", -0.15), m("shieldDelay", 0.12)], "RUNAWAY: the longest slides / −15% ADS strafe, late shield"),
-  reconciled("margin_call", "MARGIN CALL", 3, 17, 1450, [m("reloadSpeed", 0.25)], [m("spread", 0.12), m("recoil", 0.1), m("mantleTime", 0.06)], "MARGIN CALL: +25% reload / +12% spread, +10% recoil, slower mantle"),
-  reconciled("capital_flight", "CAPITAL FLIGHT", 3, 19, 1550, [m("mantleTime", -0.2), m("adsMove", 0.1)], [m("slideBoost", -0.12), m("throwSpeed", -0.1), m("reloadSpeed", -0.07)], "CAPITAL FLIGHT: fast mantle, +10% ADS strafe / −12% slide, weak throw, −7% reload"),
-  reconciled("clearing_house", "CLEARING HOUSE", 3, 18, 1500, [m("grenades", 1), m("throwSpeed", 0.1)], [m("shieldDelay", 0.12), m("reloadSpeed", -0.07)], "CLEARING HOUSE: +1 grenade, +10% throw / late shield, −7% reload"),
-  reconciled("front_run", "FRONT RUN", 3, 24, 1800, [m("moveSpeed", 0.02), m("slideBoost", 0.08)], [m("shieldDelay", 0.08), m("droneDetect", 0.08)], "FRONT RUN: +2% move, +8% slide / late shield, easier to spot"),
-  reconciled("dark_pool", "DARK POOL", 3, 19, 1550, [m("droneDetect", -0.45), m("footstep", -0.2)], [m("flipRate", -0.15), m("range", -0.03), m("reloadSpeed", -0.1)], "DARK POOL: nearly off the model / −15% flip, −3% range, −10% reload"),
-  reconciled("yield", "YIELD", 3, 28, 2000, [m("shieldRegen", 0.35), m("flipRate", 0.1)], [m("moveSpeed", -0.02), m("mantleTime", 0.1), m("reloadSpeed", -0.16), m("spread", 0.08), m("footstep", 0.12)], "YIELD: +35% regen, +10% flip / −2% move, slower mantle, −16% reload, +8% spread, louder"),
-  reconciled("liquidation", "LIQUIDATION", 3, 20, 1600, [m("headMult", 0.18)], [m("shieldRegen", -0.25), m("reloadSpeed", -0.08), m("adsMove", -0.06)], "LIQUIDATION: +18% headshot / −25% regen, −8% reload, −6% ADS strafe"),
-  reconciled("black_swan", "BLACK SWAN", 3, 30, 2200, [m("droneDetect", -0.5), m("mantleTime", -0.1), m("slideBoost", 0.05)], [m("shieldRegen", -0.3), m("flipRate", -0.1), m("reloadSpeed", -0.06)], "BLACK SWAN: invisible to the model, quick over walls / −30% regen, −10% flip, −6% reload"),
-  reconciled("haircut", "HAIRCUT", 3, 20, 1600, [m("recoil", -0.2), m("spread", -0.12)], [m("reloadSpeed", -0.15), m("moveSpeed", -0.015), m("shieldDelay", 0.12)], "HAIRCUT: −20% recoil, −12% spread / −15% reload, −1.5% move, later shield"),
-  reconciled("circuit_breaker", "CIRCUIT BREAKER", 3, 22, 1700, [m("shieldDelay", -0.3), m("slideBoost", 0.06)], [m("shieldRegen", -0.2), m("adsMove", -0.08)], "CIRCUIT BREAKER: shield returns at once, +6% slide / regens slower, −8% ADS strafe"),
-  reconciled("stop_loss", "STOP LOSS", 3, 22, 1700, [m("range", 0.03), m("spread", -0.06)], [m("fireRate", -0.02), m("reloadSpeed", -0.02), m("mantleTime", 0.05)], "STOP LOSS: +3% range, −6% spread / −2% fire rate, −2% reload, slower mantle"),
-  reconciled("leverage", "LEVERAGE", 3, 24, 1800, [m("throwSpeed", 0.25), m("grenades", 1), m("slideBoost", 0.05)], [m("shieldRegen", -0.22), m("footstep", 0.2)], "LEVERAGE: +1 grenade, +25% throw, +5% slide / −22% regen, loud"),
-  reconciled("wash_trade", "WASH TRADE", 3, 26, 1900, [m("flipRate", 0.2), m("footstep", -0.15)], [m("adsMove", -0.15), m("throwSpeed", -0.1), m("moveSpeed", -0.01), m("reloadSpeed", -0.12), m("spread", 0.06)], "WASH TRADE: +20% flip, quieter / −15% ADS strafe, weak throw, −1% move, −12% reload, +6% spread"),
-  reconciled("default_swap", "DEFAULT SWAP", 3, 26, 1900, [m("reloadSpeed", 0.2), m("recoil", -0.1), m("mantleTime", -0.06)], [m("spread", 0.15), m("range", -0.03), m("shieldDelay", 0.12), m("droneDetect", 0.1)], "DEFAULT SWAP: +20% reload, −10% recoil, faster mantle / +15% spread, −3% range, later shield, easier to spot"),
+  reconciled("acceleration", "ACCELERATION", 3, 24, 1500, [m("moveSpeed", 0.03)], [m("shieldRegen", -0.06), m("footstep", 0.05)], "ACCELERATION: +3% move / −6% regen, a little louder"),
+  reconciled("counterparty", "COUNTERPARTY", 3, 18, 1400, [m("shieldRegen", 0.4), m("shieldDelay", -0.1)], [m("moveSpeed", -0.02), m("slideBoost", -0.06), m("reloadSpeed", -0.18), m("spread", 0.06), m("throwSpeed", -0.08)], "COUNTERPARTY: shield like a wall / −2% move, −6% slide, −18% reload, +6% spread, weak throw"),
+  reconciled("runaway", "RUNAWAY", 3, 20, 1450, [m("slideBoost", 0.15), m("slideFriction", -0.15)], [m("adsMove", -0.15), m("shieldDelay", 0.12)], "RUNAWAY: the longest slides / −15% ADS strafe, late shield"),
+  reconciled("margin_call", "MARGIN CALL", 3, 22, 1450, [m("reloadSpeed", 0.25)], [m("spread", 0.12), m("recoil", 0.1), m("mantleTime", 0.06)], "MARGIN CALL: +25% reload / +12% spread, +10% recoil, slower mantle"),
+  reconciled("capital_flight", "CAPITAL FLIGHT", 3, 28, 1550, [m("mantleTime", -0.2), m("adsMove", 0.1)], [m("slideBoost", -0.12), m("throwSpeed", -0.1), m("reloadSpeed", -0.07)], "CAPITAL FLIGHT: fast mantle, +10% ADS strafe / −12% slide, weak throw, −7% reload"),
+  reconciled("clearing_house", "CLEARING HOUSE", 3, 26, 1500, [m("grenades", 1), m("throwSpeed", 0.1)], [m("shieldDelay", 0.12), m("reloadSpeed", -0.07)], "CLEARING HOUSE: +1 grenade, +10% throw / late shield, −7% reload"),
+  reconciled("front_run", "FRONT RUN", 3, 40, 1800, [m("moveSpeed", 0.02), m("slideBoost", 0.08)], [m("shieldDelay", 0.08), m("droneDetect", 0.08)], "FRONT RUN: +2% move, +8% slide / late shield, easier to spot"),
+  reconciled("dark_pool", "DARK POOL", 3, 30, 1550, [m("droneDetect", -0.45), m("footstep", -0.2)], [m("flipRate", -0.15), m("range", -0.03), m("reloadSpeed", -0.1)], "DARK POOL: nearly off the model / −15% flip, −3% range, −10% reload"),
+  reconciled("yield", "YIELD", 3, 47, 2000, [m("shieldRegen", 0.35), m("flipRate", 0.1)], [m("moveSpeed", -0.02), m("mantleTime", 0.1), m("reloadSpeed", -0.16), m("spread", 0.08), m("footstep", 0.12)], "YIELD: +35% regen, +10% flip / −2% move, slower mantle, −16% reload, +8% spread, louder"),
+  reconciled("liquidation", "LIQUIDATION", 3, 32, 1600, [m("headMult", 0.18)], [m("shieldRegen", -0.25), m("reloadSpeed", -0.08), m("adsMove", -0.06)], "LIQUIDATION: +18% headshot / −25% regen, −8% reload, −6% ADS strafe"),
+  reconciled("black_swan", "BLACK SWAN", 3, 48, 2200, [m("droneDetect", -0.5), m("mantleTime", -0.1), m("slideBoost", 0.05)], [m("shieldRegen", -0.3), m("flipRate", -0.1), m("reloadSpeed", -0.06)], "BLACK SWAN: invisible to the model, quick over walls / −30% regen, −10% flip, −6% reload"),
+  reconciled("haircut", "HAIRCUT", 3, 34, 1600, [m("recoil", -0.2), m("spread", -0.12)], [m("reloadSpeed", -0.15), m("moveSpeed", -0.015), m("shieldDelay", 0.12)], "HAIRCUT: −20% recoil, −12% spread / −15% reload, −1.5% move, later shield"),
+  reconciled("circuit_breaker", "CIRCUIT BREAKER", 3, 36, 1700, [m("shieldDelay", -0.3), m("slideBoost", 0.06)], [m("shieldRegen", -0.2), m("adsMove", -0.08)], "CIRCUIT BREAKER: shield returns at once, +6% slide / regens slower, −8% ADS strafe"),
+  reconciled("stop_loss", "STOP LOSS", 3, 38, 1700, [m("range", 0.03), m("spread", -0.06)], [m("fireRate", -0.02), m("reloadSpeed", -0.02), m("mantleTime", 0.05)], "STOP LOSS: +3% range, −6% spread / −2% fire rate, −2% reload, slower mantle"),
+  reconciled("leverage", "LEVERAGE", 3, 42, 1800, [m("throwSpeed", 0.25), m("grenades", 1), m("slideBoost", 0.05)], [m("shieldRegen", -0.22), m("footstep", 0.2)], "LEVERAGE: +1 grenade, +25% throw, +5% slide / −22% regen, loud"),
+  reconciled("wash_trade", "WASH TRADE", 3, 44, 1900, [m("flipRate", 0.2), m("footstep", -0.15)], [m("adsMove", -0.15), m("throwSpeed", -0.1), m("moveSpeed", -0.01), m("reloadSpeed", -0.12), m("spread", 0.06)], "WASH TRADE: +20% flip, quieter / −15% ADS strafe, weak throw, −1% move, −12% reload, +6% spread"),
+  reconciled("default_swap", "DEFAULT SWAP", 3, 46, 1900, [m("reloadSpeed", 0.2), m("recoil", -0.1), m("mantleTime", -0.06)], [m("spread", 0.15), m("range", -0.03), m("shieldDelay", 0.12), m("droneDetect", 0.1)], "DEFAULT SWAP: +20% reload, −10% recoil, faster mantle / +15% spread, −3% range, later shield, easier to spot"),
 ];
 
 /** Hex constellation links: neighbours around each ring, plus the nearest nodes in the adjacent rings by angle. */

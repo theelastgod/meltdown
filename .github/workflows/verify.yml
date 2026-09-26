@@ -72,6 +72,8 @@ jobs:
         if: ${{ !cancelled() }}
       - run: npm run lint:campaign
         if: ${{ !cancelled() }}
+      - run: npm run lint:progression
+        if: ${{ !cancelled() }}
       - run: npm run lint:assets
         if: ${{ !cancelled() }}
       - run: npm run probe:economy

@@ -1641,6 +1641,83 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 659 — The ladder was spent by Depth 30 and the last 19 levels paid nothing
+
+**The defect, measured.** Depth runs 1–50 and the climb is 1,475,292 XP —
+about 58.5 h at 4,200 XP per ten-minute match. Counting every system that
+gates on Depth together, which is how a player experiences them (Ledger nodes
+and keystones, weapons, moniker tiers, glyph layers, the counter-ledger gates):
+
+```
+depths 2..50 that grant nothing: 24 of 49
+longest run of empty depths:     19  (Depth 31–49) = 36.9 h of play
+grants in hand by Depth 30:      60 of 63, at 32% of the climb
+```
+
+The last nineteen levels — **68% of the climb to 50 and 36.9 hours of play** —
+contained not one grant of any kind. Everything the ladder had was gone by
+Depth 30, and the only thing waiting at the top was the Depth-50 capstone
+(moniker tier, on-chain name, named glyph). The whole arsenal was in hand by
+Depth 6: 15,240 XP, 1.0% of the climb, about 36 minutes.
+
+**The fix, and why it costs nothing.** Ring 3 of the Ledger Graph — the
+market's own language, 18 nodes — was written across Depth 16–30, two to a
+level. It is spread across **16–48** now, one node every other Depth, mapped in
+the order it already had so the cheap nodes still come first and price never
+falls as the gate deepens. No node was added, removed, repriced or reworded.
+
+This delays **variety, not strength**. Every node is a reconciled paired trade
+that the Fairness Lint holds to ±4% TTK, so a fully carved file is differently
+shaped rather than stronger — which is exactly the thing a ladder should be
+allowed to pay out slowly. Spreading power up the climb would widen the gap
+between a new file and a veteran one in PvP; spreading shape does not.
+
+```
+                         before      after
+depths granting nothing   24 of 49   16 of 49
+longest dead zone         19 (36.9 h) 1 (0.6 h)
+grants by Depth 30        60 of 63    51 of 63
+grants by Depth 40        60 of 63    56 of 63
+```
+
+**The guard.** `shared/progression/lint.ts` and `npm run lint:progression`,
+wired into both `verify` and the CI workflow — `tests/verify.test.ts` already
+pins those two lists to each other, so it could not be added to one and
+forgotten in the other. `depthGrants()` derives the ladder from the manifests
+rather than listing it, so a reward added anywhere counts without anyone coming
+back here. Four rules: `dead-zone` (no more than 2 consecutive Depths may grant
+nothing), `empty-back-half`, `unpaid-cap`, and `grant-off-the-ladder` for a
+reward gated past 50 where nobody would ever see it.
+
+It had to be a rule over the ladder rather than over a reward. Every other
+check in the project asks whether a reward is *correct* — reconciled, in the
+TTK band, priced against its benefits — and **a Depth that grants nothing has
+nothing to check**. All 48 nodes were individually fine the whole time.
+
+**Mutation.** Dragging ring 3 back under Depth 30 fails `lint:progression` with
+exit 1 and `dead-zone: Depth 31–49 is 19 levels granting nothing (limit 2)` —
+reproducing the original measurement, 19 levels and 36.9 h, from the other
+direction. A second, finer mutation in `tests/ladder.test.ts` moves a single
+node back, so the rule is not one that only bites on a whole rewrite.
+
+**A second frozen literal, same family as Stage 658's.** `probe/stage7.ts`
+asserted `NEEDS DEPTH 30` for BLACK SWAN — ring 3's old ceiling written into
+the probe — and broke the moment the ring moved. It now reads the gate from the
+manifest. That is the third count-or-constant this week that was copied out of
+the data it was supposed to be checking.
+
+**Verified on a still tree.** tsc, 1414 unit tests, the full fairness lint
+(**new 0, worse 0**, the recorded debt untouched at 89), the economy, campaign,
+asset and progression lints, `probe:file` 20/20, `probe:mastery` 23/23,
+`probe:identity` 25/25, `probe:endgame` 20/20, and the production build.
+
+**Still open.** Sixteen Depths still grant nothing, but every one of them is now
+a single level between two that pay. The weapon ladder has the same shape of
+hole one level down: ranks 15, 19, 23, 24, 26, 29 and 30 unlock nothing on any
+weapon, and **rank 30 — the cap — is empty for all eight**, while ranks 15 and
+25 are challenge gates, so a player completes a curriculum and is granted
+permission to keep ranking.
+
 ## Stage 658 — The weapons the story gives you were the only ones mastery never paid
 
 *Second stage under the owner's brief, which now also names character

@@ -20,6 +20,7 @@ import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 import { certifyFirmwares } from "../shared/sim/ttk";
+import { LEDGER_ITEMS } from "../shared/manifest/items";
 
 const VITE_PORT = 5195;
 const HOST_PORT = 8798;
@@ -184,7 +185,10 @@ async function main(): Promise<void> {
     await shotCheck(r, "stage7-graph-after.png", "#hud .graph");
     check("shop: a Depth-10 file with Scrip buys SLIPFILE and the hex turns green on the graph", bought.ok && after.owned.includes("slipfile") && after.scrip === before.scrip - 400 && after.green && after.own === before.own + 1, `owned ${before.owned}→${after.owned.length} · scrip ${before.scrip}→${after.scrip} · green hexes ${before.own}→${after.own}`);
     const deep = await r.evaluate(() => window.__game.buy("black_swan"));
-    check("shop: ring III is gated on Depth (BLACK SWAN needs 30)", !deep.ok && deep.reason === "NEEDS DEPTH 30", deep.reason ?? "bought?!");
+    // derived from the manifest, not the literal 30 it was: that literal was ring 3's old ceiling
+    // frozen into the probe, and it broke the moment the ring was spread up the ladder (Stage 659)
+    const swanDepth = LEDGER_ITEMS.find((i) => i.id === "black_swan")!.requiresDepth;
+    check(`shop: ring III is gated on Depth (BLACK SWAN needs ${swanDepth})`, !deep.ok && deep.reason === `NEEDS DEPTH ${swanDepth}`, `${deep.reason ?? "bought?!"} · the file is at Depth 10`);
     const twice = await r.evaluate(() => window.__game.buy("slipfile"));
     check("shop: ownership is permanent — buying a node twice is refused", !twice.ok && twice.reason === "ALREADY IN YOUR FILE", twice.reason ?? "bought?!");
     await r.evaluate(() => window.__game.setLoadout({ primary: "lease_breaker", secondary: "shock_baton", attested: ["slipfile"] }));
