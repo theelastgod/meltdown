@@ -1,7 +1,8 @@
 /**
  * The CRT menu flow (Stage 13). After the crawl's title: two title cards — "Every mind in Neo-China
  * is leased." / "You woke free." — then the menu: WAKE (a district and the public room), CAMPAIGN
- * (the desk), THE OFFICE (the hub), THE RANGE (offline, dummies), FILE, SETTINGS. In play, ESC
+ * (the desk), THE OFFICE (the hub), THE RANGE (offline, dummies), FILE, WALLET (the page drawn in
+ * place, like SETTINGS, from the Counter-Ledger's own client: client/wallet.ts), SETTINGS. In play, ESC
  * opens the pause menu (RESUME / SETTINGS / FILE / QUIT TO MENU). Choices are URLs, like district
  * travel: the client reloads with the query that describes the mode.
  *
@@ -19,6 +20,7 @@ import { menuFooter, settingsLine } from "./hud/keyhint";
 import type { GameAudio } from "./audio";
 import { clipsFor, videoUrl } from "../shared/assets/video";
 import { CAPITAL_MARK } from "./brand";
+import { walletEntries, walletHtml, walletState, type WalletState } from "./wallet";
 
 /** a row with [−] [+]: a setting, or a field of the look (Stage 689) */
 const adjustable = (id: string): boolean => id.startsWith("set:") || id.startsWith("look:");
@@ -27,7 +29,7 @@ export const TITLE_CARDS: readonly string[] = ["Every mind in Neo-China is lease
 export const CARD_SECONDS = 2.4;
 export const CARD_GAP = 0.5;
 
-export type MenuScreen = "cards" | "main" | "wake" | "settings" | "character" | "pause" | "hidden";
+export type MenuScreen = "cards" | "main" | "wake" | "settings" | "character" | "wallet" | "pause" | "hidden";
 
 export interface MenuEntry {
   id: string;
@@ -37,7 +39,7 @@ export interface MenuEntry {
   line: string;
 }
 
-const MAIN: MenuEntry[] = [
+export const MAIN: readonly MenuEntry[] = [
   { id: "wake", label: "WAKE", line: "THE SIGNATURE MODE: FLIP THE NODES, HOLD THE DISTRICT, BEAT THE KERNEL'S CLOCK" },
   { id: "run", label: "THE RUN", line: "PLAY TO EARN: CARRY $CAPITAL CLAIMS OUT OF THE PVP ZONE TO A GATE; DIE AND THEY DROP", icon: CAPITAL_MARK.small },
   { id: "campaign", label: "CAMPAIGN", line: "THE DESK AT THE DEADLETTER OFFICE: FIXERS, GIGS, THE SEVEN-MISSION ARC" },
@@ -45,6 +47,7 @@ const MAIN: MenuEntry[] = [
   { id: "range", label: "THE RANGE", line: "THE DRAINAGE YARD, OFFLINE, WITH DUMMIES" },
   { id: "character", label: "CHARACTER", line: "BUILD YOUR BLANK: BODY, BUILD, COAT, SHOULDER · CLOTH ONLY, THE SAME HITBOX FOR EVERY BODY" },
   { id: "file", label: "FILE", line: "THE GHOSTFILE: NODES, MASTERY, STAMPS, THE COUNTER-LEDGER" },
+  { id: "wallet", label: "WALLET", line: "CONNECT A WALLET: YOUR ADDRESS, YOUR $CAPITAL, YOUR GHOSTFILE ON-CHAIN" },
   { id: "settings", label: "SETTINGS", line: "SENSITIVITY, FIELD OF VIEW, VOLUMES, THE CRT" },
 ];
 
@@ -71,6 +74,17 @@ export interface MenuView {
   skippable: boolean;
   /** the look the CHARACTER page's turntable is wearing, or null before it was first opened (Stage 689) */
   previewLook: number | null;
+  /** the text of the page drawn above the list (the WALLET page); "" on the list-only screens */
+  page: string;
+}
+
+/** The WALLET page's side of the host: the Counter-Ledger's client, loaded on demand (client/wallet.ts). */
+export interface MenuWallet {
+  state: () => WalletState;
+  /** the page opened: load the chain client if it is not in yet, re-read the holdings if connected */
+  open: () => void;
+  /** a button on the page: walletconnect / injected / disconnect / copy / switch */
+  act: (id: string) => void;
 }
 
 export interface MenuHost {
@@ -81,6 +95,8 @@ export interface MenuHost {
   /** the pause menu's RESUME: back to the game (pointer lock is the click's) */
   resume: () => void;
   identityLine: () => string;
+  /** the WALLET page (absent: the entry opens an empty page that says there is no ledger host) */
+  wallet?: MenuWallet;
   /** the look the file wears, and wearing another (Stage 689) */
   look: () => number;
   setLook: (code: number) => void;
@@ -157,6 +173,7 @@ export class Menu {
   private pick: "wake" | "run" = "wake";
   private raf = 0;
   private started = 0;
+  private pageHtml = "";
   onQuit: (() => void) | null = null;
 
   constructor(private host: MenuHost, private speed = 1) {
@@ -172,7 +189,7 @@ export class Menu {
     const root = document.createElement("div");
     root.id = "menu";
     root.hidden = true;
-    root.innerHTML = `<video class="bg" muted loop playsinline preload="auto"></video><div class="card"></div><div class="panel"><div class="hd"><span class="word">MELTDOWN</span><span class="who"></span></div><div class="list"></div><canvas class="pv" width="440" height="600" hidden></canvas><div class="line"></div><div class="ft"><span class="hint"></span> · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
+    root.innerHTML = `<video class="bg" muted loop playsinline preload="auto"></video><div class="card"></div><div class="panel"><div class="hd"><span class="word">MELTDOWN</span><span class="who"></span></div><div class="page"></div><div class="list"></div><canvas class="pv" width="440" height="600" hidden></canvas><div class="line"></div><div class="ft"><span class="hint"></span> · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
     // The title sits over the city rather than over black (Stage 633). A DOM video, not a pooled
     // one: the menu is not a scene and this costs no material. It fails soft in the strongest
     // sense — the element simply never plays and the menu is the flat panel it has always been.
@@ -299,7 +316,7 @@ export class Menu {
     this.preview.start();
   }
 
-  private entries(): MenuEntry[] {
+  private entries(): readonly MenuEntry[] {
     switch (this.screen) {
       case "main":
         return MAIN;
@@ -313,13 +330,27 @@ export class Menu {
         const l = decodeLook(this.host.look());
         return [...LOOK_FIELDS.map((f) => ({ id: `look:${f.key}`, label: f.label, line: f.options[l[f.key]]?.label ?? "" })), { id: "back", label: "BACK", line: "" }];
       }
+      case "wallet":
+        return [...walletEntries(this.walletState()).map((e) => ({ ...e, id: `wallet:${e.id}` })), { id: "back", label: "BACK", line: "" }];
       default:
         return [];
     }
   }
 
+  private walletState(): WalletState {
+    return this.host.wallet?.state() ?? walletState(null, false);
+  }
+
+  /** Redraw when something the current page shows changed underneath it (the wallet connecting). */
+  refresh(): void {
+    if (this.screen === "wallet") this.render();
+  }
+
   private render(): void {
     if (this.screen === "cards" || this.screen === "hidden") return;
+    // written only when it changed, so the page's $CAPITAL mark is not re-fetched on every key
+    const pageHtml = this.screen === "wallet" ? walletHtml(this.walletState()) : "";
+    if (pageHtml !== this.pageHtml) (this.root.querySelector(".page") as HTMLElement).innerHTML = this.pageHtml = pageHtml;
     const es = this.entries();
     if (this.cursor >= es.length) this.cursor = 0;
     const list = this.root.querySelector(".list") as HTMLElement;
@@ -333,7 +364,7 @@ export class Menu {
     const wants = menuFooter(wantsTouch(), es.some((e) => adjustable(e.id)), this.canBack());
     if (hint.textContent !== wants) hint.textContent = wants;
     const hd = this.root.querySelector(".hd .word") as HTMLElement;
-    hd.textContent = this.screen === "pause" ? "PAUSED" : this.screen === "wake" ? `${this.pick === "run" ? "THE RUN" : "WAKE"} · PICK A DISTRICT` : this.screen === "settings" ? "SETTINGS" : this.screen === "character" ? "CHARACTER" : "MELTDOWN";
+    hd.textContent = this.screen === "pause" ? "PAUSED" : this.screen === "wake" ? `${this.pick === "run" ? "THE RUN" : "WAKE"} · PICK A DISTRICT` : this.screen === "settings" ? "SETTINGS" : this.screen === "character" ? "CHARACTER" : this.screen === "wallet" ? "WALLET" : "MELTDOWN";
   }
 
   private onKey = (e: KeyboardEvent): void => {
@@ -387,7 +418,7 @@ export class Menu {
 
   /** Whether ESC goes anywhere from here. The main menu is the root: there is nothing behind it. */
   private canBack(): boolean {
-    return this.screen === "wake" || this.screen === "settings" || this.screen === "character" || this.screen === "pause";
+    return this.screen === "wake" || this.screen === "settings" || this.screen === "character" || this.screen === "wallet" || this.screen === "pause";
   }
 
   private back(): void {
@@ -395,7 +426,7 @@ export class Menu {
     // back sound and stay exactly where it was
     if (!this.canBack()) return;
     this.host.audio?.uiBack();
-    if (this.screen === "wake") this.show("main");
+    if (this.screen === "wake" || this.screen === "wallet") this.show("main");
     else if (this.screen === "settings") this.show(this.prev === "pause" ? "pause" : "main");
     else if (this.screen === "character") this.show("main");
     else if (this.screen === "pause") this.choose("resume");
@@ -433,6 +464,16 @@ export class Menu {
     }
     if (id.startsWith("look:")) {
       this.adjust(1);
+      return null;
+    }
+    if (id === "wallet") {
+      this.cursor = 0;
+      this.show("wallet");
+      this.host.wallet?.open();
+      return null;
+    }
+    if (id.startsWith("wallet:")) {
+      this.host.wallet?.act(id.slice(7));
       return null;
     }
     if (id.startsWith("set:")) {
@@ -493,7 +534,7 @@ export class Menu {
   }
 
   view(): MenuView {
-    return { matched: !!this.matched, screen: this.screen, card: this.card, cardT: this.cardClock(performance.now()), cardText:(this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen, previewLook: this.preview ? this.preview.look : null };
+    return { matched: !!this.matched, screen: this.screen, card: this.card, cardT: this.cardClock(performance.now()), cardText:(this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen, previewLook: this.preview ? this.preview.look : null, page: (this.root.querySelector(".page") as HTMLElement | null)?.textContent ?? "" };
   }
 
   static settingsOf(): Settings {

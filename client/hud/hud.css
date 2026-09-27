@@ -466,6 +466,17 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #menu .line { min-height: 18px; margin-top: 10px; font-size: 11px; color: var(--gr); letter-spacing: 0.08em; opacity: 0.85; }
 #menu .ft { margin-top: 8px; font-size: 10px; color: rgba(53,242,255,0.55); letter-spacing: 0.12em; }
 #menu .ft .build { color: var(--mg); }
+/* the WALLET page (client/wallet.ts): drawn above the list, the FILE panel's terminal lines */
+#menu .page:empty { display: none; }
+#menu .page { margin: 0 0 10px; font-size: 12px; letter-spacing: 0.06em; color: var(--cy); overflow-wrap: anywhere; }
+#menu .page .sh { color: var(--mg); letter-spacing: 0.1em; margin: 0 0 6px; padding-bottom: 3px; border-bottom: 1px solid rgba(255,62,201,0.35); }
+#menu .page .ln { margin: 3px 0; }
+#menu .page b { color: var(--gr); }
+#menu .page .dim { color: rgba(53,242,255,0.5); }
+#menu .page .st.none b, #menu .page .st.connecting b { color: var(--ye); }
+#menu .page .st.wrong-chain b, #menu .page .bad { color: var(--mg); }
+#menu .page .safe { margin-top: 8px; color: rgba(55,255,139,0.8); font-size: 11px; }
+#menu .page .am { color: var(--am); }
 #menu .scan { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.5) 2px 3px); animation: crawl-flicker 0.11s steps(2) infinite; }
 
 /* ---- THE RUN (Stage 14): the strip, the zone edge ---- */

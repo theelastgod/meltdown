@@ -174,6 +174,29 @@ async function main(): Promise<void> {
     await twice.close();
     check("the Ghostfile cannot move (soulbound), and a second file cannot bind the same wallet", soulbound && !link2.ok && /already bound/.test(link2.reason ?? ""), `transfer reverted ${soulbound} · second link: ${link2.reason}`);
 
+    // ---------------- the WALLET page on the main menu ----------------
+    // The wallet the link above bound, on a menu page of its own: it opens NOT CONNECTED, connects
+    // through the same headless account, and reads the Ghostfile and the launch grant off the chain.
+    const w = await newPage({ width: 960, height: 560 }, "wallet");
+    await w.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&menu=1&crawl=0&nonav=1&menuspeed=8&level=drainage_yard&account=wallet-cl&secret=${SECRET}&shop=${HOST}&wallet=${DEV_KEYS.player}`, { waitUntil: "load", timeout: NAV_MS });
+    await w.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "main", null, { timeout: 40000, polling: 50 });
+    const wMain = await w.evaluate(() => window.__game.menu()!.entries);
+    await w.evaluate(() => window.__game.menuChoose("wallet"));
+    await w.waitForFunction(() => /STATUS NOT CONNECTED/.test(window.__game.menu()?.page ?? "") && !/FETCHING/.test(window.__game.menu()?.page ?? ""), null, { timeout: 20000, polling: 100 }).catch(() => undefined);
+    const w0 = await w.evaluate(() => ({ ...window.__game.menu()!, wallet: window.__game.counter().wallet }));
+    check("the main menu lists WALLET right after FILE, and it opens the WALLET page on NOT CONNECTED: both connects offered, the safety line shown, no wallet on the client yet", wMain.indexOf("WALLET") === wMain.indexOf("FILE") + 1 && w0.screen === "wallet" && /STATUS NOT CONNECTED/.test(w0.page) && !/ADDRESS/.test(w0.page) && /NEVER ASKS FOR YOUR SEED PHRASE/.test(w0.page) && w0.entries.join("|") === "CONNECT — WALLETCONNECT|CONNECT — BROWSER WALLET|BACK" && w0.wallet === null, `menu [${wMain.join(", ")}] · ${w0.screen} · [${w0.entries.join(", ")}] · "${w0.page.slice(0, 120)}"`);
+    await w.evaluate(() => window.__game.menuChoose("wallet:injected"));
+    await w.waitForFunction(() => /GHOSTFILE #\d+ BOUND/.test(window.__game.menu()?.page ?? ""), null, { timeout: 20000, polling: 100 }).catch(() => undefined);
+    const w1 = await w.evaluate(() => ({ ...window.__game.menu()!, wallet: window.__game.counter().wallet }));
+    await w.evaluate(() => window.__game.toggleFile(true));
+    await w.waitForTimeout(300);
+    const wFile = await w.evaluate(() => (document.querySelector("#hud .file .cl") as HTMLElement | null)?.textContent ?? "");
+    await w.evaluate(() => window.__game.toggleFile(false));
+    await shotCheck(w, `stage11b-wallet.png`, "#menu");
+    await w.close();
+    const shortPlayer = `${player.address.slice(0, 6)}…${player.address.slice(-4)}`;
+    check("the WALLET page connects through the headless account: CONNECTED on the devnet, the short address, the launch grant as the $CAPITAL balance and the bound Ghostfile read from the chain, DISCONNECT and COPY ADDRESS offered, and the FILE page's Counter-Ledger shows the same wallet", /STATUS CONNECTED ON MELTDOWN DEVNET/.test(w1.page) && w1.page.includes(`ADDRESS ${shortPlayer}`) && w1.page.includes(`$CAPITAL ${LAUNCH_GRANT.toLocaleString("en-US")}`) && /GHOSTFILE #1 BOUND/.test(w1.page) && w1.entries.join("|") === "DISCONNECT|COPY ADDRESS|BACK" && w1.wallet?.toLowerCase() === player.address.toLowerCase() && wFile.includes(`WALLET ${shortPlayer}`), `[${w1.entries.join(", ")}] · wallet ${w1.wallet} · page "${w1.page.slice(0, 220)}" · FILE "${wFile.slice(0, 120)}"`);
+
     // ---------------- the market ----------------
     await post("/chain/faucet", { address: player.address }); // gas for the wallet's own transactions (devnet)
     const rust = i0.listings.find((l) => l.token === 1)!;

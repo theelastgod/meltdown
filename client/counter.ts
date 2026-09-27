@@ -5,7 +5,7 @@
  * sent straight to the chain's RPC, and the cache ops on the file. It reads nothing mechanical
  * and writes nothing but identity and ownership.
  */
-import { createPublicClient, createWalletClient, custom, defineChain, http, parseEther, type Hex, type PublicClient, type WalletClient } from "viem";
+import { createPublicClient, createWalletClient, custom, defineChain, formatEther, http, parseEther, type Hex, type PublicClient, type WalletClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { createSiweMessage } from "viem/siwe";
 import type { CounterRecord } from "@shared/progression/account";
@@ -43,6 +43,7 @@ export function counterOpLine(op: string, ok: boolean, reason?: string): string 
 
 interface Eip1193 {
   request(args: { method: string; params?: unknown[] }): Promise<unknown>;
+  on?(event: string, handler: (arg: unknown) => void): void;
 }
 
 export class CounterClient {
@@ -52,9 +53,18 @@ export class CounterClient {
   /** last line for the panel */
   last = "";
   busy = false;
+  /** a connect is waiting on the wallet (the WALLET page's CONNECTING) */
+  connecting = false;
+  /** the chain the wallet itself is on; the WALLET page compares it with `info.chainId` */
+  walletChain: number | null = null;
+  /** the connected address's own $CAPITAL (whole-token string) and Ghostfile token id (0: none), read from the chain */
+  holdings: { capital: string; ghostfile: number } | null = null;
   onChange: (() => void) | null = null;
   private wallet: WalletClient | null = null;
   private pub: PublicClient | null = null;
+  /** the injected provider this client connected through (null: none, or the headless local account) */
+  private eth: Eip1193 | null = null;
+  private heard = new WeakSet<Eip1193>();
 
   /** the file's credential: the counter-ledger changes the file, so it needs it like every other mutation */
   secret = "";
@@ -83,8 +93,24 @@ export class CounterClient {
     return defineChain({ id, name: this.info?.devnet ? "MELTDOWN devnet" : "Robinhood Chain", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [this.info?.rpc ?? ""] } } });
   }
 
-  /** Connect: `?wallet=<key>` (headless / tests) or the injected provider. */
-  async connect(): Promise<boolean> {
+  /**
+   * Connect: `?wallet=<key>` (headless / tests, standing in for any wallet) or the injected provider.
+   * `via` is the WALLET page's button; the FILE page's link and buys ask for "any" (the injected one).
+   */
+  async connect(via: "any" | "walletconnect" | "injected" = "any"): Promise<boolean> {
+    this.connecting = true;
+    this.onChange?.();
+    try {
+      const ok = await this.connectVia(via);
+      if (ok) void this.readHoldings();
+      return ok;
+    } finally {
+      this.connecting = false;
+      this.onChange?.();
+    }
+  }
+
+  private async connectVia(via: "any" | "walletconnect" | "injected"): Promise<boolean> {
     if (!this.info) await this.load();
     if (!this.info) return false;
     const q = new URLSearchParams(location.search);
@@ -96,8 +122,14 @@ export class CounterClient {
       const acct = privateKeyToAccount(key as Hex);
       this.wallet = createWalletClient({ chain, transport, account: acct });
       this.address = acct.address;
+      this.walletChain = this.info.chainId; // a local account is built on the ledger's chain
       this.say(`WALLET · ${this.short()} (LOCAL ACCOUNT)`);
       return true;
+    }
+    if (via === "walletconnect") {
+      // the WalletConnect relay (a Reown project id and its provider package) is not in this build
+      this.say("WALLETCONNECT IS NOT IN THIS BUILD YET: USE A BROWSER WALLET, OR OPEN THIS PAGE IN YOUR WALLET APP'S BROWSER");
+      return false;
     }
     const eth = (window as unknown as { ethereum?: Eip1193 }).ethereum;
     if (!eth) {
@@ -108,6 +140,9 @@ export class CounterClient {
       const accounts = (await eth.request({ method: "eth_requestAccounts" })) as Hex[];
       this.address = accounts[0] ?? null;
       this.wallet = createWalletClient({ chain, transport: custom(eth), account: this.address ?? undefined });
+      this.eth = eth;
+      this.walletChain = await this.askChain(eth);
+      this.listen(eth);
       this.say(`WALLET · ${this.short()}`);
       return !!this.address;
     } catch (e) {
@@ -118,6 +153,111 @@ export class CounterClient {
 
   short(): string {
     return this.address ? `${this.address.slice(0, 6)}…${this.address.slice(-4)}` : "—";
+  }
+
+  private async askChain(eth: Eip1193): Promise<number | null> {
+    try {
+      const id = Number.parseInt(String(await eth.request({ method: "eth_chainId" })), 16);
+      return Number.isFinite(id) ? id : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** The wallet moves chain or account on its own: follow it (once per provider). */
+  private listen(eth: Eip1193): void {
+    if (!eth.on || this.heard.has(eth)) return;
+    this.heard.add(eth);
+    eth.on("chainChanged", (id) => {
+      if (this.eth !== eth) return;
+      const n = Number.parseInt(String(id), 16);
+      this.walletChain = Number.isFinite(n) ? n : null;
+      this.onChange?.();
+    });
+    eth.on("accountsChanged", (list) => {
+      if (this.eth !== eth) return;
+      const next = (Array.isArray(list) ? (list[0] as Hex | undefined) : undefined) ?? null;
+      if (!next) {
+        void this.disconnect();
+        return;
+      }
+      this.address = next;
+      this.wallet = createWalletClient({ chain: this.chain(), transport: custom(eth), account: next });
+      this.holdings = null;
+      this.say(`WALLET · ${this.short()}`);
+      void this.readHoldings();
+    });
+  }
+
+  /** Forget the wallet on this page. A file already linked stays linked: that lives on the ledger. */
+  async disconnect(): Promise<void> {
+    const eth = this.eth;
+    this.eth = null;
+    this.wallet = null;
+    this.address = null;
+    this.walletChain = null;
+    this.holdings = null;
+    // best effort: a wallet that supports it drops the site's permission, so the next connect asks again
+    if (eth) await eth.request({ method: "wallet_revokePermissions", params: [{ eth_accounts: {} }] }).catch(() => undefined);
+    this.say("WALLET DISCONNECTED");
+  }
+
+  /** Ask the injected wallet to move to the ledger's chain, adding the chain when the wallet does not know it. */
+  async switchChain(): Promise<boolean> {
+    const eth = this.eth;
+    if (!this.info) return false;
+    if (!eth) return this.walletChain === this.info.chainId;
+    const chainId = `0x${this.info.chainId.toString(16)}`;
+    const refused = (e: unknown) => {
+      this.say(`SWITCH REFUSED: ${crtPhrase(String((e as Error).message ?? e).slice(0, 80))}`);
+      return false;
+    };
+    try {
+      await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId }] });
+    } catch (e) {
+      if ((e as { code?: number }).code !== 4902 || !this.info.rpc) return refused(e);
+      try {
+        await eth.request({ method: "wallet_addEthereumChain", params: [{ chainId, chainName: this.chain().name, rpcUrls: [this.info.rpc], nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 } }] });
+      } catch (e2) {
+        return refused(e2);
+      }
+    }
+    this.walletChain = await this.askChain(eth);
+    const ok = this.walletChain === this.info.chainId;
+    this.say(ok ? `ON ${this.chain().name.toUpperCase()}` : "THE WALLET IS STILL ON ANOTHER NETWORK");
+    return ok;
+  }
+
+  /** The full address to the clipboard (the WALLET page shows it shortened). */
+  async copyAddress(): Promise<boolean> {
+    if (!this.address) return false;
+    try {
+      await navigator.clipboard.writeText(this.address);
+      this.say(`ADDRESS COPIED · ${this.address}`);
+      return true;
+    } catch {
+      this.say(`THE BROWSER BLOCKED THE COPY · ${this.address}`);
+      return false;
+    }
+  }
+
+  /** The connected address's $CAPITAL balance and Ghostfile token, read from the chain the ledger runs on. */
+  async readHoldings(): Promise<CounterClient["holdings"]> {
+    const pub = this.pub;
+    const address = this.address;
+    if (!pub || !address || !this.info) return null;
+    try {
+      const [bal, token] = await Promise.all([
+        pub.readContract({ address: this.info.contracts.capital, abi: ABI["$CAPITAL"]!.abi as never, functionName: "balanceOf", args: [address] }) as Promise<bigint>,
+        pub.readContract({ address: this.info.contracts.ghostfile, abi: ABI.Ghostfile!.abi as never, functionName: "tokenOf", args: [address] }) as Promise<bigint>,
+      ]);
+      if (this.address !== address) return this.holdings; // the wallet moved on while this read was out
+      this.holdings = { capital: formatEther(bal), ghostfile: Number(token) };
+      this.onChange?.();
+    } catch (e) {
+      this.say(`WALLET READ FAILED: ${crtPhrase(String((e as Error).message ?? e).split("\n")[0]!.slice(0, 80))}`);
+    }
+    return this.holdings;
   }
 
   /** SIWE: the host's nonce, one signed statement, the host verifies and binds; the Ghostfile mints sponsored. */
@@ -132,7 +272,7 @@ export class CounterClient {
       const message = createSiweMessage({ address: this.address!, chainId: n.chainId, domain: location.host || "127.0.0.1", nonce: n.nonce, uri: location.origin && location.origin !== "null" ? location.origin : "http://127.0.0.1/", version: "1", statement: n.statement });
       const signature = await this.wallet!.signMessage({ account: this.wallet!.account!, message });
       const r = (await (await fetch(`${this.shop}/link/verify`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ account: this.account, message, signature, secret: this.secret }) })).json()) as { ok: boolean; reason?: string; counter: CounterRecord | null };
-      if (r.ok) await this.op("view");
+      if (r.ok) await Promise.all([this.op("view"), this.readHoldings()]);
       this.say(r.ok ? `LINKED · ${this.short()}${r.reason ? " · " + crtPhrase(r.reason) : ""}` : `LINK REFUSED: ${crtPhrase(r.reason ?? "")}`);
       return { ok: r.ok, reason: r.reason };
     } catch (e) {

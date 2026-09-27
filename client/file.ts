@@ -161,12 +161,16 @@ export class GhostFile {
    * bundle's source and a player needs none of it to wake, walk and shoot. It loads the first time
    * the ledger is opened, asked about or acted on — never on the way to the first frame — and a
    * file with no shop (offline) never loads it at all.
+   *
+   * `fallback` is a host to use when the file has no shop: the WALLET page on the title menu, which
+   * has no room and no `?shop=`, passes the built counter-ledger host. One client either way, so a
+   * wallet connected on that page is the wallet the FILE page's Counter-Ledger sees.
    */
-  ensureCounter(): Promise<CounterClient | null> {
+  ensureCounter(fallback: string | null = null): Promise<CounterClient | null> {
     if (this.counter) return Promise.resolve(this.counter);
-    if (!this.shop) return Promise.resolve(null);
+    const shop = this.shop ?? fallback;
+    if (!shop) return Promise.resolve(null);
     if (!this.counterLoading) {
-      const shop = this.shop;
       this.counterLoading = import("./counter")
         .then(({ CounterClient }) => {
           // in production the counter-ledger is its own Worker (VITE_COUNTER_URL); in development it is the same host
@@ -175,12 +179,17 @@ export class GhostFile {
             this.counterState = view;
             this.render();
             this.onIdentity?.(this);
+            this.onCounter?.();
           });
           c.secret = this.secret;
-          c.onChange = () => this.render();
+          c.onChange = () => {
+            this.render();
+            this.onCounter?.();
+          };
           this.counter = c;
           void c.load();
           this.render();
+          this.onCounter?.();
           return c;
         })
         .catch(() => {
@@ -207,6 +216,8 @@ export class GhostFile {
   onEndgame: ((f: GhostFile) => void) | null = null;
   /** the counter-ledger client (Stage 11b); null offline */
   counter: CounterClient | null = null;
+  /** anything else drawn from the counter-ledger client (the WALLET page) redraws on this */
+  onCounter: (() => void) | null = null;
   /** the counter record as the panel sees it (from the account record; refreshed by every counter op) */
   counterState: CounterView | null = null;
   /** the last private room this file opened (Stage 20): the code is the access control, so it is shown, not the URL */

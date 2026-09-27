@@ -1,7 +1,7 @@
 /**
  * Stage 13 probe — polish & ship.
  *  The CRT menu flow: the two title cards in order ("Every mind in Neo-China is leased." / "You woke
- *  free."), then the menu with WAKE / CAMPAIGN / THE OFFICE / THE RANGE / FILE / SETTINGS; keys
+ *  free."), then the menu with WAKE / CAMPAIGN / THE OFFICE / THE RANGE / FILE / WALLET / SETTINGS; keys
  *  move the cursor and a choice is a URL that names the mode (WAKE picks a district and the
  *  public room); SETTINGS adjust live (sensitivity, FOV, volumes, CRT) and persist; ESC in play
  *  is the pause menu; the audio pass: buses, UI cues, the card sting, the low-health pulse.
@@ -139,7 +139,7 @@ async function main(): Promise<void> {
     }));
     const marked = marks.filter((m) => m.mark !== "none");
     check("THE RUN wears the $CAPITAL mark on the menu, loaded, and no other mode does", marked.length === 1 && marked[0]!.label === "THE RUN" && marked[0]!.mark === "loaded", marks.map((m) => `${m.label}: ${m.mark}`).join(" · "));
-    check("the menu lists WAKE / THE RUN / CAMPAIGN / THE OFFICE / THE RANGE / CHARACTER / FILE / SETTINGS with the file's identity line; ↓↑ move the cursor", m0.entries.join("|") === "WAKE|THE RUN|CAMPAIGN|THE OFFICE|THE RANGE|CHARACTER|FILE|SETTINGS" && m0.cursor === 0 && m1.cursor === 2 && m2.cursor === 1 && /DEPTH 50/.test(who) && /sandbox-ship/.test(who), `[${m0.entries.join(", ")}] · cursor 0→2→1 · "${who}"`);
+    check("the menu lists WAKE / THE RUN / CAMPAIGN / THE OFFICE / THE RANGE / CHARACTER / FILE / WALLET / SETTINGS with the file's identity line; ↓↑ move the cursor", m0.entries.join("|") === "WAKE|THE RUN|CAMPAIGN|THE OFFICE|THE RANGE|CHARACTER|FILE|WALLET|SETTINGS" && m0.cursor === 0 && m1.cursor === 2 && m2.cursor === 1 && /DEPTH 50/.test(who) && /sandbox-ship/.test(who), `[${m0.entries.join(", ")}] · cursor 0→2→1 · "${who}"`);
     // Stage 152: and on a desktop it still names the keys, because a desktop has them
     const footDesk = await a.evaluate(() => {
       const menuEl = document.getElementById("menu")!;

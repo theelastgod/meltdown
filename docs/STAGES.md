@@ -1641,6 +1641,60 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 690 — The wallet had no page
+
+**The ask.** The owner: "add a wallet connect ... page".
+
+**The gap.** The wallet lived only inside the FILE page's Counter-Ledger, as a [LINK A WALLET]
+button. The main menu had nowhere to connect one, or to see which address was connected, on which
+chain, holding what.
+
+**The change.** WALLET sits on the main menu between FILE and SETTINGS and opens a page drawn in
+place, as SETTINGS is. The page shows:
+
+- the status: NOT CONNECTED, CONNECTING, CONNECTED on the chain's name, or WRONG NETWORK naming both
+  chains;
+- when connected: the shortened address (full on hover), the $CAPITAL balance and whether the
+  Ghostfile is bound, read from the chain;
+- the buttons: CONNECT — WALLETCONNECT, CONNECT — BROWSER WALLET, DISCONNECT, COPY ADDRESS (the full
+  address), and SWITCH NETWORK on the wrong chain;
+- a line that the game never asks for a seed phrase and never sends from the wallet without a
+  signature prompt.
+
+`client/wallet.ts` is pure functions of the Counter-Ledger's `CounterClient`, reached through
+`GhostFile.ensureCounter()`. The two pages therefore share one connection, and the chain client
+stays a lazy chunk off the first download. The WalletConnect relay (its library and a project id)
+is not in this build, and that button says so and points to a browser wallet.
+
+**The guards.** `tests/wallet.test.ts` (16) covers every state. It drives the real client against
+the devnet with the headless account and a fake injected wallet on the wrong chain, and drives the
+real menu. Sixteen mutations were each caught, among them:
+
+- connected shown when not;
+- the wrong-chain state dropped;
+- the entry missing or after SETTINGS;
+- the page not drawn;
+- disconnect keeping the address;
+- copy writing the short address;
+- WALLETCONNECT falling through to the browser wallet.
+
+probe:counter opens WALLET from the menu on NOT CONNECTED, connects through the headless account,
+and reads CONNECTED on the devnet with the short address, the 1,000 launch grant and the bound
+Ghostfile. The FILE page's Counter-Ledger shows the same wallet. 21/21.
+
+The menu's exact list in probe:ship now reads WAKE / THE RUN / CAMPAIGN / THE OFFICE / THE RANGE /
+CHARACTER / FILE / WALLET / SETTINGS. The page was built in parallel with Stage 689's CHARACTER, and
+the merge keeps both screens.
+
+**Open.** The agent that built this noticed that choosing FILE from the main menu may open the FILE
+panel behind the menu (the pause menu hides itself first; the main menu does not). Not checked in
+a browser yet.
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1535 tests; lint:economy 0 violations;
+probe:counter 21/21, probe:ship 16/16, probe:mobile 40/40; `npm run build`.
+
+**Proof.** `docs/proof/stage690/wallet.png` is the probe's frame of the page, connected.
+
 ## Stage 689 — Every Blank wore the same body
 
 **The ask.** The owner: "add a ... character customization page where you build appearance gender

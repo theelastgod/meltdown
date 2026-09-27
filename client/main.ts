@@ -3,6 +3,8 @@ import type { RigReport } from "./render/rig";
 import type { RemoteBodyView, Renderer } from "./render/renderer";
 import { assetStats, texture as assetTexture } from "./render/assets";
 import { Menu, menuWanted, type MenuView } from "./menu";
+import { walletAct, walletState } from "./wallet";
+import { COUNTER_URL, HOSTS } from "./config";
 import { clampSettings, saveSettings, type Settings } from "./settings";
 import { crawlWanted, OpeningCrawl, type CrawlView } from "./crawl";
 import { parseTag } from "@shared/identity/identity";
@@ -418,6 +420,12 @@ registerServiceWorker();
 /** The opening crawl plays over the booting game; headless probes skip it unless they ask for it. */
 const bootQ = new URLSearchParams(location.search);
 const crawl = crawlWanted(bootQ) ? new OpeningCrawl(game.audio, Number(bootQ.get("crawlspeed") ?? 1) || 1) : null;
+/**
+ * The WALLET page's ledger host when the file has none (the title menu has no room and no `?shop=`):
+ * the built counter-ledger, and in development nothing — the page says so instead of failing a fetch
+ * to a default host that is not running, the same rule as matchmaking below.
+ */
+const walletFallback = COUNTER_URL ?? (HOSTS.build !== "dev" ? HOSTS.ledger : null);
 /** The CRT menu flow: title cards then the menu after the crawl (or straight away); ESC in play is the pause menu. */
 const menu = menuWanted(bootQ)
   ? new Menu(
@@ -436,6 +444,16 @@ const menu = menuWanted(bootQ)
         },
         look: () => game.file.look,
         setLook: (code) => game.file.setLook(code),
+        // one client for the WALLET page and the FILE page's Counter-Ledger: the file's (Stage 48's lazy chunk)
+        wallet: {
+          state: () => walletState(game.file.counter, !!(game.file.shop ?? walletFallback)),
+          open: () => {
+            void game.file.ensureCounter(walletFallback).then((c) => c?.address && c.readHoldings());
+          },
+          act: (id) => {
+            void game.file.ensureCounter(walletFallback).then((c) => c && walletAct(c, id));
+          },
+        },
       },
       Number(bootQ.get("menuspeed") ?? 1) || 1,
     )
@@ -444,6 +462,7 @@ if (menu) {
   // Probes step the title cards themselves. The freeze has to be set before the first card frame,
   // which is earlier than any script the harness can inject once the page has loaded.
   if (bootQ.get("menufreeze") === "1") menu.paused = true;
+  game.file.onCounter = () => menu.refresh();
   if (crawl) crawl.onFinish = () => menu.start();
   else menu.start();
   game.onLockLost = () => {
