@@ -17,7 +17,7 @@ import { MISSIONS, variantObjectives, type Objective } from "../shared/campaign/
 import { resolveSpot } from "../shared/campaign/runtime";
 import { EscortFigures } from "../client/render/escort";
 import { CITIZEN_LIMBS } from "../client/render/life";
-import { VESSEL_STRIDE } from "../client/render/figures";
+import { VESSEL_STRIDE, fixerGeometry } from "../client/render/figures";
 
 const stubTag = () => new THREE.Object3D();
 const meshesOf = (g: THREE.Object3D) => {
@@ -191,5 +191,123 @@ describe("Ida walks in her own body", () => {
     expect(Math.abs(l!.z - r!.z)).toBeLessThan(0.01);
     expect(Math.abs(l!.y)).toBeLessThan(0.005);
     expect(Math.abs(r!.y)).toBeLessThan(0.005);
+  });
+});
+
+describe("Ida's arms swing when she walks (Stage 685)", () => {
+  /** her walking body: the one mesh whose sleeves are tagged to swing */
+  const bodyOf = (fig: EscortFigures) => meshesOf(fig.vessel).find((m) => m.geometry.getAttribute("arm"))!;
+  /**
+   * vertex i of her body where the GPU draws it, in world space: figures.ts `armSwingPatch` turns an
+   * `arm`-tagged vertex about the x axis at height uShoulder by its side's uArm angle, then the mesh's
+   * world matrix carries it. Read from the uniforms the figure exposes, never from the swing function.
+   */
+  const drawn = (fig: EscortFigures, i: number): THREE.Vector3 => {
+    const body = bodyOf(fig);
+    const side = body.geometry.getAttribute("arm").getX(i);
+    const a = side < 0 ? fig.vesselArms.uArm.value.x : side > 0 ? fig.vesselArms.uArm.value.y : 0;
+    const s = fig.vesselArms.uShoulder.value;
+    const v = new THREE.Vector3().fromBufferAttribute(body.geometry.getAttribute("position"), i);
+    const y = v.y - s;
+    v.set(v.x, s + y * Math.cos(a) - v.z * Math.sin(a), y * Math.sin(a) + v.z * Math.cos(a));
+    return v.applyMatrix4(body.matrixWorld);
+  };
+  /** the vertices of each sleeve (left, right) */
+  const sleeves = (fig: EscortFigures): number[][] => {
+    const arm = bodyOf(fig).geometry.getAttribute("arm");
+    return [-1, 1].map((side) => Array.from({ length: arm.count }, (_, i) => i).filter((i) => arm.getX(i) === side));
+  };
+  /** each hand (left, right): its sleeve's lowest point as built */
+  const handsOf = (fig: EscortFigures): number[] => {
+    const pos = bodyOf(fig).geometry.getAttribute("position");
+    return sleeves(fig).map((ids) => ids.reduce((low, i) => (pos.getY(i) < pos.getY(low) ? i : low)));
+  };
+  const corr = (a: number[], b: number[]): number => {
+    const ma = a.reduce((s, v) => s + v, 0) / a.length;
+    const mb = b.reduce((s, v) => s + v, 0) / b.length;
+    let ab = 0, aa = 0, bb = 0;
+    for (let i = 0; i < a.length; i++) {
+      ab += (a[i]! - ma) * (b[i]! - mb);
+      aa += (a[i]! - ma) ** 2;
+      bb += (b[i]! - mb) ** 2;
+    }
+    return ab / Math.sqrt(aa * bb || 1);
+  };
+  const heading = Math.atan2(-1, 0); // walking +x
+
+  /** walk her one stride along +x, reading each hand's and each sole's distance ahead of her */
+  function stride() {
+    const fig = new EscortFigures(stubTag);
+    fig.set({ x: 3, z: 0, heading, who: "vessel", waiting: false });
+    for (let i = 0; i < 60; i++) fig.update(1 / 60); // settle into the walk
+    const handIds = handsOf(fig);
+    const hand: number[][] = [[], []];
+    const foot: number[][] = [[], []];
+    const steps = 120;
+    for (let k = 1; k <= steps; k++) {
+      fig.set({ x: 3 + (k * VESSEL_STRIDE) / steps, z: 0, heading, who: "vessel", waiting: false });
+      const s = fig.vesselSoles(); // also brings the world matrices up to date
+      for (const i of [0, 1]) {
+        hand[i]!.push(drawn(fig, handIds[i]!).x - fig.vessel.position.x);
+        foot[i]!.push(s[i]!.x - fig.vessel.position.x);
+      }
+    }
+    return { fig, hand, foot };
+  }
+
+  it("her sleeves ride in her body's own mesh, and its shader is the one that swings them", () => {
+    const fig = new EscortFigures(stubTag);
+    const body = bodyOf(fig);
+    const [left, right] = sleeves(fig);
+    expect(left!.length, "no left sleeve is tagged").toBeGreaterThan(50);
+    expect(right!.length, "no right sleeve is tagged").toBeGreaterThan(50);
+    // patch a real standard shader the way the renderer would, and check every hook took
+    const shader = { vertexShader: THREE.ShaderLib.standard.vertexShader, fragmentShader: THREE.ShaderLib.standard.fragmentShader, uniforms: {} as Record<string, THREE.IUniform> };
+    (body.material as THREE.Material).onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as unknown as THREE.WebGLRenderer);
+    expect(shader.vertexShader).toContain("attribute float arm;");
+    expect(shader.vertexShader).toContain("objectNormal.yz = armTurn() * objectNormal.yz;");
+    expect(shader.vertexShader).toContain("transformed.yz = armTurn() * (transformed.yz - vec2(uShoulder, 0.0)) + vec2(uShoulder, 0.0);");
+    expect(shader.uniforms.uArm).toBe(fig.vesselArms.uArm);
+    expect(shader.uniforms.uShoulder).toBe(fig.vesselArms.uShoulder);
+  });
+
+  it("each hand moves fore and aft over a stride, a little: a walk, not a march", () => {
+    const { hand } = stride();
+    for (const i of [0, 1]) {
+      const reach = Math.max(...hand[i]!) - Math.min(...hand[i]!);
+      expect(reach, `hand ${i} hangs still while she walks`).toBeGreaterThan(0.1);
+      expect(reach, `hand ${i} marches`).toBeLessThan(0.3);
+    }
+  });
+
+  it("each hand is forward while the foot on its own side is back", () => {
+    const { hand, foot } = stride();
+    for (const i of [0, 1]) {
+      expect(corr(hand[i]!, foot[i]!), `hand ${i} swings with its own foot`).toBeLessThan(-0.8);
+      expect(corr(hand[i]!, foot[1 - i]!), `hand ${i} does not swing with the other foot`).toBeGreaterThan(0.8);
+    }
+  });
+
+  it("when she stops her arms come back to the pose she stands in", () => {
+    const { fig } = stride();
+    // the standing figure (the office's) is the pose: every drawn vertex of each sleeve must lie on it again
+    const standing = fixerGeometry("vessel").body.getAttribute("position");
+    const ids = sleeves(fig).flat().filter((_, n) => n % 3 === 0);
+    const onPose = (): number => {
+      fig.vessel.updateWorldMatrix(true, true);
+      const toFigure = fig.vessel.matrixWorld.clone().invert();
+      let worst = 0;
+      for (const i of ids) {
+        const v = drawn(fig, i).applyMatrix4(toFigure);
+        let near = Infinity;
+        for (let j = 0; j < standing.count; j++) near = Math.min(near, Math.hypot(standing.getX(j) - v.x, standing.getY(j) - v.y, standing.getZ(j) - v.z));
+        worst = Math.max(worst, near);
+      }
+      return worst;
+    };
+    expect(onPose(), "her arms were at rest mid-stride").toBeGreaterThan(0.02);
+    fig.set({ x: 3 + VESSEL_STRIDE * 1.3, z: 0, heading, who: "vessel", waiting: true });
+    for (let i = 0; i < 60; i++) fig.update(1 / 60);
+    expect(onPose(), "a waiting Ida holds her arms mid-swing").toBeLessThan(1e-4);
   });
 });

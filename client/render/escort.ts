@@ -6,7 +6,7 @@
  * and not Ida at all. Each is drawn as who it is now.
  *
  * - **Ida Vessel** walks in her own body (figures.ts), her legs swung by the planted-foot walk
- *   (gait.ts), facing along the street she is walking.
+ *   (gait.ts) and her arms against them, facing along the street she is walking.
  * - **A wake cell** is three citizens of the leased crowd who have woken: the crowd's own coats,
  *   hoods and striding limbs, walking close together, with the lease lamp on the chest gone out and
  *   the cells' cyan in its place.
@@ -17,8 +17,8 @@
 import * as THREE from "three";
 import type { EscortWho } from "@shared/campaign/missions";
 import { bindPlate, PALETTE } from "./city";
-import { FIXER_SCALE, FIXER_TRIM, VESSEL_HIP, VESSEL_LIFT, VESSEL_STRIDE, fixerGeometry, vesselLegLength, vesselWalkerGeometry } from "./figures";
-import { plantedBob, plantedGait, type PlantedWalk } from "./gait";
+import { FIXER_SCALE, FIXER_TRIM, VESSEL_ARM_SWING, VESSEL_HIP, VESSEL_LIFT, VESSEL_SHOULDER, VESSEL_STRIDE, armSwingPatch, fixerGeometry, vesselLegLength, vesselWalkerGeometry, type ArmUniforms } from "./figures";
+import { armSwing, plantedBob, plantedGait, type PlantedWalk } from "./gait";
 import { CITIZEN_LIMBS, citizenBodyGeometry, citizenHoodGeometry, citizenSwing } from "./life";
 
 /** where the mission runtime has the escort, and which way it faces (a sim yaw: front -z at 0) */
@@ -51,6 +51,8 @@ export class EscortFigures {
   readonly cell = new THREE.Group();
   /** Ida's two legs (left, right), each about its hip */
   readonly vesselLegs: THREE.InstancedMesh;
+  /** the pitch of Ida's two arms (left, right) about her shoulder, as her body's shader reads it */
+  readonly vesselArms: ArmUniforms = { uArm: { value: new THREE.Vector2() }, uShoulder: { value: VESSEL_SHOULDER } };
   /** the cell's shins, shoes and arms, CITIZEN_LIMBS.length per citizen */
   readonly cellLimbs: THREE.InstancedMesh;
   private vesselPose = new THREE.Group();
@@ -79,7 +81,10 @@ export class EscortFigures {
     // ---- Ida ----
     const vg = vesselWalkerGeometry();
     const bodyMat = new THREE.MeshStandardMaterial({ color: 0x06070b, roughness: 0.95 });
-    const body = new THREE.Mesh(vg.body, bodyMat);
+    // the body's own material swings her arms; the legs keep the plain one
+    const armedMat = bodyMat.clone();
+    armSwingPatch(armedMat, this.vesselArms);
+    const body = new THREE.Mesh(vg.body, armedMat);
     const trim = new THREE.Mesh(fixerGeometry("vessel").trim, new THREE.MeshBasicMaterial({ color: FIXER_TRIM.vessel }));
     this.vesselLegs = new THREE.InstancedMesh(vg.leg, bodyMat, 2);
     this.vesselLegs.frustumCulled = false;
@@ -165,13 +170,14 @@ export class EscortFigures {
 
   private pose_(): void {
     const go = 1 - this.rest;
-    // ---- Ida: the planted-foot walk, eased to legs-together while she waits ----
+    // ---- Ida: the planted-foot walk, the arms against it, eased to her standing pose while she waits ----
     const local = this.walked / FIXER_SCALE.vessel;
     for (const [k, side] of [[0, -1], [1, 1]] as const) {
       const g = plantedGait(this.walk, local, side);
       this.m.makeTranslation(side * VESSEL_HIP.x, VESSEL_HIP.y + g.lift * go, 0);
       this.m.multiply(this.r.makeRotationX(g.angle * go));
       this.vesselLegs.setMatrixAt(k, this.m);
+      this.vesselArms.uArm.value.setComponent(k, armSwing(this.walk, local, side, VESSEL_ARM_SWING) * go);
     }
     this.vesselLegs.instanceMatrix.needsUpdate = true;
     this.vesselPose.position.y = plantedBob(this.walk, local) * go;

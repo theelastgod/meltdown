@@ -1641,6 +1641,31 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 688 — Ida's arms were posed
+
+**The gap.** Since Stage 677 Ida Vessel walks mission 4 on her own legs, swung by the planted-foot
+walk. Her arms were merged into her standing body, the left sleeve hanging and the right hand on her
+hip, and did not move: she strode down the street with her arms held still.
+
+**The change.** Her sleeves stay in her body mesh and are swung in its vertex shader. Each vertex of
+the walking body carries an `arm` value (0 body, -1 left sleeve, +1 right), and `armSwingPatch` in
+`client/render/figures.ts`, on the pattern of `swayPatch` in `rig.ts`, rotates the tagged vertices
+and their normals about the shoulder (1.4 m) by one angle per side. `armSwing` in
+`client/render/gait.ts` sets the angles from distance walked: 0.16 rad against the leg on the same
+side, a hand about 9 cm forward and back, the walk of a tailored coat. When she waits, the same
+`SETTLE` easing that brings her feet together returns her arms. She still costs 4 draw calls during
+an escort, and the Stage 677 cap on her meshes stands unchanged.
+
+**The guards.** `tests/escort.test.ts` checks that the sleeves are tagged and that the patch takes in
+three's real standard shader with the figure's own uniforms; then, applying the documented rotation
+to the tagged vertices from those uniforms, that each hand travels 0.1 to 0.3 m over a stride
+(0.183 m, 0.171 m), runs opposite its own foot (correlation -0.992) and with the other, and is back
+on the standing pose within 0.1 mm after she stops. Six mutations were each caught: zero amplitude,
+same phase, arms in step, no settle, a 0.6 rad march, and a misspelled shader hook.
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1509 tests; probe:campaign 61/61 with no page
+or shader errors.
+
 ## Stage 687 — Remote players did not show the mastery finish
 
 **The gap.** Stage 675 drew a weapon at mastery rank 30 with inlay lines, on the local viewmodel and

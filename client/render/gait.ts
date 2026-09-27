@@ -35,6 +35,14 @@ export function plantedGait(w: PlantedWalk, walked: number, side: -1 | 1): { ang
   return { angle: Math.asin(ahead / w.leg), lift };
 }
 
+/**
+ * An arm's pitch after `walked` metres (Stage 685), in `plantedGait`'s sense: a pendulum `swing`
+ * radians each way, back while the leg on its own side is forward, so it swings with the other leg.
+ */
+export function armSwing(w: PlantedWalk, walked: number, side: -1 | 1, swing: number): number {
+  return side * swing * Math.cos((2 * Math.PI * walked) / w.stride);
+}
+
 /** how far the body sinks so the planted foot, on its rigid leg, stays on the ground */
 export function plantedBob(w: PlantedWalk, walked: number): number {
   const l = plantedGait(w, walked, -1);
