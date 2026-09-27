@@ -100,6 +100,17 @@ export class Campaign {
     return this.playing !== null || this.contractsOpen;
   }
 
+  /**
+   * The campaign as it stands, without touching `save`: the loaded file when a host is linked, else the
+   * local stand-in. The hub reads this for who is waiting in the office (Stage 667); `save` is only
+   * brought up to date when a contract is acted on, so reading it here would show the stand-in's
+   * visitor to a file whose ledger says otherwise.
+   */
+  current(): CampaignSave {
+    const f = this.game.file;
+    return f.loaded && f.accountRecord ? campaignOf(f.accountRecord) : campaignOf(this.local);
+  }
+
   /** The account the contracts are judged against: the loaded file when a host is linked, else the local stand-in. */
   private account(): Account {
     const f = this.game.file;

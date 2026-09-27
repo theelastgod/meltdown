@@ -1641,6 +1641,85 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 667 — The four people who run the arc had no bodies
+
+**The defect.** Every contract in the arc is handed over by one of four people:
+the Deacon, Marrow, Ida Vessel and August Wern. Until this stage each one existed
+only as a name, a colour and a sigil on the terminal. The Deadletter Office, where
+the player picks up the work, was an empty room with a desk in it. The white
+office, where the whole arc ends on Wern's offer, held a desk, a chair and
+nobody. The player spent seven missions being addressed by people who never
+appeared anywhere, not even at the end.
+
+**The fix.** `client/render/figures.ts` builds each of them from the same lathe
+helpers as the Blank's cloak, `lathe`, `inside` and `lerpProfile`, now exported from
+`rig.ts`. They are static figures: three meshes each (cloth, strip-light and the
+void inside a hood), with geometry cached and shared. They are made to be told
+apart by outline before colour:
+
+- **The Deacon**: tall, in a long robe and a hooded stole. Two cyan lines run down
+  the stole to the hem, and a closed ledger is held at the chest.
+- **Marrow**: bent small under a heavy hooded cloak, with a clock face in magenta
+  on the back and beads round the hem.
+- **Ida Vessel**: bare-headed, in a short fitted coat with a high collar, a belt
+  and two front seams. Her terminal colour is amber, but amber in the world means
+  VANTAGE is watching, so her light is **yellow**.
+- **August Wern**: the tallest, bare-headed, in a long straight coat with two
+  blood-red lines from collar to hem and his hands behind his back. The
+  Kernel's red is his alone.
+
+No light touches any face. The two hooded figures show black inside the hood,
+the same rule as the Blank's.
+
+**Where they stand.** `officeVisitor(campaign)` (in `shared/campaign/save.ts`)
+returns the fixer of the next contract when that fixer can come to the office
+(the Deacon, Marrow or Vessel), and returns nobody when the next contract is
+Wern's or the arc is closed. Wern never comes to you. `refreshHub` passes it to
+`HubDressing`, which stands the visitor at `VISITOR_AT`, clear of the desk and
+the bench and facing into the room. It reads the campaign through a new
+`Campaign.current()` in `client/campaign.ts`. The old `save` field is only refreshed when the
+desk is judged, so on a fresh page load it still held the empty local
+campaign. The probe's mutation run showed that stale path putting the Deacon in
+an office whose arc was already finished. In the white office Wern stands at
+`WERN_AT`, behind the desk, facing the door. The range ghost in the office, a
+translucent capsule and cone since Stage 8, is now the Blank's own cloak.
+
+**The guards.**
+- *`tests/fixers.test.ts`* checks the following:
+  - exactly the four people are embodied, and every pair differs in outline
+    (Marrow is the shortest; Wern and the Deacon are the tallest);
+  - each figure's light is its allowed colour, both in the table and on the
+    built material. Vessel's is not amber, and red belongs to Wern only;
+  - no strip-light vertex sits in front of any face;
+  - the hooded figures carry a void and the bare-headed ones do not;
+  - walking the whole arc, the visitor is always the next contract's fixer,
+    Wern and VANTAGE never appear, and nobody is left once the arc closes;
+  - `VISITOR_AT` and `WERN_AT` stand clear of every collider, renovation and
+    decor box, with walls on all four sides.
+
+  Eleven mutations were each caught: Vessel set to amber; Marrow scaled to
+  Vessel's height; the trim material ignoring the colour table; Vessel's collar
+  raised onto her face; Wern's lines run up his face; a hood without its void;
+  the visitor letting Wern in; a visitor after the arc; the visitor placed in the
+  desk; the visitor placed outside the office; Wern placed in the desk.
+- *`probe:campaign`* reads the rendered scene itself, through the new
+  `__game.figures()` hook, which lists every visible `fixer:*` object with its
+  world position and facing. It checks three things: on a fresh file the Deacon
+  and nobody else is in the office, at `VISITOR_AT`, turned to within 0.05 rad of
+  the room; Wern is in the white office at `WERN_AT`, turned toward the player;
+  and once the arc is closed the office is empty. Swapping `current()` back to the
+  stale `save` fails the last check with *"missions done 7 · figures [deacon]"*.
+
+**Verified.** `npm run typecheck` (both configs), 1453 unit tests across 130
+files, lint:campaign, lint:progression, lint:economy, lint:assets,
+`npm run build`, `probe:campaign` 50/50 and `probe:identity` 25/25.
+
+**Proof.** `docs/proof/stage667/fixers-turntable.png` shows the four figures from
+the front (top row) and the back (bottom row), in order: Deacon, Marrow, Vessel,
+Wern. `office-deacon.png` is the Deacon waiting in the Deadletter Office on a
+fresh file. `white-office-wern.png` is the probe's frame of the white office
+with Wern behind the desk.
+
 ## Stage 666 — The crowd slid along the pavement on its coat hem
 
 **The defect.** Stage 665 gave the leased citizen a body; it still moved as one

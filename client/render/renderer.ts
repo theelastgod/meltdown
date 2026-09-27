@@ -12,6 +12,8 @@ import { VfxPool } from "./vfx";
 import { markShared, release } from "./dispose";
 import { CityLife, flickerMaterial } from "./life";
 import { HubDressing } from "./hub";
+import { buildFixer } from "./figures";
+import { WHITE_LEVEL_ID } from "@shared/sim/white";
 import { CampaignFx } from "./campaign";
 import { drawGlyph, glyphFor } from "@shared/identity/glyph";
 import { parseTag } from "@shared/identity/identity";
@@ -139,6 +141,9 @@ export type DistrictId = keyof typeof DISTRICTS;
  * CRT post chain. Geometry is low-poly by design; lighting, fog, and post do
  * the work.
  */
+/** where Wern stands in the white office: behind the desk, beside the chair that is the offer */
+export const WERN_AT = { x: 1.25, z: -7.25 } as const;
+
 export class Renderer {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
@@ -153,6 +158,8 @@ export class Renderer {
   readonly life: CityLife;
   /** the Deadletter Office's renovation, trophies and ghost (null outside the hub) */
   readonly hub: HubDressing | null;
+  /** Wern, when this is his office */
+  wern: THREE.Group | null = null;
   readonly campaignFx: CampaignFx;
   /** sign atlas flicker (null when the level has no signs) */
   signFlicker: { setTime: (t: number) => void } | null = null;
@@ -306,6 +313,15 @@ export class Renderer {
     this.life.group.name = "city life";
     this.scene.add(this.life.group);
     this.hub = level.hub ? new HubDressing(this.scene, level) : null;
+    // August Wern, in his own office, standing by the empty chair he is offering you (Stage 667). The
+    // white office is the one place the arc lets him be met.
+    if (level.name === WHITE_LEVEL_ID) {
+      const w = buildFixer("wern");
+      w.position.set(WERN_AT.x, 0, WERN_AT.z);
+      w.rotation.y = Math.PI; // toward the room, and the file walking in
+      this.scene.add(w);
+      this.wern = w;
+    }
     this.campaignFx = new CampaignFx(this.scene, this.camera);
     if (level.traffic?.length) {
       this.traffic = new Traffic(level.traffic, level.skylineSeed ?? 5);

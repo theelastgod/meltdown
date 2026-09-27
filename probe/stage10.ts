@@ -29,6 +29,8 @@ import { ENT_WASP } from "../shared/net/protocol";
 import { validInviteCode } from "../shared/net/private";
 import { buildNav, findPath } from "../shared/sim/nav";
 import { HUB_LEVEL_ID } from "../shared/sim/hub";
+import { VISITOR_AT } from "../client/render/hub";
+import { WERN_AT } from "../client/render/renderer";
 import { scriptById } from "../shared/campaign/script";
 
 const VITE_PORT = 5203;
@@ -172,6 +174,12 @@ async function main(): Promise<void> {
     await hub.waitForTimeout(200);
     const c0 = await hub.evaluate(() => window.__game.campaign());
     check("the contracts desk opens on a fresh file with the creation script: no house yet, three to choose from", c0.contractsOpen && c0.faction === null && c0.dialogue?.script === "creation" && c0.next === "m1_wake_unlisted", `dialogue ${c0.dialogue?.script}:${c0.dialogue?.node} · faction ${c0.faction} · next ${c0.next}`);
+    // Stage 667: the fixer with the next contract is in the room, in person, not just a name on the terminal
+    const fig0 = await hub.evaluate(() => window.__game.figures());
+    const deacon = fig0.find((f) => f.id === "deacon");
+    const toDoor = deacon ? Math.atan2(-(VISITOR_AT.faceX - deacon.x), -(VISITOR_AT.faceZ - deacon.z)) : NaN;
+    const turn = deacon ? Math.abs(Math.atan2(Math.sin(deacon.yaw - toDoor), Math.cos(deacon.yaw - toDoor))) : NaN;
+    check("the Deacon waits in the office on a fresh file, where the visitor stands, facing into the room — and nobody else is there", fig0.length === 1 && !!deacon && Math.hypot(deacon.x - VISITOR_AT.x, deacon.z - VISITOR_AT.z) < 0.05 && turn < 0.05, `figures ${JSON.stringify(fig0.map((f) => ({ ...f, x: +f.x.toFixed(2), z: +f.z.toFixed(2), yaw: +f.yaw.toFixed(2) })))} · off the door by ${turn.toFixed(3)} rad`);
     const seen = await playTerminal(hub, [2]); // the wake cells
     await hub.waitForTimeout(400);
     const c1 = await hub.evaluate(() => window.__game.campaign());
@@ -692,6 +700,11 @@ async function main(): Promise<void> {
     // chair AND the ending the broadcast opens. Until Stage 37 that last choice was written to the
     // file and read by nothing, and this line read "wipe,chair" whichever way it had been answered.
     check("the white office: no guards, the desk is the objective, and the endings open follow the testimony — including the broadcast the arc chose", w1.level === "white_office" && w1.wasps === 0 && w1.c.mission?.kind === "reach" && w1.c.endingsOpen.join() === "wipe,chair,wipe_fire", `wasps ${w1.wasps} · objective "${w1.c.mission?.objective}" · endings [${w1.c.endingsOpen.join(", ")}]`);
+    const wf = await wo.evaluate(() => ({ figs: window.__game.figures(), pos: window.__game.state().pos }));
+    const wern = wf.figs.find((f) => f.id === "wern");
+    const toPlayer = wern ? Math.atan2(-(wf.pos.x - wern.x), -(wf.pos.z - wern.z)) : NaN;
+    const wTurn = wern ? Math.abs(Math.atan2(Math.sin(wern.yaw - toPlayer), Math.cos(wern.yaw - toPlayer))) : NaN;
+    check("August Wern is in the white office in person, behind the desk, turned toward the door you come in by", wf.figs.length === 1 && !!wern && Math.hypot(wern.x - WERN_AT.x, wern.z - WERN_AT.z) < 0.05 && wTurn < 0.6, `figures ${JSON.stringify(wf.figs.map((f) => f.id))} · at ${wern?.x.toFixed(2)},${wern?.z.toFixed(2)} · off the player by ${wTurn.toFixed(2)} rad`);
     const sp = await wo.evaluate(() => window.__game.state().pos);
     await runBot(wo, [{ kind: "goto", x: 0, z: -4, sprint: false, radius: 1.5, timeoutTicks: 600, stop: true }]);
     void sp;
@@ -716,6 +729,14 @@ async function main(): Promise<void> {
     await shotCheck(wo, `stage10-ending.png`, "#hud .card");
     check("Wern's offer plays at the desk; the final input is a choice, the chair is taken, and the ending is written to the file", w2?.script === "m7_office" && seenW.length >= 3 && w3.c.ending === "chair" && w3.cardOpen && /TAKE THE CHAIR/.test(w3.card) && fArc.campaign?.ending === "chair" && fArc.campaign.missionsDone.length === 7, `dialogue ${seenW.join(" → ")} · ending ${w3.c.ending} · card "${w3.card}" · file ending ${fArc.campaign?.ending}, ${fArc.campaign?.missionsDone.length}/7`);
     await wo.close();
+    // and back at the Deadletter Office with the arc closed, nobody is waiting: Wern never comes to you
+    const ho = await newPage({ width: 960, height: 540 }, "home");
+    await ho.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=${HUB_LEVEL_ID}&account=${arc}&secret=${SECRET}&shop=${HOST}`, { waitUntil: "load" });
+    await ho.waitForFunction(() => window.__game?.ready === true && window.__game.state().hub?.fileLoaded === true, null, { timeout: 40000, polling: 100 });
+    await ho.waitForTimeout(300);
+    const homeFigs = await ho.evaluate(() => ({ figs: window.__game.figures().map((f) => f.id), done: window.__game.campaign().missionsDone.length }));
+    check("with the arc closed the office is empty again: no fixer waits for a file with no contract left", homeFigs.done === 7 && homeFigs.figs.length === 0, `missions done ${homeFigs.done} · figures [${homeFigs.figs.join(", ")}]`);
+    await ho.close();
 
     // The same office, answered the other way (Stage 174). Two of the six endings are written by no
     // choice at all — they are the two readings of wiping the ledger, told apart by what the m6

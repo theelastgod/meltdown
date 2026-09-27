@@ -128,9 +128,9 @@ function merged(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
 // thighs, shins and boots. Every part is still one skinned mesh on the same ten bones and one
 // material, so it costs no draw call the old body did not.
 
-type Profile = [number, number][];
+export type Profile = [number, number][];
 /** a surface of revolution with the body's proportions: squashed front-to-back, optional cloth folds, optional front opening */
-function lathe(profile: Profile, segs: number, o: { sx?: number; sz?: number; folds?: number; fold?: (y: number) => number; gap?: number } = {}): THREE.BufferGeometry {
+export function lathe(profile: Profile, segs: number, o: { sx?: number; sz?: number; folds?: number; fold?: (y: number) => number; gap?: number } = {}): THREE.BufferGeometry {
   const gap = o.gap ?? 0;
   // three's lathe puts phi 0 at +z (the back) and phi pi at -z (the front)
   const g = new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), segs, Math.PI + gap / 2, Math.PI * 2 - gap);
@@ -144,7 +144,7 @@ function lathe(profile: Profile, segs: number, o: { sx?: number; sz?: number; fo
   return g;
 }
 /** the same surface seen from inside: winding and normals reversed, for the underside of cloth */
-function inside(geo: THREE.BufferGeometry): THREE.BufferGeometry {
+export function inside(geo: THREE.BufferGeometry): THREE.BufferGeometry {
   const idx = geo.index!;
   for (let i = 0; i < idx.count; i += 3) {
     const b = idx.getX(i + 1);
@@ -155,7 +155,7 @@ function inside(geo: THREE.BufferGeometry): THREE.BufferGeometry {
   for (let i = 0; i < n.count; i++) n.setXYZ(i, -n.getX(i), -n.getY(i), -n.getZ(i));
   return geo;
 }
-const lerpProfile = (pr: Profile, y: number): number => {
+export const lerpProfile = (pr: Profile, y: number): number => {
   for (let i = 1; i < pr.length; i++) {
     const [r0, y0] = pr[i - 1]!;
     const [r1, y1] = pr[i]!;

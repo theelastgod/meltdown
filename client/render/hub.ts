@@ -9,7 +9,8 @@ import { release } from "./dispose";
 import type { LevelDef } from "@shared/sim/level";
 import type { HubDef } from "@shared/sim/hub";
 import { bindPlate, MeshBatch, PALETTE, SignAtlas } from "./city";
-import { MOVE } from "@shared/sim/constants";
+import { cloakGeometry } from "./rig";
+import { buildFixer, type FixerBody } from "./figures";
 
 export interface HubState {
   chapter: number;
@@ -17,7 +18,12 @@ export interface HubState {
   named: string | null;
   /** plaque texts, newest first */
   trophies: string[];
+  /** the fixer of the next contract, waiting by the terminal (Stage 667); none for the last, or once the arc is done */
+  visitor?: FixerBody | null;
 }
+
+/** where the visitor stands: by the terminal, clear of the desk and the bench, facing the door the file comes in by */
+export const VISITOR_AT = { x: 1.6, z: -5.0, faceX: 0, faceZ: 3 } as const;
 
 const RENO_COLORS: Record<string, number> = { shelf: 0x2a2f3a, crates: 0x3a3126, rug: 0x2c0f24, server_rack: 0x121a24, nameplate: 0x3a3218, window_glow: 0x0b2a30 };
 
@@ -29,6 +35,8 @@ export class HubDressing {
   private ghostMat: THREE.MeshBasicMaterial;
   trophyCount = 0;
   renovations = 0;
+  /** who is standing in the office, for probes and tests */
+  visitor: FixerBody | null = null;
 
   constructor(private scene: THREE.Scene, level: LevelDef) {
     this.hub = level.hub!;
@@ -37,12 +45,8 @@ export class HubDressing {
     this.ghostMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
     bindPlate(this.ghostMat, "tex_cloak");
     this.ghost = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(MOVE.capsuleRadius - 0.02, MOVE.standHeight - MOVE.capsuleRadius * 2, 4, 10), this.ghostMat);
-    body.position.y = MOVE.standHeight / 2;
-    this.ghost.add(body);
-    const hood = new THREE.Mesh(new THREE.ConeGeometry(MOVE.capsuleRadius + 0.06, 0.5, 8), this.ghostMat);
-    hood.position.y = MOVE.standHeight - 0.05;
-    this.ghost.add(hood);
+    // the file's own best run, in the file's own body: the Blank's cloak at rest (Stage 667; it was a capsule and a cone)
+    this.ghost.add(new THREE.Mesh(cloakGeometry(null), this.ghostMat));
     this.ghost.visible = false;
     scene.add(this.ghost);
     this.set({ chapter: 0, named: null, trophies: [] });
@@ -50,9 +54,11 @@ export class HubDressing {
 
   /** Rebuild the renovation decor and the trophy wall for this file. */
   set(st: HubState): void {
-    const key = `${st.chapter}|${st.named ?? ""}|${st.trophies.join("")}`;
+    const key = `${st.chapter}|${st.named ?? ""}|${st.trophies.join("")}|${st.visitor ?? ""}`;
     if (key === this.key) return;
     this.key = key;
+    // the last visitor's materials are its own (its geometry is shared): let them go with it
+    for (const c of [...this.group.children]) if (c.name.startsWith("fixer:")) release(c);
     this.group.clear();
     const batch = new MeshBatch(this.group);
     const mats = new Map<string, THREE.Material>();
@@ -98,6 +104,15 @@ export class HubDressing {
     this.trophyCount = shown.length;
     if (st.chapter >= 3 && st.named) signs.add({ text: st.named, fg: "#ffe34a", bg: "#1a1206", border: "#ffe34a", w: 1.7, h: 0.3, x: -2.6, y: 1.08, z: -5.88, rotY: 0 });
     signs.flush(this.group);
+    // the fixer with work for you, in person
+    this.visitor = st.visitor ?? null;
+    if (this.visitor) {
+      const f = buildFixer(this.visitor);
+      f.position.set(VISITOR_AT.x, 0, VISITOR_AT.z);
+      // a figure faces -z; turn it toward the door
+      f.rotation.y = Math.atan2(-(VISITOR_AT.faceX - VISITOR_AT.x), -(VISITOR_AT.faceZ - VISITOR_AT.z));
+      this.group.add(f);
+    }
   }
 
   setGhost(pose: { x: number; y: number; z: number; yaw: number } | null): void {

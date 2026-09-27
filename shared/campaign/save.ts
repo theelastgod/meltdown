@@ -6,7 +6,7 @@
  */
 import type { Account, CampaignRecord } from "../progression/account";
 import { depthForXp } from "../progression/depth";
-import { factionName, type FactionId } from "./factions";
+import { factionName, type FactionId, type HandlerId } from "./factions";
 import { gateOpen, handlersAlive, resolveEnding, type Testimony } from "./testimony";
 import { GIGS, MAIN_ARC, missionById, type MissionDef, type Reward } from "./missions";
 import { MAX_PROTOCOLS, protocolById } from "./protocols";
@@ -34,6 +34,18 @@ export function campaignOf(a: Account): CampaignSave {
 /** The next main mission (null when the arc is complete). */
 export function nextMission(c: CampaignSave): MissionDef | null {
   return MAIN_ARC.find((m) => !c.missionsDone.includes(m.id)) ?? null;
+}
+
+/**
+ * Who is waiting in the Deadletter Office (Stage 667): the fixer of the next contract in the arc, in
+ * person, by the terminal. Nobody comes for the last one — Wern does not visit; the call to the white
+ * office comes from the top, and the office is empty when it does. VANTAGE has no body. And nobody
+ * once the arc is done.
+ */
+export function officeVisitor(c: CampaignSave): Exclude<HandlerId, "vantage" | "wern"> | null {
+  const next = nextMission(c);
+  if (!next) return null;
+  return next.fixer === "deacon" || next.fixer === "marrow" || next.fixer === "vessel" ? next.fixer : null;
 }
 
 /** Gigs on offer: Threat and testimony gates, the fixer alive, not yet done. */

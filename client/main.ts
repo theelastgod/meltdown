@@ -152,6 +152,8 @@ export interface GameHook {
   claimPrize: (epoch: number) => Promise<{ ok: boolean; reason?: string }>;
   /** Campaign (Stage 10): state, dialogue advance/choose, contracts desk, launch, faction, protocols. */
   campaign: () => ReturnType<Game["campaign"]["view"]>;
+  /** Stage 667: the fixers standing in the rendered scene, by name, where they stand and which way they face */
+  figures: () => { id: string; x: number; z: number; yaw: number }[];
   /** Stage 32: is this the touch build, and where are the controls actually sitting? */
   mobile: () => { on: boolean; engaged: boolean; buttons: { id: string; x: number; y: number; w: number; h: number }[]; mirror: boolean; scale: number };
   dialogueAdvance: (choice?: number) => boolean;
@@ -345,6 +347,18 @@ window.__game = {
     return game.player.health;
   },
   campaign: () => game.campaign.view(),
+  figures: () => {
+    const out: { id: string; x: number; z: number; yaw: number }[] = [];
+    // read the scene itself, not the fields that say what was built: a figure counts if it is attached and shown
+    game.renderer.scene.traverseVisible((o) => {
+      if (!o.name.startsWith("fixer:")) return;
+      o.updateWorldMatrix(true, false);
+      const e = o.matrixWorld.elements;
+      // a figure's front is its -z; the world yaw of that, in the camera's convention
+      out.push({ id: o.name.slice(6), x: e[12]!, z: e[14]!, yaw: Math.atan2(e[8]!, e[10]!) });
+    });
+    return out;
+  },
   dialogueAdvance: (choice) => game.campaign.advance(choice ?? -1),
   contracts: (on) => game.campaign.toggleContracts(on),
   launch: (id) => game.campaign.launch(id),

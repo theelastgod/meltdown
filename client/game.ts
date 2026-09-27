@@ -50,6 +50,7 @@ import { Campaign } from "./campaign";
 import { AUDITS } from "@shared/endgame/audits";
 import { emptyInput } from "@shared/sim/input";
 import { trophiesFromLedger } from "./render/hub";
+import { officeVisitor } from "@shared/campaign/save";
 import { monikerById } from "@shared/identity/monikers";
 import { filesWord } from "@shared/identity/identity";
 import type { NodeView } from "./render/wake";
@@ -291,7 +292,7 @@ export class Game {
   private refreshHub(): void {
     if (!this.renderer.hub) return;
     const v = this.file.identityView();
-    this.renderer.hub.set({ chapter: v.chapter, named: v.chapter >= 3 ? v.display : null, trophies: trophiesFromLedger(this.file.ledger) });
+    this.renderer.hub.set({ chapter: v.chapter, named: v.chapter >= 3 ? v.display : null, trophies: trophiesFromLedger(this.file.ledger), visitor: this.campaign ? officeVisitor(this.campaign.current()) : null });
     this.ghost?.adopt(this.file.ghosts[this.levelId]);
   }
 
