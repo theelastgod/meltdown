@@ -1641,6 +1641,33 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 670 — BRAVO's picture was taken a second after it was last seen alive
+
+**The red.** CI run 665 (Stage 667) failed `probe:net` on one artifact:
+*"stage2-bravo.png does not show #hud .ammo — the panel was not up when the
+shutter opened"*. Stage 667 touched nothing in the HUD or the netcode.
+
+**The cause, from the log.** The check just before it had passed with
+*"re-leased 0 ms after ALPHA stood down · health 4"*. BRAVO was alive, but with 4
+of 70 health, at the instant ALPHA's bot was stood down. ALPHA had been firing
+over the probe's simulated 150 ms round-trip link. The probe then waited 1.2 s
+and took ALPHA's picture before BRAVO's. Rounds ALPHA sent before it stood down
+can still reach the server in that time. A 4 hp file dies to one of them, and
+since Stage 128 a closed file's HUD hides the gun's chrome, which is exactly the
+frame the artifact check refused. The "alive" poll asked once, then the probe
+took the picture more than a second and another screenshot later.
+
+**Not reproduced locally.** It needs BRAVO nearly dead at that instant. Three
+local passes read full health. The mechanism above is inferred from CI's two log
+lines, not observed.
+
+**The fix is in the probe.** It asks again at the moment BRAVO's shutter opens,
+with the same poll: alive, and the ammo panel drawn. If BRAVO was closed by then,
+the probe says so and how long it waited. The next time this happens, the log
+will confirm or refute the mechanism. The artifact check is unchanged.
+
+**Verified.** `probe:net` 28/28; `npm run typecheck`.
+
 ## Stage 669 — The alert ran out while the probe was still counting frames
 
 **The red.** CI run 664 (Stage 666) failed `probe:wake` on one check: *"the alert

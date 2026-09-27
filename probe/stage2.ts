@@ -589,6 +589,22 @@ async function main(): Promise<void> {
     check("BRAVO is back on the ledger, ammo drawn, before its frame is taken: the picture claims a living file's HUD", bravoBack.back, `re-leased ${bravoBack.waited} ms after ALPHA stood down · health ${bravoBack.health}`);
     await E.a.waitForTimeout(1200);
     await shotCheck(E.a, `stage2-alpha.png`, "#hud .ammo");
+    // Stage 670: BRAVO can be back on the ledger with 4 hp while rounds ALPHA fired before it was
+    // stood down are still on the 150 ms link, and a second later it is dead and its gun's chrome
+    // gone (CI run 665: "re-leased 0 ms after ALPHA stood down · health 4", then the frame without
+    // the ammo panel). Ask again at the moment the shutter opens, not a second and a picture before
+    const bravoAgain = await E.b.evaluate(async (polls) => {
+      for (let i = 0; i < polls; i++) {
+        const s = window.__game.state();
+        const el = document.querySelector("#hud .ammo");
+        const cs = el ? getComputedStyle(el) : null;
+        const drawn = !!cs && cs.display !== "none" && cs.visibility !== "hidden" && Number(cs.opacity) >= 0.02;
+        if (s.health > 0 && drawn) return { back: true, waited: i * 50, health: s.health };
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      return { back: false, waited: polls * 50, health: window.__game.state().health };
+    }, BACK_POLLS);
+    if (bravoAgain.waited > 0) console.log(`BRAVO was closed again when its shutter came round: back ${bravoAgain.back} after ${bravoAgain.waited} ms, health ${bravoAgain.health}`);
     await shotCheck(E.b, `stage2-bravo.png`, "#hud .ammo");
     await E.a.close();
     await E.b.close();
