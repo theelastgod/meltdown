@@ -166,6 +166,10 @@ async function main(): Promise<void> {
     const kitText = await a.evaluate(() => document.querySelector("#hud .file .kit")?.textContent ?? "");
     check("file: the FILE panel shows mastery ranks, sockets and firmware", /MASTERY 30\/30/.test(kitText) && /THREE-COUNT/.test(kitText), kitText.replace(/\s+/g, " ").slice(0, 100));
     await a.evaluate(() => window.__game.toggleFile(false));
+    // Stage 675: a weapon at the mastery cap carries its finish, and one below it does not. Read the
+    // models the renderer actually built against the file's own ranks, not a list written down here
+    const finA = await a.evaluate(() => ({ drawn: window.__game.game.renderer.masteredWeapons().sort(), capped: Object.entries(window.__game.file().mastery).filter(([, m]) => m.rank >= 30).map(([w]) => w).sort(), inHand: window.__game.game.renderer.masteredWeapons().length }));
+    check("mastery finish: every weapon this file has at rank 30 is drawn with its finish, and no other", finA.capped.length > 0 && JSON.stringify(finA.drawn) === JSON.stringify(finA.capped), `at the cap [${finA.capped.join(", ")}] · drawn with the finish [${finA.drawn.join(", ")}]`);
 
     // ---------------- ledger shop ----------------
     const poor = await fetch(`http://127.0.0.1:${HOST_PORT}/file/fresh-poor/buy`, { method: "POST", body: JSON.stringify({ node: "slipfile" }) }).then((r) => r.json()) as { ok: boolean; reason?: string };
@@ -226,6 +230,8 @@ async function main(): Promise<void> {
     await fresh.waitForTimeout(800);
     const fv = await fresh.evaluate(() => ({ stamps: window.__game.file().stamps, mastery: window.__game.file().mastery["lease_breaker"], log: [...document.querySelectorAll("#hud .log div")].map((d) => d.textContent ?? "").filter((t) => /STAMP|MASTERY/.test(t)) }));
     check("stamps: FIRST FILE CLOSED un-redacts on the killer's file mid-round and reaches the client", fv.stamps.includes("first_kill:lease_breaker") && fv.log.some((l) => /STAMP · FIRST FILE CLOSED/.test(l)), `stamps [${fv.stamps.join(", ")}] · LB xp ${fv.mastery?.xp} rank ${fv.mastery?.rank} · ${fv.log.slice(0, 2).join(" | ")}`);
+    const finF = await fresh.evaluate(() => ({ drawn: window.__game.game.renderer.masteredWeapons(), top: Math.max(...Object.values(window.__game.file().mastery).map((m) => m.rank), 1) }));
+    check("mastery finish: a file with nothing at the cap draws no finish", finF.top < 30 && finF.drawn.length === 0, `highest rank ${finF.top} · drawn with the finish [${finF.drawn.join(", ")}]`);
     check("mastery: XP alone holds at the first gate — rank 1 file, no challenge done", (fv.mastery?.rank ?? 0) <= 5 && (fv.mastery?.done.length ?? 0) === 0, `rank ${fv.mastery?.rank}, done ${JSON.stringify(fv.mastery?.done)}`);
     await fresh.evaluate(() => { window.__game.setRealtime(false); window.__game.toggleFile(true); });
     await fresh.setViewportSize({ width: 1280, height: 720 });

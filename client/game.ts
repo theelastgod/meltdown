@@ -27,7 +27,7 @@ import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { impactRead, landedDamage, WASP_SHOT } from "./hit";
 import { bodyKey, closeLine, closeRead, forgetOldHits, rememberHit, type LandedHit, ttkNote, victimLabel, weaponName } from "./hud/kill";
-import { challengeClearedLine, masteryRankLine } from "@shared/progression/mastery";
+import { challengeClearedLine, MAX_RANK, masteryRankLine } from "@shared/progression/mastery";
 import { threatMarks, type LiveProjectile } from "./hud/threat";
 import { waspLocks, type WaspSeen } from "./vantage";
 import { lookYawPitch } from "./render/feel";
@@ -201,6 +201,7 @@ export class Game {
       // offline the loadout applies at once; online the server decides at the next link
       if (!this.online) this.world.setLoadout(this.player, f.localLoadout());
       this.hud.setFile(f.view());
+      this.applyMastery();
       this.refreshHub();
     };
     this.file.onStamp = (lines, ranks, challenges) => {
@@ -285,7 +286,13 @@ export class Game {
     this.hud.setIdentity(v.glyphSvg, v.display, v.monikerText, v.chapter);
     const worn = skinByToken(this.file.accountRecord?.counter?.worn ?? 0);
     this.renderer.setSkin(worn?.tint ?? null, worn?.texture ?? null);
+    this.applyMastery();
     this.refreshHub();
+  }
+
+  /** A weapon at the mastery cap carries its finish, in first person and in the hand (Stage 675). */
+  private applyMastery(): void {
+    for (const w of WEAPON_LIST) this.renderer.setMastered(w.id, (this.file.mastery[w.id]?.rank ?? 1) >= MAX_RANK);
   }
 
   /** The office renovates with the Chapter; the trophy wall is cut from the file's ledger; the ghost adopts the file's best run. */

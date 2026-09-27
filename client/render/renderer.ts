@@ -585,6 +585,49 @@ export class Renderer {
     this.local.trim.needsUpdate = true;
   }
 
+  /**
+   * The mastery finish (Stage 675): rebuild a weapon's viewmodel and held model with or without it.
+   * Rare — a file loading, a rank 30 landing — so the models are rebuilt rather than carrying a
+   * hidden mesh (a hidden mesh would be a draw call the moment it showed, and lease_row has four).
+   * The rebuilt strips take the worn skin's tint and plate, as the old ones had.
+   */
+  setMastered(id: WeaponId, on: boolean): void {
+    const vm0 = this.viewmodels.get(id);
+    const held0 = this.localWeapons.get(id);
+    if (!vm0 || !held0 || (vm0.userData.mastered === true) === on) return;
+    const vm = buildViewmodel(id, on);
+    vm.visible = vm0.visible;
+    this.camera.remove(vm0);
+    release(vm0);
+    this.camera.add(vm);
+    this.viewmodels.set(id, vm);
+    if (this.viewmodel === vm0) this.viewmodel = vm;
+    const held = buildViewmodel(id, on);
+    held.position.set(...WEAPON_IN_SOCKET.position);
+    held.rotation.set(0, WEAPON_IN_SOCKET.rotationY, 0);
+    mergeByMaterial(held);
+    held.userData.mastered = on;
+    held.visible = held0.visible;
+    held.traverse((o) => o.layers.set(FAR_LAYER));
+    this.local.hand.remove(held0);
+    release(held0);
+    this.local.hand.add(held);
+    this.localWeapons.set(id, held);
+    if (this.localWeapon === held0) this.localWeapon = held;
+    for (const g of [vm, held]) {
+      const strip = g.userData.strip as THREE.MeshBasicMaterial | undefined;
+      if (!strip) continue;
+      strip.color.set(this.skinTint ?? (g.userData.tracer as string));
+      strip.map = this.skinMap;
+      strip.needsUpdate = true;
+    }
+  }
+
+  /** which weapons are drawn with the mastery finish (probes and tests) */
+  masteredWeapons(): WeaponId[] {
+    return [...this.viewmodels.entries()].filter(([, g]) => g.userData.mastered === true).map(([id]) => id);
+  }
+
   /** true when a plate is loaded and the strips *and* the body trim are drawing it */
   skinBound(): boolean {
     if (!this.skinMap) return false;

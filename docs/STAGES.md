@@ -1641,6 +1641,65 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 675 — Mastering a weapon changed nothing you could see
+
+**The defect.** Every rank of the mastery ladder paid a chip or a firmware. The
+cap, rank 30, paid a twentieth chip. The only sign of a mastered weapon was a
+kill-confirm sound (Stage 8), so a weapon at rank 30 looked exactly like one at
+rank 1. Nothing new in kind arrived at the top of the ladder.
+
+**The fix: the mastery finish.** A weapon at the cap is drawn with inlay lines in
+its own tracer colour: two set into each flank of its receiver, running its
+length. It is cosmetic only; nothing about the gun changes, in keeping with the
+rule that top-end rewards are cosmetic, never power.
+- `buildViewmodel(id, mastered)` adds the inlays and merges them into the gun's
+  first strip mesh, so the finish costs no draw call. It uses the strip's own
+  material, so a worn skin's tint and plate reach it.
+- `Renderer.setMastered()` rebuilds a weapon's first-person and held models when
+  its state changes. That is rare (a file loading, a rank 30 landing), and a
+  hidden mesh would become a draw call the moment it showed, with lease_row four
+  calls from its limit.
+- The game applies the finish whenever the file changes.
+
+**Two flaws caught on the way.**
+- *The first draft's inlays ran along the barrel and hung below the grip.* It
+  measured every body-material part together, and barrels and grips share that
+  material. The receiver is now the largest body part. The close-up render showed
+  this. The test had passed because it measured the receiver with the same
+  function it was checking; it now finds the receiver itself.
+- *The finish was non-indexed and every other part of the gun is indexed.* The
+  held model merges its parts by material, and three.js will not merge the two
+  kinds. On every gun with more than one strip part, the whole strip silently
+  dropped out of the player's hand. `probe:tps` and `probe:city` caught it as a
+  page error; the unit tests never ran the held-model merge. They do now.
+
+**The guards.**
+- *`tests/finish.test.ts`*, for every weapon:
+  - the mastered model has the same number of meshes, and its strip carries
+    exactly four inlay boxes more, on the strip's own material;
+  - the renderer's `mergeByMaterial` keeps every strip triangle;
+  - every inlay vertex sits on the receiver's flank, within its length and
+    height, with the receiver found independently of the code under test.
+
+  Six mutations were each caught: inlays sunk into the receiver, inlays as their
+  own mesh, the finish never applied, the receiver taken as the last body part,
+  every body part taken together (the first draft's bug), and a non-indexed
+  merge.
+- *`probe:mastery`* compares the models the renderer actually built with the
+  file's own ranks. On the sandbox file all 8 weapons are at the cap and all 8
+  are drawn with the finish. On a fresh online file, whose highest rank is 1,
+  none are. Removing the game's call fails it with *"drawn with the finish []"*.
+
+**Budget.** `probe:city` read lease_row 186, docks 167 and depot 183, the same as
+Stage 674. The broken build had read lease_row at 182, four calls fewer, because
+the held gun's strip was missing.
+
+**Verified.** `npm run typecheck` (both configs), 1472 unit tests, the four lints,
+`npm run build`, `probe:mastery` 25/25, `probe:tps` 50/50 and `probe:city` 51/51.
+
+**Proof.** `docs/proof/stage675/mastery-finish.png` shows four weapons: plain on
+the top row, mastered on the bottom.
+
 ## Stage 674 — The rail ran through the middle of the monorail
 
 **The defect.** The monorail that passes over every district's walkway street was a

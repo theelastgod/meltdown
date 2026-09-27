@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { markSharedAll, release } from "./dispose";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import { bindPlate, PALETTE } from "./city";
@@ -6,7 +7,13 @@ import type { Vec3 } from "@shared/math/vec3";
 import { MECH_HEAD_Y, MECH_HIP, mechBob, mechGait, mechGeometry, WASP_ROTORS, waspGeometry } from "./machines";
 
 /** Distinct kitbash silhouettes per weapon. Cheap boxes; the strip colour is the read. */
-export function buildViewmodel(id: WeaponId): THREE.Group {
+/**
+ * `mastered` (Stage 675): a weapon at mastery rank 30 carries its finish — inlay lines in its own
+ * tracer colour set into both flanks of the receiver, nose to heel. Cosmetic only; nothing about the
+ * gun changes. The inlays are merged into the weapon's first strip mesh, so the finish costs no draw
+ * call, and they take the worn skin's tint with the strip.
+ */
+export function buildViewmodel(id: WeaponId, mastered = false): THREE.Group {
   const g = new THREE.Group();
   const body = new THREE.MeshStandardMaterial({ color: 0x151a22, roughness: 0.5, metalness: 0.6 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x0c0f15, roughness: 0.7, metalness: 0.3 });
@@ -89,9 +96,53 @@ export function buildViewmodel(id: WeaponId): THREE.Group {
       for (let i = 0; i < 3; i++) add(new THREE.BoxGeometry(0.085, 0.01, 0.02), strip, 0, 0.05, -0.08 + i * 0.05);
       break;
   }
+  if (mastered) inlay(g, body, strip);
+  g.userData.mastered = mastered;
+  g.userData.body = body;
   g.position.set(0.28, -0.26, -0.55);
   g.rotation.y = -0.04;
   return g;
+}
+
+/** the receiver: the largest part of the body material (a barrel or a grip can share it) */
+export function receiverBox(g: THREE.Group, body: THREE.Material): THREE.Box3 {
+  let best = new THREE.Box3();
+  let vol = -1;
+  for (const c of g.children) {
+    const m = c as THREE.Mesh;
+    if (m.material !== body) continue;
+    m.geometry.computeBoundingBox();
+    const b = m.geometry.boundingBox!.clone().translate(m.position);
+    const v = b.getSize(new THREE.Vector3());
+    if (v.x * v.y * v.z > vol) {
+      vol = v.x * v.y * v.z;
+      best = b;
+    }
+  }
+  return best;
+}
+
+/** the mastery finish: two inlay lines down each flank of the receiver, merged into the first strip mesh */
+function inlay(g: THREE.Group, body: THREE.Material, strip: THREE.Material): void {
+  const box = receiverBox(g, body);
+  const host = g.children.find((c) => (c as THREE.Mesh).material === strip) as THREE.Mesh | undefined;
+  if (box.isEmpty() || !host) return;
+  const size = box.getSize(new THREE.Vector3());
+  const mid = box.getCenter(new THREE.Vector3());
+  const lines: THREE.BufferGeometry[] = [];
+  for (const sx of [-1, 1]) {
+    for (const dy of [-0.22, 0.22]) {
+      lines.push(new THREE.BoxGeometry(0.004, 0.006, size.z * 0.86).translate(mid.x + sx * (size.x / 2 + 0.002) - host.position.x, mid.y + dy * size.y - host.position.y, mid.z - host.position.z));
+    }
+  }
+  // indexed, like every other part of the gun: the held model merges its parts by material, and
+  // three.js will not merge indexed with non-indexed — the whole strip would drop out of the hand
+  const merged = mergeGeometries([host.geometry, ...lines], false);
+  for (const l of lines) l.dispose();
+  if (!merged) return;
+  host.geometry.dispose();
+  host.geometry = merged;
+  host.name = "strip+finish";
 }
 
 /** World-space effects: beams, explosions, smoke, EMP rings, projectiles, wasps, mechs. */
