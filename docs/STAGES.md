@@ -1641,6 +1641,70 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 664 — The fog was a black wall at sixty-four metres
+
+**The defect, measured.** The art bible says *"haze softens everything past
+~200 m"* and *"Fog: exponential, colour-cast per district, never grey."* The
+renderer ran `FogExp2(cast.fog, 0.013)`, and exp2 fog at that density is **half
+at 64 m and total by ~150 m**. With near-black cast colours, that did not soften
+the distance; it erased it, starting three times closer than specified. The
+camera's far plane is 900 m, so everything between ~120 m and 900 m was painted
+out.
+
+`probe:look` had been hinting at this for a long time without anyone reading it
+that way. Two of its three vantages sat at the dark edge of the clip's band —
+luma **0.067** against a floor of 0.06, dark **84%** against a ceiling of 88% —
+while their neon coverage matched the clip. So the missing light was not neon.
+
+**The experiment.** Density was the only variable, swept through `probe:look` in
+sequence, with the source restored after each run:
+
+| density | whole frame (clip: 62%) | lane neon (clip: 4.1%) | street ÷ skyline | arena luma | street luma |
+|---|---|---|---|---|---|
+| **0.013** (was) | 66% | 3.4% | **2.60×** | 0.067 | 0.136 |
+| 0.009 | 64% | 4.1% | 1.92× | 0.078 | 0.136 |
+| **0.0065** (now) | **62%** | 4.6% | **1.51×** | 0.084 | 0.137 |
+| 0.0045 | 61% | 5.0% | 1.33× | 0.089 | 0.137 |
+
+0.0065 puts the whole frame at 62% dark, the reference clip's own figure. Half-fog
+falls at 128 m, and at 200 m about a fifth of a building still shows through. The
+distance is softened, not gone. 0.0045 matches the "~200 m" wording more
+literally but pushes neon further past the clip, so it lost.
+
+**What it reframes.** The street luma column barely moves, because the street is
+near the camera and fog hardly reaches it. Yet the street-to-skyline split
+Stages 647 and 657 fought falls from 2.60× to 1.51×. That split had been
+measuring the street against a wall. Stage 657 was still right to darken the
+street, but half of what it was fighting was here.
+
+**Look at the frames** (`docs/proof/stage664/`). Before: the centre of the skyline
+view is a black void with a few faint window grids. After: layered towers with
+sparse window rectangles and ad screens receding into haze, and the sky above
+still pure black — *"a low-poly kitbash skyline at night… every building a dark
+slab… windows sparse warm/cyan rectangles"*, which is what the art bible
+describes the clip as showing. The city was always there. Fog colour is
+untouched and the background is its own colour, so nothing went grey and the sky
+did not lift.
+
+**The guard.** `probe/stage3.ts` ratchets the street-to-skyline split from ≤2.95 to
+**≤1.62** — today's 1.50–1.51× plus the same ~7% headroom Stage 647 allowed. The
+skyline luma read 0.050–0.052 across three runs at the old density, so the
+measurement is steady. Mutation: putting the density back to 0.013, with the
+probe unchanged, fails with *"street is 2.72x the skyline"* against the 1.62
+bound. A mutation test fits here because the change is one number; the choice of
+*which* number was made by the sweep and by eye, and the frames are in the
+repository for the owner to overrule.
+
+**Verified on a still tree.** `probe:look` 19/19, `probe:city` 51/51,
+`probe:cityLife` 21/21, `probe:frame` 8/8 (fog density costs nothing per frame),
+`npm run typecheck`, 1437 unit tests, the campaign, progression, economy and
+asset lints, and the build.
+
+**Still open.** Only the density moved. The fog *colour* is still near-black in
+every cast (`0x05090f` for cyan), so the haze darkens and softens but never
+*glows*. The clip's wet night air, lit by the neon, is a separate question for a
+separate stage — and it must stay clear of "never grey".
+
 ## Stage 663 — Mercy and betrayal played the same mission
 
 **The defect, measured.** Stage 656 made the ending answer every choice; Stage 661

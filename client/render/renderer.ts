@@ -281,7 +281,14 @@ export class Renderer {
     this.renderer.toneMappingExposure = 1.25;
     this.scene.background = new THREE.Color(PALETTE.bg);
     const fogColor = new THREE.Color(cast.fog);
-    const fogDensity = 0.013;
+    // "Haze softens everything past ~200 m" (docs/ART_BIBLE.md). At 0.013 the exp2 fog was half at
+    // 64 m and total by ~150 m, so the skyline was not softened but erased: the centre of every
+    // distant view was a black wall with the city behind it. Swept 0.013 / 0.009 / 0.0065 / 0.0045
+    // through probe:look with nothing else changed; 0.0065 puts the whole frame at 62% dark, the
+    // reference clip's own figure, with half-fog at 128 m and the street itself untouched (it is
+    // near the camera). The fog colour is unchanged and the background is separate, so the sky is
+    // still pure black (Stage 664).
+    const fogDensity = 0.0065;
     this.scene.fog = new THREE.FogExp2(cast.fog, fogDensity);
 
     this.camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.05, 900);

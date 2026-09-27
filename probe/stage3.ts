@@ -158,7 +158,11 @@ async function main(): Promise<void> {
       // ~7% headroom Stage 647 allowed for machine variance (the luma reads 0.151 and 0.152 on two
       // different runs of the old shader, so it is stable to under a percent) and no more, because
       // the whole point of the number is that the split cannot widen again unseen.
-      roadDark >= 0.08 && roadDark <= 0.60 && roadLuma <= 0.145 && split <= 2.95,
+      // Ratcheted again by Stage 664, and this time the split fell for the other reason: the
+      // skyline was fog-black. Opening the fog from 0.013 to 0.0065 took the split from 2.60x to
+      // 1.51x while the street held at luma 0.136-0.137 — it had been compared against a wall. The
+      // bound is today's 1.51x with the same ~7% headroom, so thickening the fog back fails here.
+      roadDark >= 0.08 && roadDark <= 0.60 && roadLuma <= 0.145 && split <= 1.62,
       `street dark ${(roadDark * 100).toFixed(1)}% luma ${roadLuma.toFixed(3)} · skyline luma ${sky.meanLuma.toFixed(3)} · street is ${split.toFixed(2)}x the skyline · whole frame ${(shots["lane"]!.darkFrac * 100).toFixed(0)}% against the clip's 62%`,
     );
 
