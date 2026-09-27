@@ -1,14 +1,17 @@
 /**
- * The CRT menu flow (Stage 13). After the crawl's title: two title cards — "Every mind in Neo-China
- * is leased." / "You woke free." — then the menu: WAKE (a district and the public room), CAMPAIGN
- * (the desk), THE OFFICE (the hub), THE RANGE (offline, dummies), FILE, WALLET (the page drawn in
- * place, like SETTINGS, from the Counter-Ledger's own client: client/wallet.ts), SETTINGS. In play, ESC
+ * The CRT menu flow (Stage 13). Two title cards — "Every mind in Neo-China is leased." / "You woke
+ * free." — only on a boot the trailer did not open (the trailer already says both), then the menu:
+ * PLAY first and preselected (the campaign in the shared city: `playUrl`), CHARACTER, MODES (a
+ * screen of its own: WAKE, THE RUN, THE RANGE, THE OFFICE), FILE, WALLET (the page drawn in place,
+ * like SETTINGS, from the Counter-Ledger's own client: client/wallet.ts), SETTINGS. In play, ESC
  * opens the pause menu (RESUME / SETTINGS / FILE / QUIT TO MENU). Choices are URLs, like district
- * travel: the client reloads with the query that describes the mode.
+ * travel: the client reloads with the query that describes the mode, behind the loading card
+ * (client/loading.ts) the choice raises before the page goes.
  *
  *   ?menu=1 forces the flow (headless probes skip it), ?menu=0 never; ?nonav=1 reports the URL a
  *   choice would load instead of loading it (the probe).
  */
+import { cityPageUrl, DEFAULT_CITY } from "@shared/net/city";
 import { decodeLook, encodeLook, LOOK_FIELDS, stepLook, type LookField } from "@shared/identity/look";
 import { LookPreview } from "./render/lookpreview";
 import { HUB_LEVEL_ID } from "@shared/sim/hub";
@@ -21,6 +24,10 @@ import type { GameAudio } from "./audio";
 import { clipsFor, videoUrl } from "../shared/assets/video";
 import { CAPITAL_MARK } from "./brand";
 import { walletEntries, walletHtml, walletState, type WalletState } from "./wallet";
+import { hideLoading, loadingFor, placeName, showLoading, travelTo, writeLoading, type LoadingDescriptor } from "./loading";
+import { MISSION_ART } from "./missionart";
+import { nextMission, type CampaignSave } from "@shared/campaign/save";
+import { MAIN_ARC } from "@shared/campaign/missions";
 
 /** a row with [−] [+]: a setting, or a field of the look (Stage 689) */
 const adjustable = (id: string): boolean => id.startsWith("set:") || id.startsWith("look:");
@@ -29,7 +36,17 @@ export const TITLE_CARDS: readonly string[] = ["Every mind in Neo-China is lease
 export const CARD_SECONDS = 2.4;
 export const CARD_GAP = 0.5;
 
-export type MenuScreen = "cards" | "main" | "wake" | "settings" | "character" | "wallet" | "pause" | "hidden";
+/**
+ * Whether the title cards play on this boot. They are the trailer's own opening line and its last,
+ * so a boot the trailer just opened goes straight to the menu; a returning player, whose trailer is
+ * long seen, still gets the two lines once per boot — except coming back from a game (QUIT TO MENU),
+ * which is not an arrival.
+ */
+export function cardsWanted(trailerPlayed: boolean, fromGame = false): boolean {
+  return !trailerPlayed && !fromGame;
+}
+
+export type MenuScreen = "cards" | "main" | "modes" | "wake" | "settings" | "character" | "wallet" | "pause" | "hidden";
 
 export interface MenuEntry {
   id: string;
@@ -39,17 +56,52 @@ export interface MenuEntry {
   line: string;
 }
 
-export const MAIN: readonly MenuEntry[] = [
+/** The modes, on their own screen under MODES: each with its line and its behaviour, as they were on the main menu. */
+export const MODES: readonly MenuEntry[] = [
   { id: "wake", label: "WAKE", line: "THE SIGNATURE MODE: FLIP THE NODES, HOLD THE DISTRICT, BEAT THE KERNEL'S CLOCK" },
   { id: "run", label: "THE RUN", line: "PLAY TO EARN: CARRY $CAPITAL CLAIMS OUT OF THE PVP ZONE TO A GATE; DIE AND THEY DROP", icon: CAPITAL_MARK.small },
-  { id: "campaign", label: "CAMPAIGN", line: "THE DESK AT THE DEADLETTER OFFICE: FIXERS, GIGS, THE SEVEN-MISSION ARC" },
-  { id: "office", label: "THE OFFICE", line: "THE HUB: YOUR FILE ON THE WALL, THE RANGE GHOSTS, THE DOSSIER" },
   { id: "range", label: "THE RANGE", line: "THE DRAINAGE YARD, OFFLINE, WITH DUMMIES" },
+  { id: "office", label: "THE OFFICE", line: "THE HUB: YOUR FILE ON THE WALL, THE RANGE GHOSTS, THE DOSSIER" },
+];
+
+/** The desk, straight to the office. PLAY is the campaign now; the id still chooses (the probes, old links). */
+export const CAMPAIGN_DESK: MenuEntry = { id: "campaign", label: "CAMPAIGN", line: "THE DESK AT THE DEADLETTER OFFICE: FIXERS, GIGS, THE SEVEN-MISSION ARC" };
+
+/** The main menu: PLAY first and preselected; everything else is one step aside. PLAY's line is the file's own (`playLine`). */
+export const MAIN: readonly MenuEntry[] = [
+  { id: "play", label: "PLAY", line: "THE CITY · THE CAMPAIGN · EVERYONE ONLINE IS HERE" },
   { id: "character", label: "CHARACTER", line: "BUILD YOUR BLANK: BODY, BUILD, COAT, SHOULDER · CLOTH ONLY, THE SAME HITBOX FOR EVERY BODY" },
+  { id: "modes", label: "MODES", line: "WAKE · THE RUN · THE RANGE · THE OFFICE" },
   { id: "file", label: "FILE", line: "THE GHOSTFILE: NODES, MASTERY, STAMPS, THE COUNTER-LEDGER" },
   { id: "wallet", label: "WALLET", line: "CONNECT A WALLET: YOUR ADDRESS, YOUR $CAPITAL, YOUR GHOSTFILE ON-CHAIN" },
   { id: "settings", label: "SETTINGS", line: "SENSITIVITY, FIELD OF VIEW, VOLUMES, THE CRT" },
 ];
+
+/** Where the campaign stands for PLAY's line: the next mission in the arc, its number and its district; null once the arc is done. */
+export interface PlayInfo {
+  next: { index: number; id: string; title: string; level: string } | null;
+  begun: boolean;
+}
+
+export function playInfo(save: CampaignSave): PlayInfo {
+  const n = nextMission(save);
+  return { next: n ? { index: MAIN_ARC.indexOf(n) + 1, id: n.id, title: n.title, level: n.level } : null, begun: save.missionsDone.length > 0 };
+}
+
+const nextWords = (n: NonNullable<PlayInfo["next"]>) => `NEXT: ${String(n.index).padStart(2, "0")} ${n.title}`;
+
+/** PLAY's line: what it does and where, from the file's campaign save when there is one. */
+export function playLine(p: PlayInfo | null): string {
+  if (!p) return MAIN[0]!.line;
+  if (!p.next) return "THE CITY · THE ARC IS CLOSED: GIGS AND THE STREET · EVERYONE ONLINE IS HERE";
+  return `THE CITY · ${placeName(p.next.level)} · ${nextWords(p.next)} · EVERYONE ONLINE IS HERE`;
+}
+
+/** PLAY's loading card: the destination the URL names, the campaign's next step, the next mission's art. */
+export function playLoading(url: string, p: PlayInfo | null): LoadingDescriptor {
+  const line = `THE CITY · ${p?.begun ? "CONTINUE" : "BEGIN"} THE CAMPAIGN${p?.next ? ` · ${nextWords(p.next)}` : ""}`;
+  return loadingFor(url, { kind: "play", line, art: p?.next ? MISSION_ART[p.next.id] : undefined });
+}
 
 const PAUSE: MenuEntry[] = [
   { id: "resume", label: "RESUME", line: "" },
@@ -76,6 +128,8 @@ export interface MenuView {
   previewLook: number | null;
   /** the text of the page drawn above the list (the WALLET page); "" on the list-only screens */
   page: string;
+  /** the line under the list: what the row under the cursor does (PLAY's names the city and the next mission) */
+  line: string;
 }
 
 /** The WALLET page's side of the host: the Counter-Ledger's client, loaded on demand (client/wallet.ts). */
@@ -97,6 +151,8 @@ export interface MenuHost {
   identityLine: () => string;
   /** the WALLET page (absent: the entry opens an empty page that says there is no ledger host) */
   wallet?: MenuWallet;
+  /** the file's campaign save, for PLAY's line (absent: the line says the campaign without the next step) */
+  campaign?: () => CampaignSave | null;
   /** the look the file wears, and wearing another (Stage 689) */
   look: () => number;
   setLook: (code: number) => void;
@@ -125,7 +181,7 @@ export function districtPickLine(pick: "wake" | "run", l: { displayName: string;
 /** The URL a choice loads: the mode as a query, like district travel. */
 export function choiceUrl(id: string, base: string, opts: { level?: string; account?: string } = {}): string | null {
   const u = new URL(base);
-  for (const k of ["net", "mission", "explore", "level", "ai", "menu", "crawl", "shop", "mode"]) u.searchParams.delete(k);
+  for (const k of ["net", "mission", "explore", "level", "ai", "menu", "crawl", "shop", "mode", "city"]) u.searchParams.delete(k);
   if (opts.account) u.searchParams.set("account", opts.account);
   switch (id) {
     case "range":
@@ -155,6 +211,19 @@ export function choiceUrl(id: string, base: string, opts: { level?: string; acco
       }
       return null;
   }
+}
+
+/**
+ * PLAY's destination — the ONE place it is decided. PLAY starts the campaign in the shared open world:
+ * the city (Stage 692), a district's persistent co-op room on the campaign host, with the ledger host
+ * kept as `shop` so the page can fetch the file and its campaign save. PLAY's loading card is derived
+ * from this URL, and the probes follow it.
+ */
+export function playUrl(base: string, opts: { account?: string; level?: string } = {}): string {
+  const u = new URL(base);
+  if (opts.account) u.searchParams.set("account", opts.account);
+  const wsBase = HOSTS.build === "dev" ? HOSTS.ledger.replace(/^http/, "ws") : HOSTS.campaignWs;
+  return cityPageUrl(u.toString(), { wsBase, level: opts.level ?? DEFAULT_CITY, shop: HOSTS.ledger });
 }
 
 export class Menu {
@@ -217,9 +286,13 @@ export class Menu {
     });
   }
 
-  /** The flow from the top: the two title cards, then the main menu. */
-  start(): void {
+  /** The flow from the top: the two title cards (unless `cards: false` — see `cardsWanted`), then the main menu. */
+  start(o: { cards?: boolean } = {}): void {
     this.started = performance.now();
+    if (o.cards === false) {
+      this.showMain();
+      return;
+    }
     this.cardStart = 0;
     this.card = 0;
     this.show("cards");
@@ -294,6 +367,8 @@ export class Menu {
   }
 
   private show(screen: MenuScreen): void {
+    // a screen coming up is the menu answering: any loading card left standing (a trip the probe did not take) goes
+    hideLoading(false);
     this.screen = screen;
     this.root.hidden = false;
     this.root.className = screen;
@@ -319,7 +394,9 @@ export class Menu {
   private entries(): readonly MenuEntry[] {
     switch (this.screen) {
       case "main":
-        return MAIN;
+        return MAIN.map((e) => (e.id === "play" ? { ...e, line: playLine(this.playInfo()) } : e));
+      case "modes":
+        return [...MODES, { id: "back", label: "BACK", line: "" }];
       case "pause":
         return PAUSE;
       case "wake":
@@ -335,6 +412,11 @@ export class Menu {
       default:
         return [];
     }
+  }
+
+  private playInfo(): PlayInfo | null {
+    const s = this.host.campaign?.();
+    return s ? playInfo(s) : null;
   }
 
   private walletState(): WalletState {
@@ -354,7 +436,7 @@ export class Menu {
     const es = this.entries();
     if (this.cursor >= es.length) this.cursor = 0;
     const list = this.root.querySelector(".list") as HTMLElement;
-    list.innerHTML = es.map((e, i) => `<div class="row ${i === this.cursor ? "on" : ""}" data-i="${i}"><span class="k">${i === this.cursor ? "▸" : " "}</span><span class="lb">${e.label}${e.icon ? `<img class="cap-mark after" src="${e.icon}" alt="¥" width="64" height="64">` : ""}</span>${adjustable(e.id) ? `<span class="v"><span class="adj" data-adj="-1">[−]</span> ${e.line} <span class="adj" data-adj="1">[+]</span></span>` : ""}</div>`).join("");
+    list.innerHTML = es.map((e, i) => `<div class="row ${i === this.cursor ? "on" : ""}${e.id === "play" ? " play" : ""}" data-i="${i}"><span class="k">${i === this.cursor ? "▸" : " "}</span><span class="lb">${e.label}${e.icon ? `<img class="cap-mark after" src="${e.icon}" alt="¥" width="64" height="64">` : ""}</span>${adjustable(e.id) ? `<span class="v"><span class="adj" data-adj="-1">[−]</span> ${e.line} <span class="adj" data-adj="1">[+]</span></span>` : ""}</div>`).join("");
     const line = this.root.querySelector(".line") as HTMLElement;
     const cur = es[this.cursor];
     line.textContent = cur && cur.id.startsWith("look:") ? lookLine(wantsTouch()) : cur && !cur.id.startsWith("set:") ? cur.line : cur ? settingsLine(wantsTouch()) : "";
@@ -364,7 +446,7 @@ export class Menu {
     const wants = menuFooter(wantsTouch(), es.some((e) => adjustable(e.id)), this.canBack());
     if (hint.textContent !== wants) hint.textContent = wants;
     const hd = this.root.querySelector(".hd .word") as HTMLElement;
-    hd.textContent = this.screen === "pause" ? "PAUSED" : this.screen === "wake" ? `${this.pick === "run" ? "THE RUN" : "WAKE"} · PICK A DISTRICT` : this.screen === "settings" ? "SETTINGS" : this.screen === "character" ? "CHARACTER" : this.screen === "wallet" ? "WALLET" : "MELTDOWN";
+    hd.textContent = this.screen === "pause" ? "PAUSED" : this.screen === "modes" ? "MODES" : this.screen === "wake" ? `${this.pick === "run" ? "THE RUN" : "WAKE"} · PICK A DISTRICT` : this.screen === "settings" ? "SETTINGS" : this.screen === "character" ? "CHARACTER" : this.screen === "wallet" ? "WALLET" : "MELTDOWN";
   }
 
   private onKey = (e: KeyboardEvent): void => {
@@ -418,7 +500,7 @@ export class Menu {
 
   /** Whether ESC goes anywhere from here. The main menu is the root: there is nothing behind it. */
   private canBack(): boolean {
-    return this.screen === "wake" || this.screen === "settings" || this.screen === "character" || this.screen === "wallet" || this.screen === "pause";
+    return this.screen === "modes" || this.screen === "wake" || this.screen === "settings" || this.screen === "character" || this.screen === "wallet" || this.screen === "pause";
   }
 
   private back(): void {
@@ -426,7 +508,14 @@ export class Menu {
     // back sound and stay exactly where it was
     if (!this.canBack()) return;
     this.host.audio?.uiBack();
-    if (this.screen === "wake" || this.screen === "wallet") this.show("main");
+    if (this.screen === "wake") {
+      // the district list is a mode's: back is the modes it was picked from
+      this.cursor = Math.max(0, MODES.findIndex((m) => m.id === this.pick));
+      this.show("modes");
+    } else if (this.screen === "modes") {
+      this.cursor = MAIN.findIndex((e) => e.id === "modes");
+      this.show("main");
+    } else if (this.screen === "wallet") this.show("main");
     else if (this.screen === "settings") this.show(this.prev === "pause" ? "pause" : "main");
     else if (this.screen === "character") this.show("main");
     else if (this.screen === "pause") this.choose("resume");
@@ -444,6 +533,15 @@ export class Menu {
     if (id === "back") {
       this.back();
       return null;
+    }
+    if (id === "modes") {
+      this.cursor = 0;
+      this.show("modes");
+      return null;
+    }
+    if (id === "play") {
+      const url = playUrl(location.href);
+      return this.go(url, playLoading(url, this.playInfo()));
     }
     if (id === "wake" || id === "run") {
       this.cursor = 0;
@@ -493,17 +591,19 @@ export class Menu {
     }
     if (id === "quit") {
       const u = new URL(location.href);
-      for (const k of ["net", "mission", "explore", "level", "ai", "mode"]) u.searchParams.delete(k);
+      for (const k of ["net", "mission", "explore", "level", "ai", "mode", "city"]) u.searchParams.delete(k);
       u.searchParams.set("menu", "1");
       u.searchParams.set("crawl", "0");
-      this.target = u.toString();
-      if (!this.nonav) location.assign(this.target);
-      return this.target;
+      return this.go(u.toString(), { kind: "menu", title: "MELTDOWN", line: "BACK TO THE MENU" });
     }
     const url = choiceUrl(id, location.href);
     if (!url) return null;
     this.target = url;
     if (id.startsWith("wake:") || id.startsWith("run:")) {
+      // the card is up from the click; the descriptor is written before the page goes, matched or not
+      const card = loadingFor(url);
+      if (!this.nonav) writeLoading(card);
+      showLoading(card);
       // ask the host for the room with space; fall back to the default name when it does not answer
       const run = id.startsWith("run:");
       const level = id.slice(run ? 4 : 5);
@@ -529,12 +629,18 @@ export class Menu {
         });
       return url;
     }
-    if (!this.nonav) location.assign(url);
+    return this.go(url, id === "campaign" ? loadingFor(url, { line: `CAMPAIGN · ${CAMPAIGN_DESK.line}` }) : loadingFor(url));
+  }
+
+  /** A trip: the loading card up with the destination, the descriptor written, then the page goes (not under nonav). */
+  private go(url: string, card: LoadingDescriptor): string {
+    this.target = url;
+    travelTo(url, card, { nonav: this.nonav });
     return url;
   }
 
   view(): MenuView {
-    return { matched: !!this.matched, screen: this.screen, card: this.card, cardT: this.cardClock(performance.now()), cardText:(this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen, previewLook: this.preview ? this.preview.look : null, page: (this.root.querySelector(".page") as HTMLElement | null)?.textContent ?? "" };
+    return { matched: !!this.matched, screen: this.screen, card: this.card, cardT: this.cardClock(performance.now()), cardText:(this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen, previewLook: this.preview ? this.preview.look : null, page: (this.root.querySelector(".page") as HTMLElement | null)?.textContent ?? "", line: (this.root.querySelector(".line") as HTMLElement | null)?.textContent ?? "" };
   }
 
   static settingsOf(): Settings {

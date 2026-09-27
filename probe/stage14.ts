@@ -518,6 +518,8 @@ async function main(): Promise<void> {
     check("the money moments are heard offline: the claim in its own voice with a line, and a death with it carried drops it to the street — one fall, a line, nothing carried, the claim lying where the file fell", moments.carried > 0 && moments.claim >= 1 && moments.flips === 0 && /CLAIM \+/.test(moments.pickLine) && moments.carried === 1 && moments.drops === 1 && moments.dropLine.trim() === "» ◈ 1 UNIT DROPPED WHERE YOU FELL" && moments.after === 0 && moments.onStreet && !moments.alive, `carried ${moments.carried} · claim cue ×${moments.claim}, node flips ×${moments.flips}, "${moments.pickLine.trim()}" · after the death: fall ×${moments.drops}, "${moments.dropLine.trim()}", carrying ${moments.after}, dropped claim on the street ${moments.onStreet}, alive ${moments.alive}`);
     await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&menu=1&crawl=0&nonav=1&menuspeed=8&level=drainage_yard`, { waitUntil: "load", timeout: NAV_MS });
     await c.waitForFunction(() => window.__game?.ready === true && window.__game.menu()?.screen === "main", null, { timeout: 40000, polling: 50 });
+    // the modes are on the MODES screen, one step from the main menu
+    await c.evaluate(() => window.__game.menuChoose("modes"));
     const entries = await c.evaluate(() => window.__game.menu()!.entries);
     await c.evaluate(() => window.__game.menuChoose("run"));
     const pick = await c.evaluate(() => window.__game.menu()!);
@@ -525,7 +527,7 @@ async function main(): Promise<void> {
     const target3 = await c.evaluate(() => window.__game.menu()!.target);
     const u = new URL(target3 ?? "http://x/");
     await c.close();
-    check("offline the yard runs the same sim (`?mode=run`), and the menu's THE RUN entry picks a district and names the run room", off.zones.length === 1 && off.claims.length === claims.length && offPick && entries.includes("THE RUN") && pick.screen === "wake" && u.searchParams.get("mode") === "run" && /mode=run/.test(u.searchParams.get("net") ?? "") && /-run-lease_row/.test(u.searchParams.get("net") ?? ""), `offline claims ${off.claims.length} picked ${offPick} · entries [${entries.join(", ")}] · run → ${u.searchParams.get("net")}`);
+    check("offline the yard runs the same sim (`?mode=run`), and the menu's THE RUN entry (on the MODES screen) picks a district and names the run room", off.zones.length === 1 && off.claims.length === claims.length && offPick && entries.includes("THE RUN") && pick.screen === "wake" && u.searchParams.get("mode") === "run" && /mode=run/.test(u.searchParams.get("net") ?? "") && /-run-lease_row/.test(u.searchParams.get("net") ?? ""), `offline claims ${off.claims.length} picked ${offPick} · entries [${entries.join(", ")}] · run → ${u.searchParams.get("net")}`);
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     results["run"] = { target: target.value, drop: dropSeen, scripPaid: fb.wallet.scrip - scrip0, owed: va.owed, paid: fa2.counter?.run?.paid };
     writeFileSync(`${OUT}/stage14.json`, JSON.stringify({ results, checks }, null, 2));

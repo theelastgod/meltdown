@@ -59,6 +59,7 @@ import { GRENADE_LIST, WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
 import { modsFor, weaponDefOf } from "@shared/sim/player";
 import { rejoinDelay, rejoinTries, triesWord } from "@shared/net/rejoin";
 import { linkStatusLine, linkingSimNote, roomName } from "./hud/room";
+import { loadingFor, travelTo } from "./loading";
 
 export interface NetConfig {
   url: string;
@@ -320,7 +321,7 @@ export class Game {
     u.searchParams.delete("mission");
     u.searchParams.delete("explore");
     this.renderer.post.kick(1);
-    setTimeout(() => location.replace(u.toString()), 120);
+    travelTo(u.toString(), loadingFor(u.toString()), { replace: true, delay: 120 });
   }
 
   /** Sign the post-match Ledger Entry (Enter). The receipt must have finished printing. */
@@ -410,7 +411,7 @@ export class Game {
         if (net.levelName && net.levelName !== this.levelId && LEVEL_IDS.includes(net.levelName)) {
           // the room plays a different district: travel there (a fresh world and renderer for that level)
           this.hud.alert(`◆ TRAVELLING — ${levelDisplayName(net.levelName)}`, false, 3);
-          this.travel(net.levelName);
+          this.travel(net.levelName, "THE ROOM PLAYS HERE · TRAVELLING");
           return;
         }
         (this.world as { seed: number }).seed = net.seed;
@@ -447,14 +448,14 @@ export class Game {
     this.hud.push(`LINKING ${cfg.url}${cfg.sim ? linkingSimNote(cfg.sim) : ""}`, "k");
   }
 
-  /** Travel to another district: the world and renderer are built per level, so the page reloads with `?level=`. */
-  travel(levelId: string): void {
+  /** Travel to another district: the world and renderer are built per level, so the page reloads with `?level=`, behind the loading card. */
+  travel(levelId: string, line?: string): void {
     if (!LEVEL_IDS.includes(levelId) || levelId === this.levelId) return;
     const u = new URL(location.href);
     u.searchParams.set("level", levelId);
     if (this.net?.token) u.searchParams.set("token", this.net.token);
     this.renderer.post.kick(1);
-    setTimeout(() => location.replace(u.toString()), 120);
+    travelTo(u.toString(), loadingFor(u.toString(), { line }), { replace: true, delay: 120 });
   }
 
   /** how many times this drop has been knocked on, cleared when the room takes the file back */

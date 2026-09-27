@@ -1,10 +1,12 @@
 /**
  * Stage 13 probe — polish & ship.
  *  The CRT menu flow: the two title cards in order ("Every mind in Neo-China is leased." / "You woke
- *  free."), then the menu with WAKE / CAMPAIGN / THE OFFICE / THE RANGE / FILE / WALLET / SETTINGS; keys
- *  move the cursor and a choice is a URL that names the mode (WAKE picks a district and the
- *  public room); SETTINGS adjust live (sensitivity, FOV, volumes, CRT) and persist; ESC in play
- *  is the pause menu; the audio pass: buses, UI cues, the card sting, the low-health pulse.
+ *  free."), then the menu with PLAY (first and selected) / CHARACTER / MODES (WAKE / THE RUN / THE
+ *  RANGE / THE OFFICE on their own screen) / FILE / WALLET / SETTINGS; keys move the cursor and a
+ *  choice is a URL that names the mode (WAKE picks a district and the public room), raised behind
+ *  the loading card with its destination before the page goes; SETTINGS adjust live (sensitivity,
+ *  FOV, volumes, CRT) and persist; ESC in play is the pause menu; the audio pass: buses, UI cues,
+ *  the card sting, the low-health pulse.
  *
  *   npm run probe:ship
  */
@@ -124,6 +126,12 @@ async function main(): Promise<void> {
     // ---------------- the main menu and the keys ----------------
     await a.waitForFunction(() => window.__game.menu()?.screen === "main", null, { timeout: 20000, polling: 30 });
     const m0 = await a.evaluate(() => window.__game.menu()!);
+    // PLAY is the first, obvious action: first on the list, the row under the cursor when the menu opens, and its line says where it goes
+    const playRow = await a.evaluate(() => {
+      const on = document.querySelector("#menu .list .row.on") as HTMLElement | null;
+      const first = document.querySelector('#menu .list .row[data-i="0"]') as HTMLElement | null;
+      return { on: (on?.querySelector(".lb")?.textContent ?? "").trim(), first: (first?.querySelector(".lb")?.textContent ?? "").trim(), firstIsPlay: !!first?.classList.contains("play") };
+    });
     await a.screenshot({ path: `${OUT}/stage13-menu.png` });
     await a.evaluate(() => window.__game.menuKey("ArrowDown"));
     await a.evaluate(() => window.__game.menuKey("ArrowDown"));
@@ -131,15 +139,31 @@ async function main(): Promise<void> {
     await a.evaluate(() => window.__game.menuKey("ArrowUp"));
     const m2 = await a.evaluate(() => window.__game.menu()!);
     const who = await a.evaluate(() => (document.querySelector("#menu .who") as HTMLElement).textContent ?? "");
-    // Stage 679: the mode that pays $CAPITAL wears the token's mark, and nothing else does
+    check("the menu lists PLAY / CHARACTER / MODES / FILE / WALLET / SETTINGS with the file's identity line; ↓↑ move the cursor", m0.entries.join("|") === "PLAY|CHARACTER|MODES|FILE|WALLET|SETTINGS" && m0.cursor === 0 && m1.cursor === 2 && m2.cursor === 1 && /DEPTH 50/.test(who) && /sandbox-ship/.test(who), `[${m0.entries.join(", ")}] · cursor 0→2→1 · "${who}"`);
+    check(
+      "PLAY leads the main menu and is selected when it opens; its line names the shared city and the campaign",
+      m0.entries[0] === "PLAY" && m0.cursor === 0 && playRow.on === "PLAY" && playRow.first === "PLAY" && playRow.firstIsPlay && /^THE CITY · /.test(m0.line) && /EVERYONE ONLINE IS HERE$/.test(m0.line),
+      `first "${playRow.first}" · under the cursor "${playRow.on}" (cursor ${m0.cursor}) · line "${m0.line}"`,
+    );
+    // MODES: the four modes on a screen of their own, each with its line, and BACK
+    const modes = await a.evaluate(async () => {
+      window.__game.menuChoose("modes");
+      await new Promise((r) => requestAnimationFrame(r));
+      const v = window.__game.menu()!;
+      const head = (document.querySelector("#menu .hd .word") as HTMLElement | null)?.textContent ?? "";
+      return { screen: v.screen, entries: v.entries, head, line: v.line };
+    });
+    // Stage 679: the mode that pays $CAPITAL wears the token's mark, and nothing else does — on the MODES screen, where the modes are now
     await a.waitForFunction(() => [...document.querySelectorAll("#menu img.cap-mark")].every((i) => (i as HTMLImageElement).complete), null, { timeout: 10000, polling: 50 }).catch(() => undefined);
     const marks = await a.evaluate(() => [...document.querySelectorAll("#menu .row")].map((r) => {
       const i = r.querySelector("img.cap-mark") as HTMLImageElement | null;
       return { label: (r.querySelector(".lb") as HTMLElement | null)?.textContent ?? "", mark: i ? (i.complete && i.naturalWidth > 0 ? "loaded" : "broken") : "none" };
     }));
     const marked = marks.filter((m) => m.mark !== "none");
-    check("THE RUN wears the $CAPITAL mark on the menu, loaded, and no other mode does", marked.length === 1 && marked[0]!.label === "THE RUN" && marked[0]!.mark === "loaded", marks.map((m) => `${m.label}: ${m.mark}`).join(" · "));
-    check("the menu lists WAKE / THE RUN / CAMPAIGN / THE OFFICE / THE RANGE / CHARACTER / FILE / WALLET / SETTINGS with the file's identity line; ↓↑ move the cursor", m0.entries.join("|") === "WAKE|THE RUN|CAMPAIGN|THE OFFICE|THE RANGE|CHARACTER|FILE|WALLET|SETTINGS" && m0.cursor === 0 && m1.cursor === 2 && m2.cursor === 1 && /DEPTH 50/.test(who) && /sandbox-ship/.test(who), `[${m0.entries.join(", ")}] · cursor 0→2→1 · "${who}"`);
+    await a.screenshot({ path: `${OUT}/stage13-modes.png` });
+    check("MODES lists WAKE / THE RUN / THE RANGE / THE OFFICE and BACK on a screen of its own, WAKE's line under the cursor", modes.screen === "modes" && modes.entries.join("|") === "WAKE|THE RUN|THE RANGE|THE OFFICE|BACK" && modes.head === "MODES" && /^THE SIGNATURE MODE/.test(modes.line), `${modes.screen} "${modes.head}" [${modes.entries.join(", ")}] · "${modes.line}"`);
+    check("THE RUN wears the $CAPITAL mark on the MODES screen, loaded, and no other mode does", marked.length === 1 && marked[0]!.label === "THE RUN" && marked[0]!.mark === "loaded", marks.map((m) => `${m.label}: ${m.mark}`).join(" · "));
+    await a.evaluate(() => window.__game.menuKey("Escape"));
     // Stage 152: and on a desktop it still names the keys, because a desktop has them
     const footDesk = await a.evaluate(() => {
       const menuEl = document.getElementById("menu")!;
@@ -177,6 +201,57 @@ async function main(): Promise<void> {
       backOnRoot.before === "main" && backOnRoot.after === "main" && backOnRoot.cuesAfter === backOnRoot.cuesBefore,
       `screen ${backOnRoot.before} \u2192 ${backOnRoot.after} \u00b7 back cue ${backOnRoot.cuesBefore} \u2192 ${backOnRoot.cuesAfter}`,
     );
+
+    // ---------------- the loading card: a choice raises it with the destination before the page goes ----------------
+    // Under nonav nothing navigates, so the card that would cover the reload stays up to be read.
+    const pageBefore = await a.evaluate(() => location.href);
+    const range0 = await a.evaluate(() => ({ url: window.__game.menuChoose("range"), card: window.__game.loading(), href: location.href }));
+    await a.waitForFunction(() => { const i = document.querySelector("#loading .art") as HTMLImageElement | null; return !i || i.hidden || i.complete; }, null, { timeout: 10000, polling: 50 }).catch(() => undefined);
+    await a.waitForTimeout(950); // the title's snap-in is a CSS animation on wall time
+    const cardLook = await a.evaluate(() => {
+      const root = document.getElementById("loading");
+      const w = document.querySelector("#loading .ttl .w") as HTMLElement | null;
+      const img = document.querySelector("#loading .art") as HTMLImageElement | null;
+      const cs = root ? getComputedStyle(root) : null;
+      return {
+        up: !!root && !root.hidden && !!cs && cs.display !== "none" && Number(cs.opacity) > 0.9,
+        covers: !!root && root.getBoundingClientRect().width >= innerWidth - 1 && root.getBoundingClientRect().height >= innerHeight - 1,
+        over: !!cs && Number(cs.zIndex) > Number(getComputedStyle(document.getElementById("menu")!).zIndex),
+        title: w?.textContent ?? "",
+        color: w ? getComputedStyle(w).color : "",
+        font: w ? getComputedStyle(w).fontFamily : "",
+        split: w ? getComputedStyle(w).textShadow : "",
+        line: (document.querySelector("#loading .ln") as HTMLElement | null)?.textContent ?? "",
+        stage: (document.querySelector("#loading .st") as HTMLElement | null)?.textContent ?? "",
+        tip: (document.querySelector("#loading .tip") as HTMLElement | null)?.textContent ?? "",
+        bar: (document.querySelector("#loading .bar i") as HTMLElement | null)?.getBoundingClientRect().width ?? 0,
+        art: img ? { src: img.getAttribute("src") ?? "", loaded: img.complete && img.naturalWidth > 0 } : null,
+      };
+    });
+    await a.screenshot({ path: `${OUT}/stage13-loading.png` });
+    check(
+      "choosing a mode raises the loading card with the destination before the page goes: THE RANGE's card names THE DRAINAGE YARD over the yard's art, in the terminal title (cyan, split magenta), the first stage and a tip, over the menu — and the page has not moved",
+      range0.card?.shown === true && range0.card.title === "THE DRAINAGE YARD" && range0.card.stage === "district" && range0.href === pageBefore && new URL(range0.url ?? "http://x/").searchParams.get("level") === "drainage_yard" &&
+        cardLook.up && cardLook.covers && cardLook.over && cardLook.title === "THE DRAINAGE YARD" && cardLook.color === "rgb(53, 242, 255)" && /Courier New/.test(cardLook.font) && /rgba?\(255, 62, 201/.test(cardLook.split) &&
+        cardLook.line === "THE RANGE · OFFLINE, WITH DUMMIES" && cardLook.stage.startsWith("LOADING THE DISTRICT") && cardLook.tip.length > 10 && cardLook.bar > 0 && !!cardLook.art?.loaded && /\/gigs\/g_escrow_row\.jpg$/.test(cardLook.art.src),
+      `card ${JSON.stringify(range0.card)} · page ${range0.href === pageBefore ? "unmoved" : `moved to ${range0.href}`} · "${cardLook.title}" ${cardLook.color} ${cardLook.font.slice(0, 20)} shadow ${cardLook.split.slice(0, 60)} · "${cardLook.line}" · "${cardLook.stage}" · bar ${cardLook.bar.toFixed(0)}px · art ${cardLook.art?.src} loaded ${cardLook.art?.loaded} · up ${cardLook.up} covers ${cardLook.covers} over the menu ${cardLook.over}`,
+    );
+    // and at a phone's width it still fits: nothing runs off the side
+    await a.setViewportSize({ width: 390, height: 760 });
+    await a.waitForTimeout(200);
+    const phone = await a.evaluate(() => {
+      const w = document.querySelector("#loading .ttl .w") as HTMLElement | null;
+      const r = w?.getBoundingClientRect();
+      const body = (document.querySelector("#loading .body") as HTMLElement | null)?.getBoundingClientRect();
+      return { inner: innerWidth, scroll: document.documentElement.scrollWidth, left: r?.left ?? -1, right: r?.right ?? 1e9, bodyLeft: body?.left ?? -1, bodyRight: body?.right ?? 1e9 };
+    });
+    await a.screenshot({ path: `${OUT}/stage13-loading-phone.png` });
+    await a.setViewportSize({ width: 960, height: 540 });
+    check("the loading card fits a phone: the title and its lines stay inside a 390 px screen with a gutter, no sideways scroll", phone.scroll <= phone.inner && phone.left >= 0 && phone.right <= phone.inner && phone.bodyLeft >= 16 && phone.bodyRight <= phone.inner - 16, `viewport ${phone.inner} · scroll ${phone.scroll} · title ${phone.left.toFixed(0)}–${phone.right.toFixed(0)} · body ${phone.bodyLeft.toFixed(0)}–${phone.bodyRight.toFixed(0)}`);
+    // PLAY: the campaign, through the one URL that decides it, with its own card
+    const play = await a.evaluate(() => ({ url: window.__game.menuChoose("play"), card: window.__game.loading(), line: (document.querySelector("#loading .ln") as HTMLElement | null)?.textContent ?? "" }));
+    const pu = new URL(play.url ?? "http://x/");
+    check("PLAY walks the city: LEASE ROW's shared room on the campaign host, in campaign mode, behind a card that says THE CITY and the campaign", pu.searchParams.get("mode") === "campaign" && pu.searchParams.get("city") === "1" && pu.searchParams.get("level") === "lease_row" && new URL(pu.searchParams.get("net") ?? "http://x/").pathname === "/campaign/city-lease_row" && play.card?.shown === true && play.card.title === "LEASE ROW" && /^THE CITY · (BEGIN|CONTINUE) THE CAMPAIGN/.test(play.line), `${pu.search} · card ${JSON.stringify(play.card)} · "${play.line}"`);
 
     // choices are URLs that name the mode
     const campaign = await a.evaluate(() => window.__game.menuChoose("campaign"));

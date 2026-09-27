@@ -482,6 +482,31 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #menu .page .safe { margin-top: 8px; color: rgba(55,255,139,0.8); font-size: 11px; }
 #menu .page .am { color: var(--am); }
 #menu .scan { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.5) 2px 3px); animation: crawl-flicker 0.11s steps(2) infinite; }
+/* PLAY leads the main menu: the first, obvious action, a size up from the rest */
+#menu .row.play .lb { font-size: 19px; letter-spacing: 0.22em; }
+#menu .row.play:not(.on) .lb { color: var(--cy); text-shadow: 0 0 8px rgba(53,242,255,0.55), 2px 0 0 rgba(255,62,201,0.35); }
+
+/* ---- the loading card: every trip that reloads the page, from the click to the first playable frame ---- */
+#loading { position: fixed; inset: 0; z-index: 950; background: #000; color: var(--cy); font-family: var(--mono); overflow: hidden; opacity: 1; transition: opacity 0.4s; cursor: default; }
+#loading[hidden] { display: none; }
+#loading.out { opacity: 0; pointer-events: none; }
+#loading .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.7; animation: load-drift 18s ease-out both; }
+#loading .art[hidden] { display: none; }
+@keyframes load-drift { from { transform: scale(1.08); } to { transform: scale(1); } }
+#loading .vig { position: absolute; inset: 0; background: radial-gradient(ellipse 75% 70% at 50% 45%, rgba(0,0,0,0.25), rgba(0,0,0,0.7) 70%, rgba(0,0,0,0.92)), linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.85) 100%); }
+#loading .body { position: absolute; left: 16px; right: 16px; bottom: max(8vh, 24px); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; z-index: 2; }
+#loading .ttl .w { display: inline-block; font-size: clamp(30px, 7vw, 84px); letter-spacing: 0.22em; padding-left: 0.22em; line-height: 1.05; overflow-wrap: anywhere; color: var(--cy); text-shadow: 0 0 18px rgba(53,242,255,0.7), 3px 0 0 rgba(255,62,201,0.55), -3px 0 0 rgba(53,242,255,0.35); animation: crawl-title 0.9s steps(3) both; }
+#loading .ln { font-size: clamp(11px, 1.6vw, 14px); letter-spacing: 0.16em; color: var(--gr); text-shadow: 0 0 6px rgba(55,255,139,0.45); max-width: 760px; }
+#loading .bar { position: relative; width: min(520px, 100%); height: 3px; margin-top: 8px; background: rgba(53,242,255,0.12); border: 1px solid rgba(53,242,255,0.35); }
+#loading .bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 25%; background: var(--cy); box-shadow: 0 0 8px rgba(53,242,255,0.8); transition: width 0.35s steps(4); }
+#loading .st { font-size: 11px; letter-spacing: 0.2em; color: var(--cy); min-height: 14px; }
+#loading.err .bar i { background: var(--mg); box-shadow: 0 0 8px rgba(255,62,201,0.8); }
+#loading.err .st { color: var(--mg); text-shadow: 0 0 4px rgba(255,62,201,0.5); }
+#loading .tip { font-size: 10px; letter-spacing: 0.12em; color: rgba(53,242,255,0.6); max-width: 640px; }
+#loading .go { font-size: 11px; letter-spacing: 0.2em; color: var(--ye); animation: blink 1.2s steps(2) infinite; cursor: pointer; }
+#loading .go[hidden] { display: none; }
+#loading .scan { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.4) 2px 3px); animation: crawl-flicker 0.11s steps(2) infinite; }
+@media (max-width: 640px) { #loading .ttl .w { letter-spacing: 0.12em; padding-left: 0.12em; } #loading .ln { letter-spacing: 0.08em; } }
 
 /* ---- THE RUN (Stage 14): the strip, the zone edge ---- */
 #hud .runstrip { display: block; margin-top: 4px; padding: 3px 8px; background: var(--pan); border: 1px solid var(--am); color: var(--am); font-size: 11px; letter-spacing: 0.08em; white-space: normal; line-height: 1.5; text-shadow: 0 0 4px rgba(255,176,46,0.5); }

@@ -1641,6 +1641,64 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 693 — The way in was nine doors and a black screen
+
+**The ask.** The owner wanted the opening menu and its loading screens to be more intuitive, and
+the game to start with the campaign in a shared open world.
+
+**What there was.**
+- The menu offered nine equal entries with no obvious first move.
+- The two title cards repeated the line the trailer had just said.
+- Every choice reloaded into a black page until the world was built.
+
+**The change.**
+- **The menu.** It is PLAY · CHARACTER · MODES · FILE · WALLET · SETTINGS, with PLAY preselected.
+  - PLAY walks the city (Stage 692): LEASE ROW's shared room on the campaign host, in campaign
+    mode, with the ledger host kept for the file.
+  - Its line reads the file's campaign save, e.g. "THE CITY · LEASE ROW · NEXT: 01 WAKE UNLISTED ·
+    EVERYONE ONLINE IS HERE".
+  - Its URL comes from one function, `playUrl`.
+  - WAKE, THE RUN, THE RANGE and THE OFFICE moved to a MODES screen with their old lines, and every
+    old id still chooses.
+- **The title cards** play only on a boot the trailer did not open.
+- **A real loading screen.** Every reload now goes through one loading card (`client/loading.ts`):
+  menu choices, map travel, a room sending you on, contract launch, crew travel, explore, retry,
+  and the way back to the city.
+  - The caller raises the card at once and writes a descriptor (title, line, art, kind) to
+    sessionStorage before the page goes.
+  - `index.html` draws it on the next page before the game code arrives.
+  - The boot holds it through LOADING THE DISTRICT, BUILDING THE CITY, LINKING and READY, until a
+    frame is drawn and the room has let the file in.
+  - A failed join shows the link's own line and lets the player through; so does a wait over 30 s.
+- **The merge with the city.** The menu was built in parallel with Stage 692. The merge points
+  `playUrl` at `cityPageUrl`, and the retry key goes through the card.
+
+**Found on the way.** probe:counter's outage page got 504 "Outdated Optimize Dep" for viem's lazy
+chunks. The dev servers of parallel worktrees share one `node_modules` by symlink, and they kept
+re-optimizing the same dependency cache under each other's differing configs. The cache now lives
+with the checkout (`cacheDir: ".vite"`); after that probe:counter was 21/21. A first guess,
+pre-bundling viem, did not fix it and was dropped.
+
+**The guards.**
+- `tests/loading.test.ts` pins:
+  - `playUrl`, now to the city: LEASE ROW's room, campaign mode, the ledger kept;
+  - the menu order and the MODES screen;
+  - when the title cards play;
+  - the descriptor written before navigation and read back once;
+  - the stage walk and its watcher.
+
+  25 mutations were each caught.
+- probe:ship:
+  - the new exact list;
+  - PLAY selected and walking LEASE ROW's city behind a LEASE ROW card;
+  - MODES;
+  - a mode's card raised before the page goes, and at phone width.
+- `tests/verify.test.ts` caught a CI step inserted between another step and its guard; both steps
+  are guarded now.
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1563 tests; probe:ship 21/21, probe:crawl
+9/9, probe:run 28/28, probe:mobile 40/40, probe:counter 21/21; `npm run build`.
+
 ## Stage 692 — The campaign had no shared world
 
 **The ask.** The owner: "you should start with the campaign in a shared open world", and "expand

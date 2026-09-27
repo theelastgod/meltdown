@@ -2,7 +2,8 @@ import { pwaState, registerServiceWorker } from "./pwa";
 import type { RigReport } from "./render/rig";
 import type { RemoteBodyView, Renderer } from "./render/renderer";
 import { assetStats, texture as assetTexture } from "./render/assets";
-import { Menu, menuWanted, type MenuView } from "./menu";
+import { cardsWanted, Menu, menuWanted, type MenuView } from "./menu";
+import { bootWanted, loadingFor, loadingView, nextPaint, readLoading, showLoading, watchBoot, type LoadingView } from "./loading";
 import { walletAct, walletState } from "./wallet";
 import { COUNTER_URL, HOSTS } from "./config";
 import { clampSettings, saveSettings, type Settings } from "./settings";
@@ -134,6 +135,8 @@ export interface GameHook {
   crawlSeek: (t: number) => void;
   /** The menu flow (Stage 13): its view, a key, a choice, the pause menu; settings; the audio cues fired. */
   menu: () => MenuView | null;
+  /** The loading card (every trip that reloads the page): whether it is up, where to, and the stage it has reached; null when none is on the page. */
+  loading: () => LoadingView | null;
   menuKey: (code: string) => void;
   menuChoose: (id: string) => string | null;
   pause: () => void;
@@ -200,6 +203,19 @@ declare global {
     __game: GameHook;
   }
 }
+
+/**
+ * The loading card on boot: the descriptor the trip wrote (or one the URL implies, on a shared link)
+ * on screen before the world is built, and gone once the game is playable — the world built, a first
+ * frame drawn, the room joined when there is one. index.html's boot snippet has usually painted it
+ * already, from the same descriptor, before this bundle arrived; the card adopts that element. The
+ * build is synchronous, so the card gets one frame to be painted in first.
+ */
+const bootQ = new URLSearchParams(location.search);
+const bootDesc = readLoading();
+const bootCard = bootWanted(bootQ, !!bootDesc, menuWanted(bootQ)) ? showLoading(bootDesc ?? loadingFor(location.href), "city") : null;
+if (bootCard) await nextPaint();
+else document.getElementById("loading")?.remove(); // a snippet's card this boot does not want
 
 const canvas = document.getElementById("view") as HTMLCanvasElement;
 const hudRoot = document.getElementById("hud") as HTMLElement;
@@ -320,6 +336,7 @@ window.__game = {
   },
   crawlSeek: (t) => crawl?.seek(t),
   menu: () => menu?.view() ?? null,
+  loading: () => loadingView(),
   menuKey: (code) => menu?.key(code),
   menuChoose: (id) => menu?.choose(id) ?? null,
   pause: () => menu?.pause(),
@@ -418,7 +435,6 @@ registerServiceWorker();
 }
 
 /** The opening crawl plays over the booting game; headless probes skip it unless they ask for it. */
-const bootQ = new URLSearchParams(location.search);
 // the opening trailer plays once per browser (Stage 691), or every visit when the setting asks
 const crawl = crawlWanted(bootQ, crawlSeen(), game.settings.crawlEveryTime) ? new OpeningCrawl(game.audio, Number(bootQ.get("crawlspeed") ?? 1) || 1) : null;
 /**
@@ -455,6 +471,8 @@ const menu = menuWanted(bootQ)
             void game.file.ensureCounter(walletFallback).then((c) => c && walletAct(c, id));
           },
         },
+        // PLAY's line: the campaign as the file has it (the linked ledger's save, else the local one)
+        campaign: () => game.campaign.current(),
       },
       Number(bootQ.get("menuspeed") ?? 1) || 1,
     )
@@ -464,8 +482,10 @@ if (menu) {
   // which is earlier than any script the harness can inject once the page has loaded.
   if (bootQ.get("menufreeze") === "1") menu.paused = true;
   game.file.onCounter = () => menu.refresh();
-  if (crawl) crawl.onFinish = () => menu.start();
-  else menu.start();
+  // the title cards say what the trailer just said: only on a boot the trailer did not open (and not on the way back from a game)
+  const fromGame = bootDesc?.kind === "menu";
+  if (crawl) crawl.onFinish = () => menu.start({ cards: cardsWanted(true, fromGame) });
+  else menu.start({ cards: cardsWanted(false, fromGame) });
   game.onLockLost = () => {
     if (menu.screen === "hidden" && !game.file.isOpen && !crawl?.active) menu.pause();
   };
@@ -475,3 +495,11 @@ if (menu) {
   };
 }
 game.start();
+
+// the card walks the real stages and goes when the game is playable: the world is built (the Game
+// exists), a frame drawn (one the probes' `setDrawing(false)` never draws counts as drawn), and in a
+// room the Welcome in and the first exact state applied; a failed join shows the link's own line
+if (bootCard) {
+  const networked = bootQ.has("net");
+  watchBoot(bootCard, () => ({ built: true, frames: game.drawing ? game.stats.frames : 1, networked, net: game.net ? { status: game.net.status, reason: game.net.kickReason, synced: game.synced } : null }));
+}

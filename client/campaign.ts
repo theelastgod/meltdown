@@ -31,6 +31,7 @@ import { ENDING_ART } from "./endings";
 import { deskBanner } from "./missionart";
 import { gigThumb } from "./gigart";
 import { protocolIcon, weaponCard } from "./kitart";
+import { loadingFor, travelTo } from "./loading";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop" | "city";
 
@@ -365,7 +366,7 @@ export class Campaign {
     }
     // J, not C: C is crouch, and the desk used to open every time the player ducked (Stage 692)
     if (e.code === "KeyJ") this.toggleContracts();
-    if (e.code === "KeyR" && this.mission?.status === "failed") location.reload();
+    if (e.code === "KeyR" && this.mission?.status === "failed") travelTo(location.href, loadingFor(location.href), { replace: true });
     if (e.code === "KeyB" && this.mission && this.mission.status !== "running") {
       const url = this.backToCity();
       if (url) this.travel(url);
@@ -508,7 +509,7 @@ export class Campaign {
     u.searchParams.delete("net");
     u.searchParams.delete("city");
     this.game.renderer.post.kick(1);
-    setTimeout(() => location.replace(u.toString()), 120);
+    travelTo(u.toString(), loadingFor(u.toString()), { replace: true, delay: 120 });
     return { ok: true };
   }
 
@@ -523,10 +524,10 @@ export class Campaign {
     return { http: shop, ws: shop.replace(/^http/, "ws") };
   }
 
+  /** A crew's trip: the loading card names the district and the crew (under `?nonav=1` it shows and nothing loads). */
   private travel(url: string): void {
     this.game.renderer.post.kick(1);
-    if (new URLSearchParams(location.search).get("nonav") === "1") return;
-    setTimeout(() => location.replace(url), 120);
+    travelTo(url, loadingFor(url), { replace: true, delay: 120, nonav: new URLSearchParams(location.search).get("nonav") === "1" });
   }
 
   /** RUN WITH A CREW (Stage 49): the same launch gate as solo, then a code, the co-op room it names, and travel. */
@@ -623,7 +624,7 @@ export class Campaign {
       if (this.game.levelId === HUB_LEVEL_ID) u.searchParams.set("level", "lease_row");
       u.searchParams.set("explore", "1");
       u.searchParams.delete("mission");
-      location.replace(u.toString());
+      travelTo(u.toString(), loadingFor(u.toString()), { replace: true });
     }
   }
 

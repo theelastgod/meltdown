@@ -27,6 +27,11 @@ export default defineConfig({
     },
   },
   server: { strictPort: true },
+  // The dev server's optimized-dependency cache lives with the checkout, not in node_modules: parallel
+  // worktrees share one node_modules by symlink, and two dev servers with different configs kept
+  // re-optimizing the same cache under each other — pages then got 504 "Outdated Optimize Dep" for
+  // viem's lazy chunks mid-probe (Stage 693). Development only; the build does not use it.
+  cacheDir: ".vite",
   build: { target: "es2022", sourcemap: true },
   test: {
     include: ["tests/**/*.test.ts"],

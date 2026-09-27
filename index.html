@@ -19,6 +19,35 @@
   <body>
     <canvas id="view"></canvas>
     <div id="hud"></div>
+    <!-- The loading card's first frame: the trip that reloaded this page wrote where it was going
+         (client/loading.ts), so paint that before the bundle arrives rather than a black page. The
+         bundle's LoadingCard adopts this element; the markup is LOADING_HTML, verbatim. -->
+    <script>
+      (function () {
+        try {
+          if (/[?&](headless|loading=0)(=|&|$)/.test(location.search)) return;
+          var d = JSON.parse(sessionStorage.getItem("meltdown.loading") || "null");
+          if (!d || typeof d.title !== "string" || typeof d.line !== "string" || !/^[a-z]+$/.test(d.kind)) return;
+          var el = document.createElement("div");
+          el.id = "loading";
+          el.dataset.boot = "1";
+          el.className = "on " + d.kind;
+          el.innerHTML = '<img class="art" alt=""><div class="vig"></div><div class="body" role="status" aria-live="polite"><div class="ttl"></div><div class="ln"></div><div class="bar"><i></i></div><div class="st"></div><div class="tip"></div><div class="go" hidden></div></div><div class="scan"></div>';
+          var w = document.createElement("span");
+          w.className = "w";
+          w.textContent = d.title;
+          el.querySelector(".ttl").appendChild(w);
+          el.querySelector(".ln").textContent = d.line;
+          el.querySelector(".st").textContent = "LOADING THE DISTRICT …";
+          var img = el.querySelector(".art");
+          if (typeof d.art === "string" && d.art.charAt(0) === "/") img.src = d.art;
+          else img.hidden = true;
+          document.body.appendChild(el);
+        } catch (e) {
+          /* no storage, no card: the bundle's own boot still shows one */
+        }
+      })();
+    </script>
     <script type="module" src="/client/main.ts"></script>
   </body>
 </html>

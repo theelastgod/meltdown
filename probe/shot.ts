@@ -16,13 +16,14 @@ import type { Page } from "playwright";
 /**
  * Full-screen chrome that legitimately exists but must never be in a shot of the game.
  *
- * Deliberately just these two. `#hud .card` is also `inset: 0` over everything, but it is the
+ * Deliberately just these three. `#hud .card` is also `inset: 0` over everything, but it is the
  * *subject* of `stage10-ending.png` and of stage13's title cards, so a blanket rule against it
  * would be wrong; those shots name it in `mustShow` instead. A cover list is only worth having if
  * every entry can actually fire — an earlier draft carried a `.titlecard` selector that matches
- * nothing in this client at all.
+ * nothing in this client at all. `#loading` is the card every trip raises (client/loading.ts): a
+ * nonav choice raises it on the page a probe goes on photographing.
  */
-const COVERS = ["#crawl", "#menu"];
+const COVERS = ["#crawl", "#menu", "#loading"];
 
 export interface ShotResult {
   ok: boolean;

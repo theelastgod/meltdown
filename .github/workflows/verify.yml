@@ -81,6 +81,7 @@ jobs:
       - run: npm run probe:counter
         if: ${{ !cancelled() }}
       - run: npm run probe:crawl
+        if: ${{ !cancelled() }}
       - run: npm run probe:world
         if: ${{ !cancelled() }}
       - run: npm run probe:ship
