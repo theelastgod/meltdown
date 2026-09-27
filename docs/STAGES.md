@@ -1641,6 +1641,50 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 694 — Lease Row was a hundred metres across
+
+**The ask.** The owner wants a bigger world with more to do in it. The city (Stage 692) put every
+file in one shared district, and that district was 108 m across, nine blocks around a plaza.
+
+**The change.**
+- **Grid size belongs to the district.** `DistrictSpec.grid` is 3 or 5 (default 3), and every
+  size-derived value in the generator comes from `districtHalf(spec)`: 54 m at 3×3, 87 m at 5×5.
+  The docks, the depot and Lease Row's old 3×3 spec hash byte-for-byte as they did before
+  (`tests/citysize.test.ts` holds the pre-change hashes).
+- **LEASE ROW is 5×5.** It is 174 m across with 25 blocks, and the old nine sit in the centre cell
+  for cell with the plaza in the middle. The wake's nodes stay at ±16.5, so every node-keyed
+  contract plays the same. There are four inner streets, and the eight gates and vistas stay on
+  the avenues. It has 27 claims (was 11), 5 wasps and 2 mechs, and spawns, the walkway, tram,
+  posts, ads, vents, signage and rig lights all scale with the half-size. Boxes: 317 → 622.
+- **The outer ring is dressed lean** so the frame fits the budget. It has no shop-front props, a
+  quarter of the cars, no market rails, fewer awnings and no yard. `tests/citycost.test.ts`
+  models the frame with the real dressing code: 183k triangles, 33 batches (unchanged).
+  Pedestrians stay at 110, because the crowd is drawn in both passes.
+- **BLIND THE MODEL's outer lattice posts** are placed from the nodes instead of typed metres, so
+  they stay in the same courtyards at either size. The campaign lint checks them like literals.
+- **Probe bots got leg timeouts sized to the leg** (`probe/route.ts`). The nav grid returns a
+  straight run as one leg, and on the new Lease Row one leg is 99 m, 825 ticks at sprint speed,
+  against a flat 700. probe:endgame failed "ALPHA 12.2 m from B with wake phase running". A leg's
+  timeout is now its sprint time plus half again, never under 700. The checks that read where
+  the bot ended up are untouched.
+
+**Verified.**
+- Unit tests: 1583 pass (1563 before).
+- probe:city 51/51 — Lease Row renders in 186 draw calls and 186,268 triangles (budget 190 /
+  200k); the docks and the depot are unchanged.
+- probe:cityLife 21/21 (210 calls, budget 230). probe:campaign 61/61, probe:world 4/4,
+  probe:run 28/28, probe:mobile 40/40, probe:look 19/19, probe:harden 9/9, probe:ship 21/21.
+- probe:endgame fails 18/20 with the old flat timeout (the mutation) and passes 20/20 with it
+  sized.
+- The build passes. `npm run smoke` passes 6/7 in this sandbox: its one failure is the production
+  page's fetch to the deployed counter worker, refused over the sandbox proxy's certificate
+  (`ERR_CERT_AUTHORITY_INVALID`), the same before this change.
+- Proof: `docs/proof/stage694/` (street, walkway, kernel on the 5×5 Lease Row).
+
+**Open.** Lease Row now sits 4 draw calls under the budget. Collision and hitscan still loop
+over every box, and there are twice as many here. The next districts to grow need the crowd
+drawn once or a spatial index first.
+
 ## Stage 693 — The way in was nine doors and a black screen
 
 **The ask.** The owner wanted the opening menu and its loading screens to be more intuitive, and

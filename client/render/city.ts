@@ -139,6 +139,12 @@ function tube(batch: NeonBatch, x: number, y: number, z: number, len: number, ax
 }
 
 /**
+ * How many signs one atlas holds. A sign past this is not drawn (`add` refuses it), so a district's
+ * generator has to stay under it: `tests/citysize.test.ts` holds every district to it (Stage 692).
+ */
+export const SIGN_ATLAS_SLOTS = 8 * 16;
+
+/**
  * All of a level's signs on one atlas → one mesh. Text is pixel monospace in
  * the clip's register; every sign is a flat emissive quad.
  */
@@ -146,7 +152,7 @@ export class SignAtlas {
   private canvas = document.createElement("canvas");
   private g: CanvasRenderingContext2D;
   private cols = 8;
-  private rows = 16;
+  private rows = SIGN_ATLAS_SLOTS / 8;
   private cw = 256;
   private ch = 64;
   private n = 0;

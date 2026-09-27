@@ -24,6 +24,7 @@ import { shot } from "./shot";
 import type { BotStep } from "../client/bot";
 import { levelById } from "../shared/sim/level";
 import { MISSIONS } from "../shared/campaign/missions";
+import { resolveSpot } from "../shared/campaign/runtime";
 import { crewRoomName } from "../shared/net/crew";
 import { ENT_WASP } from "../shared/net/protocol";
 import { validInviteCode } from "../shared/net/private";
@@ -654,7 +655,7 @@ async function main(): Promise<void> {
       const o = m1def.objectives.find((x) => x.text === objective);
       const at = o && "at" in o ? o.at : undefined;
       if (!at) return null;
-      return "node" in at ? nodePos("lease_row", at.node) : { x: at.x, z: at.z };
+      return "node" in at ? nodePos("lease_row", at.node) : resolveSpot(levelById("lease_row"), at);
     };
     const coopWalk = async (pg: Page, to: { x: number; z: number }, radius: number) => {
       const from = await pg.evaluate(() => window.__game.state().pos);

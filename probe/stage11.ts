@@ -18,9 +18,10 @@ import { cssAlpha, hidesPanels } from "../client/hud/panel";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
+import { sprintRoute } from "./route";
 import type { BotStep } from "../client/bot";
 import { levelById } from "../shared/sim/level";
-import { buildNav, findPath } from "../shared/sim/nav";
+import { buildNav } from "../shared/sim/nav";
 import { LEDGER_ITEMS } from "../shared/manifest/items";
 import type { AuditDef } from "../shared/endgame/audits";
 import { WEAPON_DEPTH } from "../shared/manifest/loadout";
@@ -202,7 +203,7 @@ async function main(): Promise<void> {
     const sheetOk = (au.sheet.moveSpeed === undefined || Math.abs(w0.mods.moveSpeed! - au.sheet.moveSpeed) < 1e-6) && (au.sheet.range === undefined || Math.abs(w0.mods.range! - au.sheet.range) < 1e-6) && (wantShield === null || w0.maxShield === wantShield);
     check("the Welcome names the playlist and the client runs the same gravity and sheet the room runs", w0.eg.mode === `audit:${au.id}:${au.week}` && Math.abs(w0.eg.gravity - au.gravityMult) < 1e-6 && sheetOk && w0.log.some((l) => l.includes(`AUDIT · ${au.name}`)), `mode ${w0.eg.mode} · gravity ${w0.eg.gravity} · shield ${w0.maxShield} · move ×${w0.mods.moveSpeed} range ×${w0.mods.range}`);
     // ALPHA (cells) flips B during the round; BRAVO stands off; the round settles
-    const route = (from: { x: number; z: number }, to: { x: number; z: number }): BotStep[] => (findPath(nav, { x: from.x, y: 0, z: from.z }, { x: to.x, y: 0, z: to.z }) ?? [{ x: from.x, y: 0, z: from.z }, { x: to.x, y: 0, z: to.z }]).slice(1).map((p, i, arr) => ({ kind: "goto" as const, x: p.x, z: p.z, sprint: true, radius: i === arr.length - 1 ? 1.2 : 1.4, timeoutTicks: 700, stop: i === arr.length - 1 }));
+    const route = (from: { x: number; z: number }, to: { x: number; z: number }): BotStep[] => sprintRoute(nav, from, to);
     const pa = await a.evaluate(() => window.__game.state().pos);
     await a.evaluate((plan) => window.__game.setBot(plan), [...route(pa, { x: B.x, z: B.z }), { kind: "hold", ticks: 9000 }] as BotStep[]);
     await b.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 9000 }]));

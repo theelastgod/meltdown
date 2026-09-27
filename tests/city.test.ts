@@ -78,7 +78,8 @@ describe("city districts", () => {
     expect(hashWorld(w1)).toBe(hashWorld(w2));
     expect(Math.hypot(p1.pos.x - w1.level.spawns[0]!.pos.x, p1.pos.z - w1.level.spawns[0]!.pos.z)).toBeGreaterThan(8);
     expect(w1.wake!.phase).toBe("wake");
-    expect(w1.wasps.length).toBe(3);
-    expect(w1.mechs.length).toBe(1);
+    // LEASE ROW is five blocks by five since Stage 692 and flies five wasps and walks two mechs (it was 3 and 1 at 3×3)
+    expect(w1.wasps.length).toBe(5);
+    expect(w1.mechs.length).toBe(2);
   });
 });

@@ -330,6 +330,14 @@ export function lintSpotsAreInTheOpen(): CampaignViolation[] {
             if (!level.nodes.some((n) => n.label === s.node)) out.push({ where, rule: "spot-names-a-node", detail: `"${o.kind}" names node ${s.node}, which ${m.level} does not have`, severity: "error" });
             continue;
           }
+          // a spot found from the nodes needs both of them, and is then held to the same ground as a literal
+          if ("past" in s) {
+            const missing = ["A", s.past].filter((l) => !level.nodes.some((n) => n.label === l));
+            if (missing.length) {
+              out.push({ where, rule: "spot-names-a-node", detail: `"${o.kind}" is placed past node ${s.past} from node A, and ${m.level} has no node ${missing.join(" or ")}`, severity: "error" });
+              continue;
+            }
+          }
           const p = resolveSpot(level, s);
           if (!standable(level, p.x, p.z)) {
             out.push({ where, rule: "spot-is-in-the-open", detail: `"${o.kind}" spot (${p.x}, ${p.z}) on ${m.level} is inside a solid box — nothing can stand there`, severity: "error" });

@@ -73,6 +73,13 @@ export function resolveSpot(level: LevelDef, s: Spot): Vec3 {
     const n = level.nodes.find((x) => x.label === s.node);
     return n ? v3(n.pos.x, n.pos.y, n.pos.z) : v3(0, 0, 0);
   }
+  if ("past" in s) {
+    // from node A through the named node, `times` that distance in all, then the offset (see `Spot`)
+    const a = level.nodes.find((x) => x.label === "A");
+    const n = level.nodes.find((x) => x.label === s.past);
+    if (!a || !n) return v3(0, 0, 0);
+    return v3(a.pos.x + (n.pos.x - a.pos.x) * s.times + s.dx, 0, a.pos.z + (n.pos.z - a.pos.z) * s.times + s.dz);
+  }
   return v3(s.x, 0, s.z);
 }
 

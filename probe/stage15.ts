@@ -14,6 +14,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
+import { sprintRoute } from "./route";
 import WebSocket from "ws";
 import { createPublicClient, defineChain, http, parseEther, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -132,7 +133,7 @@ async function main(): Promise<void> {
     // ---------------- prizes: an Audit round, the weekly job, a sponsored claim ----------------
     const level = levelById("lease_row");
     const nav = buildNav(level);
-    const route = (from: { x: number; z: number }, to: { x: number; z: number }): BotStep[] => (findPath(nav, { x: from.x, y: 0, z: from.z }, { x: to.x, y: 0, z: to.z }) ?? [{ x: from.x, y: 0, z: from.z }, { x: to.x, y: 0, z: to.z }]).slice(1).map((p, i, arr) => ({ kind: "goto" as const, x: p.x, z: p.z, sprint: true, radius: i === arr.length - 1 ? 1.2 : 1.4, timeoutTicks: 700, stop: i === arr.length - 1 }));
+    const route = (from: { x: number; z: number }, to: { x: number; z: number }): BotStep[] => sprintRoute(nav, from, to);
     const eg = await get<{ audit: { week: number; weapons: string[] } }>("/endgame");
     const au = eg.audit;
     const loadout = { primary: au.weapons.length && !au.weapons.includes("lease_breaker") ? au.weapons[0] : "lease_breaker", secondary: "shock_baton", attested: [] };

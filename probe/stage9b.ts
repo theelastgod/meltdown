@@ -16,7 +16,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
 import { levelById } from "../shared/sim/level";
-import { CITY_HALF } from "../shared/sim/city";
+import { CITY_HALF, districtById, districtHalf } from "../shared/sim/city";
 import { buildNav, findPath, reachableFrom } from "../shared/sim/nav";
 import { computeLookStatsSource, type LookStats } from "./look-metrics";
 
@@ -92,7 +92,11 @@ async function main(): Promise<void> {
 
     const id = "lease_row";
     const L = levelById(id);
-    const H = CITY_HALF;
+    // the district's own half-size: LEASE ROW is 5×5 since Stage 692 (87 m; a 3×3 district is 54). The
+    // walks below cross it end to end, so their tick allowances grow with it (900 ticks at 54 m)
+    const H = districtHalf(districtById(id)!);
+    const walkTicks = Math.ceil((900 * H) / CITY_HALF);
+    const walkPolls = Math.ceil((60 * H) / CITY_HALF);
     await page.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&ai=0&level=${id}`, { waitUntil: "load" });
     await page.waitForFunction(() => window.__game?.ready === true, null, { timeout: 60000, polling: 100 });
     await page.evaluate(() => window.__game.resumeAudio());
@@ -180,8 +184,8 @@ async function main(): Promise<void> {
     const vistas = (L.decor ?? []).filter((d) => (d.tag ?? "").startsWith("vista_"));
     check("the city continues beyond every exit as a vista (road, receding buildings, lamps, traffic lanes)", vistas.length >= 8 * 6 && (L.traffic?.length ?? 0) >= 16, `${vistas.length} vista pieces · ${L.traffic?.length} traffic lanes`);
     // a Blank sprints at the north gate on the walkway street and is stopped by it
-    await page.evaluate((H) => window.__game.setBot([{ kind: "goto", x: 16.5, z: -H + 14, sprint: true, radius: 1.2, timeoutTicks: 900, stop: true }, { kind: "look", yaw: 0, pitch: 0.02, ticks: 6 }, { kind: "goto", x: 16.5, z: -H - 4, sprint: true, radius: 0.6, timeoutTicks: 240, stop: true }]), H);
-    for (let i = 0; i < 60; i++) {
+    await page.evaluate(([H, walkTicks]) => window.__game.setBot([{ kind: "goto", x: 16.5, z: -H! + 14, sprint: true, radius: 1.2, timeoutTicks: walkTicks!, stop: true }, { kind: "look", yaw: 0, pitch: 0.02, ticks: 6 }, { kind: "goto", x: 16.5, z: -H! - 4, sprint: true, radius: 0.6, timeoutTicks: 240, stop: true }]), [H, walkTicks]);
+    for (let i = 0; i < walkPolls; i++) {
       await page.evaluate(() => window.__game.advance(20));
       if ((await page.evaluate(() => window.__game.botStatus()))?.done) break;
     }
@@ -195,8 +199,8 @@ async function main(): Promise<void> {
     check("the vista through the gate reads like the clip (dark, neon-fractioned, cyan/magenta)", shotVista.darkFrac >= 0.4 && shotVista.meanLuma >= 0.05 && shotVista.meanLuma <= 0.24 && shotVista.neonFrac >= 0.008 && shotVista.hue.cyan + shotVista.hue.magenta >= 0.35, fmt(shotVista));
 
     // --- the monorail overhead: fast-forward the line until a car is about to come into earshot, then let a frame fire the cue ---
-    await page.evaluate(() => window.__game.setBot([{ kind: "goto", x: 10, z: 16.5 + 5, sprint: true, radius: 1.2, timeoutTicks: 900, stop: true }, { kind: "look", yaw: Math.PI / 2, pitch: 0.35, ticks: 6 }, { kind: "hold", ticks: 10 }]));
-    for (let i = 0; i < 60; i++) {
+    await page.evaluate((walkTicks) => window.__game.setBot([{ kind: "goto", x: 10, z: 16.5 + 5, sprint: true, radius: 1.2, timeoutTicks: walkTicks, stop: true }, { kind: "look", yaw: Math.PI / 2, pitch: 0.35, ticks: 6 }, { kind: "hold", ticks: 10 }]), walkTicks);
+    for (let i = 0; i < walkPolls; i++) {
       await page.evaluate(() => window.__game.advance(20));
       if ((await page.evaluate(() => window.__game.botStatus()))?.done) break;
     }

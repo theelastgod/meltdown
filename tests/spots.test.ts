@@ -54,15 +54,16 @@ describe("mission spots — nothing is asked for inside a wall", () => {
     expect(lintCampaign().filter((v) => v.severity === "error").map((v) => `${v.where}: ${v.detail}`)).toEqual([]);
   });
 
-  it("every literal spot in every mission and variant stands in the open", () => {
+  it("every spot that is not a node itself (a literal, or one placed from the nodes) stands in the open", () => {
     for (const m of MISSIONS) {
       const runs: [string, readonly Objective[]][] = [[m.id, m.objectives], ...(m.variants ?? []).map((v, i) => [`${m.id} variant ${i + 1}`, v.objectives ?? []] as [string, readonly Objective[]])];
       for (const [where, objs] of runs) {
         for (const o of objs) {
           for (const s of spotsOf(o)) {
             if ("node" in s) continue;
-            const inside = swallowedBy(m.level, s.x, s.z);
-            expect(inside.map((b) => `x ${b.min.x}..${b.max.x} z ${b.min.z}..${b.max.z}`), `${where}: "${o.kind}" spot (${s.x}, ${s.z}) on ${m.level}`).toEqual([]);
+            const p = resolveSpot(levelById(m.level), s);
+            const inside = swallowedBy(m.level, p.x, p.z);
+            expect(inside.map((b) => `x ${b.min.x}..${b.max.x} z ${b.min.z}..${b.max.z}`), `${where}: "${o.kind}" spot (${p.x}, ${p.z}) on ${m.level}`).toEqual([]);
           }
         }
       }
@@ -93,7 +94,8 @@ describe("mission spots — the six lattice nodes of BLIND THE MODEL", () => {
     const generated = clearance(node.pos.x, node.pos.z);
     for (const s of destroy.spots) {
       if ("node" in s) continue;
-      expect(clearance(s.x, s.z), `spot (${s.x}, ${s.z}) clearance vs generated node ${generated.toFixed(1)} m`).toBeGreaterThanOrEqual(generated);
+      const p = resolveSpot(lvl, s);
+      expect(clearance(p.x, p.z), `spot (${p.x}, ${p.z}) clearance vs generated node ${generated.toFixed(1)} m`).toBeGreaterThanOrEqual(generated);
     }
   });
 
@@ -158,6 +160,39 @@ describe("mission spots — the rule fires", () => {
       const problems = lintSpotsAreInTheOpen();
       expect(problems).toHaveLength(1);
       expect(problems[0]!.rule).toBe("spot-names-a-node");
+    } finally {
+      d.spots.length = 0;
+      d.spots.push(...keep);
+    }
+  });
+
+  it("a spot placed from the nodes is held to the same ground as a literal: inside a building is an error (Stage 692)", () => {
+    const m5 = MISSIONS.find((m) => m.id === "m5_blind_the_model")!;
+    const d = m5.objectives.find((o) => o.kind === "destroy") as Extract<Objective, { kind: "destroy" }>;
+    const keep = [...d.spots];
+    // the courtyard past node D, then 9 m north: into the court's north range of low-rises (33, -42)
+    d.spots.push({ past: "D", times: 2, dx: 0, dz: -9 });
+    try {
+      const problems = lintSpotsAreInTheOpen();
+      expect(problems).toHaveLength(1);
+      expect(problems[0]!.rule).toBe("spot-is-in-the-open");
+      expect(problems[0]!.detail).toContain("(33, -42)");
+    } finally {
+      d.spots.length = 0;
+      d.spots.push(...keep);
+    }
+  });
+
+  it("and one placed past a node the level does not have names the missing node", () => {
+    const m5 = MISSIONS.find((m) => m.id === "m5_blind_the_model")!;
+    const d = m5.objectives.find((o) => o.kind === "destroy") as Extract<Objective, { kind: "destroy" }>;
+    const keep = [...d.spots];
+    d.spots.push({ past: "Z", times: 2, dx: 0, dz: 0 });
+    try {
+      const problems = lintSpotsAreInTheOpen();
+      expect(problems).toHaveLength(1);
+      expect(problems[0]!.rule).toBe("spot-names-a-node");
+      expect(problems[0]!.detail).toContain("no node Z");
     } finally {
       d.spots.length = 0;
       d.spots.push(...keep);

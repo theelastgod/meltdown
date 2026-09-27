@@ -7,7 +7,16 @@
 import type { HandlerId } from "./factions";
 import type { Gate } from "./testimony";
 
-export type Spot = { x: number; z: number } | { node: string };
+/**
+ * Where an objective sends you: metres, a wake node by label, or a place found from the nodes (Stage 692).
+ *
+ * `past` walks from the plaza's node A through the named node and on, `times` the A→node distance in
+ * all (2: as far again, which from a corner intersection is the centre of the diagonal block beyond it),
+ * then `dx`/`dz` metres. The district generator puts the four outer nodes on the plaza's corner
+ * intersections in a district of any size, so a spot written this way is the same place on the same
+ * block whether the district is three blocks across or five; metres typed against one size are not.
+ */
+export type Spot = { x: number; z: number } | { node: string } | { past: string; times: number; dx: number; dz: number };
 
 /**
  * Who an escort is walking (Stage 677). Until this every escort was Ida Vessel: the three wake-cell
@@ -187,8 +196,10 @@ export const MISSIONS: readonly MissionDef[] = [
     // ROW, sealing a 1.8 m lattice node in concrete where nothing could shoot it (Stage 175).
     // These two were found by scanning the level rather than typed: 4.4 m of clearance each — the
     // generator gives its own nodes 4.2 — on opposite outer diagonals, so the six spread across
-    // the district the brief says to blind.
-    objectives: [D("m5_lattice", "THE LATTICE"), { kind: "destroy", spots: [{ node: "B" }, { node: "C" }, { node: "D" }, { node: "E" }, { x: 32, z: -32 }, { x: -34, z: 34 }], label: "LATTICE NODE", text: "PUT OUT THE SIX LATTICE NODES" }, { kind: "survive", seconds: 40, at: { node: "A" }, radius: 12, text: "SURVIVE THE IMMUNE RESPONSE AT THE PLAZA", waves: 3 }],
+    // the district the brief says to blind. They were (32, -32) and (-34, 34): the courtyards of the
+    // blocks diagonally beyond nodes D and C. Since Stage 692 they are written from those nodes, so
+    // they stay in those courtyards when LEASE ROW is five blocks across instead of three.
+    objectives: [D("m5_lattice", "THE LATTICE"), { kind: "destroy", spots: [{ node: "B" }, { node: "C" }, { node: "D" }, { node: "E" }, { past: "D", times: 2, dx: -1, dz: 1 }, { past: "C", times: 2, dx: -1, dz: 1 }], label: "LATTICE NODE", text: "PUT OUT THE SIX LATTICE NODES" }, { kind: "survive", seconds: 40, at: { node: "A" }, radius: 12, text: "SURVIVE THE IMMUNE RESPONSE AT THE PLAZA", waves: 3 }],
     variants: [
       { gate: { all: { "m3:volatility": "publish" } }, objectives: [D("m5_lattice", "THE LATTICE"), { kind: "destroy", spots: [{ node: "B" }, { node: "C" }, { node: "D" }, { node: "E" }], label: "LATTICE NODE", text: "PUT OUT THE FOUR LATTICE NODES (THE FEEDS ALREADY TOOK TWO)" }, { kind: "survive", seconds: 40, at: { node: "A" }, radius: 12, text: "SURVIVE THE IMMUNE RESPONSE AT THE PLAZA", waves: 3 }] },
       // The Directive in mission 4. Until this, keeping it or giving it to Ida changed

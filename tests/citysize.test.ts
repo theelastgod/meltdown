@@ -1,0 +1,237 @@
+/**
+ * A district's grid is its own (Stage 692): LEASE ROW is five blocks by five, 174 m across, and the
+ * docks and the depot are still three by three.
+ *
+ * Two promises are held here. The first is that nothing about a 3×3 district moved: every value the
+ * generator derives from the size now comes from the spec's half-size instead of one constant, and a
+ * 3×3 district must come out byte for byte what it was. The hashes below were taken on the generator
+ * as it stood before the grid was a property (commit 451a761), for all three districts as they were
+ * then, and LEASE ROW's old 3×3 spec is kept here so its old level can still be built and compared.
+ *
+ * The second is that the 5×5 district plays: every node reachable from every spawn, everything the
+ * sim sends over the wire well inside what a position can carry, the claims and safe zones on
+ * ground a Blank can reach, the wasps over streets and not through buildings.
+ */
+import { createHash } from "node:crypto";
+import { describe, expect, it } from "vitest";
+import { CITY_HALF, DISTRICT_SPECS, districtById, districtGrid, districtHalf, generateDistrict, type DistrictSpec } from "../shared/sim/city";
+import { levelById } from "../shared/sim/level";
+import { buildNav, cellOf, reachableFrom, walkable } from "../shared/sim/nav";
+import { capsuleFree } from "../shared/sim/collision";
+import { MOVE } from "../shared/sim/constants";
+import { MISSIONS, type Objective } from "../shared/campaign/missions";
+import { resolveSpot } from "../shared/campaign/runtime";
+import { SIGN_ATLAS_SLOTS } from "../client/render/city";
+
+const hash = (spec: DistrictSpec): string => createHash("sha256").update(JSON.stringify(generateDistrict(spec))).digest("hex");
+
+/** LEASE ROW as it was before Stage 692: three blocks by three, three wasps, one mech. */
+const LEASE_ROW_3X3: DistrictSpec = {
+  ...districtById("lease_row")!,
+  grid: 3,
+  blocks: ["tower", "split", "court", "market", "plaza", "split", "court", "tower", "market"],
+  mechs: 1,
+  wasps: 3,
+  pedestrians: 110,
+};
+
+/** sha256 of JSON.stringify(generateDistrict(spec)), taken on the generator before the grid was a property */
+const BEFORE: Record<string, string> = {
+  lease_row: "186a6e9ef13e31116cc79fc7f20305dfef6ee77c6bf8f10c581e460ceb8a5c43",
+  deadletter_docks: "9552cae19d3d26499f6b5b52f93b294bb02c79dd26b74c9f89e0c29bb9b1746d",
+  repo_depot: "11ea845b42e65c3a0f4348a6eae63a3231a6daa657f880de6cef8a50f40ad69d",
+};
+
+/** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
+const NET_LIMIT = 300;
+
+const lease = () => generateDistrict(districtById("lease_row")!);
+
+describe("a 3×3 district is the level it always was", () => {
+  it("the docks and the depot, which did not change, hash exactly as they did before the grid was a property", () => {
+    for (const id of ["deadletter_docks", "repo_depot"]) {
+      const spec = districtById(id)!;
+      expect(districtGrid(spec), id).toBe(3);
+      expect(hash(spec), id).toBe(BEFORE[id]);
+    }
+  });
+
+  it("LEASE ROW's old 3×3 spec still builds its old level, byte for byte", () => {
+    expect(hash(LEASE_ROW_3X3)).toBe(BEFORE["lease_row"]);
+  });
+
+  it("a 3×3 spec with the grid written out builds the same level as one that leaves it to the default", () => {
+    const docks = districtById("deadletter_docks")!;
+    expect(hash({ ...docks, grid: 3 })).toBe(hash(docks));
+  });
+
+  it("the half-size: 54 m for three blocks, 87 m for five, and CITY_HALF is still the 3×3 value", () => {
+    expect(CITY_HALF).toBe(54);
+    expect(districtHalf({ grid: 3 })).toBe(54);
+    expect(districtHalf({})).toBe(54);
+    expect(districtHalf({ grid: 5 })).toBe(87);
+    for (const spec of DISTRICT_SPECS) expect(generateDistrict(spec).bounds, spec.id).toBe(districtHalf(spec));
+  });
+});
+
+describe("LEASE ROW is five blocks by five", () => {
+  it("is the one 5×5 district: 25 blocks, the plaza in the centre, the old nine in the middle", () => {
+    const spec = districtById("lease_row")!;
+    expect(districtGrid(spec)).toBe(5);
+    expect(spec.blocks).toHaveLength(25);
+    expect(spec.blocks[12]).toBe("plaza");
+    expect(spec.blocks.filter((b) => b === "plaza")).toHaveLength(1);
+    // the centre nine, row by row, are the 3×3 LEASE ROW's own: the contracts' blocks did not move
+    const centre = [1, 2, 3].flatMap((bz) => [1, 2, 3].map((bx) => spec.blocks[bz * 5 + bx]));
+    expect(centre).toEqual(LEASE_ROW_3X3.blocks);
+    expect(DISTRICT_SPECS.filter((d) => districtGrid(d) === 5).map((d) => d.id)).toEqual(["lease_row"]);
+  });
+
+  it("the wake's five nodes stand exactly where the 3×3 district put them, under the same labels", () => {
+    const small = generateDistrict(LEASE_ROW_3X3);
+    const big = lease();
+    expect(big.nodes.map((n) => [n.label, n.pos.x, n.pos.z, n.links])).toEqual(small.nodes.map((n) => [n.label, n.pos.x, n.pos.z, n.links]));
+    expect(big.nodes.find((n) => n.label === "A")!.pos).toEqual({ x: 0, y: 0, z: 0 });
+  });
+
+  it("is larger: 174 m across, more blocks, more to walk", () => {
+    const small = generateDistrict(LEASE_ROW_3X3);
+    const big = lease();
+    expect(big.bounds).toBe(87);
+    expect(big.walks!.length).toBe(26); // a loop per block and the perimeter
+    expect(small.walks!.length).toBe(10);
+    expect(big.boxes.length).toBeGreaterThan(small.boxes.length);
+    expect(big.wasps.length).toBe(5);
+    expect(big.mechs.length).toBe(2);
+    // the spawns stand in the perimeter street, 4.5 m inside the facade, as they do in a 3×3 district
+    for (const s of big.spawns) expect(Math.max(Math.abs(s.pos.x), Math.abs(s.pos.z))).toBe(87 - 4.5);
+  });
+
+  it("every spawn reaches every node, every claim and both safe zones at street level", () => {
+    const L = lease();
+    const nav = buildNav(L);
+    const reach = reachableFrom(nav, L.spawns[0]!.pos);
+    const on = (x: number, z: number, what: string) => {
+      const c = cellOf(nav, x, z);
+      expect(walkable(nav, c.i, c.j), `${what} (${x}, ${z}) stands on walkable ground`).toBe(true);
+      expect(reach.has(c.j * nav.w + c.i), `${what} (${x}, ${z}) is reachable from the first spawn`).toBe(true);
+    };
+    for (const s of L.spawns) on(s.pos.x, s.pos.z, "spawn");
+    for (const n of L.nodes) on(n.pos.x, n.pos.z, `node ${n.label}`);
+    for (const cl of L.claims!) on(cl.pos.x, cl.pos.z, `claim worth ${cl.value}`);
+    for (const z of L.zones!) on(z.pos.x, z.pos.z, `safe zone ${z.label}`);
+  });
+
+  it("spawns, nodes, claims and zones stand clear of every box", () => {
+    const L = lease();
+    const free = (x: number, z: number) => capsuleFree({ x, y: 0.03, z }, MOVE.capsuleRadius, MOVE.standHeight, L.boxes);
+    for (const s of L.spawns) expect(free(s.pos.x, s.pos.z), `spawn ${s.pos.x},${s.pos.z}`).toBe(true);
+    for (const n of L.nodes) expect(free(n.pos.x, n.pos.z), `node ${n.label}`).toBe(true);
+    for (const c of L.claims!) expect(free(c.pos.x, c.pos.z), `claim ${c.pos.x},${c.pos.z}`).toBe(true);
+    for (const z of L.zones!) expect(free(z.pos.x, z.pos.z), `zone ${z.label}`).toBe(true);
+  });
+
+  it("everything the sim sends stays inside the district, and the district inside what a position can carry", () => {
+    for (const spec of DISTRICT_SPECS) {
+      const L = generateDistrict(spec);
+      const H = L.bounds!;
+      const pts: [string, { x: number; z: number }][] = [
+        ...L.spawns.map((s) => ["spawn", s.pos] as [string, { x: number; z: number }]),
+        ...L.nodes.map((n) => [`node ${n.label}`, n.pos] as [string, { x: number; z: number }]),
+        ...L.claims!.map((c) => ["claim", c.pos] as [string, { x: number; z: number }]),
+        ...L.zones!.map((z) => [`zone ${z.label}`, z.pos] as [string, { x: number; z: number }]),
+        ...L.wasps.flatMap((w) => w.waypoints.map((p) => ["wasp waypoint", p] as [string, { x: number; z: number }])),
+        ...L.mechs.flatMap((m) => m.path.map((p) => ["mech path", p] as [string, { x: number; z: number }])),
+      ];
+      for (const [what, p] of pts) expect(Math.max(Math.abs(p.x), Math.abs(p.z)), `${spec.id} ${what} (${p.x}, ${p.z}) inside the facades at ${H}`).toBeLessThan(H);
+      expect(H).toBeLessThan(NET_LIMIT);
+      // a grenade can land anywhere on the slab: its edge is inside the limit too
+      const floor = L.boxes.find((b) => b.tag === "floor")!;
+      expect(Math.max(-floor.min.x, floor.max.x, -floor.min.z, floor.max.z), `${spec.id} floor slab`).toBeLessThanOrEqual(254);
+      expect(254).toBeLessThan(NET_LIMIT);
+    }
+  });
+
+  it("THE RUN: more claims over the larger ground, worth more the deeper they lie, none in a safe zone", () => {
+    const small = generateDistrict(LEASE_ROW_3X3);
+    const L = lease();
+    expect(small.claims).toHaveLength(11);
+    expect(L.claims).toHaveLength(27);
+    expect(L.zones!.map((z) => [z.label, z.pos.x, z.pos.z])).toEqual([["WEST GATE", -82.5, 16.5], ["EAST GATE", 82.5, 16.5]]);
+    const depth = (p: { x: number; z: number }) => Math.min(...L.zones!.map((z) => Math.hypot(p.x - z.pos.x, p.z - z.pos.z)));
+    const sorted = [...L.claims!].sort((a, b) => depth(a.pos) - depth(b.pos));
+    for (let i = 1; i < sorted.length; i++) expect(sorted[i]!.value).toBeGreaterThanOrEqual(sorted[i - 1]!.value);
+    for (const c of L.claims!) {
+      expect(c.value).toBeGreaterThanOrEqual(1);
+      expect(c.value).toBeLessThanOrEqual(5);
+      for (const z of L.zones!) expect(Math.hypot(c.pos.x - z.pos.x, c.pos.z - z.pos.z)).toBeGreaterThan(z.radius + 2);
+    }
+    // values spread over the depth rather than capping a third of the way in: 2 near a gate, 5 at the far ring
+    expect(Math.min(...L.claims!.map((c) => c.value))).toBe(2);
+    expect(Math.max(...L.claims!.map((c) => c.value))).toBe(5);
+    expect(L.claims!.filter((c) => c.value === 5).every((c) => Math.max(Math.abs(c.pos.x), Math.abs(c.pos.z)) > 33)).toBe(true);
+    // and every quadrant of the outer ring carries one
+    for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
+      expect(L.claims!.some((c) => Math.sign(c.pos.x) === sx && Math.sign(c.pos.z) === sz && Math.max(Math.abs(c.pos.x), Math.abs(c.pos.z)) > 33), `quadrant ${sx},${sz}`).toBe(true);
+    }
+  });
+
+  it("the wasps fly the streets: every leg of every patrol runs along a street's centreline", () => {
+    const L = lease();
+    const H = L.bounds!;
+    const centrelines = Array.from({ length: 6 }, (_, k) => -H + 4.5 + k * 33); // the perimeter and the four inner streets
+    expect(centrelines).toEqual([-82.5, -49.5, -16.5, 16.5, 49.5, 82.5]);
+    const onStreet = (v: number) => centrelines.some((c) => Math.abs(v - c) < 1e-9);
+    for (const w of L.wasps) {
+      const pts = w.waypoints;
+      for (let i = 0; i < pts.length; i++) {
+        const a = pts[i]!;
+        const b = pts[(i + 1) % pts.length]!;
+        const alongX = Math.abs(a.z - b.z) < 1e-9 && onStreet(a.z);
+        const alongZ = Math.abs(a.x - b.x) < 1e-9 && onStreet(a.x);
+        expect(alongX || alongZ, `leg (${a.x}, ${a.z}) → (${b.x}, ${b.z})`).toBe(true);
+      }
+    }
+  });
+
+  it("the monorail's posts stand on sidewalks, never in the road of a crossing street", () => {
+    const L = lease();
+    const H = L.bounds!;
+    const roads = Array.from({ length: 4 }, (_, k) => -H + 4.5 + (k + 1) * 33);
+    for (const p of L.boxes.filter((b) => b.tag === "post")) {
+      const x = (p.min.x + p.max.x) / 2;
+      for (const r of roads) expect(Math.abs(x - r), `post at x ${x} vs the road at ${r}`).toBeGreaterThan(3);
+    }
+  });
+
+  it("the generator refuses a spec whose blocks do not fill its grid, or whose centre is not the plaza", () => {
+    const spec = districtById("lease_row")!;
+    expect(() => generateDistrict({ ...spec, blocks: spec.blocks.slice(0, 9) })).toThrow(/9 blocks for a 5×5 grid/);
+    const moved = [...spec.blocks];
+    moved[12] = "tower";
+    moved[6] = "plaza";
+    expect(() => generateDistrict({ ...spec, blocks: moved })).toThrow(/centre block is tower/);
+  });
+
+  it("every district's signs fit the one atlas the renderer draws them from", () => {
+    for (const spec of DISTRICT_SPECS) expect((generateDistrict(spec).signs ?? []).length, spec.id).toBeLessThanOrEqual(SIGN_ATLAS_SLOTS);
+    expect((lease().signs ?? []).length).toBeGreaterThan((generateDistrict(LEASE_ROW_3X3).signs ?? []).length);
+  });
+});
+
+describe("BLIND THE MODEL's two outer lattice posts are placed from the nodes", () => {
+  const m5 = MISSIONS.find((m) => m.id === "m5_blind_the_model")!;
+  const destroy = m5.objectives.find((o) => o.kind === "destroy") as Extract<Objective, { kind: "destroy" }>;
+
+  it("they are the two courtyards they always were, on the 3×3 LEASE ROW and on the 5×5 one", () => {
+    const placed = destroy.spots.filter((s) => "past" in s);
+    expect(placed).toHaveLength(2);
+    for (const L of [generateDistrict(LEASE_ROW_3X3), levelById("lease_row")]) {
+      expect(placed.map((s) => resolveSpot(L, s)).map((p) => [p.x, p.z])).toEqual([[32, -32], [-34, 34]]);
+    }
+    // and in the 5×5 district each lies in the court block diagonally past its node, as it did at 3×3
+    const spec = districtById("lease_row")!;
+    const cellAt = (x: number) => Math.floor((x + 87 - 9 + 4.5) / 33);
+    for (const p of placed.map((s) => resolveSpot(levelById("lease_row"), s))) expect(spec.blocks[cellAt(p.z) * 5 + cellAt(p.x)], `(${p.x}, ${p.z})`).toBe("court");
+  });
+});

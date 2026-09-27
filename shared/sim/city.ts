@@ -1,12 +1,19 @@
 import type { ClaimDef, ZoneDef } from "./run";
 /**
  * Neo-China proper: procedural city districts. One deterministic generator, three
- * district specs. A district is a 3×3 grid of building blocks split by
+ * district specs. A district is a 3×3 (or 5×5) grid of building blocks split by
  * streets with sidewalks, alleys through some blocks, an elevated walkway,
  * storefronts, parked cars, rails, lamps, vending machines, dumpsters, a
  * metro kiosk — and the wake's five nodes at the plaza and intersections.
  * Everything the sim collides with is a Box; render-only dressing goes to
  * `decor`. The renderer reads tags; the sim reads nothing but boxes.
+ *
+ * The grid size is the spec's own (`grid`, Stage 692). Every size-derived value is computed from
+ * the district's half-size, and a 3×3 district builds exactly the level it built before the grid
+ * was a property: `tests/citysize.test.ts` holds a hash of each one taken on the old generator.
+ * The plaza is always the centre block, and the wake's four outer nodes are always its corner
+ * intersections, so a 5×5 district's nodes sit where a 3×3 district's do (±16.5) and a mission
+ * keyed by node label plays the same in either.
  */
 import { v3, type Vec3 } from "../math/vec3";
 import { box, type Box } from "./box";
@@ -17,7 +24,9 @@ export interface DistrictSpec {
   displayName: string;
   cast: DistrictCast;
   seed: number;
-  /** block kinds by grid cell, row-major (3×3); "plaza" is the wake's centre */
+  /** blocks per side (default 3). A 5×5 district is 174 m across to a 3×3's 108 m. */
+  grid?: DistrictGrid;
+  /** block kinds by grid cell, row-major (grid × grid); "plaza" is the wake's centre and sits in the centre cell */
   blocks: BlockKind[];
   /** sign vocabulary in this district's voice */
   words: string[];
@@ -42,12 +51,20 @@ function lcg(seed: number): () => number {
   };
 }
 
+export type DistrictGrid = 3 | 5;
+
 const B = 24; // block size
 const S = 9; // street width incl. sidewalks
 const SW = 1.5; // sidewalk width
 const CURB = 0.15;
-const N = 3;
-export const CITY_HALF = (N * B + (N + 1) * S) / 2; // 54
+/** half-size of a district `n` blocks across: n blocks and n + 1 streets */
+const halfFor = (n: number): number => (n * B + (n + 1) * S) / 2;
+/** A 3×3 district's half-size (54). Kept for what was written against the one size; new code asks `districtHalf`. */
+export const CITY_HALF = halfFor(3);
+/** The spec's grid, defaulted. */
+export const districtGrid = (spec: Pick<DistrictSpec, "grid">): DistrictGrid => spec.grid ?? 3;
+/** A district's half-size in metres: 54 for 3×3, 87 for 5×5. The level's `bounds` is this. */
+export const districtHalf = (spec: Pick<DistrictSpec, "grid">): number => halfFor(districtGrid(spec));
 
 const COLORS = { cyan: "#35f2ff", magenta: "#ff3ec9", yellow: "#ffe34a", amber: "#ffb02e", green: "#37ff8b", violet: "#8f4dff" };
 
@@ -58,12 +75,31 @@ interface Ctx {
   decor: Box[];
   signs: SignDef[];
   lights: LightDef[];
+  /** the district's half-size */
+  H: number;
+  /**
+   * An outer-ring block of a 5×5 district is being built: dressed leaner (see `LEAN`). Never set in a
+   * 3×3 district, whose every roll is the roll it always was.
+   */
+  lean: boolean;
 }
 
+/**
+ * What an outer-ring block of a 5×5 district gives up. Every triangle of the dressing is drawn twice
+ * (scene and the wet floor's mirror) and the merged batches are never culled, so the ring's sixteen
+ * blocks dressed like the centre take LEASE ROW's frame to ~209k triangles against a 200k budget
+ * (measured in `tests/citycost.test.ts`: dressing 61k, 721 boxes). The ring keeps its buildings,
+ * storefronts, lamps and walks; it sheds the props in front of the shops, three parked cars in four,
+ * the crossing rails and a market's rails, and hangs fewer awnings and shop signs (which also keeps
+ * the district's signs inside the renderer's one atlas). The centre nine, where the wake is played,
+ * are dressed in full.
+ */
+const LEAN = { awning: 0.3, sign: 0.25, cars: 0.25 } as const;
+
 /** Block footprint in world space (buildings go inside; sidewalks ring it). */
-function blockRect(bx: number, bz: number): { x0: number; z0: number; x1: number; z1: number } {
-  const x0 = -CITY_HALF + S + bx * (B + S);
-  const z0 = -CITY_HALF + S + bz * (B + S);
+function blockRect(H: number, bx: number, bz: number): { x0: number; z0: number; x1: number; z1: number } {
+  const x0 = -H + S + bx * (B + S);
+  const z0 = -H + S + bz * (B + S);
   return { x0, z0, x1: x0 + B, z1: z0 + B };
 }
 
@@ -87,7 +123,7 @@ function storefronts(c: Ctx, x0: number, z0: number, x1: number, z1: number, sid
     const sx = alongX ? mid : face + out * 0.02;
     const sz = alongX ? face + out * 0.02 : mid;
     // awning (decor only) over about half the shops
-    if (c.rnd() < 0.55) {
+    if (c.rnd() < (c.lean ? LEAN.awning : 0.55)) {
       const depth = 1.1;
       const ax0 = alongX ? mid - w / 2 : Math.min(face, face + out * depth);
       const ax1 = alongX ? mid + w / 2 : Math.max(face, face + out * depth);
@@ -95,13 +131,15 @@ function storefronts(c: Ctx, x0: number, z0: number, x1: number, z1: number, sid
       const az1 = alongX ? Math.max(face, face + out * depth) : mid + w / 2;
       c.decor.push(box(ax0, 2.9, az0, ax1, 3.05, az1, c.rnd() < 0.5 ? "awning_mg" : "awning_cy"));
     }
-    if (c.rnd() < 0.5) {
+    if (c.rnd() < (c.lean ? LEAN.sign : 0.5)) {
       const word = c.spec.words[Math.floor(c.rnd() * c.spec.words.length)]!;
       addSign(c, word, sx + (alongX ? 0 : out * 0.03), 3.6, sz + (alongX ? out * 0.03 : 0), rotY, Math.min(w, 4.4));
     }
     // vending machine or a stall of crates in front, sometimes
     const r = c.rnd();
-    if (r < 0.18) {
+    if (c.lean) {
+      // the outer ring's shop fronts stand bare: no machine, no crates
+    } else if (r < 0.18) {
       const vx = alongX ? mid + w / 2 - 0.6 : face + out * 0.55;
       const vz = alongX ? face + out * 0.55 : mid + w / 2 - 0.6;
       c.boxes.push(box(vx - 0.45, 0, vz - 0.45, vx + 0.45, 1.9, vz + 0.45, "vending"));
@@ -188,7 +226,7 @@ function rail(c: Ctx, x0: number, z0: number, x1: number, z1: number): void {
 }
 
 function block(c: Ctx, bx: number, bz: number, kind: BlockKind, nodePos?: Vec3): void {
-  const { x0, z0, x1, z1 } = blockRect(bx, bz);
+  const { x0, z0, x1, z1 } = blockRect(c.H, bx, bz);
   const r = c.rnd;
   const sides: ("n" | "s" | "e" | "w")[] = ["n", "s", "e", "w"];
   switch (kind) {
@@ -251,8 +289,10 @@ function block(c: Ctx, bx: number, bz: number, kind: BlockKind, nodePos?: Vec3):
           if (r() < 0.5) addSign(c, c.spec.words[Math.floor(r() * c.spec.words.length)]!, sx + 1.3, 3.0, sz + (j === 0 ? -0.55 : 3.15), j === 0 ? Math.PI : 0, 2.4);
         }
       }
-      rail(c, x0 + 2, z0 + B / 2 - 0.04, x0 + 10, z0 + B / 2 + 0.04);
-      rail(c, x1 - 10, z0 + B / 2 - 0.04, x1 - 2, z0 + B / 2 + 0.04);
+      if (!c.lean) {
+        rail(c, x0 + 2, z0 + B / 2 - 0.04, x0 + 10, z0 + B / 2 + 0.04);
+        rail(c, x1 - 10, z0 + B / 2 - 0.04, x1 - 2, z0 + B / 2 + 0.04);
+      }
       c.lights.push({ x: (x0 + x1) / 2, y: 3.8, z: (z0 + z1) / 2, color: "magenta", intensity: 14, range: 20 });
       break;
     }
@@ -322,14 +362,31 @@ function block(c: Ctx, bx: number, bz: number, kind: BlockKind, nodePos?: Vec3):
 }
 
 export function generateDistrict(spec: DistrictSpec): LevelDef {
-  const c: Ctx = { spec, rnd: lcg(spec.seed), boxes: [], decor: [], signs: [], lights: [] };
-  const H = CITY_HALF;
+  const N = districtGrid(spec);
+  const H = districtHalf(spec);
+  if (spec.blocks.length !== N * N) throw new Error(`${spec.id}: ${spec.blocks.length} blocks for a ${N}×${N} grid`);
+  const mid = (N - 1) / 2; // the centre cell: the plaza's
+  if (spec.blocks[mid * N + mid] !== "plaza") throw new Error(`${spec.id}: the centre block is ${spec.blocks[mid * N + mid]}, not the plaza`);
+  /** scale against a 3×3 district: exactly 1 for one, so its numbers are the ones it always had */
+  const k = H / CITY_HALF;
+  const c: Ctx = { spec, rnd: lcg(spec.seed), boxes: [], decor: [], signs: [], lights: [], H, lean: false };
   // ground slab (wide: the vista roads beyond the exits sit on it too) and the perimeter of tall facades.
-  // Each inner street runs out through the perimeter: a gate seals it, the city continues beyond as a vista.
+  // The avenues either side of the plaza run out through the perimeter: a gate seals each, the city
+  // continues beyond as a vista. In a 3×3 district those are its only two inner streets; a 5×5 district's
+  // outer streets meet the perimeter street at a T under the facade (eight gates either way).
   const F = 30;
-  const V = 170; // vista length beyond the facade
+  // vista length beyond the facade: the slab's edge stays at ±254 m whatever the district's size
+  // (170 m for a 3×3), well inside the ±327 m a position can be sent at (shared/net/protocol.ts)
+  const V = 254 - H - F;
+  // a vista's buildings and lamps every 22 m (18 m deep) in a 3×3 district. A 5×5 district's vistas start
+  // 33 m further out, into the fog, and every triangle of them is drawn twice (the wet floor's mirror):
+  // there they stand a block apart, 29 m deep, so the street still reads built-up for two thirds the cost
+  const vStep = N === 3 ? 22 : B + S;
+  const vDepth = vStep - 4;
   c.boxes.push(box(-H - F - V, -1, -H - F - V, H + F + V, 0, H + F + V, "floor"));
-  const I0 = -H + S / 2 + (B + S); // -16.5: the first inner street centreline
+  // the plaza's corner intersections: -16.5 in a district of any size (the centre block is always at the origin)
+  const I = blockRect(H, mid, mid).x0 - S / 2;
+  const I0 = I; // the avenue either side of the plaza (-16.5)
   const streets = [I0, -I0];
   const gapHalf = S / 2;
   const facadeRuns = (lo: number, hi: number): [number, number][] => {
@@ -365,12 +422,12 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
       const z0 = sgn * H;
       const z1 = sgn * (H + F + V);
       c.decor.push(box(sc - 3, -0.05, Math.min(z0, z1), sc + 3, 0.0, Math.max(z0, z1), "vista_road"));
-      for (let d = 0; d < F + V; d += 22) {
+      for (let d = 0; d < F + V; d += vStep) {
         const zz = z0 + sgn * d;
         const h = 22 + ((d * 7) % 30);
         if (d >= F) {
-          c.decor.push(box(sc - gapHalf - 14, 0, Math.min(zz, zz + sgn * 18), sc - gapHalf, h, Math.max(zz, zz + sgn * 18), "vista_bldg"));
-          c.decor.push(box(sc + gapHalf, 0, Math.min(zz, zz + sgn * 18), sc + gapHalf + 14, h + 8, Math.max(zz, zz + sgn * 18), "vista_bldg"));
+          c.decor.push(box(sc - gapHalf - 14, 0, Math.min(zz, zz + sgn * vDepth), sc - gapHalf, h, Math.max(zz, zz + sgn * vDepth), "vista_bldg"));
+          c.decor.push(box(sc + gapHalf, 0, Math.min(zz, zz + sgn * vDepth), sc + gapHalf + 14, h + 8, Math.max(zz, zz + sgn * vDepth), "vista_bldg"));
         }
         c.decor.push(box(sc - gapHalf + 0.5, 0, zz - 0.15, sc - gapHalf + 0.8, 5.2, zz + 0.15, "vista_lamp"));
         c.decor.push(box(sc + gapHalf - 0.8, 0, zz - 0.15, sc + gapHalf - 0.5, 5.2, zz + 0.15, "vista_lamp"));
@@ -382,12 +439,12 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
       const x0 = sgn * H;
       const x1 = sgn * (H + F + V);
       c.decor.push(box(Math.min(x0, x1), -0.05, sc - 3, Math.max(x0, x1), 0.0, sc + 3, "vista_road"));
-      for (let d = 0; d < F + V; d += 22) {
+      for (let d = 0; d < F + V; d += vStep) {
         const xx = x0 + sgn * d;
         const h = 22 + ((d * 11) % 30);
         if (d >= F) {
-          c.decor.push(box(Math.min(xx, xx + sgn * 18), 0, sc - gapHalf - 14, Math.max(xx, xx + sgn * 18), h, sc - gapHalf, "vista_bldg"));
-          c.decor.push(box(Math.min(xx, xx + sgn * 18), 0, sc + gapHalf, Math.max(xx, xx + sgn * 18), h + 8, sc + gapHalf + 14, "vista_bldg"));
+          c.decor.push(box(Math.min(xx, xx + sgn * vDepth), 0, sc - gapHalf - 14, Math.max(xx, xx + sgn * vDepth), h, sc - gapHalf, "vista_bldg"));
+          c.decor.push(box(Math.min(xx, xx + sgn * vDepth), 0, sc + gapHalf, Math.max(xx, xx + sgn * vDepth), h + 8, sc + gapHalf + 14, "vista_bldg"));
         }
         c.decor.push(box(xx - 0.15, 0, sc - gapHalf + 0.5, xx + 0.15, 5.2, sc - gapHalf + 0.8, "vista_lamp"));
         c.decor.push(box(xx - 0.15, 0, sc + gapHalf - 0.8, xx + 0.15, 5.2, sc + gapHalf - 0.5, "vista_lamp"));
@@ -399,7 +456,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   // sidewalks ring every block; curbs are step-height
   for (let bx = 0; bx < N; bx++) {
     for (let bz = 0; bz < N; bz++) {
-      const { x0, z0, x1, z1 } = blockRect(bx, bz);
+      const { x0, z0, x1, z1 } = blockRect(H, bx, bz);
       c.boxes.push(box(x0 - SW, 0, z0 - SW, x1 + SW, CURB, z0, "sidewalk"));
       c.boxes.push(box(x0 - SW, 0, z1, x1 + SW, CURB, z1 + SW, "sidewalk"));
       c.boxes.push(box(x0 - SW, 0, z0, x0, CURB, z1, "sidewalk"));
@@ -412,8 +469,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   c.boxes.push(box(-H, 0, -H, -H + SW, CURB, H, "sidewalk"));
   c.boxes.push(box(H - SW, 0, -H, H, CURB, H, "sidewalk"));
 
-  // nodes: plaza centre + the four inner intersections
-  const I = -H + S / 2 + (B + S); // first inner intersection coordinate (-16.5)
+  // nodes: plaza centre + the plaza's four corner intersections
   const nodes = [
     { id: 1, label: "A", pos: v3(0, 0, 0), links: [2, 3, 4, 5] },
     { id: 2, label: "B", pos: v3(-I, 0, -I), links: [1, 3, 4] },
@@ -431,20 +487,39 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     { kind: "safe", label: "EAST GATE", pos: gateB, radius: 6 },
   ];
   const claimSpots: Vec3[] = [...nodes.map((n) => n.pos), v3(0, 0, -I), v3(0, 0, I), v3(-I, 0, 0), v3(I, 0, 0), v3(-I, 0, -H + S / 2), v3(I, 0, H - S / 2)];
+  // a 5×5 district has a second ring of streets (J = -49.5): claims at its midpoints, its corners and
+  // where it crosses the avenues, so the larger ground carries claims in proportion (27 to 11)
+  const J = N >= 5 ? blockRect(H, mid - 1, mid - 1).x0 - S / 2 : null;
+  if (J !== null) {
+    claimSpots.push(v3(0, 0, J), v3(0, 0, -J), v3(J, 0, 0), v3(-J, 0, 0));
+    claimSpots.push(v3(J, 0, J), v3(-J, 0, J), v3(J, 0, -J), v3(-J, 0, -J));
+    for (const a of [I, -I]) claimSpots.push(v3(a, 0, J), v3(a, 0, -J), v3(J, 0, a), v3(-J, 0, a));
+  }
+  // the value steps once per 14 m from a gate in a 3×3 district; the step grows with the district so a
+  // larger one's values spread over its whole depth rather than capping a third of the way in
+  const step = 14 * k;
   const claims: ClaimDef[] = claimSpots.map((p) => {
     const d = Math.min(Math.hypot(p.x - gateA.x, p.z - gateA.z), Math.hypot(p.x - gateB.x, p.z - gateB.z));
-    return { pos: v3(p.x, 0, p.z), value: 1 + Math.min(4, Math.floor(d / 14)) };
+    return { pos: v3(p.x, 0, p.z), value: 1 + Math.min(4, Math.floor(d / step)) };
   }).filter((cl) => !zones.some((z) => Math.hypot(cl.pos.x - z.pos.x, cl.pos.z - z.pos.z) < z.radius + 2));
 
-  // blocks
-  for (let bz = 0; bz < N; bz++) for (let bx = 0; bx < N; bx++) block(c, bx, bz, spec.blocks[bz * N + bx]!, bx === 1 && bz === 1 ? nodes[0]!.pos : undefined);
+  // blocks (a 5×5 district's outer ring dressed lean; a 3×3 district has no ring)
+  const outerRing = (bx: number, bz: number): boolean => N > 3 && (bx === 0 || bz === 0 || bx === N - 1 || bz === N - 1);
+  for (let bz = 0; bz < N; bz++) {
+    for (let bx = 0; bx < N; bx++) {
+      c.lean = outerRing(bx, bz);
+      block(c, bx, bz, spec.blocks[bz * N + bx]!, bx === mid && bz === mid ? nodes[0]!.pos : undefined);
+    }
+  }
+  c.lean = false;
 
-  // elevated walkway along the street between block rows 1 and 2 (z = I). Each end has a landing in the
+  // elevated walkway along the avenue south of the plaza (z = -I, 16.5, in a district of either size), from
+  // perimeter street to perimeter street. Each end has a landing in the
   // perimeter street and a switchback stair descending along that street (so the street stays open beside it);
   // a spur drops into the plaza. Rails along both edges.
   const WY = 4.6;
   const WS = -I; // 16.5: the street centreline it follows
-  const LX = H - S + 0.5; // 45.5: where the landings start
+  const LX = H - S + 0.5; // where the landings start: 45.5 in a 3×3 district, 78.5 in a 5×5
   if (spec.walkway === "x") {
     c.boxes.push(box(-LX, WY - 0.3, WS - 1.6, LX, WY, WS + 1.6, "walkway"));
     c.boxes.push(box(-LX, WY, WS - 1.7, LX, WY + 1.0, WS - 1.6, "rail"));
@@ -475,13 +550,15 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   // street furniture: lamps at block corners, parked cars along curbs, rails at crossings
   for (let bx = 0; bx < N; bx++) {
     for (let bz = 0; bz < N; bz++) {
-      const { x0, z0, x1, z1 } = blockRect(bx, bz);
+      const { x0, z0, x1, z1 } = blockRect(H, bx, bz);
       lamp(c, x0 - SW + 0.4, z0 - SW + 0.4);
       lamp(c, x1 + SW - 0.4, z1 + SW - 0.4);
       // cars on the road just off the sidewalk (north and west curbs of each block)
-      cars(c, x0, z0 - SW - 2.1, x1, z0 - SW - 0.2, true, spec.carDensity);
-      cars(c, x0 - SW - 2.1, z0, x0 - SW - 0.2, z1, false, spec.carDensity);
-      if (c.rnd() < 0.6) rail(c, x0 + 4, z1 + SW + 0.3, x0 + 9, z1 + SW + 0.38);
+      const lean = outerRing(bx, bz);
+      const density = lean ? spec.carDensity * LEAN.cars : spec.carDensity;
+      cars(c, x0, z0 - SW - 2.1, x1, z0 - SW - 0.2, true, density);
+      cars(c, x0 - SW - 2.1, z0, x0 - SW - 0.2, z1, false, density);
+      if (!lean && c.rnd() < 0.6) rail(c, x0 + 4, z1 + SW + 0.3, x0 + 9, z1 + SW + 0.38);
     }
   }
   // lamps along the perimeter streets
@@ -494,7 +571,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const walks: WalkLoop[] = [];
   for (let bx = 0; bx < N; bx++) {
     for (let bz = 0; bz < N; bz++) {
-      const { x0, z0, x1, z1 } = blockRect(bx, bz);
+      const { x0, z0, x1, z1 } = blockRect(H, bx, bz);
       walks.push({ x0: x0 - SW / 2, z0: z0 - SW / 2, x1: x1 + SW / 2, z1: z1 + SW / 2 });
     }
   }
@@ -505,10 +582,19 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     { x: -H - 0.2, y: 20, z: 30, rotY: Math.PI / 2, w: 14, h: 4 },
     { x: 34, y: 22, z: -H - 0.2, rotY: 0, w: 14, h: 4 },
   ];
+  if (J !== null) {
+    // the outer ring of streets steams too, at the road's edge of each (never on a centreline, where claims lie)
+    vents.push(v3(J + 3, 0, 30), v3(-J - 3, 0, -30), v3(-66, 0, J + 3), v3(66, 0, -J - 3));
+    // and the two facades without a panel get one, clear of the avenues and the monorail's portals
+    ads.push({ x: H + 0.2, y: 21, z: -60, rotY: -Math.PI / 2, w: 14, h: 4 }, { x: -60, y: 20, z: H + 0.2, rotY: Math.PI, w: 14, h: 4 });
+  }
   // y is the running surface the car's bogies sit on: the top of the posts' cross-members, which stand
   // 0.1 m proud of the 9.0-9.3 m beam (Stage 674; it was 8.6, the car's centre, with the beam through it)
   const tram: TramLine = spec.walkway === "x" ? { axis: "x", at: WS, y: 9.4, from: -H - F - 30, to: H + F + 30, period: 26 } : { axis: "z", at: WS, y: 9.4, from: -H - F - 30, to: H + F + 30, period: 26 };
-  for (let p = -H + S; p <= H - S; p += 24) {
+  // posts every 24 m in a 3×3 district; a 5×5 district's posts stand one per block, on each block's
+  // west sidewalk corner, so none lands in the road of a crossing avenue (24 m would put one at x = 18)
+  const postStep = N === 3 ? 24 : B + S;
+  for (let p = -H + S; p <= H - S; p += postStep) {
     if (spec.walkway === "x") {
       c.boxes.push(box(p - 0.2, 0, WS - 4.3, p + 0.2, 9.4, WS - 3.9, "post"));
       c.boxes.push(box(p - 0.2, 0, WS + 3.9, p + 0.2, 9.4, WS + 4.3, "post"));
@@ -526,9 +612,12 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
 
   // big district signage on the perimeter facades
   const big = [`${spec.displayName}`, "VANTAGE INTEGRITY", "LEASE · RENEW · COMPLY", ...spec.words.slice(0, 3)];
-  for (let i = 0; i < 4; i++) {
-    const t = big[i]!;
-    const p = -H + 16 + i * 26;
+  // four per side 26 m apart in a 3×3 district; in a larger one, one centred on each block column, so the
+  // longer walls carry more and none hangs over an avenue's gate
+  const signsPerSide = N === 3 ? 4 : N;
+  for (let i = 0; i < signsPerSide; i++) {
+    const t = big[i % big.length]!;
+    const p = N === 3 ? -H + 16 + i * 26 : (blockRect(H, i, 0).x0 + blockRect(H, i, 0).x1) / 2;
     addSign(c, t, p, 9 + (i % 2) * 5, -H - 0.05, 0, 12, i % 2 ? COLORS.magenta : COLORS.cyan);
     addSign(c, big[(i + 2) % big.length]!, H + 0.05, 8 + (i % 2) * 6, p, -Math.PI / 2, 12, i % 2 ? COLORS.cyan : COLORS.magenta);
     addSign(c, big[(i + 3) % big.length]!, -p, 10 + (i % 2) * 4, H + 0.05, Math.PI, 12, i % 2 ? COLORS.cyan : COLORS.magenta);
@@ -539,7 +628,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   // district gets its threat colour from the local VANTAGE lights (lots, towers, fences), never the rig.
   const key: LightDef["color"] = spec.cast === "cyan" ? "cyan" : "magenta";
   const alt: LightDef["color"] = spec.cast === "cyan" ? "magenta" : "cyan";
-  c.lights.unshift({ x: 30, y: 12, z: 30, color: key, intensity: 80, range: 110 }, { x: -30, y: 12, z: -30, color: alt, intensity: 80, range: 110 });
+  c.lights.unshift({ x: 30 * k, y: 12, z: 30 * k, color: key, intensity: 80, range: 110 * k }, { x: -30 * k, y: 12, z: -30 * k, color: alt, intensity: 80, range: 110 * k });
 
   // spawns: mid-edge streets, then corners (rooms alternate cells through the list)
   const E = H - 4.5; // centreline of the perimeter streets
@@ -563,6 +652,21 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     [v3(-I, 6, I), v3(I, 6.5, I), v3(I, 6, -I), v3(-I, 6.5, -I)],
     [v3(-I, 5, -ring), v3(-I, 5.5, ring)],
   ];
+  if (J !== null) {
+    // a 5×5 district: every patrol flies the streets. The two corner loops above cut across the centre
+    // row at z = 0, which in a 3×3 district is the plaza's row; here they are replaced by loops over the
+    // outer ring of streets, one per quadrant, and the plaza ring and the avenue run are kept
+    patrols.length = 0;
+    patrols.push(
+      [v3(-ring, 4, -ring), v3(I, 4.5, -ring), v3(I, 4.2, J), v3(-ring, 4, J)],
+      [v3(ring, 4, ring), v3(-I, 4.5, ring), v3(-I, 4.2, -J), v3(ring, 4, -J)],
+      [v3(-I, 6, I), v3(I, 6.5, I), v3(I, 6, -I), v3(-I, 6.5, -I)],
+      [v3(-I, 5, -ring), v3(-I, 5.5, ring)],
+      [v3(ring, 4, -ring), v3(-I, 4.5, -ring), v3(-I, 4.2, J), v3(ring, 4, J)],
+      [v3(-ring, 4, ring), v3(I, 4.5, ring), v3(I, 4.2, -J), v3(-ring, 4, -J)],
+      [v3(J, 5, -ring), v3(J, 5.5, ring)],
+    );
+  }
   for (let i = 0; i < Math.min(spec.wasps, patrols.length); i++) wasps.push({ waypoints: patrols[i]! });
   const mechs: { path: Vec3[]; face?: number }[] = [];
   const mechPaths: { path: Vec3[]; face: number }[] = [
@@ -620,13 +724,27 @@ export const DISTRICT_SPECS: DistrictSpec[] = [
     displayName: "LEASE ROW",
     cast: "magenta",
     seed: 1101,
-    blocks: ["tower", "split", "court", "market", "plaza", "split", "court", "tower", "market"],
+    grid: 5,
+    // The centre nine are the 3×3 LEASE ROW's own nine, cell for cell, so every node, lattice post and
+    // route a contract knows is on the same kind of block it always was; the ring around them is new.
+    blocks: [
+      "stack", "split", "tower", "market", "lot",
+      "split", "tower", "split", "court", "tower",
+      "court", "market", "plaza", "split", "court",
+      "tower", "court", "tower", "market", "split",
+      "stack", "market", "split", "court", "stack",
+    ],
     words: ["RE-LEASE", "再租", "NIGHT CO", "PAWN", "NOODLE 24", "ヴァンテージ", "CHILL UNDER", "DEADLETTER", "LEASE-BREAKER", "SEC-9"],
     signFg: [COLORS.magenta, COLORS.cyan, COLORS.yellow],
     walkway: "x",
     carDensity: 0.45,
-    mechs: 1,
-    wasps: 3,
+    mechs: 2,
+    wasps: 5,
+    // Not scaled with the area. Every citizen is ~350 triangles drawn in both passes (the wet floor's
+    // mirror), so the crowd is the costliest thing per head in the frame: 110 is 77k of the 200k budget,
+    // and the ~290 the larger area would carry would be 203k on its own. With the outer ring dressed
+    // lean the frame measures 183k (tests/citycost.test.ts), which is room for the actors and not for
+    // more citizens. More needs the crowd drawn once, not a bigger number here.
     pedestrians: 110,
   },
   {
