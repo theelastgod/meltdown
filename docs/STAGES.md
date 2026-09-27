@@ -1641,6 +1641,103 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 665 — The characters were a cone on a tube and a pill in a hat
+
+*The owner's brief: "make the character designs real".*
+
+**What they were.** The art bible asks for *"Hooded silhouettes; faces never
+lit. Faction trim is a strip-light on the body… a figure reads as a person
+walking before any face could be seen."* The player — every file in every room —
+was a ten-sided tube, an eight-sided closed cone for a hood with no opening in
+it, box arms and box boots. A leased citizen, up to 110 of them per district, was
+a capsule 0.6 m wide with a cone on top: a pill wearing a witch's hat. The
+before turntable is `docs/proof/stage665/turntable-before.png`.
+
+**The player: the Blank.** Same ten bones, same skinned-mesh-per-material
+structure, same pose code; every part is new.
+
+- **A slim torso** the arms hang outside of. The rig's shoulders are only 0.21 m
+  from centre, so the old tube's arms were always inside the cloth and clipped
+  through it when aiming.
+- **A shoulder mantle** that drapes, giving the silhouette its width, with a lit
+  hem all the way round that carries the shoulders in the dark.
+- **A long coat below the belt, split at the front**, cloth folds deepening toward
+  the hem; the stride shows through the split and both front edges are lit.
+- **A hood with a real face opening**, its crown pulled back into a point, and
+  **nothing lit inside it**: a new baked-occlusion vertex attribute (`shade`) takes
+  the albedo *and* the worn tint's glow to zero on the hood's interior, so the face
+  is a void by construction, not by lighting luck. The rim of the opening is lit.
+- Belt and buckle, a chest strap, one asymmetric shoulder plate; sleeves widening
+  to the cuff, gloves; thighs, shins, boot shafts, soles with toes.
+
+**The citizen: the leased.** A long drab coat hunched at the shoulders, arms
+hanging, legs and shoes under the hem, a hood with a dark plate where a face
+would be, and VANTAGE's amber lease lamp on the chest — and **no strip-light**.
+The contrast is the story: the Blank is the one who isn't leased. Heights vary
+±8% from their own random stream, so the crowd's loops, speeds and umbrellas are
+exactly the ones they were. Their front is +z, the way the walk loops face them —
+the old pill was symmetric, so nothing had ever checked which way they looked.
+
+**How the design was checked — by eye, then by test.** A turntable (the rig
+alone, front / side / back, under district-style neon) caught what no test did:
+
+1. A hexagon inside the face opening — the hood's peak cone sat *inside* the shell.
+   Removed; the crown's trail does the job.
+2. A column of lit dots down the front of the coat — the back spine *showing
+   through the cloth*. Winding was checked and was correct; the cause was that
+   vertical bars on a flaring coat had their lower halves inside it. Bars now lie
+   along the surface's meridian.
+3. The mantle flared like a lampshade. It drapes now.
+
+Then a test (`no strip-light sits inside the coat's cloth`) found what the eye
+had not: 51 trim vertices still up to 15 mm inside the cloth, because every bar
+was centred on the smooth profile while the cloth folds swell under it. Bars now
+seat their *inner face* on the true, fold-aware surface, sampled across their
+width. The final frame is `turntable-after.png`; `walk-after.png` is the body in
+the game, walking.
+
+**The guards (`tests/character.test.ts`), each mutation-checked:**
+
+| test | mutation | result |
+|---|---|---|
+| the hood's real peak sits under the point `rigReport` measures | hood 5 cm higher | fails |
+| the hood has a face opening, and the opening is baked to black | hood closed over the face | fails |
+| no strip-light sits inside the coat's cloth | bars centred on the cloth again | fails |
+| a citizen is a person's size and shape, hood opening to +z, under 360 triangles | — | — |
+
+The first matters beyond this stage. `rigReport.hoodApex` reads a *fixed point*
+(head + 0.3 m), not the geometry, so a taller hood would have passed the crouch
+check unseen. The new test ties that point to the vertices. The face test's first
+draft counted the neck cowl's top ring at the chin (y 1.560) as a face; its box
+now starts above the cowl, and closing the hood still fails it.
+
+**The budget, written down instead of copied.** `tests/rig.test.ts` held the cloak
+under 500 triangles, Stage 63's "no more than the capsule". The real limit is the
+district's 200k frame budget, so `BODY_TRIANGLES = 2000` and `TRIM_TRIANGLES = 700`
+now live in `rig.ts` with their arithmetic: 8 files × 2 passes (scene and
+wet-floor mirror) × 2,700 = 43k at worst. The body is 1,568 + trim ~640; a
+citizen is ~320 against the pill's ~150.
+
+**Measured in `probe:city`:** triangles rose as planned — lease_row 117k → 164k,
+repo_depot 108k → 139k, docks 89k → 114k, all under 200k. Draw calls did not rise
+in any way I can attribute: the per-object breakdown is identical in every run
+(97 objects), lease_row read 184 once and 180 on re-run (its old figure), docks
+ranged 155–165 across two runs *before* this stage, and repo_depot read 182 on
+both new runs against 178 on both old ones. That last +4 is either the same noise
+or real and unattributed; either way it is 182 of 190. I am recording it rather
+than claiming zero.
+
+**Verified on a still tree.** `probe:body` 21/21, `probe:tps` 50/50,
+`probe:cityLife` 21/21, `probe:city` 51/51 (twice), `probe:frame` 8/8, `probe:look`
+19/19, `npm run typecheck`, 1443 unit tests (6 new), the campaign, progression,
+economy and asset lints, and the build.
+
+**Still open.** Citizens are one static mesh gliding — no legs moving; a cheap
+vertex-shader stride keyed on the instance's phase would sell the crowd. The
+fixers (Wern, Vessel, Deacon, Marrow) still exist only as a name and a sigil on
+the terminal; they have no body anywhere in the game. Higgsfield is still at 0.55
+credits, so their portraits wait.
+
 ## Stage 664 — The fog was a black wall at sixty-four metres
 
 **The defect, measured.** The art bible says *"haze softens everything past

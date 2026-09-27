@@ -7,6 +7,7 @@
  * live in the level as boxes.
  */
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { LevelDef, TramLine, WalkLoop } from "@shared/sim/level";
 import { bindPlate, PALETTE } from "./city";
 import { tickerStep } from "./ticker";
@@ -30,6 +31,8 @@ interface Ped {
   /** standing still (leaning at a storefront) */
   idle: boolean;
   umbrella: boolean;
+  /** body scale: the crowd is not one height (Stage 665) */
+  h: number;
   x: number;
   z: number;
   yaw: number;
@@ -53,6 +56,71 @@ function onLoop(l: WalkLoop, t: number): { x: number; z: number; yaw: number } {
 }
 
 /** Hooded silhouettes walking the sidewalks. Faces never lit; one amber lease-light on the chest. */
+// ---- the leased citizen (Stage 665) ----
+//
+// Until Stage 665 a citizen was a capsule 0.6 m wide with a cone on top: a pill in a hat. Now a
+// citizen is a person in a long drab coat with the hood up, arms hanging, legs and shoes under the
+// hem, and a face that is a dark opening rather than a solid cone. They carry no strip-light: that
+// is what marks a Blank out from the leased crowd (the lease lamp on the chest is VANTAGE's amber,
+// not theirs). Built feet-at-the-origin with the front at +z, the way the walk loops face them.
+// The same two instanced meshes and materials as before, so a crowd still costs its four calls.
+
+type CitizenProfile = [number, number][];
+function citizenLathe(profile: CitizenProfile, segs: number, sx: number, sz: number, folds: number, fold: (y: number) => number): THREE.BufferGeometry {
+  const g = new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), segs);
+  const p = g.getAttribute("position");
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const k = 1 + fold(y) * Math.sin(folds * Math.atan2(x, z));
+    p.setXYZ(i, x * k * sx, y, z * k * sz);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+function bake(g: THREE.BufferGeometry, m: THREE.Matrix4): THREE.BufferGeometry {
+  return g.applyMatrix4(m);
+}
+const T = (x: number, y: number, z: number) => new THREE.Matrix4().makeTranslation(x, y, z);
+
+/** the coat, the arms and the legs: one geometry, the crowd's `dark` material */
+export function citizenBodyGeometry(): THREE.BufferGeometry {
+  const hem = (y: number) => 0.06 * Math.min(1, Math.max(0, (0.75 - y) / 0.43));
+  const parts = [
+    // a long coat, hunched at the shoulders, folded toward the hem
+    citizenLathe([[0.25, 0.32], [0.23, 0.55], [0.195, 0.85], [0.185, 1.05], [0.21, 1.22], [0.2, 1.33], [0.13, 1.41], [0.09, 1.44]], 10, 1.08, 0.82, 5, hem),
+    // arms hanging off the shoulders
+    bake(new THREE.BoxGeometry(0.085, 0.52, 0.09), T(0.235, 1.03, 0).multiply(new THREE.Matrix4().makeRotationZ(0.08))),
+    bake(new THREE.BoxGeometry(0.085, 0.52, 0.09), T(-0.235, 1.03, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.08))),
+    // legs and shoes below the hem
+    bake(new THREE.BoxGeometry(0.1, 0.32, 0.11), T(0.085, 0.18, 0)),
+    bake(new THREE.BoxGeometry(0.1, 0.32, 0.11), T(-0.085, 0.18, 0)),
+    bake(new THREE.BoxGeometry(0.1, 0.06, 0.19), T(0.085, 0.03, 0.035)),
+    bake(new THREE.BoxGeometry(0.1, 0.06, 0.19), T(-0.085, 0.03, 0.035)),
+  ];
+  const out = mergeGeometries(parts.map((g) => (g.index ? g.toNonIndexed() : g)), false);
+  for (const g of parts) g.dispose();
+  return out!;
+}
+
+/** the hood with its face opening toward +z, and a dark plate where a face would be: the crowd's hood material */
+export function citizenHoodGeometry(): THREE.BufferGeometry {
+  const opening = 1.7;
+  const shell = new THREE.SphereGeometry(0.15, 10, 6, Math.PI / 2 + opening / 2, Math.PI * 2 - opening, 0, Math.PI * 0.7);
+  const p = shell.getAttribute("position");
+  for (let i = 0; i < p.count; i++) {
+    const y = p.getY(i);
+    // elongate, pull the crown back (away from the face at +z), seat it on the shoulders
+    p.setXYZ(i, p.getX(i), y * 1.15 + 1.53, p.getZ(i) * 1.1 - 0.07 * Math.max(0, y / 0.15) - 0.01);
+  }
+  shell.computeVertexNormals();
+  // faces are never lit: a plate at the back of the opening, in the hood's own near-black
+  const face = new THREE.CircleGeometry(0.1, 8).applyMatrix4(T(0, 1.5, 0.02));
+  const out = mergeGeometries([shell.toNonIndexed(), face.toNonIndexed()], false);
+  shell.dispose();
+  face.dispose();
+  return out!;
+}
+
 export class Crowd {
   readonly group = new THREE.Group();
   private peds: Ped[] = [];
@@ -76,17 +144,19 @@ export class Crowd {
     bindPlate(hoodMat, "tex_cloak");
     bindPlate(brollyMat, "tex_brolly");
     bindPlate(lampMat, "tex_lamp");
-    this.body = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.3, 1.0, 3, 8), dark, count);
-    this.hood = new THREE.InstancedMesh(new THREE.ConeGeometry(0.36, 0.5, 7), hoodMat, count);
+    this.body = new THREE.InstancedMesh(citizenBodyGeometry(), dark, count);
+    this.hood = new THREE.InstancedMesh(citizenHoodGeometry(), hoodMat, count);
     this.lamp = new THREE.InstancedMesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), lampMat, count);
     this.brolly = new THREE.InstancedMesh(new THREE.ConeGeometry(0.75, 0.25, 8, 1, true), brollyMat, count);
     for (const mesh of [this.body, this.hood, this.lamp, this.brolly]) {
       mesh.frustumCulled = false;
       this.group.add(mesh);
     }
+    // heights from their own stream, so the crowd's loops, speeds and umbrellas are the ones they were
+    const rh = lcg(seed + 101);
     for (let i = 0; i < count; i++) {
       const loop = loops[Math.floor(rnd() * loops.length)]!;
-      this.peds.push({ loop, t: rnd() * perimeter(loop), dir: rnd() < 0.5 ? 1 : -1, speed: 0.8 + rnd() * 0.7, bob: rnd() * 6.28, idle: rnd() < 0.12, umbrella: rnd() < 0.3, x: 0, z: 0, yaw: 0 });
+      this.peds.push({ loop, t: rnd() * perimeter(loop), dir: rnd() < 0.5 ? 1 : -1, speed: 0.8 + rnd() * 0.7, bob: rnd() * 6.28, idle: rnd() < 0.12, umbrella: rnd() < 0.3, h: 0.92 + rh() * 0.16, x: 0, z: 0, yaw: 0 });
     }
     this.update(0);
   }
@@ -111,18 +181,18 @@ export class Crowd {
       ped.yaw = ped.dir > 0 ? o.yaw : o.yaw + Math.PI;
       const bob = ped.idle ? 0 : Math.abs(Math.sin(this.time * 6 * ped.speed + ped.bob)) * 0.04;
       this.q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), ped.yaw);
-      this.sc.set(1, 1, 1);
-      this.p.set(o.x, 0.8 + bob, o.z);
+      // body and hood share one feet-at-the-origin frame and the citizen's own height
+      this.sc.set(ped.h, ped.h, ped.h);
+      this.p.set(o.x, bob, o.z);
       this.m.compose(this.p, this.q, this.sc);
       this.body.setMatrixAt(i, this.m);
-      this.p.set(o.x, 1.62 + bob, o.z);
-      this.m.compose(this.p, this.q, this.sc);
       this.hood.setMatrixAt(i, this.m);
-      // lease light on the chest, facing the way they walk
-      this.p.set(o.x + Math.sin(ped.yaw) * 0.3, 1.15 + bob, o.z + Math.cos(ped.yaw) * 0.3);
+      // lease light on the chest, on the coat's surface, facing the way they walk
+      this.sc.set(1, 1, 1);
+      this.p.set(o.x + Math.sin(ped.yaw) * 0.19 * ped.h, 1.12 * ped.h + bob, o.z + Math.cos(ped.yaw) * 0.19 * ped.h);
       this.m.compose(this.p, this.q, this.sc);
       this.lamp.setMatrixAt(i, this.m);
-      this.p.set(o.x, ped.umbrella ? 2.05 + bob : -5, o.z);
+      this.p.set(o.x, ped.umbrella ? 2.0 * ped.h + bob : -5, o.z);
       this.m.compose(this.p, this.q, this.sc);
       this.brolly.setMatrixAt(i, this.m);
     }

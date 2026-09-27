@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { applyPose, BONE, buildRig, cloakGeometry, REST_BONES, rigReport, trimGeometry, weaponStripGeometry, type BoneName } from "../client/render/rig";
+import { applyPose, BODY_TRIANGLES, BONE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, REST_BONES, rigReport, TRIM_TRIANGLES, trimGeometry, weaponStripGeometry, type BoneName } from "../client/render/rig";
 import { createPoseState, poseBody, type PoseInput } from "../client/render/pose";
 import { MOVE } from "../shared/sim/constants";
 
@@ -37,9 +37,11 @@ describe("the rig", () => {
       expect(m.boundingSphere?.radius).toBe(1.5);
     }
     const tris = (g: THREE.BufferGeometry) => (g.index ? g.index.count : g.getAttribute("position").count) / 3;
+    // the budget is written down with its arithmetic in rig.ts, not copied here (Stage 665)
     expect(tris(rig.cloak.geometry)).toBeGreaterThan(200);
-    expect(tris(rig.cloak.geometry)).toBeLessThan(500);
+    expect(tris(rig.cloak.geometry)).toBeLessThan(BODY_TRIANGLES);
     expect(tris(rig.trimMesh.geometry)).toBeGreaterThan(40);
+    expect(tris(rig.trimMesh.geometry)).toBeLessThan(TRIM_TRIANGLES);
     // the hem sways, the shoulders do not
     const pos = rig.cloak.geometry.getAttribute("position");
     const sway = rig.cloak.geometry.getAttribute("sway");
