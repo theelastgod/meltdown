@@ -189,7 +189,17 @@ export const MISSIONS: readonly MissionDef[] = [
     // generator gives its own nodes 4.2 — on opposite outer diagonals, so the six spread across
     // the district the brief says to blind.
     objectives: [D("m5_lattice", "THE LATTICE"), { kind: "destroy", spots: [{ node: "B" }, { node: "C" }, { node: "D" }, { node: "E" }, { x: 32, z: -32 }, { x: -34, z: 34 }], label: "LATTICE NODE", text: "PUT OUT THE SIX LATTICE NODES" }, { kind: "survive", seconds: 40, at: { node: "A" }, radius: 12, text: "SURVIVE THE IMMUNE RESPONSE AT THE PLAZA", waves: 3 }],
-    variants: [{ gate: { all: { "m3:volatility": "publish" } }, objectives: [D("m5_lattice", "THE LATTICE"), { kind: "destroy", spots: [{ node: "B" }, { node: "C" }, { node: "D" }, { node: "E" }], label: "LATTICE NODE", text: "PUT OUT THE FOUR LATTICE NODES (THE FEEDS ALREADY TOOK TWO)" }, { kind: "survive", seconds: 40, at: { node: "A" }, radius: 12, text: "SURVIVE THE IMMUNE RESPONSE AT THE PLAZA", waves: 3 }] }],
+    variants: [
+      { gate: { all: { "m3:volatility": "publish" } }, objectives: [D("m5_lattice", "THE LATTICE"), { kind: "destroy", spots: [{ node: "B" }, { node: "C" }, { node: "D" }, { node: "E" }], label: "LATTICE NODE", text: "PUT OUT THE FOUR LATTICE NODES (THE FEEDS ALREADY TOOK TWO)" }, { kind: "survive", seconds: 40, at: { node: "A" }, radius: 12, text: "SURVIVE THE IMMUNE RESPONSE AT THE PLAZA", waves: 3 }] },
+      // The Directive in mission 4. Until this, keeping it or giving it to Ida changed
+      // nothing you played: the endings read it and a file note mentioned it. Kept, it is the one
+      // copy outside the Estate, and the Estate wants it back — it writes a repo writ and VANTAGE
+      // sends a mech to serve it before the lattice can be touched. Given, the Estate is reading its
+      // own hand and pulls its audit drones off the row it would have been hunting you on. Both carry
+      // no objectives of their own to replace, so they compose with the publish variant above.
+      { gate: { all: { "m4:directive": "kept" } }, extraMechs: 1, prepend: [{ kind: "kill", target: "mech", count: 1, text: "THE ESTATE WROTE A REPO WRIT FOR THE DIRECTIVE. PUT DOWN THE MECH SERVING IT" }] },
+      { gate: { all: { "m4:directive": "given" } }, extraWasps: -2 },
+    ],
     reward: { scrip: 800, xp: 2000, protocol: "wern_pulse" },
     wasps: 6,
     mechs: 1,

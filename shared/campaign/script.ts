@@ -200,8 +200,8 @@ export const SCRIPTS: readonly ScriptDef[] = [
     nodes: [
       n("a", "terminal", ["THE SENSOR LATTICE IS THE MODEL'S EYES. DISTRICT BY DISTRICT, PUT THEM OUT.", "VANTAGE WILL RESPOND LIKE AN IMMUNE SYSTEM. THIS IS THE HARDEST NIGHT OF YOUR FILE."], {
         recall: [
-          { gate: { all: { "m4:directive": "kept" } }, lines: ["FILE NOTE: THE DIRECTIVE IS IN YOUR FILE AND NOWHERE ELSE. NO HOUSE HAS READ IT BUT YOU."] },
-          { gate: { all: { "m4:directive": "given" } }, lines: ["FILE NOTE: THE ESTATE HAS BEEN READING ITS OWN HAND FOR SIX DAYS. IT HAS NOT ANSWERED."] },
+          { gate: { all: { "m4:directive": "kept" } }, lines: ["FILE NOTE: THE DIRECTIVE IS IN YOUR FILE AND NOWHERE ELSE. NO HOUSE HAS READ IT BUT YOU.", "FILE NOTE: THE ESTATE HAS FILED A REPO WRIT ON IT. THE MECH WAS ONLY THE FIRST TO SERVE IT."] },
+          { gate: { all: { "m4:directive": "given" } }, lines: ["FILE NOTE: THE ESTATE HAS BEEN READING ITS OWN HAND FOR SIX DAYS. IT HAS NOT ANSWERED.", "FILE NOTE: TWO OF ITS AUDIT DRONES CAME OFF LEASE ROW TONIGHT. THAT IS AS CLOSE TO AN ANSWER AS THE ESTATE GIVES."] },
         ],
         choices: [
           { text: "ALL OF IT. BLIND THE MODEL EVERYWHERE.", set: { "m5:lattice": "all" }, next: "all" },

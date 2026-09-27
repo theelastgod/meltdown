@@ -1641,6 +1641,31 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 686 — The Directive changed nothing until the end
+
+**The gap.** Mission 4 asks whether to keep the Directive or give it to Ida. Two things read the
+answer: the ending gates, which open the three chairs only to a file that kept it, and one file
+note in the mission 5 briefing. No mission or gig played differently. A file that gave the Estate
+its own hand fought the same BLIND THE MODEL as one that walked off with the only copy.
+
+**The change.** Mission 5 has two variants gated on `m4:directive`. Kept: the Estate writes a repo
+writ, one extra repo mech spawns, and a prepended objective, THE ESTATE WROTE A REPO WRIT FOR THE
+DIRECTIVE. PUT DOWN THE MECH SERVING IT, comes before the lattice briefing. Given: the Estate pulls
+two audit drones off Lease Row (`extraWasps: -2`). Neither variant replaces the objective list, so
+both compose with the m3 "publish" variant, which stays at index 0. The briefing's file note names
+each consequence ("THE MECH WAS ONLY THE FIRST TO SERVE IT"; "THAT IS AS CLOSE TO AN ANSWER AS THE
+ESTATE GIVES").
+
+**The guards.** `tests/arcconsequence.test.ts` builds mission 5 through `createMission`, the call
+the client and the co-op room make at launch, for kept, given and neither files and again with the
+published logs: the first objective, the mech and drone counts, the unchanged remaining steps, and
+a mech kill handing over to the lattice briefing. Seven mutations were each caught: either variant
+removed, the gates swapped, the kept gate opened to all or keyed wrong, and the runtime ignoring
+`prepend` or `extraMechs`.
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1502 tests; lint:campaign 0 errors, 0
+notes; lint:progression 0 violations; probe:campaign 61/61.
+
 ## Stage 685 — The kit had no pictures
 
 **The gap.** The contracts desk listed the five Kernel Protocols and the two campaign weapons (THE

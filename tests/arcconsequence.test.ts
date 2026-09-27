@@ -12,7 +12,9 @@
 import { describe, expect, it } from "vitest";
 import { World } from "../shared/sim/world";
 import { levelById } from "../shared/sim/level";
-import { createMission, missionView } from "../shared/campaign/runtime";
+import { createMission, current, missionView, stepMission } from "../shared/campaign/runtime";
+import type { SimEvent } from "../shared/sim/world";
+import { SCRIPTS, spokenLines } from "../shared/campaign/script";
 import { lintChoicesChangeTheArc, lintCampaign } from "../shared/campaign/lint";
 import type { Testimony } from "../shared/campaign/testimony";
 import { MISSIONS } from "../shared/campaign/missions";
@@ -90,6 +92,64 @@ describe("a choice changes what a later mission is", () => {
     const both = build("m6_trial_by_data", "repo_depot", { "m1:lease": "keep", "m5:lattice": "spare_docks" });
     expect(both.texts.slice(1)).toEqual(leaseOnly.texts);
     expect(both.texts[0]).toMatch(/RELAY AT E/);
+  });
+
+  it("mission 5 is hunted for a kept Directive and lighter for a given one (the Directive's consequence in play)", () => {
+    const none = build("m5_blind_the_model", "lease_row", {});
+    const kept = build("m5_blind_the_model", "lease_row", { "m4:directive": "kept" });
+    const given = build("m5_blind_the_model", "lease_row", { "m4:directive": "given" });
+
+    // kept: the Estate's repo writ is served first — a mech to put down before the lattice brief
+    expect(kept.kinds[0]).toBe("kill");
+    expect(kept.st.objectives[0]).toMatchObject({ kind: "kill", target: "mech", count: 1 });
+    expect(kept.texts[0]).toMatch(/REPO WRIT FOR THE DIRECTIVE/);
+    expect(kept.kinds.slice(1)).toEqual(none.kinds);
+    expect(kept.texts.slice(1)).toEqual(none.texts);
+    // and the mech that serves it is one more than the district would have sent
+    expect(kept.st.spawned.mechs).toBe(none.st.spawned.mechs + 1);
+    expect(kept.wasps).toBe(none.wasps);
+    // it can be served: the hunt never asks for more mechs than it spawns
+    expect(kept.st.spawned.mechs).toBeGreaterThanOrEqual(1);
+    // the HUD opens on the hunt, not the lattice
+    expect(kept.view.objective).toMatch(/REPO WRIT/);
+    expect(none.view.objective).not.toMatch(/REPO WRIT/);
+
+    // given: the Estate pulls two audit drones off the row; the mission's steps are the base file's
+    expect(given.wasps).toBe(none.wasps - 2);
+    expect(given.st.spawned.mechs).toBe(none.st.spawned.mechs);
+    expect(given.texts).toEqual(none.texts);
+    expect(given.texts.join(" ")).not.toMatch(/REPO WRIT/);
+
+    // the three are three different missions
+    expect(kept.kinds).not.toEqual(given.kinds);
+    expect(given.wasps).not.toBe(kept.wasps);
+  });
+
+  it("the Directive's variants compose with the published logs rather than overwriting them", () => {
+    const pub = build("m5_blind_the_model", "lease_row", { "m3:volatility": "publish" });
+    const pubKept = build("m5_blind_the_model", "lease_row", { "m3:volatility": "publish", "m4:directive": "kept" });
+    const pubGiven = build("m5_blind_the_model", "lease_row", { "m3:volatility": "publish", "m4:directive": "given" });
+    expect(pub.texts.join(" ")).toMatch(/FOUR LATTICE NODES/);
+    expect(pubKept.texts[0]).toMatch(/REPO WRIT/);
+    expect(pubKept.texts.slice(1)).toEqual(pub.texts);
+    expect(pubKept.st.spawned.mechs).toBe(pub.st.spawned.mechs + 1);
+    expect(pubGiven.texts).toEqual(pub.texts);
+    expect(pubGiven.wasps).toBe(pub.wasps - 2);
+  });
+
+  it("the file note in the lattice brief names what the Directive cost or bought", () => {
+    const node = SCRIPTS.find((s) => s.id === "m5_lattice")!.nodes.find((x) => x.id === "a")!;
+    expect(spokenLines(node, { "m4:directive": "kept" }, "cells").join(" ")).toMatch(/REPO WRIT/);
+    expect(spokenLines(node, { "m4:directive": "given" }, "cells").join(" ")).toMatch(/AUDIT DRONES CAME OFF LEASE ROW/);
+  });
+
+  it("the hunt ends on a mech kill and hands the file to the lattice brief, on the real runtime", () => {
+    const world = new World(levelById("lease_row"), { ai: false, seed: 9 });
+    const st = createMission("m5_blind_the_model", world, { "m4:directive": "kept" }, "cells", 0)!;
+    expect(current(st)?.kind).toBe("kill");
+    stepMission(st, world, [{ type: "kill", victimKind: "mech" } as unknown as SimEvent]);
+    expect(st.index).toBe(1);
+    expect(current(st)).toMatchObject({ kind: "dialogue", script: "m5_lattice" });
   });
 
   it("the campaign lint reads what a variant prepends: a relay at a node the district lacks is an error", () => {
