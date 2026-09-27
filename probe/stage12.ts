@@ -1,17 +1,19 @@
 /**
- * Stage 12 probe — the opening crawl.
- *  Cyan monospace on black; one paragraph typed then held; scanlines flickering over it; a
- *  glitch tear between paragraphs; ~35 s at 1× (run here at speed, with the schedule checked at
- *  1×); not skippable on the first view, skippable after; a hard cut to silence, then the
- *  MELTDOWN title; the title's click hands the wake to the game underneath.
+ * Stage 12 probe — the opening, since Stage 691 a trailer shown once.
+ *  A browser's first visit plays the trailer: the Higgsfield footage with the opening text's own
+ *  lines typed over it, decoded at no more than thirty seconds, muted until a gesture (the first
+ *  click brings its sound up and does not skip), ending on the MELTDOWN title, whose click hands
+ *  the wake to the game. The second visit boots straight into the game. OPENING TRAILER EVERY
+ *  VISIT brings it back, and SPACE skips it.
  *
  *   npm run probe:crawl
  */
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
-import { CRAWL_TEXT } from "../client/crawl-text";
-import { buildSchedule, crawlDuration, crawlShape, TEAR_SECONDS } from "../client/crawl-schedule";
+import { TRAILER_LINES } from "../client/crawl-text";
+import { MAX_TRAILER_SECONDS, TRAILER } from "../shared/assets/video";
+import { shot } from "./shot";
 
 const VITE_PORT = 5207;
 const OUT = "probe/out";
@@ -60,123 +62,107 @@ async function main(): Promise<void> {
     pg.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
     return pg;
   };
-  const SPEED = 4;
   try {
-    // ---------------- the schedule at 1× ----------------
-    const d = crawlDuration(CRAWL_TEXT);
-    const shape = crawlShape(CRAWL_TEXT);
-    check("the crawl runs ~35 s at 1× (first keystroke to title); the copy shortens paragraph by paragraph and ends on one isolated line", d >= 30 && d <= 40 && shape.shortening && shape.isolatedLast, `${d.toFixed(1)} s · ${shape.count} paragraphs · lengths ${CRAWL_TEXT.map((p) => p.length).join(" > ")}`);
-
-    // ---------------- first view: not skippable ----------------
+    const url = `http://127.0.0.1:${VITE_PORT}/?level=drainage_yard`;
+    // ---------------- the first visit: the trailer plays ----------------
     const a = await newPage("first");
-    await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=1&crawlspeed=${SPEED / 2}&level=drainage_yard`, { waitUntil: "load" });
-    await a.waitForFunction(() => window.__game?.ready === true && !!window.__game.crawl()?.active, null, { timeout: 40000, polling: 20 });
-    // sampled on the crawl's own clock: frames under SwiftShader are slow, so wall time says nothing
-    const samples: { t: number; phase: string; typed: number; p: number }[] = [];
-    const t0 = Date.now();
-    let shot = false;
-    while (Date.now() - t0 < 60000) {
-      const v = await a.evaluate(() => window.__game.crawl()!);
-      samples.push({ t: v.t, phase: v.phase, typed: v.typed, p: v.paragraph });
-      if (!shot && v.phase === "type" && v.typed > 40) {
-        await a.screenshot({ path: `${OUT}/stage12-typing.png` });
-        shot = true;
-      }
-      if (v.paragraph > 0 || v.phase === "tear") break;
-      await a.waitForTimeout(15);
-    }
-    const look = await a.evaluate(() => {
-      const el = document.querySelector("#crawl .txt") as HTMLElement;
-      const root = document.getElementById("crawl")!;
-      const cs = getComputedStyle(el);
-      const rs = getComputedStyle(root);
-      const scan = getComputedStyle(document.querySelector("#crawl .scan")!);
-      return { color: cs.color, font: cs.fontFamily, bg: rs.backgroundColor, scanAnim: scan.animationName, scanBg: scan.backgroundImage.slice(0, 40), z: rs.zIndex };
-    });
-    check("cyan monospace on black, scanlines flickering over it, above everything else", /53,\s*242,\s*255/.test(look.color) && /mono|Menlo|Consolas|Courier/i.test(look.font) && /rgb\(0,\s*0,\s*0\)/.test(look.bg) && look.scanAnim === "crawl-flicker" && /repeating-linear-gradient/.test(look.scanBg) && Number(look.z) >= 1000, `color ${look.color} · font ${look.font.slice(0, 30)} · bg ${look.bg} · scan ${look.scanAnim} · z ${look.z}`);
-    const typing = samples.filter((s) => s.phase === "type" && s.p === 0);
-    const monotone = typing.every((s, i) => i === 0 || s.typed >= typing[i - 1]!.typed);
-    const held = samples.filter((s) => s.phase === "hold" && s.p === 0);
-    check("one paragraph at a time, typed then held: the character count rises monotonically to the full paragraph, then holds it", typing.length >= 4 && monotone && held.length >= 1 && held.every((s) => s.typed === CRAWL_TEXT[0]!.length) && (typing[typing.length - 1]?.typed ?? 0) > typing[0]!.typed, `${typing.length} typing samples ${typing[0]?.typed}→${typing[typing.length - 1]?.typed} · held ${held.length} at ${held[0]?.typed}/${CRAWL_TEXT[0]!.length}`);
-    // the first view cannot be skipped
-    await a.keyboard.press("Space");
-    await a.waitForTimeout(80);
-    const afterSkip = await a.evaluate(() => window.__game.crawl()!);
-    check("the first view is not skippable: SPACE does nothing but the crawl keeps its place", !afterSkip.skippable && !afterSkip.seen && afterSkip.phase !== "cut" && afterSkip.phase !== "title" && afterSkip.paragraph <= 1, `seen ${afterSkip.seen} · skippable ${afterSkip.skippable} · phase ${afterSkip.phase} p${afterSkip.paragraph}`);
-    // photograph a tear: freeze the clock inside the first tear (a tear is 0.35 s at 1×; at speed it is shorter than a screenshot)
-    const firstTear = buildSchedule(CRAWL_TEXT).find((x) => x.kind === "tear")!;
+    await a.goto(url, { waitUntil: "load" });
+    await a.waitForFunction(() => window.__game?.ready === true && window.__game.crawl()?.playing === true, null, { timeout: 40000, polling: 50 });
+    const p0 = await a.evaluate(() => window.__game.crawl()!);
+    await a.waitForTimeout(700);
+    const p1 = await a.evaluate(() => window.__game.crawl()!);
+    check(
+      `a browser's first visit plays the trailer: /video/${TRAILER.file}, decoded by the browser at no more than ${MAX_TRAILER_SECONDS} s, advancing, muted until a gesture`,
+      p0.active && p0.phase === "trailer" && p0.src.endsWith(`/video/${TRAILER.file}`) && p0.duration > 0 && p0.duration <= MAX_TRAILER_SECONDS && Math.abs(p0.duration - TRAILER.seconds) < 0.3 && p1.t > p0.t + 0.3 && p0.muted && !p0.seen,
+      `src ${p0.src.split("/").pop()} · decoded ${p0.duration.toFixed(2)} s (declared ${TRAILER.seconds}) · t ${p0.t.toFixed(2)} → ${p1.t.toFixed(2)} · muted ${p0.muted} · seen before ${p0.seen}`,
+    );
+    // what is on screen while a line is up: footage, and the line typed over it in the terminal's cyan
+    const line = TRAILER_LINES[2]!;
     await a.evaluate(() => window.__game.crawlPause(true));
-    await a.evaluate((t) => window.__game.crawlSeek(t), firstTear.start + TEAR_SECONDS / 2);
-    await a.waitForTimeout(120);
-    const tearFrame = await a.evaluate(() => {
-      const c = window.__game.crawl()!;
-      const root = document.getElementById("crawl")!;
-      return { phase: c.phase, bands: c.bands, tearing: root.classList.contains("tearing"), ghosts: [...root.querySelectorAll(".txt.g1, .txt.g2")].filter((g) => Number(getComputedStyle(g).opacity) > 0.5).length };
+    await a.evaluate((t) => window.__game.crawlSeek(t), (line.at + line.until) / 2);
+    await a.waitForFunction(() => {
+      const v = document.querySelector("#crawl video") as HTMLVideoElement | null;
+      return !!v && !v.seeking && v.readyState >= 2;
+    }, null, { timeout: 10000, polling: 50 });
+    const frame = await a.evaluate(() => {
+      const v = document.querySelector("#crawl video") as HTMLVideoElement;
+      const c = document.createElement("canvas");
+      c.width = 320;
+      c.height = 180;
+      const x = c.getContext("2d")!;
+      x.drawImage(v, 0, 0, c.width, c.height);
+      const d = x.getImageData(0, 0, c.width, c.height).data;
+      let sum = 0, cyan = 0, lit = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        const y = 0.2126 * d[i]! + 0.7152 * d[i + 1]! + 0.0722 * d[i + 2]!;
+        sum += y;
+        if (y > 40) lit++;
+        if (d[i + 2]! > 170 && d[i + 1]! > 170 && d[i]! < 140) cyan++;
+      }
+      return { mean: sum / (d.length / 4), lit, cyan, t: v.currentTime };
     });
-    await a.screenshot({ path: `${OUT}/stage12-tear.png` });
+    const s1 = await shot(a, `${OUT}/stage12-trailer.png`, "#crawl");
+    check(
+      `the trailer is footage, not black, with the opening text's line typed over it in the terminal's cyan (at ${frame.t.toFixed(1)} s: "${line.text}")`,
+      s1.ok && frame.mean > 10 && frame.lit > 2000 && frame.cyan > 150,
+      `${s1.detail} · mean luminance ${frame.mean.toFixed(1)} · lit ${frame.lit} · cyan ${frame.cyan}`,
+    );
+    // the first click brings the sound up and does not skip
+    await a.mouse.click(480, 270);
+    await a.waitForTimeout(150);
+    const clicked = await a.evaluate(() => ({ c: window.__game.crawl()!, live: window.__game.audioLive() }));
+    check("the first click brings the trailer's sound up and wakes the game's audio, and does not skip it", !clicked.c.muted && clicked.c.phase === "trailer" && clicked.live.ready, `muted ${clicked.c.muted} · phase ${clicked.c.phase} · audio ready ${clicked.live.ready}`);
+    // the end: MELTDOWN, and the visit is recorded
+    await a.evaluate((d) => window.__game.crawlSeek(d - 0.6), p0.duration);
     await a.evaluate(() => window.__game.crawlPause(false));
-    await a.waitForFunction(() => window.__game.crawl()?.done === true, null, { timeout: 120000, polling: 100 });
-    const end = await a.evaluate(() => window.__game.crawl()!);
-    check("a glitch tear between paragraphs: three layers sliced into bands and pushed apart, the ghosts tinted magenta and cyan, one tear per paragraph gap", tearFrame.phase === "tear" && tearFrame.tearing && tearFrame.bands.length === 3 && tearFrame.bands.some((b) => Math.abs(b) >= 3) && tearFrame.ghosts === 2 && end.tears === CRAWL_TEXT.length - 1, `phase ${tearFrame.phase} · bands [${tearFrame.bands.join(", ")}] · ghosts ${tearFrame.ghosts} · tears ${end.tears}/${CRAWL_TEXT.length - 1}`);
-    // the cut and the title
-    const cutSeen = samples.length > 0; // placeholder: the cut is checked on the second page where we can watch it closely
-    void cutSeen;
+    const ended = await a.waitForFunction(() => window.__game.crawl()?.phase === "title", null, { timeout: 15000, polling: 50 }).then(() => true, () => false);
+    await a.waitForTimeout(1100);
     const title = await a.evaluate(() => {
-      const w = document.querySelector("#crawl .title .word") as HTMLElement | null;
-      const txt = document.querySelector("#crawl .txt") as HTMLElement;
-      return { word: w?.textContent ?? "", visible: !!w && getComputedStyle(w).display !== "none" && !(w.closest(".title") as HTMLElement).hidden, textHidden: getComputedStyle(txt).visibility === "hidden", hum: window.__game.crawl()!.hum, seen: (() => { try { return localStorage.getItem("meltdown.crawl.seen"); } catch { return null; } })() };
+      const t = document.querySelector("#crawl .title") as HTMLElement;
+      return { word: (t.querySelector(".word") as HTMLElement).textContent, prompt: (t.querySelector(".prompt") as HTMLElement).textContent, visible: !t.hidden && getComputedStyle(t).display !== "none", seen: localStorage.getItem("meltdown.crawl.seen") };
     });
-    await a.waitForTimeout(1200 / SPEED + 300);
     await a.screenshot({ path: `${OUT}/stage12-title.png` });
-    check("hard cut, then the MELTDOWN title: the text is gone, the hum is off, the title is up, and the first view is now recorded", end.done && title.word === "MELTDOWN" && title.visible && title.textHidden && !title.hum && title.seen === "1", `title "${title.word}" visible ${title.visible} · text hidden ${title.textHidden} · hum ${title.hum} · seen ${title.seen}`);
-    // the click hands the wake to the game
+    check("the trailer ends on the MELTDOWN title and its ▲ CLICK TO WAKE, and the visit is recorded", ended && title.word === "MELTDOWN" && /CLICK TO WAKE/.test(title.prompt ?? "") && title.visible && title.seen === "1", `ended ${ended} · "${title.word}" / "${title.prompt}" visible ${title.visible} · seen ${title.seen}`);
     await a.mouse.click(480, 270);
     await a.waitForTimeout(200);
     const gone = await a.evaluate(() => ({ overlay: !!document.getElementById("crawl"), active: window.__game.crawl()?.active ?? false, ready: window.__game.ready }));
     check("the title's click removes the overlay and the game underneath is ready to wake", !gone.overlay && !gone.active && gone.ready, `overlay ${gone.overlay} · active ${gone.active}`);
     await a.close();
 
-    // ---------------- second view: skippable, and the cut is silent ----------------
+    // ---------------- the second visit: once means once ----------------
     const b = await newPage("second");
-    await b.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=1&crawlspeed=${SPEED}&level=drainage_yard`, { waitUntil: "load" });
-    await b.waitForFunction(() => window.__game?.ready === true && !!window.__game.crawl()?.active, null, { timeout: 40000, polling: 50 });
-    const s0 = await b.evaluate(() => ({ c: window.__game.crawl()!, hint: !(document.querySelector("#crawl .skip") as HTMLElement).hidden, hintText: (document.querySelector("#crawl .skip") as HTMLElement).textContent }));
-    await b.waitForTimeout(400);
-    await b.keyboard.press("Space");
-    await b.waitForTimeout(60);
-    const s1 = await b.evaluate(() => window.__game.crawl()!);
-    const titled = await b.waitForFunction(() => window.__game.crawl()?.phase === "title", null, { timeout: 15000, polling: 30 }).then(() => true, () => false);
-    const s2 = await b.evaluate(() => window.__game.crawl()!);
-    void titled;
-    check("after the first view the crawl is skippable: the hint shows, SPACE jumps to the cut (black, silent, ~1.6 s at 1×), then the title", s0.c.seen && s0.c.skippable && s0.hint && /SKIP/.test(s0.hintText ?? "") && s1.phase === "cut" && !s1.hum && s1.typed === 0 && s2.phase === "title" && s2.done, `seen ${s0.c.seen} skippable ${s0.c.skippable} · hint ${s0.hint} "${s0.hintText}" · after SPACE: ${s1.phase} typed ${s1.typed} hum ${s1.hum} · then ${s2.phase} done ${s2.done}`);
+    await b.goto(url, { waitUntil: "load" });
+    await b.waitForFunction(() => window.__game?.ready === true, null, { timeout: 40000, polling: 50 });
+    await b.waitForTimeout(500);
+    const again = await b.evaluate(() => ({ crawl: window.__game.crawl(), overlay: !!document.getElementById("crawl") }));
+    check("the second visit boots straight into the game: the opening shows once", again.crawl === null && !again.overlay, `crawl ${again.crawl ? again.crawl.phase : null} · overlay ${again.overlay}`);
     await b.close();
 
-    // ---------------- the hum is asked for before there is anywhere to make it ----------------
-    // A browser builds no AudioContext without a gesture, and the only listener that resumed audio
-    // was on the canvas — which the crawl overlay covers, swallowing its own clicks. For the whole
-    // crawl the hum, the key per two characters and the tear counted themselves and returned at
-    // `if (!this.ctx) return` (Stage 177). `crawl().hum` is the crawl's own request; `audioLive()`
-    // is whether anything is sounding, and the two came apart for the whole ~35 s.
-    const h = await newPage("hum");
-    await h.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=1&crawlspeed=${SPEED}&level=drainage_yard`, { waitUntil: "load" });
-    await h.waitForFunction(() => window.__game?.ready === true && window.__game.crawl()?.hum === true, null, { timeout: 40000, polling: 50 });
-    const humAsked = await h.evaluate(() => ({ crawl: window.__game.crawl()!, live: window.__game.audioLive() }));
-    // one key that is not a skip, over the overlay that stops its own clicks from bubbling
-    await h.keyboard.press("KeyA");
-    await h.waitForTimeout(250);
-    const humWoke = await h.evaluate(() => ({ crawl: window.__game.crawl()!, live: window.__game.audioLive() }));
-    check("the crawl's hum is asked for before any gesture and sounds the moment one arrives, from a key the overlay would have swallowed", humAsked.crawl.hum && !humAsked.live.ready && !humAsked.live.humming && humWoke.live.ready && humWoke.live.humming && humWoke.crawl.hum, `asked hum ${humAsked.crawl.hum} · before: audio ready ${humAsked.live.ready} humming ${humAsked.live.humming} · after one key: ready ${humWoke.live.ready} humming ${humWoke.live.humming} · phase ${humWoke.crawl.phase}`);
-    await h.close();
+    // ---------------- every visit, when asked; SPACE skips ----------------
+    const e = await newPage("every");
+    await e.goto(url, { waitUntil: "domcontentloaded" });
+    await e.evaluate(() => {
+      const cur = JSON.parse(localStorage.getItem("meltdown.settings") ?? "{}") as Record<string, unknown>;
+      localStorage.setItem("meltdown.settings", JSON.stringify({ ...cur, crawlEveryTime: true }));
+    });
+    await e.goto(url, { waitUntil: "load" });
+    await e.waitForFunction(() => window.__game?.ready === true && window.__game.crawl()?.phase === "trailer", null, { timeout: 40000, polling: 50 });
+    const e0 = await e.evaluate(() => window.__game.crawl()!);
+    await e.keyboard.press("Space");
+    await e.waitForTimeout(100);
+    const e1 = await e.evaluate(() => window.__game.crawl()!);
+    check("OPENING TRAILER EVERY VISIT brings it back, and SPACE skips straight to the title", e0.phase === "trailer" && e0.seen && e0.skippable && e1.phase === "title" && e1.done, `with the setting: ${e0.phase} (seen ${e0.seen}) · after SPACE: ${e1.phase}`);
+    await e.close();
 
-    // ---------------- headless default: no crawl ----------------
+    // ---------------- headless default: no opening ----------------
     const c = await newPage("headless");
     await c.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard`, { waitUntil: "load" });
     await c.waitForFunction(() => window.__game?.ready === true, null, { timeout: 40000, polling: 50 });
     const none = await c.evaluate(() => ({ crawl: window.__game.crawl(), overlay: !!document.getElementById("crawl") }));
-    check("headless probes and ?crawl=0 boot straight into the game; a browser visit gets the crawl", none.crawl === null && !none.overlay, `crawl ${none.crawl} · overlay ${none.overlay}`);
+    check("headless probes and ?crawl=0 boot straight into the game", none.crawl === null && !none.overlay, `crawl ${none.crawl} · overlay ${none.overlay}`);
     await c.close();
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
-    results["crawl"] = { duration: d, paragraphs: CRAWL_TEXT.map((p) => p.length), tears: end.tears, tearFrame };
+    results["trailer"] = { declared: TRAILER.seconds, decoded: p0.duration, frame };
     writeFileSync(`${OUT}/stage12.json`, JSON.stringify({ results, checks }, null, 2));
     const failed = checks.filter((x) => !x.pass);
     console.log(`\n${checks.length - failed.length}/${checks.length} checks passed.`);

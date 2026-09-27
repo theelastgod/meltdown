@@ -1,39 +1,63 @@
+/**
+ * The opening (Stage 691): a trailer of the opening text, shown once.
+ *
+ * The typed crawl played on every visit because the gate that decides whether it plays never read
+ * the "only until seen" flag it was meant to honour. These hold the gate to the owner's rule, the
+ * trailer's lines to the opening text word for word, and the trailer itself to thirty seconds.
+ */
 import { describe, expect, it } from "vitest";
-import { CRAWL_TEXT, DEFAULT_CRAWL, OPENING_TEXT } from "../client/crawl-text";
-import { buildSchedule, crawlAt, crawlDuration, crawlShape, CUT_SECONDS, TEAR_SECONDS, TYPE_CPS } from "../client/crawl-schedule";
+import { readFileSync } from "node:fs";
+import { CRAWL_TEXT, DEFAULT_CRAWL, OPENING_TEXT, TRAILER_LINES } from "../client/crawl-text";
+import { crawlWanted } from "../client/crawl";
+import { TITLE_CARDS } from "../client/menu";
+import { MAX_TRAILER_SECONDS, TRAILER } from "../shared/assets/video";
+import { lintTrailer } from "../shared/assets/lint";
 
-describe("the opening crawl's schedule", () => {
-  it("runs about 35 seconds from the first keystroke to the title, typed then held, a tear between every pair of paragraphs, a cut before the title", () => {
-    const d = crawlDuration(CRAWL_TEXT);
-    expect(d).toBeGreaterThanOrEqual(30);
-    expect(d).toBeLessThanOrEqual(40);
-    const s = buildSchedule(CRAWL_TEXT);
-    expect(s.filter((x) => x.kind === "type").length).toBe(CRAWL_TEXT.length);
-    expect(s.filter((x) => x.kind === "hold").length).toBe(CRAWL_TEXT.length);
-    expect(s.filter((x) => x.kind === "tear").length).toBe(CRAWL_TEXT.length - 1);
-    expect(s.filter((x) => x.kind === "cut").length).toBe(1);
-    // segments abut: no gaps, no overlaps
-    for (let i = 1; i < s.length; i++) expect(s[i]!.start).toBeCloseTo(s[i - 1]!.end, 9);
-    // typed-then-held: the first paragraph types at TYPE_CPS then holds complete
-    const p0 = CRAWL_TEXT[0]!;
-    expect(crawlAt(s, CRAWL_TEXT, 1).typed).toBe(Math.floor(TYPE_CPS));
-    const holdStart = s.find((x) => x.kind === "hold")!.start;
-    expect(crawlAt(s, CRAWL_TEXT, holdStart + 0.1)).toMatchObject({ phase: "hold", paragraph: 0, typed: p0.length });
-    const tear0 = s.find((x) => x.kind === "tear")!;
-    expect(crawlAt(s, CRAWL_TEXT, tear0.start + TEAR_SECONDS / 2).phase).toBe("tear");
-    expect(crawlAt(s, CRAWL_TEXT, tear0.end + 0.01)).toMatchObject({ phase: "type", paragraph: 1, tears: 1 });
-    const cut = s.find((x) => x.kind === "cut")!;
-    expect(crawlAt(s, CRAWL_TEXT, cut.start + CUT_SECONDS / 2)).toMatchObject({ phase: "cut", typed: 0, done: false });
-    expect(crawlAt(s, CRAWL_TEXT, cut.end + 0.01)).toMatchObject({ phase: "title", done: true, tears: CRAWL_TEXT.length - 1 });
+const q = (s = "") => new URLSearchParams(s);
+
+describe("the opening plays once", () => {
+  it("a browser's first visit gets it; once seen, never again, unless the setting asks for every visit", () => {
+    expect(crawlWanted(q(), false, false)).toBe(true);
+    expect(crawlWanted(q(), true, false)).toBe(false);
+    expect(crawlWanted(q(), true, true)).toBe(true);
   });
 
-  it("ships the owner's text verbatim when supplied, else the original copy in the register: paragraphs shorten and the last is one isolated line", () => {
+  it("?crawl=0 never shows it and ?crawl=1 always does; headless probes skip it by default", () => {
+    expect(crawlWanted(q("crawl=0"), false, true)).toBe(false);
+    expect(crawlWanted(q("crawl=1"), true, false)).toBe(true);
+    expect(crawlWanted(q("headless=1"), false, false)).toBe(false);
+    expect(crawlWanted(q("headless=1&crawl=1"), true, false)).toBe(true);
+  });
+
+  it("the boot reads the seen flag and the setting, rather than a gate that ignores both", () => {
+    const main = readFileSync(new URL("../client/main.ts", import.meta.url), "utf8");
+    expect(main).toMatch(/crawlWanted\(bootQ, crawlSeen\(\), game\.settings\.crawlEveryTime\)/);
+  });
+});
+
+describe("the trailer", () => {
+  it("runs no longer than the owner's thirty seconds, and is the file it says it is", () => {
+    expect(TRAILER.seconds).toBeGreaterThan(20);
+    expect(TRAILER.seconds).toBeLessThanOrEqual(MAX_TRAILER_SECONDS);
+    expect(MAX_TRAILER_SECONDS).toBe(30);
+    expect(lintTrailer()).toEqual([]);
+  });
+
+  it("types the opening text's own sentences, word for word, in order, inside its length, ending on the text's last line", () => {
+    const sources = [...CRAWL_TEXT, ...TITLE_CARDS.map((c) => c.toUpperCase())];
+    let last = 0;
+    for (const l of TRAILER_LINES) {
+      expect(sources.some((p) => p.includes(l.text)), `"${l.text}" is not a sentence of the opening text`).toBe(true);
+      expect(l.at).toBeGreaterThanOrEqual(last);
+      expect(l.until).toBeGreaterThan(l.at);
+      expect(l.until).toBeLessThan(TRAILER.seconds);
+      last = l.until;
+    }
+    expect(CRAWL_TEXT[CRAWL_TEXT.length - 1]!.endsWith(TRAILER_LINES[TRAILER_LINES.length - 1]!.text)).toBe(true);
+  });
+
+  it("ships the owner's text verbatim when supplied, else the original copy in the register", () => {
     expect(CRAWL_TEXT).toBe(OPENING_TEXT ?? DEFAULT_CRAWL);
-    const shape = crawlShape(DEFAULT_CRAWL);
-    expect(shape.count).toBeGreaterThanOrEqual(5);
-    expect(shape.shortening).toBe(true);
-    expect(shape.isolatedLast).toBe(true);
-    // the register: no lowercase prose, no quotation marks (nothing quoted from anywhere)
     for (const p of DEFAULT_CRAWL) {
       expect(p).toBe(p.toUpperCase());
       expect(p).not.toMatch(/["“”]/);

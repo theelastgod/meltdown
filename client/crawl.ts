@@ -1,214 +1,196 @@
 /**
- * The opening crawl: cyan monospace on black, one paragraph typed then held, scanlines
- * flickering over it, a glitch tear between paragraphs, ~35 s, skippable after the first view.
- * Then a hard cut to silence and the MELTDOWN title. It sits over the game (which boots
- * underneath) and hands the first real click to the wake.
+ * The opening (Stage 691): a trailer, shown once.
+ *
+ * Until Stage 690 the opening was the crawl: the opening text typed out paragraph by paragraph over
+ * black, ~35 s, on every visit (the "only until seen" setting existed and nothing read it). The
+ * owner asked for it once, and as a trailer. It is now a 29.6 s cut of the game's Higgsfield footage
+ * with the opening text's own lines typed over it, ending on MELTDOWN, then the title and its
+ * ▲ CLICK TO WAKE, which hands the first real click to the game booting underneath.
+ *
+ * It shows on a browser's first visit and never again, unless OPENING TRAILER EVERY VISIT is on.
+ * A browser will not play sound before a gesture, so it starts muted: the first click turns the
+ * sound on and does not skip; SPACE, ENTER or ESC skip to the title. It is marked seen the moment it
+ * starts playing, so a reload halfway through does not play it again. It fails soft: a trailer that
+ * cannot load or decode goes straight to the title.
  *
  *   ?crawl=1 forces it (headless probes skip it by default); ?crawl=0 never shows it;
- *   ?crawlspeed=<k> runs the schedule k× faster (the probe).
+ *   ?crawlspeed=<k> plays it k× faster (the probe).
  */
-import { CRAWL_TEXT } from "./crawl-text";
-import { buildSchedule, crawlAt, crawlDuration, type CrawlState, type Phase } from "./crawl-schedule";
+import { TRAILER } from "@shared/assets/video";
 import type { GameAudio } from "./audio";
 
 const SEEN_KEY = "meltdown.crawl.seen";
 
-export interface CrawlView extends CrawlState {
+export type CrawlPhase = "trailer" | "title";
+
+export interface CrawlView {
   active: boolean;
+  phase: CrawlPhase;
+  /** seconds into the trailer */
+  t: number;
+  /** the trailer's length as the browser decoded it (0 until its metadata is in) */
   duration: number;
-  skippable: boolean;
-  seen: boolean;
-  speed: number;
-  /** the tear's current band offsets (px), for the probe */
-  bands: number[];
-  hum: boolean;
+  done: boolean;
   titleUp: boolean;
+  seen: boolean;
+  skippable: boolean;
+  muted: boolean;
+  /** whether the trailer is advancing */
+  playing: boolean;
+  src: string;
+  speed: number;
 }
 
-export function crawlWanted(q: URLSearchParams): boolean {
+/** whether this browser has already been shown the opening */
+export function crawlSeen(): boolean {
+  try {
+    return localStorage.getItem(SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Whether the opening plays on this boot: once per browser, or every visit when the setting asks. */
+export function crawlWanted(q: URLSearchParams, seen: boolean = crawlSeen(), everyTime = false): boolean {
   const flag = q.get("crawl");
   if (flag === "0") return false;
   if (flag === "1") return true;
-  return !q.has("headless");
+  if (q.has("headless")) return false;
+  return !seen || everyTime;
 }
 
 export class OpeningCrawl {
   readonly root: HTMLDivElement;
-  private txt: HTMLDivElement;
-  private ghosts: HTMLDivElement[];
+  private video: HTMLVideoElement;
   private title: HTMLDivElement;
   private prompt: HTMLDivElement;
-  private skipHint: HTMLDivElement;
-  private schedule = buildSchedule(CRAWL_TEXT);
-  private t = 0;
-  private last = 0;
-  private state: CrawlState;
-  private raf = 0;
-  private lastTick = -1;
-  private tearsPlayed = 0;
-  private bands: number[] = [];
-  private humOn = false;
+  private hint: HTMLDivElement;
+  private phase: CrawlPhase = "trailer";
   readonly seen: boolean;
   readonly speed: number;
   active = true;
-  /** the probe freezes the clock to photograph a tear; the tear's bands keep moving */
-  paused = false;
   private resolve!: () => void;
   readonly finished: Promise<void>;
   onFinish: (() => void) | null = null;
 
   constructor(private audio: GameAudio | null, speed = 1) {
     this.speed = speed;
-    let seen = false;
-    try {
-      seen = localStorage.getItem(SEEN_KEY) === "1";
-    } catch {
-      seen = false;
-    }
-    this.seen = seen;
+    this.seen = crawlSeen();
     this.finished = new Promise((r) => (this.resolve = r));
     const root = document.createElement("div");
     root.id = "crawl";
-    // the scanline pass is the last child: it lies over the text and the title alike
-    root.innerHTML = `<div class="body"><div class="txt"></div><div class="txt g1"></div><div class="txt g2"></div></div><div class="title" hidden><div class="word">MELTDOWN</div><div class="prompt">▲ CLICK TO WAKE</div></div><div class="skip" hidden>[SPACE] SKIP</div><div class="scan"></div>`;
+    root.innerHTML = `<video class="tv" playsinline muted preload="auto"></video><div class="title" hidden><div class="word">MELTDOWN</div><div class="prompt">▲ CLICK TO WAKE</div></div><div class="skip">CLICK FOR SOUND · [SPACE] SKIP</div><div class="scan"></div>`;
     document.body.appendChild(root);
     this.root = root;
-    this.txt = root.querySelector(".txt")!;
-    this.ghosts = [root.querySelector(".g1")!, root.querySelector(".g2")!];
+    this.video = root.querySelector("video")!;
     this.title = root.querySelector(".title")!;
     this.prompt = root.querySelector(".prompt")!;
-    this.skipHint = root.querySelector(".skip")!;
-    this.skipHint.hidden = !seen;
-    this.state = crawlAt(this.schedule, CRAWL_TEXT, 0);
+    this.hint = root.querySelector(".skip")!;
+    const v = this.video;
+    v.muted = true;
+    v.src = `/video/${TRAILER.file}`;
+    v.playbackRate = speed;
+    v.addEventListener("playing", () => this.markSeen(), { once: true });
+    v.addEventListener("ended", () => this.toTitle());
+    v.addEventListener("error", () => this.toTitle());
+    void v.play().catch(() => {
+      /* refused even muted: the title still waits for the click */
+      if (v.paused && v.readyState === 0) this.toTitle();
+    });
     root.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (this.state.done) this.finish(true);
-      else this.skip();
+      if (this.phase === "title") this.finish(true);
+      else this.unmute();
     });
     document.addEventListener("keydown", this.onKey);
-    this.last = performance.now();
-    this.raf = requestAnimationFrame(this.frame);
+  }
+
+  private markSeen(): void {
+    try {
+      localStorage.setItem(SEEN_KEY, "1");
+    } catch {
+      /* no storage */
+    }
+  }
+
+  /** the first gesture: the trailer's own sound comes up, and the game's audio wakes with it */
+  private unmute(): void {
+    if (!this.video.muted) return;
+    this.video.muted = false;
+    this.audio?.resume();
+    this.hint.textContent = "[SPACE] SKIP";
   }
 
   private onKey = (e: KeyboardEvent): void => {
     if (!this.active) return;
-    if (this.state.done) {
+    if (this.phase === "title") {
       if (e.code === "Space" || e.code === "Enter") this.finish(false);
       return;
     }
     if (e.code === "Space" || e.code === "Escape" || e.code === "Enter") this.skip();
+    else this.unmute();
   };
 
-  /** The probe's seek: moves the clock and renders now. */
+  /** The probe's seek: moves the trailer's clock. */
   seek(t: number): void {
-    this.t = Math.max(0, t);
-    this.render();
+    if (this.phase !== "trailer") return;
+    this.video.currentTime = Math.max(0, t);
   }
 
-  /** Skippable after the first view: jumps to the cut. */
+  set paused(on: boolean) {
+    if (on) this.video.pause();
+    else if (this.phase === "trailer") void this.video.play().catch(() => undefined);
+  }
+
+  get paused(): boolean {
+    return this.video.paused;
+  }
+
+  /** SPACE, ENTER or ESC: straight to the title. */
   skip(): boolean {
-    if (!this.seen || this.state.done) return false;
-    const cut = this.schedule.find((s) => s.kind === "cut")!;
-    this.t = cut.start;
-    this.render(); // take effect now, not on the next frame
+    if (this.phase !== "trailer") return false;
+    this.toTitle();
     return true;
   }
 
-  private frame = (now: number): void => {
-    if (!this.active) return;
-    // never negative: the first rAF timestamp is the START of the frame in progress, which can
-    // predate the performance.now() the constructor stored a moment earlier. seek() has clamped its
-    // clock since Stage 12; the frame loop had not, and one backwards step was enough to run the
-    // schedule off its front edge.
-    const dt = Math.max(0, Math.min(0.25, (now - this.last) / 1000));
-    this.last = now;
-    if (!this.paused) this.t += dt * this.speed;
-    this.render();
-    this.raf = requestAnimationFrame(this.frame);
-  };
-
-  private render(): void {
-    const prev = this.state;
-    const s = crawlAt(this.schedule, CRAWL_TEXT, this.t);
-    this.state = s;
-    const text = CRAWL_TEXT[s.paragraph] ?? "";
-    const shown = s.phase === "cut" || s.phase === "title" ? "" : text.slice(0, s.typed) + (s.phase === "type" ? "▮" : "");
-    if (this.txt.textContent !== shown) {
-      this.txt.textContent = shown;
-      for (const g of this.ghosts) g.textContent = shown.replace("▮", "");
-    }
-    // the hum runs under the text and stops dead at the cut
-    const wantHum = s.phase !== "cut" && s.phase !== "title";
-    if (wantHum !== this.humOn) {
-      this.humOn = wantHum;
-      this.audio?.crawlHum(wantHum);
-    }
-    if (s.phase === "type" && s.typed !== this.lastTick && s.typed % 2 === 0) {
-      this.lastTick = s.typed;
-      this.audio?.crawlTick();
-    }
-    if (s.phase === "tear") {
-      if (s.tears + 1 > this.tearsPlayed) {
-        this.tearsPlayed = s.tears + 1;
-        this.audio?.tear();
-      }
-      this.tear(true);
-    } else if (prev.phase === "tear") this.tear(false);
-    const titleUp = s.phase === "title";
-    // derived every frame rather than latched once: the branch below is edge-triggered and fires on
-    // BOTH transitions, so a hint hidden on the way into the title never came back on the way out.
-    const wantHint = this.seen && !titleUp;
-    if (this.skipHint.hidden === wantHint) this.skipHint.hidden = !wantHint;
-    if (this.title.hidden === titleUp) {
-      this.title.hidden = !titleUp;
-      this.root.classList.toggle("cut", s.phase === "cut" || titleUp);
-      this.root.classList.toggle("titled", titleUp);
-      if (titleUp) {
-        try {
-          localStorage.setItem(SEEN_KEY, "1");
-        } catch {
-          /* no storage */
-        }
-        this.prompt.style.opacity = "0";
-        setTimeout(() => (this.prompt.style.opacity = "1"), 900 / this.speed);
-      }
-    } else if (s.phase === "cut" && !this.root.classList.contains("cut")) this.root.classList.add("cut");
-  }
-
-  /** The glitch tear: three ghost layers, random horizontal bands shifted apart, chromatic tint. */
-  private tear(on: boolean): void {
-    this.root.classList.toggle("tearing", on);
-    if (!on) {
-      this.bands = [];
-      for (const g of [this.txt, ...this.ghosts]) {
-        g.style.clipPath = "";
-        g.style.transform = "";
-      }
-      return;
-    }
-    const layers = [this.txt, ...this.ghosts];
-    this.bands = [];
-    layers.forEach((el, i) => {
-      const top = Math.random() * 70;
-      const h = 8 + Math.random() * 22;
-      const dx = (Math.random() * 2 - 1) * (10 + i * 14);
-      this.bands.push(Math.round(dx));
-      el.style.clipPath = i === 0 ? `inset(0 0 ${Math.max(0, 100 - top).toFixed(1)}% 0)` : `inset(${top.toFixed(1)}% 0 ${Math.max(0, 100 - top - h).toFixed(1)}% 0)`;
-      el.style.transform = `translateX(${dx.toFixed(1)}px)`;
-    });
+  private toTitle(): void {
+    if (this.phase === "title" || !this.active) return;
+    this.phase = "title";
+    this.markSeen();
+    this.video.pause();
+    this.root.classList.add("titled");
+    this.title.hidden = false;
+    this.hint.hidden = true;
+    this.prompt.style.opacity = "0";
+    setTimeout(() => (this.prompt.style.opacity = "1"), 900 / this.speed);
   }
 
   view(): CrawlView {
-    return { ...this.state, active: this.active, duration: crawlDuration(CRAWL_TEXT), skippable: this.seen && !this.state.done, seen: this.seen, speed: this.speed, bands: this.bands.slice(), hum: this.humOn, titleUp: this.state.done };
+    const v = this.video;
+    return {
+      active: this.active,
+      phase: this.phase,
+      t: v.currentTime,
+      duration: Number.isFinite(v.duration) ? v.duration : 0,
+      done: this.phase === "title",
+      titleUp: this.phase === "title",
+      seen: this.seen,
+      skippable: this.phase === "trailer",
+      muted: v.muted,
+      playing: !v.paused && !v.ended && v.readyState > 2,
+      src: v.currentSrc || v.src,
+      speed: this.speed,
+    };
   }
 
   /** The title's click: the overlay goes, the wake takes the gesture. */
   finish(fromClick: boolean): void {
     if (!this.active) return;
     this.active = false;
-    cancelAnimationFrame(this.raf);
     document.removeEventListener("keydown", this.onKey);
-    this.audio?.crawlHum(false);
+    this.video.pause();
+    this.video.removeAttribute("src");
+    this.video.load();
     this.root.remove();
     if (fromClick) {
       this.audio?.resume();

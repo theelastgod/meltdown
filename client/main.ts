@@ -6,7 +6,7 @@ import { Menu, menuWanted, type MenuView } from "./menu";
 import { walletAct, walletState } from "./wallet";
 import { COUNTER_URL, HOSTS } from "./config";
 import { clampSettings, saveSettings, type Settings } from "./settings";
-import { crawlWanted, OpeningCrawl, type CrawlView } from "./crawl";
+import { crawlSeen, crawlWanted, OpeningCrawl, type CrawlView } from "./crawl";
 import { parseTag } from "@shared/identity/identity";
 import type { counterView } from "@shared/economy/counter";
 import { Game, type NetConfig } from "./game";
@@ -419,7 +419,8 @@ registerServiceWorker();
 
 /** The opening crawl plays over the booting game; headless probes skip it unless they ask for it. */
 const bootQ = new URLSearchParams(location.search);
-const crawl = crawlWanted(bootQ) ? new OpeningCrawl(game.audio, Number(bootQ.get("crawlspeed") ?? 1) || 1) : null;
+// the opening trailer plays once per browser (Stage 691), or every visit when the setting asks
+const crawl = crawlWanted(bootQ, crawlSeen(), game.settings.crawlEveryTime) ? new OpeningCrawl(game.audio, Number(bootQ.get("crawlspeed") ?? 1) || 1) : null;
 /**
  * The WALLET page's ledger host when the file has none (the title menu has no room and no `?shop=`):
  * the built counter-ledger, and in development nothing — the page says so instead of failing a fetch

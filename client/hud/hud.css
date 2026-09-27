@@ -436,6 +436,10 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #crawl .title .prompt { color: var(--mg); font-size: 12px; letter-spacing: 0.2em; text-shadow: 0 0 4px rgba(255,62,201,0.5); transition: opacity 0.3s; }
 #crawl .skip { position: absolute; right: 18px; bottom: 14px; font-size: 11px; color: rgba(53,242,255,0.55); letter-spacing: 0.15em; }
 #crawl .skip[hidden] { display: none; }
+/* the opening trailer (Stage 691): the footage fills the screen under the scanlines; the title takes over on black */
+#crawl .tv { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+#crawl.titled .tv { visibility: hidden; }
+#crawl .skip { z-index: 4; }
 
 /* ---- the CRT menu flow (Stage 13): title cards, the main menu, pause, settings ---- */
 #menu { position: fixed; inset: 0; z-index: 900; background: #000; color: var(--cy); font-family: var(--mono); overflow: hidden; }

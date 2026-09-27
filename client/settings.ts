@@ -15,7 +15,7 @@ export interface Settings {
   bed: number;
   /** CRT post intensity (grain, aberration, scanlines, vignette) 0..1.5 */
   crt: number;
-  /** show the opening crawl on every visit (else only until seen; it stays skippable) */
+  /** play the opening trailer on every visit (else once per browser; it is always skippable) */
   crawlEveryTime: boolean;
   /** the view: third person is the game's (the trailer's); this puts the camera in the head (Stage 60) */
   firstPerson: boolean;
@@ -80,7 +80,7 @@ export const SETTING_LABELS: Record<keyof Settings, string> = {
   sfx: "SFX",
   bed: "CITY BED",
   crt: "CRT",
-  crawlEveryTime: "OPENING CRAWL EVERY VISIT",
+  crawlEveryTime: "OPENING TRAILER EVERY VISIT",
   firstPerson: "FIRST-PERSON VIEW",
 };
 

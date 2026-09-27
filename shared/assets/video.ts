@@ -72,6 +72,26 @@ export const VIDEOS: readonly VideoDef[] = [
 ];
 
 /**
+ * The opening trailer (Stage 691): the one full-screen video, played once per browser before the
+ * title. Not a screen clip, so not under the screens' ceilings: it has its own, and the owner's
+ * rule — thirty seconds at most — is one of them. WebM for the same reason as the clips.
+ */
+export interface TrailerDef {
+  id: string;
+  file: string;
+  width: number;
+  height: number;
+  seconds: number;
+  bytes: number;
+  sha256: string;
+  provenance: string;
+}
+export const MAX_TRAILER_SECONDS = 30;
+export const MAX_TRAILER_BYTES = 8 * 1024 * 1024;
+export const MAX_TRAILER_EDGE = 1280;
+export const TRAILER: TrailerDef = { id: "vid_trailer", file: "trailer.webm", width: 1280, height: 720, seconds: 29.7, bytes: 5892170, sha256: "f7de66910d64abfc2661dc1cc543c217e51cc1efe03571cee60bfcef34bd40ff", provenance: "cut 2026-09-27 from the Higgsfield footage (the hero clips, the city ads, and four seedance_2_5 clips animated from the Stage 684 gig stills) to the supplied bed, the opening text typed over it; VP9 + Opus" };
+
+/**
  * Where the clips are served from.
  *
  * They ship in `public/video` today, which is what lets CI check them. `VITE_VIDEO_BASE` points the

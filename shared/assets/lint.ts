@@ -12,7 +12,7 @@ import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { ASSETS, ASSET_BUDGET_BYTES, MAX_ASSET_BYTES, MAX_TEXTURE_EDGE, type AssetDef } from "./manifest";
 import { PLATE_POOLS, pooledPlates, reachablePlates, UNDRAWN_PLATES } from "./plates";
-import { MAX_VIDEO_BYTES, MAX_VIDEO_EDGE, VIDEO_BUDGET_BYTES, VIDEOS, type VideoDef } from "./video";
+import { MAX_TRAILER_BYTES, MAX_TRAILER_EDGE, MAX_TRAILER_SECONDS, MAX_VIDEO_BYTES, MAX_VIDEO_EDGE, TRAILER, VIDEO_BUDGET_BYTES, VIDEOS, type TrailerDef, type VideoDef } from "./video";
 
 /** Every file that may name a plate: the renderer, and the cosmetics catalog a player's equipped
  *  skin is bound from. Read as text, never imported, so listing the catalog here does not put
@@ -137,6 +137,30 @@ export function lintPlatesAreDrawn(assets: readonly AssetDef[] = ASSETS, sources
 
   const ids = new Set(assets.map((a) => a.id));
   for (const id of recorded) if (!ids.has(id)) out.push({ asset: id, rule: "undrawn-ghost", detail: "is on UNDRAWN_PLATES but is not an asset any more" });
+  return out;
+}
+
+/**
+ * The opening trailer (Stage 691): the file on disk is the file declared, a WebM the CI browser can
+ * decode, no wider than 1280, no heavier than its ceiling, and no longer than the owner's thirty
+ * seconds. The decoded length is read again in the browser by probe:crawl.
+ */
+export function lintTrailer(t: TrailerDef = TRAILER, root = "."): AssetViolation[] {
+  const out: AssetViolation[] = [];
+  if (!t.provenance.trim()) out.push({ asset: t.id, rule: "provenance", detail: "no note on where it came from" });
+  let buf: Buffer;
+  try {
+    buf = readFileSync(resolve(root, "public/video", t.file));
+  } catch {
+    return [...out, { asset: t.id, rule: "file-exists", detail: `public/video/${t.file} is not there` }];
+  }
+  if (buf.length !== t.bytes) out.push({ asset: t.id, rule: "declared-bytes", detail: `manifest says ${t.bytes}, the file is ${buf.length}` });
+  if (buf.length > MAX_TRAILER_BYTES) out.push({ asset: t.id, rule: "trailer-budget", detail: `${buf.length} bytes over the ${MAX_TRAILER_BYTES} ceiling` });
+  const sha = createHash("sha256").update(buf).digest("hex");
+  if (sha !== t.sha256) out.push({ asset: t.id, rule: "sha256", detail: `manifest says ${t.sha256.slice(0, 12)}…, the file is ${sha.slice(0, 12)}…` });
+  if (buf.length < 4 || buf[0] !== 0x1a || buf[1] !== 0x45 || buf[2] !== 0xdf || buf[3] !== 0xa3) out.push({ asset: t.id, rule: "clip-webm", detail: "is not a WebM" });
+  if (Math.max(t.width, t.height) > MAX_TRAILER_EDGE) out.push({ asset: t.id, rule: "clip-edge", detail: `${t.width}×${t.height} over the ${MAX_TRAILER_EDGE} edge` });
+  if (!(t.seconds > 0) || t.seconds > MAX_TRAILER_SECONDS) out.push({ asset: t.id, rule: "trailer-length", detail: `${t.seconds} s: the trailer runs at most ${MAX_TRAILER_SECONDS} s` });
   return out;
 }
 

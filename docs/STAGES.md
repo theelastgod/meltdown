@@ -1641,6 +1641,82 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 691 — The opening played every visit, and it was text
+
+**The ask.** The owner: "Neo-China opening text ending in meltdown should only display once", and
+"Neo-China opening message should be reconfigured as a trailer using higgsfield. 30 seconds max.
+You can reuse clips already generated in higgsfield and make more".
+
+**Why it played every time.** `crawlWanted` returned true for every browser visit. The crawl
+recorded a "seen" flag and SETTINGS had OPENING CRAWL EVERY VISIT, off by default, but the gate
+that decides whether it plays read neither.
+
+**The change.**
+
+- **Once.** The gate reads the seen flag and the setting: a browser's first visit gets the opening,
+  every later one boots straight into the game, and OPENING TRAILER EVERY VISIT brings it back. It
+  is marked seen the moment it starts playing, so a reload halfway through does not replay it.
+- **A trailer.** The opening is now a 29.7 s video (`public/video/trailer.webm`, VP9 + Opus,
+  1280x720, 5.9 MB) in place of the typed crawl:
+  - the Higgsfield footage already made for the game: the hero clips and the city's ads;
+  - four new `seedance_2_5` clips animated from the Stage 684 gig stills: citizens caught in the
+    searchlight, drones looping the plaza, the Blank leading the woken cell, the lattice falling;
+  - the opening text's own lines typed over it in the terminal's cyan: NEO-CHINA. / EVERY MIND IN
+    NEO-CHINA IS LEASED. / VANTAGE WAS THE COLLECTIONS DEPARTMENT. / BY THE HOUR. WITH INTEREST. /
+    IT AUDITED THE AUDITORS. / THE CITY CALLED IT A BLANK. / THERE WERE FOUR. THEN FORTY. /
+    SOMETHING IS ARRIVING FROM NEXT YEAR. / IT KNOWS YOUR NAME.;
+  - cut to the supplied bed: its intro into the drop, then its build to the peak and the decay under
+    MELTDOWN.
+
+  Then the title and its CLICK TO WAKE, as before.
+- **Playing it in a browser.** It starts muted, because a browser will not play sound before a
+  gesture. The first click brings its sound up and wakes the game's audio without skipping; SPACE,
+  ENTER or ESC skip to the title. A trailer that cannot load goes straight to the title.
+- **The lines and the build.** The lines are `TRAILER_LINES` in `client/crawl-text.ts`. The build
+  script (`docs/brand/trailer/build.sh`) burns exactly those, and a shareable H.264 cut for socials
+  is `docs/brand/trailer/MELTDOWN_trailer_30s.mp4` (7.7 MB).
+
+`TRAILER` in `shared/assets/video.ts` has its own ceilings, since it is not a screen clip: WebM,
+1280 px, 8 MB, and the owner's 30 s. `lintTrailer` checks the file against its declared bytes and
+hash.
+
+**Removed with the crawl.** `client/crawl-schedule.ts` and the tests of its typing schedule
+(`tests/crawlclock.test.ts`, and the schedule case in `tests/crawl.test.ts`), 8 tests of a feature
+that no longer exists. The unit count goes 1535 → 1533: six new tests in, eight schedule tests out.
+`GameAudio`'s crawl hum and its tests stay; nothing plays the hum now.
+
+**The guards.**
+
+- `tests/crawl.test.ts` (6):
+  - the gate's whole matrix: first visit, seen, seen with the setting, `crawl=0`, `crawl=1`,
+    headless;
+  - the boot passing the seen flag and the setting;
+  - the trailer at no more than 30 s and clean under `lintTrailer`;
+  - every typed line a sentence of the opening text or the title card, word for word, in order,
+    ending on the text's last line.
+- probe:crawl, rewritten (9/9):
+  - a first visit plays `/video/trailer.webm`, decoded by the browser at 29.70 s, advancing, muted;
+  - a paused frame is footage, not black (mean luminance 56), with the cyan line on it;
+  - the first click unmutes and does not skip;
+  - it ends on MELTDOWN / ▲ CLICK TO WAKE with the visit recorded, and the title's click hands over
+    to the game;
+  - the second visit shows nothing;
+  - the every-visit setting brings it back, and SPACE skips.
+
+Two mutations were each caught: the gate ignoring the seen flag, the old bug (unit), and the boot
+passing "not seen" (probe:crawl, 8/9, the second visit showed the trailer).
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1533 tests; lint:assets 0 violations;
+probe:crawl 9/9, probe:ship 16/16, probe:mobile 40/40; `npm run build` (the trailer ships in
+`dist/video`). Higgsfield: 140 credits for the four clips.
+
+**Proof.** In `docs/proof/stage691/`:
+
+- `trailer-frame.png`: the probe's paused frame, VANTAGE WAS THE COLLECTIONS DEPARTMENT. over
+  the eye;
+- `title.png`: the title after it;
+- `trailer-sheet.jpg`: one frame per line.
+
 ## Stage 690 — The wallet had no page
 
 **The ask.** The owner: "add a wallet connect ... page".
