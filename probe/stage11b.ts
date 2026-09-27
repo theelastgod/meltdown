@@ -242,7 +242,7 @@ async function main(): Promise<void> {
     await shotCheck(b, `stage11b-rig.png`);
     const alphaSeen = seenByB.find((r) => r.name === "ALPHA" || r.skin === 1);
     const bravoSeen = seenByA[0];
-    check("in the next match the other client's snapshot carries the worn skin as a token id in the tag and nothing else of the purchase; the file that wears nothing keeps the four-segment tag", !!alphaSeen && alphaSeen.skin === 1 && /^[0-9a-z]+\.\d\.-?\d+\.\d\.1$/.test(alphaSeen.tag) && !!bravoSeen && bravoSeen.skin === 0 && bravoSeen.tag.split(".").length === 4 && !/rust|#d86a2a|wake|price/i.test(rawRemote), `BRAVO sees ${alphaSeen?.name} [${alphaSeen?.tag}] skin ${alphaSeen?.skin} · ALPHA sees [${bravoSeen?.tag}] · remote keys ${Object.keys(JSON.parse(rawRemote)).join(",")}`);
+    check("in the next match the other client's snapshot carries the worn skin as a token id in the tag and nothing else of the purchase; the file that wears nothing keeps the four-segment tag", !!alphaSeen && alphaSeen.skin === 1 && /^[0-9a-z]+\.\d\.-?\d+\.\d\.1(\.[0-9a-z]+)?$/.test(alphaSeen.tag) && !!bravoSeen && bravoSeen.skin === 0 && bravoSeen.tag.split(".").length === 4 && !/rust|#d86a2a|wake|price/i.test(rawRemote), `BRAVO sees ${alphaSeen?.name} [${alphaSeen?.tag}] skin ${alphaSeen?.skin} · ALPHA sees [${bravoSeen?.tag}] · remote keys ${Object.keys(JSON.parse(rawRemote)).join(",")}`);
     const t0 = Date.now();
     let phase = "";
     while (Date.now() - t0 < 60000 && phase !== "results") {

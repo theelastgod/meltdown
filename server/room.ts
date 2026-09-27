@@ -1054,6 +1054,8 @@ export class Room {
       const note = rec.progress.onEvents(tickEvents, p, rec.playerId, this.tick, this.world.wasps);
       if (note) {
         this.saveAccount(rec.account);
+        // a rank landing mid-round may be the cap: the others see the finish from the next snapshot
+        if (note.ranks.length) this.refreshIdentity(rec);
         rec.conn?.send(encodeFile(this.fileMsg(rec, note.stamps.map((id) => `STAMP · ${stampLine(id)}`), "stamp", note)));
       }
     }

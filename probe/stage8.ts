@@ -228,7 +228,7 @@ async function main(): Promise<void> {
     const ra = await a.evaluate(() => window.__game.net()!.remotes.map((r) => ({ id: r.id, name: r.name, tag: r.tag })));
     const alphaSeen = rb.find((r) => r.id === ids.a);
     const bravoSeen = ra.find((r) => r.id === ids.b);
-    check("over-the-head tags: others see ALPHA by name at Chapter III and BRAVO as BLANK; the tag carries glyph seed, chapter and moniker only", alphaSeen?.name === "ALPHA" && /\.3\.\d+\.\d$/.test(alphaSeen?.tag ?? "") && bravoSeen?.name === "BLANK" && /\.0\.-1\.\d$/.test(bravoSeen?.tag ?? ""), `BRAVO sees ${alphaSeen?.name} [${alphaSeen?.tag}] · ALPHA sees ${bravoSeen?.name} [${bravoSeen?.tag}]`);
+    check("over-the-head tags: others see ALPHA by name at Chapter III and BRAVO as BLANK; the tag carries glyph seed, chapter and moniker only (and the sandbox file's mastery finish mask)", alphaSeen?.name === "ALPHA" && /\.3\.\d+\.\d(\.\d+\.[0-9a-z]+)?$/.test(alphaSeen?.tag ?? "") && bravoSeen?.name === "BLANK" && /\.0\.-1\.\d$/.test(bravoSeen?.tag ?? ""), `BRAVO sees ${alphaSeen?.name} [${alphaSeen?.tag}] · ALPHA sees ${bravoSeen?.name} [${bravoSeen?.tag}]`);
 
     // ---- kills: tiers, Debts (all inside round one) ----
     const ph0 = await waitPhase("wake", 40000);
@@ -362,7 +362,7 @@ async function main(): Promise<void> {
     const allSocial = [...(await a.evaluate(() => window.__game.state().social)), ...(await b.evaluate(() => window.__game.state().social)), ...(await c.evaluate(() => window.__game.state().social))];
     const leaks = allSocial.flatMap((m) => mechanicalLeaks(m));
     const tags = [...rb, ...ra].map((r) => r.tag);
-    check("identity leaks nothing mechanical: every social payload and every tag passes the scanner (which does catch a loadout)", allSocial.length >= 8 && leaks.length === 0 && tags.every((t) => /^[0-9a-z]+\.\d\.-?\d+\.\d$/.test(t)) && mechanicalLeaks({ display: "X", attested: ["slipfile"] }).length >= 2, `${allSocial.length} social messages · ${leaks.length} leaks · tags [${tags.join(" ")}] · control: ${mechanicalLeaks({ display: "X", attested: ["slipfile"] }).length} flagged`);
+    check("identity leaks nothing mechanical: every social payload and every tag passes the scanner (which does catch a loadout)", allSocial.length >= 8 && leaks.length === 0 && tags.every((t) => /^[0-9a-z]+\.\d\.-?\d+\.\d(\.\d+\.[0-9a-z]+)?$/.test(t)) && mechanicalLeaks({ display: "X", attested: ["slipfile"] }).length >= 2, `${allSocial.length} social messages · ${leaks.length} leaks · tags [${tags.join(" ")}] · control: ${mechanicalLeaks({ display: "X", attested: ["slipfile"] }).length} flagged`);
     const stSoc = (await stats()).rooms[room]!.social;
     results["online"] = { ids, flash, social: stSoc, alpha: sa2, charlie: sc, tags };
     if (checks.some((x) => !x.pass)) {

@@ -1641,6 +1641,32 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 687 — Remote players did not show the mastery finish
+
+**The gap.** Stage 675 drew a weapon at mastery rank 30 with inlay lines, on the local viewmodel and
+the local held model only. A remote's held weapon was built from `weaponStripGeometry(slot)`, which
+always built the plain gun, and nothing about a file's mastery reached other players.
+
+**The change.** `publicIdentity` carries `finish`, a bitmask with one bit per weapon in rack order,
+set when the server's own record of the file has that weapon at the cap. The identity tag gains an
+optional sixth segment for it; the tag is resent only when it changes, so the finish adds no bytes
+per tick, and a rank that lands mid-round refreshes it. The join is read for the moniker only, so a
+client cannot claim a finish. `holdRemoteWeapon()` in `client/render/rig.ts` builds a remote's strip
+with the inlays exactly when the tag has the bit for the weapon in its hand; the finish is merged
+into the strip, so it adds no draw call. Cosmetic only: `lint:fairness` is unchanged, and
+`shared/identity` imports nothing from `shared/economy` or `server/chain`.
+
+**The guards.** `tests/remotefinish.test.ts` drives a real Room and decodes what it sent the other
+client, then measures the remote strip against the Stage 675 viewmodels: finished for a mastered
+weapon, plain for an unmastered one and for a fresh file, finished after a rank 30 lands mid-round,
+and nothing for a join that claims every finish. Seven mutations were each caught (never sent,
+always drawn, any weapon instead of the held one, strip ignoring mastery, no rebuild, no mid-round
+refresh, any rank). probe:identity and probe:counter accept the optional tag segment.
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1505 tests; lint:fairness PASS with debt 89
+unchanged; lint:economy 0 violations; probe:identity 25/25, probe:counter 18/18, probe:body 21/21,
+probe:tps 50/50.
+
 ## Stage 686 — The Directive changed nothing until the end
 
 **The gap.** Mission 4 asks whether to keep the Directive or give it to Ida. Two things read the

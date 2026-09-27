@@ -11,7 +11,8 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { MOVE } from "../../shared/sim/constants";
-import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
+import { WEAPON_LIST, weaponBySlot, type WeaponId } from "@shared/weapons/manifest";
+import { parseTag, wearsFinish } from "@shared/identity/identity";
 import { bindPlate, PALETTE } from "./city";
 import { buildViewmodel } from "./weapons";
 import { markShared, release } from "./dispose";
@@ -272,7 +273,7 @@ function weaponParts(id: WeaponId, lit: boolean): THREE.BufferGeometry[] {
 
 const cloakCache = new Map<string, THREE.BufferGeometry>();
 let trimCache: THREE.BufferGeometry | null = null;
-const stripCache = new Map<WeaponId, THREE.BufferGeometry>();
+const stripCache = new Map<string, THREE.BufferGeometry>();
 
 /** the cloak geometry, shared: with a weapon baked in for a remote's slot, bare for the local rig */
 export function cloakGeometry(slot: WeaponId | null): THREE.BufferGeometry {
@@ -348,11 +349,15 @@ export function trimGeometry(): THREE.BufferGeometry {
   return trimCache;
 }
 
-/** a remote's weapon strip: the unlit parts of the weapon, socket-local, in the tracer colour */
-export function weaponStripGeometry(id: WeaponId): THREE.BufferGeometry {
-  let g = stripCache.get(id);
+/**
+ * a remote's weapon strip: the unlit parts of the weapon, socket-local, in the tracer colour. With
+ * `mastered` it carries the mastery finish's inlays, which the viewmodel merges into its first strip.
+ */
+export function weaponStripGeometry(id: WeaponId, mastered = false): THREE.BufferGeometry {
+  const key = mastered ? `${id}+finish` : id;
+  let g = stripCache.get(key);
   if (!g) {
-    const vm = buildViewmodel(id);
+    const vm = buildViewmodel(id, mastered);
     const local = new THREE.Matrix4().makeRotationY(WEAPON_IN_SOCKET.rotationY).multiply(new THREE.Matrix4().makeTranslation(...WEAPON_IN_SOCKET.position));
     const parts: THREE.BufferGeometry[] = [];
     for (const o of vm.children) {
@@ -364,7 +369,7 @@ export function weaponStripGeometry(id: WeaponId): THREE.BufferGeometry {
     const out = mergeGeometries(parts, false);
     for (const p of parts) p.dispose();
     g = markShared(out ?? new THREE.BufferGeometry());
-    stripCache.set(id, g);
+    stripCache.set(key, g);
   }
   return g;
 }
@@ -439,12 +444,27 @@ export function buildRig(slot: WeaponId | null = null): Rig {
 }
 
 /** put a remote's weapon on its rig by slot: the cloak's geometry with that weapon baked in, and its strip */
-export function setRigSlot(rig: Rig, slot: WeaponId | null, strip: THREE.Mesh | null): void {
+export function setRigSlot(rig: Rig, slot: WeaponId | null, strip: THREE.Mesh | null, mastered = false): void {
   rig.cloak.geometry = cloakGeometry(slot);
   if (strip) {
     strip.visible = !!slot;
-    if (slot) strip.geometry = weaponStripGeometry(slot);
+    if (slot) strip.geometry = weaponStripGeometry(slot, mastered);
   }
+}
+
+/**
+ * A remote's weapon from what the wire carries: the weapon of its slot, with the mastery finish
+ * when that file's tag says its record has that weapon at the cap. Rebuilds only on a change and
+ * returns whether there was one. The finish lives in the strip, so it costs no draw call.
+ */
+export function holdRemoteWeapon(rig: Rig, strip: THREE.Mesh, slot: number | undefined, tag: string | undefined): boolean {
+  const id = slot !== undefined ? (weaponBySlot(slot)?.id ?? null) : null;
+  const mastered = !!id && wearsFinish(parseTag(tag ?? "", "").finish, id);
+  const key = `${id ?? "-"}|${mastered ? 1 : 0}`;
+  if (strip.userData.held === key) return false;
+  strip.userData.held = key;
+  setRigSlot(rig, id, strip, mastered);
+  return true;
 }
 
 // ---- the pose writer ----

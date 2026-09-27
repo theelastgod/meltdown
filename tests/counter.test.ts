@@ -238,7 +238,8 @@ describe("the counter-ledger on the devnet", () => {
     const pi = publicIdentity(a, "LINK");
     expect(pi.skin).toBe(1);
     expect(parseTag(identityTag(pi), "LINK").skin).toBe(1);
-    expect(identityTag({ ...pi, skin: 0 }).split(".").length).toBe(4);
+    // a sandbox file has mastered every weapon: without the finish, the file that wears nothing keeps four segments
+    expect(identityTag({ ...pi, skin: 0, finish: 0 }).split(".").length).toBe(4);
   }, 60_000);
 
   it("a name at Depth 50 burns $CAPITAL by length through a game voucher; a Depth-1 file gets no voucher", async () => {

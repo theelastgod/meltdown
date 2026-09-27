@@ -13,7 +13,8 @@ import { ALL_ITEMS } from "../manifest/items";
 import { CHIPS } from "../manifest/chips";
 import { FIRMWARES } from "../manifest/firmwares";
 import { STAT_KEYS } from "../manifest/stats";
-import { WEAPON_LIST } from "../weapons/manifest";
+import { WEAPON_LIST, type WeaponId } from "../weapons/manifest";
+import { MAX_RANK } from "../progression/mastery";
 
 export interface PublicIdentity {
   /** glyph seed (the client regenerates the glyph from seed + chapter) */
@@ -30,10 +31,16 @@ export interface PublicIdentity {
   debt: boolean;
   /** worn cosmetic token id (0 = none): an ID only — the palette it names lives in the client's catalog */
   skin: number;
+  /**
+   * The mastery finish (Stage 675) as others see it: bit i is set when the file's record on the
+   * server has WEAPON_LIST[i] at the rank cap. Never taken from the client. Cosmetic: it draws the
+   * inlays on the weapon in the file's hand and names nothing it is running.
+   */
+  finish: number;
 }
 
 /** The only keys an identity may carry on the wire. */
-export const IDENTITY_KEYS: readonly string[] = ["id", "team", "glyph", "chapter", "moniker", "display", "stamps", "debt", "skin"];
+export const IDENTITY_KEYS: readonly string[] = ["id", "team", "glyph", "chapter", "moniker", "display", "stamps", "debt", "skin", "finish"];
 
 /** One file is FILE, not FILES. */
 export function filesWord(n: number): string {
@@ -52,20 +59,39 @@ export function displayName(a: Account | null, handle: string): string {
 }
 
 export function publicIdentity(a: Account | null, handle: string, debt = false): PublicIdentity {
-  if (!a) return { glyph: glyphSeed(handle), chapter: 0, moniker: null, display: handle, stamps: 0, debt, skin: 0 };
-  return { glyph: glyphSeed(a.id), chapter: chapterFor(a.depth), moniker: wornMoniker(a, a.moniker)?.id ?? null, display: displayName(a, handle), stamps: a.stamps.length, debt, skin: a.counter?.worn ?? 0 };
+  if (!a) return { glyph: glyphSeed(handle), chapter: 0, moniker: null, display: handle, stamps: 0, debt, skin: 0, finish: 0 };
+  return { glyph: glyphSeed(a.id), chapter: chapterFor(a.depth), moniker: wornMoniker(a, a.moniker)?.id ?? null, display: displayName(a, handle), stamps: a.stamps.length, debt, skin: a.counter?.worn ?? 0, finish: finishMask(a) };
 }
 
-/** Compact wire form for the snapshot: `seed.chapter.monikerIndex.debt[.skin]` — the skin segment only when one is worn. */
+/** which weapons the file's record has at the rank cap: one bit per WEAPON_LIST index */
+export function finishMask(a: Account): number {
+  let mask = 0;
+  WEAPON_LIST.forEach((w, i) => {
+    if ((a.mastery?.[w.id]?.rank ?? 1) >= MAX_RANK) mask |= 1 << i;
+  });
+  return mask;
+}
+
+/** whether a finish mask carries the finish for this weapon */
+export function wearsFinish(mask: number, id: WeaponId): boolean {
+  const i = WEAPON_LIST.findIndex((w) => w.id === id);
+  return i >= 0 && ((mask >>> i) & 1) === 1;
+}
+
+/**
+ * Compact wire form for the snapshot: `seed.chapter.monikerIndex.debt[.skin[.finish]]`. The skin
+ * segment appears when one is worn or a finish follows it; the finish (base 36) only when there is one.
+ */
 export function identityTag(pi: PublicIdentity): string {
   const mi = pi.moniker ? MONIKERS.findIndex((m) => m.id === pi.moniker) : -1;
-  return `${pi.glyph.toString(36)}.${pi.chapter}.${mi}.${pi.debt ? 1 : 0}${pi.skin ? `.${pi.skin}` : ""}`;
+  const tail = pi.finish ? `.${pi.skin}.${pi.finish.toString(36)}` : pi.skin ? `.${pi.skin}` : "";
+  return `${pi.glyph.toString(36)}.${pi.chapter}.${mi}.${pi.debt ? 1 : 0}${tail}`;
 }
 
 export function parseTag(tag: string, display: string): PublicIdentity {
-  const [s, c, mi, d, sk] = tag.split(".");
+  const [s, c, mi, d, sk, fin] = tag.split(".");
   const idx = Number(mi ?? -1);
-  return { glyph: parseInt(s ?? "0", 36) >>> 0, chapter: Number(c ?? 0) || 0, moniker: idx >= 0 ? (MONIKERS[idx]?.id ?? null) : null, display, stamps: 0, debt: d === "1", skin: Number(sk ?? 0) || 0 };
+  return { glyph: parseInt(s ?? "0", 36) >>> 0, chapter: Number(c ?? 0) || 0, moniker: idx >= 0 ? (MONIKERS[idx]?.id ?? null) : null, display, stamps: 0, debt: d === "1", skin: Number(sk ?? 0) || 0, finish: parseInt(fin ?? "0", 36) >>> 0 || 0 };
 }
 
 // ---------------------------------------------------------------------------

@@ -23,7 +23,7 @@ import { RunFx } from "./run";
 import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import { mergeByMaterial } from "./body";
-import { applyPose, buildRig, disposeRig, rigReport, setRigSlot, WEAPON_IN_SOCKET, weaponStripGeometry, type Rig, type RigReport, RIG_EMISSIVE } from "./rig";
+import { applyPose, buildRig, disposeRig, holdRemoteWeapon, rigReport, WEAPON_IN_SOCKET, weaponStripGeometry, type Rig, type RigReport, RIG_EMISSIVE } from "./rig";
 import { poseBody, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
@@ -710,7 +710,9 @@ export class Renderer {
       // the worn skin travels as a token id in the tag; the palette it names is the client's catalog
       const skin = v.tag ? parseTag(v.tag, "").skin : 0;
       const slot = v.slot ?? e.slot;
-      if (skin !== e.skin || slot !== e.slot) {
+      // the weapon in their hand, and its mastery finish when the tag carries it for that weapon
+      const held = holdRemoteWeapon(e.rig, e.strip, slot, v.tag);
+      if (skin !== e.skin || slot !== e.slot || held) {
         e.skin = skin;
         e.slot = slot;
         const def = skinByToken(skin);
@@ -720,7 +722,6 @@ export class Renderer {
         e.rig.mat.emissive.set(tint ?? PALETTE.cyan);
         e.rig.tint.set(tint ?? PALETTE.cyan);
         const slotId = Renderer.slotId(slot);
-        setRigSlot(e.rig, slotId, e.strip);
         e.stripMat.color.set(tint ?? (slotId ? WEAPON_LIST[slot - 1]!.tracer : PALETTE.cyan));
         // Stage 206: the catalog plate was local-strip only. A teammate wearing RUST LEASE was a
         // tint and no map. Same fail-soft load as setSkin, keyed so a slower plate cannot land after a swap.
