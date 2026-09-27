@@ -14,6 +14,10 @@
  * stage: lease_row 164k measured / 161.3k here, repo_depot 139k / 135.7k, docks 114k / 111.1k). The
  * budget below leaves 10k of the 200k for the actors. This runs the same `dressLevel`, `Crowd` and
  * `buildSkyline` the renderer runs, with a canvas stub where the browser would draw textures.
+ *
+ * In the city (Stage 704) the dressing also carries the gates as doors: eight destination signs on
+ * the sign atlas and their light in the neon batches, so the city's frame is the same model with a
+ * slightly larger dressing, held to the same budget.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as THREE from "three";
@@ -48,17 +52,28 @@ const trianglesOf = (o: THREE.Object3D): number => {
   return t;
 };
 
-interface Cost { boxes: number; dressing: number; batches: number; crowd: number; skyline: number; frame: number }
+/** every mesh the dressing adds is a draw call (twice with the mirror): the merged solids, the neon colours, the sign atlas */
+const meshesOf = (o: THREE.Object3D): number => {
+  let n = 0;
+  o.traverse((m) => void ((m as THREE.Mesh).isMesh && n++));
+  return n;
+};
 
-async function costOf(L: LevelDef): Promise<Cost> {
-  const { dressLevel, buildSkyline } = await import("../client/render/city");
+interface Cost { boxes: number; dressing: number; batches: number; meshes: number; crowd: number; skyline: number; frame: number }
+
+/**
+ * `city`: dress the district as the city does, its gates as doors (Stage 704), exactly as the renderer
+ * does for a page that is `inCity`. Every other mode dresses it without.
+ */
+async function costOf(L: LevelDef, city = false): Promise<Cost> {
+  const { cityDoors, dressLevel, buildSkyline } = await import("../client/render/city");
   const { Crowd } = await import("../client/render/life");
   const scene = new THREE.Scene();
-  const { calls } = dressLevel(scene, L);
+  const { calls } = dressLevel(scene, L, undefined, cityDoors(L, city));
   const dressing = trianglesOf(scene);
   const skyline = trianglesOf(buildSkyline(new THREE.Scene(), L.skylineSeed ?? 42, (L.bounds ?? 32) + 44, L.district ?? "magenta"));
   const crowd = trianglesOf(new Crowd(L.walks!, L.pedestrians!, (L.skylineSeed ?? 1) + 7).group);
-  return { boxes: L.boxes.length, dressing, batches: calls, crowd, skyline, frame: 2 * dressing + crowd + skyline };
+  return { boxes: L.boxes.length, dressing, batches: calls, meshes: meshesOf(scene), crowd, skyline, frame: 2 * dressing + crowd + skyline };
 }
 
 /** LEASE ROW as it was before Stage 692 */
@@ -67,8 +82,25 @@ const LEASE_ROW_3X3: DistrictSpec = { ...districtById("lease_row")!, grid: 3, bl
 describe("what a district costs to draw", () => {
   it("every district's frame fits the 200k-triangle budget with 10k left for the actors", async () => {
     for (const spec of DISTRICT_SPECS) {
-      const c = await costOf(generateDistrict(spec));
-      expect(c.frame, `${spec.id}: ${JSON.stringify(c)}`).toBeLessThanOrEqual(190_000);
+      // the city's frame (its gates dressed as doors, Stage 704) and every other mode's
+      for (const city of [false, true]) {
+        const c = await costOf(generateDistrict(spec), city);
+        expect(c.frame, `${spec.id}${city ? " (city)" : ""}: ${JSON.stringify(c)}`).toBeLessThanOrEqual(190_000);
+      }
+    }
+  }, 30_000);
+
+  it("the city's doors cost at most one batch and 2k triangles a district: the signs ride the atlas, the light rides the neon (Stage 704)", async () => {
+    for (const spec of DISTRICT_SPECS) {
+      const plain = await costOf(generateDistrict(spec));
+      const city = await costOf(generateDistrict(spec), true);
+      const what = `${spec.id}: ${JSON.stringify(city)} vs ${JSON.stringify(plain)}`;
+      expect(city.meshes - plain.meshes, what).toBeLessThanOrEqual(1);
+      expect(city.batches - plain.batches, what).toBeLessThanOrEqual(1);
+      expect(city.dressing - plain.dressing, what).toBeLessThanOrEqual(2_000);
+      // live, not vacuous: the doors are drawn (8 signs and their light), in the dressing the mirror draws again
+      expect(city.dressing - plain.dressing, what).toBeGreaterThan(8 * 2);
+      expect(city.frame - plain.frame, what).toBe(2 * (city.dressing - plain.dressing));
     }
   }, 30_000);
 

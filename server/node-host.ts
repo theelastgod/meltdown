@@ -612,6 +612,23 @@ const http = createServer((req, res) => {
       return;
     }
   }
+  // the dev host's EMP over a whole district (Stage 704): a probe's bot cannot shoot back, and a
+  // street run it is timing is not a fight. `{ seconds }`, at most 300. The Worker has no such route
+  const cityEmp = req.method === "POST" ? req.url?.match(/^\/city\/([a-z_]{1,32})\/emp$/) : null;
+  if (cityEmp) {
+    void readBody(req).then((body) => {
+      const city = cityOf(`city-${cityEmp[1]}`);
+      res.setHeader("content-type", "application/json");
+      const seconds = typeof body.seconds === "number" && body.seconds > 0 && body.seconds <= 300 ? body.seconds : null;
+      if (!city || seconds === null) {
+        res.end(JSON.stringify({ ok: false, reason: !city ? "no such city" : "seconds must be 1..300" }));
+        return;
+      }
+      getCityRoom(city).empDistrict(seconds);
+      res.end(JSON.stringify({ ok: true, city, seconds }));
+    });
+    return;
+  }
   const cityEvent = req.method === "POST" ? req.url?.match(/^\/city\/([a-z_]{1,32})\/event$/) : null;
   if (cityEvent) {
     // the dev host's button (Stage 699), like /chain/faucet: bring a city's next public event
@@ -622,6 +639,14 @@ const http = createServer((req, res) => {
       res.setHeader("content-type", "application/json");
       if (!city) {
         res.end(JSON.stringify({ ok: false, reason: "no such city" }));
+        return;
+      }
+      // `{ quiet: seconds }` holds the schedule back instead (Stage 704): a probe that starts its own
+      // event, or times a street run, is not raced by one the schedule brings
+      const quiet = typeof body.quiet === "number" && body.quiet > 0 && body.quiet <= 3600 ? body.quiet : null;
+      if (quiet !== null) {
+        getCityRoom(city).quietEvents(quiet);
+        res.end(JSON.stringify({ ok: true, city, quiet }));
         return;
       }
       const kind = body.kind === "hold" || body.kind === "intercept" || body.kind === "escort" ? body.kind : null;

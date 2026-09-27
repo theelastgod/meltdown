@@ -35,7 +35,8 @@ import { deskBanner } from "./missionart";
 import { gigThumb } from "./gigart";
 import { protocolIcon, weaponCard } from "./kitart";
 import { loadingFor, travelTo } from "./loading";
-import { gatePrompt, gateToTravel, gateTravelUrl, holdProgress, stepGateHold, type GateHold } from "@shared/net/citygates";
+import { gatePrompt, gateSigns, gateToTravel, gateTravelUrl, holdProgress, stepGateHold, type GateHold } from "@shared/net/citygates";
+import { radarGates } from "./hud/radar";
 import { SIM_DT } from "@shared/sim/constants";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop" | "city";
@@ -176,6 +177,8 @@ export class Campaign {
     // its room may not be up yet when this runs; the desk opens anywhere, and a contract comes back here
     if (inCity(new URLSearchParams(location.search))) {
       this.mode = "city";
+      // the gates are doors here, and the map says where each one goes (Stage 704)
+      this.game.hud.setRadarGates(radarGates(gateSigns(this.game.world.level, this.mode)));
       this.cityObjective();
       this.note(`THE CITY · ${levelDisplayName(this.game.levelId)} · EVERYONE ONLINE WALKS THESE STREETS · [J] CONTRACTS`);
       // the room may have told us about its public event before the file came back

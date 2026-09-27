@@ -132,3 +132,20 @@ describe("the city's names and pages", () => {
     expect(inCity(q)).toBe(false);
   });
 });
+
+describe("the dev host's EMP over a district (Stage 704)", () => {
+  it("holds every wasp and mech down for the seconds asked, never shortening a longer hold", () => {
+    const h = createCityRoom({ district: "lease_row", seed: 7 });
+    for (let t = 0; t < 3; t++) h.room.step();
+    const { wasps, mechs } = h.room.world;
+    expect(wasps.length).toBeGreaterThan(0);
+    expect(mechs.length).toBeGreaterThan(0);
+    h.empDistrict(150);
+    for (const x of [...wasps, ...mechs]) expect(x.disabledTimer).toBe(150);
+    h.empDistrict(5);
+    for (const x of [...wasps, ...mechs]) expect(x.disabledTimer).toBe(150);
+    // and it runs down on the sim's clock like a grenade's
+    for (let t = 0; t < 60; t++) h.room.step();
+    for (const x of [...wasps, ...mechs]) expect(x.disabledTimer).toBeCloseTo(149, 5);
+  });
+});

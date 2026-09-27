@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import type { Box, LevelDef, SignDef, TrafficLane } from "@shared/sim/level";
+import type { Box, DistrictCast, LevelDef, SignDef, TrafficLane } from "@shared/sim/level";
+import { gateInward, gateSigns, type GateSign } from "@shared/net/citygates";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { brickTexture, facadeTextures, hazardTexture, shutterTexture } from "./textures";
 import { texture as assetTexture } from "./assets";
@@ -214,8 +215,53 @@ export class SignAtlas {
   }
 }
 
-/** Dress a level's collision boxes and decor with the clip's kitbash vocabulary. Returns the draw-call count it added and the sign material (for flicker). */
-export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: ScreenPool): { calls: number; signMat: THREE.MeshBasicMaterial | null } {
+/** a district cast's colour, for what is drawn in a destination's colour */
+export const CAST_COLOR: Record<DistrictCast, number> = { magenta: PALETTE.magenta, cyan: PALETTE.cyan, amber: PALETTE.amber };
+
+/** The doors the renderer dresses: the city's gates on a page that is walking the city (`inCity`), none on any other. */
+export const cityDoors = (level: LevelDef, city: boolean): GateSign[] => gateSigns(level, city ? "city" : "none");
+
+/** the destination sign over a gate's mouth: the neighbour's name behind an arrow, as the HUD line says it */
+export const gateSignText = (g: GateSign): string => `→ ${g.name}`;
+
+/**
+ * The city's gates dressed as doors (Stage 704). Only what `gateSigns` hands in, which is nothing
+ * outside the city, so every other mode's gates are the chain-link they were, to the byte.
+ *
+ * Nothing here is a new draw call. The destination sign is one more quad on the district's sign
+ * atlas (the mesh every sign is already on), and the door's light is neon boxes in a cast colour:
+ * magenta and cyan carry every district and every gate's top rail is amber, so each lands in a neon
+ * batch that exists already. Per gate: 2 triangles of sign and 4 boxes (48 triangles) of light — a
+ * lintel under the sign, a jamb either side of the mouth, a strip across the street at its feet.
+ */
+export function dressGateDoors(neon: NeonBatch, signs: SignAtlas, gates: readonly GateSign[]): void {
+  for (const g of gates) {
+    const color = CAST_COLOR[g.cast];
+    const hex = `#${color.toString(16).padStart(6, "0")}`;
+    const inn = gateInward(g.dir);
+    const alongX = g.dir === "n" || g.dir === "s";
+    // the sign spans most of the street, above the gate's posts (0.3 m over its top) and its amber rail
+    const w = Math.min(6.4, g.half * 2 - 1.2);
+    const h = w / 4; // the atlas cell's own aspect: the text is not stretched
+    const bottom = g.top + 0.55;
+    const at = (d: number) => ({ x: g.x + inn.x * d, z: g.z + inn.z * d });
+    const face = at(0.12);
+    signs.add({ text: gateSignText(g), fg: hex, bg: "#06070c", border: hex, w, h, x: face.x, y: bottom + h / 2, z: face.z, rotY: Math.atan2(inn.x, inn.z) });
+    // a box of `len` along the gate's line, `t` thick across it
+    const bar = (len: number, hgt: number, t: number, y: number, d: number, off = 0) => {
+      const p = at(d);
+      const ox = alongX ? off : 0;
+      const oz = alongX ? 0 : off;
+      neon.box(alongX ? len : t, hgt, alongX ? t : len, p.x + ox, y, p.z + oz, color);
+    };
+    bar(w + 0.4, 0.08, 0.08, bottom - 0.08, 0.16);
+    for (const s of [-1, 1]) bar(0.08, bottom - 0.08, 0.08, (bottom - 0.08) / 2, 0.16, s * (g.half - 0.15));
+    bar(g.half * 2 - 0.3, 0.03, 0.3, 0.015, 0.6);
+  }
+}
+
+/** Dress a level's collision boxes and decor with the clip's kitbash vocabulary. Returns the draw-call count it added and the sign material (for flicker). `gates` are the city's doors (Stage 704): [] everywhere but the city. */
+export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: ScreenPool, gates: readonly GateSign[] = []): { calls: number; signMat: THREE.MeshBasicMaterial | null } {
   const group = new THREE.Group();
   group.name = "dressing";
   scene.add(group);
@@ -722,6 +768,8 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
     signs.add(s);
     signsPlaced++;
   }
+  // after everything else, so the district's own dressing is untouched and the doors only append
+  dressGateDoors(neon, signs, gates);
   const signMat = signs.flush(group);
   neon.flush();
   const calls = batch.flush();

@@ -194,7 +194,7 @@ export class Game {
     // A phone has no pointer lock, no keyboard and no mouse, so it gets thumbs and a cheaper frame
     // (Stage 32). Both decided once, here, from the same answer.
     this.mobile = wantsTouch();
-    this.renderer = new Renderer(canvas, this.world.level, undefined, this.mobile);
+    this.renderer = new Renderer(canvas, this.world.level, undefined, this.mobile, city);
     this.hud = new Hud(hudRoot);
     if (this.mobile) {
       hudRoot.classList.add("touch");

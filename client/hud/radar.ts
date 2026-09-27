@@ -138,6 +138,59 @@ export function spotMarks(spots: readonly RadarSpot[], at: { x: number; z: numbe
 }
 
 /**
+ * The city's doors on the map (Stage 704).
+ *
+ * In the city every street gate is a door to the next district, and the map in the corner drew
+ * none of them: the only thing that said a gate led anywhere was the HUD line, and only once the
+ * file was already standing in it. Each gate is marked where it is, in its destination's cast
+ * colour, with the destination's initials — pinned to the rim on its own bearing when it is past
+ * the edge, like everything else the map draws, so the way to DEADLETTER DOCKS is on the map from
+ * anywhere in LEASE ROW.
+ */
+export interface RadarGate {
+  x: number;
+  z: number;
+  /** the destination's initials: DD for DEADLETTER DOCKS */
+  label: string;
+  colour: string;
+}
+
+export interface GateMark {
+  label: string;
+  colour: string;
+  /** canvas pixels */
+  x: number;
+  y: number;
+  edge: boolean;
+  distance: number;
+}
+
+/** the casts' colours, as the map draws them */
+export const CAST_HEX = { magenta: "#ff3ec9", cyan: "#35f2ff", amber: "#ffb02e" } as const;
+
+/** a district's initials for the map: the first letter of each word of its name */
+export function gateInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter((w) => /^[A-Z0-9]/i.test(w))
+    .map((w) => w[0]!.toUpperCase())
+    .join("")
+    .slice(0, 3);
+}
+
+/** the map's gates from the city's (shared/net/citygates.ts `gateSigns`) */
+export function radarGates(gates: readonly { x: number; z: number; name: string; cast: keyof typeof CAST_HEX }[]): RadarGate[] {
+  return gates.map((g) => ({ x: g.x, z: g.z, label: gateInitials(g.name), colour: CAST_HEX[g.cast] }));
+}
+
+export function gateMarks(gates: readonly RadarGate[], at: { x: number; z: number }, yaw: number, scale: number, w: number, h: number, pad = 3): GateMark[] {
+  return gates.map((g) => {
+    const m = place(g, at, yaw, scale, w, h, pad);
+    return { label: g.label, colour: g.colour, x: m.x, y: m.y, edge: m.edge, distance: m.distance };
+  });
+}
+
+/**
  * The map's footer (Stage 129). It had said "tap to walk" since the first HUD, on every platform,
  * and nothing anywhere handled a tap or a click on the map. What the map is: heading-up — the
  * file's view is up the screen — and this many metres across, from the same scale it is drawn at.

@@ -1641,6 +1641,100 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 704 — The doors between districts looked like chain-link
+
+**The ask.** Stage 697 made every district's eight street gates into doors to the next district,
+but they still looked like chain-link across a vista. The only thing that said where a gate went
+was a HUD line, and it appeared only once you were already in front of it.
+
+**The change.**
+- **In the city, and nowhere else, each gate is dressed as a door:**
+  - a sign above its mouth, "→ DEADLETTER DOCKS", in the destination's cast colour, facing into
+    the streets;
+  - a light bar under the sign, an upright either side, and a strip across the street at its feet,
+    in the same colour.
+- **No new draw calls.** The sign is one more quad on the district's existing sign atlas, so it
+  flickers with the other signs. The light goes into the neon batches every district already has.
+  The cost is 400 triangles per district, or 800 in the frame with the wet floor's reflection.
+- **One flag.** The renderer is told it is in the city by `inCity`. Every other mode (PvP,
+  contracts, THE RUN, Audits, offline) gets no doors.
+- **The corner map** marks each gate with its destination's initials in its colour, pinned to the
+  rim when off the map.
+
+**Merged onto Stage 701's five districts.** The byte-identical guard is a fingerprint of each
+district's non-city dressing, recorded before the doors. The agent recorded three districts;
+NIGHT MARKET and RELAY HEIGHTS came after. Their fingerprints were recorded on the Stage 703
+commit, the code before this stage, in a scratch checkout. The three original fingerprints
+reproduced there exactly, so the two new ones record "before", not "now".
+
+**Verified.**
+- `tests/citygatedoors.test.ts`:
+  - all five districts' fingerprints are reproduced exactly in every non-city mode, and by the
+    renderer off the city;
+  - the city's dressing only appends to the district's own;
+  - every sign names the neighbour `neighbourAt` gives, in its colour, over the gate's mouth,
+    facing in;
+  - the district's signs and its eight gate signs fit the atlas;
+  - the map's marks, colours and rim pinning are right.
+- `tests/citycost.test.ts`: the city frame fits the same 190k model budget (LEASE ROW 184.1k), and
+  the doors add at most 1 batch and 2k triangles per district (measured: 0 batches, 400
+  triangles).
+- The agent caught ten mutations.
+- probe:world, new checks:
+  - BRAVO's renderer has eight doors, each signed with the district its gate really leads to.
+  - A proof shot is taken as BRAVO walks up to the door it goes through. The page's sim is held
+    still for the shot, or the one-second hold in the mouth runs out behind the seconds a
+    SwiftShader shot takes, and the crossing is never seen.
+  - ALPHA's contract page, off the city, has no doors.
+- **probe:world's street run and event no longer race the district.**
+  - The run now comes before the public event; a HOLD sends wasps at its part of the district, and
+    ALPHA was downed three runs in a row on the way to the first checkpoint.
+  - With the run first, the schedule's own first event, 90 s in, landed on it instead: a convoy
+    downed ALPHA, and the check read the convoy rather than the HOLD it started.
+  - With both out of the way, the district's ordinary patrols still downed a bot that cannot shoot
+    back on two runs in three.
+  - The dev host gains two affordances, on the dev host only; the Workers have neither:
+    - `POST /city/<district>/event { quiet }` holds a district's own schedule back
+      (`CityEvents.postpone`, which never brings it forward);
+    - `POST /city/<district>/emp { seconds }` holds every wasp and mech down for up to 300 s, the
+      same hold an EMP grenade puts on what it catches.
+  - probe:world quiets LEASE ROW before anyone joins and grounds its patrols for each timed run.
+  - `docs/SECURITY.md`'s dev-affordances row names both.
+  - Tests:
+    - `tests/cityevents.test.ts`: the quiet holds the schedule back, a shorter one does not undo a
+      longer one, a forced event still starts at once, and nothing starts under it. Dropping the
+      `Math.max` fails it (the mutation).
+    - `tests/cityroom.test.ts`: the EMP holds every wasp and mech, never shortens a longer hold, and
+      runs down on the sim's clock.
+- **The event check now reads the objective line on BRAVO and CHARLIE**, not ALPHA. ALPHA's loop
+  ends in its own start ring, and a second standing there arms the next run. A file with a run armed
+  or running keeps the run's line; that is the game's rule, and the right one. Everyone else's line
+  names the event.
+
+**CI, which the Stage 702 run turned up.**
+- **A unit test timed out.** `tests/catchup.test.ts`'s sweep of one to four catch-up frames at
+  every phase builds 240 rooms: 2.2 s here, over vitest's 5 s default on the runner. It now has
+  a 60 s timeout, like the other heavy sweeps; what it asserts is unchanged.
+- **probe:mastery shot the loading card again.** Stage 700 waited for the card's `shown` to drop,
+  but that drops when the card starts its 450 ms fade. On the runner the shot landed inside the
+  fade. The probe now waits until the card is off the page (`loading()` is null).
+- **probe:world's event check on the runner.** BRAVO and the late CHARLIE heard nothing, and the
+  room had no event by the time of the read. The same failure turned up here once the patrols were
+  grounded. ALPHA survived in the ring and held the post its 40 s, and the event was over before a
+  CHARLIE slower to load than that arrived. CHARLIE now walks in while the event runs, before ALPHA
+  reaches the ring; it is still a late joiner.
+- probe:world 8/8, twice in a row: the doors, the street run in 23.983 s, the event on every
+  file, the gate walk arriving at 0.00 m, and the liar at a spawn.
+- probe:city 79/79: the non-city frame is unchanged, as the fingerprints say. probe:look 19/19,
+  probe:mobile 40/40, probe:mastery 25/25.
+- 1706 unit tests pass.
+- Proof: `docs/proof/stage704/city-gate-door.png`.
+
+**Open.**
+- The sign flickers with the other signs.
+- The light strip is the only thing on the ground; nothing stops a file walking past a door's
+  mouth without seeing the sign overhead, but the HUD line still names the door from 5 m.
+
 ## Stage 703 — Nothing in the city showed off how a Blank moves
 
 **The ask.** "Expand … the different things you can do in it." The city had patrols and public

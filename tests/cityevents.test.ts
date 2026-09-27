@@ -461,3 +461,29 @@ describe("the HUD's words", () => {
     expect(eventCard({ event: ev, next: -1, you: true })).toBeNull();
   });
 });
+
+describe("the dev host's quiet (Stage 704)", () => {
+  it("holds the schedule back, never brings it forward, and a forced event still starts at once", () => {
+    const L = levelById("lease_row");
+    const ev = new CityEvents(7, L, 0);
+    const first = ev.nextAt;
+    expect(first).toBe(Math.round(CITY_EVENTS.firstSeconds * 60));
+    ev.postpone(0, 1800);
+    expect(ev.nextAt).toBe(1800 * 60);
+    // a shorter quiet does not undo a longer one, nor bring the first event forward
+    ev.postpone(0, 1);
+    expect(ev.nextAt).toBe(1800 * 60);
+    // the probe's own event: at once, quiet or not
+    ev.startNow(5, "hold");
+    expect(ev.nextAt).toBe(5);
+    // and the room steps it: nothing starts on its own under the quiet
+    const w = new World(L, { ai: true, seed: 7, wakePhase: "off" });
+    const quiet = new CityEvents(7, L, 0);
+    quiet.postpone(0, 600);
+    for (let t = 0; t < CITY_EVENTS.firstSeconds * 60 + 120; t++) {
+      w.step(new Map());
+      expect(quiet.step(w, w.drainEvents())).toBeNull();
+    }
+    expect(quiet.current).toBeNull();
+  }, 30_000);
+});

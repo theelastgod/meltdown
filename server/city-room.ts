@@ -46,6 +46,10 @@ export interface CityRoomHandle {
   state: () => { district: string; players: number; pvp: boolean; event: CityEventView | null; next: number; events: number; credited: { event: number; file: string; xp: number }[]; runs: { courses: { id: string; name: string; par: number; checkpoints: number; start: { x: number; y: number; z: number } }[]; running: number; finishes: number; board: NonNullable<CityRunMsg["board"]> } };
   /** bring the next public event forward to the next tick (the dev host's button, and the tests') */
   startEvent: (kind?: CityEventKind | null) => void;
+  /** hold the district's own schedule back this many seconds (the dev host's `quiet`, Stage 704) */
+  quietEvents: (seconds: number) => void;
+  /** an EMP over the whole district: every wasp and mech held down this many seconds (the dev host's, Stage 704) */
+  empDistrict: (seconds: number) => void;
   /** the district's street runs (Stage 703): the courses, the clocks and the board */
   runs: StreetRuns;
   board: RunBoard;
@@ -236,5 +240,11 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
       };
     },
     startEvent: (kind = null) => eventsOf(room).startNow(room.world.tick + 1, kind),
+    quietEvents: (seconds) => eventsOf(room).postpone(room.world.tick, seconds),
+    empDistrict: (seconds) => {
+      // the same hold an EMP grenade puts on what it catches (`disabledTimer`, seconds), on all of them
+      for (const w of room.world.wasps) w.disabledTimer = Math.max(w.disabledTimer, seconds);
+      for (const m of room.world.mechs) m.disabledTimer = Math.max(m.disabledTimer, seconds);
+    },
   };
 }

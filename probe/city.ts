@@ -68,6 +68,9 @@ async function main(): Promise<void> {
   try {
     // two fresh files, each with a house picked (a contract needs one)
     for (const id of ["city-alpha", "city-bravo"]) await fetch(`${HOST}/file/${id}/campaign`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op: "faction", faction: "cells", secret: SECRET }) });
+    // LEASE ROW's own schedule held back (the dev host's quiet, Stage 704): this probe starts the one
+    // event it checks, and a HOLD or a convoy the schedule brings 90 s in lands on the street run
+    await fetch(`${HOST}/city/lease_row/event`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ quiet: 1800 }) });
     // ---------------- two files walk into the same city ----------------
     const a = await newPage("alpha");
     const b = await newPage("bravo");
@@ -102,45 +105,11 @@ async function main(): Promise<void> {
     const afterJ = await a.evaluate(() => ({ open: window.__game.campaign().contractsOpen, hint: (document.querySelector("#hud .contracts .hd .x") as HTMLElement | null)?.textContent ?? "" }));
     check("the contracts desk opens on J, and crouching (C) no longer opens it", !afterC && afterJ.open && /\[J\]/.test(afterJ.hint), `after C: open ${afterC} · after J: open ${afterJ.open} · close hint "${afterJ.hint}"`);
 
-    // ---------------- a public event: the whole street hears it, and the room knows who is in it ----------------
-    // (Stage 699) The dev host starts LEASE ROW's next event now, a HOLD. Both files are told; ALPHA
-    // runs into the ring and the room counts it in; BRAVO, across the district, is not. A third file
-    // walking in mid-event is told at the door. Completion and pay are the unit tests' (a bot that
-    // cannot shoot back does not last a 40 s hold against the wasps).
-    await fetch(`${HOST}/city/lease_row/event`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "hold" }) });
-    const heard = async (pg: Page) => {
-      await pg.waitForFunction(() => window.__game.campaign().cityEvent?.event?.status === "running", null, { timeout: 20000, polling: 100 }).catch(() => undefined);
-      return await pg.evaluate(() => ({ ev: window.__game.campaign().cityEvent, title: (document.querySelector("#hud .mtitle") as HTMLElement | null)?.textContent ?? "" }));
-    };
-    const [ha, hb] = [await heard(a), await heard(b)];
-    const ev = ha.ev?.event;
-    if (ev) {
-      const pa = await a.evaluate(() => window.__game.state().pos);
-      await a.evaluate((plan) => window.__game.setBot(plan), [...sprintRoute(buildNav(levelById("lease_row")), pa, { x: ev.x, z: ev.z }, 1.5), { kind: "hold", ticks: 9000 }] as BotStep[]);
-      await a.waitForFunction(() => (window.__game.campaign().cityEvent?.event?.progress ?? 0) > 0 && window.__game.campaign().cityEvent?.you === true, null, { timeout: 30000, polling: 100 }).catch(() => undefined);
-    }
-    const inRing = await a.evaluate(() => ({ progress: window.__game.campaign().cityEvent?.event?.progress ?? 0, you: window.__game.campaign().cityEvent?.you ?? false }));
-    const bYou = await b.evaluate(() => window.__game.campaign().cityEvent?.you ?? null);
-    const late = await newPage("charlie");
-    await late.goto(cityUrl("city-charlie", "CHARLIE"), { waitUntil: "domcontentloaded", timeout: 120000 });
-    await late.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined", null, { timeout: 90000, polling: 100 }).catch(() => undefined);
-    const hc = await heard(late);
-    const stE = (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { city?: { event: { id: number; participants: number } | null } }> };
-    const roomEv = stE.rooms["city:lease_row"]?.city?.event;
-    check(
-      "a public event in the city: every file in the district is told (a late one at the door), the objective names it, and the room counts in the file in the ring and not the one across the street",
-      !!ev && ev.kind === "hold" && hb.ev?.event?.id === ev.id && hc.ev?.event?.id === ev.id && /PUBLIC EVENT/.test(ha.title) && inRing.progress > 0 && inRing.you === true && bYou === false && hc.ev?.you === false && !!roomEv && roomEv.id === ev.id && roomEv.participants >= 1,
-      `event ${ev?.id} ${ev?.kind} "${ev?.title}" at (${ev?.x.toFixed(1)}, ${ev?.z.toFixed(1)}) · objective "${ha.title.replace(/\s+/g, " ").slice(0, 70)}" · BRAVO hears ${hb.ev?.event?.id} · CHARLIE (late) hears ${hc.ev?.event?.id} · ALPHA progress ${inRing.progress.toFixed(1)} you ${inRing.you} · BRAVO you ${bYou} · CHARLIE you ${hc.ev?.you} · room ${JSON.stringify(roomEv && { id: roomEv.id, participants: roomEv.participants })}`,
-    );
-    await shot(a, `${OUT}/city-event.png`);
-    await late.close();
-    await a.evaluate(() => window.__game.setBot(null));
-
     // ---------------- a street run: the room keeps the clock ----------------
     // (Stage 703) ALPHA runs LEASE ROW's quickest all-street course: into the start ring for the second
     // that arms it, then checkpoint to checkpoint. The time is the room's, not the page's: the check
-    // reads it off the room's board and BRAVO's feed. A run the patrols end (death voids it) is run again,
-    // up to three runs.
+    // reads it off the room's board and BRAVO's feed. A run that still ends void is run again, up to three
+    // runs, and why it ended goes in the detail.
     const courses = await a.evaluate(() => window.__game.campaign().cityRuns.courses);
     const street = courses.filter((c) => c.checkpoints.every((p) => p.kind === "street")).sort((x, y) => x.par - y.par)[0];
     const leaseNav2 = buildNav(levelById("lease_row"));
@@ -150,6 +119,9 @@ async function main(): Promise<void> {
     const sawTitle = new Set<string>();
     if (street) {
       for (runs = 1; runs <= 3; runs++) {
+        // the district's patrols grounded for the run (the dev host's EMP, Stage 704): a bot that cannot
+        // shoot back was downed on two runs in three, and a street run being timed is not a fight
+        await fetch(`${HOST}/city/lease_row/emp`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ seconds: 150 }) });
         const from = await a.evaluate(() => window.__game.state().pos);
         const plan: BotStep[] = [...sprintRoute(leaseNav2, from, street.start, 0.6), { kind: "hold", ticks: 90 }];
         let prev = street.start;
@@ -187,6 +159,45 @@ async function main(): Promise<void> {
     );
     await shot(a, `${OUT}/city-run.png`);
 
+    // ---------------- a public event: the whole street hears it, and the room knows who is in it ----------------
+    // The objective line is judged on BRAVO and CHARLIE: ALPHA has just finished a loop, which ends in
+    // its own start ring, and a second standing there arms the next run. A file with a run armed or
+    // running keeps the run's line; the event is on everyone else's (Stage 704).
+    // (Stage 699) The dev host starts LEASE ROW's next event now, a HOLD. Both files are told; ALPHA
+    // runs into the ring and the room counts it in; BRAVO, across the district, is not. A third file
+    // walking in mid-event is told at the door. Completion and pay are the unit tests' (a bot that
+    // cannot shoot back does not last a 40 s hold against the wasps).
+    await fetch(`${HOST}/city/lease_row/event`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "hold" }) });
+    const heard = async (pg: Page) => {
+      await pg.waitForFunction(() => window.__game.campaign().cityEvent?.event?.status === "running", null, { timeout: 20000, polling: 100 }).catch(() => undefined);
+      return await pg.evaluate(() => ({ ev: window.__game.campaign().cityEvent, title: (document.querySelector("#hud .mtitle") as HTMLElement | null)?.textContent ?? "" }));
+    };
+    const [ha, hb] = [await heard(a), await heard(b)];
+    const ev = ha.ev?.event;
+    // CHARLIE walks in while it runs, before ALPHA reaches the ring: with the patrols grounded ALPHA
+    // can hold the post its 40 s, and a CHARLIE that loads slower than that finds it over (Stage 704)
+    const late = await newPage("charlie");
+    await late.goto(cityUrl("city-charlie", "CHARLIE"), { waitUntil: "domcontentloaded", timeout: 120000 });
+    await late.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined", null, { timeout: 90000, polling: 100 }).catch(() => undefined);
+    const hc = await heard(late);
+    if (ev) {
+      const pa = await a.evaluate(() => window.__game.state().pos);
+      await a.evaluate((plan) => window.__game.setBot(plan), [...sprintRoute(buildNav(levelById("lease_row")), pa, { x: ev.x, z: ev.z }, 1.5), { kind: "hold", ticks: 9000 }] as BotStep[]);
+      await a.waitForFunction(() => (window.__game.campaign().cityEvent?.event?.progress ?? 0) > 0 && window.__game.campaign().cityEvent?.you === true, null, { timeout: 30000, polling: 100 }).catch(() => undefined);
+    }
+    const inRing = await a.evaluate(() => ({ progress: window.__game.campaign().cityEvent?.event?.progress ?? 0, you: window.__game.campaign().cityEvent?.you ?? false }));
+    const bYou = await b.evaluate(() => window.__game.campaign().cityEvent?.you ?? null);
+    const stE = (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { city?: { event: { id: number; participants: number } | null } }> };
+    const roomEv = stE.rooms["city:lease_row"]?.city?.event;
+    check(
+      "a public event in the city: every file in the district is told (a late one at the door), the objective names it, and the room counts in the file in the ring and not the one across the street",
+      !!ev && ev.kind === "hold" && hb.ev?.event?.id === ev.id && hc.ev?.event?.id === ev.id && /PUBLIC EVENT/.test(hb.title) && /PUBLIC EVENT/.test(hc.title) && inRing.progress > 0 && inRing.you === true && bYou === false && hc.ev?.you === false && !!roomEv && roomEv.id === ev.id && roomEv.participants >= 1,
+      `event ${ev?.id} ${ev?.kind} "${ev?.title}" at (${ev?.x.toFixed(1)}, ${ev?.z.toFixed(1)}) · BRAVO's objective "${hb.title.replace(/\s+/g, " ").slice(0, 70)}" · CHARLIE's "${hc.title.replace(/\s+/g, " ").slice(0, 50)}" · ALPHA's "${ha.title.replace(/\s+/g, " ").slice(0, 50)}" · BRAVO hears ${hb.ev?.event?.id} · CHARLIE (late) hears ${hc.ev?.event?.id} · ALPHA progress ${inRing.progress.toFixed(1)} you ${inRing.you} · BRAVO you ${bYou} · CHARLIE you ${hc.ev?.you} · room ${JSON.stringify(roomEv && { id: roomEv.id, participants: roomEv.participants })}`,
+    );
+    await shot(a, `${OUT}/city-event.png`);
+    await late.close();
+    await a.evaluate(() => window.__game.setBot(null));
+
     // ---------------- a contract taken in the city knows the way back ----------------
     const nav = a.waitForURL(/mission=/, { timeout: 20000, waitUntil: "commit" }).then(() => true, () => false);
     // the desk reads the file the ledger host keeps, house and all
@@ -196,11 +207,13 @@ async function main(): Promise<void> {
     const q = new URL(a.url()).searchParams;
     await a.waitForFunction(() => window.__game?.ready === true, null, { timeout: 60000, polling: 100 });
     const back = await a.evaluate(() => window.__game.campaign().backToCity);
+    // a contract is played off the city: its gates are chain-link, not doors (Stage 704)
+    const contractDoors = await a.evaluate(() => window.__game.game.renderer.gateDoors.length);
     const bq = back ? new URL(back).searchParams : null;
     check(
       "a contract taken in the city is played off it, and knows the way back to the same city",
-      left && q.get("mission") === "m1_wake_unlisted" && !q.has("net") && !q.has("city") && q.get("back") === "lease_row" && !!bq && bq.get("city") === "1" && !bq.has("back") && !bq.has("mission") && new URL(bq.get("net") ?? "http://x").pathname === `/campaign/${cityRoomName("lease_row")}`,
-      `left ${left} · mission ${q.get("mission")} net ${q.get("net")} back ${q.get("back")} · way back ${back}`,
+      left && contractDoors === 0 && q.get("mission") === "m1_wake_unlisted" && !q.has("net") && !q.has("city") && q.get("back") === "lease_row" && !!bq && bq.get("city") === "1" && !bq.has("back") && !bq.has("mission") && new URL(bq.get("net") ?? "http://x").pathname === `/campaign/${cityRoomName("lease_row")}`,
+      `left ${left} · doors on the contract page ${contractDoors} · mission ${q.get("mission")} net ${q.get("net")} back ${q.get("back")} · way back ${back}`,
     );
     // ---------------- the districts are joined: BRAVO walks through the nearest of LEASE ROW's gates ----------------
     // (Stage 697) Whichever gate is nearest BRAVO (spawns sit by the gates): BRAVO sprints to a point
@@ -220,6 +233,10 @@ async function main(): Promise<void> {
     };
     const pb = await b.evaluate(() => window.__game.state().pos);
     let EXIT = nearestGate(pb);
+    // in the city every gate is a door with its destination over it (Stage 704)
+    const doors = await b.evaluate(() => window.__game.game.renderer.gateDoors.map((d) => ({ gate: d.gate, to: d.to, text: d.text })));
+    const doorsRight = doors.length === lease.exits!.length && doors.every((d) => d.to === neighbourAt("lease_row", d.gate)!.district && d.text === `→ ${levelById(d.to).displayName}`);
+    let doorShot = false;
     // a 5×5 LEASE ROW has corner spawns 66 m from any gate, and a bot that cannot shoot back is often
     // downed on the way: when it dies it is walked again from where it respawned, to the gate nearest
     // there, up to four walks in all. Which gate it takes does not matter; the check reads the gate the
@@ -236,6 +253,15 @@ async function main(): Promise<void> {
     while (going) {
       const at = await b.evaluate(() => ({ line: window.__game.campaign().gate.line, deaths: window.__game.state().stats.deaths, health: window.__game.state().health, pos: window.__game.state().pos })).catch(() => null);
       if (at?.line) lines.add(at.line.replace(/[▮▯]+/g, "▮"));
+      // walking up to it: the door is ahead of BRAVO, its sign lit
+      if (at?.line && !doorShot && /WALK INTO THE GATE/.test(at.line)) {
+        doorShot = true;
+        // the sim held still for the shot (seconds under SwiftShader), or the one-second hold in the
+        // gate's mouth runs out behind it and the crossing is never seen
+        await b.evaluate(() => window.__game.setRealtime(false)).catch(() => undefined);
+        await shot(b, `${OUT}/city-gate-door.png`).catch(() => undefined);
+        await b.evaluate(() => window.__game.setRealtime(true)).catch(() => undefined);
+      }
       if (at && at.deaths > deathsSeen && at.health > 0 && walks < 4 && going) {
         deathsSeen = at.deaths;
         walks++;
@@ -282,8 +308,8 @@ async function main(): Promise<void> {
     // the arrival is exact; every district has a spawn 2 m from some gate's arrival, so the tolerance is well under that
     check(
       "the districts are joined: walking into a LEASE ROW gate names the district it leads to, and standing in it walks the file into that city at the gate that leads back",
-      went && [...lines].some((l) => l.includes(`→ ${there.displayName}`)) && [...lines].some((l) => /CROSSING/.test(l)) && bu.get("city") === "1" && bu.get("from") === "lease_row" && bu.get("gate") === String(to.gate) && land.mode === "city" && land.live >= 3 && land.off < 0.5 && (st2.rooms[`city:${to.district}`]?.city?.players ?? 0) >= 1,
-      `${walks} walk(s), first from (${pb.x.toFixed(1)}, ${pb.z.toFixed(1)}) · gate ${EXIT} at (${mouth.x}, ${mouth.z})${stuck ? ` · walk ended at (${stuck.pos.x.toFixed(1)}, ${stuck.pos.y.toFixed(1)}, ${stuck.pos.z.toFixed(1)}) health ${stuck.health} deaths ${stuck.deaths}` : ""} → ${to.district} gate ${to.gate} · lines [${[...lines].join(" | ")}] · went ${went} → level ${bu.get("level")} from ${bu.get("from")} gate ${bu.get("gate")} · mode ${land.mode} · at most ${land.off.toFixed(2)} m from the arrival point over ${land.live} live samples in its first second · room ${JSON.stringify(st2.rooms[`city:${to.district}`]?.city && { players: st2.rooms[`city:${to.district}`]!.city!.players })}`,
+      doorsRight && went && [...lines].some((l) => l.includes(`→ ${there.displayName}`)) && [...lines].some((l) => /CROSSING/.test(l)) && bu.get("city") === "1" && bu.get("from") === "lease_row" && bu.get("gate") === String(to.gate) && land.mode === "city" && land.live >= 3 && land.off < 0.5 && (st2.rooms[`city:${to.district}`]?.city?.players ?? 0) >= 1,
+      `doors [${doors.map((d) => d.text).join(", ")}]${doorsRight ? "" : " WRONG"} · ${walks} walk(s), first from (${pb.x.toFixed(1)}, ${pb.z.toFixed(1)}) · gate ${EXIT} at (${mouth.x}, ${mouth.z})${stuck ? ` · walk ended at (${stuck.pos.x.toFixed(1)}, ${stuck.pos.y.toFixed(1)}, ${stuck.pos.z.toFixed(1)}) health ${stuck.health} deaths ${stuck.deaths}` : ""} → ${to.district} gate ${to.gate} · lines [${[...lines].join(" | ")}] · went ${went} → level ${bu.get("level")} from ${bu.get("from")} gate ${bu.get("gate")} · mode ${land.mode} · at most ${land.off.toFixed(2)} m from the arrival point over ${land.live} live samples in its first second · room ${JSON.stringify(st2.rooms[`city:${to.district}`]?.city && { players: st2.rooms[`city:${to.district}`]!.city!.players })}`,
     );
     await shot(b, `${OUT}/city-gate-arrival.png`);
 

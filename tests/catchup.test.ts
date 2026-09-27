@@ -184,7 +184,7 @@ describe("a client whose page blocked comes back and catches up without being ki
         expect(r.kicks(), `${frames} frames, phase ${phase}`).toEqual([]);
       }
     }
-  });
+  }, 60_000); // 240 rooms, 2 s here and over 5 s on a CI runner (Stage 704)
 
   it("a page that hitches again and again, half a second at a time, is never struck", () => {
     // a client stuck at 2 fps: each frame is capped at 0.5 s and runs MAX_CATCHUP_TICKS ticks, which is

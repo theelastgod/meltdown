@@ -21,7 +21,7 @@
  * never a coordinate.
  */
 import { v3 } from "../math/vec3";
-import type { LevelDef, SpawnPoint, StreetExit } from "../sim/level";
+import { LEVEL_INFO, levelDisplayName, type DistrictCast, type LevelDef, type SpawnPoint, type StreetExit } from "../sim/level";
 import { CITY_DISTRICTS, cityDistrict, cityPageUrl } from "./city";
 
 /** gates in a district: the level's `exits`, in the order the generator writes them */
@@ -117,6 +117,61 @@ export function gatePrompt(pos: { x: number; z: number }, level: LevelDef, mode:
   const g = gateWithin(level, mode, pos, GATE_PROMPT_M);
   if (g === null) return null;
   return { gate: g, to: neighbourAt(level.name, g)! };
+}
+
+/**
+ * A gate dressed as a door (Stage 704): what the renderer hangs over its mouth and the map marks it
+ * with. The street it seals (centre, side, half its width, the gate's height) and where it leads:
+ * the neighbour's name and its cast colour.
+ */
+export interface GateSign {
+  gate: number;
+  x: number;
+  z: number;
+  dir: StreetExit["dir"];
+  /** half the street's width at the gate: the gate box's own extent along its line */
+  half: number;
+  /** the top of the gate box (metres) */
+  top: number;
+  to: GateLink;
+  /** the destination's name, as the HUD line says it */
+  name: string;
+  /** the destination's cast: its sign and its map mark are drawn in that colour */
+  cast: DistrictCast;
+}
+
+/**
+ * The gates to dress as doors, in gate order. Only in the city, like everything else here: any other
+ * mode answers [] and its gates are the chain-link they always were. A gate with nowhere to go is left
+ * out (a city of one district has no doors).
+ */
+export function gateSigns(level: LevelDef, mode: string): GateSign[] {
+  if (!gated(level, mode)) return [];
+  const out: GateSign[] = [];
+  const exits = level.exits!;
+  for (let g = 0; g < exits.length; g++) {
+    const e = exits[g]!;
+    const to = neighbourAt(level.name, g);
+    if (!to) continue;
+    const ns = e.dir === "n" || e.dir === "s";
+    // the gate box on this exit's line: its extent across the street is the mouth
+    const box = level.boxes.find((b) => {
+      if (b.tag !== "gate") return false;
+      return ns
+        ? Math.abs((b.min.x + b.max.x) / 2 - e.x) < 0.01 && e.z >= b.min.z - 0.01 && e.z <= b.max.z + 0.01
+        : Math.abs((b.min.z + b.max.z) / 2 - e.z) < 0.01 && e.x >= b.min.x - 0.01 && e.x <= b.max.x + 0.01;
+    });
+    const half = box ? (ns ? box.max.x - box.min.x : box.max.z - box.min.z) / 2 : GATE_MOUTH_M;
+    const cast = LEVEL_INFO.find((l) => l.id === to.district)?.cast ?? "magenta";
+    out.push({ gate: g, x: e.x, z: e.z, dir: e.dir, half, top: box?.max.y ?? 3.2, to, name: levelDisplayName(to.district), cast });
+  }
+  return out;
+}
+
+/** a gate's inward direction (x, z): from its line into the district */
+export function gateInward(dir: StreetExit["dir"]): { x: number; z: number } {
+  const o = outward(dir);
+  return { x: -o.x, z: -o.z };
 }
 
 /** A file's time in a gate: which gate, and how long it has stood there. */

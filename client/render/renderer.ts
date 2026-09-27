@@ -7,7 +7,7 @@ import type { Vec3 } from "@shared/math/vec3";
 import { PostChain } from "./post";
 import { Rain } from "./rain";
 import { makeFlatWetFloor, makeWetFloor } from "./wetfloor";
-import { bindPlate, buildSkyline, dressLevel, PALETTE, Traffic } from "./city";
+import { bindPlate, buildSkyline, cityDoors, dressLevel, gateSignText, PALETTE, Traffic } from "./city";
 import { VfxPool } from "./vfx";
 import { markShared, release } from "./dispose";
 import { CityLife, flickerMaterial } from "./life";
@@ -152,6 +152,8 @@ export class Renderer {
   readonly district: DistrictId;
   /** Draw calls the level dressing added (probes budget this). */
   readonly levelCalls: number;
+  /** the city's gates dressed as doors, each with its destination's sign (Stage 704; probes read it): [] outside the city */
+  readonly gateDoors: readonly { gate: number; to: string; text: string }[];
   private rain: Rain;
   private traffic: Traffic | null = null;
   /** crowds, monorail, steam, ads, skyline blinkers, airship (render-only) */
@@ -277,7 +279,11 @@ export class Renderer {
   /** Set on a touch device: the mirror is skipped and the post chain runs smaller (Stage 32). */
   readonly mobile: boolean;
 
-  constructor(canvas: HTMLCanvasElement, level: LevelDef, district: DistrictId = level.district ?? "magenta", mobile = false) {
+  /**
+   * `city`: the page is walking the city (`inCity`, Stage 692), so the district's gates are doors
+   * and are dressed as doors (Stage 704). Everywhere else they stay the chain-link they were.
+   */
+  constructor(canvas: HTMLCanvasElement, level: LevelDef, district: DistrictId = level.district ?? "magenta", mobile = false, city = false) {
     this.mobile = mobile;
     this.district = district;
     const cast = DISTRICTS[district];
@@ -303,7 +309,9 @@ export class Renderer {
     this.camera.name = "viewmodel";
     this.scene.add(this.camera);
 
-    const dressed = dressLevel(this.scene, level, this.screens);
+    const doors = cityDoors(level, city);
+    this.gateDoors = doors.map((g) => ({ gate: g.gate, to: g.to.district, text: gateSignText(g) }));
+    const dressed = dressLevel(this.scene, level, this.screens, doors);
     this.levelCalls = dressed.calls;
     if (dressed.signMat) this.signFlicker = flickerMaterial(dressed.signMat);
     const skyline = buildSkyline(this.scene, level.skylineSeed ?? 42, (level.bounds ?? 32) + 44, district);

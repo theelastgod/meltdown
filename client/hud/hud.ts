@@ -27,7 +27,7 @@ import { terminalFooter, terminalSeat } from "./terminal";
 import { closeHint, openHint } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
 import { nodeClockNote, type NodeReadout } from "./node";
-import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
+import { gateMarks, nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type GateMark, type RadarGate, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
 import { capitalMark } from "../brand";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
@@ -1064,6 +1064,17 @@ export class Hud {
   }
   private radarSpots: readonly RadarSpot[] = [];
 
+  /** the city's gates, each a door to a named district (Stage 704): handed in once, in the city only */
+  setRadarGates(gates: readonly RadarGate[]): void {
+    this.radarGates = gates;
+  }
+  private radarGates: readonly RadarGate[] = [];
+  private gateMarksDrawn: readonly GateMark[] = [];
+  /** the gate marks the map last drew, for the probe */
+  get mapGates(): readonly GateMark[] {
+    return this.gateMarksDrawn;
+  }
+
   private mapFoot = "";
   /** the metres the map spans, for the probe */
   get mapAcross(): number {
@@ -1121,6 +1132,21 @@ export class Hud {
         g.arc(m.x, m.y, r + 2.5, 0, Math.PI * 2);
         g.stroke();
       }
+    }
+    // the city's doors (Stage 704): a bar across each gate in its destination's colour, and the
+    // destination's initials beside it; past the edge, a pinned square on the gate's bearing
+    this.gateMarksDrawn = gateMarks(this.radarGates, p.pos, p.yaw, scale, w, h);
+    for (const m of this.gateMarksDrawn) {
+      g.fillStyle = m.colour;
+      if (m.edge) {
+        g.fillRect(Math.round(m.x) - 1, Math.round(m.y) - 1, 3, 3);
+        continue;
+      }
+      g.fillRect(Math.round(m.x) - 2, Math.round(m.y) - 1, 5, 2);
+      g.font = "6px monospace";
+      g.textAlign = "center";
+      g.textBaseline = "bottom";
+      g.fillText(m.label, m.x, m.y - 1.5);
     }
     for (const d of dummies) {
       if (!d.alive) continue;

@@ -211,6 +211,15 @@ export class CityEvents {
     this.nextAt = tick;
   }
 
+  /**
+   * Hold the schedule back: no event starts on its own for `seconds` from `tick` (a running one runs
+   * on). The dev host's `quiet` (Stage 704), so a probe's own events and street runs are not raced by
+   * the schedule's; `startNow` still starts one at once.
+   */
+  postpone(tick: number, seconds: number): void {
+    this.nextAt = Math.max(this.nextAt, tick + Math.round(seconds * SIM_HZ));
+  }
+
   /** Whether a player (by key) has taken part in the event running or just ended. */
   took(key: string): boolean {
     return !!this.current && this.current.participants.has(key);

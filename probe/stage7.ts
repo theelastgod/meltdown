@@ -108,7 +108,9 @@ async function main(): Promise<void> {
       // lifts once a frame is drawn and the room has let the file in. On a busy runner RICH's first
       // SwiftShader frame came after its graph was opened, and the proof shot was a picture of the
       // card. Wait for the card as a player would; a card that never lifts still fails the shot.
-      await pg.waitForFunction(() => !(window.__game.loading()?.shown ?? false), null, { timeout: 60000, polling: 100 }).catch(() => undefined);
+      // Gone, not just going (Stage 704): `shown` drops when the card starts its 450 ms fade, and on
+      // a CI runner the shot landed inside the fade. The card is off the page once `loading()` is null.
+      await pg.waitForFunction(() => window.__game.loading() === null, null, { timeout: 60000, polling: 100 }).catch(() => undefined);
       return pg;
     };
     const net = (pg: Page) => pg.evaluate(() => { const n = window.__game.net()!; return { status: n.status, reason: n.kickReason }; });
