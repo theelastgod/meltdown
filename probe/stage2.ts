@@ -131,6 +131,22 @@ const NAV = buildNav(levelById("drainage_yard"));
  * for the rest of the run. This is the only place in the level the two of them can see each other,
  * so anything that needs a round to land has to put BRAVO back here first.
  */
+/** ALPHA's post: the end of the lane it covers from, the other place in the level with a sightline down it */
+const POST = { x: 0, z: 20 };
+/**
+ * Walk ALPHA to its post along the nav mesh, then engage (Stage 673). The drawing section used to
+ * hand ALPHA a killPlayer wherever the earlier tests had left it, and killPlayer never moves: the
+ * driver holds fire at a target it cannot see (Stage 34), so an ALPHA respawned at the north spawn,
+ * behind the upper deck from the lane, stood there for the whole two minutes. CI runs 666 and 667:
+ * "the driver pulled the trigger 0x … from a range of 17.8-34.6 m, re-armed 3x".
+ */
+const postThenKill = (from: { x: number; z: number }, targetId: number, seconds: number): BotStep[] => [
+  ...(findPath(NAV, { x: from.x, y: 0, z: from.z }, { x: POST.x, y: 0, z: POST.z }) ?? [{ x: from.x, y: 0, z: from.z }, { x: POST.x, y: 0, z: POST.z }])
+    .slice(1)
+    .map((p, i, arr) => ({ kind: "goto" as const, x: p.x, z: p.z, sprint: true, radius: i === arr.length - 1 ? 1 : 1.6, timeoutTicks: 400 })),
+  { kind: "killPlayer", targetId, ticks: 60 * seconds },
+];
+
 const laneRoute = (from: { x: number; z: number }, seconds: number): BotStep[] => [
   ...(findPath(NAV, { x: from.x, y: 0, z: from.z }, { x: LANE.x, y: 0, z: LANE.z }) ?? [{ x: from.x, y: 0, z: from.z }, { x: LANE.x, y: 0, z: LANE.z }])
     .slice(1)
@@ -451,7 +467,10 @@ async function main(): Promise<void> {
     // socket out of the room in two of five runs at CPU=2 — ALPHA stayed online, synced and
     // drawing with `remotes: 0` and nothing to shoot at.
     await E.a.evaluate(() => window.__game.setDrawing(true));
-    await E.a.evaluate((id) => window.__game.setBot([{ kind: "killPlayer", targetId: id, ticks: 60 * 32 }]), E.idB);
+    {
+      const from = await E.a.evaluate(() => ({ x: window.__game.state().pos.x, z: window.__game.state().pos.z }));
+      await E.a.evaluate((plan) => window.__game.setBot(plan), postThenKill(from, E.idB, 32));
+    }
 
     // ---------------- Stage 89: a hit is visible on the body it landed on ----------------
     //
@@ -523,7 +542,9 @@ async function main(): Promise<void> {
       if (Math.hypot(at.x - LANE.x, at.z - LANE.z) > 4) await E.b.evaluate((p) => window.__game.setBot(p), laneRoute(at, 30));
       if (await E.a.evaluate(() => window.__game.botStatus()?.done ?? true)) {
         rearms++;
-        await E.a.evaluate((id) => window.__game.setBot([{ kind: "killPlayer", targetId: id, ticks: 60 * 32 }]), E.idB);
+        // back to the post first: a death since the last arm respawns ALPHA wherever the level puts it
+        const from = await E.a.evaluate(() => ({ x: window.__game.state().pos.x, z: window.__game.state().pos.z }));
+        await E.a.evaluate((plan) => window.__game.setBot(plan), postThenKill(from, E.idB, 32));
       }
       const a = await E.a.evaluate(() => {
         const g = window.__game;
@@ -535,7 +556,7 @@ async function main(): Promise<void> {
       if (d < minD) minD = d;
       if (d > maxD) maxD = d;
       lastStep = a.step;
-      aState = `hp ${a.hp} ammo ${a.ammo} reload ${a.reload} swap ${a.swap}`;
+      aState = `at ${a.x.toFixed(1)},${a.z.toFixed(1)} · hp ${a.hp} ammo ${a.ammo} reload ${a.reload} swap ${a.swap}`;
       aimed = a.aimed;
       await E.a.waitForTimeout(500);
       im = await E.a.evaluate(() => (window as unknown as { __impact: Impact }).__impact);

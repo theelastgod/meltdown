@@ -1641,6 +1641,40 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 673 — ALPHA was shooting from behind the deck
+
+**The red.** CI runs 666 and 667 (Stages 668 and 669) both failed `probe:net` on
+the drawing client's engagement. The log read *"0 rounds fired (the driver pulled
+the trigger 0x with a target aimed and visible) in 120.4 s from a range of
+17.8-34.6 m, re-armed 3x"*. ALPHA was online and synced, and could see BRAVO alive
+in the lane at (1.3, 9.8). This is the intermittent Stage 662 traced to the
+probe's bot driver. It had now failed two runs in a row, so it was root-caused
+now.
+
+**The cause.** The main engagement walks ALPHA to its post at (0, 20) before it
+shoots. The drawing section that follows (Stage 89) handed ALPHA a `killPlayer`
+from wherever the earlier tests had left it. `killPlayer` never moves the bot,
+and since Stage 34 the driver holds fire at a target it cannot see. An ALPHA
+respawned at the north spawn, behind the upper deck from the lane, therefore
+stood there for the whole two minutes, re-armed three times, and never pulled
+the trigger. The failing range of 17.8–34.6 m is what separates the north spawn
+from the lane.
+
+**Reproduced.** In a scratch copy of the probe I walked ALPHA to the north spawn
+(0.3, −23.7) and BRAVO into the lane (−1.8, 8.0) before the section. The
+unmodified section failed exactly as CI did: *"the driver pulled the trigger 0x …
+from a range of 31.4-33.8 m, re-armed 3x"*.
+
+**The fix is in the probe.** `postThenKill()` routes ALPHA along the nav mesh to
+its post and then engages. It runs on the first arm and on every re-arm, because
+a death between arms respawns ALPHA wherever the level puts it. BRAVO has been
+routed to the lane the same way since Stage 654. The failure detail now also
+says where ALPHA stood. From the same forced start the section passed: 5 rounds
+fired and 3 landed in 8.2 s, with ALPHA finishing at (0.4, 22.8).
+
+**Verified.** The repro 28/28 with the fix, `probe:net` 28/28, and `npm run
+typecheck`.
+
 ## Stage 672 — The fixers stood like statues
 
 **The defect.** Stage 667 gave the four fixers bodies, and they stood perfectly
