@@ -660,7 +660,8 @@ wss.on("connection", (ws: WebSocket, req) => {
     close: (code, reason) => ws.close(code, reason),
   };
   roomAttach(room);
-  room.onOpen(conn);
+  // a city reads a gate arrival from its socket's query (Stage 697); no other room is given one
+  room.onOpen(conn, city ? url.searchParams : undefined);
   ws.on("message", (data) => {
     const buf = data instanceof ArrayBuffer ? data : Array.isArray(data) ? Buffer.concat(data).buffer : new Uint8Array(data as Buffer).slice().buffer;
     room.onMessage(conn, buf as ArrayBuffer);

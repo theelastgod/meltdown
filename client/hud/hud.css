@@ -71,6 +71,9 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .alert { position: absolute; left: 50%; top: 58px; transform: translateX(-50%); color: var(--gr); font-size: 11px; white-space: nowrap; opacity: 0; transition: opacity 0.2s; }
 #hud .alert.on { opacity: 1; }
 #hud .alert.am { color: var(--am); text-shadow: 0 0 4px rgba(255,176,46,0.5); }
+/* Stage 697: a city gate names where it leads, under the reticle, while the file is at its mouth */
+#hud .gatehint { left: 50%; top: calc(50% + 48px); transform: translateX(-50%); padding: 4px 10px; font-size: 12px; letter-spacing: 0.12em; white-space: nowrap; color: var(--cy); }
+#hud .gatehint[hidden] { display: none; }
 #hud .map { right: 14px; top: 14px; width: 116px; padding: 4px; }
 #hud .map .t { color: var(--cy); text-align: center; font-size: 10px; margin-bottom: 3px; letter-spacing: 0.12em; }
 #hud .map canvas { display: block; width: 108px; height: 84px; image-rendering: pixelated; background: rgba(0, 12, 18, 0.7); border: 1px solid rgba(53,242,255,0.35); }
@@ -95,7 +98,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.q-prompt .prompt, #hud.q-prompt .prompt-touch, #hud.q-prompt .keys,
 #hud.q-reticle .xh,
 #hud.q-rack .rack,
-#hud.q-alert .alert,
+#hud.q-alert .alert, #hud.q-alert .gatehint,
 #hud.q-ammo .ammo,
 #hud.q-nades .nades,
 #hud.q-arrows .dmg, #hud.q-arrows .thr, #hud.q-arrows .hit,

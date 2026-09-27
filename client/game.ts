@@ -9,7 +9,9 @@ import { WAKE } from "@shared/sim/wake";
 import type { InputFrame } from "@shared/sim/input";
 import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS, levelDisplayName } from "@shared/sim/level";
 import { itemName } from "@shared/manifest/items";
-import { eyeHeight, eyePos, type PlayerState } from "@shared/sim/player";
+import { eyeHeight, eyePos, reviveMotion, type PlayerState } from "@shared/sim/player";
+import { arrivalFromQuery } from "@shared/net/citygates";
+import type { SpawnPoint } from "@shared/sim/level";
 import { canSee, MECH, WASP } from "@shared/sim/ai";
 import { aimAssistScale } from "./aimassist";
 import { DUMMY_HEIGHT, DUMMY_RADIUS, hashWorld, MECH_HEIGHT, MECH_RADIUS, WASP_HEIGHT, WASP_RADIUS, World, type SimEvent } from "@shared/sim/world";
@@ -114,6 +116,8 @@ export class Game {
   private netConfig: NetConfig | null = null;
   /** Online: true once the first authoritative local state arrived; prediction starts then. */
   synced = false;
+  /** where a walk in through a city gate stands (Stage 697), until the first link has used it */
+  private arrival: SpawnPoint | null = null;
   readonly netStats = { corrections: 0, maxCorrectionM: 0, replayedInputs: 0, serverHitsOnMe: 0, myHits: 0, myShotsConfirmed: 0, log: [] as { tick: number; corr: number; ack: number; pendingBefore: number; replayed: number; wasAlive: boolean; stance: string }[] };
   readonly input: InputController;
   /** touch device: thumbs instead of pointer lock, and a frame a phone can hold (Stage 32) */
@@ -179,6 +183,10 @@ export class Game {
     this.world = new World(levelById(this.levelId), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" || campaignMode ? "off" : "wake", dummyRespawn: !campaignMode || city, run: this.runMode, pvp: !city });
     this.file = new GhostFile(() => this.online);
     this.player = this.world.addPlayer(1, "BLANK", 1, this.file.localLoadout());
+    // a walk in through a city gate (Stage 697) stands at that gate, facing in: here until the room
+    // answers, and the room puts the file in the same place (it checks the gate; the page cannot choose)
+    this.arrival = city ? arrivalFromQuery(this.world.level, q) : null;
+    if (this.arrival) reviveMotion(this.player, this.arrival);
     this.input = new InputController(canvas);
     this.input.yaw = this.player.yaw;
     // A phone has no pointer lock, no keyboard and no mouse, so it gets thumbs and a cheaper frame
@@ -432,6 +440,10 @@ export class Game {
           if (Object.keys(audit.sheet).length) this.world.setLoadout(this.player, this.file.admitted ?? this.file.localLoadout(), audit.sheet);
           this.hud.push(`AUDIT · ${audit.name} · ${audit.line}`, "am");
         }
+        // the first link after a walk through a city gate faces in from it, as the room placed it
+        // (Stage 697); a relink keeps the seat, and the snapshot says where that is
+        if (this.arrival) reviveMotion(this.player, this.arrival);
+        this.arrival = null;
         this.input.yaw = this.player.yaw;
         this.hud.push(`${this.rejoins > 0 ? "RELINKED" : "LINKED"} · ROOM ${roomName(cfg.url)} · FILE #${net.playerId}`, "cy");
         this.rejoins = 0;

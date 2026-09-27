@@ -126,8 +126,8 @@ export const MAX_PLAYER_ID = 255;
 export interface RoomHooks {
   /** after every tick, with the tick's sim events */
   afterStep?: (room: Room, events: readonly SimEvent[]) => void;
-  /** a client was admitted (its player exists) */
-  onAdmit?: (room: Room, playerId: number, account: Account | null) => void;
+  /** a client was admitted (its player exists); `query` is its socket's, when the host passed one to `onOpen` */
+  onAdmit?: (room: Room, playerId: number, account: Account | null, query?: URLSearchParams) => void;
   /** a client message the room does not handle itself */
   onClientMessage?: (room: Room, playerId: number, msg: { type: "choice"; script: string; testimony: Record<string, string> } | { type: "terminal"; script: string; node: string; choices: string[]; picked: string | null; recall: number }) => void;
 }
@@ -234,6 +234,8 @@ export class Room {
    */
   private bases = new Map<string, Account>();
   private byConn = new Map<Conn, ClientRec>();
+  /** each socket's own query, as its host passed it to `onOpen` (Stage 697) */
+  private socketQuery = new WeakMap<Conn, URLSearchParams>();
   private history = new Map<number, Map<number, RewindPose>>();
   private nextId = 1;
   /**
@@ -304,8 +306,13 @@ export class Room {
 
   // ---- connection lifecycle ----
 
-  onOpen(_conn: Conn): void {
-    // nothing until Join
+  /**
+   * A socket opened. Nothing happens until Join; the socket's own query, when the host passes it,
+   * is kept for the admit hook (a city reads a gate arrival from it, Stage 697). A WeakMap: a
+   * socket that closes before joining leaves nothing behind.
+   */
+  onOpen(conn: Conn, query?: URLSearchParams): void {
+    if (query) this.socketQuery.set(conn, query);
   }
 
   onMessage(conn: Conn, buf: ArrayBuffer): void {
@@ -678,7 +685,7 @@ export class Room {
     conn.send(encodeFile(this.fileMsg(rec, [], "join", joinNote)));
     this.resolveDebts();
     for (const other of this.clients.values()) if (other !== rec) other.pendingEvents.push({ type: "join", playerId, name: safeName });
-    this.opts.hooks?.onAdmit?.(this, playerId, account);
+    this.opts.hooks?.onAdmit?.(this, playerId, account, this.socketQuery.get(conn));
     this.opts.onLog(`player ${playerId} (${safeName}) joined as ${account?.id ?? "guest"} depth ${depth} · ${v.loadout.primary}/${v.loadout.secondary} · attested [${v.loadout.attested.join(",")}]${v.loadout.keystone ? " · keystone " + v.loadout.keystone : ""}`);
   }
 

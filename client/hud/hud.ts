@@ -145,6 +145,7 @@ export class Hud {
       <div class="p nodefoot" hidden></div>
       <div class="p mg mission"><span class="mtitle">◈ THE WAKE — DRAINAGE YARD</span><div class="sub"><span class="mline">⌖ CONTRACT — DUMMIES <span class="kills">0</span>/5</span></div><div class="runstrip" hidden></div><div class="sub mscore"></div><div class="nodes"></div></div>
       <div class="alert"></div>
+      <div class="p cy gatehint" hidden></div>
       <div class="debt"></div>
       <div class="dossier" hidden><div class="dt">▲ DOSSIER · BOTH CELLS · FILES AS THE CITY SEES THEM</div><div class="cells"></div></div>
       <div class="p am receipt" hidden><div class="rh">▲ LEDGER ENTRY · VANTAGE CLEARING HOUSE</div><div class="rl"></div><div class="rs">◆ <span class="rst">PRINTING…</span></div><div class="rf">[ENTER] SIGN</div></div>
@@ -412,6 +413,23 @@ export class Hud {
     this.q(".bar.shield").classList.toggle("broken", broken);
   }
   private shieldBroken = false;
+
+  /**
+   * A city gate's line (Stage 697): where the gate ahead leads, and how far through crossing it the
+   * file is. Null hides it. Written only when it changes: the campaign sets it every sim tick.
+   */
+  setGate(line: string | null): void {
+    if (line === this.gateLine) return;
+    this.gateLine = line;
+    const el = this.q(".gatehint");
+    el.hidden = line === null;
+    el.textContent = line ?? "";
+  }
+  private gateLine: string | null = null;
+  /** the gate line as shown, for the probe */
+  get gateText(): string | null {
+    return this.gateLine;
+  }
 
   /** Mission title and the current objective under it (replaces the wake strip while a contract runs). */
   setObjective(title: string, text: string, progress: string | null): void {

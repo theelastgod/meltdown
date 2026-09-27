@@ -74,7 +74,10 @@ export function loadingFor(href: string, over: Partial<LoadingDescriptor> = {}):
   if (mission) {
     d = { kind: crew ? "crew" : "mission", title: placeName(mission.level), line: crew ? `CREW ${crew} · ${mission.title}` : `CONTRACT · ${mission.title}`, art: MISSION_ART[mission.id] ?? GIG_ART[mission.id] ?? LEVEL_ART[mission.level] };
   } else if (q.get("mode") === "campaign") {
-    d = q.get("city") === "1" ? { kind: "play", title: placeName(level), line: "THE CITY · CONTINUE THE CAMPAIGN" } : { kind: "mode", title: placeName(level), line: "CAMPAIGN · THE DESK: FIXERS, GIGS, THE ARC" };
+    // a walk through a city gate (Stage 697) says where it came in from
+    const from = q.get("from");
+    const via = from && from !== level && LEVEL_INFO.some((l) => l.id === from && l.kind === "district") ? `THE CITY · IN FROM ${placeName(from)}` : "THE CITY · CONTINUE THE CAMPAIGN";
+    d = q.get("city") === "1" ? { kind: "play", title: placeName(level), line: via } : { kind: "mode", title: placeName(level), line: "CAMPAIGN · THE DESK: FIXERS, GIGS, THE ARC" };
   } else if (q.get("mode") === "run") {
     d = { kind: "mode", title: placeName(level), line: "THE RUN · CARRY THE CLAIMS TO A GATE" };
   } else if (q.get("explore") === "1") {

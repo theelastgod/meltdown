@@ -32,12 +32,24 @@ import { deskBanner } from "./missionart";
 import { gigThumb } from "./gigart";
 import { protocolIcon, weaponCard } from "./kitart";
 import { loadingFor, travelTo } from "./loading";
+import { gatePrompt, gateToTravel, gateTravelUrl, holdProgress, stepGateHold, type GateHold } from "@shared/net/citygates";
+import { SIM_DT } from "@shared/sim/constants";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop" | "city";
 
 /** The hold/survive objective clock: CRT, not `12s / 20s`. */
 export function holdClock(progress: number, need: number): string {
   return `${Math.floor(progress)}S / ${need}S`;
+}
+
+/**
+ * A city gate's HUD line (Stage 697): where it leads, then how to cross — or, once the file is in
+ * its mouth, how far through crossing it is.
+ */
+export function gateLine(district: string, progress: number, inMouth: boolean): string {
+  const n = 6;
+  const done = Math.max(0, Math.min(n, Math.floor(progress * n)));
+  return `→ ${levelDisplayName(district)} · ${inMouth ? `CROSSING ${"▮".repeat(done)}${"▯".repeat(n - done)}` : "WALK INTO THE GATE"}`;
 }
 
 /** One wasp is WASP, not WASPS. */
@@ -197,8 +209,43 @@ export class Campaign {
     this.game.hud.push(line, "am");
   }
 
+  /** the city gate this file is standing in and for how long (Stage 697) */
+  gateHold: GateHold | null = null;
+  /** where a gate sent this page: the probe reads it under `?nonav=1`, where nothing loads */
+  gateTarget: { gate: number; district: string; arriveGate: number; url: string } | null = null;
+
+  /**
+   * The city's gates, once a sim tick (Stage 697): name the gate ahead, count the time stood in its
+   * mouth, and walk through it once the hold is full. A dead file, or one at the desk, crosses nothing.
+   */
+  private cityGates(): void {
+    const g = this.game;
+    if (this.gateTarget) return; // already on the way
+    const p = g.player;
+    const level = g.world.level;
+    const live = p.alive && !this.uiOpen;
+    const at = live ? gateToTravel(p.pos, level, this.mode) : null;
+    const step = stepGateHold(this.gateHold, at, SIM_DT);
+    this.gateHold = step.hold;
+    const near = live ? gatePrompt(p.pos, level, this.mode) : null;
+    g.hud.setGate(near ? gateLine(near.to.district, holdProgress(this.gateHold), at !== null) : null);
+    if (step.go && at !== null) this.walkThrough(at);
+  }
+
+  /** Through a gate: the neighbour's city, arriving at the gate that leads back here. */
+  walkThrough(gate: number): boolean {
+    const t = gateTravelUrl(location.href, gate);
+    if (!t) return false;
+    this.gateTarget = { gate, district: t.to.district, arriveGate: t.to.gate, url: t.url };
+    this.game.hud.setGate(null);
+    this.note(`THE CITY · THROUGH THE GATE TO ${levelDisplayName(t.to.district)}`);
+    this.travel(t.url);
+    return true;
+  }
+
   /** One sim tick (offline modes): step the mission and present what happened. */
   tick(events: readonly SimEvent[]): void {
+    if (this.mode === "city") return this.cityGates();
     if (this.mode !== "mission" || !this.mission) return;
     stepMission(this.mission, this.game.world, events);
     for (const ev of drainMissionEvents(this.mission)) this.onMissionEvent(ev);
@@ -656,6 +703,8 @@ export class Campaign {
       crewTarget: this.crewTarget,
       /** where a contract taken in the city goes back to (Stage 692) */
       backToCity: this.backToCity(),
+      /** the city's gates (Stage 697): the line the HUD shows, the hold, and where a gate sent this page */
+      gate: { line: this.game.hud.gateText, hold: this.gateHold ? { ...this.gateHold } : null, target: this.gateTarget },
       terminalMirror: this.mirror,
       mirrorLog: this.mirrorLog.slice(),
       log: this.log.slice(-8),

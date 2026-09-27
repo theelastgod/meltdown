@@ -28,21 +28,36 @@ export function cityOf(roomName: string): string | null {
   return CITY_DISTRICTS.includes(d) ? d : null;
 }
 
-/** the socket a player opens to walk a district's city */
-export function citySocket(wsBase: string, level: string): string {
+/**
+ * Where a file walking in through a gate came from (Stage 697): the district it left and the gate
+ * of this district it arrives at. The room checks it (shared/net/citygates.ts `arrivalFor`).
+ */
+export interface CityArrival {
+  from: string;
+  gate: number;
+}
+
+/** the socket a player opens to walk a district's city (with the gate it walks in through, if any) */
+export function citySocket(wsBase: string, level: string, arrive?: CityArrival | null): string {
   const d = cityDistrict(level);
-  return `${wsBase.replace(/\/$/, "")}/campaign/${cityRoomName(d)}?city=${encodeURIComponent(d)}&level=${encodeURIComponent(d)}`;
+  const via = arrive ? `&from=${encodeURIComponent(arrive.from)}&gate=${arrive.gate}` : "";
+  return `${wsBase.replace(/\/$/, "")}/campaign/${cityRoomName(d)}?city=${encodeURIComponent(d)}&level=${encodeURIComponent(d)}${via}`;
 }
 
 /** the page that walks a district's city: the district, campaign mode, the city's socket, the shop kept */
-export function cityPageUrl(base: string, o: { wsBase: string; level: string; shop?: string | null }): string {
+export function cityPageUrl(base: string, o: { wsBase: string; level: string; shop?: string | null; arrive?: CityArrival | null }): string {
   const u = new URL(base);
-  for (const k of ["explore", "menu", "crawl", "mission", "net", "ai", "back"]) u.searchParams.delete(k);
+  // an arrival belongs to its own trip: one carried over from an earlier gate would place the file at the wrong one
+  for (const k of ["explore", "menu", "crawl", "mission", "net", "ai", "back", "from", "gate"]) u.searchParams.delete(k);
   const d = cityDistrict(o.level);
   u.searchParams.set("level", d);
   u.searchParams.set("mode", "campaign");
   u.searchParams.set("city", "1");
-  u.searchParams.set("net", citySocket(o.wsBase, d));
+  u.searchParams.set("net", citySocket(o.wsBase, d, o.arrive));
+  if (o.arrive) {
+    u.searchParams.set("from", o.arrive.from);
+    u.searchParams.set("gate", String(o.arrive.gate));
+  }
   if (o.shop) u.searchParams.set("shop", o.shop);
   return u.toString();
 }

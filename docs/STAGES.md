@@ -1641,6 +1641,58 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 697 — The districts were rooms with no doors between them
+
+**The ask.** "Expand the size of the world and the different things you can do in it … start
+with the campaign in a shared open world." The city (Stage 692) had one room per district, and
+the menu was the only way between them. Every district has eight street gates, and nothing read
+them.
+
+**The change.**
+- **In the city, every gate leads somewhere.** The districts tile: leave east or south and you
+  step one along the list; leave west or north and you step one back. You come in at the gate on
+  the same avenue on the far side, and that gate leads back to where you started
+  (`shared/net/citygates.ts`, `neighbourAt`).
+- **The HUD names the way.** Within 5 m of a gate it shows `→ DEADLETTER DOCKS · WALK INTO THE
+  GATE`. Stand in the gate's mouth for a second (`CROSSING ▮▮▮▯▯▯`) and the loading card takes you
+  there: "THE CITY · IN FROM LEASE ROW". A dead file, or one with the desk or a terminal open, does
+  not cross.
+- **The room places the arrival.** You arrive 6.5 m inside the matching gate, facing in and out of
+  the prompt's reach, so nobody bounces back. The page names only a gate. The room checks that the
+  gate leads back to where the page says it came from, then puts the file at that gate's own
+  point; anything else gets an ordinary spawn. The client runs the same check, so it never
+  predicts a place the room will refuse.
+- **Only the city has doors.** PvP rooms, contracts, THE RUN, Audits and offline exploring walk
+  the same streets with the gates shut.
+- **No new draw calls.** The gate line is one DOM element, written only when its text changes.
+
+**Verified.**
+- `tests/citygates.test.ts`, 18 tests:
+  - every gate pairs both ways, on the same avenue and the opposite side, and east-then-south lands
+    where south-then-east does;
+  - every arrival point is clear, faces in, and is out of its gate's reach;
+  - the real city room places a walker at the gate it names and ignores a missing, malformed or
+    lying hint, and a non-city room never reads one;
+  - new here: the walker is still at the gate after 60 room ticks.
+- The agent caught 5 mutations of the guards.
+- **probe:world**, two new checks: BRAVO sprints to LEASE ROW's east gate and stands in it.
+  - The HUD named DEADLETTER DOCKS, then CROSSING.
+  - The page went to the docks' city with `from=lease_row&gate=2`, and the docks room had the file.
+  - All ten live samples in its first second were 0.00 m from the arrival point.
+  - A page that lies about its gate lands on an ordinary spawn.
+  - With the room's arrival commented out (the mutation), the check fails at 91.9 m.
+- **A first cut of the check read the file after its first second** and found it on a spawn. It
+  had landed at the gate, stood still under a docks wasp, been worn down and respawned; the city
+  has no spawn protection, and spawns have none either. The check now judges only live samples.
+- Probes: probe:world 6/6, campaign 61/61, mobile 40/40, frame 8/8, net 28/28. 1602 unit tests
+  pass.
+- Proof: `docs/proof/stage697/city-gate-arrival.png`.
+
+**Open.**
+- With three districts the map repeats: LEASE ROW's east and south both lead to the DOCKS.
+- The gates look as they did; the only marker is the HUD line.
+- A file coming through a gate can land under a patrol, as a spawning file can.
+
 ## Stage 696 — The mirror drew every citizen a second time
 
 **The ask.** A bigger world with more in it. Stage 694 made LEASE ROW five blocks by five, but its

@@ -117,7 +117,8 @@ export class CampaignRoom implements DurableObject {
       close: (code, reason) => server.close(code, reason),
     };
     this.sockets++;
-    h.room.onOpen(conn);
+    // a city reads a gate arrival from its socket's query (Stage 697); a contract's room ignores it
+    h.room.onOpen(conn, url.searchParams);
     server.addEventListener("message", (ev) => {
       if (ev.data instanceof ArrayBuffer) h.room.onMessage(conn, ev.data);
       else h.room.onMessage(conn, new ArrayBuffer(0));

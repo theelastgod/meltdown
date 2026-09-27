@@ -12,6 +12,11 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
 import { cityPageUrl, cityRoomName } from "../shared/net/city";
+import { gateArrival, neighbourAt } from "../shared/net/citygates";
+import { levelById } from "../shared/sim/level";
+import { buildNav } from "../shared/sim/nav";
+import type { BotStep } from "../client/bot";
+import { sprintRoute } from "./route";
 
 const VITE_PORT = 5231;
 const HOST_PORT = 8871;
@@ -112,6 +117,72 @@ async function main(): Promise<void> {
       left && q.get("mission") === "m1_wake_unlisted" && !q.has("net") && !q.has("city") && q.get("back") === "lease_row" && !!bq && bq.get("city") === "1" && !bq.has("back") && !bq.has("mission") && new URL(bq.get("net") ?? "http://x").pathname === `/campaign/${cityRoomName("lease_row")}`,
       `left ${left} · mission ${q.get("mission")} net ${q.get("net")} back ${q.get("back")} · way back ${back}`,
     );
+    // ---------------- the districts are joined: BRAVO walks through LEASE ROW's east gate ----------------
+    // (Stage 697) Gate 3 is the east gate on the south avenue. BRAVO sprints to a point inside it, then
+    // into its mouth, and stands there: the HUD names the neighbour, and a second later the page goes.
+    const lease = levelById("lease_row");
+    const EAST = 3;
+    const to = neighbourAt("lease_row", EAST)!;
+    const inside = gateArrival(lease, EAST)!.pos;
+    const mouth = lease.exits![EAST]!;
+    const pb = await b.evaluate(() => window.__game.state().pos);
+    const walk: BotStep[] = [...sprintRoute(buildNav(lease), pb, inside, 1.4), { kind: "goto", x: mouth.x, z: mouth.z, sprint: false, radius: 0.3, timeoutTicks: 400, stop: true }, { kind: "hold", ticks: 9000 }];
+    const crossed = b.waitForURL((u) => new URL(u).searchParams.get("level") === to.district, { timeout: 60000, waitUntil: "commit" }).then(() => true, () => false);
+    await b.evaluate((plan) => window.__game.setBot(plan), walk);
+    // the line the HUD showed on the way in, read until the page goes
+    const lines = new Set<string>();
+    let going = true;
+    void crossed.then(() => (going = false));
+    while (going) {
+      const line = await b.evaluate(() => window.__game.campaign().gate.line).catch(() => "");
+      if (line) lines.add(line.replace(/[▮▯]+/g, "▮"));
+      await b.waitForTimeout(100).catch(() => undefined);
+    }
+    const went = await crossed;
+    const bu = new URL(b.url()).searchParams;
+    await b.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 90000, polling: 100 }).catch(() => undefined);
+    await b.evaluate(() => window.__game.setRealtime(true)).catch(() => undefined);
+    // Where the file stands for its first second in the docks, while it is alive. The city has no
+    // spawn protection (a spawn has none either), and a file standing still under a patrol at the
+    // gate is worn down and respawns: a sample after that says where the room respawned it, not where
+    // the gate put it. Every live sample must be at the gate, and there must be some.
+    const docks = levelById(to.district);
+    const want = gateArrival(docks, to.gate)!.pos;
+    let landed: { mode: string } | null = null;
+    let off = 0;
+    let live = 0;
+    for (let i = 0; i < 10; i++) {
+      const at = await b.evaluate(() => ({ pos: window.__game.state().pos, health: window.__game.state().health, mode: window.__game.campaign().mode })).catch(() => null);
+      if (at) landed = at;
+      if (at && at.health > 0) {
+        live++;
+        off = Math.max(off, Math.hypot(at.pos.x - want.x, at.pos.z - want.z));
+      }
+      await b.waitForTimeout(100);
+    }
+    if (live === 0) off = Infinity;
+    const st2 = (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { city?: { players: number } }> };
+    check(
+      "the districts are joined: walking into LEASE ROW's east gate names DEADLETTER DOCKS, and standing in it walks the file into the docks' city at the gate that leads back",
+      went && [...lines].some((l) => l.includes(`→ ${docks.displayName}`)) && [...lines].some((l) => /CROSSING/.test(l)) && bu.get("city") === "1" && bu.get("from") === "lease_row" && bu.get("gate") === String(to.gate) && landed?.mode === "city" && live >= 3 && off < 1.5 && (st2.rooms[`city:${to.district}`]?.city?.players ?? 0) >= 1,
+      `lines [${[...lines].join(" | ")}] · went ${went} → level ${bu.get("level")} from ${bu.get("from")} gate ${bu.get("gate")} · mode ${landed?.mode} · at most ${off.toFixed(2)} m from the arrival point over ${live} live samples in its first second · docks room ${JSON.stringify(st2.rooms[`city:${to.district}`]?.city)}`,
+    );
+    await shot(b, `${OUT}/city-gate-arrival.png`);
+
+    // ---------------- a page that lies about where it came from is placed like anyone else ----------------
+    // gate 5 of the docks leads to REPO DEPOT, not LEASE ROW: the room ignores the hint and spawns the file
+    const liar = await newPage("liar");
+    await liar.goto(`${cityPageUrl(`http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=0&account=city-liar&secret=${SECRET}&name=LIAR`, { wsBase: `ws://127.0.0.1:${HOST_PORT}`, level: to.district, shop: HOST })}&from=lease_row&gate=5`, { waitUntil: "domcontentloaded", timeout: 120000 });
+    await liar.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 90000, polling: 100 }).catch(() => undefined);
+    await liar.evaluate(() => window.__game.setRealtime(true)).catch(() => undefined);
+    await liar.waitForTimeout(600);
+    const lp = await liar.evaluate(() => window.__game.state().pos).catch(() => ({ x: NaN, z: NaN }));
+    const lie = gateArrival(docks, 5)!.pos;
+    const fromLie = Math.hypot(lp.x - lie.x, lp.z - lie.z);
+    const nearSpawn = Math.min(...docks.spawns.map((sp) => Math.hypot(lp.x - sp.pos.x, lp.z - sp.pos.z)));
+    check("a page that names a gate that does not lead where it says is placed at an ordinary spawn, not at the gate", fromLie > 3 && nearSpawn < 1.5, `${fromLie.toFixed(1)} m from gate 5's arrival · ${nearSpawn.toFixed(2)} m from the nearest spawn`);
+    await liar.close();
+
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     writeFileSync(`${OUT}/city.json`, JSON.stringify({ checks }, null, 2));
   } finally {
