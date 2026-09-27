@@ -12,7 +12,7 @@ import { VfxPool } from "./vfx";
 import { markShared, release } from "./dispose";
 import { CityLife, flickerMaterial } from "./life";
 import { HubDressing } from "./hub";
-import { buildFixer } from "./figures";
+import { attend, buildFixer } from "./figures";
 import { WHITE_LEVEL_ID } from "@shared/sim/white";
 import { CampaignFx } from "./campaign";
 import { drawGlyph, glyphFor } from "@shared/identity/glyph";
@@ -1047,6 +1047,9 @@ export class Renderer {
     this.traffic?.update(cityDt);
     this.listener.copy(this.camera.position);
     this.life.update(cityDt, this.listener);
+    // the people waiting for you breathe, and turn to you as you come near (Stage 672)
+    this.hub?.attendVisitor(cityDt, v.x, v.z, this.clock);
+    if (this.wern) attend(this.wern, cityDt, v.x, v.z, this.clock);
     this.campaignFx.update(cityDt);
     this.signFlicker?.setTime(this.clock);
     this.post.render(this.clock, dt);

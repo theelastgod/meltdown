@@ -1641,6 +1641,51 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 672 — The fixers stood like statues
+
+**The defect.** Stage 667 gave the four fixers bodies, and they stood perfectly
+still. A figure that never moves reads as a statue however well it is cut. The
+Deacon waiting in the office did not react when you walked up to his desk, and
+neither did Wern when you crossed the white office to him.
+
+**The fix.** `attend()` in `client/render/figures.ts` runs every frame for the
+office visitor and for Wern:
+- **Breath.** A slow rise of 1.2% over a 4.2 s period. It pivots at the feet,
+  so the figure never leaves the floor.
+- **The turn.** When the player comes within 7 m, the whole figure turns toward
+  them at up to 1.6 rad/s (these bodies have no bones). It turns at most 0.9 rad
+  from the way it was set facing; it was facing the room for a reason. It takes
+  the short way round, and turns back when the player leaves.
+
+`attendTarget()` is the rule on its own, used by the renderer and the probe
+alike. The office spawn is 8.2 m from the visitor's spot, so a file walking in
+sees the fixer facing the room, and they turn as you come to the desk.
+
+**The guards.**
+- *`tests/fixers.test.ts`* drives `attend` on a real built figure and checks:
+  - the figure turns toward a player to its side and never faster than the rate
+    allows;
+  - it stops at the cap and turns back when the player leaves;
+  - it ignores a player out of reach;
+  - it breathes, within 3%, with its width untouched;
+  - the rule caps behind-the-back targets the right way round and wraps the short
+    way.
+
+  Five mutations were each caught: snapping round, no cap, no breath, no reach
+  limit, turning away.
+- *`probe:campaign`* walks the file up to the Deacon's desk and reads his world
+  facing off the rendered scene. He is turned 0.56 rad from the room, the rule's
+  amount for where the file stands, and 0.000 rad off it. The fresh-file check
+  now derives the facing it expects from the same rule. Removing the renderer's
+  call fails the probe with *"should have turned −0.56 rad … is 0.563 rad off
+  that"*.
+
+**Verified.** `npm run typecheck` (both configs), 1464 unit tests, `npm run
+build`, `probe:campaign` 51/51.
+
+**Proof.** `docs/proof/stage672/office-deacon-turns.png` shows the Deacon turned
+from the room to the file standing at his desk.
+
 ## Stage 671 — Mission 3 was the same for every file
 
 **The defect.** Every mission after the first reads at least one earlier choice,

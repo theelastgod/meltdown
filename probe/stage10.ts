@@ -30,6 +30,7 @@ import { validInviteCode } from "../shared/net/private";
 import { buildNav, findPath } from "../shared/sim/nav";
 import { HUB_LEVEL_ID } from "../shared/sim/hub";
 import { VISITOR_AT } from "../client/render/hub";
+import { attendTarget } from "../client/render/figures";
 import { WERN_AT } from "../client/render/renderer";
 import { scriptById } from "../shared/campaign/script";
 
@@ -175,11 +176,27 @@ async function main(): Promise<void> {
     const c0 = await hub.evaluate(() => window.__game.campaign());
     check("the contracts desk opens on a fresh file with the creation script: no house yet, three to choose from", c0.contractsOpen && c0.faction === null && c0.dialogue?.script === "creation" && c0.next === "m1_wake_unlisted", `dialogue ${c0.dialogue?.script}:${c0.dialogue?.node} · faction ${c0.faction} · next ${c0.next}`);
     // Stage 667: the fixer with the next contract is in the room, in person, not just a name on the terminal
-    const fig0 = await hub.evaluate(() => window.__game.figures());
-    const deacon = fig0.find((f) => f.id === "deacon");
-    const toDoor = deacon ? Math.atan2(-(VISITOR_AT.faceX - deacon.x), -(VISITOR_AT.faceZ - deacon.z)) : NaN;
-    const turn = deacon ? Math.abs(Math.atan2(Math.sin(deacon.yaw - toDoor), Math.cos(deacon.yaw - toDoor))) : NaN;
-    check("the Deacon waits in the office on a fresh file, where the visitor stands, facing into the room — and nobody else is there", fig0.length === 1 && !!deacon && Math.hypot(deacon.x - VISITOR_AT.x, deacon.z - VISITOR_AT.z) < 0.05 && turn < 0.05, `figures ${JSON.stringify(fig0.map((f) => ({ ...f, x: +f.x.toFixed(2), z: +f.z.toFixed(2), yaw: +f.yaw.toFixed(2) })))} · off the door by ${turn.toFixed(3)} rad`);
+    const fig0 = await hub.evaluate(() => ({ figs: window.__game.figures(), pos: window.__game.state().pos }));
+    const deacon = fig0.figs.find((f) => f.id === "deacon");
+    const toDoor = Math.atan2(-(VISITOR_AT.faceX - VISITOR_AT.x), -(VISITOR_AT.faceZ - VISITOR_AT.z));
+    // he faces the room, turned toward the file by what the attend rule gives where it stands (Stage 672)
+    const want0 = toDoor + attendTarget(VISITOR_AT, toDoor, fig0.pos.x, fig0.pos.z);
+    const turn = deacon ? Math.abs(Math.atan2(Math.sin(deacon.yaw - want0), Math.cos(deacon.yaw - want0))) : NaN;
+    check("the Deacon waits in the office on a fresh file, where the visitor stands, facing into the room — and nobody else is there", fig0.figs.length === 1 && !!deacon && Math.hypot(deacon.x - VISITOR_AT.x, deacon.z - VISITOR_AT.z) < 0.05 && turn < 0.05, `figures ${JSON.stringify(fig0.figs.map((f) => ({ ...f, x: +f.x.toFixed(2), z: +f.z.toFixed(2), yaw: +f.yaw.toFixed(2) })))} · file at ${fig0.pos.x.toFixed(1)},${fig0.pos.z.toFixed(1)} · off where he should face by ${turn.toFixed(3)} rad`);
+    // Stage 672: walk up to him and he turns to you. Read off the rendered scene, on the render clock
+    await hub.evaluate(() => window.__game.contracts(false));
+    await hub.evaluate(() => {
+      window.__game.setBot([{ kind: "goto", x: -0.6, z: -2.6, sprint: false, radius: 0.5, timeoutTicks: 900, stop: true }, { kind: "hold", ticks: 9000 }]);
+      window.__game.advance(480);
+    });
+    await hub.waitForTimeout(1500);
+    const near = await hub.evaluate(() => ({ figs: window.__game.figures(), pos: window.__game.state().pos }));
+    const dNear = near.figs.find((f) => f.id === "deacon");
+    const wantNear = attendTarget(VISITOR_AT, toDoor, near.pos.x, near.pos.z);
+    const offNear = dNear ? Math.abs(Math.atan2(Math.sin(dNear.yaw - (toDoor + wantNear)), Math.cos(dNear.yaw - (toDoor + wantNear)))) : NaN;
+    check("walk up to the Deacon and he turns to you: round from the room by the rule's amount, toward where you stand", !!dNear && Math.abs(wantNear) > 0.3 && offNear < 0.08, `file at ${near.pos.x.toFixed(1)},${near.pos.z.toFixed(1)} · he should have turned ${wantNear.toFixed(2)} rad from the room and is ${offNear.toFixed(3)} rad off that`);
+    await hub.evaluate(() => window.__game.contracts(true));
+    await hub.waitForTimeout(200);
     const seen = await playTerminal(hub, [2]); // the wake cells
     await hub.waitForTimeout(400);
     const c1 = await hub.evaluate(() => window.__game.campaign());

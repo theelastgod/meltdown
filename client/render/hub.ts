@@ -10,7 +10,7 @@ import type { LevelDef } from "@shared/sim/level";
 import type { HubDef } from "@shared/sim/hub";
 import { bindPlate, MeshBatch, PALETTE, SignAtlas } from "./city";
 import { cloakGeometry } from "./rig";
-import { buildFixer, type FixerBody } from "./figures";
+import { attend, buildFixer, type FixerBody } from "./figures";
 
 export interface HubState {
   chapter: number;
@@ -37,6 +37,7 @@ export class HubDressing {
   renovations = 0;
   /** who is standing in the office, for probes and tests */
   visitor: FixerBody | null = null;
+  private visitorFig: THREE.Group | null = null;
 
   constructor(private scene: THREE.Scene, level: LevelDef) {
     this.hub = level.hub!;
@@ -112,7 +113,13 @@ export class HubDressing {
       // a figure faces -z; turn it toward the door
       f.rotation.y = Math.atan2(-(VISITOR_AT.faceX - VISITOR_AT.x), -(VISITOR_AT.faceZ - VISITOR_AT.z));
       this.group.add(f);
-    }
+      this.visitorFig = f;
+    } else this.visitorFig = null;
+  }
+
+  /** the visitor breathes, and turns to the file when it comes near (Stage 672) */
+  attendVisitor(dt: number, px: number, pz: number, time: number): void {
+    if (this.visitorFig) attend(this.visitorFig, dt, px, pz, time);
   }
 
   setGhost(pose: { x: number; y: number; z: number; yaw: number } | null): void {

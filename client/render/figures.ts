@@ -230,3 +230,38 @@ export function buildFixer(id: FixerBody): THREE.Group {
   group.scale.setScalar(FIXER_SCALE[id]);
   return group;
 }
+
+// ---- a fixer waiting for you (Stage 672) ----
+//
+// A figure that never moves reads as a statue however well it is cut. A person waiting in a room
+// breathes, and when you come close they turn to you: not all the way (they were facing the room
+// for a reason) and not at once. The turn is the whole figure — these bodies have no bones — and
+// the breath is a slow rise of the chest, pivoting at the feet so nobody floats.
+
+/** how near the player must come to be turned to; how far round a fixer will turn; how fast (rad/s); how deep a breath */
+export const ATTEND = { near: 7, turn: 0.9, rate: 1.6, breath: 0.012, period: 4.2 } as const;
+
+/** the yaw (relative to where the figure was set facing) a fixer turns toward a player at (px, pz), or 0 if they are too far */
+export function attendTarget(at: { x: number; z: number }, baseYaw: number, px: number, pz: number): number {
+  const dx = px - at.x;
+  const dz = pz - at.z;
+  if (Math.hypot(dx, dz) > ATTEND.near) return 0;
+  // a figure faces -z; the yaw that faces the player, as an offset from the base, wrapped and capped
+  const want = Math.atan2(-dx, -dz) - baseYaw;
+  const off = Math.atan2(Math.sin(want), Math.cos(want));
+  return Math.max(-ATTEND.turn, Math.min(ATTEND.turn, off));
+}
+
+/** step a fixer standing in the scene: turn toward (or back from) the player, and breathe */
+export function attend(f: THREE.Group, dt: number, px: number, pz: number, time: number): void {
+  const u = f.userData as { baseYaw?: number; turned?: number; id?: FixerBody };
+  u.baseYaw ??= f.rotation.y;
+  u.turned ??= 0;
+  const target = attendTarget(f.position, u.baseYaw, px, pz);
+  const step = ATTEND.rate * Math.max(0, dt);
+  u.turned += Math.max(-step, Math.min(step, target - u.turned));
+  f.rotation.y = u.baseYaw + u.turned;
+  const id = f.name.slice("fixer:".length) as FixerBody;
+  const s = FIXER_SCALE[id] ?? 1;
+  f.scale.set(s, s * (1 + ATTEND.breath * Math.sin((time / ATTEND.period) * Math.PI * 2)), s);
+}

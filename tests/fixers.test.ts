@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, fixerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, fixerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -128,5 +128,57 @@ describe("where they stand", () => {
     const { hits, walled } = clear(white, [], WERN_AT.x, WERN_AT.z);
     expect(hits, `Wern stands inside ${hits.map((b) => (b as { tag?: string }).tag ?? "a box").join(", ")}`).toEqual([]);
     expect(walled).toBe(true);
+  });
+});
+
+describe("a fixer waiting for you (Stage 672)", () => {
+  const facing = (f: THREE.Group, px: number, pz: number) => {
+    // a figure's front is its -z: the cosine between that and the way to the player
+    const fx = -Math.sin(f.rotation.y), fz = -Math.cos(f.rotation.y);
+    const dx = px - f.position.x, dz = pz - f.position.z;
+    return (fx * dx + fz * dz) / Math.hypot(dx, dz);
+  };
+
+  it("turns toward a player who comes near, no faster than it should and no further, and back when they go", () => {
+    const f = buildFixer("deacon");
+    f.position.set(0, 0, 0);
+    f.rotation.y = 0; // facing -z
+    const side = { x: 3, z: 0 }; // well to its right, inside ATTEND.near
+    const before = facing(f, side.x, side.z);
+    attend(f, 0.1, side.x, side.z, 0);
+    expect(Math.abs(f.rotation.y), "it snapped round").toBeLessThanOrEqual(ATTEND.rate * 0.1 + 1e-9);
+    for (let k = 0; k < 180; k++) attend(f, 1 / 60, side.x, side.z, k / 60);
+    expect(facing(f, side.x, side.z)).toBeGreaterThan(before + 0.5);
+    expect(Math.abs(f.rotation.y)).toBeCloseTo(ATTEND.turn, 6);
+    // the player walks off: the figure turns back to the room it was set facing
+    for (let k = 0; k < 180; k++) attend(f, 1 / 60, 40, 40, k / 60);
+    expect(f.rotation.y).toBeCloseTo(0, 6);
+  });
+
+  it("ignores a player out of reach, and breathes without leaving the floor", () => {
+    const f = buildFixer("marrow");
+    f.rotation.y = 1;
+    const ys = new Set<number>();
+    for (let k = 0; k < 300; k++) {
+      attend(f, 1 / 60, 30, 30, k / 60);
+      ys.add(Math.round(f.scale.y * 1e4));
+      expect(f.scale.x).toBe(FIXER_SCALE.marrow);
+    }
+    expect(f.rotation.y).toBe(1);
+    expect(ys.size, "it does not breathe").toBeGreaterThan(10);
+    const lo = Math.min(...ys) / 1e4, hi = Math.max(...ys) / 1e4;
+    expect(hi / lo - 1).toBeLessThan(0.03);
+    // the feet are the pivot: scale about the origin keeps the lowest point on the floor
+    expect(f.position.y).toBe(0);
+  });
+
+  it("the turn target is capped and wraps the short way round", () => {
+    // behind and a little to the right (+x, which a -z facer turns to by negative yaw): the right way, capped
+    expect(attendTarget({ x: 0, z: 0 }, 0, 0.2, 3)).toBeCloseTo(-ATTEND.turn, 9);
+    expect(attendTarget({ x: 0, z: 0 }, 0, -0.2, 3)).toBeCloseTo(ATTEND.turn, 9);
+    expect(attendTarget({ x: 0, z: 0 }, Math.PI - 0.1, 0, -2)).toBeCloseTo(-ATTEND.turn, 9); // needs -(pi - 0.1): the short way, capped
+    expect(attendTarget({ x: 0, z: 0 }, -Math.PI + 0.1, 0, -2)).toBeCloseTo(ATTEND.turn, 9);
+    expect(Math.abs(attendTarget({ x: 0, z: 0 }, 3.0, 0.5, 3))).toBeLessThanOrEqual(ATTEND.turn);
+    expect(attendTarget({ x: 0, z: 0 }, 0, 0, -20)).toBe(0);
   });
 });
