@@ -1641,6 +1641,51 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 698 — A player whose page froze was kicked for catching up
+
+**The failure.** While root-causing probe:net (Stage 695), about half of the instrumented runs
+kicked BRAVO right after its long first frame; software GL can hold a page for about 14 s. The
+room logged three "strike … input rate" lines within about 54 ms, then "kick player N". BRAVO
+rejoined as a fresh blank file on a new seat. The room's own comment says a hitching client is
+not a cheater.
+
+**The cause.** The input-rate guard counts inputs in a fixed one-second window and strikes every
+one past 95. After the block, the client's frame loop sends up to `MAX_CATCHUP_TICKS` (30) inputs
+a frame to catch up, then goes back to 60 a second. Two catch-up frames plus a second of play
+crossed 95 inside one window. The inputs past the limit came on three consecutive ticks, which is
+three strikes and a kick.
+
+**The fix.** The window rule is unchanged. Silence past a window's end that lasts at least a
+whole window earns catch-up credit: 60 inputs per second of silence, capped at 120 (four catch-up
+frames). The window the client comes back in spends that credit before counting anything, and
+credit left unspent is dropped at the next reset. A client sending more than 95 inputs a second,
+at most 32 per packet, sends a packet at least every 337 ms, so it never earns credit and is
+struck exactly as before.
+
+**A first version was sent back.** It replaced the window with a token bucket that had 12 spare
+inputs with no silence before them. A client flooding at 100 a second then took about 3 s to kick
+instead of about 1 s. That loosens the check, so it was rejected.
+
+**Verified.**
+- `tests/catchup.test.ts`, 17 tests:
+  - A 14 s block followed by one to four 30-tick catch-up frames, at every start point in the
+    window, draws no strike. Neither does a page stuck at 2 fps.
+  - A sweep of floods at 96, 100, 105, 110, 120, 150 and 200 inputs a second, one input a packet
+    and 32 a packet, from join and at the worst of 60 start points after honest play. It is
+    measured against kick times recorded from the old guard as constants, and new equals old in
+    every case. At 96 a second the kick lands at tick 119 from join, and 178 after honest play,
+    both before and after.
+  - Fake catch-up bursts, bursts larger than the silence earned, a 14 s dump, and credit banked
+    across windows are all refused and kicked.
+- Six mutations were caught:
+  - the 12 spare inputs re-added (all 9 sweep tests fail);
+  - the rejected bucket;
+  - the old window with no credit;
+  - the one-second minimum silence removed;
+  - credit carried across windows;
+  - the credit cap removed.
+- probe:net 28/28 and probe:harden 9/9. 1619 unit tests pass.
+
 ## Stage 697 — The districts were rooms with no doors between them
 
 **The ask.** "Expand the size of the world and the different things you can do in it … start

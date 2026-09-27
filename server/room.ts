@@ -10,7 +10,7 @@ import { encodeRun, type RunMsg } from "../shared/net/protocol";
 import { RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT, runView, unitsWord } from "../shared/sim/run";
 import { dayIndex } from "../shared/endgame/clock";
 import { dailyOf } from "../shared/endgame/contracts";
-import { MOVE, SIM_HZ } from "../shared/sim/constants";
+import { MAX_CATCHUP_TICKS, MOVE, SIM_HZ } from "../shared/sim/constants";
 import { auditErrors, type AuditDef } from "../shared/endgame/audits";
 import { itemById } from "../shared/manifest/items";
 import type { EndgameStore } from "./endgame";
@@ -76,6 +76,11 @@ interface ClientRec {
   strikeWindowStart: number;
   inputWindowStart: number;
   inputCount: number;
+  /**
+   * catch-up credit (Stage 698): inputs this window may take without counting against it, earned by
+   * silence no window saw and spendable only in the window the client came back in
+   */
+  catchUp: number;
   /** the last input the client actually sent, repeated to fill a loss gap (Stage 31) */
   lastInput: NetInput | null;
   /** inputs synthesised to cover loss, for /stats */
@@ -213,6 +218,22 @@ const MAX_GAP_FILL = 4;
 /** What survives into a filled input: movement, stance and look. Never a discrete action. */
 const GAP_FILL_BUTTONS = Btn.Forward | Btn.Back | Btn.Left | Btn.Right | Btn.Jump | Btn.Sprint | Btn.Crouch;
 const MAX_INPUT_RATE_PER_SEC = 95;
+/**
+ * The most catch-up credit one silence can buy, in inputs (Stage 698). The client's frame loop drops
+ * time past MAX_CATCHUP_TICKS a frame, so one frame out of a block owes at most 30. A page limping
+ * out of a long block runs several such frames, and their packets can land together (the failing
+ * probe's strikes fell inside ~54 ms). Four of them is two seconds of sim. Past that the drain
+ * would discard the backlog anyway (MAX_INPUT_QUEUE, INPUT_BURST_CREDITS), so accepting more buys
+ * an honest client nothing.
+ */
+const INPUT_CATCHUP_MAX = 4 * MAX_CATCHUP_TICKS;
+/**
+ * The shortest silence past a window's end that earns catch-up credit (Stage 698): one whole window
+ * that never heard from the client. Any client over MAX_INPUT_RATE_PER_SEC must send at least one
+ * packet every 32/95 s = 337 ms (a packet carries at most 32 inputs, see decodeClientMessage), so a
+ * flooder can never go this quiet, not even with a packet of 32. The block it exists for is ~14 s.
+ */
+const CATCHUP_MIN_SILENCE_MS = 1000;
 /**
  * A client may only ever spend as many inputs as the sim has ticked. Every input is a full
  * `stepPlayer` at SIM_DT, so a client allowed to spend more inputs than ticks simply moves and
@@ -353,6 +374,27 @@ export class Room {
     rec.ackTick = Math.max(rec.ackTick, msg.ackTick);
     const now = this.opts.now();
     if (now - rec.inputWindowStart >= 1000) {
+      /**
+       * Catch-up credit (Stage 698). A client whose page blocked sends nothing, then comes back with
+       * up to MAX_CATCHUP_TICKS inputs a frame and resumes 60 Hz; burst plus 60 Hz crossed 95 in the
+       * window it came back in, and the three inputs past it, on three consecutive ticks, were a kick.
+       *
+       * The window rule itself is untouched. What is added: the time between the end of the last
+       * window and this packet, a stretch no window counted and in which the client sent nothing,
+       * earns SIM_HZ inputs a second (the ticks it could really owe), capped at INPUT_CATCHUP_MAX,
+       * if it lasted at least CATCHUP_MIN_SILENCE_MS. Inputs in the new window spend that credit
+       * before they count against it. Unspent credit does not carry: the next reset replaces it.
+       *
+       * Why this loosens nothing:
+       *  - no credit for a flooder. Anyone over 95 a second, at most 32 inputs a packet, sends a
+       *    packet at least every 337 ms, so it never earns credit and is counted, struck and kicked
+       *    exactly as before (tests/catchup.test.ts sweeps 96..200 a second against the old times).
+       *  - no sustained gain. Time splits into windows (at most 95 counted in each) and the gaps
+       *    between them (no inputs, 60 credit a second, spent in the next window only), so over any
+       *    run a client is held to 95 a second, as it was.
+       */
+      const silence = now - (rec.inputWindowStart + 1000);
+      rec.catchUp = silence >= CATCHUP_MIN_SILENCE_MS ? Math.min(INPUT_CATCHUP_MAX, (silence * SIM_HZ) / 1000) : 0;
       rec.inputWindowStart = now;
       rec.inputCount = 0;
     }
@@ -363,8 +405,8 @@ export class Room {
         this.strike(rec, "invalid input");
         continue;
       }
-      rec.inputCount++;
-      if (rec.inputCount > MAX_INPUT_RATE_PER_SEC) {
+      if (rec.catchUp >= 1) rec.catchUp -= 1;
+      else if (++rec.inputCount > MAX_INPUT_RATE_PER_SEC) {
         rec.inputsRejected++;
         this.strike(rec, "input rate");
         continue;
@@ -649,6 +691,7 @@ export class Room {
       strikeWindowStart: 0,
       inputWindowStart: this.opts.now(),
       inputCount: 0,
+      catchUp: 0,
       credits: INPUT_BURST_CREDITS,
       lastInput: null,
       gapFilled: 0,

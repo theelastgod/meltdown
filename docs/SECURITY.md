@@ -110,6 +110,15 @@ A hitching client still catches up out of its bank, and a flooder's surplus pile
 and is dropped there. The per-second cap stays as a coarse flood guard, but the bucket is the
 invariant.
 
+Stage 698 kept that window as the strike rule and added catch-up credit to it. A page that blocked
+and then caught up used to be kicked: its catch-up burst plus 60 Hz crossed 95 in one window, and
+three consecutive packets were three strikes. Now, silence past a window's end that lasted at least
+a whole window earns 60 inputs a second of it, capped at 120 (four `MAX_CATCHUP_TICKS` frames). The
+window the client comes back in spends that credit before it counts, and unspent credit is dropped
+at the next reset. A flooder over 95 a second must send a packet at least every 337 ms (32 inputs
+a packet at most), so it never earns credit. `tests/catchup.test.ts` sweeps 96 to 200 a second,
+from join and after honest play, against kick times recorded from the old guard.
+
 `tests/speedhack.test.ts` races an honest client against one sending 90 a second down the same
 open ground. Pre-fix the cheat leads by 4.4 m over three seconds and the gap widens by 0.84 m every
 second. Post-fix the lead is the one-off burst allowance and stops growing once the credits are
