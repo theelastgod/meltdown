@@ -16,6 +16,7 @@ import { wantsTouch } from "./touch";
 import { menuFooter, settingsLine } from "./hud/keyhint";
 import type { GameAudio } from "./audio";
 import { clipsFor, videoUrl } from "../shared/assets/video";
+import { CAPITAL_MARK } from "./brand";
 
 export const TITLE_CARDS: readonly string[] = ["Every mind in Neo-China is leased.", "You woke free."];
 export const CARD_SECONDS = 2.4;
@@ -26,12 +27,14 @@ export type MenuScreen = "cards" | "main" | "wake" | "settings" | "pause" | "hid
 export interface MenuEntry {
   id: string;
   label: string;
+  /** a mark beside the label: the token's own, for the mode that pays it (Stage 679) */
+  icon?: string;
   line: string;
 }
 
 const MAIN: MenuEntry[] = [
   { id: "wake", label: "WAKE", line: "THE SIGNATURE MODE: FLIP THE NODES, HOLD THE DISTRICT, BEAT THE KERNEL'S CLOCK" },
-  { id: "run", label: "THE RUN", line: "PLAY TO EARN: CARRY $CAPITAL CLAIMS OUT OF THE PVP ZONE TO A GATE; DIE AND THEY DROP" },
+  { id: "run", label: "THE RUN", line: "PLAY TO EARN: CARRY $CAPITAL CLAIMS OUT OF THE PVP ZONE TO A GATE; DIE AND THEY DROP", icon: CAPITAL_MARK.small },
   { id: "campaign", label: "CAMPAIGN", line: "THE DESK AT THE DEADLETTER OFFICE: FIXERS, GIGS, THE SEVEN-MISSION ARC" },
   { id: "office", label: "THE OFFICE", line: "THE HUB: YOUR FILE ON THE WALL, THE RANGE GHOSTS, THE DOSSIER" },
   { id: "range", label: "THE RANGE", line: "THE DRAINAGE YARD, OFFLINE, WITH DUMMIES" },
@@ -284,7 +287,7 @@ export class Menu {
     const es = this.entries();
     if (this.cursor >= es.length) this.cursor = 0;
     const list = this.root.querySelector(".list") as HTMLElement;
-    list.innerHTML = es.map((e, i) => `<div class="row ${i === this.cursor ? "on" : ""}" data-i="${i}"><span class="k">${i === this.cursor ? "▸" : " "}</span><span class="lb">${e.label}</span>${e.id.startsWith("set:") ? `<span class="v"><span class="adj" data-adj="-1">[−]</span> ${e.line} <span class="adj" data-adj="1">[+]</span></span>` : ""}</div>`).join("");
+    list.innerHTML = es.map((e, i) => `<div class="row ${i === this.cursor ? "on" : ""}" data-i="${i}"><span class="k">${i === this.cursor ? "▸" : " "}</span><span class="lb">${e.label}${e.icon ? `<img class="cap-mark after" src="${e.icon}" alt="¥" width="64" height="64">` : ""}</span>${e.id.startsWith("set:") ? `<span class="v"><span class="adj" data-adj="-1">[−]</span> ${e.line} <span class="adj" data-adj="1">[+]</span></span>` : ""}</div>`).join("");
     const line = this.root.querySelector(".line") as HTMLElement;
     const cur = es[this.cursor];
     line.textContent = cur && !cur.id.startsWith("set:") ? cur.line : cur ? settingsLine(wantsTouch()) : "";

@@ -131,6 +131,14 @@ async function main(): Promise<void> {
     await a.evaluate(() => window.__game.menuKey("ArrowUp"));
     const m2 = await a.evaluate(() => window.__game.menu()!);
     const who = await a.evaluate(() => (document.querySelector("#menu .who") as HTMLElement).textContent ?? "");
+    // Stage 679: the mode that pays $CAPITAL wears the token's mark, and nothing else does
+    await a.waitForFunction(() => [...document.querySelectorAll("#menu img.cap-mark")].every((i) => (i as HTMLImageElement).complete), null, { timeout: 10000, polling: 50 }).catch(() => undefined);
+    const marks = await a.evaluate(() => [...document.querySelectorAll("#menu .row")].map((r) => {
+      const i = r.querySelector("img.cap-mark") as HTMLImageElement | null;
+      return { label: (r.querySelector(".lb") as HTMLElement | null)?.textContent ?? "", mark: i ? (i.complete && i.naturalWidth > 0 ? "loaded" : "broken") : "none" };
+    }));
+    const marked = marks.filter((m) => m.mark !== "none");
+    check("THE RUN wears the $CAPITAL mark on the menu, loaded, and no other mode does", marked.length === 1 && marked[0]!.label === "THE RUN" && marked[0]!.mark === "loaded", marks.map((m) => `${m.label}: ${m.mark}`).join(" · "));
     check("the menu lists WAKE / THE RUN / CAMPAIGN / THE OFFICE / THE RANGE / FILE / SETTINGS with the file's identity line; ↓↑ move the cursor", m0.entries.join("|") === "WAKE|THE RUN|CAMPAIGN|THE OFFICE|THE RANGE|FILE|SETTINGS" && m0.cursor === 0 && m1.cursor === 2 && m2.cursor === 1 && /DEPTH 50/.test(who) && /sandbox-ship/.test(who), `[${m0.entries.join(", ")}] · cursor 0→2→1 · "${who}"`);
     // Stage 152: and on a desktop it still names the keys, because a desktop has them
     const footDesk = await a.evaluate(() => {

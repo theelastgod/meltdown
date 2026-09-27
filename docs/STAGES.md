@@ -1641,6 +1641,55 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 679 — $CAPITAL had no mark
+
+**The ask.** The owner: "the logo for capital should be the yen symbol". Until this stage the
+token was only the word $CAPITAL, wherever it appeared.
+
+**Looked for first.** The owner remembered a ¥ made in Higgsfield. None was found. The search
+covered about 1,475 image generations in the account (back to 2026-09-08), all 175 videos, the
+Marketing Studio history (empty) and 100 uploads, which were checked by eye because uploads carry
+no prompt. Two things were left unchecked. Higgsfield's 3D history returned an error on every
+request. Four uploads from 2026-09-20 now answer "Access Denied" from the file host. If the
+original turns up it drops in over the two files below; nothing else changes.
+
+**The mark.** A new ¥ was generated in Higgsfield (`gpt_image_2_5`, four variants, 0.25
+credits). It is a heavy ¥ in the Estate's gold with the terminal's cyan edge and magenta fringe,
+two scanline cuts through it, in a thin coin ring. Of the four, d081d30f has the heaviest glyph and
+reads best at 24 px. It was keyed off its black ground in a browser canvas, stepped down by halves
+so the ring and the cuts survive, and written out as `public/icons/capital-64.png` (4 KB) and
+`capital-256.png` (32 KB). The 1024 px original is `docs/brand/capital-1024.png`, for listings.
+
+**Where it stands** (`client/brand.ts`, one class `.cap-mark` in `hud.css`):
+
+- the Counter-Ledger header: ¥ COUNTER-LEDGER // $CAPITAL;
+- THE RUN on the main menu, after the label so the menu's left edge holds. The first try put it in
+  front, and the frame showed THE RUN pushed out of line;
+- the run strip on the HUD, where ◈ CARRYING used to be, since the strip counts $CAPITAL claims.
+
+`index.html` preloads the small mark. The service worker precaches the `/icons/` paths the shell
+names, so the mark works offline too.
+
+**The guards.**
+
+- `tests/brand.test.ts` decodes both PNGs. They must be RGBA at the stated sizes, with transparent
+  corners and gold opaque pixels, and the page must preload the path the code uses.
+- Three probe checks read the live page. probe:ship: THE RUN wears the mark, loaded, and no other
+  entry does. probe:run: the strip carries it, loaded and 8–32 px wide. probe:counter: the
+  Counter-Ledger header carries it beside the token's name.
+
+Three mutations were each caught: the unkeyed black square (the unit test), the preload removed
+(the unit test), and a broken path (probe:run: `"loaded":false`). A source pin in
+`tests/district.test.ts` requires THE RUN's label and subtitle to sit together, so the new `icon`
+field goes after them.
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1484 tests; lint:campaign,
+lint:progression, lint:economy and lint:assets clean; probe:ship 13/13; probe:run 28/28;
+probe:counter 18/18; `npm run build`.
+
+**Proof.** `docs/proof/stage679/menu.png` is the main menu with the ¥ after THE RUN.
+`variants.png` shows the four generations at 300, 48 and 24 px.
+
 ## Stage 678 — The flinch was judged from inside the body it bent
 
 **CI red on run 674 (Stage 676).** probe:net failed one check: "the body bends away from the muzzle".

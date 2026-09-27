@@ -149,6 +149,10 @@ async function main(): Promise<void> {
     await a.evaluate(() => window.__game.toggleFile(true));
     await a.waitForTimeout(300);
     const panel0 = await a.evaluate(() => (document.querySelector("#hud .file .cl") as HTMLElement)?.textContent ?? "");
+    // Stage 679: the Counter-Ledger's header carries the $CAPITAL mark, and it loads
+    await a.waitForFunction(() => { const i = document.querySelector("#hud .file .cl .sh img.cap-mark") as HTMLImageElement | null; return !!i && i.complete; }, null, { timeout: 10000, polling: 50 }).catch(() => undefined);
+    const ledgerMark = await a.evaluate(() => { const i = document.querySelector("#hud .file .cl .sh img.cap-mark") as HTMLImageElement | null; return i ? { loaded: i.complete && i.naturalWidth > 0, header: (i.parentElement?.textContent ?? "").slice(0, 40) } : null; });
+    check("the Counter-Ledger's header carries the $CAPITAL mark, loaded, beside the token's name", !!ledgerMark && ledgerMark.loaded && /COUNTER-LEDGER \/\/ \$CAPITAL/.test(ledgerMark.header), JSON.stringify(ledgerMark));
     const ethBefore = await pub.getBalance({ address: player.address });
     const link = await a.evaluate(() => window.__game.link());
     await a.waitForTimeout(300);

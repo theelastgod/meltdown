@@ -534,3 +534,8 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
   z-index: 0;
 }
 #menu .card, #menu .panel, #menu .scan { position: relative; z-index: 1; }
+
+/* the $CAPITAL mark (Stage 679): a ¥ coin at text height beside the token's name */
+.cap-mark { width: auto; height: 1.25em; vertical-align: -0.3em; margin-right: 0.35em; }
+/* after a label, so the menu's labels keep one left edge */
+.cap-mark.after { margin: 0 0 0 0.45em; }

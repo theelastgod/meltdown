@@ -28,6 +28,7 @@ import { closeHint, openHint } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
 import { nodeClockNote, type NodeReadout } from "./node";
 import { nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
+import { capitalMark } from "../brand";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
 export class Hud {
@@ -365,7 +366,7 @@ export class Hud {
     document.getElementById("hud")?.classList.toggle("safe", !!v?.inSafe);
     if (!v) return;
     const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? `SAFE ZONE · <span class="zone">${openHint("TAB", "MARKET", this.touch)}</span>` : `<span class="pvp">PVP ZONE</span>`;
-    el.innerHTML = `◈ CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · OWED <b>${v.owed}</b> ${unitsLabel(v.owed)} · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${claimsWord(v.claims)}`;
+    el.innerHTML = `${capitalMark()}CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · OWED <b>${v.owed}</b> ${unitsLabel(v.owed)} · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${claimsWord(v.claims)}`;
   }
 
   /**

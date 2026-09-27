@@ -139,6 +139,10 @@ async function main(): Promise<void> {
     const mode = await a.evaluate(() => window.__game.endgame().mode);
     const v0 = await a.evaluate(() => window.__game.run()!);
     const strip0 = await a.evaluate(() => (document.querySelector("#hud .runstrip") as HTMLElement).textContent ?? "");
+    // Stage 679: the strip that counts $CAPITAL claims carries the token's mark, and it loads
+    await a.waitForFunction(() => { const i = document.querySelector("#hud .runstrip img.cap-mark") as HTMLImageElement | null; return !!i && i.complete; }, null, { timeout: 10000, polling: 50 }).catch(() => undefined);
+    const stripMark = await a.evaluate(() => { const i = document.querySelector("#hud .runstrip img.cap-mark") as HTMLImageElement | null; return i ? { loaded: i.complete && i.naturalWidth > 0, w: +i.getBoundingClientRect().width.toFixed(1), src: i.getAttribute("src") } : null; });
+    check("the run strip carries the $CAPITAL mark, loaded and at text height", !!stripMark && stripMark.loaded && stripMark.w > 8 && stripMark.w < 32, JSON.stringify(stripMark));
     // Stage 149: both readouts that say how many files are in the district \u2014 the header line's tail
     // and the right-hand band \u2014 were typed into the markup at the first stage and never written
     // again. With ALPHA and BRAVO in this room they both said one. Read them from the drawn frame.
