@@ -1,3 +1,4 @@
+import { inCity } from "@shared/net/city";
 import { districtName, enteredLine, fullWakeLine, roundOverLine, wakeBeginsLine } from "./hud/district";
 import { runView, type RunView } from "@shared/sim/run";
 import type { RunMsg } from "@shared/net/protocol";
@@ -172,7 +173,9 @@ export class Game {
     // a contract or an explorable district runs without the wake and without dummy respawns (targets stay down)
     const campaignMode = q.has("mission") || q.get("explore") === "1" || q.get("mode") === "campaign";
     this.runMode = q.get("mode") === "run";
-    this.world = new World(levelById(this.levelId), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" || campaignMode ? "off" : "wake", dummyRespawn: !campaignMode, run: this.runMode });
+    // the city (Stage 692) is the campaign's shared open world: no match, the patrols live, no player can hurt another
+    const city = inCity(q);
+    this.world = new World(levelById(this.levelId), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" || campaignMode ? "off" : "wake", dummyRespawn: !campaignMode || city, run: this.runMode, pvp: !city });
     this.file = new GhostFile(() => this.online);
     this.player = this.world.addPlayer(1, "BLANK", 1, this.file.localLoadout());
     this.input = new InputController(canvas);

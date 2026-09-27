@@ -124,6 +124,11 @@ export interface WorldOptions {
   roundSeconds?: number;
   /** dummies come back after DUMMY_RESPAWN_SECONDS (false: campaign targets stay down) */
   dummyRespawn?: boolean;
+  /**
+   * Whether players can hurt each other (default true). The city (Stage 692) is PvE: the district's
+   * patrols can kill a player, another player cannot, and a player's own blast still can.
+   */
+  pvp?: boolean;
 }
 
 /**
@@ -135,6 +140,7 @@ export class World {
   readonly seed: number;
   readonly ai: boolean;
   readonly dummyRespawn: boolean;
+  readonly pvp: boolean;
   readonly level: LevelDef;
   readonly players = new Map<number, PlayerState>();
   readonly dummies: Dummy[] = [];
@@ -162,6 +168,7 @@ export class World {
     this.seed = opts.seed ?? 1;
     this.ai = opts.ai ?? true;
     this.dummyRespawn = opts.dummyRespawn ?? true;
+    this.pvp = opts.pvp ?? true;
     const wp = opts.wakePhase ?? "wake";
     this.wake = wp === "off" || opts.run || level.nodes.length === 0 ? null : createWake(level.nodes, wp, { warmupSeconds: opts.warmupSeconds, roundSeconds: opts.roundSeconds });
     this.run = opts.run ? createRun(level.zones ?? [], level.claims ?? []) : null;
@@ -552,6 +559,8 @@ export class World {
     if (kind === "player") {
       const v = this.players.get(id);
       if (!v || !v.alive) return;
+      // the city is PvE (Stage 692): another player's damage is not applied; the patrols' and your own are
+      if (!this.pvp && attacker !== id && this.players.has(attacker)) return;
       if (v.firstDamageTick < 0) v.firstDamageTick = this.tick;
       v.lastAttacker = attacker;
       v.sinceDamage = 0;

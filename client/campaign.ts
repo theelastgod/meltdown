@@ -6,6 +6,7 @@
  * file goes through the ledger host's /file/:id/campaign endpoint when one
  * is linked, and a local save otherwise.
  */
+import { cityPageUrl, inCity } from "@shared/net/city";
 import type { Game } from "./game";
 import { closeHint } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
@@ -31,7 +32,7 @@ import { deskBanner } from "./missionart";
 import { gigThumb } from "./gigart";
 import { protocolIcon, weaponCard } from "./kitart";
 
-export type CampaignMode = "none" | "mission" | "explore" | "coop";
+export type CampaignMode = "none" | "mission" | "explore" | "coop" | "city";
 
 /** The hold/survive objective clock: CRT, not `12s / 20s`. */
 export function holdClock(progress: number, need: number): string {
@@ -141,6 +142,14 @@ export class Campaign {
     this.started = true;
     const a = this.account();
     this.threat = threatProfile(threatRating({ depth: a.depth, counters: a.counters, campaign: this.save }));
+    // the city (Stage 692): the district's shared open world, known from the page itself — the link to
+    // its room may not be up yet when this runs; the desk opens anywhere, and a contract comes back here
+    if (inCity(new URLSearchParams(location.search))) {
+      this.mode = "city";
+      this.game.hud.setObjective(`◈ THE CITY · ${levelDisplayName(this.game.levelId)}`, "[J] CONTRACTS · NO ONE HERE CAN HURT YOU BUT VANTAGE", null);
+      this.note(`THE CITY · ${levelDisplayName(this.game.levelId)} · EVERYONE ONLINE WALKS THESE STREETS · [J] CONTRACTS`);
+      return;
+    }
     if (this.game.online) {
       this.mode = new URLSearchParams(location.search).get("mode") === "campaign" ? "coop" : "none";
       return;
@@ -221,7 +230,7 @@ export class Campaign {
         break;
       case "failed":
         hud.setRadarSpots([]);
-        hud.card("CONTRACT FAILED", [ev.reason, "THE FILE RE-LEASES. THE CONTRACT STAYS OPEN.", "[C] CONTRACTS · [R] RUN IT AGAIN"], "mg", 0);
+        hud.card("CONTRACT FAILED", [ev.reason, "THE FILE RE-LEASES. THE CONTRACT STAYS OPEN.", "[J] CONTRACTS · [R] RUN IT AGAIN"], "mg", 0);
         this.note(`CONTRACT FAILED · ${ev.reason}`);
         this.game.audio.debtOwed();
         break;
@@ -354,8 +363,21 @@ export class Campaign {
       }
       return;
     }
-    if (e.code === "KeyC") this.toggleContracts();
+    // J, not C: C is crouch, and the desk used to open every time the player ducked (Stage 692)
+    if (e.code === "KeyJ") this.toggleContracts();
     if (e.code === "KeyR" && this.mission?.status === "failed") location.reload();
+    if (e.code === "KeyB" && this.mission && this.mission.status !== "running") {
+      const url = this.backToCity();
+      if (url) this.travel(url);
+    }
+  }
+
+  /** where a contract taken in the city goes back to when it is over (Stage 692), or null when it was not taken there */
+  backToCity(): string | null {
+    const back = new URLSearchParams(location.search).get("back");
+    const hosts = this.crewHosts();
+    if (!back || !hosts) return null;
+    return cityPageUrl(location.href, { wsBase: hosts.ws, level: back, shop: new URLSearchParams(location.search).get("shop") });
   }
 
   // ---- completion ----
@@ -382,7 +404,7 @@ export class Campaign {
     this.completion = { id, ok, reason };
     const def = missionById(id)!;
     const rw = def.reward;
-    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", "[C] CONTRACTS"].filter(Boolean);
+    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", this.backToCity() ? "[J] CONTRACTS · [B] BACK TO THE CITY" : "[J] CONTRACTS"].filter(Boolean);
     this.note(`CONTRACT CLOSED · ${def.title}${ok ? "" : " · " + (reason ?? "")}`);
     this.game.audio.sign();
     if (id === "m7_white_office") {
@@ -391,7 +413,7 @@ export class Campaign {
       // the coda after the ending's own lines: the choices no ending gate reads, answered rather
       // than dropped (Stage 656)
       const coda = endingCoda(t);
-      this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", "[C] CONTRACTS"], "ye", 0, ENDING_ART[e.id]);
+      this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", "[J] CONTRACTS"], "ye", 0, ENDING_ART[e.id]);
       this.game.audio.rite(3);
     } else this.game.hud.card(`CONTRACT CLOSED · ${def.title}`, lines, "am", 0);
     this.game.renderer.post.kick(1);
@@ -419,7 +441,7 @@ export class Campaign {
         const s = m.settled?.find((x) => x.id === ev.id);
         this.completion = { id: ev.id, ok: s?.ok ?? false, reason: s?.reason };
         const def = missionById(ev.id);
-        this.game.hud.card(`CONTRACT CLOSED · ${def?.title ?? ev.id}`, [s?.ok ? "SETTLED ON EVERY FILE" : `NOT SETTLED · ${s?.reason ?? ""}`, "[C] CONTRACTS"], "am", 0);
+        this.game.hud.card(`CONTRACT CLOSED · ${def?.title ?? ev.id}`, [s?.ok ? "SETTLED ON EVERY FILE" : `NOT SETTLED · ${s?.reason ?? ""}`, "[J] CONTRACTS"], "am", 0);
         this.game.audio.sign();
       } else this.onMissionEvent(ev);
     }
@@ -478,10 +500,13 @@ export class Campaign {
     if (!r.ok) return r;
     const def = missionById(id)!;
     const u = new URL(location.href);
+    // a contract taken in the city (Stage 692) remembers which city to come back to
+    if (this.mode === "city") u.searchParams.set("back", this.game.levelId);
     u.searchParams.set("level", def.level);
     u.searchParams.set("mission", id);
     u.searchParams.delete("explore");
     u.searchParams.delete("net");
+    u.searchParams.delete("city");
     this.game.renderer.post.kick(1);
     setTimeout(() => location.replace(u.toString()), 120);
     return { ok: true };
@@ -566,7 +591,7 @@ export class Campaign {
       return `<label class="pr ${owned ? "" : "off"} ${worn ? "worn" : ""}">${protocolIcon(p.id)}<input type="checkbox" data-wear="${p.id}" ${worn ? "checked" : ""} ${owned ? "" : "disabled"}> <b>${p.name}</b> <span class="dim">${p.line}</span></label>`;
     }).join("");
     const endings = endingsFor(c.testimony, c.faction).map((e) => e.title).join(" · ");
-    return `<div class="hd">▲ CONTRACTS · ${faction ? `${faction.name}` : "NO HOUSE"} <span class="x" data-act="close">${closeHint("C", this.game.hud.touch)}</span></div>
+    return `<div class="hd">▲ CONTRACTS · ${faction ? `${faction.name}` : "NO HOUSE"} <span class="x" data-act="close">${closeHint("J", this.game.hud.touch)}</span></div>
       <div class="ln">THREAT <b>${threat.rating}</b> · ${threat.line}${threat.named ? " · THE PA CALLS YOUR NAME" : ""}</div>
       <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => testimonyLine(k, v)).join(" · ") || "— NOTHING ON THE RECORD —"} · ENDINGS OPEN: ${endings}</div>
       <div class="cols"><div><div class="sh">THE ARC · ${c.missionsDone.length}/${MAIN_ARC.length}</div>${arc}<div class="sh">FIXERS · GIGS ${c.gigsDone.length}/${GIGS.length}</div>${fixers}</div>
@@ -628,6 +653,8 @@ export class Campaign {
       host: this.host,
       crew: this.crew,
       crewTarget: this.crewTarget,
+      /** where a contract taken in the city goes back to (Stage 692) */
+      backToCity: this.backToCity(),
       terminalMirror: this.mirror,
       mirrorLog: this.mirrorLog.slice(),
       log: this.log.slice(-8),

@@ -28,6 +28,7 @@
     "probe:endgame": "tsx probe/stage11.ts",
     "probe:counter": "tsx probe/stage11b.ts",
     "probe:crawl": "tsx probe/stage12.ts",
+    "probe:world": "tsx probe/city.ts",
     "probe:ship": "tsx probe/stage13.ts",
     "probe:run": "tsx probe/stage14.ts",
     "probe:harden": "tsx probe/stage15.ts",

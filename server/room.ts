@@ -120,6 +120,9 @@ interface ClientRec {
 }
 
 /** Hooks a host may attach to run a mode on top of the room without the room importing it (the campaign co-op room). */
+/** player ids travel as one byte (shared/net/protocol.ts): 1..255 */
+export const MAX_PLAYER_ID = 255;
+
 export interface RoomHooks {
   /** after every tick, with the tick's sim events */
   afterStep?: (room: Room, events: readonly SimEvent[]) => void;
@@ -174,6 +177,8 @@ export interface RoomOptions {
    * cheapest mint.
    */
   private?: boolean;
+  /** whether players can hurt each other (default true); the city (Stage 692) is PvE */
+  pvp?: boolean;
 }
 
 export interface RoomStats {
@@ -231,6 +236,22 @@ export class Room {
   private byConn = new Map<Conn, ClientRec>();
   private history = new Map<number, Map<number, RewindPose>>();
   private nextId = 1;
+  /**
+   * The next player id (Stage 692). Ids go on the wire as one byte, and a room used to count them up
+   * forever: a city room that stays open all day would have broken on its 256th join. An id is now
+   * reused once nobody holds it — not a connected player, not a seat kept for a rejoin, not a body
+   * still in the world — scanning on from the last one given so a freed id is not handed straight back.
+   */
+  private freeId(): number {
+    for (let i = 0; i < MAX_PLAYER_ID; i++) {
+      const id = ((this.nextId - 1 + i) % MAX_PLAYER_ID) + 1;
+      if (!this.clients.has(id) && !this.world.players.has(id)) {
+        this.nextId = (id % MAX_PLAYER_ID) + 1;
+        return id;
+      }
+    }
+    throw new Error("room: no free player id");
+  }
   private tickTimes: number[] = [];
   private tickCount = 0;
   private startedAt: number;
@@ -267,10 +288,11 @@ export class Room {
       endgame: opts.endgame ?? null,
       private: opts.private ?? false,
       run: opts.run ?? false,
+      pvp: opts.pvp ?? true,
       wakePhase: opts.wakePhase ?? "warmup",
       dummyRespawn: opts.dummyRespawn ?? true,
     };
-    this.world = new World(levelById(this.opts.level || undefined), { run: !!opts.run, ai: this.opts.ai, seed: this.opts.seed, wakePhase: this.opts.wakePhase, warmupSeconds: this.opts.warmupSeconds, roundSeconds: this.opts.roundSeconds, dummyRespawn: this.opts.dummyRespawn });
+    this.world = new World(levelById(this.opts.level || undefined), { run: !!opts.run, ai: this.opts.ai, seed: this.opts.seed, wakePhase: this.opts.wakePhase, warmupSeconds: this.opts.warmupSeconds, roundSeconds: this.opts.roundSeconds, dummyRespawn: this.opts.dummyRespawn, pvp: this.opts.pvp });
     if (this.opts.audit) this.world.gravityMult = this.opts.audit.def.gravityMult;
     this.startedAt = this.opts.now();
     this.lastRateAt = this.startedAt;
@@ -597,7 +619,7 @@ export class Room {
       if (ae.length) return this.rejectLoadout(conn, ae.map((e) => `${e.rule}: ${e.detail}`).join("; "));
     }
     if (this.clients.size >= this.opts.maxPlayers) return this.kickConn(conn, "room full");
-    const playerId = this.nextId++;
+    const playerId = this.freeId();
     const newToken = `${playerId}-${Math.random().toString(36).slice(2, 12)}-${Math.random().toString(36).slice(2, 12)}`;
     // balance cells: join the smaller one, ties to cell 1
     let c1 = 0;

@@ -30,6 +30,7 @@ import type { CounterClient, CounterView } from "./counter";
 import { COUNTER_URL } from "./config";
 import { CHAPTERS, chapterFor, MONIKERS, monikerById, unlockedMonikers, wornMoniker } from "@shared/identity/monikers";
 import { sanitizeLookCode } from "@shared/identity/look";
+import { inCity } from "@shared/net/city";
 import { weaponName } from "./hud/kill";
 import { unitsLabel } from "./runcue";
 import { capitalMark } from "./brand";
@@ -147,7 +148,9 @@ export class GhostFile {
     }
     // offline in the hub: `?shop=<host>` loads the real file from the ledger host (trophies, ghosts, identity)
     const shop = q.get("shop");
-    if (shop && !net) {
+    // the city (Stage 692) is networked, but the room's File message carries no campaign save: the
+    // desk needs the whole file, so the city fetches it from the ledger host as the offline hub does
+    if (shop && (!net || inCity(q))) {
       this.shop = shop;
       void this.load().then(() => this.loadEndgame());
     } else if (this.shop) void this.loadEndgame();

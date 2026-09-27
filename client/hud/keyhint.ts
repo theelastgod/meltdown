@@ -2,7 +2,7 @@
  * The phone was told to press keys it does not have (Stage 145).
  *
  * The reader frames close on a click, so a thumb has always worked; what they said was wrong. The
- * FILE book's header read `[TAB] CLOSE`, the graph's `[G] CLOSE`, the contracts desk's `[C] CLOSE`,
+ * FILE book's header read `[TAB] CLOSE`, the graph's `[G] CLOSE`, the contracts desk's `[J] CLOSE` (C until Stage 692, when it was found to be crouch too),
  * the district panel's `[M] CLOSE`, and THE RUN's strip offered `[TAB] MARKET` — five instructions
  * naming keys a phone has no way to press, on frames a phone reaches by tapping. Stage 138 fixed
  * the fixer's terminal the same way; these are the rest.

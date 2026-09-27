@@ -7,6 +7,8 @@
 import { IDLE_PARK_MS, SERVER_TICK_MS, type Conn } from "./room";
 import { decodePath } from "./path";
 import { createCampaignRoom, crewInfo, type CampaignRoomHandle } from "./campaign-room";
+import { createCityRoom } from "./city-room";
+import { cityOf } from "../shared/net/city";
 import { crewRoomName, normaliseCrewCode, NO_SUCH_CREW } from "../shared/net/crew";
 import { DoAccountStore, NOT_YOURS } from "./player-do";
 import { campaignRequest } from "../shared/campaign/endpoint";
@@ -67,6 +69,12 @@ export class CampaignRoom implements DurableObject {
   }
 
   private roomFor(url: URL): CampaignRoomHandle {
+    // a city (Stage 692) is a room with no mission: the district's shared open world, PvE
+    const city = cityOf(url.pathname.split("/").pop() ?? "");
+    if (!this.handle && city) {
+      const c = createCityRoom({ accounts: new DoAccountStore(this.env.PLAYER_FILE), district: city });
+      this.handle = { room: c.room, state: () => ({ mission: "", hostId: -1, view: null, settled: [], choices: 0 }) };
+    }
     if (!this.handle) this.handle = createCampaignRoom({ accounts: new DoAccountStore(this.env.PLAYER_FILE), mission: url.searchParams.get("mission") ?? "g_escrow_row" });
     return this.handle;
   }

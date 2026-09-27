@@ -1641,6 +1641,61 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 692 — The campaign had no shared world
+
+**The ask.** The owner: "you should start with the campaign in a shared open world", and "expand
+the size of the world and the different things you can do in it".
+
+**What there was.** The campaign ran offline: the Deadletter Office was a local sim, contracts
+reloaded the page into an offline district, and the only networked campaign was a co-op crew,
+one contract at a time. Nowhere could two players simply be in the same streets.
+
+**The change.**
+- **The city.** One persistent co-op room per district on the campaign host,
+  `/campaign/city-<district>` (`server/city-room.ts`, routed on the dev host and the campaign
+  worker). It runs the district's patrols with no match. It holds 12 files, not a match's 8, and
+  applies each file's Kernel Protocols, as co-op does: the city is campaign. The PvP worker never
+  loads it (the existing import-graph test covers it).
+- **PvE.** `World` has a `pvp` option. In the city another player's damage is not applied, while
+  a patrol's and your own blast still are. Every other room keeps friendly fire exactly as it was.
+- **The client.** `?city=1` with the city's socket (`shared/net/city.ts`, `cityPageUrl`) walks the
+  city. The objective line reads THE CITY · LEASE ROW, and the desk opens anywhere. A contract taken
+  there plays off it and remembers the way back: its end card offers [B] BACK TO THE CITY. The city
+  fetches the file from the ledger host, because the room's File message carries no campaign save;
+  without that the desk read an empty local save and the campaign never entered the city.
+- **Found on the way:**
+  - The contracts desk opened on C, which is also crouch: every duck opened it. It is J now.
+  - Player ids travel as one byte and a room counted them up forever, so a room open all day
+    would have broken on its 256th join. `Room.freeId()` reuses an id once no connection, kept
+    seat or body holds it.
+
+**The guards.**
+- `tests/cityroom.test.ts` (6):
+  - in a real city room, a player's damage to another is not applied, while a patrol's and a
+    self-inflicted blast are;
+  - a match room still takes friendly fire;
+  - the city runs patrols, with no wake;
+  - 300 joins and leaves in a row keep every id in 1–255 and never shared;
+  - the names and pages round-trip.
+- `probe:world` (`probe/city.ts`, new, in CI), 4/4:
+  - two files walk into LEASE ROW's city: one room with PvP off, each on the other's wire, the
+    objective naming THE CITY;
+  - J opens the desk and C does not;
+  - a contract launched there leaves the city and knows the way back.
+
+Mutations each caught:
+- PvE off (unit);
+- ids counted up (unit);
+- the city not fetching the file (probe, 2/4).
+
+A first fix, starting the campaign at once on any networked page, was removed when its mutation
+passed: the file fetch had made it redundant.
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1539 tests; probe:world 4/4, probe:campaign
+61/61, probe:identity 25/25; `npm run build`.
+
+**Next.** PLAY lands here (Stage 693); gates walk between district cities; public world events.
+
 ## Stage 691 — The opening played every visit, and it was text
 
 **The ask.** The owner: "Neo-China opening text ending in meltdown should only display once", and

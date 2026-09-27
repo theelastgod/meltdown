@@ -8,6 +8,7 @@
  *   POST /file/<id>/buy      → { node } buys a Ledger Graph node with Scrip; /refund gives half back
  *   WS   /room/<name>[?lagcomp=0&ai=0&warmup=<s>&round=<s>&level=<id>&mode=run]
  *   WS   /campaign/<name>?mission=<id>   → a co-op contract (the mission runtime on the server)
+ *   WS   /campaign/city-<district>        → the district's city: the campaign's shared open world (Stage 692)
  *   POST /file/<id>/campaign → { op: faction | complete | wear | state }
  *   POST /chain              → JSON-RPC to the in-process devnet (a real EVM; the contracts are deployed at boot)
  *   GET  /counter            → chain id, contract addresses, the market's listings, treasury figures
@@ -23,6 +24,8 @@ import { buyNode, fileAuth, publicFile, publicLabel, recordGhost, refundNode, va
 import { NOT_YOURS } from "./player-do";
 import { campaignRequest } from "../shared/campaign/endpoint";
 import { createCampaignRoom, crewInfo, type CampaignRoomHandle } from "./campaign-room";
+import { createCityRoom, type CityRoomHandle } from "./city-room";
+import { cityOf } from "../shared/net/city";
 import { crewRoomName, normaliseCrewCode, NO_SUCH_CREW } from "../shared/net/crew";
 import { checkReport, ReportRing } from "../shared/perf/report";
 import { seasonToPost } from "./chain/cron";
@@ -181,7 +184,7 @@ function startLoop(room: Room): void {
         roomIdleSince.delete(room);
         // a room nothing names any more (an expired private room) is let go with its loop; the
         // bookkeeping held every parked simulation for the life of the process (Stage 55)
-        const named = [...rooms.values()].includes(room) || [...campaigns.values()].some((h) => h.room === room);
+        const named = [...rooms.values()].includes(room) || [...campaigns.values()].some((h) => h.room === room) || [...cities.values()].some((h) => h.room === room);
         if (!named) roomSockets.delete(room);
         return;
       }
@@ -219,6 +222,17 @@ function getRoom(name: string, lagComp: boolean, ai: boolean, warmupSeconds?: nu
 const perfReports = new ReportRing();
 
 const campaigns = new Map<string, CampaignRoomHandle>();
+/** the cities (Stage 692): one per district, made on the first walk-in and kept */
+const cities = new Map<string, CityRoomHandle>();
+function getCityRoom(district: string): CityRoomHandle {
+  let h = cities.get(district);
+  if (!h) {
+    h = createCityRoom({ lagComp: true, seed: 7, accounts, district, onLog: (l) => log(`[city ${district}] ${l}`) });
+    cities.set(district, h);
+    startLoop(h.room);
+  }
+  return h;
+}
 function getCampaignRoom(name: string, mission: string): CampaignRoomHandle {
   let h = campaigns.get(name);
   if (!h) {
@@ -601,6 +615,7 @@ const http = createServer((req, res) => {
     const out: Record<string, unknown> = {};
     for (const [k, r] of rooms) out[k] = r.stats();
     for (const [k, h] of campaigns) out[`campaign:${k}`] = { ...h.room.stats(), campaign: h.state() };
+    for (const [k, h] of cities) out[`city:${k}`] = { ...h.room.stats(), city: h.state() };
     res.setHeader("content-type", "application/json");
     const files: Record<string, unknown> = {};
     for (const [id, a] of accounts.accounts) files[id] = { depth: a.depth, xp: a.xp, scrip: a.wallet.scrip, matches: a.matches, ledger: a.ledger.slice(-8) };
@@ -635,7 +650,8 @@ wss.on("connection", (ws: WebSocket, req) => {
     }
   }
   const num = (k: string) => (url.searchParams.has(k) ? Number(url.searchParams.get(k)) : undefined);
-  const room = m[1] === "campaign" ? getCampaignRoom(m[2]!, url.searchParams.get("mission") ?? "g_escrow_row").room : getRoom(m[2]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"), url.searchParams.get("level") ?? undefined, url.searchParams.get("audit") === "1", url.searchParams.get("mode") === "run");
+  const city = m[1] === "campaign" ? cityOf(m[2]!) : null;
+  const room = city ? getCityRoom(city).room : m[1] === "campaign" ? getCampaignRoom(m[2]!, url.searchParams.get("mission") ?? "g_escrow_row").room : getRoom(m[2]!, url.searchParams.get("lagcomp") !== "0", url.searchParams.get("ai") !== "0", num("warmup"), num("round"), url.searchParams.get("level") ?? undefined, url.searchParams.get("audit") === "1", url.searchParams.get("mode") === "run");
   ws.binaryType = "arraybuffer";
   const conn: Conn = {
     send: (buf) => {
