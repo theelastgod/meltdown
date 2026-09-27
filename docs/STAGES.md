@@ -1641,6 +1641,51 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 666 — The crowd slid along the pavement on its coat hem
+
+**The defect.** Stage 665 gave the leased citizen a body; it still moved as one
+rigid mesh gliding along its walk loop with a vertical bob, legs never moving.
+A crowd of 110 people that all slide reads as scenery, not as a city.
+
+**The fix.** A citizen's shins, shoes and arms come out of the coat mesh and become
+instances of one shared unit box (`Crowd.limbs`), each posed every frame about its
+hip or shoulder in the citizen's own frame and then placed with it. The legs swing
+on the **same clock as the existing bob** — `citizenSwing` is a cosine where the bob
+is |sine| — so the body is highest exactly when the feet pass each other, the way a
+walking body is. Arms swing against the leg on their side at 0.7 of its reach, and
+an idle citizen's limbs stay still. The limb table (`CITIZEN_LIMBS`) carries each
+part's size, centre, pivot and how far it follows the stride.
+
+**Why the limbs are on the CPU and not in a shader.** A vertex-shader stride would
+have cost nothing in draw calls, and nothing in Node could see it — a test could
+only pin the shader's source text. Posing the limbs as instance matrices costs
+**one draw call** (two, counting the wet-floor mirror), and lets a test read the
+matrices the crowd actually draws. That trade is the lesson this project keeps
+paying for: a guard that cannot see the thing it guards is worthless.
+
+**The guard (`tests/character.test.ts`).** One test holds the formula to the bob's
+clock (the swing is zero where the bob peaks, full a quarter-step later, zero when
+idle). The other builds a real 60-citizen `Crowd`, finds a walker and an idle
+citizen, steps the crowd to the walker's full stride and then half a stride on,
+and reads the posed shoe matrices: the walker's feet must be more than 0.1 m apart
+along its facing and trade places, and the idle citizen's must not move. Two
+mutations, both caught with *"the walker's feet are not apart at full stride"*:
+both legs swinging the same way, and the limb matrices never written.
+
+**Measured in `probe:city`:** draw calls moved exactly as predicted, +2 —
+lease_row 180 → 182, repo_depot 182 → 184, both under 190; `probe:cityLife`
+206 of its 230. Triangles did not change (the limbs moved out of the coat mesh,
+they were not added). `docs/proof/stage666/lease-row-street.png` is lease_row with
+this session's fog, bodies and crowd together.
+
+**Verified on a still tree.** `probe:cityLife` 21/21, `probe:city` 51/51,
+`probe:frame` 8/8, `probe:look` 19/19, `npm run typecheck`, 1445 unit tests, the
+four lints, the build.
+
+**Still open.** Lease_row now has 8 draw calls left under its 190 budget. The next
+character work — giving the fixers a body in the hub — must pay for itself inside
+that or buy calls back elsewhere first.
+
 ## Stage 665 — The characters were a cone on a tube and a pill in a hat
 
 *The owner's brief: "make the character designs real".*

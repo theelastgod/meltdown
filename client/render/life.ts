@@ -77,29 +77,38 @@ function citizenLathe(profile: CitizenProfile, segs: number, sx: number, sz: num
   g.computeVertexNormals();
   return g;
 }
-function bake(g: THREE.BufferGeometry, m: THREE.Matrix4): THREE.BufferGeometry {
-  return g.applyMatrix4(m);
-}
 const T = (x: number, y: number, z: number) => new THREE.Matrix4().makeTranslation(x, y, z);
 
-/** the coat, the arms and the legs: one geometry, the crowd's `dark` material */
+/** the coat: the crowd's `dark` material. The limbs are separate instances so they can move (Stage 666) */
 export function citizenBodyGeometry(): THREE.BufferGeometry {
   const hem = (y: number) => 0.06 * Math.min(1, Math.max(0, (0.75 - y) / 0.43));
-  const parts = [
-    // a long coat, hunched at the shoulders, folded toward the hem
-    citizenLathe([[0.25, 0.32], [0.23, 0.55], [0.195, 0.85], [0.185, 1.05], [0.21, 1.22], [0.2, 1.33], [0.13, 1.41], [0.09, 1.44]], 10, 1.08, 0.82, 5, hem),
-    // arms hanging off the shoulders
-    bake(new THREE.BoxGeometry(0.085, 0.52, 0.09), T(0.235, 1.03, 0).multiply(new THREE.Matrix4().makeRotationZ(0.08))),
-    bake(new THREE.BoxGeometry(0.085, 0.52, 0.09), T(-0.235, 1.03, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.08))),
-    // legs and shoes below the hem
-    bake(new THREE.BoxGeometry(0.1, 0.32, 0.11), T(0.085, 0.18, 0)),
-    bake(new THREE.BoxGeometry(0.1, 0.32, 0.11), T(-0.085, 0.18, 0)),
-    bake(new THREE.BoxGeometry(0.1, 0.06, 0.19), T(0.085, 0.03, 0.035)),
-    bake(new THREE.BoxGeometry(0.1, 0.06, 0.19), T(-0.085, 0.03, 0.035)),
-  ];
-  const out = mergeGeometries(parts.map((g) => (g.index ? g.toNonIndexed() : g)), false);
-  for (const g of parts) g.dispose();
-  return out!;
+  // a long coat, hunched at the shoulders, folded toward the hem
+  return citizenLathe([[0.25, 0.32], [0.23, 0.55], [0.195, 0.85], [0.185, 1.05], [0.21, 1.22], [0.2, 1.33], [0.13, 1.41], [0.09, 1.44]], 10, 1.08, 0.82, 5, hem);
+}
+
+/**
+ * A citizen's limbs (Stage 666): shins, shoes and arms, each an instance of one unit box, posed per
+ * frame about its hip or shoulder. Until this stage a citizen was one rigid mesh sliding along the
+ * pavement with a bob; now its legs stride and its arms swing against them. `side` is +1 on the
+ * citizen's right; `swing` is how far this limb follows the stride (negative: against it).
+ */
+export const CITIZEN_LIMBS: readonly { kind: "shin" | "shoe" | "arm"; side: 1 | -1; size: [number, number, number]; centre: [number, number, number]; pivot: [number, number, number]; swing: number; tilt: number }[] = [
+  { kind: "shin", side: 1, size: [0.1, 0.32, 0.11], centre: [0.085, 0.18, 0], pivot: [0.085, 0.34, 0], swing: 1, tilt: 0 },
+  { kind: "shin", side: -1, size: [0.1, 0.32, 0.11], centre: [-0.085, 0.18, 0], pivot: [-0.085, 0.34, 0], swing: 1, tilt: 0 },
+  { kind: "shoe", side: 1, size: [0.1, 0.06, 0.19], centre: [0.085, 0.03, 0.035], pivot: [0.085, 0.34, 0], swing: 1, tilt: 0 },
+  { kind: "shoe", side: -1, size: [0.1, 0.06, 0.19], centre: [-0.085, 0.03, 0.035], pivot: [-0.085, 0.34, 0], swing: 1, tilt: 0 },
+  { kind: "arm", side: 1, size: [0.085, 0.52, 0.09], centre: [0.235, 1.03, 0], pivot: [0.235, 1.29, 0], swing: -0.7, tilt: 0.08 },
+  { kind: "arm", side: -1, size: [0.085, 0.52, 0.09], centre: [-0.235, 1.03, 0], pivot: [-0.235, 1.29, 0], swing: -0.7, tilt: -0.08 },
+];
+/** the stride's reach at the hip, radians */
+export const CITIZEN_STRIDE = 0.42;
+
+/**
+ * The stride angle for a citizen's right leg at a time: on the same clock as the bob, so the body is
+ * highest when the feet pass each other (the swing crosses zero where |sin| peaks). Idle: none.
+ */
+export function citizenSwing(time: number, speed: number, phase: number, idle: boolean): number {
+  return idle ? 0 : CITIZEN_STRIDE * Math.cos(time * 6 * speed + phase);
 }
 
 /** the hood with its face opening toward +z, and a dark plate where a face would be: the crowd's hood material */
@@ -125,6 +134,10 @@ export class Crowd {
   readonly group = new THREE.Group();
   private peds: Ped[] = [];
   private body: THREE.InstancedMesh;
+  /** every citizen's shins, shoes and arms, CITIZEN_LIMBS.length per citizen in that order; read by tests */
+  readonly limbs: THREE.InstancedMesh;
+  private lm = new THREE.Matrix4();
+  private lr = new THREE.Matrix4();
   private hood: THREE.InstancedMesh;
   private lamp: THREE.InstancedMesh;
   private brolly: THREE.InstancedMesh;
@@ -145,10 +158,11 @@ export class Crowd {
     bindPlate(brollyMat, "tex_brolly");
     bindPlate(lampMat, "tex_lamp");
     this.body = new THREE.InstancedMesh(citizenBodyGeometry(), dark, count);
+    this.limbs = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), dark, count * CITIZEN_LIMBS.length);
     this.hood = new THREE.InstancedMesh(citizenHoodGeometry(), hoodMat, count);
     this.lamp = new THREE.InstancedMesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), lampMat, count);
     this.brolly = new THREE.InstancedMesh(new THREE.ConeGeometry(0.75, 0.25, 8, 1, true), brollyMat, count);
-    for (const mesh of [this.body, this.hood, this.lamp, this.brolly]) {
+    for (const mesh of [this.body, this.limbs, this.hood, this.lamp, this.brolly]) {
       mesh.frustumCulled = false;
       this.group.add(mesh);
     }
@@ -163,6 +177,12 @@ export class Crowd {
 
   get count(): number {
     return this.peds.length;
+  }
+
+  /** A citizen's state, for tests: whether it stands still, and where it is facing. */
+  pedInfo(i: number): { idle: boolean; speed: number; bob: number; yaw: number; x: number; z: number } {
+    const p = this.peds[i]!;
+    return { idle: p.idle, speed: p.speed, bob: p.bob, yaw: p.yaw, x: p.x, z: p.z };
   }
 
   /** Positions for probes (and later, for the campaign's Threat Rating). */
@@ -187,6 +207,19 @@ export class Crowd {
       this.m.compose(this.p, this.q, this.sc);
       this.body.setMatrixAt(i, this.m);
       this.hood.setMatrixAt(i, this.m);
+      // the limbs: each about its hip or shoulder, in the citizen's own frame, then placed with it
+      const swing = citizenSwing(this.time, ped.speed, ped.bob, ped.idle);
+      for (let k = 0; k < CITIZEN_LIMBS.length; k++) {
+        const L = CITIZEN_LIMBS[k]!;
+        const a = swing * L.swing * L.side;
+        this.lm.makeTranslation(L.pivot[0], L.pivot[1], L.pivot[2]);
+        this.lm.multiply(this.lr.makeRotationX(a));
+        this.lm.multiply(this.lr.makeTranslation(L.centre[0] - L.pivot[0], L.centre[1] - L.pivot[1], L.centre[2] - L.pivot[2]));
+        if (L.tilt) this.lm.multiply(this.lr.makeRotationZ(L.tilt));
+        this.lm.multiply(this.lr.makeScale(L.size[0], L.size[1], L.size[2]));
+        this.lm.premultiply(this.m);
+        this.limbs.setMatrixAt(i * CITIZEN_LIMBS.length + k, this.lm);
+      }
       // lease light on the chest, on the coat's surface, facing the way they walk
       this.sc.set(1, 1, 1);
       this.p.set(o.x + Math.sin(ped.yaw) * 0.19 * ped.h, 1.12 * ped.h + bob, o.z + Math.cos(ped.yaw) * 0.19 * ped.h);
@@ -197,6 +230,7 @@ export class Crowd {
       this.brolly.setMatrixAt(i, this.m);
     }
     this.body.instanceMatrix.needsUpdate = true;
+    this.limbs.instanceMatrix.needsUpdate = true;
     this.hood.instanceMatrix.needsUpdate = true;
     this.lamp.instanceMatrix.needsUpdate = true;
     this.brolly.instanceMatrix.needsUpdate = true;
