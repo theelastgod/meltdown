@@ -366,6 +366,14 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .contracts .pr.worn { border-color: #ff1e3c; box-shadow: 0 0 8px rgba(255,30,60,0.35); }
 #hud .contracts .pr.off { opacity: 0.4; cursor: default; }
 #hud .contracts .pr b { color: #ff1e3c; }
+/* the kit's pictures (Stage 685): each protocol's emblem at the head of its row, each campaign weapon's render over its name */
+#hud .contracts .pr { display: flow-root; }
+#hud .contracts .pr .pi { float: left; width: 34px; height: 34px; object-fit: cover; margin: 0 6px 0 0; border: 1px solid rgba(255,30,60,0.45); background: #000; }
+#hud .contracts .pr.off .pi { filter: grayscale(0.7); }
+#hud .contracts .cws { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#hud .contracts .cw { display: block; border: 1px solid rgba(255,176,46,0.35); padding: 2px; color: var(--ye); }
+#hud .contracts .cw.off { opacity: 0.5; }
+#hud .contracts .cw .wi { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #000; margin-bottom: 2px; }
 #hud .card { position: absolute; inset: 0; background: rgba(2,3,6,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; text-align: center; color: var(--am); }
 #hud .card[hidden] { display: none; }
 /* an ending's plate (Stage 681): full bleed behind the words, under a vignette that keeps every line readable */

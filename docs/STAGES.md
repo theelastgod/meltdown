@@ -1641,6 +1641,35 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 685 — The kit had no pictures
+
+**The gap.** The contracts desk listed the five Kernel Protocols and the two campaign weapons (THE
+DIRECTIVE, CLOCKEATER) as text.
+
+**The change.** Each protocol's row now leads with an emblem drawn in the Kernel's blood-red
+filament: a barrel wired into a wrist (FILAMENT CORE), a stitched contract heart (RED LEASE), a
+metronome pulse (WERN PULSE), a ledger of veins with a shield (BLOOD LEDGER), a filament iris
+(DIRECTIVE OPTIC). Each campaign weapon has a card: a render of the gun the game draws (the
+Directive's long rifle with the red optic and amber rail, the Clockeater's short pistol with three
+magenta slits) over its name, dimmed until the file owns it. Higgsfield, `gpt_image_2_5` medium,
+two variants each, 7 credits; 128 px square emblems and 320x180 renders in `public/kit/`.
+`client/kitart.ts` keys them by id; `protocolIcon()` and `weaponCard()` write the markup. The
+service worker caches `/kit/`.
+
+**The guards.** `tests/kitart.test.ts`: every protocol and every campaign weapon, and nothing else,
+has its own file at its size; each row and card carries its own picture and no other's; a card is
+dimmed until owned. probe:campaign reads the live desk: five protocol rows with their own emblems
+and two weapon cards, loaded, neither owned on a fresh file. 61/61.
+
+Two mutations were each caught: the rows without `protocolIcon` (probe:campaign, 60/61), and RED
+LEASE mapped to FILAMENT CORE's emblem (the unit test, 2 failed).
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1498 tests; lint:campaign and lint:assets
+clean; probe:campaign 61/61; probe:mobile 40/40; `npm run build`.
+
+**Proof.** `docs/proof/stage685/desk-kit.png` is the probe's frame of the desk with the emblems and
+cards; `kit-sheet.png` is every variant generated.
+
 ## Stage 684 — The gigs had no pictures
 
 **The gap.** Stages 680 to 683 gave the speakers, the endings, the arc's missions and the fixers

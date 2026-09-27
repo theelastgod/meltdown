@@ -29,6 +29,7 @@ import { fixerHeader, portraitFor } from "./portraits";
 import { ENDING_ART } from "./endings";
 import { deskBanner } from "./missionart";
 import { gigThumb } from "./gigart";
+import { protocolIcon, weaponCard } from "./kitart";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop";
 
@@ -562,7 +563,7 @@ export class Campaign {
     const protos = PROTOCOLS.map((p) => {
       const owned = c.protocols.includes(p.id);
       const worn = c.worn.includes(p.id);
-      return `<label class="pr ${owned ? "" : "off"} ${worn ? "worn" : ""}"><input type="checkbox" data-wear="${p.id}" ${worn ? "checked" : ""} ${owned ? "" : "disabled"}> <b>${p.name}</b> <span class="dim">${p.line}</span></label>`;
+      return `<label class="pr ${owned ? "" : "off"} ${worn ? "worn" : ""}">${protocolIcon(p.id)}<input type="checkbox" data-wear="${p.id}" ${worn ? "checked" : ""} ${owned ? "" : "disabled"}> <b>${p.name}</b> <span class="dim">${p.line}</span></label>`;
     }).join("");
     const endings = endingsFor(c.testimony, c.faction).map((e) => e.title).join(" · ");
     return `<div class="hd">▲ CONTRACTS · ${faction ? `${faction.name}` : "NO HOUSE"} <span class="x" data-act="close">${closeHint("C", this.game.hud.touch)}</span></div>
@@ -570,7 +571,7 @@ export class Campaign {
       <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => testimonyLine(k, v)).join(" · ") || "— NOTHING ON THE RECORD —"} · ENDINGS OPEN: ${endings}</div>
       <div class="cols"><div><div class="sh">THE ARC · ${c.missionsDone.length}/${MAIN_ARC.length}</div>${arc}<div class="sh">FIXERS · GIGS ${c.gigsDone.length}/${GIGS.length}</div>${fixers}</div>
       <div><div class="sh">KERNEL PROTOCOLS · ${c.worn.length}/${MAX_PROTOCOLS} WORN <span class="red">· CAMPAIGN ONLY · STRIPPED AT PVP JOIN</span></div>${protos}
-      <div class="sh">CAMPAIGN WEAPONS</div><div class="ln">${CAMPAIGN_WEAPONS.map((w) => `${c.weapons.includes(w as "directive" | "clockeater") ? "▣" : "▢"} ${weaponName(w)}`).join(" · ")}</div>
+      <div class="sh">CAMPAIGN WEAPONS</div><div class="ln cws">${CAMPAIGN_WEAPONS.map((w) => weaponCard(w, weaponName(w), c.weapons.includes(w as "directive" | "clockeater"))).join("")}</div>
       <div class="sh">CREW</div><div class="ln">${this.crew ? `IN CREW <b class="ye">${this.crew}</b> · ${this.host ? "YOU HOLD THE TERMINALS" : "THE HOST HOLDS THE TERMINALS"} · TELL A FRIEND THE CODE` : `<input data-crewcode="1" maxlength="8" placeholder="INVITE CODE" style="text-transform:uppercase"> <span class="cy" data-act="joinCrew">[JOIN A CREW]</span> <span class="dim">OR RUN WITH A CREW ON A CONTRACT ABOVE AND READ THE CODE OUT</span>`}</div>
       <div class="sh">EXPLORE</div><div class="ln dim">TRAVEL TO A DISTRICT FROM THE MAP WITH THE THREAT LIVE: <span class="cy" data-explore="1">[EXPLORE THIS DISTRICT]</span></div></div></div>`;
   }

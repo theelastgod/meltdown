@@ -247,6 +247,13 @@ async function main(): Promise<void> {
       await hub.waitForFunction(() => [...document.querySelectorAll("#hud .contracts .gt")].every((i) => (i as HTMLImageElement).complete), null, { timeout: 5000, polling: 50 }).catch(() => undefined);
       const gigRows = await hub.evaluate(() => [...document.querySelectorAll("#hud .contracts .fx .ct")].map((r) => { const i = r.querySelector(".gt") as HTMLImageElement | null; return { id: r.getAttribute("data-launch") ?? "", src: i?.getAttribute("src") ?? null, loaded: !!i && i.complete && i.naturalWidth > 0 }; }));
       const arcThumbs = await hub.evaluate(() => document.querySelectorAll("#hud .contracts .ct:not(.fx .ct) .gt").length);
+      // Stage 685: each Kernel Protocol leads its row with its own emblem, and each campaign weapon has its card, loaded; a fresh file owns neither weapon
+      await hub.waitForFunction(() => [...document.querySelectorAll("#hud .contracts .pi, #hud .contracts .wi")].every((i) => (i as HTMLImageElement).complete), null, { timeout: 5000, polling: 50 }).catch(() => undefined);
+      const kit = await hub.evaluate(() => ({
+        protocols: [...document.querySelectorAll("#hud .contracts .pr")].map((r) => { const i = r.querySelector(".pi") as HTMLImageElement | null; const box = r.querySelector("input[data-wear]"); return { id: box?.getAttribute("data-wear") ?? "", src: i?.getAttribute("src") ?? null, loaded: !!i && i.complete && i.naturalWidth > 0 }; }),
+        weapons: [...document.querySelectorAll("#hud .contracts .cw")].map((r) => { const i = r.querySelector(".wi") as HTMLImageElement | null; return { id: r.getAttribute("data-weapon") ?? "", src: i?.getAttribute("src") ?? null, loaded: !!i && i.complete && i.naturalWidth > 0, owned: !r.classList.contains("off") }; }),
+      }));
+      check("each Kernel Protocol leads its row with its own emblem and each campaign weapon has its card, loaded; a fresh file owns neither weapon", kit.protocols.length === 5 && kit.protocols.every((x) => x.src === `/kit/p_${x.id}.jpg` && x.loaded) && kit.weapons.length === 2 && kit.weapons.every((x) => x.src === `/kit/w_${x.id}.jpg` && x.loaded && !x.owned), JSON.stringify(kit));
       await hub.evaluate(() => document.querySelector("#hud .contracts .fx")?.scrollIntoView({ block: "start" }));
       await shotCheck(hub, `stage10-gigs.png`, "#hud .contracts");
       await hub.evaluate(() => { const d = document.querySelector("#hud .contracts") as HTMLElement | null; if (d) d.scrollTop = 0; });
