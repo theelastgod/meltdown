@@ -238,6 +238,11 @@ async function main(): Promise<void> {
     await shotCheck(hub, `stage10-contracts.png`);
     {
       const b = await deskBanner(hub);
+      // Stage 683: each fixer's face over their gigs, their own portrait, loaded; none greyed on a file that lost nobody
+      await hub.waitForFunction(() => [...document.querySelectorAll("#hud .contracts .fp")].every((i) => (i as HTMLImageElement).complete), null, { timeout: 5000, polling: 50 }).catch(() => undefined);
+      const faces = await hub.evaluate(() => [...document.querySelectorAll("#hud .contracts .fx")].map((fx) => { const i = fx.querySelector(".fp") as HTMLImageElement | null; return { name: i?.alt ?? "", src: i?.getAttribute("src") ?? null, loaded: !!i && i.complete && i.naturalWidth > 0, gone: !!i && i.classList.contains("gone") }; }));
+      const want: Record<string, string> = { "THE DEACON": "/portraits/deacon.jpg", MARROW: "/portraits/marrow.jpg", "IDA VESSEL": "/portraits/vessel.jpg" };
+      check("each fixer on the desk is shown by their own portrait over their gigs, loaded, and none greyed on a file that has lost nobody", faces.length === 3 && faces.every((f) => want[f.name] === f.src && f.loaded && !f.gone), JSON.stringify(faces));
       check("the desk leads with the next mission's key art, loaded: WAKE UNLISTED for a file that has not started the arc", c1.next === "m1_wake_unlisted" && b.src === "/missions/m1_wake_unlisted.jpg" && b.loaded, `next ${c1.next} · ${JSON.stringify(b)}`);
     }
     // Stage 95: the desk is a frame, and since Stage 10 the combat chrome has drawn straight through

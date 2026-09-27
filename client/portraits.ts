@@ -8,7 +8,7 @@
  *
  * A Record over every handler, so a new speaker cannot be written without a portrait.
  */
-import type { HandlerId } from "@shared/campaign/factions";
+import { HANDLERS, type HandlerId } from "@shared/campaign/factions";
 
 export const PORTRAIT: Record<HandlerId, string> = {
   deacon: "/portraits/deacon.jpg",
@@ -21,4 +21,14 @@ export const PORTRAIT: Record<HandlerId, string> = {
 /** the portrait for a script node's speaker, or null for the file's own lines and the bare terminal */
 export function portraitFor(speaker: string): string | null {
   return speaker in PORTRAIT ? PORTRAIT[speaker as HandlerId] : null;
+}
+
+/**
+ * A fixer's header on the contracts desk (Stage 683): their face over their gigs, the terminal's
+ * portrait framed in their colour. A fixer the file has had re-leased keeps their place on the desk
+ * with the face greyed out, beside the RE-LEASED note: the desk remembers who is gone.
+ */
+export function fixerHeader(h: Exclude<HandlerId, "wern" | "vantage">, alive: boolean): string {
+  const H = HANDLERS[h];
+  return `<div class="fh"><img class="fp${alive ? "" : " gone"}" src="${PORTRAIT[h]}" alt="${H.name}" width="256" height="256">${H.sigil} ${H.name} <span class="dim">${H.title}</span> ${alive ? "" : '<span class="mg">· RE-LEASED</span>'}</div>`;
 }

@@ -1641,6 +1641,36 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 683 — The desk's fixers had names but no faces
+
+**The gap.** Stage 680 gave each fixer a portrait at the terminal, where they speak. The contracts
+desk, where the player chooses whose work to take, still listed their gigs under a glyph and a
+name.
+
+**The change.** Each fixer's header on the desk now carries the same portrait at 40 px, framed in
+their colour, beside their name and title. A fixer the file has had re-leased keeps their place and
+their face, greyed out, next to the RE-LEASED note: Ida Vessel, after the file exposes her in
+mission 4. No new art was generated; the headers reuse the Stage 680 files. The header is
+`fixerHeader()` in `client/portraits.ts`, which the desk calls.
+
+**The guards.**
+
+- `tests/deskfixers.test.ts`: each header carries that fixer's own portrait and no one else's, and
+  is not greyed while they live. With `m4:vessel` set to expose, `handlersAlive` marks Ida gone and
+  her header keeps her face, greyed, with the note.
+- probe:campaign reads the live desk: three headers, each with its own portrait, loaded, none
+  greyed on a file that has lost nobody. 58/58.
+
+Two mutations were each caught: every header given the Deacon's portrait (the unit test), and the
+desk bypassing `fixerHeader` (probe:campaign).
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1492 tests; lint:campaign,
+lint:progression, lint:economy and lint:assets clean; probe:campaign 58/58; probe:mobile 40/40;
+`npm run build`.
+
+**Proof.** `docs/proof/stage683/desk.png` is the probe's frame of the desk: the Deacon's face over
+his gigs, under the arc's banner.
+
 ## Stage 682 — The arc's missions had no pictures
 
 **The defect.** The contracts desk is where the campaign begins: it shows the next mission of the

@@ -354,6 +354,11 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .contracts .fx { margin: 6px 0; padding: 4px 6px; border-left: 2px solid; }
 #hud .contracts .fx.cy { border-color: var(--cy); } #hud .contracts .fx.mg { border-color: var(--mg); } #hud .contracts .fx.am { border-color: var(--am); }
 #hud .contracts .fh { color: #ffe9c2; margin-bottom: 3px; }
+/* each fixer's face over their gigs (Stage 683): the terminal's portrait, framed in their colour; a re-leased fixer greyed out */
+#hud .contracts .fh { display: flex; align-items: center; flex-wrap: wrap; gap: 0 6px; }
+#hud .contracts .fp { width: 40px; height: 40px; flex: none; object-fit: cover; border: 1px solid currentColor; margin-right: 4px; }
+#hud .contracts .fx.cy .fp { color: var(--cy); } #hud .contracts .fx.mg .fp { color: var(--mg); } #hud .contracts .fx.am .fp { color: var(--am); }
+#hud .contracts .fp.gone { filter: grayscale(1) brightness(0.45); }
 #hud .contracts .pr { display: block; padding: 3px 4px; margin: 2px 0; border: 1px solid rgba(255,30,60,0.35); color: #ffb3bb; cursor: pointer; }
 #hud .contracts .pr.worn { border-color: #ff1e3c; box-shadow: 0 0 8px rgba(255,30,60,0.35); }
 #hud .contracts .pr.off { opacity: 0.4; cursor: default; }
