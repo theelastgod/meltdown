@@ -25,6 +25,7 @@ import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type C
 import { HOSTS } from "./config";
 import { weaponName } from "./hud/kill";
 import { CAMPAIGN_WEAPONS } from "@shared/weapons/manifest";
+import { portraitFor } from "./portraits";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop";
 
@@ -275,7 +276,7 @@ export class Campaign {
     const choices = (n.choices ?? []).filter((c) => gateOpen(c.gate, all, this.save.faction)).map((c) => c.text);
     // what the file has to say back about what this player already did (Stage 661)
     const recall = recallIndex(n, all, this.save.faction);
-    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, recall), choices.length ? choices : null);
+    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, recall), choices.length ? choices : null, portraitFor(n.speaker));
     // the crew reads the same screen (Stage 52): the host sends where it is; the room mirrors it to everyone
     if (this.mode === "coop" && this.host && this.game.net) this.game.net.sendTerminal({ script: p.script, node: n.id, choices, picked: this.lastPick, recall });
     this.lastPick = null;
@@ -295,7 +296,7 @@ export class Campaign {
     const speaker = n.speaker === "you" ? { name: "THE HOST", sigil: "▸", color: "gr" } : n.speaker === "terminal" ? { name: "TERMINAL", sigil: "▮", color: "cy" } : { name: HANDLERS[n.speaker as HandlerId].name, sigil: HANDLERS[n.speaker as HandlerId].sigil, color: HANDLERS[n.speaker as HandlerId].color };
     this.mirror = { script: ev.script, node: ev.node, choices: ev.choices.slice(), picked: ev.picked };
     // the host's recall, not the guest's own testimony: the crew reads one screen (Stage 52 / 661)
-    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, ev.recall), ev.choices.length ? ev.choices : null);
+    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, ev.recall), ev.choices.length ? ev.choices : null, portraitFor(n.speaker));
     this.game.hud.terminalFooter(ev.choices.length ? "THE HOST IS CHOOSING" : "THE HOST READS ON");
     if (ev.picked) this.game.hud.alert(`◆ THE HOST CHOSE · ${ev.picked}`, false, 2.5);
   }

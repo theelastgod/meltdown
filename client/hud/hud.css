@@ -315,6 +315,12 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .terminal { left: 50%; bottom: 120px; transform: translateX(-50%); width: 640px; max-width: 92vw; padding: 10px 14px; pointer-events: auto; }
 #hud .terminal .th { font-size: 12px; letter-spacing: 0.14em; border-bottom: 1px solid rgba(53,242,255,0.35); padding-bottom: 4px; margin-bottom: 6px; }
 #hud .terminal .tl { font-size: 12px; line-height: 1.6; min-height: 40px; color: #dff9ff; }
+/* who is speaking (Stage 680): the portrait beside the lines, framed in the speaker's own colour */
+#hud .terminal .tb { display: flex; gap: 12px; align-items: flex-start; }
+#hud .terminal .tx { flex: 1; min-width: 0; }
+#hud .terminal .pt { width: 96px; height: 96px; flex: none; object-fit: cover; border: 1px solid currentColor; box-shadow: 0 0 10px -2px currentColor; background: #000; }
+#hud .terminal .pt[hidden] { display: none; }
+#hud.touch .terminal .pt { width: 64px; height: 64px; }
 #hud .terminal .tl .cur { animation: blink 0.6s steps(2) infinite; }
 #hud .terminal .tc { margin-top: 6px; }
 #hud .terminal .ch { padding: 3px 6px; margin: 2px 0; border: 1px solid rgba(53,242,255,0.3); color: var(--cy); cursor: pointer; }

@@ -118,6 +118,8 @@ async function main(): Promise<void> {
     pg.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
     return pg;
   };
+  /** every node read at a terminal: who spoke, and the portrait the screen put beside them (Stage 680) */
+  const faces: { speaker: string; src: string | null; shown: boolean; loaded: boolean }[] = [];
   /** play through an open terminal: skip typing, continue, pick `pick` when choices come (default the first) */
   const playTerminal = async (pg: Page, picks: number[] = [], said?: string[]): Promise<string[]> => {
     const seen: string[] = [];
@@ -129,6 +131,11 @@ async function main(): Promise<void> {
       // what the screen actually reads, not what the model says it should (Stage 661): a recall
       // line that never types is the same as no recall line
       if (said && d.ready) said.push(await pg.evaluate(() => document.querySelector("#hud .terminal .tl")?.textContent ?? ""));
+      if (d.ready) {
+        await pg.waitForFunction(() => { const i = document.querySelector("#hud .terminal .pt") as HTMLImageElement | null; return !i || i.hidden || i.complete; }, null, { timeout: 3000, polling: 50 }).catch(() => undefined);
+        const face = await pg.evaluate(() => { const i = document.querySelector("#hud .terminal .pt") as HTMLImageElement | null; return { src: i?.getAttribute("src") ?? null, shown: !!i && !i.hidden, loaded: !!i && i.complete && i.naturalWidth > 0 }; });
+        faces.push({ speaker: d.speaker, ...face });
+      }
       if (!d.ready) {
         await pg.evaluate(() => window.__game.dialogueAdvance());
         await pg.waitForTimeout(60);
@@ -527,6 +534,15 @@ async function main(): Promise<void> {
     const a0 = await armed.evaluate(() => ({ def: window.__game.state().weaponDef, slot: window.__game.state().slot, file: window.__game.file(), audio: window.__game.state().audio, ammo: window.__game.state().ammo }));
     check("weapons 7–8: the Directive is refused for a file without the unlock and spawns (slot 7, burst-free marksman) for one that owns it; it fires", /weapon-locked/.test(k0) && a0.def.id === "directive" && a0.slot === 7 && (a0.file.loadout as { primary: string }).primary === "directive" && (a0.audio["shot_directive"] ?? 0) >= 1, `locked: "${k0}" · armed: ${a0.def.id} slot ${a0.slot} rpm ${a0.def.rpm} · shots ${a0.audio["shot_directive"] ?? 0} · ammo ${a0.ammo}`);
     await armed.close();
+
+    // Stage 680: whoever speaks at a terminal is shown beside their words — a fixer's own portrait,
+    // loaded; the file's lines and the bare terminal carry none
+    {
+      const fixers = faces.filter((f) => f.speaker !== "you" && f.speaker !== "terminal");
+      const wrong = faces.filter((f) => (f.speaker === "you" || f.speaker === "terminal" ? f.shown : !f.shown || !f.loaded || f.src !== `/portraits/${f.speaker}.jpg`));
+      const who = [...new Set(fixers.map((f) => f.speaker))];
+      check("every fixer who speaks at a terminal is shown in their own portrait, loaded; the file and the bare terminal show none", fixers.length > 0 && wrong.length === 0, `${faces.length} nodes read · fixers seen [${who.join(", ")}] · wrong ${wrong.length ? JSON.stringify(wrong.slice(0, 3)) : "none"}`);
+    }
 
     // ---------------- co-op: two files, the campaign room, the host at the terminal ----------------
     for (const id of ["coop-a", "coop-b"]) await post(id, { op: "faction", faction: "clockeaters" });

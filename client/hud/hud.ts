@@ -149,7 +149,7 @@ export class Hud {
       <div class="dossier" hidden><div class="dt">▲ DOSSIER · BOTH CELLS · FILES AS THE CITY SEES THEM</div><div class="cells"></div></div>
       <div class="p am receipt" hidden><div class="rh">▲ LEDGER ENTRY · VANTAGE CLEARING HOUSE</div><div class="rl"></div><div class="rs">◆ <span class="rst">PRINTING…</span></div><div class="rf">[ENTER] SIGN</div></div>
       <div class="rite" hidden><div class="rn"></div><div class="rt"></div><div class="rlines"></div></div>
-      <div class="p cy terminal" hidden><div class="th"><span class="sg"></span> <span class="sp"></span></div><div class="tl"></div><div class="tc"></div><div class="tf">[ENTER] CONTINUE · [1–4] CHOOSE</div></div>
+      <div class="p cy terminal" hidden><div class="th"><span class="sg"></span> <span class="sp"></span></div><div class="tb"><img class="pt" alt="" hidden><div class="tx"><div class="tl"></div><div class="tc"></div></div></div><div class="tf">[ENTER] CONTINUE · [1–4] CHOOSE</div></div>
       <div class="contracts" hidden></div>
       <div class="card" hidden><div class="ct"></div><div class="cl"></div></div>
 
@@ -429,12 +429,20 @@ export class Hud {
     return this.term.ready;
   }
 
-  terminal(speaker: string, sigil: string, color: string, lines: string[], choices: string[] | null): void {
+  terminal(speaker: string, sigil: string, color: string, lines: string[], choices: string[] | null, portrait: string | null = null): void {
     const t = this.q(".terminal");
     t.hidden = false;
     t.className = `p terminal ${color}`;
     this.q(".terminal .sg").textContent = sigil;
     this.q(".terminal .sp").textContent = speaker;
+    // who is speaking (Stage 680): a fixer's portrait beside their words; the file and the bare
+    // terminal have none. The alt is the speaker, so a portrait that fails to load still names them.
+    const pt = this.q(".terminal .pt") as HTMLImageElement;
+    pt.hidden = !portrait;
+    if (portrait) {
+      if (pt.getAttribute("src") !== portrait) pt.src = portrait;
+      pt.alt = speaker;
+    } else pt.removeAttribute("src");
     this.term = { lines: lines.slice(), shown: 0, chars: 0, ready: false, choices };
     this.q(".terminal .tl").innerHTML = "";
     this.q(".terminal .tc").innerHTML = "";

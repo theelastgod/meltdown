@@ -1641,6 +1641,57 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 680 — The people who hand you every contract had no faces on the terminal
+
+**The defect.** Every line of the campaign is read at the CRT terminal, and a speaker there was one
+glyph and a name: ▲ THE DEACON, ◈ MARROW, ◆ IDA VESSEL, ■ AUGUST WERN, ▣ VANTAGE. Since Stage 667
+the fixers have had bodies in the Deadletter Office, but the terminal, where the player actually
+meets them, still showed a glyph.
+
+**The art.** These are the first campaign assets drawn in Higgsfield since credits were restored.
+The four fixers' front views were cut from the Stage 667 turntable and uploaded as references.
+Each portrait was generated from its own figure (`gpt_image_2_5`, medium quality, two variants per
+speaker, ten images, 5 credits). They keep the figures' silhouettes, hoods and strip-lights:
+
+- the Deacon's hood rim and stole in cyan, with the ledger marked by the cells' triangle;
+- Marrow hunched in a ragged magenta-hemmed cloak;
+- Ida bare-headed, one hand on her hip, with the gold collar and belt;
+- Wern in his black greatcoat with red-lit edges, alone against the white office the art bible
+  gives him;
+- VANTAGE, which has no body, as an amber lens.
+
+No face is lit, as in the world. The first crop left the heads small at 96 px, so each was
+re-cropped to a bust and stepped down to a 256 px JPEG of 7–14 KB under `public/portraits/`.
+
+**On the screen.** The terminal gets a portrait slot beside its lines (96 px, 64 px on a phone),
+framed in the speaker's own colour. It is set for every node from `client/portraits.ts`, a
+`Record` over every handler, so a new speaker cannot be written without one. The file's own lines
+and the bare terminal show no portrait. A co-op guest's mirrored terminal shows the same portrait
+as the host's. The alt text is the speaker's name, so a portrait that fails to load still names
+them. The service worker caches `/portraits/` at runtime, so a dialogue read once reads offline.
+
+**The guards.**
+
+- `tests/portraits.test.ts`: every handler has a portrait, a 256 px JPEG under 40 KB. Every speaker
+  in every script is a handler, the file or the terminal. The four fixers and VANTAGE each speak
+  somewhere.
+- probe:campaign records the portrait slot at every node its terminal reads. A new check requires
+  every fixer node to show that fixer's own portrait, loaded, and every "you" or terminal node to
+  show none. The run read six nodes (the Deacon and VANTAGE).
+
+Three mutations were each caught: every speaker given the Deacon's portrait (the unit test);
+Marrow's file removed (the unit test); the HUD never showing the slot (probe:campaign: `"shown":
+false`).
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1486 tests; lint:campaign,
+lint:progression, lint:economy and lint:assets clean; probe:campaign 52/52; probe:mobile 40/40;
+`npm run build`.
+
+**Proof.** `docs/proof/stage680/generations.png` shows the ten generations: top row the ones used,
+bottom row the alternates. `terminal.png` shows the terminal as the game draws it for the Deacon,
+Ida Vessel, August Wern and VANTAGE. Marrow's lines sit behind choices the capture did not take;
+the unit test and the Record cover his portrait.
+
 ## Stage 679 — $CAPITAL had no mark
 
 **The ask.** The owner: "the logo for capital should be the yen symbol". Until this stage the
