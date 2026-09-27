@@ -1641,6 +1641,38 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 669 — The alert ran out while the probe was still counting frames
+
+**The red.** CI run 664 (Stage 666) failed `probe:wake` on one check: *"the alert
+hangs under both of them at each of those sizes"*. The alert read unlit at
+1280 × 720 and lit at 640 × 360 and 480 × 270. The positions were right at
+every size. Stage 666 changed only citizen limbs, so the cause was not what
+the check measures.
+
+**The cause.** The HUD spends an alert's life by rendered frames, each capped at
+0.5 s. The probe fired a 4 s alert, waited for it to fade in, waited five more
+frames, and then made a second round trip to read it. That wait is a count of
+frames, not a length of time. The time used grows with the cost of a frame, and
+a frame costs most in the widest window. Instrumented locally with the life
+printed at the read, the unthrottled run used 1.76 s at 1280 × 720, 1.06 s at
+640 × 360 and 0.36 s at 480 × 270. With 30× CPU throttling the 1280 × 720 read
+used 2.51 s. CPU throttling cannot slow the software rasterizer, so it could not
+reach CI's frame cost. Stages 665–666 made frames heavier and CI crossed 4 s.
+
+**Reproduced** by scaling the life to the local frame cost: with a 1.5 s alert
+the unmodified check fails exactly as CI did. At 1280 × 720 the alert is unlit
+(−0.06 s left), while 640 × 360 (0.44 s left) and 480 × 270 (1.12 s left) are
+lit.
+
+**The fix is in the probe, not the HUD.** An alert's 4 s is right in play; the
+check is about where the alert hangs. The probe now fires the alert with a 30 s
+life, which no run of frames here can spend (at most 0.5 s a frame, about eight
+frames). It then re-fires the alert with its 4 s life, so the checks after it
+see what they were written against. The check still requires the alert to be
+lit.
+
+**Verified.** `probe:wake` 27/27 locally with the fix; `npm run typecheck`.
+
 ## Stage 668 — VANTAGE's machines were boxes
 
 **The defect.** The two things the player fights in every contract were the

@@ -153,7 +153,12 @@ async function main(): Promise<void> {
     for (const size of [{ w: 1280, h: 720 }, { w: 640, h: 360 }, { w: 480, h: 270 }]) {
       await page.setViewportSize({ width: size.w, height: size.h });
       await page.evaluate(async () => {
-        window.__game.game.hud.alert("\u25c6 INTEGRITY 30", false, 4);
+        // Stage 669: the alert's life is spent by rendered frames (at most 0.5 s each), and this read
+        // waits a number of frames, not a time. On a runner where a 1280 × 720 frame costs 0.5 s the
+        // eight or so frames between firing and reading spent all 4 s, and the widest window read the
+        // alert unlit (CI run 664). Give it a life no run of frames here can spend; the check is where
+        // it hangs, and it still has to be lit to pass
+        window.__game.game.hud.alert("\u25c6 INTEGRITY 30", false, 30);
         // wait for the frame where it is lit rather than for a stopwatch (Stage 151): a slow
         // runner draws the 0.2 s fade when it gets to it, and a fixed wait reads it transparent
         const litAlert = document.querySelector("#hud .alert") as HTMLElement;
@@ -194,6 +199,8 @@ async function main(): Promise<void> {
       if (!alertOk) alertSeatsOk = false;
       alertSeats.push(`${size.w}\u00d7${size.h}: alert ${seat.alert} (lit ${seat.alertLit}) \u00b7 ${seat.alertInPanel ? "INSIDE the panel" : "clear of the panel"} \u00b7 ${seat.alertInLine ? "INSIDE the line" : `${seat.alertGap.toFixed(0)} px under the line`}`);
     }
+    // and back to the life an alert is given in play, so nothing after this reads a 30 s alert
+    await page.evaluate(() => window.__game.game.hud.alert("\u25c6 INTEGRITY 30", false, 4));
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.evaluate(async () => {
       for (let f = 0; f < 5; f++) await new Promise((r) => requestAnimationFrame(r));
