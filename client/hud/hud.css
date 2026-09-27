@@ -342,6 +342,8 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .contracts .red { color: #ff1e3c; }
 #hud .contracts .cols { display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; margin-top: 6px; }
 #hud .contracts .sh { color: var(--cy); letter-spacing: 0.1em; margin: 8px 0 4px; border-bottom: 1px solid rgba(53,242,255,0.35); }
+/* the arc's banner (Stage 682): the next mission's key art above its row, or the ending's plate */
+#hud .contracts .mb { display: block; width: 100%; aspect-ratio: 3 / 1; object-fit: cover; border: 1px solid rgba(53,242,255,0.35); margin: 4px 0 6px; background: #000; }
 #hud .contracts .ct { padding: 4px 6px; margin: 3px 0; border: 1px solid rgba(255,176,46,0.3); cursor: pointer; }
 #hud .contracts .ct:hover { border-color: var(--am); }
 #hud .contracts .ct.off { opacity: 0.5; cursor: default; }

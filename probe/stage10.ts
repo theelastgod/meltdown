@@ -123,6 +123,11 @@ async function main(): Promise<void> {
     await pg.waitForFunction(() => { const i = document.querySelector("#hud .card .cart") as HTMLImageElement | null; return !i || i.hidden || i.complete; }, null, { timeout: 5000, polling: 50 }).catch(() => undefined);
     return pg.evaluate(() => { const i = document.querySelector("#hud .card .cart") as HTMLImageElement | null; return { src: i?.getAttribute("src") ?? null, shown: !!i && !i.hidden, loaded: !!i && i.complete && i.naturalWidth > 0 }; });
   };
+  /** the banner the contracts desk leads with (Stage 682): its source, and whether it loaded */
+  const deskBanner = async (pg: Page): Promise<{ src: string | null; loaded: boolean }> => {
+    await pg.waitForFunction(() => { const i = document.querySelector("#hud .contracts img.mb") as HTMLImageElement | null; return !i || i.complete; }, null, { timeout: 5000, polling: 50 }).catch(() => undefined);
+    return pg.evaluate(() => { const i = document.querySelector("#hud .contracts img.mb") as HTMLImageElement | null; return { src: i?.getAttribute("src") ?? null, loaded: !!i && i.complete && i.naturalWidth > 0 }; });
+  };
   /** every node read at a terminal: who spoke, and the portrait the screen put beside them (Stage 680) */
   const faces: { speaker: string; src: string | null; shown: boolean; loaded: boolean }[] = [];
   /** play through an open terminal: skip typing, continue, pick `pick` when choices come (default the first) */
@@ -231,6 +236,10 @@ async function main(): Promise<void> {
     });
     check("the contracts desk ends above the bottom row with a gap: neither the row nor the foot line is drawn over it, and what does not fit scrolls inside it", deskSeat.deskBottom <= deskSeat.rowTop - 4 && !deskSeat.rowCrosses && !deskSeat.footCrosses && deskSeat.scrolls, `desk ${deskSeat.deskTop.toFixed(0)}–${deskSeat.deskBottom.toFixed(0)} px · row from ${deskSeat.rowTop.toFixed(0)} · foot line from ${deskSeat.footTop.toFixed(0)} · view ${deskSeat.view.toFixed(0)} · row crosses ${deskSeat.rowCrosses} · foot crosses ${deskSeat.footCrosses} · scrolls ${deskSeat.scrolls}`);
     await shotCheck(hub, `stage10-contracts.png`);
+    {
+      const b = await deskBanner(hub);
+      check("the desk leads with the next mission's key art, loaded: WAKE UNLISTED for a file that has not started the arc", c1.next === "m1_wake_unlisted" && b.src === "/missions/m1_wake_unlisted.jpg" && b.loaded, `next ${c1.next} · ${JSON.stringify(b)}`);
+    }
     // Stage 95: the desk is a frame, and since Stage 10 the combat chrome has drawn straight through
     // it — the CLICK TO WAKE banner across the crew invite, the weapon rack along the desk's foot,
     // the ammo count over the EXPLORE line. Measured as geometry: no visible piece of chrome may
@@ -781,6 +790,15 @@ async function main(): Promise<void> {
     await ho.waitForFunction(() => window.__game?.ready === true && window.__game.state().hub?.fileLoaded === true, null, { timeout: 40000, polling: 100 });
     await ho.waitForTimeout(300);
     const homeFigs = await ho.evaluate(() => ({ figs: window.__game.figures().map((f) => f.id), done: window.__game.campaign().missionsDone.length }));
+    {
+      await ho.evaluate(() => window.__game.contracts(true));
+      await ho.waitForTimeout(200);
+      const b = await deskBanner(ho);
+      // the ending as the desk itself states it, from the file (campaign().ending is only the session that closed the arc)
+      const said = await ho.evaluate(() => [...document.querySelectorAll("#hud .contracts .dim")].map((d) => d.textContent ?? "").find((t) => t.startsWith("THE ARC IS COMPLETE"))?.split("ENDING: ")[1]?.trim() ?? "");
+      check("and with the arc done the desk leads with the plate of the ending this file earned, not a mission's", said === "TAKE THE CHAIR" && b.src === "/endings/chair.jpg" && b.loaded, `desk says ENDING: ${said || "?"} · ${JSON.stringify(b)}`);
+      await ho.evaluate(() => window.__game.contracts(false));
+    }
     check("with the arc closed the office is empty again: no fixer waits for a file with no contract left", homeFigs.done === 7 && homeFigs.figs.length === 0, `missions done ${homeFigs.done} · figures [${homeFigs.figs.join(", ")}]`);
     await ho.close();
 

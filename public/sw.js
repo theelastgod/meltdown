@@ -69,8 +69,8 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // the speakers' portraits (Stage 680) and the endings' plates (681) are kept like the art: seen once, seen offline
-  if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/portraits/") || url.pathname.startsWith("/endings/")) {
+  // the speakers' portraits (Stage 680) and the endings' plates (681) and the missions' (682) are kept like the art: seen once, seen offline
+  if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/portraits/") || url.pathname.startsWith("/endings/") || url.pathname.startsWith("/missions/")) {
     // ignoreVary (Stage 46): the origin may answer with "Vary: Origin", and a module <script> request
     // carries an Origin header the install-time precache fetch did not, so a strict match would miss
     // the very bundle the install step stored. The bundles are content-hashed; no header changes

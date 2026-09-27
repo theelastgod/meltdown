@@ -27,6 +27,7 @@ import { weaponName } from "./hud/kill";
 import { CAMPAIGN_WEAPONS } from "@shared/weapons/manifest";
 import { portraitFor } from "./portraits";
 import { ENDING_ART } from "./endings";
+import { deskBanner } from "./missionart";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop";
 
@@ -554,7 +555,9 @@ export class Campaign {
       const done = GIGS.filter((g) => g.fixer === h && c.gigsDone.includes(g.id)).length;
       return `<div class="fx ${H.color}"><div class="fh">${H.sigil} ${H.name} <span class="dim">${H.title}</span> ${alive[h] ? "" : '<span class="mg">· RE-LEASED</span>'}</div>${alive[h] ? mine.map((g) => row(g, true)).join("") || `<div class="dim">NO CONTRACTS ON OFFER${done ? ` · ${done} CLOSED` : ""}</div>` : '<div class="dim">NO ONE ANSWERS</div>'}</div>`;
     }).join("");
-    const arc = next ? row(next, true) : `<div class="dim">THE ARC IS COMPLETE · ENDING: ${endingTitle(c.ending)}</div>`;
+    // the arc leads with its picture (Stage 682): the next mission's key art, or the ending the file earned
+    const banner = deskBanner(next?.id ?? null, c.ending ?? null, ENDING_ART);
+    const arc = (banner ? `<img class="mb" src="${banner}" alt="">` : "") + (next ? row(next, true) : `<div class="dim">THE ARC IS COMPLETE · ENDING: ${endingTitle(c.ending)}</div>`);
     const protos = PROTOCOLS.map((p) => {
       const owned = c.protocols.includes(p.id);
       const worn = c.worn.includes(p.id);

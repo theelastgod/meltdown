@@ -1641,6 +1641,59 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 682 — The arc's missions had no pictures
+
+**The defect.** The contracts desk is where the campaign begins: it shows the next mission of the
+arc as one row of text, with its title, district, brief and reward. Seven missions build to the
+white office, and none of them had an image anywhere in the game.
+
+**The art.** Seven banners were drawn in Higgsfield (`gpt_image_2_5`, 21:9, medium quality, two
+variants each, fourteen images). Each used the Blank's turntable as reference, plus Ida for THE
+LEAK and Wern for THE WHITE OFFICE, and each is set in the district the mission is fought in:
+
+- **WAKE UNLISTED.** The Blank's hand on a hacked escrow terminal under the Lease Row monorail,
+  the amber-lamped crowd flowing past.
+- **DEADLETTER RUN.** Crouched on a container while amber-eyed Wasps sweep the harbour, an
+  informant waiting in a lit door.
+- **VARIANCE.** Holding a data terminal in the impound yard while a reverse-jointed repo mech
+  stalks through its own searchlight.
+- **THE LEAK.** Walking beside Ida Vessel down the container rows as the sweep closes behind.
+- **BLIND THE MODEL.** Lattice pylons bursting while the drone swarm pours in.
+- **TRIAL BY DATA.** The depot's broadcast tower blazing cyan, the city's screens answering it.
+- **THE WHITE OFFICE.** The Blank in the dark doorway, Wern waiting behind the white desk.
+
+The Wasps, the mech, Ida and Wern read as their in-game designs. The banners are 960 px-wide
+JPEGs of 33–93 KB under `public/missions/`, kept offline by the service worker once seen.
+
+**On the desk.** The arc column now leads with a 3:1 banner above the next mission's row. Once
+the arc is done, the same place shows the plate of the ending the file earned (Stage 681), beside
+the desk's "THE ARC IS COMPLETE · ENDING: …" line. `deskBanner()` in `client/missionart.ts`
+makes that choice.
+
+**The guards.**
+
+- `tests/missionart.test.ts`: every arc mission, and nothing else, has its own banner, a 960
+  px-wide JPEG wider than 2.2:1 and under 150 KB. `deskBanner` returns each mission's banner, each
+  ending's plate, or nothing.
+- probe:campaign reads the desk twice. On a fresh file it leads with WAKE UNLISTED's banner,
+  loaded. On a file that has closed the arc it leads with the plate of the ending the desk itself
+  names (TAKE THE CHAIR). 57/57.
+
+Two mutations were each caught: the banner lookup stuck on mission 1 (the unit test), and the desk
+dropping the banner (probe:campaign, both checks).
+
+**Found while writing the probe check.** Its first draft read the earned ending from
+`campaign().ending`, which is set only in the session that closed the arc. On a later visit it is
+null, even though the file's save holds the ending and the desk prints it. The check now reads the
+ending from the desk's own line, from the element and not the panel's run-together `textContent`.
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1490 tests; lint:campaign,
+lint:progression, lint:economy and lint:assets clean; probe:campaign 57/57; probe:mobile 40/40;
+`npm run build`.
+
+**Proof.** `docs/proof/stage682/desk.png` is the probe's frame of the desk leading with WAKE
+UNLISTED. `generations.png` shows all fourteen generations: the left of each pair is in use.
+
 ## Stage 681 — Six endings, one black card
 
 **The defect.** The arc closes on one full-screen card: the ending's title, its three lines and
