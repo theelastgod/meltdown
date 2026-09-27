@@ -505,7 +505,9 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     { x: -H - 0.2, y: 20, z: 30, rotY: Math.PI / 2, w: 14, h: 4 },
     { x: 34, y: 22, z: -H - 0.2, rotY: 0, w: 14, h: 4 },
   ];
-  const tram: TramLine = spec.walkway === "x" ? { axis: "x", at: WS, y: 8.6, from: -H - F - 30, to: H + F + 30, period: 26 } : { axis: "z", at: WS, y: 8.6, from: -H - F - 30, to: H + F + 30, period: 26 };
+  // y is the running surface the car's bogies sit on: the top of the posts' cross-members, which stand
+  // 0.1 m proud of the 9.0-9.3 m beam (Stage 674; it was 8.6, the car's centre, with the beam through it)
+  const tram: TramLine = spec.walkway === "x" ? { axis: "x", at: WS, y: 9.4, from: -H - F - 30, to: H + F + 30, period: 26 } : { axis: "z", at: WS, y: 9.4, from: -H - F - 30, to: H + F + 30, period: 26 };
   for (let p = -H + S; p <= H - S; p += 24) {
     if (spec.walkway === "x") {
       c.boxes.push(box(p - 0.2, 0, WS - 4.3, p + 0.2, 9.4, WS - 3.9, "post"));

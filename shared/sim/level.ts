@@ -59,7 +59,7 @@ export interface WalkLoop {
   z1: number;
 }
 
-/** The monorail line over a street: axis it runs along, the fixed coordinate, height, and span. */
+/** The monorail line over a street: axis it runs along, the fixed coordinate, the height of its running surface (the car's floor), and span. */
 export interface TramLine {
   axis: "x" | "z";
   at: number;

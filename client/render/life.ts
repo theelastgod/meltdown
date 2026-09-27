@@ -10,6 +10,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { LevelDef, TramLine, WalkLoop } from "@shared/sim/level";
 import { bindPlate, PALETTE } from "./city";
+import { markShared } from "./dispose";
 import { tickerStep } from "./ticker";
 import { FAR_LAYER } from "./renderer";
 
@@ -238,6 +239,114 @@ export class Crowd {
 }
 
 /** The monorail: a lit car passing along the beam over the walkway street, both directions on a period. */
+// ---- the monorail car (Stage 674) ----
+//
+// Until this stage a car was a 14 m box with a box of windows on it, centred at 8.6 m: the rail
+// beam (9.0-9.3 m) ran straight through its upper body. A car now rides ON the beam, the way the
+// posts and the walkway beneath it demand (a car hung under the beam would pass at head height over
+// the 4.6 m walkway): two bogies on the running surface, a lofted hull with raked noses and a flat
+// windscreen, window panes down both sides, a roof pod. Built along +x from the running surface up.
+// The same five meshes and materials as before, so a car costs no call it did not.
+
+/** the running surface is the car's floor: the cross-members at the posts stand 0.1 m proud of the beam */
+export const TRAM = { length: 14, width: 2.6, height: 2.6, lift: 0.35, bogie: 0.35 } as const;
+
+type Station = { x: number; w: number; h: number; dy: number };
+/** a rounded-rectangle ring, `segs` points per quarter corner, in the y-z plane */
+function tramRing(w: number, h: number, r: number, segs: number): [number, number][] {
+  const pts: [number, number][] = [];
+  const cx = w / 2 - r, cy = h / 2 - r;
+  const corners: [number, number, number][] = [[cx, cy, 0], [-cx, cy, Math.PI / 2], [-cx, -cy, Math.PI], [cx, -cy, (3 * Math.PI) / 2]];
+  for (const [ox, oy, a0] of corners) for (let k = 0; k <= segs; k++) {
+    const a = a0 + (k / segs) * (Math.PI / 2);
+    pts.push([ox + Math.cos(a) * r, oy + Math.sin(a) * r]);
+  }
+  return pts; // [z, y]
+}
+/** connect rings at each station into a closed hull, capped at both ends */
+function loft(stations: Station[], yc: number): THREE.BufferGeometry {
+  const base = tramRing(1, 1, 0.12, 3);
+  const pos: number[] = [];
+  const uv: number[] = [];
+  const x0 = stations[0]!.x, span = stations[stations.length - 1]!.x - x0;
+  // u runs nose to nose, v round the section: the hull's plate wraps it the way it wrapped the box
+  const ring = (s: Station) => base.map(([z, y], k) => [s.x, yc + s.dy + y * s.h, z * s.w, (s.x - x0) / span, k / base.length] as number[]);
+  const rings = stations.map(ring);
+  const tri = (a: number[], b: number[], c: number[]) => {
+    pos.push(a[0]!, a[1]!, a[2]!, b[0]!, b[1]!, b[2]!, c[0]!, c[1]!, c[2]!);
+    uv.push(a[3]!, a[4]!, b[3]!, b[4]!, c[3]!, c[4]!);
+  };
+  for (let i = 0; i + 1 < rings.length; i++) {
+    const A = rings[i]!, B = rings[i + 1]!;
+    for (let k = 0; k < A.length; k++) {
+      const k1 = (k + 1) % A.length;
+      tri(A[k]!, B[k]!, A[k1]!);
+      tri(A[k1]!, B[k]!, B[k1]!);
+    }
+  }
+  for (const [R, flip] of [[rings[0]!, true], [rings[rings.length - 1]!, false]] as const) {
+    const c = R.reduce((m, p) => [m[0]! + p[0]! / R.length, m[1]! + p[1]! / R.length, m[2]! + p[2]! / R.length, m[3]! + p[3]! / R.length, 0.5], [0, 0, 0, 0, 0.5]);
+    for (let k = 0; k < R.length; k++) flip ? tri(c, R[k]!, R[(k + 1) % R.length]!) : tri(c, R[(k + 1) % R.length]!, R[k]!);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.computeVertexNormals();
+  return g;
+}
+const tb = (w: number, h: number, d: number, x: number, y: number, z: number) => new THREE.BoxGeometry(w, h, d).translate(x, y, z).toNonIndexed();
+const tmerge = (parts: THREE.BufferGeometry[]) => {
+  const out = mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)), false)!;
+  for (const p of parts) p.dispose();
+  return out;
+};
+
+let tramCache: { shell: THREE.BufferGeometry; hull: THREE.BufferGeometry; windows: THREE.BufferGeometry; strip: THREE.BufferGeometry; lampsFront: THREE.BufferGeometry; lampsBack: THREE.BufferGeometry } | null = null;
+/** one car's geometry, shared by every car: floor on the running surface at y 0, noses at x = ±7 */
+export function tramGeometry() {
+  if (tramCache) return tramCache;
+  const { length, width, height, lift } = TRAM;
+  const half = length / 2;
+  const yc = lift + height / 2;
+  const body = half - 0.8;
+  // the raked noses: the full section, then a lower, narrower one at the tip
+  const nose = (sx: number): Station => ({ x: sx * half, w: width * 0.85, h: height * 0.55, dy: -height * 0.21 });
+  const hull = loft([nose(-1), { x: -body, w: width, h: height, dy: 0 }, { x: body, w: width, h: height, dy: 0 }, nose(1)], yc);
+  const shell = markShared(hull.clone());
+  const parts = [hull];
+  // two bogies straddling nothing: they sit on the running surface, inside the beam's 2 m
+  for (const bx of [-4.6, 4.6]) parts.push(tb(2.4, TRAM.bogie, 1.8, bx, TRAM.bogie / 2, 0));
+  // the roof pod
+  parts.push(tb(4.2, 0.26, 1.3, 0, lift + height + 0.13, 0));
+  // the windscreens: on the raked upper face of each nose, a hair proud of it
+  const top = yc + height / 2;
+  const tipTop = yc - height * 0.21 + (height * 0.55) / 2;
+  const windows: THREE.BufferGeometry[] = [];
+  for (const sx of [-1, 1]) {
+    const run = half - body, drop = top - tipTop;
+    const n = new THREE.Vector2(drop, run).normalize(); // outward (x, y) of the raked face
+    const at = (s: number, z: number) => [sx * (body + run * s + n.x * 0.02), top - drop * s + n.y * 0.02, z];
+    const a = at(0.14, -0.78), b = at(0.14, 0.78), c = at(0.78, 0.78), d = at(0.78, -0.78);
+    const g = new THREE.BufferGeometry();
+    const quad = sx > 0 ? [...a, ...c, ...b, ...a, ...d, ...c] : [...a, ...b, ...c, ...a, ...c, ...d];
+    g.setAttribute("position", new THREE.Float32BufferAttribute(quad, 3));
+    // the glass plate across the screen, corner to corner
+    const [ua, ub, uc, ud] = [[0, 1], [1, 1], [1, 0], [0, 0]];
+    g.setAttribute("uv", new THREE.Float32BufferAttribute(sx > 0 ? [...ua!, ...uc!, ...ub!, ...ua!, ...ud!, ...uc!] : [...ua!, ...ub!, ...uc!, ...ua!, ...uc!, ...ud!], 2));
+    g.computeVertexNormals();
+    windows.push(g);
+  }
+  // window panes down both sides, pillars between
+  for (const sz of [-1, 1]) for (let k = 0; k < 8; k++) windows.push(tb(1.12, 0.78, 0.02, -5.25 + k * 1.5, yc + 0.45, sz * (width / 2 + 0.012)));
+  // the magenta line along the skirt
+  const strip = [-1, 1].map((sz) => tb(length - 1.8, 0.08, 0.02, 0, lift + 0.22, sz * (width / 2 + 0.012)));
+  // lamps: a pair low on each nose face
+  const tip = yc - height * 0.21 - (height * 0.55) / 2;
+  const lamps = (sx: number) => tmerge([-1, 1].map((sz) => tb(0.05, 0.16, 0.36, sx * (half + 0.03), tip + 0.32, sz * 0.62)));
+  tramCache = { shell, hull: markShared(tmerge(parts)), windows: markShared(tmerge(windows)), strip: markShared(tmerge(strip)), lampsFront: markShared(lamps(1)), lampsBack: markShared(lamps(-1)) };
+  return tramCache;
+}
+
 export class Tram {
   readonly group = new THREE.Group();
   private cars: { mesh: THREE.Group; dir: 1 | -1; phase: number }[] = [];
@@ -250,32 +359,30 @@ export class Tram {
       const g = new THREE.Group();
       const hullMat = new THREE.MeshStandardMaterial({ color: 0x141a24, roughness: 0.4, metalness: 0.6 });
       bindPlate(hullMat, "tex_monorail");
-      const body = new THREE.Mesh(new THREE.BoxGeometry(14, 2.6, 2.4), hullMat);
+      const geo = tramGeometry();
+      const body = new THREE.Mesh(geo.hull, hullMat);
+      body.name = "tram:hull";
       g.add(body);
       const windowMat = new THREE.MeshBasicMaterial({ color: 0xbfefff });
       bindPlate(windowMat, "tex_glass");
-      const windows = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.9, 2.46), windowMat);
-      windows.position.y = 0.35;
-      g.add(windows);
+      g.add(new THREE.Mesh(geo.windows, windowMat));
       const railStripMat = new THREE.MeshBasicMaterial({ color: PALETTE.magenta });
       bindPlate(railStripMat, "tex_billboard_mg");
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(14.05, 0.08, 2.45), railStripMat);
-      strip.position.y = -1.2;
-      g.add(strip);
+      g.add(new THREE.Mesh(geo.strip, railStripMat));
       const headMat = new THREE.MeshBasicMaterial({ color: 0xfff3d0 });
       bindPlate(headMat, "tex_lamp");
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 1.2), headMat);
-      head.position.set(dir * 7.05, -0.4, 0);
-      g.add(head);
+      // the head lamps lead: at +x for a car running +x, at -x for one running back
+      g.add(new THREE.Mesh(dir > 0 ? geo.lampsFront : geo.lampsBack, headMat));
       const tailMat = new THREE.MeshBasicMaterial({ color: PALETTE.red });
       bindPlate(tailMat, "tex_lamp");
-      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 1.2), tailMat);
-      tail.position.set(-dir * 7.05, -0.4, 0);
-      g.add(tail);
+      g.add(new THREE.Mesh(dir > 0 ? geo.lampsBack : geo.lampsFront, tailMat));
+      // the street under the beam is what this lights
       const light = new THREE.PointLight(0xbfefff, 6, 18, 1.8);
-      light.position.y = -1.5;
+      light.position.y = -1.6;
       g.add(light);
-      if (line.axis === "z") g.rotation.y = Math.PI / 2;
+      // a car is built along +x; on a z line turn +x to +z (a quarter turn the other way pointed a car
+      // running +z backwards, head lamps trailing, until Stage 674)
+      if (line.axis === "z") g.rotation.y = -Math.PI / 2;
       this.group.add(g);
       this.cars.push({ mesh: g, dir, phase: dir > 0 ? 0 : line.period / 2 });
     }

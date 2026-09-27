@@ -1641,6 +1641,71 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 674 — The rail ran through the middle of the monorail
+
+**The defect.** The monorail that passes over every district's walkway street was a
+14 m box with a box of windows on it, centred 8.6 m up. Its rail beam spans
+9.0–9.3 m, so the beam ran straight through the car's upper body and out of both
+ends. The before image shows it. There was a second bug on lines that run along
+z: the car was turned a quarter turn the wrong way, so a car running +z drove
+backwards, its head lamps trailing.
+
+**Where the car belongs.** It rides on the beam. The walkway deck beneath it is at
+4.6 m, so a car hung under the beam would pass at head height over the people on
+it. The posts' cross-members stand 0.1 m proud of the beam, up to 9.4 m. The
+line's `y` is now that running surface, the car's floor, instead of the car's
+centre.
+
+**The car** (`tramGeometry()` in `client/render/life.ts`):
+- a hull lofted through rounded sections, with raked noses and a flat windscreen
+  on each;
+- eight window panes down each side;
+- two bogies sitting on the running surface, inside the beam's width;
+- a roof pod and the magenta skirt line;
+- a pair of lamps low on each nose.
+
+It uses the same five meshes and materials as the box did, so a car costs no draw
+call it did not before.
+
+**Two things the turntable caught before the tests could.**
+- *The hull was inside out.* The loft wound its faces inward, so the outer faces
+  were culled and you looked into the far wall.
+- *The windows were black.* My merge helper dropped the UV attribute, because the
+  lofted shell had none. Every one of the car's materials is a plate bound by
+  `bindPlate`, and without UVs each part sampled a single corner texel. The loft
+  and windscreens now carry UVs, and the merge keeps them.
+
+**The guards (`tests/tram.test.ts`)** build the real `Tram` that city life runs:
+- *On the surface:* the hull's lowest point is the running surface.
+- *Solid from outside:* no face of the lofted shell points into it.
+- *UVs:* every car mesh carries texture coordinates, one per vertex.
+- *Clear:* swept along its line inside each district's bounds, the car meets no
+  box or decor. The perimeter facades, which the beam passes through by design,
+  are outside the sweep.
+- *Heading:* on both axes the head lamps lead the direction of travel.
+
+Six mutations were each caught:
+
+| Mutation | Test that fails |
+| --- | --- |
+| The old 8.6 m height | Clear |
+| The old quarter turn | Heading |
+| Head and tail lamps swapped | Heading |
+| Bogies sunk 0.5 m | On the surface, and Clear |
+| The old winding | Solid from outside |
+| UVs dropped in the merge | UVs |
+
+**Budget.** `probe:city` read lease_row at 186 calls (it had read 182–185), the
+docks at 167 (a steady 166 before) and the depot at 183, all under 190. Lease_row
+is now 4 calls from the limit. Triangles rose by 372–756 per district for the more
+detailed car.
+
+**Verified.** `npm run typecheck` (both configs), 1469 unit tests, the four lints,
+`npm run build`, `probe:cityLife` 21/21 and `probe:city` 51/51.
+
+**Proof.** `docs/proof/stage674/monorail-before.png` and `monorail-after.png` show
+the same three views of a car on a stretch of beam with its posts.
+
 ## Stage 673 — ALPHA was shooting from behind the deck
 
 **The red.** CI runs 666 and 667 (Stages 668 and 669) both failed `probe:net` on
