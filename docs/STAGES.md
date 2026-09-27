@@ -1641,6 +1641,103 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 668 — VANTAGE's machines were boxes
+
+**The defect.** The two things the player fights in every contract were the
+crudest shapes left in the game. A Wasp was a 0.5 × 0.22 × 0.7 box with four flat
+discs above it. A repo mech was a 2 m box torso on two box legs and two flat-box
+feet, and it slid along its patrol without its legs moving. Stages 665–667 gave
+the Blank, the crowd and the fixers real bodies; VANTAGE's machines were still
+the Stage 4 kitbash.
+
+**The fix.** `client/render/machines.ts` builds both from shared, cached
+geometry, front at −z the way the sim's yaw faces them:
+
+- **The Wasp** is a surveillance insect. It has a thorax and a head, and a tail
+  in three shrinking segments that curls down to a sensor sting. A gun hangs
+  under the jaw and three pairs of legs hang under the thorax. Four rotors, each
+  a pair of crossed blades, sit inside ducts on swept arms. The eye is three
+  amber lenses across the face, and an amber stripe runs down the tail so a
+  chasing drone reads from behind.
+- **The repo mech** is a reverse-jointed walker. A hunched hull leans into the
+  walk, with a lease plate on the chest, shoulder pods, clamp arms with
+  two-pronged claws for repossessing, and two exhaust stacks. The searchlight
+  turret has a hood and fins. Each leg has a thigh running back to the knee, a
+  shin running forward, three toes and a heel spur. VANTAGE's amber is the visor
+  band across the chest and a lamp on each shoulder pod.
+
+**It walks.** `mechGait(walked, side)` drives each leg by distance covered, not
+by time, so a mech that stops stops mid-stride. For half the cycle the foot is
+on the ground and moves back under the hip at exactly the body's speed; the
+angle is `asin`, not a sine wave. For the other half the foot lifts 0.22 m and
+swings forward to the next foothold. The two legs are half a cycle apart. A rigid
+leg rotating about the hip lifts its planted foot at each end of the step, so
+the hull sinks by the same amount (`mechBob`). That gives the walker its heavy
+bob and keeps the planted sole on the street. The leg length used is read from
+the built leg's lowest vertex, not typed in.
+
+**Found on the way: the searchlight lens faced backward.** The lens disc was
+single-sided and faced +z, into its own lamp housing, so it was culled whenever
+the front of the lamp was in view. The Stage 634 plate bound to it was never
+seen. The old turntable frame shows the lamp with no lens at all. It now faces
+the street it lights.
+
+**Measured before it was right.** The first gait was a plain sine swing of a
+rigid leg. The new test read its planted foot sliding **2.76 m per 2.4 m stride**,
+more than the mech walked. Both legs were also at the same height at every
+instant, so neither was visibly on the ground. The proper gait then left
+0.127 m per stride. That was a constant 0.0011 m per 0.025 m step: the ratio of
+two radii. The gait swung the leg as if the sole sat at the toe centreline
+(1.775 m) while the part touching the street was the sole bottom (1.845 m).
+Reading the length from the geometry left **0.027 m** per stride (1.1%), all of
+it at the two instants when the feet swap. The turntable also caught the first
+draft's knees bending forward like a person's.
+
+**Cheaper, not dearer.** A Wasp was 10 meshes and is now 6. A mech was 9 and is
+now 7. Every Wasp shares one hull, one eye and one rotor geometry.
+
+**The guards (`tests/machines.test.ts`)** drive the real `ArsenalFx.syncMechs` and
+`syncWasps` path and read what they built:
+
+- the legs start half a stride apart, standing still does not walk, and a jump
+  across the street is not a step;
+- over a full stride, the planted foot slides less than 2% of the distance, never
+  sinks more than 2 cm or floats more than 3 cm, and the stepping foot lifts more
+  than 15 cm;
+- the mech fills its hit capsule: soles on the ground, the turret at 0.95–1.1 of
+  `MECH_HEIGHT`, and shoulders at 0.9–1.3 of `MECH_RADIUS`;
+- the Wasp stays within its capsule's height and reaches no further out than the
+  old rotor discs did;
+- the lens faces −z;
+- the mesh counts are at or under 6 and 7, and a wave of three drones shares
+  three geometries.
+
+Nine mutations were each caught: the old sine swing; the toe-line radius; the
+swing running backward; no lift; no bob; a respawn counted as a stride; the lens
+turned back round; a long sting; short legs. `tests/assets.test.ts` pinned the
+Wasp's rotor arms to the plated hull material through the old box's source line.
+The arms are now part of the hull geometry drawn with that same `waspMat`, and
+the pin follows them there.
+
+**Verified.** On a still tree: `npm run typecheck` (both configs), 1460 unit tests
+across 131 files, lint:campaign, lint:progression, lint:economy, lint:assets,
+`npm run build`, `probe:arsenal` 32/32, `probe:city` 51/51 (twice), `probe:frame`
+8/8, `probe:tps` 50/50 and `probe:campaign` 50/50.
+
+`probe:city` does not frame a Wasp or a mech, so its budgets say little about
+this stage. Measured on the same machine with this stage stashed, lease_row and
+the docks read identically with and without it. The depot read 184 calls on both
+runs with it and 180 on the one run without. The four extra calls add exactly
+48 triangles: four 12-triangle boxes. The new machines contain no separate box
+meshes. Lease_row flickered by three such boxes between two runs of the same
+tree, and Stage 665 recorded the depot's ±4 as unattributed. This is left
+unattributed too. Every district is at or under 185 of 190.
+
+**Proof.** `docs/proof/stage668/machines-before.png` and `machines-after.png`
+show the same three angles (front, side and back), with the mech in the top row
+and the Wasp in the bottom row. The after frame catches the mech mid-step, one
+foot lifted.
+
 ## Stage 667 — The four people who run the arc had no bodies
 
 **The defect.** Every contract in the arc is handed over by one of four people:

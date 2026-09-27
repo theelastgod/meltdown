@@ -191,7 +191,9 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(weapons).toMatch(/bindPlate\(optic, "tex_directive_core"\)/);
     expect(weapons).toMatch(/bindPlate\(beamMat, "tex_tracer"\)/);
     expect(weapons).toMatch(/bindPlate\(blastMat, "tex_blast"\)/);
-    expect(weapons).toMatch(/new THREE\.Mesh\(new THREE\.BoxGeometry\(0\.06, 0\.04, 0\.06\), waspMat\)/);
+    // the rotor arms are drawn in the plated hull, not an unplated brown box: since Stage 668 they are part of the hull geometry
+    expect(weapons).toMatch(/new THREE\.Mesh\(geo\.hull, waspMat\)/);
+    expect(readFileSync(new URL("../client/render/machines.ts", import.meta.url), "utf8")).toMatch(/hull\.push\(strut\(\[Math\.sign\(x\)/);
     const city = readFileSync(new URL("../client/render/city.ts", import.meta.url), "utf8");
     expect(city).toMatch(/bindPlate\(M\.railMg, "tex_cable"\)/);
     expect(city).toMatch(/bindPlate\(stripMat, "tex_lamp"\)/);

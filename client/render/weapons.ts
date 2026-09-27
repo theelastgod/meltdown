@@ -3,6 +3,7 @@ import { markSharedAll, release } from "./dispose";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import { bindPlate, PALETTE } from "./city";
 import type { Vec3 } from "@shared/math/vec3";
+import { MECH_HEAD_Y, MECH_HIP, mechBob, mechGait, mechGeometry, WASP_ROTORS, waspGeometry } from "./machines";
 
 /** Distinct kitbash silhouettes per weapon. Cheap boxes; the strip colour is the read. */
 export function buildViewmodel(id: WeaponId): THREE.Group {
@@ -100,7 +101,12 @@ export class ArsenalFx {
   private clouds = new Map<number, { group: THREE.Group; mats: THREE.MeshBasicMaterial[]; born: number }>();
   private projectiles = new Map<number, THREE.Mesh>();
   private wasps = new Map<number, { group: THREE.Group; rotors: THREE.Mesh[]; light: THREE.PointLight }>();
-  private mechs = new Map<number, { group: THREE.Group; head: THREE.Group; spot: THREE.SpotLight; cone: THREE.Mesh; target: THREE.Object3D }>();
+  private mechs = new Map<number, { group: THREE.Group; head: THREE.Group; spot: THREE.SpotLight; cone: THREE.Mesh; target: THREE.Object3D; legs: THREE.Mesh[]; walk: number; at: { x: number; z: number } }>();
+  /** a mech's hip angles, for tests and probes: [left, right] */
+  mechLegs(id: number): [number, number] | null {
+    const e = this.mechs.get(id);
+    return e ? [e.legs[0]!.rotation.x, e.legs[1]!.rotation.x] : null;
+  }
   private clock = 0;
   /** one material per projectile kind, shared by every projectile of it */
   private projMats = markSharedAll({
@@ -220,25 +226,21 @@ export class ArsenalFx {
       seen.add(w.id);
       let e = this.wasps.get(w.id);
       if (!e) {
+        // the Wasp's body, eye and rotors (Stage 668): shared geometry, this drone's own materials
         const group = new THREE.Group();
+        const geo = waspGeometry();
         const waspMat = new THREE.MeshStandardMaterial({ color: 0x14120e, roughness: 0.6, metalness: 0.5 });
         bindPlate(waspMat, "tex_wasp_hull");
-        const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.7), waspMat);
-        group.add(body);
+        group.add(new THREE.Mesh(geo.hull, waspMat));
         const eyeMat = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
         bindPlate(eyeMat, "tex_lamp");
-        const eye = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.06, 0.06), eyeMat);
-        eye.position.set(0, 0, -0.36);
-        group.add(eye);
+        group.add(new THREE.Mesh(geo.eye, eyeMat));
         const rotors: THREE.Mesh[] = [];
         const rotorMat = new THREE.MeshBasicMaterial({ color: 0x2b2618, transparent: true, opacity: 0.55 });
         bindPlate(rotorMat, "tex_wasp_hull");
-        for (const [x, z] of [[-0.35, -0.3], [0.35, -0.3], [-0.35, 0.3], [0.35, 0.3]]) {
-          const arm = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.06), waspMat);
-          arm.position.set(x!, 0.08, z!);
-          group.add(arm);
-          const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.01, 8), rotorMat);
-          rotor.position.set(x!, 0.12, z!);
+        for (const [x, y, z] of WASP_ROTORS) {
+          const rotor = new THREE.Mesh(geo.rotor, rotorMat);
+          rotor.position.set(x, y, z);
           group.add(rotor);
           rotors.push(rotor);
         }
@@ -271,33 +273,31 @@ export class ArsenalFx {
       seen.add(m.id);
       let e = this.mechs.get(m.id);
       if (!e) {
+        // the repo mech (Stage 668): a hull, two legs that swing from the hip, the searchlight turret
         const group = new THREE.Group();
+        const geo = mechGeometry();
         const hull = new THREE.MeshStandardMaterial({ color: 0x1a1710, roughness: 0.55, metalness: 0.6 });
         bindPlate(hull, "tex_mech_hull");
-        const torso = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.6, 1.4), hull);
-        torso.position.y = 2.2;
-        group.add(torso);
-        for (const s of [-0.7, 0.7]) {
-          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.5, 0.6), hull);
-          leg.position.set(s, 0.75, 0);
+        group.add(new THREE.Mesh(geo.hull, hull));
+        const legs: THREE.Mesh[] = [];
+        for (const s of [-1, 1]) {
+          const leg = new THREE.Mesh(geo.leg, hull);
+          leg.position.set(s * MECH_HIP.x, MECH_HIP.y, 0);
+          leg.name = s < 0 ? "legL" : "legR";
           group.add(leg);
-          const foot = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.2, 1.0), hull);
-          foot.position.set(s, 0.1, 0.1);
-          group.add(foot);
+          legs.push(leg);
         }
         const stripMat = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
         bindPlate(stripMat, "tex_lamp");
-        const strip = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.06, 0.06), stripMat);
-        strip.position.set(0, 2.95, -0.7);
-        group.add(strip);
+        group.add(new THREE.Mesh(geo.visor, stripMat));
         const head = new THREE.Group();
-        head.position.set(0, 3.2, 0);
-        const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.5), hull);
-        head.add(lamp);
+        head.position.set(0, MECH_HEAD_Y, 0);
+        head.add(new THREE.Mesh(geo.head, hull));
         const lensMat = new THREE.MeshBasicMaterial({ color: 0xffd28a });
         bindPlate(lensMat, "tex_lamp");
-        const lens = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12), lensMat);
-        lens.position.set(0, 0, -0.26);
+        const lens = new THREE.Mesh(new THREE.CircleGeometry(0.24, 14), lensMat);
+        lens.position.set(0, 0, -0.335);
+        lens.rotation.y = Math.PI;
         head.add(lens);
         const spot = new THREE.SpotLight(0xffc46a, 90, 34, 0.22, 0.6, 1.4);
         spot.position.set(0, 0, -0.2);
@@ -316,11 +316,22 @@ export class ArsenalFx {
         head.add(cone);
         group.add(head);
         this.scene.add(group);
-        e = { group, head, spot, cone, target };
+        e = { group, head, spot, cone, target, legs, walk: 0, at: { x: m.pos.x, z: m.pos.z } };
         this.mechs.set(m.id, e);
       }
       e.group.visible = m.alive;
-      e.group.position.set(m.pos.x, m.pos.y, m.pos.z);
+      // the walk is driven by ground covered, not by time, so a mech that stops stops mid-stride
+      // and one pushed faster strides faster; a jump (a respawn, a teleport) is not a step
+      const moved = Math.hypot(m.pos.x - e.at.x, m.pos.z - e.at.z);
+      if (moved < 2) e.walk += moved;
+      e.at.x = m.pos.x;
+      e.at.z = m.pos.z;
+      for (const [k, side] of [[0, -1], [1, 1]] as const) {
+        const g = mechGait(e.walk, side);
+        e.legs[k]!.rotation.x = g.angle;
+        e.legs[k]!.position.y = MECH_HIP.y + g.lift;
+      }
+      e.group.position.set(m.pos.x, m.pos.y + mechBob(e.walk), m.pos.z);
       e.group.rotation.y = m.yaw;
       e.head.rotation.y = m.lightYaw - m.yaw;
       const c = m.locked ? 0xffa050 : 0xffc46a;
