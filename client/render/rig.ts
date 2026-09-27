@@ -13,6 +13,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { MOVE } from "../../shared/sim/constants";
 import { WEAPON_LIST, weaponBySlot, type WeaponId } from "@shared/weapons/manifest";
 import { parseTag, wearsFinish } from "@shared/identity/identity";
+import { decodeLook, lookOption, sanitizeLookCode } from "@shared/identity/look";
 import { bindPlate, PALETTE } from "./city";
 import { buildViewmodel } from "./weapons";
 import { markShared, release } from "./dispose";
@@ -65,6 +66,9 @@ export interface Rig {
   tint: THREE.Color;
   /** the last pose written, for the probe */
   last: PoseOut | null;
+  /** the look the cloth is cut to (Stage 689), and the weapon baked into it, so either can change alone */
+  look: number;
+  slot: WeaponId | null;
 }
 
 // ---- geometry ----
@@ -175,6 +179,63 @@ const SKIRT_S = { sx: 1.1, sz: 0.95 };
 /** the coat's front opening, in radians of arc: the stride shows through it */
 export const SKIRT_GAP = 0.8;
 const skirtFold = (y: number) => 0.075 * Math.min(1, Math.max(0, (0.985 - y) / 0.485));
+/** the short jacket's hem (Stage 689): the coat's own profile, cut above the knee */
+export const SKIRT_SHORT: Profile = [[0.235, 0.74], [0.215, 0.82], [0.2, 0.9], [0.18, 0.985]];
+
+/**
+ * The look (Stage 689): the cloth cut to a body, a build, a coat and a shoulder. It never moves a
+ * bone, the hood or a limb, so the pose, the eye height and the crouch check are the same for every
+ * look; it widens or narrows the torso, the mantle and the coat by height, and never past where the
+ * coat's hem already was, so every look stays inside the sim's capsule.
+ */
+export interface LookShape {
+  shoulder: number;
+  waist: number;
+  hip: number;
+  girth: number;
+  short: boolean;
+  plateR: boolean;
+  plateL: boolean;
+}
+/** shoulder, waist, hip, as fractions of the Blank's own */
+const BODY_SHAPE: Record<string, [number, number, number]> = { neutral: [1, 1, 1], masc: [1.07, 1.0, 0.95], fem: [0.92, 0.88, 1.05] };
+const BUILD_GIRTH: Record<string, number> = { standard: 1, slim: 0.92, heavy: 1.06 };
+export function lookShape(code: number): LookShape {
+  const l = decodeLook(sanitizeLookCode(code));
+  const [shoulder, waist, hip] = BODY_SHAPE[lookOption(l, "body")] ?? [1, 1, 1];
+  const kit = lookOption(l, "kit");
+  return { shoulder, waist, hip, girth: BUILD_GIRTH[lookOption(l, "build")] ?? 1, short: lookOption(l, "coat") === "short", plateR: kit === "right" || kit === "both", plateL: kit === "left" || kit === "both" };
+}
+const mix = (a: number, b: number, t: number): number => a + (b - a) * Math.min(1, Math.max(0, t));
+/** how much wider the cloth is at a height for a look: the shoulders over the mantle, the waist at the belt, the hips over the coat's top; below the hips it eases back, so the hem is never wider than the Blank's */
+export function lookWidth(sh: LookShape, y: number): number {
+  const band = y >= 1.3 ? sh.shoulder : y >= 1.05 ? mix(sh.waist, sh.shoulder, (y - 1.05) / 0.25) : y >= 0.98 ? sh.waist : y >= 0.9 ? mix(sh.hip, sh.waist, (y - 0.9) / 0.08) : sh.hip;
+  const f = band * sh.girth;
+  return y < 0.8 && f > 1 ? mix(f, 1, (0.8 - y) / 0.2) : f;
+}
+const plainShape = (sh: LookShape): boolean => sh.shoulder === 1 && sh.waist === 1 && sh.hip === 1 && sh.girth === 1;
+/** cut a baked part to the look: x and z scaled by the width at each vertex's height, normals to match */
+function cut(geo: THREE.BufferGeometry, sh: LookShape): THREE.BufferGeometry {
+  if (plainShape(sh)) return geo;
+  const pos = geo.getAttribute("position");
+  const nor = geo.getAttribute("normal");
+  for (let i = 0; i < pos.count; i++) {
+    const f = lookWidth(sh, pos.getY(i));
+    pos.setXYZ(i, pos.getX(i) * f, pos.getY(i), pos.getZ(i) * f);
+    if (nor) {
+      const nx = nor.getX(i) / f, ny = nor.getY(i), nz = nor.getZ(i) / f;
+      const m = Math.hypot(nx, ny, nz) || 1;
+      nor.setXYZ(i, nx / m, ny / m, nz / m);
+    }
+  }
+  pos.needsUpdate = true;
+  return geo;
+}
+/** where a look's coat surface is, by angle and height: the lathe's formula, cut to the look */
+export function coatSurfaceRadiusFor(code: number, phi: number, y: number): number {
+  const sh = lookShape(code);
+  return lerpProfile(sh.short ? SKIRT_SHORT : SKIRT, y) * (1 + skirtFold(y) * Math.sin(7 * phi));
+}
 
 /** the hood: a shell with its face cut away, pulled back over the head; its peak stays under head + 0.3 m, where rigReport measures it */
 export const HOOD = { centre: [0, 1.62, 0.015] as const, r: 0.165, sy: 1.18, sz: 1.12, trail: 0.09, opening: 1.9, thetaLen: Math.PI * 0.72 };
@@ -212,23 +273,26 @@ export function coatSurfaceRadius(phi: number, y: number): number {
 export const COAT_SCALE = SKIRT_S;
 
 /** the body's own parts: torso, mantle, coat, belt, hood, sleeves, gloves, legs, boots */
-function cloakParts(): THREE.BufferGeometry[] {
+function cloakParts(look = 0): THREE.BufferGeometry[] {
   const parts: THREE.BufferGeometry[] = [];
   const I = new THREE.Matrix4();
+  const sh = lookShape(look);
+  const coat = sh.short ? SKIRT_SHORT : SKIRT;
   // torso, under everything: slim enough that the arms hang outside it
-  parts.push(part(lathe(TORSO, 12, TORSO_S), I.clone(), tubeWeights));
+  parts.push(cut(part(lathe(TORSO, 12, TORSO_S), I.clone(), tubeWeights), sh));
   // the mantle over the shoulders: the silhouette's width, and its underside for when the arms come up
-  parts.push(part(lathe(MANTLE, 14, { ...MANTLE_S, folds: 6, fold: mantleFold }), I.clone(), fixed(BONE.chest)));
-  parts.push(part(inside(lathe(MANTLE, 14, { ...MANTLE_S, folds: 6, fold: mantleFold })), I.clone(), fixed(BONE.chest), 0.3));
+  parts.push(cut(part(lathe(MANTLE, 14, { ...MANTLE_S, folds: 6, fold: mantleFold }), I.clone(), fixed(BONE.chest)), sh));
+  parts.push(cut(part(inside(lathe(MANTLE, 14, { ...MANTLE_S, folds: 6, fold: mantleFold })), I.clone(), fixed(BONE.chest), 0.3), sh));
   // the coat below the belt, split at the front, folded toward the hem; its inside is in shadow
-  parts.push(part(lathe(SKIRT, 16, { ...SKIRT_S, folds: 7, fold: skirtFold, gap: SKIRT_GAP }), I.clone(), tubeWeights));
-  parts.push(part(inside(lathe(SKIRT, 16, { ...SKIRT_S, folds: 7, fold: skirtFold, gap: SKIRT_GAP })), I.clone(), tubeWeights, 0.35));
+  parts.push(cut(part(lathe(coat, 16, { ...SKIRT_S, folds: 7, fold: skirtFold, gap: SKIRT_GAP }), I.clone(), tubeWeights), sh));
+  parts.push(cut(part(inside(lathe(coat, 16, { ...SKIRT_S, folds: 7, fold: skirtFold, gap: SKIRT_GAP })), I.clone(), tubeWeights, 0.35), sh));
   // belt, buckle, and a strap across the chest
-  parts.push(part(lathe([[0.19, 0.965], [0.19, 1.03]], 14, { sx: 1.08, sz: 0.86 }), I.clone(), tubeWeights));
-  parts.push(part(new THREE.BoxGeometry(0.075, 0.06, 0.025), at(0, 0.998, -0.19 * 0.86 - 0.01), tubeWeights));
-  parts.push(part(new THREE.BoxGeometry(0.045, 0.5, 0.02), at(-0.01, 1.2, -0.16 * 0.78 - 0.018).multiply(new THREE.Matrix4().makeRotationZ(0.62)), fixed(BONE.chest)));
-  // a single plate on the right shoulder: kitbash, and it breaks the symmetry
-  parts.push(part(new THREE.BoxGeometry(0.14, 0.04, 0.2), at(0.235, 1.445, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.6)), fixed(BONE.chest)));
+  parts.push(cut(part(lathe([[0.19, 0.965], [0.19, 1.03]], 14, { sx: 1.08, sz: 0.86 }), I.clone(), tubeWeights), sh));
+  parts.push(cut(part(new THREE.BoxGeometry(0.075, 0.06, 0.025), at(0, 0.998, -0.19 * 0.86 - 0.01), tubeWeights), sh));
+  parts.push(cut(part(new THREE.BoxGeometry(0.045, 0.5, 0.02), at(-0.01, 1.2, -0.16 * 0.78 - 0.018).multiply(new THREE.Matrix4().makeRotationZ(0.62)), fixed(BONE.chest)), sh));
+  // a plate on the right shoulder: kitbash, and it breaks the symmetry; the look may move it, double it or leave the shoulder bare
+  if (sh.plateR) parts.push(cut(part(new THREE.BoxGeometry(0.14, 0.04, 0.2), at(0.235, 1.445, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.6)), fixed(BONE.chest)), sh));
+  if (sh.plateL) parts.push(cut(part(new THREE.BoxGeometry(0.14, 0.04, 0.2), at(-0.235, 1.445, 0).multiply(new THREE.Matrix4().makeRotationZ(0.6)), fixed(BONE.chest)), sh));
   // the hood: a cowl at the neck, the shell with its face cut away and its crown pulled back, a void inside it
   parts.push(part(lathe([[0.19, 1.44], [0.175, 1.5], [0.15, 1.56]], 12, { sx: 1.05, sz: 1, folds: 5, fold: () => 0.05 }), I.clone(), fixed(BONE.head)));
   parts.push(part(hoodShell(1), I.clone(), fixed(BONE.head)));
@@ -272,15 +336,16 @@ function weaponParts(id: WeaponId, lit: boolean): THREE.BufferGeometry[] {
 }
 
 const cloakCache = new Map<string, THREE.BufferGeometry>();
-let trimCache: THREE.BufferGeometry | null = null;
+const trimCache = new Map<number, THREE.BufferGeometry>();
 const stripCache = new Map<string, THREE.BufferGeometry>();
 
 /** the cloak geometry, shared: with a weapon baked in for a remote's slot, bare for the local rig */
-export function cloakGeometry(slot: WeaponId | null): THREE.BufferGeometry {
-  const key = slot ?? "-";
+export function cloakGeometry(slot: WeaponId | null, look = 0): THREE.BufferGeometry {
+  const code = sanitizeLookCode(look);
+  const key = `${slot ?? "-"}|${code}`;
   let g = cloakCache.get(key);
   if (!g) {
-    g = markShared(merged([...cloakParts(), ...(slot ? weaponParts(slot, true) : [])]));
+    g = markShared(merged([...cloakParts(code), ...(slot ? weaponParts(slot, true) : [])]));
     cloakCache.set(key, g);
   }
   return g;
@@ -292,14 +357,20 @@ export function cloakGeometry(slot: WeaponId | null): THREE.BufferGeometry {
  * width in the dark; the coat's two front edges, which part as the legs stride; the rim of the
  * hood opening, and never anything inside it; the buckle; a band on each boot.
  */
-export function trimGeometry(): THREE.BufferGeometry {
-  if (trimCache) return trimCache;
+export function trimGeometry(look = 0): THREE.BufferGeometry {
+  const code = sanitizeLookCode(look);
+  const hit = trimCache.get(code);
+  if (hit) return hit;
   const parts: THREE.BufferGeometry[] = [];
+  const sh = lookShape(code);
+  // the short jacket (Stage 689) has its own hem: the coat's lights stop above it
+  const coat = sh.short ? SKIRT_SHORT : SKIRT;
+  const hem = coat[0]![1];
   // The cloth's true surface, folds and all. A bar is placed with its INNER face on it, sampled
   // across the bar's width, so no part of a light sits inside the cloth: the first version centred
   // bars on the smooth profile and a test found 51 of their vertices up to 15 mm inside the coat.
   const surfR = (pr: Profile, phi: number, y: number): number =>
-    pr === SKIRT ? coatSurfaceRadius(phi, y) : pr === MANTLE ? lerpProfile(MANTLE, y) * (1 + mantleFold(y) * Math.sin(6 * phi)) : lerpProfile(pr, y);
+    pr === SKIRT || pr === SKIRT_SHORT ? coatSurfaceRadiusFor(code, phi, y) : pr === MANTLE ? lerpProfile(MANTLE, y) * (1 + mantleFold(y) * Math.sin(6 * phi)) : lerpProfile(pr, y);
   const onSurface = (pr: Profile, sc: { sx: number; sz: number }, phi: number, y: number, depth: number, halfW = 0): [number, number, number] => {
     const r0 = surfR(pr, phi, y);
     const d = halfW / Math.max(0.05, r0);
@@ -319,19 +390,19 @@ export function trimGeometry(): THREE.BufferGeometry {
     return new THREE.Matrix4().compose(new THREE.Vector3(...c), q, new THREE.Vector3(1, 1, 1));
   };
   // the spine: the torso between mantle and belt, then the coat's back down to the hem
-  for (const y of [1.08, 1.2]) parts.push(part(new THREE.BoxGeometry(0.028, 0.11, 0.02), along(TORSO, TORSO_S, 0, y, 0.02, 0.014, 0.055), tubeWeights));
-  for (const y of [0.9, 0.8, 0.7, 0.6]) parts.push(part(new THREE.BoxGeometry(0.028, 0.09, 0.02), along(SKIRT, SKIRT_S, 0, y, 0.02, 0.014, 0.045), tubeWeights));
+  for (const y of [1.08, 1.2]) parts.push(cut(part(new THREE.BoxGeometry(0.028, 0.11, 0.02), along(TORSO, TORSO_S, 0, y, 0.02, 0.014, 0.055), tubeWeights), sh));
+  for (const y of [0.9, 0.8, 0.7, 0.6]) if (!sh.short || y - 0.045 >= hem) parts.push(cut(part(new THREE.BoxGeometry(0.028, 0.09, 0.02), along(coat, SKIRT_S, 0, y, 0.02, 0.014, 0.045), tubeWeights), sh));
   // the mantle's hem, all the way round
   const ring = 18;
   for (let k = 0; k < ring; k++) {
     const phi = (k / ring) * Math.PI * 2;
     const [x, y, z] = onSurface(MANTLE, MANTLE_S, phi, 1.275, 0.018, 0.05);
-    parts.push(part(new THREE.BoxGeometry(0.1, 0.018, 0.018), at(x, y, z).multiply(new THREE.Matrix4().makeRotationY(phi + Math.PI / 2)), fixed(BONE.chest)));
+    parts.push(cut(part(new THREE.BoxGeometry(0.1, 0.018, 0.018), at(x, y, z).multiply(new THREE.Matrix4().makeRotationY(phi + Math.PI / 2)), fixed(BONE.chest)), sh));
   }
   // the coat's two front edges
   for (const side of [-1, 1]) {
     const phi = Math.PI + side * (SKIRT_GAP / 2);
-    for (const y of [0.92, 0.82, 0.72, 0.62, 0.53]) parts.push(part(new THREE.BoxGeometry(0.018, 0.1, 0.018), along(SKIRT, SKIRT_S, phi, y, 0.018, 0.009, 0.05), tubeWeights));
+    for (const y of [0.92, 0.82, 0.72, 0.62, 0.53]) if (!sh.short || y - 0.05 >= hem) parts.push(cut(part(new THREE.BoxGeometry(0.018, 0.1, 0.018), along(coat, SKIRT_S, phi, y, 0.018, 0.009, 0.05), tubeWeights), sh));
   }
   // the hood's rim: beads along both edges of the opening, from the crown down to the jaw
   for (const side of [-1, 1]) {
@@ -341,12 +412,13 @@ export function trimGeometry(): THREE.BufferGeometry {
       parts.push(part(new THREE.BoxGeometry(0.022, 0.03, 0.022), at(...hoodPoint(phi, theta, 1.02)), fixed(BONE.head)));
     }
   }
-  parts.push(part(new THREE.BoxGeometry(0.04, 0.025, 0.012), at(0, 0.998, -0.19 * 0.86 - 0.026), tubeWeights));
+  parts.push(cut(part(new THREE.BoxGeometry(0.04, 0.025, 0.012), at(0, 0.998, -0.19 * 0.86 - 0.026), tubeWeights), sh));
   for (const [leg, x] of [["legL", -0.11], ["legR", 0.11]] as const) {
     parts.push(part(new THREE.BoxGeometry(0.17, 0.018, 0.17), at(x, 0.23, 0.005), fixed(BONE[leg])));
   }
-  trimCache = markShared(merged(parts));
-  return trimCache;
+  const out = markShared(merged(parts));
+  trimCache.set(code, out);
+  return out;
 }
 
 /**
@@ -401,7 +473,7 @@ function swayPatch(material: THREE.Material, uniforms: SwayUniforms): void {
 /** the cloak's resting emissive: a hit lights it above this and it falls back here (Stage 89) */
 export const RIG_EMISSIVE = 0.025;
 
-export function buildRig(slot: WeaponId | null = null): Rig {
+export function buildRig(slot: WeaponId | null = null, look = 0): Rig {
   const group = new THREE.Group();
   const bones = {} as Record<BoneName, THREE.Bone>;
   for (const name of Object.keys(REST_BONES) as BoneName[]) {
@@ -431,8 +503,9 @@ export function buildRig(slot: WeaponId | null = null): Rig {
   const trim = new THREE.MeshBasicMaterial({ color: PALETTE.cyan });
   swayPatch(mat, uniforms);
   swayPatch(trim, uniforms);
-  const cloak = new THREE.SkinnedMesh(cloakGeometry(slot), mat);
-  const trimMesh = new THREE.SkinnedMesh(trimGeometry(), trim);
+  const code = sanitizeLookCode(look);
+  const cloak = new THREE.SkinnedMesh(cloakGeometry(slot, code), mat);
+  const trimMesh = new THREE.SkinnedMesh(trimGeometry(code), trim);
   for (const m of [cloak, trimMesh]) {
     m.frustumCulled = true;
     group.add(m);
@@ -440,12 +513,13 @@ export function buildRig(slot: WeaponId | null = null): Rig {
     // a slide's lead boot is 0.58 m ahead and a mantle's hands 1.95 m up: both inside this, never recomputed
     m.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0.95, 0), 1.5);
   }
-  return { group, mat, trim, hand: bones.socket, bones, skeleton, cloak, trimMesh, uniforms, state: createPoseState(), tint: new THREE.Color(PALETTE.cyan), last: null };
+  return { group, mat, trim, hand: bones.socket, bones, skeleton, cloak, trimMesh, uniforms, state: createPoseState(), tint: new THREE.Color(PALETTE.cyan), last: null, look: code, slot };
 }
 
 /** put a remote's weapon on its rig by slot: the cloak's geometry with that weapon baked in, and its strip */
 export function setRigSlot(rig: Rig, slot: WeaponId | null, strip: THREE.Mesh | null, mastered = false): void {
-  rig.cloak.geometry = cloakGeometry(slot);
+  rig.slot = slot;
+  rig.cloak.geometry = cloakGeometry(slot, rig.look);
   if (strip) {
     strip.visible = !!slot;
     if (slot) strip.geometry = weaponStripGeometry(slot, mastered);
@@ -464,6 +538,16 @@ export function holdRemoteWeapon(rig: Rig, strip: THREE.Mesh, slot: number | und
   if (strip.userData.held === key) return false;
   strip.userData.held = key;
   setRigSlot(rig, id, strip, mastered);
+  return true;
+}
+
+/** cut a rig's cloth to a look (Stage 689): the cloak and its lights change, the bones do not. Returns whether it changed. */
+export function setRigLook(rig: Rig, look: number): boolean {
+  const code = sanitizeLookCode(look);
+  if (code === rig.look) return false;
+  rig.look = code;
+  rig.cloak.geometry = cloakGeometry(rig.slot, code);
+  rig.trimMesh.geometry = trimGeometry(code);
   return true;
 }
 

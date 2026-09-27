@@ -23,7 +23,7 @@ import { RunFx } from "./run";
 import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import { mergeByMaterial } from "./body";
-import { applyPose, buildRig, disposeRig, holdRemoteWeapon, rigReport, WEAPON_IN_SOCKET, weaponStripGeometry, type Rig, type RigReport, RIG_EMISSIVE } from "./rig";
+import { applyPose, buildRig, disposeRig, holdRemoteWeapon, rigReport, setRigLook, WEAPON_IN_SOCKET, weaponStripGeometry, type Rig, type RigReport, RIG_EMISSIVE } from "./rig";
 import { poseBody, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
@@ -544,6 +544,11 @@ export class Renderer {
    * already have. A cosmetic that cannot load is a cosmetic that does not appear — never an error
    * a player sees, and never anything the simulation is told about.
    */
+  /** the local body's look (Stage 689): the third-person rig, the mirror, the office */
+  setLook(code: number): void {
+    setRigLook(this.local, code);
+  }
+
   setSkin(tint: string | null, textureId?: string | null): void {
     this.skinTint = tint;
     for (const vm of [...this.viewmodels.values(), ...this.localWeapons.values()]) {
@@ -711,6 +716,8 @@ export class Renderer {
       const skin = v.tag ? parseTag(v.tag, "").skin : 0;
       const slot = v.slot ?? e.slot;
       // the weapon in their hand, and its mastery finish when the tag carries it for that weapon
+      // the body they chose (Stage 689): the cloth recut when their tag's look changes
+      setRigLook(e.rig, v.tag ? parseTag(v.tag, "").look : 0);
       const held = holdRemoteWeapon(e.rig, e.strip, slot, v.tag);
       if (skin !== e.skin || slot !== e.slot || held) {
         e.skin = skin;

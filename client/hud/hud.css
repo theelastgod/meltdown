@@ -455,6 +455,12 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #menu .row .k { width: 12px; }
 #menu .row .lb { flex: 1; }
 #menu .row .v { color: var(--cy); font-size: 13px; letter-spacing: 0.06em; }
+/* the CHARACTER page (Stage 689): the look's rows on the left, the turntable on the right */
+#menu.character .panel { min-height: 390px; }
+#menu.character .list, #menu.character .line { margin-right: 236px; }
+#menu .pv { position: absolute; right: 18px; top: 56px; width: 220px; height: 300px; border: 1px solid rgba(53,242,255,0.35); background: #000; }
+#menu .pv[hidden] { display: none; }
+@media (max-width: 640px) { #menu.character .list, #menu.character .line { margin-right: 0; } #menu .pv { position: static; display: block; width: 100%; height: 220px; margin: 6px 0; } }
 #menu .row.on .v { color: var(--ye); }
 #menu .row .adj { cursor: pointer; opacity: 0.7; }
 #menu .line { min-height: 18px; margin-top: 10px; font-size: 11px; color: var(--gr); letter-spacing: 0.08em; opacity: 0.85; }

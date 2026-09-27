@@ -139,7 +139,7 @@ async function main(): Promise<void> {
     }));
     const marked = marks.filter((m) => m.mark !== "none");
     check("THE RUN wears the $CAPITAL mark on the menu, loaded, and no other mode does", marked.length === 1 && marked[0]!.label === "THE RUN" && marked[0]!.mark === "loaded", marks.map((m) => `${m.label}: ${m.mark}`).join(" · "));
-    check("the menu lists WAKE / THE RUN / CAMPAIGN / THE OFFICE / THE RANGE / FILE / SETTINGS with the file's identity line; ↓↑ move the cursor", m0.entries.join("|") === "WAKE|THE RUN|CAMPAIGN|THE OFFICE|THE RANGE|FILE|SETTINGS" && m0.cursor === 0 && m1.cursor === 2 && m2.cursor === 1 && /DEPTH 50/.test(who) && /sandbox-ship/.test(who), `[${m0.entries.join(", ")}] · cursor 0→2→1 · "${who}"`);
+    check("the menu lists WAKE / THE RUN / CAMPAIGN / THE OFFICE / THE RANGE / CHARACTER / FILE / SETTINGS with the file's identity line; ↓↑ move the cursor", m0.entries.join("|") === "WAKE|THE RUN|CAMPAIGN|THE OFFICE|THE RANGE|CHARACTER|FILE|SETTINGS" && m0.cursor === 0 && m1.cursor === 2 && m2.cursor === 1 && /DEPTH 50/.test(who) && /sandbox-ship/.test(who), `[${m0.entries.join(", ")}] · cursor 0→2→1 · "${who}"`);
     // Stage 152: and on a desktop it still names the keys, because a desktop has them
     const footDesk = await a.evaluate(() => {
       const menuEl = document.getElementById("menu")!;
@@ -217,10 +217,62 @@ async function main(): Promise<void> {
     await a.screenshot({ path: `${OUT}/stage13-settings.png` });
     const stored = await a.evaluate(() => JSON.parse(localStorage.getItem("meltdown.settings") ?? "{}") as Record<string, number>);
     check("SETTINGS adjust live: ← → step sensitivity and FOV, the CRT setting scales grain/scanline/vignette (0 is clean), volumes reach the buses; every change is kept in the browser", s0.screen === "settings" && s0.entries.length === Object.keys(DEFAULT_SETTINGS).length + 1 && Math.abs(s1.sensitivity - 1.05) < 1e-6 && Math.abs(s1.applied.sensitivity - 0.0022 * 1.05) < 1e-9 && s1.fov === DEFAULT_SETTINGS.fov + 5 && s1.applied.fov === DEFAULT_SETTINGS.fov + 5 && s2.crt === 0 && applied0.crt.scanline === 0 && applied0.crt.grain === 0 && applied1.crt.scanline > 0.2 && vol.master === 0.3 && busesBefore === null && !!buses && Math.abs(buses.master - 0.3) < 1e-6 && Math.abs(buses.sfx - vol.sfx) < 1e-6 && stored.fov === DEFAULT_SETTINGS.fov + 5 && stored.crt === 1.5 && stored.master === 0.3, `sens ${s1.sensitivity} (${s1.applied.sensitivity.toFixed(5)}) · fov ${s1.fov} · crt 0 → scan ${applied0.crt.scanline}, 1.5 → scan ${applied1.crt.scanline.toFixed(3)} · master ${vol.master} asked with no context, and once the gesture built one the buses carry ${buses ? `${buses.master} master / ${buses.sfx} sfx` : "NOTHING — no audio context"} · stored ${JSON.stringify(stored)}`);
+    // ---------------- CHARACTER: the look on a turntable, worn by the body, kept with the file (Stage 689) ----------------
+    await a.evaluate(() => window.__game.menuKey("Escape"));
+    await a.evaluate(() => window.__game.menuChoose("character"));
+    await a.waitForTimeout(500);
+    const lookState = () =>
+      a.evaluate(() => {
+        const g = window.__game.game as unknown as { file: { look: number }; renderer: { local: { look: number } } };
+        const pv = document.querySelector("#menu .pv") as HTMLCanvasElement;
+        const c = document.createElement("canvas");
+        c.width = pv.width;
+        c.height = pv.height;
+        const x = c.getContext("2d")!;
+        x.drawImage(pv, 0, 0);
+        const d = x.getImageData(0, 0, c.width, c.height).data;
+        let lit = 0, cyan = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i]! + d[i + 1]! + d[i + 2]! > 60) lit++;
+          if (d[i + 2]! > 150 && d[i + 1]! > 150 && d[i]! < 120) cyan++;
+        }
+        const values = [...document.querySelectorAll("#menu .list .row")].map((r) => (r.querySelector(".v")?.textContent ?? "").replace(/\[[−+]\]/g, "").trim());
+        let stored = -1;
+        try {
+          stored = (JSON.parse(localStorage.getItem("meltdown.file") ?? "{}") as { look?: number }).look ?? -1;
+        } catch {
+          stored = -2;
+        }
+        return { file: g.file.look, local: g.renderer.local.look, shown: !pv.hidden && pv.clientWidth > 0, lit, cyan, values, stored, view: window.__game.menu()! };
+      });
+    const k0 = await lookState();
+    await a.evaluate(() => window.__game.menuKey("ArrowRight")); // BODY → MASCULINE
+    await a.evaluate(() => window.__game.menuKey("ArrowDown"));
+    await a.evaluate(() => window.__game.menuKey("ArrowDown"));
+    await a.evaluate(() => window.__game.menuKey("ArrowRight")); // COAT → SHORT JACKET
+    await a.waitForTimeout(400);
+    const k1 = await lookState();
+    await a.screenshot({ path: `${OUT}/stage13-character.png` });
+    // MASCULINE is body 1, SHORT JACKET is coat 1: 1 + 9 × 1 in shared/identity/look.ts
+    const want = 10;
+    check(
+      "CHARACTER builds the look: BODY / BUILD / COAT / SHOULDER on the left, the Blank on a lit turntable on the right; ← → change it, and the file, the local body and the turntable all wear it and the browser keeps it",
+      k0.view.screen === "character" && k0.view.entries.join("|") === "BODY|BUILD|COAT|SHOULDER|BACK" && k0.values.slice(0, 4).join("|") === "ANDROGYNOUS|STANDARD|LONG COAT|PLATE RIGHT" && k0.file === 0 && k0.shown && k0.lit > 2000 && k0.cyan > 100 &&
+        k1.values.slice(0, 4).join("|") === "MASCULINE|STANDARD|SHORT JACKET|PLATE RIGHT" && k1.file === want && k1.local === want && k1.view.previewLook === want && k1.stored === want && k1.lit > 2000,
+      `rows [${k0.view.entries.join(", ")}] · before ${k0.values.slice(0, 4).join("/")} look ${k0.file} lit ${k0.lit} cyan ${k0.cyan} · after ${k1.values.slice(0, 4).join("/")} file ${k1.file} body ${k1.local} turntable ${k1.view.previewLook} stored ${k1.stored} lit ${k1.lit}`,
+    );
+    await a.evaluate(() => window.__game.menuKey("Escape"));
+    const k2 = await lookState();
+    check("ESC leaves CHARACTER for the menu and the turntable goes with it", k2.view.screen === "main" && !k2.shown, `screen ${k2.view.screen} · turntable shown ${k2.shown}`);
     // a reload finds them applied
     await a.goto(`http://127.0.0.1:${VITE_PORT}/?headless=1&level=drainage_yard&account=sandbox-ship`, { waitUntil: "load" });
     await a.waitForFunction(() => window.__game?.ready === true, null, { timeout: 40000, polling: 50 });
     const again = await a.evaluate(() => window.__game.settings());
+    const lookAgain = await a.evaluate(() => {
+      const g = window.__game.game as unknown as { file: { look: number }; renderer: { local: { look: number } } };
+      return { file: g.file.look, body: g.renderer.local.look };
+    });
+    check("a reload wears the kept look: the file and the body", lookAgain.file === 10 && lookAgain.body === 10, `file ${lookAgain.file} · body ${lookAgain.body}`);
     check("a reload applies the saved settings before the first frame", again.fov === DEFAULT_SETTINGS.fov + 5 && again.applied.fov === DEFAULT_SETTINGS.fov + 5 && again.crt === 1.5 && again.applied.volumes.master === 0.3, `fov ${again.fov} applied ${again.applied.fov} · crt ${again.crt} · master ${again.applied.volumes.master}`);
     await a.evaluate(() => window.__game.setSetting("crt", 1));
     await a.evaluate(() => window.__game.setSetting("fov", 80));

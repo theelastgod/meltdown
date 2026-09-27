@@ -8,6 +8,8 @@
  *   ?menu=1 forces the flow (headless probes skip it), ?menu=0 never; ?nonav=1 reports the URL a
  *   choice would load instead of loading it (the probe).
  */
+import { decodeLook, encodeLook, LOOK_FIELDS, stepLook, type LookField } from "@shared/identity/look";
+import { LookPreview } from "./render/lookpreview";
 import { HUB_LEVEL_ID } from "@shared/sim/hub";
 import { LEVEL_INFO } from "@shared/sim/level";
 import { HOSTS } from "./config";
@@ -18,11 +20,14 @@ import type { GameAudio } from "./audio";
 import { clipsFor, videoUrl } from "../shared/assets/video";
 import { CAPITAL_MARK } from "./brand";
 
+/** a row with [−] [+]: a setting, or a field of the look (Stage 689) */
+const adjustable = (id: string): boolean => id.startsWith("set:") || id.startsWith("look:");
+
 export const TITLE_CARDS: readonly string[] = ["Every mind in Neo-China is leased.", "You woke free."];
 export const CARD_SECONDS = 2.4;
 export const CARD_GAP = 0.5;
 
-export type MenuScreen = "cards" | "main" | "wake" | "settings" | "pause" | "hidden";
+export type MenuScreen = "cards" | "main" | "wake" | "settings" | "character" | "pause" | "hidden";
 
 export interface MenuEntry {
   id: string;
@@ -38,6 +43,7 @@ const MAIN: MenuEntry[] = [
   { id: "campaign", label: "CAMPAIGN", line: "THE DESK AT THE DEADLETTER OFFICE: FIXERS, GIGS, THE SEVEN-MISSION ARC" },
   { id: "office", label: "THE OFFICE", line: "THE HUB: YOUR FILE ON THE WALL, THE RANGE GHOSTS, THE DOSSIER" },
   { id: "range", label: "THE RANGE", line: "THE DRAINAGE YARD, OFFLINE, WITH DUMMIES" },
+  { id: "character", label: "CHARACTER", line: "BUILD YOUR BLANK: BODY, BUILD, COAT, SHOULDER · CLOTH ONLY, THE SAME HITBOX FOR EVERY BODY" },
   { id: "file", label: "FILE", line: "THE GHOSTFILE: NODES, MASTERY, STAMPS, THE COUNTER-LEDGER" },
   { id: "settings", label: "SETTINGS", line: "SENSITIVITY, FIELD OF VIEW, VOLUMES, THE CRT" },
 ];
@@ -63,6 +69,8 @@ export interface MenuView {
   /** the URL the last choice would have loaded (nonav) */
   target: string | null;
   skippable: boolean;
+  /** the look the CHARACTER page's turntable is wearing, or null before it was first opened (Stage 689) */
+  previewLook: number | null;
 }
 
 export interface MenuHost {
@@ -73,6 +81,14 @@ export interface MenuHost {
   /** the pause menu's RESUME: back to the game (pointer lock is the click's) */
   resume: () => void;
   identityLine: () => string;
+  /** the look the file wears, and wearing another (Stage 689) */
+  look: () => number;
+  setLook: (code: number) => void;
+}
+
+/** The line under a look row (Stage 689): how to change it, and that it changes nothing but the cloth. */
+export function lookLine(touch: boolean): string {
+  return `${touch ? "TAP [−] [+]" : "← → OR [−] [+]"} TO CHANGE · CLOTH ONLY: EVERY BODY HAS THE SAME HITBOX, EYE HEIGHT AND SPEED`;
 }
 
 export function menuWanted(q: URLSearchParams): boolean {
@@ -156,7 +172,7 @@ export class Menu {
     const root = document.createElement("div");
     root.id = "menu";
     root.hidden = true;
-    root.innerHTML = `<video class="bg" muted loop playsinline preload="auto"></video><div class="card"></div><div class="panel"><div class="hd"><span class="word">MELTDOWN</span><span class="who"></span></div><div class="list"></div><div class="line"></div><div class="ft"><span class="hint"></span> · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
+    root.innerHTML = `<video class="bg" muted loop playsinline preload="auto"></video><div class="card"></div><div class="panel"><div class="hd"><span class="word">MELTDOWN</span><span class="who"></span></div><div class="list"></div><canvas class="pv" width="440" height="600" hidden></canvas><div class="line"></div><div class="ft"><span class="hint"></span> · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
     // The title sits over the city rather than over black (Stage 633). A DOM video, not a pooled
     // one: the menu is not a scene and this costs no material. It fails soft in the strongest
     // sense — the element simply never plays and the menu is the flat panel it has always been.
@@ -254,6 +270,7 @@ export class Menu {
 
   hide(): void {
     cancelAnimationFrame(this.raf);
+    this.preview?.stop();
     this.screen = "hidden";
     this.root.hidden = true;
     this.root.className = "";
@@ -264,7 +281,22 @@ export class Menu {
     this.root.hidden = false;
     this.root.className = screen;
     (this.root.querySelector(".who") as HTMLElement).textContent = this.host.identityLine();
+    this.showPreview(screen === "character");
     this.render();
+  }
+
+  /** the CHARACTER page's turntable (Stage 689): built on first open, stopped whenever the page is not showing */
+  preview: LookPreview | null = null;
+  private showPreview(on: boolean): void {
+    const cv = this.root.querySelector(".pv") as HTMLCanvasElement;
+    cv.hidden = !on;
+    if (!on) {
+      this.preview?.stop();
+      return;
+    }
+    if (!this.preview) this.preview = new LookPreview(cv, this.host.look());
+    else this.preview.set(this.host.look());
+    this.preview.start();
   }
 
   private entries(): MenuEntry[] {
@@ -277,6 +309,10 @@ export class Menu {
         return [...LEVEL_INFO.filter((l) => l.kind === "district").map((l) => ({ id: `${this.pick}:${l.id}`, label: l.displayName, line: districtPickLine(this.pick, l) })), { id: "back", label: "BACK", line: "" }];
       case "settings":
         return [...(Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]).map((k) => ({ id: `set:${k}`, label: SETTING_LABELS[k], line: formatSetting(this.host.settings, k) })), { id: "back", label: "BACK", line: "" }];
+      case "character": {
+        const l = decodeLook(this.host.look());
+        return [...LOOK_FIELDS.map((f) => ({ id: `look:${f.key}`, label: f.label, line: f.options[l[f.key]]?.label ?? "" })), { id: "back", label: "BACK", line: "" }];
+      }
       default:
         return [];
     }
@@ -287,17 +323,17 @@ export class Menu {
     const es = this.entries();
     if (this.cursor >= es.length) this.cursor = 0;
     const list = this.root.querySelector(".list") as HTMLElement;
-    list.innerHTML = es.map((e, i) => `<div class="row ${i === this.cursor ? "on" : ""}" data-i="${i}"><span class="k">${i === this.cursor ? "▸" : " "}</span><span class="lb">${e.label}${e.icon ? `<img class="cap-mark after" src="${e.icon}" alt="¥" width="64" height="64">` : ""}</span>${e.id.startsWith("set:") ? `<span class="v"><span class="adj" data-adj="-1">[−]</span> ${e.line} <span class="adj" data-adj="1">[+]</span></span>` : ""}</div>`).join("");
+    list.innerHTML = es.map((e, i) => `<div class="row ${i === this.cursor ? "on" : ""}" data-i="${i}"><span class="k">${i === this.cursor ? "▸" : " "}</span><span class="lb">${e.label}${e.icon ? `<img class="cap-mark after" src="${e.icon}" alt="¥" width="64" height="64">` : ""}</span>${adjustable(e.id) ? `<span class="v"><span class="adj" data-adj="-1">[−]</span> ${e.line} <span class="adj" data-adj="1">[+]</span></span>` : ""}</div>`).join("");
     const line = this.root.querySelector(".line") as HTMLElement;
     const cur = es[this.cursor];
-    line.textContent = cur && !cur.id.startsWith("set:") ? cur.line : cur ? settingsLine(wantsTouch()) : "";
+    line.textContent = cur && cur.id.startsWith("look:") ? lookLine(wantsTouch()) : cur && !cur.id.startsWith("set:") ? cur.line : cur ? settingsLine(wantsTouch()) : "";
     // the footer names what this screen offers (Stage 163): every screen is a list, so moving and
     // selecting are always there; adjusting and going back are not
     const hint = this.root.querySelector(".ft .hint") as HTMLElement;
-    const wants = menuFooter(wantsTouch(), es.some((e) => e.id.startsWith("set:")), this.canBack());
+    const wants = menuFooter(wantsTouch(), es.some((e) => adjustable(e.id)), this.canBack());
     if (hint.textContent !== wants) hint.textContent = wants;
     const hd = this.root.querySelector(".hd .word") as HTMLElement;
-    hd.textContent = this.screen === "pause" ? "PAUSED" : this.screen === "wake" ? `${this.pick === "run" ? "THE RUN" : "WAKE"} · PICK A DISTRICT` : this.screen === "settings" ? "SETTINGS" : "MELTDOWN";
+    hd.textContent = this.screen === "pause" ? "PAUSED" : this.screen === "wake" ? `${this.pick === "run" ? "THE RUN" : "WAKE"} · PICK A DISTRICT` : this.screen === "settings" ? "SETTINGS" : this.screen === "character" ? "CHARACTER" : "MELTDOWN";
   }
 
   private onKey = (e: KeyboardEvent): void => {
@@ -330,6 +366,15 @@ export class Menu {
 
   private adjust(dir: 1 | -1): void {
     const cur = this.entries()[this.cursor];
+    if (cur?.id.startsWith("look:")) {
+      const key = cur.id.slice(5) as LookField["key"];
+      const next = encodeLook(stepLook(decodeLook(this.host.look()), key, dir));
+      this.host.setLook(next);
+      this.preview?.set(next);
+      this.host.audio?.uiMove();
+      this.render();
+      return;
+    }
     if (!cur?.id.startsWith("set:")) return;
     const k = cur.id.slice(4) as keyof Settings;
     const s = stepSetting(this.host.settings, k, dir);
@@ -342,7 +387,7 @@ export class Menu {
 
   /** Whether ESC goes anywhere from here. The main menu is the root: there is nothing behind it. */
   private canBack(): boolean {
-    return this.screen === "wake" || this.screen === "settings" || this.screen === "pause";
+    return this.screen === "wake" || this.screen === "settings" || this.screen === "character" || this.screen === "pause";
   }
 
   private back(): void {
@@ -352,6 +397,7 @@ export class Menu {
     this.host.audio?.uiBack();
     if (this.screen === "wake") this.show("main");
     else if (this.screen === "settings") this.show(this.prev === "pause" ? "pause" : "main");
+    else if (this.screen === "character") this.show("main");
     else if (this.screen === "pause") this.choose("resume");
   }
 
@@ -378,6 +424,15 @@ export class Menu {
       this.prev = this.screen === "pause" ? "pause" : "main";
       this.cursor = 0;
       this.show("settings");
+      return null;
+    }
+    if (id === "character") {
+      this.cursor = 0;
+      this.show("character");
+      return null;
+    }
+    if (id.startsWith("look:")) {
+      this.adjust(1);
       return null;
     }
     if (id.startsWith("set:")) {
@@ -438,7 +493,7 @@ export class Menu {
   }
 
   view(): MenuView {
-    return { matched: !!this.matched, screen: this.screen, card: this.card, cardT: this.cardClock(performance.now()), cardText:(this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen };
+    return { matched: !!this.matched, screen: this.screen, card: this.card, cardT: this.cardClock(performance.now()), cardText:(this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen, previewLook: this.preview ? this.preview.look : null };
   }
 
   static settingsOf(): Settings {

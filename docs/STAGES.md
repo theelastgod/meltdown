@@ -1641,6 +1641,66 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 689 — Every Blank wore the same body
+
+**The ask.** The owner: "add a ... character customization page where you build appearance gender
+and types".
+
+**The change.** CHARACTER sits on the main menu between THE RANGE and FILE. Its page has four rows,
+each stepped with ← → or [−] [+]: BODY (ANDROGYNOUS, MASCULINE, FEMININE), BUILD (STANDARD, SLIM,
+HEAVY), COAT (LONG COAT, SHORT JACKET) and SHOULDER (PLATE RIGHT, PLATE LEFT, BOTH PLATES, BARE).
+Beside them the Blank turns on a turntable in its own small WebGL canvas
+(`client/render/lookpreview.ts`), cut by the same code every player's body is.
+
+`shared/identity/look.ts` encodes a look as one integer, 72 in all. Index 0 of every field is the
+Blank as it was, so look 0 is the old body vertex for vertex and costs nothing on the wire.
+`client/render/rig.ts` cuts the cloth to the look: `lookWidth` widens or narrows the torso, the
+mantle and the coat by height (shoulders, waist, hips), easing back to the Blank's own hem so no look
+flares past it. The jacket is the coat's profile cut above the knee, with its lights stopping at
+the hem. The plates move, double or go.
+
+The look is kept with the file on the device and sent in the join's identity. The server wears any
+real look and makes anything else the default, for a file or a guest, and keeps it on the file.
+The identity tag carries it as a seventh segment, only when it is set. Every remote's body is recut
+when its tag's look changes, and the local third-person body wears it from the first frame.
+
+**Fair by construction.** A look moves no bone, not the hood and not a limb. Every body has the
+same capsule, eye height, speed and hitbox; the sim never reads the look. `lint:fairness` is
+unchanged.
+
+**The guards.** `tests/look.test.ts` (10):
+- every code round-trips, and junk is the default;
+- for all 72 looks: the cloth stays inside the 0.4 m capsule, on the same floor under the same hood
+  peak and crouch point, and within both triangle budgets; no coat light sits inside its own cloth,
+  measured against the cloak's vertices;
+- measured from the geometry: masculine is broader at the shoulder, feminine narrower at the waist
+  and fuller at the hip, slim narrower and heavy wider, the jacket's cloth and lights end above
+  0.72 m, and the plates are where the look says;
+- the tag round-trips and a look-0 tag is the old tag; a real Room wears the look a file or a guest
+  sent, shows it to the others, and makes junk the default.
+
+probe:ship opens CHARACTER, reads the rows and a lit turntable, steps BODY and COAT, and reads the
+file, the local body, the turntable and the browser's store all wearing look 10. ESC leaves with
+the turntable, and a reload wears the kept look. 16/16.
+
+Five mutations were each caught:
+- HEAVY cut past the capsule (unit);
+- the plates swapped (unit);
+- the tag dropping the look (unit, 2 failed);
+- the room ignoring the join's look (unit);
+- the local body not recut on a change (probe:ship, 15/16).
+
+**Found on the way.** The jacket's hem filter first applied to the long coat too, and dropped its
+lowest two front lights. The short-jacket test's measurement of the long coat caught it: look 0 is
+back to exactly its old lights.
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1519 tests; lint:fairness PASS with debt 89
+unchanged; probe:ship 16/16, probe:identity 25/25, probe:body 21/21, probe:tps 50/50;
+`npm run build`.
+
+**Proof.** `docs/proof/stage689/character.png` is the probe's frame of the page: MASCULINE, SHORT
+JACKET, the turntable showing the back.
+
 ## Stage 688 — Ida's arms were posed
 
 **The gap.** Since Stage 677 Ida Vessel walks mission 4 on her own legs, swung by the planted-foot

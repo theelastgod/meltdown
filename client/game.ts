@@ -215,6 +215,9 @@ export class Game {
       if (lines.length || ranks.length) this.renderer.post.kick(0.6);
     };
     this.file.onIdentity = (f) => this.applyIdentity(f.identityView());
+    // the look (Stage 689): the local body wears it from the start and is recut when the CHARACTER page changes it
+    this.renderer.setLook(this.file.look);
+    this.file.onLook = (code) => this.renderer.setLook(code);
     // from a safe zone's kiosk, Tab opens the panel on the market (offline and online alike)
     this.file.openSection = () => (this.runView?.inSafe ? "market" : "top");
     this.applyIdentity(this.file.identityView());

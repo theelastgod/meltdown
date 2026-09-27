@@ -6,6 +6,7 @@
  * channels and names every key or value that would tell an opponent what
  * you are running. CI, the room (a dev-time guard) and the probe all use it.
  */
+import { sanitizeLookCode } from "./look";
 import type { Account } from "../progression/account";
 import { glyphSeed } from "./glyph";
 import { chapterFor, MONIKERS, monikerById, wornMoniker } from "./monikers";
@@ -37,10 +38,12 @@ export interface PublicIdentity {
    * inlays on the weapon in the file's hand and names nothing it is running.
    */
   finish: number;
+  /** the look the file wears (Stage 689): body, build, coat, shoulder, as one code (shared/identity/look.ts). Cloth only; 0 is the Blank as it was */
+  look: number;
 }
 
 /** The only keys an identity may carry on the wire. */
-export const IDENTITY_KEYS: readonly string[] = ["id", "team", "glyph", "chapter", "moniker", "display", "stamps", "debt", "skin", "finish"];
+export const IDENTITY_KEYS: readonly string[] = ["id", "team", "glyph", "chapter", "moniker", "display", "stamps", "debt", "skin", "finish", "look"];
 
 /** One file is FILE, not FILES. */
 export function filesWord(n: number): string {
@@ -58,9 +61,10 @@ export function displayName(a: Account | null, handle: string): string {
   return wornMoniker(a, a.moniker)?.text ?? "BLANK";
 }
 
-export function publicIdentity(a: Account | null, handle: string, debt = false): PublicIdentity {
-  if (!a) return { glyph: glyphSeed(handle), chapter: 0, moniker: null, display: handle, stamps: 0, debt, skin: 0, finish: 0 };
-  return { glyph: glyphSeed(a.id), chapter: chapterFor(a.depth), moniker: wornMoniker(a, a.moniker)?.id ?? null, display: displayName(a, handle), stamps: a.stamps.length, debt, skin: a.counter?.worn ?? 0, finish: finishMask(a) };
+export function publicIdentity(a: Account | null, handle: string, debt = false, look: number = a?.look ?? 0): PublicIdentity {
+  const lk = sanitizeLookCode(look);
+  if (!a) return { glyph: glyphSeed(handle), chapter: 0, moniker: null, display: handle, stamps: 0, debt, skin: 0, finish: 0, look: lk };
+  return { glyph: glyphSeed(a.id), chapter: chapterFor(a.depth), moniker: wornMoniker(a, a.moniker)?.id ?? null, display: displayName(a, handle), stamps: a.stamps.length, debt, skin: a.counter?.worn ?? 0, finish: finishMask(a), look: lk };
 }
 
 /** which weapons the file's record has at the rank cap: one bit per WEAPON_LIST index */
@@ -79,19 +83,21 @@ export function wearsFinish(mask: number, id: WeaponId): boolean {
 }
 
 /**
- * Compact wire form for the snapshot: `seed.chapter.monikerIndex.debt[.skin[.finish]]`. The skin
- * segment appears when one is worn or a finish follows it; the finish (base 36) only when there is one.
+ * Compact wire form for the snapshot: `seed.chapter.monikerIndex.debt[.skin[.finish[.look]]]`. A
+ * segment appears when it or one after it is set; the finish and the look (Stage 689) are base 36.
  */
 export function identityTag(pi: PublicIdentity): string {
   const mi = pi.moniker ? MONIKERS.findIndex((m) => m.id === pi.moniker) : -1;
-  const tail = pi.finish ? `.${pi.skin}.${pi.finish.toString(36)}` : pi.skin ? `.${pi.skin}` : "";
+  const extra = [String(pi.skin), pi.finish.toString(36), (pi.look ?? 0).toString(36)];
+  while (extra.length && extra[extra.length - 1] === "0") extra.pop();
+  const tail = extra.length ? `.${extra.join(".")}` : "";
   return `${pi.glyph.toString(36)}.${pi.chapter}.${mi}.${pi.debt ? 1 : 0}${tail}`;
 }
 
 export function parseTag(tag: string, display: string): PublicIdentity {
-  const [s, c, mi, d, sk, fin] = tag.split(".");
+  const [s, c, mi, d, sk, fin, lk] = tag.split(".");
   const idx = Number(mi ?? -1);
-  return { glyph: parseInt(s ?? "0", 36) >>> 0, chapter: Number(c ?? 0) || 0, moniker: idx >= 0 ? (MONIKERS[idx]?.id ?? null) : null, display, stamps: 0, debt: d === "1", skin: Number(sk ?? 0) || 0, finish: parseInt(fin ?? "0", 36) >>> 0 || 0 };
+  return { glyph: parseInt(s ?? "0", 36) >>> 0, chapter: Number(c ?? 0) || 0, moniker: idx >= 0 ? (MONIKERS[idx]?.id ?? null) : null, display, stamps: 0, debt: d === "1", skin: Number(sk ?? 0) || 0, finish: parseInt(fin ?? "0", 36) >>> 0 || 0, look: sanitizeLookCode(parseInt(lk ?? "0", 36)) };
 }
 
 // ---------------------------------------------------------------------------

@@ -434,6 +434,8 @@ const menu = menuWanted(bootQ)
           const v = game.file.identityView();
           return `${v.display} · DEPTH ${String(game.file.depth).padStart(2, "0")} · ${game.file.account}`;
         },
+        look: () => game.file.look,
+        setLook: (code) => game.file.setLook(code),
       },
       Number(bootQ.get("menuspeed") ?? 1) || 1,
     )

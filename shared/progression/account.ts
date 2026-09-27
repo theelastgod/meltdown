@@ -34,6 +34,8 @@ export interface Account {
   counters: Record<string, number>;
   /** equipped moniker id (Stage 8 identity; zero gameplay effect) */
   moniker: string | null;
+  /** the look the file wears (Stage 689): shared/identity/look.ts code; cloth only, zero gameplay effect */
+  look?: number;
   /** Chapter rites already performed (1, 2, 3) */
   chapters: number[];
   /** nemesis-lite: the enemy file that killed you most last match, until you settle it */

@@ -49,6 +49,7 @@ import { applyMatch, ranksOf, type Account } from "../shared/progression/account
 import { stampLine } from "../shared/progression/stamps";
 import { ProgressionTracker, type ProgressNote } from "./progression";
 import { assertClean, displayName, filesWord, identityTag, publicIdentity, type PublicIdentity } from "../shared/identity/identity";
+import { sanitizeLookCode } from "../shared/identity/look";
 import { CHAPTERS, chapterFor, unlockedMonikers, wornMoniker } from "../shared/identity/monikers";
 import { glyphSeed } from "../shared/identity/glyph";
 import type { AccountStore } from "./accounts";
@@ -109,6 +110,8 @@ interface ClientRec {
   progress: ProgressionTracker;
   /** what others see of this file (Stage 8); refreshed at join, round start and settlement */
   identity: PublicIdentity;
+  /** the look sent at the join (Stage 689), kept here too so a guest without a file wears it */
+  look: number;
   /** this round: killer playerId → kills on me (feeds the Debt at settlement) */
   killedBy: Map<number, number>;
   /** playerId in this room of the file I owe a Debt to (−1 none) */
@@ -544,6 +547,14 @@ export class Room {
 
   /** Validate the claimed loadout against the file, then spawn. Illegal loadouts are refused, never stripped. */
   private admit(conn: Conn, safeName: string, account: Account | null, loadoutJson: string, identityJson = ""): void {
+    // the look (Stage 689): the join's if it sent one, else the file's; a guest wears it from here
+    let sent: unknown;
+    try {
+      sent = identityJson ? (JSON.parse(identityJson) as { look?: unknown }).look : undefined;
+    } catch {
+      sent = undefined;
+    }
+    const look = sent !== undefined ? sanitizeLookCode(sent) : sanitizeLookCode(account?.look ?? 0);
     if (account && !this.bases.has(account.id)) this.track(account);
     // the day's contracts roll here, before the match moves the counters (Stage 58): a file that
     // had not been touched since yesterday used to have its base snapshot taken by the first claim
@@ -556,6 +567,8 @@ export class Room {
       try {
         const req = (JSON.parse(identityJson) as { moniker?: unknown }).moniker;
         if (typeof req === "string" || req === null) account.moniker = wornMoniker(account, req)?.id ?? null;
+        // the look (Stage 689): every look is free, so any real one is worn and anything else is the default
+        if (sent !== undefined) account.look = look;
       } catch {
         /* malformed identity: keep the file's own */
       }
@@ -629,7 +642,8 @@ export class Room {
       lastSettleXp: 0,
       lastRoundFlips: 0,
       progress: new ProgressionTracker(account),
-      identity: publicIdentity(account, safeName),
+      identity: publicIdentity(account, safeName, false, look),
+      look,
       killedBy: new Map(),
       debtTargetId: -1,
       debtClearedThisRound: false,
@@ -715,7 +729,7 @@ export class Room {
   }
 
   private refreshIdentity(rec: ClientRec): void {
-    rec.identity = publicIdentity(rec.account, rec.name);
+    rec.identity = publicIdentity(rec.account, rec.name, false, rec.look);
   }
 
   /** Point every file's Debt at the connected player who owes it (by file id), and tell the ones who just found their number in the room. */

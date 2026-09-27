@@ -29,6 +29,7 @@ import { crtPhrase } from "./crt";
 import type { CounterClient, CounterView } from "./counter";
 import { COUNTER_URL } from "./config";
 import { CHAPTERS, chapterFor, MONIKERS, monikerById, unlockedMonikers, wornMoniker } from "@shared/identity/monikers";
+import { sanitizeLookCode } from "@shared/identity/look";
 import { weaponName } from "./hud/kill";
 import { unitsLabel } from "./runcue";
 import { capitalMark } from "./brand";
@@ -82,6 +83,10 @@ export class GhostFile {
   shop: string | null = null;
   /** equipped moniker id (sent at link; the server wears it only if earned) */
   moniker: string | null = null;
+  /** the look (Stage 689): body, build, coat, shoulder as one code; sent at link, worn by everyone's renderer */
+  look = 0;
+  /** told when the look changes, so the local body can be recut */
+  onLook: ((code: number) => void) | null = null;
   /** identity as the server last described it (null offline: derived from the sandbox file) */
   serverIdentity: FileMsg["identity"] | null = null;
   onIdentity: ((f: GhostFile) => void) | null = null;
@@ -103,7 +108,7 @@ export class GhostFile {
 
   constructor(private online: () => boolean) {
     const q = new URLSearchParams(location.search);
-    let stored: { account?: string; secret?: string; loadout?: Record<string, unknown>; moniker?: string | null } = {};
+    let stored: { account?: string; secret?: string; loadout?: Record<string, unknown>; moniker?: string | null; look?: number } = {};
     try {
       stored = JSON.parse(localStorage.getItem(KEY) ?? "{}");
     } catch {
@@ -115,6 +120,7 @@ export class GhostFile {
     // enough on its own to Rewrite someone back to Depth 1.
     this.secret = q.get("secret") ?? stored.secret ?? newFileSecret();
     this.moniker = q.get("moniker") ?? stored.moniker ?? null;
+    this.look = sanitizeLookCode(q.has("look") ? Number(q.get("look")) : stored.look);
     const urlLoadout = q.get("loadout");
     if (urlLoadout) {
       try {
@@ -325,9 +331,18 @@ export class GhostFile {
     return JSON.stringify(this.raw);
   }
 
-  /** Identity claims sent at link: only the equipped moniker (the server decides whether it was earned). */
+  /** Identity claims sent at link: the equipped moniker (the server decides whether it was earned) and the look (every look is free). */
   identityJson(): string {
-    return JSON.stringify({ moniker: this.moniker });
+    return JSON.stringify({ moniker: this.moniker, look: this.look });
+  }
+
+  /** wear a look (Stage 689): kept with the file on this device, sent at the next link */
+  setLook(code: number): void {
+    const next = sanitizeLookCode(code);
+    if (next === this.look) return;
+    this.look = next;
+    this.persist();
+    this.onLook?.(next);
   }
 
   setMoniker(id: string | null): void {
@@ -493,7 +508,7 @@ export class GhostFile {
 
   private persist(): void {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ account: this.account, secret: this.secret, loadout: this.raw, moniker: this.moniker }));
+      localStorage.setItem(KEY, JSON.stringify({ account: this.account, secret: this.secret, loadout: this.raw, moniker: this.moniker, look: this.look }));
     } catch {
       /* private mode */
     }
