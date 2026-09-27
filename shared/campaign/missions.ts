@@ -28,10 +28,20 @@ export interface Reward {
 
 export interface Variant {
   gate: Gate;
-  /** objectives replaced wholesale when the gate opens */
+  /** objectives replaced wholesale when the gate opens (the last open variant's win) */
   objectives?: Objective[];
+  /**
+   * objectives placed before whichever list wins (Stage 676). These compose: a variant that only
+   * prepends never overwrites another variant's objectives, so two choices can both change a mission
+   */
+  prepend?: Objective[];
   extraWasps?: number;
   extraMechs?: number;
+}
+
+/** every objective a variant can put in front of the player: what it prepends, then what it replaces */
+export function variantObjectives(v: Variant): Objective[] {
+  return [...(v.prepend ?? []), ...(v.objectives ?? [])];
 }
 
 export interface MissionDef {
@@ -194,6 +204,10 @@ export const MISSIONS: readonly MissionDef[] = [
       // composes with the lease variant above instead of overwriting it; Wern names the cost of the
       // same blindness in the white office.
       { gate: { all: { "m5:lattice": "all" } }, extraWasps: -2 },
+      // Sparing the docks in mission 5 left the model one eye, and it is looking at the depot: the
+      // harbour lattice relays the tower to VANTAGE, and it has to be cut before the broadcast can go
+      // out (Stage 676). Prepended, so it composes with the lease variant's closing hold.
+      { gate: { all: { "m5:lattice": "spare_docks" } }, prepend: [{ kind: "destroy", spots: [{ node: "E" }], label: "HARBOUR RELAY", text: "YOU LEFT THE DOCKS THEIR EYE. CUT ITS RELAY AT E BEFORE IT CALLS THE TOWER IN" }] },
     ],
     reward: { scrip: 1000, xp: 2400, protocol: "blood_ledger", stamp: "mission:trial" },
     wasps: 6,

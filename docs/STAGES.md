@@ -1641,6 +1641,49 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 676 — Sparing the docks changed nothing you had to do
+
+**The defect.** Stage 663 made the mission-5 lattice choice reach mission 6, but
+only as a number: a city blinded whole draws two fewer drones. Sparing the docks
+changed nothing at all. That was the only mechanism available. The runtime let
+the last open variant's objectives win, and mission 6 already had a lease
+variant with its own objectives, so a second objective variant would have
+silently overwritten one of the two consequences.
+
+**The mechanism: variants that compose.** A variant can now carry `prepend`, a
+list of objectives placed before whichever list wins. Any number of prepending
+variants stack, and a prepend never overwrites another variant's objectives, so
+two choices can both change the same mission. `variantObjectives()` returns
+everything a variant can put in front of the player. The campaign lint's four
+readers now use it: dialogue scripts, anchored holds, spots on real nodes, and
+the scripts a mission opens. A prepended relay pointed at a node the district
+lacks would otherwise have passed unseen.
+
+**The consequence.** Sparing the docks left the model one eye, and in mission 6
+it is looking at the depot. A file that spared the docks now opens mission 6
+with *"YOU LEFT THE DOCKS THEIR EYE. CUT ITS RELAY AT E BEFORE IT CALLS THE TOWER
+IN"*. A file that blinded everything still draws the smaller sweep. Each lattice
+answer now changes mission 6 in its own way. With the lease file kept as well,
+the relay comes first and the lease's shortened closing hold still follows.
+Mission 7 (Wern's lines, Stage 661) already speaks to both answers.
+
+**The guards** (`tests/arcconsequence.test.ts`) build mission 6 on a real World
+through `createMission`:
+- a spared-docks file's first objective is the relay at E, and the rest of its
+  mission matches the base;
+- neither the base file nor the blinded file has it;
+- with the lease kept too, the relay leads and the lease variant's objectives
+  follow unchanged;
+- a second test points the prepended relay at node Q and requires the campaign
+  lint to flag it.
+
+Three mutations were each caught: the runtime ignoring `prepend`, a prepend that
+overwrites instead of composing, and the spot lint reading only `objectives`.
+
+**Verified.** `npm run typecheck` (both configs), 1474 unit tests, lint:campaign
+(0 errors), lint:progression, lint:economy, lint:assets, `npm run build` and
+`probe:campaign` 51/51.
+
 ## Stage 675 — Mastering a weapon changed nothing you could see
 
 **The defect.** Every rank of the mastery ladder paid a chip or a firmware. The

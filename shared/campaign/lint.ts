@@ -18,7 +18,7 @@
  * `tests/campaign.test.ts` fails the build on any violation.
  */
 import { FACTIONS, type FactionId } from "./factions";
-import { MISSIONS, type MissionDef } from "./missions";
+import { MISSIONS, type MissionDef, variantObjectives } from "./missions";
 import { recalledTestimony, SCRIPTS, type ScriptDef } from "./script";
 import { ENDINGS, ENDING_CODA, endingGateKeys, type Gate } from "./testimony";
 import { resolveSpot } from "./runtime";
@@ -202,7 +202,7 @@ export function lintCampaign(): CampaignViolation[] {
   out.push(...lintMissionOrder(MISSIONS));
   for (const m of MISSIONS) {
     for (const o of m.objectives) if (o.kind === "dialogue" && !scriptIds.has(o.script)) out.push({ where: `${m.kind} ${m.id}`, rule: "dialogue-names-a-script", detail: `no script "${o.script}"`, severity: "error" });
-    for (const v of m.variants ?? []) for (const o of v.objectives ?? []) if (o.kind === "dialogue" && !scriptIds.has(o.script)) out.push({ where: `${m.id} variant`, rule: "dialogue-names-a-script", detail: `no script "${o.script}"`, severity: "error" });
+    for (const v of m.variants ?? []) for (const o of variantObjectives(v)) if (o.kind === "dialogue" && !scriptIds.has(o.script)) out.push({ where: `${m.id} variant`, rule: "dialogue-names-a-script", detail: `no script "${o.script}"`, severity: "error" });
   }
 
   // ---- the mission arc has no gaps: orders run 1..n with nothing missing ----
@@ -286,7 +286,7 @@ export function lintHoldsAreAnchored(missions: readonly MissionDef[] = MISSIONS)
   };
   for (const m of missions) {
     walk(`${m.kind} ${m.id}`, m.objectives);
-    for (const [i, v] of (m.variants ?? []).entries()) if (v.objectives) walk(`${m.id} variant ${i + 1}`, v.objectives);
+    for (const [i, v] of (m.variants ?? []).entries()) walk(`${m.id} variant ${i + 1}`, variantObjectives(v));
   }
   return out;
 }
@@ -322,7 +322,7 @@ export function lintSpotsAreInTheOpen(): CampaignViolation[] {
   for (const m of MISSIONS) {
     const level = levelFor(m.level);
     const runs: [string, readonly Objective[]][] = [[m.id, m.objectives]];
-    for (const [i, v] of (m.variants ?? []).entries()) if (v.objectives) runs.push([`${m.id} variant ${i + 1}`, v.objectives]);
+    for (const [i, v] of (m.variants ?? []).entries()) runs.push([`${m.id} variant ${i + 1}`, variantObjectives(v)]);
     for (const [where, objectives] of runs) {
       for (const o of objectives) {
         for (const s of spotsOf(o)) {
@@ -351,7 +351,7 @@ function keysOfGate(g: Gate | undefined): string[] {
 
 /** The dialogue scripts a mission can open, base objectives and every variant's. */
 function scriptsOf(m: MissionDef): string[] {
-  const objs = [...m.objectives, ...(m.variants ?? []).flatMap((v) => v.objectives ?? [])];
+  const objs = [...m.objectives, ...(m.variants ?? []).flatMap((v) => variantObjectives(v))];
   return objs.filter((o): o is Extract<Objective, { kind: "dialogue" }> => o.kind === "dialogue").map((o) => o.script);
 }
 

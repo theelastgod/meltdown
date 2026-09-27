@@ -111,16 +111,18 @@ export function createMission(id: string, world: World, testimony: Testimony, fa
   if (!def) return null;
   const threat = threatProfile(threatRating);
   let objectives = def.objectives;
+  const prepend: Objective[] = [];
   let extraWasps = 0;
   let extraMechs = 0;
   for (const v of def.variants ?? []) {
     if (gateOpen(v.gate, testimony, faction)) {
       if (v.objectives) objectives = v.objectives;
+      if (v.prepend) prepend.push(...v.prepend);
       extraWasps += v.extraWasps ?? 0;
       extraMechs += v.extraMechs ?? 0;
     }
   }
-  const st: MissionState = { def, objectives: objectives.slice(), index: 0, status: "running", progress: 0, ticks: 0, targets: [], escort: null, dialogue: null, testimony: { ...testimony }, wavesSpawned: 0, downTicks: 0, events: [], threat, spawned: { wasps: 0, mechs: 0, dummies: 0 } };
+  const st: MissionState = { def, objectives: [...prepend, ...objectives], index: 0, status: "running", progress: 0, ticks: 0, targets: [], escort: null, dialogue: null, testimony: { ...testimony }, wavesSpawned: 0, downTicks: 0, events: [], threat, spawned: { wasps: 0, mechs: 0, dummies: 0 } };
   const rnd = lcg(11 + world.seed);
   const anchors = world.level.nodes.length ? world.level.nodes.map((n) => n.pos) : world.level.spawns.map((s) => s.pos);
   for (let i = 0; i < def.wasps + extraWasps; i++) {
