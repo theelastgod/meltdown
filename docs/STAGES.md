@@ -1641,6 +1641,42 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 696 — The mirror drew every citizen a second time
+
+**The ask.** A bigger world with more in it. Stage 694 made LEASE ROW five blocks by five, but its
+crowd stayed at 110. At the old nine blocks' density the new area would hold about 300.
+
+**The cause.** The wet floor's mirror renders layer 0 a second time, and the crowd was on layer 0.
+A citizen is about 350 triangles and five instanced draws. In the mirror the crowd cost as much
+again as it did on the street, for figures the floor blurs to dark smudges. Before this stage, 110
+citizens were 77k of LEASE ROW's 186k triangles.
+
+**The change.**
+- **The crowd is on the far layer**, which the main camera sees and the mirror camera does not.
+  It is the only camera that draws the street; the look preview draws no city.
+- **LEASE ROW's crowd is 220** (`shared/sim/city.ts`): twice the old nine blocks' crowd, for the
+  same triangles 110 cost when drawn twice. 300 would put the cost model over the 190k it allows.
+- **The cost model** in `tests/citycost.test.ts` is now `2 × dressing + crowd + skyline`. The
+  budget it holds (190k, with 10k left for the actors) is unchanged.
+- **A per-citizen, per-frame allocation** in `Crowd.update` (the up axis) is hoisted.
+
+**Verified.**
+- A new test builds the real `CityLife` for LEASE ROW and checks the crowd's five meshes: none is
+  visible to a layer-0 camera, all are visible to the street camera, and there are 220 citizens.
+  It fails with the layer line commented out (the mutation).
+- The crowd's triangles and draw calls per frame:
+
+  | | Draw calls | Triangles |
+  |---|---|---|
+  | LEASE ROW | 186 → 181 | 186,268 → 186,268, with twice the people |
+  | DEADLETTER DOCKS | 166 → 152 | 114k → 94k |
+  | REPO DEPOT | 175 | 114k |
+
+- probe:city 51/51. probe:cityLife 21/21 (168 calls). probe:look 19/19: the street still reads like
+  the clip. probe:mobile 40/40 (a phone draws no mirror, so it gains only the crowd).
+- Unit tests: 1584 pass.
+- Proof: `docs/proof/stage696/` (LEASE ROW's street and node with 220 citizens).
+
 ## Stage 695 — probe:net failed on runs that changed nothing
 
 **The failure.** Two CI runs whose commits only added files under `docs/brand/` failed

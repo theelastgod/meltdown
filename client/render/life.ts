@@ -131,6 +131,8 @@ export function citizenHoodGeometry(): THREE.BufferGeometry {
   return out!;
 }
 
+const UP = new THREE.Vector3(0, 1, 0);
+
 export class Crowd {
   readonly group = new THREE.Group();
   private peds: Ped[] = [];
@@ -201,7 +203,7 @@ export class Crowd {
       ped.z = o.z;
       ped.yaw = ped.dir > 0 ? o.yaw : o.yaw + Math.PI;
       const bob = ped.idle ? 0 : Math.abs(Math.sin(this.time * 6 * ped.speed + ped.bob)) * 0.04;
-      this.q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), ped.yaw);
+      this.q.setFromAxisAngle(UP, ped.yaw);
       // body and hood share one feet-at-the-origin frame and the citizen's own height
       this.sc.set(ped.h, ped.h, ped.h);
       this.p.set(o.x, bob, o.z);
@@ -668,7 +670,14 @@ export class CityLife {
   private time = 0;
   constructor(level: LevelDef, skyline: THREE.Group) {
     this.crowd = level.walks?.length && level.pedestrians ? new Crowd(level.walks, level.pedestrians, (level.skylineSeed ?? 1) + 7) : null;
-    if (this.crowd) this.group.add(this.crowd.group);
+    if (this.crowd) {
+      // Drawn once (Stage 696). The wet floor's mirror renders layer 0 a second time, and a citizen
+      // is ~350 triangles and five instanced draws: in the mirror the crowd cost as much again as it
+      // did on the street, for figures the floor blurs to dark smudges. Off layer 0 the mirror never
+      // sees them, and the triangles it spent there pay for twice the citizens on LEASE ROW.
+      this.crowd.group.traverse((o) => o.layers.set(FAR_LAYER));
+      this.group.add(this.crowd.group);
+    }
     this.tram = level.tram ? new Tram(level.tram) : null;
     if (this.tram) this.group.add(this.tram.group);
     this.steam = level.vents?.length ? new Steam(level.vents) : null;

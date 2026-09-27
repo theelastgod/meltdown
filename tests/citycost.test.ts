@@ -4,11 +4,11 @@
  * `probe:city` holds a district's frame to ≤ 190 draw calls and ≤ 200k triangles in a browser. The
  * dressing is merged into one mesh per material, so its draw calls do not grow with the district,
  * but its triangles do, and none of it is ever frustum-culled: every merged batch's bounds cover the
- * district. The wet floor's mirror renders layer 0 a second time, and the dressing and the crowd are
- * on layer 0; the skyline is on the far layer and drawn once. So a frame is, to within the actors in
- * it (the Blank's body, wasps, mechs, the viewmodel):
+ * district. The wet floor's mirror renders layer 0 a second time, and the dressing is on layer 0; the
+ * skyline and, since Stage 696, the crowd are on the far layer and drawn once. So a frame is, to
+ * within the actors in it (the Blank's body, wasps, mechs, the viewmodel):
  *
- *     2 × (dressing + crowd) + skyline
+ *     2 × dressing + crowd + skyline
  *
  * which predicted the last recorded `probe:city` figures to within 3.3k (docs/STAGES.md, the body
  * stage: lease_row 164k measured / 161.3k here, repo_depot 139k / 135.7k, docks 114k / 111.1k). The
@@ -58,7 +58,7 @@ async function costOf(L: LevelDef): Promise<Cost> {
   const dressing = trianglesOf(scene);
   const skyline = trianglesOf(buildSkyline(new THREE.Scene(), L.skylineSeed ?? 42, (L.bounds ?? 32) + 44, L.district ?? "magenta"));
   const crowd = trianglesOf(new Crowd(L.walks!, L.pedestrians!, (L.skylineSeed ?? 1) + 7).group);
-  return { boxes: L.boxes.length, dressing, batches: calls, crowd, skyline, frame: 2 * (dressing + crowd) + skyline };
+  return { boxes: L.boxes.length, dressing, batches: calls, crowd, skyline, frame: 2 * dressing + crowd + skyline };
 }
 
 /** LEASE ROW as it was before Stage 692 */
@@ -78,5 +78,23 @@ describe("what a district costs to draw", () => {
     expect(big.batches, `${JSON.stringify(big)} vs ${JSON.stringify(small)}`).toBeLessThanOrEqual(small.batches);
     // the measurement is live, not vacuous: the larger district does cost more triangles
     expect(big.dressing).toBeGreaterThan(small.dressing);
+  }, 30_000);
+
+  it("the crowd is drawn once: the wet floor's mirror (layer 0) sees none of it, the street camera sees all of it (Stage 696)", async () => {
+    const { CityLife } = await import("../client/render/life");
+    const { FAR_LAYER } = await import("../client/render/renderer");
+    const life = new CityLife(generateDistrict(districtById("lease_row")!), new THREE.Group());
+    const mirror = new THREE.Layers(); // a fresh camera's layers: 0 only, as the mirror camera's are
+    const street = new THREE.Layers();
+    street.enable(FAR_LAYER);
+    const meshes: THREE.Object3D[] = [];
+    life.crowd!.group.traverse((o) => (o as THREE.Mesh).isMesh && meshes.push(o));
+    expect(meshes.length).toBe(5);
+    for (const m of meshes) {
+      expect(m.layers.test(mirror), `${(m as THREE.Mesh).geometry.type} is in the mirror`).toBe(false);
+      expect(m.layers.test(street)).toBe(true);
+    }
+    // and the model counts the crowd once, so 220 citizens cost what 110 drawn twice did
+    expect(life.crowd!.count).toBe(220);
   }, 30_000);
 });

@@ -105,7 +105,7 @@ describe("a leased citizen", () => {
     const tris = (g: THREE.BufferGeometry) => (g.index ? g.index.count : g.getAttribute("position").count) / 3;
     // coat + hood + one box per limb + lamp + umbrella
     const total = tris(citizenBodyGeometry()) + tris(citizenHoodGeometry()) + 12 * CITIZEN_LIMBS.length + 12 + 16;
-    // 110 citizens in the busiest district, scene and mirror: 110 x 2 x 360 = 79k, inside what lease_row had spare
+    // 220 citizens in the busiest district, drawn once (Stage 696): 220 x 360 = 79k, inside what lease_row has spare
     expect(total).toBeLessThan(360);
   });
 });

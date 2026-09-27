@@ -740,12 +740,11 @@ export const DISTRICT_SPECS: DistrictSpec[] = [
     carDensity: 0.45,
     mechs: 2,
     wasps: 5,
-    // Not scaled with the area. Every citizen is ~350 triangles drawn in both passes (the wet floor's
-    // mirror), so the crowd is the costliest thing per head in the frame: 110 is 77k of the 200k budget,
-    // and the ~290 the larger area would carry would be 203k on its own. With the outer ring dressed
-    // lean the frame measures 183k (tests/citycost.test.ts), which is room for the actors and not for
-    // more citizens. More needs the crowd drawn once, not a bigger number here.
-    pedestrians: 110,
+    // Twice the old nine blocks' crowd, not the ~300 the area would carry at the same density. Every
+    // citizen is ~350 triangles; since Stage 696 the crowd is drawn once (the wet floor's mirror no
+    // longer sees it), so 220 cost what 110 did when they were drawn twice, and the frame measures what
+    // it did (tests/citycost.test.ts). 300 would put the model over the 190k it allows.
+    pedestrians: 220,
   },
   {
     id: "deadletter_docks",
