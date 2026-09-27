@@ -1641,6 +1641,49 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 684 — The gigs had no pictures
+
+**The gap.** Stages 680 to 683 gave the speakers, the endings, the arc's missions and the fixers
+their art. The twelve gigs under each fixer were still rows of text: title, district, brief,
+reward.
+
+**The change.** Each gig's row now leads with its own thumbnail. They were drawn in Higgsfield
+(`gpt_image_2_5`, medium, 16:9, two variants each, 12 credits) with the Blank's turntable crop as
+reference, one per gig kind and district:
+
+- the escrow heists: the terminal pouring cyan under the monorail; the lot escrow with the mech at
+  the far fence; the harbour escrow spilling Marrow's melting clocks;
+- the drone convoys: the Wasps crossing the harbour seen from the walkway; four of them looping the
+  plaza; the depot convoy with its mech escort;
+- the wake-cell rescues: the cell pinned in the impound searchlight; walked home between the
+  containers; pressed to a wall with a mech over them;
+- the sensor sabotage: one lattice post of two bursting on the walkway street; three along the
+  crane line; the last lattice falling around the depot plaza.
+
+The version kept of each is the one that reads at 96 px. Each was cropped and stepped down in a
+browser canvas to a 320x180 JPEG of 12 to 17 KB in `public/gigs/`. `client/gigart.ts` maps gig ids
+to files, and `gigThumb()` writes the row's image; a mission's row gets nothing, because the arc
+leads with its banner. The service worker caches `/gigs/` like the other art.
+
+**The guards.**
+
+- `tests/gigart.test.ts`: every gig and nothing else has its own file, 320x180, under 30 KB. Each
+  gig's thumb carries its own picture and no other gig's; a mission's is empty.
+- probe:campaign reads the live desk: every gig row on offer leads with `/gigs/<its id>.jpg`,
+  loaded, and the arc's row has none. It also scrolls to the fixers and shoots the rows
+  (`stage10-gigs.png`). 60/60.
+
+Two mutations were each caught: the desk row without `gigThumb` (probe:campaign, 59/60, all three
+rows with no image), and one gig mapped to another's picture (the unit test).
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1494 tests; lint:campaign,
+lint:progression, lint:economy and lint:assets clean; probe:campaign 60/60; probe:mobile 40/40;
+`npm run build`.
+
+**Proof.** `docs/proof/stage684/desk-gigs.png` is the probe's frame of the fixers' rows with their
+pictures; `gigs-sheet.png` is all twelve, by kind (escrow, convoy, rescue, lattice) across the
+districts.
+
 ## Stage 683 — The desk's fixers had names but no faces
 
 **The gap.** Stage 680 gave each fixer a portrait at the terminal, where they speak. The contracts

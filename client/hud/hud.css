@@ -346,6 +346,9 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .contracts .mb { display: block; width: 100%; aspect-ratio: 3 / 1; object-fit: cover; border: 1px solid rgba(53,242,255,0.35); margin: 4px 0 6px; background: #000; }
 #hud .contracts .ct { padding: 4px 6px; margin: 3px 0; border: 1px solid rgba(255,176,46,0.3); cursor: pointer; }
 #hud .contracts .ct:hover { border-color: var(--am); }
+/* each gig's picture (Stage 684), at the head of its row */
+#hud .contracts .ct { display: flow-root; }
+#hud .contracts .ct .gt { float: left; width: 96px; aspect-ratio: 16 / 9; object-fit: cover; margin: 1px 6px 1px 0; border: 1px solid rgba(255,176,46,0.35); background: #000; }
 #hud .contracts .ct.off { opacity: 0.5; cursor: default; }
 #hud .contracts .ct .nm { color: #ffe9c2; }
 #hud .contracts .ct .lv { float: right; font-size: 9.5px; color: rgba(53,242,255,0.6); }

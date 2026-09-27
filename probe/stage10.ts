@@ -243,6 +243,14 @@ async function main(): Promise<void> {
       const faces = await hub.evaluate(() => [...document.querySelectorAll("#hud .contracts .fx")].map((fx) => { const i = fx.querySelector(".fp") as HTMLImageElement | null; return { name: i?.alt ?? "", src: i?.getAttribute("src") ?? null, loaded: !!i && i.complete && i.naturalWidth > 0, gone: !!i && i.classList.contains("gone") }; }));
       const want: Record<string, string> = { "THE DEACON": "/portraits/deacon.jpg", MARROW: "/portraits/marrow.jpg", "IDA VESSEL": "/portraits/vessel.jpg" };
       check("each fixer on the desk is shown by their own portrait over their gigs, loaded, and none greyed on a file that has lost nobody", faces.length === 3 && faces.every((f) => want[f.name] === f.src && f.loaded && !f.gone), JSON.stringify(faces));
+      // Stage 684: each gig on offer leads its row with its own picture, loaded; the arc's row has none
+      await hub.waitForFunction(() => [...document.querySelectorAll("#hud .contracts .gt")].every((i) => (i as HTMLImageElement).complete), null, { timeout: 5000, polling: 50 }).catch(() => undefined);
+      const gigRows = await hub.evaluate(() => [...document.querySelectorAll("#hud .contracts .fx .ct")].map((r) => { const i = r.querySelector(".gt") as HTMLImageElement | null; return { id: r.getAttribute("data-launch") ?? "", src: i?.getAttribute("src") ?? null, loaded: !!i && i.complete && i.naturalWidth > 0 }; }));
+      const arcThumbs = await hub.evaluate(() => document.querySelectorAll("#hud .contracts .ct:not(.fx .ct) .gt").length);
+      await hub.evaluate(() => document.querySelector("#hud .contracts .fx")?.scrollIntoView({ block: "start" }));
+      await shotCheck(hub, `stage10-gigs.png`, "#hud .contracts");
+      await hub.evaluate(() => { const d = document.querySelector("#hud .contracts") as HTMLElement | null; if (d) d.scrollTop = 0; });
+      check("each gig on offer leads its row with its own picture, loaded, and the arc's row has none", gigRows.length >= 2 && gigRows.every((g) => g.id.startsWith("g_") && g.src === `/gigs/${g.id}.jpg` && g.loaded) && arcThumbs === 0, `${JSON.stringify(gigRows)} · arc thumbs ${arcThumbs}`);
       check("the desk leads with the next mission's key art, loaded: WAKE UNLISTED for a file that has not started the arc", c1.next === "m1_wake_unlisted" && b.src === "/missions/m1_wake_unlisted.jpg" && b.loaded, `next ${c1.next} · ${JSON.stringify(b)}`);
     }
     // Stage 95: the desk is a frame, and since Stage 10 the combat chrome has drawn straight through
