@@ -141,6 +141,13 @@ export class World {
   readonly ai: boolean;
   readonly dummyRespawn: boolean;
   readonly pvp: boolean;
+  /**
+   * Files in the room that are not on the street yet (Stage 699): admitted and placed, still behind
+   * their loading card, and the room has not had one input from them. The AI does not see them and
+   * nothing hurts them; they cannot move or shoot either, so the grace buys nothing but the load. The
+   * room fills and empties it (only a room that asks for the grace ever does); offline it stays empty.
+   */
+  readonly arriving = new Set<number>();
   readonly level: LevelDef;
   readonly players = new Map<number, PlayerState>();
   readonly dummies: Dummy[] = [];
@@ -241,6 +248,7 @@ export class World {
 
   removePlayer(id: number): void {
     this.players.delete(id);
+    this.arriving.delete(id);
   }
 
   drainEvents(): SimEvent[] {
@@ -498,6 +506,8 @@ export class World {
     // up and the reticle is gone, and a round that is over does not close files. The warm-up keeps
     // its guns; the dummies and the cast are not covered, as in a safe zone
     if (kind === "player" && this.wake?.phase === "results") return;
+    // a file still loading into the room (Stage 699) is not on the street yet
+    if (kind === "player" && this.arriving.has(id)) return;
     const shooter = attacker > 0 ? this.players.get(attacker) : undefined;
     // THE RUN's safe zones are a rule about PLAYERS: you bank a claim and use the market without
     // another file shooting you. So a player inside one neither takes damage nor deals it.
@@ -700,6 +710,7 @@ export class World {
   private stepAI(opts: StepOpts): void {
     const targets: SightTarget[] = [];
     for (const p of this.players.values()) {
+      if (this.arriving.has(p.id)) continue; // not on the street yet (Stage 699)
       const build = modsFor(p).droneDetect * (0.85 + 0.15 * modsFor(p).footstep);
       targets.push({ id: p.id, eye: eyePos(p), chest: v3(p.pos.x, p.pos.y + p.height * 0.55, p.pos.z), alive: p.alive, detectMult: build * this.threatDetectMult });
     }

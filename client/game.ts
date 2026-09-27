@@ -399,6 +399,7 @@ export class Game {
     this.net = net;
     net.onSocial = (m) => this.onSocial(m);
     net.onMission = (m) => this.campaign.onMissionMsg(m);
+    net.onCityEvent = (m) => this.campaign.onCityEventMsg(m);
     net.onRun = (m) => this.onRunMsg(m);
     net.onFile = (f) => {
       this.file.applyServer(f);

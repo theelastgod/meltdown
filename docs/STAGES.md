@@ -1641,6 +1641,97 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 699 — The city had nothing to do together but walk
+
+**The ask.** "Expand the size of the world and the different things you can do in it." The city
+(Stage 692) put every file in one district's streets, and the only thing to do there together
+was walk past the patrols.
+
+**The change.**
+- **Public events.** A city room starts one 90 s after it opens, then again 150–270 s after each
+  one ends, at one of the district's lattice posts. Everyone in the room hears about it. The
+  schedule is a function of the room's seed (`shared/city/events.ts`). There are three kinds:
+  - **HOLD** the post: 40 s in a 6 m ring while VANTAGE sends wasps at it.
+  - **INTERCEPT** a convoy of the district's own wasps flying round the posts.
+  - **ESCORT** a cell two street legs to another post. It walks only while someone is close.
+
+  Every three events run all three kinds, never at the same post twice running.
+- **Nothing is spawned.** An event borrows the patrol's wasps and hands them back. A room open all
+  day never grows its entity list.
+- **The room that ran it pays who took part**, as a contract is closed (Stage 27). Taking part
+  means being in the ring, near the convoy or the cell, hitting a wasp the event sent, or being
+  within 20 m when it closed.
+  - Each file is paid once, and only if its seat still holds that file.
+  - The pay is +300 XP, a counter, three new city stamps and a ledger line.
+  - The XP is capped at six events a day, on the record the Debt keeps its own daily cap in. After
+    that an event still counts and stamps but pays nothing.
+  - No Scrip, Wakelight or $CAPITAL. A failed event pays nobody.
+- **The wire** gains `Msg.CityEvent` (20, JSON), sent only by city rooms. The protocol version is
+  unchanged, and an older client ignores the message. A late joiner is told at the door.
+- **The client** shows:
+  - a banner, and the objective line (progress, clock, metres);
+  - the contract beam and map spots, and the cell in its own body;
+  - a closing card that says what this file was paid, or that it was not there.
+- **The dev host** gets `POST /city/<district>/event` to start one now; the Workers have no such
+  route.
+- **The arrival grace.** Found by the new probe check. A file walking through LEASE ROW's east
+  gate arrives at the docks' WEST GATE, which a wasp patrol flies through. The room had placed it,
+  and while its page loaded the patrol wore it down. It stood on an ordinary spawn by the time it
+  could look.
+  - A room can now ask for an arrival grace (`arrivalGrace`), and the city does. From the join
+    until the file's first input reaches the room, at most 30 s, the file is in
+    `World.arriving`: the AI does not see it and nothing hurts it.
+  - It cannot move or shoot either, so the grace buys only the load.
+  - Match rooms do not ask for it and are unchanged.
+
+**Verified.**
+- `tests/cityevents.test.ts` (24 tests), which the agent checked with 19 mutations, each caught:
+  - scheduler determinism, and each kind's complete and fail paths;
+  - pay: the file in the ring is paid, the one across the district and a late joiner are not,
+    nothing is paid twice, and a seat now held by another file is not paid;
+  - the protocol round trip, and match and contract rooms never sending the message;
+  - `server/room.ts` and `server/worker.ts` never reach `shared/city/`, and the events code never
+    reaches campaign, economy or chain.
+- `tests/arrivalgrace.test.ts` (4 tests):
+  - a loading file stood under a wasp for 90 ticks is never its target and takes no damage;
+  - one input later it does;
+  - the grace runs out after 30 s;
+  - a match room hurts a file the moment it is placed;
+  - a file that leaves while loading leaves nothing behind.
+  Removing the AI skip fails one test, and removing the damage skip fails one test.
+- probe:world, a new check:
+  - The dev host starts a HOLD in LEASE ROW, and ALPHA, BRAVO and a late CHARLIE all hear the
+    same event.
+  - The objective reads "◈ PUBLIC EVENT · HOLD THE LATTICE POST AT D".
+  - ALPHA runs into the ring and is counted (progress > 0, `you`); BRAVO and CHARLIE are not.
+  - The room's /stats names one participant.
+  Completion and pay are left to the unit tests: a bot that cannot shoot back does not last a
+  40 s hold.
+- **probe:world's gate checks, from Stage 697, were tightened** while chasing the arrival.
+  - **The liar check proved nothing about the room.** It put its lie on the page's URL and never
+    in the socket's query, so the room never saw a lie. The client refused it on its own, and the
+    check passed.
+  - **The liar now lies in the socket**, at a gate whose arrival point is 33 m from every spawn.
+    With the room's "leads back to `from`" guard removed (the mutation), the liar stood at the
+    gate and the check failed.
+  - **The arrival check** takes the gate nearest BRAVO (a short walk, not a crossing of a hostile
+    district), counts samples only before the file's first death in the room, and holds the
+    arrival to 0.5 m (was 1.5). The arrival is exact, and every district has a spawn 2 m from some
+    gate's arrival.
+- `tests/cityroom.test.ts`: the PvE test's two players now send one input each before the damage
+  checks, so the grace is not what it measures. Its assertions are unchanged.
+- probe:world 7/7, campaign 61/61, ship 21/21, net 28/28, mobile 40/40, cityLife 21/21, frame
+  8/8.
+- The economy, progression, campaign and fairness lints are unchanged (89 recorded, 0 new).
+- 1647 unit tests pass.
+
+**Open.**
+- A hold against five wasps is a real fight for one player; the balance is not play-tested.
+- The frame has not been measured during an escort.
+- The import walker used by every import-restriction test does not follow a bare `import "x"`.
+- Guests take part but are never paid.
+- A Worker city's schedule restarts if its Durable Object is evicted.
+
 ## Stage 698 — A player whose page froze was kicked for catching up
 
 **The failure.** While root-causing probe:net (Stage 695), about half of the instrumented runs

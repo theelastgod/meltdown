@@ -9,7 +9,7 @@ import {
   type NetInput,
   type RemotePlayerQ,
   type Snapshot,
-  type FileMsg, type SocialMsg, type MissionMsg, type RunMsg, encodeChoice, encodeTerminal, type TerminalMsg,
+  type FileMsg, type SocialMsg, type MissionMsg, type RunMsg, type CityEventMsg, encodeChoice, encodeTerminal, type TerminalMsg,
 } from "@shared/net/protocol";
 import { joinDelay, joinGiveUpMs } from "@shared/net/rejoin";
 import type { Transport } from "./transport";
@@ -77,6 +77,8 @@ export class NetClient {
   onSocial: ((m: SocialMsg) => void) | null = null;
   onMission: ((m: MissionMsg) => void) | null = null;
   onRun: ((m: RunMsg) => void) | null = null;
+  /** the city's public event (Stage 699): only a city room sends it */
+  onCityEvent: ((m: CityEventMsg) => void) | null = null;
 
   constructor(private transport: Transport, private name: string, token = "", private account = "", private loadout = "", private identity = "", private secret = "") {
     this.token = token;
@@ -218,6 +220,9 @@ export class NetClient {
         break;
       case "run":
         this.onRun?.(msg.run);
+        break;
+      case "cityEvent":
+        this.onCityEvent?.(msg.cityEvent);
         break;
       case "welcome":
         // the room says hello again when it thinks the first one was lost (Stage 155); a client

@@ -184,7 +184,17 @@ export interface RoomOptions {
   private?: boolean;
   /** whether players can hurt each other (default true); the city (Stage 692) is PvE */
   pvp?: boolean;
+  /**
+   * The arrival grace (Stage 699): from its join until its first input reaches the room (at most
+   * ARRIVAL_GRACE_TICKS), a file is not on the street: the AI does not see it and nothing hurts it.
+   * A page takes seconds to load after the room has placed it, and a city room places arrivals where
+   * the patrols fly (the docks' WEST GATE is on a wasp route). Off by default; the city asks for it.
+   */
+  arrivalGrace?: boolean;
 }
+
+/** the longest a file can stay off the street without sending an input: 30 s, a slow phone's load */
+export const ARRIVAL_GRACE_TICKS = 30 * SIM_HZ;
 
 export interface RoomStats {
   tick: number;
@@ -255,6 +265,8 @@ export class Room {
    */
   private bases = new Map<string, Account>();
   private byConn = new Map<Conn, ClientRec>();
+  /** the tick each file still off the street joined at (the arrival grace, Stage 699) */
+  private arrivingSince = new Map<number, number>();
   /** each socket's own query, as its host passed it to `onOpen` (Stage 697) */
   private socketQuery = new WeakMap<Conn, URLSearchParams>();
   private history = new Map<number, Map<number, RewindPose>>();
@@ -312,6 +324,7 @@ export class Room {
       private: opts.private ?? false,
       run: opts.run ?? false,
       pvp: opts.pvp ?? true,
+      arrivalGrace: opts.arrivalGrace ?? false,
       wakePhase: opts.wakePhase ?? "warmup",
       dummyRespawn: opts.dummyRespawn ?? true,
     };
@@ -675,6 +688,10 @@ export class Room {
     let c2 = 0;
     for (const p of this.world.players.values()) p.team === 1 ? c1++ : p.team === 2 ? c2++ : 0;
     const player = this.world.addPlayer(playerId, safeName, c1 <= c2 ? 1 : 2, v.loadout);
+    if (this.opts.arrivalGrace) {
+      this.world.arriving.add(playerId);
+      this.arrivingSince.set(playerId, this.tick);
+    }
     // an Audit's sheet mutator is the same for every file in the room (the client applies it too, from the Welcome)
     if (this.opts.audit && Object.keys(this.opts.audit.def.sheet).length) this.world.setLoadout(player, v.loadout, this.opts.audit.def.sheet);
     const rec: ClientRec = {
@@ -744,6 +761,19 @@ export class Room {
 
   playerIds(): number[] {
     return [...this.clients.keys()];
+  }
+
+  /**
+   * A hook changed a file outside a settlement (the city's public events, Stage 699): save it, let
+   * any stamp its counters now meet un-redact, and tell the client its file with the lines to print.
+   * A client without a file has nothing to be told.
+   */
+  pushFile(playerId: number, lines: string[]): void {
+    const rec = this.clients.get(playerId);
+    if (!rec?.account) return;
+    const note = rec.progress.fileMilestones({ stamps: [], ranks: [], challenges: [] });
+    this.saveAccount(rec.account, (err) => this.opts.onLog(`file save failed for ${rec.account?.id}: ${String(err)}`));
+    rec.conn?.send(encodeFile(this.fileMsg(rec, [...lines, ...note.stamps.map((id) => `STAMP · ${stampLine(id)}`)], "stamp", note)));
   }
 
   saveAccount(a: Account, onError: (err: unknown) => void = () => {}): void {
@@ -1104,6 +1134,13 @@ export class Room {
       const list = rec.queue.splice(0, allowed);
       inputs.set(rec.playerId, list);
       applied.set(rec.playerId, list);
+    }
+    // on the street from the first input it sends, or once the grace runs out (Stage 699)
+    for (const [id, since] of this.arrivingSince) {
+      if (applied.has(id) || this.tick - since >= ARRIVAL_GRACE_TICKS || !this.world.players.has(id)) {
+        this.world.arriving.delete(id);
+        this.arrivingSince.delete(id);
+      }
     }
     const wasAlive = new Map<number, boolean>();
     for (const p of this.world.players.values()) wasAlive.set(p.id, p.alive);

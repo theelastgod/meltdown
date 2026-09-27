@@ -102,6 +102,40 @@ async function main(): Promise<void> {
     const afterJ = await a.evaluate(() => ({ open: window.__game.campaign().contractsOpen, hint: (document.querySelector("#hud .contracts .hd .x") as HTMLElement | null)?.textContent ?? "" }));
     check("the contracts desk opens on J, and crouching (C) no longer opens it", !afterC && afterJ.open && /\[J\]/.test(afterJ.hint), `after C: open ${afterC} · after J: open ${afterJ.open} · close hint "${afterJ.hint}"`);
 
+    // ---------------- a public event: the whole street hears it, and the room knows who is in it ----------------
+    // (Stage 699) The dev host starts LEASE ROW's next event now, a HOLD. Both files are told; ALPHA
+    // runs into the ring and the room counts it in; BRAVO, across the district, is not. A third file
+    // walking in mid-event is told at the door. Completion and pay are the unit tests' (a bot that
+    // cannot shoot back does not last a 40 s hold against the wasps).
+    await fetch(`${HOST}/city/lease_row/event`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "hold" }) });
+    const heard = async (pg: Page) => {
+      await pg.waitForFunction(() => window.__game.campaign().cityEvent?.event?.status === "running", null, { timeout: 20000, polling: 100 }).catch(() => undefined);
+      return await pg.evaluate(() => ({ ev: window.__game.campaign().cityEvent, title: (document.querySelector("#hud .mtitle") as HTMLElement | null)?.textContent ?? "" }));
+    };
+    const [ha, hb] = [await heard(a), await heard(b)];
+    const ev = ha.ev?.event;
+    if (ev) {
+      const pa = await a.evaluate(() => window.__game.state().pos);
+      await a.evaluate((plan) => window.__game.setBot(plan), [...sprintRoute(buildNav(levelById("lease_row")), pa, { x: ev.x, z: ev.z }, 1.5), { kind: "hold", ticks: 9000 }] as BotStep[]);
+      await a.waitForFunction(() => (window.__game.campaign().cityEvent?.event?.progress ?? 0) > 0 && window.__game.campaign().cityEvent?.you === true, null, { timeout: 30000, polling: 100 }).catch(() => undefined);
+    }
+    const inRing = await a.evaluate(() => ({ progress: window.__game.campaign().cityEvent?.event?.progress ?? 0, you: window.__game.campaign().cityEvent?.you ?? false }));
+    const bYou = await b.evaluate(() => window.__game.campaign().cityEvent?.you ?? null);
+    const late = await newPage("charlie");
+    await late.goto(cityUrl("city-charlie", "CHARLIE"), { waitUntil: "domcontentloaded", timeout: 120000 });
+    await late.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined", null, { timeout: 90000, polling: 100 }).catch(() => undefined);
+    const hc = await heard(late);
+    const stE = (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { city?: { event: { id: number; participants: number } | null } }> };
+    const roomEv = stE.rooms["city:lease_row"]?.city?.event;
+    check(
+      "a public event in the city: every file in the district is told (a late one at the door), the objective names it, and the room counts in the file in the ring and not the one across the street",
+      !!ev && ev.kind === "hold" && hb.ev?.event?.id === ev.id && hc.ev?.event?.id === ev.id && /PUBLIC EVENT/.test(ha.title) && inRing.progress > 0 && inRing.you === true && bYou === false && hc.ev?.you === false && !!roomEv && roomEv.id === ev.id && roomEv.participants >= 1,
+      `event ${ev?.id} ${ev?.kind} "${ev?.title}" at (${ev?.x.toFixed(1)}, ${ev?.z.toFixed(1)}) · objective "${ha.title.replace(/\s+/g, " ").slice(0, 70)}" · BRAVO hears ${hb.ev?.event?.id} · CHARLIE (late) hears ${hc.ev?.event?.id} · ALPHA progress ${inRing.progress.toFixed(1)} you ${inRing.you} · BRAVO you ${bYou} · CHARLIE you ${hc.ev?.you} · room ${JSON.stringify(roomEv && { id: roomEv.id, participants: roomEv.participants })}`,
+    );
+    await shot(a, `${OUT}/city-event.png`);
+    await late.close();
+    await a.evaluate(() => window.__game.setBot(null));
+
     // ---------------- a contract taken in the city knows the way back ----------------
     const nav = a.waitForURL(/mission=/, { timeout: 20000, waitUntil: "commit" }).then(() => true, () => false);
     // the desk reads the file the ledger host keeps, house and all
@@ -117,15 +151,18 @@ async function main(): Promise<void> {
       left && q.get("mission") === "m1_wake_unlisted" && !q.has("net") && !q.has("city") && q.get("back") === "lease_row" && !!bq && bq.get("city") === "1" && !bq.has("back") && !bq.has("mission") && new URL(bq.get("net") ?? "http://x").pathname === `/campaign/${cityRoomName("lease_row")}`,
       `left ${left} · mission ${q.get("mission")} net ${q.get("net")} back ${q.get("back")} · way back ${back}`,
     );
-    // ---------------- the districts are joined: BRAVO walks through LEASE ROW's east gate ----------------
-    // (Stage 697) Gate 3 is the east gate on the south avenue. BRAVO sprints to a point inside it, then
-    // into its mouth, and stands there: the HUD names the neighbour, and a second later the page goes.
+    // ---------------- the districts are joined: BRAVO walks through the nearest of LEASE ROW's gates ----------------
+    // (Stage 697) Whichever gate is nearest BRAVO (spawns sit by the gates): BRAVO sprints to a point
+    // inside it, then into its mouth, and stands there. The HUD names the neighbour, and a second later
+    // the page goes. The nearest gate keeps the walk short: a bot that cannot shoot back does not cross
+    // a hostile district reliably, and the trip is the same trip from any gate.
     const lease = levelById("lease_row");
-    const EAST = 3;
-    const to = neighbourAt("lease_row", EAST)!;
-    const inside = gateArrival(lease, EAST)!.pos;
-    const mouth = lease.exits![EAST]!;
     const pb = await b.evaluate(() => window.__game.state().pos);
+    let EXIT = 0;
+    for (let g = 1; g < lease.exits!.length; g++) if (Math.hypot(lease.exits![g]!.x - pb.x, lease.exits![g]!.z - pb.z) < Math.hypot(lease.exits![EXIT]!.x - pb.x, lease.exits![EXIT]!.z - pb.z)) EXIT = g;
+    const to = neighbourAt("lease_row", EXIT)!;
+    const inside = gateArrival(lease, EXIT)!.pos;
+    const mouth = lease.exits![EXIT]!;
     const walk: BotStep[] = [...sprintRoute(buildNav(lease), pb, inside, 1.4), { kind: "goto", x: mouth.x, z: mouth.z, sprint: false, radius: 0.3, timeoutTicks: 400, stop: true }, { kind: "hold", ticks: 9000 }];
     const crossed = b.waitForURL((u) => new URL(u).searchParams.get("level") === to.district, { timeout: 60000, waitUntil: "commit" }).then(() => true, () => false);
     await b.evaluate((plan) => window.__game.setBot(plan), walk);
@@ -140,47 +177,68 @@ async function main(): Promise<void> {
     }
     const went = await crossed;
     const bu = new URL(b.url()).searchParams;
-    await b.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 90000, polling: 100 }).catch(() => undefined);
-    await b.evaluate(() => window.__game.setRealtime(true)).catch(() => undefined);
-    // Where the file stands for its first second in the docks, while it is alive. The city has no
-    // spawn protection (a spawn has none either), and a file standing still under a patrol at the
-    // gate is worn down and respawns: a sample after that says where the room respawned it, not where
-    // the gate put it. Every live sample must be at the gate, and there must be some.
-    const docks = levelById(to.district);
-    const want = gateArrival(docks, to.gate)!.pos;
-    let landed: { mode: string } | null = null;
-    let off = 0;
-    let live = 0;
-    for (let i = 0; i < 10; i++) {
-      const at = await b.evaluate(() => ({ pos: window.__game.state().pos, health: window.__game.state().health, mode: window.__game.campaign().mode })).catch(() => null);
-      if (at) landed = at;
-      if (at && at.health > 0) {
-        live++;
-        off = Math.max(off, Math.hypot(at.pos.x - want.x, at.pos.z - want.z));
+    const there = levelById(to.district);
+    /**
+     * Where a file stands in its first second in a room, before it has died there. The city has no
+     * spawn protection past the arrival grace (Stage 699), and a file standing still under a patrol
+     * is worn down and respawns: a sample after its first death says where the room respawned it,
+     * not where it was put. Samples count only while the file's death count in the room is 0, and
+     * there must be some.
+     */
+    const placed = async (pg: Page, want: { x: number; z: number }): Promise<{ off: number; live: number; mode: string }> => {
+      await pg.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 90000, polling: 100 }).catch(() => undefined);
+      await pg.evaluate(() => window.__game.setRealtime(true)).catch(() => undefined);
+      let off = 0;
+      let live = 0;
+      let mode = "";
+      for (let i = 0; i < 10; i++) {
+        const at = await pg.evaluate(() => ({ pos: window.__game.state().pos, health: window.__game.state().health, deaths: window.__game.state().stats.deaths, mode: window.__game.campaign().mode })).catch(() => null);
+        if (at) mode = at.mode;
+        if (at && at.health > 0 && at.deaths === 0) {
+          live++;
+          off = Math.max(off, Math.hypot(at.pos.x - want.x, at.pos.z - want.z));
+        }
+        await pg.waitForTimeout(100);
       }
-      await b.waitForTimeout(100);
-    }
-    if (live === 0) off = Infinity;
+      return { off: live ? off : Infinity, live, mode };
+    };
+    const want = gateArrival(there, to.gate)!.pos;
+    const land = await placed(b, want);
     const st2 = (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { city?: { players: number } }> };
+    // the arrival is exact; every district has a spawn 2 m from some gate's arrival, so the tolerance is well under that
     check(
-      "the districts are joined: walking into LEASE ROW's east gate names DEADLETTER DOCKS, and standing in it walks the file into the docks' city at the gate that leads back",
-      went && [...lines].some((l) => l.includes(`→ ${docks.displayName}`)) && [...lines].some((l) => /CROSSING/.test(l)) && bu.get("city") === "1" && bu.get("from") === "lease_row" && bu.get("gate") === String(to.gate) && landed?.mode === "city" && live >= 3 && off < 1.5 && (st2.rooms[`city:${to.district}`]?.city?.players ?? 0) >= 1,
-      `lines [${[...lines].join(" | ")}] · went ${went} → level ${bu.get("level")} from ${bu.get("from")} gate ${bu.get("gate")} · mode ${landed?.mode} · at most ${off.toFixed(2)} m from the arrival point over ${live} live samples in its first second · docks room ${JSON.stringify(st2.rooms[`city:${to.district}`]?.city)}`,
+      "the districts are joined: walking into a LEASE ROW gate names the district it leads to, and standing in it walks the file into that city at the gate that leads back",
+      went && [...lines].some((l) => l.includes(`→ ${there.displayName}`)) && [...lines].some((l) => /CROSSING/.test(l)) && bu.get("city") === "1" && bu.get("from") === "lease_row" && bu.get("gate") === String(to.gate) && land.mode === "city" && land.live >= 3 && land.off < 0.5 && (st2.rooms[`city:${to.district}`]?.city?.players ?? 0) >= 1,
+      `gate ${EXIT} → ${to.district} gate ${to.gate} · lines [${[...lines].join(" | ")}] · went ${went} → level ${bu.get("level")} from ${bu.get("from")} gate ${bu.get("gate")} · mode ${land.mode} · at most ${land.off.toFixed(2)} m from the arrival point over ${land.live} live samples in its first second · room ${JSON.stringify(st2.rooms[`city:${to.district}`]?.city && { players: st2.rooms[`city:${to.district}`]!.city!.players })}`,
     );
     await shot(b, `${OUT}/city-gate-arrival.png`);
 
-    // ---------------- a page that lies about where it came from is placed like anyone else ----------------
-    // gate 5 of the docks leads to REPO DEPOT, not LEASE ROW: the room ignores the hint and spawns the file
+    // ---------------- a socket that lies about where it came from is placed like anyone else ----------------
+    // The lie goes where a real one would, in the socket's query (and the page's). The docks' gate it
+    // names leads to REPO DEPOT, not LEASE ROW, and its arrival is far from every spawn, so "at the gate"
+    // and "at a spawn" cannot be mistaken for each other.
+    const docks = levelById("deadletter_docks");
+    let LIE = 0;
+    for (let g = 0; g < docks.exits!.length; g++) {
+      const a = gateArrival(docks, g)!.pos;
+      if (neighbourAt("deadletter_docks", g)?.district !== "lease_row" && Math.min(...docks.spawns.map((sp) => Math.hypot(sp.pos.x - a.x, sp.pos.z - a.z))) > 10) {
+        LIE = g;
+        break;
+      }
+    }
     const liar = await newPage("liar");
-    await liar.goto(`${cityPageUrl(`http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=0&account=city-liar&secret=${SECRET}&name=LIAR`, { wsBase: `ws://127.0.0.1:${HOST_PORT}`, level: to.district, shop: HOST })}&from=lease_row&gate=5`, { waitUntil: "domcontentloaded", timeout: 120000 });
-    await liar.waitForFunction(() => window.__game?.ready === true && window.__game.net()?.status === "joined" && window.__game.net()?.synced === true, null, { timeout: 90000, polling: 100 }).catch(() => undefined);
-    await liar.evaluate(() => window.__game.setRealtime(true)).catch(() => undefined);
-    await liar.waitForTimeout(600);
+    const liarUrl = cityPageUrl(`http://127.0.0.1:${VITE_PORT}/?headless=1&crawl=0&account=city-liar&secret=${SECRET}&name=LIAR`, { wsBase: `ws://127.0.0.1:${HOST_PORT}`, level: "deadletter_docks", shop: HOST, arrive: { from: "lease_row", gate: LIE } });
+    await liar.goto(liarUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
+    const lie = gateArrival(docks, LIE)!.pos;
+    const lied = await placed(liar, lie);
     const lp = await liar.evaluate(() => window.__game.state().pos).catch(() => ({ x: NaN, z: NaN }));
-    const lie = gateArrival(docks, 5)!.pos;
-    const fromLie = Math.hypot(lp.x - lie.x, lp.z - lie.z);
     const nearSpawn = Math.min(...docks.spawns.map((sp) => Math.hypot(lp.x - sp.pos.x, lp.z - sp.pos.z)));
-    check("a page that names a gate that does not lead where it says is placed at an ordinary spawn, not at the gate", fromLie > 3 && nearSpawn < 1.5, `${fromLie.toFixed(1)} m from gate 5's arrival · ${nearSpawn.toFixed(2)} m from the nearest spawn`);
+    const sock = new URL(new URL(liarUrl).searchParams.get("net")!).searchParams;
+    check(
+      "a socket that names a gate that does not lead where it says is placed at an ordinary spawn, not at the gate",
+      sock.get("from") === "lease_row" && sock.get("gate") === String(LIE) && lied.live >= 3 && lied.off > 10 && nearSpawn < 0.5,
+      `socket from ${sock.get("from")} gate ${sock.get("gate")} (leads to ${neighbourAt("deadletter_docks", LIE)?.district}) · ${lied.live} live samples, nearest ${lied.off === Infinity ? "∞" : lied.off.toFixed(1)} m from the gate's arrival · ${nearSpawn.toFixed(2)} m from the nearest spawn`,
+    );
     await liar.close();
 
     check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");

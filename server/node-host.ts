@@ -9,6 +9,7 @@
  *   WS   /room/<name>[?lagcomp=0&ai=0&warmup=<s>&round=<s>&level=<id>&mode=run]
  *   WS   /campaign/<name>?mission=<id>   → a co-op contract (the mission runtime on the server)
  *   WS   /campaign/city-<district>        → the district's city: the campaign's shared open world (Stage 692)
+ *   POST /city/<district>/event          → { kind? } start that city's next public event now (dev only; Stage 699)
  *   POST /file/<id>/campaign → { op: faction | complete | wear | state }
  *   POST /chain              → JSON-RPC to the in-process devnet (a real EVM; the contracts are deployed at boot)
  *   GET  /counter            → chain id, contract addresses, the market's listings, treasury figures
@@ -610,6 +611,24 @@ const http = createServer((req, res) => {
       });
       return;
     }
+  }
+  const cityEvent = req.method === "POST" ? req.url?.match(/^\/city\/([a-z_]{1,32})\/event$/) : null;
+  if (cityEvent) {
+    // the dev host's button (Stage 699), like /chain/faucet: bring a city's next public event
+    // forward to the next tick, optionally of one kind, so a probe need not wait out the quiet.
+    // The Worker has no such route; the schedule is the only way an event starts there.
+    void readBody(req).then((body) => {
+      const city = cityOf(`city-${cityEvent[1]}`);
+      res.setHeader("content-type", "application/json");
+      if (!city) {
+        res.end(JSON.stringify({ ok: false, reason: "no such city" }));
+        return;
+      }
+      const kind = body.kind === "hold" || body.kind === "intercept" || body.kind === "escort" ? body.kind : null;
+      getCityRoom(city).startEvent(kind);
+      res.end(JSON.stringify({ ok: true, city, kind }));
+    });
+    return;
   }
   if (req.url?.startsWith("/stats")) {
     const out: Record<string, unknown> = {};

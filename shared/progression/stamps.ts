@@ -21,7 +21,8 @@ export type StampCounter =
   | "fragKills" | "fragDoubles" | "stickyKills" | "proximityKills" | "empKills"
   | "depth" | "nodesOwned" | "attested" | "keystones" | "chips" | "firmwares" | "crafts" | "ring2" | "ring3"
   | "wins" | "fullWakeWins" | "noDeathRounds" | "matchKillsAny" | "topScores" | "matches"
-  | "rejoins" | "districts" | "kills";
+  | "rejoins" | "districts" | "kills"
+  | "cityEvents";
 
 export interface StampDef {
   id: string;
@@ -117,6 +118,10 @@ export const STAMPS: StampDef[] = [
   // the city
   st("first_rejoin", "city", "rejoins", 1, "CAME BACK FROM A DROPPED LINK"),
   st("districts_3", "city", "districts", 3, "ALL THREE DISTRICTS WALKED"),
+  // public events in the city (Stage 699): taken part in, with whoever else was on the street
+  st("city_event_1", "city", "cityEvents", 1, "A PUBLIC EVENT, WITH STRANGERS"),
+  st("city_events_10", "city", "cityEvents", 10, "TEN PUBLIC EVENTS"),
+  st("city_events_50", "city", "cityEvents", 50, "FIFTY PUBLIC EVENTS"),
 ];
 
 export const stampById = (id: string): StampDef | undefined => STAMPS.find((s) => s.id === id);

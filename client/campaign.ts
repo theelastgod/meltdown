@@ -19,7 +19,8 @@ import { campaignOf, canLaunch, completeContract, gigsOnOffer, nextMission, pick
 import { createMission, drainMissionEvents, missionView, resolveDialogue, resolveSpot, spawnThreat, stepMission, type MissionState } from "@shared/campaign/runtime";
 import { sandboxAccount, type Account } from "@shared/progression/account";
 import type { SimEvent } from "@shared/sim/world";
-import type { MissionMsg } from "@shared/net/protocol";
+import type { CityEventMsg, MissionMsg } from "@shared/net/protocol";
+import { eventBanner, eventCard, eventMarker, eventObjective } from "./cityevent";
 import { HUB_LEVEL_ID } from "@shared/sim/hub";
 import { levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
@@ -96,6 +97,11 @@ export class Campaign {
   /** every choice the host was seen to take, in order */
   readonly mirrorLog: string[] = [];
   private lastPick: string | null = null;
+  /** the city's public event as the room last told it (Stage 699) */
+  cityEvent: CityEventMsg | null = null;
+  /** the last event whose start was announced, and the last whose end card was shown */
+  private cityEventAnnounced = 0;
+  private cityEventClosed = 0;
 
   constructor(private game: Game) {
     const q = new URLSearchParams(location.search);
@@ -159,8 +165,10 @@ export class Campaign {
     // its room may not be up yet when this runs; the desk opens anywhere, and a contract comes back here
     if (inCity(new URLSearchParams(location.search))) {
       this.mode = "city";
-      this.game.hud.setObjective(`◈ THE CITY · ${levelDisplayName(this.game.levelId)}`, "[J] CONTRACTS · NO ONE HERE CAN HURT YOU BUT VANTAGE", null);
+      this.cityObjective();
       this.note(`THE CITY · ${levelDisplayName(this.game.levelId)} · EVERYONE ONLINE WALKS THESE STREETS · [J] CONTRACTS`);
+      // the room may have told us about its public event before the file came back
+      if (this.cityEvent) this.onCityEventMsg(this.cityEvent);
       return;
     }
     if (this.game.online) {
@@ -495,6 +503,54 @@ export class Campaign {
     }
   }
 
+  // ---- the city's public events (Stage 699) ----
+
+  private cityObjective(): void {
+    this.game.hud.setObjective(`◈ THE CITY · ${levelDisplayName(this.game.levelId)}`, "[J] CONTRACTS · NO ONE HERE CAN HURT YOU BUT VANTAGE", null);
+  }
+
+  /**
+   * The room's word on its public event: a banner when one starts, the objective line, the beam and
+   * the map while it runs (the cell walked in its own body), a card when it ends. Everything drawn is
+   * something the HUD and the contract markers already draw.
+   */
+  onCityEventMsg(m: CityEventMsg): void {
+    this.cityEvent = m;
+    if (this.mode !== "city") return;
+    const ev = m.event;
+    const hud = this.game.hud;
+    const fx = this.game.renderer.campaignFx;
+    if (!ev || ev.status !== "running") {
+      fx.setMarker(null);
+      fx.setEscort(null);
+      fx.setTargets([]);
+      hud.setRadarSpots([]);
+      this.cityObjective();
+      const card = eventCard(m);
+      if (ev && card && ev.id !== this.cityEventClosed) {
+        this.cityEventClosed = ev.id;
+        hud.card(card.title, card.lines, card.color, 7);
+        this.note(`${card.title} · ${card.lines.slice(1).join(" · ")}`);
+        if (ev.status === "complete") this.game.audio.sign();
+        else this.game.audio.debtOwed();
+      }
+      return;
+    }
+    if (ev.id !== this.cityEventAnnounced) {
+      this.cityEventAnnounced = ev.id;
+      hud.alert(eventBanner(ev), true, 5);
+      this.note(`PUBLIC EVENT · ${ev.title} · ${ev.text}`);
+      this.game.audio.pa();
+    }
+    const me = this.game.player;
+    const o = eventObjective(ev, me ? { x: me.pos.x, z: me.pos.z } : null);
+    hud.setObjective(o.title, o.text, o.progress);
+    const marker = eventMarker(ev);
+    fx.setMarker(ev.kind === "escort" ? null : marker);
+    fx.setEscort(ev.escort ? { x: ev.escort.x, z: ev.escort.z, heading: ev.escort.heading, waiting: ev.escort.waiting, who: "cell" } : null);
+    hud.setRadarSpots([{ kind: "goal" as const, x: marker.x, z: marker.z }, ...(ev.escort ? [{ kind: "escort" as const, x: ev.escort.x, z: ev.escort.z }] : []), ...ev.targets.map((t) => ({ kind: "target" as const, x: t.x, z: t.z }))]);
+  }
+
   // ---- contracts panel (the Deadletter Office desk, reachable anywhere) ----
 
   toggleContracts(on = !this.contractsOpen): void {
@@ -705,6 +761,8 @@ export class Campaign {
       backToCity: this.backToCity(),
       /** the city's gates (Stage 697): the line the HUD shows, the hold, and where a gate sent this page */
       gate: { line: this.game.hud.gateText, hold: this.gateHold ? { ...this.gateHold } : null, target: this.gateTarget },
+      /** the city's public event as this client knows it (Stage 699) */
+      cityEvent: this.cityEvent,
       terminalMirror: this.mirror,
       mirrorLog: this.mirrorLog.slice(),
       log: this.log.slice(-8),

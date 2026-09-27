@@ -10,7 +10,8 @@ import { Room, MAX_PLAYER_ID, type Conn } from "../server/room";
 import { createCityRoom, CITY_MAX_PLAYERS } from "../server/city-room";
 import { MemoryAccountStore } from "../server/accounts";
 import { createAccount } from "../shared/progression/account";
-import { decodeServerMessage, encodeJoin } from "../shared/net/protocol";
+import { decodeServerMessage, encodeInputs, encodeJoin } from "../shared/net/protocol";
+import { Btn } from "../shared/sim/input";
 import { CITY_DISTRICTS, cityDistrict, cityOf, cityPageUrl, cityRoomName, citySocket, inCity } from "../shared/net/city";
 
 const LOADOUT = JSON.stringify({ primary: "lease_breaker", secondary: "shock_baton", attested: [] });
@@ -34,8 +35,12 @@ describe("the city is PvE", () => {
     h.room.onMessage(a.c, encodeJoin("ALPHA", "", "city-a", LOADOUT));
     h.room.onOpen(b.c);
     h.room.onMessage(b.c, encodeJoin("BRAVO", "", "city-b", LOADOUT));
+    // both on the street: a file still loading is covered by the arrival grace (Stage 699), which is
+    // not what this test is about; one input each ends it
+    for (const [k, seq] of [[a, 1], [b, 1]] as const) h.room.onMessage(k.c, encodeInputs([{ seq, tick: h.room.tick, viewTick: h.room.tick, viewFrac: 0, buttons: Btn.Forward, yaw: 0, pitch: 0, px: 0, py: 0, pz: 0 }], 0));
     for (let t = 0; t < 3; t++) h.room.step();
     const [ia, ib] = [idOf(a.msgs), idOf(b.msgs)];
+    expect(h.room.world.arriving.size).toBe(0);
     const pb = h.room.world.players.get(ib)!;
     const before = pb.health + pb.shield;
     h.room.world.applyDamage("player", ib, 40, ia, "lease_breaker", "shot");

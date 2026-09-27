@@ -60,6 +60,12 @@ export const Msg = {
   Choice: 4,
   /** Campaign co-op: where the host's terminal is, so a crew reads the same screen (JSON; Stage 52). */
   Terminal: 19,
+  /**
+   * room → client: the city's public event (Stage 699, JSON). Only a city room sends it. A new kind
+   * of message rather than a new shape of an old one, so no encoder the version guards changed: an
+   * older client that meets it decodes nothing and goes on (`decodeServerMessage` returns null).
+   */
+  CityEvent: 20,
 } as const;
 
 /** Co-op mission traffic (the campaign room only; the PvP room never sends this). */
@@ -70,6 +76,38 @@ export interface MissionMsg {
   hostId: number;
   /** contract completion applied to every file (rewards) */
   settled?: { id: string; ok: boolean; reason?: string }[];
+}
+
+/**
+ * The city's public event as one client hears it (Stage 699): the event running, or the one that just
+ * ended (its status says which), or null when the streets are quiet; when the next one is due; and
+ * this client's own part in it. The view is the room's (`shared/city/events.ts` `CityEventView`),
+ * carried as data so the wire does not import the city.
+ */
+export interface CityEventMsg {
+  event: {
+    id: number;
+    kind: string;
+    title: string;
+    text: string;
+    status: "running" | "complete" | "failed";
+    reason: string;
+    x: number;
+    z: number;
+    radius: number;
+    progress: number;
+    need: number;
+    left: number;
+    escort: { x: number; z: number; waiting: boolean; heading: number } | null;
+    targets: { x: number; y: number; z: number }[];
+    participants: number;
+  } | null;
+  /** seconds until the next event is due, or -1 while one runs */
+  next: number;
+  /** this client is on the event's list of who took part */
+  you: boolean;
+  /** on the message that closes an event this client's file was credited for: what it was paid */
+  reward?: string[];
 }
 
 /** One file as the dossier shows it: identity only (see shared/identity/identity.ts). */
@@ -446,6 +484,13 @@ export function encodeSocial(m: SocialMsg): ArrayBuffer {
   return w.done();
 }
 
+export function encodeCityEvent(m: CityEventMsg): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.CityEvent);
+  w.str(JSON.stringify(m));
+  return w.done();
+}
+
 export function encodeKick(reason: string): ArrayBuffer {
   const w = new W();
   w.u8(Msg.Kick);
@@ -672,7 +717,8 @@ export type ServerMessage =
   | { type: "file"; file: FileMsg }
   | { type: "social"; social: SocialMsg }
   | { type: "mission"; mission: MissionMsg }
-  | { type: "run"; run: RunMsg };
+  | { type: "run"; run: RunMsg }
+  | { type: "cityEvent"; cityEvent: CityEventMsg };
 
 /** Decode a server message. `baselines` resolves the acked snapshot a delta was built on. */
 export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) => Snapshot | null): ServerMessage | null {
@@ -689,6 +735,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     if (t === Msg.Social) return { type: "social", social: JSON.parse(r.str()) as SocialMsg };
     if (t === Msg.Mission) return { type: "mission", mission: JSON.parse(r.str()) as MissionMsg };
     if (t === Msg.Run) return { type: "run", run: JSON.parse(r.str()) as RunMsg };
+    if (t === Msg.CityEvent) return { type: "cityEvent", cityEvent: JSON.parse(r.str()) as CityEventMsg };
     if (t !== Msg.Snapshot) return null;
     const tick = r.u32();
     const baselineTick = r.u32();
