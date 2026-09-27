@@ -56,6 +56,24 @@ describe("a choice changes what a later mission is", () => {
     }
   });
 
+  it("mission 3 pays Marrow's debt to the file that turned the informant in, and to no other (Stage 671)", () => {
+    const spare = build("m3_repo_volatility", "repo_depot", { "m2:informant": "spare" });
+    const turn = build("m3_repo_volatility", "repo_depot", { "m2:informant": "turn" });
+    const holdOf = (b: typeof spare) => b.st.objectives.find((o) => o.kind === "hold") as { seconds: number; waves: number };
+    // the turned file walks to the switchgear first; the spared one goes straight to the plaza
+    expect(turn.kinds[0]).toBe("reach");
+    expect(turn.texts[0]).toMatch(/SWITCHGEAR OPEN AT D/);
+    expect(spare.kinds[0]).toBe("hold");
+    // and then holds the plaza in the dark for half as long, against fewer waves
+    expect(holdOf(turn).seconds * 2).toBe(holdOf(spare).seconds);
+    expect(holdOf(turn).waves).toBeLessThan(holdOf(spare).waves);
+    // both still disable the mech and read the logs, so both reach the same choice
+    for (const b of [spare, turn]) {
+      expect(b.kinds).toContain("kill");
+      expect(b.kinds[b.kinds.length - 1]).toBe("dialogue");
+    }
+  });
+
   it("the harder fight can still be won: the betrayed sweep never asks for more drones than it spawns", () => {
     const turn = build("m4_the_leak", "deadletter_docks", { "m2:informant": "turn" });
     const need = (turn.st.objectives.find((o) => o.kind === "kill") as { count: number }).count;

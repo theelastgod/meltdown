@@ -154,7 +154,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       n("a", "terminal", ["THE DEPOT LOGS DO NOT DESCRIBE CRIME. THEY DESCRIBE VARIANCE.", "EVERY WAKE, EVERY PULLED NODE, DEGRADES THE MODEL'S CONFIDENCE BY A FRACTION OF A PERCENT.", "VANTAGE IS NOT POLICING THE CITY. IT IS STEADYING A FORECAST."], {
         recall: [
           { gate: { all: { "m2:informant": "spare" } }, lines: ["FILE NOTE: THE DOCKS INFORMANT IS STILL BREATHING. HIS ROUTES WENT QUIET THE NIGHT YOU LET HIM RUN."] },
-          { gate: { all: { "m2:informant": "turn" } }, lines: ["FILE NOTE: THE DOCKS INFORMANT'S FILE CLOSED ELEVEN HOURS AFTER YOU HANDED HIM OVER. CAUSE OF CLOSURE: NOT RECORDED."] },
+          { gate: { all: { "m2:informant": "turn" } }, lines: ["FILE NOTE: THE DOCKS INFORMANT'S FILE CLOSED ELEVEN HOURS AFTER YOU HANDED HIM OVER. CAUSE OF CLOSURE: NOT RECORDED.", "FILE NOTE: THE DEPOT SWITCHGEAR WAS OPENED FROM INSIDE. CLOCKEATER HOURS, BILLED TO NO ONE."] },
         ],
         choices: [
           { text: "PUBLISH IT ON EVERY LEASED FEED TONIGHT.", set: { "m3:volatility": "publish" }, next: "publish" },

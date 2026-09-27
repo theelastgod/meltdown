@@ -1641,6 +1641,55 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 671 — Mission 3 was the same for every file
+
+**The defect.** Every mission after the first reads at least one earlier choice,
+except mission 3. VARIANCE played the same way whatever the player had done
+before it: which house they chose, what they did with the lease file, and
+whether they spared the docks informant or handed him to Marrow's people. Its
+terminal remembered the informant (Stage 661), but nothing else did.
+
+**The fix: Marrow's debt.** Mission 3 is Marrow's job, and turning the informant
+in handed him to the Clockeaters. They settle their accounts: for a file that
+turned him in, mission 3 now opens with a walk to D, where *"MARROW'S PEOPLE LEFT
+THE DEPOT SWITCHGEAR OPEN AT D. CUT THE YARD LIGHTS"*. The plaza is then held in
+the dark for 15 s against one wave, instead of 30 s against two. The mech still
+has to be disabled, and the logs' choice is the same.
+
+The two informant choices now each pay off, one mission apart:
+
+| Choice | Pays off in | Costs in |
+| --- | --- | --- |
+| Spared | Mission 4, on his own docks (Stage 663) | — |
+| Turned in | Mission 3, through Marrow | Mission 4 (Stage 663) |
+
+The depot terminal's file note for a turned informant now adds a second line:
+*"THE DEPOT SWITCHGEAR WAS OPENED FROM INSIDE. CLOCKEATER HOURS, BILLED TO NO
+ONE."*
+
+**The guard.** `tests/arcconsequence.test.ts` builds mission 3 on a real World
+through `createMission` for each choice and checks:
+- the turned file's first objective is the walk to the switchgear, and the
+  spared file's is the hold;
+- the turned file's hold is exactly half as long, against fewer waves;
+- both still disable the mech and end on the logs' dialogue.
+
+Pointing the variant's gate at the spared informant fails it.
+
+**Measured this cycle and dropped: a luminous fog colour.** The distant views
+read darker than the clip (arena and skyline 78–80% dark at luma 0.082–0.089,
+against 62% and 0.133). I swept the fog colour's brightness at 1×, 2×, 3×, 4.5×
+and 6× through `probe:look`, restoring the source after each run. Even at 6× the
+skyline moved from luma 0.082 to 0.087 and from 80% to 79% dark, and the frames
+are nearly identical. The buildings in these views are within about 100 m, where
+exp2 fog at 0.0065 does almost nothing, and the black sky that makes the frame
+dark is separate from the fog. The fog colour is not the lever, so it is
+unchanged.
+
+**Verified.** `npm run typecheck` (both configs); 1461 unit tests; lint:campaign
+(7 missions, 12 gigs, 0 errors), lint:progression, lint:economy, lint:assets;
+`npm run build`.
+
 ## Stage 670 — BRAVO's picture was taken a second after it was last seen alive
 
 **The red.** CI run 665 (Stage 667) failed `probe:net` on one artifact:

@@ -99,6 +99,22 @@ export const MISSIONS: readonly MissionDef[] = [
     fixer: "marrow",
     brief: "PULL THE DEPOT'S LOGS. HOLD THE PLAZA WHILE THEY COPY, AND DISABLE THE MECH VANTAGE SENDS TO STOP YOU.",
     objectives: [{ kind: "hold", at: { node: "A" }, radius: 7, seconds: 30, text: "HOLD THE PLAZA WHILE THE LOGS COPY", waves: 2 }, { kind: "kill", target: "mech", count: 1, text: "DISABLE THE REPO MECH" }, D("m3_volatility", "THE LOGS")],
+    // Marrow's debt (Stage 671). Hand the docks informant to the Clockeaters in mission 2 and this is
+    // their job: the Clockeaters settle their accounts, and they leave the depot's switchgear open.
+    // Cut the yard lights first and the logs copy in the dark — a walk before the fight, and half the
+    // hold. The spared informant pays you back on his own docks in mission 4; this is the other
+    // choice's payment, one mission sooner. Before this stage mission 3 was the same for every file.
+    variants: [
+      {
+        gate: { all: { "m2:informant": "turn" } },
+        objectives: [
+          reach({ node: "D" }, "MARROW'S PEOPLE LEFT THE DEPOT SWITCHGEAR OPEN AT D. CUT THE YARD LIGHTS"),
+          { kind: "hold", at: { node: "A" }, radius: 7, seconds: 15, text: "HOLD THE PLAZA IN THE DARK WHILE THE LOGS COPY", waves: 1 },
+          { kind: "kill", target: "mech", count: 1, text: "DISABLE THE REPO MECH" },
+          D("m3_volatility", "THE LOGS"),
+        ],
+      },
+    ],
     reward: { scrip: 500, xp: 1300, protocol: "filament_core" },
     wasps: 3,
     mechs: 1,
