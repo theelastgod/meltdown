@@ -81,9 +81,22 @@ interface Impact {
   after: number;
   samples: number;
   peakHurt: number;
-  /** where the body was bending from at the hardest flinch, and where the two of them were */
+  /** where the body was bending from at the hardest flinch taken at range, and where the two of them were */
   best: { hurtFrom: number; bx: number; bz: number; ax: number; az: number } | null;
+  /** the hardest flinch taken at range, which `best` belongs to */
+  bestHurt: number;
+  /** flinches sampled with the two bodies closer than BEAR_RANGE: no bearing to judge (Stage 678) */
+  close: number;
 }
+
+/**
+ * How far apart the two bodies must be for "the body bends away from the muzzle" to be judged
+ * (Stage 678). The flinch bends from the impact point back toward the muzzle; at arm's length the
+ * muzzle is at or inside the body it hit and that bearing is not defined (the round lands where it
+ * started, and the yaw of a zero vector reads 0). CI run 674 judged it on a sample 1.4 m apart,
+ * when BRAVO respawned at the south spawn behind ALPHA's post and ran through ALPHA back to the lane.
+ */
+const BEAR_RANGE = 2.5;
 
 async function openClient(browser: Awaited<ReturnType<typeof chromium.launch>>, room: string, name: string, seed: number): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: 480, height: 270 } });
@@ -480,9 +493,9 @@ async function main(): Promise<void> {
     //
     // Sampled inside the page rather than from out here: a hit's flash lives about a fifth of a
     // second, and this process comes back every quarter of one.
-    await E.a.evaluate((id) => {
+    await E.a.evaluate(([id, range]) => {
       const w = window as unknown as { __impact: Impact; __impactTimer: number };
-      w.__impact = { peak: 0, after: 0, samples: 0, peakHurt: 0, best: null };
+      w.__impact = { peak: 0, after: 0, samples: 0, peakHurt: 0, best: null, bestHurt: 0, close: 0 };
       w.__impactTimer = window.setInterval(() => {
         try {
           const r = window.__game.rig(id);
@@ -491,20 +504,25 @@ async function main(): Promise<void> {
           if (r.emissive > i.peak) i.peak = r.emissive;
           // at rest again, having been lit: the proof that the light dies away rather than sticking
           if (i.peak > 0.1 && r.emissive <= 0.03) i.after++;
-          if ((r.hurt ?? 0) > i.peakHurt) {
+          const hurt = r.hurt ?? 0;
+          if (hurt > i.peakHurt) i.peakHurt = hurt;
+          if (hurt > i.bestHurt) {
             const them = window.__game.net()?.remotes.find((x) => x.id === id);
             const me = window.__game.state().pos;
-            i.peakHurt = r.hurt ?? 0;
-            if (them) i.best = { hurtFrom: r.hurtFrom ?? 0, bx: them.x, bz: them.z, ax: me.x, az: me.z };
+            // a bearing is only judged where there is one: point-blank, the muzzle is inside the body
+            if (them && Math.hypot(them.x - me.x, them.z - me.z) >= range) {
+              i.bestHurt = hurt;
+              i.best = { hurtFrom: r.hurtFrom ?? 0, bx: them.x, bz: them.z, ax: me.x, az: me.z };
+            } else if (them) i.close++;
           }
         } catch {
           // BRAVO's body is not on this client yet: nothing to sample this tick
         }
       }, 8);
-    }, E.idB);
+    }, [E.idB, BEAR_RANGE] as [number, number]);
     const lit = RIG_EMISSIVE + FLASH_MIN * HIT_GLOW * 0.95;
     const impactT0 = Date.now();
-    let im: Impact = { peak: 0, after: 0, samples: 0, peakHurt: 0, best: null };
+    let im: Impact = { peak: 0, after: 0, samples: 0, peakHurt: 0, best: null, bestHurt: 0, close: 0 };
     // BRAVO has had no plan since the engagement ended, and by now it has died twice and respawned
     // wherever the level put it — in run #118 that was (15.0, 19.7), across the yard and out of the
     // lane, and ALPHA spent the whole window firing at nothing. So this section puts BRAVO back and
@@ -563,7 +581,8 @@ async function main(): Promise<void> {
       const now = await hitsOf();
       landed = now.hits - hits0.hits;
       fired = now.shots - hits0.shots;
-      if (landed >= 3 && im.peak >= lit && im.peakHurt > 0 && im.after > 0) break;
+      // …and one of them landed at range, where a bend has a bearing to be judged by (Stage 678)
+      if (landed >= 3 && im.peak >= lit && im.bestHurt > 0 && im.after > 0) break;
       // nothing landing is only news once ALPHA has had the chance to put rounds downrange
       if (fired >= NEED_FIRED) break;
     }
@@ -587,7 +606,7 @@ async function main(): Promise<void> {
     // been handed to anybody but the local file.
     check("a round that lands lights the body it landed on, and the light dies away again", im.peak >= lit && im.after > 0 && im.samples > 50, `peak emissive ${im.peak.toFixed(3)} (at rest ${RIG_EMISSIVE}, a hit wants ≥ ${lit.toFixed(3)}) · back at rest in ${im.after} of ${im.samples} samples`);
     const bearErr = im.best ? Math.abs(wrapAngle(im.best.hurtFrom - Math.atan2(-(im.best.ax - im.best.bx), -(im.best.az - im.best.bz)))) : Math.PI;
-    check("and the body bends away from the muzzle, not some other way", im.peakHurt > 0 && bearErr < 0.6, `flinch ${im.peakHurt.toFixed(2)} · it bends from ${(im.best?.hurtFrom ?? 0).toFixed(2)} rad, and ALPHA was ${bearErr.toFixed(2)} rad off that bearing, ${im.best ? Math.hypot(im.best.ax - im.best.bx, im.best.az - im.best.bz).toFixed(1) : "?"} m away`);
+    check("and the body bends away from the muzzle, not some other way", im.bestHurt > 0 && bearErr < 0.6, `flinch ${im.bestHurt.toFixed(2)} at range (${im.peakHurt.toFixed(2)} at any) · it bends from ${(im.best?.hurtFrom ?? 0).toFixed(2)} rad, and ALPHA was ${bearErr.toFixed(2)} rad off that bearing, ${im.best ? Math.hypot(im.best.ax - im.best.bx, im.best.az - im.best.bz).toFixed(1) : "?"} m away · ${im.close} flinch${im.close === 1 ? "" : "es"} closer than ${BEAR_RANGE} m not judged`);
 
     await E.b.evaluate(() => window.__game.setDrawing(true));
     // Stage 134: ALPHA's 32 s kill plan outlives the window above, and BRAVO is closed for the

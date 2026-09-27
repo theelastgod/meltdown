@@ -1641,6 +1641,42 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 678 — The flinch was judged from inside the body it bent
+
+**CI red on run 674 (Stage 676).** probe:net failed one check: "the body bends away from the muzzle".
+The sample was judged 2.70 rad off with ALPHA 1.4 m from BRAVO, and the engagement had ranged
+1.2–10.0 m. BRAVO had respawned at the south spawn (0, 24), 4 m behind ALPHA's post at (0, 20).
+The lane BRAVO is sent back to is at (0, 8), so its route ran straight through ALPHA. ALPHA fired
+the whole way, and the first hit hard enough to count landed at arm's length.
+
+**Why that is no measurement.** The flinch bends from the impact point back toward the muzzle. At
+arm's length the muzzle is at or inside the body it hit, so there is no bearing to bend from. The
+yaw of a near-zero vector reads 0, and the reproduction read exactly 0.00 rad. The probe also
+compares that bearing with where the two bodies are when the sample is taken, a round trip after
+the server's fire-time geometry. At 1 m, a few centimetres of lag turn the bearing through any
+angle.
+
+**Reproduced.** A scratch copy of the probe parked BRAVO at the south spawn before the section.
+The engagement ran at 0.8–1.3 m and the check failed with "it bends from 0.00 rad, and ALPHA was
+0.64 rad off that bearing, 0.7 m away".
+
+**The fix (`probe/stage2.ts`).** A bend's bearing is judged only on flinches taken with the bodies
+at least `BEAR_RANGE` (2.5 m) apart. The flinch sampled at any range is still recorded and
+reported. The 0.6 rad bound is unchanged. Closer flinches are counted and printed ("17 flinches
+closer than 2.5 m not judged"). The section no longer ends at three landed rounds; it now also
+waits for one of them to land at range. Otherwise a window spent entirely at arm's length judged
+nothing: the second reproduction run did exactly that, landing its first three rounds in 1.1 s at
+1.6–2.2 m.
+
+**Verified.**
+
+- The reproduction with the fix: BRAVO ran through ALPHA (range 1.2–5.7 m), 17 point-blank flinches
+  were skipped, and the one judged at 6.0 m was 0.16 rad off. PASS.
+- Mutation, with the muzzle bearing reversed in `client/game.ts`: "ALPHA was 3.12 rad off that
+  bearing, 28.0 m away". FAIL, as it must.
+- The unmodified probe: 28/28, bend 0.15 rad off at 6.7 m.
+- Both typecheck configs.
+
 ## Stage 677 — Every escort was Ida Vessel
 
 **The defect.** The campaign has four escorts: Ida Vessel from B to D in mission 4, and a wake cell
