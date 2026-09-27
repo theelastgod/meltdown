@@ -1641,6 +1641,25 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 700 — probe:mastery photographed the loading card
+
+**The failure.** CI has been red since Stage 693, every time on the same check:
+"stage7-graph-before.png is a picture of #loading, not of #hud .graph". It fails here too, every
+run.
+
+**The cause.** probe:mastery's pages are not `?headless=1`: they run the real boot. Since Stage 693
+that boot sits behind the loading card until a frame is drawn and the room has let the file in.
+RICH is a rendered 1280×720 page on SwiftShader, and its first frame came after the probe had
+opened its graph and waited 300 ms. The card was still up, correctly, and the shot was of the card.
+The shot check was right to fail it.
+
+**The fix.** The probe's `open` now waits for the card to lift, as a player would, after the join.
+It waits up to 60 s and then carries on. A card that never lifts still fails the shot, because the
+shot check is what judges it.
+
+**Verified.** Without the wait, probe:mastery failed that check on every local run (the mutation).
+With it, 25/25. Proof: `docs/proof/stage700/stage7-graph-before.png`.
+
 ## Stage 699 — The city had nothing to do together but walk
 
 **The ask.** "Expand the size of the world and the different things you can do in it." The city

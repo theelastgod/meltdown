@@ -104,6 +104,11 @@ async function main(): Promise<void> {
       }
       openMs.push(`${name} ${((Date.now() - t0) / 1000).toFixed(1)}s${render ? " (rendered)" : ""}`);
       await pg.waitForFunction(() => { const n = window.__game.net(); return !!n && (n.status === "kicked" || n.status === "closed" || (n.status === "joined" && n.synced)); }, null, { timeout: 15000, polling: 100 });
+      // These pages are not `?headless=1`, so they boot behind the loading card (Stage 693), which
+      // lifts once a frame is drawn and the room has let the file in. On a busy runner RICH's first
+      // SwiftShader frame came after its graph was opened, and the proof shot was a picture of the
+      // card. Wait for the card as a player would; a card that never lifts still fails the shot.
+      await pg.waitForFunction(() => !(window.__game.loading()?.shown ?? false), null, { timeout: 60000, polling: 100 }).catch(() => undefined);
       return pg;
     };
     const net = (pg: Page) => pg.evaluate(() => { const n = window.__game.net()!; return { status: n.status, reason: n.kickReason }; });
