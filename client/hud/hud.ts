@@ -151,7 +151,7 @@ export class Hud {
       <div class="rite" hidden><div class="rn"></div><div class="rt"></div><div class="rlines"></div></div>
       <div class="p cy terminal" hidden><div class="th"><span class="sg"></span> <span class="sp"></span></div><div class="tb"><img class="pt" alt="" hidden><div class="tx"><div class="tl"></div><div class="tc"></div></div></div><div class="tf">[ENTER] CONTINUE · [1–4] CHOOSE</div></div>
       <div class="contracts" hidden></div>
-      <div class="card" hidden><div class="ct"></div><div class="cl"></div></div>
+      <div class="card" hidden><img class="cart" alt="" hidden><div class="ct"></div><div class="cl"></div></div>
 
       <div class="p cy map"><div class="t">AREA MAP</div><canvas width="54" height="42"></canvas><div class="f"></div></div>
       <div class="side"><div><span class="k">▸</span> <span class="roomband">OFFLINE</span><span class="linkms"></span></div><div class="perf"></div></div>
@@ -713,10 +713,16 @@ export class Hud {
 
   /** a full-screen card (contract closed / failed / ending); seconds 0 = until the next card or contracts */
   private cardTimer = 0;
-  card(title: string, lines: string[], color: "am" | "mg" | "ye" | "cy", seconds: number): void {
+  card(title: string, lines: string[], color: "am" | "mg" | "ye" | "cy", seconds: number, art: string | null = null): void {
     const el = this.q(".card");
     el.hidden = false;
-    el.className = `card ${color}`;
+    el.className = `card ${color}${art ? " art" : ""}`;
+    // an ending's plate behind its words (Stage 681); every other card stays on black
+    const img = this.q(".card .cart") as HTMLImageElement;
+    img.hidden = !art;
+    if (art) {
+      if (img.getAttribute("src") !== art) img.src = art;
+    } else img.removeAttribute("src");
     this.q(".card .ct").textContent = title;
     this.q(".card .cl").innerHTML = lines.map((l) => `<div>${l}</div>`).join("");
     this.cardTimer = seconds;

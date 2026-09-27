@@ -26,6 +26,7 @@ import { HOSTS } from "./config";
 import { weaponName } from "./hud/kill";
 import { CAMPAIGN_WEAPONS } from "@shared/weapons/manifest";
 import { portraitFor } from "./portraits";
+import { ENDING_ART } from "./endings";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop";
 
@@ -387,7 +388,7 @@ export class Campaign {
       // the coda after the ending's own lines: the choices no ending gate reads, answered rather
       // than dropped (Stage 656)
       const coda = endingCoda(t);
-      this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", "[C] CONTRACTS"], "ye", 0);
+      this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", "[C] CONTRACTS"], "ye", 0, ENDING_ART[e.id]);
       this.game.audio.rite(3);
     } else this.game.hud.card(`CONTRACT CLOSED · ${def.title}`, lines, "am", 0);
     this.game.renderer.post.kick(1);

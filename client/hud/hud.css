@@ -358,6 +358,11 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .contracts .pr b { color: #ff1e3c; }
 #hud .card { position: absolute; inset: 0; background: rgba(2,3,6,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; text-align: center; color: var(--am); }
 #hud .card[hidden] { display: none; }
+/* an ending's plate (Stage 681): full bleed behind the words, under a vignette that keeps every line readable */
+#hud .card .cart { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.85; }
+#hud .card .cart[hidden] { display: none; }
+#hud .card.art::before { content: ""; position: absolute; inset: 0; z-index: 1; background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(2,3,6,0.72), rgba(2,3,6,0.45) 70%, rgba(2,3,6,0.25)); }
+#hud .card > .ct, #hud .card > .cl { position: relative; z-index: 2; }
 #hud .card .ct { font-size: 28px; letter-spacing: 0.3em; text-shadow: 0 0 16px rgba(255,176,46,0.5); }
 #hud .card .cl { font-size: 12px; line-height: 1.9; letter-spacing: 0.08em; color: rgba(255,227,74,0.8); }
 #hud .card.mg { color: var(--mg); } #hud .card.mg .cl { color: rgba(255,62,201,0.8); }

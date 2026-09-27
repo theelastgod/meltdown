@@ -1641,6 +1641,61 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 681 — Six endings, one black card
+
+**The defect.** The arc closes on one full-screen card: the ending's title, its three lines and
+the coda, then MELTDOWN. Whichever of the six endings the file had earned, the card was that text
+on black. The payoff of seven missions and every choice in them looked exactly like a contract
+receipt.
+
+**The art.** Six plates were drawn in Higgsfield (`gpt_image_2_5`, 16:9, medium quality, two
+variants each, twelve images). Each used the game's own figures as reference: the Blank's
+turntable render (cut from Stage 665), plus Wern, Marrow or Ida where the ending puts them in the
+room.
+
+- **WIPE THE LEDGER.** The Blank walks out of the white office's doorway into a street whose signs
+  have all gone dark.
+- **TAKE THE CHAIR.** The Blank signs at the white desk while the frozen city glitters under ice
+  beyond the window and Wern, a red line in the doorway, walks out.
+- **THE CLOCKEATER'S CHAIR.** The dim office, clocks with their hands eaten, and Marrow hunched in
+  magenta at the chair.
+- **THE ESTATE'S CHAIR.** Gold light, Ida at the Blank's shoulder, the leased city unchanged.
+- **THE CITY THAT READ THE FIRE.** From a rooftop: bonfires of ledgers in the streets and red
+  forecasts on every tower.
+- **THE QUIET WAKING.** A grey dawn, commuters under umbrellas, their amber lease lamps going
+  dark one by one.
+
+No face is lit. The plates are 1280×720 JPEGs of 90–130 KB under `public/endings/`, and the service
+worker keeps them offline once seen.
+
+**On the screen.** `hud.card()` takes an optional plate, drawn full-bleed behind the text under a
+vignette that keeps every line legible (see the proof frames). `client/endings.ts` is a `Record`
+over every `EndingId`, so a seventh ending cannot be written without a plate. Contract, failure and
+co-op cards stay on black.
+
+**The guards.**
+
+- `tests/endingart.test.ts`: every ending has its own plate and no two share one. Each is a
+  1280×720 JPEG under 200 KB.
+- probe:campaign, which already plays the white office to two different endings, now reads the
+  plate behind each card. TAKE THE CHAIR shows `chair.jpg`, loaded. THE QUIET WAKING shows
+  `wipe_quiet.jpg`, not the chair's. An ordinary contract's card shows no plate. 55/55.
+
+Two mutations were each caught: a plate removed (the unit test), and every ending given the
+chair's plate (probe:campaign: `"src":"/endings/chair.jpg"` on THE QUIET WAKING).
+
+**Caught on the way.** This stage's first unit test was written with a shell heredoc to
+`tests/endings.test.ts`, a file that already existed. The full suite reported 1472 tests instead
+of 1488, which exposed it before anything was committed. The original was restored from git and
+the new tests moved to `tests/endingart.test.ts`.
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1488 tests; lint:campaign,
+lint:progression, lint:economy and lint:assets clean; probe:campaign 55/55; `npm run build`.
+
+**Proof.** `docs/proof/stage681/ending-chair.png` and `ending-quiet.png` are the probe's own frames
+of the two ending cards as the game draws them. `generations.png` shows all twelve generations:
+the left of each pair is in use.
+
 ## Stage 680 — The people who hand you every contract had no faces on the terminal
 
 **The defect.** Every line of the campaign is read at the CRT terminal, and a speaker there was one

@@ -118,6 +118,11 @@ async function main(): Promise<void> {
     pg.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
     return pg;
   };
+  /** the plate behind the card (Stage 681): its source, whether it is shown, and whether it loaded */
+  const cardPlate = async (pg: Page): Promise<{ src: string | null; shown: boolean; loaded: boolean }> => {
+    await pg.waitForFunction(() => { const i = document.querySelector("#hud .card .cart") as HTMLImageElement | null; return !i || i.hidden || i.complete; }, null, { timeout: 5000, polling: 50 }).catch(() => undefined);
+    return pg.evaluate(() => { const i = document.querySelector("#hud .card .cart") as HTMLImageElement | null; return { src: i?.getAttribute("src") ?? null, shown: !!i && !i.hidden, loaded: !!i && i.complete && i.naturalWidth > 0 }; });
+  };
   /** every node read at a terminal: who spoke, and the portrait the screen put beside them (Stage 680) */
   const faces: { speaker: string; src: string | null; shown: boolean; loaded: boolean }[] = [];
   /** play through an open terminal: skip typing, continue, pick `pick` when choices come (default the first) */
@@ -456,6 +461,10 @@ async function main(): Promise<void> {
     const done = await hub.evaluate(() => ({ c: window.__game.campaign(), card: !(document.querySelector("#hud .card") as HTMLElement).hidden, cardTitle: document.querySelector("#hud .card .ct")?.textContent ?? "", audio: window.__game.state().audio }));
     const f2 = await file(acct);
     check("out through the plaza: the contract closes, the card prints, and the ledger host settles it — testimony, Scrip, XP, Threat", done.c.mission?.status === "complete" && done.c.completion?.ok === true && done.card && /CONTRACT CLOSED/.test(done.cardTitle) && f2.campaign?.missionsDone.includes("m1_wake_unlisted") === true && f2.campaign.testimony["m1:lease"] === "burn" && f2.wallet.scrip === 300 && done.c.missionsDone.includes("m1_wake_unlisted"), `status ${done.c.mission?.status} · settled ${done.c.completion?.ok} · card "${done.cardTitle}" · file: missions [${f2.campaign?.missionsDone.join(",")}] testimony ${JSON.stringify(f2.campaign?.testimony)} scrip ${f2.wallet.scrip}`);
+    {
+      const plain = await cardPlate(hub);
+      check("an ordinary contract closes on the plain card: no ending's plate behind it", done.card && !plain.shown && plain.src === null, JSON.stringify(plain));
+    }
     // Stage 113: the alert had no place in a frame. With the card up the mission panel is silenced
     // and the alert had hung six pixels from the top of the screen; it is chrome, and the card
     // silences it with the rest
@@ -760,6 +769,10 @@ async function main(): Promise<void> {
     const w3 = await wo.evaluate(() => ({ c: window.__game.campaign(), card: document.querySelector("#hud .card .ct")?.textContent ?? "", cardOpen: !(document.querySelector("#hud .card") as HTMLElement).hidden }));
     const fArc = await file(arc);
     await shotCheck(wo, `stage10-ending.png`, "#hud .card");
+    {
+      const plate = await cardPlate(wo);
+      check("the ending lands on its own plate: TAKE THE CHAIR is drawn behind its words, loaded", w3.c.ending === "chair" && plate.shown && plate.loaded && plate.src === "/endings/chair.jpg", `ending ${w3.c.ending} · ${JSON.stringify(plate)}`);
+    }
     check("Wern's offer plays at the desk; the final input is a choice, the chair is taken, and the ending is written to the file", w2?.script === "m7_office" && seenW.length >= 3 && w3.c.ending === "chair" && w3.cardOpen && /TAKE THE CHAIR/.test(w3.card) && fArc.campaign?.ending === "chair" && fArc.campaign.missionsDone.length === 7, `dialogue ${seenW.join(" → ")} · ending ${w3.c.ending} · card "${w3.card}" · file ending ${fArc.campaign?.ending}, ${fArc.campaign?.missionsDone.length}/7`);
     await wo.close();
     // and back at the Deadletter Office with the arc closed, nobody is waiting: Wern never comes to you
@@ -795,6 +808,10 @@ async function main(): Promise<void> {
     const q3 = await qo.evaluate(() => ({ c: window.__game.campaign(), card: document.querySelector("#hud .card .ct")?.textContent ?? "", lines: document.querySelector("#hud .card .cl")?.textContent ?? "", cardOpen: !(document.querySelector("#hud .card") as HTMLElement).hidden }));
     const fQuiet = await file(arcQ);
     await shotCheck(qo, `stage10-ending-quiet.png`, "#hud .card");
+    {
+      const plate = await cardPlate(qo);
+      check("and the other reading lands on its own: THE QUIET WAKING's plate, not the chair's", q3.c.ending === "wipe_quiet" && plate.shown && plate.loaded && plate.src === "/endings/wipe_quiet.jpg", `ending ${q3.c.ending} · ${JSON.stringify(plate)}`);
+    }
     check("the same last choice, answered the other way: a redacted broadcast wipes to THE QUIET WAKING, and the card is the one the panel offered", q1.join() === "wipe,chair,wipe_quiet" && seenQ.length >= 3 && q3.c.ending === "wipe_quiet" && q3.cardOpen && /QUIET WAKING/.test(q3.card) && fQuiet.campaign?.ending === "wipe_quiet", `endings [${q1.join(", ")}] · ending ${q3.c.ending} · card "${q3.card}" · first line "${q3.lines.slice(0, 40)}" · file ending ${fQuiet.campaign?.ending}`);
     await qo.close();
 
