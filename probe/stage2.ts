@@ -19,7 +19,7 @@ import { chromium, type Page } from "playwright";
 import { shot } from "./shot";
 import WebSocket from "ws";
 import type { BotStep } from "../client/bot";
-import { encodeInputs, encodeJoin, MAX_REWIND_TICKS, Msg } from "../shared/net/protocol";
+import { encodeInputs, encodeJoin, MAX_REWIND_TICKS, Msg, type NetEvent } from "../shared/net/protocol";
 import { levelById } from "../shared/sim/level";
 import { FLASH_MIN, HIT_GLOW } from "../client/hit";
 import { RIG_EMISSIVE } from "../client/render/rig";
@@ -81,20 +81,30 @@ interface Impact {
   after: number;
   samples: number;
   peakHurt: number;
-  /** where the body was bending from at the hardest flinch taken at range, and where the two of them were */
-  best: { hurtFrom: number; bx: number; bz: number; ax: number; az: number } | null;
-  /** the hardest flinch taken at range, which `best` belongs to */
+  /**
+   * where the body was bending from at the hardest flinch a round fired from range set, and that
+   * round's own muzzle and impact point as the room reported them on the wire
+   */
+  best: { hurtFrom: number; fx: number; fz: number; tx: number; tz: number } | null;
+  /** the hardest flinch a round fired from range set, which `best` belongs to */
   bestHurt: number;
-  /** flinches sampled with the two bodies closer than BEAR_RANGE: no bearing to judge (Stage 678) */
+  /** flinches set by rounds fired from closer than BEAR_RANGE: no bearing to judge (Stage 678) */
   close: number;
 }
 
 /**
- * How far apart the two bodies must be for "the body bends away from the muzzle" to be judged
- * (Stage 678). The flinch bends from the impact point back toward the muzzle; at arm's length the
- * muzzle is at or inside the body it hit and that bearing is not defined (the round lands where it
- * started, and the yaw of a zero vector reads 0). CI run 674 judged it on a sample 1.4 m apart,
- * when BRAVO respawned at the south spawn behind ALPHA's post and ran through ALPHA back to the lane.
+ * How far a round must have flown for "the body bends away from the muzzle" to be judged (Stage
+ * 678). The flinch bends from the impact point back toward the muzzle; at arm's length the muzzle is
+ * at or inside the body it hit and that bearing is not defined (the round lands where it started,
+ * and the yaw of a zero vector reads 0). CI run 674 judged it on a sample 1.4 m apart, when BRAVO
+ * respawned at the south spawn behind ALPHA's post and ran through ALPHA back to the lane.
+ *
+ * It is the round's own flight that is measured, not where the two bodies stand when the flinch is
+ * sampled. The flinch arrives a round trip after the trigger, and by then a sprinting BRAVO is about
+ * two metres further on: a point-blank round's bend, still dying away, was judged the moment BRAVO
+ * ran out past 2.5 m on ALPHA's far side, and read as bending straight at the muzzle ("it bends from
+ * 0.08 rad, and ALPHA was 3.05 rad off that bearing, 2.5 m away"). So each bend is paired with the
+ * shot on the wire that set it, and judged against that shot's muzzle and impact point.
  */
 const BEAR_RANGE = 2.5;
 
@@ -506,19 +516,41 @@ async function main(): Promise<void> {
           if (i.peak > 0.1 && r.emissive <= 0.03) i.after++;
           const hurt = r.hurt ?? 0;
           if (hurt > i.peakHurt) i.peakHurt = hurt;
-          if (hurt > i.bestHurt) {
-            const them = window.__game.net()?.remotes.find((x) => x.id === id);
-            const me = window.__game.state().pos;
-            // a bearing is only judged where there is one: point-blank, the muzzle is inside the body
-            if (them && Math.hypot(them.x - me.x, them.z - me.z) >= range) {
-              i.bestHurt = hurt;
-              i.best = { hurtFrom: r.hurtFrom ?? 0, bx: them.x, bz: them.z, ax: me.x, az: me.z };
-            } else if (them) i.close++;
-          }
         } catch {
           // BRAVO's body is not on this client yet: nothing to sample this tick
         }
       }, 8);
+      // Each bend is read at the moment the shot that set it is handed to the game, and kept with
+      // that shot's muzzle and impact point (BEAR_RANGE). The game's own dispatch is wrapped, not
+      // replaced: the original runs first and the rig is read before and after it.
+      const g = window.__game.game as unknown as { onNetEvent: (ev: NetEvent) => void };
+      const dispatch = g.onNetEvent.bind(g);
+      g.onNetEvent = (ev) => {
+        let before = 0;
+        try {
+          before = window.__game.rig(id).hurt ?? 0;
+        } catch {
+          // no body yet: anything this shot sets is a rise from nothing
+        }
+        dispatch(ev);
+        if (ev.type !== "shot" || ev.hitKind !== 3 || ev.victimId !== id) return;
+        let r: ReturnType<typeof window.__game.rig>;
+        try {
+          r = window.__game.rig(id);
+        } catch {
+          return;
+        }
+        const hurt = r.hurt ?? 0;
+        // a graze does not override a heavier bend still in progress: this shot set nothing
+        if (hurt <= before) return;
+        const i = w.__impact;
+        // a bearing is only judged where there is one: point-blank, the muzzle is inside the body
+        if (Math.hypot(ev.fx - ev.tx, ev.fz - ev.tz) < range) i.close++;
+        else if (hurt > i.bestHurt) {
+          i.bestHurt = hurt;
+          i.best = { hurtFrom: r.hurtFrom ?? 0, fx: ev.fx, fz: ev.fz, tx: ev.tx, tz: ev.tz };
+        }
+      };
     }, [E.idB, BEAR_RANGE] as [number, number]);
     const lit = RIG_EMISSIVE + FLASH_MIN * HIT_GLOW * 0.95;
     const impactT0 = Date.now();
@@ -581,12 +613,16 @@ async function main(): Promise<void> {
       const now = await hitsOf();
       landed = now.hits - hits0.hits;
       fired = now.shots - hits0.shots;
-      // …and one of them landed at range, where a bend has a bearing to be judged by (Stage 678)
+      // …and one of them was fired from range, where a bend has a bearing to be judged by (Stage 678)
       if (landed >= 3 && im.peak >= lit && im.bestHurt > 0 && im.after > 0) break;
       // nothing landing is only news once ALPHA has had the chance to put rounds downrange
       if (fired >= NEED_FIRED) break;
     }
-    await E.a.evaluate(() => clearInterval((window as unknown as { __impactTimer: number }).__impactTimer));
+    await E.a.evaluate(() => {
+      clearInterval((window as unknown as { __impactTimer: number }).__impactTimer);
+      // the game's own dispatch again, from its prototype
+      delete (window.__game.game as unknown as { onNetEvent?: unknown }).onNetEvent;
+    });
     // what ALPHA could see when the window closed, in ALPHA's own terms: this check can only fail
     // two ways — the link, or the driver — and a bare count says which one it was not
     const sight = await E.a.evaluate((id) => {
@@ -605,46 +641,73 @@ async function main(): Promise<void> {
     // only, the body never lit, and the flinch the pose rig has had since Stage 74 had never once
     // been handed to anybody but the local file.
     check("a round that lands lights the body it landed on, and the light dies away again", im.peak >= lit && im.after > 0 && im.samples > 50, `peak emissive ${im.peak.toFixed(3)} (at rest ${RIG_EMISSIVE}, a hit wants ≥ ${lit.toFixed(3)}) · back at rest in ${im.after} of ${im.samples} samples`);
-    const bearErr = im.best ? Math.abs(wrapAngle(im.best.hurtFrom - Math.atan2(-(im.best.ax - im.best.bx), -(im.best.az - im.best.bz)))) : Math.PI;
-    check("and the body bends away from the muzzle, not some other way", im.bestHurt > 0 && bearErr < 0.6, `flinch ${im.bestHurt.toFixed(2)} at range (${im.peakHurt.toFixed(2)} at any) · it bends from ${(im.best?.hurtFrom ?? 0).toFixed(2)} rad, and ALPHA was ${bearErr.toFixed(2)} rad off that bearing, ${im.best ? Math.hypot(im.best.ax - im.best.bx, im.best.az - im.best.bz).toFixed(1) : "?"} m away · ${im.close} flinch${im.close === 1 ? "" : "es"} closer than ${BEAR_RANGE} m not judged`);
+    // the bearing from where the round landed back to where it was fired from, worked out here from
+    // the wire's two points and not by the game's own function
+    const bearErr = im.best ? Math.abs(wrapAngle(im.best.hurtFrom - Math.atan2(-(im.best.fx - im.best.tx), -(im.best.fz - im.best.tz)))) : Math.PI;
+    check("and the body bends away from the muzzle, not some other way", im.bestHurt > 0 && bearErr < 0.6, `flinch ${im.bestHurt.toFixed(2)} at range (${im.peakHurt.toFixed(2)} at any) · it bends from ${(im.best?.hurtFrom ?? 0).toFixed(2)} rad, and the muzzle was ${bearErr.toFixed(2)} rad off that bearing, the round fired from ${im.best ? Math.hypot(im.best.fx - im.best.tx, im.best.fz - im.best.tz).toFixed(1) : "?"} m · ${im.close} flinch${im.close === 1 ? "" : "es"} from rounds fired closer than ${BEAR_RANGE} m not judged`);
 
     await E.b.evaluate(() => window.__game.setDrawing(true));
     // Stage 134: ALPHA's 32 s kill plan outlives the window above, and BRAVO is closed for the
     // three seconds of its re-lease at the moment its frame is taken; since Stage 128 the gun's
     // chrome goes with a closed file, and the picture claims a living file's HUD. ALPHA is stood
-    // down and the shutter waits for BRAVO to be back on the ledger with its ammo drawn
-    await E.a.evaluate(() => window.__game.setBot(null));
-    const bravoBack = await E.b.evaluate(async (polls) => {
-      for (let i = 0; i < polls; i++) {
-        const s = window.__game.state();
-        const el = document.querySelector("#hud .ammo");
-        const cs = el ? getComputedStyle(el) : null;
-        const drawn = !!cs && cs.display !== "none" && cs.visibility !== "hidden" && Number(cs.opacity) >= 0.02;
-        if (s.health > 0 && drawn) return { back: true, waited: i * 50, health: s.health };
-        await new Promise((r) => setTimeout(r, 50));
+    // down and the shutter waits for BRAVO to be back on the ledger with its ammo drawn.
+    //
+    // …and that is asked of a BRAVO that has caught up with the room. BRAVO has not drawn a frame
+    // until now, and its first one on software GL holds the page for seconds (fourteen on a laptop):
+    // no snapshot is applied while it draws, and the backlog drains over the frames after it. So
+    // BRAVO's own health and HUD, the only things these polls can read, are the room as it was
+    // seconds ago. CI run 36336029495 took the frame of a BRAVO that read "health 8" and alive twice
+    // over, 0 ms after ALPHA stood down and again at the shutter, while its death from a round ALPHA
+    // had fired before the stand-down was still in that backlog; it landed between the second read
+    // and the shutter, and the frame had no ammo panel. The stand-down is therefore waited on until
+    // the room has applied every input ALPHA sent under its plan (no round of ALPHA's is still on the
+    // link), the room's tick then is the moment BRAVO has to have caught up to, and BRAVO is judged
+    // on a frame drawn after its view reached it.
+    const stood = await E.a.evaluate(async () => {
+      window.__game.setBot(null);
+      const n = window.__game.game.net;
+      if (!n) return false;
+      const last = n.pendingInputs.length ? n.pendingInputs[n.pendingInputs.length - 1]!.seq : 0;
+      for (let i = 0; i < 400; i++) {
+        if (!n.pendingInputs.some((x) => x.seq <= last)) return true;
+        await new Promise((r) => setTimeout(r, 25));
       }
-      const s = window.__game.state();
-      return { back: false, waited: polls * 50, health: s.health };
-    }, BACK_POLLS);
-    check("BRAVO is back on the ledger, ammo drawn, before its frame is taken: the picture claims a living file's HUD", bravoBack.back, `re-leased ${bravoBack.waited} ms after ALPHA stood down · health ${bravoBack.health}`);
+      return false;
+    });
+    const quietTick = (await stats()).rooms[ROOM].tick as number;
+    const bravoLive = () =>
+      E.b.evaluate(
+        async ([polls, since]) => {
+          // no named function consts in a page function: tsx's --keep-names helper is not in the page
+          const behind = since - (window.__game.game.net?.snapshotTick ?? 0);
+          // the frame count when BRAVO's view first reached the room's quiet tick; the HUD is drawn
+          // with the frame, so it speaks for that view from the next one on
+          let caughtAt = -1;
+          for (let i = 0; i < polls; i++) {
+            const s = window.__game.state();
+            if (caughtAt < 0 && (window.__game.game.net?.snapshotTick ?? 0) >= since) caughtAt = s.render.frames;
+            if (caughtAt >= 0 && s.render.frames > caughtAt) {
+              const el = document.querySelector("#hud .ammo");
+              const cs = el ? getComputedStyle(el) : null;
+              const drawn = !!cs && cs.display !== "none" && cs.visibility !== "hidden" && Number(cs.opacity) >= 0.02;
+              if (s.health > 0 && drawn) return { back: true, waited: i * 50, health: s.health, behind, caught: true };
+            }
+            await new Promise((r) => setTimeout(r, 50));
+          }
+          return { back: false, waited: polls * 50, health: window.__game.state().health, behind, caught: caughtAt >= 0 };
+        },
+        [BACK_POLLS, quietTick] as [number, number],
+      );
+    const bravoBack = await bravoLive();
+    check("BRAVO is back on the ledger, ammo drawn, before its frame is taken: the picture claims a living file's HUD", stood && bravoBack.back, `${stood ? "every input ALPHA sent under its plan answered" : "ALPHA's inputs still unanswered after 10 s"} · BRAVO's view ${bravoBack.behind} ticks short of the room's tick at the stand-down when first asked, ${bravoBack.caught ? "then caught up" : "and never caught up"} · re-leased ${bravoBack.waited} ms after ALPHA stood down · health ${bravoBack.health}`);
     await E.a.waitForTimeout(1200);
     await shotCheck(E.a, `stage2-alpha.png`, "#hud .ammo");
     // Stage 670: BRAVO can be back on the ledger with 4 hp while rounds ALPHA fired before it was
     // stood down are still on the 150 ms link, and a second later it is dead and its gun's chrome
     // gone (CI run 665: "re-leased 0 ms after ALPHA stood down · health 4", then the frame without
     // the ammo panel). Ask again at the moment the shutter opens, not a second and a picture before
-    const bravoAgain = await E.b.evaluate(async (polls) => {
-      for (let i = 0; i < polls; i++) {
-        const s = window.__game.state();
-        const el = document.querySelector("#hud .ammo");
-        const cs = el ? getComputedStyle(el) : null;
-        const drawn = !!cs && cs.display !== "none" && cs.visibility !== "hidden" && Number(cs.opacity) >= 0.02;
-        if (s.health > 0 && drawn) return { back: true, waited: i * 50, health: s.health };
-        await new Promise((r) => setTimeout(r, 50));
-      }
-      return { back: false, waited: polls * 50, health: window.__game.state().health };
-    }, BACK_POLLS);
-    if (bravoAgain.waited > 0) console.log(`BRAVO was closed again when its shutter came round: back ${bravoAgain.back} after ${bravoAgain.waited} ms, health ${bravoAgain.health}`);
+    const bravoAgain = await bravoLive();
+    console.log(`BRAVO asked again as its shutter came round: back ${bravoAgain.back} after ${bravoAgain.waited} ms, health ${bravoAgain.health}`);
     await shotCheck(E.b, `stage2-bravo.png`, "#hud .ammo");
     await E.a.close();
     await E.b.close();

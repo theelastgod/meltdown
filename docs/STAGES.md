@@ -1641,6 +1641,43 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 695 — probe:net failed on runs that changed nothing
+
+**The failure.** Two CI runs whose commits only added files under `docs/brand/` failed
+`probe:net`, each on a different check.
+- Run 36335149142: "it bends from 0.08 rad, and ALPHA was 3.05 rad off that bearing, 2.5 m away".
+- Run 36336029495: "stage2-bravo.png does not show #hud .ammo". Both reads of BRAVO had just found
+  it alive at 8 hp.
+
+**The cause.** Both checks measured before their precondition held.
+- **The flinch** was judged against where the two bodies stood when the probe sampled it. The
+  flinch arrives a round trip after the trigger, when a sprinting BRAVO is about two metres further
+  on. A point-blank round's bend has no bearing, and it was judged as soon as BRAVO ran out past
+  2.5 m on ALPHA's far side.
+- **BRAVO's frame.** Its first frame on software GL holds its page for seconds, so its health and
+  HUD showed the room as it had been. A death from a round ALPHA had already fired landed between
+  the second read and the shutter.
+
+**The fix.**
+- Each bend is paired with the shot on the wire that set it, and judged against that shot's
+  muzzle and impact point, only when the round flew 2.5 m or more. The 0.6 rad tolerance is
+  unchanged.
+- The stand-down waits until the room has answered every input ALPHA sent under its plan. BRAVO
+  is judged only once its newest snapshot has reached the room's tick at that moment, and only on
+  a frame drawn after that. `NetClient.snapshotTick` is a new read-only getter for this.
+
+**Verified.**
+- Forced repros reproduce both CI lines on the old code and pass on the new:
+  - the flinch fails 2 of 3 on the old code and passes 4 of 4 on the new;
+  - the frame fails 4 of 6 on the old code and passes 6 of 6 on the new.
+- `probe:net` passed 28/28 three times in a row here, after six clean runs in the worktree.
+  Typecheck and 1583 unit tests pass.
+
+**Open.** A separate bug, found while instrumenting: after the long first frame, the client's
+catch-up burst (up to 30 ticks a frame) can trip the room's fixed one-second input-rate window.
+That gives three strikes in 54 ms, and the player is kicked and re-seated as a blank file. It is
+being fixed separately, without raising the sustained rate a client may send.
+
 ## Stage 694 — Lease Row was a hundred metres across
 
 **The ask.** The owner wants a bigger world with more to do in it. The city (Stage 692) put every

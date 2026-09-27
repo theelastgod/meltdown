@@ -140,6 +140,11 @@ export class NetClient {
     return this.pending;
   }
 
+  /** the server tick of the newest snapshot this client has applied: how far into the room's past it is */
+  get snapshotTick(): number {
+    return this.latestTick;
+  }
+
   /** Estimated current server tick (continuous). */
   serverTickNow(): number {
     if (!this.latestTick) return 0;
