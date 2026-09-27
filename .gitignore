@@ -7,3 +7,6 @@ probe/out/
 .wrangler/
 .env.production
 art-source/
+
+# agent worktrees (parallel work, merged by cherry-pick)
+.claude/worktrees/
