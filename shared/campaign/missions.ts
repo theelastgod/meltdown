@@ -9,13 +9,21 @@ import type { Gate } from "./testimony";
 
 export type Spot = { x: number; z: number } | { node: string };
 
+/**
+ * Who an escort is walking (Stage 677). Until this every escort was Ida Vessel: the three wake-cell
+ * rescues walked a capsule tagged IDA VESSEL home, and the feed said IDA IS MOVING.
+ */
+export type EscortWho = "vessel" | "cell";
+/** how the feed names them when they move or stop */
+export const ESCORT_NAME: Record<EscortWho, string> = { vessel: "IDA", cell: "THE CELL" };
+
 export type Objective =
   | { kind: "dialogue"; script: string; text: string }
   | { kind: "reach"; at: Spot; radius: number; text: string }
   | { kind: "kill"; target: "wasp" | "mech" | "dummy" | "any"; count: number; text: string }
   | { kind: "destroy"; text: string; spots: Spot[]; label: string }
   | { kind: "survive"; seconds: number; at?: Spot; radius?: number; text: string; waves?: number }
-  | { kind: "escort"; path: Spot[]; speed: number; text: string; leash: number }
+  | { kind: "escort"; path: Spot[]; speed: number; text: string; leash: number; who: EscortWho }
   | { kind: "hold"; at: Spot; radius: number; seconds: number; text: string; waves?: number };
 
 export interface Reward {
@@ -137,7 +145,7 @@ export const MISSIONS: readonly MissionDef[] = [
     level: "deadletter_docks",
     fixer: "vessel",
     brief: "AN ESTATE DEFECTOR HANDS YOU THE DIRECTIVE. WALK HER FROM B TO D UNDER A VANTAGE SWEEP WHILE WERN ARGUES HIS CASE.",
-    objectives: [D("m4_leak", "THE DIRECTIVE"), { kind: "escort", path: [{ node: "B" }, { node: "A" }, { node: "D" }], speed: 2.2, leash: 8, text: "WALK IDA VESSEL FROM B TO D" }, { kind: "kill", target: "wasp", count: 3, text: "CLEAR THE SWEEP" }],
+    objectives: [D("m4_leak", "THE DIRECTIVE"), { kind: "escort", path: [{ node: "B" }, { node: "A" }, { node: "D" }], speed: 2.2, leash: 8, who: "vessel", text: "WALK IDA VESSEL FROM B TO D" }, { kind: "kill", target: "wasp", count: 3, text: "CLEAR THE SWEEP" }],
     // The docks informant's two endings, played out on his own docks (Stage 663). Before this the
     // choice in mission 2 was read by nothing in the arc — one optional gig — so mercy and betrayal
     // produced the same mission. Now they produce different ones: spared, he repays it with the
@@ -148,7 +156,7 @@ export const MISSIONS: readonly MissionDef[] = [
         objectives: [
           D("m4_leak", "THE DIRECTIVE"),
           { kind: "destroy", spots: [{ node: "C" }], label: "VANTAGE SPEAKER", text: "THE INFORMANT LEFT HIS SPEAKER AT C. KILL IT AND THE SWEEP GOES DEAF" },
-          { kind: "escort", path: [{ node: "B" }, { node: "A" }, { node: "D" }], speed: 2.2, leash: 8, text: "WALK IDA VESSEL FROM B TO D WHILE THE SWEEP IS DEAF" },
+          { kind: "escort", path: [{ node: "B" }, { node: "A" }, { node: "D" }], speed: 2.2, leash: 8, who: "vessel", text: "WALK IDA VESSEL FROM B TO D WHILE THE SWEEP IS DEAF" },
           { kind: "kill", target: "wasp", count: 1, text: "CLEAR WHAT IS LEFT OF THE SWEEP" },
         ],
       },
@@ -157,7 +165,7 @@ export const MISSIONS: readonly MissionDef[] = [
         extraWasps: 2,
         objectives: [
           D("m4_leak", "THE DIRECTIVE"),
-          { kind: "escort", path: [{ node: "B" }, { node: "A" }, { node: "D" }], speed: 2.2, leash: 8, text: "WALK IDA VESSEL FROM B TO D" },
+          { kind: "escort", path: [{ node: "B" }, { node: "A" }, { node: "D" }], speed: 2.2, leash: 8, who: "vessel", text: "WALK IDA VESSEL FROM B TO D" },
           { kind: "kill", target: "wasp", count: 5, text: "CLEAR THE SWEEP — IT IS RUNNING THE ROUTES HE SOLD" },
         ],
       },
@@ -230,15 +238,15 @@ export const MISSIONS: readonly MissionDef[] = [
   // ---- gigs ----
   { id: "g_escrow_row", kind: "gig", order: 0, title: "ESCROW HEIST · LEASE ROW", level: "lease_row", fixer: "marrow", brief: "CRACK THE ESCROW TERMINAL AT D AND GET THE SLEEP CREDIT OUT BEFORE THE PATROL TURNS.", objectives: [reach({ node: "D" }, "CRACK THE ESCROW AT D"), { kind: "survive", seconds: 15, at: { node: "D" }, radius: 6, text: "HOLD WHILE IT DUMPS", waves: 1 }, reach({ node: "A" }, "OUT THROUGH THE PLAZA")], reward: { scrip: 250, xp: 500, stamp: "gig:first" }, wasps: 2, mechs: 0 },
   { id: "g_convoy_docks", kind: "gig", order: 0, title: "DRONE CONVOY · DOCKS", level: "deadletter_docks", fixer: "deacon", brief: "A WASP CONVOY CROSSES THE DOCKS AT HEIGHT. AMBUSH IT FROM THE WALKWAY.", objectives: [reach({ node: "B" }, "TAKE THE WALKWAY OVER B"), { kind: "kill", target: "wasp", count: 3, text: "DOWN THE CONVOY" }], reward: { scrip: 300, xp: 600 }, wasps: 3, mechs: 0 },
-  { id: "g_rescue_depot", kind: "gig", order: 0, title: "WAKE-CELL RESCUE · DEPOT", level: "repo_depot", fixer: "deacon", brief: "A CELL IS PINNED UNDER THE IMPOUND SEARCHLIGHT AT C. GET THEM OUT.", objectives: [reach({ node: "C" }, "REACH THE PINNED CELL AT C"), { kind: "escort", path: [{ node: "C" }, { node: "A" }], speed: 2.4, leash: 8, text: "WALK THEM TO THE PLAZA" }], reward: { scrip: 350, xp: 700, protocol: "red_lease" }, wasps: 3, mechs: 1, requires: { threat: 1 } },
+  { id: "g_rescue_depot", kind: "gig", order: 0, title: "WAKE-CELL RESCUE · DEPOT", level: "repo_depot", fixer: "deacon", brief: "A CELL IS PINNED UNDER THE IMPOUND SEARCHLIGHT AT C. GET THEM OUT.", objectives: [reach({ node: "C" }, "REACH THE PINNED CELL AT C"), { kind: "escort", path: [{ node: "C" }, { node: "A" }], speed: 2.4, leash: 8, who: "cell", text: "WALK THEM TO THE PLAZA" }], reward: { scrip: 350, xp: 700, protocol: "red_lease" }, wasps: 3, mechs: 1, requires: { threat: 1 } },
   { id: "g_lattice_row", kind: "gig", order: 0, title: "SENSOR SABOTAGE · LEASE ROW", level: "lease_row", fixer: "vessel", brief: "TWO LATTICE POSTS ON THE WALKWAY STREET. THE ESTATE WANTS THEM DARK BEFORE THE AUDIT.", objectives: [{ kind: "destroy", spots: [{ node: "B" }, { node: "C" }], label: "SENSOR POST", text: "BREAK THE TWO SENSOR POSTS" }], reward: { scrip: 300, xp: 600 }, wasps: 2, mechs: 0, requires: { gate: { not: { "m4:vessel": "expose" } } } },
   { id: "g_escrow_depot", kind: "gig", order: 0, title: "ESCROW HEIST · DEPOT", level: "repo_depot", fixer: "marrow", brief: "THE IMPOUND LOT KEEPS A SECOND ESCROW. TAKE IT WHILE THE MECH IS AT THE FAR FENCE.", objectives: [reach({ node: "E" }, "REACH THE LOT ESCROW AT E"), { kind: "survive", seconds: 20, at: { node: "E" }, radius: 6, text: "HOLD THE DUMP", waves: 1 }, reach({ node: "B" }, "OUT THROUGH B")], reward: { scrip: 400, xp: 800, weapon: "clockeater" }, wasps: 3, mechs: 1, requires: { threat: 2 } },
   { id: "g_convoy_row", kind: "gig", order: 0, title: "DRONE CONVOY · LEASE ROW", level: "lease_row", fixer: "marrow", brief: "FOUR WASPS RUN THE PLAZA LOOP EVERY NIGHT. BREAK THE LOOP.", objectives: [{ kind: "kill", target: "wasp", count: 4, text: "BREAK THE LOOP" }], reward: { scrip: 350, xp: 700 }, wasps: 4, mechs: 0, requires: { threat: 2 } },
-  { id: "g_rescue_docks", kind: "gig", order: 0, title: "WAKE-CELL RESCUE · DOCKS", level: "deadletter_docks", fixer: "deacon", brief: "A CELL WENT DARK AT E. BRING WHOEVER IS LEFT TO THE PLAZA.", objectives: [reach({ node: "E" }, "REACH E"), { kind: "escort", path: [{ node: "E" }, { node: "A" }], speed: 2.2, leash: 8, text: "WALK THEM HOME" }, { kind: "kill", target: "wasp", count: 2, text: "COVER THE WALK" }], reward: { scrip: 400, xp: 800, protocol: "blood_ledger" }, wasps: 4, mechs: 0, requires: { threat: 3 }, variants: [{ gate: { all: { "m5:lattice": "spare_docks" } }, extraWasps: 2 }] },
+  { id: "g_rescue_docks", kind: "gig", order: 0, title: "WAKE-CELL RESCUE · DOCKS", level: "deadletter_docks", fixer: "deacon", brief: "A CELL WENT DARK AT E. BRING WHOEVER IS LEFT TO THE PLAZA.", objectives: [reach({ node: "E" }, "REACH E"), { kind: "escort", path: [{ node: "E" }, { node: "A" }], speed: 2.2, leash: 8, who: "cell", text: "WALK THEM HOME" }, { kind: "kill", target: "wasp", count: 2, text: "COVER THE WALK" }], reward: { scrip: 400, xp: 800, protocol: "blood_ledger" }, wasps: 4, mechs: 0, requires: { threat: 3 }, variants: [{ gate: { all: { "m5:lattice": "spare_docks" } }, extraWasps: 2 }] },
   { id: "g_lattice_docks", kind: "gig", order: 0, title: "SENSOR SABOTAGE · DOCKS", level: "deadletter_docks", fixer: "vessel", brief: "THREE LATTICE POSTS ALONG THE CRANE LINE.", objectives: [{ kind: "destroy", spots: [{ node: "B" }, { node: "D" }, { node: "E" }], label: "SENSOR POST", text: "BREAK THE THREE POSTS" }], reward: { scrip: 450, xp: 900, protocol: "filament_core" }, wasps: 3, mechs: 1, requires: { threat: 3, gate: { not: { "m4:vessel": "expose", "m5:lattice": "all" } } } },
   { id: "g_escrow_docks", kind: "gig", order: 0, title: "ESCROW HEIST · DOCKS", level: "deadletter_docks", fixer: "marrow", brief: "THE HARBOUR ESCROW AT C PAYS IN CLOCKEATER TIME.", objectives: [reach({ node: "C" }, "CRACK THE HARBOUR ESCROW"), { kind: "survive", seconds: 25, at: { node: "C" }, radius: 6, text: "HOLD THE DUMP", waves: 2 }], reward: { scrip: 500, xp: 1000 }, wasps: 4, mechs: 1, requires: { threat: 4, gate: { not: { "m2:informant": "turn" } } } },
   { id: "g_convoy_depot", kind: "gig", order: 0, title: "DRONE CONVOY · DEPOT", level: "repo_depot", fixer: "deacon", brief: "THE DEPOT CONVOY FLIES WITH A MECH ESCORT.", objectives: [{ kind: "kill", target: "wasp", count: 4, text: "DOWN THE CONVOY" }, { kind: "kill", target: "mech", count: 1, text: "DISABLE THE ESCORT" }], reward: { scrip: 600, xp: 1200, protocol: "wern_pulse" }, wasps: 4, mechs: 1, requires: { threat: 5 } },
-  { id: "g_rescue_row", kind: "gig", order: 0, title: "WAKE-CELL RESCUE · LEASE ROW", level: "lease_row", fixer: "deacon", brief: "THE LAST CELL ON THE ROW IS PINNED AT D WITH A MECH ON THEM.", objectives: [reach({ node: "D" }, "REACH D"), { kind: "kill", target: "mech", count: 1, text: "DISABLE THE MECH" }, { kind: "escort", path: [{ node: "D" }, { node: "A" }], speed: 2.4, leash: 8, text: "WALK THEM TO THE PLAZA" }], reward: { scrip: 700, xp: 1400 }, wasps: 4, mechs: 1, requires: { threat: 6 } },
+  { id: "g_rescue_row", kind: "gig", order: 0, title: "WAKE-CELL RESCUE · LEASE ROW", level: "lease_row", fixer: "deacon", brief: "THE LAST CELL ON THE ROW IS PINNED AT D WITH A MECH ON THEM.", objectives: [reach({ node: "D" }, "REACH D"), { kind: "kill", target: "mech", count: 1, text: "DISABLE THE MECH" }, { kind: "escort", path: [{ node: "D" }, { node: "A" }], speed: 2.4, leash: 8, who: "cell", text: "WALK THEM TO THE PLAZA" }], reward: { scrip: 700, xp: 1400 }, wasps: 4, mechs: 1, requires: { threat: 6 } },
   { id: "g_lattice_depot", kind: "gig", order: 0, title: "SENSOR SABOTAGE · DEPOT", level: "repo_depot", fixer: "vessel", brief: "THE DEPOT LATTICE IS THE LAST ONE THE ESTATE AUDIT CAN SEE THROUGH.", objectives: [{ kind: "destroy", spots: [{ node: "B" }, { node: "C" }, { node: "D" }, { node: "E" }], label: "SENSOR POST", text: "BREAK ALL FOUR POSTS" }, { kind: "survive", seconds: 30, at: { node: "A" }, radius: 10, text: "SURVIVE THE RESPONSE", waves: 2 }], reward: { scrip: 800, xp: 1600, protocol: "directive_optic" }, wasps: 5, mechs: 2, requires: { threat: 7, gate: { not: { "m4:vessel": "expose" } } } },
 ];
 

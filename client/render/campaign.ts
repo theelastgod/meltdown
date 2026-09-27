@@ -1,5 +1,5 @@
 /**
- * Campaign render pieces: the objective beam, the escort's figure, markers
+ * Campaign render pieces: the objective beam, the escort (escort.ts), markers
  * over destroy targets, and the blood-red Kernel filament that corrupts the
  * viewmodel while a Protocol is worn — the visual promise that campaign
  * power can never be mistaken for PvP-legal. Render only.
@@ -7,6 +7,7 @@
 import * as THREE from "three";
 import { MOVE } from "@shared/sim/constants";
 import { bindPlate, PALETTE } from "./city";
+import { EscortFigures, type EscortPose } from "./escort";
 
 const RED = 0xff1e3c;
 
@@ -22,8 +23,8 @@ export class CampaignFx {
   readonly group = new THREE.Group();
   private marker: THREE.Group;
   private ring: THREE.Mesh;
-  private escort: THREE.Group;
-  private escortTag: THREE.Sprite;
+  /** Ida, or a wake cell: whoever the contract is walking home (Stage 677) */
+  readonly escort: EscortFigures;
   private targets: THREE.Group[] = [];
   private targetPool: THREE.Group[] = [];
   private filament: THREE.Group;
@@ -43,33 +44,21 @@ export class CampaignFx {
     this.marker.add(this.ring);
     this.marker.visible = false;
     this.group.add(this.marker);
-    // the escort: an amber figure, a hood, a tag
-    this.escort = new THREE.Group();
-    const mat = new THREE.MeshStandardMaterial({ color: 0x2a1a08, emissive: PALETTE.amber, emissiveIntensity: 0.25, roughness: 0.8 });
-    bindPlate(mat, "tex_crowd_coat");
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(MOVE.capsuleRadius - 0.02, MOVE.standHeight - MOVE.capsuleRadius * 2, 4, 10), mat);
-    body.position.y = MOVE.standHeight / 2;
-    this.escort.add(body);
-    const hoodMat = new THREE.MeshStandardMaterial({ color: 0x120c04, roughness: 0.9 });
-    bindPlate(hoodMat, "tex_cloak");
-    const hood = new THREE.Mesh(new THREE.ConeGeometry(MOVE.capsuleRadius + 0.06, 0.5, 8), hoodMat);
-    hood.position.y = MOVE.standHeight - 0.05;
-    this.escort.add(hood);
-    const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 48;
-    const g = canvas.getContext("2d")!;
-    g.font = "bold 26px 'Courier New', monospace";
-    g.fillStyle = "#ffb02e";
-    g.textBaseline = "middle";
-    g.fillText("IDA VESSEL", 8, 24);
-    const tex = new THREE.CanvasTexture(canvas);
-    this.escortTag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
-    this.escortTag.scale.set(1.6, 0.3, 1);
-    this.escortTag.position.y = MOVE.standHeight + 0.4;
-    this.escort.add(this.escortTag);
-    this.escort.visible = false;
-    this.group.add(this.escort);
+    // the escort: who it is, in their own body, with a name over them in their own colour
+    this.escort = new EscortFigures((text, colour) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 256;
+      canvas.height = 48;
+      const g = canvas.getContext("2d")!;
+      g.font = "bold 26px 'Courier New', monospace";
+      g.fillStyle = `#${colour.toString(16).padStart(6, "0")}`;
+      g.textBaseline = "middle";
+      g.fillText(text, 8, 24);
+      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, depthTest: false }));
+      tag.scale.set(1.6, 0.3, 1);
+      return tag;
+    });
+    this.group.add(this.escort.group);
     // the filament: red strands over the weapon, pulsing
     this.filament = new THREE.Group();
     // depthTest is flipped per host in setFilamentHost; depth is never written, because additive
@@ -118,10 +107,8 @@ export class CampaignFx {
     if (pos) this.marker.position.set(pos.x, pos.y, pos.z);
   }
 
-  setEscort(pos: { x: number; z: number } | null, waiting: boolean): void {
-    this.escort.visible = pos !== null;
-    if (pos) this.escort.position.set(pos.x, 0, pos.z);
-    (this.escort.children[0] as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material.emissiveIntensity = waiting ? 0.6 : 0.25;
+  setEscort(pose: EscortPose | null): void {
+    this.escort.set(pose);
   }
 
   setTargets(positions: { x: number; y: number; z: number }[]): void {
@@ -165,6 +152,7 @@ export class CampaignFx {
 
   update(dt: number): void {
     this.time += dt;
+    this.escort.update(dt);
     if (this.marker.visible) {
       const s = 1 + Math.sin(this.time * 3) * 0.15;
       this.ring.scale.set(s, s, 1);

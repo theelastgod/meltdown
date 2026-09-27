@@ -236,7 +236,7 @@ export class Campaign {
       marker = { x: p.x, y: p.y, z: p.z };
     }
     fx.setMarker(marker);
-    fx.setEscort(v.escort ? { x: v.escort.x, z: v.escort.z } : null, v.escort?.waiting ?? false);
+    fx.setEscort(v.escort);
     const targets = o?.kind === "destroy" ? st.targets.map((id) => this.game.world.dummies.find((d) => d.id === id)).filter((d) => d && d.alive).map((d) => ({ x: d!.pos.x, y: d!.pos.y, z: d!.pos.z })) : [];
     fx.setTargets(targets);
     // and the map gets the same three things (Stage 92): the contract has been a marker in the world
@@ -403,7 +403,7 @@ export class Campaign {
     const prog = v.kind === "kill" || v.kind === "destroy" ? `${v.progress}/${v.need}` : v.kind === "survive" || v.kind === "hold" ? holdClock(v.progress, v.need) : null;
     this.game.hud.setObjective(`◈ ${v.title}${this.crew ? ` · CREW ${this.crew}` : ""}${this.host ? " · HOST" : ""}`, v.objective || (v.status === "complete" ? "CONTRACT CLOSED" : v.status === "failed" ? "CONTRACT FAILED" : ""), prog);
     const fx = this.game.renderer.campaignFx;
-    fx.setEscort(v.escort ? { x: v.escort.x, z: v.escort.z } : null, v.escort?.waiting ?? false);
+    fx.setEscort(v.escort);
     for (const ev of m.events as ReturnType<typeof drainMissionEvents>) {
       if (ev.type === "dialogue") {
         if (this.host) this.onMissionEvent(ev);

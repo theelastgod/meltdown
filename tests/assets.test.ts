@@ -151,6 +151,7 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
       "client/render/renderer.ts",
       "client/render/weapons.ts",
       "client/render/campaign.ts",
+      "client/render/escort.ts",
       "client/render/run.ts",
       "client/render/wake.ts",
       "client/render/rig.ts",
@@ -174,7 +175,10 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
       expect(src.includes(`"${id}"`) || reachablePlates().includes(id), id).toBe(true);
     }
     const campaign = readFileSync(new URL("../client/render/campaign.ts", import.meta.url), "utf8");
-    expect(campaign).toMatch(/bindPlate\(hoodMat, "tex_cloak"\)/);
+    // the escort's hood moved with the escort into escort.ts (Stage 677): a wake cell's three hoods
+    const escort = readFileSync(new URL("../client/render/escort.ts", import.meta.url), "utf8");
+    expect(escort).toMatch(/bindPlate\(hoodMat, "tex_cloak"\)/);
+    expect(escort).toMatch(/bindPlate\(dark, "tex_crowd_coat"\)/);
     expect(campaign).toMatch(/bindPlate\(ringMat, "tex_lamp"\)/);
     expect(campaign).toMatch(/bindPlate\(mat, "tex_lamp"\)/);
     expect(campaign).toMatch(/bindPlate\(fm, "tex_lamp"\)/);

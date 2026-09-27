@@ -33,6 +33,8 @@ interface Parts {
   body: THREE.BufferGeometry[];
   trim: THREE.BufferGeometry[];
   void: THREE.BufferGeometry[];
+  /** legs that can swing (Stage 677): part of the body when the figure stands */
+  legs: THREE.BufferGeometry[];
 }
 const T = (x: number, y: number, z: number) => new THREE.Matrix4().makeTranslation(x, y, z);
 const put = (g: THREE.BufferGeometry, m: THREE.Matrix4) => g.applyMatrix4(m);
@@ -76,7 +78,7 @@ function hood(parts: Parts, o: { r: number; cy: number; sy: number; sz: number; 
 
 // ---- the Deacon: a tall keeper in a floor-length robe, hands clasped on the ledger of the woken ----
 function deacon(): Parts {
-  const parts: Parts = { body: [], trim: [], void: [] };
+  const parts: Parts = { body: [], trim: [], void: [], legs: [] };
   const ROBE: Profile = [[0.36, 0.02], [0.33, 0.3], [0.28, 0.7], [0.24, 1.0], [0.22, 1.2], [0.25, 1.38], [0.21, 1.48], [0.12, 1.56]];
   const fold = (y: number) => 0.05 * Math.min(1, Math.max(0, (1.0 - y) / 1.0));
   parts.body.push(lathe(ROBE, 14, { sx: 1, sz: 0.85, folds: 6, fold }));
@@ -100,7 +102,7 @@ function deacon(): Parts {
 
 // ---- Marrow: short, hunched, in a ragged layered cloak, a clock face on the back ----
 function marrow(): Parts {
-  const parts: Parts = { body: [], trim: [], void: [] };
+  const parts: Parts = { body: [], trim: [], void: [], legs: [] };
   const CLOAK: Profile = [[0.42, 0.15], [0.38, 0.4], [0.32, 0.75], [0.28, 1.0], [0.3, 1.2], [0.27, 1.33], [0.17, 1.45], [0.1, 1.5]];
   const fold = (y: number) => 0.09 * Math.min(1, Math.max(0, (1.1 - y) / 0.95));
   const cloak = lathe(CLOAK, 16, { sx: 1.05, sz: 0.95, folds: 9, fold });
@@ -135,8 +137,20 @@ function marrow(): Parts {
 }
 
 // ---- Ida Vessel: no hood, a tailored Estate coat, squared shoulders, a high collar ----
+
+/** Ida's hips, where her trousers start: the pivots her legs swing on when she walks (Stage 677) */
+export const VESSEL_HIP = { x: 0.09, y: 0.72 } as const;
+/** one of Ida's legs, trouser, boot and shoe, standing under a hip at x = 0 */
+function vesselLeg(): THREE.BufferGeometry[] {
+  return [
+    put(new THREE.CylinderGeometry(0.065, 0.058, 0.5, 8), T(0, VESSEL_HIP.y - 0.25, 0)),
+    put(new THREE.CylinderGeometry(0.068, 0.072, 0.24, 8), T(0, 0.12, 0)),
+    put(new THREE.BoxGeometry(0.1, 0.06, 0.22), T(0, 0.03, -0.04)),
+  ];
+}
+
 function vessel(): Parts {
-  const parts: Parts = { body: [], trim: [], void: [] };
+  const parts: Parts = { body: [], trim: [], void: [], legs: [] };
   const COAT: Profile = [[0.25, 0.5], [0.23, 0.7], [0.2, 0.95], [0.17, 1.03], [0.19, 1.2], [0.21, 1.38], [0.13, 1.49]];
   parts.body.push(lathe(COAT.slice(0, 4), 12, { sx: 1.1, sz: 0.8, gap: 0.5 }));
   parts.body.push(inside(lathe(COAT.slice(0, 4), 12, { sx: 1.1, sz: 0.8, gap: 0.5 })));
@@ -148,11 +162,7 @@ function vessel(): Parts {
   parts.body.push(put(new THREE.SphereGeometry(0.1, 12, 10), T(0, 1.69, 0).multiply(new THREE.Matrix4().makeScale(0.92, 1.12, 1))));
   parts.body.push(put(new THREE.SphereGeometry(0.107, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.62), T(0, 1.705, 0.018)));
   // trousers and boots under the coat
-  for (const x of [-0.09, 0.09]) {
-    parts.body.push(put(new THREE.CylinderGeometry(0.065, 0.058, 0.5, 8), T(x, 0.47, 0)));
-    parts.body.push(put(new THREE.CylinderGeometry(0.068, 0.072, 0.24, 8), T(x, 0.12, 0)));
-    parts.body.push(put(new THREE.BoxGeometry(0.1, 0.06, 0.22), T(x, 0.03, -0.04)));
-  }
+  for (const x of [-VESSEL_HIP.x, VESSEL_HIP.x]) for (const g of vesselLeg()) parts.legs.push(put(g, T(x, 0, 0)));
   // slim sleeves, one hand on the hip
   parts.body.push(put(new THREE.CylinderGeometry(0.055, 0.06, 0.58, 8), T(-0.25, 1.12, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.06))));
   parts.body.push(put(new THREE.CylinderGeometry(0.055, 0.06, 0.32, 8), T(0.27, 1.27, 0).multiply(new THREE.Matrix4().makeRotationZ(0.5))));
@@ -172,7 +182,7 @@ function vessel(): Parts {
 
 // ---- August Wern: a tall black greatcoat to the ankle, a stiff collar, hands behind his back ----
 function wern(): Parts {
-  const parts: Parts = { body: [], trim: [], void: [] };
+  const parts: Parts = { body: [], trim: [], void: [], legs: [] };
   const COAT: Profile = [[0.34, 0.06], [0.31, 0.4], [0.27, 0.8], [0.24, 1.05], [0.23, 1.2], [0.26, 1.38], [0.25, 1.45], [0.15, 1.53]];
   parts.body.push(lathe(COAT, 14, { sx: 1.12, sz: 0.8, folds: 4, fold: () => 0.015, gap: 0.3 }));
   parts.body.push(inside(lathe(COAT, 14, { sx: 1.12, sz: 0.8, folds: 4, fold: () => 0.015, gap: 0.3 })));
@@ -212,7 +222,7 @@ export function fixerGeometry(id: FixerBody): { body: THREE.BufferGeometry; trim
   if (!g) {
     const p = BUILDERS[id]();
     // shared: every visit and every level load reuses them, so release() must never dispose them
-    g = { body: markShared(flat(p.body)), trim: markShared(flat(p.trim)), void: markShared(flat(p.void.length ? p.void : [new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute([], 3))])) };
+    g = { body: markShared(flat([...p.body, ...p.legs])), trim: markShared(flat(p.trim)), void: markShared(flat(p.void.length ? p.void : [new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute([], 3))])) };
     cache.set(id, g);
   }
   return g;
@@ -229,6 +239,36 @@ export function buildFixer(id: FixerBody): THREE.Group {
   if (g.void.getAttribute("position").count) group.add(new THREE.Mesh(g.void, new THREE.MeshBasicMaterial({ color: 0x000000 })));
   group.scale.setScalar(FIXER_SCALE[id]);
   return group;
+}
+
+// ---- Ida Vessel, walking (Stage 677) ----
+//
+// Mission 4 walks Ida from B to D. Until this stage the escort was an amber capsule under a cone, and
+// the only person in the arc the player walks beside had no body there. She walks in her own: the
+// standing figure without its legs, and the legs on their hips, swung by the planted-foot walk the
+// repo mech uses (a person's stride, a person's lift), so neither foot slides over the street.
+
+/** Ida's walk: 1.3 m a cycle at her 2.2 m/s escort pace, the leg read off the built geometry */
+export const VESSEL_STRIDE = 1.3;
+export const VESSEL_LIFT = 0.07;
+
+let walker: { body: THREE.BufferGeometry; leg: THREE.BufferGeometry } | null = null;
+/** Ida without her legs, and one leg with its hip at the origin: built once, shared */
+export function vesselWalkerGeometry(): { body: THREE.BufferGeometry; leg: THREE.BufferGeometry } {
+  if (!walker) {
+    const p = vessel();
+    for (const g of p.legs) g.dispose();
+    for (const g of [...p.trim, ...p.void]) g.dispose();
+    walker = { body: markShared(flat(p.body)), leg: markShared(flat(vesselLeg().map((g) => put(g, T(0, -VESSEL_HIP.y, 0))))) };
+  }
+  return walker;
+}
+
+/** hip to the bottom of the sole, read off the built leg */
+export function vesselLegLength(): number {
+  const g = vesselWalkerGeometry().leg;
+  g.computeBoundingBox();
+  return -g.boundingBox!.min.y;
 }
 
 // ---- a fixer waiting for you (Stage 672) ----

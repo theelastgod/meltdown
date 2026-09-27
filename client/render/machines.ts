@@ -15,6 +15,7 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { markShared } from "./dispose";
+import { plantedBob, plantedGait, type PlantedWalk } from "./gait";
 
 type P3 = readonly [number, number, number];
 const T = (x: number, y: number, z: number) => new THREE.Matrix4().makeTranslation(x, y, z);
@@ -162,31 +163,18 @@ export function mechGeometry(): { hull: THREE.BufferGeometry; leg: THREE.BufferG
 
 /** how high a stepping foot is lifted at the top of its swing */
 export const MECH_LIFT = 0.22;
+/** the mech's walk: its stride, its leg read off the geometry, its lift */
+const mechWalk = (): PlantedWalk => ({ stride: MECH_STRIDE, leg: mechLegLength(), lift: MECH_LIFT });
+
 /**
- * A leg's pose after `walked` metres (Stage 668). For half the cycle the foot is on the ground and
- * slides back under the hip at exactly the body's speed, so it stays where it was put; for the
- * other half it lifts and swings forward to the next foothold. The other leg is half a cycle on.
- * `angle` is the hip's pitch (positive swings the foot forward, toward -z); `lift` raises the leg.
+ * A leg's pose after `walked` metres (Stage 668): the planted-foot walk in `gait.ts`. `angle` is the
+ * hip's pitch (positive swings the foot forward, toward -z); `lift` raises the leg.
  */
 export function mechGait(walked: number, side: -1 | 1): { angle: number; lift: number } {
-  const half = MECH_STRIDE / 4; // how far ahead of (or behind) the hip a foot is put down
-  const u = (((walked / MECH_STRIDE + (side > 0 ? 0.5 : 0)) % 1) + 1) % 1;
-  let ahead: number;
-  let lift = 0;
-  if (u < 0.5) ahead = half - (u / 0.5) * 2 * half;
-  else {
-    const t = (u - 0.5) / 0.5;
-    const eased = t * t * (3 - 2 * t);
-    ahead = -half + eased * 2 * half;
-    lift = MECH_LIFT * Math.sin(Math.PI * t);
-  }
-  return { angle: Math.asin(ahead / mechLegLength()), lift };
+  return plantedGait(mechWalk(), walked, side);
 }
 
 /** how far the hull sinks so the planted foot, on its rigid leg, stays on the ground: a heavy walker's bob */
 export function mechBob(walked: number): number {
-  const l = mechGait(walked, -1);
-  const r = mechGait(walked, 1);
-  const planted = l.lift <= r.lift ? l : r;
-  return -mechLegLength() * (1 - Math.cos(planted.angle));
+  return plantedBob(mechWalk(), walked);
 }

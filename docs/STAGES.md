@@ -1641,6 +1641,75 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 677 — Every escort was Ida Vessel
+
+**The defect.** The campaign has four escorts: Ida Vessel from B to D in mission 4, and a wake cell
+walked home in each of the three WAKE-CELL RESCUE gigs. All four drew the same thing, an amber
+capsule under a cone with IDA VESSEL written over it. The feed said IDA IS MOVING and IDA IS
+WAITING while a file walked a cell of strangers home from the depot. Mission 4 also got the capsule,
+so the one person in the arc the player walks beside had no body there. Stage 667 had given her one
+that only ever stood in the office. The capsule's amber was also wrong: the art bible reserves
+amber for VANTAGE.
+
+**The fix.**
+
+- **Every escort names who it walks.** An escort objective now carries `who: "vessel" | "cell"`.
+  The field is required, so the type check refuses an escort that doesn't say. The runtime names
+  them in the feed through `ESCORT_NAME`: IDA, or THE CELL. `missionView` passes `who` and a
+  `heading` (the leg of the path being walked) to the client, and to co-op guests with the rest of
+  the view.
+- **Ida walks in her own body** (`client/render/escort.ts`). Her standing figure's legs are split
+  out: the standing merge is the same geometry, and walking she is the figure without legs plus two
+  legs on their hips. The legs swing by the planted-foot walk Stage 668 wrote for the repo mech.
+  That walk now lives in `client/render/gait.ts`, so the mech and Ida share one implementation. Ida
+  walks a 1.3 m cycle with a 7 cm lift, her leg length read off the built leg.
+- **A wake cell is three woken citizens.** They are the crowd's own coats, hoods and striding limbs
+  (Stages 665 and 666), walking close together a pace apart. The lease lamp on the chest, which is
+  VANTAGE's amber on everyone in the crowd, is gone; a thin bar of the cells' cyan sits in its
+  place. Their stride is driven by ground covered, not by time.
+- **Both face the way they walk,** and while they wait for the player their feet settle together
+  instead of freezing mid-step. The name tag over them blinks while they wait. Tags use each
+  person's own colour: Ida's Estate gold and the cells' cyan, where both used to be VANTAGE's amber.
+
+**Draw calls.** No change outside an escort: probe:city reads lease_row 185, docks 166, depot 180
+of 190. During an escort Ida costs 4 calls (body, gold, legs, tag) and the cell 5; the capsule cost
+3. The lease_row rescue therefore runs at about 187 of 190.
+
+**The guards (`tests/escort.test.ts`)** run the real mission runtime on a real district and feed
+`missionView` into the real `EscortFigures` the renderer draws, every tick:
+
+- every escort in every contract and variant is Ida exactly when its objective text names her;
+- the docks rescue shows the cell and not Ida, the feed never says IDA and does say THE CELL IS
+  MOVING, and each of the three faces along the path from E to A;
+- the cell's shoes stride more than 15 cm apart while walking and come together while waiting;
+- mission 4 shows Ida, not the cell, with no capsule and no cone, and the feed names her;
+- Ida faces her direction of travel on five headings;
+- over a full stride her planted foot slides under 2% of the stride, never sinks 1 cm or floats
+  1.5 cm, and the stepping foot lifts more than 4 cm;
+- when she waits, both feet come down together on the street.
+
+Eleven mutations were each caught: the feed saying IDA again; the docks cell tagged as Ida; the
+heading always north; the cell turned backwards; no bob; the leg swinging the wrong way; the stride
+driven by time; legs that never settle; the cell always shown; the cell gliding; no lift. The
+Stage-634 pin in `tests/assets.test.ts` that bound the escort's hood to `tex_cloak` in
+`campaign.ts` follows the hood into `escort.ts`, and now also pins the cell's coats to
+`tex_crowd_coat`.
+
+**Measured on the way, not changed.** The Deacon's trim "reading white under bloom" (an open item
+since Stage 667) is the game's cyan, not a defect of his. In the Stage 667 office frame the
+brightest pixels of his trim have saturation 0.29, the Blank's own cyan trim beside him 0.30, and
+the DEADLETTER OFFICE sign 0.43.
+
+**Verified.** Both typecheck configs; `npx vitest run`, 1481 tests; lint:campaign, lint:progression,
+lint:economy and lint:assets clean; probe:campaign 51/51; probe:city 51/51; `npm run build`.
+
+**Proof.** `docs/proof/stage677/escort-before.png` and `escort-after.png` show front, side and back
+views, with Ida in the top row and a wake cell in the bottom row. Before, both rows are the amber
+capsule tagged IDA VESSEL. After, Ida is caught mid-stride in her own coat and gold, and the cell
+walks home in the crowd's coats with the cyan mark. A frame from inside the game was attempted and
+not committed. The headless bot could not be posted ahead of the walking escort on the depot's
+diagonal, so the only in-game frame is from behind, where the cell reads only by its WAKE CELL tag.
+
 ## Stage 676 — Sparing the docks changed nothing you had to do
 
 **The defect.** Stage 663 made the mission-5 lattice choice reach mission 6, but

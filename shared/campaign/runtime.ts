@@ -13,7 +13,7 @@ import type { SimEvent, World } from "../sim/world";
 import { SIM_DT } from "../sim/constants";
 import type { FactionId } from "./factions";
 import { gateOpen, type Testimony } from "./testimony";
-import { missionById, type MissionDef, type Objective, type Spot } from "./missions";
+import { ESCORT_NAME, missionById, type EscortWho, type MissionDef, type Objective, type Spot } from "./missions";
 import { threatProfile, type ThreatProfile } from "./threat";
 
 export type MissionEvent =
@@ -34,6 +34,7 @@ export interface EscortState {
   speed: number;
   leash: number;
   waiting: boolean;
+  who: EscortWho;
 }
 
 export interface MissionState {
@@ -171,7 +172,7 @@ function startObjective(st: MissionState, world: World): void {
       const p = resolveSpot(world.level, s);
       return v3(p.x, 0, p.z);
     });
-    st.escort = { pos: v3(path[0]!.x, 0, path[0]!.z), next: 1, path, speed: o.speed, leash: o.leash, waiting: true };
+    st.escort = { pos: v3(path[0]!.x, 0, path[0]!.z), next: 1, path, speed: o.speed, leash: o.leash, waiting: true, who: o.who };
   } else if (o.kind === "dialogue") {
     st.dialogue = o.script;
     st.events.push({ type: "dialogue", script: o.script });
@@ -257,7 +258,7 @@ export function stepMission(st: MissionState, world: World, events: readonly Sim
     case "escort": {
       const e = st.escort!;
       const near = alivePlayers(world).some((p) => Math.hypot(p.pos.x - e.pos.x, p.pos.z - e.pos.z) <= e.leash);
-      if (near !== !e.waiting) st.events.push({ type: "escort", text: near ? "IDA IS MOVING" : "IDA IS WAITING — STAY CLOSE" });
+      if (near !== !e.waiting) st.events.push({ type: "escort", text: `${ESCORT_NAME[e.who]} ${near ? "IS MOVING" : "IS WAITING — STAY CLOSE"}` });
       e.waiting = !near;
       if (near && e.next < e.path.length) {
         const to = e.path[e.next]!;
@@ -297,6 +298,18 @@ export function drainMissionEvents(st: MissionState): MissionEvent[] {
 }
 
 /** A compact view for HUDs and probes. */
+/**
+ * The way an escort faces, as a sim yaw (front -z at 0): along the leg of the path it is walking, or
+ * the last leg once it has arrived (Stage 677). A person walked home faces home, not north.
+ */
+export function escortHeading(e: EscortState): number {
+  const i = Math.min(e.next, e.path.length - 1);
+  const to = e.path[i]!;
+  const from = i > 0 ? e.path[i - 1]! : e.pos;
+  const dx = to.x - from.x, dz = to.z - from.z;
+  return dx === 0 && dz === 0 ? 0 : Math.atan2(-dx, -dz);
+}
+
 export function missionView(st: MissionState) {
   const o = current(st);
   return {
@@ -310,7 +323,7 @@ export function missionView(st: MissionState) {
     progress: Math.round(st.progress * 100) / 100,
     need: o ? (o.kind === "kill" ? o.count : o.kind === "survive" || o.kind === "hold" ? o.seconds : o.kind === "destroy" ? st.targets.length : 1) : 0,
     dialogue: st.dialogue,
-    escort: st.escort ? { x: st.escort.pos.x, z: st.escort.pos.z, waiting: st.escort.waiting } : null,
+    escort: st.escort ? { x: st.escort.pos.x, z: st.escort.pos.z, waiting: st.escort.waiting, who: st.escort.who, heading: escortHeading(st.escort) } : null,
     targets: st.targets.slice(),
     spawned: { ...st.spawned },
     testimony: { ...st.testimony },
