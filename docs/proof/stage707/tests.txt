@@ -1,0 +1,19 @@
+
+> meltdown@0.1.0 test
+> vitest run tests/assets.test.ts tests/loading.test.ts tests/pwa.test.ts --maxWorkers=1 --testTimeout=60000
+
+
+ RUN  v3.2.7 /Users/wendellphillips/meltdown
+
+ ✓ tests/assets.test.ts (21 tests) 4591ms
+   ✓ an asset can never reach the simulation > and an asset carries nothing a sim could read even if it could see one  447ms
+   ✓ the manifest is honest about what is on disk > lints clean as it stands  1023ms
+   ✓ the lint catches what an art pipeline actually gets wrong > a set that fits individually and busts the budget together  2178ms
+ ✓ tests/loading.test.ts (24 tests) 445ms
+ ✓ tests/pwa.test.ts (9 tests) 129ms
+
+ Test Files  3 passed (3)
+      Tests  54 passed (54)
+   Start at  11:44:08
+   Duration  28.51s (transform 6.43s, setup 0ms, collect 10.18s, tests 5.17s, environment 37ms, prepare 4.70s)
+

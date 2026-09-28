@@ -1641,6 +1641,32 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 707 — Cloth that belongs on a character, and Lease Row's own arrival
+
+**The ask.** Improve the graphics and assets with generated artwork while retaining
+MELTDOWN's existing visual direction.
+
+**The change.** A new graphite cloth plate replaces the scenery and baked colored
+reflections in the cloak's albedo. It uses the same `tex_cloak` identity and 256²
+texture allocation across the player rig, escort and office ghost. The old image is
+preserved; the manifest points to the versioned replacement. Character geometry,
+live faction lighting and gameplay are unchanged.
+
+LEASE ROW now has its own 960×411 destination illustration: dark slab buildings,
+cyan and magenta edges, a pedestrian bridge, wet avenue and the distant Kernel.
+The mission keeps its original narrative art. District illustrations now use the
+same service-worker cache path as mission artwork after being viewed.
+
+**Verified.** Asset lint: 198 assets, 30,683.3 KB within the 65,536 KB ceiling,
+zero violations. The cloak is 154,271 bytes, 11,999 fewer than its predecessor,
+with the same 256² dimensions. The loading, asset and service-worker suites pass
+**54/54**. Generated originals and conditioned outputs were visually reviewed;
+prompts and test logs are in `docs/proof/stage707/`.
+
+**Open.** Browser presentation checks and release verification are in progress.
+The networking stage's recorded local timeouts remain visible; production has
+not yet been updated by these commits.
+
 ## Stage 706 — The city tells each client what is near it
 
 **The ask.** Integrate the latest handoff, preserve the shared city's presence feed,

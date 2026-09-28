@@ -35,9 +35,9 @@ export interface LoadingDescriptor {
   kind: LoadingKind;
 }
 
-/** Each place's picture: the arc's banner fought there, the office's own, the yard's gig. */
+/** Each place's picture: its district illustration, an arc banner, the office's own, or the yard's gig. */
 export const LEVEL_ART: Readonly<Record<string, string>> = {
-  lease_row: "/missions/m1_wake_unlisted.jpg",
+  lease_row: "/districts/lease_row.jpg",
   deadletter_docks: "/missions/m2_deadletter_run.jpg",
   repo_depot: "/missions/m3_repo_volatility.jpg",
   // Stage 701's districts, painted for them: the market's lanterns and crowd, the relay towers' dishes

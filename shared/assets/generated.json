@@ -92,11 +92,11 @@
   {
     "id": "tex_cloak",
     "kind": "texture",
-    "file": "tex_cloak.png",
+    "file": "tex_cloak_v2.png",
     "size": 256,
-    "bytes": 166270,
-    "sha256": "7503867a46907c278ba37c8b1538cc737867df1db171c3fe7c12c5dc4e18828c",
-    "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-20), conditioned by tools/asset-add.ts"
+    "bytes": 154271,
+    "sha256": "41961c929cde1cd75079511f08423c428afe614f1aad3696391f691d1857d09f",
+    "provenance": "generated (built-in image generation, 2026-09-28), conditioned by tools/asset-add.ts"
   },
   {
     "id": "tex_brolly",

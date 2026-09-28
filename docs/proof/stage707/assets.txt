@@ -1,0 +1,5 @@
+
+> meltdown@0.1.0 lint:assets
+> tsx shared/assets/cli.ts
+
+asset lint: 198 asset(s) · 30683.3 KB of 65536.0 KB · 132 plate(s) drawn, 66 recorded undrawn · 12 clip(s), 1519.7 KB not precached · 0 violations
