@@ -1,27 +1,11 @@
-> Stage 629 fixes effect shader warm-up after asynchronous art loading. Focused
-> tests pass 27/27; diagnostic frame probe passes 8/8 with longer startup waits.
-> Stage 628 wake, mastery, and mobile probes all passed GitHub CI. Next stage: **630**.
-> Campaign completion, landing-camera, and remote-pose failures remain open.
+# Handoff — MELTDOWN, for Astra
 
-> Stage 628 updates five stale release-probe expectations; no game bundle changed.
-> Predicate proof is in `docs/proof/stage628/`. Browser acceptance remains limited
-> by local startup timeouts; inspect the new CI run before marking those probes green.
-> Next stage: **629**. Continue with verified campaign/rendering failures in BACKLOG.
+Written 2026-09-28 at **Stage 705**, for Astra (the next agent on this branch). Everything here holds
+for anyone who picks the branch up; the one Astra-specific item is §6, a finished piece of work that
+exists only as a patch file and is yours to merge first.
 
-> Release audit, 2026-09-24: Stage 627 fixes offline art installation. GitHub and
-> production Pages were both at `dd2f8d6` when this work began. The latest CI run
-> was **red**, not verified green; see the release findings in `docs/BACKLOG.md`.
-> Cloudflare CLI access works here. The older deployment-block and no-open-findings
-> statements below are historical. Prioritize the release failures over the next
-> uppercase-copy edit. The next stage number after this release is **628**.
-
-# Handoff — picking up the stage loop
-
-Written 2026-09-23, at Stage 626, for whoever works this next. It is deliberately not addressed to
-a particular agent: everything here holds for anyone who picks the branch up.
-
-Read this, then `docs/BACKLOG.md`, then the top three entries of `docs/STAGES.md`. That is about
-twenty minutes and it is the whole job.
+Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` → `docs/BACKLOG.md` →
+`docs/TOKENOMICS.md` §1 if you touch anything with a price on it.
 
 ---
 
@@ -29,248 +13,234 @@ twenty minutes and it is the whole job.
 
 | | |
 | --- | --- |
-| Branch | `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 626 on this branch (Marrow first line) |
-| Next stage number | **627** |
-| CI | `verify` runs #202–#208 (Stages 172–178) all green; 179 not yet watched on CI |
-| Unit tests | 1208 across 117 files, `npm test` |
-| Probes | 23, 523 checks, ~35–40 min for the full sweep |
-| Lints | four: `fairness`, `campaign`, `economy`, `assets` |
-| Working tree | clean |
+| Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
+| HEAD | `94e455f` Stage 705 (presence feed + WORLD MAP) |
+| Next stage number | **706** — and §6 is already written for it |
+| Unit tests | 1748, `npm test` (vitest) — all green at HEAD |
+| Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
+| Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |
+| CI | Stage 699 green. 700–703 red on three causes all fixed in 704 (a vitest 5 s timeout, probe:mastery shooting the loading card mid-fade, probe:world racing the district). **704 and 705 were still running at handoff — check them first.** |
+| Working tree | clean apart from this file and `docs/handoff/` |
 
 There is no pull request and none was asked for. Do not open one unless the owner asks.
-
-Node 22. `npm ci` if `node_modules` is cold.
+Node 22. `npm ci` if `node_modules` is cold. Chromium is preinstalled for Playwright.
 
 ---
 
-## 2. The method
+## 2. What the owner has asked for (standing, verbatim)
 
-This is the whole of it, and it is not negotiable — it is what makes the stage entries in
-`docs/STAGES.md` worth anything.
+These are the live requests. The last several stages were all in service of the first two.
 
-1. **Look at real frames or real play** for something a player would notice. Not a lint you invented,
-   not a refactor, not a "code smell". A thing that is wrong when someone plays the game.
-2. **Verify it yourself before building anything.** Read the source. Then *measure* it — a real
-   `World`, a real `Room`, a real browser page. The backlog entries are a starting point, not
-   evidence. Two of them turned out sharper than written once measured, and one first measurement
-   in Stage 168 was flatly wrong (a firmware had silently not been flashed because its id is
-   namespaced).
-3. **Build the missing thing.** The smallest change that fixes the actual cause.
-4. **Guard it with a mutation-tested check.** Write the guard, then revert the fix and confirm the
-   guard fails. **A mutation that passes is a hole to close**, not a result to accept.
-5. **Verify on a still tree.** Full `npm test`, the four lints, the probe list in
-   `.github/workflows/verify.yml`, then build and smoke (§4). **Do not edit source while a sweep is
-   running** — the dev server hot-reloads the pages under the probes and you get three failures
-   that look like findings and are not. That cost a rerun in Stage 172.
+1. "Expand the size of the world and the different things you can do in it"
+2. "Make the opening menu with the different loading screens more intuitive — you should start with the
+   campaign in a shared open world"
+3. "Not an hourly check in — work progressively and continuously with no prompts"
+4. "add $CAPITAL as P2E economy"
+5. Standing mission from earlier: campaign, story, narrative progression, graphics, character
+   progression, weapon unlocks; make character designs real; campaign art; Higgsfield may be used
+   freely (`use_unlim:false`).
+
+On (4): **$CAPITAL already exists as the P2E economy** — Stage 14 onward (THE RUN extraction loop:
+PvP zones, safe zones, claims banked for $CAPITAL under daily caps and a Depth gate), with the
+emission schedule, sinks, treasury/relayer split and Merkle prize vaults hardened through Stages
+17–29. Read `docs/TOKENOMICS.md` and `docs/ECONOMY.md`. What is *not* yet done is surfacing it in
+the shared city (§7 has the shape). The hard rule: **$CAPITAL never touches a stat**, and no
+wagering or staking of any kind.
+
+---
+
+## 3. What the last stretch built (Stages 692–705)
+
+The campaign now starts in a **shared open world, "the city"**: one persistent PvE co-op room per
+district on the campaign host.
+
+| Stage | What |
+| --- | --- |
+| 692 | The city: `/campaign/city-<district>` rooms, PvE (`World.pvp=false`), 24 files, contracts taken from anywhere |
+| 693 | Menu is PLAY · CHARACTER · MODES · FILE · WALLET · SETTINGS; PLAY walks into the city; one loading card for every trip (`client/loading.ts`) |
+| 694 | LEASE ROW is 5×5 (174 m); `DistrictSpec.grid` |
+| 695 | probe:net root-caused (two measuring-too-early bugs) |
+| 696 | Crowd drawn once (off the mirror layer); LEASE ROW 220 citizens for the same triangles |
+| 697 | **Gates are doors** between districts (`shared/net/citygates.ts`, the districts tile) |
+| 698 | Input-rate guard: silence earns catch-up credit (no kick after a blocked frame); flood kick times unchanged |
+| 699 | **Public events** (HOLD / INTERCEPT / ESCORT, `shared/city/events.ts`), paid in XP+stamps; **arrival grace** (a loading file is not on the street) |
+| 700 | probe:mastery waits for the loading card |
+| 701 | **Five districts**: + NIGHT MARKET, RELAY HEIGHTS (with Higgsfield loading art in `public/districts/`) |
+| 702 | Client keeps an Audit's sheet past the join file (GLASS week bug) |
+| 703 | **Street runs**: 3 proved time-trial courses per district, server-timed, per-district boards (`shared/city/courses.ts`, `runs.ts`) |
+| 704 | Gates **look** like doors (signs, light, map marks, 0 new draw calls); dev routes `quiet`/`emp`; CI fixes |
+| 705 | **Presence feed** `GET /city` + in-game **WORLD MAP** + PLAY to the busiest district (`shared/city/presence.ts`, `client/worldmap.ts`) |
+
+### Map of the city code
+
+| Concern | Where |
+| --- | --- |
+| District generator, specs, budgets | `shared/sim/city.ts` (`DISTRICT_SPECS`, `generateDistrict`, `districtHalf`) |
+| City room (server) | `server/city-room.ts` (`createCityRoom`: hooks, events, runs, presence, dev hooks) |
+| Generic room, snapshots, rate limits, arrival grace | `server/room.ts` |
+| Hosts | `server/node-host.ts` (dev), `server/campaign-worker.ts` (Cloudflare DO) |
+| Names, URLs, sockets | `shared/net/city.ts` (`CITY_DISTRICTS`, `cityPageUrl`, `inCity`) |
+| Gates | `shared/net/citygates.ts` |
+| Events / runs / rewards / presence | `shared/city/{events,courses,runs,reward,presence,worldmap}.ts` |
+| Client city behaviour | `client/campaign.ts` (mode `"city"`), `client/cityevent.ts`, `client/cityrun.ts`, `client/worldmap.ts` |
+| Loading card / menu | `client/loading.ts`, `client/menu.ts` (`playUrl`, `playInfo`) |
+| Wire | `shared/net/protocol.ts` (`Msg.CityEvent = 20`, `Msg.CityRun = 21`, JSON; version unchanged at 11) |
+| The city's probe | `probe/city.ts` → `npm run probe:world` (9 checks) |
+
+---
+
+## 4. The method (unchanged — it is what makes `docs/STAGES.md` worth reading)
+
+1. **Look at real play** for something a player would notice.
+2. **Verify it yourself** — read the source, then measure: a real `World`, a real `Room`, a real page.
+3. **Build the smallest change** that fixes the cause.
+4. **Guard it with a mutation-tested check**: write the guard, revert the fix, confirm the guard
+   fails. A mutation that passes is a hole to close.
+5. **Verify on a still tree**: typecheck, full `npm test`, the lints, the probes the change touches,
+   one at a time. **Never edit source while a probe runs** (the dev server hot-reloads under it).
 6. **One stage = one commit**, with a `docs/STAGES.md` entry inserted **above** the previous stage
-   heading, `**Proof.**` filled from real measured numbers, and the mutation results written out.
-7. **Push.** Only verified commits.
+   heading, proof from numbers you watched appear, mutations written out, proof images in
+   `docs/proof/stageN/`.
+7. **Push** (`git push -u origin claude/meltdown-game-design-uovda4`). Only verified commits.
 
-### The entry in `docs/STAGES.md`
-
-Match the existing house style — read Stages 172–178 before writing one. What they have in common:
-
-- the promise the code made, quoted from the code or its comment
-- what it actually did, with **measured numbers**, usually as a small table or a block of output
-- what changed, and *why that shape* rather than another
-- **Proof.** — the vitest total, the sweep, build and smoke, all real
-- the mutation list, each one named, each with what failed and how many
-- anything tried and thrown away, and anything exposed but deliberately not fixed
-
-Write plainly. No adjectives doing work the numbers should do.
-
-### Commit messages
-
-Body describes the defect, the measurement, the fix, the mutations. End with:
-
-```
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_01CGtSP1FDJirbYNjg3UdwRf
-```
-
-Replace those two lines with your own attribution. Do not put a model name anywhere else in the
-repository — not in code comments, not in stage entries.
+Entry style: **The ask / The change / Verified / Open**, plain words, measured numbers, what you
+tried and threw away. Commit messages describe defect → measurement → fix → mutations, and end with
+your own attribution lines. **No model names anywhere else in the repository.**
 
 ---
 
-## 3. Rules learned the hard way
+## 5. Rules learned the hard way
 
-Each of these cost a stage or a false start.
+**Never loosen a check.** If a test, lint, budget or probe assertion fails, the fix is in the code or
+in the probe's *setup*, never in its threshold. Examples from this stretch:
+- A per-course XP total over the street-run bound → lowered the XP, kept the bound (703).
+- A rate-limit fix that let 96–110 inputs/s floods live 3× longer → rejected and redone so every
+  flood rate is kicked at exactly the old tick (698).
+- Byte-identical fingerprints for new districts were recorded **on the commit before the change**,
+  in a scratch worktree, after confirming the old ones reproduced there (704).
 
-**On guards**
+**The city is hostile to probe bots.** A bot cannot shoot back. `probe:world` therefore:
+- holds LEASE ROW's event schedule back: `POST /city/<d>/event {quiet: seconds}` (dev host only);
+- grounds patrols for a timed run: `POST /city/<d>/emp {seconds ≤ 300}` (dev host only);
+- re-walks after a death; samples a file's position only before its first death in a room;
+- judges an objective line on files that are not racing (an armed run keeps its own line).
 
-- A mutation that passes is a hole. Stage 159 had two guards where either alone sufficed; the fix
-  was to find the case that separates them. Stage 164's first guard passed 5/5 with the fix
-  reverted, because the bot's slide held high speed for thirty ticks — the luck had to be taken out
-  by putting a whole sprint inside one `advance()` call.
-- A check that passes under its own mutation is measuring the wrong moment.
-- A check that fails one run in twenty is not a guard. Two such are already recorded in
-  `docs/BACKLOG.md` under *Process and gates*.
-- A test defending a guess fails the wrong mutations (Stage 158).
-- **An existing green check may be checking the wrong half.** This is the single most productive
-  pattern in this repo. Stage 171: a chip lint compared total weight and the two sides weighed the
-  same *because they cancelled*. Stage 174: a test called `endingsFor`, which measures the filter
-  and never the selection. Stage 176: the probe asserted the grants landed on the list the defect
-  wrote to. Stage 173: CI ran the fairness lint with `--quick`, which duels three of eight weapons
-  and misses all 89 violations. When you fix something, **check what was supposed to have caught
-  it, and fix that too.**
-- It is fine and correct for a mutation to be caught by only one of two layers, when that layer is
-  the one that owns it (Stage 161). Stage 178 is the clean example: `jumpBuffer` left out fails only
-  the test that plays; `airTime` left out fails only the structural walk.
-- A rule can be *unwired* from the thing CI runs while every test still passes, because the tests
-  call it by name. This was a real hole in both Stage 175 and Stage 176. Add a check that the rule
-  fires through the entry point CI actually invokes.
-- A ratchet cannot police its own record. Stage 173's debt file is guarded by tests that check each
-  recorded magnitude against the percentage in its own detail line, and that percentage against the
-  two times printed beside it.
+**Probes and CPU.** Probes run on SwiftShader and are timing-sensitive. Running vitest-heavy work
+(agents' mutation runs) beside a probe produced a whole batch of false failures. Run probes alone.
 
-**On the simulation**
+**Shell.**
+- Never `pkill -f`/`pgrep -f` a pattern matching your own command line. Kill by PID.
+- Stopping a background shell may leave its node/chromium children alive on the probe ports —
+  check `ss -ltnp` / `ps` and kill by PID before the next run.
+- Write python edit scripts to files; never create a file with a shell heredoc without checking it
+  does not exist.
+- Never run vitest with `--root /`.
+- `git cherry-pick` state can be lost across a container restart; if `--continue` fails, **do not
+  `--amend`** (that folded Stage 699 into 698 once) — `git reset --soft <parent>` and commit.
 
-- Watch for the Stage 156/164 family: work folded inside the drawn-frame branch in
-  `client/game.ts`, past `if (!render || !this.drawing) return;`, that belongs to every frame.
-  Anything *sampled* there rather than counted is lost on a slow machine.
-- Watch for the Stage 167/168/178 family: one life's state with two definitions, the shorter one in
-  a respawn or revive. `reviveWasp`, `reviveMech`, `armFromKit`, `reviveMotion` are the fixes; the
-  guard is a field-for-field comparison of a revived entity against a fresh one.
-- `advance(n)` is a pure synchronous tick loop that draws nothing — the tool for taking timing luck
-  out of a probe.
-- `poseBody` clamps its ease step at `Math.min(rawDt, 1/30)`, so a fixed frame count means the same
-  thing at any frame rate.
-- `rigReport().out` is a **live reference**; `bones` are value snapshots.
+**Probes (code).** No named arrow helpers inside `page.evaluate` (esbuild keep-names injects
+`__name`). Unique variable names across a probe file. A picture's claim is read from the drawn
+frame. A SwiftShader screenshot takes seconds: pause the page's sim (`setRealtime(false)`) around a
+shot taken mid-action.
 
-**On probes**
-
-- No named arrow helpers, named function expressions, or arrow values assigned to object properties
-  inside `page.evaluate` — esbuild's keep-names injects a `__name` the page does not have.
-- Unique variable names across a whole probe file.
-- A third concurrently-open renderer page times out on `ready`. Give an extra page the browser to
-  itself, or close one first.
-- A probe log buffers until the run ends: block on `[script done]`, do not poll.
-- Read boxes, not hit-tests. Wait for the frame where a thing is drawn, not for a stopwatch.
-- A picture's claim is read from the drawn frame, never from a state string.
-
-**On the shell**
-
-- **Never** `pkill -f` / `pgrep -f` with a pattern that matches your own command line. It kills your
-  own shell (exit 144). This happened in Stage 177 *after* the rule was already written down.
-- Kill by PID, and kill the **process**, not the `npx` wrapper in front of it. A `vite preview`
-  leaked this way and served a stale `dist/` on port 5299 for two stages, silently invalidating four
-  measurements in a row.
-- Quote heredocs that carry code.
-- Save mutation-restore copies **after** applying the stage's edits, and restore with `cp`.
-- `git status` should say `??`, not `M`, for a file you meant to create.
-- Do not `git stash` across long waits. A worker restart mid-stash nearly lost a stage; copying the
-  files to the scratchpad is safer.
+**Parallel worktree agents** (if your harness has them): each starts with
+`ln -s /home/user/meltdown/node_modules node_modules`, runs no probes, doesn't push or edit STAGES,
+and returns a draft entry; the parent cherry-picks, renumbers stage references on the lines that
+commit added only, runs the probes, writes STAGES, amends, pushes.
 
 ---
 
-## 4. Verifying
+## 6. First job: merge Stage 706 (interest management) — already built
+
+`docs/handoff/stage706-interest-management.patch` is a finished, unit-tested commit (`ec58224`,
+built on Stage 704) that lived only in a local worktree:
+
+> Interest management for **city rooms only** (`shared/net/interest.ts`): other files within 72 m
+> (kept to 82 m), at most 8 nearest; machines/charges/smoke on the same radius; anything hunting,
+> hurting or hit by the client from anywhere (3 s hold); a public event's machines from 120 m and to
+> its participants from anywhere; the feed always. The city sends its roster (`Msg.CityRoster`) so
+> the file count still knows the whole room. Match/run/every non-city room is **byte-identical on the
+> wire** (hashes in `tests/interest.test.ts`). 24 files over LEASE ROW: **17.9 → 7.1 KB/s per
+> client**; crowded and firing 20.9 → 9.6.
+
+To merge:
+```bash
+git apply --3way docs/handoff/stage706-interest-management.patch
+# conflicts in server/city-room.ts and server/room.ts, against Stage 705's presence code
+# (presenceSeats / presence()) and Stage 704's dev hooks (quietEvents / empDistrict): keep both sides
+npm run typecheck && npm test
+npm run probe:world && npm run probe:net && npm run probe:harden   # one at a time
+```
+- Check `probe:world`'s first check still sees 2 players and each file on the other's screen
+  (they spawn close — inside 72 m — but verify), and that the Stage 705 feed still counts
+  the whole room (the roster should make it so).
+- Suggested new probe check: two files walk > 90 m apart in LEASE ROW; each stops receiving the
+  other's position, the HUD count still says 2, and walking back re-shows them at the new position
+  (no stale lerp).
+- Write the STAGES entry (**Stage 706 — the city tells each client what is near it**), delete
+  `docs/handoff/`, commit, push.
+
+---
+
+## 7. What to build next (in priority order)
+
+1. **Watch CI for 704/705.** The runner is slower than this sandbox. The known CI-only failure was
+   probe:world's event check (a late joiner arriving after the HOLD ended) — fixed in 704 by having
+   CHARLIE join before ALPHA reaches the ring; confirm it.
+2. **$CAPITAL in the shared world** (owner request 4), within `docs/TOKENOMICS.md` §1:
+   - THE RUN's extraction already pays $CAPITAL in its PvP zones. Make it *reachable from the city*:
+     a gate or desk in the city that leads into THE RUN, and a WORLD MAP marker for it.
+   - A city **market kiosk** (Stage 15 built safe-zone kiosks) in NIGHT MARKET for cosmetics and
+     names — a **sink**, never a faucet; `npm run lint:economy` must stay clean.
+   - City events/runs keep paying XP and stamps only. Do **not** add a $CAPITAL faucet to PvE.
+3. **More to do in the city**: an interact key (needs `Btn`/`ACTION_MASK` widened — check the
+   protocol fingerprint tests), vendors/fixers standing in the streets, district-specific event
+   kinds, co-op run relays.
+4. **Bigger world**: more districts (3×3 fits the frame budget easily; 5×5 LEASE ROW sits at 181 of
+   190 draw calls), now that interest management bounds bandwidth.
+5. **Menu**: PLAY already goes to the busiest district; the MODES screen could show live counts
+   from `GET /city`.
+
+---
+
+## 8. Verifying
 
 ```bash
 npm run typecheck
-npm test                       # read the TOTAL, not just "passed"
-npm run lint:fairness          # ~18 s, full 366 builds — see §7
-npm run lint:campaign
-npm run lint:economy
-npm run lint:assets
-# then the 23 probes in .github/workflows/verify.yml order, ~35–40 min
+npm test                     # read the total
+npm run lint:fairness && npm run lint:campaign && npm run lint:economy && npm run lint:progression && npm run lint:assets
+npm run probe:world          # the city; ~6 min
+# plus whichever of the 24 probes (verify.yml order) your change touches, one at a time
 npm run build && npm run smoke
 ```
-
-`npm run verify` chains all of it, but running the probes from a small script that logs
-`PASS/FAIL name checks/total` per probe is far easier to read and lets you keep working while it
-runs. One probe per line, appended as each finishes.
-
-**Smoke reads 6/7 locally and that is the sandbox, not the build.** `.env.production` is present and
-gitignored, so a local `vite build` bakes in the live `meltdown-*.workers.dev` hosts; headless
-Chromium reaches one at boot through the sandbox's TLS-inspecting proxy and refuses the re-signed
-certificate. Move `.env.production` aside, rebuild, and smoke is 7/7 — that is what CI does. Put it
-back and rebuild afterwards.
-
-`probe:run` had a spell of failing in-sequence around Stages 166–171 and passing standalone; it has
-now passed in sequence six sweeps running. If it fails, run it alone before concluding anything.
+`smoke` reads 6/7 in this sandbox: the production build fetches the deployed counter worker and the
+sandbox proxy's TLS is refused. It is 7/7 on CI.
 
 ---
 
-## 5. The week's work
+## 9. Decisions that are the owner's, not yours
 
-`docs/BACKLOG.md` has **0 open findings**. The recorded sweep is closed (Stages 168–195).
-New defects still follow the same method.
+- **The 89 fairness violations** (`stack_smg`, `clockeater`) are recorded debt in
+  `shared/fairness/debt.ts`. You may fix them; never add to the file or loosen the rule.
+- **Cloudflare/Higgsfield credentials** live only in a session scratchpad, never in the repo. No
+  WalletConnect keys in the repo.
+- Deploys: `docs/DEPLOY.md`.
 
-| | Area | Shipped |
-| --- | --- | --- |
-| Mon | sim-core | Stage 179 (`fromSlideJump`) |
-| Tue | campaign | Stages 180–181 |
-| Wed | netcode / campaign | Stages 182–184 |
-| Thu | economy / copy | Stages 185–190 |
-| Fri | audio-render / probes | Stages 191–195 |
-
----
-
-## 6. Stage 627 is next
-
-Stage 626 CRT-cased Marrow's first creation line. His second still says
-mixed-case `We meet where the clocks are broken`. Title cards stay
-prose (probe:ship asserts them). Crew-code reasons stay mixed-case
-(`probe:campaign` asserts `not a crew code`). Do not loosen fairness.
-Do not plate viewmodel or remote strips. The join line still prints
-the socket name — `probe:net` asserts `probe-join-31`; leave it.
-
-City path tests can time out
-under a full `npm test` (the walkway case has taken ~8 s on this
-machine against a 15 s budget).
-
----
-
-## 7. Decisions that are the owner's, not yours
-
-**The 89 fairness violations.** `npm run lint:fairness` reports 89 `ttk-deviation` violations, all on
-`stack_smg` and `clockeater`. They are real and dose-responsive: a −6% spread node moves the SMG's
-40 m kill by −6.7%, −10% by −7.7%, +19% by +19.2%, +29% by +30.8% — on a weapon whose manifest says
-its falloff ends at 28 m. Whether a ledger node may make an SMG viable at 40 m is a **balance**
-decision. Stage 173 did not make it. Instead `shared/fairness/debt.ts` records all 89 with a stable
-key and the magnitude at recording, and the lint now fails on anything **new** or **worse**.
-
-So: you may fix any of them, and the lint will report them cleared. **Do not add to the file, and do
-not loosen the rule.** If a change of yours adds a violation, that is your change to fix, not a line
-to record. `npm run lint:fairness -- --record` exists and regenerating it is a deliberate act whose
-diff is the thing to review.
-
-**`stack_smg:choke` is no longer COMPENSATOR.** Stage 201 authored it as recoil −12% / ADS strafe
-−12%. Do not convert that back to spread. Do not loosen fairness.
-
-**The Cloudflare deploy is blocked**, not forgotten. Every `wrangler` invocation was refused by this
-sandbox's permission classifier, including read-only listing, and no workaround was attempted.
-`dist/` is built and carries the production hosts. It needs either a Bash permission rule for
-`npx wrangler` or the owner running the four commands in `docs/DEPLOY.md` §2–3.
-
----
-
-## 8. Constraints that hold regardless
+## 10. Constraints that hold regardless
 
 - No wagering or staking mechanics of any kind.
-- Rewrite rewards are cosmetic — never power.
+- Rewrite rewards are cosmetic — never power. $CAPITAL never touches a stat.
 - Kernel Protocols stay quarantined from PvP.
-- The PvP match bundle must never reach `shared/economy` or `server/chain`.
-  `tests/quarantine.test.ts` and `tests/counter.test.ts` enforce it, and they caught a mid-stage
-  mistake in Stage 176 within seconds. Trust them.
-- `.github/workflows/verify.yml` steps carry `if: ${{ !cancelled() }}` — keep it when editing.
-- `npm run verify`'s script string and the workflow must agree. `tests/verify.test.ts` (Stage 30)
-  checks that every check the project claims is a step CI runs; it caught exactly that drift in
-  Stage 173.
+- The PvP bundle/worker never imports `shared/economy`, `server/chain` or `shared/campaign`
+  (`tests/quarantine.test.ts`). City code lives in `shared/city/` and match rooms never reach it.
+- A file id is a bearer credential: publish display names only (the presence feed's redaction is
+  the pattern).
+- `.github/workflows/verify.yml` steps carry `if: ${{ !cancelled() }}`; `tests/verify.test.ts`
+  checks the workflow and `npm run verify` agree.
 
----
+## 11. What good looks like
 
-## 9. What good looks like
-
-At the end of a stage, someone should be able to read the `docs/STAGES.md` entry alone and know:
-what was wrong, how you know, what you changed, why that shape, what would break if someone undid
-it, and what you chose not to do.
-
-If a stage's proof section contains a number you did not personally watch appear, it is not proof.
-If the mutation list is short because the mutations passed, the guard is not finished.
-
-Report what actually happened. If a sweep went 22/23, say so, say which one, and say what you did
-about it — both times that happened here it turned out to be a marginal threshold in someone else's
-probe, and both are now written down in the backlog instead of being quietly re-run until green.
+Someone reading one `docs/STAGES.md` entry alone should know what was wrong, how you know, what you
+changed, why that shape, what breaks if it is undone, and what you chose not to do. If a proof
+section has a number you did not watch appear, it is not proof. Report what actually happened —
+including a probe that went 8/9 and why.

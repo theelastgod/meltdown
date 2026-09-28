@@ -1,0 +1,1588 @@
+From ec58224487ff95c2a2e9bcda8afbcf3835746f73 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Mon, 28 Sep 2026 04:23:36 +0000
+Subject: [PATCH] =?UTF-8?q?Stage=20706=20=E2=80=94=20the=20city=20tells=20?=
+ =?UTF-8?q?each=20client=20what=20is=20near=20it?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Interest management for city rooms only (shared/net/interest.ts): other
+files within 72 m (kept to 82 m), at most 8 of them nearest first; machines,
+charges and smoke on the same radius; anything hunting, hurting or hit by
+the client from anywhere (3 s hold); a public event's machines from 120 m,
+and from anywhere to its participants; gunfire from files in view and
+machines within hearing; the feed always. The city sends its roster
+(Msg.CityRoster, JSON) so the file count still knows the whole room, and a
+file that walks in without a gate arrives at the spawn nearest somebody.
+
+Match, run and every non-city room are byte-identical on the wire
+(tests/interest.test.ts holds hashes taken before the change). 24 files
+spread over LEASE ROW: 17.9 -> 7.1 KB/s per client; crowded and firing:
+20.9 -> 9.6.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01CGtSP1FDJirbYNjg3UdwRf
+---
+ client/game.ts          |   3 +
+ client/main.ts          |   3 +
+ client/net/netclient.ts |  26 +-
+ server/city-room.ts     |  78 ++++-
+ server/room.ts          | 144 +++++++-
+ shared/city/events.ts   |  15 +
+ shared/net/interest.ts  | 228 ++++++++++++
+ shared/net/protocol.ts  |  24 +-
+ tests/interest.test.ts  | 754 ++++++++++++++++++++++++++++++++++++++++
+ 9 files changed, 1256 insertions(+), 19 deletions(-)
+ create mode 100644 shared/net/interest.ts
+ create mode 100644 tests/interest.test.ts
+
+diff --git a/client/game.ts b/client/game.ts
+index 68c4d73..a89c55e 100644
+--- a/client/game.ts
++++ b/client/game.ts
+@@ -522,6 +522,9 @@ export class Game {
+       local.pos.y = d.y;
+       local.pos.z = d.z;
+     }
++    // one the room did not send is out of this client's view (a city's interest, Stage 706): it is not
++    // drawn, rather than left standing where it was last told of. Every other room sends them all
++    if (ns.dummies.length < this.world.dummies.length) for (const local of this.world.dummies) if (!ns.dummies.some((d) => d.id === local.id)) local.alive = false;
+     if (ns.local) {
+       const before = { x: p.pos.x, y: p.pos.y, z: p.pos.z };
+       const wasSynced = this.synced;
+diff --git a/client/main.ts b/client/main.ts
+index 1d8e1df..60dcda2 100644
+--- a/client/main.ts
++++ b/client/main.ts
+@@ -413,6 +413,9 @@ window.__game = {
+           stats: { ...game.net.stats },
+           game: { ...game.netStats },
+           remotes: game.net.remoteViews(),
++          // everyone in a city room, names only (Stage 706); null in a room that does not send one
++          roster: game.net.roster,
++          files: game.net.files,
+           kickReason: game.net.kickReason,
+         }
+       : null,
+diff --git a/client/net/netclient.ts b/client/net/netclient.ts
+index 3245848..2c083b6 100644
+--- a/client/net/netclient.ts
++++ b/client/net/netclient.ts
+@@ -9,7 +9,7 @@ import {
+   type NetInput,
+   type RemotePlayerQ,
+   type Snapshot,
+-  type FileMsg, type SocialMsg, type MissionMsg, type RunMsg, type CityEventMsg, type CityRunMsg, encodeChoice, encodeTerminal, type TerminalMsg,
++  type FileMsg, type SocialMsg, type MissionMsg, type RunMsg, type CityEventMsg, type CityRunMsg, type CityRosterMsg, encodeChoice, encodeTerminal, type TerminalMsg,
+ } from "@shared/net/protocol";
+ import { joinDelay, joinGiveUpMs } from "@shared/net/rejoin";
+ import type { Transport } from "./transport";
+@@ -81,6 +81,12 @@ export class NetClient {
+   onCityEvent: ((m: CityEventMsg) => void) | null = null;
+   /** the city's street runs (Stage 703): only a city room sends it */
+   onCityRun: ((m: CityRunMsg) => void) | null = null;
++  /**
++   * Everyone in the room, names only, when the room says (Stage 706). A city room tells each client
++   * only about the files near it, so its snapshots stop being the room; this is. Null in every room
++   * that does not send it, where the snapshot's player list still is the room.
++   */
++  roster: CityRosterMsg["players"] | null = null;
+ 
+   constructor(private transport: Transport, private name: string, token = "", private account = "", private loadout = "", private identity = "", private secret = "") {
+     this.token = token;
+@@ -229,6 +235,9 @@ export class NetClient {
+       case "cityRun":
+         this.onCityRun?.(msg.cityRun);
+         break;
++      case "cityRoster":
++        this.roster = msg.cityRoster.players;
++        break;
+       case "welcome":
+         // the room says hello again when it thinks the first one was lost (Stage 155); a client
+         // already in its seat takes the repeat as an ack and nothing else — running the branch
+@@ -272,6 +281,13 @@ export class NetClient {
+         this.latestAt = performance.now();
+         this.baselines.set(s.tick, s);
+         for (const t of this.baselines.keys()) if (t < s.tick - 120) this.baselines.delete(t);
++        /*
++         * A file missing from a snapshot is gone from this client's view: it left the room, or (in a
++         * city, Stage 706) it walked out of this client's interest. Either way its samples go, and
++         * the renderer drops its body with them, so nothing is left standing where it was last seen.
++         * A file that comes back starts a fresh list: its first sample is where it is now, and with
++         * one sample `remoteViews` draws it there rather than lerping from where it was.
++         */
+         for (const p of s.players) {
+           this.names.set(p.id, p.name);
+           this.tags.set(p.id, p.tag);
+@@ -289,10 +305,14 @@ export class NetClient {
+ 
+   /**
+    * How many files are in this room, this one included, or 0 with no room (Stage 149). The
+-   * snapshot's player list is everyone but the recipient, so the room is the remotes plus me.
++   * snapshot's player list is everyone but the recipient, so the room is the remotes plus me — except
++   * in a city, which sends only the files near each client and says who is in the room in its roster
++   * (Stage 706). A remote the roster has not caught up with yet still counts.
+    */
+   get files(): number {
+-    return this.status === "joined" ? this.remotes.size + 1 : 0;
++    if (this.status !== "joined") return 0;
++    const seen = this.remotes.size + 1;
++    return this.roster ? Math.max(seen, this.roster.length) : seen;
+   }
+ 
+   /** Interpolated remote players at the current view tick. */
+diff --git a/server/city-room.ts b/server/city-room.ts
+index cf052b1..9f027ff 100644
+--- a/server/city-room.ts
++++ b/server/city-room.ts
+@@ -13,14 +13,22 @@
+  * The room keeps every runner's clock from where the sim put them; a finish is posted to the district's
+  * board, told to everyone, and the first finish of each course is credited to the file. A host that
+  * can keep the board (the campaign Worker's Durable Object storage) passes `runBoard`.
++ *
++ * Interest (Stage 706): each client is told about what is near it, not the whole district
++ * (`shared/net/interest.ts`). This module says what only the city knows — which wasps a public event
++ * has borrowed and who is taking part — and sends the roster (`Msg.CityRoster`), because the
++ * snapshot's player list is no longer everyone in the room. A file that walks in without a gate
++ * arrives at the spawn nearest somebody already in the street, so the city it enters is not empty.
+  */
+-import { Room, type RoomHooks, type RoomOptions } from "./room";
++import { Room, type InterestPolicy, type RoomHooks, type RoomOptions } from "./room";
+ import { campaignOf } from "../shared/campaign/save";
+ import { protocolMods } from "../shared/campaign/protocols";
+ import { cityDistrict } from "../shared/net/city";
+ import { arrivalFromQuery } from "../shared/net/citygates";
+ import { reviveMotion } from "../shared/sim/player";
+-import { encodeCityEvent, encodeCityRun, type CityEventMsg, type CityRunMsg } from "../shared/net/protocol";
++import { encodeCityEvent, encodeCityRoster, encodeCityRun, ENT_WASP, type CityEventMsg, type CityRunMsg } from "../shared/net/protocol";
++import { bodyKey } from "../shared/net/interest";
++import type { LevelDef, SpawnPoint } from "../shared/sim/level";
+ import { CityEvents, type CityEventKind, type CityEventView } from "../shared/city/events";
+ import { creditCityEvent, creditStreetRun } from "../shared/city/reward";
+ import { STREET_RUN, type StreetRunCourse } from "../shared/city/courses";
+@@ -61,6 +69,36 @@ export const CITY_MAX_PLAYERS = 24;
+ /** how often a running event's progress goes out (ticks): twice a second, as a contract's does */
+ const EVENT_PUSH_TICKS = 30;
+ 
++/**
++ * How often the roster goes out even when nobody came or went (ticks): every ten seconds, so a client
++ * that relinked (a rejoin keeps its seat and misses the changes in between) is right again soon.
++ */
++export const ROSTER_EVERY_TICKS = 600;
++
++/** an arrival is not put on top of somebody: a spawn closer than this to another file is passed over */
++const CROWD_CLEAR = 3;
++
++/**
++ * Where a file that walked in without a gate should stand (Stage 706): the district spawn nearest to
++ * any other file already in the street, or null to keep where the room put it. With interest a file
++ * is shown only what is near it, and the room hands spawns out in turn — the first two files into
++ * LEASE ROW used to stand 168 m apart, out of each other's view.
++ */
++export function crowdSpawn(level: LevelDef, others: readonly { x: number; z: number }[], from: { x: number; z: number }): SpawnPoint | null {
++  if (!others.length) return null;
++  const gap = (x: number, z: number) => Math.min(...others.map((o) => Math.hypot(o.x - x, o.z - z)));
++  let best: SpawnPoint | null = null;
++  let bestGap = gap(from.x, from.z);
++  for (const sp of level.spawns) {
++    const g = gap(sp.pos.x, sp.pos.z);
++    if (g >= CROWD_CLEAR && g < bestGap) {
++      best = sp;
++      bestGap = g;
++    }
++  }
++  return best;
++}
++
+ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
+   const district = cityDistrict(opts.district);
+   let events: CityEvents | null = null;
+@@ -154,20 +192,52 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
+     }
+   };
+ 
++  // ---- who is in the room, and what each client is told about (Stage 706) ----
++  let rosterSent = "";
++  const sendRoster = (room: Room, force: boolean): void => {
++    const players = room.roster();
++    const sig = players.map((x) => `${x.id}:${x.name}:${x.tag}`).join("|");
++    if (!force && sig === rosterSent) return;
++    rosterSent = sig;
++    room.send(encodeCityRoster({ players }));
++  };
++  let lentAt = -1;
++  let lentKeys: ReadonlySet<number> = new Set();
++  const interest: InterestPolicy = {
++    eventKeys(room) {
++      // asked once per client per snapshot: worked out once per tick
++      if (lentAt !== room.world.tick) {
++        lentAt = room.world.tick;
++        const ev = eventsOf(room);
++        lentKeys = ev.current?.status === "running" ? new Set([...ev.lent].map((id) => bodyKey(ENT_WASP, id))) : new Set();
++      }
++      return lentKeys;
++    },
++    participant: (room, playerId) => eventsOf(room).takesPart(playerId, keyOf(room)(playerId)),
++  };
++
+   const hooks: RoomHooks = {
+     onAdmit(room, playerId, account, query) {
+       const p = room.world.players.get(playerId);
+       if (p && account) room.world.setLoadout(p, account.loadout, protocolMods(campaignOf(account).worn));
+       // a file walking in through a gate (Stage 697) stands at that gate, facing in — when the gate
+-      // it names really leads back to where it says it came from; anything else takes the room's spawn
++      // it names really leads back to where it says it came from; anything else takes the room's spawn,
++      // the one nearest somebody already in the street when there is anybody (Stage 706)
+       const arrive = arrivalFromQuery(room.world.level, query);
+       if (p && arrive) reviveMotion(p, arrive);
++      else if (p) {
++        const others = [...room.world.players.values()].filter((o) => o.id !== playerId).map((o) => o.pos);
++        const near = crowdSpawn(room.world.level, others, p.pos);
++        if (near) reviveMotion(p, near);
++      }
+       // a late joiner sees the event already running (or the one just ended, or when the next is due)
+       room.send(encodeCityEvent(msgFor(room, playerId)), playerId);
+       // and the district's street runs: where they start, the board, and this file's bests (Stage 703)
+       room.send(encodeCityRun({ courses: coursesMsg(runsOf(room).courses), board: boardMsg(room), best: bestMsg(room, account?.id ?? null), run: null }), playerId);
+     },
+     afterStep(room, simEvents) {
++      // the roster: on every change of who is in the room, and every ten seconds anyway
++      sendRoster(room, room.world.tick % ROSTER_EVERY_TICKS === 0);
+       stepRuns(room);
+       const ev = eventsOf(room);
+       const notice = ev.step(room.world, simEvents, keyOf(room));
+@@ -195,7 +265,7 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
+       if (ev.current?.status === "running" && room.world.tick % EVENT_PUSH_TICKS === 0) pushAll(room);
+     },
+   };
+-  const room = new Room({ maxPlayers: CITY_MAX_PLAYERS, ...opts, hooks, level: district, ai: true, wakePhase: "off", dummyRespawn: true, pvp: false, run: false, arrivalGrace: true });
++  const room = new Room({ maxPlayers: CITY_MAX_PLAYERS, ...opts, hooks, level: district, ai: true, wakePhase: "off", dummyRespawn: true, pvp: false, run: false, arrivalGrace: true, interest });
+   // the courses are built (and proved) now, before anyone is in the street, not on the first join
+   const rs = runsOf(room);
+   const b = boardOf(room);
+diff --git a/server/room.ts b/server/room.ts
+index 8bfca0d..d76b27e 100644
+--- a/server/room.ts
++++ b/server/room.ts
+@@ -56,6 +56,7 @@ import type { AccountStore } from "./accounts";
+ import { fileAuth } from "../shared/progression/account";
+ import type { PlayerStats } from "../shared/sim/player";
+ import { JOIN_RESENDS, REJOIN_GRACE_SECONDS } from "../shared/net/rejoin";
++import { BODY_DUMMY, BODY_PLAYER, INTEREST, InterestSet, bodyKey, eventInterest, stickyFrom, type InterestBody } from "../shared/net/interest";
+ 
+ export interface Conn {
+   send(buf: ArrayBuffer): void;
+@@ -122,6 +123,31 @@ interface ClientRec {
+   /** playerId in this room of the file I owe a Debt to (−1 none) */
+   debtTargetId: number;
+   debtClearedThisRound: boolean;
++  /** what this client is told about, in a room that filters its snapshots (Stage 706); null in every other room */
++  interest: InterestSet | null;
++}
++
++/**
++ * A room that tells each client only about what is near it (Stage 706): the city. The room does the
++ * filtering (`shared/net/interest.ts`); the policy says what the mode on top of it knows — which
++ * machines a public event has borrowed, and who took part in it.
++ */
++export interface InterestPolicy {
++  /** the entity keys (`bodyKey(ENT_*, id)`) of machines a running public event has, seen from further */
++  eventKeys(room: Room): ReadonlySet<number>;
++  /** whether this player is on the running event's list of who took part: it sees the event's machines wherever they are */
++  participant(room: Room, playerId: number): boolean;
++}
++
++/** what the room knows about one snapshot entity that the wire does not carry: whose it is, whom it hunts */
++interface EntityMeta {
++  key: number;
++  x: number;
++  z: number;
++  /** the player whose charge it is, or whom it is hunting (−1: nobody) */
++  of: number;
++  /** a wake node: part of the match, not of the street */
++  global: boolean;
+ }
+ 
+ /** Hooks a host may attach to run a mode on top of the room without the room importing it (the campaign co-op room). */
+@@ -191,6 +217,11 @@ export interface RoomOptions {
+    * the patrols fly (the docks' WEST GATE is on a wasp route). Off by default; the city asks for it.
+    */
+   arrivalGrace?: boolean;
++  /**
++   * Interest management (Stage 706): tell each client only about what is near it. Only the city sets
++   * it; without it a room's snapshots are exactly what they always were.
++   */
++  interest?: InterestPolicy | null;
+ }
+ 
+ /** the longest a file can stay off the street without sending an input: 30 s, a slow phone's load */
+@@ -207,7 +238,7 @@ export interface RoomStats {
+   kicks: number;
+   inputsRejected: number;
+   bytesOut: number;
+-  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; throttled: number; inputsApplied: number; inputsRejected: number; gapFilled: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number; stamps: number; ranks: Record<string, number> } | null; loadout: Loadout; identity: { display: string; chapter: number; moniker: string | null; debt: string | null; debtTarget: number; wakelight: number; chapters: number[] } }[];
++  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; throttled: number; inputsApplied: number; inputsRejected: number; gapFilled: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number; stamps: number; ranks: Record<string, number> } | null; loadout: Loadout; identity: { display: string; chapter: number; moniker: string | null; debt: string | null; debtTarget: number; wakelight: number; chapters: number[] }; inView?: { files: number; bodies: number } }[];
+   settlements: number;
+   /** social messages sent, by kind (dossier / debt / rite) */
+   social: Record<string, number>;
+@@ -325,6 +356,7 @@ export class Room {
+       run: opts.run ?? false,
+       pvp: opts.pvp ?? true,
+       arrivalGrace: opts.arrivalGrace ?? false,
++      interest: opts.interest ?? null,
+       wakePhase: opts.wakePhase ?? "warmup",
+       dummyRespawn: opts.dummyRespawn ?? true,
+     };
+@@ -736,6 +768,7 @@ export class Room {
+       killedBy: new Map(),
+       debtTargetId: -1,
+       debtClearedThisRound: false,
++      interest: this.opts.interest ? new InterestSet() : null,
+     };
+     if (account) account.loadout = v.loadout;
+     const joinNote = rec.progress.fileMilestones({ stamps: [], ranks: [], challenges: [] });
+@@ -763,6 +796,20 @@ export class Room {
+     return [...this.clients.keys()];
+   }
+ 
++  /**
++   * Everyone in the room as a snapshot names them (Stage 706): the display name and identity tag, no
++   * position. A room that filters its snapshots tells its clients this instead of letting the
++   * snapshot's player list stand for the room.
++   */
++  roster(): { id: number; name: string; tag: string }[] {
++    return [...this.clients.values()].map((rec) => ({ id: rec.playerId, name: rec.identity.display, tag: identityTag(rec.identity) }));
++  }
++
++  /** what a client was told about in its last snapshot (Stage 706), or null in a room that tells everyone everything */
++  inViewOf(playerId: number): ReadonlySet<number> | null {
++    return this.clients.get(playerId)?.interest?.keys ?? null;
++  }
++
+   /**
+    * A hook changed a file outside a settlement (the city's public events, Stage 699): save it, let
+    * any stamp its counters now meet un-redact, and tell the client its file with the lines to print.
+@@ -1182,6 +1229,10 @@ export class Room {
+         rec.conn?.send(encodeFile(this.fileMsg(rec, note.stamps.map((id) => `STAMP · ${stampLine(id)}`), "stamp", note)));
+       }
+     }
++    if (this.opts.interest) {
++      // whatever hurt a client, or it hit, stays in its view for a while wherever it goes (Stage 706)
++      for (const ev of tickEvents) for (const { viewer, key } of stickyFrom(ev)) this.clients.get(viewer)?.interest?.hold(key, this.tick + INTEREST.stickyTicks);
++    }
+     for (const ev of tickEvents) {
+       if (ev.type === "kill" && ev.victimKind === "player") this.onPlayerKill(ev.playerId, ev.victimId);
+       if (ev.type === "bank") this.onBank(ev.playerId, ev.value, ev.zone);
+@@ -1342,27 +1393,96 @@ export class Room {
+     }
+   }
+ 
+-  private entities(): NetEntity[] {
++  /**
++   * The snapshot's entities. `meta`, when given, is filled in step with them (one per entity, same
++   * order) with what an interest filter needs and the wire does not carry (Stage 706); the entities
++   * themselves are the same either way.
++   */
++  private entities(meta?: EntityMeta[]): NetEntity[] {
+     const out: NetEntity[] = [];
+     const w = this.world;
+-    for (const p of w.projectiles) out.push({ kind: ENT_PROJECTILE, id: p.id, x: p.pos.x, y: p.pos.y, z: p.pos.z, a: p.kind === "phage" ? 1 : p.kind === "sticky" ? 2 : p.kind === "frag" ? 3 : p.kind === "smoke" ? 4 : 5, b: p.stuck ? 1 : 0, c: Math.round(p.fuse * 100), d: 0 });
+-    for (const c of w.clouds) out.push({ kind: ENT_CLOUD, id: c.id, x: c.pos.x, y: c.pos.y, z: c.pos.z, a: 0, b: 0, c: Math.round(c.radius * 100), d: Math.round(c.ttl * 100) });
+-    for (const ws of w.wasps) out.push({ kind: ENT_WASP, id: ws.id, x: ws.pos.x, y: ws.pos.y, z: ws.pos.z, a: ws.alive ? 1 : 0, b: Math.max(0, ws.health), c: Math.round(ws.yaw * 1000), d: ws.disabledTimer > 0 ? 2 : ws.state === "chase" ? 1 : 0 });
+-    if (w.wake) for (const n of w.wake.nodes) out.push({ kind: ENT_NODE, id: n.id, x: n.pos.x, y: n.pos.y, z: n.pos.z, a: n.owner, b: Math.round(n.hold * 100), c: (n.contested ? 1 : 0) | (n.puller << 1) | (n.boost > 0 ? 8 : 0), d: n.links.reduce((m, l) => m | (1 << l), 0) });
+-    for (const m of w.mechs) out.push({ kind: ENT_MECH, id: m.id, x: m.pos.x, y: m.pos.y, z: m.pos.z, a: m.alive ? 1 : 0, b: Math.round(Math.max(0, m.health) / 2), c: Math.round(m.yaw * 1000), d: Math.round((m.face + m.lightYaw) * 1000) });
++    const note = (kind: number, id: number, x: number, z: number, of: number, global = false) => meta?.push({ key: bodyKey(kind, id), x, z, of, global });
++    for (const p of w.projectiles) {
++      out.push({ kind: ENT_PROJECTILE, id: p.id, x: p.pos.x, y: p.pos.y, z: p.pos.z, a: p.kind === "phage" ? 1 : p.kind === "sticky" ? 2 : p.kind === "frag" ? 3 : p.kind === "smoke" ? 4 : 5, b: p.stuck ? 1 : 0, c: Math.round(p.fuse * 100), d: 0 });
++      note(ENT_PROJECTILE, p.id, p.pos.x, p.pos.z, p.owner);
++    }
++    for (const c of w.clouds) {
++      out.push({ kind: ENT_CLOUD, id: c.id, x: c.pos.x, y: c.pos.y, z: c.pos.z, a: 0, b: 0, c: Math.round(c.radius * 100), d: Math.round(c.ttl * 100) });
++      note(ENT_CLOUD, c.id, c.pos.x, c.pos.z, -1);
++    }
++    for (const ws of w.wasps) {
++      out.push({ kind: ENT_WASP, id: ws.id, x: ws.pos.x, y: ws.pos.y, z: ws.pos.z, a: ws.alive ? 1 : 0, b: Math.max(0, ws.health), c: Math.round(ws.yaw * 1000), d: ws.disabledTimer > 0 ? 2 : ws.state === "chase" ? 1 : 0 });
++      note(ENT_WASP, ws.id, ws.pos.x, ws.pos.z, ws.alive && ws.state === "chase" ? ws.targetId : -1);
++    }
++    if (w.wake)
++      for (const n of w.wake.nodes) {
++        out.push({ kind: ENT_NODE, id: n.id, x: n.pos.x, y: n.pos.y, z: n.pos.z, a: n.owner, b: Math.round(n.hold * 100), c: (n.contested ? 1 : 0) | (n.puller << 1) | (n.boost > 0 ? 8 : 0), d: n.links.reduce((m, l) => m | (1 << l), 0) });
++        note(ENT_NODE, n.id, n.pos.x, n.pos.z, -1, true);
++      }
++    for (const m of w.mechs) {
++      out.push({ kind: ENT_MECH, id: m.id, x: m.pos.x, y: m.pos.y, z: m.pos.z, a: m.alive ? 1 : 0, b: Math.round(Math.max(0, m.health) / 2), c: Math.round(m.yaw * 1000), d: Math.round((m.face + m.lightYaw) * 1000) });
++      note(ENT_MECH, m.id, m.pos.x, m.pos.z, m.alive ? m.targetId : -1);
++    }
+     return out;
+   }
+ 
++  /**
++   * One client's share of a snapshot in a room that filters (Stage 706): itself always, and of the
++   * rest what `shared/net/interest.ts` says is near it, hunting it, hurting it, hit by it, or its
++   * event's. The lists keep the world's order, so the delta against the baseline is the same shape
++   * an unfiltered snapshot has.
++   */
++  private interestView(rec: ClientRec, me: PlayerState, all: { players: ReturnType<Room["quantized"]>[]; dummies: Snapshot["dummies"]; entities: NetEntity[]; meta: EntityMeta[] }): { players: Snapshot["players"]; dummies: Snapshot["dummies"]; entities: NetEntity[]; view: ReadonlySet<number> } {
++    const policy = this.opts.interest!;
++    const eventKeys = policy.eventKeys(this);
++    const part = eventKeys.size > 0 && policy.participant(this, rec.playerId);
++    const bodies: InterestBody[] = [];
++    for (const q of all.players) bodies.push({ key: bodyKey(BODY_PLAYER, q.id), x: q.x, z: q.z, player: true });
++    for (const d of all.dummies) bodies.push({ key: bodyKey(BODY_DUMMY, d.id), x: d.x, z: d.z });
++    for (const m of all.meta) {
++      const wide = eventKeys.has(m.key);
++      bodies.push({ key: m.key, x: m.x, z: m.z, wide, always: m.global || m.of === rec.playerId || (wide && part) });
++    }
++    const view = rec.interest!.select(me.pos, bodies, this.tick);
++    return {
++      players: all.players.filter((q) => view.has(bodyKey(BODY_PLAYER, q.id))),
++      dummies: all.dummies.filter((d) => view.has(bodyKey(BODY_DUMMY, d.id))),
++      entities: all.entities.filter((_, i) => view.has(all.meta[i]!.key)),
++      view,
++    };
++  }
++
+   private broadcast(): void {
+     const serverTimeMs = this.opts.now();
++    // a room that filters builds every body once per snapshot, then hands each client its share (Stage 706)
++    let all: Parameters<Room["interestView"]>[2] | null = null;
++    if (this.opts.interest) {
++      const meta: EntityMeta[] = [];
++      const entities = this.entities(meta);
++      all = { players: [...this.world.players.values()].map((p) => this.quantized(p)), dummies: this.world.dummies.map((d) => ({ id: d.id, alive: d.alive, health: d.health, x: d.pos.x, y: d.pos.y, z: d.pos.z })), entities, meta };
++    }
+     for (const rec of this.clients.values()) {
+       if (!rec.conn) {
+         rec.pendingEvents.length = 0;
+         continue;
+       }
+       const me = this.world.players.get(rec.playerId)!;
+-      const players = [...this.world.players.values()].filter((p) => p.id !== rec.playerId).map((p) => this.quantized(p));
+-      const dummies = this.world.dummies.map((d) => ({ id: d.id, alive: d.alive, health: d.health, x: d.pos.x, y: d.pos.y, z: d.pos.z }));
++      let players: Snapshot["players"];
++      let dummies: Snapshot["dummies"];
++      let entities: NetEntity[];
++      let events: NetEvent[];
++      if (all) {
++        const mine = this.interestView(rec, me, { ...all, players: all.players.filter((q) => q.id !== rec.playerId) });
++        players = mine.players;
++        dummies = mine.dummies;
++        entities = mine.entities;
++        events = rec.pendingEvents.splice(0).filter((ev) => eventInterest(ev, rec.playerId, me.pos, mine.view));
++      } else {
++        players = [...this.world.players.values()].filter((p) => p.id !== rec.playerId).map((p) => this.quantized(p));
++        dummies = this.world.dummies.map((d) => ({ id: d.id, alive: d.alive, health: d.health, x: d.pos.x, y: d.pos.y, z: d.pos.z }));
++        entities = this.entities();
++        events = rec.pendingEvents.splice(0);
++      }
+       const snap: Omit<Snapshot, "bytes"> = {
+         tick: this.tick,
+         serverTimeMs,
+@@ -1379,9 +1499,9 @@ export class Room {
+         local: this.world.exportLocal(me, rec.lastAppliedSeq),
+         players,
+         dummies,
+-        entities: this.entities(),
++        entities,
+         match: this.world.wake ? { phase: this.world.wake.phase === "warmup" ? 0 : this.world.wake.phase === "wake" ? 1 : 2, timeLeft: this.world.wake.timeLeft, score1: this.world.wake.score[1], score2: this.world.wake.score[2], winner: this.world.wake.winner, round: this.world.wake.round } : null,
+-        events: rec.pendingEvents.splice(0),
++        events,
+       };
+       const baseline = rec.ackTick ? rec.sent.get(rec.ackTick) ?? null : null;
+       const buf = encodeSnapshot(snap, baseline);
+@@ -1449,6 +1569,8 @@ export class Room {
+         file: c.account ? { account: c.account.id, depth: c.account.depth, xp: c.account.xp, scrip: c.account.wallet.scrip, settlements: c.settlements, stamps: c.account.stamps.length, ranks: Object.fromEntries(Object.entries(c.account.mastery).map(([w, m]) => [w, m.rank])) } : null,
+         loadout: c.loadout,
+         identity: { display: c.identity.display, chapter: c.identity.chapter, moniker: c.identity.moniker, debt: c.account?.debt?.display ?? null, debtTarget: c.debtTargetId, wakelight: c.account?.wallet.wakelight ?? 0, chapters: c.account?.chapters.slice() ?? [] },
++        // in a room that filters its snapshots (Stage 706): how many other files, and bodies in all, this client was last told about
++        ...(c.interest ? { inView: { files: [...c.interest.keys].filter((k) => k < 65536).length, bodies: c.interest.keys.size } } : {}),
+       };
+     });
+     return {
+diff --git a/shared/city/events.ts b/shared/city/events.ts
+index 06931d8..af08cf6 100644
+--- a/shared/city/events.ts
++++ b/shared/city/events.ts
+@@ -216,6 +216,21 @@ export class CityEvents {
+     return !!this.current && this.current.participants.has(key);
+   }
+ 
++  /**
++   * The wasps the running event has borrowed (its convoy, a hold's waves, an escort's ambush): the
++   * machines the city's interest filter shows from further, and to its participants from anywhere
++   * (Stage 706). Empty between events: everything is handed back when one ends.
++   */
++  get lent(): ReadonlySet<number> {
++    return new Set(this.borrowed.keys());
++  }
++
++  /** Whether this player, seen under `key` (or as `#id` without one, as `mark` keys it), is on the running event's list. */
++  takesPart(playerId: number, key: string | null): boolean {
++    const ev = this.current;
++    return !!ev && ev.status === "running" && ev.participants.get(key ?? `#${playerId}`) === playerId;
++  }
++
+   /**
+    * One tick, after the world stepped: start an event that is due, advance the one running, and say
+    * whether one started or ended. `keyOf` names a player for the participant list (the room passes
+diff --git a/shared/net/interest.ts b/shared/net/interest.ts
+new file mode 100644
+index 0000000..99fda88
+--- /dev/null
++++ b/shared/net/interest.ts
+@@ -0,0 +1,228 @@
++/**
++ * Interest management for the city (Stage 706).
++ *
++ * A city room used to tell every client about every file and every machine in the district, thirty
++ * times a second. The cost of a client's snapshots grew with the room: measured at the city's cap
++ * (24 files spread over LEASE ROW, every one moving), 17.9 KB/s per client, 21.3 with everyone
++ * firing, against the 12 KB/s budget `probe:net` holds a match to. The cap is what the city was built
++ * to hold, so the room was over budget exactly when it worked. (`tests/interest.test.ts` measures it.)
++ *
++ * Now a city room tells each client about what is near it:
++ *
++ *  - **itself, always** (the local block is not filtered at all);
++ *  - **other files within `enter` metres**, kept until they pass `leave`. The ten metres between is
++ *    the hysteresis: a file standing on the line does not blink in and out of view every snapshot;
++ *  - **no more than `maxPlayers` of them**, nearest first. A radius bounds what a client is told by
++ *    how crowded the street is; this bounds it outright, so a crowd of 24 in one street costs each of
++ *    them about what a full match does. A file already in view competes as if `leave - enter`
++ *    nearer, the same hysteresis in the other direction, so the cut does not flicker either;
++ *  - **machines (wasps, mechs, dummies), charges and smoke within the same radius**;
++ *  - **anything hunting, hurting or hit by this client, wherever it is**: a wasp or mech whose
++ *    target it is, the charge it threw, and for `stickyTicks` anything that hurt it or that it hit.
++ *    A client is never shot by something it was not told about;
++ *  - **a public event's machines** (the convoy, a hold's wave) from `eventEnter`, and from anywhere
++ *    to a file on the event's list of who took part;
++ *  - **gunfire** from files in view and from machines within `hearing` (the range a client can hear
++ *    a shot at, `client/gunfire.ts` GUN_RANGE); **blasts** within `hearing`; and anything this client
++ *    fired or was hit by. A file out of view is not heard firing: its body is not there to have fired;
++ *  - **the kill feed, deaths, joins and leaves, always**. Who is in the room is not a position: the
++ *    city sends the whole roster, names and all, as its own message (`Msg.CityRoster`), so the HUD's
++ *    file count and anything that lists names still sees everyone.
++ *
++ * What a client is not told about simply is not in its snapshot. The client already treats a file
++ * missing from a snapshot as gone (`client/net/netclient.ts` drops its samples, the renderer drops
++ * its body), so there is no frozen ghost; and a file coming back into view starts a fresh sample
++ * list, so it appears where it is rather than sliding in from where it was last seen.
++ *
++ * None of this touches the world. Hitscan, lag compensation and damage are the room's, against every
++ * body in the district, whatever any snapshot said (`server/room.ts` rewinds `world.poses()`).
++ *
++ * Only a room that asks for it (`RoomOptions.interest`, set by `server/city-room.ts`) filters at all.
++ * A match, an Audit, THE RUN and a contract send exactly the bytes they always did.
++ */
++import { SIM_HZ } from "../sim/constants";
++import type { SimEvent, ShotHit } from "../sim/world";
++import { ENT_MECH, ENT_WASP, FX, type NetEvent } from "./protocol";
++
++export const INTEREST = {
++  /**
++   * A file comes into view at 72 m. LEASE ROW is 174 m across, so from the middle of the district
++   * almost all of it is in view and from a corner about half is. The haze is half at 128 m, so a
++   * body appearing at 72 m is not yet a clear figure; a player's other senses reach further, and are
++   * served further (`hearing`). It is well past the range anything in the city fights at: a wasp
++   * sees 18 m and fires from 25, a mech's light reaches 30, and every weapon but the Longwave is at
++   * its floor damage by 75 m. A Longwave aimed further still hits: the room resolves it against the
++   * world, and a body it hits is then held in view (`stickyTicks`).
++   */
++  enter: 72,
++  /** and leaves only past 82 m: ten metres of hysteresis, about a second and a half at a sprint */
++  leave: 82,
++  /**
++   * The most other files one client is told about: one more than a full match shows (seven others).
++   * All 24 files crowded into one street, every one moving and firing, cost each client 9.6 KB/s at
++   * 8 and 10.7 at 10, against 20.9 unfiltered — and eight files in that street unfiltered, a full
++   * match's worth, cost 11.0. So a city crowd costs a client no more than a full match does, with
++   * room under the 12 KB/s budget for what a real round adds. `tests/interest.test.ts` measures it.
++   */
++  maxPlayers: 8,
++  /** a public event's own machines are seen from further: it is where the district is being told to go */
++  eventEnter: 120,
++  eventLeave: 130,
++  /** gunfire and blasts are sent within the range a shot is heard at (client/gunfire.ts GUN_RANGE) */
++  hearing: 120,
++  /** a body that hurt this client, or that it hit, stays in view this long afterwards, wherever it is */
++  stickyTicks: 3 * SIM_HZ,
++} as const;
++
++/** body keys: an entity's own (kind << 16 | id, as the snapshot's delta baseline indexes it), and two more kinds */
++export const BODY_PLAYER = 0;
++export const BODY_DUMMY = 7;
++export const bodyKey = (kind: number, id: number): number => kind * 65536 + (id & 0xffff);
++
++/** One body a client might be told about. */
++export interface InterestBody {
++  key: number;
++  x: number;
++  z: number;
++  /** in view whatever the distance (it hunts this client; it is this client's charge; this client took part in its event) */
++  always?: boolean;
++  /** a public event's machine: seen from `eventEnter` rather than `enter` */
++  wide?: boolean;
++  /** a file, counted against `maxPlayers` */
++  player?: boolean;
++}
++
++/**
++ * What one client is told about, and what it was told about last time (the hysteresis needs both).
++ * One per client, kept by the room for as long as the client is.
++ */
++export class InterestSet {
++  private view = new Set<number>();
++  private sticky = new Map<number, number>();
++
++  /** keep `key` in view until `untilTick`, wherever it goes (it hurt this client, or this client hit it) */
++  hold(key: number, untilTick: number): void {
++    if ((this.sticky.get(key) ?? -1) < untilTick) this.sticky.set(key, untilTick);
++  }
++
++  /** whether `key` was in view at the last selection */
++  has(key: number): boolean {
++    return this.view.has(key);
++  }
++
++  /** everything in view at the last selection */
++  get keys(): ReadonlySet<number> {
++    return this.view;
++  }
++
++  /**
++   * Decide what this client is told about this snapshot, from where it stands (`at`), and remember it.
++   * Bodies not offered at all (a charge that went off, a file that left) simply fall out of view.
++   */
++  select(at: { x: number; z: number }, bodies: Iterable<InterestBody>, tick: number): ReadonlySet<number> {
++    const next = new Set<number>();
++    const files: { key: number; rank: number }[] = [];
++    for (const b of bodies) {
++      const until = this.sticky.get(b.key);
++      const stuck = until !== undefined && until >= tick;
++      if (until !== undefined && !stuck) this.sticky.delete(b.key);
++      const was = this.view.has(b.key);
++      const d = Math.hypot(b.x - at.x, b.z - at.z);
++      const reach = b.wide ? (was ? INTEREST.eventLeave : INTEREST.eventEnter) : was ? INTEREST.leave : INTEREST.enter;
++      const forced = !!b.always || stuck;
++      if (!forced && d > reach) continue;
++      if (b.player) {
++        // forced files rank ahead of everyone; one already in view is ranked as if `leave - enter` nearer
++        files.push({ key: b.key, rank: forced ? -1 : was ? d - (INTEREST.leave - INTEREST.enter) : d });
++        continue;
++      }
++      next.add(b.key);
++    }
++    files.sort((a, b) => a.rank - b.rank || a.key - b.key);
++    for (let i = 0; i < files.length && i < INTEREST.maxPlayers; i++) next.add(files[i]!.key);
++    // a file forced into view past the cap (it hunts you: never in a PvE city, but a rule has no exceptions)
++    for (const f of files) if (f.rank < 0) next.add(f.key);
++    for (const k of this.sticky.keys()) if ((this.sticky.get(k) ?? -1) < tick) this.sticky.delete(k);
++    this.view = next;
++    return next;
++  }
++}
++
++/** A sim attacker id as a body key: a player's own id, a wasp's −(100 + id), a mech's −(200 + id) (shared/sim/world.ts). */
++export function attackerKey(by: number): number | null {
++  if (by > 0) return bodyKey(BODY_PLAYER, by);
++  if (by <= -200) return bodyKey(ENT_MECH, -by - 200);
++  if (by <= -100) return bodyKey(ENT_WASP, -by - 100);
++  return null;
++}
++
++const hitKey = (h: ShotHit): number | null =>
++  h.kind === "player" ? bodyKey(BODY_PLAYER, h.id) : h.kind === "wasp" ? bodyKey(ENT_WASP, h.id) : h.kind === "mech" ? bodyKey(ENT_MECH, h.id) : h.kind === "dummy" ? bodyKey(BODY_DUMMY, h.id) : null;
++
++/**
++ * Who should keep whom in view after one sim event: the victim its attacker, the shooter what it hit.
++ * `viewer` is a player id; the room holds `key` in that player's set for `INTEREST.stickyTicks`.
++ */
++export function stickyFrom(ev: SimEvent): { viewer: number; key: number }[] {
++  const out: { viewer: number; key: number }[] = [];
++  const add = (viewer: number, key: number | null) => {
++    if (viewer > 0 && key !== null && key !== bodyKey(BODY_PLAYER, viewer)) out.push({ viewer, key });
++  };
++  switch (ev.type) {
++    case "hurt":
++      add(ev.playerId, attackerKey(ev.by));
++      if (ev.by > 0) add(ev.by, bodyKey(BODY_PLAYER, ev.playerId));
++      break;
++    case "shot":
++    case "melee":
++      for (const h of ev.hits) {
++        add(ev.playerId, hitKey(h));
++        if (h.kind === "player") add(h.id, attackerKey(ev.playerId));
++      }
++      break;
++    case "kill":
++      add(ev.playerId, hitKey({ kind: ev.victimKind, id: ev.victimId, damage: 0 }));
++      break;
++    case "mechBeam":
++    case "flagged":
++      add(ev.playerId, bodyKey(ENT_MECH, ev.mechId));
++      break;
++    case "stun":
++      add(ev.playerId, attackerKey(ev.by));
++      break;
++  }
++  return out;
++}
++
++/** effects whose position is where they happened (and so are heard from there) */
++const PLACED_FX: ReadonlySet<number> = new Set([FX.explode, FX.cloud, FX.emp, FX.mechBeam]);
++/** effects a client only ever acts on when they are its own (client/game.ts onNetEvent) */
++const OWN_FX: ReadonlySet<number> = new Set([FX.hurt, FX.flagged, FX.stun]);
++/** effects about another file's hands: heard only from a file in view */
++const FILE_FX: ReadonlySet<number> = new Set([FX.swap, FX.melee, FX.throw, FX.chargeFull, FX.lunge]);
++
++/**
++ * Whether one wire event goes to a client in a city room. `me` is its player id, `at` where it
++ * stands, `inView` the keys it was just told about. Kills, deaths, joins, leaves and the district's
++ * own announcements (a wasp downed, a node, a phase) always go: they are the feed, not a position.
++ */
++export function eventInterest(ev: NetEvent, me: number, at: { x: number; z: number }, inView: ReadonlySet<number>): boolean {
++  const near = (x: number, z: number) => Math.hypot(x - at.x, z - at.z) <= INTEREST.hearing;
++  // a file's id on the wire is itself; a machine's is 200 + something (server/room.ts toNetEvent), never a file in view
++  const fileInView = (id: number) => inView.has(bodyKey(BODY_PLAYER, id));
++  switch (ev.type) {
++    case "shot":
++      if (ev.playerId === me || (ev.hitKind === 3 && ev.victimId === me)) return true;
++      if (fileInView(ev.playerId)) return true;
++      // a machine's shot (a file's out of view is not told: its body is not there to have fired it)
++      return ev.playerId >= 200 && (near(ev.fx, ev.fz) || near(ev.tx, ev.tz));
++    case "fx":
++      if (ev.playerId === me) return true;
++      if (PLACED_FX.has(ev.kind)) return near(ev.x, ev.z);
++      if (OWN_FX.has(ev.kind)) return false;
++      if (FILE_FX.has(ev.kind)) return fileInView(ev.playerId);
++      return true;
++    default:
++      return true;
++  }
++}
+diff --git a/shared/net/protocol.ts b/shared/net/protocol.ts
+index 9e1ee95..3de6201 100644
+--- a/shared/net/protocol.ts
++++ b/shared/net/protocol.ts
+@@ -74,6 +74,14 @@ export const Msg = {
+    * where the sim put the runner, and nothing a client says can start, stop or time one.
+    */
+   CityRun: 21,
++  /**
++   * room → client: who is in the city (Stage 706, JSON). A city room filters its snapshots to what
++   * is near each client (`shared/net/interest.ts`), so the snapshot's player list is no longer the
++   * room; this is. Names and identity tags only, never a position. Sent on every change of who is
++   * in the room and every ten seconds. Only a city room sends it; an older client decodes nothing
++   * and goes on, as with CityEvent.
++   */
++  CityRoster: 22,
+ } as const;
+ 
+ /** Co-op mission traffic (the campaign room only; the PvP room never sends this). */
+@@ -161,6 +169,11 @@ export interface CityRunMsg {
+   feed?: string;
+ }
+ 
++/** Everyone in a city room (Stage 706), the recipient included: id, display name and identity tag. */
++export interface CityRosterMsg {
++  players: { id: number; name: string; tag: string }[];
++}
++
+ /** One file as the dossier shows it: identity only (see shared/identity/identity.ts). */
+ export interface DossierEntry {
+   id: number;
+@@ -549,6 +562,13 @@ export function encodeCityRun(m: CityRunMsg): ArrayBuffer {
+   return w.done();
+ }
+ 
++export function encodeCityRoster(m: CityRosterMsg): ArrayBuffer {
++  const w = new W();
++  w.u8(Msg.CityRoster);
++  w.str(JSON.stringify(m));
++  return w.done();
++}
++
+ export function encodeKick(reason: string): ArrayBuffer {
+   const w = new W();
+   w.u8(Msg.Kick);
+@@ -777,7 +797,8 @@ export type ServerMessage =
+   | { type: "mission"; mission: MissionMsg }
+   | { type: "run"; run: RunMsg }
+   | { type: "cityEvent"; cityEvent: CityEventMsg }
+-  | { type: "cityRun"; cityRun: CityRunMsg };
++  | { type: "cityRun"; cityRun: CityRunMsg }
++  | { type: "cityRoster"; cityRoster: CityRosterMsg };
+ 
+ /** Decode a server message. `baselines` resolves the acked snapshot a delta was built on. */
+ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) => Snapshot | null): ServerMessage | null {
+@@ -796,6 +817,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number)
+     if (t === Msg.Run) return { type: "run", run: JSON.parse(r.str()) as RunMsg };
+     if (t === Msg.CityEvent) return { type: "cityEvent", cityEvent: JSON.parse(r.str()) as CityEventMsg };
+     if (t === Msg.CityRun) return { type: "cityRun", cityRun: JSON.parse(r.str()) as CityRunMsg };
++    if (t === Msg.CityRoster) return { type: "cityRoster", cityRoster: JSON.parse(r.str()) as CityRosterMsg };
+     if (t !== Msg.Snapshot) return null;
+     const tick = r.u32();
+     const baselineTick = r.u32();
+diff --git a/tests/interest.test.ts b/tests/interest.test.ts
+new file mode 100644
+index 0000000..d642c74
+--- /dev/null
++++ b/tests/interest.test.ts
+@@ -0,0 +1,754 @@
++/**
++ * Interest management in the city (Stage 706): each client is told about what is near it, what is
++ * hunting it, what it hit, and its event's machines — and every other room sends what it always did.
++ *
++ * The rules are `shared/net/interest.ts`; the room applies them (`server/room.ts`, `RoomOptions.interest`)
++ * and only the city asks (`server/city-room.ts`). These drive the real room with a clock that moves
++ * with the ticks: a harness on the wall clock sends a room five seconds of inputs in a fraction of
++ * one, the input-rate guard strikes every client out after ~95 of them, and whatever it then
++ * measures is an empty room.
++ */
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { createHash } from "node:crypto";
++import { Room, type Conn, type RoomOptions } from "../server/room";
++import { createCityRoom, crowdSpawn, ROSTER_EVERY_TICKS } from "../server/city-room";
++import { BODY_DUMMY, BODY_PLAYER, INTEREST, InterestSet, attackerKey, bodyKey, eventInterest, stickyFrom, type InterestBody } from "../shared/net/interest";
++import { decodeServerMessage, encodeInputs, encodeJoin, encodeSnapshot, encodeWelcome, ENT_MECH, ENT_PROJECTILE, ENT_WASP, FX, Msg, type NetEvent, type RemotePlayerQ, type Snapshot } from "../shared/net/protocol";
++import { INTERP_DELAY_TICKS, NetClient } from "../client/net/netclient";
++import type { Transport } from "../client/net/transport";
++import { GUN_RANGE } from "../client/gunfire";
++import { SIM_HZ } from "../shared/sim/constants";
++import { Btn } from "../shared/sim/input";
++import { reviveMotion } from "../shared/sim/player";
++import { levelById } from "../shared/sim/level";
++import { v3 } from "../shared/math/vec3";
++import type { SimEvent } from "../shared/sim/world";
++
++const PK = (id: number) => bodyKey(BODY_PLAYER, id);
++const WK = (id: number) => bodyKey(ENT_WASP, id);
++const MK = (id: number) => bodyKey(ENT_MECH, id);
++const at0 = { x: 0, z: 0 };
++
++// ---------------------------------------------------------------------------------------------
++describe("who is in view: the radius, its hysteresis and the cap", () => {
++  const one = (s: InterestSet, key: number, x: number, tick = 0, extra: Partial<InterestBody> = {}) => s.select(at0, [{ key, x, z: 0, ...extra }], tick).has(key);
++
++  it("a body comes into view at `enter`, stays until past `leave`, and needs `enter` again to come back", () => {
++    const s = new InterestSet();
++    expect(one(s, PK(2), INTEREST.enter + 0.5)).toBe(false);
++    expect(one(s, PK(2), INTEREST.enter)).toBe(true);
++    // on the line and a little beyond it: no blinking
++    for (const d of [INTEREST.enter + 1, INTEREST.enter + 5, INTEREST.leave - 0.1, INTEREST.leave]) expect(one(s, PK(2), d), `at ${d} m`).toBe(true);
++    expect(one(s, PK(2), INTEREST.leave + 0.1)).toBe(false);
++    // out, it is the enter line again, not the leave line
++    expect(one(s, PK(2), INTEREST.leave - 1)).toBe(false);
++    expect(one(s, PK(2), INTEREST.enter + 1)).toBe(false);
++    expect(one(s, PK(2), INTEREST.enter - 1)).toBe(true);
++    expect(INTEREST.leave - INTEREST.enter).toBeGreaterThanOrEqual(8);
++  });
++
++  it("a file walking back and forth across the line is told once, not every snapshot", () => {
++    const s = new InterestSet();
++    let flips = 0;
++    let was = false;
++    for (let t = 0; t < 600; t++) {
++      // ±4 m around the enter line, as a player idling on a corner would
++      const d = INTEREST.enter + 4 * Math.sin(t * 0.3);
++      const now = one(s, PK(3), d, t);
++      if (now !== was) flips++;
++      was = now;
++    }
++    expect(flips).toBe(1);
++  });
++
++  it("a body the room no longer offers (a charge gone off, a file gone) falls out of view", () => {
++    const s = new InterestSet();
++    s.select(at0, [{ key: PK(2), x: 10, z: 0 }, { key: bodyKey(ENT_PROJECTILE, 9), x: 5, z: 0 }], 0);
++    expect(s.has(bodyKey(ENT_PROJECTILE, 9))).toBe(true);
++    s.select(at0, [{ key: PK(2), x: 10, z: 0 }], 1);
++    expect(s.has(bodyKey(ENT_PROJECTILE, 9))).toBe(false);
++    expect(s.has(PK(2))).toBe(true);
++  });
++
++  it("`always` bodies are in view from anywhere; a `wide` one (an event's machine) from `eventEnter` to `eventLeave`", () => {
++    const s = new InterestSet();
++    expect(one(s, WK(1), 900, 0, { always: true })).toBe(true);
++    const w = new InterestSet();
++    expect(one(w, WK(4), INTEREST.eventEnter + 1, 0, { wide: true })).toBe(false);
++    expect(one(w, WK(4), INTEREST.eventEnter - 1, 0, { wide: true })).toBe(true);
++    expect(one(w, WK(4), INTEREST.eventLeave - 1, 0, { wide: true })).toBe(true);
++    expect(one(w, WK(4), INTEREST.eventLeave + 1, 0, { wide: true })).toBe(false);
++    // and the same machine, not an event's, is on the ordinary radius
++    expect(one(new InterestSet(), WK(4), INTEREST.eventEnter - 1)).toBe(false);
++  });
++
++  it("a held body (it hurt you; you hit it) stays in view wherever it is, for `stickyTicks`, then is on the radius again", () => {
++    const s = new InterestSet();
++    s.hold(MK(2), 100 + INTEREST.stickyTicks);
++    expect(one(s, MK(2), 400, 100)).toBe(true);
++    expect(one(s, MK(2), 400, 100 + INTEREST.stickyTicks)).toBe(true);
++    expect(one(s, MK(2), 400, 101 + INTEREST.stickyTicks)).toBe(false);
++    // a shorter hold never cuts a longer one short
++    s.hold(MK(2), 500);
++    s.hold(MK(2), 300);
++    expect(one(s, MK(2), 400, 450)).toBe(true);
++  });
++
++  it("no more than `maxPlayers` other files, nearest first; machines are not counted against it", () => {
++    const s = new InterestSet();
++    const files: InterestBody[] = Array.from({ length: 20 }, (_, i) => ({ key: PK(i + 1), x: 5 + i * 3, z: 0, player: true }));
++    const wasps: InterestBody[] = Array.from({ length: 6 }, (_, i) => ({ key: WK(i + 1), x: 0, z: 10 + i }));
++    const view = s.select(at0, [...files, ...wasps], 0);
++    const seen = [...view].filter((k) => k < 65536);
++    expect(seen.length).toBe(INTEREST.maxPlayers);
++    expect(seen.sort((a, b) => a - b)).toEqual(files.slice(0, INTEREST.maxPlayers).map((f) => f.key));
++    for (const w of wasps) expect(view.has(w.key)).toBe(true);
++  });
++
++  it("at the cap a file in view is not cut for a newcomer only a little nearer (the same hysteresis), but is for one much nearer", () => {
++    const n = INTEREST.maxPlayers;
++    const s = new InterestSet();
++    const inView = Array.from({ length: n }, (_, i) => ({ key: PK(i + 1), x: 30 + i, z: 0, player: true }));
++    s.select(at0, inView, 0);
++    const far = inView[n - 1]!;
++    const slightly: InterestBody = { key: PK(50), x: far.x - (INTEREST.leave - INTEREST.enter) / 2, z: 0, player: true };
++    expect(s.select(at0, [...inView, slightly], 1).has(slightly.key)).toBe(false);
++    expect(s.has(far.key)).toBe(true);
++    const much: InterestBody = { key: PK(51), x: 2, z: 0, player: true };
++    const v = s.select(at0, [...inView, much], 2);
++    expect(v.has(much.key)).toBe(true);
++    expect(v.has(far.key)).toBe(false);
++  });
++});
++
++// ---------------------------------------------------------------------------------------------
++describe("what keeps a body in view, and which wire events go", () => {
++  const ev = (e: Partial<SimEvent> & { type: SimEvent["type"] }): SimEvent => ({ tick: 1, playerId: 1, ...e }) as SimEvent;
++
++  it("the sim's attacker ids read back to the bodies they are", () => {
++    expect(attackerKey(4)).toBe(PK(4));
++    expect(attackerKey(-(100 + 3))).toBe(WK(3));
++    expect(attackerKey(-(200 + 2))).toBe(MK(2));
++    expect(attackerKey(-1)).toBeNull();
++  });
++
++  it("the hurt hold what hurt them, the shooter holds what it hit, the killer what it killed, a mech's mark its mech", () => {
++    expect(stickyFrom(ev({ type: "hurt", playerId: 5, by: -(100 + 3), damage: 5, kind: "shot" }))).toEqual([{ viewer: 5, key: WK(3) }]);
++    expect(stickyFrom(ev({ type: "shot", playerId: 5, hits: [{ kind: "wasp", id: 2, damage: 9 }, { kind: "world", id: -1, damage: 0 }] } as never))).toEqual([{ viewer: 5, key: WK(2) }]);
++    // a machine's shot at a file: the file holds the machine
++    expect(stickyFrom(ev({ type: "shot", playerId: -(100 + 1), hits: [{ kind: "player", id: 6, damage: 5 }] } as never))).toEqual([{ viewer: 6, key: WK(1) }]);
++    expect(stickyFrom(ev({ type: "kill", playerId: 5, victimKind: "mech", victimId: 1 } as never))).toEqual([{ viewer: 5, key: MK(1) }]);
++    expect(stickyFrom(ev({ type: "mechBeam", playerId: 7, mechId: 2 } as never))).toEqual([{ viewer: 7, key: MK(2) }]);
++    expect(stickyFrom(ev({ type: "kill", playerId: 5, victimKind: "dummy", victimId: 3 } as never))).toEqual([{ viewer: 5, key: bodyKey(BODY_DUMMY, 3) }]);
++    // your own blast is not somebody to keep in view
++    expect(stickyFrom(ev({ type: "hurt", playerId: 5, by: 5, damage: 5, kind: "explosion" }))).toEqual([]);
++  });
++
++  it("the feed always goes; gunfire and blasts go by who and where", () => {
++    const me = 3;
++    const view = new Set([PK(4)]);
++    const shot = (playerId: number, fx: number, tx = fx, extra: Partial<NetEvent> = {}): NetEvent => ({ type: "shot", playerId, weapon: 1, fx, fy: 1, fz: 0, tx, ty: 1, tz: 0, hitKind: 1, victimId: 255, pierce: 0, ...extra }) as NetEvent;
++    for (const e of [{ type: "kill", playerId: 9, victimKind: 2, victimId: 1, ttkTicks: 1, weapon: 1 }, { type: "death", playerId: 9, killerId: 201 }, { type: "join", playerId: 9, name: "Z" }, { type: "leave", playerId: 9 }] as NetEvent[]) expect(eventInterest(e, me, at0, view), e.type).toBe(true);
++    expect(eventInterest(shot(me, 900), me, at0, view), "my own shot").toBe(true);
++    expect(eventInterest(shot(4, 60), me, at0, view), "a file in view").toBe(true);
++    expect(eventInterest(shot(9, 30), me, at0, view), "a file out of view (cut by the cap), even near").toBe(false);
++    expect(eventInterest(shot(9, 900, 900, { hitKind: 3, victimId: me }), me, at0, view), "a shot that hit me, from anywhere").toBe(true);
++    expect(eventInterest(shot(201, INTEREST.hearing - 1), me, at0, view), "a machine within hearing").toBe(true);
++    expect(eventInterest(shot(201, 500, INTEREST.hearing - 1), me, at0, view), "a machine's round landing within hearing").toBe(true);
++    expect(eventInterest(shot(201, INTEREST.hearing + 1), me, at0, view), "a machine out of hearing").toBe(false);
++    const fx = (kind: number, playerId: number, x: number): NetEvent => ({ type: "fx", kind, playerId, x, y: 0, z: 0, a: 1, b: 0 });
++    expect(eventInterest(fx(FX.explode, 9, 50), me, at0, view)).toBe(true);
++    expect(eventInterest(fx(FX.explode, 9, INTEREST.hearing + 5), me, at0, view)).toBe(false);
++    expect(eventInterest(fx(FX.explode, me, 900), me, at0, view), "my own charge, anywhere").toBe(true);
++    expect(eventInterest(fx(FX.hurt, me, 0), me, at0, view)).toBe(true);
++    expect(eventInterest(fx(FX.hurt, 4, 0), me, at0, view), "someone else's hurt is never acted on").toBe(false);
++    expect(eventInterest(fx(FX.swap, 4, 0), me, at0, view)).toBe(true);
++    expect(eventInterest(fx(FX.swap, 9, 0), me, at0, view)).toBe(false);
++    expect(eventInterest(fx(FX.waspDeath, 9, 0), me, at0, view), "the district's own announcements").toBe(true);
++  });
++
++  it("gunfire is sent as far as the client hears it", () => {
++    expect(INTEREST.hearing).toBeGreaterThanOrEqual(GUN_RANGE);
++  });
++});
++
++// ---------------------------------------------------------------------------------------------
++/**
++ * The wire of every room that is not a city, before and after (Stage 706). Each hash is every
++ * snapshot byte four (three) moving, turning, firing clients were sent, in order, taken from the
++ * code before this stage and again after it: they did not move. A match on drainage_yard with its
++ * AI and a live wake (nodes, dummies, shots); THE RUN; and a PvE room with every city option but the
++ * city's hooks, so the flag is the only thing that turns filtering on.
++ */
++const MATCH_WIRE = { hash: "f5d436dabe33fc7d", bytes: 247040, snaps: 720 };
++const RUN_WIRE = { hash: "8d5653aa658ac19b", bytes: 136328, snaps: 450 };
++const PVE_WIRE = { hash: "926cdddf78fa2e72", bytes: 136328, snaps: 450 };
++
++function wire(opts: RoomOptions, n: number, seconds: number): { hash: string; bytes: number; snaps: number } {
++  let clock = 1_700_000_000_000;
++  const room = new Room({ ...opts, now: () => clock });
++  const h = createHash("sha256");
++  let bytes = 0;
++  let snaps = 0;
++  const cs = Array.from({ length: n }, (_, i) => {
++    const m = { i, seq: 0, ack: 0, conn: { send: (_b: ArrayBuffer) => {}, close: () => {} } };
++    m.conn.send = (buf: ArrayBuffer) => {
++      const v = new DataView(buf);
++      if (v.getUint8(0) !== Msg.Snapshot) return;
++      m.ack = Math.max(m.ack, v.getUint32(1, true));
++      h.update(`${m.i}:`);
++      h.update(Buffer.from(buf));
++      bytes += buf.byteLength;
++      snaps++;
++    };
++    room.onOpen(m.conn as never);
++    room.onMessage(m.conn as never, encodeJoin(`P${i}`, "", "", ""));
++    return m;
++  });
++  for (let t = 0; t < seconds * SIM_HZ; t++) {
++    for (const m of cs) room.onMessage(m.conn as never, encodeInputs([{ seq: ++m.seq, tick: room.tick, buttons: Btn.Forward | (t % 50 < 25 ? Btn.Left : Btn.Right) | (t % 9 === m.i ? Btn.Fire : 0) | (t % 120 < 10 ? Btn.Sprint : 0), yaw: Math.sin(t * 0.03 + m.i) * 3, pitch: Math.cos(t * 0.02) * 0.2, viewTick: Math.max(0, room.tick - 6), viewFrac: 0.5, px: 0, py: 0, pz: 0 }], m.ack));
++    room.step();
++    clock += 1000 / SIM_HZ;
++  }
++  return { hash: h.digest("hex").slice(0, 16), bytes, snaps };
++}
++
++describe("every room that is not a city is byte-for-byte what it was", () => {
++  it("a match room's snapshots are the bytes they were before interest management existed", () => {
++    expect(wire({ ai: true, seed: 11, level: "drainage_yard", warmupSeconds: 1, roundSeconds: 600 }, 4, 6)).toEqual(MATCH_WIRE);
++  });
++  it("THE RUN's, and a PvE room with every city option but the city's own, likewise", () => {
++    expect(wire({ ai: true, seed: 12, level: "lease_row", run: true, wakePhase: "off" }, 3, 5)).toEqual(RUN_WIRE);
++    expect(wire({ ai: true, seed: 13, level: "lease_row", wakePhase: "off", pvp: false, arrivalGrace: true }, 3, 5)).toEqual(PVE_WIRE);
++  });
++  it("only the city asks: a room is unfiltered unless told, and a match room with files 150 m apart still sends each the other", () => {
++    expect(new Room({ ai: false, seed: 1 }).opts.interest).toBeNull();
++    expect(createCityRoom({ district: "lease_row", seed: 1 }).room.opts.interest).not.toBeNull();
++    const r = new Room({ ai: false, seed: 1, level: "lease_row", wakePhase: "off" });
++    const a = client(r, "A"), b = client(r, "B");
++    place(r, a.id, -75, -75);
++    place(r, b.id, 75, 75);
++    step(r, 4);
++    expect(lastSnap(a).players.map((p) => p.id)).toEqual([b.id]);
++    expect(r.inViewOf(a.id)).toBeNull();
++  });
++});
++
++// ---------------------------------------------------------------------------------------------
++/** each room's clock, moved on with its ticks by `step` (the input-rate guard counts inputs a wall-clock second) */
++const clocks = new WeakMap<Room, { t: number }>();
++function city(district = "lease_row", opts: Omit<Parameters<typeof createCityRoom>[0], "district"> = {}) {
++  const clk = { t: 1_000_000 };
++  const h = createCityRoom({ district, seed: 3, now: () => clk.t, ...opts });
++  clocks.set(h.room, clk);
++  return h;
++}
++
++interface Client {
++  id: number;
++  conn: Conn;
++  msgs: NonNullable<ReturnType<typeof decodeServerMessage>>[];
++  snaps: Snapshot[];
++  seq: number;
++}
++/** A client that decodes what it is sent against the baselines it was sent, and acks the newest. */
++function client(room: Room, name: string, query?: URLSearchParams): Client {
++  const base = new Map<number, Snapshot>();
++  const c: Client = { id: -1, conn: null as never, msgs: [], snaps: [], seq: 0 };
++  c.conn = {
++    send: (buf) => {
++      const m = decodeServerMessage(buf, (t) => base.get(t) ?? null);
++      if (!m) return;
++      c.msgs.push(m);
++      if (m.type === "welcome") c.id = m.playerId;
++      if (m.type === "snapshot") {
++        base.set(m.snapshot.tick, m.snapshot);
++        c.snaps.push(m.snapshot);
++      }
++    },
++    close: () => {},
++  };
++  room.onOpen(c.conn, query);
++  room.onMessage(c.conn, encodeJoin(name, "", "", ""));
++  return c;
++}
++const lastSnap = (c: Client): Snapshot => c.snaps[c.snaps.length - 1]!;
++/** every client sends one still input a tick (off the arrival grace, acking what it has) and the room steps */
++function step(room: Room, ticks: number, cs: Client[] = []): void {
++  for (let t = 0; t < ticks; t++) {
++    for (const c of cs) room.onMessage(c.conn, encodeInputs([{ seq: ++c.seq, tick: room.tick, buttons: 0, yaw: 0, pitch: 0, viewTick: room.tick, viewFrac: 0, px: 0, py: 0, pz: 0 }], c.snaps.length ? lastSnap(c).tick : 0));
++    room.step();
++    const clk = clocks.get(room);
++    if (clk) clk.t += 1000 / SIM_HZ;
++  }
++}
++function place(room: Room, id: number, x: number, z: number): void {
++  reviveMotion(room.world.players.get(id)!, { pos: v3(x, 0, z), yaw: 0 });
++}
++/** hold a wasp where it is put: on its one waypoint, not chasing anyone */
++function pin(room: Room, id: number, x: number, z: number, y = 4): void {
++  const w = room.world.wasps.find((q) => q.id === id)!;
++  w.pos = v3(x, y, z);
++  w.waypoints = [v3(x, y, z)];
++  w.wp = 0;
++  w.state = "patrol";
++  w.targetId = -1;
++}
++
++describe("the city tells each client what is near it", () => {
++  it("a file out of range is not in the snapshot, comes in at `enter`, and stays until past `leave`", () => {
++    const h = city();
++    const a = client(h.room, "A"), b = client(h.room, "B");
++    place(h.room, a.id, -80, 0);
++    place(h.room, b.id, 60, 0);
++    step(h.room, 4, [a, b]);
++    expect(lastSnap(a).players.map((p) => p.id)).toEqual([]);
++    expect(lastSnap(b).players.map((p) => p.id)).toEqual([]);
++    place(h.room, b.id, -80 + INTEREST.enter - 1, 0);
++    step(h.room, 4, [a, b]);
++    expect(lastSnap(a).players.map((p) => p.id)).toEqual([b.id]);
++    expect(lastSnap(b).players.map((p) => p.id)).toEqual([a.id]);
++    place(h.room, b.id, -80 + INTEREST.leave - 1, 0);
++    step(h.room, 4, [a, b]);
++    expect(lastSnap(a).players.map((p) => p.id), "inside the hysteresis band").toEqual([b.id]);
++    place(h.room, b.id, -80 + INTEREST.leave + 2, 0);
++    step(h.room, 4, [a, b]);
++    expect(lastSnap(a).players.map((p) => p.id)).toEqual([]);
++  });
++
++  it("a wasp or mech far off is not sent; one hunting this client is, from anywhere; so is the charge it threw", () => {
++    const h = city();
++    const a = client(h.room, "A");
++    // the north-west corner; LEASE ROW's mechs walk the south
++    const me = { x: -80, z: 80 };
++    const w = h.room.world.wasps[0]!;
++    const m = h.room.world.mechs[h.room.world.mechs.length - 1]!;
++    const put = (hunt: boolean) => {
++      place(h.room, a.id, me.x, me.z);
++      pin(h.room, w.id, 80, 80);
++      if (hunt) {
++        w.state = "chase";
++        w.targetId = a.id;
++        m.targetId = a.id;
++      } else m.targetId = -1;
++    };
++    for (let t = 0; t < 4; t++) {
++      put(false);
++      step(h.room, 1, [a]);
++    }
++    const ents = () => lastSnap(a).entities.map((e) => bodyKey(e.kind, e.id));
++    expect(Math.hypot(m.pos.x - me.x, m.pos.z - me.z)).toBeGreaterThan(INTEREST.leave);
++    expect(ents()).not.toContain(WK(w.id));
++    expect(ents()).not.toContain(MK(m.id));
++    // it has this client in its sights: the wasp chasing it, the mech locked on. The room reads both
++    // at the snapshot, after the sim has stepped (and after the city's hook), so that is where the
++    // mech's lock is set: its own AI would drop a lock on a file it cannot see
++    const orig = h.room.opts.hooks.afterStep!;
++    h.room.opts.hooks.afterStep = (r, evs) => {
++      orig(r, evs);
++      m.targetId = a.id;
++    };
++    for (let t = 0; t < 2; t++) {
++      put(true);
++      step(h.room, 1, [a]);
++    }
++    h.room.opts.hooks.afterStep = orig;
++    expect(Math.hypot(w.pos.x - me.x, w.pos.z - me.z)).toBeGreaterThan(INTEREST.leave);
++    expect(ents(), "the wasp hunting this client").toContain(WK(w.id));
++    expect(ents(), "the mech with this client in its light").toContain(MK(m.id));
++    // and a charge this client threw, wherever it has got to
++    const pr = { id: 77, kind: "frag", owner: a.id, pos: v3(80, 1, -80), vel: v3(0, 0, 0), fuse: 9, gravity: 0, bounce: 0, stuck: false, armed: 0, radius: 4, damage: 0, edgeDamage: 0, direct: 0, proximity: 0 };
++    const other = { ...pr, id: 78, owner: 999, pos: v3(80, 1, -79) };
++    h.room.world.projectiles.push(pr as never, other as never);
++    step(h.room, 2, [a]);
++    expect(ents()).toContain(bodyKey(ENT_PROJECTILE, 77));
++    expect(ents()).not.toContain(bodyKey(ENT_PROJECTILE, 78));
++  });
++
++  it("anything that hurt this client stays in its view, wherever it is, for `stickyTicks`", () => {
++    const h = city();
++    const a = client(h.room, "A");
++    place(h.room, a.id, -80, -80);
++    const w = h.room.world.wasps[0]!;
++    pin(h.room, w.id, 80, 80);
++    step(h.room, 4, [a]);
++    expect(h.room.inViewOf(a.id)!.has(WK(w.id))).toBe(false);
++    h.room.world.applyDamage("player", a.id, 1, -(100 + w.id), "wasp", "shot");
++    step(h.room, 2, [a]);
++    expect(h.room.inViewOf(a.id)!.has(WK(w.id)), "the wasp that just shot this client, 226 m off").toBe(true);
++    expect(lastSnap(a).entities.some((e) => e.kind === ENT_WASP && e.id === w.id)).toBe(true);
++    for (let t = 0; t < INTEREST.stickyTicks + 4; t++) {
++      pin(h.room, w.id, 80, 80);
++      step(h.room, 1, [a]);
++    }
++    expect(h.room.inViewOf(a.id)!.has(WK(w.id)), "and out again once the hold has run").toBe(false);
++  });
++
++  it("a public event's machines: from anywhere to a file taking part, from `eventEnter` to one that is not", () => {
++    const h = city();
++    const [a, b, c] = [client(h.room, "A"), client(h.room, "B"), client(h.room, "C")];
++    step(h.room, 2, [a, b, c]);
++    h.startEvent("intercept");
++    step(h.room, 2, [a, b, c]);
++    const ev = h.events.current!;
++    expect(ev.kind).toBe("intercept");
++    const convoy = ev.targets[0]!;
++    const plain = h.room.world.wasps.find((w) => !h.events.lent.has(w.id))!;
++    expect(h.events.lent.has(convoy)).toBe(true);
++    // A takes part (it is on the list), 160 m off; B is not, as far; C is not, within the event's reach
++    const put = () => {
++      ev.participants.clear();
++      ev.participants.set(`#${a.id}`, a.id);
++      pin(h.room, convoy, 80, 80);
++      pin(h.room, plain.id, 80, 75);
++      place(h.room, a.id, -80, 80);
++      place(h.room, b.id, -80, 75);
++      place(h.room, c.id, 80 - (INTEREST.eventEnter - 5), 80);
++    };
++    // long enough for anything the arrivals were shot by on the way in to have let go
++    for (let t = 0; t < INTEREST.stickyTicks + 4; t++) {
++      put();
++      step(h.room, 1, [a, b, c]);
++    }
++    const sees = (k: Client, id: number) => lastSnap(k).entities.some((e) => e.kind === ENT_WASP && e.id === id);
++    expect(h.events.takesPart(a.id, null)).toBe(true);
++    expect(sees(a, convoy), "a participant, 226 m off").toBe(true);
++    expect(sees(b, convoy), "a file not taking part, as far").toBe(false);
++    expect(sees(c, convoy), "a file not taking part, within the event's reach").toBe(true);
++    expect(sees(c, plain.id), "an ordinary wasp as far off is not an event's").toBe(false);
++    expect(sees(a, plain.id)).toBe(false);
++  });
++
++  it("a file out of view is not heard firing; a file in view is, and the shooter hears its own", () => {
++    const h = city();
++    const [a, b, c] = [client(h.room, "A"), client(h.room, "B"), client(h.room, "C")];
++    for (let t = 0; t < 120; t++) {
++      place(h.room, a.id, -80, 80);
++      place(h.room, b.id, 60, -80);
++      place(h.room, c.id, 80, -80);
++      for (const k of [a, b, c]) h.room.onMessage(k.conn, encodeInputs([{ seq: ++k.seq, tick: h.room.tick, buttons: k === b && t % 15 === 0 ? Btn.Fire : 0, yaw: 0, pitch: 0, viewTick: h.room.tick, viewFrac: 0, px: 0, py: 0, pz: 0 }], k.snaps.length ? lastSnap(k).tick : 0));
++      h.room.step();
++      clocks.get(h.room)!.t += 1000 / SIM_HZ;
++    }
++    const shotsBy = (k: Client, id: number) => k.snaps.flatMap((s) => s.events).filter((e) => e.type === "shot" && e.playerId === id).length;
++    expect(shotsBy(b, b.id), "the shooter hears its own").toBeGreaterThan(3);
++    expect(shotsBy(c, b.id), "a file 20 m off, in view").toBe(shotsBy(b, b.id));
++    expect(shotsBy(a, b.id), "a file 200 m off, out of view").toBe(0);
++  });
++
++  it("the kill feed, joins and leaves reach a client whatever it can see", () => {
++    const h = city();
++    const a = client(h.room, "A");
++    place(h.room, a.id, -80, -80);
++    step(h.room, 2, [a]);
++    const b = client(h.room, "B");
++    place(h.room, b.id, 80, 80);
++    step(h.room, 2, [a, b]);
++    const w = h.room.world.wasps[0]!;
++    pin(h.room, w.id, 80, 80);
++    h.room.world.applyDamage("wasp", w.id, 999, b.id, "lease_breaker", "shot");
++    step(h.room, 2, [a, b]);
++    const evs = a.snaps.flatMap((s) => s.events);
++    expect(lastSnap(a).players).toEqual([]);
++    expect(evs.some((e) => e.type === "join" && e.playerId === b.id)).toBe(true);
++    expect(evs.some((e) => e.type === "kill" && e.playerId === b.id && e.victimId === w.id)).toBe(true);
++  });
++});
++
++describe("the roster: who is in the city, without where", () => {
++  it("every client is told everyone in the room, names and tags, including files it cannot see, and again when one leaves", () => {
++    const h = city("lease_row", { rejoinGraceSeconds: 1 });
++    const a = client(h.room, "ALPHA"), b = client(h.room, "BRAVO"), c = client(h.room, "CHARLIE");
++    place(h.room, a.id, -80, -80);
++    place(h.room, b.id, 80, 80);
++    place(h.room, c.id, 80, -80);
++    step(h.room, 4, [a, b, c]);
++    const roster = (k: Client) => [...k.msgs].reverse().find((m) => m.type === "cityRoster");
++    const names = (k: Client) => {
++      const r = roster(k);
++      return r?.type === "cityRoster" ? r.cityRoster.players.map((p) => p.name).sort() : null;
++    };
++    expect(lastSnap(a).players).toEqual([]);
++    expect(names(a)).toEqual(["ALPHA", "BRAVO", "CHARLIE"]);
++    const r = roster(a);
++    expect(r?.type === "cityRoster" && r.cityRoster.players.every((p) => Object.keys(p).sort().join() === "id,name,tag")).toBe(true);
++    h.room.onClose(c.conn);
++    step(h.room, 2 * SIM_HZ, [a, b]);
++    expect(names(a)).toEqual(["ALPHA", "BRAVO"]);
++    // and every ten seconds with no change, for a client that relinked in between
++    const before = a.msgs.filter((m) => m.type === "cityRoster").length;
++    step(h.room, ROSTER_EVERY_TICKS, [a, b]);
++    expect(a.msgs.filter((m) => m.type === "cityRoster").length).toBe(before + 1);
++    // a match room never sends one
++    const plain = new Room({ ai: false, seed: 1 });
++    const x = client(plain, "X");
++    step(plain, 4, [x]);
++    expect(x.msgs.some((m) => m.type === "cityRoster")).toBe(false);
++  });
++});
++
++describe("a file that walks in finds somebody", () => {
++  it("without a gate it stands at the spawn nearest a file already in the street, in that file's view", () => {
++    const h = city();
++    const a = client(h.room, "ALPHA");
++    step(h.room, 2, [a]);
++    const b = client(h.room, "BRAVO");
++    step(h.room, 2, [a, b]);
++    const pa = h.room.world.players.get(a.id)!.pos, pb = h.room.world.players.get(b.id)!.pos;
++    // the room's turn-taking alone put the first two files into LEASE ROW 168 m apart
++    const L = levelById("lease_row");
++    expect(Math.hypot(L.spawns[0]!.pos.x - L.spawns[1]!.pos.x, L.spawns[0]!.pos.z - L.spawns[1]!.pos.z)).toBeGreaterThan(INTEREST.leave);
++    const d = Math.hypot(pa.x - pb.x, pa.z - pb.z);
++    expect(d).toBeLessThan(INTEREST.enter);
++    expect(d).toBeGreaterThan(2);
++    expect(lastSnap(a).players.map((p) => p.id)).toEqual([b.id]);
++    expect(lastSnap(b).players.map((p) => p.id)).toEqual([a.id]);
++  });
++
++  it("the rule: nobody there keeps the room's spawn; never on top of a file; never further than it already was", () => {
++    const L = levelById("lease_row");
++    expect(crowdSpawn(L, [], { x: 0, z: 0 })).toBeNull();
++    const s = L.spawns[0]!.pos;
++    const got = crowdSpawn(L, [{ x: s.x, z: s.z }], { x: -s.x, z: -s.z })!;
++    expect(Math.hypot(got.pos.x - s.x, got.pos.z - s.z)).toBeGreaterThanOrEqual(3);
++    // already beside somebody: stays
++    expect(crowdSpawn(L, [{ x: s.x + 2, z: s.z }], { x: s.x + 4, z: s.z })).toBeNull();
++  });
++});
++
++// ---------------------------------------------------------------------------------------------
++describe("hits and lag compensation use the world, not the snapshot", () => {
++  it("the rewind holds every file in the district, in view of the shooter or not", () => {
++    const h = city();
++    const a = client(h.room, "A"), b = client(h.room, "B");
++    place(h.room, a.id, -80, -80);
++    place(h.room, b.id, 80, 80);
++    step(h.room, 4, [a, b]);
++    expect(h.room.inViewOf(a.id)!.has(PK(b.id))).toBe(false);
++    const poses = (h.room as unknown as { rewindFor(s: number, t: number, f: number): ReadonlyMap<number, unknown> | null }).rewindFor(a.id, h.room.tick - 2, 0);
++    expect(poses?.has(b.id)).toBe(true);
++  });
++
++  it("a round fired at a wasp the shooter was not told about still lands, and the wasp is then held in its view", () => {
++    const h = city();
++    const a = client(h.room, "A");
++    step(h.room, 2, [a]);
++    const p = h.room.world.players.get(a.id)!;
++    const w = h.room.world.wasps[0]!;
++    // down the north street, 80 m: never inside `enter`, well inside the Lease Breaker's reach; the
++    // wasp at eye height, so the aim is level and the round's cone is all that decides it
++    const from = { x: -83, z: 83 };
++    const target = { x: -3, y: 2.07, z: 83 };
++    let hit: SimEvent | undefined;
++    for (let t = 0; t < 900 && !hit; t++) {
++      place(h.room, a.id, from.x, from.z);
++      p.grounded = true;
++      pin(h.room, w.id, target.x, target.z, target.y);
++      const aim = h.room.world.aimAt(p, v3(target.x, target.y - 0.45, target.z));
++      h.room.onMessage(a.conn, encodeInputs([{ seq: ++a.seq, tick: h.room.tick, buttons: t % 30 === 0 ? Btn.Fire : 0, yaw: aim.yaw, pitch: aim.pitch, viewTick: h.room.tick, viewFrac: 0, px: 0, py: 0, pz: 0 }], lastSnap(a).tick));
++      const seen = h.room.inViewOf(a.id)!.has(WK(w.id));
++      const spy: SimEvent[] = [];
++      const orig = h.room.opts.hooks.afterStep!;
++      h.room.opts.hooks.afterStep = (r, evs) => {
++        spy.push(...evs);
++        orig(r, evs);
++      };
++      h.room.step();
++      clocks.get(h.room)!.t += 1000 / SIM_HZ;
++      h.room.opts.hooks.afterStep = orig;
++      const s = spy.find((e) => e.type === "shot" && e.playerId === a.id && e.hits.some((x) => x.kind === "wasp" && x.id === w.id));
++      if (s) {
++        expect(seen, "the wasp was out of the shooter's view when it fired").toBe(false);
++        hit = s;
++      }
++    }
++    expect(hit, "the round found the wasp 80 m off").toBeDefined();
++    pin(h.room, w.id, target.x, target.z, target.y);
++    step(h.room, 2, [a]);
++    expect(h.room.inViewOf(a.id)!.has(WK(w.id)), "and the wasp it hit is now in view").toBe(true);
++  });
++});
++
++// ---------------------------------------------------------------------------------------------
++/**
++ * The client side: a file missing from a snapshot is gone, and one that comes back is drawn where it
++ * is. `NetClient` is fed real encoded snapshots through a transport with nothing on the other end.
++ */
++describe("the client: out of view is gone, and back in view starts where it is", () => {
++  let now = 0;
++  afterEach(() => vi.restoreAllMocks());
++
++  function harness() {
++    vi.spyOn(performance, "now").mockImplementation(() => now);
++    const t: Transport = { send: () => {}, close: () => t.onClose?.("closed"), onMessage: null, onOpen: null, onClose: null, open: true };
++    const net = new NetClient(t, "ME");
++    t.onMessage!(encodeWelcome(1, 100, "tok", "lease_row", 1, "campaign"));
++    let prev: Snapshot | null = null;
++    const feed = (tick: number, players: RemotePlayerQ[]) => {
++      const s = { tick, serverTimeMs: 0, local: null, players, dummies: [], entities: [], match: null, events: [] };
++      // deltaed against the last one, as the room does for a client that acked it
++      t.onMessage!(encodeSnapshot(s, prev));
++      prev = { ...s, bytes: 0 };
++      now = ((tick - 100) * 1000) / SIM_HZ;
++    };
++    return { net, feed, close: () => net.close() };
++  }
++  const q = (id: number, x: number): RemotePlayerQ => ({ id, slot: 1, team: 1, shield: 0, x, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, health: 100, ammo: 10, alive: true, grounded: true, stance: 0, height: 1.8, name: "BRAVO", tag: "" });
++
++  it("a file that leaves view is gone the next snapshot: no body standing where it was", () => {
++    const { net, feed, close } = harness();
++    for (let k = 0; k < 10; k++) feed(102 + k * 2, [q(2, k)]);
++    expect(net.remoteViews().map((v) => v.id)).toEqual([2]);
++    feed(122, []);
++    expect(net.remoteViews()).toEqual([]);
++    close();
++  });
++
++  it("a file that comes back is drawn at its new place, not slid there from the old one", () => {
++    const { net, feed, close } = harness();
++    for (let k = 0; k < 10; k++) feed(102 + k * 2, [q(2, 0)]);
++    feed(122, []);
++    feed(124, []);
++    feed(126, [q(2, 50)]);
++    // the view time is INTERP_DELAY_TICKS behind, here tick 125: a stale list would be halfway from 0
++    now += 3 * (1000 / SIM_HZ);
++    expect(net.serverTickNow() - INTERP_DELAY_TICKS).toBeCloseTo(125, 6);
++    const v = net.remoteViews().find((r) => r.id === 2)!;
++    expect(v.x).toBe(50);
++    feed(128, [q(2, 51)]);
++    for (const r of net.remoteViews()) expect(r.x).toBeGreaterThanOrEqual(50);
++    close();
++  });
++
++  it("(the control) a file that never left and jumped 50 m is lerped: the snap is the absence doing it", () => {
++    const { net, feed, close } = harness();
++    for (let k = 0; k < 10; k++) feed(102 + k * 2, [q(2, 0)]);
++    feed(122, [q(2, 0)]);
++    feed(124, [q(2, 0)]);
++    feed(126, [q(2, 50)]);
++    now += 3 * (1000 / SIM_HZ);
++    const v = net.remoteViews().find((r) => r.id === 2)!;
++    expect(v.x).toBeCloseTo(25, 6);
++    close();
++  });
++
++  it("the file count is the room's roster when the room sends one, not the files in view", () => {
++    const { net, feed, close } = harness();
++    feed(102, [q(2, 0)]);
++    expect(net.files).toBe(2);
++    const t = (net as unknown as { transport: Transport }).transport;
++    const roster = new TextEncoder().encode(JSON.stringify({ players: [1, 2, 3, 4, 5].map((id) => ({ id, name: `F${id}`, tag: "" })) }));
++    const buf = new Uint8Array(3 + roster.length);
++    buf[0] = Msg.CityRoster;
++    new DataView(buf.buffer).setUint16(1, roster.length, true);
++    buf.set(roster, 3);
++    t.onMessage!(buf.buffer);
++    expect(net.roster?.map((p) => p.name)).toEqual(["F1", "F2", "F3", "F4", "F5"]);
++    expect(net.files).toBe(5);
++    feed(104, []);
++    expect(net.files, "a file walking out of view is still in the room").toBe(5);
++    close();
++  });
++});
++
++// ---------------------------------------------------------------------------------------------
++/** The ceiling probe:net asserts per client, downstream, and tests/bandwidth.test.ts holds a match to. */
++const BUDGET_KBS = 12;
++
++interface Meter {
++  conn: Conn;
++  bytes: number;
++  seq: number;
++  ack: number;
++  id: number;
++}
++/**
++ * `n` files in a city room (or, with `unfiltered`, the same room without interest), placed by
++ * `where(i)`, every one moving, turning and (with `fire`) shooting, for `seconds`; bytes per client
++ * per second downstream, everything the room sends counted.
++ */
++function cityBytes(o: { n: number; where: (i: number) => { x: number; z: number }; fire?: boolean; seconds?: number; unfiltered?: boolean; measure?: (i: number) => boolean }): number {
++  let clock = 1_000_000;
++  const room = o.unfiltered
++    ? new Room({ level: "lease_row", seed: 5, ai: true, wakePhase: "off", dummyRespawn: true, pvp: false, run: false, arrivalGrace: true, maxPlayers: 24, now: () => clock })
++    : createCityRoom({ district: "lease_row", seed: 5, now: () => clock }).room;
++  const meters: Meter[] = [];
++  for (let i = 0; i < o.n; i++) {
++    const m: Meter = { bytes: 0, seq: 0, ack: 0, id: -1, conn: null as never };
++    m.conn = {
++      send: (buf: ArrayBuffer) => {
++        m.bytes += buf.byteLength;
++        const v = new DataView(buf);
++        if (v.getUint8(0) === Msg.Snapshot) m.ack = Math.max(m.ack, v.getUint32(1, true));
++        if (v.getUint8(0) === Msg.Welcome) m.id = v.getUint8(1);
++      },
++      close: () => {},
++    };
++    room.onOpen(m.conn);
++    room.onMessage(m.conn, encodeJoin(`P${i}`, "", "", ""));
++    meters.push(m);
++  }
++  meters.forEach((m, i) => {
++    const w = o.where(i);
++    place(room, m.id, w.x, w.z);
++  });
++  const drive = (t: number) => {
++    for (const m of meters) room.onMessage(m.conn, encodeInputs([{ seq: ++m.seq, tick: room.tick, buttons: Btn.Forward | Btn.Sprint | (t % 40 < 20 ? Btn.Left : Btn.Right) | (o.fire && (t + m.id) % 12 === 0 ? Btn.Fire : 0), yaw: Math.sin(t * 0.05 + m.seq) * 2, pitch: 0, viewTick: m.ack, viewFrac: 0, px: 0, py: 0, pz: 0 }], m.ack));
++    room.step();
++    clock += 1000 / SIM_HZ;
++  };
++  // the join burst is not the steady state
++  for (let t = 0; t < SIM_HZ; t++) drive(t);
++  for (const m of meters) m.bytes = 0;
++  const seconds = o.seconds ?? 4;
++  for (let t = 0; t < seconds * SIM_HZ; t++) drive(t);
++  expect(room.kicks, "a client struck out: the measurement would be of an empty room").toBe(0);
++  const counted = meters.filter((_, i) => (o.measure ? o.measure(i) : true));
++  return counted.reduce((a, m) => a + m.bytes, 0) / counted.length / seconds / 1024;
++}
++/** a square grid of `n` over ±`half` metres round (cx, cz) */
++const grid = (n: number, half: number, cx = 0, cz = 0) => (i: number) => {
++  const side = Math.ceil(Math.sqrt(n));
++  const s = side > 1 ? (2 * half) / (side - 1) : 0;
++  return { x: cx - half + (i % side) * s, z: cz - half + Math.floor(i / side) * s };
++};
++
++describe("per-client bytes are bounded by what a client is told about, not by the room", () => {
++  // Measured by this harness (LEASE ROW, every file moving and turning; KB/s per client downstream,
++  // everything the room sends):
++  //                                        before (unfiltered)   after
++  //   24 spread over the district                17.9             7.1
++  //   24 spread, every file firing               21.3             8.5
++  //   24 in one street, every file firing        20.9             9.6   ← the cap, not the radius
++  //   (8 in one street, every file firing, unfiltered: 11.0 — a full match's worth)
++  it("24 files spread over the district, every one moving and firing, stay under the per-client budget a match is held to", () => {
++    const kbs = cityBytes({ n: 24, where: grid(24, 80), fire: true });
++    expect(kbs).toBeLessThan(BUDGET_KBS);
++  });
++
++  it("24 files crowded into one street, every one moving and firing, stay under it too: the cap, not the radius", () => {
++    const kbs = cityBytes({ n: 24, where: grid(24, 8, -40, 83), fire: true });
++    expect(kbs).toBeLessThan(BUDGET_KBS);
++    // and no more than eight files in that street cost each other with nothing filtered: a full match's worth
++    expect(kbs).toBeLessThan(cityBytes({ n: 8, where: grid(8, 8, -40, 83), fire: true, unfiltered: true }));
++  });
++
++  it("the same 24 spread files without interest are over it: the filter is what holds the line", () => {
++    const off = cityBytes({ n: 24, where: grid(24, 80), unfiltered: true });
++    const on = cityBytes({ n: 24, where: grid(24, 80) });
++    expect(off).toBeGreaterThan(BUDGET_KBS);
++    expect(on).toBeLessThan(off * 0.6);
++  });
++
++  it("eighteen more files across the district cost a group of six nothing they can see", () => {
++    // six in the south-west corner, alone; then the same six with eighteen more in the north-east
++    const corner = grid(6, 6, -75, -75);
++    const alone = cityBytes({ n: 6, where: corner });
++    const crowd = cityBytes({ n: 24, where: (i) => (i < 6 ? corner(i) : grid(18, 10, 70, 70)(i - 6)), measure: (i) => i < 6 });
++    // what grows is only the roster (eighteen more names every ten seconds) and the kill feed
++    expect(crowd / alone).toBeLessThan(1.1);
++    // and without the filter the same eighteen cost the six several KB/s each
++    const crowdOff = cityBytes({ n: 24, where: (i) => (i < 6 ? corner(i) : grid(18, 10, 70, 70)(i - 6)), measure: (i) => i < 6, unfiltered: true });
++    expect(crowdOff - alone).toBeGreaterThan(4);
++  });
++});
+-- 
+2.43.0
+
