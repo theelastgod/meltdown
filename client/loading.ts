@@ -38,8 +38,9 @@ export interface LoadingDescriptor {
 /** Each place's picture: its district illustration, an arc banner, the office's own, or the yard's gig. */
 export const LEVEL_ART: Readonly<Record<string, string>> = {
   lease_row: "/districts/lease_row.jpg",
-  deadletter_docks: "/missions/m2_deadletter_run.jpg",
-  repo_depot: "/missions/m3_repo_volatility.jpg",
+  // Arrival art for the district, separate from the contract illustrations.
+  deadletter_docks: "/districts/deadletter_docks.jpg",
+  repo_depot: "/districts/repo_depot.jpg",
   // Stage 701's districts, painted for them: the market's lanterns and crowd, the relay towers' dishes
   night_market: "/districts/night_market.jpg",
   relay_heights: "/districts/relay_heights.jpg",

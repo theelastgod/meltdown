@@ -276,7 +276,33 @@ describe("the loading descriptor", () => {
   it("a URL implies its own card when the trip did not write one (a shared link)", () => {
     expect(loadingFor("http://x/?level=lease_row&mission=m1_wake_unlisted")).toMatchObject({ kind: "mission", title: "LEASE ROW", line: "CONTRACT · WAKE UNLISTED", art: MISSION_ART.m1_wake_unlisted });
     expect(loadingFor("http://x/?level=lease_row&net=ws://h/room/neochina-lease_row?level=lease_row")).toMatchObject({ kind: "district", title: "LEASE ROW", line: "WAKE · THE PUBLIC ROOM" });
-    expect(loadingFor("http://x/?level=repo_depot&mode=run&net=ws://h/room/r")).toMatchObject({ title: "REPO DEPOT", line: "THE RUN · CARRY THE CLAIMS TO A GATE" });
+    expect(loadingFor("http://x/?level=repo_depot&mode=run&net=ws://h/room/r")).toMatchObject({ title: "REPO DEPOT", line: "THE RUN · CARRY THE CLAIMS TO A GATE", art: "/districts/repo_depot.jpg" });
+    expect(loadingFor("http://x/?level=deadletter_docks&city=1")).toMatchObject({ title: "DEADLETTER DOCKS", art: "/districts/deadletter_docks.jpg" });
+    expect(loadingFor("http://x/?level=repo_depot&city=1").art).toBe("/districts/repo_depot.jpg");
+    for (const id of ["deadletter_docks", "repo_depot"] as const) {
+      expect(LEVEL_ART[id]).toBe(`/districts/${id}.jpg`);
+      expect(LEVEL_ART[id]).not.toMatch(/\/missions\//);
+      const path = new URL(`../public${LEVEL_ART[id]}`, import.meta.url);
+      const b = readFileSync(path);
+      expect(b[0]).toBe(0xff);
+      expect(b[1]).toBe(0xd8);
+      let o = 2;
+      let w = 0;
+      let h = 0;
+      while (o < b.length) {
+        const m = b[o + 1]!;
+        const len = b.readUInt16BE(o + 2);
+        if (m === 0xc0 || m === 0xc2) {
+          h = b.readUInt16BE(o + 5);
+          w = b.readUInt16BE(o + 7);
+          break;
+        }
+        o += 2 + len;
+      }
+      expect(w, id).toBe(960);
+      expect(h, id).toBe(411);
+      expect(b.length, id).toBeLessThan(150_000);
+    }
     expect(loadingFor(playUrl(BASE))).toMatchObject({ kind: "play", title: "LEASE ROW", line: "THE CITY · CONTINUE THE CAMPAIGN" });
     expect(loadingFor("http://x/?level=nowhere").title).toBe("LEASE ROW");
     // every picture the card names is a file that ships

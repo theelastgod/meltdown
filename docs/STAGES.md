@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 709 — Docks and Depot opened on someone else's picture
+
+**The ask.** The two older districts still borrowed a contract illustration for the loading card. Lease Row, Night Market, and Relay Heights already had their own arrival art.
+
+**The change.** `LEVEL_ART` now points Deadletter Docks and Repo Depot at `/districts/deadletter_docks.jpg` and `/districts/repo_depot.jpg`. The contract banners stay on the missions. Both pictures are 960×411 JPEGs from Higgsfield Soul Location, cropped and compressed to the same card size as the other districts. A first depot picture had readable fence labels and was discarded.
+
+**Verified.** `tests/loading.test.ts` requires both cards to name those files, at 960×411 and under 150 KB, and not a path under `/missions/`. Reverting the docks path to `m2_deadletter_run.jpg` failed that test once. The files on disk are 44,566 and 54,858 bytes.
+
+**Open.** The pictures are loading-card art. They do not retile the street geometry.
+
 ## Stage 708 — A walking screenshot could start at its destination
 
 **The ask.** Resolve release-check failures before shipping the latest game.

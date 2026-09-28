@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | `94e455f` Stage 705 (presence feed + WORLD MAP) |
-| Next stage number | **706** — and §6 is already written for it |
+| HEAD | Stage 709 (Docks and Depot have their own arrival art). Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **710** |
 | Unit tests | 1748, `npm test` (vitest) — all green at HEAD |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |
