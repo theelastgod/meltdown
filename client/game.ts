@@ -118,6 +118,8 @@ export class Game {
   synced = false;
   /** where a walk in through a city gate stands (Stage 697), until the first link has used it */
   private arrival: SpawnPoint | null = null;
+  /** the room's sheet mutator (an Audit's), applied on top of every loadout the room admits (Stage 702) */
+  private roomSheet: Parameters<World["setLoadout"]>[2] = undefined;
   readonly netStats = { corrections: 0, maxCorrectionM: 0, replayedInputs: 0, serverHitsOnMe: 0, myHits: 0, myShotsConfirmed: 0, log: [] as { tick: number; corr: number; ack: number; pendingBefore: number; replayed: number; wasAlive: boolean; stance: string }[] };
   readonly input: InputController;
   /** touch device: thumbs instead of pointer lock, and a frame a phone can hold (Stage 32) */
@@ -404,8 +406,11 @@ export class Game {
     net.onFile = (f) => {
       this.file.applyServer(f);
       if (f.reason === "join" && this.net === net) {
-        // the server admitted this loadout: run the same sheet locally (arrives before the first snapshot)
-        this.world.setLoadout(this.player, f.loadout as Parameters<World["setLoadout"]>[1]);
+        // the server admitted this loadout: run the same sheet locally (arrives before the first snapshot),
+        // with the room's own mutator on top — the File comes after the Welcome that named it, and
+        // setting the loadout bare here undid an Audit's sheet (a GLASS week predicted shields and ×1
+        // movement the room did not run; Stage 702)
+        this.world.setLoadout(this.player, f.loadout as Parameters<World["setLoadout"]>[1], this.roomSheet);
         this.hud.push(`FILE ${f.account} · DEPTH ${String(f.depth).padStart(2, "0")} · ATTESTED [${f.loadout.attested.map(itemName).join(", ") || "NONE"}]${f.loadout.keystone ? " · " + itemName(f.loadout.keystone) : ""}`, "cy");
       } else if (f.reason === "settle") {
         // the Ledger Entry ritual: the receipt prints line by line, the stamp thunks, the player signs
@@ -438,7 +443,10 @@ export class Game {
         const audit = am ? AUDITS.find((x) => x.id === am[1]) : undefined;
         if (audit) {
           this.world.gravityMult = audit.gravityMult;
-          if (Object.keys(audit.sheet).length) this.world.setLoadout(this.player, this.file.admitted ?? this.file.localLoadout(), audit.sheet);
+          if (Object.keys(audit.sheet).length) {
+            this.roomSheet = audit.sheet;
+            this.world.setLoadout(this.player, this.file.admitted ?? this.file.localLoadout(), audit.sheet);
+          }
           this.hud.push(`AUDIT · ${audit.name} · ${audit.line}`, "am");
         }
         // the first link after a walk through a city gate faces in from it, as the room placed it

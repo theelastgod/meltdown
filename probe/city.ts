@@ -157,25 +157,48 @@ async function main(): Promise<void> {
     // the page goes. The nearest gate keeps the walk short: a bot that cannot shoot back does not cross
     // a hostile district reliably, and the trip is the same trip from any gate.
     const lease = levelById("lease_row");
+    const leaseNav = buildNav(lease);
+    const nearestGate = (p: { x: number; z: number }): number => {
+      let g0 = 0;
+      for (let g = 1; g < lease.exits!.length; g++) if (Math.hypot(lease.exits![g]!.x - p.x, lease.exits![g]!.z - p.z) < Math.hypot(lease.exits![g0]!.x - p.x, lease.exits![g0]!.z - p.z)) g0 = g;
+      return g0;
+    };
+    const walkTo = (p: { x: number; z: number }, g: number): BotStep[] => {
+      const mouth = lease.exits![g]!;
+      return [...sprintRoute(leaseNav, p, gateArrival(lease, g)!.pos, 1.4), { kind: "goto", x: mouth.x, z: mouth.z, sprint: false, radius: 0.3, timeoutTicks: 400, stop: true }, { kind: "hold", ticks: 9000 }];
+    };
     const pb = await b.evaluate(() => window.__game.state().pos);
-    let EXIT = 0;
-    for (let g = 1; g < lease.exits!.length; g++) if (Math.hypot(lease.exits![g]!.x - pb.x, lease.exits![g]!.z - pb.z) < Math.hypot(lease.exits![EXIT]!.x - pb.x, lease.exits![EXIT]!.z - pb.z)) EXIT = g;
-    const to = neighbourAt("lease_row", EXIT)!;
-    const inside = gateArrival(lease, EXIT)!.pos;
-    const mouth = lease.exits![EXIT]!;
-    const walk: BotStep[] = [...sprintRoute(buildNav(lease), pb, inside, 1.4), { kind: "goto", x: mouth.x, z: mouth.z, sprint: false, radius: 0.3, timeoutTicks: 400, stop: true }, { kind: "hold", ticks: 9000 }];
-    const crossed = b.waitForURL((u) => new URL(u).searchParams.get("level") === to.district, { timeout: 60000, waitUntil: "commit" }).then(() => true, () => false);
-    await b.evaluate((plan) => window.__game.setBot(plan), walk);
+    let EXIT = nearestGate(pb);
+    // a 5×5 LEASE ROW has corner spawns 66 m from any gate, and a bot that cannot shoot back is often
+    // downed on the way: when it dies it is walked again from where it respawned, to the gate nearest
+    // there, up to four walks in all. Which gate it takes does not matter; the check reads the gate the
+    // page actually went through
+    const leftTo = new Set(lease.exits!.map((_e, g) => neighbourAt("lease_row", g)!.district));
+    const crossed = b.waitForURL((u) => leftTo.has(new URL(u).searchParams.get("level") ?? ""), { timeout: 150000, waitUntil: "commit" }).then(() => true, () => false);
+    await b.evaluate((plan) => window.__game.setBot(plan), walkTo(pb, EXIT));
     // the line the HUD showed on the way in, read until the page goes
     const lines = new Set<string>();
     let going = true;
+    let walks = 1;
+    let deathsSeen = await b.evaluate(() => window.__game.state().stats.deaths);
     void crossed.then(() => (going = false));
     while (going) {
-      const line = await b.evaluate(() => window.__game.campaign().gate.line).catch(() => "");
-      if (line) lines.add(line.replace(/[▮▯]+/g, "▮"));
+      const at = await b.evaluate(() => ({ line: window.__game.campaign().gate.line, deaths: window.__game.state().stats.deaths, health: window.__game.state().health, pos: window.__game.state().pos })).catch(() => null);
+      if (at?.line) lines.add(at.line.replace(/[▮▯]+/g, "▮"));
+      if (at && at.deaths > deathsSeen && at.health > 0 && walks < 4 && going) {
+        deathsSeen = at.deaths;
+        walks++;
+        lines.clear();
+        EXIT = nearestGate(at.pos);
+        await b.evaluate((plan) => window.__game.setBot(plan), walkTo(at.pos, EXIT)).catch(() => undefined);
+      }
       await b.waitForTimeout(100).catch(() => undefined);
     }
     const went = await crossed;
+    const mouth = lease.exits![EXIT]!;
+    const to = neighbourAt("lease_row", EXIT)!;
+    // where BRAVO was when the walk ended, for the detail line when it did not cross
+    const stuck = went ? null : await b.evaluate(() => ({ pos: window.__game.state().pos, health: window.__game.state().health, deaths: window.__game.state().stats.deaths })).catch(() => null);
     const bu = new URL(b.url()).searchParams;
     const there = levelById(to.district);
     /**
@@ -209,7 +232,7 @@ async function main(): Promise<void> {
     check(
       "the districts are joined: walking into a LEASE ROW gate names the district it leads to, and standing in it walks the file into that city at the gate that leads back",
       went && [...lines].some((l) => l.includes(`→ ${there.displayName}`)) && [...lines].some((l) => /CROSSING/.test(l)) && bu.get("city") === "1" && bu.get("from") === "lease_row" && bu.get("gate") === String(to.gate) && land.mode === "city" && land.live >= 3 && land.off < 0.5 && (st2.rooms[`city:${to.district}`]?.city?.players ?? 0) >= 1,
-      `gate ${EXIT} → ${to.district} gate ${to.gate} · lines [${[...lines].join(" | ")}] · went ${went} → level ${bu.get("level")} from ${bu.get("from")} gate ${bu.get("gate")} · mode ${land.mode} · at most ${land.off.toFixed(2)} m from the arrival point over ${land.live} live samples in its first second · room ${JSON.stringify(st2.rooms[`city:${to.district}`]?.city && { players: st2.rooms[`city:${to.district}`]!.city!.players })}`,
+      `${walks} walk(s), first from (${pb.x.toFixed(1)}, ${pb.z.toFixed(1)}) · gate ${EXIT} at (${mouth.x}, ${mouth.z})${stuck ? ` · walk ended at (${stuck.pos.x.toFixed(1)}, ${stuck.pos.y.toFixed(1)}, ${stuck.pos.z.toFixed(1)}) health ${stuck.health} deaths ${stuck.deaths}` : ""} → ${to.district} gate ${to.gate} · lines [${[...lines].join(" | ")}] · went ${went} → level ${bu.get("level")} from ${bu.get("from")} gate ${bu.get("gate")} · mode ${land.mode} · at most ${land.off.toFixed(2)} m from the arrival point over ${land.live} live samples in its first second · room ${JSON.stringify(st2.rooms[`city:${to.district}`]?.city && { players: st2.rooms[`city:${to.district}`]!.city!.players })}`,
     );
     await shot(b, `${OUT}/city-gate-arrival.png`);
 

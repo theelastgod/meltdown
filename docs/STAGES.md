@@ -1641,6 +1641,36 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 702 — A GLASS week's client ran shields the room had taken away
+
+Two failures turned up while running Stage 701's probes. Neither was caused by the new districts.
+
+**1. The Audit's sheet was undone by the file that followed it.**
+- **The failure.** The week turned over to GLASS ("SHIELDS OFF, +20% MOVE"), and probe:endgame
+  failed "the client runs the same gravity and sheet the room runs": shield 30, move ×1. The room
+  was running shield 0 and move ×1.2.
+- **The cause.** The room sends the Welcome and then the file. The client applied the Audit's sheet
+  on the Welcome, then set the admitted loadout bare when the `join` file arrived, which dropped
+  the sheet. For the whole round a GLASS client predicted a body with shields at the wrong speed,
+  and the room corrected it every snapshot. Any week with a sheet mutator was exposed; GLASS, with
+  the biggest one, is the first week the probe has met since the check was written.
+- **The fix.** The client remembers the room's sheet (`roomSheet`) and applies it on top of every
+  loadout the room admits.
+- **Verified.** probe:endgame 20/20 in the GLASS week: shield 0, move ×1.2, the same as the room.
+  Before the fix it failed the same way on every run (the mutation).
+
+**2. probe:world's gate walk from a far corner.**
+- **The failure.** "The districts are joined" failed with no gate line at all. BRAVO had been
+  downed during the event check and respawned in a corner of the 5×5 LEASE ROW, 66 m from the
+  nearest gate. It died three more times on the way: a bot that cannot shoot back does not cross
+  a district with five wasps.
+- **The fix.** When BRAVO dies on the walk it is walked again from where it respawned, to the gate
+  nearest there, up to four walks. The check reads the gate the page actually went through. Every
+  assertion is unchanged: the gate line, CROSSING, the arrival at 0.00 m before its first death in
+  the new room, and the room holding the file.
+- **Verified.** probe:world 7/7: two walks, the second from (-82.5, -82.5) through the east gate
+  into the docks.
+
 ## Stage 701 — The city was three districts, and walking east came home in two
 
 **The ask.** "Expand the size of the world." The city was three districts joined by their gates
