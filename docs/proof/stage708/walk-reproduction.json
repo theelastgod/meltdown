@@ -1,0 +1,60 @@
+{
+  "scope": "Real World+Bot screenshot setup only; browser gait/render acceptance remains probe:body",
+  "thresholdMps": 3.5,
+  "start": {
+    "pos": {
+      "x": 0,
+      "y": 0.00009999999999999983,
+      "z": 24
+    },
+    "yaw": 0
+  },
+  "target": {
+    "x": 0,
+    "z": 12
+  },
+  "inherited": {
+    "pos": {
+      "x": 0,
+      "y": 0.00009999999999999983,
+      "z": 12
+    },
+    "speed": 0,
+    "grounded": true
+  },
+  "before": {
+    "observedTicks": 300,
+    "firstWalkingTick": null,
+    "peakSpeed": 1.0666666666666667,
+    "finalSpeed": 0,
+    "current": {
+      "kind": "hold",
+      "ticks": 6000
+    },
+    "log": [
+      "t+1 goto → reached (0.0,12.0)"
+    ]
+  },
+  "after": {
+    "advancedTicks": 4,
+    "speed": 4.266666666666667,
+    "grounded": true,
+    "position": {
+      "x": 0,
+      "y": 0.00009999999999999983,
+      "z": 23.82222222222223
+    },
+    "current": {
+      "kind": "goto",
+      "x": 0,
+      "z": 12,
+      "sprint": false,
+      "radius": 1,
+      "timeoutTicks": 900,
+      "stop": false
+    },
+    "log": []
+  },
+  "reproduced": true,
+  "fixed": true
+}

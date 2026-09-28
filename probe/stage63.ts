@@ -337,22 +337,33 @@ async function main(): Promise<void> {
       lastSign = sgn || lastSign;
     }
     check("walking: the legs alternate at the stride's amplitude, the boots stay on the ground, and the body leans into the walk", moving.length >= 8 && walkFlips >= 2 && peak >= 0.3 && boots && leanMin >= 0.008, `${moving.length} of ${walk.length} frames moving · flips ${walkFlips} · peak ${peak.toFixed(2)} rad · boots on the ground ${boots} · chest ahead of the hips by at least ${leanMin.toFixed(3)} m`);
-    // a frame labelled "walk" has to show the body walking: send it off again and freeze the sim on a
-    // stride (the renderer keeps drawing, so the pose in the picture is the pose the checks measured)
-    await pg.evaluate((z) => window.__game.setBot([{ kind: "goto", x: 0, z: (z as number) - 12, sprint: false, radius: 1, timeoutTicks: 900, stop: false }, { kind: "hold", ticks: 6000 }]), s0.pos.z);
-    const walking = await pg.evaluate(async () => {
-      for (let i = 0; i < 300; i++) {
-        await new Promise((r) => requestAnimationFrame(r));
+    // The gait sample stops wherever its third stride lands. Reusing its destination can start
+    // inside the goto's radius, skip straight to hold, and never produce a walking photograph.
+    // Restore the run-up and find the speed by sim ticks, as leapRead finds the air. The live gait
+    // above still has to pass; this only lets the renderer photograph an actual moving state.
+    const walking = await pg.evaluate((start) => {
+      window.__game.setRealtime(false);
+      const p = window.__game.game.player;
+      p.pos.x = start.pos.x;
+      p.pos.y = start.pos.y;
+      p.pos.z = start.pos.z;
+      p.vel.x = p.vel.y = p.vel.z = 0;
+      p.yaw = start.yaw;
+      window.__game.setBot([{ kind: "goto", x: 0, z: start.pos.z - 12, sprint: false, radius: 1, timeoutTicks: 900, stop: false }, { kind: "hold", ticks: 6000 }]);
+      const drew0 = window.__game.state().loop.frames;
+      let ticks = 0;
+      for (; ticks < 120;) {
+        window.__game.advance(1);
+        ticks++;
         const st = window.__game.state();
-        if (Math.hypot(st.vel.x, st.vel.z) > 3.5 && st.grounded) {
-          window.__game.setRealtime(false);
-          return Math.hypot(st.vel.x, st.vel.z);
-        }
+        if (Math.hypot(st.vel.x, st.vel.z) > 3.5 && st.grounded) break;
       }
-      return 0;
-    });
+      const st = window.__game.state();
+      return { ticks, speed: Math.hypot(st.vel.x, st.vel.z), grounded: st.grounded, drawn: st.loop.frames - drew0, pos: st.pos, bot: window.__game.botStatus() };
+    }, { pos: s0.pos, yaw: s0.yaw });
     await nextFrame(pg, 3);
-    check("the walk frame is taken while it is walking, not after it stopped", walking > 3.5, `frozen at ${walking.toFixed(1)} m/s`);
+    check("the walk frame is taken while it is walking, not after it stopped", walking.speed > 3.5 && walking.grounded && walking.drawn === 0, `frozen at ${walking.speed.toFixed(1)} m/s after ${walking.ticks} sim ticks · grounded ${walking.grounded} · ${walking.drawn} frames drawn while finding the stride`);
+    results["walkCapture"] = walking;
     await shotCheck(pg, "stage63-walk.png");
     await pg.evaluate(() => window.__game.setRealtime(true));
     await pg.evaluate(() => window.__game.setBot([{ kind: "hold", ticks: 6000 }]));

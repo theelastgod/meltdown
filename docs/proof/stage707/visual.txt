@@ -1,0 +1,27 @@
+Loading-card screenshot captured
+{
+  "loading": {
+    "shown": true,
+    "title": "LEASE ROW",
+    "line": "THE CITY · CONTINUE THE CAMPAIGN",
+    "kind": "play",
+    "stage": "district",
+    "label": "LOADING THE DISTRICT",
+    "progress": 0.25,
+    "error": null,
+    "art": "/districts/lease_row.jpg",
+    "tip": "CLOTH ONLY: EVERY BODY HAS THE SAME HITBOX, EYE HEIGHT AND SPEED",
+    "through": false
+  },
+  "cloth": {
+    "source": "tex_cloak_v2.png",
+    "width": 256,
+    "calls": 2,
+    "assets": {
+      "requested": 1,
+      "loaded": 1,
+      "failed": 0
+    }
+  },
+  "errors": []
+}

@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/client/hud/hud.css"></head><body>
+<canvas id="character" width="440" height="600" style="display:block;width:440px;height:600px;margin:0 auto"></canvas>
+<script type="module">
+import { LookPreview } from '/client/render/lookpreview.ts';
+import { LoadingCard, loadingFor } from '/client/loading.ts';
+import { assetStats } from '/client/render/assets.ts';
+const card = new LoadingCard();
+card.show(loadingFor('http://localhost/?mode=campaign&city=1&level=lease_row&net=ws://localhost/campaign/city-lease_row'), 'district');
+const preview = new LookPreview(document.querySelector('#character'), 0);
+window.review = {card,preview,assetStats};
+</script></body></html>

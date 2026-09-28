@@ -1,0 +1,74 @@
+/**
+ * Bounded diagnostic for probe/stage63.ts's screenshot run-up. This uses the real World and Bot;
+ * it does not exercise the renderer or replace probe:body's live gait/screenshot acceptance.
+ * Run from the repository root with: node node_modules/tsx/dist/cli.mjs probe/out/body-walk-capture-repro.ts
+ */
+import { writeFileSync } from "node:fs";
+import { World } from "../../shared/sim/world";
+import { levelById } from "../../shared/sim/level";
+import { Bot, type BotStep } from "../../shared/sim/bot";
+
+const speedOf = (p: { vel: { x: number; z: number } }) => Math.hypot(p.vel.x, p.vel.z);
+const fixture = () => {
+  const world = new World(levelById("drainage_yard"), { ai: false, seed: 1, wakePhase: "off" });
+  const player = world.addPlayer(1, "WALK CAPTURE");
+  const hold = new Bot([{ kind: "hold", ticks: 6000 }], player.yaw);
+  for (let i = 0; i < 30; i++) world.step(new Map([[player.id, hold.sample(world, player, world.tick)]]));
+  const start = { pos: { ...player.pos }, yaw: player.yaw };
+  const target = { x: 0, z: start.pos.z - 12 };
+  // Adversarial but legal outcome of the preceding gait sampler: it can end at this destination.
+  player.pos.x = target.x;
+  player.pos.z = target.z;
+  player.vel.x = player.vel.y = player.vel.z = 0;
+  const inherited = { pos: { ...player.pos }, speed: speedOf(player), grounded: player.grounded };
+  const plan = (): BotStep[] => [{ kind: "goto", ...target, sprint: false, radius: 1, timeoutTicks: 900, stop: false }, { kind: "hold", ticks: 6000 }];
+  const tick = (bot: Bot) => world.step(new Map([[player.id, bot.sample(world, player, world.tick)]]));
+  return { world, player, start, target, inherited, plan, tick };
+};
+
+const before = fixture();
+const oldBot = new Bot(before.plan(), before.player.yaw);
+let oldPeak = 0;
+let oldFoundAt: number | null = null;
+// Observe every sim tick, a stronger opportunity to find motion than the old rendered-frame loop.
+for (let ticks = 1; ticks <= 300; ticks++) {
+  before.tick(oldBot);
+  const speed = speedOf(before.player);
+  oldPeak = Math.max(oldPeak, speed);
+  if (oldFoundAt === null && speed > 3.5 && before.player.grounded) oldFoundAt = ticks;
+}
+
+const after = fixture();
+after.player.pos.x = after.start.pos.x;
+after.player.pos.y = after.start.pos.y;
+after.player.pos.z = after.start.pos.z;
+after.player.vel.x = after.player.vel.y = after.player.vel.z = 0;
+after.player.yaw = after.start.yaw;
+const fixedBot = new Bot(after.plan(), after.player.yaw);
+let fixedTicks = 0;
+for (; fixedTicks < 120;) {
+  after.tick(fixedBot);
+  fixedTicks++;
+  if (speedOf(after.player) > 3.5 && after.player.grounded) break;
+}
+
+const result = {
+  scope: "Real World+Bot screenshot setup only; browser gait/render acceptance remains probe:body",
+  thresholdMps: 3.5,
+  start: before.start,
+  target: before.target,
+  inherited: before.inherited,
+  before: {
+    observedTicks: 300, firstWalkingTick: oldFoundAt, peakSpeed: oldPeak,
+    finalSpeed: speedOf(before.player), current: oldBot.current, log: oldBot.log,
+  },
+  after: {
+    advancedTicks: fixedTicks, speed: speedOf(after.player), grounded: after.player.grounded,
+    position: after.player.pos, current: fixedBot.current, log: fixedBot.log,
+  },
+  reproduced: oldFoundAt === null && oldPeak <= 3.5 && oldBot.current?.kind === "hold",
+  fixed: speedOf(after.player) > 3.5 && after.player.grounded && fixedBot.current?.kind === "goto",
+};
+writeFileSync("probe/out/body-walk-capture-repro.json", JSON.stringify(result, null, 2) + "\n");
+console.log(JSON.stringify(result, null, 2));
+if (!result.reproduced || !result.fixed) process.exitCode = 1;

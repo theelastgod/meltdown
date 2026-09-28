@@ -1641,6 +1641,30 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 708 — A walking screenshot could start at its destination
+
+**The ask.** Resolve release-check failures before shipping the latest game.
+
+**The change.** The body probe's live gait sampler stops when it has counted its
+strides. Its screenshot setup reused the old destination without restoring the
+starting point; if already there, the bot immediately held still. The capture now
+restores its run-up, pauses realtime simulation, and advances individual simulation
+ticks until a grounded walking state is reached. Rendering photographs that held
+state. The existing live gait test and the speed requirement remain, with additional
+checks for grounded state and zero rendered frames while preparing the capture.
+
+**Verified.** Baseline CI `36443715555` passed actual walking (25/27 moving frames,
+three stride flips) but failed the screenshot at 0.0 m/s. A real World and Bot
+reproduction starts at the reused destination: the old setup reaches hold on its
+first tick, peaks at 1.067 m/s and never exceeds 3.5 over 300 ticks. Restoring the
+run-up reaches **4.267 m/s, grounded, in four ticks**. Both reproduction and recovery
+passed. The baseline CI log did not include position, so this demonstrates the setup
+failure rather than claiming to reconstruct that run's exact trajectory.
+
+**Open.** Full browser acceptance of this capture change remains for CI. No gameplay
+or production bundle code changed in this stage. Stage 707's art presentation proof
+is now included alongside its already-passing 54 tests and production build.
+
 ## Stage 707 — Cloth that belongs on a character, and Lease Row's own arrival
 
 **The ask.** Improve the graphics and assets with generated artwork while retaining
@@ -1663,9 +1687,15 @@ with the same 256² dimensions. The loading, asset and service-worker suites pas
 **54/54**. Generated originals and conditioned outputs were visually reviewed;
 prompts and test logs are in `docs/proof/stage707/`.
 
-**Open.** Browser presentation checks and release verification are in progress.
-The networking stage's recorded local timeouts remain visible; production has
-not yet been updated by these commits.
+The actual loading card and CHARACTER turntable were rendered with the production
+components: the district image appeared, the cloak decoded at 256², the turntable
+used two draw calls, and no page errors occurred. Screenshots are in the proof
+directory. The first screenshot attempt timed out at 30 s on the loaded Mac;
+a 120 s capture allowance produced the reviewed frames without changing game logic.
+
+**Open.** Production release verification is in progress. The networking stage's
+recorded local timeouts remain visible; production has not yet been updated by
+these commits.
 
 ## Stage 706 — The city tells each client what is near it
 
