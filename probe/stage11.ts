@@ -117,8 +117,9 @@ async function main(): Promise<void> {
   try {
     // ---------------- the board ----------------
     const eg0 = await endgame();
+    // five districts of five nodes each (Stage 701 added NIGHT MARKET and RELAY HEIGHTS to the three)
     const nodes = Object.values(eg0.season.districts).flat();
-    check("the ledger host serves today's three contracts, the week's Audit playlist and an empty Deep Wake season", eg0.contracts.length === 3 && new Set(eg0.contracts.map((c) => c.id)).size === 3 && !!eg0.audit.id && eg0.board.length === 0 && nodes.length === 15 && nodes.every((n) => n.house === "unaligned"), `day ${eg0.day} · [${eg0.contracts.map((c) => c.id).join(", ")}] · audit ${eg0.audit.id} week ${eg0.audit.week} · season ${eg0.season.season} w${eg0.season.week}`);
+    check("the ledger host serves today's three contracts, the week's Audit playlist and an empty Deep Wake season", eg0.contracts.length === 3 && new Set(eg0.contracts.map((c) => c.id)).size === 3 && !!eg0.audit.id && eg0.board.length === 0 && nodes.length === 25 && nodes.every((n) => n.house === "unaligned"), `day ${eg0.day} · [${eg0.contracts.map((c) => c.id).join(", ")}] · audit ${eg0.audit.id} week ${eg0.audit.week} · season ${eg0.season.season} w${eg0.season.week}`);
     const au = eg0.audit;
 
     // ---------------- the FILE panel ----------------

@@ -1,6 +1,6 @@
 import type { ClaimDef, ZoneDef } from "./run";
 /**
- * Neo-China proper: procedural city districts. One deterministic generator, three
+ * Neo-China proper: procedural city districts. One deterministic generator, five
  * district specs. A district is a 3×3 (or 5×5) grid of building blocks split by
  * streets with sidewalks, alleys through some blocks, an elevated walkway,
  * storefronts, parked cars, rails, lamps, vending machines, dumpsters, a
@@ -716,7 +716,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
 }
 
 // ---------------------------------------------------------------------------
-// The three launch districts
+// The districts: the three launch districts, and the two Stage 701 added
 
 export const DISTRICT_SPECS: DistrictSpec[] = [
   {
@@ -773,6 +773,41 @@ export const DISTRICT_SPECS: DistrictSpec[] = [
     mechs: 3,
     wasps: 4,
     pedestrians: 70,
+  },
+  // Stage 701: two more districts, so the city's gates do not loop back to the same three streets.
+  // Each reuses a cast the renderer already dresses (the art bible keeps the city cyan and magenta,
+  // amber for VANTAGE), and each is told apart by its blocks, its crowd, its traffic and its patrols.
+  {
+    // the street market under the awnings: stalls and courtyards, the fewest parked cars, the
+    // thickest crowd of any 3×3 district, one mech
+    id: "night_market",
+    displayName: "NIGHT MARKET",
+    cast: "magenta",
+    seed: 4404,
+    blocks: ["market", "court", "market", "court", "plaza", "market", "split", "market", "court"],
+    words: ["夜市", "NOODLE 24", "CHIP DOCTOR", "KARAOKE", "PAWN", "BLACK CLINIC", "FRESH RAM", "NIGHT CO", "DEADLETTER"],
+    signFg: [COLORS.magenta, COLORS.yellow, COLORS.cyan],
+    walkway: "z",
+    carDensity: 0.15,
+    mechs: 1,
+    wasps: 3,
+    pedestrians: 100,
+  },
+  {
+    // the relay towers: tall stacks of leased compute, a warehouse and two alleys, the thinnest crowd
+    // in the city, every wasp route of a 3×3 district flown
+    id: "relay_heights",
+    displayName: "RELAY HEIGHTS",
+    cast: "cyan",
+    seed: 5505,
+    blocks: ["tower", "tower", "split", "tower", "plaza", "stack", "split", "tower", "tower"],
+    words: ["RELAY 7", "COLD RACK", "UPLINK", "中继", "LEASED CYCLES", "SEC-9", "COMPLY", "LATENCY"],
+    signFg: [COLORS.cyan, COLORS.magenta, COLORS.yellow],
+    walkway: "x",
+    carDensity: 0.4,
+    mechs: 2,
+    wasps: 4,
+    pedestrians: 40,
   },
 ];
 

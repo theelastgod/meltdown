@@ -1641,6 +1641,62 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 701 — The city was three districts, and walking east came home in two
+
+**The ask.** "Expand the size of the world." The city was three districts joined by their gates
+(Stage 697), so a file walking east was home again after two crossings.
+
+**The change.**
+- **Two new 3×3 districts from the one generator:**
+  - **NIGHT MARKET** (magenta): markets and courtyards round a plaza. It has the fewest parked
+    cars and the biggest crowd of any 3×3 district: 100 citizens, 3 wasps, 1 mech, 10 claims.
+  - **RELAY HEIGHTS** (cyan): five towers, a stack and two alleys. It has the city's thinnest
+    crowd: 40 citizens, 4 wasps, 2 mechs, 11 claims.
+  - Each has its own seed, sign words and walkway direction.
+- **They reuse casts the renderer already dresses.** The renderer picks brick, facade and skyline
+  textures per cast, and the art bible reserves amber, green and red for other things.
+- **One list.** The level registry, the city rooms, the gate map, the menu's district pick and the
+  MAP tab already read `DISTRICT_SPECS`. The Deep Wake's hand-kept list of three now reads it too:
+  a season stored before a district existed adds it on that district's first round (15 → 25
+  nodes). The gate map runs round five districts. West from LEASE ROW is now RELAY HEIGHTS.
+- **Their own loading art:** two banners painted for them in Higgsfield (image model, 960×411):
+  NIGHT MARKET's lanterns and crowd, and RELAY HEIGHTS' dish-crowned towers. Both have the
+  KERNEL on the horizon, as every district's banner does (`public/districts/`).
+
+**Verified.**
+- The docks and the depot hash exactly as they did, and LEASE ROW's pinned 3×3 hash still holds
+  (`tests/citysize.test.ts`, unchanged).
+- `tests/newdistricts.test.ts` (14 tests):
+  - both new levels are pinned and deterministic;
+  - every spawn reaches every node, claim, safe zone and gate arrival;
+  - all 40 gates pair one-to-one;
+  - every district reaches every other.
+- The agent caught four mutations.
+- **probe:city now renders five districts**, 79 checks. Every district is inside the unchanged
+  budget:
+
+  | District | Draw calls | Triangles |
+  |---|---|---|
+  | NIGHT MARKET | 157 | 115,884 |
+  | RELAY HEIGHTS | 174 | 92,828 |
+  | LEASE ROW | 181 | 186,268 |
+  | DEADLETTER DOCKS | 162 | 95,054 |
+  | REPO DEPOT | 175 | 114,092 |
+
+- **probe:city's MAP check** named three districts and counted five rows. It now takes the list
+  from `DISTRICT_SPECS`: every district by name, the range and the Deadletter Office, and nothing
+  else. The panel fits at 1280×720 with seven rows.
+- probe:endgame's Deep Wake node count follows the registry: 25.
+- probe:city 79/79, file 20/20, mobile 40/40 (seven MAP rows on a phone), cityLife 21/21. The
+  world and endgame probes turned up two failures of their own, both fixed in Stage 702.
+- The assets lint passes with 0 violations. 1661 unit tests pass.
+- Proof: `docs/proof/stage701/`: both new districts' streets, the MAP panel, and the two
+  banners.
+
+**Open.**
+- The MAP panel has no max height; seven rows fit at 1280×720 and on the phone probe's frame, and a
+  much longer list would need one.
+
 ## Stage 700 — probe:mastery photographed the loading card
 
 **The failure.** CI has been red since Stage 693, every time on the same check:

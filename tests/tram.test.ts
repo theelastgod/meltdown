@@ -10,8 +10,10 @@ import * as THREE from "three";
 import { Tram, TRAM, tramGeometry } from "../client/render/life";
 import { levelById } from "../shared/sim/level";
 import type { TramLine } from "../shared/sim/level";
+import { DISTRICT_SPECS } from "../shared/sim/city";
 
-const DISTRICTS = ["lease_row", "deadletter_docks", "repo_depot"];
+/** every district, so a district added later rides its beam too (Stage 701) */
+const DISTRICTS = DISTRICT_SPECS.map((d) => d.id);
 
 describe("the monorail car", () => {
   it("sits on its running surface: bogies on it, nothing below it", () => {

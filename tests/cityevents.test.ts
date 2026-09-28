@@ -15,6 +15,7 @@ import { decodeServerMessage, encodeCityEvent, encodeJoin, Msg, PROTOCOL_VERSION
 import { CITY_EVENT_KINDS, CITY_EVENTS, CityEvents, citySites, cityRing, planCityEvents, type CityEventKind } from "../shared/city/events";
 import { CITY_EVENT_XP, CITY_EVENT_XP_PER_DAY, cityEventsPaidToday, creditCityEvent } from "../shared/city/reward";
 import { levelById } from "../shared/sim/level";
+import { CITY_DISTRICTS } from "../shared/net/city";
 import { World, type SimEvent } from "../shared/sim/world";
 import { SIM_HZ } from "../shared/sim/constants";
 import { WASP } from "../shared/sim/ai";
@@ -121,7 +122,8 @@ describe("the schedule is the room's seed and nothing else", () => {
   });
 
   it("the posts are the district's lattice posts, and the ring runs round the outer four", () => {
-    for (const d of ["lease_row", "deadletter_docks", "repo_depot"]) {
+    expect(CITY_DISTRICTS.length).toBe(5);
+    for (const d of CITY_DISTRICTS) {
       const level = levelById(d);
       expect(citySites(level).map((s) => s.label)).toEqual(level.nodes.map((n) => n.label));
       const ring = cityRing(level);

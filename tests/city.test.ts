@@ -14,8 +14,8 @@ import { World, hashWorld } from "../shared/sim/world";
 import { Btn } from "../shared/sim/input";
 
 describe("city districts", () => {
-  it("the registry serves the range and three districts; the default is a district", () => {
-    expect(LEVEL_IDS).toEqual(["drainage_yard", "lease_row", "deadletter_docks", "repo_depot", "deadletter_office", "white_office"]);
+  it("the registry serves the range and five districts; the default is a district", () => {
+    expect(LEVEL_IDS).toEqual(["drainage_yard", "lease_row", "deadletter_docks", "repo_depot", "night_market", "relay_heights", "deadletter_office", "white_office"]);
     expect(levelById(DEFAULT_LEVEL_ID).district).toBe("magenta");
     expect(levelById("nonsense").name).toBe(DEFAULT_LEVEL_ID);
   });

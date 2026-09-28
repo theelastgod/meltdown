@@ -8,6 +8,7 @@
  */
 import { seasonIndex, seasonWeek } from "./clock";
 import { levelDisplayName } from "../sim/level";
+import { DISTRICT_SPECS } from "../sim/city";
 
 export type House = "estate" | "clockeaters" | "cells" | "unaligned";
 export const HOUSES: readonly House[] = ["estate", "clockeaters", "cells"];
@@ -22,7 +23,8 @@ export const HOUSE_NAME: Record<House, string> = {
 export function houseName(h: string): string {
   return HOUSE_NAME[h as House] ?? h.replace(/_/g, " ").toUpperCase();
 }
-export const DISTRICTS: readonly string[] = ["lease_row", "deadletter_docks", "repo_depot"];
+/** every district of the city, in the order the generator lists them (Stage 701: five, no longer a hand-kept three) */
+export const DISTRICTS: readonly string[] = DISTRICT_SPECS.map((d) => d.id);
 export const NODE_LABELS: readonly string[] = ["A", "B", "C", "D", "E"];
 /** pressure needed to turn a node */
 export const TURN_AT = 6;
@@ -106,6 +108,8 @@ export function rollSeason(st: SeasonState, now = Date.now()): boolean {
 /** Apply a settled round. Returns the nodes that turned. */
 export function applyRound(st: SeasonState, push: RoundPush, now = Date.now()): { label: string; from: House; to: House }[] {
   rollSeason(st, now);
+  // a season stored before a district existed (Stage 701) has no entry for it: its first round opens one
+  if (!st.districts[push.level] && DISTRICTS.includes(push.level)) st.districts[push.level] = Object.fromEntries(NODE_LABELS.map((n) => [n, emptyNode()]));
   const nodes = st.districts[push.level];
   if (!nodes) return [];
   const turned: { label: string; from: House; to: House }[] = [];

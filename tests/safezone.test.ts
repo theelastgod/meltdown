@@ -21,7 +21,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { World } from "../shared/sim/world";
-import { levelById } from "../shared/sim/level";
+import { levelById, LEVEL_IDS } from "../shared/sim/level";
 import { inSafeZone } from "../shared/sim/run";
 import { v3 } from "../shared/math/vec3";
 
@@ -99,7 +99,7 @@ describe("the hole in it is deliberate, and the probe used to read it as a leak"
 
 describe("levels place the cast against that rule, not by accident", () => {
   it("no level parks a training dummy inside a safe zone, where it could never be shot", () => {
-    for (const id of ["drainage_yard", "lease_row", "deadletter_docks", "repo_depot"]) {
+    for (const id of LEVEL_IDS) {
       const L = levelById(id);
       for (const z of L.zones ?? []) {
         if (z.kind !== "safe") continue;

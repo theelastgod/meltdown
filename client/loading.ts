@@ -40,6 +40,9 @@ export const LEVEL_ART: Readonly<Record<string, string>> = {
   lease_row: "/missions/m1_wake_unlisted.jpg",
   deadletter_docks: "/missions/m2_deadletter_run.jpg",
   repo_depot: "/missions/m3_repo_volatility.jpg",
+  // Stage 701's districts, painted for them: the market's lanterns and crowd, the relay towers' dishes
+  night_market: "/districts/night_market.jpg",
+  relay_heights: "/districts/relay_heights.jpg",
   [HUB_LEVEL_ID]: "/missions/m4_the_leak.jpg",
   drainage_yard: "/gigs/g_escrow_row.jpg",
   [WHITE_LEVEL_ID]: "/missions/m7_white_office.jpg",

@@ -59,7 +59,7 @@ Durable Object host is `server/worker.ts` (`npx wrangler dev`).
 Add `?headless=1` to the URL to start with the simulation paused; the
 `window.__game` hook then advances it deterministically.
 
-`?level=lease_row | deadletter_docks | repo_depot | drainage_yard` picks the
+`?level=lease_row | deadletter_docks | repo_depot | night_market | relay_heights | drainage_yard` picks the
 district (default Lease Row); **M** or the MAP tab travels between them.
 Rooms take the same parameter: `ws://host/room/<name>?level=repo_depot`.
 

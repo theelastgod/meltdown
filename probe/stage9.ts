@@ -282,7 +282,8 @@ async function main(): Promise<void> {
     await page.waitForTimeout(300);
     const rows = await page.evaluate(() => [...document.querySelectorAll("#hud .travel .row")].map((r) => r.textContent?.trim() ?? ""));
     await shotCheck(page, "stage9-map.png");
-    check("MAP tab lists the range, the three districts of Neo-China and the Deadletter Office", rows.length === 5 && rows.some((r) => /LEASE ROW/.test(r)) && rows.some((r) => /DEADLETTER DOCKS/.test(r)) && rows.some((r) => /REPO DEPOT/.test(r)) && rows.some((r) => /DEADLETTER OFFICE/.test(r)), rows.join(" | "));
+    // every district of Neo-China by name (Stage 701 added two), the range and the Deadletter Office, and nothing else
+    check(`MAP tab lists the range, the ${DISTRICT_SPECS.length} districts of Neo-China and the Deadletter Office`, rows.length === DISTRICT_SPECS.length + 2 && DISTRICT_SPECS.every((d) => rows.some((r) => r.includes(d.displayName))) && rows.some((r) => /DRAINAGE YARD/.test(r)) && rows.some((r) => /DEADLETTER OFFICE/.test(r)), rows.join(" | "));
     check("no page errors across three districts", errors.length === 0, errors.slice(0, 3).join(" | ") || "clean console");
     await page.close();
 
