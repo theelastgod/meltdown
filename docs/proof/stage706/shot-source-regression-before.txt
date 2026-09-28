@@ -1,0 +1,88 @@
+
+> meltdown@0.1.0 test
+> vitest run tests/interest.test.ts --maxWorkers=1 --testTimeout=60000 -t shot interest distinguishes|long-lived city filters
+
+
+ RUN  v3.2.7 /Users/wendellphillips/meltdown
+
+ ❯ tests/interest.test.ts (36 tests | 2 failed | 34 skipped) 12667ms
+   ↓ who is in view: the radius, its hysteresis and the cap > a body comes into view at `enter`, stays until past `leave`, and needs `enter` again to come back
+   ↓ who is in view: the radius, its hysteresis and the cap > a file walking back and forth across the line is told once, not every snapshot
+   ↓ who is in view: the radius, its hysteresis and the cap > a body the room no longer offers (a charge gone off, a file gone) falls out of view
+   ↓ who is in view: the radius, its hysteresis and the cap > `always` bodies are in view from anywhere; a `wide` one (an event's machine) from `eventEnter` to `eventLeave`
+   ↓ who is in view: the radius, its hysteresis and the cap > a held body (it hurt you; you hit it) stays in view wherever it is, for `stickyTicks`, then is on the radius again
+   ↓ who is in view: the radius, its hysteresis and the cap > no more than `maxPlayers` other files, nearest first; machines are not counted against it
+   ↓ who is in view: the radius, its hysteresis and the cap > at the cap a file in view is not cut for a newcomer only a little nearer (the same hysteresis), but is for one much nearer
+   ↓ who is in view: the radius, its hysteresis and the cap > an expired hold returns a nearby crowd to the player cap despite negative hysteresis ranks
+   ↓ what keeps a body in view, and which wire events go > the sim's attacker ids read back to the bodies they are
+   ↓ what keeps a body in view, and which wire events go > the hurt hold what hurt them, the shooter holds what it hit, the killer what it killed, a mech's mark its mech
+   ↓ what keeps a body in view, and which wire events go > the feed always goes; gunfire and blasts go by who and where
+   ↓ what keeps a body in view, and which wire events go > gunfire is sent as far as the client hears it
+   × what keeps a body in view, and which wire events go > shot interest distinguishes machines from real players sharing high wire ids 109ms
+     → a real high-id file out of view: expected true to be false // Object.is equality
+   ↓ every room that is not a city is byte-for-byte what it was > a match room's snapshots are the bytes they were before interest management existed
+   ↓ every room that is not a city is byte-for-byte what it was > THE RUN's, and a PvE room with every city option but the city's own, likewise
+   ↓ every room that is not a city is byte-for-byte what it was > only the city asks: a room is unfiltered unless told, and a match room with files 150 m apart still sends each the other
+   × the city tells each client what is near it > a long-lived city filters an unseen real player's gunfire after admissions reach id 201 12541ms
+     → the invisible file's shot is filtered: expected true to be false // Object.is equality
+   ↓ the city tells each client what is near it > a file out of range is not in the snapshot, comes in at `enter`, and stays until past `leave`
+   ↓ the city tells each client what is near it > a wasp or mech far off is not sent; one hunting this client is, from anywhere; so is the charge it threw
+   ↓ the city tells each client what is near it > anything that hurt this client stays in its view, wherever it is, for `stickyTicks`
+   ↓ the city tells each client what is near it > a public event's machines: from anywhere to a file taking part, from `eventEnter` to one that is not
+   ↓ the city tells each client what is near it > a file out of view is not heard firing; a file in view is, and the shooter hears its own
+   ↓ the city tells each client what is near it > the kill feed, joins and leaves reach a client whatever it can see
+   ↓ the roster: who is in the city, without where > every client is told everyone in the room, names and tags, including files it cannot see, and again when one leaves
+   ↓ a file that walks in finds somebody > without a gate it stands at the spawn nearest a file already in the street, in that file's view
+   ↓ a file that walks in finds somebody > the rule: nobody there keeps the room's spawn; never on top of a file; never further than it already was
+   ↓ hits and lag compensation use the world, not the snapshot > the rewind holds every file in the district, in view of the shooter or not
+   ↓ hits and lag compensation use the world, not the snapshot > a round fired at a wasp the shooter was not told about still lands, and the wasp is then held in its view
+   ↓ the client: out of view is gone, and back in view starts where it is > a file that leaves view is gone the next snapshot: no body standing where it was
+   ↓ the client: out of view is gone, and back in view starts where it is > a file that comes back is drawn at its new place, not slid there from the old one
+   ↓ the client: out of view is gone, and back in view starts where it is > (the control) a file that never left and jumped 50 m is lerped: the snap is the absence doing it
+   ↓ the client: out of view is gone, and back in view starts where it is > the file count is the room's roster when the room sends one, not the files in view
+   ↓ per-client bytes are bounded by what a client is told about, not by the room > 24 files spread over the district, every one moving and firing, stay under the per-client budget a match is held to
+   ↓ per-client bytes are bounded by what a client is told about, not by the room > 24 files crowded into one street, every one moving and firing, stay under it too: the cap, not the radius
+   ↓ per-client bytes are bounded by what a client is told about, not by the room > the same 24 spread files without interest are over it: the filter is what holds the line
+   ↓ per-client bytes are bounded by what a client is told about, not by the room > eighteen more files across the district cost a group of six nothing they can see
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/interest.test.ts > what keeps a body in view, and which wire events go > shot interest distinguishes machines from real players sharing high wire ids
+AssertionError: a real high-id file out of view: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ tests/interest.test.ts:195:91
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/interest.test.ts > the city tells each client what is near it > a long-lived city filters an unseen real player's gunfire after admissions reach id 201
+AssertionError: the invisible file's shot is filtered: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ tests/interest.test.ts:353:140
+    351|     step(h.room, 2, [observer]);
+    352|     expect(lastSnap(shooter).events.some((e) => e.type === "shot" && e…
+    353|     expect(lastSnap(observer).events.some((e) => e.type === "shot" && …
+       |                                                                                                                                            ^
+    354|   });
+    355| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 34 skipped (36)
+   Start at  10:00:46
+   Duration  21.05s (transform 4.66s, setup 0ms, collect 5.94s, tests 12.67s, environment 1ms, prepare 667ms)
+

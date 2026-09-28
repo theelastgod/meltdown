@@ -51,14 +51,18 @@ the schedule counted from it, and only the treasury can retune a channel afterwa
 
 ```sh
 cp .env.example .env.production   # fill in the three Workers' hosts
-npm run build                     # typecheck + vite build → dist/
+VITE_BUILD="$(git rev-parse HEAD)" npm run build # committed release → dist/
 npm run smoke                     # the built bundle boots, joins a room, renders (headless)
-npx wrangler pages deploy dist --project-name meltdown
+npx wrangler pages deploy dist --project-name meltdown --branch main --commit-hash "$(git rev-parse HEAD)"
 ```
 
 The `VITE_*` values are read at build time (`client/config.ts`). Development needs none of them:
 `npm run dev` and `npx tsx server/node-host.ts` are the whole stack, including an in-process EVM
 devnet for the counter-ledger.
+
+Set `VITE_BUILD` for a manual production build: its default is `dev`, which makes PLAY use the
+development host instead of the campaign Worker. Pages' production branch is `main`; this flag
+selects the production deployment and does not change the repository's working branch.
 
 ## 4. Where it runs today
 

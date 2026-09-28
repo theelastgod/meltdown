@@ -1,0 +1,10 @@
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.waitForFunction: Timeout 90000ms exceeded.
+    at main (/Users/wendellphillips/meltdown/probe/out/city-706-diagnostic.ts:79:13) {
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.0

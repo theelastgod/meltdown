@@ -1,0 +1,355 @@
+
+> meltdown@0.1.0 test
+> vitest run --maxWorkers=1 --testTimeout=60000
+
+
+ RUN  v3.2.7 /Users/wendellphillips/meltdown
+
+ ✓ tests/streetruns.test.ts (35 tests) 57025ms
+   ✓ the courses are the district's own, and the same every time > generating again builds the same courses to the centimetre, and the same par to the tick  27405ms
+   ✓ a bot proves every course at a sprint > each course, run again from its start by the sprinting bot through the movement sim, finishes in its par, inside the bound  20937ms
+   ✓ a bot proves every course at a sprint > a course the bot cannot finish is thrown away: a judge that never counts the finish leaves no course at all  3345ms
+   ✓ a bot proves every course at a sprint > a checkpoint moved inside a building fails the proof  1555ms
+   ✓ the room keeps the clock > the time is the room's ticks between the start and the finish, told to the runner and posted to the board  429ms
+   ✓ the room keeps the clock > the runner's splits are measured against its best; a slower run leaves the best and the board alone  609ms
+   ✓ the room keeps the clock > everyone else hears the finish as a line, and gets the new board  464ms
+   ✓ the room keeps the clock > the first finish of a course pays once; the next finish of it pays nothing; another course's first pays again  551ms
+ ✓ tests/cityevents.test.ts (25 tests) 60886ms
+   ✓ the schedule is the room's seed and nothing else > two rooms with one seed start the same event on the same tick, after the first quiet  911ms
+   ✓ the schedule is the room's seed and nothing else > an event that comes due on empty streets waits for someone to be there  321ms
+   ✓ each kind completes and fails on its own rule > HOLD: the ring held for its seconds completes it, with VANTAGE sending wasps at the post; the patrols go home after  1929ms
+   ✓ each kind completes and fails on its own rule > HOLD: time spent outside the ring does not count, and a post not held long enough fails at the limit and pays nobody, not even who stood in it  8972ms
+   ✓ each kind completes and fails on its own rule > INTERCEPT: a convoy nobody downs clears the district and the event fails  2127ms
+   ✓ each kind completes and fails on its own rule > ESCORT: the cell walks only while someone is close, and completes at the far post  711ms
+   ✓ each kind completes and fails on its own rule > ESCORT: a cell left in the street fails at the limit  2623ms
+   ✓ each kind completes and fails on its own rule > an event started while one runs waits for it; the next is scheduled after the quiet  1314ms
+   ✓ the room that ran it credits who took part > the file in the ring is paid; the file across the district is not; a file that walks in after is not; nothing is paid twice  21282ms
+   ✓ the room that ran it credits who took part > a failed event pays nobody, not even who took part in it, and says so  5107ms
+   ✓ only a city schedules events > a match room and a contract room run past the city's first event and never send one  8156ms
+   ✓ only a city schedules events > while the city, over the same span, starts one and tells its players  6174ms
+   ✓ the dev host's quiet (Stage 704) > holds the schedule back, never brings it forward, and a forced event still starts at once  754ms
+ ✓ tests/settle.test.ts (31 tests) 318178ms
+   ✓ the nightly settlement > settles a day, posts it as an epoch, and spends the units it paid for  6272ms
+   ✓ the nightly settlement > refuses to settle the same day twice — the cron may fire again and must cost nothing  4035ms
+   ✓ the nightly settlement > refuses a day whose epoch is already on chain, even if the store forgot  4073ms
+   ✓ the nightly settlement > marks a quiet day settled rather than retrying it forever  4097ms
+   ✓ the nightly settlement > names a file that banked but has no wallet, and does not spend its units  5428ms
+   ✓ the nightly settlement > spends only the units the settled day paid for, not what a file banked afterwards  12092ms
+   ✓ the nightly settlement > splits a day that outgrows its pot pro rata, and never mints past it  22251ms
+   ✓ the nightly settlement > does not spend a file's units when the epoch could not be posted  23169ms
+   ✓ the nightly settlement > a direct withdrawal spends the day's units, so the night does not pay for them again  19969ms
+   ✓ the nightly settlement > and the guard runs the other way too: a settled day cannot then be withdrawn  25432ms
+   ✓ reconciling the two records > finds units the banking table lost, and restores them so the night pays after all  29731ms
+   ✓ reconciling the two records > frees a file stranded by a settlement that posted but could not clear it  20672ms
+   ✓ reconciling the two records > a stranded clear spends only the day's units and credits the leaf's $CAPITAL, not the carried owed  19767ms
+   ✓ reconciling the two records > says nothing about a day that agrees with itself  30730ms
+   ✓ reconciling the two records > walks every linked file, not only the ones the table happens to know about  13943ms
+   ✓ epochs nobody claimed > cannot be swept before the vault's own deadline  11757ms
+   ✓ epochs nobody claimed > refuses an epoch that was never posted  5835ms
+   ✓ epochs nobody claimed > sweeps what nobody claimed back to the treasury after the deadline, once, and closes the epoch  7842ms
+   ✓ epochs nobody claimed > only the unclaimed remainder comes back — a file that claimed keeps what it took  7438ms
+   ✓ epochs nobody claimed > and a reclaim leaves the next day's settlement untouched end to end  3864ms
+   ✓ walking the backlog, not one day at a time > finds drift on days nobody asked about, in one pass over the files  3990ms
+   ✓ walking the backlog, not one day at a time > leaves today alone: an in-flight write is indistinguishable from a lost one  5084ms
+   ✓ walking the backlog, not one day at a time > reads each day once however many files share it, and never repairs a file twice  6010ms
+   ✓ walking the backlog, not one day at a time > clears a stranded file whatever day it was stranded on  3214ms
+   ✓ the fourth review (Stage 57): what the settlement pays, and what the withdrawal may > the direct withdrawal is devnet-only: a real chain pays once, at the night's settlement  3003ms
+   ✓ the fourth review (Stage 57): what the settlement pays, and what the withdrawal may > pays only what the day's row holds, not units the file carried over from another day  3216ms
+   ✓ the fourth review (Stage 57): what the settlement pays, and what the withdrawal may > the reconciliation reports a file the settlement could not pay as unpaid, and never clears it as stranded  4328ms
+   ✓ the fourth review (Stage 57): what the settlement pays, and what the withdrawal may > a later settled day does not wipe earlier unpaid units as stranded, and paid is $CAPITAL not units  5172ms
+   ✓ the fourth review (Stage 57): what the settlement pays, and what the withdrawal may > refuses to post an epoch the chain already has when the store forgot it, before drawing anything  2553ms
+   ✓ the fourth review (Stage 57): what the settlement pays, and what the withdrawal may > a reclaimed epoch is marked swept, so the night does not send the sweep again  2729ms
+ ✓ tests/catchup.test.ts (17 tests) 135763ms
+   ✓ a client whose page blocked comes back and catches up without being kicked > a 14 s block, then four 30-tick catch-up frames back to back, then ten seconds of play: no strike  1770ms
+   ✓ a client whose page blocked comes back and catches up without being kicked > one to four catch-up frames after the block, at every phase of the one-second window: no strike  52906ms
+   ✓ a flooder is kicked no later than the old guard kicked it > 96 inputs a second, a packet each: from join, and worst case after honest play  12803ms
+   ✓ a flooder is kicked no later than the old guard kicked it > 100 inputs a second, a packet each: from join, and worst case after honest play  6054ms
+   ✓ a flooder is kicked no later than the old guard kicked it > 105 inputs a second, a packet each: from join, and worst case after honest play  10394ms
+   ✓ a flooder is kicked no later than the old guard kicked it > 110 inputs a second, a packet each: from join, and worst case after honest play  7924ms
+   ✓ a flooder is kicked no later than the old guard kicked it > 120 inputs a second, a packet each: from join, and worst case after honest play  8000ms
+   ✓ a flooder is kicked no later than the old guard kicked it > 150 inputs a second, a packet each: from join, and worst case after honest play  4597ms
+   ✓ a flooder is kicked no later than the old guard kicked it > 200 inputs a second, a packet each: from join, and worst case after honest play  4904ms
+   ✓ a flooder is kicked no later than the old guard kicked it > 96 inputs a second in 32-input packets: from join, and worst case after honest play  6754ms
+   ✓ a flooder is kicked no later than the old guard kicked it > 120 inputs a second in 32-input packets: from join, and worst case after honest play  10786ms
+   ✓ a flooder is kicked no later than the old guard kicked it > 200 inputs a second in 32-input packets: from join, and worst case after honest play  8318ms
+ ✓ tests/citygatedoors.test.ts (7 tests) 67530ms
+   ✓ the city's gates are doors, and look like them (Stage 704) > outside the city nothing changes: every district's dressing is byte-identical to before, in every mode  51358ms
+   ✓ the city's gates are doors, and look like them (Stage 704) > the city's dressing is the district's own with the doors appended: nothing it had is moved, recoloured or dropped  15820ms
+ ✓ tests/security.test.ts (13 tests) 17633ms
+   ✓ the money paths, adversarially > a voucher contract refuses a malformed signature instead of recovering the zero address, and the signer can never be set to zero  2377ms
+   ✓ the money paths, adversarially > one file is one wallet on chain, not only in the host's index; burning the Ghostfile frees the file again  1299ms
+   ✓ the money paths, adversarially > a prize epoch is a ring-fenced pot: a root that claims more than the epoch was funded with cannot reach another epoch's money  1371ms
+   ✓ the money paths, adversarially > a prize is claimed once, by anyone, for the account in the leaf, and a forged amount fails the proof  2408ms
+   ✓ the money paths, adversarially > $CAPITAL: supply is only destroyed through burn, so the burn counter is the whole truth  1147ms
+   ✓ the money paths, adversarially > $CAPITAL: a signed permit sets the allowance in one transaction, once, and only for its own signer  2329ms
+   ✓ the money paths, adversarially > Names: the fee is priced per byte, so a multi-byte name cannot buy characters it did not pay for  1284ms
+   ✓ the hot key is not the bank > the relayer holds no supply, and what it can spend is an allowance the treasury set  500ms
+   ✓ the hot key is not the bank > a compromised relayer cannot take more than the allowance, however it asks  733ms
+   ✓ the hot key is not the bank > the ordinary payouts still work, and they draw on that same allowance  1018ms
+   ✓ the hot key is not the bank > and an epoch larger than the allowance is refused rather than half-posted  668ms
+ ✓ tests/citycost.test.ts (4 tests) 9257ms
+   ✓ what a district costs to draw > every district's frame fits the 200k-triangle budget with 10k left for the actors  6097ms
+   ✓ what a district costs to draw > the city's doors cost at most one batch and 2k triangles a district: the signs ride the atlas, the light rides the neon (Stage 704)  2728ms
+   ✓ what a district costs to draw > the 5×5 LEASE ROW draws in no more batches than the 3×3 one did: its blocks bring no new material  397ms
+ ✓ tests/cityroom.test.ts (7 tests) 9911ms
+   ✓ the city is PvE > in a city room another player's damage is not applied; a patrol's and your own are  6957ms
+   ✓ the city is PvE > the city runs the district's patrols and no match, and holds more than a match room  2652ms
+ ✓ tests/citypresence.test.ts (21 tests) 15275ms
+   ✓ a district's line of the feed > counts the files online and names them by the name the city calls them  4233ms
+   ✓ a district's line of the feed > names at most PRESENCE_NAMES; the count is everyone  9492ms
+   ✓ redaction: no id and no secret ever reaches the payload > a file named after its own id, another's id, or a slice of another's secret is not printed  1260ms
+ ✓ tests/prizes.test.ts (3 tests) 2061ms
+   ✓ the PrizeVault on the devnet > builds a Merkle epoch the contract verifies; a file with a wallet claims (sponsored), a second claim reverts, a file without a wallet is skipped  699ms
+ ✓ tests/sinks.test.ts (13 tests) 6181ms
+   ✓ SeasonBuyout — the Deep Wake pass > burns the fee in full: the buyer pays, the supply falls, nobody receives it  2068ms
+   ✓ SeasonBuyout — the Deep Wake pass > sells a season once, and only the season asked for  731ms
+   ✓ SeasonBuyout — the Deep Wake pass > refuses a price the buyer did not agree to, so a retune cannot front-run a purchase  711ms
+   ✓ SeasonBuyout — the Deep Wake pass > lets nobody but the steward move the price or the role  694ms
+   ✓ RoomCredits — a server of your own, by the hour > burns per hour and credits the buyer, and the host spends the credit down  669ms
+   ✓ RoomCredits — a server of your own, by the hour > refuses a spend by anyone but the host, and refuses to go negative  614ms
+   ✓ RoomCredits — a server of your own, by the hour > refuses an absurd purchase rather than overflowing the fee  653ms
+ ✓ tests/schedule.test.ts (7 tests) 7878ms
+   ✓ the vault's side of the schedule > carries the model's numbers: the same launch day, and the same cap for every kind of epoch on every kind of day  318ms
+   ✓ the vault's side of the schedule > refuses a post over the cap before a token is drawn, and an epoch of no channel at all  3470ms
+   ✓ the vault's side of the schedule > the poster cannot move the cap; the treasury can  2250ms
+   ✓ the vault's side of the schedule > the ledger names an over-schedule post as a refusal and draws nothing, rather than paying for a revert  357ms
+ ✓ tests/counter.test.ts (26 tests) 8333ms
+   ✓ the counter-ledger on the devnet > links a wallet over SIWE, binds it 1:1, mints the soulbound Ghostfile with sponsored gas and attests the file's stamps  1468ms
+   ✓ the counter-ledger on the devnet > a market buy is player-signed, takes the 2/2/1 fee on chain, and lands on the rig through reconcile — as an ID only  333ms
+   ✓ the counter-ledger on the devnet > chain down, game up: with the RPC dead, link and reconcile fail soft with a reason while wear, the join and the settlement still work  2250ms
+ ✓ tests/city.test.ts (6 tests) 16395ms
+   ✓ city districts > every spawn reaches every node at street level, in every district  3720ms
+   ✓ city districts > the elevated walkway is reachable up its stairs (steps, no mantle)  12493ms
+stdout | tests/interest.test.ts > per-client bytes are bounded by what a client is told about, not by the room > 24 files spread over the district, every one moving and firing, stay under the per-client budget a match is held to
+CITY BANDWIDTH {"players":24,"measuredPlayers":24,"firing":true,"unfiltered":false,"KBps":8.453}
+
+stdout | tests/interest.test.ts > per-client bytes are bounded by what a client is told about, not by the room > 24 files crowded into one street, every one moving and firing, stay under it too: the cap, not the radius
+CITY BANDWIDTH {"players":24,"measuredPlayers":24,"firing":true,"unfiltered":false,"KBps":9.554}
+CITY BANDWIDTH {"players":8,"measuredPlayers":8,"firing":true,"unfiltered":true,"KBps":10.951}
+
+stdout | tests/interest.test.ts > per-client bytes are bounded by what a client is told about, not by the room > the same 24 spread files without interest are over it: the filter is what holds the line
+CITY BANDWIDTH {"players":24,"measuredPlayers":24,"firing":false,"unfiltered":true,"KBps":17.888}
+CITY BANDWIDTH {"players":24,"measuredPlayers":24,"firing":false,"unfiltered":false,"KBps":7.051}
+
+stdout | tests/interest.test.ts > per-client bytes are bounded by what a client is told about, not by the room > eighteen more files across the district cost a group of six nothing they can see
+CITY BANDWIDTH {"players":6,"measuredPlayers":6,"firing":false,"unfiltered":false,"KBps":7.335}
+CITY BANDWIDTH {"players":24,"measuredPlayers":6,"firing":false,"unfiltered":false,"KBps":7.673}
+CITY BANDWIDTH {"players":24,"measuredPlayers":6,"firing":false,"unfiltered":true,"KBps":16.292}
+
+ ✓ tests/interest.test.ts (36 tests) 9040ms
+   ✓ every room that is not a city is byte-for-byte what it was > THE RUN's, and a PvE room with every city option but the city's own, likewise  434ms
+   ✓ every room that is not a city is byte-for-byte what it was > only the city asks: a room is unfiltered unless told, and a match room with files 150 m apart still sends each the other  2472ms
+   ✓ per-client bytes are bounded by what a client is told about, not by the room > 24 files spread over the district, every one moving and firing, stay under the per-client budget a match is held to  926ms
+   ✓ per-client bytes are bounded by what a client is told about, not by the room > 24 files crowded into one street, every one moving and firing, stay under it too: the cap, not the radius  1098ms
+   ✓ per-client bytes are bounded by what a client is told about, not by the room > the same 24 spread files without interest are over it: the filter is what holds the line  1263ms
+   ✓ per-client bytes are bounded by what a client is told about, not by the room > eighteen more files across the district cost a group of six nothing they can see  1700ms
+ ✓ tests/citygates.test.ts (18 tests) 1824ms
+   ✓ the city room places a file walking in through a gate > at the gate it names, facing in, when the gate leads back to where it came from  1083ms
+   ✓ the city room places a file walking in through a gate > at the room's own spawn when the hint is missing, malformed, or lies about where it came from  550ms
+ ✓ tests/fairness.test.ts (19 tests) 1292ms
+   ✓ fairness lint — simulation, not arithmetic > a reconciled-on-paper damage node still fails the duel lint (net power)  526ms
+   ✓ fairness lint — simulation, not arithmetic > the shipped catalogue passes the quick lint  676ms
+ ✓ tests/arrivalgrace.test.ts (4 tests) 3875ms
+   ✓ a file loading into the city is not on the street yet (Stage 699) > nothing hurts it and no wasp takes it as a target until its first input arrives; then both do  1132ms
+   ✓ a file loading into the city is not on the street yet (Stage 699) > the grace runs out: a file that never sends an input is on the street after ARRIVAL_GRACE_TICKS  703ms
+   ✓ a file loading into the city is not on the street yet (Stage 699) > a file that leaves while loading leaves nothing behind  2032ms
+ ✓ tests/run.test.ts (6 tests) 1545ms
+   ✓ THE RUN — the room and the payout > the payout moves what is owed from the treasury to the linked wallet on chain  809ms
+   ✓ THE RUN — the room and the payout > a day settled through the vault cannot also be withdrawn directly: the two paths never double-pay  414ms
+ ✓ tests/wallet.test.ts (16 tests) 986ms
+ ✓ tests/citysize.test.ts (16 tests) 1301ms
+   ✓ LEASE ROW is five blocks by five > every spawn reaches every node, every claim and both safe zones at street level  1202ms
+ ✓ tests/model.test.ts (18 tests) 720ms
+   ✓ the fix: a day is a pot, not a price > pays a day worth less than a whole $CAPITAL rather than rounding it away  425ms
+ ✓ tests/hold.test.ts (8 tests) 1207ms
+   ✓ m1's hold is at the terminal > the timer does not run across the district  624ms
+   ✓ m1's hold is at the terminal > standing at B for 20 s does decrypt it  423ms
+ ✓ tests/look.test.ts (10 tests) 4026ms
+   ✓ every look is fair: cloth only > every look stays inside the sim's capsule, on the same floor under the same hood, within the triangle budgets  950ms
+   ✓ every look is fair: cloth only > no look puts a strip-light inside its own cloth  2074ms
+   ✓ the look on the wire > the room wears the look a file or a guest sent at the join, and the other players see it; junk is the default  390ms
+ ✓ tests/newdistricts.test.ts (14 tests) 1479ms
+   ✓ a Blank can walk every new district > night_market: every spawn reaches every node, every claim and both safe zones at street level  808ms
+   ✓ a Blank can walk every new district > relay_heights: every spawn reaches every node, every claim and both safe zones at street level  485ms
+ ✓ tests/arsenal.test.ts (29 tests) 868ms
+ ✓ tests/campaign.test.ts (92 tests) 1646ms
+   ✓ mission runtime > steps reach, survive, dialogue, destroy, kill and escort objectives against a real district  1205ms
+ ✓ tests/rig.test.ts (12 tests) 530ms
+ ✓ tests/escort.test.ts (11 tests) 769ms
+   ✓ a wake cell walked home is a wake cell > the feed names the cell, never Ida, and the three woken walk facing home  320ms
+ ✓ tests/gapfill.test.ts (8 tests) 298ms
+ ✓ tests/mastery.test.ts (21 tests) 642ms
+ ✓ tests/rituals.test.ts (3 tests) 1270ms
+   ✓ room — identity & rituals > dossier at round start (identity only), Debt at settlement, Chapter I rite on a Depth-10 crossing  1027ms
+(node:3435) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ tests/sqlite.test.ts (8 tests) 611ms
+ ✓ tests/sim.test.ts (23 tests) 266ms
+ ✓ tests/assets.test.ts (21 tests) 853ms
+   ✓ the manifest is honest about what is on disk > lints clean as it stands  465ms
+ ✓ tests/room.test.ts (14 tests) 214ms
+ ✓ tests/bandwidth.test.ts (3 tests) 566ms
+ ✓ tests/spots.test.ts (14 tests) 192ms
+ ✓ tests/speedhack.test.ts (3 tests) 172ms
+ ✓ tests/receipt.test.ts (11 tests) 149ms
+ ✓ tests/endgame.test.ts (82 tests) 241ms
+ ✓ tests/chiptrade.test.ts (44 tests) 88ms
+ ✓ tests/remotefinish.test.ts (3 tests) 1794ms
+   ✓ remote players carry their mastery finish > the snapshot a client is sent carries the finish for a weapon the file's record has at the cap, not for one it has not, and never a client's claim  337ms
+   ✓ remote players carry their mastery finish > a remote's held weapon is drawn with the finish exactly when that file mastered the weapon in its hand  1210ms
+ ✓ tests/slots.test.ts (12 tests) 404ms
+ ✓ tests/wake.test.ts (11 tests) 391ms
+ ✓ tests/fixers.test.ts (11 tests) 270ms
+ ✓ tests/arcconsequence.test.ts (11 tests) 231ms
+(node:3482) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ tests/filerow.test.ts (5 tests) 122ms
+ ✓ tests/economy.test.ts (37 tests) 273ms
+ ✓ tests/loading.test.ts (24 tests) 158ms
+ ✓ tests/identity.test.ts (32 tests) 197ms
+ ✓ tests/routes.test.ts (19 tests) 291ms
+ ✓ tests/worldmap.test.ts (21 tests) 84ms
+ ✓ tests/bundle.test.ts (3 tests) 193ms
+ ✓ tests/fairnessdebt.test.ts (17 tests) 77ms
+ ✓ tests/fileauth.test.ts (15 tests) 59ms
+ ✓ tests/slidejump.test.ts (10 tests) 122ms
+ ✓ tests/character.test.ts (8 tests) 109ms
+ ✓ tests/revive.test.ts (6 tests) 49ms
+ ✓ tests/plates.test.ts (12 tests) 236ms
+ ✓ tests/pose.test.ts (20 tests) 70ms
+ ✓ tests/roomlabel.test.ts (21 tests) 26ms
+ ✓ tests/screens.test.ts (10 tests) 200ms
+ ✓ tests/tram.test.ts (5 tests) 172ms
+ ✓ tests/safezone.test.ts (11 tests) 52ms
+ ✓ tests/finish.test.ts (3 tests) 283ms
+ ✓ tests/layout.test.ts (46 tests) 52ms
+ ✓ tests/firmware.test.ts (22 tests) 59ms
+ ✓ tests/private.test.ts (13 tests) 245ms
+ ✓ tests/perf.test.ts (8 tests) 431ms
+   ✓ the monitor is out of the simulation's reach > nothing under shared/ or server/ imports the client, so the sim cannot see the monitor, the HUD or anything else the page owns  403ms
+ ✓ tests/brand.test.ts (3 tests) 157ms
+ ✓ tests/quarantine.test.ts (5 tests) 120ms
+ ✓ tests/endings.test.ts (16 tests) 109ms
+ ✓ tests/machines.test.ts (7 tests) 113ms
+ ✓ tests/detectmult.test.ts (2 tests) 98ms
+ ✓ tests/drone.test.ts (12 tests) 46ms
+ ✓ tests/contact.test.ts (5 tests) 91ms
+ ✓ tests/kill.test.ts (21 tests) 30ms
+ ✓ tests/joinretry.test.ts (6 tests) 46ms
+ ✓ tests/trade.test.ts (2 tests) 77ms
+ ✓ tests/recallrelay.test.ts (3 tests) 70ms
+ ✓ tests/aimassist.test.ts (11 tests) 36ms
+ ✓ tests/recall.test.ts (8 tests) 62ms
+ ✓ tests/target.test.ts (6 tests) 16ms
+ ✓ tests/spawn.test.ts (5 tests) 33ms
+ ✓ tests/probeshot.test.ts (3 tests) 30ms
+ ✓ tests/seasonpass.test.ts (18 tests) 38ms
+ ✓ tests/review3.test.ts (3 tests) 59ms
+ ✓ tests/district.test.ts (17 tests) 35ms
+ ✓ tests/tps.test.ts (14 tests) 32ms
+ ✓ tests/radar.test.ts (19 tests) 39ms
+ ✓ tests/crawl.test.ts (6 tests) 39ms
+ ✓ tests/damage.test.ts (8 tests) 92ms
+ ✓ tests/node.test.ts (15 tests) 42ms
+ ✓ tests/telemetry.test.ts (14 tests) 32ms
+ ✓ tests/crew.test.ts (6 tests) 84ms
+ ✓ tests/hit.test.ts (11 tests) 45ms
+ ✓ tests/gigart.test.ts (2 tests) 50ms
+(node:3641) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ tests/rund1.test.ts (2 tests) 20ms
+ ✓ tests/steps.test.ts (8 tests) 46ms
+ ✓ tests/merge.test.ts (9 tests) 28ms
+ ✓ tests/firmwarecoverage.test.ts (8 tests) 31ms
+ ✓ tests/masteryladder.test.ts (8 tests) 47ms
+ ✓ tests/round.test.ts (12 tests) 32ms
+ ✓ tests/respawn.test.ts (10 tests) 40ms
+ ✓ tests/lease.test.ts (2 tests) 46ms
+ ✓ tests/feel.test.ts (11 tests) 34ms
+ ✓ tests/vfxplates.test.ts (2 tests) 26ms
+ ✓ tests/rejoin.test.ts (8 tests) 34ms
+ ✓ tests/keyhint.test.ts (10 tests) 20ms
+ ✓ tests/ballistic.test.ts (9 tests) 56ms
+ ✓ tests/endingart.test.ts (2 tests) 33ms
+ ✓ tests/portraits.test.ts (2 tests) 23ms
+ ✓ tests/missionart.test.ts (2 tests) 25ms
+ ✓ tests/blastlight.test.ts (1 test) 19ms
+ ✓ tests/quiet.test.ts (15 tests) 37ms
+ ✓ tests/cron.test.ts (8 tests) 21ms
+ ✓ tests/crawlaudio.test.ts (8 tests) 30ms
+ ✓ tests/pwa.test.ts (9 tests) 27ms
+ ✓ tests/kitart.test.ts (4 tests) 28ms
+ ✓ tests/ticker.test.ts (9 tests) 13ms
+ ✓ tests/deskfixers.test.ts (2 tests) 12ms
+ ✓ tests/grenadepad.test.ts (5 tests) 19ms
+ ✓ tests/ladder.test.ts (8 tests) 26ms
+ ✓ tests/matchinput.test.ts (9 tests) 31ms
+ ✓ tests/vantage.test.ts (8 tests) 19ms
+ ✓ tests/rewindbudget.test.ts (5 tests) 8ms
+ ✓ tests/runcue.test.ts (8 tests) 55ms
+ ✓ tests/perfwindow.test.ts (5 tests) 20ms
+ ✓ tests/mechflag.test.ts (1 test) 6ms
+ ✓ tests/rack.test.ts (4 tests) 17ms
+ ✓ tests/weaponname.test.ts (5 tests) 19ms
+ ✓ tests/threat.test.ts (9 tests) 34ms
+ ✓ tests/coda.test.ts (5 tests) 18ms
+ ✓ tests/nearmiss.test.ts (7 tests) 13ms
+ ✓ tests/voice.test.ts (4 tests) 28ms
+ ✓ tests/verify.test.ts (5 tests) 43ms
+ ✓ tests/ammo.test.ts (11 tests) 17ms
+ ✓ tests/results.test.ts (3 tests) 15ms
+ ✓ tests/stance.test.ts (3 tests) 8ms
+ ✓ tests/keys.test.ts (7 tests) 20ms
+ ✓ tests/wire.test.ts (2 tests) 11ms
+ ✓ tests/subtick.test.ts (6 tests) 23ms
+ ✓ tests/gunfire.test.ts (6 tests) 9ms
+ ✓ tests/footline.test.ts (4 tests) 17ms
+ ✓ tests/onlinefx.test.ts (5 tests) 12ms
+ ✓ tests/ping.test.ts (6 tests) 13ms
+ ✓ tests/probesflake.test.ts (2 tests) 14ms
+ ✓ tests/clientauth.test.ts (4 tests) 25ms
+ ✓ tests/shieldcue.test.ts (6 tests) 22ms
+ ✓ tests/spread.test.ts (7 tests) 23ms
+ ✓ tests/panel.test.ts (7 tests) 33ms
+ ✓ tests/warmup.test.ts (4 tests) 22ms
+ ✓ tests/settings.test.ts (2 tests) 13ms
+ ✓ tests/terminal.test.ts (4 tests) 15ms
+ ✓ tests/respawncue.test.ts (2 tests) 8ms
+ ✓ tests/paidfmt.test.ts (1 test) 12ms
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 3 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-worker]: Timeout calling "onTaskUpdate"
+ ❯ Object.onTimeoutError node_modules/vitest/dist/chunks/rpc.-pEldfrD.js:53:10
+ ❯ Timeout._onTimeout node_modules/vitest/dist/chunks/index.B521nVV-.js:59:62
+ ❯ listOnTimeout node:internal/timers:585:17
+ ❯ processTimers node:internal/timers:521:7
+
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-worker]: Timeout calling "onTaskUpdate"
+ ❯ Object.onTimeoutError node_modules/vitest/dist/chunks/rpc.-pEldfrD.js:53:10
+ ❯ Timeout._onTimeout node_modules/vitest/dist/chunks/index.B521nVV-.js:59:62
+ ❯ listOnTimeout node:internal/timers:585:17
+ ❯ processTimers node:internal/timers:521:7
+
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-worker]: Timeout calling "onTaskUpdate"
+ ❯ Object.onTimeoutError node_modules/vitest/dist/chunks/rpc.-pEldfrD.js:53:10
+ ❯ Timeout._onTimeout node_modules/vitest/dist/chunks/index.B521nVV-.js:59:62
+ ❯ listOnTimeout node:internal/timers:585:17
+ ❯ processTimers node:internal/timers:521:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  157 passed (157)
+      Tests  1784 passed (1784)
+     Errors  3 errors
+   Start at  10:07:27
+   Duration  4432.53s (transform 16.49s, setup 0ms, collect 3491.61s, tests 778.76s, environment 116ms, prepare 45.92s)
+

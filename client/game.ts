@@ -536,6 +536,9 @@ export class Game {
       local.pos.y = d.y;
       local.pos.z = d.z;
     }
+    // one the room did not send is out of this client's view (a city's interest, Stage 706): it is not
+    // drawn, rather than left standing where it was last told of. Every other room sends them all
+    if (ns.dummies.length < this.world.dummies.length) for (const local of this.world.dummies) if (!ns.dummies.some((d) => d.id === local.id)) local.alive = false;
     if (ns.local) {
       const before = { x: p.pos.x, y: p.pos.y, z: p.pos.z };
       const wasSynced = this.synced;

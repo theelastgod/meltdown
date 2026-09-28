@@ -1,0 +1,13 @@
+ALPHA boot failed · {"page":"alpha","state":{"readError":"page did not answer the diagnostic within 3 s"},"pending":["/file/city-alpha","/assets/tex_white_office.png","/assets/tex_var_090.png","/assets/tex_chainlink.png","/assets/tex_crate.png","/assets/tex_dumpster.png","/assets/tex_wall_boardform.png","/assets/tex_pavement.png","/assets/tex_var_081.png","/assets/tex_var_050.png","/assets/tex_tile_metro.png","/assets/tex_wall_container.png"],"failedRequests":[],"errors":[]}
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.waitForFunction: Timeout 90000ms exceeded.
+    at <anonymous> (/Users/wendellphillips/meltdown/probe/out/stage706-world-native.ts:109:45)
+    at waitPage (/Users/wendellphillips/meltdown/probe/out/stage706-world-native.ts:78:13)
+    at main (/Users/wendellphillips/meltdown/probe/out/stage706-world-native.ts:109:11) {
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.0

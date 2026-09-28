@@ -1,0 +1,25 @@
+
+ RUN  v3.2.7 /Users/wendellphillips/meltdown
+
+ ✓ tests/interest.test.ts (33 tests) 42855ms
+   ✓ every room that is not a city is byte-for-byte what it was > a match room's snapshots are the bytes they were before interest management existed  1477ms
+   ✓ every room that is not a city is byte-for-byte what it was > THE RUN's, and a PvE room with every city option but the city's own, likewise  2699ms
+   ✓ every room that is not a city is byte-for-byte what it was > only the city asks: a room is unfiltered unless told, and a match room with files 150 m apart still sends each the other  13498ms
+   ✓ the city tells each client what is near it > anything that hurt this client stays in its view, wherever it is, for `stickyTicks`  341ms
+   ✓ the city tells each client what is near it > a public event's machines: from anywhere to a file taking part, from `eventEnter` to one that is not  1064ms
+   ✓ the roster: who is in the city, without where > every client is told everyone in the room, names and tags, including files it cannot see, and again when one leaves  1052ms
+   ✓ per-client bytes are bounded by what a client is told about, not by the room > 24 files spread over the district, every one moving and firing, stay under the per-client budget a match is held to  3170ms
+   ✓ per-client bytes are bounded by what a client is told about, not by the room > 24 files crowded into one street, every one moving and firing, stay under it too: the cap, not the radius  5041ms
+   ✓ per-client bytes are bounded by what a client is told about, not by the room > the same 24 spread files without interest are over it: the filter is what holds the line  5534ms
+   ✓ per-client bytes are bounded by what a client is told about, not by the room > eighteen more files across the district cost a group of six nothing they can see  8205ms
+ ✓ tests/citypresence.test.ts (21 tests) 19271ms
+   ✓ a district's line of the feed > counts the files online and names them by the name the city calls them  4137ms
+   ✓ a district's line of the feed > names at most PRESENCE_NAMES; the count is everyone  11734ms
+   ✓ redaction: no id and no secret ever reaches the payload > a file named after its own id, another's id, or a slice of another's secret is not printed  2975ms
+ ✓ tests/worldmap.test.ts (21 tests) 295ms
+
+ Test Files  3 passed (3)
+      Tests  75 passed (75)
+   Start at  09:13:44
+   Duration  80.90s (transform 7.03s, setup 0ms, collect 11.51s, tests 62.42s, environment 3ms, prepare 1.63s)
+

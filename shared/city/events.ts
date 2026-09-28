@@ -226,6 +226,21 @@ export class CityEvents {
   }
 
   /**
+   * The wasps the running event has borrowed (its convoy, a hold's waves, an escort's ambush): the
+   * machines the city's interest filter shows from further, and to its participants from anywhere
+   * (Stage 706). Empty between events: everything is handed back when one ends.
+   */
+  get lent(): ReadonlySet<number> {
+    return new Set(this.borrowed.keys());
+  }
+
+  /** Whether this player, seen under `key` (or as `#id` without one, as `mark` keys it), is on the running event's list. */
+  takesPart(playerId: number, key: string | null): boolean {
+    const ev = this.current;
+    return !!ev && ev.status === "running" && ev.participants.get(key ?? `#${playerId}`) === playerId;
+  }
+
+  /**
    * One tick, after the world stepped: start an event that is due, advance the one running, and say
    * whether one started or ended. `keyOf` names a player for the participant list (the room passes
    * the file id); a player without one is keyed by id and simply never credited.

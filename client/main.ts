@@ -423,6 +423,9 @@ window.__game = {
           stats: { ...game.net.stats },
           game: { ...game.netStats },
           remotes: game.net.remoteViews(),
+          // everyone in a city room, names only (Stage 706); null in a room that does not send one
+          roster: game.net.roster,
+          files: game.net.files,
           kickReason: game.net.kickReason,
         }
       : null,

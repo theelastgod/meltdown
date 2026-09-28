@@ -74,6 +74,14 @@ export const Msg = {
    * where the sim put the runner, and nothing a client says can start, stop or time one.
    */
   CityRun: 21,
+  /**
+   * room → client: who is in the city (Stage 706, JSON). A city room filters its snapshots to what
+   * is near each client (`shared/net/interest.ts`), so the snapshot's player list is no longer the
+   * room; this is. Names and identity tags only, never a position. Sent on every change of who is
+   * in the room and every ten seconds. Only a city room sends it; an older client decodes nothing
+   * and goes on, as with CityEvent.
+   */
+  CityRoster: 22,
 } as const;
 
 /** Co-op mission traffic (the campaign room only; the PvP room never sends this). */
@@ -159,6 +167,11 @@ export interface CityRunMsg {
   } | null;
   /** someone's finish, for everyone in the city: "ALPHA RAN WEST LOOP IN 38.217S" */
   feed?: string;
+}
+
+/** Everyone in a city room (Stage 706), the recipient included: id, display name and identity tag. */
+export interface CityRosterMsg {
+  players: { id: number; name: string; tag: string }[];
 }
 
 /** One file as the dossier shows it: identity only (see shared/identity/identity.ts). */
@@ -549,6 +562,13 @@ export function encodeCityRun(m: CityRunMsg): ArrayBuffer {
   return w.done();
 }
 
+export function encodeCityRoster(m: CityRosterMsg): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.CityRoster);
+  w.str(JSON.stringify(m));
+  return w.done();
+}
+
 export function encodeKick(reason: string): ArrayBuffer {
   const w = new W();
   w.u8(Msg.Kick);
@@ -777,7 +797,8 @@ export type ServerMessage =
   | { type: "mission"; mission: MissionMsg }
   | { type: "run"; run: RunMsg }
   | { type: "cityEvent"; cityEvent: CityEventMsg }
-  | { type: "cityRun"; cityRun: CityRunMsg };
+  | { type: "cityRun"; cityRun: CityRunMsg }
+  | { type: "cityRoster"; cityRoster: CityRosterMsg };
 
 /** Decode a server message. `baselines` resolves the acked snapshot a delta was built on. */
 export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) => Snapshot | null): ServerMessage | null {
@@ -796,6 +817,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     if (t === Msg.Run) return { type: "run", run: JSON.parse(r.str()) as RunMsg };
     if (t === Msg.CityEvent) return { type: "cityEvent", cityEvent: JSON.parse(r.str()) as CityEventMsg };
     if (t === Msg.CityRun) return { type: "cityRun", cityRun: JSON.parse(r.str()) as CityRunMsg };
+    if (t === Msg.CityRoster) return { type: "cityRoster", cityRoster: JSON.parse(r.str()) as CityRosterMsg };
     if (t !== Msg.Snapshot) return null;
     const tick = r.u32();
     const baselineTick = r.u32();

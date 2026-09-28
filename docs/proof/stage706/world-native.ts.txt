@@ -1,3 +1,4 @@
+// Diagnostic copy: original assertions, native Metal renderer on macOS.
 /**
  * The city probe (Stage 692) — the campaign's shared open world.
  *  Two files walk into LEASE ROW's city on the campaign host: the same room, each on the other's
@@ -10,13 +11,13 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
-import { shot } from "./shot";
-import { cityPageUrl, cityRoomName } from "../shared/net/city";
-import { gateArrival, neighbourAt } from "../shared/net/citygates";
-import { levelById } from "../shared/sim/level";
-import { buildNav } from "../shared/sim/nav";
-import type { BotStep } from "../client/bot";
-import { sprintRoute } from "./route";
+import { shot } from ".././shot";
+import { cityPageUrl, cityRoomName } from "../../shared/net/city";
+import { gateArrival, neighbourAt } from "../../shared/net/citygates";
+import { levelById } from "../../shared/sim/level";
+import { buildNav } from "../../shared/sim/nav";
+import type { BotStep } from "../../client/bot";
+import { sprintRoute } from ".././route";
 
 const VITE_PORT = 5231;
 const HOST_PORT = 8871;
@@ -40,7 +41,7 @@ function waitFor(child: ChildProcess, re: RegExp, what: string): Promise<void> {
   });
 }
 
-const ARGS = ["--no-proxy-server", "--use-angle=swiftshader", "--use-gl=angle", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--autoplay-policy=no-user-gesture-required", "--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows"];
+const ARGS = ["--no-proxy-server", "--use-angle=metal", "--use-gl=angle", "--ignore-gpu-blocklist", "--autoplay-policy=no-user-gesture-required", "--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows"];
 
 async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });

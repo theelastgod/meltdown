@@ -1641,6 +1641,52 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 706 — The city tells each client what is near it
+
+**The ask.** Integrate the latest handoff, preserve the shared city's presence feed,
+and reduce the traffic a full district sends to each player.
+
+**The change.** City rooms select nearby players, machines, projectiles and smoke,
+with an eight-player ordinary cap, 72 m entry radius and 82 m exit radius. Combat
+holds and public-event participants retain relevant threats. A separate roster
+keeps the whole room's names and count available. Leaving interest removes the
+remote body and interpolation history; returning starts from its current state.
+Noncity rooms retain their existing snapshot path.
+
+The supplied patch was merged with Stage 705's presence and Stage 704's quiet-event
+and EMP hooks. Review caught two defects in that patch: negative hysteresis ranks
+could bypass the cap after a combat hold expired, and player IDs 200–255 could be
+mistaken for AI shots. Forced interest is now explicit, and the room retains the
+original shot source separately from its wire encoding.
+
+The city probe now waits for the observer's actual finish feed. It preloads a late
+joiner's page while holding its first socket unopened, then admits it after the
+public event starts. This preserves a real fresh join without spending the event's
+lifetime compiling another renderer. Failed setup waits report page and link state.
+
+**Verified.**
+- Both TypeScript projects pass. All five lints passed before the subsequent art update.
+- All **1,784 assertions in 157 files passed** on the final serial run. Three internal
+  Vitest `onTaskUpdate` RPC timeouts still made that command exit 1; this is not a clean
+  full-suite result. Earlier integration run: 1,781 assertions passed, four RPC errors.
+- Focused integration run: 75/75. Targeted cap/shot-source regressions after review:
+  14 passed, 22 skipped. Removing distance rejection failed the real-room regression;
+  the original cap and shot-source implementations failed their added regression checks.
+- Measured 24-player idle traffic: **17.888 → 7.051 KB/s per client**. Crowded firing:
+  **9.554 KB/s**. Six nearby recipients with 24 total players: 7.673 KB/s, versus
+  16.292 unfiltered. Other rooms' byte fingerprints remain covered by the suite.
+- An isolated city browser joined and drew its first frames in 40.2 s. The full city
+  probe still timed out loading its second page with pending art requests and no
+  logged page exception. Prior net/harden attempts failed before host startup.
+- Proof, including unsuccessful runs, is retained in `docs/proof/stage706/`.
+
+**Open.** Browser release validation and production deployment are pending. The local
+machine was heavily loaded; a native-renderer diagnostic and GitHub verification
+are being used to distinguish environment delays from game failures. The previous
+handoff CI failed world and body probes. No production-success claim is made here.
+Manual deployment instructions now require an explicit `VITE_BUILD` revision so
+PLAY selects the campaign Worker rather than the development host path.
+
 ## Stage 705 — Five districts that could not see each other
 
 **The ask.** "Expand the size of the world and the different things you can do in it … start with

@@ -17,14 +17,22 @@
  * Presence (Stage 705): `presence()` is this district's line of the city's public feed (GET /city,
  * shared/city/presence.ts): how many are online, their display names, the running event and the
  * course records. Display names only: the room's ids and secrets go in as what it must never print.
+ *
+ * Interest (Stage 706): each client is told about what is near it, not the whole district
+ * (`shared/net/interest.ts`). This module says what only the city knows — which wasps a public event
+ * has borrowed and who is taking part — and sends the roster (`Msg.CityRoster`), because the
+ * snapshot's player list is no longer everyone in the room. A file that walks in without a gate
+ * arrives at the spawn nearest somebody already in the street, so the city it enters is not empty.
  */
-import { Room, type RoomHooks, type RoomOptions } from "./room";
+import { Room, type InterestPolicy, type RoomHooks, type RoomOptions } from "./room";
 import { campaignOf } from "../shared/campaign/save";
 import { protocolMods } from "../shared/campaign/protocols";
 import { cityDistrict } from "../shared/net/city";
 import { arrivalFromQuery } from "../shared/net/citygates";
 import { reviveMotion } from "../shared/sim/player";
-import { encodeCityEvent, encodeCityRun, type CityEventMsg, type CityRunMsg } from "../shared/net/protocol";
+import { encodeCityEvent, encodeCityRoster, encodeCityRun, ENT_WASP, type CityEventMsg, type CityRunMsg } from "../shared/net/protocol";
+import { bodyKey } from "../shared/net/interest";
+import type { LevelDef, SpawnPoint } from "../shared/sim/level";
 import { CityEvents, type CityEventKind, type CityEventView } from "../shared/city/events";
 import { creditCityEvent, creditStreetRun } from "../shared/city/reward";
 import { STREET_RUN, type StreetRunCourse } from "../shared/city/courses";
@@ -71,6 +79,36 @@ export const CITY_MAX_PLAYERS = 24;
 
 /** how often a running event's progress goes out (ticks): twice a second, as a contract's does */
 const EVENT_PUSH_TICKS = 30;
+
+/**
+ * How often the roster goes out even when nobody came or went (ticks): every ten seconds, so a client
+ * that relinked (a rejoin keeps its seat and misses the changes in between) is right again soon.
+ */
+export const ROSTER_EVERY_TICKS = 600;
+
+/** an arrival is not put on top of somebody: a spawn closer than this to another file is passed over */
+const CROWD_CLEAR = 3;
+
+/**
+ * Where a file that walked in without a gate should stand (Stage 706): the district spawn nearest to
+ * any other file already in the street, or null to keep where the room put it. With interest a file
+ * is shown only what is near it, and the room hands spawns out in turn — the first two files into
+ * LEASE ROW used to stand 168 m apart, out of each other's view.
+ */
+export function crowdSpawn(level: LevelDef, others: readonly { x: number; z: number }[], from: { x: number; z: number }): SpawnPoint | null {
+  if (!others.length) return null;
+  const gap = (x: number, z: number) => Math.min(...others.map((o) => Math.hypot(o.x - x, o.z - z)));
+  let best: SpawnPoint | null = null;
+  let bestGap = gap(from.x, from.z);
+  for (const sp of level.spawns) {
+    const g = gap(sp.pos.x, sp.pos.z);
+    if (g >= CROWD_CLEAR && g < bestGap) {
+      best = sp;
+      bestGap = g;
+    }
+  }
+  return best;
+}
 
 export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
   const district = cityDistrict(opts.district);
@@ -165,20 +203,52 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
     }
   };
 
+  // ---- who is in the room, and what each client is told about (Stage 706) ----
+  let rosterSent = "";
+  const sendRoster = (room: Room, force: boolean): void => {
+    const players = room.roster();
+    const sig = players.map((x) => `${x.id}:${x.name}:${x.tag}`).join("|");
+    if (!force && sig === rosterSent) return;
+    rosterSent = sig;
+    room.send(encodeCityRoster({ players }));
+  };
+  let lentAt = -1;
+  let lentKeys: ReadonlySet<number> = new Set();
+  const interest: InterestPolicy = {
+    eventKeys(room) {
+      // asked once per client per snapshot: worked out once per tick
+      if (lentAt !== room.world.tick) {
+        lentAt = room.world.tick;
+        const ev = eventsOf(room);
+        lentKeys = ev.current?.status === "running" ? new Set([...ev.lent].map((id) => bodyKey(ENT_WASP, id))) : new Set();
+      }
+      return lentKeys;
+    },
+    participant: (room, playerId) => eventsOf(room).takesPart(playerId, keyOf(room)(playerId)),
+  };
+
   const hooks: RoomHooks = {
     onAdmit(room, playerId, account, query) {
       const p = room.world.players.get(playerId);
       if (p && account) room.world.setLoadout(p, account.loadout, protocolMods(campaignOf(account).worn));
       // a file walking in through a gate (Stage 697) stands at that gate, facing in — when the gate
-      // it names really leads back to where it says it came from; anything else takes the room's spawn
+      // it names really leads back to where it says it came from; anything else takes the room's spawn,
+      // the one nearest somebody already in the street when there is anybody (Stage 706)
       const arrive = arrivalFromQuery(room.world.level, query);
       if (p && arrive) reviveMotion(p, arrive);
+      else if (p) {
+        const others = [...room.world.players.values()].filter((o) => o.id !== playerId).map((o) => o.pos);
+        const near = crowdSpawn(room.world.level, others, p.pos);
+        if (near) reviveMotion(p, near);
+      }
       // a late joiner sees the event already running (or the one just ended, or when the next is due)
       room.send(encodeCityEvent(msgFor(room, playerId)), playerId);
       // and the district's street runs: where they start, the board, and this file's bests (Stage 703)
       room.send(encodeCityRun({ courses: coursesMsg(runsOf(room).courses), board: boardMsg(room), best: bestMsg(room, account?.id ?? null), run: null }), playerId);
     },
     afterStep(room, simEvents) {
+      // the roster: on every change of who is in the room, and every ten seconds anyway
+      sendRoster(room, room.world.tick % ROSTER_EVERY_TICKS === 0);
       stepRuns(room);
       const ev = eventsOf(room);
       const notice = ev.step(room.world, simEvents, keyOf(room));
@@ -206,7 +276,7 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
       if (ev.current?.status === "running" && room.world.tick % EVENT_PUSH_TICKS === 0) pushAll(room);
     },
   };
-  const room = new Room({ maxPlayers: CITY_MAX_PLAYERS, ...opts, hooks, level: district, ai: true, wakePhase: "off", dummyRespawn: true, pvp: false, run: false, arrivalGrace: true });
+  const room = new Room({ maxPlayers: CITY_MAX_PLAYERS, ...opts, hooks, level: district, ai: true, wakePhase: "off", dummyRespawn: true, pvp: false, run: false, arrivalGrace: true, interest });
   // the courses are built (and proved) now, before anyone is in the street, not on the first join
   const rs = runsOf(room);
   const b = boardOf(room);

@@ -9,7 +9,7 @@ import {
   type NetInput,
   type RemotePlayerQ,
   type Snapshot,
-  type FileMsg, type SocialMsg, type MissionMsg, type RunMsg, type CityEventMsg, type CityRunMsg, encodeChoice, encodeTerminal, type TerminalMsg,
+  type FileMsg, type SocialMsg, type MissionMsg, type RunMsg, type CityEventMsg, type CityRunMsg, type CityRosterMsg, encodeChoice, encodeTerminal, type TerminalMsg,
 } from "@shared/net/protocol";
 import { joinDelay, joinGiveUpMs } from "@shared/net/rejoin";
 import type { Transport } from "./transport";
@@ -81,6 +81,12 @@ export class NetClient {
   onCityEvent: ((m: CityEventMsg) => void) | null = null;
   /** the city's street runs (Stage 703): only a city room sends it */
   onCityRun: ((m: CityRunMsg) => void) | null = null;
+  /**
+   * Everyone in the room, names only, when the room says (Stage 706). A city room tells each client
+   * only about the files near it, so its snapshots stop being the room; this is. Null in every room
+   * that does not send it, where the snapshot's player list still is the room.
+   */
+  roster: CityRosterMsg["players"] | null = null;
 
   constructor(private transport: Transport, private name: string, token = "", private account = "", private loadout = "", private identity = "", private secret = "") {
     this.token = token;
@@ -229,6 +235,9 @@ export class NetClient {
       case "cityRun":
         this.onCityRun?.(msg.cityRun);
         break;
+      case "cityRoster":
+        this.roster = msg.cityRoster.players;
+        break;
       case "welcome":
         // the room says hello again when it thinks the first one was lost (Stage 155); a client
         // already in its seat takes the repeat as an ack and nothing else — running the branch
@@ -272,6 +281,13 @@ export class NetClient {
         this.latestAt = performance.now();
         this.baselines.set(s.tick, s);
         for (const t of this.baselines.keys()) if (t < s.tick - 120) this.baselines.delete(t);
+        /*
+         * A file missing from a snapshot is gone from this client's view: it left the room, or (in a
+         * city, Stage 706) it walked out of this client's interest. Either way its samples go, and
+         * the renderer drops its body with them, so nothing is left standing where it was last seen.
+         * A file that comes back starts a fresh list: its first sample is where it is now, and with
+         * one sample `remoteViews` draws it there rather than lerping from where it was.
+         */
         for (const p of s.players) {
           this.names.set(p.id, p.name);
           this.tags.set(p.id, p.tag);
@@ -289,10 +305,14 @@ export class NetClient {
 
   /**
    * How many files are in this room, this one included, or 0 with no room (Stage 149). The
-   * snapshot's player list is everyone but the recipient, so the room is the remotes plus me.
+   * snapshot's player list is everyone but the recipient, so the room is the remotes plus me — except
+   * in a city, which sends only the files near each client and says who is in the room in its roster
+   * (Stage 706). A remote the roster has not caught up with yet still counts.
    */
   get files(): number {
-    return this.status === "joined" ? this.remotes.size + 1 : 0;
+    if (this.status !== "joined") return 0;
+    const seen = this.remotes.size + 1;
+    return this.roster ? Math.max(seen, this.roster.length) : seen;
   }
 
   /** Interpolated remote players at the current view tick. */

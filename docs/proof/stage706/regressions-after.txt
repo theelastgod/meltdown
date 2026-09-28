@@ -1,0 +1,15 @@
+
+> meltdown@0.1.0 test
+> vitest run tests/interest.test.ts --maxWorkers=1 --testTimeout=60000 -t who is in view|what keeps a body in view|long-lived city filters
+
+
+ RUN  v3.2.7 /Users/wendellphillips/meltdown
+
+ ✓ tests/interest.test.ts (36 tests | 22 skipped) 9563ms
+   ✓ the city tells each client what is near it > a long-lived city filters an unseen real player's gunfire after admissions reach id 201  9518ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed | 22 skipped (36)
+   Start at  10:01:51
+   Duration  16.56s (transform 3.98s, setup 0ms, collect 5.10s, tests 9.56s, environment 1ms, prepare 672ms)
+

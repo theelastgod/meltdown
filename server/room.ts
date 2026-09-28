@@ -56,6 +56,7 @@ import type { AccountStore } from "./accounts";
 import { fileAuth } from "../shared/progression/account";
 import type { PlayerStats } from "../shared/sim/player";
 import { JOIN_RESENDS, REJOIN_GRACE_SECONDS } from "../shared/net/rejoin";
+import { BODY_DUMMY, BODY_PLAYER, INTEREST, InterestSet, bodyKey, eventInterest, stickyFrom, type InterestBody } from "../shared/net/interest";
 
 export interface Conn {
   send(buf: ArrayBuffer): void;
@@ -122,6 +123,31 @@ interface ClientRec {
   /** playerId in this room of the file I owe a Debt to (−1 none) */
   debtTargetId: number;
   debtClearedThisRound: boolean;
+  /** what this client is told about, in a room that filters its snapshots (Stage 706); null in every other room */
+  interest: InterestSet | null;
+}
+
+/**
+ * A room that tells each client only about what is near it (Stage 706): the city. The room does the
+ * filtering (`shared/net/interest.ts`); the policy says what the mode on top of it knows — which
+ * machines a public event has borrowed, and who took part in it.
+ */
+export interface InterestPolicy {
+  /** the entity keys (`bodyKey(ENT_*, id)`) of machines a running public event has, seen from further */
+  eventKeys(room: Room): ReadonlySet<number>;
+  /** whether this player is on the running event's list of who took part: it sees the event's machines wherever they are */
+  participant(room: Room, playerId: number): boolean;
+}
+
+/** what the room knows about one snapshot entity that the wire does not carry: whose it is, whom it hunts */
+interface EntityMeta {
+  key: number;
+  x: number;
+  z: number;
+  /** the player whose charge it is, or whom it is hunting (−1: nobody) */
+  of: number;
+  /** a wake node: part of the match, not of the street */
+  global: boolean;
 }
 
 /** Hooks a host may attach to run a mode on top of the room without the room importing it (the campaign co-op room). */
@@ -191,6 +217,11 @@ export interface RoomOptions {
    * the patrols fly (the docks' WEST GATE is on a wasp route). Off by default; the city asks for it.
    */
   arrivalGrace?: boolean;
+  /**
+   * Interest management (Stage 706): tell each client only about what is near it. Only the city sets
+   * it; without it a room's snapshots are exactly what they always were.
+   */
+  interest?: InterestPolicy | null;
 }
 
 /** the longest a file can stay off the street without sending an input: 30 s, a slow phone's load */
@@ -207,7 +238,7 @@ export interface RoomStats {
   kicks: number;
   inputsRejected: number;
   bytesOut: number;
-  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; throttled: number; inputsApplied: number; inputsRejected: number; gapFilled: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number; stamps: number; ranks: Record<string, number> } | null; loadout: Loadout; identity: { display: string; chapter: number; moniker: string | null; debt: string | null; debtTarget: number; wakelight: number; chapters: number[] } }[];
+  clients: { id: number; name: string; connected: boolean; traceMaxErr: number; traceSamples: number; throttled: number; inputsApplied: number; inputsRejected: number; gapFilled: number; kills: number; deaths: number; shots: number; hits: number; queue: number; flips: number; nodeSeconds: number; support: number; file: { account: string; depth: number; xp: number; scrip: number; settlements: number; stamps: number; ranks: Record<string, number> } | null; loadout: Loadout; identity: { display: string; chapter: number; moniker: string | null; debt: string | null; debtTarget: number; wakelight: number; chapters: number[] }; inView?: { files: number; bodies: number } }[];
   settlements: number;
   /** social messages sent, by kind (dossier / debt / rite) */
   social: Record<string, number>;
@@ -270,6 +301,8 @@ export class Room {
   /** each socket's own query, as its host passed it to `onOpen` (Stage 697) */
   private socketQuery = new WeakMap<Conn, URLSearchParams>();
   private history = new Map<number, Map<number, RewindPose>>();
+  /** Shot provenance before one-byte wire ids overlap players and machines; no protocol change. */
+  private machineShotEvents = new WeakSet<NetEvent>();
   private nextId = 1;
   /**
    * The next player id (Stage 692). Ids go on the wire as one byte, and a room used to count them up
@@ -325,6 +358,7 @@ export class Room {
       run: opts.run ?? false,
       pvp: opts.pvp ?? true,
       arrivalGrace: opts.arrivalGrace ?? false,
+      interest: opts.interest ?? null,
       wakePhase: opts.wakePhase ?? "warmup",
       dummyRespawn: opts.dummyRespawn ?? true,
     };
@@ -736,6 +770,7 @@ export class Room {
       killedBy: new Map(),
       debtTargetId: -1,
       debtClearedThisRound: false,
+      interest: this.opts.interest ? new InterestSet() : null,
     };
     if (account) account.loadout = v.loadout;
     const joinNote = rec.progress.fileMilestones({ stamps: [], ranks: [], challenges: [] });
@@ -770,6 +805,20 @@ export class Room {
    */
   presenceSeats(): { display: string; connected: boolean; account: string | null; secret: string | null }[] {
     return [...this.clients.values()].map((c) => ({ display: c.identity.display, connected: c.conn !== null, account: c.account?.id ?? null, secret: c.account?.secret ?? null }));
+  }
+
+  /**
+   * Everyone in the room as a snapshot names them (Stage 706): the display name and identity tag, no
+   * position. A room that filters its snapshots tells its clients this instead of letting the
+   * snapshot's player list stand for the room.
+   */
+  roster(): { id: number; name: string; tag: string }[] {
+    return [...this.clients.values()].map((rec) => ({ id: rec.playerId, name: rec.identity.display, tag: identityTag(rec.identity) }));
+  }
+
+  /** what a client was told about in its last snapshot (Stage 706), or null in a room that tells everyone everything */
+  inViewOf(playerId: number): ReadonlySet<number> | null {
+    return this.clients.get(playerId)?.interest?.keys ?? null;
   }
 
   /**
@@ -1191,6 +1240,10 @@ export class Room {
         rec.conn?.send(encodeFile(this.fileMsg(rec, note.stamps.map((id) => `STAMP · ${stampLine(id)}`), "stamp", note)));
       }
     }
+    if (this.opts.interest) {
+      // whatever hurt a client, or it hit, stays in its view for a while wherever it goes (Stage 706)
+      for (const ev of tickEvents) for (const { viewer, key } of stickyFrom(ev)) this.clients.get(viewer)?.interest?.hold(key, this.tick + INTEREST.stickyTicks);
+    }
     for (const ev of tickEvents) {
       if (ev.type === "kill" && ev.victimKind === "player") this.onPlayerKill(ev.playerId, ev.victimId);
       if (ev.type === "bank") this.onBank(ev.playerId, ev.value, ev.zone);
@@ -1230,6 +1283,7 @@ export class Room {
       }
       const ne = this.toNetEvent(ev);
       if (!ne) continue;
+      if (this.opts.interest && ev.type === "shot" && ev.playerId < 0) this.machineShotEvents.add(ne);
       for (const rec of this.clients.values()) rec.pendingEvents.push(ne);
     }
     this.opts.hooks?.afterStep?.(this, tickEvents);
@@ -1351,27 +1405,96 @@ export class Room {
     }
   }
 
-  private entities(): NetEntity[] {
+  /**
+   * The snapshot's entities. `meta`, when given, is filled in step with them (one per entity, same
+   * order) with what an interest filter needs and the wire does not carry (Stage 706); the entities
+   * themselves are the same either way.
+   */
+  private entities(meta?: EntityMeta[]): NetEntity[] {
     const out: NetEntity[] = [];
     const w = this.world;
-    for (const p of w.projectiles) out.push({ kind: ENT_PROJECTILE, id: p.id, x: p.pos.x, y: p.pos.y, z: p.pos.z, a: p.kind === "phage" ? 1 : p.kind === "sticky" ? 2 : p.kind === "frag" ? 3 : p.kind === "smoke" ? 4 : 5, b: p.stuck ? 1 : 0, c: Math.round(p.fuse * 100), d: 0 });
-    for (const c of w.clouds) out.push({ kind: ENT_CLOUD, id: c.id, x: c.pos.x, y: c.pos.y, z: c.pos.z, a: 0, b: 0, c: Math.round(c.radius * 100), d: Math.round(c.ttl * 100) });
-    for (const ws of w.wasps) out.push({ kind: ENT_WASP, id: ws.id, x: ws.pos.x, y: ws.pos.y, z: ws.pos.z, a: ws.alive ? 1 : 0, b: Math.max(0, ws.health), c: Math.round(ws.yaw * 1000), d: ws.disabledTimer > 0 ? 2 : ws.state === "chase" ? 1 : 0 });
-    if (w.wake) for (const n of w.wake.nodes) out.push({ kind: ENT_NODE, id: n.id, x: n.pos.x, y: n.pos.y, z: n.pos.z, a: n.owner, b: Math.round(n.hold * 100), c: (n.contested ? 1 : 0) | (n.puller << 1) | (n.boost > 0 ? 8 : 0), d: n.links.reduce((m, l) => m | (1 << l), 0) });
-    for (const m of w.mechs) out.push({ kind: ENT_MECH, id: m.id, x: m.pos.x, y: m.pos.y, z: m.pos.z, a: m.alive ? 1 : 0, b: Math.round(Math.max(0, m.health) / 2), c: Math.round(m.yaw * 1000), d: Math.round((m.face + m.lightYaw) * 1000) });
+    const note = (kind: number, id: number, x: number, z: number, of: number, global = false) => meta?.push({ key: bodyKey(kind, id), x, z, of, global });
+    for (const p of w.projectiles) {
+      out.push({ kind: ENT_PROJECTILE, id: p.id, x: p.pos.x, y: p.pos.y, z: p.pos.z, a: p.kind === "phage" ? 1 : p.kind === "sticky" ? 2 : p.kind === "frag" ? 3 : p.kind === "smoke" ? 4 : 5, b: p.stuck ? 1 : 0, c: Math.round(p.fuse * 100), d: 0 });
+      note(ENT_PROJECTILE, p.id, p.pos.x, p.pos.z, p.owner);
+    }
+    for (const c of w.clouds) {
+      out.push({ kind: ENT_CLOUD, id: c.id, x: c.pos.x, y: c.pos.y, z: c.pos.z, a: 0, b: 0, c: Math.round(c.radius * 100), d: Math.round(c.ttl * 100) });
+      note(ENT_CLOUD, c.id, c.pos.x, c.pos.z, -1);
+    }
+    for (const ws of w.wasps) {
+      out.push({ kind: ENT_WASP, id: ws.id, x: ws.pos.x, y: ws.pos.y, z: ws.pos.z, a: ws.alive ? 1 : 0, b: Math.max(0, ws.health), c: Math.round(ws.yaw * 1000), d: ws.disabledTimer > 0 ? 2 : ws.state === "chase" ? 1 : 0 });
+      note(ENT_WASP, ws.id, ws.pos.x, ws.pos.z, ws.alive && ws.state === "chase" ? ws.targetId : -1);
+    }
+    if (w.wake)
+      for (const n of w.wake.nodes) {
+        out.push({ kind: ENT_NODE, id: n.id, x: n.pos.x, y: n.pos.y, z: n.pos.z, a: n.owner, b: Math.round(n.hold * 100), c: (n.contested ? 1 : 0) | (n.puller << 1) | (n.boost > 0 ? 8 : 0), d: n.links.reduce((m, l) => m | (1 << l), 0) });
+        note(ENT_NODE, n.id, n.pos.x, n.pos.z, -1, true);
+      }
+    for (const m of w.mechs) {
+      out.push({ kind: ENT_MECH, id: m.id, x: m.pos.x, y: m.pos.y, z: m.pos.z, a: m.alive ? 1 : 0, b: Math.round(Math.max(0, m.health) / 2), c: Math.round(m.yaw * 1000), d: Math.round((m.face + m.lightYaw) * 1000) });
+      note(ENT_MECH, m.id, m.pos.x, m.pos.z, m.alive ? m.targetId : -1);
+    }
     return out;
+  }
+
+  /**
+   * One client's share of a snapshot in a room that filters (Stage 706): itself always, and of the
+   * rest what `shared/net/interest.ts` says is near it, hunting it, hurting it, hit by it, or its
+   * event's. The lists keep the world's order, so the delta against the baseline is the same shape
+   * an unfiltered snapshot has.
+   */
+  private interestView(rec: ClientRec, me: PlayerState, all: { players: ReturnType<Room["quantized"]>[]; dummies: Snapshot["dummies"]; entities: NetEntity[]; meta: EntityMeta[] }): { players: Snapshot["players"]; dummies: Snapshot["dummies"]; entities: NetEntity[]; view: ReadonlySet<number> } {
+    const policy = this.opts.interest!;
+    const eventKeys = policy.eventKeys(this);
+    const part = eventKeys.size > 0 && policy.participant(this, rec.playerId);
+    const bodies: InterestBody[] = [];
+    for (const q of all.players) bodies.push({ key: bodyKey(BODY_PLAYER, q.id), x: q.x, z: q.z, player: true });
+    for (const d of all.dummies) bodies.push({ key: bodyKey(BODY_DUMMY, d.id), x: d.x, z: d.z });
+    for (const m of all.meta) {
+      const wide = eventKeys.has(m.key);
+      bodies.push({ key: m.key, x: m.x, z: m.z, wide, always: m.global || m.of === rec.playerId || (wide && part) });
+    }
+    const view = rec.interest!.select(me.pos, bodies, this.tick);
+    return {
+      players: all.players.filter((q) => view.has(bodyKey(BODY_PLAYER, q.id))),
+      dummies: all.dummies.filter((d) => view.has(bodyKey(BODY_DUMMY, d.id))),
+      entities: all.entities.filter((_, i) => view.has(all.meta[i]!.key)),
+      view,
+    };
   }
 
   private broadcast(): void {
     const serverTimeMs = this.opts.now();
+    // a room that filters builds every body once per snapshot, then hands each client its share (Stage 706)
+    let all: Parameters<Room["interestView"]>[2] | null = null;
+    if (this.opts.interest) {
+      const meta: EntityMeta[] = [];
+      const entities = this.entities(meta);
+      all = { players: [...this.world.players.values()].map((p) => this.quantized(p)), dummies: this.world.dummies.map((d) => ({ id: d.id, alive: d.alive, health: d.health, x: d.pos.x, y: d.pos.y, z: d.pos.z })), entities, meta };
+    }
     for (const rec of this.clients.values()) {
       if (!rec.conn) {
         rec.pendingEvents.length = 0;
         continue;
       }
       const me = this.world.players.get(rec.playerId)!;
-      const players = [...this.world.players.values()].filter((p) => p.id !== rec.playerId).map((p) => this.quantized(p));
-      const dummies = this.world.dummies.map((d) => ({ id: d.id, alive: d.alive, health: d.health, x: d.pos.x, y: d.pos.y, z: d.pos.z }));
+      let players: Snapshot["players"];
+      let dummies: Snapshot["dummies"];
+      let entities: NetEntity[];
+      let events: NetEvent[];
+      if (all) {
+        const mine = this.interestView(rec, me, { ...all, players: all.players.filter((q) => q.id !== rec.playerId) });
+        players = mine.players;
+        dummies = mine.dummies;
+        entities = mine.entities;
+        events = rec.pendingEvents.splice(0).filter((ev) => eventInterest(ev, rec.playerId, me.pos, mine.view, this.machineShotEvents.has(ev)));
+      } else {
+        players = [...this.world.players.values()].filter((p) => p.id !== rec.playerId).map((p) => this.quantized(p));
+        dummies = this.world.dummies.map((d) => ({ id: d.id, alive: d.alive, health: d.health, x: d.pos.x, y: d.pos.y, z: d.pos.z }));
+        entities = this.entities();
+        events = rec.pendingEvents.splice(0);
+      }
       const snap: Omit<Snapshot, "bytes"> = {
         tick: this.tick,
         serverTimeMs,
@@ -1388,9 +1511,9 @@ export class Room {
         local: this.world.exportLocal(me, rec.lastAppliedSeq),
         players,
         dummies,
-        entities: this.entities(),
+        entities,
         match: this.world.wake ? { phase: this.world.wake.phase === "warmup" ? 0 : this.world.wake.phase === "wake" ? 1 : 2, timeLeft: this.world.wake.timeLeft, score1: this.world.wake.score[1], score2: this.world.wake.score[2], winner: this.world.wake.winner, round: this.world.wake.round } : null,
-        events: rec.pendingEvents.splice(0),
+        events,
       };
       const baseline = rec.ackTick ? rec.sent.get(rec.ackTick) ?? null : null;
       const buf = encodeSnapshot(snap, baseline);
@@ -1458,6 +1581,8 @@ export class Room {
         file: c.account ? { account: c.account.id, depth: c.account.depth, xp: c.account.xp, scrip: c.account.wallet.scrip, settlements: c.settlements, stamps: c.account.stamps.length, ranks: Object.fromEntries(Object.entries(c.account.mastery).map(([w, m]) => [w, m.rank])) } : null,
         loadout: c.loadout,
         identity: { display: c.identity.display, chapter: c.identity.chapter, moniker: c.identity.moniker, debt: c.account?.debt?.display ?? null, debtTarget: c.debtTargetId, wakelight: c.account?.wallet.wakelight ?? 0, chapters: c.account?.chapters.slice() ?? [] },
+        // in a room that filters its snapshots (Stage 706): how many other files, and bodies in all, this client was last told about
+        ...(c.interest ? { inView: { files: [...c.interest.keys].filter((k) => k < 65536).length, bodies: c.interest.keys.size } } : {}),
       };
     });
     return {

@@ -1,0 +1,14 @@
+
+> meltdown@0.1.0 probe:world
+> tsx probe/city.ts
+
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.waitForFunction: Timeout 90000ms exceeded.
+    at main (/Users/wendellphillips/meltdown/probe/city.ts:79:13) {
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.0

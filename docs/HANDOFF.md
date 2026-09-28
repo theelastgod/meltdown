@@ -1,5 +1,10 @@
 # Handoff — MELTDOWN, for Astra
 
+> Integration update, 2026-09-28: Stage 706's patch is already applied,
+> with conflicts resolved and cap/shot-source regressions corrected. Read
+> [the verification status](handoff/stage706-integration-status.md) before §6;
+> do not apply the patch a second time. Browser release validation is pending.
+
 Written 2026-09-28 at **Stage 705**, for Astra (the next agent on this branch). Everything here holds
 for anyone who picks the branch up; the one Astra-specific item is §6, a finished piece of work that
 exists only as a patch file and is yours to merge first.

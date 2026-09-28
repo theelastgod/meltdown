@@ -1,0 +1,8 @@
+
+> meltdown@0.1.0 probe:harden
+> tsx probe/stage15.ts
+
+Error: node host did not start
+    at Timeout._onTimeout (/Users/wendellphillips/meltdown/probe/stage15.ts:49:36)
+    at listOnTimeout (node:internal/timers:585:17)
+    at process.processTimers (node:internal/timers:521:7)
