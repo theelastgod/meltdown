@@ -313,6 +313,26 @@ async function main(): Promise<void> {
     );
     await shot(b, `${OUT}/city-gate-arrival.png`);
 
+    // ---------------- the city is one world: who is where, and the WORLD MAP (Stage 705) ----------------
+    // BRAVO is in the district it walked into; the host's public feed says so by name (the display name
+    // the city shows everyone, which ALPHA saw at the start: a fresh file is BLANK), and never prints a
+    // file id or a secret. BRAVO's MAP is the WORLD MAP: it knows where BRAVO is and counts the district.
+    const feedRaw = await (await fetch(`${HOST}/city`)).text();
+    const bravoShown = seenA.remotes[0] ?? "?";
+    const cityFeed = JSON.parse(feedRaw) as { districts: { district: string; players: number; names: string[] }[] };
+    const mine = cityFeed.districts.find((d) => d.district === to.district);
+    const leaks = ["city-alpha", "city-bravo", "city-charlie", "city-liar", SECRET].filter((x) => feedRaw.includes(x));
+    await b.evaluate(() => window.__game.worldMap({ open: true })).catch(() => undefined);
+    await b.waitForFunction((d) => (window.__game.worldMap()?.counts[d] ?? 0) >= 1, to.district, { timeout: 15000, polling: 200 }).catch(() => undefined);
+    const wm = await b.evaluate(() => window.__game.worldMap()).catch(() => null);
+    check(
+      "the city is one world: the host's feed names BRAVO in the district it walked into, prints no file id or secret, and BRAVO's WORLD MAP puts it there",
+      cityFeed.districts.length === 5 && !!mine && mine.players >= 1 && mine.names.includes(bravoShown) && leaks.length === 0 && !!wm && wm.open && wm.here === to.district && (wm.counts[to.district] ?? 0) >= 1 && wm.links.length > 0,
+      `feed ${cityFeed.districts.map((d) => `${d.district}:${d.players}${d.names.length ? `[${d.names.join(",")}]` : ""}`).join(" ")} · BRAVO shown to ALPHA as "${bravoShown}" · leaks [${leaks.join(", ")}] · map open ${wm?.open} here ${wm?.here} status ${wm?.status} counts ${JSON.stringify(wm?.counts)} · ${wm?.links.length} joins`,
+    );
+    await shot(b, `${OUT}/city-worldmap.png`);
+    await b.evaluate(() => window.__game.worldMap({ open: false })).catch(() => undefined);
+
     // ---------------- a socket that lies about where it came from is placed like anyone else ----------------
     // The lie goes where a real one would, in the socket's query (and the page's). The docks' gate it
     // names leads to REPO DEPOT, not LEASE ROW, and its arrival is far from every spawn, so "at the gate"

@@ -13,6 +13,10 @@
  * The room keeps every runner's clock from where the sim put them; a finish is posted to the district's
  * board, told to everyone, and the first finish of each course is credited to the file. A host that
  * can keep the board (the campaign Worker's Durable Object storage) passes `runBoard`.
+ *
+ * Presence (Stage 705): `presence()` is this district's line of the city's public feed (GET /city,
+ * shared/city/presence.ts): how many are online, their display names, the running event and the
+ * course records. Display names only: the room's ids and secrets go in as what it must never print.
  */
 import { Room, type RoomHooks, type RoomOptions } from "./room";
 import { campaignOf } from "../shared/campaign/save";
@@ -25,6 +29,7 @@ import { CityEvents, type CityEventKind, type CityEventView } from "../shared/ci
 import { creditCityEvent, creditStreetRun } from "../shared/city/reward";
 import { STREET_RUN, type StreetRunCourse } from "../shared/city/courses";
 import { RunBoard, runSeconds, streetRunsFor, StreetRuns, type ActiveRun, type BoardData } from "../shared/city/runs";
+import { districtPresence, type DistrictPresence } from "../shared/city/presence";
 
 /** Where a host keeps a district's street-run board between the room's lives (Stage 703). */
 export interface RunBoardStore {
@@ -57,6 +62,8 @@ export interface CityRoomHandle {
   finishes: () => { course: string; name: string; file: string | null; time: number; rank: number; xp: number }[];
   /** resolves once the host's kept board has been read in (at once when there is none) */
   boardLoaded: Promise<void>;
+  /** this district's report for the city's presence feed (Stage 705): display names only */
+  presence: () => DistrictPresence;
 }
 
 /** a city holds more than a match does: it is somewhere to be, not a round to win */
@@ -246,5 +253,15 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
       for (const w of room.world.wasps) w.disabledTimer = Math.max(w.disabledTimer, seconds);
       for (const m of room.world.mechs) m.disabledTimer = Math.max(m.disabledTimer, seconds);
     },
+    presence: () =>
+      districtPresence({
+        district,
+        seats: room.presenceSeats(),
+        event: eventsOf(room).view(room.world),
+        records: rs.courses.flatMap((c) => {
+          const e = b.top(c.id, 1)[0];
+          return e ? [{ course: c.name, time: runSeconds(e.ticks), holder: e.name, key: e.key }] : [];
+        }),
+      }),
   };
 }

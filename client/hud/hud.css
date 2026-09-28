@@ -240,6 +240,45 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .travel .row.amber .cast { color: var(--am); }
 #hud .travel .f { margin-top: 6px; font-size: 9px; color: rgba(53,242,255,0.5); }
 #hud .tabs { pointer-events: auto; cursor: pointer; }
+/* The WORLD MAP (Stage 705): the MAP tab in the city. The districts on their tiling cells, the gate
+   joins between them, a count on each, a pulse where a public event runs. DOM and CSS: no draw call. */
+#hud .worldmap { left: 50%; top: 50%; transform: translate(-50%, -50%); width: 460px; max-width: calc(100vw - 32px); max-height: calc(100vh - 24px); overflow: auto; box-sizing: border-box; pointer-events: auto; padding: 8px 12px; background: var(--solid); border-color: var(--cy); color: var(--cy); text-shadow: 0 0 4px rgba(53,242,255,0.4); }
+#hud .worldmap .t { font-size: 11px; letter-spacing: 0.12em; margin-bottom: 8px; }
+#hud .worldmap .t .x { float: right; color: var(--mg); cursor: pointer; }
+#hud .worldmap .wg { display: grid; align-items: stretch; }
+#hud .worldmap .wt { position: relative; min-height: 52px; padding: 5px 6px; border: 1px solid rgba(53,242,255,0.35); cursor: pointer; display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+#hud .worldmap .wt:hover { border-color: var(--cy); }
+#hud .worldmap .wt.magenta { box-shadow: inset 3px 0 0 var(--mg); }
+#hud .worldmap .wt.cyan { box-shadow: inset 3px 0 0 var(--cy); }
+#hud .worldmap .wt.amber { box-shadow: inset 3px 0 0 var(--am); }
+#hud .worldmap .wt .nm { font-size: 10px; letter-spacing: 0.06em; color: #dff9ff; line-height: 1.15; }
+#hud .worldmap .wt .ct { font-size: 9.5px; color: var(--gr); }
+#hud .worldmap .wt .you { font-size: 8.5px; color: var(--ye); letter-spacing: 0.08em; }
+#hud .worldmap .wt.here { border-color: var(--ye); background: rgba(255,227,74,0.08); }
+#hud .worldmap .wt.sel { outline: 1px solid var(--cy); outline-offset: 1px; }
+#hud .worldmap .wt .pulse { position: absolute; right: 6px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--am); box-shadow: 0 0 6px var(--am); animation: wmpulse 1.1s ease-in-out infinite alternate; }
+@keyframes wmpulse { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0.35; transform: scale(0.6); } }
+#hud .worldmap .wt .ws { position: absolute; font-style: normal; font-size: 7px; color: rgba(53,242,255,0.55); }
+#hud .worldmap .wt .ws.n { top: 0; left: 50%; transform: translateX(-50%); }
+#hud .worldmap .wt .ws.s { bottom: 0; left: 50%; transform: translateX(-50%); }
+#hud .worldmap .wt .ws.w { left: 1px; top: 50%; transform: translateY(-50%); }
+#hud .worldmap .wt .ws.e { right: 1px; top: 50%; transform: translateY(-50%); }
+#hud .worldmap .wl { align-self: center; justify-self: center; background: var(--cy); box-shadow: 0 0 4px var(--cy); }
+#hud .worldmap .wl.h { width: 100%; height: 2px; }
+#hud .worldmap .wl.v { width: 2px; height: 100%; min-height: 12px; }
+#hud .worldmap .wd { margin-top: 8px; border-top: 1px solid rgba(53,242,255,0.35); padding-top: 6px; font-size: 10px; line-height: 1.45; }
+#hud .worldmap .wd .dh b { color: #dff9ff; }
+#hud .worldmap .wd .dn { color: var(--gr); overflow-wrap: anywhere; }
+#hud .worldmap .wd .de { color: var(--am); }
+#hud .worldmap .wd .dr { color: rgba(53,242,255,0.85); }
+#hud .worldmap .wd .dg { color: rgba(53,242,255,0.6); font-size: 9px; }
+#hud .worldmap .wd .dim { opacity: 0.6; }
+#hud .worldmap .wd .go { margin-top: 6px; padding: 6px 8px; text-align: center; border: 1px solid var(--gr); color: var(--gr); cursor: pointer; letter-spacing: 0.1em; }
+#hud .worldmap .wd .go:hover { background: rgba(55,255,139,0.12); }
+#hud .worldmap .wd .go.here { border-color: rgba(255,227,74,0.5); color: var(--ye); cursor: default; }
+#hud .worldmap .f { margin-top: 6px; font-size: 9px; color: rgba(53,242,255,0.5); }
+#hud.touch .worldmap .wt { min-height: 60px; }
+#hud.touch .worldmap .wd .go { padding: 10px 8px; }
 
 /* Ledger Graph (G / GRAPH tab): three rings of hexes, violet leased → green owned */
 #hud .graph { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 760px; max-width: 96vw; max-height: 92vh; overflow: auto; pointer-events: auto; padding: 8px 14px 10px; background: rgba(3,5,9,0.94); border: 1px solid var(--gr); color: var(--gr); text-shadow: 0 0 4px rgba(55,255,139,0.4); box-shadow: 0 0 0 1px rgba(0,0,0,0.7), 0 0 16px rgba(55,255,139,0.2); font-size: 10.5px; }

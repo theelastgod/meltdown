@@ -251,3 +251,21 @@ export function gateTravelUrl(href: string, gate: number): { url: string; to: Ga
   if (!wsBase || !to) return null;
   return { url: cityPageUrl(href, { wsBase, level: to.district, shop: q.get("shop"), arrive: { from: here, gate: to.gate } }), to };
 }
+
+/**
+ * The WORLD MAP's trip (Stage 705): the page that walks another district's city, from a page walking
+ * this one — the same campaign host, the same kept `shop`, no gate (the room puts the file at its own
+ * spawn). Null when the page is not a city, the district is not one, or it is where the page already is.
+ */
+export function cityMapTravelUrl(href: string, district: string): string | null {
+  let q: URLSearchParams;
+  try {
+    q = new URL(href).searchParams;
+  } catch {
+    return null;
+  }
+  const here = q.get("level");
+  const wsBase = cityWsBase(q.get("net"));
+  if (!wsBase || !here || cityDistrict(here) !== here || !CITY_DISTRICTS.includes(district) || district === here) return null;
+  return cityPageUrl(href, { wsBase, level: district, shop: q.get("shop") });
+}

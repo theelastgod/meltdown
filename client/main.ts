@@ -157,6 +157,8 @@ export interface GameHook {
   claimPrize: (epoch: number) => Promise<{ ok: boolean; reason?: string }>;
   /** Campaign (Stage 10): state, dialogue advance/choose, contracts desk, launch, faction, protocols. */
   campaign: () => ReturnType<Game["campaign"]["view"]>;
+  /** Stage 705: the WORLD MAP in the city (null elsewhere): open or shut it, pick a district, TRAVEL (under `?nonav=1` it only says where) */
+  worldMap: (o?: { open?: boolean; select?: string; travel?: string }) => (ReturnType<NonNullable<Game["worldMap"]>["view"]> & { travelUrl: string | null }) | null;
   /** Stage 667: the fixers standing in the rendered scene, by name, where they stand and which way they face */
   figures: () => { id: string; x: number; z: number; yaw: number }[];
   /** Stage 32: is this the touch build, and where are the controls actually sitting? */
@@ -366,6 +368,14 @@ window.__game = {
     return game.player.health;
   },
   campaign: () => game.campaign.view(),
+  worldMap: (o = {}) => {
+    const m = game.worldMap;
+    if (!m) return null;
+    if (o.open !== undefined && o.open !== m.open) m.toggle(o.open);
+    if (o.select) m.select(o.select);
+    const travelUrl = o.travel ? m.travel(o.travel) : null;
+    return { ...m.view(), travelUrl };
+  },
   figures: () => {
     const out: { id: string; x: number; z: number; yaw: number }[] = [];
     // read the scene itself, not the fields that say what was built: a figure counts if it is attached and shown
@@ -487,7 +497,8 @@ if (menu) {
   if (crawl) crawl.onFinish = () => menu.start({ cards: cardsWanted(true, fromGame) });
   else menu.start({ cards: cardsWanted(false, fromGame) });
   game.onLockLost = () => {
-    if (menu.screen === "hidden" && !game.file.isOpen && !crawl?.active) menu.pause();
+    // the WORLD MAP gives up the pointer to be clicked (Stage 705): that is not a pause
+    if (menu.screen === "hidden" && !game.file.isOpen && !game.worldMap?.open && !crawl?.active) menu.pause();
   };
   // Stage 141: the phone's PAUSE pad is its Escape
   if (game.touch) game.touch.onPause = () => {

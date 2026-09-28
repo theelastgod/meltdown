@@ -61,7 +61,8 @@ import { GRENADE_LIST, WEAPONS, WEAPON_LIST } from "@shared/weapons/manifest";
 import { modsFor, weaponDefOf } from "@shared/sim/player";
 import { rejoinDelay, rejoinTries, triesWord } from "@shared/net/rejoin";
 import { linkStatusLine, linkingSimNote, roomName } from "./hud/room";
-import { loadingFor, travelTo } from "./loading";
+import { loadingFor, placeName, travelTo } from "./loading";
+import { WorldMap } from "./worldmap";
 
 export interface NetConfig {
   url: string;
@@ -129,6 +130,8 @@ export class Game {
   readonly perf: PerfMonitor | null = null;
   readonly renderer: Renderer;
   readonly hud: Hud;
+  /** the WORLD MAP (Stage 705): the MAP tab in the city, null anywhere else */
+  readonly worldMap: WorldMap | null = null;
   readonly file: GhostFile;
   readonly audio = new GameAudio();
   /** the player's settings (client/settings.ts), applied live */
@@ -209,6 +212,17 @@ export class Game {
       if (q.get("perf") === "1") this.perf = new PerfMonitor(this, hudRoot, Number(q.get("perfAfter") ?? 30) || 30);
     }
     this.hud.setLevel(this.world.level, (id) => this.travel(id));
+    // in the city the MAP tab is the whole city (Stage 705): its districts, who is where, and a trip
+    // to another district's city room — not the offline level travel of the district select
+    if (city) {
+      const nonav = q.get("nonav") === "1";
+      const map = new WorldMap(hudRoot, this.levelId, this.mobile, (url) => {
+        this.renderer.post.kick(1);
+        travelTo(url, loadingFor(url, { line: `THE CITY · ACROSS THE MAP FROM ${placeName(this.levelId)}` }), { replace: true, delay: 120, nonav });
+      });
+      (this as { worldMap: WorldMap | null }).worldMap = map;
+      this.hud.mapToggle = () => map.toggle();
+    }
     this.file.mount(hudRoot);
     this.hud.setFile(this.file.view());
     this.file.onChange = (f) => {

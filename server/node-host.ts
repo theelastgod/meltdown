@@ -10,6 +10,7 @@
  *   WS   /campaign/<name>?mission=<id>   → a co-op contract (the mission runtime on the server)
  *   WS   /campaign/city-<district>        → the district's city: the campaign's shared open world (Stage 692)
  *   POST /city/<district>/event          → { kind? } start that city's next public event now (dev only; Stage 699)
+ *   GET  /city                           → the city's presence feed: per district, who is online (display names only), the event, the records (Stage 705)
  *   POST /file/<id>/campaign → { op: faction | complete | wear | state }
  *   POST /chain              → JSON-RPC to the in-process devnet (a real EVM; the contracts are deployed at boot)
  *   GET  /counter            → chain id, contract addresses, the market's listings, treasury figures
@@ -26,7 +27,8 @@ import { NOT_YOURS } from "./player-do";
 import { campaignRequest } from "../shared/campaign/endpoint";
 import { createCampaignRoom, crewInfo, type CampaignRoomHandle } from "./campaign-room";
 import { createCityRoom, type CityRoomHandle } from "./city-room";
-import { cityOf } from "../shared/net/city";
+import { CITY_DISTRICTS, cityOf } from "../shared/net/city";
+import { aggregatePresence, PresenceCache, type CityPresence } from "../shared/city/presence";
 import { crewRoomName, normaliseCrewCode, NO_SUCH_CREW } from "../shared/net/crew";
 import { checkReport, ReportRing } from "../shared/perf/report";
 import { seasonToPost } from "./chain/cron";
@@ -234,6 +236,13 @@ function getCityRoom(district: string): CityRoomHandle {
   }
   return h;
 }
+/**
+ * The city's presence feed (Stage 705): built from the rooms in this process, at most once per
+ * PRESENCE_TTL_MS however often it is asked. A district nobody has walked into yet is an empty line.
+ */
+const presence = new PresenceCache<string>();
+const cityPresence = (): string => presence.get(Date.now(), () => JSON.stringify(aggregatePresence(CITY_DISTRICTS.map((d) => cities.get(d)?.presence() ?? null), Date.now()) satisfies CityPresence));
+
 function getCampaignRoom(name: string, mission: string): CampaignRoomHandle {
   let h = campaigns.get(name);
   if (!h) {
@@ -627,6 +636,13 @@ const http = createServer((req, res) => {
       getCityRoom(city).empDistrict(seconds);
       res.end(JSON.stringify({ ok: true, city, seconds }));
     });
+    return;
+  }
+  if (req.method === "GET" && (req.url === "/city" || req.url?.startsWith("/city?"))) {
+    // public and read-only: display names, counts, the event and the records; never an id or a secret
+    res.setHeader("content-type", "application/json");
+    res.setHeader("cache-control", "public, max-age=2");
+    res.end(cityPresence());
     return;
   }
   const cityEvent = req.method === "POST" ? req.url?.match(/^\/city\/([a-z_]{1,32})\/event$/) : null;

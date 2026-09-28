@@ -11,7 +11,8 @@
  *   ?menu=1 forces the flow (headless probes skip it), ?menu=0 never; ?nonav=1 reports the URL a
  *   choice would load instead of loading it (the probe).
  */
-import { cityPageUrl, DEFAULT_CITY } from "@shared/net/city";
+import { cityPageUrl } from "@shared/net/city";
+import { cityPresenceUrl, fetchPresence, playDistrict, type CityPresence } from "@shared/city/presence";
 import { decodeLook, encodeLook, LOOK_FIELDS, stepLook, type LookField } from "@shared/identity/look";
 import { LookPreview } from "./render/lookpreview";
 import { HUB_LEVEL_ID } from "@shared/sim/hub";
@@ -90,8 +91,13 @@ export function playInfo(save: CampaignSave): PlayInfo {
 
 const nextWords = (n: NonNullable<PlayInfo["next"]>) => `NEXT: ${String(n.index).padStart(2, "0")} ${n.title}`;
 
-/** PLAY's line: what it does and where, from the file's campaign save when there is one. */
-export function playLine(p: PlayInfo | null): string {
+/**
+ * PLAY's line: what it does and where, from the file's campaign save when there is one. When the
+ * city's presence feed says files are online (Stage 705), the line names the district PLAY will drop
+ * you into — the busiest — and how many are there: `THE CITY · NIGHT MARKET · 6 ONLINE`.
+ */
+export function playLine(p: PlayInfo | null, busy: { district: string; online: number } | null = null): string {
+  if (busy && busy.online > 0) return `THE CITY · ${placeName(busy.district)} · ${busy.online} ONLINE${p?.next ? ` · ${nextWords(p.next)}` : p ? " · THE ARC IS CLOSED" : ""}`;
   if (!p) return MAIN[0]!.line;
   if (!p.next) return "THE CITY · THE ARC IS CLOSED: GIGS AND THE STREET · EVERYONE ONLINE IS HERE";
   return `THE CITY · ${placeName(p.next.level)} · ${nextWords(p.next)} · EVERYONE ONLINE IS HERE`;
@@ -130,6 +136,8 @@ export interface MenuView {
   page: string;
   /** the line under the list: what the row under the cursor does (PLAY's names the city and the next mission) */
   line: string;
+  /** where PLAY goes (Stage 705): the busiest district when the city's feed says anyone is online, else LEASE ROW */
+  play: { district: string; online: number; feed: "off" | "pending" | "live" | "unreachable" };
 }
 
 /** The WALLET page's side of the host: the Counter-Ledger's client, loaded on demand (client/wallet.ts). */
@@ -219,11 +227,35 @@ export function choiceUrl(id: string, base: string, opts: { level?: string; acco
  * kept as `shop` so the page can fetch the file and its campaign save. PLAY's loading card is derived
  * from this URL, and the probes follow it.
  */
-export function playUrl(base: string, opts: { account?: string; level?: string } = {}): string {
+export function playUrl(base: string, opts: { account?: string; level?: string; presence?: CityPresence | null } = {}): string {
   const u = new URL(base);
   if (opts.account) u.searchParams.set("account", opts.account);
-  const wsBase = HOSTS.build === "dev" ? HOSTS.ledger.replace(/^http/, "ws") : HOSTS.campaignWs;
-  return cityPageUrl(u.toString(), { wsBase, level: opts.level ?? DEFAULT_CITY, shop: HOSTS.ledger });
+  // where: the district named, else the busiest district the city's feed has told the menu of, else
+  // LEASE ROW (Stage 705) — a feed that never answered is LEASE ROW, as PLAY always was
+  const level = opts.level ?? playDistrict(opts.presence === undefined ? playPresence : opts.presence).district;
+  return cityPageUrl(u.toString(), { wsBase: playWsBase(), level, shop: HOSTS.ledger });
+}
+
+/** the campaign host PLAY walks the city on */
+const playWsBase = (): string => (HOSTS.build === "dev" ? HOSTS.ledger.replace(/^http/, "ws") : HOSTS.campaignWs);
+
+/** the city's presence as the menu last read it (Stage 705); null until the feed answers, and when it cannot */
+let playPresence: CityPresence | null = null;
+
+/** what the menu read from the feed: PLAY's line and PLAY's district follow it */
+export function notePlayPresence(p: CityPresence | null): void {
+  playPresence = p;
+}
+
+/**
+ * Where the menu reads the city's presence feed, or null when it does not: the campaign host PLAY
+ * walks, on a build that names one, or the `?shop=` host a dev page was given. A dev page with
+ * neither asks nothing, so a menu with no host behind it puts no failed fetch in the console.
+ */
+export function playFeedUrl(q: URLSearchParams, build: string = HOSTS.build): string | null {
+  const shop = q.get("shop");
+  if (shop) return cityPresenceUrl(shop.replace(/^http/, "ws"));
+  return build !== "dev" ? cityPresenceUrl(playWsBase()) : null;
 }
 
 export class Menu {
@@ -244,6 +276,9 @@ export class Menu {
   private started = 0;
   private pageHtml = "";
   onQuit: (() => void) | null = null;
+  /** the city's presence feed (Stage 705): asked once when the menu is made, never waited on */
+  presence: Promise<CityPresence | null> = Promise.resolve(null);
+  private feed: "off" | "pending" | "live" | "unreachable" = "off";
 
   constructor(private host: MenuHost, private speed = 1) {
     const q = new URLSearchParams(location.search);
@@ -271,6 +306,7 @@ export class Menu {
     }
     document.body.appendChild(root);
     this.root = root;
+    this.readPresence(q);
     document.addEventListener("keydown", this.onKey);
     root.addEventListener("click", (e) => {
       const t = (e.target as HTMLElement).closest("[data-i]") as HTMLElement | null;
@@ -394,7 +430,7 @@ export class Menu {
   private entries(): readonly MenuEntry[] {
     switch (this.screen) {
       case "main":
-        return MAIN.map((e) => (e.id === "play" ? { ...e, line: playLine(this.playInfo()) } : e));
+        return MAIN.map((e) => (e.id === "play" ? { ...e, line: playLine(this.playInfo(), playDistrict(playPresence)) } : e));
       case "modes":
         return [...MODES, { id: "back", label: "BACK", line: "" }];
       case "pause":
@@ -412,6 +448,27 @@ export class Menu {
       default:
         return [];
     }
+  }
+
+  /**
+   * Ask the city who is online (Stage 705), with a short timeout, and redraw PLAY's line when it
+   * answers. The menu never waits for it: PLAY chosen before the answer (or with none) is LEASE ROW.
+   */
+  private readPresence(q: URLSearchParams): void {
+    const url = playFeedUrl(q);
+    if (!url || typeof fetch !== "function") return;
+    this.feed = "pending";
+    this.presence = fetchPresence(url).then((p) => {
+      this.feed = p ? "live" : "unreachable";
+      notePlayPresence(p);
+      if (this.screen === "main") this.render();
+      return p;
+    });
+  }
+
+  /** PLAY's pick as it stands: the district, how many are there, and where the feed is */
+  playPick(): { district: string; online: number; feed: "off" | "pending" | "live" | "unreachable" } {
+    return { ...playDistrict(playPresence), feed: this.feed };
   }
 
   private playInfo(): PlayInfo | null {
@@ -640,7 +697,7 @@ export class Menu {
   }
 
   view(): MenuView {
-    return { matched: !!this.matched, screen: this.screen, card: this.card, cardT: this.cardClock(performance.now()), cardText:(this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen, previewLook: this.preview ? this.preview.look : null, page: (this.root.querySelector(".page") as HTMLElement | null)?.textContent ?? "", line: (this.root.querySelector(".line") as HTMLElement | null)?.textContent ?? "" };
+    return { matched: !!this.matched, screen: this.screen, card: this.card, cardT: this.cardClock(performance.now()), cardText:(this.root.querySelector(".card") as HTMLElement | null)?.textContent ?? "", cursor: this.cursor, entries: this.entries().map((e) => e.label), settings: { ...this.host.settings }, target: this.target, skippable: this.seen, previewLook: this.preview ? this.preview.look : null, page: (this.root.querySelector(".page") as HTMLElement | null)?.textContent ?? "", line: (this.root.querySelector(".line") as HTMLElement | null)?.textContent ?? "", play: this.playPick() };
   }
 
   static settingsOf(): Settings {

@@ -764,6 +764,15 @@ export class Room {
   }
 
   /**
+   * Who is in the room, for the city's presence feed (Stage 705): the name the city calls each file
+   * (the one the snapshot already shows everyone here) and whether its link is up. The file's id and
+   * secret ride along only so the feed can prove it never prints them (shared/city/presence.ts).
+   */
+  presenceSeats(): { display: string; connected: boolean; account: string | null; secret: string | null }[] {
+    return [...this.clients.values()].map((c) => ({ display: c.identity.display, connected: c.conn !== null, account: c.account?.id ?? null, secret: c.account?.secret ?? null }));
+  }
+
+  /**
    * A hook changed a file outside a settlement (the city's public events, Stage 699): save it, let
    * any stamp its counters now meet un-redact, and tell the client its file with the lines to print.
    * A client without a file has nothing to be told.

@@ -1641,6 +1641,68 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 705 — Five districts that could not see each other
+
+**The ask.** "Expand the size of the world and the different things you can do in it … start with
+the campaign in a shared open world." The city's five districts were five rooms that could not see
+each other:
+- a file saw only its own district;
+- the MAP tab still offered the old offline level travel;
+- PLAY always went to LEASE ROW, even when everyone online was somewhere else.
+
+**The change.**
+- **A presence feed, `GET /city`, on the campaign host** (the node host, and the campaign Worker).
+  For each district it gives the files online, up to eight display names, the public event running
+  there, and the street-run records. It is cached for 2 s and built at most once at a time, so it
+  also rate-limits itself.
+- **Display names only.**
+  - Every file's id and secret, and every board key, are handed to the feed as strings it must never
+    print. A name shaped like an id or secret, or containing one, is dropped; a record holder becomes
+    BLANK.
+  - The finished report is scanned, and emptied of names on any hit.
+  - The aggregate re-checks every name, so a report from another process is not trusted either.
+- **On the Worker** the feed fans out in parallel to the five city Durable Objects, 1.5 s each. A
+  slow district is an empty line. Asking never builds a room, and each Durable Object keeps its
+  redacted records, so an empty district still shows them.
+- **The WORLD MAP.** In the city, M and the MAP tab open it; outside the city the district select is
+  unchanged. It shows:
+  - the districts on their cells of the city's tiling, with the gate joins (every join a real
+    `neighbourAt` pair, every gate drawn once);
+  - a count on each district, a pulse where an event runs, and your district lit.
+  - Choosing a district shows who is there, its event, its records and where its gates lead, with
+    TRAVEL to that district's city room behind the loading card.
+  - It is HTML and CSS only: no draw calls. It polls the feed every 3 s, and only while open.
+- **PLAY goes to the busiest district**: "THE CITY · NIGHT MARKET · 6 ONLINE". It falls back to
+  LEASE ROW when nobody is online or the feed does not answer. The menu never waits on it.
+
+**Merged onto Stage 704.** The dev host's new `/city/<district>/emp` and the feed's `GET /city` sit
+side by side in `node-host.ts`, and the city room's handle carries both the dev hooks and
+`presence()`.
+
+**Verified.**
+- `tests/citypresence.test.ts` (21) and `tests/worldmap.test.ts` (21):
+  - counts and redaction on real rooms, including files named after an id or a slice of another
+    file's secret, and a scan of the whole payload for anything credential-shaped;
+  - the cache and in-flight sharing;
+  - the Worker's fan-out and the Durable Object's kept records;
+  - every map join a real gate pair;
+  - the travel URL, and PLAY's choice and fallback.
+- The agent checked 31 mutations and 29 were caught, including every redaction guard. The two that
+  survived cannot change the output with the code as it stands.
+- **probe:world, a new check.** After BRAVO walks through a gate:
+  - the host's feed names BRAVO in the district it walked into, by the display name the city
+    already shows everyone (a fresh file is BLANK, as ALPHA saw at the start), and contains none of
+    the probe's four file ids or its secret;
+  - BRAVO's WORLD MAP is open, puts BRAVO in that district, counts it, and draws the gate joins.
+- probe:world 9/9. probe:ship 21/21: the PLAY line and target hold on a host where nobody is in
+  the city yet. probe:mobile 40/40, probe:city 79/79.
+- 1748 unit tests pass.
+- Proof: `docs/proof/stage705/city-worldmap.png`.
+
+**Open.**
+- There are no friends yet, so PLAY counts anyone.
+- The feed's "time left" can be up to 2 s old.
+
 ## Stage 704 — The doors between districts looked like chain-link
 
 **The ask.** Stage 697 made every district's eight street gates into doors to the next district,

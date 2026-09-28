@@ -42,6 +42,11 @@ export class Hud {
   /** the post-match receipt: lines to print, how many are printed, the print clock, and whether it was signed */
   readonly receiptState = { open: false, lines: [] as string[], printed: 0, timer: 0, stamped: false, signed: 0 };
   onPrint: (() => void) | null = null;
+  /**
+   * What the MAP tab (and M) opens instead of the district select, when something does (Stage 705):
+   * the WORLD MAP in the city. Unset, the tab is the district select it always was.
+   */
+  mapToggle: (() => void) | null = null;
   onStamp: (() => void) | null = null;
   private radar: CanvasRenderingContext2D;
   private locked = false;
@@ -207,12 +212,16 @@ export class Hud {
     tabs.onclick = (e) => {
       const t = (e.target as HTMLElement).closest(".tab") as HTMLElement | null;
       if (!t) return;
-      if (/MAP/.test(t.textContent ?? "")) panel.hidden = !panel.hidden;
+      if (/MAP/.test(t.textContent ?? "")) {
+        if (this.mapToggle) this.mapToggle();
+        else panel.hidden = !panel.hidden;
+      }
       else if (/FILE/.test(t.textContent ?? "")) document.dispatchEvent(new KeyboardEvent("keydown", { code: "Tab" }));
       else if (/GRAPH/.test(t.textContent ?? "")) document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyG" }));
     };
     document.addEventListener("keydown", (e) => {
       if (e.code === "KeyM") {
+        if (this.mapToggle) return this.mapToggle();
         panel.hidden = !panel.hidden;
         if (!panel.hidden) document.exitPointerLock?.();
       }

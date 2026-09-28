@@ -3,12 +3,28 @@
  * Durable Object never loads campaign power. It hosts the co-op room DO
  * and the campaign file route; files live in the PvP worker's PlayerFile
  * DO, reached through a cross-script binding (load → apply → save).
+ *
+ * The city's presence feed (Stage 705), `GET /city`: public, read-only, display names only. The
+ * design is a fan-out behind a cache, the simplest thing that holds up here: the city is five
+ * Durable Objects with fixed names (`city-<district>`), so the Worker asks each for its own line
+ * (`/presence`, answered by the object without building a room when it has none) in parallel, with a
+ * short timeout each, and aggregates them (`aggregatePresence`, which re-checks every name). The
+ * result is kept for PRESENCE_TTL_MS in the isolate (`PresenceCache`, one build at a time), and sent
+ * with `cache-control: max-age=2`, so however often the feed is asked, an isolate costs the city at
+ * most five small subrequests per two seconds. There is no registry object to keep in step and no
+ * write on every join: a district that cannot answer in time is an empty line, never an error.
+ *
+ * A city object that has been evicted has no room and nobody in it; its line still carries the
+ * course records, which the object keeps beside the street-run board (`cityRecords:<district>`,
+ * already reduced to course, time and display name) whenever the board or the feed changes them.
  */
 import { IDLE_PARK_MS, SERVER_TICK_MS, type Conn } from "./room";
 import { decodePath } from "./path";
 import { createCampaignRoom, crewInfo, type CampaignRoomHandle } from "./campaign-room";
 import { createCityRoom } from "./city-room";
-import { cityOf } from "../shared/net/city";
+import { CITY_DISTRICTS, cityOf } from "../shared/net/city";
+import { aggregatePresence, emptyPresence, PresenceCache, PRESENCE_TIMEOUT_MS, readDistrict, type DistrictPresence } from "../shared/city/presence";
+import type { CityRoomHandle } from "./city-room";
 import { crewRoomName, normaliseCrewCode, NO_SUCH_CREW } from "../shared/net/crew";
 import { DoAccountStore, NOT_YOURS } from "./player-do";
 import { campaignRequest } from "../shared/campaign/endpoint";
@@ -21,9 +37,34 @@ export interface Env {
   PLAYER_FILE: DurableObjectNamespace;
 }
 
+/** the feed, kept per isolate (Stage 705): at most one gather per PRESENCE_TTL_MS */
+const presence = new PresenceCache<string>();
+
+/** One district's line, from its city object: null when it does not answer in time. */
+async function districtLine(env: Env, district: string): Promise<unknown> {
+  const stub = env.CAMPAIGN_ROOM.get(env.CAMPAIGN_ROOM.idFromName(`city-${district}`));
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const late = new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), PRESENCE_TIMEOUT_MS)));
+  try {
+    return await Promise.race([stub.fetch(new Request(`https://city/presence?city=${district}`)).then((r) => (r.ok ? r.json() : null)).catch(() => null), late]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/** GET /city: every district's line, gathered in parallel and aggregated (every name checked again). */
+export function cityPresenceFeed(env: Env, now = Date.now()): Promise<string> {
+  return presence.getAsync(now, async () => JSON.stringify(aggregatePresence(await Promise.all(CITY_DISTRICTS.map((d) => districtLine(env, d))), now)));
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === "/city" && request.method === "GET") {
+      // public and read-only: display names, counts, the event and the records; never an id or a secret
+      const body = await cityPresenceFeed(env).catch(() => JSON.stringify(aggregatePresence([], Date.now())));
+      return new Response(body, { headers: { "access-control-allow-origin": "*", "content-type": "application/json", "cache-control": "public, max-age=2" } });
+    }
     const m = url.pathname.match(/^\/campaign\/([a-zA-Z0-9_-]{1,32})$/);
     if (m) return env.CAMPAIGN_ROOM.get(env.CAMPAIGN_ROOM.idFromName(m[1]!)).fetch(request);
     // a crew's door (Stage 49): look a code up before travelling; a room nobody has opened says so
@@ -58,6 +99,10 @@ export default {
 
 export class CampaignRoom implements DurableObject {
   private handle: CampaignRoomHandle | null = null;
+  /** the city this object runs, when it is one (Stage 705: its presence line) */
+  private city: CityRoomHandle | null = null;
+  /** the records last kept for the feed, so they are written only when they change */
+  private keptRecords = "";
   private env: Env;
   private timer: ReturnType<typeof setInterval> | null = null;
   private next = 0;
@@ -77,8 +122,16 @@ export class CampaignRoom implements DurableObject {
       // the district's street-run board (Stage 703) outlives the room in this object's own storage:
       // one Durable Object per city room name, so one board per district
       const key = `streetRuns:${city}`;
-      const runBoard = { load: () => this.state.storage.get(key), save: (data: unknown) => this.state.storage.put(key, data) };
+      // a new best changes the records the presence feed shows, so they are kept with the board (Stage 705)
+      const runBoard = {
+        load: () => this.state.storage.get(key),
+        save: async (data: unknown) => {
+          await this.state.storage.put(key, data);
+          if (this.city) await this.keepRecords(this.city.presence());
+        },
+      };
       const c = createCityRoom({ accounts: new DoAccountStore(this.env.PLAYER_FILE), district: city, runBoard });
+      this.city = c;
       this.handle = { room: c.room, state: () => ({ mission: "", hostId: -1, view: null, settled: [], choices: 0 }) };
     }
     if (!this.handle) this.handle = createCampaignRoom({ accounts: new DoAccountStore(this.env.PLAYER_FILE), mission: url.searchParams.get("mission") ?? "g_escrow_row" });
@@ -108,8 +161,33 @@ export class CampaignRoom implements DurableObject {
     }, SERVER_TICK_MS / 2);
   }
 
+  /** keep a city's records for the feed, beside its board, when they changed (display names only: they come from `districtPresence`) */
+  private async keepRecords(line: DistrictPresence): Promise<void> {
+    const s = JSON.stringify(line.records);
+    if (s === this.keptRecords) return;
+    this.keptRecords = s;
+    await this.state.storage.put(`cityRecords:${line.district}`, line.records);
+  }
+
+  /** This city's line of the presence feed (Stage 705). Asking must not build a room: an object with none has nobody in it. */
+  private async presenceLine(district: string): Promise<DistrictPresence> {
+    if (this.city && this.city.district === district) {
+      const line = this.city.presence();
+      await this.keepRecords(line).catch(() => undefined);
+      return line;
+    }
+    const kept = await this.state.storage.get(`cityRecords:${district}`).catch(() => null);
+    // read back through the same checks as any report from another process
+    return readDistrict({ ...emptyPresence(district), records: kept }) ?? emptyPresence(district);
+  }
+
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === "/presence") {
+      const district = cityOf(`city-${url.searchParams.get("city") ?? ""}`);
+      if (!district) return Response.json(null, { status: 404 });
+      return Response.json(await this.presenceLine(district));
+    }
     // asking about a crew must not create one: an unopened room answers "no such crew"
     if (url.pathname === "/info") return Response.json(this.handle ? crewInfo(this.handle, url.searchParams.get("code") ?? "") : { ok: false, reason: NO_SUCH_CREW });
     const h = this.roomFor(url);
