@@ -63,8 +63,10 @@ export class CampaignRoom implements DurableObject {
   private next = 0;
   private sockets = 0;
   private idleSince = 0;
+  private state: DurableObjectState;
 
-  constructor(_state: DurableObjectState, env: Env) {
+  constructor(state: DurableObjectState, env: Env) {
+    this.state = state;
     this.env = env;
   }
 
@@ -72,7 +74,11 @@ export class CampaignRoom implements DurableObject {
     // a city (Stage 692) is a room with no mission: the district's shared open world, PvE
     const city = cityOf(url.pathname.split("/").pop() ?? "");
     if (!this.handle && city) {
-      const c = createCityRoom({ accounts: new DoAccountStore(this.env.PLAYER_FILE), district: city });
+      // the district's street-run board (Stage 703) outlives the room in this object's own storage:
+      // one Durable Object per city room name, so one board per district
+      const key = `streetRuns:${city}`;
+      const runBoard = { load: () => this.state.storage.get(key), save: (data: unknown) => this.state.storage.put(key, data) };
+      const c = createCityRoom({ accounts: new DoAccountStore(this.env.PLAYER_FILE), district: city, runBoard });
       this.handle = { room: c.room, state: () => ({ mission: "", hostId: -1, view: null, settled: [], choices: 0 }) };
     }
     if (!this.handle) this.handle = createCampaignRoom({ accounts: new DoAccountStore(this.env.PLAYER_FILE), mission: url.searchParams.get("mission") ?? "g_escrow_row" });

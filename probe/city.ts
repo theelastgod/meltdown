@@ -136,6 +136,57 @@ async function main(): Promise<void> {
     await late.close();
     await a.evaluate(() => window.__game.setBot(null));
 
+    // ---------------- a street run: the room keeps the clock ----------------
+    // (Stage 703) ALPHA runs LEASE ROW's quickest all-street course: into the start ring for the second
+    // that arms it, then checkpoint to checkpoint. The time is the room's, not the page's: the check
+    // reads it off the room's board and BRAVO's feed. A run the patrols end (death voids it) is run again,
+    // up to three runs.
+    const courses = await a.evaluate(() => window.__game.campaign().cityRuns.courses);
+    const street = courses.filter((c) => c.checkpoints.every((p) => p.kind === "street")).sort((x, y) => x.par - y.par)[0];
+    const leaseNav2 = buildNav(levelById("lease_row"));
+    let ran: { state: string; time?: number; reason?: string; next?: number } | null = null;
+    let runs = 0;
+    const voids: string[] = [];
+    const sawTitle = new Set<string>();
+    if (street) {
+      for (runs = 1; runs <= 3; runs++) {
+        const from = await a.evaluate(() => window.__game.state().pos);
+        const plan: BotStep[] = [...sprintRoute(leaseNav2, from, street.start, 0.6), { kind: "hold", ticks: 90 }];
+        let prev = street.start;
+        for (const cp of street.checkpoints) {
+          plan.push(...sprintRoute(leaseNav2, prev, cp, 0.8));
+          prev = cp;
+        }
+        plan.push({ kind: "hold", ticks: 600 });
+        await a.evaluate((pl) => window.__game.setBot(pl), plan);
+        const until = Date.now() + 120000;
+        ran = null;
+        while (Date.now() < until) {
+          const v = await a.evaluate(() => ({ run: window.__game.campaign().cityRuns.run, title: (document.querySelector("#hud .mtitle") as HTMLElement | null)?.textContent ?? "" }));
+          if (v.title) sawTitle.add(v.title.replace(/[\d.:]+/g, "#"));
+          if (v.run && (v.run.state === "finished" || v.run.state === "void")) {
+            ran = v.run;
+            break;
+          }
+          await a.waitForTimeout(200);
+        }
+        if (ran?.state === "finished") break;
+        voids.push(`${ran?.reason ?? ran?.state ?? "no end"} at checkpoint ${ran?.next ?? "?"}`);
+      }
+      runs = Math.min(runs, 3);
+      await a.evaluate(() => window.__game.setBot(null));
+    }
+    await b.waitForTimeout(500);
+    const feed = await b.evaluate(() => window.__game.campaign().cityRuns.feed);
+    const stR = (await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { city?: { runs: { finishes: number; board: { course: string; top: { name: string; time: number }[] }[] } } }> };
+    const boardTop = stR.rooms["city:lease_row"]?.city?.runs.board.find((x) => x.course === street?.id)?.top[0];
+    check(
+      "a street run in the city: ALPHA runs the quickest street course, the room times it and puts it on the board, and BRAVO hears it",
+      !!street && ran?.state === "finished" && (ran.time ?? 0) > 0 && boardTop?.name === "ALPHA" && Math.abs((boardTop.time ?? 0) - (ran.time ?? -1)) < 1e-6 && (stR.rooms["city:lease_row"]?.city?.runs.finishes ?? 0) >= 1 && feed.some((l) => l.startsWith(`ALPHA RAN ${street.name} IN`)) && [...sawTitle].some((t) => /STREET RUN/.test(t)),
+      `course ${street?.id} ${street?.name} (${street?.checkpoints.length} checkpoints, par ${street?.par}) · ${runs} run(s)${voids.length ? ` (void: ${voids.join("; ")})` : ""} · ${ran?.state} ${ran?.time} · board #1 ${JSON.stringify(boardTop)} · BRAVO's feed [${feed.join(" | ")}] · titles [${[...sawTitle].slice(0, 3).join(" | ")}]`,
+    );
+    await shot(a, `${OUT}/city-run.png`);
+
     // ---------------- a contract taken in the city knows the way back ----------------
     const nav = a.waitForURL(/mission=/, { timeout: 20000, waitUntil: "commit" }).then(() => true, () => false);
     // the desk reads the file the ledger host keeps, house and all

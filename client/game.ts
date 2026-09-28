@@ -118,7 +118,7 @@ export class Game {
   synced = false;
   /** where a walk in through a city gate stands (Stage 697), until the first link has used it */
   private arrival: SpawnPoint | null = null;
-  /** the room's sheet mutator (an Audit's), applied on top of every loadout the room admits (Stage 702) */
+  /** the room's sheet mutator (an Audit's), applied on top of every loadout the room admits (Stage 703) */
   private roomSheet: Parameters<World["setLoadout"]>[2] = undefined;
   readonly netStats = { corrections: 0, maxCorrectionM: 0, replayedInputs: 0, serverHitsOnMe: 0, myHits: 0, myShotsConfirmed: 0, log: [] as { tick: number; corr: number; ack: number; pendingBefore: number; replayed: number; wasAlive: boolean; stance: string }[] };
   readonly input: InputController;
@@ -402,6 +402,7 @@ export class Game {
     net.onSocial = (m) => this.onSocial(m);
     net.onMission = (m) => this.campaign.onMissionMsg(m);
     net.onCityEvent = (m) => this.campaign.onCityEventMsg(m);
+    net.onCityRun = (m) => this.campaign.onCityRunMsg(m);
     net.onRun = (m) => this.onRunMsg(m);
     net.onFile = (f) => {
       this.file.applyServer(f);
@@ -409,7 +410,7 @@ export class Game {
         // the server admitted this loadout: run the same sheet locally (arrives before the first snapshot),
         // with the room's own mutator on top — the File comes after the Welcome that named it, and
         // setting the loadout bare here undid an Audit's sheet (a GLASS week predicted shields and ×1
-        // movement the room did not run; Stage 702)
+        // movement the room did not run; Stage 703)
         this.world.setLoadout(this.player, f.loadout as Parameters<World["setLoadout"]>[1], this.roomSheet);
         this.hud.push(`FILE ${f.account} · DEPTH ${String(f.depth).padStart(2, "0")} · ATTESTED [${f.loadout.attested.map(itemName).join(", ") || "NONE"}]${f.loadout.keystone ? " · " + itemName(f.loadout.keystone) : ""}`, "cy");
       } else if (f.reason === "settle") {

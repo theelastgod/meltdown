@@ -19,8 +19,10 @@ import { campaignOf, canLaunch, completeContract, gigsOnOffer, nextMission, pick
 import { createMission, drainMissionEvents, missionView, resolveDialogue, resolveSpot, spawnThreat, stepMission, type MissionState } from "@shared/campaign/runtime";
 import { sandboxAccount, type Account } from "@shared/progression/account";
 import type { SimEvent } from "@shared/sim/world";
-import type { CityEventMsg, MissionMsg } from "@shared/net/protocol";
+import type { CityEventMsg, CityRunMsg, MissionMsg } from "@shared/net/protocol";
 import { eventBanner, eventCard, eventMarker, eventObjective } from "./cityevent";
+import { nearestStart, runCard, runClock, runObjective, splitBanner, startPrompt, type RunCourse, type RunView } from "./cityrun";
+import type { RadarSpot } from "./hud/radar";
 import { HUB_LEVEL_ID } from "@shared/sim/hub";
 import { levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
@@ -102,6 +104,15 @@ export class Campaign {
   /** the last event whose start was announced, and the last whose end card was shown */
   private cityEventAnnounced = 0;
   private cityEventClosed = 0;
+  /** the map's spots the public event asks for (Stage 699), kept so a street run's can sit beside them */
+  private eventSpots: RadarSpot[] = [];
+  /**
+   * Street runs as the room last told them (Stage 703): the district's courses, its board, this file's
+   * bests, this client's run and when its clock was last set (performance.now()), and the feed.
+   */
+  cityRuns: { courses: RunCourse[]; board: NonNullable<CityRunMsg["board"]>; best: NonNullable<CityRunMsg["best"]>; run: RunView | null; runAt: number; feed: string[] } = { courses: [], board: [], best: [], run: null, runAt: 0, feed: [] };
+  /** the objective line as last drawn by the runs, so a tick that changes nothing writes nothing */
+  private runLine = "";
 
   constructor(private game: Game) {
     const q = new URLSearchParams(location.search);
@@ -253,7 +264,10 @@ export class Campaign {
 
   /** One sim tick (offline modes): step the mission and present what happened. */
   tick(events: readonly SimEvent[]): void {
-    if (this.mode === "city") return this.cityGates();
+    if (this.mode === "city") {
+      this.cityRunHud();
+      return this.cityGates();
+    }
     if (this.mode !== "mission" || !this.mission) return;
     stepMission(this.mission, this.game.world, events);
     for (const ev of drainMissionEvents(this.mission)) this.onMissionEvent(ev);
@@ -520,12 +534,15 @@ export class Campaign {
     const ev = m.event;
     const hud = this.game.hud;
     const fx = this.game.renderer.campaignFx;
+    // a street run in progress has the objective line and the beam (Stage 703); the event keeps its spots on the map
+    const running = this.runActive();
     if (!ev || ev.status !== "running") {
-      fx.setMarker(null);
+      if (!running) fx.setMarker(null);
       fx.setEscort(null);
       fx.setTargets([]);
-      hud.setRadarSpots([]);
-      this.cityObjective();
+      this.eventSpots = [];
+      this.cityRadar();
+      if (!running) this.cityObjective();
       const card = eventCard(m);
       if (ev && card && ev.id !== this.cityEventClosed) {
         this.cityEventClosed = ev.id;
@@ -543,12 +560,138 @@ export class Campaign {
       this.game.audio.pa();
     }
     const me = this.game.player;
-    const o = eventObjective(ev, me ? { x: me.pos.x, z: me.pos.z } : null);
-    hud.setObjective(o.title, o.text, o.progress);
     const marker = eventMarker(ev);
-    fx.setMarker(ev.kind === "escort" ? null : marker);
+    if (!running) {
+      const o = eventObjective(ev, me ? { x: me.pos.x, z: me.pos.z } : null);
+      hud.setObjective(o.title, o.text, o.progress);
+      this.runLine = "";
+      fx.setMarker(ev.kind === "escort" ? null : marker);
+    }
     fx.setEscort(ev.escort ? { x: ev.escort.x, z: ev.escort.z, heading: ev.escort.heading, waiting: ev.escort.waiting, who: "cell" } : null);
-    hud.setRadarSpots([{ kind: "goal" as const, x: marker.x, z: marker.z }, ...(ev.escort ? [{ kind: "escort" as const, x: ev.escort.x, z: ev.escort.z }] : []), ...ev.targets.map((t) => ({ kind: "target" as const, x: t.x, z: t.z }))]);
+    this.eventSpots = [{ kind: "goal" as const, x: marker.x, z: marker.z }, ...(ev.escort ? [{ kind: "escort" as const, x: ev.escort.x, z: ev.escort.z }] : []), ...ev.targets.map((t) => ({ kind: "target" as const, x: t.x, z: t.z }))];
+    this.cityRadar();
+  }
+
+  // ---- street runs (Stage 703) ----
+
+  private runActive(): boolean {
+    const r = this.cityRuns.run;
+    return !!r && (r.state === "armed" || r.state === "running");
+  }
+
+  private runCourse(id: string): RunCourse | null {
+    return this.cityRuns.courses.find((c) => c.id === id) ?? null;
+  }
+
+  private bestTime(id: string): number | null {
+    return this.cityRuns.best.find((b) => b.course === id)?.time ?? null;
+  }
+
+  /** the run's clock as this client shows it: the room's word, run on from when it arrived */
+  runElapsed(now = performance.now()): number {
+    const r = this.cityRuns.run;
+    if (!r || r.state !== "running") return r?.time ?? 0;
+    return r.elapsed + Math.max(0, now - this.cityRuns.runAt) / 1000;
+  }
+
+  /** The map: a run's next checkpoint and the one after; otherwise the event's spots and every course's start. */
+  private cityRadar(): void {
+    const r = this.cityRuns.run;
+    const c = r && this.runActive() ? this.runCourse(r.course) : null;
+    if (r && c) {
+      const next = c.checkpoints[Math.min(r.next, c.checkpoints.length - 1)]!;
+      const then = c.checkpoints[r.next + 1];
+      this.game.hud.setRadarSpots([{ kind: "goal", x: next.x, z: next.z }, ...(then ? [{ kind: "escort" as const, x: then.x, z: then.z }] : [])]);
+      return;
+    }
+    this.game.hud.setRadarSpots([...this.eventSpots, ...this.cityRuns.courses.map((k) => ({ kind: "escort" as const, x: k.start.x, z: k.start.z }))]);
+  }
+
+  /**
+   * The room's word on street runs: the courses at the door, the board, a run's arming, start, splits
+   * and end (to its runner), and anyone's finish (to everyone else, as a line).
+   */
+  onCityRunMsg(m: CityRunMsg): void {
+    const st = this.cityRuns;
+    if (m.courses) st.courses = m.courses;
+    if (m.board) st.board = m.board;
+    if (m.best) st.best = m.best;
+    if (m.feed) {
+      st.feed.push(m.feed);
+      if (st.feed.length > 8) st.feed.shift();
+    }
+    const prev = st.run;
+    if (m.run !== undefined) {
+      st.run = m.run;
+      st.runAt = performance.now();
+    }
+    if (this.mode !== "city") return;
+    const hud = this.game.hud;
+    if (m.feed) this.note(`STREET RUN · ${m.feed}`);
+    const r = m.run;
+    const c = r ? this.runCourse(r.course) : null;
+    if (r && c) {
+      if (r.state === "armed") {
+        hud.alert(`◆ STREET RUN · ${c.name} · ARMED`, false, 3);
+        this.game.audio.objective();
+      } else if (r.state === "running" && r.splits.length === 0 && prev?.state === "armed") {
+        hud.alert(`◆ GO · ${c.name}`, false, 1.5);
+      } else if (r.state === "running" && r.splits.length > (prev?.splits.length ?? 0)) {
+        hud.alert(splitBanner(c, r), false, 2);
+        this.game.audio.objective();
+      } else if (r.state === "finished" || r.state === "void") {
+        const card = runCard(c, r, this.bestTime(c.id));
+        if (card) {
+          hud.card(card.title, card.lines, card.color, 7);
+          this.note(`${card.title} · ${card.lines.join(" · ")}`);
+        }
+        if (r.state === "finished" && r.pb) this.game.audio.sign();
+        else if (r.state === "void") this.game.audio.debtOwed();
+        this.runLine = "";
+        // the event (if one runs) takes the objective line and the beam back
+        if (this.cityEvent) this.onCityEventMsg(this.cityEvent);
+        else this.cityObjective();
+      }
+    }
+    this.cityRunHud();
+  }
+
+  /**
+   * Once a tick in the city: the run's objective line with its clock, and the beam on the next
+   * checkpoint; with no run on, the start ring nearby (unless a public event has the line).
+   */
+  private cityRunHud(): void {
+    const st = this.cityRuns;
+    const g = this.game;
+    const me = g.player;
+    const fx = g.renderer.campaignFx;
+    const at = me ? { x: me.pos.x, z: me.pos.z } : null;
+    let line: { title: string; text: string; progress: string } | null = null;
+    const r = st.run;
+    const c = r && this.runActive() ? this.runCourse(r.course) : null;
+    if (r && c) {
+      line = runObjective(c, r, this.runElapsed(), at);
+      const next = r.state === "armed" ? c.start : c.checkpoints[Math.min(r.next, c.checkpoints.length - 1)]!;
+      fx.setMarker({ x: next.x, y: next.y, z: next.z });
+    } else if (at && st.courses.length && this.cityEvent?.event?.status !== "running") {
+      const near = nearestStart(st.courses, at);
+      if (near && near.distance <= 40) {
+        const rec = st.board.find((b) => b.course === near.course.id)?.top[0] ?? null;
+        line = startPrompt(near.course, this.bestTime(near.course.id), rec, near.distance);
+        fx.setMarker({ x: near.course.start.x, y: near.course.start.y, z: near.course.start.z });
+      } else if (this.runLine) {
+        // walked away from the ring: the city's own line again
+        this.runLine = "";
+        fx.setMarker(null);
+        this.cityObjective();
+      }
+    }
+    this.cityRadar();
+    if (!line) return;
+    const key = `${line.title}|${line.text}|${line.progress}`;
+    if (key === this.runLine) return;
+    this.runLine = key;
+    g.hud.setObjective(line.title, line.text, line.progress);
   }
 
   // ---- contracts panel (the Deadletter Office desk, reachable anywhere) ----
@@ -763,6 +906,8 @@ export class Campaign {
       gate: { line: this.game.hud.gateText, hold: this.gateHold ? { ...this.gateHold } : null, target: this.gateTarget },
       /** the city's public event as this client knows it (Stage 699) */
       cityEvent: this.cityEvent,
+      /** street runs as this client knows them (Stage 703): the courses, the board, this file's bests, its run and its clock */
+      cityRuns: { ...this.cityRuns, clock: runClock(this.runElapsed()), objective: this.runLine },
       terminalMirror: this.mirror,
       mirrorLog: this.mirrorLog.slice(),
       log: this.log.slice(-8),

@@ -22,7 +22,8 @@ export type StampCounter =
   | "depth" | "nodesOwned" | "attested" | "keystones" | "chips" | "firmwares" | "crafts" | "ring2" | "ring3"
   | "wins" | "fullWakeWins" | "noDeathRounds" | "matchKillsAny" | "topScores" | "matches"
   | "rejoins" | "districts" | "kills"
-  | "cityEvents";
+  | "cityEvents"
+  | `streetRun:${string}`;
 
 export interface StampDef {
   id: string;
@@ -34,6 +35,24 @@ export interface StampDef {
 }
 
 const st = (id: string, group: StampDef["group"], counter: StampCounter, need: number, line: string): StampDef => ({ id, group, counter, need, line });
+
+/**
+ * The street runs' course slots (Stage 703): three per walkable district, the same three everywhere.
+ * The courses themselves are read off each district's geometry (`shared/city/courses.ts`); the slots
+ * are fixed here because a stamp is a fixed thing, and this file is loaded by rooms that must not
+ * load the city. `tests/streetruns.test.ts` holds the districts to the city's own list.
+ */
+export const STREET_RUN_SLOTS = ["HIGH LINE", "WEST LOOP", "EAST LOOP"] as const;
+const STREET_RUN_DISTRICTS: readonly [string, string][] = [
+  ["lease_row", "LEASE ROW"],
+  ["deadletter_docks", "DEADLETTER DOCKS"],
+  ["repo_depot", "REPO DEPOT"],
+  ["night_market", "NIGHT MARKET"],
+  ["relay_heights", "RELAY HEIGHTS"],
+];
+export const STREET_RUN_COURSES: readonly { id: string; district: string; districtName: string; slot: number; name: string }[] = STREET_RUN_DISTRICTS.flatMap(([district, districtName]) =>
+  STREET_RUN_SLOTS.map((name, slot) => ({ id: `${district}:${slot}`, district, districtName, slot, name })),
+);
 
 const perWeapon: StampDef[] = WEAPON_LIST.flatMap((w) => {
   // Stage 109 taught the rack not to call THE DIRECTIVE "THE". The stamp matrix still took
@@ -122,6 +141,8 @@ export const STAMPS: StampDef[] = [
   st("city_event_1", "city", "cityEvents", 1, "A PUBLIC EVENT, WITH STRANGERS"),
   st("city_events_10", "city", "cityEvents", 10, "TEN PUBLIC EVENTS"),
   st("city_events_50", "city", "cityEvents", 50, "FIFTY PUBLIC EVENTS"),
+  // street runs (Stage 703): the first finish of each course
+  ...STREET_RUN_COURSES.map((c) => st(`street_run:${c.id}`, "city", `streetRun:${c.id}`, 1, `STREET RUN · ${c.districtName} · ${c.name}`)),
 ];
 
 export const stampById = (id: string): StampDef | undefined => STAMPS.find((s) => s.id === id);

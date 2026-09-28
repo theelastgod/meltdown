@@ -1641,6 +1641,80 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 703 — Nothing in the city showed off how a Blank moves
+
+**The ask.** "Expand … the different things you can do in it." The city had patrols and public
+events (Stage 699), but nothing for the movement: sprint, slide, slide-jump, mantle.
+
+**The change.**
+- **Street runs: three time trials in every district, read off its own geometry**
+  (`shared/city/courses.ts`):
+  - a HIGH LINE: up the walkway's stair, along its top, down, and on into the street;
+  - a WEST LOOP and an EAST LOOP, each coming back to its own start.
+  - Checkpoints stand on open street or on raised ground: walkway, docks, roofs.
+- **Every course is proved.** Every leg needs a nav path. Then a bot sprints the whole course
+  through the movement sim, judged by the room's own checkpoint rules. A course the bot cannot
+  finish inside its bound is thrown out, and the bot's time is the course's PAR. Sliding and
+  slide-jumping beat it.
+- **The room keeps the clock** (`shared/city/runs.ts`). There is no client-to-room run message.
+  - A second in a start ring arms the run, and the clock starts on the tick you step out.
+  - Only the next checkpoint counts, and a raised one only while you stand on it.
+  - Death, the time limit, leaving the course or the room, or a changed seat makes the run void.
+  - A file still loading into the room (Stage 699's grace) cannot arm one.
+- **A board per district:** each file's best, with its splits. The campaign Worker keeps it in the
+  city Durable Object's storage; the dev host keeps it in memory.
+- **The HUD:**
+  - near a start: a prompt with PAR, your best and the record;
+  - during a run: the next checkpoint and its distance, the clock, and the last split against
+    your best, with the contract beam and map spot on the next checkpoint;
+  - at the end: a result card.
+  - Everyone else hears "ALPHA RAN WEST LOOP IN 24.0S".
+- **The pay:** the first finish of each course pays 120 XP and its stamp, once in a file's life.
+  Later finishes pay nothing; the board is the prize. No Scrip, Wakelight or $CAPITAL.
+- **The wire** gains `Msg.CityRun` (21, JSON), sent only by city rooms, which older clients
+  ignore. The protocol version is unchanged.
+
+**Merged onto Stage 701's five districts, with three fixes.**
+- **The stamp slots** named three districts, and `tests/streetruns.test.ts` held them to the city's
+  own list. It failed, as it should have, when NIGHT MARKET and RELAY HEIGHTS arrived. They are
+  added.
+- **RELAY HEIGHTS had no WEST LOOP.**
+  - A loop snaps each of its ideal points to a standable point within 11 m.
+  - RELAY HEIGHTS' west side is tower footprint, and every one of 24 candidate loops (and 96,
+    tried) had a point with nothing standing that near.
+  - Where the 11 m search finds nothing, it now widens to 16 m, then 22 m. RELAY HEIGHTS gets a
+    WEST LOOP: 8 checkpoints, par 36.6 s.
+  - LEASE ROW and REPO DEPOT generate exactly the courses they did. The docks' two loops and
+    NIGHT MARKET's EAST LOOP change, because an earlier candidate now succeeds.
+- **The XP.** The test holds every course's first finish together to under half of one good match
+  (2,100). Fifteen courses at the agent's 150 came to 2,250. The pay is now 120 a course, 1,800 in
+  all; the bound is unchanged.
+
+**Verified.**
+- `tests/streetruns.test.ts` (35 tests), which the agent checked with 23 mutations, each caught:
+  - generation is deterministic, and every course is proved by the bot;
+  - checkpoint order holds, and a raised checkpoint counts only standing on it;
+  - the timing is the room's, and every way a run is voided voids it;
+  - the board keeps each file's best, per district, and a stored board is checked on load;
+  - the reward pays once, and non-city rooms run no courses.
+- The widened search: without it the test fails with two courses for RELAY HEIGHTS (the mutation).
+- **probe:world**, a new check, passed twice in a row:
+  - ALPHA runs LEASE ROW's quickest all-street course (WEST LOOP, 7 checkpoints, par 23.8 s) in
+    23.983 s.
+  - The room's board has ALPHA at #1 with that time.
+  - BRAVO's feed reads "ALPHA RAN WEST LOOP IN 24.0S · THE DISTRICT'S BEST".
+  - The objective line read "STREET RUN · WEST LOOP".
+  - A run the patrols void is run again, up to three runs, and the void reasons go in the detail.
+- The economy, progression and campaign lints pass. 1696 unit tests pass.
+- probe:campaign 61/61, cityLife 21/21, net 28/28, ship 21/21, mobile 40/40.
+- Proof: `docs/proof/stage703/city-run.png`.
+
+**Open.**
+- A bot that cannot shoot back can be downed mid-run by the patrols. The probe runs again; a
+  player shoots back.
+- Guests on a host with a file store get a `guest:` file, so their runs are posted and paid like
+  city events.
+
 ## Stage 702 — A GLASS week's client ran shields the room had taken away
 
 Two failures turned up while running Stage 701's probes. Neither was caused by the new districts.

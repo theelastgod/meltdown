@@ -66,6 +66,14 @@ export const Msg = {
    * older client that meets it decodes nothing and goes on (`decodeServerMessage` returns null).
    */
   CityEvent: 20,
+  /**
+   * room → client: street runs (Stage 703, JSON). Only a city room sends it, as CityEvent is sent. Its
+   * own number rather than a field on CityEvent: a run is one file's, told to that file as it happens,
+   * and folding it into the event's message would redraw the event's HUD on every checkpoint. An older
+   * client decodes nothing and goes on. There is no client → room message for a run: the room reads
+   * where the sim put the runner, and nothing a client says can start, stop or time one.
+   */
+  CityRun: 21,
 } as const;
 
 /** Co-op mission traffic (the campaign room only; the PvP room never sends this). */
@@ -108,6 +116,49 @@ export interface CityEventMsg {
   you: boolean;
   /** on the message that closes an event this client's file was credited for: what it was paid */
   reward?: string[];
+}
+
+/**
+ * Street runs as one client hears them (Stage 703). Every field is optional: the door sends the
+ * district's courses, the board and this file's bests; a run's own progress goes to its runner; a
+ * finish goes to everyone as a feed line and a new board. Times are seconds, counted by the room.
+ */
+export interface CityRunMsg {
+  courses?: {
+    id: string;
+    name: string;
+    start: { x: number; y: number; z: number };
+    checkpoints: { x: number; y: number; z: number; kind: string }[];
+    radius: number;
+    /** the sprinting bot's time: what plain running does */
+    par: number;
+    length: number;
+  }[];
+  /** per course, the fastest five (name and time) and how many files are on its board */
+  board?: { course: string; top: { name: string; time: number }[]; files: number }[];
+  /** this file's best per course, with its splits (the deltas are measured against them) */
+  best?: { course: string; time: number; splits: number[] }[];
+  /** this client's run, as it stands */
+  run?: {
+    course: string;
+    state: "armed" | "running" | "finished" | "void";
+    /** checkpoints taken */
+    next: number;
+    /** seconds since the start, at the room's tick this was sent on */
+    elapsed: number;
+    /** seconds at each checkpoint taken, and against this file's best there (null: no best to beat) */
+    splits: number[];
+    deltas: (number | null)[];
+    time?: number;
+    reason?: string;
+    /** a finish: the place on the board, and whether it beat this file's best */
+    rank?: number;
+    pb?: boolean;
+    /** a finish credited to this client's file: what it was paid */
+    reward?: string[];
+  } | null;
+  /** someone's finish, for everyone in the city: "ALPHA RAN WEST LOOP IN 38.217S" */
+  feed?: string;
 }
 
 /** One file as the dossier shows it: identity only (see shared/identity/identity.ts). */
@@ -491,6 +542,13 @@ export function encodeCityEvent(m: CityEventMsg): ArrayBuffer {
   return w.done();
 }
 
+export function encodeCityRun(m: CityRunMsg): ArrayBuffer {
+  const w = new W();
+  w.u8(Msg.CityRun);
+  w.str(JSON.stringify(m));
+  return w.done();
+}
+
 export function encodeKick(reason: string): ArrayBuffer {
   const w = new W();
   w.u8(Msg.Kick);
@@ -718,7 +776,8 @@ export type ServerMessage =
   | { type: "social"; social: SocialMsg }
   | { type: "mission"; mission: MissionMsg }
   | { type: "run"; run: RunMsg }
-  | { type: "cityEvent"; cityEvent: CityEventMsg };
+  | { type: "cityEvent"; cityEvent: CityEventMsg }
+  | { type: "cityRun"; cityRun: CityRunMsg };
 
 /** Decode a server message. `baselines` resolves the acked snapshot a delta was built on. */
 export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) => Snapshot | null): ServerMessage | null {
@@ -736,6 +795,7 @@ export function decodeServerMessage(buf: ArrayBuffer, baselines: (tick: number) 
     if (t === Msg.Mission) return { type: "mission", mission: JSON.parse(r.str()) as MissionMsg };
     if (t === Msg.Run) return { type: "run", run: JSON.parse(r.str()) as RunMsg };
     if (t === Msg.CityEvent) return { type: "cityEvent", cityEvent: JSON.parse(r.str()) as CityEventMsg };
+    if (t === Msg.CityRun) return { type: "cityRun", cityRun: JSON.parse(r.str()) as CityRunMsg };
     if (t !== Msg.Snapshot) return null;
     const tick = r.u32();
     const baselineTick = r.u32();

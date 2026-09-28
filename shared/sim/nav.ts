@@ -97,8 +97,12 @@ export function nearestCell(g: NavGrid, x: number, z: number, maxR = 3): { i: nu
  * BFS over 4-neighbours with a step limit (MOVE.stepHeight) — or, with
  * `mantle`, the mantle window too. Returns the path as world waypoints
  * (turning points only) or null when unreachable.
+ *
+ * `limits` overrides the climb and the drop one cell may take (Stage 703: a street run's legs hop a
+ * stair's two treads in one 1 m cell, and must not "drop" off the walkway through its rail, which a
+ * cell centre either side of it cannot see). Without it the rules are the ones they always were.
  */
-export function findPath(g: NavGrid, from: Vec3, to: Vec3, mantle = false): Vec3[] | null {
+export function findPath(g: NavGrid, from: Vec3, to: Vec3, mantle = false, limits?: { rise?: number; drop?: number }): Vec3[] | null {
   const a = nearestCell(g, from.x, from.z);
   const b = nearestCell(g, to.x, to.z);
   if (!a || !b) return null;
@@ -107,7 +111,8 @@ export function findPath(g: NavGrid, from: Vec3, to: Vec3, mantle = false): Vec3
   const prev = new Int32Array(g.w * g.h).fill(-1);
   prev[start] = start;
   const q = [start];
-  const rise = mantle ? MOVE.mantleMaxHeight : MOVE.stepHeight + 0.05;
+  const rise = limits?.rise ?? (mantle ? MOVE.mantleMaxHeight : MOVE.stepHeight + 0.05);
+  const drop = limits?.drop ?? 6;
   let head = 0;
   while (head < q.length) {
     const cur = q[head++]!;
@@ -122,7 +127,7 @@ export function findPath(g: NavGrid, from: Vec3, to: Vec3, mantle = false): Vec3
       const n = nj * g.w + ni;
       if (prev[n] !== -1) continue;
       const nt = g.top[n]!;
-      if (nt - ct > rise || ct - nt > 6) continue; // no long drops either: probes route what a Blank would walk
+      if (nt - ct > rise || ct - nt > drop) continue; // no long drops either: probes route what a Blank would walk
       prev[n] = cur;
       q.push(n);
     }
