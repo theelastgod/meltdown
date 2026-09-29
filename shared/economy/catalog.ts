@@ -81,6 +81,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(43, "skin_vent", "VENT", "DARK VENT GRILLE, CYAN EDGE ON EVERY OTHER SLAT", 62, 0xc22b, "#ff3ec9", "skin_vent_plate"),
   skin(44, "skin_cable", "CABLE", "BUNDLED BLACK CABLES WITH ONE CYAN TRACER STRAND", 74, 0xc22c, "#ffb02e", "skin_cable_plate"),
   skin(45, "skin_hex", "HEX", "DARK HEX STONE PAVEMENT, WET, CYAN IN THE CRACKS", 88, 0xc22d, "#37ff8b", "skin_hex_plate"),
+  skin(46, "skin_terrazzo", "TERRAZZO", "DARK TERRAZZO CHIPS, MAGENTA FLECKS, NO PATTERN TEXT", 96, 0xc22e, "#8f4dff", "skin_terrazzo_plate"),
+  skin(47, "skin_rib", "RIB", "DARK ACOUSTIC RIBBED WALL, COOL GREY, ONE CYAN BAR", 110, 0xc22f, "#ffd27a", "skin_rib_plate"),
+  skin(48, "skin_rail", "RAIL", "COLD CYAN RAIL METAL, BLACK GAPS, NO MARKINGS", 58, 0xc230, "#8fd8ff", "skin_rail_plate"),
+  skin(49, "skin_oil", "OIL", "BLACK OIL-SLICK METAL, THIN CYAN AND MAGENTA INTERFERENCE", 82, 0xc231, "#f2f4ff", "skin_oil_plate"),
 ];
 
 /**
