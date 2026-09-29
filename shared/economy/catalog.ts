@@ -73,6 +73,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(35, "skin_bulkhead", "BULKHEAD", "DARK RIBBED STEEL WITH A THIN GREEN CIRCULAR SEAM", 110, 45347, "#ffd27a", "skin_bulkhead_plate"),
   skin(36, "skin_static", "STATIC", "NEAR-BLACK CRT PHOSPHOR NOISE, SPARSE GREEN SPECKS, NO LETTERS", 58, 45348, "#8fd8ff", "skin_static_plate"),
   skin(37, "skin_ash", "ASH", "SOOT-BLACK BRUSHED METAL, ALMOST NO COLOR, ONE FAINT CYAN SCRATCH", 82, 45349, "#f2f4ff", "skin_ash_plate"),
+  skin(38, "skin_chain", "CHAIN", "DARK CHAINLINK OVER BLACK, A THIN AMBER WIRE ONLY AT THE KNOTS", 48, 0xc226, "#35f2ff", "skin_chain_plate"),
+  skin(39, "skin_puddle", "PUDDLE", "BLACK GLASS WITH STRETCHED CYAN AND MAGENTA REFLECTIONS", 62, 0xc227, "#ff3ec9", "skin_puddle_plate"),
+  skin(40, "skin_brick", "BRICK", "NEAR-BLACK BRICK WITH A SINGLE CYAN MORTAR LINE", 74, 0xc228, "#ffb02e", "skin_brick_plate"),
+  skin(41, "skin_scaffold", "SCAFFOLD", "DARK RUSTED SCAFFOLD POLES, COOL, NO ORANGE FIRE", 88, 0xc229, "#37ff8b", "skin_scaffold_plate"),
 ];
 
 /**
