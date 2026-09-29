@@ -1825,5 +1825,41 @@
     "bytes": 122407,
     "sha256": "52d839c3bbc95591c0e503bb96e31140c30efb664d944c485aea0befcd26b866",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-09-29), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_cone_plate",
+    "kind": "texture",
+    "file": "skin_cone_plate.png",
+    "size": 256,
+    "bytes": 148621,
+    "sha256": "239390a7504a56765903707e33dbcadf6c9e815cd4396de991b8fb30cbf67213",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-09-29), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_drum_plate",
+    "kind": "texture",
+    "file": "skin_drum_plate.png",
+    "size": 256,
+    "bytes": 137247,
+    "sha256": "c98ea32cbb083ec1beae65af9cb53b9ae0f01039f203663ede75a75027283718",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-09-29), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_carpaint_plate",
+    "kind": "texture",
+    "file": "skin_carpaint_plate.png",
+    "size": 256,
+    "bytes": 112220,
+    "sha256": "af37e03eb1764114fcee0469641f46b50394a04c771986bb49e3025b93b108f6",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-09-29), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_awning_plate",
+    "kind": "texture",
+    "file": "skin_awning_plate.png",
+    "size": 256,
+    "bytes": 158378,
+    "sha256": "97e214778c7a9bf583e770e7eb6a7e6a189eb5684f9d39192d8c5b8dc067e641",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-09-29), conditioned by tools/asset-add.ts"
   }
 ]
