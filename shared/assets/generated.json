@@ -1600,5 +1600,14 @@
     "bytes": 154171,
     "sha256": "ceec93140bbda8be7b6c019c9b8ecb97af0b6c9a2c1d3489bf367ab4375de719",
     "provenance": "generated (Higgsfield nano_banana_pro, 2026-09-25) as a seamless tile, conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_conduit_plate",
+    "kind": "texture",
+    "file": "skin_conduit_plate.png",
+    "size": 256,
+    "bytes": 158861,
+    "sha256": "4892c0524f7d3378640a1aee2e0805d76ee16e7f626c75c06f1dd904bc86ed97",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-09-29), conditioned by tools/asset-add.ts"
   }
 ]
