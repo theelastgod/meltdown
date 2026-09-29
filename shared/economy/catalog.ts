@@ -69,6 +69,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(31, "skin_canal", "CANAL", "WET DARK CONCRETE WITH LONG CYAN PUDDLE REFLECTIONS", 62, 45343, "#ff3ec9", "skin_canal_plate"),
   skin(32, "skin_gantry", "GANTRY", "DARK CRANE STEEL PANELS WITH THIN CYAN STRIP-LIGHTS ALONG SEAMS", 74, 45344, "#ffb02e", "skin_gantry_plate"),
   skin(33, "skin_lantern", "LANTERN", "WARM-NOT-AMBER PAPER LANTERN CLOTH, MOSTLY BLACK, THIN MAGENTA GLOW IN", 88, 45345, "#37ff8b", "skin_lantern_plate"),
+  skin(34, "skin_uplink", "UPLINK", "DARK ALLOY WITH A FAINT CYAN DISH-GRID, NO READABLE MARKS", 96, 45346, "#8f4dff", "skin_uplink_plate"),
+  skin(35, "skin_bulkhead", "BULKHEAD", "DARK RIBBED STEEL WITH A THIN GREEN CIRCULAR SEAM", 110, 45347, "#ffd27a", "skin_bulkhead_plate"),
+  skin(36, "skin_static", "STATIC", "NEAR-BLACK CRT PHOSPHOR NOISE, SPARSE GREEN SPECKS, NO LETTERS", 58, 45348, "#8fd8ff", "skin_static_plate"),
+  skin(37, "skin_ash", "ASH", "SOOT-BLACK BRUSHED METAL, ALMOST NO COLOR, ONE FAINT CYAN SCRATCH", 82, 45349, "#f2f4ff", "skin_ash_plate"),
 ];
 
 /**
