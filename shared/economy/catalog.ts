@@ -65,6 +65,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(27, "skin_vein", "PHAGE VEIN", "IRIDESCENT SPORE-VEIN POLYMER, THE LAUNCHER'S OWN STAIN", 92, 0x7e46, "#37ff8b", "tex_phage_vein"),
   skin(28, "skin_gear", "CLOCK GEAR", "BRASS GEARS ON WET STEEL, FASTER THAN THE CITY CAN COUNT", 98, 0x2d9b, "#ffd27a", "tex_clock_gear"),
   skin(29, "skin_conduit", "CONDUIT TRACE", "CYAN CABLE WOVEN THROUGH WET BLACK STEEL", 66, 0xc0d1, "#35f2ff", "skin_conduit_plate"),
+  skin(30, "skin_shutter", "SHUTTER", "CLOSED METAL SHUTTER SLATS, NEAR-BLACK, THIN MAGENTA LIGHT IN THE GAPS", 48, 45342, "#35f2ff", "skin_shutter_plate"),
+  skin(31, "skin_canal", "CANAL", "WET DARK CONCRETE WITH LONG CYAN PUDDLE REFLECTIONS", 62, 45343, "#ff3ec9", "skin_canal_plate"),
+  skin(32, "skin_gantry", "GANTRY", "DARK CRANE STEEL PANELS WITH THIN CYAN STRIP-LIGHTS ALONG SEAMS", 74, 45344, "#ffb02e", "skin_gantry_plate"),
+  skin(33, "skin_lantern", "LANTERN", "WARM-NOT-AMBER PAPER LANTERN CLOTH, MOSTLY BLACK, THIN MAGENTA GLOW IN", 88, 45345, "#37ff8b", "skin_lantern_plate"),
 ];
 
 /**
