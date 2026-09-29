@@ -1717,5 +1717,41 @@
     "bytes": 154846,
     "sha256": "c0fcd102ddcddf50a84dc3d6ea6ede883fa0d107ee100dad39ca163ed6eeafcc",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-09-29), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_rack_plate",
+    "kind": "texture",
+    "file": "skin_rack_plate.png",
+    "size": 256,
+    "bytes": 135567,
+    "sha256": "8e72f4fef399fa4632980aa57a75f2496022d930a754f37a57be9d83a57dcedb",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-09-29), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_vent_plate",
+    "kind": "texture",
+    "file": "skin_vent_plate.png",
+    "size": 256,
+    "bytes": 129754,
+    "sha256": "5003b49a7feb17bc526c1f4b6330fe65dba353b0d6354ed454bb338d060fad4a",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-09-29), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_cable_plate",
+    "kind": "texture",
+    "file": "skin_cable_plate.png",
+    "size": 256,
+    "bytes": 154952,
+    "sha256": "38e2825bd903460592356ff5f7c9876ba74c97ade7991dd6f1a1458376f97c26",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-09-29), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_hex_plate",
+    "kind": "texture",
+    "file": "skin_hex_plate.png",
+    "size": 256,
+    "bytes": 149297,
+    "sha256": "e45335d70d0dfd73bb763dfd612ca00779fc203c0e433cb634a7b87baa6d9e6c",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-09-29), conditioned by tools/asset-add.ts"
   }
 ]

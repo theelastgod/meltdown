@@ -77,6 +77,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(39, "skin_puddle", "PUDDLE", "BLACK GLASS WITH STRETCHED CYAN AND MAGENTA REFLECTIONS", 62, 0xc227, "#ff3ec9", "skin_puddle_plate"),
   skin(40, "skin_brick", "BRICK", "NEAR-BLACK BRICK WITH A SINGLE CYAN MORTAR LINE", 74, 0xc228, "#ffb02e", "skin_brick_plate"),
   skin(41, "skin_scaffold", "SCAFFOLD", "DARK RUSTED SCAFFOLD POLES, COOL, NO ORANGE FIRE", 88, 0xc229, "#37ff8b", "skin_scaffold_plate"),
+  skin(42, "skin_rack", "RACK", "DARK SERVER-RACK METAL, TINY CYAN PIN LIGHTS, NO DIGITS", 48, 0xc22a, "#35f2ff", "skin_rack_plate"),
+  skin(43, "skin_vent", "VENT", "DARK VENT GRILLE, CYAN EDGE ON EVERY OTHER SLAT", 62, 0xc22b, "#ff3ec9", "skin_vent_plate"),
+  skin(44, "skin_cable", "CABLE", "BUNDLED BLACK CABLES WITH ONE CYAN TRACER STRAND", 74, 0xc22c, "#ffb02e", "skin_cable_plate"),
+  skin(45, "skin_hex", "HEX", "DARK HEX STONE PAVEMENT, WET, CYAN IN THE CRACKS", 88, 0xc22d, "#37ff8b", "skin_hex_plate"),
 ];
 
 /**
