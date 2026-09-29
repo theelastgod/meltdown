@@ -35,7 +35,7 @@ export interface LoadingDescriptor {
   kind: LoadingKind;
 }
 
-/** Each place's picture: its district illustration, an arc banner, the office's own, or the yard's gig. */
+/** Each place's picture. Districts, the office, the yard, and the white room each have their own card. */
 export const LEVEL_ART: Readonly<Record<string, string>> = {
   lease_row: "/districts/lease_row.jpg",
   // Arrival art for the district, separate from the contract illustrations.
@@ -44,9 +44,9 @@ export const LEVEL_ART: Readonly<Record<string, string>> = {
   // Stage 701's districts, painted for them: the market's lanterns and crowd, the relay towers' dishes
   night_market: "/districts/night_market.jpg",
   relay_heights: "/districts/relay_heights.jpg",
-  [HUB_LEVEL_ID]: "/missions/m4_the_leak.jpg",
-  drainage_yard: "/gigs/g_escrow_row.jpg",
-  [WHITE_LEVEL_ID]: "/missions/m7_white_office.jpg",
+  [HUB_LEVEL_ID]: "/districts/deadletter_office.jpg",
+  drainage_yard: "/districts/drainage_yard.jpg",
+  [WHITE_LEVEL_ID]: "/districts/white_office.jpg",
 };
 
 /** The name a place goes by on the card: the city's name, never the level id. */

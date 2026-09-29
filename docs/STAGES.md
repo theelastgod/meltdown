@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 710 — The office, the yard, and the white room opened on someone else's picture
+
+**The ask.** After the five districts had their own arrival art, three places still borrowed a picture: the Deadletter Office used the Leak banner, the Drainage Yard used a gig, and the White Office used the last mission's banner.
+
+**The change.** Those three cards now use `/districts/deadletter_office.jpg`, `/districts/drainage_yard.jpg`, and `/districts/white_office.jpg`. The mission and gig banners stay where they were. Each new file is a 960×411 JPEG from Higgsfield Soul Location, cropped the same way as the district cards.
+
+**Verified.** `tests/loading.test.ts` requires the three URLs to name those files, at 960×411 and under 150 KB, and not a path under `/missions/` or `/gigs/`. Reverting the office path to `m4_the_leak.jpg` failed that test once. The files are 39,116, 30,302, and 47,289 bytes.
+
+**Open.** These are loading-card pictures. They do not rebuild the rooms.
+
 ## Stage 709 — Docks and Depot opened on someone else's picture
 
 **The ask.** The two older districts still borrowed a contract illustration for the loading card. Lease Row, Night Market, and Relay Heights already had their own arrival art.

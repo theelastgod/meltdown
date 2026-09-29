@@ -279,9 +279,12 @@ describe("the loading descriptor", () => {
     expect(loadingFor("http://x/?level=repo_depot&mode=run&net=ws://h/room/r")).toMatchObject({ title: "REPO DEPOT", line: "THE RUN · CARRY THE CLAIMS TO A GATE", art: "/districts/repo_depot.jpg" });
     expect(loadingFor("http://x/?level=deadletter_docks&city=1")).toMatchObject({ title: "DEADLETTER DOCKS", art: "/districts/deadletter_docks.jpg" });
     expect(loadingFor("http://x/?level=repo_depot&city=1").art).toBe("/districts/repo_depot.jpg");
-    for (const id of ["deadletter_docks", "repo_depot"] as const) {
+    expect(loadingFor("http://x/?level=deadletter_office")).toMatchObject({ title: "THE DEADLETTER OFFICE", art: "/districts/deadletter_office.jpg" });
+    expect(loadingFor("http://x/?level=drainage_yard")).toMatchObject({ title: "THE DRAINAGE YARD", art: "/districts/drainage_yard.jpg" });
+    expect(loadingFor("http://x/?level=white_office")).toMatchObject({ title: "THE WHITE OFFICE", art: "/districts/white_office.jpg" });
+    for (const id of ["deadletter_docks", "repo_depot", "deadletter_office", "drainage_yard", "white_office"] as const) {
       expect(LEVEL_ART[id]).toBe(`/districts/${id}.jpg`);
-      expect(LEVEL_ART[id]).not.toMatch(/\/missions\//);
+      expect(LEVEL_ART[id]).not.toMatch(/\/(missions|gigs)\//);
       const path = new URL(`../public${LEVEL_ART[id]}`, import.meta.url);
       const b = readFileSync(path);
       expect(b[0]).toBe(0xff);
