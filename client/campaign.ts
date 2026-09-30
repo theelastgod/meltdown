@@ -40,6 +40,8 @@ import { inLedgerMouth, LEDGER_HOLD_GATE, ledgerHudLine, nearLedgerDesk } from "
 import { runPageUrl } from "./runpage";
 import { radarGates } from "./hud/radar";
 import { SIM_DT } from "@shared/sim/constants";
+import { eyeHeight } from "@shared/sim/player";
+import { dialogueShot } from "./render/faceshot";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop" | "city";
 
@@ -387,6 +389,7 @@ export class Campaign {
     // what the file has to say back about what this player already did (Stage 661)
     const recall = recallIndex(n, all, this.save.faction);
     this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, recall), choices.length ? choices : null, portraitFor(n.speaker));
+    this.armCutscene(n.speaker);
     // the crew reads the same screen (Stage 52): the host sends where it is; the room mirrors it to everyone
     if (this.mode === "coop" && this.host && this.game.net) this.game.net.sendTerminal({ script: p.script, node: n.id, choices, picked: this.lastPick, recall });
     this.lastPick = null;
@@ -397,6 +400,7 @@ export class Campaign {
     if (ev.picked) this.mirrorLog.push(ev.picked);
     if (!ev.node) {
       this.mirror = null;
+      this.game.renderer.setFace(null);
       this.game.hud.terminalClose();
       return;
     }
@@ -407,8 +411,26 @@ export class Campaign {
     this.mirror = { script: ev.script, node: ev.node, choices: ev.choices.slice(), picked: ev.picked };
     // the host's recall, not the guest's own testimony: the crew reads one screen (Stage 52 / 661)
     this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, ev.recall), ev.choices.length ? ev.choices : null, portraitFor(n.speaker));
+    this.armCutscene(n.speaker);
     this.game.hud.terminalFooter(ev.choices.length ? "THE HOST IS CHOOSING" : "THE HOST READS ON");
     if (ev.picked) this.game.hud.alert(`◆ THE HOST CHOSE · ${ev.picked}`, false, 2.5);
+  }
+
+  /**
+   * The line is a cutscene. A body in the room gets the camera. Anyone else with a portrait gets
+   * the plate pushed in. The bars come down either way.
+   */
+  private armCutscene(speaker: string): void {
+    const p = this.game.player;
+    const wern = this.game.renderer.wern;
+    const shot = dialogueShot({
+      speaker,
+      player: { x: p.pos.x, y: p.pos.y, z: p.pos.z, yaw: p.yaw, eye: eyeHeight(p) },
+      visitor: this.game.renderer.hub?.visitorPose() ?? null,
+      wern: wern ? { x: wern.position.x, z: wern.position.z, yaw: wern.rotation.y } : null,
+    });
+    this.game.renderer.setFace(shot);
+    this.game.hud.cutscene(true, shot ? null : portraitFor(speaker));
   }
 
   /** Enter / Space: continue a node without choices; 1–4: pick a choice. */
@@ -439,6 +461,7 @@ export class Campaign {
       this.showNode();
     } else {
       this.playing = null;
+      this.game.renderer.setFace(null);
       this.game.hud.terminalClose();
       if (this.mode === "coop" && this.host && this.game.net) this.game.net.sendTerminal({ script: p.script, node: "", choices: [], picked: this.lastPick, recall: -1 });
       this.lastPick = null;

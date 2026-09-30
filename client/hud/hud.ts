@@ -155,6 +155,7 @@ export class Hud {
       <div class="dossier" hidden><div class="dt">▲ DOSSIER · BOTH CELLS · FILES AS THE CITY SEES THEM</div><div class="cells"></div></div>
       <div class="p am receipt" hidden><div class="rh">▲ LEDGER ENTRY · VANTAGE CLEARING HOUSE</div><div class="rl"></div><div class="rs">◆ <span class="rst">PRINTING…</span></div><div class="rf">[ENTER] SIGN</div></div>
       <div class="rite" hidden><div class="rn"></div><div class="rt"></div><div class="rlines"></div></div>
+      <div class="letter top"></div><div class="letter bot"></div><div class="faceplate" hidden><img alt=""></div>
       <div class="p cy terminal" hidden><div class="th"><span class="sg"></span> <span class="sp"></span></div><div class="tb"><img class="pt" alt="" hidden><div class="tx"><div class="tl"></div><div class="tc"></div></div></div><div class="tf">[ENTER] CONTINUE · [1–4] CHOOSE</div></div>
       <div class="contracts" hidden></div>
       <div class="card" hidden><img class="cart" alt="" hidden><div class="ct"></div><div class="cl"></div></div>
@@ -512,8 +513,26 @@ export class Hud {
 
   terminalClose(): void {
     this.q(".terminal").hidden = true;
+    this.cutscene(false, null);
     this.applyQuiet();
     this.term = { lines: [], shown: 0, chars: 0, ready: false, choices: null };
+  }
+
+  /**
+   * The cutscene frame (Stage 715): bars over and under the picture. `plate` is a face to push
+   * into when that person is not standing in the room. Null keeps the bars and leaves the zoom
+   * to the camera.
+   */
+  cutscene(on: boolean, plate: string | null): void {
+    this.root.classList.toggle("cut", on);
+    const box = this.q(".faceplate");
+    const img = box.querySelector("img") as HTMLImageElement;
+    box.hidden = !on || !plate;
+    if (!on || !plate) return;
+    if (img.getAttribute("src") !== plate) img.src = plate;
+    img.style.animation = "none";
+    void img.offsetWidth;
+    img.style.animation = "";
   }
 
   private tickTerminal(dt: number): void {

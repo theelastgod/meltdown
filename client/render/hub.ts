@@ -37,6 +37,11 @@ export class HubDressing {
   renovations = 0;
   /** who is standing in the office, for probes and tests */
   visitor: FixerBody | null = null;
+  /** where that figure stands and which way it faces, for the dialogue close-up */
+  visitorPose(): { id: FixerBody; x: number; z: number; yaw: number } | null {
+    if (!this.visitor || !this.visitorFig) return null;
+    return { id: this.visitor, x: this.visitorFig.position.x, z: this.visitorFig.position.z, yaw: this.visitorFig.rotation.y };
+  }
   private visitorFig: THREE.Group | null = null;
 
   constructor(private scene: THREE.Scene, level: LevelDef) {

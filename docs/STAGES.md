@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 715 — A line of dialogue closes on a face
+
+**The ask.** Talking to someone opened a terminal. The camera stayed where the gun was, and the other person's face stayed a thumbnail.
+
+**The change.** While a line is up, bars come down over the picture. If that person is standing in the room — the office visitor, August Wern, or the player on their own line — the camera eases to under a metre from the face and the lens closes to 28°. The forward is the body's own. If they are not in the room and they have a portrait, that plate pushes in from a wide crop to a tight one. The terminal still types the line underneath. Ending the line gives the camera back.
+
+**Verified.** `tests/faceshot.test.ts` places a camera on the shot and requires its view direction to meet the face. A stand of 3 m failed the under-a-metre check once. The Deacon's height is his hood centre times his scale.
+
+**Open.** A speaker who is neither in the room nor drawn has bars and no face. The zoom does not yet cut between two bodies in one shot.
+
 ## Stage 714 — The streets wear the plates, and the metro booth opens the ledger
 
 **The ask.** The Higgsfield plates were in the catalog and on a worn rig, and the streets still wore the older tiles. The city also had no way to spend $CAPITAL, and no way into THE RUN except the menu.

@@ -29,6 +29,7 @@ import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
 import { spawnCurve, spawnEdge, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
+import { type FaceShot } from "./faceshot";
 import { arcPoint, type ArcSpec } from "./ballistic";
 import { DEATH_TURN, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
@@ -199,6 +200,12 @@ export class Renderer {
   private shoulderSmooth = 0;
   private lastView: CameraView = { third: true, fov: 80, dip: 0, hard: 0, roll: 0, look: { yaw: 0, pitch: 0 }, anchor: { x: 0, y: 0, z: 0 }, camera: { x: 0, y: 0, z: 0 }, distance: 0, blocked: false, bodyVisible: false, reticle: { x: 0, y: 0, visible: true }, aim: { distance: 0, hit: false, onTarget: false, arc: false, point: { x: 0, y: 0, z: 0 } } };
   private tmpProj = new THREE.Vector3();
+  /** dialogue close-up (Stage 715): blended over the play camera, then let go */
+  private faceShot: FaceShot | null = null;
+  private faceHold: FaceShot | null = null;
+  private faceT = 0;
+  private faceAt = new THREE.Vector3();
+  private faceEye = new THREE.Object3D();
   private vmSlot = 1;
   private vmSwap = 0;
   readonly fx: ArsenalFx;
@@ -206,7 +213,12 @@ export class Renderer {
   /** THE RUN: claims and safe zones */
   readonly run: RunFx;
   private baseFov = 80;
-  /** Settings: field of view and the CRT intensity. */
+  /** A dialogue close-up. Null lets the play camera back in. */
+  setFace(shot: FaceShot | null): void {
+    this.faceShot = shot;
+    if (shot) this.faceHold = shot;
+  }
+
   setFov(fov: number): void {
     this.baseFov = Math.max(60, Math.min(110, fov));
   }
@@ -902,6 +914,35 @@ export class Renderer {
   }
 
   /**
+   * Blend the play camera toward the speaking face. The play pose is written first each frame;
+   * this only pulls off it, and lets go when the line ends. The camera's own lookAt points its
+   * −z at the face.
+   */
+  private placeFace(dt: number): void {
+    const want = this.faceShot ? 1 : 0;
+    this.faceT += (want - this.faceT) * Math.min(1, dt * 3.2);
+    const s = this.faceShot ?? this.faceHold;
+    if (!s || this.faceT < 0.002) {
+      if (this.faceT < 0.002) this.faceHold = null;
+      return;
+    }
+    const k = this.faceT;
+    this.faceAt.set(s.x, s.y, s.z);
+    this.camera.position.lerp(this.faceAt, k);
+    this.faceEye.position.copy(this.camera.position);
+    this.faceEye.up.set(0, 1, 0);
+    this.faceEye.lookAt(s.lookX, s.lookY, s.lookZ);
+    this.camera.quaternion.slerp(this.faceEye.quaternion, k);
+    const fov = this.camera.fov + (s.fov - this.camera.fov) * k;
+    if (Math.abs(this.camera.fov - fov) > 0.01) {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
+    }
+    if (s.who === "you" && k > 0.2 && !this.bodyHidden) this.local.group.visible = true;
+    if (k > 0.35) this.viewmodel.visible = false;
+  }
+
+  /**
    * The camera behind the body (Stage 60). The pivot is the eye the sim fires from; the camera sits
    * behind it over the right shoulder, backs off any box in its way (tps.ts), and eases distance
    * changes so a doorway does not snap it. The body stands on the player's feet, faces the aim, and
@@ -1052,6 +1093,7 @@ export class Renderer {
     }
     // the viewmodel is the first-person weapon; behind the body the hand holds it instead
     this.viewmodel.visible = !this.thirdPerson;
+    this.placeFace(dt);
 
     const reloadDip = v.reloading > 0 ? Math.sin(v.reloading * Math.PI) * 0.18 : 0;
     this.viewmodel.position.set(0.28 + bobX * 0.5, -0.26 - reloadDip + bobY * 0.5, -0.55 + this.vmKick * 0.06);
