@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { yawDir, yawTo } from "../shared/math/vec3";
-import { dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot } from "../client/render/faceshot";
+import { dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine } from "../client/render/faceshot";
 import { attend, ATTEND, buildFixer, FIXER_SCALE, holdFace } from "../client/render/figures";
 
 describe("the close-up", () => {
@@ -140,6 +140,17 @@ describe("the close-up", () => {
     const slipped = Math.atan2(Math.sin(f.rotation.y - yaw), Math.cos(f.rotation.y - yaw));
     expect(Math.abs(slipped)).toBeLessThanOrEqual(ATTEND.rate / 60 + 1e-6);
     expect(Math.abs(f.rotation.y - capped)).toBeGreaterThan(0.5);
+  });
+
+  it("the gun is off the lens from the start of the line, not after the blend", () => {
+    expect(gunOnLine(0, false)).toBe(false);
+    expect(gunOnLine(0.1, false)).toBe(false);
+    expect(gunOnLine(0, true)).toBe(true);
+    expect(gunOnLine(0.1, true)).toBe(true);
+    expect(gunOnLine(1, true)).toBe(true);
+    const rend = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
+    expect(rend).toMatch(/gunOnLine\(k, this\.faceShot !== null\)/);
+    expect(rend).not.toMatch(/if \(k > 0\.35\) this\.viewmodel\.visible = false/);
   });
 
   it("the line arms it, and the end of the line lets the camera go", () => {

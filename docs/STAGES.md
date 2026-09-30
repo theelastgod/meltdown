@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 722 — A line takes the gun off the lens
+
+**The ask.** First person parents the weapon to the camera. A line eased the camera onto the face and left the gun in the shot until the blend passed 0.35. The opening of the line was the barrel.
+
+**The change.** The gun is hidden for the whole line, from the first frame, and comes back when the line is over. Third person was already drawing the weapon on the hand, not on the lens.
+
+**Verified.** `gunOnLine(0, true)` and `gunOnLine(0.1, true)` are both hides. Gating it at 0.35 failed once (`expected false to be true` at blend 0).
+
+**Open.** Your own line, in first person, still has no body on your feet. The close-up is the room in front of you.
+
 ## Stage 721 — Ending the line does not snap the hood off you
 
 **The ask.** The close-up held the face on you, and the instant the line ended the hood jumped back to the door. The camera was still leaving. One frame turned the figure 2.22 rad.

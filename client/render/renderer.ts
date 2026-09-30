@@ -29,7 +29,7 @@ import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
 import { spawnCurve, spawnEdge, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
-import { faceCuts, type FaceShot } from "./faceshot";
+import { faceCuts, gunOnLine, type FaceShot } from "./faceshot";
 import { arcPoint, type ArcSpec } from "./ballistic";
 import { DEATH_TURN, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
@@ -948,7 +948,7 @@ export class Renderer {
     // The waiting turn runs later in this frame and caps at a short look. Pin the line for the whole
     // shot, or the hood is back on the door by the time the picture is drawn.
     this.pinSpeaker(this.faceShot);
-    if (k > 0.35) this.viewmodel.visible = false;
+    if (gunOnLine(k, this.faceShot !== null)) this.viewmodel.visible = false;
   }
 
   /** The office visitor or Wern, when the shot is on them. Anyone else is let back to the room. */

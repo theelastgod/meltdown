@@ -100,6 +100,15 @@ export function dialogueShot(o: DialogueBodies): FaceShot | null {
   return null;
 }
 
+/**
+ * The play gun leaves the lens for the whole line (Stage 722). Gating it on the blend left the
+ * weapon in the face until the camera had mostly arrived. First person parents that gun to the lens.
+ */
+export function gunOnLine(blending: number, shot: boolean): boolean {
+  if (!shot) return false;
+  return blending >= 0;
+}
+
 /** True when the line has moved to a different face. Opening and closing a line are blends. */
 export function faceCuts(prev: Pick<FaceShot, "lookX" | "lookY" | "lookZ"> | null, next: Pick<FaceShot, "lookX" | "lookY" | "lookZ"> | null): boolean {
   if (!prev || !next) return false;
