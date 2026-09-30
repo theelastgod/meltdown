@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 734 — A wall on the right sends the lens left
+
+**The ask.** A gap tighter than the hood steps the lens to the right. Against a wall that step put the camera in the masonry.
+
+**The change.** The right-hand point is tested against the room's solids at eye height. A wall there sends the lens to the left, still outside the hood. Both sides in a wall keeps the lens on the line. An open room still steps right. A full stand does not step at all.
+
+**Verified.** `tests/faceshot.test.ts` blocks the right of the Deacon and requires the lens on the left. Ignoring the wall failed once (`expected 0.17 to be less than -0.1`).
+
+**Open.** Both walls still leave the lens inside the hood, on the line.
+
 ## Stage 733 — A tighter gap steps the lens off the hood
 
 **The ask.** Pulling the stand back to 55% of a very short gap put the lens inside the hood. At a quarter of a metre the straight shot is 0.14 m from the face, and the cloth is 0.22 m deep.

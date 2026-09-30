@@ -60,6 +60,33 @@ export function lensBeside(stand: number): number {
   return Math.sqrt(FACE_HOOD * FACE_HOOD - stand * stand);
 }
 
+/** Where a side-step puts the lens, in the horizontal. Positive `side` is to the right of the look. */
+export function sidePoint(at: { x: number; z: number }, yaw: number, stand: number, side: number): { x: number; z: number } {
+  const fwd = yawDir(yaw);
+  const right = yawRight(yaw);
+  return { x: at.x + fwd.x * stand + right.x * side, z: at.z + fwd.z * stand + right.z * side };
+}
+
+/**
+ * Which way the close step goes (Stage 734). The right side is the default. A wall there sends
+ * the lens left. Both sides in masonry keeps the lens on the line: inside the hood, not the wall.
+ */
+export function lensSide(stand: number, rightBlocked: boolean, leftBlocked = false): number {
+  const mag = lensBeside(stand);
+  if (mag === 0) return 0;
+  if (!rightBlocked) return mag;
+  if (leftBlocked) return 0;
+  return -mag;
+}
+
+/** True when a point sits in a solid box. Floors and ceilings that miss this height do not count. */
+export function solidAt(x: number, y: number, z: number, boxes: readonly { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } }[]): boolean {
+  for (const b of boxes) {
+    if (x >= b.min.x && x <= b.max.x && y >= b.min.y && y <= b.max.y && z >= b.min.z && z <= b.max.z) return true;
+  }
+  return false;
+}
+
 /** Metres along `yaw` to another body, when they are in the lens. Off to the side is not a block. */
 export function lensGap(from: { x: number; z: number }, yaw: number, other: { x: number; z: number } | null): number | null {
   if (!other) return null;
@@ -104,6 +131,8 @@ export interface DialogueBodies {
   youIsSelf?: boolean;
   /** The host's body, on a guest's mirror of the host's own line. Absent when they are not drawn. */
   host?: { x: number; y: number; z: number; yaw: number; eye: number } | null;
+  /** True when that horizontal point is inside a wall. Absent means the room is open. */
+  solid?: (x: number, z: number) => boolean;
 }
 
 /**
@@ -131,6 +160,21 @@ function partner(o: DialogueBodies): { x: number; z: number } | null {
  * A reply, when someone else is standing there, looks at them. The gun's yaw is where the next
  * shot goes, and a conversation is not a shot.
  */
+/** The close-up for one body. A wall on the right sends the step to the left. */
+function closeOn(o: DialogueBodies, at: { x: number; z: number }, yaw: number, faceY: number, who: FaceWho, other: { x: number; z: number } | null): FaceShot {
+  const stand = standOff(lensGap(at, yaw, other));
+  const mag = lensBeside(stand);
+  let rightBlocked = false;
+  let leftBlocked = false;
+  if (mag > 0 && o.solid) {
+    const right = sidePoint(at, yaw, stand, mag);
+    const left = sidePoint(at, yaw, stand, -mag);
+    rightBlocked = o.solid(right.x, right.z);
+    leftBlocked = o.solid(left.x, left.z);
+  }
+  return faceShot(at, yaw, faceY, who, stand, lensSide(stand, rightBlocked, leftBlocked));
+}
+
 export function dialogueShot(o: DialogueBodies): FaceShot | null {
   if (o.speaker === "you") {
     if (o.youIsSelf === false) {
@@ -138,23 +182,19 @@ export function dialogueShot(o: DialogueBodies): FaceShot | null {
       if (!o.host) return null;
       const face = partner(o) ?? o.player;
       const yaw = yawAt(o.host, face, o.host.yaw);
-      const stand = standOff(lensGap(o.host, yaw, face));
-      return faceShot({ x: o.host.x, z: o.host.z }, yaw, o.host.y + o.host.eye, "other", stand, lensBeside(stand));
+      return closeOn(o, o.host, yaw, o.host.y + o.host.eye, "other", face);
     }
     const other = partner(o);
     const yaw = other ? yawTo({ x: o.player.x, y: 0, z: o.player.z }, { x: other.x, y: 0, z: other.z }) : o.player.yaw;
-    const stand = standOff(lensGap({ x: o.player.x, z: o.player.z }, yaw, other));
-    return faceShot({ x: o.player.x, z: o.player.z }, yaw, o.player.y + o.player.eye, "you", stand, lensBeside(stand));
+    return closeOn(o, { x: o.player.x, z: o.player.z }, yaw, o.player.y + o.player.eye, "you", other);
   }
   if (o.visitor && o.visitor.id === o.speaker && o.speaker in FACE_Y) {
     const yaw = yawAt(o.visitor, o.player, o.visitor.yaw);
-    const stand = standOff(lensGap(o.visitor, yaw, o.player));
-    return faceShot(o.visitor, yaw, FACE_Y[o.speaker as keyof typeof FACE_Y], "other", stand, lensBeside(stand));
+    return closeOn(o, o.visitor, yaw, FACE_Y[o.speaker as keyof typeof FACE_Y], "other", o.player);
   }
   if (o.speaker === "wern" && o.wern) {
     const yaw = yawAt(o.wern, o.player, o.wern.yaw);
-    const stand = standOff(lensGap(o.wern, yaw, o.player));
-    return faceShot(o.wern, yaw, FACE_Y.wern, "other", stand, lensBeside(stand));
+    return closeOn(o, o.wern, yaw, FACE_Y.wern, "other", o.player);
   }
   return null;
 }

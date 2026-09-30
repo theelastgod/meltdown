@@ -42,7 +42,7 @@ import { radarGates } from "./hud/radar";
 import { SIM_DT } from "@shared/sim/constants";
 import { eyeHeight } from "@shared/sim/player";
 import { thumbBeside } from "./hud/faceplate";
-import { dialogueShot, lineEye } from "./render/faceshot";
+import { dialogueShot, lineEye, solidAt } from "./render/faceshot";
 import { hostPush, terminalPush } from "./hud/terminal";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop" | "city";
@@ -425,6 +425,8 @@ export class Campaign {
   private armCutscene(speaker: string, youIsSelf = true): string | null {
     const p = this.game.player;
     const wern = this.game.renderer.wern;
+    const eye = p.pos.y + eyeHeight(p);
+    const boxes = this.game.world.level.boxes;
     const shot = dialogueShot({
       speaker,
       youIsSelf,
@@ -432,6 +434,7 @@ export class Campaign {
       visitor: this.game.renderer.hub?.visitorPose() ?? null,
       wern: wern ? { x: wern.position.x, z: wern.position.z, yaw: wern.rotation.y } : null,
       host: youIsSelf ? null : this.hostBody(),
+      solid: (x, z) => solidAt(x, eye, z, boxes),
     });
     this.game.renderer.setFace(shot);
     const plate = shot ? null : portraitFor(speaker);

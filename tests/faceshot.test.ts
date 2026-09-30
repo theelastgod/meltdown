@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { yawDir, yawRight, yawTo } from "../shared/math/vec3";
-import { bodyOnLine, dialogueShot, FACE_CUT_M, FACE_FOV, FACE_HOOD, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, lensBeside, lensGap, lineEye, ownStand, standOff } from "../client/render/faceshot";
+import { bodyOnLine, dialogueShot, FACE_CUT_M, FACE_FOV, FACE_HOOD, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, lensBeside, lensGap, lensSide, lineEye, ownStand, solidAt, standOff } from "../client/render/faceshot";
 import { attend, ATTEND, buildFixer, FIXER_SCALE, holdFace } from "../client/render/figures";
 
 describe("the close-up", () => {
@@ -66,6 +66,29 @@ describe("the close-up", () => {
     const along = shot.x * fwd.x + shot.z * fwd.z;
     expect(along).toBeLessThan(0.25);
     expect(Math.abs(shot.x * right.x + shot.z * right.z)).toBeGreaterThan(0.1);
+  });
+
+  it("steps left when the right side is a wall", () => {
+    const player = { x: 0, y: 0, z: -0.25, yaw: Math.PI, eye: 1.62 };
+    const visitor = { id: "deacon", x: 0, z: 0, yaw: 0 };
+    const right = yawRight(0);
+    const bodies = { speaker: "deacon", player, visitor, wern: null };
+    const open = dialogueShot(bodies)!;
+    expect(open.x * right.x + open.z * right.z).toBeGreaterThan(0.1);
+    const walled = dialogueShot({ ...bodies, solid: (x, z) => x * right.x + z * right.z > 0.05 })!;
+    expect(walled.x * right.x + walled.z * right.z).toBeLessThan(-0.1);
+    expect(Math.hypot(walled.x, walled.y - walled.lookY, walled.z)).toBeGreaterThanOrEqual(FACE_HOOD - 1e-6);
+    const both = dialogueShot({ ...bodies, solid: () => true })!;
+    expect(Math.abs(both.x * right.x + both.z * right.z)).toBeLessThan(0.02);
+    expect(lensSide(standOff(0.25), true, false)).toBeLessThan(0);
+    expect(lensSide(standOff(0.25), false, false)).toBeGreaterThan(0);
+    expect(lensSide(FACE_STAND, true)).toBe(0);
+    const wall = { min: { x: 0.05, y: 0, z: -1 }, max: { x: 1, y: 3, z: 1 } };
+    expect(solidAt(0.2, 1.6, 0, [wall])).toBe(true);
+    expect(solidAt(-0.2, 1.6, 0, [wall])).toBe(false);
+    expect(solidAt(0.2, 4, 0, [wall])).toBe(false);
+    const camp = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(camp).toMatch(/solid: \(x, z\) => solidAt\(x, eye, z, boxes\)/);
   });
 
   it("uses the hood's own height", () => {
