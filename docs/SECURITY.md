@@ -7,7 +7,8 @@ regression test in `tests/security.test.ts` that fails on the pre-fix code.
 **Status.** This is an internal review, not an audit. It is written to be the document an external
 auditor starts from: it says what was found, what was changed, what is deliberately trusted, and
 what is still open. Nothing here has touched a public chain — the contracts run on the in-process
-devnet (`server/chain/devnet.ts`) until Robinhood Chain's testnet parameters are published.
+devnet (`server/chain/devnet.ts`). Robinhood Chain's parameters are published (testnet 46630,
+mainnet 4663) and the live worker stays unconfigured until the contracts are deployed there.
 
 ---
 

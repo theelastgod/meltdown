@@ -1,6 +1,6 @@
 # MELTDOWN — $CAPITAL: the counter-ledger
 
-**Status:** design spec, adopted. Implemented in Stage 11b (see `docs/STAGES.md`): the contracts in `contracts/`, the wallet link, vouchers, market and names run against an in-process EVM devnet until Robinhood Chain's testnet parameters are published; the testnet is configuration (`wrangler.counter.toml`, `shared/economy/chain.ts`).
+**Status:** design spec, adopted. Implemented in Stage 11b (see `docs/STAGES.md`): the contracts in `contracts/`, the wallet link, vouchers, market and names run against an in-process EVM devnet. Robinhood Chain's parameters are published in `shared/economy/chain.ts` (testnet 46630, mainnet 4663). The live counter Worker stays on `CHAIN_ID` 0 until those contracts are deployed to the testnet.
 **Token:** $CAPITAL (ERC-20; the contract is named `$CAPITAL`, symbol CAPITAL). The play-to-earn extraction loop (THE RUN: PvP zones, safe zones, the markets) is Stage 14.
 **Chain:** Robinhood Chain (Arbitrum Orbit L2, EVM). **Wallets:** WalletConnect via Reown AppKit.
 **Enforced today:** `shared/economy/` — no item that carries a token price or an on-chain binding may carry a stat.
@@ -219,10 +219,9 @@ build if a rate ever escapes the schedule again.
 Robinhood Chain is Robinhood's Layer 2 built on the Arbitrum Orbit stack:
 EVM-compatible, Nitro execution, bridged from Ethereum. Every contract and
 client path in this spec is plain Orbit EVM, so nothing depends on a
-chain-specific feature. Chain ID, RPC, explorer, and bridge endpoints are
-configuration values (`shared/economy/chain.ts`, filled from Robinhood's
-developer documentation when mainnet parameters are final; the testnet
-values go in first).
+chain-specific feature. Chain ID, RPC and explorer are the published
+values in `shared/economy/chain.ts`: testnet 46630, mainnet 4663. Gas is
+ETH. The counter Worker does not use them until the contracts are deployed.
 
 Why this chain and not a generic L2:
 

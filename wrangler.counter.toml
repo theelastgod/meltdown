@@ -9,8 +9,10 @@ main = "server/counter-worker.ts"
 compatibility_date = "2025-06-01"
 
 [vars]
-# Robinhood Chain testnet parameters go here when published (shared/economy/chain.ts); the
-# addresses come from `npm run contracts:deploy -- <rpc> <relayer key>`.
+# Robinhood Chain testnet is published in shared/economy/chain.ts (chain 46630).
+# These stay empty until `npm run contracts:deploy` has printed CONTRACTS for that
+# testnet. Filling them here without those addresses would point a live worker at
+# a chain that has no Meltdown contracts.
 CHAIN_ID = "0"
 CHAIN_RPC = ""
 CONTRACTS = "{}"
