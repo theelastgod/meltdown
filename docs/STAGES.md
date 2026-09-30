@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 724 — The phone's portrait starts under the bar
+
+**The ask.** The letterbox is 11vh. On a phone the portrait started at 8vh and painted over the bar, because the plate sits above it. The desk already started at 12vh, under the bar.
+
+**The change.** The plate's top is at least a vh under the bar, on a phone and on a desk. The phone's own rule says 12vh as well, so a frame before the line is seated still clears the bar.
+
+**Verified.** `plateTop(true)` is 12. Returning the old 8 failed once (`expected 8 to be 12`).
+
+**Open.** The same face is also the thumbnail beside the words, so a plate line shows it twice.
+
 ## Stage 723 — Your own line stands you on your feet
 
 **The ask.** First person hides the body and never moves it. Your line closed the lens on your face and filmed the room, because the body was still wherever third person had left it, or at the origin.

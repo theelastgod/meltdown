@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 723 (your own line stands you on your feet). Stage 722 takes the gun off the lens for a line. Stage 721 eases the hood off you when the line ends. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **724** |
+| HEAD | Stage 724 (the phone's portrait starts under the bar). Stage 723 stands you on your feet for your own line. Stage 722 takes the gun off the lens. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **725** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. faceshot 10 at Stage 723. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |

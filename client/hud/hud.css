@@ -364,7 +364,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .faceplate img.in.top { z-index: 2; }
 @keyframes facezoom { from { transform: scale(1.05); } to { transform: scale(1.85); } }
 @keyframes facein { from { opacity: 0; } to { opacity: 1; } }
-#hud.touch .faceplate { top: 8vh; width: min(34vh, 70vw); }
+#hud.touch .faceplate { top: 12vh; width: min(34vh, 70vw); }
 #hud .terminal { left: 50%; bottom: 120px; transform: translateX(-50%); width: 640px; max-width: 92vw; padding: 10px 14px; pointer-events: auto; }
 #hud.cut.file:not(.touch) .terminal { bottom: 18vh; transform: translateX(-50%) scale(1.14); transition: transform 0.45s ease, bottom 0.45s ease; }
 #hud.touch.cut.file .terminal { transform: scale(1.06); }

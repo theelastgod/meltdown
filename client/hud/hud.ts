@@ -23,7 +23,7 @@ import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
 import { footTag, footTagText } from "./footline";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
-import { platePass } from "./faceplate";
+import { platePass, plateTop } from "./faceplate";
 import { terminalFooter, terminalSeat } from "./terminal";
 import { closeHint, openHint } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
@@ -531,6 +531,7 @@ export class Hud {
     this.root.classList.toggle("cut", on);
     this.root.classList.toggle("file", on && machine && !plate);
     const box = this.q(".faceplate");
+    box.style.top = `${plateTop(this.root.classList.contains("touch"))}vh`;
     const pass = platePass(on ? this.plateShown : null, on ? plate : null);
     if (pass === "off") {
       box.hidden = true;

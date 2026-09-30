@@ -6,7 +6,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { platePass } from "../client/hud/faceplate";
+import { LETTER_VH, platePass, plateTop } from "../client/hud/faceplate";
 
 const DEACON = "/portraits/deacon.jpg";
 const MARROW = "/portraits/marrow.jpg";
@@ -30,5 +30,15 @@ describe("the portrait plate", () => {
     expect(css).toMatch(/@keyframes facein/);
     expect(css).toMatch(/opacity: 0/);
     expect(css).toMatch(/to \{ opacity: 1; \}/);
+  });
+
+  it("starts the plate under the bar on a phone", () => {
+    expect(plateTop(false)).toBe(12);
+    expect(plateTop(true)).toBe(LETTER_VH + 1);
+    expect(plateTop(true)).toBeGreaterThan(LETTER_VH);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/plateTop\(this\.root\.classList\.contains\("touch"\)\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud\.touch \.faceplate \{ top: 12vh/);
   });
 });
