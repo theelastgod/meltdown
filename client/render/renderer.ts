@@ -964,10 +964,32 @@ export class Renderer {
       this.hub?.faceVisitor(s.yaw);
       this.hub?.holdVisitor(s.yaw);
     } else this.hub?.holdVisitor(null);
+    let onW = false;
     if (s && s.who === "other" && this.wern && (this.wern.position.x - s.lookX) * (this.wern.position.x - s.lookX) + (this.wern.position.z - s.lookZ) * (this.wern.position.z - s.lookZ) < 0.04) {
       this.wern.rotation.y = s.yaw;
       holdFace(this.wern, s.yaw);
+      onW = true;
     } else if (this.wern) holdFace(this.wern, null);
+    // A fixer owns this look. A crew body is the other case: the host, standing where the shot looks.
+    if (s && s.who === "other" && !onV && !onW) this.faceRemote(s.lookX, s.lookZ, s.yaw);
+  }
+
+  /** A crew body the shot is on, turned to the line. The wire yaw is where the gun points. */
+  faceRemote(lookX: number, lookZ: number, yaw: number): void {
+    for (const e of this.remoteMeshes.values()) {
+      const v = e.view;
+      if (!v) continue;
+      const dx = v.x - lookX;
+      const dz = v.z - lookZ;
+      if (dx * dx + dz * dz < 0.04) e.group.rotation.y = yaw;
+    }
+  }
+
+  /** Where a remote stands, for a line about that body. */
+  remotePose(id: number): { x: number; y: number; z: number; yaw: number; height: number } | null {
+    const v = this.remoteMeshes.get(id)?.view;
+    if (!v || !v.alive) return null;
+    return { x: v.x, y: v.y, z: v.z, yaw: v.yaw, height: v.height };
   }
 
   /**

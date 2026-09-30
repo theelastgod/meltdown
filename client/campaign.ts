@@ -42,7 +42,7 @@ import { radarGates } from "./hud/radar";
 import { SIM_DT } from "@shared/sim/constants";
 import { eyeHeight } from "@shared/sim/player";
 import { thumbBeside } from "./hud/faceplate";
-import { dialogueShot } from "./render/faceshot";
+import { dialogueShot, lineEye } from "./render/faceshot";
 import { terminalPush } from "./hud/terminal";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop" | "city";
@@ -431,11 +431,21 @@ export class Campaign {
       player: { x: p.pos.x, y: p.pos.y, z: p.pos.z, yaw: p.yaw, eye: eyeHeight(p) },
       visitor: this.game.renderer.hub?.visitorPose() ?? null,
       wern: wern ? { x: wern.position.x, z: wern.position.z, yaw: wern.rotation.y } : null,
+      host: youIsSelf ? null : this.hostBody(),
     });
     this.game.renderer.setFace(shot);
     const plate = shot ? null : portraitFor(speaker);
     this.game.hud.cutscene(true, plate, terminalPush(speaker, shot !== null));
     return plate;
+  }
+
+  /** The host as drawn on this guest, or null when that body is not in the room. */
+  private hostBody(): { x: number; y: number; z: number; yaw: number; eye: number } | null {
+    const id = this.remote?.hostId;
+    if (id === undefined || id < 0) return null;
+    const pose = this.game.renderer.remotePose(id);
+    if (!pose) return null;
+    return { x: pose.x, y: pose.y, z: pose.z, yaw: pose.yaw, eye: lineEye(pose.height) };
   }
 
   /** Enter / Space: continue a node without choices; 1–4: pick a choice. */

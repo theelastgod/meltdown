@@ -9,6 +9,7 @@
  * the eye the sim already fires from.
  */
 import { yawDir, yawTo } from "../../shared/math/vec3";
+import { MOVE } from "../../shared/sim/constants";
 
 export const FACE_STAND = 0.72;
 export const FACE_DIP = 0.08;
@@ -67,6 +68,8 @@ export interface DialogueBodies {
    * guest whose camera this is. Omitting it means the line is your own.
    */
   youIsSelf?: boolean;
+  /** The host's body, on a guest's mirror of the host's own line. Absent when they are not drawn. */
+  host?: { x: number; y: number; z: number; yaw: number; eye: number } | null;
 }
 
 /**
@@ -96,7 +99,13 @@ function partner(o: DialogueBodies): { x: number; z: number } | null {
  */
 export function dialogueShot(o: DialogueBodies): FaceShot | null {
   if (o.speaker === "you") {
-    if (o.youIsSelf === false) return null;
+    if (o.youIsSelf === false) {
+      // The host is in the room (Stage 729). Absent, the line stays the bars.
+      if (!o.host) return null;
+      const face = partner(o) ?? o.player;
+      const yaw = yawAt(o.host, face, o.host.yaw);
+      return faceShot({ x: o.host.x, z: o.host.z }, yaw, o.host.y + o.host.eye, "other");
+    }
     const other = partner(o);
     const yaw = other ? yawTo({ x: o.player.x, y: 0, z: o.player.z }, { x: other.x, y: 0, z: other.z }) : o.player.yaw;
     return faceShot({ x: o.player.x, z: o.player.z }, yaw, o.player.y + o.player.eye, "you");
@@ -132,6 +141,11 @@ export function bodyOnLine(blending: number, who: FaceWho): boolean {
 export function gunOnLine(blending: number, shot: boolean): boolean {
   if (!shot) return false;
   return blending >= 0;
+}
+
+/** Eye height for a body's line. A crouched file is not filmed a standing head above the coat. */
+export function lineEye(height: number): number {
+  return height < MOVE.standHeight - 0.01 ? MOVE.eyeLow : MOVE.eyeStand;
 }
 
 /** True when the line has moved to a different face. Opening and closing a line are blends. */

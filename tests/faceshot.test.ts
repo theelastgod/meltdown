@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { yawDir, yawTo } from "../shared/math/vec3";
-import { bodyOnLine, dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, ownStand } from "../client/render/faceshot";
+import { bodyOnLine, dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, lineEye, ownStand } from "../client/render/faceshot";
 import { attend, ATTEND, buildFixer, FIXER_SCALE, holdFace } from "../client/render/figures";
 
 describe("the close-up", () => {
@@ -184,6 +184,30 @@ describe("the close-up", () => {
     const camp = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
     expect(camp).toMatch(/this\.armCutscene\(n\.speaker, false\)/);
     expect(camp).toMatch(/youIsSelf,/);
+  });
+
+  it("a guest films the host, turned toward the guest, and not their own face", () => {
+    const player = { x: 2, y: 0, z: 1, yaw: 0.4, eye: 1.62 };
+    const host = { x: 5, y: 0, z: -2, yaw: 0.2, eye: lineEye(1.8) };
+    expect(dialogueShot({ speaker: "you", player, visitor: null, wern: null, youIsSelf: false })).toBeNull();
+    const shot = dialogueShot({ speaker: "you", player, visitor: null, wern: null, youIsSelf: false, host })!;
+    expect(shot.who).toBe("other");
+    expect(shot.lookX).toBeCloseTo(host.x);
+    expect(shot.lookZ).toBeCloseTo(host.z);
+    expect(shot.lookY).toBeCloseTo(host.y + host.eye);
+    const toward = yawTo({ x: host.x, y: 0, z: host.z }, { x: player.x, y: 0, z: player.z });
+    expect(shot.yaw).toBeCloseTo(toward);
+    expect(shot.yaw).not.toBeCloseTo(host.yaw);
+    const visitor = { id: "deacon", x: 1.6, z: -5, yaw: 1 };
+    const atDeacon = dialogueShot({ speaker: "you", player, visitor, wern: null, youIsSelf: false, host })!;
+    expect(atDeacon.yaw).toBeCloseTo(yawTo({ x: host.x, y: 0, z: host.z }, { x: visitor.x, y: 0, z: visitor.z }));
+    expect(atDeacon.lookX).toBeCloseTo(host.x);
+    expect(lineEye(1.1)).toBeLessThan(1);
+    expect(lineEye(1.8)).toBeGreaterThan(1.5);
+    const rend = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
+    expect(rend).toMatch(/faceRemote\(s\.lookX, s\.lookZ, s\.yaw\)/);
+    const camp = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(camp).toMatch(/host: youIsSelf \? null : this\.hostBody\(\)/);
   });
 
   it("the line arms it, and the end of the line lets the camera go", () => {

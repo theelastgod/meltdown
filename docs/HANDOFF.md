@@ -19,9 +19,9 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 728 (your own line stands you on the first frame). Stage 727 named Robinhood Chain and did not take this table. Stage 726 stops a crew mirror from filming the guest. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **729** |
-| Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. faceshot first-frame guard at Stage 728. |
+| HEAD | Stage 729 (a guest films the host). Stage 728 stands your body on the first frame of your own line. Stage 727 named Robinhood Chain and did not take this table. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **730** |
+| Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. faceshot host guard at Stage 729. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |
 | CI | Stage 699 green. 700–703 red on three causes all fixed in 704 (a vitest 5 s timeout, probe:mastery shooting the loading card mid-fade, probe:world racing the district). **704 and 705 were still running at handoff — check them first.** |

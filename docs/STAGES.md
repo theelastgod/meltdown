@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 729 — A guest films the host
+
+**The ask.** The host's own line read THE HOST and came down on black. That body was not this machine, and it was not a plate, so the guest got the bars and no face.
+
+**The change.** When the host is standing in the room, the guest closes on that body and turns it toward the person the line is for. A crouched host is filmed at a crouched eye. When that body is not drawn, the line stays the bars. Your own machine still films you.
+
+**Verified.** A host pose is a shot of them, `who` other, yaw toward the guest and not the gun. No pose is still null. Returning null whenever the speaker was not this machine failed once (the shot was null).
+
+**Open.** A host who is not in the room is still only the bars.
+
 ## Stage 728 — Your own line stands you on the first frame
 
 **The ask.** First person hides the body. Your line stood it back up only after the camera blend passed 0.2. The opening of the close-up was an empty hood, and the same pop happened on the way out.
