@@ -163,6 +163,18 @@ describe("the close-up", () => {
     expect(rend).toMatch(/this\.local\.group\.position\.set\(feet\.x, feet\.y, feet\.z\)/);
   });
 
+  it("a guest does not film their own face for the host's line", () => {
+    const player = { x: 2, y: 0, z: 1, yaw: 0.4, eye: 1.62 };
+    expect(dialogueShot({ speaker: "you", player, visitor: null, wern: null, youIsSelf: false })).toBeNull();
+    expect(dialogueShot({ speaker: "you", player, visitor: null, wern: null })!.who).toBe("you");
+    const deacon = dialogueShot({ speaker: "deacon", player, visitor: { id: "deacon", x: 1.6, z: -5, yaw: 1 }, wern: null, youIsSelf: false });
+    expect(deacon).not.toBeNull();
+    expect(deacon!.who).toBe("other");
+    const camp = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(camp).toMatch(/this\.armCutscene\(n\.speaker, false\)/);
+    expect(camp).toMatch(/youIsSelf,/);
+  });
+
   it("the line arms it, and the end of the line lets the camera go", () => {
     const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
     expect(src).toMatch(/this\.armCutscene\(n\.speaker\)/);

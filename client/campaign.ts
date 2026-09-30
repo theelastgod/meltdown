@@ -412,7 +412,7 @@ export class Campaign {
     const speaker = n.speaker === "you" ? { name: "THE HOST", sigil: "▸", color: "gr" } : n.speaker === "terminal" ? { name: "TERMINAL", sigil: "▮", color: "cy" } : { name: HANDLERS[n.speaker as HandlerId].name, sigil: HANDLERS[n.speaker as HandlerId].sigil, color: HANDLERS[n.speaker as HandlerId].color };
     this.mirror = { script: ev.script, node: ev.node, choices: ev.choices.slice(), picked: ev.picked };
     // the host's recall, not the guest's own testimony: the crew reads one screen (Stage 52 / 661)
-    const plate = this.armCutscene(n.speaker);
+    const plate = this.armCutscene(n.speaker, false);
     this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, ev.recall), ev.choices.length ? ev.choices : null, thumbBeside(plate, portraitFor(n.speaker)));
     this.game.hud.terminalFooter(ev.choices.length ? "THE HOST IS CHOOSING" : "THE HOST READS ON");
     if (ev.picked) this.game.hud.alert(`◆ THE HOST CHOSE · ${ev.picked}`, false, 2.5);
@@ -422,11 +422,12 @@ export class Campaign {
    * The line is a cutscene. A body in the room gets the camera. Anyone else with a portrait gets
    * the plate pushed in. The bars come down either way.
    */
-  private armCutscene(speaker: string): string | null {
+  private armCutscene(speaker: string, youIsSelf = true): string | null {
     const p = this.game.player;
     const wern = this.game.renderer.wern;
     const shot = dialogueShot({
       speaker,
+      youIsSelf,
       player: { x: p.pos.x, y: p.pos.y, z: p.pos.z, yaw: p.yaw, eye: eyeHeight(p) },
       visitor: this.game.renderer.hub?.visitorPose() ?? null,
       wern: wern ? { x: wern.position.x, z: wern.position.z, yaw: wern.rotation.y } : null,

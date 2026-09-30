@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 726 — The host's line does not film the guest
+
+**The ask.** In a crew, the host's own line reads THE HOST on everyone else's terminal. The camera still closed on the guest, because "you" meant whoever was holding the machine. You watched your own face under someone else's name.
+
+**The change.** A mirrored line is not this body. "you" on a guest returns no close-up, so the bars come down and the terminal keeps the words. A fixer who is actually in the room is still filmed. Your own machine, when you are the one speaking, is unchanged.
+
+**Verified.** With `youIsSelf` false, the player's line is null. Without the flag it is still a shot of you, and the Deacon in the room is still filmed. Dropping the check failed once (`expected { who: 'you', … } to be null`).
+
+**Open.** That guest now has the bars and no face, because the host is not a plate and not this body.
+
 ## Stage 725 — A plate line does not show the face twice
 
 **The ask.** A line with no body in the room pushes the portrait up to fill the bars, and the same picture stayed in the terminal beside the words. Two Deacons, one sentence.

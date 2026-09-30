@@ -62,6 +62,11 @@ export interface DialogueBodies {
   visitor: { id: string; x: number; z: number; yaw: number } | null;
   /** August Wern, if this is his office */
   wern: { x: number; z: number; yaw: number } | null;
+  /**
+   * False when this machine is mirroring the host's line (Stage 726). "you" is the host, not the
+   * guest whose camera this is. Omitting it means the line is your own.
+   */
+  youIsSelf?: boolean;
 }
 
 /**
@@ -91,6 +96,7 @@ function partner(o: DialogueBodies): { x: number; z: number } | null {
  */
 export function dialogueShot(o: DialogueBodies): FaceShot | null {
   if (o.speaker === "you") {
+    if (o.youIsSelf === false) return null;
     const other = partner(o);
     const yaw = other ? yawTo({ x: o.player.x, y: 0, z: o.player.z }, { x: other.x, y: 0, z: other.z }) : o.player.yaw;
     return faceShot({ x: o.player.x, z: o.player.z }, yaw, o.player.y + o.player.eye, "you");
