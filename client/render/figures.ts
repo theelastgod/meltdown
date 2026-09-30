@@ -340,12 +340,19 @@ export function attendTarget(at: { x: number; z: number }, baseYaw: number, px: 
 /**
  * A dialogue line holds the facing (Stage 720). The waiting turn is capped, and it runs after the
  * close-up has aimed the figure, so without this the frame draws the cap and the lens films the hood.
- * Releasing the hold does not move the wait-turn: that ease is the next frame's.
+ * Letting go starts the ease from the line (Stage 721). Leaving the old offset snaps the hood off
+ * you while the camera is still on the face.
  */
 export function holdFace(f: THREE.Group, yaw: number | null): void {
-  const u = f.userData as { faceHold?: number };
-  if (yaw === null) delete u.faceHold;
-  else u.faceHold = yaw;
+  const u = f.userData as { faceHold?: number; baseYaw?: number; turned?: number };
+  if (yaw === null) {
+    if (typeof u.faceHold === "number" && typeof u.baseYaw === "number") {
+      u.turned = Math.atan2(Math.sin(u.faceHold - u.baseYaw), Math.cos(u.faceHold - u.baseYaw));
+    }
+    delete u.faceHold;
+    return;
+  }
+  u.faceHold = yaw;
 }
 
 /** step a fixer standing in the scene: turn toward (or back from) the player, and breathe */

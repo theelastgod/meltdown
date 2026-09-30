@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { yawDir, yawTo } from "../shared/math/vec3";
 import { dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot } from "../client/render/faceshot";
-import { attend, buildFixer, FIXER_SCALE, holdFace } from "../client/render/figures";
+import { attend, ATTEND, buildFixer, FIXER_SCALE, holdFace } from "../client/render/figures";
 
 describe("the close-up", () => {
   it("stands in front of the face, along the same forward the body uses, and looks at it", () => {
@@ -122,6 +122,24 @@ describe("the close-up", () => {
     expect(rend).toMatch(/holdVisitor\(s\.yaw\)/);
     expect(rend).toMatch(/holdFace\(this\.wern, s\.yaw\)/);
     expect(rend).toMatch(/this\.pinSpeaker\(this\.faceShot\)/);
+  });
+
+  it("ending the line eases the hood off you instead of snapping it to the door", () => {
+    const f = buildFixer("deacon");
+    f.position.set(1.6, 0, -5);
+    f.rotation.y = 0.4;
+    const player = { x: 4, z: 1 };
+    for (let k = 0; k < 180; k++) attend(f, 1 / 60, player.x, player.z, k / 60);
+    const capped = f.rotation.y;
+    const yaw = yawTo({ x: 1.6, y: 0, z: -5 }, { x: player.x, y: 0, z: player.z });
+    holdFace(f, yaw);
+    attend(f, 1 / 60, player.x, player.z, 4);
+    expect(f.rotation.y).toBeCloseTo(yaw);
+    holdFace(f, null);
+    attend(f, 1 / 60, player.x, player.z, 4);
+    const slipped = Math.atan2(Math.sin(f.rotation.y - yaw), Math.cos(f.rotation.y - yaw));
+    expect(Math.abs(slipped)).toBeLessThanOrEqual(ATTEND.rate / 60 + 1e-6);
+    expect(Math.abs(f.rotation.y - capped)).toBeGreaterThan(0.5);
   });
 
   it("the line arms it, and the end of the line lets the camera go", () => {
