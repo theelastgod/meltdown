@@ -29,7 +29,7 @@ import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
 import { spawnCurve, spawnEdge, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
-import { faceCuts, gunOnLine, type FaceShot } from "./faceshot";
+import { faceCuts, gunOnLine, ownStand, type FaceShot } from "./faceshot";
 import { arcPoint, type ArcSpec } from "./ballistic";
 import { DEATH_TURN, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
@@ -920,7 +920,7 @@ export class Renderer {
    * this only pulls off it, and lets go when the line ends. The camera's own lookAt points its
    * −z at the face.
    */
-  private placeFace(dt: number): void {
+  private placeFace(dt: number, v: ViewState): void {
     const want = this.faceShot ? 1 : 0;
     this.faceT += (want - this.faceT) * Math.min(1, dt * 3.2);
     const s = this.faceShot ?? this.faceHold;
@@ -941,9 +941,14 @@ export class Renderer {
       this.camera.updateProjectionMatrix();
     }
     if (s.who === "you" && k > 0.2 && !this.bodyHidden) {
-      this.local.group.visible = true;
-      // The face holds the shot's yaw, which is the line to the other person when one is in the room.
-      this.local.group.rotation.y = s.yaw;
+      const feet = ownStand(s.who, this.thirdPerson, { x: v.x, y: v.y, z: v.z });
+      if (feet) {
+        this.local.group.visible = true;
+        // First person never stood the body this frame. The line is about these feet.
+        this.local.group.position.set(feet.x, feet.y, feet.z);
+        // The face holds the shot's yaw, which is the line to the other person when one is in the room.
+        this.local.group.rotation.y = s.yaw;
+      }
     }
     // The waiting turn runs later in this frame and caps at a short look. Pin the line for the whole
     // shot, or the hood is back on the door by the time the picture is drawn.
@@ -1116,7 +1121,7 @@ export class Renderer {
     }
     // the viewmodel is the first-person weapon; behind the body the hand holds it instead
     this.viewmodel.visible = !this.thirdPerson;
-    this.placeFace(dt);
+    this.placeFace(dt, v);
 
     const reloadDip = v.reloading > 0 ? Math.sin(v.reloading * Math.PI) * 0.18 : 0;
     this.viewmodel.position.set(0.28 + bobX * 0.5, -0.26 - reloadDip + bobY * 0.5, -0.55 + this.vmKick * 0.06);

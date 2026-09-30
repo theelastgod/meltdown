@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { yawDir, yawTo } from "../shared/math/vec3";
-import { dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine } from "../client/render/faceshot";
+import { dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, ownStand } from "../client/render/faceshot";
 import { attend, ATTEND, buildFixer, FIXER_SCALE, holdFace } from "../client/render/figures";
 
 describe("the close-up", () => {
@@ -151,6 +151,16 @@ describe("the close-up", () => {
     const rend = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
     expect(rend).toMatch(/gunOnLine\(k, this\.faceShot !== null\)/);
     expect(rend).not.toMatch(/if \(k > 0\.35\) this\.viewmodel\.visible = false/);
+  });
+
+  it("your own line stands your body on your feet in first person", () => {
+    const feet = { x: 3, y: 1, z: -2 };
+    expect(ownStand("you", false, feet)).toEqual(feet);
+    expect(ownStand("you", true, feet)).toEqual(feet);
+    expect(ownStand("other", false, feet)).toBeNull();
+    const rend = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
+    expect(rend).toMatch(/ownStand\(s\.who, this\.thirdPerson/);
+    expect(rend).toMatch(/this\.local\.group\.position\.set\(feet\.x, feet\.y, feet\.z\)/);
   });
 
   it("the line arms it, and the end of the line lets the camera go", () => {

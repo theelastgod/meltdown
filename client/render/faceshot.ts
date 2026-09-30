@@ -101,6 +101,16 @@ export function dialogueShot(o: DialogueBodies): FaceShot | null {
 }
 
 /**
+ * Where your body stands for your own line (Stage 723). Third person had already put it on these
+ * feet. First person hid it and left it wherever it last was, so the close-up was the room.
+ */
+export function ownStand(who: FaceWho, third: boolean, feet: { x: number; y: number; z: number }): { x: number; y: number; z: number } | null {
+  if (who !== "you") return null;
+  if (!third) return { x: feet.x, y: feet.y, z: feet.z };
+  return { x: feet.x, y: feet.y, z: feet.z };
+}
+
+/**
  * The play gun leaves the lens for the whole line (Stage 722). Gating it on the blend left the
  * weapon in the face until the camera had mostly arrived. First person parents that gun to the lens.
  */

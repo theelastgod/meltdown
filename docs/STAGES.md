@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 723 — Your own line stands you on your feet
+
+**The ask.** First person hides the body and never moves it. Your line closed the lens on your face and filmed the room, because the body was still wherever third person had left it, or at the origin.
+
+**The change.** Your line stands the body on the feet the shot is about, in either view, and turns it to the line. The gun stays off the lens. Another speaker does not move you.
+
+**Verified.** `ownStand("you", false, { x: 3, y: 1, z: -2 })` is those feet. Skipping first person failed once (`expected null to deeply equal { x: 3, y: 1, z: -2 }`).
+
+**Open.** A speaker the script names who is neither a body in the room nor a plate still has bars only. The terminal and your own line are no longer that case.
+
 ## Stage 722 — A line takes the gun off the lens
 
 **The ask.** First person parents the weapon to the camera. A line eased the camera onto the face and left the gun in the shot until the blend passed 0.35. The opening of the line was the barrel.

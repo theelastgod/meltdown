@@ -19,9 +19,9 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 722 (a line takes the gun off the lens). Stage 721 eases the hood off you when the line ends. Stage 720 keeps the close-up facing through the waiting turn. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **723** |
-| Unit tests | 1790 at Stage 714, plus the face, plate, and terminal files green at Stage 719 |
+| HEAD | Stage 723 (your own line stands you on your feet). Stage 722 takes the gun off the lens for a line. Stage 721 eases the hood off you when the line ends. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **724** |
+| Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. faceshot 10 at Stage 723. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |
 | CI | Stage 699 green. 700–703 red on three causes all fixed in 704 (a vitest 5 s timeout, probe:mastery shooting the loading card mid-fade, probe:world racing the district). **704 and 705 were still running at handoff — check them first.** |
