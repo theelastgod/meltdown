@@ -79,6 +79,18 @@ export function lensSide(stand: number, rightBlocked: boolean, leftBlocked = fal
   return -mag;
 }
 
+/**
+ * How far above the dip the lens rises when the flat shot is still inside the hood (Stage 735).
+ * Both walls leave no side to step to. The camera comes up instead of sitting in the cloth.
+ */
+export function lensLift(stand: number, side: number): number {
+  const flat = Math.hypot(stand, side);
+  if (flat >= FACE_HOOD - 1e-6) return 0;
+  // The ordinary shot sits FACE_DIP under the face. Add that back, then the clearance, so the
+  // lens is above the cloth rather than FACE_DIP short of it.
+  return Math.sqrt(FACE_HOOD * FACE_HOOD - flat * flat) + FACE_DIP;
+}
+
 /** True when a point sits in a solid box. Floors and ceilings that miss this height do not count. */
 export function solidAt(x: number, y: number, z: number, boxes: readonly { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } }[]): boolean {
   for (const b of boxes) {
@@ -101,7 +113,7 @@ export function lensGap(from: { x: number; z: number }, yaw: number, other: { x:
 }
 
 /** The lens in front of a face that stands at `at` and looks along `yaw`. */
-export function faceShot(at: { x: number; z: number }, yaw: number, faceY: number, who: FaceWho = "other", stand = FACE_STAND, side = 0): FaceShot {
+export function faceShot(at: { x: number; z: number }, yaw: number, faceY: number, who: FaceWho = "other", stand = FACE_STAND, side = 0, lift = 0): FaceShot {
   const fwd = yawDir(yaw);
   const right = yawRight(yaw);
   return {
@@ -111,7 +123,7 @@ export function faceShot(at: { x: number; z: number }, yaw: number, faceY: numbe
     lookZ: at.z,
     yaw,
     x: at.x + fwd.x * stand + right.x * side,
-    y: faceY - FACE_DIP,
+    y: faceY - FACE_DIP + lift,
     z: at.z + fwd.z * stand + right.z * side,
     fov: FACE_FOV,
   };
@@ -172,7 +184,8 @@ function closeOn(o: DialogueBodies, at: { x: number; z: number }, yaw: number, f
     rightBlocked = o.solid(right.x, right.z);
     leftBlocked = o.solid(left.x, left.z);
   }
-  return faceShot(at, yaw, faceY, who, stand, lensSide(stand, rightBlocked, leftBlocked));
+  const side = lensSide(stand, rightBlocked, leftBlocked);
+  return faceShot(at, yaw, faceY, who, stand, side, lensLift(stand, side));
 }
 
 export function dialogueShot(o: DialogueBodies): FaceShot | null {

@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { yawDir, yawRight, yawTo } from "../shared/math/vec3";
-import { bodyOnLine, dialogueShot, FACE_CUT_M, FACE_FOV, FACE_HOOD, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, lensBeside, lensGap, lensSide, lineEye, ownStand, solidAt, standOff } from "../client/render/faceshot";
+import { bodyOnLine, dialogueShot, FACE_CUT_M, FACE_DIP, FACE_FOV, FACE_HOOD, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, lensBeside, lensGap, lensLift, lensSide, lineEye, ownStand, solidAt, standOff } from "../client/render/faceshot";
 import { attend, ATTEND, buildFixer, FIXER_SCALE, holdFace } from "../client/render/figures";
 
 describe("the close-up", () => {
@@ -89,6 +89,19 @@ describe("the close-up", () => {
     expect(solidAt(0.2, 4, 0, [wall])).toBe(false);
     const camp = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
     expect(camp).toMatch(/solid: \(x, z\) => solidAt\(x, eye, z, boxes\)/);
+  });
+
+  it("rises over the hood when both sides are a wall", () => {
+    const player = { x: 0, y: 0, z: -0.25, yaw: Math.PI, eye: 1.62 };
+    const visitor = { id: "deacon", x: 0, z: 0, yaw: 0 };
+    const both = dialogueShot({ speaker: "deacon", player, visitor, wern: null, solid: () => true })!;
+    const dist = Math.hypot(both.x - visitor.x, both.y - both.lookY, both.z - visitor.z);
+    expect(dist).toBeGreaterThanOrEqual(FACE_HOOD - 1e-6);
+    expect(both.y).toBeGreaterThan(both.lookY - FACE_DIP);
+    expect(lensLift(FACE_STAND, 0)).toBe(0);
+    expect(lensLift(standOff(0.25), 0)).toBeGreaterThan(0.1);
+    const open = dialogueShot({ speaker: "deacon", player, visitor, wern: null })!;
+    expect(open.y).toBeCloseTo(open.lookY - FACE_DIP);
   });
 
   it("uses the hood's own height", () => {

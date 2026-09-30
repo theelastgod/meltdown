@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 735 — Both walls lift the lens over the hood
+
+**The ask.** A wall on both sides of a tight gap left the lens on the line, 0.14 m from the face. The hood is 0.22 m deep, so the camera was inside the cloth.
+
+**The change.** When the flat shot is still inside the hood, the lens rises by the rest of that circle, plus the little dip it usually sits under. It looks down on the face from outside the cloth. A side-step that already clears the hood does not rise. A full stand does not rise.
+
+**Verified.** `tests/faceshot.test.ts` blocks both sides at 0.25 m and requires the lens at least 0.22 m from the face, above the ordinary dip. Returning no lift failed once (`expected 0.16 to be greater than or equal to 0.22`).
+
+**Open.** The wet floor's reflector still has no albedo. What reads as stone is the mirrored scene and fog.
+
 ## Stage 734 — A wall on the right sends the lens left
 
 **The ask.** A gap tighter than the hood steps the lens to the right. Against a wall that step put the camera in the masonry.
