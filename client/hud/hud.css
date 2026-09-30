@@ -359,8 +359,11 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.cut .letter { height: 11vh; }
 #hud .faceplate { position: absolute; z-index: 5; left: 50%; top: 12vh; width: min(46vh, 78vw); aspect-ratio: 1; transform: translateX(-50%); overflow: hidden; border: 1px solid rgba(53,242,255,0.45); background: #000; pointer-events: none; }
 #hud .faceplate[hidden] { display: none; }
-#hud .faceplate img { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; transform-origin: center 30%; animation: facezoom 1.15s ease forwards; }
+#hud .faceplate img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; transform-origin: center 30%; opacity: 0; }
+#hud .faceplate img.in { animation: facezoom 1.15s ease forwards, facein 0.4s ease forwards; z-index: 1; }
+#hud .faceplate img.in.top { z-index: 2; }
 @keyframes facezoom { from { transform: scale(1.05); } to { transform: scale(1.85); } }
+@keyframes facein { from { opacity: 0; } to { opacity: 1; } }
 #hud.touch .faceplate { top: 8vh; width: min(34vh, 70vw); }
 #hud .terminal { left: 50%; bottom: 120px; transform: translateX(-50%); width: 640px; max-width: 92vw; padding: 10px 14px; pointer-events: auto; }
 #hud .terminal .th { font-size: 12px; letter-spacing: 0.14em; border-bottom: 1px solid rgba(53,242,255,0.35); padding-bottom: 4px; margin-bottom: 6px; }

@@ -23,6 +23,7 @@ import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
 import { footTag, footTagText } from "./footline";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
+import { platePass } from "./faceplate";
 import { terminalFooter, terminalSeat } from "./terminal";
 import { closeHint, openHint } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
@@ -155,7 +156,7 @@ export class Hud {
       <div class="dossier" hidden><div class="dt">▲ DOSSIER · BOTH CELLS · FILES AS THE CITY SEES THEM</div><div class="cells"></div></div>
       <div class="p am receipt" hidden><div class="rh">▲ LEDGER ENTRY · VANTAGE CLEARING HOUSE</div><div class="rl"></div><div class="rs">◆ <span class="rst">PRINTING…</span></div><div class="rf">[ENTER] SIGN</div></div>
       <div class="rite" hidden><div class="rn"></div><div class="rt"></div><div class="rlines"></div></div>
-      <div class="letter top"></div><div class="letter bot"></div><div class="faceplate" hidden><img alt=""></div>
+      <div class="letter top"></div><div class="letter bot"></div><div class="faceplate" hidden><img class="a" alt=""><img class="b" alt=""></div>
       <div class="p cy terminal" hidden><div class="th"><span class="sg"></span> <span class="sp"></span></div><div class="tb"><img class="pt" alt="" hidden><div class="tx"><div class="tl"></div><div class="tc"></div></div></div><div class="tf">[ENTER] CONTINUE · [1–4] CHOOSE</div></div>
       <div class="contracts" hidden></div>
       <div class="card" hidden><img class="cart" alt="" hidden><div class="ct"></div><div class="cl"></div></div>
@@ -453,6 +454,9 @@ export class Hud {
 
   /** the CRT terminal: typed lines then choices */
   private term = { lines: [] as string[], shown: 0, chars: 0, ready: false, choices: null as string[] | null };
+  /** the portrait the plate is already showing, and which of the two layers is in front */
+  private plateShown: string | null = null;
+  private plateFront: "a" | "b" = "a";
   get terminalReady(): boolean {
     return this.term.ready;
   }
@@ -521,18 +525,32 @@ export class Hud {
   /**
    * The cutscene frame (Stage 715): bars over and under the picture. `plate` is a face to push
    * into when that person is not standing in the room. Null keeps the bars and leaves the zoom
-   * to the camera.
+   * to the camera. A second face fades over the first (Stage 717). The same face holds.
    */
   cutscene(on: boolean, plate: string | null): void {
     this.root.classList.toggle("cut", on);
     const box = this.q(".faceplate");
-    const img = box.querySelector("img") as HTMLImageElement;
-    box.hidden = !on || !plate;
-    if (!on || !plate) return;
-    if (img.getAttribute("src") !== plate) img.src = plate;
-    img.style.animation = "none";
+    const pass = platePass(on ? this.plateShown : null, on ? plate : null);
+    if (pass === "off") {
+      box.hidden = true;
+      this.plateShown = null;
+      for (const img of box.querySelectorAll("img")) img.classList.remove("in", "top");
+      return;
+    }
+    box.hidden = false;
+    if (pass === "hold") return;
+    const incoming = this.plateFront === "a" ? "b" : "a";
+    const img = box.querySelector(`img.${incoming}`) as HTMLImageElement;
+    const other = box.querySelector(`img.${this.plateFront}`) as HTMLImageElement;
+    if (img.getAttribute("src") !== plate) img.src = plate!;
+    img.classList.remove("in", "top");
     void img.offsetWidth;
-    img.style.animation = "";
+    img.classList.add("in", "top");
+    other.classList.remove("top");
+    if (pass === "cross") other.classList.add("in");
+    if (pass === "zoom") other.classList.remove("in");
+    this.plateFront = incoming;
+    this.plateShown = plate;
   }
 
   private tickTerminal(dt: number): void {

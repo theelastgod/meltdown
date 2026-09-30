@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 717 — A second face fades over the first
+
+**The ask.** Two people speaking from portraits popped. The plate swapped and the zoom started over, so a conversation read as two separate stills.
+
+**The change.** The same face holds the zoom it already reached. A different portrait fades in over the one underneath, zooming as it arrives. Opening on a plate still zooms from wide. Closing the line clears both.
+
+**Verified.** `tests/faceplate.test.ts` requires Deacon then Marrow to be a cross, and the same plate twice to hold. Returning a fresh zoom for that change failed once (`expected 'zoom' to be 'cross'`).
+
+**Open.** The bare terminal still has bars and no face. A speaker who is not drawn and has no portrait is that case.
+
 ## Stage 716 — A reply looks at the other face, and the next line cuts
 
 **The ask.** Your own line closed on wherever the gun was pointed. If the Deacon was standing in the office and you were looking at the door, the lens filmed the side of the conversation, and the line back to him slid off the shoulder camera instead of cutting.
