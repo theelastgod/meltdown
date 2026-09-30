@@ -123,10 +123,16 @@ export function citizenHoodGeometry(): THREE.BufferGeometry {
     p.setXYZ(i, p.getX(i), y * 1.15 + 1.53, p.getZ(i) * 1.1 - 0.07 * Math.max(0, y / 0.15) - 0.01);
   }
   shell.computeVertexNormals();
-  // faces are never lit: a plate at the back of the opening, in the hood's own near-black
-  const face = new THREE.CircleGeometry(0.1, 8).applyMatrix4(T(0, 1.5, 0.02));
-  const out = mergeGeometries([shell.toNonIndexed(), face.toNonIndexed()], false);
+  // The face plate shares the hood mesh, so it cannot have its own material without another draw.
+  // Vertex colour 0 blacks it after the cloak map; the shell stays 1 and looks as it did (Stage 737).
+  const shellN = shell.toNonIndexed();
+  shellN.setAttribute("color", new THREE.BufferAttribute(new Float32Array(shellN.getAttribute("position").count * 3).fill(1), 3));
+  const faceSrc = new THREE.CircleGeometry(0.1, 8).applyMatrix4(T(0, 1.5, 0.02));
+  const face = faceSrc.toNonIndexed();
+  face.setAttribute("color", new THREE.BufferAttribute(new Float32Array(face.getAttribute("position").count * 3), 3));
+  const out = mergeGeometries([shellN, face], false);
   shell.dispose();
+  faceSrc.dispose();
   face.dispose();
   return out!;
 }
@@ -153,7 +159,7 @@ export class Crowd {
   constructor(loops: readonly WalkLoop[], count: number, seed = 11) {
     const rnd = lcg(seed);
     const dark = new THREE.MeshStandardMaterial({ color: 0x0b0d13, roughness: 0.9, metalness: 0.05 });
-    const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1 });
+    const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1, vertexColors: true });
     const lampMat = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
     const brollyMat = new THREE.MeshStandardMaterial({ color: 0x0e1218, roughness: 0.8, side: THREE.DoubleSide });
     bindPlate(dark, "tex_crowd_coat");

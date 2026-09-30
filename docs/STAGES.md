@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 737 — A citizen's face stays black under the cloak
+
+**The ask.** The face plate was merged into the hood so the crowd would not spend another draw. The cloak plate then lit that plate, so a leased citizen had a face.
+
+**The change.** The shell's vertices are colour 1 and the plate's are colour 0. The hood material reads vertex colour, so the map multiplies the plate to black and leaves the cloth. The wake cell uses the same material. Still one mesh.
+
+**Verified.** `tests/character.test.ts` counts black vertices on the plate and cloth vertices on the shell. Dropping `vertexColors` from the crowd hood failed once (the source no longer matched).
+
+**Open.** A mastery gate in the file still reads as a sentence.
+
 ## Stage 736 — The wet street is stone, not a flat tone
 
 **The ask.** The reflector that fills a street camera sampled only the mirror. What read as paving was that mirror and the fog. The mobile fallback already wore a plate. The desktop pass did not, and binding one would not have reached it.

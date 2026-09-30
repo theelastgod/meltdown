@@ -100,7 +100,7 @@ export class EscortFigures {
     // ---- the cell ----
     const n = CELL.length;
     const dark = new THREE.MeshStandardMaterial({ color: 0x0b0d13, roughness: 0.9, metalness: 0.05 });
-    const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1 });
+    const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1, vertexColors: true });
     const markMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan });
     bindPlate(dark, "tex_crowd_coat");
     bindPlate(hoodMat, "tex_cloak");

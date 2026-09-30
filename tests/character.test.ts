@@ -6,6 +6,7 @@
  * the hood has an opening with nothing lit inside it, its real peak sits under the point the crouch
  * check measures, no strip-light sits inside the cloth, and the crowd is people, not pills.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { BONE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, REST_BONES, rigReport, trimGeometry } from "../client/render/rig";
@@ -99,6 +100,27 @@ describe("a leased citizen", () => {
       front = Math.max(front, pos.getZ(i));
     }
     expect(-back).toBeGreaterThan(front);
+    // the plate is black; the shell is not. One mesh, so this is a vertex colour, not a draw.
+    const color = g.getAttribute("color");
+    expect(color, "the face has no colour of its own").toBeTruthy();
+    let black = 0;
+    let cloth = 0;
+    for (let i = 0; i < color.count; i++) {
+      const c = color.getX(i);
+      if (c === 0) {
+        black++;
+        expect(pos.getY(i)).toBeGreaterThan(1.35);
+      } else cloth++;
+    }
+    expect(black).toBeGreaterThan(8);
+    expect(cloth).toBeGreaterThan(black);
+  });
+
+  it("the crowd and the wake cell actually use that black, or the cloak lights the face", () => {
+    const life = readFileSync(new URL("../client/render/life.ts", import.meta.url), "utf8");
+    const escort = readFileSync(new URL("../client/render/escort.ts", import.meta.url), "utf8");
+    expect(life).toMatch(/hoodMat = new THREE\.MeshStandardMaterial\(\{ color: 0x090a0f, roughness: 1, vertexColors: true \}\)/);
+    expect(escort).toMatch(/hoodMat = new THREE\.MeshStandardMaterial\(\{ color: 0x090a0f, roughness: 1, vertexColors: true \}\)/);
   });
 
   it("costs what a crowd can afford: under 360 triangles a citizen with its lamp and umbrella", () => {
