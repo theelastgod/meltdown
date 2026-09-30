@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 743 — The hair stays on the coat
+
+**The ask.** Stage 741 blacked the whole head so the street would miss the face. The hair is the sphere above that, and it went black with it. Ida and Wern read as a hole where the hair should be.
+
+**The change.** The face sphere stays colour 0. The hair sphere is colour 1, the same as the coat. No new mesh. The walk uses the same body.
+
+**Verified.** `tests/fixers.test.ts` counts cloth vertices above 1.78 m on Ida, on Wern, and on the walker. Painting the hair black failed once (`expected 0 to be greater than 8`).
+
+**Open.** The Blank's boots wear the cloak at full brightness.
+
 ## Stage 742 — The office ghost's hood is empty
 
 **The ask.** The player's cloak blacks the inside of the hood in the sway shader. The range ghost in the Deadletter Office is the same cloak on a plain material, so the opening showed the cloak plate.

@@ -110,6 +110,16 @@ describe("the fixers, in the flesh", () => {
     blackOn("vessel", fixerGeometry("vessel").body);
     blackOn("wern", fixerGeometry("wern").body);
     blackOn("vessel", vesselWalkerGeometry().body);
+    const crown = (id: string, g: THREE.BufferGeometry) => {
+      const color = g.getAttribute("color");
+      const pos = g.getAttribute("position");
+      let cloth = 0;
+      for (let i = 0; i < color.count; i++) if (color.getX(i) === 1 && pos.getY(i) > 1.78) cloth++;
+      expect(cloth, `${id} hair is painted with the face`).toBeGreaterThan(8);
+    };
+    crown("vessel", fixerGeometry("vessel").body);
+    crown("wern", fixerGeometry("wern").body);
+    crown("vessel-walk", vesselWalkerGeometry().body);
     const deacon = fixerGeometry("deacon").body.getAttribute("color");
     expect(deacon).toBeTruthy();
     for (let i = 0; i < deacon.count; i++) expect(deacon.getX(i)).toBe(1);
