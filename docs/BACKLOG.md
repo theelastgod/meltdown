@@ -7,17 +7,11 @@ and are listed at the foot of this file with the commit that closed them.
 
 ## The floor is a shader, not a material (2026-09-25)
 
-Answered by Stage 634, and it closes Stage 632's open question. The surface filling most of a street
-camera is `makeWetFloor` in `client/render/wetfloor.ts`: a `Reflector` whose custom fragment shader
-samples only `tDiffuse`, the reflection render target. **It has no albedo texture.** What reads as
-pale flat tiling is the mirrored scene plus fog; the seams are geometry, not a plate. No amount of
-plate binding changes it — the mobile fallback `makeFlatWetFloor` does bind `tex_wet_cobble`, which
-is why the two paths look different.
-
-To give it a surface: add an albedo sampler multiplied under the puddle mask, so the wet sheen reads
-over stone rather than over nothing. Stage 22 measured this Reflector as the largest single line in
-the draw-call budget, so measure the frame cost before and after rather than assuming a texture
-lookup is free. The `plaza` pool already has the tiles for it.
+Answered by Stage 634, and it closes Stage 632's open question. Stage 736 put an albedo on the
+reflector: the fragment shader samples `tex_plaza_slab` and divides by that plate's average linear
+luma (0.0885), so the bed stays the Stage 657 tone. One lookup on the pass that already draws the
+floor. `tex_pavement` was not used — it is a photograph of a street, and repeating it would paint a
+horizon on the ground. The mobile fallback `makeFlatWetFloor` still binds `tex_wet_cobble`.
 
 Also still open, from Stage 634: four generated plates (wake hex cell, mech armour, wasp carapace,
 weapon receiver) are **not shipped** because their surfaces are built per entity in `wake.ts` and

@@ -1,6 +1,32 @@
 import * as THREE from "three";
 import { Reflector } from "three/examples/jsm/objects/Reflector.js";
+import { texture as assetTexture } from "./assets";
 import { bindPlate } from "./city";
+
+/**
+ * Linear luma of `tex_plaza_slab`, the tile the reflector samples (Stage 736).
+ * Measured from the file: sRGB bytes to linear, then 0.2126 R + 0.7152 G + 0.0722 B.
+ * The shader divides by this so the bed's average stays the Stage 657 tone.
+ * `tex_pavement` is a photograph of a street, not a tile, so it is not the albedo.
+ */
+export const SLAB_LUMA = 0.0885;
+/** Four slabs across the image, each the 2 m the grout already uses. */
+export const SLAB_TILE_M = 8;
+
+/** A texel's share of the bed. The plate's own average is 1, so the street's mean does not move. */
+export function stoneGain(luma: number, mean = SLAB_LUMA): number {
+  if (!(mean > 0)) return 1;
+  return luma / mean;
+}
+
+/** A stand-in the bed samples until the slab file arrives. Linear white, so the gain is 1. */
+function whiteSlab(): THREE.DataTexture {
+  const tex = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.needsUpdate = true;
+  return tex;
+}
 
 /**
  * Wet street: a planar reflection rendered at low resolution and smeared
@@ -37,6 +63,9 @@ export function makeWetFloor(width: number, depth: number, y: number, fogColor: 
       fogDensity: { value: fogDensity },
       camPos: { value: new THREE.Vector3() },
       debug: { value: new URLSearchParams(location.search).get("debug") === "refl" ? 1 : 0 },
+      // White until the slab arrives, and a mean of 1, so those frames are the old bed.
+      tAlbedo: { value: whiteSlab() },
+      albedoMean: { value: 1 },
     },
     vertexShader: /* glsl */ `
       uniform mat4 textureMatrix;
@@ -49,7 +78,7 @@ export function makeWetFloor(width: number, depth: number, y: number, fogColor: 
       }
     `,
     fragmentShader: /* glsl */ `
-      uniform sampler2D tDiffuse; uniform float time; uniform vec3 fogColor; uniform float fogDensity; uniform vec3 camPos; uniform float debug;
+      uniform sampler2D tDiffuse; uniform sampler2D tAlbedo; uniform float albedoMean; uniform float time; uniform vec3 fogColor; uniform float fogDensity; uniform vec3 camPos; uniform float debug;
       varying vec4 vUv; varying vec3 vWorld;
       float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float noise(vec2 p) {
@@ -77,6 +106,12 @@ export function makeWetFloor(width: number, depth: number, y: number, fogColor: 
         // night. The hue ratio is kept; only the magnitude moves, so the sheen below is unchanged
         // and reads harder against a darker bed (Stage 657).
         vec3 base = vec3(0.024, 0.029, 0.041) * tone * (1.0 - grout * 0.6);
+        // The slab's brightness, over its own average (Stage 736). One lookup on this
+        // pass, no extra draw. The mean of the bed stays the tone above.
+        vec3 alb = texture2D(tAlbedo, vWorld.xz / ${SLAB_TILE_M}.0).rgb;
+        float lum = dot(alb, vec3(0.2126, 0.7152, 0.0722));
+        float stone = lum / albedoMean;
+        base *= stone;
         // puddle mask
         float pud = smoothstep(0.35, 0.75, noise(vWorld.xz * 0.18 + vec2(3.1, 7.7)));
         // dry tarmac keeps less of the reflection and the puddles keep more, so the street
@@ -110,6 +145,14 @@ export function makeWetFloor(width: number, depth: number, y: number, fogColor: 
       // which only sees layer 0 — see the note above on what that is worth.
       (orig as (...a: unknown[]) => void).call(this, renderer, scene, camera, ...rest);
     })(r.onBeforeRender);
+  // The slab and its mean land together. A slab divided by 1 would crush the bed.
+  void assetTexture("tex_plaza_slab").then((tex) => {
+    if (!tex || !mat.uniforms.tAlbedo || !mat.uniforms.albedoMean) return;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    mat.uniforms.tAlbedo.value = tex;
+    mat.uniforms.albedoMean.value = SLAB_LUMA;
+  });
   return r;
 }
 

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 736 — The wet street is stone, not a flat tone
+
+**The ask.** The reflector that fills a street camera sampled only the mirror. What read as paving was that mirror and the fog. The mobile fallback already wore a plate. The desktop pass did not, and binding one would not have reached it.
+
+**The change.** The same fragment shader samples `tex_plaza_slab` and multiplies the bed by that texel's brightness over the plate's average linear luma (0.0885). A white stand-in with a mean of 1 holds the old bed until the file arrives; the slab and the mean are written together. The Stage 657 tone is unchanged, so the street's average does not move. It is one lookup on the pass that already draws the floor. `tex_pavement` is a photograph of a street, so it is not the tile.
+
+**Verified.** `tests/wetfloor.test.ts` requires the lookup, the divide, and the multiply. Deleting `base *= stone` failed once (the source no longer matched). `stoneGain(0.0885)` is 1. `probe:look` still reads the street inside `roadLuma <= 0.145`.
+
+**Open.** A citizen's face plate was in the hood mesh, so the cloak lit it.
+
 ## Stage 735 — Both walls lift the lens over the hood
 
 **The ask.** A wall on both sides of a tight gap left the lens on the line, 0.14 m from the face. The hood is 0.22 m deep, so the camera was inside the cloth.
