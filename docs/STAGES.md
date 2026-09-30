@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 728 — Your own line stands you on the first frame
+
+**The ask.** First person hides the body. Your line stood it back up only after the camera blend passed 0.2. The opening of the close-up was an empty hood, and the same pop happened on the way out.
+
+**The change.** The body is up for the whole line, from the first frame, and it stays until the camera has left. Someone else's line still does not move you.
+
+**Verified.** `bodyOnLine(0, "you")` and `bodyOnLine(0.1, "you")` are both shows. Gating it at 0.2 failed once (expected false to be true at blend 0).
+
+**Open.** A guest's view of the host still has the bars and no face.
+
 ## Stage 726 — The host's line does not film the guest
 
 **The ask.** In a crew, the host's own line reads THE HOST on everyone else's terminal. The camera still closed on the guest, because "you" meant whoever was holding the machine. You watched your own face under someone else's name.

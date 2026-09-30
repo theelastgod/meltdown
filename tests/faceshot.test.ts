@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { yawDir, yawTo } from "../shared/math/vec3";
-import { dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, ownStand } from "../client/render/faceshot";
+import { bodyOnLine, dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, ownStand } from "../client/render/faceshot";
 import { attend, ATTEND, buildFixer, FIXER_SCALE, holdFace } from "../client/render/figures";
 
 describe("the close-up", () => {
@@ -151,6 +151,17 @@ describe("the close-up", () => {
     const rend = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
     expect(rend).toMatch(/gunOnLine\(k, this\.faceShot !== null\)/);
     expect(rend).not.toMatch(/if \(k > 0\.35\) this\.viewmodel\.visible = false/);
+  });
+
+  it("your own line stands your body on the first frame, not after the blend is in", () => {
+    expect(bodyOnLine(0, "you")).toBe(true);
+    expect(bodyOnLine(0.1, "you")).toBe(true);
+    expect(bodyOnLine(1, "you")).toBe(true);
+    expect(bodyOnLine(0, "other")).toBe(false);
+    expect(bodyOnLine(0.5, "other")).toBe(false);
+    const rend = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
+    expect(rend).toMatch(/bodyOnLine\(k, s\.who\)/);
+    expect(rend).not.toMatch(/k > 0\.2 && !this\.bodyHidden/);
   });
 
   it("your own line stands your body on your feet in first person", () => {

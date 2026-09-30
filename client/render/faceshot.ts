@@ -117,6 +117,15 @@ export function ownStand(who: FaceWho, third: boolean, feet: { x: number; y: num
 }
 
 /**
+ * Your body is in the shot for the whole line (Stage 728). First person hides it, and the line
+ * used to wait until the blend passed 0.2 before standing it back up. The opening was an empty hood.
+ */
+export function bodyOnLine(blending: number, who: FaceWho): boolean {
+  if (who !== "you") return false;
+  return blending >= 0;
+}
+
+/**
  * The play gun leaves the lens for the whole line (Stage 722). Gating it on the blend left the
  * weapon in the face until the camera had mostly arrived. First person parents that gun to the lens.
  */

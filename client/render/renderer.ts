@@ -29,7 +29,7 @@ import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
 import { spawnCurve, spawnEdge, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
-import { faceCuts, gunOnLine, ownStand, type FaceShot } from "./faceshot";
+import { bodyOnLine, faceCuts, gunOnLine, ownStand, type FaceShot } from "./faceshot";
 import { arcPoint, type ArcSpec } from "./ballistic";
 import { DEATH_TURN, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
@@ -940,7 +940,7 @@ export class Renderer {
       this.camera.fov = fov;
       this.camera.updateProjectionMatrix();
     }
-    if (s.who === "you" && k > 0.2 && !this.bodyHidden) {
+    if (bodyOnLine(k, s.who) && !this.bodyHidden) {
       const feet = ownStand(s.who, this.thirdPerson, { x: v.x, y: v.y, z: v.z });
       if (feet) {
         this.local.group.visible = true;
