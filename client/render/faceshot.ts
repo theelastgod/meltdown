@@ -64,6 +64,17 @@ export interface DialogueBodies {
   wern: { x: number; z: number; yaw: number } | null;
 }
 
+/**
+ * Facing from a body toward the player. The placed yaw is where they were stood; a line looks at
+ * the person they are talking to. On top of them the direction is noise, so the placed yaw stays.
+ */
+function yawAt(at: { x: number; z: number }, player: { x: number; z: number }, placed: number): number {
+  const dx = player.x - at.x;
+  const dz = player.z - at.z;
+  if (dx * dx + dz * dz < 0.25) return placed;
+  return yawTo({ x: at.x, y: 0, z: at.z }, { x: player.x, y: 0, z: player.z });
+}
+
 /** The other body in the room, if there is one. The visitor stands closer to a reply than Wern does. */
 function partner(o: DialogueBodies): { x: number; z: number } | null {
   if (o.visitor) return o.visitor;
@@ -84,8 +95,8 @@ export function dialogueShot(o: DialogueBodies): FaceShot | null {
     const yaw = other ? yawTo({ x: o.player.x, y: 0, z: o.player.z }, { x: other.x, y: 0, z: other.z }) : o.player.yaw;
     return faceShot({ x: o.player.x, z: o.player.z }, yaw, o.player.y + o.player.eye, "you");
   }
-  if (o.visitor && o.visitor.id === o.speaker && o.speaker in FACE_Y) return faceShot(o.visitor, o.visitor.yaw, FACE_Y[o.speaker as keyof typeof FACE_Y]);
-  if (o.speaker === "wern" && o.wern) return faceShot(o.wern, o.wern.yaw, FACE_Y.wern);
+  if (o.visitor && o.visitor.id === o.speaker && o.speaker in FACE_Y) return faceShot(o.visitor, yawAt(o.visitor, o.player, o.visitor.yaw), FACE_Y[o.speaker as keyof typeof FACE_Y]);
+  if (o.speaker === "wern" && o.wern) return faceShot(o.wern, yawAt(o.wern, o.player, o.wern.yaw), FACE_Y.wern);
   return null;
 }
 

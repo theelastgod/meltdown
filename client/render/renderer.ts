@@ -945,6 +945,11 @@ export class Renderer {
       // The face holds the shot's yaw, which is the line to the other person when one is in the room.
       this.local.group.rotation.y = s.yaw;
     }
+    if (s.who === "other" && k > 0.2) {
+      const v = this.hub?.visitorPose();
+      if (v && (v.x - s.lookX) * (v.x - s.lookX) + (v.z - s.lookZ) * (v.z - s.lookZ) < 0.04) this.hub?.faceVisitor(s.yaw);
+      if (this.wern && (this.wern.position.x - s.lookX) * (this.wern.position.x - s.lookX) + (this.wern.position.z - s.lookZ) * (this.wern.position.z - s.lookZ) < 0.04) this.wern.rotation.y = s.yaw;
+    }
     if (k > 0.35) this.viewmodel.visible = false;
   }
 

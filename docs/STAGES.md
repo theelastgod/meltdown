@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 719 — The person you are talking to looks at you
+
+**The ask.** A fixer in the office faced the mark they were stood on. If you took the line from across the room, the close-up was the side of the hood, aimed at an empty spot.
+
+**The change.** Their line faces you. The lens sits on that line, and the figure turns with it — the office visitor or Wern, whichever face the shot is on. Standing on top of them keeps the placed facing, because a direction of zero is noise. Your gun's yaw is still untouched.
+
+**Verified.** `tests/faceshot.test.ts` puts the player at (4, 1) and the Deacon, placed at yaw 0.4, at (1.6, −5). The shot's yaw is the line to the player. Keeping the placed yaw failed once (`expected 0.4 to be close to -2.76`).
+
+**Open.** A speaker who is not in the room and has no portrait still has bars only. That is the terminal's case no longer: the CRT pushes in. What remains is a speaker the script names who is neither a body nor a plate.
+
 ## Stage 718 — The file's own line pushes the terminal in
 
 **The ask.** A line from the terminal — the file opening, a contract briefing — brought the bars down and then showed nothing. The machine that was speaking stayed the same size at the foot of the screen.

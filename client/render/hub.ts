@@ -42,6 +42,11 @@ export class HubDressing {
     if (!this.visitor || !this.visitorFig) return null;
     return { id: this.visitor, x: this.visitorFig.position.x, z: this.visitorFig.position.z, yaw: this.visitorFig.rotation.y };
   }
+
+  /** Turn the standing fixer to the line. Their placed yaw is where the office sat them. */
+  faceVisitor(yaw: number): void {
+    if (this.visitorFig) this.visitorFig.rotation.y = yaw;
+  }
   private visitorFig: THREE.Group | null = null;
 
   constructor(private scene: THREE.Scene, level: LevelDef) {

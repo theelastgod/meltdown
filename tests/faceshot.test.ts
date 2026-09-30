@@ -83,6 +83,24 @@ describe("the close-up", () => {
     expect(rend).toMatch(/this\.local\.group\.rotation\.y = s\.yaw/);
   });
 
+  it("the other person looks at the player, not at the mark they were placed on", () => {
+    const player = { x: 4, y: 0, z: 1, yaw: 0, eye: 1.62 };
+    const visitor = { id: "deacon", x: 1.6, z: -5, yaw: 0.4 };
+    const deacon = dialogueShot({ speaker: "deacon", player, visitor, wern: null })!;
+    const toward = yawTo({ x: visitor.x, y: 0, z: visitor.z }, { x: player.x, y: 0, z: player.z });
+    expect(deacon.yaw).toBeCloseTo(toward);
+    expect(deacon.yaw).not.toBeCloseTo(visitor.yaw);
+    const wernAt = { x: 1.25, z: -7.25, yaw: Math.PI };
+    const wern = dialogueShot({ speaker: "wern", player, visitor: null, wern: wernAt })!;
+    expect(wern.yaw).toBeCloseTo(yawTo({ x: wernAt.x, y: 0, z: wernAt.z }, { x: player.x, y: 0, z: player.z }));
+    expect(wern.yaw).not.toBeCloseTo(wernAt.yaw);
+    const onTop = dialogueShot({ speaker: "deacon", player: { ...player, x: visitor.x, z: visitor.z }, visitor, wern: null })!;
+    expect(onTop.yaw).toBeCloseTo(visitor.yaw);
+    const rend = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
+    expect(rend).toMatch(/faceVisitor\(s\.yaw\)/);
+    expect(rend).toMatch(/this\.wern\.rotation\.y = s\.yaw/);
+  });
+
   it("the line arms it, and the end of the line lets the camera go", () => {
     const src = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
     expect(src).toMatch(/this\.armCutscene\(n\.speaker\)/);
