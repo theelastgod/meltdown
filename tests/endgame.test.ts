@@ -470,6 +470,12 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/GATE r\$\{gate\.gate\}/);
   });
 
+  it("a mastery gate's words are CRT, not the sentence they were authored as", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/GATE R\$\{gate\.gate\}: \$\{gate\.text\.toUpperCase\(\)\}/);
+    expect(src).not.toMatch(/GATE R\$\{gate\.gate\}: \$\{gate\.text\} /);
+  });
+
   it("a chip option rank is R, not r", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/\} · R\$\{c\.rank\}/);

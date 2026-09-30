@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 738 — A mastery gate reads as the terminal
+
+**The ask.** The file showed a rank gate as a sentence: "10 headshot kills". The rest of that panel is already CRT.
+
+**The change.** The gate's words are uppercased where they are drawn. The curriculum stays the sentences it was written as. A mastered gun still says MASTERED. XP under the gate is unchanged.
+
+**Verified.** `tests/endgame.test.ts` requires `gate.text.toUpperCase()` on the GATE R line. Drawing the sentence failed once (the source no longer matched).
+
+**Open.** The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 737 — A citizen's face stays black under the cloak
 
 **The ask.** The face plate was merged into the hood so the crowd would not spend another draw. The cloak plate then lit that plate, so a leased citizen had a face.
