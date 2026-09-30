@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 730 — A host who is not in the room still has a face
+
+**The ask.** When the host's body is not drawn, their own line is the bars and the words. The machine has no portrait of them, so the picture is black.
+
+**The change.** That line pushes the CRT in, the same way a terminal line does. A host who is standing there is still the close-up, and your own line still is not a machine.
+
+**Verified.** `hostPush("you", false, false)` is the CRT. A filmed host, your own line, a fixer, and the bare terminal are not. Always returning false failed once (expected false to be true).
+
+**Open.** The line's alert sits under the letterbox, or on the face when the screen is short.
+
 ## Stage 729 — A guest films the host
 
 **The ask.** The host's own line read THE HOST and came down on black. That body was not this machine, and it was not a plate, so the guest got the bars and no face.

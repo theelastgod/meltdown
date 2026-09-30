@@ -16,6 +16,14 @@ export function terminalPush(speaker: string, hasBody: boolean): boolean {
   return speaker === "terminal" && !hasBody;
 }
 
+/**
+ * The host's line on a guest, when that body is not in the room (Stage 730). The bars are already
+ * down. The CRT is the only face this machine has of them.
+ */
+export function hostPush(speaker: string, self: boolean, hasBody: boolean): boolean {
+  return speaker === "you" && self === false && !hasBody;
+}
+
 /** the footer's line: what the player does next, in the terms of the device in their hands */
 export function terminalFooter(hasChoices: boolean, touch: boolean): string {
   if (touch) return hasChoices ? "TAP A LINE TO CHOOSE" : "TAP TO CONTINUE";

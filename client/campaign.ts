@@ -43,7 +43,7 @@ import { SIM_DT } from "@shared/sim/constants";
 import { eyeHeight } from "@shared/sim/player";
 import { thumbBeside } from "./hud/faceplate";
 import { dialogueShot, lineEye } from "./render/faceshot";
-import { terminalPush } from "./hud/terminal";
+import { hostPush, terminalPush } from "./hud/terminal";
 
 export type CampaignMode = "none" | "mission" | "explore" | "coop" | "city";
 
@@ -435,7 +435,7 @@ export class Campaign {
     });
     this.game.renderer.setFace(shot);
     const plate = shot ? null : portraitFor(speaker);
-    this.game.hud.cutscene(true, plate, terminalPush(speaker, shot !== null));
+    this.game.hud.cutscene(true, plate, terminalPush(speaker, shot !== null) || hostPush(speaker, youIsSelf, shot !== null));
     return plate;
   }
 

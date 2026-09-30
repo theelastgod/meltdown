@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { TERMINAL_GAP, TERMINAL_INSET, terminalFooter, terminalPush, terminalSeat } from "../client/hud/terminal";
+import { hostPush, TERMINAL_GAP, TERMINAL_INSET, terminalFooter, terminalPush, terminalSeat } from "../client/hud/terminal";
 
 describe("the terminal's footer", () => {
   it("offers the keys on a keyboard", () => {
@@ -30,6 +30,18 @@ describe("the bare terminal", () => {
     expect(css).toMatch(/scale\(1\.14\)/);
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     expect(hud).toMatch(/toggle\("file", on && machine && !plate\)/);
+  });
+});
+
+describe("the host's line with no body", () => {
+  it("pushes the CRT in on a guest, and leaves a filmed host and your own line alone", () => {
+    expect(hostPush("you", false, false)).toBe(true);
+    expect(hostPush("you", false, true)).toBe(false);
+    expect(hostPush("you", true, false)).toBe(false);
+    expect(hostPush("terminal", false, false)).toBe(false);
+    expect(hostPush("deacon", false, false)).toBe(false);
+    const camp = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(camp).toMatch(/hostPush\(speaker, youIsSelf, shot !== null\)/);
   });
 });
 
