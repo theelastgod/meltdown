@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 740 — A citizen's shoes are not the coat
+
+**The ask.** Shins, shoes and arms are one instanced box on the coat plate, so the feet at the hem wore the same cloth as the coat. A leased crowd and a wake cell both read that way.
+
+**The change.** The limb mesh already drawn takes an instance colour: a shoe is `0x14110e`, cloth stays white, and the plate is unchanged. No new mesh. The wake cell uses the same paint.
+
+**Verified.** `tests/character.test.ts` reads the colours off a real crowd. Dropping `paintCitizenLimbs` failed once (`getColorAt` on a mesh that had no instance colour).
+
+**Open.** Ida and Wern's heads are the coat material, so the street lights the face.
+
 ## Stage 739 — The slab sits under the sheen at two fifths
 
 **The ask.** Stage 736 multiplied the whole bed by the slab. Tone mapping is not linear, so the measured street moved off the Stage 657 bed even though the shader's average gain was 1.

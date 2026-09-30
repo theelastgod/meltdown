@@ -123,6 +123,22 @@ describe("a leased citizen", () => {
     expect(escort).toMatch(/hoodMat = new THREE\.MeshStandardMaterial\(\{ color: 0x090a0f, roughness: 1, vertexColors: true \}\)/);
   });
 
+  it("a shoe is darker than the coat it hangs under", () => {
+    const crowd = new Crowd([{ x0: -4, z0: 0, x1: 4, z1: 0 }], 4, 3);
+    const shoe = new THREE.Color();
+    const arm = new THREE.Color();
+    const shoeK = CITIZEN_LIMBS.findIndex((l) => l.kind === "shoe");
+    const armK = CITIZEN_LIMBS.findIndex((l) => l.kind === "arm");
+    crowd.limbs.getColorAt(shoeK, shoe);
+    crowd.limbs.getColorAt(armK, arm);
+    expect(shoe.r, "the shoe wears the coat").toBeLessThan(0.15);
+    expect(arm.r, "the sleeve went dark with the shoe").toBeGreaterThan(0.9);
+    const life = readFileSync(new URL("../client/render/life.ts", import.meta.url), "utf8");
+    const escort = readFileSync(new URL("../client/render/escort.ts", import.meta.url), "utf8");
+    expect(life).toMatch(/paintCitizenLimbs\(this\.limbs, count\)/);
+    expect(escort).toMatch(/paintCitizenLimbs\(this\.cellLimbs, n\)/);
+  });
+
   it("costs what a crowd can afford: under 360 triangles a citizen with its lamp and umbrella", () => {
     const tris = (g: THREE.BufferGeometry) => (g.index ? g.index.count : g.getAttribute("position").count) / 3;
     // coat + hood + one box per limb + lamp + umbrella

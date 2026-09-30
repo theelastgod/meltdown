@@ -112,6 +112,17 @@ export function citizenSwing(time: number, speed: number, phase: number, idle: b
   return idle ? 0 : CITIZEN_STRIDE * Math.cos(time * 6 * speed + phase);
 }
 
+/** Shoes are not the coat. One instance colour on the limb mesh the crowd already draws: dark on a shoe, white on cloth, so the plate stays and the feet read as feet. */
+const LIMB_SHOE = new THREE.Color(0x14110e);
+const LIMB_CLOTH = new THREE.Color(1, 1, 1);
+export function paintCitizenLimbs(mesh: THREE.InstancedMesh, citizens: number): void {
+  const n = CITIZEN_LIMBS.length;
+  for (let i = 0; i < citizens; i++) {
+    for (let k = 0; k < n; k++) mesh.setColorAt(i * n + k, CITIZEN_LIMBS[k]!.kind === "shoe" ? LIMB_SHOE : LIMB_CLOTH);
+  }
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+}
+
 /** the hood with its face opening toward +z, and a dark plate where a face would be: the crowd's hood material */
 export function citizenHoodGeometry(): THREE.BufferGeometry {
   const opening = 1.7;
@@ -168,6 +179,7 @@ export class Crowd {
     bindPlate(lampMat, "tex_lamp");
     this.body = new THREE.InstancedMesh(citizenBodyGeometry(), dark, count);
     this.limbs = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), dark, count * CITIZEN_LIMBS.length);
+    paintCitizenLimbs(this.limbs, count);
     this.hood = new THREE.InstancedMesh(citizenHoodGeometry(), hoodMat, count);
     this.lamp = new THREE.InstancedMesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), lampMat, count);
     this.brolly = new THREE.InstancedMesh(new THREE.ConeGeometry(0.75, 0.25, 8, 1, true), brollyMat, count);

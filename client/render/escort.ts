@@ -19,7 +19,7 @@ import type { EscortWho } from "@shared/campaign/missions";
 import { bindPlate, PALETTE } from "./city";
 import { FIXER_SCALE, FIXER_TRIM, VESSEL_ARM_SWING, VESSEL_HIP, VESSEL_LIFT, VESSEL_SHOULDER, VESSEL_STRIDE, armSwingPatch, fixerGeometry, vesselLegLength, vesselWalkerGeometry, type ArmUniforms } from "./figures";
 import { armSwing, plantedBob, plantedGait, type PlantedWalk } from "./gait";
-import { CITIZEN_LIMBS, citizenBodyGeometry, citizenHoodGeometry, citizenSwing } from "./life";
+import { CITIZEN_LIMBS, citizenBodyGeometry, citizenHoodGeometry, citizenSwing, paintCitizenLimbs } from "./life";
 
 /** where the mission runtime has the escort, and which way it faces (a sim yaw: front -z at 0) */
 export interface EscortPose {
@@ -107,6 +107,7 @@ export class EscortFigures {
     bindPlate(markMat, "tex_lamp");
     this.cellBody = new THREE.InstancedMesh(citizenBodyGeometry(), dark, n);
     this.cellLimbs = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), dark, n * CITIZEN_LIMBS.length);
+    paintCitizenLimbs(this.cellLimbs, n);
     this.cellHood = new THREE.InstancedMesh(citizenHoodGeometry(), hoodMat, n);
     // where the crowd wears VANTAGE's amber lease lamp, the woken wear a thin cyan bar
     this.cellMark = new THREE.InstancedMesh(new THREE.BoxGeometry(0.1, 0.022, 0.03), markMat, n);
