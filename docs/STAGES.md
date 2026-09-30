@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 716 — A reply looks at the other face, and the next line cuts
+
+**The ask.** Your own line closed on wherever the gun was pointed. If the Deacon was standing in the office and you were looking at the door, the lens filmed the side of the conversation, and the line back to him slid off the shoulder camera instead of cutting.
+
+**The change.** When someone else is in the room, your line faces them. The lens sits on the line between the two faces, and the body holds that facing for the shot. The gun's yaw is left alone. A new face more than half a metre from the last one arrives on that frame. Opening the line and leaving it still ease.
+
+**Verified.** `tests/faceshot.test.ts` aims the player the other way and requires the reply to use the yaw toward the Deacon. Using the gun's yaw failed that once (`expected π to be close to -0.31`). A cut threshold of 100 m failed the distance between the two faces once (`expected 5.25 to be greater than 100`).
+
+**Open.** A speaker who is neither in the room nor drawn still has bars and no face. Two portraits in one conversation restart the plate zoom; they do not crossfade.
+
 ## Stage 715 — A line of dialogue closes on a face
 
 **The ask.** Talking to someone opened a terminal. The camera stayed where the gun was, and the other person's face stayed a thumbnail.

@@ -8,11 +8,13 @@
  * Heights are the hood and head centres in figures.ts, times FIXER_SCALE. The player's line uses
  * the eye the sim already fires from.
  */
-import { yawDir } from "../../shared/math/vec3";
+import { yawDir, yawTo } from "../../shared/math/vec3";
 
 export const FACE_STAND = 0.72;
 export const FACE_DIP = 0.08;
 export const FACE_FOV = 28;
+/** A new face farther than this from the last one is a cut, not a slide across the room. */
+export const FACE_CUT_M = 0.5;
 
 /** hood / head centre, in metres, after the figure's own scale */
 export const FACE_Y = {
@@ -32,6 +34,8 @@ export interface FaceShot {
   lookX: number;
   lookY: number;
   lookZ: number;
+  /** The facing the face holds. The lens sits along `yawDir(yaw)`. */
+  yaw: number;
   fov: number;
 }
 
@@ -43,6 +47,7 @@ export function faceShot(at: { x: number; z: number }, yaw: number, faceY: numbe
     lookX: at.x,
     lookY: faceY,
     lookZ: at.z,
+    yaw,
     x: at.x + fwd.x * FACE_STAND,
     y: faceY - FACE_DIP,
     z: at.z + fwd.z * FACE_STAND,
@@ -59,13 +64,36 @@ export interface DialogueBodies {
   wern: { x: number; z: number; yaw: number } | null;
 }
 
+/** The other body in the room, if there is one. The visitor stands closer to a reply than Wern does. */
+function partner(o: DialogueBodies): { x: number; z: number } | null {
+  if (o.visitor) return o.visitor;
+  if (o.wern) return o.wern;
+  return null;
+}
+
 /**
  * Whose face the cutscene closes on. A speaker with no body in the room returns null: the
  * portrait plate does the zoom instead. The terminal has neither.
+ *
+ * A reply, when someone else is standing there, looks at them. The gun's yaw is where the next
+ * shot goes, and a conversation is not a shot.
  */
 export function dialogueShot(o: DialogueBodies): FaceShot | null {
-  if (o.speaker === "you") return faceShot({ x: o.player.x, z: o.player.z }, o.player.yaw, o.player.y + o.player.eye, "you");
+  if (o.speaker === "you") {
+    const other = partner(o);
+    const yaw = other ? yawTo({ x: o.player.x, y: 0, z: o.player.z }, { x: other.x, y: 0, z: other.z }) : o.player.yaw;
+    return faceShot({ x: o.player.x, z: o.player.z }, yaw, o.player.y + o.player.eye, "you");
+  }
   if (o.visitor && o.visitor.id === o.speaker && o.speaker in FACE_Y) return faceShot(o.visitor, o.visitor.yaw, FACE_Y[o.speaker as keyof typeof FACE_Y]);
   if (o.speaker === "wern" && o.wern) return faceShot(o.wern, o.wern.yaw, FACE_Y.wern);
   return null;
+}
+
+/** True when the line has moved to a different face. Opening and closing a line are blends. */
+export function faceCuts(prev: Pick<FaceShot, "lookX" | "lookY" | "lookZ"> | null, next: Pick<FaceShot, "lookX" | "lookY" | "lookZ"> | null): boolean {
+  if (!prev || !next) return false;
+  const dx = prev.lookX - next.lookX;
+  const dy = prev.lookY - next.lookY;
+  const dz = prev.lookZ - next.lookZ;
+  return dx * dx + dy * dy + dz * dz > FACE_CUT_M * FACE_CUT_M;
 }

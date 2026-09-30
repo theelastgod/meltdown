@@ -29,7 +29,7 @@ import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
 import { spawnCurve, spawnEdge, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
-import { type FaceShot } from "./faceshot";
+import { faceCuts, type FaceShot } from "./faceshot";
 import { arcPoint, type ArcSpec } from "./ballistic";
 import { DEATH_TURN, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
@@ -215,6 +215,8 @@ export class Renderer {
   private baseFov = 80;
   /** A dialogue close-up. Null lets the play camera back in. */
   setFace(shot: FaceShot | null): void {
+    // A different face arrives on this frame. The ease is for entering and leaving the line.
+    if (faceCuts(this.faceHold, shot)) this.faceT = 1;
     this.faceShot = shot;
     if (shot) this.faceHold = shot;
   }
@@ -938,7 +940,11 @@ export class Renderer {
       this.camera.fov = fov;
       this.camera.updateProjectionMatrix();
     }
-    if (s.who === "you" && k > 0.2 && !this.bodyHidden) this.local.group.visible = true;
+    if (s.who === "you" && k > 0.2 && !this.bodyHidden) {
+      this.local.group.visible = true;
+      // The face holds the shot's yaw, which is the line to the other person when one is in the room.
+      this.local.group.rotation.y = s.yaw;
+    }
     if (k > 0.35) this.viewmodel.visible = false;
   }
 

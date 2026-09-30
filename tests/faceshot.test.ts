@@ -7,8 +7,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { yawDir } from "../shared/math/vec3";
-import { dialogueShot, FACE_FOV, FACE_STAND, FACE_Y, faceShot } from "../client/render/faceshot";
+import { yawDir, yawTo } from "../shared/math/vec3";
+import { dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot } from "../client/render/faceshot";
 import { FIXER_SCALE } from "../client/render/figures";
 
 describe("the close-up", () => {
@@ -54,6 +54,33 @@ describe("the close-up", () => {
     expect(dialogueShot({ speaker: "deacon", player, visitor: { id: "marrow", x: 1.6, z: -5, yaw: 1 }, wern: null })).toBeNull();
     expect(dialogueShot({ speaker: "vantage", player, visitor: null, wern: null })).toBeNull();
     expect(dialogueShot({ speaker: "wern", player, visitor: null, wern: { x: 1.25, z: -7.25, yaw: Math.PI } })!.lookZ).toBeCloseTo(-7.25);
+  });
+
+  it("a reply faces the other person, and the next line cuts to their face", () => {
+    const player = { x: 0, y: 0, z: 0, yaw: Math.PI, eye: 1.62 };
+    const visitor = { id: "deacon", x: 1.6, z: -5, yaw: 0.4 };
+    const you = dialogueShot({ speaker: "you", player, visitor, wern: null })!;
+    const toward = yawTo({ x: 0, y: 0, z: 0 }, { x: visitor.x, y: 0, z: visitor.z });
+    expect(you.yaw).toBeCloseTo(toward);
+    expect(you.yaw).not.toBeCloseTo(player.yaw);
+    const fwd = yawDir(toward);
+    const aimed = yawDir(player.yaw);
+    expect(fwd.x * aimed.x + fwd.z * aimed.z).toBeLessThan(0);
+    expect(you.x).toBeCloseTo(player.x + fwd.x * FACE_STAND);
+    expect(you.z).toBeCloseTo(player.z + fwd.z * FACE_STAND);
+    const alone = dialogueShot({ speaker: "you", player, visitor: null, wern: null })!;
+    expect(alone.yaw).toBeCloseTo(player.yaw);
+    const deacon = dialogueShot({ speaker: "deacon", player, visitor, wern: null })!;
+    expect(Math.hypot(you.lookX - deacon.lookX, you.lookZ - deacon.lookZ)).toBeGreaterThan(FACE_CUT_M);
+    expect(faceCuts(you, deacon)).toBe(true);
+    expect(faceCuts(deacon, you)).toBe(true);
+    expect(faceCuts(you, you)).toBe(false);
+    expect(faceCuts(null, you)).toBe(false);
+    expect(faceCuts(you, null)).toBe(false);
+    const rend = readFileSync(new URL("../client/render/renderer.ts", import.meta.url), "utf8");
+    expect(rend).toMatch(/faceCuts\(this\.faceHold, shot\)/);
+    expect(rend).toMatch(/this\.faceT = 1/);
+    expect(rend).toMatch(/this\.local\.group\.rotation\.y = s\.yaw/);
   });
 
   it("the line arms it, and the end of the line lets the camera go", () => {

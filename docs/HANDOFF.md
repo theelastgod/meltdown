@@ -19,9 +19,9 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 715 (dialogue closes the camera on a face in the room, or pushes a portrait in when they are not). Stage 714 put the street plates on and opened the metro desk. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **716** |
-| Unit tests | 1790 at Stage 714, plus `tests/faceshot.test.ts` (4) green with the street-run and gate files at Stage 715 |
+| HEAD | Stage 716 (a reply faces the other person in the room, and the next line cuts). Stage 715 closed dialogue on a face. Stage 714 put the street plates on and opened the metro desk. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **717** |
+| Unit tests | 1790 at Stage 714, plus `tests/faceshot.test.ts` (5) green with the street-run file at Stage 716 |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |
 | CI | Stage 699 green. 700–703 red on three causes all fixed in 704 (a vitest 5 s timeout, probe:mastery shooting the loading card mid-fade, probe:world racing the district). **704 and 705 were still running at handoff — check them first.** |
