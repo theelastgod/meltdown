@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 741 (a bare head does not catch the street). Stage 740 darkens a citizen's shoes. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **742** |
+| HEAD | Stage 742 (the office ghost's hood is empty). Stage 741 keeps a bare head off the street light. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **743** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |

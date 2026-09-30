@@ -58,7 +58,7 @@ export class HubDressing {
     this.hub = level.hub!;
     scene.add(this.group);
     // the ghost: a translucent cyan figure, additive so it reads through the lane's fog
-    this.ghostMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
+    this.ghostMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, vertexColors: true });
     bindPlate(this.ghostMat, "tex_cloak");
     this.ghost = new THREE.Group();
     // the file's own best run, in the file's own body: the Blank's cloak at rest (Stage 667; it was a capsule and a cone)

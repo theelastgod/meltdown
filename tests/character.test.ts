@@ -43,6 +43,18 @@ describe("the player's body", () => {
     expect(voids, "nothing is baked to the void").toBeGreaterThan(50);
     expect(voidOnHead).toBe(voids);
     expect(frontFace, "the hood is closed over the face").toBe(0);
+    const color = g.getAttribute("color");
+    expect(color, "the ghost has no colour to black the opening").toBeTruthy();
+    let black = 0;
+    for (let i = 0; i < pos.count; i++) {
+      if (shade.getX(i) === 0) {
+        expect(color.getX(i)).toBe(0);
+        black++;
+      }
+    }
+    expect(black).toBe(voids);
+    const hub = readFileSync(new URL("../client/render/hub.ts", import.meta.url), "utf8");
+    expect(hub).toMatch(/ghostMat = new THREE\.MeshBasicMaterial\(\{ color: PALETTE\.cyan, transparent: true, opacity: 0\.35, blending: THREE\.AdditiveBlending, depthWrite: false, vertexColors: true \}\)/);
   });
 
   it("no strip-light sits inside the coat's cloth", () => {

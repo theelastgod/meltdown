@@ -111,6 +111,10 @@ function part(geo: THREE.BufferGeometry, m: THREE.Matrix4, w: Weighting, shade =
   geo.setAttribute("sway", new THREE.Float32BufferAttribute(sw, 1));
   // baked occlusion (Stage 665): 1 is lit as the material says, 0 is the void inside the hood
   geo.setAttribute("shade", new THREE.Float32BufferAttribute(new Float32Array(n).fill(shade), 1));
+  // the same occlusion as a vertex colour, so a material that does not run the sway patch (the office ghost) can still black the hood
+  const col = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = shade;
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
   return geo;
 }
 const at = (x: number, y: number, z: number): THREE.Matrix4 => new THREE.Matrix4().makeTranslation(x, y, z);

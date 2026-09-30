@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 742 — The office ghost's hood is empty
+
+**The ask.** The player's cloak blacks the inside of the hood in the sway shader. The range ghost in the Deadletter Office is the same cloak on a plain material, so the opening showed the cloak plate.
+
+**The change.** The occlusion is also a vertex colour on the cloak. The ghost's material reads it. The opening multiplies to black. The player's own shader is unchanged, and nothing new is drawn.
+
+**Verified.** `tests/character.test.ts` requires colour 0 wherever the hood is shade 0, and `vertexColors` on the ghost material. Taking that flag off failed once (the source no longer matched).
+
+**Open.** The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 741 — A bare head does not catch the street
 
 **The ask.** Ida and Wern have no hood void. Their heads are spheres in the coat mesh, so the same light that finds the coat finds the face. A void mesh is refused: a bare head carries none.
