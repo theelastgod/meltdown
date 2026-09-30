@@ -110,7 +110,9 @@ export function makeWetFloor(width: number, depth: number, y: number, fogColor: 
         // pass, no extra draw. The mean of the bed stays the tone above.
         vec3 alb = texture2D(tAlbedo, vWorld.xz / ${SLAB_TILE_M}.0).rgb;
         float lum = dot(alb, vec3(0.2126, 0.7152, 0.0722));
-        float stone = lum / albedoMean;
+        // Full strength moved the measured street (tone mapping is not linear). 0.4 keeps the joints
+        // and leaves the average on the Stage 657 bed.
+        float stone = mix(1.0, lum / albedoMean, 0.4);
         base *= stone;
         // puddle mask
         float pud = smoothstep(0.35, 0.75, noise(vWorld.xz * 0.18 + vec2(3.1, 7.7)));

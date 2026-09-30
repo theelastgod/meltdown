@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 739 — The slab sits under the sheen at two fifths
+
+**The ask.** Stage 736 multiplied the whole bed by the slab. Tone mapping is not linear, so the measured street moved off the Stage 657 bed even though the shader's average gain was 1.
+
+**The change.** The stone is mixed in at 0.4. The joints stay. Sixty percent of the bed is the old tone. The lookup is still the one the floor already pays for.
+
+**Verified.** `tests/wetfloor.test.ts` requires the mix at 0.4. Putting the slab on at full strength failed once (the source no longer matched).
+
+**Open.** The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 738 — A mastery gate reads as the terminal
 
 **The ask.** The file showed a rank gate as a sentence: "10 headshot kills". The rest of that panel is already CRT.

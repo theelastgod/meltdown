@@ -14,7 +14,7 @@ describe("the wet floor's stone", () => {
   it("multiplies the bed by the slab and divides that average back out", () => {
     expect(src).toMatch(/uniform sampler2D tAlbedo/);
     expect(src).toMatch(/texture2D\(tAlbedo, vWorld\.xz \/ \$\{SLAB_TILE_M\}\.0\)/);
-    expect(src).toMatch(/float stone = lum \/ albedoMean/);
+    expect(src).toMatch(/float stone = mix\(1\.0, lum \/ albedoMean, 0\.4\)/);
     expect(src).toMatch(/base \*= stone/);
     expect(src).toMatch(/assetTexture\("tex_plaza_slab"\)/);
     expect(src).toMatch(/mat\.uniforms\.albedoMean\.value = SLAB_LUMA/);
