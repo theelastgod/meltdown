@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 741 — A bare head does not catch the street
+
+**The ask.** Ida and Wern have no hood void. Their heads are spheres in the coat mesh, so the same light that finds the coat finds the face. A void mesh is refused: a bare head carries none.
+
+**The change.** Those spheres are vertex colour 0. The rest of the coat is 1. The standing material and Ida's walking material read vertex colour, so the face goes black and the cloth stays. Still three draws standing, and the walk does not grow one.
+
+**Verified.** `tests/fixers.test.ts` counts black vertices above 1.5 m on Ida, on Wern, and on the walker, and cloth everywhere else, including the Deacon. Painting Ida's head as cloth failed once (`expected 0 to be greater than 30`).
+
+**Open.** The range ghost in the office wears the cloak on the inside of the hood. The player's own body blacks that opening. The ghost does not.
+
 ## Stage 740 — A citizen's shoes are not the coat
 
 **The ask.** Shins, shoes and arms are one instanced box on the coat plate, so the feet at the hem wore the same cloth as the coat. A leased crowd and a wake cell both read that way.

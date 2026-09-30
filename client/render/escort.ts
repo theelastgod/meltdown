@@ -80,7 +80,7 @@ export class EscortFigures {
     this.group.name = "escort";
     // ---- Ida ----
     const vg = vesselWalkerGeometry();
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x06070b, roughness: 0.95 });
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x06070b, roughness: 0.95, vertexColors: true });
     // the body's own material swings her arms; the legs keep the plain one
     const armedMat = bodyMat.clone();
     armSwingPatch(armedMat, this.vesselArms);

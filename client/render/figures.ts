@@ -40,6 +40,19 @@ interface Parts {
 }
 const T = (x: number, y: number, z: number) => new THREE.Matrix4().makeTranslation(x, y, z);
 const put = (g: THREE.BufferGeometry, m: THREE.Matrix4) => g.applyMatrix4(m);
+/** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
+function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
+  const n = g.getAttribute("position").count;
+  const a = new Float32Array(n * 3);
+  a.fill(v);
+  g.setAttribute("color", new THREE.BufferAttribute(a, 3));
+  return g;
+}
+/** cloth, unless a head already painted itself black */
+function ensureCloth(g: THREE.BufferGeometry): THREE.BufferGeometry {
+  if (!g.getAttribute("color")) paint(g, 1);
+  return g;
+}
 const bead = (w: number, h: number, d: number, x: number, y: number, z: number) => put(new THREE.BoxGeometry(w, h, d), T(x, y, z));
 
 /** the radius of a lathe surface at an angle, folds included — the rig's formula */
@@ -171,8 +184,9 @@ function vessel(): Parts {
   parts.body.push(put(new THREE.BoxGeometry(0.5, 0.06, 0.22), T(0, 1.42, 0)));
   // high collar, head, and the hair drawn back
   parts.body.push(lathe([[0.1, 1.47], [0.105, 1.6]], 12, { gap: 0.9 }));
-  parts.body.push(put(new THREE.SphereGeometry(0.1, 12, 10), T(0, 1.69, 0).multiply(new THREE.Matrix4().makeScale(0.92, 1.12, 1))));
-  parts.body.push(put(new THREE.SphereGeometry(0.107, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.62), T(0, 1.705, 0.018)));
+  // the head and the hair are the coat's mesh. Black vertices keep the street off the face; a void mesh is not added.
+  parts.body.push(paint(put(new THREE.SphereGeometry(0.1, 12, 10), T(0, 1.69, 0).multiply(new THREE.Matrix4().makeScale(0.92, 1.12, 1))), 0));
+  parts.body.push(paint(put(new THREE.SphereGeometry(0.107, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.62), T(0, 1.705, 0.018)), 0));
   // trousers and boots under the coat
   for (const x of [-VESSEL_HIP.x, VESSEL_HIP.x]) for (const g of vesselLeg()) parts.legs.push(put(g, T(x, 0, 0)));
   // slim sleeves, one hand on the hip
@@ -198,8 +212,8 @@ function wern(): Parts {
   parts.body.push(inside(lathe(COAT, 14, { sx: 1.12, sz: 0.8, folds: 4, fold: () => 0.015, gap: 0.3 })));
   parts.body.push(put(new THREE.BoxGeometry(0.58, 0.06, 0.24), T(0, 1.43, 0)));
   parts.body.push(lathe([[0.125, 1.47], [0.14, 1.64]], 12, { gap: 0.8 }));
-  parts.body.push(put(new THREE.SphereGeometry(0.105, 12, 10), T(0, 1.73, 0).multiply(new THREE.Matrix4().makeScale(0.9, 1.15, 1))));
-  parts.body.push(put(new THREE.SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), T(0, 1.75, 0.012)));
+  parts.body.push(paint(put(new THREE.SphereGeometry(0.105, 12, 10), T(0, 1.73, 0).multiply(new THREE.Matrix4().makeScale(0.9, 1.15, 1))), 0));
+  parts.body.push(paint(put(new THREE.SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), T(0, 1.75, 0.012)), 0));
   for (const x of [-0.1, 0.1]) parts.body.push(put(new THREE.BoxGeometry(0.1, 0.06, 0.24), T(x, 0.03, -0.12)));
   // arms folded behind, the hands meeting at the small of the back
   for (const side of [-1, 1]) {
@@ -231,6 +245,7 @@ export function fixerGeometry(id: FixerBody): { body: THREE.BufferGeometry; trim
   let g = cache.get(id);
   if (!g) {
     const p = BUILDERS[id]();
+    for (const partGeo of [...p.body, ...p.legs, ...p.arms]) ensureCloth(partGeo);
     // shared: every visit and every level load reuses them, so release() must never dispose them
     g = { body: markShared(flat([...p.body, ...p.legs, ...p.arms])), trim: markShared(flat(p.trim)), void: markShared(flat(p.void.length ? p.void : [new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute([], 3))])) };
     cache.set(id, g);
@@ -243,7 +258,7 @@ export function buildFixer(id: FixerBody): THREE.Group {
   const g = fixerGeometry(id);
   const group = new THREE.Group();
   group.name = `fixer:${id}`;
-  const body = new THREE.Mesh(g.body, new THREE.MeshStandardMaterial({ color: 0x06070b, roughness: 0.95 }));
+  const body = new THREE.Mesh(g.body, new THREE.MeshStandardMaterial({ color: 0x06070b, roughness: 0.95, vertexColors: true }));
   const trim = new THREE.Mesh(g.trim, new THREE.MeshBasicMaterial({ color: FIXER_TRIM[id] }));
   group.add(body, trim);
   if (g.void.getAttribute("position").count) group.add(new THREE.Mesh(g.void, new THREE.MeshBasicMaterial({ color: 0x000000 })));
@@ -279,8 +294,11 @@ export function vesselWalkerGeometry(): { body: THREE.BufferGeometry; leg: THREE
     const p = vessel();
     for (const g of [...p.legs, ...p.arms]) g.dispose();
     for (const g of [...p.trim, ...p.void]) g.dispose();
-    const arms = ([-1, 1] as const).flatMap((side) => vesselArm(side).map((g) => armTag(g, side)));
-    walker = { body: markShared(flat([...p.body.map((g) => armTag(g, 0)), ...arms])), leg: markShared(flat(vesselLeg().map((g) => put(g, T(0, -VESSEL_HIP.y, 0))))) };
+    for (const g of p.body) ensureCloth(g);
+    const arms = ([-1, 1] as const).flatMap((side) => vesselArm(side).map((g) => armTag(ensureCloth(g), side)));
+    const legs = vesselLeg().map((g) => put(g, T(0, -VESSEL_HIP.y, 0)));
+    for (const g of legs) ensureCloth(g);
+    walker = { body: markShared(flat([...p.body.map((g) => armTag(g, 0)), ...arms])), leg: markShared(flat(legs)) };
   }
   return walker;
 }

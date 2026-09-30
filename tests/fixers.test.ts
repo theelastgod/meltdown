@@ -6,9 +6,10 @@
  * hold their figures to what makes them read: four different silhouettes, each lit in the colour the
  * art bible allows them, no light on any face, and the right one standing in the office.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, fixerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -84,6 +85,38 @@ describe("the fixers, in the flesh", () => {
     expect(fixerGeometry("marrow").void.getAttribute("position").count).toBeGreaterThan(50);
     expect(fixerGeometry("vessel").void.getAttribute("position").count).toBe(0);
     expect(fixerGeometry("wern").void.getAttribute("position").count).toBe(0);
+  });
+
+  it("a bare head is black on the coat, and the coat stays cloth", () => {
+    const blackOn = (id: "vessel" | "wern", g: THREE.BufferGeometry) => {
+      const color = g.getAttribute("color");
+      const pos = g.getAttribute("position");
+      expect(color, id).toBeTruthy();
+      let black = 0;
+      let cloth = 0;
+      for (let i = 0; i < color.count; i++) {
+        const c = color.getX(i);
+        if (c === 0) {
+          black++;
+          expect(pos.getY(i), id).toBeGreaterThan(1.5);
+        } else {
+          cloth++;
+          expect(c, id).toBe(1);
+        }
+      }
+      expect(black, id).toBeGreaterThan(30);
+      expect(cloth, id).toBeGreaterThan(200);
+    };
+    blackOn("vessel", fixerGeometry("vessel").body);
+    blackOn("wern", fixerGeometry("wern").body);
+    blackOn("vessel", vesselWalkerGeometry().body);
+    const deacon = fixerGeometry("deacon").body.getAttribute("color");
+    expect(deacon).toBeTruthy();
+    for (let i = 0; i < deacon.count; i++) expect(deacon.getX(i)).toBe(1);
+    const figures = readFileSync(new URL("../client/render/figures.ts", import.meta.url), "utf8");
+    const escort = readFileSync(new URL("../client/render/escort.ts", import.meta.url), "utf8");
+    expect(figures).toMatch(/new THREE\.MeshStandardMaterial\(\{ color: 0x06070b, roughness: 0\.95, vertexColors: true \}\)/);
+    expect(escort).toMatch(/new THREE\.MeshStandardMaterial\(\{ color: 0x06070b, roughness: 0\.95, vertexColors: true \}\)/);
   });
 });
 
