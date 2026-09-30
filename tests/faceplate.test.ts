@@ -6,7 +6,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { LETTER_VH, platePass, plateTop, thumbBeside } from "../client/hud/faceplate";
+import { alertOnCut, ALERT_HOME, LETTER_VH, platePass, plateTop, thumbBeside } from "../client/hud/faceplate";
 
 const DEACON = "/portraits/deacon.jpg";
 const MARROW = "/portraits/marrow.jpg";
@@ -49,5 +49,14 @@ describe("the portrait plate", () => {
     expect(thumbBeside(null, null)).toBeNull();
     const camp = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
     expect(camp.split("thumbBeside(plate, portraitFor").length - 1).toBe(2);
+  });
+
+  it("parks the alert in the bar during a line, and leaves it under the compass after", () => {
+    expect(alertOnCut(true)).toEqual({ top: 8, z: "6" });
+    expect(alertOnCut(false)).toEqual({ top: ALERT_HOME, z: "" });
+    expect(alertOnCut(true).top).toBeLessThan(ALERT_HOME);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/const seat = alertOnCut\(on\)/);
+    expect(hud).toMatch(/banner\.style\.zIndex = seat\.z/);
   });
 });

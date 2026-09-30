@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 731 — A line keeps the alert in the bar
+
+**The ask.** The alert lives at 58px. The letterbox is 11vh and paints over that spot, so a line hides "THE HOST IS AT THE TERMINAL". On a short screen the same 58px sits on the face.
+
+**The change.** While the bars are down the alert sits in the top bar, above the black. When the line ends it goes back under the compass.
+
+**Verified.** `alertOnCut(true)` is top 8, above the bar. `alertOnCut(false)` is 58. Leaving it at 58 for a line failed once (expected top 8, z 6).
+
+**Open.** When the other person is closer than the stand-off, the lens sits inside them.
+
 ## Stage 730 — A host who is not in the room still has a face
 
 **The ask.** When the host's body is not drawn, their own line is the bars and the words. The machine has no portrait of them, so the picture is black.
