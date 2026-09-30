@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { yawDir, yawTo } from "../shared/math/vec3";
-import { bodyOnLine, dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, lineEye, ownStand } from "../client/render/faceshot";
+import { bodyOnLine, dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, lensGap, lineEye, ownStand, standOff } from "../client/render/faceshot";
 import { attend, ATTEND, buildFixer, FIXER_SCALE, holdFace } from "../client/render/figures";
 
 describe("the close-up", () => {
@@ -32,6 +32,23 @@ describe("the close-up", () => {
     cam.getWorldDirection(dir);
     const toFace = new THREE.Vector3(s.lookX - s.x, s.lookY - s.y, s.lookZ - s.z).normalize();
     expect(dir.dot(toFace)).toBeGreaterThan(0.99);
+  });
+
+  it("stops short of a person who is closer than the stand-off", () => {
+    const player = { x: 0, y: 0, z: -0.4, yaw: Math.PI, eye: 1.62 };
+    const visitor = { id: "deacon", x: 0, z: 0, yaw: 0 };
+    expect(lensGap(visitor, 0, player)).toBeCloseTo(0.4);
+    expect(standOff(0.4)).toBeLessThan(0.4);
+    expect(standOff(0.4)).toBeGreaterThan(0.15);
+    expect(standOff(4)).toBe(FACE_STAND);
+    expect(standOff(null)).toBe(FACE_STAND);
+    const shot = dialogueShot({ speaker: "deacon", player, visitor, wern: null })!;
+    const dist = Math.hypot(shot.x - visitor.x, shot.z - visitor.z);
+    expect(dist).toBeLessThan(0.4);
+    expect(dist).toBeCloseTo(standOff(0.4));
+    const beside = { x: 2, y: 0, z: 0, yaw: 0, eye: 1.62 };
+    const wide = dialogueShot({ speaker: "deacon", player: beside, visitor, wern: null })!;
+    expect(Math.hypot(wide.x - visitor.x, wide.z - visitor.z)).toBeCloseTo(FACE_STAND);
   });
 
   it("uses the hood's own height", () => {

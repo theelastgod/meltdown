@@ -8,10 +8,12 @@
  * Heights are the hood and head centres in figures.ts, times FIXER_SCALE. The player's line uses
  * the eye the sim already fires from.
  */
-import { yawDir, yawTo } from "../../shared/math/vec3";
+import { yawDir, yawRight, yawTo } from "../../shared/math/vec3";
 import { MOVE } from "../../shared/sim/constants";
 
 export const FACE_STAND = 0.72;
+/** Stay this far short of the other body before the full stand-off fits. */
+export const FACE_CLEAR = 0.16;
 export const FACE_DIP = 0.08;
 export const FACE_FOV = 28;
 /** A new face farther than this from the last one is a cut, not a slide across the room. */
@@ -40,8 +42,31 @@ export interface FaceShot {
   fov: number;
 }
 
+/**
+ * How far in front of a face the lens may stand. The full stand is 0.72 m. When the other person
+ * is closer than that along the look, the lens stops short of them instead of sitting inside them.
+ * Nobody in front keeps the full stand.
+ */
+export function standOff(forward: number | null): number {
+  if (forward === null || forward >= FACE_STAND + FACE_CLEAR) return FACE_STAND;
+  return Math.min(FACE_STAND, forward * 0.55);
+}
+
+/** Metres along `yaw` to another body, when they are in the lens. Off to the side is not a block. */
+export function lensGap(from: { x: number; z: number }, yaw: number, other: { x: number; z: number } | null): number | null {
+  if (!other) return null;
+  const fwd = yawDir(yaw);
+  const right = yawRight(yaw);
+  const dx = other.x - from.x;
+  const dz = other.z - from.z;
+  const along = dx * fwd.x + dz * fwd.z;
+  const side = dx * right.x + dz * right.z;
+  if (along < 0.15 || Math.abs(side) > 0.45) return null;
+  return along;
+}
+
 /** The lens in front of a face that stands at `at` and looks along `yaw`. */
-export function faceShot(at: { x: number; z: number }, yaw: number, faceY: number, who: FaceWho = "other"): FaceShot {
+export function faceShot(at: { x: number; z: number }, yaw: number, faceY: number, who: FaceWho = "other", stand = FACE_STAND): FaceShot {
   const fwd = yawDir(yaw);
   return {
     who,
@@ -49,9 +74,9 @@ export function faceShot(at: { x: number; z: number }, yaw: number, faceY: numbe
     lookY: faceY,
     lookZ: at.z,
     yaw,
-    x: at.x + fwd.x * FACE_STAND,
+    x: at.x + fwd.x * stand,
     y: faceY - FACE_DIP,
-    z: at.z + fwd.z * FACE_STAND,
+    z: at.z + fwd.z * stand,
     fov: FACE_FOV,
   };
 }
@@ -104,14 +129,20 @@ export function dialogueShot(o: DialogueBodies): FaceShot | null {
       if (!o.host) return null;
       const face = partner(o) ?? o.player;
       const yaw = yawAt(o.host, face, o.host.yaw);
-      return faceShot({ x: o.host.x, z: o.host.z }, yaw, o.host.y + o.host.eye, "other");
+      return faceShot({ x: o.host.x, z: o.host.z }, yaw, o.host.y + o.host.eye, "other", standOff(lensGap(o.host, yaw, face)));
     }
     const other = partner(o);
     const yaw = other ? yawTo({ x: o.player.x, y: 0, z: o.player.z }, { x: other.x, y: 0, z: other.z }) : o.player.yaw;
-    return faceShot({ x: o.player.x, z: o.player.z }, yaw, o.player.y + o.player.eye, "you");
+    return faceShot({ x: o.player.x, z: o.player.z }, yaw, o.player.y + o.player.eye, "you", standOff(lensGap({ x: o.player.x, z: o.player.z }, yaw, other)));
   }
-  if (o.visitor && o.visitor.id === o.speaker && o.speaker in FACE_Y) return faceShot(o.visitor, yawAt(o.visitor, o.player, o.visitor.yaw), FACE_Y[o.speaker as keyof typeof FACE_Y]);
-  if (o.speaker === "wern" && o.wern) return faceShot(o.wern, yawAt(o.wern, o.player, o.wern.yaw), FACE_Y.wern);
+  if (o.visitor && o.visitor.id === o.speaker && o.speaker in FACE_Y) {
+    const yaw = yawAt(o.visitor, o.player, o.visitor.yaw);
+    return faceShot(o.visitor, yaw, FACE_Y[o.speaker as keyof typeof FACE_Y], "other", standOff(lensGap(o.visitor, yaw, o.player)));
+  }
+  if (o.speaker === "wern" && o.wern) {
+    const yaw = yawAt(o.wern, o.player, o.wern.yaw);
+    return faceShot(o.wern, yaw, FACE_Y.wern, "other", standOff(lensGap(o.wern, yaw, o.player)));
+  }
   return null;
 }
 

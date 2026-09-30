@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 732 — A close face does not put the lens inside them
+
+**The ask.** The close-up stands 0.72 m in front of a face. Walk closer than that and the lens is past the other person, inside them, looking back out through the coat.
+
+**The change.** When someone is in the lens and closer than that stand, the camera stops at 55% of the gap, still in front of the face and short of them. Off to the side, or far enough that the full stand fits, the 0.72 m shot is unchanged.
+
+**Verified.** A player 0.4 m in front of the Deacon pulls the lens inside 0.4 m. Keeping the full stand failed once (`expected 0.72 to be less than 0.4`).
+
+**Open.** A gap tighter than the hood still has to choose a side of the cloth. The lens does not step sideways.
+
 ## Stage 731 — A line keeps the alert in the bar
 
 **The ask.** The alert lives at 58px. The letterbox is 11vh and paints over that spot, so a line hides "THE HOST IS AT THE TERMINAL". On a short screen the same 58px sits on the face.
