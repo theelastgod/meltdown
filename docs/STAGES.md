@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 733 — A tighter gap steps the lens off the hood
+
+**The ask.** Pulling the stand back to 55% of a very short gap put the lens inside the hood. At a quarter of a metre the straight shot is 0.14 m from the face, and the cloth is 0.22 m deep.
+
+**The change.** A stand closer than the hood steps to the right, on the circle that clears the cloth, and still looks at the face. A normal stand, and the 0.4 m gap that already clears the hood, stay on the line.
+
+**Verified.** `tests/faceshot.test.ts` puts the player 0.25 m in front of the Deacon and requires the lens outside the hood and off the centre line. Returning no side-step failed once (`expected 0 to be greater than 0`).
+
+**Open.** The step is always to the right. A wall on that side is not yet considered.
+
 ## Stage 732 — A close face does not put the lens inside them
 
 **The ask.** The close-up stands 0.72 m in front of a face. Walk closer than that and the lens is past the other person, inside them, looking back out through the coat.

@@ -7,8 +7,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { yawDir, yawTo } from "../shared/math/vec3";
-import { bodyOnLine, dialogueShot, FACE_CUT_M, FACE_FOV, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, lensGap, lineEye, ownStand, standOff } from "../client/render/faceshot";
+import { yawDir, yawRight, yawTo } from "../shared/math/vec3";
+import { bodyOnLine, dialogueShot, FACE_CUT_M, FACE_FOV, FACE_HOOD, FACE_STAND, FACE_Y, faceCuts, faceShot, gunOnLine, lensBeside, lensGap, lineEye, ownStand, standOff } from "../client/render/faceshot";
 import { attend, ATTEND, buildFixer, FIXER_SCALE, holdFace } from "../client/render/figures";
 
 describe("the close-up", () => {
@@ -49,6 +49,23 @@ describe("the close-up", () => {
     const beside = { x: 2, y: 0, z: 0, yaw: 0, eye: 1.62 };
     const wide = dialogueShot({ speaker: "deacon", player: beside, visitor, wern: null })!;
     expect(Math.hypot(wide.x - visitor.x, wide.z - visitor.z)).toBeCloseTo(FACE_STAND);
+  });
+
+  it("steps aside when a straight stand would be inside the hood", () => {
+    const player = { x: 0, y: 0, z: -0.25, yaw: Math.PI, eye: 1.62 };
+    const visitor = { id: "deacon", x: 0, z: 0, yaw: 0 };
+    const stand = standOff(0.25);
+    expect(stand).toBeLessThan(FACE_HOOD);
+    expect(lensBeside(stand)).toBeGreaterThan(0);
+    expect(lensBeside(FACE_STAND)).toBe(0);
+    const shot = dialogueShot({ speaker: "deacon", player, visitor, wern: null })!;
+    const dist = Math.hypot(shot.x - visitor.x, shot.y - shot.lookY, shot.z - visitor.z);
+    expect(dist).toBeGreaterThanOrEqual(FACE_HOOD - 1e-6);
+    const fwd = yawDir(0);
+    const right = yawRight(0);
+    const along = shot.x * fwd.x + shot.z * fwd.z;
+    expect(along).toBeLessThan(0.25);
+    expect(Math.abs(shot.x * right.x + shot.z * right.z)).toBeGreaterThan(0.1);
   });
 
   it("uses the hood's own height", () => {
