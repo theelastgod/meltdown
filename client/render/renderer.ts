@@ -12,7 +12,7 @@ import { VfxPool } from "./vfx";
 import { markShared, release } from "./dispose";
 import { CityLife, flickerMaterial } from "./life";
 import { HubDressing } from "./hub";
-import { attend, buildFixer } from "./figures";
+import { attend, buildFixer, holdFace } from "./figures";
 import { WHITE_LEVEL_ID } from "@shared/sim/white";
 import { CampaignFx } from "./campaign";
 import { drawGlyph, glyphFor } from "@shared/identity/glyph";
@@ -945,12 +945,24 @@ export class Renderer {
       // The face holds the shot's yaw, which is the line to the other person when one is in the room.
       this.local.group.rotation.y = s.yaw;
     }
-    if (s.who === "other" && k > 0.2) {
-      const v = this.hub?.visitorPose();
-      if (v && (v.x - s.lookX) * (v.x - s.lookX) + (v.z - s.lookZ) * (v.z - s.lookZ) < 0.04) this.hub?.faceVisitor(s.yaw);
-      if (this.wern && (this.wern.position.x - s.lookX) * (this.wern.position.x - s.lookX) + (this.wern.position.z - s.lookZ) * (this.wern.position.z - s.lookZ) < 0.04) this.wern.rotation.y = s.yaw;
-    }
+    // The waiting turn runs later in this frame and caps at a short look. Pin the line for the whole
+    // shot, or the hood is back on the door by the time the picture is drawn.
+    this.pinSpeaker(this.faceShot);
     if (k > 0.35) this.viewmodel.visible = false;
+  }
+
+  /** The office visitor or Wern, when the shot is on them. Anyone else is let back to the room. */
+  private pinSpeaker(s: FaceShot | null): void {
+    const v = this.hub?.visitorPose();
+    const onV = !!s && s.who === "other" && !!v && (v.x - s.lookX) * (v.x - s.lookX) + (v.z - s.lookZ) * (v.z - s.lookZ) < 0.04;
+    if (onV && s) {
+      this.hub?.faceVisitor(s.yaw);
+      this.hub?.holdVisitor(s.yaw);
+    } else this.hub?.holdVisitor(null);
+    if (s && s.who === "other" && this.wern && (this.wern.position.x - s.lookX) * (this.wern.position.x - s.lookX) + (this.wern.position.z - s.lookZ) * (this.wern.position.z - s.lookZ) < 0.04) {
+      this.wern.rotation.y = s.yaw;
+      holdFace(this.wern, s.yaw);
+    } else if (this.wern) holdFace(this.wern, null);
   }
 
   /**

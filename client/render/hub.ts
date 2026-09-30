@@ -10,7 +10,7 @@ import type { LevelDef } from "@shared/sim/level";
 import type { HubDef } from "@shared/sim/hub";
 import { bindPlate, MeshBatch, PALETTE, SignAtlas } from "./city";
 import { cloakGeometry } from "./rig";
-import { attend, buildFixer, type FixerBody } from "./figures";
+import { attend, buildFixer, holdFace, type FixerBody } from "./figures";
 
 export interface HubState {
   chapter: number;
@@ -46,6 +46,11 @@ export class HubDressing {
   /** Turn the standing fixer to the line. Their placed yaw is where the office sat them. */
   faceVisitor(yaw: number): void {
     if (this.visitorFig) this.visitorFig.rotation.y = yaw;
+  }
+
+  /** Keep that facing through the waiting turn, which would otherwise write the cap back over it. */
+  holdVisitor(yaw: number | null): void {
+    if (this.visitorFig) holdFace(this.visitorFig, yaw);
   }
   private visitorFig: THREE.Group | null = null;
 

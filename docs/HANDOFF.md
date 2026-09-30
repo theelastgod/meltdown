@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 719 (the person speaking looks at the player). Stage 718 pushes the terminal in on the file's own line. Stage 717 fades a second portrait over the first. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **720** |
+| HEAD | Stage 720 (the close-up keeps the facing the line aimed). Stage 719 turns the speaker toward the player. Stage 718 pushes the terminal in on the file's own line. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **721** |
 | Unit tests | 1790 at Stage 714, plus the face, plate, and terminal files green at Stage 719 |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |

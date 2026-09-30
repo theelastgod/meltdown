@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 720 — The close-up keeps the face it aimed
+
+**The ask.** The line turned the fixer toward you, and the picture still showed the side of the hood. The waiting turn runs after that aim, and it will only come 0.9 rad off the door. The lens was on the line to you. The hood had been put back.
+
+**The change.** While the shot is on the office visitor or on Wern, that facing is held through the waiting turn. The breath stays. The wait-turn's own offset is left where it was, so the room's look is still there when the line ends. Letting go of the hold still snaps; the camera is easing out when it does.
+
+**Verified.** A Deacon placed at yaw 0.4, with the player at (4, 1), settles at 1.3. The line wants −2.76. Holding that yaw and stepping the waiting turn keeps −2.76, and the chest still moves. Dropping the hold and writing the cap again failed once (`expected 1.3 to be close to -2.76`).
+
+**Open.** The moment the line ends, the hood snaps back to that 0.9 rad while the camera is still leaving the face.
+
 ## Stage 719 — The person you are talking to looks at you
 
 **The ask.** A fixer in the office faced the mark they were stood on. If you took the line from across the room, the close-up was the side of the hood, aimed at an empty spot.

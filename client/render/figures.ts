@@ -337,15 +337,28 @@ export function attendTarget(at: { x: number; z: number }, baseYaw: number, px: 
   return Math.max(-ATTEND.turn, Math.min(ATTEND.turn, off));
 }
 
+/**
+ * A dialogue line holds the facing (Stage 720). The waiting turn is capped, and it runs after the
+ * close-up has aimed the figure, so without this the frame draws the cap and the lens films the hood.
+ * Releasing the hold does not move the wait-turn: that ease is the next frame's.
+ */
+export function holdFace(f: THREE.Group, yaw: number | null): void {
+  const u = f.userData as { faceHold?: number };
+  if (yaw === null) delete u.faceHold;
+  else u.faceHold = yaw;
+}
+
 /** step a fixer standing in the scene: turn toward (or back from) the player, and breathe */
 export function attend(f: THREE.Group, dt: number, px: number, pz: number, time: number): void {
-  const u = f.userData as { baseYaw?: number; turned?: number; id?: FixerBody };
+  const u = f.userData as { baseYaw?: number; turned?: number; faceHold?: number; id?: FixerBody };
   u.baseYaw ??= f.rotation.y;
   u.turned ??= 0;
-  const target = attendTarget(f.position, u.baseYaw, px, pz);
-  const step = ATTEND.rate * Math.max(0, dt);
-  u.turned += Math.max(-step, Math.min(step, target - u.turned));
-  f.rotation.y = u.baseYaw + u.turned;
+  if (typeof u.faceHold !== "number") {
+    const target = attendTarget(f.position, u.baseYaw, px, pz);
+    const step = ATTEND.rate * Math.max(0, dt);
+    u.turned += Math.max(-step, Math.min(step, target - u.turned));
+    f.rotation.y = u.baseYaw + u.turned;
+  } else f.rotation.y = u.faceHold;
   const id = f.name.slice("fixer:".length) as FixerBody;
   const s = FIXER_SCALE[id] ?? 1;
   f.scale.set(s, s * (1 + ATTEND.breath * Math.sin((time / ATTEND.period) * Math.PI * 2)), s);
