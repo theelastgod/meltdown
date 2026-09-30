@@ -19,9 +19,9 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 710 (office, yard, and white room have their own arrival art). Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **711** |
-| Unit tests | 1748, `npm test` (vitest) — all green at HEAD |
+| HEAD | Stage 714 (streets wear the Higgsfield plates; the metro booth opens the market and holds into THE RUN). Stages 711–713 added cosmetic rig plates through AWNING. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **715** |
+| Unit tests | 1790, `npm test` (vitest) — green at Stage 714 |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |
 | CI | Stage 699 green. 700–703 red on three causes all fixed in 704 (a vitest 5 s timeout, probe:mastery shooting the loading card mid-fade, probe:world racing the district). **704 and 705 were still running at handoff — check them first.** |
@@ -192,12 +192,7 @@ npm run probe:world && npm run probe:net && npm run probe:harden   # one at a ti
 1. **Watch CI for 704/705.** The runner is slower than this sandbox. The known CI-only failure was
    probe:world's event check (a late joiner arriving after the HOLD ended) — fixed in 704 by having
    CHARLIE join before ALPHA reaches the ring; confirm it.
-2. **$CAPITAL in the shared world** (owner request 4), within `docs/TOKENOMICS.md` §1:
-   - THE RUN's extraction already pays $CAPITAL in its PvP zones. Make it *reachable from the city*:
-     a gate or desk in the city that leads into THE RUN, and a WORLD MAP marker for it.
-   - A city **market kiosk** (Stage 15 built safe-zone kiosks) in NIGHT MARKET for cosmetics and
-     names — a **sink**, never a faucet; `npm run lint:economy` must stay clean.
-   - City events/runs keep paying XP and stamps only. Do **not** add a $CAPITAL faucet to PvE.
+2. **$CAPITAL in the shared world** — Stage 714 did the reachability. The plaza metro booth is the desk: Tab opens the existing market (a sink), a one-second hold enters THE RUN of that district, and the WORLD MAP offers ENTER THE RUN. City events and street runs still pay XP and stamps only. Do **not** add a $CAPITAL faucet to PvE. `npm run lint:economy` must stay clean. What is still open is a name-change kiosk that is not the whole Ledger Market panel.
 3. **More to do in the city**: an interact key (needs `Btn`/`ACTION_MASK` widened — check the
    protocol fingerprint tests), vendors/fixers standing in the streets, district-specific event
    kinds, co-op run relays.

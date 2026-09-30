@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 714 — The streets wear the plates, and the metro booth opens the ledger
+
+**The ask.** The Higgsfield plates were in the catalog and on a worn rig, and the streets still wore the older tiles. The city also had no way to spend $CAPITAL, and no way into THE RUN except the menu.
+
+**The change.** Surface families now deal those plates: brick, puddle, canal, oil, hex, rail, vent, shutter, terrazzo, ash, gantry, bulkhead, conduit, crate, awning, lantern, chain, scaffold, drum, cone, car paint, cable, rack, and the metro tile. `bindPlate` still swaps the map on the material that was already there, so the frame does not gain a draw call. Night Market's own seed wears `skin_awning_plate` on the magenta awnings. Every district's plaza metro booth is a ledger desk. Within 7 m the gate line says the market is there, and Tab opens the file on the market. Within 2.6 m a one-second hold walks into THE RUN of that same district. The world map names the desk and offers ENTER THE RUN. City events and street runs still pay XP and stamps only.
+
+**Verified.** `tests/plates.test.ts` requires the street plates to be dealt, and Night Market's seed to wear the awning plate. Taking `skin_awning_plate` out of the awning pool failed that test once. `tests/ledgerdesk.test.ts` puts the spot 1.4 m south of the metro door, keeps every perimeter spawn outside the mouth, and holds for 60 ticks of `SIM_DT`. A phone line has no key in it. Taking `atLedgerDesk` out of Tab's market check failed that test once. `npm run lint:economy` stays clean: nothing new pays $CAPITAL.
+
+**Open.** The wet floor's reflector still has no albedo. Plates that are cloth, hoods, and spore stay on the rig until a surface is theirs.
+
 ## Stage 710 — The office, the yard, and the white room opened on someone else's picture
 
 **The ask.** After the five districts had their own arrival art, three places still borrowed a picture: the Deadletter Office used the Leak banner, the Drainage Yard used a gig, and the White Office used the last mission's banner.

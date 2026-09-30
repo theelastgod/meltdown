@@ -18,21 +18,21 @@
  *  surface wore before it had a pool, so a district that seeds to 0 looks exactly as it did. */
 export const PLATE_POOLS = {
   /** the road deck itself: wet asphalt, worn and puddled */
-  road: ["tex_asphalt_2", "tex_var_028", "tex_var_039"],
+  road: ["tex_asphalt_2", "tex_var_028", "tex_var_039", "skin_puddle_plate", "skin_canal_plate", "skin_oil_plate"],
   /** kerbs and walkways: laid stone, wet */
-  cobble: ["tex_wet_cobble", "tex_var_057", "tex_var_026", "tex_plaza_hexstone"],
+  cobble: ["tex_wet_cobble", "tex_var_057", "tex_var_026", "tex_plaza_hexstone", "skin_hex_plate"],
   /** drain covers and inspection plates set into the deck */
   drain: ["tex_grate", "tex_var_025", "tex_var_062", "tex_var_076"],
   /** the flat pads a player actually stands on between the kerbs */
   paving: ["tex_wet_asphalt", "tex_var_071", "tex_var_077", "tex_var_027"],
   /** walkable metal: tread plate and mesh decking */
-  tread: ["tex_metal", "tex_var_049", "tex_var_081", "tex_plaza_tread"],
+  tread: ["tex_metal", "tex_var_049", "tex_var_081", "tex_plaza_tread", "skin_rail_plate"],
   /** extract fans and wall vents */
-  vent: ["tex_vent", "tex_var_050"],
+  vent: ["tex_vent", "tex_var_050", "skin_vent_plate"],
   /** painted hazard, at the edges a player is not meant to cross */
   hazard: ["tex_vantage_hazard", "tex_var_041"],
   /** roller shutters and corrugated sheet */
-  shutter: ["tex_shutter", "tex_var_090", "tex_wall_shutter"],
+  shutter: ["tex_shutter", "tex_var_090", "tex_wall_shutter", "skin_shutter_plate"],
   /**
    * The plaza deck — the surface that fills most of a street camera.
    *
@@ -40,21 +40,41 @@ export const PLATE_POOLS = {
    * street reads, because this is what the player is actually looking at and it was still the one
    * flat plate it shipped with. These are the tiles generated for it (Stage 634).
    */
-  plaza: ["tex_pavement", "tex_plaza_terrazzo", "tex_plaza_slab", "tex_plaza_asphalt"],
+  plaza: ["tex_pavement", "tex_plaza_terrazzo", "tex_plaza_slab", "tex_plaza_asphalt", "skin_terrazzo_plate"],
   /** poured walls and the mass behind the dressing */
-  concrete: ["tex_concrete", "tex_wall_boardform"],
+  concrete: ["tex_concrete", "tex_wall_boardform", "skin_ash_plate", "skin_gantry_plate"],
   /** the dark bulkhead behind the neon: pipework, looms, conduit */
-  bulkhead: ["tex_bulkhead", "tex_wall_conduit"],
+  bulkhead: ["tex_bulkhead", "tex_wall_conduit", "skin_bulkhead_plate", "skin_conduit_plate"],
   /** stacked containers in the yards */
-  container: ["tex_container", "tex_wall_container"],
+  container: ["tex_container", "tex_wall_container", "skin_crate_plate"],
   /** a magenta district's brick; the amber and cyan casts keep their own */
-  brick: ["tex_neon_brick", "tex_wall_neonbrick"],
+  brick: ["tex_neon_brick", "tex_wall_neonbrick", "skin_brick_plate"],
   /** what the Deadletter Office and the hub are floored with */
   officefloor: ["tex_white_office", "tex_office_tile", "tex_office_carpet"],
   /** and walled with */
-  officewall: ["tex_white_office", "tex_office_acoustic", "tex_office_steel"],
+  officewall: ["tex_white_office", "tex_office_acoustic", "tex_office_steel", "skin_rib_plate"],
   /** THE KERNEL on the horizon, and the filament that runs through it */
   kernel: ["tex_kernel_hull", "tex_kernel_filament"],
+  /** market canvas: the flat colour the awning wore, then the cloth plate */
+  awning: ["tex_awning_mg", "skin_awning_plate"],
+  /** the other stall colour */
+  awningAlt: ["tex_awning_cy", "skin_lantern_plate"],
+  /** chain-link yards */
+  chain: ["tex_chainlink", "skin_chain_plate"],
+  /** scaffold poles */
+  scaffold: ["tex_scaffold", "skin_scaffold_plate"],
+  /** drums in the yards */
+  barrel: ["tex_barrel", "skin_drum_plate"],
+  /** traffic cones */
+  cone: ["tex_cone", "skin_cone_plate"],
+  /** parked cars */
+  car: ["tex_car", "skin_carpaint_plate"],
+  /** loose crates and stall fronts */
+  crate: ["tex_crate", "skin_crate_plate"],
+  /** cable looms on the rails */
+  cable: ["tex_cable", "skin_cable_plate"],
+  /** the plaza metro booth, which is also the ledger desk */
+  metro: ["tex_tile_metro", "skin_rack_plate", "skin_metro_plate"],
 } as const satisfies Record<string, readonly [string, ...string[]]>;
 
 export type PlateFamily = keyof typeof PLATE_POOLS;
@@ -66,8 +86,8 @@ export type PlateFamily = keyof typeof PLATE_POOLS;
 export function platePick(family: PlateFamily, seed: number): string {
   const pool = PLATE_POOLS[family] as readonly string[];
   // A deal, not a draw. Dealing by the district's place in the shipped list means N districts show
-  // min(N, pool) distinct plates rather than however many a hash happens to land on — with seven
-  // districts and pools of at most four, every pooled plate is on a surface somewhere. The family
+  // min(N, pool) distinct plates rather than however many a hash happens to land on. A pool longer
+  // than the shipped seed list leaves a plate no district wears. The family
   // offsets the deal so a district does not turn every one of its surfaces the same way.
   const rank = SHIPPED_DISTRICT_SEEDS.indexOf(seed);
   if (rank >= 0) {
@@ -82,11 +102,11 @@ export function platePick(family: PlateFamily, seed: number): string {
 }
 
 /**
- * The skyline seeds of every district that ships: the three hand-built levels and the three
- * generated ones, plus `dressLevel`'s fallback for a level that names no seed. A pooled plate no
+ * The skyline seeds of every place that ships: the hand-built rooms, every generated district,
+ * and `dressLevel`'s fallback for a level that names no seed. A pooled plate no
  * seed here can reach is not in the game, whatever the pool says — `lintPlatesAreDrawn` checks it.
  */
-export const SHIPPED_DISTRICT_SEEDS: readonly number[] = [3, 5, 42, 77, 1101, 2202, 3303];
+export const SHIPPED_DISTRICT_SEEDS: readonly number[] = [3, 5, 42, 77, 1101, 2202, 3303, 4404, 5505];
 
 /** Every plate a shipped district can actually put on a surface. */
 export function reachablePlates(): readonly string[] {

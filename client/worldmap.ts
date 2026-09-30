@@ -20,6 +20,7 @@ import { gateSummary, worldMapLayout, type WorldMapLayout } from "@shared/city/w
 import { cityMapTravelUrl, cityWsBase } from "@shared/net/citygates";
 import { levelDisplayName } from "@shared/sim/level";
 import { closeHint } from "./hud/keyhint";
+import { runPageUrl } from "./runpage";
 
 /** how often an open map reads the feed again (ms): a little over the feed's own cache */
 export const WORLD_MAP_POLL_MS = 3000;
@@ -89,7 +90,9 @@ export function worldMapDetails(v: WorldMapState): string {
   const recs = !live ? "" : p!.records.length ? p!.records.map((r) => `<div class="dr">⏱ ${esc(r.course)} · ${r.time.toFixed(1)}S · ${esc(r.holder)}</div>`).join("") : '<div class="dr dim">NO STREET-RUN RECORDS YET</div>';
   const gates = gateSummary(id).map((g) => `${g.sides.map((s) => SIDE_WORD[s]).join(" · ")} → ${levelDisplayName(g.to)}`).join(" &nbsp; ");
   const go = id === v.here ? '<div class="go here">YOU ARE HERE</div>' : `<div class="go" data-wm-go="${id}">[ TRAVEL TO ${esc(levelDisplayName(id))} ]</div>`;
-  return `<div class="wd"><div class="dh"><b>${esc(levelDisplayName(id))}</b> · ${live ? `${p!.players} ONLINE` : "—"}</div><div class="dn">${who}</div>${ev}${recs}<div class="dg">GATES ${gates}</div>${go}</div>`;
+  // The metro booth is on every plaza. The market spends $CAPITAL. THE RUN is where it is paid.
+  const run = `<div class="dg">LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS</div><div class="go" data-wm-run="${id}">ENTER THE RUN</div>`;
+  return `<div class="wd"><div class="dh"><b>${esc(levelDisplayName(id))}</b> · ${live ? `${p!.players} ONLINE` : "—"}</div><div class="dn">${who}</div>${ev}${recs}<div class="dg">GATES ${gates}</div>${go}${run}</div>`;
 }
 
 /** The panel in the HUD: opened and shut by the MAP tab, reading the feed while open. */
@@ -104,7 +107,7 @@ export class WorldMap {
   /** how many times the feed has been read (the probe checks it is only read while open) */
   reads = 0;
 
-  constructor(root: HTMLElement, here: string, touch: boolean, private go: (url: string, district: string) => void, private feed: string | null = feedUrl(location.href)) {
+  constructor(root: HTMLElement, here: string, touch: boolean, private go: (url: string, district: string) => void, private feed: string | null = feedUrl(location.href), private onRun: ((url: string) => void) | null = null) {
     this.state = { here, selected: here, presence: null, status: "loading", touch };
     const el = document.createElement("div");
     el.className = "p cy worldmap";
@@ -113,6 +116,8 @@ export class WorldMap {
     this.el = el;
     el.addEventListener("click", (e) => {
       const t = e.target as HTMLElement;
+      const run = t.closest("[data-wm-run]") as HTMLElement | null;
+      if (run?.dataset.wmRun) return void this.enterRun(run.dataset.wmRun);
       const go = t.closest("[data-wm-go]") as HTMLElement | null;
       if (go) return void this.travel(go.dataset.wmGo!);
       const pick = t.closest("[data-wm]") as HTMLElement | null;
@@ -145,6 +150,16 @@ export class WorldMap {
     if (!this.layout.tiles.some((t) => t.district === district)) return;
     this.state.selected = district;
     this.render();
+  }
+
+  /** ENTER THE RUN: this district's PvP loop, behind the loading card. Null when the district is not one. */
+  runTarget: string | null = null;
+  enterRun(district: string): string | null {
+    const url = runPageUrl(location.href, district);
+    if (!url) return null;
+    this.runTarget = url;
+    this.onRun?.(url);
+    return url;
   }
 
   /** TRAVEL: the chosen district's city, behind the loading card. Null when there is nowhere to go. */

@@ -36,6 +36,8 @@ import { gigThumb } from "./gigart";
 import { protocolIcon, weaponCard } from "./kitart";
 import { loadingFor, travelTo } from "./loading";
 import { gatePrompt, gateSigns, gateToTravel, gateTravelUrl, holdProgress, stepGateHold, type GateHold } from "@shared/net/citygates";
+import { inLedgerMouth, LEDGER_HOLD_GATE, ledgerHudLine, nearLedgerDesk } from "@shared/net/cityledger";
+import { runPageUrl } from "./runpage";
 import { radarGates } from "./hud/radar";
 import { SIM_DT } from "@shared/sim/constants";
 
@@ -235,23 +237,45 @@ export class Campaign {
   gateHold: GateHold | null = null;
   /** where a gate sent this page: the probe reads it under `?nonav=1`, where nothing loads */
   gateTarget: { gate: number; district: string; arriveGate: number; url: string } | null = null;
+  /** standing at the metro booth, so Tab opens the market (a sink, never a payout) */
+  atLedgerDesk = false;
+  /** where the booth sent this page */
+  runTarget: string | null = null;
 
   /**
    * The city's gates, once a sim tick (Stage 697): name the gate ahead, count the time stood in its
-   * mouth, and walk through it once the hold is full. A dead file, or one at the desk, crosses nothing.
+   * mouth, and walk through it once the hold is full. A dead file, or one with a panel open, crosses
+   * nothing. The metro booth, when no gate is ahead, is its own one-second hold into THE RUN.
    */
   private cityGates(): void {
     const g = this.game;
-    if (this.gateTarget) return; // already on the way
+    if (this.gateTarget || this.runTarget) return; // already on the way
     const p = g.player;
     const level = g.world.level;
     const live = p.alive && !this.uiOpen;
     const at = live ? gateToTravel(p.pos, level, this.mode) : null;
-    const step = stepGateHold(this.gateHold, at, SIM_DT);
+    const desk = live && at === null && nearLedgerDesk(p.pos, level);
+    const mouth = desk && inLedgerMouth(p.pos, level);
+    this.atLedgerDesk = desk;
+    const step = stepGateHold(this.gateHold, at ?? (mouth ? LEDGER_HOLD_GATE : null), SIM_DT);
     this.gateHold = step.hold;
     const near = live ? gatePrompt(p.pos, level, this.mode) : null;
-    g.hud.setGate(near ? gateLine(near.to.district, holdProgress(this.gateHold), at !== null) : null);
+    if (near) g.hud.setGate(gateLine(near.to.district, holdProgress(this.gateHold), at !== null));
+    else if (desk) g.hud.setGate(ledgerHudLine(holdProgress(this.gateHold), mouth, g.hud.touch));
+    else g.hud.setGate(null);
     if (step.go && at !== null) this.walkThrough(at);
+    else if (step.go && mouth) this.enterRun();
+  }
+
+  /** Through the metro booth: THE RUN of this district. The city pays nothing for the walk. */
+  enterRun(): boolean {
+    const url = runPageUrl(location.href, this.game.levelId);
+    if (!url || this.runTarget) return false;
+    this.runTarget = url;
+    this.game.hud.setGate(null);
+    this.note(`THE RUN · ${levelDisplayName(this.game.levelId)}`);
+    this.travel(url);
+    return true;
   }
 
   /** Through a gate: the neighbour's city, arriving at the gate that leads back here. */

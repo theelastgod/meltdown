@@ -125,6 +125,9 @@ describe("what the map shows", () => {
     expect(here).not.toMatch(/data-wm-go/);
     expect(here).toMatch(/YOU ARE HERE/);
     expect(here).toMatch(/NO PUBLIC EVENT RUNNING/);
+    expect(here).toMatch(/data-wm-run="lease_row"/);
+    expect(here).toMatch(/LEDGER DESK AT THE METRO/);
+    expect(worldMapHtml(layout, state({ touch: true }))).not.toMatch(/data-wm-run="[^"]*".*\[[A-Z]+\]/);
   });
 
   it("a name is text, never markup", () => {

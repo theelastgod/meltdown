@@ -39,6 +39,19 @@ describe("the plate a district wears", () => {
     const ground = SHIPPED_DISTRICT_SEEDS.map((s) => `${platePick("road", s)}|${platePick("cobble", s)}|${platePick("paving", s)}`);
     expect(new Set(ground).size).toBeGreaterThanOrEqual(3);
   });
+
+  it("deals the Higgsfield street plates onto a surface, including the night market's own seed", () => {
+    const worn = new Set<string>();
+    for (const f of families) for (const s of SHIPPED_DISTRICT_SEEDS) worn.add(platePick(f, s));
+    for (const id of ["skin_brick_plate", "skin_puddle_plate", "skin_awning_plate", "skin_lantern_plate", "skin_chain_plate", "skin_scaffold_plate", "skin_metro_plate"]) {
+      expect(worn.has(id), id).toBe(true);
+    }
+    // Night Market's seed is in the deal. Taking the awning plate out of its pool fails this.
+    expect(platePick("awning", 4404)).toBe("skin_awning_plate");
+    const city = readFileSync(new URL("../client/render/city.ts", import.meta.url), "utf8");
+    expect(city).toMatch(/bindPlate\(M\.awningMg, platePick\("awning", seed\)\)/);
+    expect(city).toMatch(/bindPlate\(M\.metro, platePick\("metro", seed\)\)/);
+  });
 });
 
 describe("the lint that keeps art from shipping unseen", () => {

@@ -219,6 +219,9 @@ export class Game {
       const map = new WorldMap(hudRoot, this.levelId, this.mobile, (url) => {
         this.renderer.post.kick(1);
         travelTo(url, loadingFor(url, { line: `THE CITY · ACROSS THE MAP FROM ${placeName(this.levelId)}` }), { replace: true, delay: 120, nonav });
+      }, undefined, (url) => {
+        this.renderer.post.kick(1);
+        travelTo(url, loadingFor(url), { replace: true, delay: 120, nonav });
       });
       (this as { worldMap: WorldMap | null }).worldMap = map;
       this.hud.mapToggle = () => map.toggle();
@@ -247,7 +250,7 @@ export class Game {
     this.renderer.setLook(this.file.look);
     this.file.onLook = (code) => this.renderer.setLook(code);
     // from a safe zone's kiosk, Tab opens the panel on the market (offline and online alike)
-    this.file.openSection = () => (this.runView?.inSafe ? "market" : "top");
+    this.file.openSection = () => (this.runView?.inSafe || this.campaign.atLedgerDesk ? "market" : "top");
     this.applyIdentity(this.file.identityView());
     this.campaign = new Campaign(this);
     this.file.onEndgame = (f) => {

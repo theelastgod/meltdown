@@ -199,7 +199,9 @@ describe("leftover Higgsfield plates are bound, not only declared", () => {
     expect(weapons).toMatch(/new THREE\.Mesh\(geo\.hull, waspMat\)/);
     expect(readFileSync(new URL("../client/render/machines.ts", import.meta.url), "utf8")).toMatch(/hull\.push\(strut\(\[Math\.sign\(x\)/);
     const city = readFileSync(new URL("../client/render/city.ts", import.meta.url), "utf8");
-    expect(city).toMatch(/bindPlate\(M\.railMg, "tex_cable"\)/);
+    expect(city).toMatch(/bindPlate\(M\.railMg, platePick\("cable", seed\)\)/);
+    expect(reachablePlates()).toContain("tex_cable");
+    expect(reachablePlates()).toContain("skin_cable_plate");
     expect(city).toMatch(/bindPlate\(stripMat, "tex_lamp"\)/);
     expect(city).toMatch(/bindPlate\(M\.head, "tex_lamp"\)/);
     // the pads take whichever paving this district was dealt; tex_wet_asphalt is that family's first
