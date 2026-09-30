@@ -1677,7 +1677,7 @@ engineering ones, and both want an owner:
 
 **The change.** The same fragment shader samples `tex_plaza_slab` and multiplies the bed by that texel's brightness over the plate's average linear luma (0.0885). A white stand-in with a mean of 1 holds the old bed until the file arrives; the slab and the mean are written together. The Stage 657 tone is unchanged, so the street's average does not move. It is one lookup on the pass that already draws the floor. `tex_pavement` is a photograph of a street, so it is not the tile.
 
-**Verified.** `tests/wetfloor.test.ts` requires the lookup, the divide, and the multiply. Deleting `base *= stone` failed once (the source no longer matched). `stoneGain(0.0885)` is 1. `probe:look` still reads the street inside `roadLuma <= 0.145`.
+**Verified.** `tests/wetfloor.test.ts` requires the lookup, the 0.4 mix, and the multiply. Deleting `base *= stone` failed once. `probe:look` street crop, three runs: dark 37.6–37.7%, luma 0.141, 1.54× the skyline, inside `roadLuma <= 0.145` and `split <= 1.62`. Full strength on the same crop was 52.9% dark at luma 0.142, so the mix is what puts the darkness back beside Stage 657's 35%. The sim-rate check read about 12 Hz at 1.1 fps; the load average was over 100, and the look checks were otherwise clean.
 
 **Open.** A citizen's face plate was in the hood mesh, so the cloak lit it.
 
