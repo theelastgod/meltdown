@@ -41,6 +41,7 @@ import { runPageUrl } from "./runpage";
 import { radarGates } from "./hud/radar";
 import { SIM_DT } from "@shared/sim/constants";
 import { eyeHeight } from "@shared/sim/player";
+import { thumbBeside } from "./hud/faceplate";
 import { dialogueShot } from "./render/faceshot";
 import { terminalPush } from "./hud/terminal";
 
@@ -389,8 +390,8 @@ export class Campaign {
     const choices = (n.choices ?? []).filter((c) => gateOpen(c.gate, all, this.save.faction)).map((c) => c.text);
     // what the file has to say back about what this player already did (Stage 661)
     const recall = recallIndex(n, all, this.save.faction);
-    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, recall), choices.length ? choices : null, portraitFor(n.speaker));
-    this.armCutscene(n.speaker);
+    const plate = this.armCutscene(n.speaker);
+    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, recall), choices.length ? choices : null, thumbBeside(plate, portraitFor(n.speaker)));
     // the crew reads the same screen (Stage 52): the host sends where it is; the room mirrors it to everyone
     if (this.mode === "coop" && this.host && this.game.net) this.game.net.sendTerminal({ script: p.script, node: n.id, choices, picked: this.lastPick, recall });
     this.lastPick = null;
@@ -411,8 +412,8 @@ export class Campaign {
     const speaker = n.speaker === "you" ? { name: "THE HOST", sigil: "▸", color: "gr" } : n.speaker === "terminal" ? { name: "TERMINAL", sigil: "▮", color: "cy" } : { name: HANDLERS[n.speaker as HandlerId].name, sigil: HANDLERS[n.speaker as HandlerId].sigil, color: HANDLERS[n.speaker as HandlerId].color };
     this.mirror = { script: ev.script, node: ev.node, choices: ev.choices.slice(), picked: ev.picked };
     // the host's recall, not the guest's own testimony: the crew reads one screen (Stage 52 / 661)
-    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, ev.recall), ev.choices.length ? ev.choices : null, portraitFor(n.speaker));
-    this.armCutscene(n.speaker);
+    const plate = this.armCutscene(n.speaker);
+    this.game.hud.terminal(speaker.name, speaker.sigil, speaker.color, linesAt(n, ev.recall), ev.choices.length ? ev.choices : null, thumbBeside(plate, portraitFor(n.speaker)));
     this.game.hud.terminalFooter(ev.choices.length ? "THE HOST IS CHOOSING" : "THE HOST READS ON");
     if (ev.picked) this.game.hud.alert(`◆ THE HOST CHOSE · ${ev.picked}`, false, 2.5);
   }
@@ -421,7 +422,7 @@ export class Campaign {
    * The line is a cutscene. A body in the room gets the camera. Anyone else with a portrait gets
    * the plate pushed in. The bars come down either way.
    */
-  private armCutscene(speaker: string): void {
+  private armCutscene(speaker: string): string | null {
     const p = this.game.player;
     const wern = this.game.renderer.wern;
     const shot = dialogueShot({
@@ -431,7 +432,9 @@ export class Campaign {
       wern: wern ? { x: wern.position.x, z: wern.position.z, yaw: wern.rotation.y } : null,
     });
     this.game.renderer.setFace(shot);
-    this.game.hud.cutscene(true, shot ? null : portraitFor(speaker), terminalPush(speaker, shot !== null));
+    const plate = shot ? null : portraitFor(speaker);
+    this.game.hud.cutscene(true, plate, terminalPush(speaker, shot !== null));
+    return plate;
   }
 
   /** Enter / Space: continue a node without choices; 1–4: pick a choice. */

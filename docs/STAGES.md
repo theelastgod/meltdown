@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 725 — A plate line does not show the face twice
+
+**The ask.** A line with no body in the room pushes the portrait up to fill the bars, and the same picture stayed in the terminal beside the words. Two Deacons, one sentence.
+
+**The change.** While the big plate is up, the thumbnail is not. A body in the room still has the small face beside the words, because the camera has the person and the plate is down. Your line and the bare terminal had no portrait either way.
+
+**Verified.** `thumbBeside` of the Deacon's plate and the Deacon's portrait is null. A body line, plate null, keeps the portrait. Always returning the portrait failed once (`expected '/portraits/deacon.jpg' to be null`).
+
+**Open.** On a crew, the host's own line closed the guest's camera on the guest. The terminal said THE HOST.
+
 ## Stage 724 — The phone's portrait starts under the bar
 
 **The ask.** The letterbox is 11vh. On a phone the portrait started at 8vh and painted over the bar, because the plate sits above it. The desk already started at 12vh, under the bar.

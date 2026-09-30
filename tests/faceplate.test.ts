@@ -6,7 +6,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { LETTER_VH, platePass, plateTop } from "../client/hud/faceplate";
+import { LETTER_VH, platePass, plateTop, thumbBeside } from "../client/hud/faceplate";
 
 const DEACON = "/portraits/deacon.jpg";
 const MARROW = "/portraits/marrow.jpg";
@@ -40,5 +40,14 @@ describe("the portrait plate", () => {
     expect(hud).toMatch(/plateTop\(this\.root\.classList\.contains\("touch"\)\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud\.touch \.faceplate \{ top: 12vh/);
+  });
+
+  it("does not show the thumbnail when the big plate is that face", () => {
+    expect(thumbBeside(DEACON, DEACON)).toBeNull();
+    expect(thumbBeside(DEACON, MARROW)).toBeNull();
+    expect(thumbBeside(null, DEACON)).toBe(DEACON);
+    expect(thumbBeside(null, null)).toBeNull();
+    const camp = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(camp.split("thumbBeside(plate, portraitFor").length - 1).toBe(2);
   });
 });
