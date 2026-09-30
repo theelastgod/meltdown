@@ -527,8 +527,9 @@ export class Hud {
    * into when that person is not standing in the room. Null keeps the bars and leaves the zoom
    * to the camera. A second face fades over the first (Stage 717). The same face holds.
    */
-  cutscene(on: boolean, plate: string | null): void {
+  cutscene(on: boolean, plate: string | null, machine = false): void {
     this.root.classList.toggle("cut", on);
+    this.root.classList.toggle("file", on && machine && !plate);
     const box = this.q(".faceplate");
     const pass = platePass(on ? this.plateShown : null, on ? plate : null);
     if (pass === "off") {

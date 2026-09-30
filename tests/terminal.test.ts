@@ -2,7 +2,8 @@
  * The fixer's terminal on the phone (Stage 138): the footer's words and the seat.
  */
 import { describe, expect, it } from "vitest";
-import { TERMINAL_GAP, TERMINAL_INSET, terminalFooter, terminalSeat } from "../client/hud/terminal";
+import { readFileSync } from "node:fs";
+import { TERMINAL_GAP, TERMINAL_INSET, terminalFooter, terminalPush, terminalSeat } from "../client/hud/terminal";
 
 describe("the terminal's footer", () => {
   it("offers the keys on a keyboard", () => {
@@ -12,6 +13,23 @@ describe("the terminal's footer", () => {
   it("and a tap on a phone", () => {
     expect(terminalFooter(true, true)).toBe("TAP A LINE TO CHOOSE");
     expect(terminalFooter(false, true)).toBe("TAP TO CONTINUE");
+  });
+});
+
+describe("the bare terminal", () => {
+  it("pushes the CRT in when the file is speaking and nobody is standing there", () => {
+    expect(terminalPush("terminal", false)).toBe(true);
+    expect(terminalPush("terminal", true)).toBe(false);
+    expect(terminalPush("deacon", false)).toBe(false);
+    expect(terminalPush("you", false)).toBe(false);
+    expect(terminalPush("vantage", false)).toBe(false);
+    const camp = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(camp).toMatch(/terminalPush\(speaker, shot !== null\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud\.cut\.file:not\(\.touch\) \.terminal/);
+    expect(css).toMatch(/scale\(1\.14\)/);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/toggle\("file", on && machine && !plate\)/);
   });
 });
 

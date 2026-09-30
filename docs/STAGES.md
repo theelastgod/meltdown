@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 718 — The file's own line pushes the terminal in
+
+**The ask.** A line from the terminal — the file opening, a contract briefing — brought the bars down and then showed nothing. The machine that was speaking stayed the same size at the foot of the screen.
+
+**The change.** When the speaker is the terminal and nobody is standing in the shot, the CRT itself pushes in under the bars: 1.14× on a desk, 1.06× on a phone. A portrait, or a body in the room, still owns the close-up. The thumbnail rules are unchanged: the file and the bare terminal still show no portrait.
+
+**Verified.** `tests/terminal.test.ts` requires `terminalPush("terminal", false)` and refuses it for a body, the Deacon, you, and VANTAGE. Returning false failed that once (`expected false to be true`).
+
+**Open.** A fixer standing in the office still faces the spot they were placed on, not wherever the player is standing for the line.
+
 ## Stage 717 — A second face fades over the first
 
 **The ask.** Two people speaking from portraits popped. The plate swapped and the zoom started over, so a conversation read as two separate stills.

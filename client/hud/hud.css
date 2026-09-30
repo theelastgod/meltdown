@@ -366,6 +366,8 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 @keyframes facein { from { opacity: 0; } to { opacity: 1; } }
 #hud.touch .faceplate { top: 8vh; width: min(34vh, 70vw); }
 #hud .terminal { left: 50%; bottom: 120px; transform: translateX(-50%); width: 640px; max-width: 92vw; padding: 10px 14px; pointer-events: auto; }
+#hud.cut.file:not(.touch) .terminal { bottom: 18vh; transform: translateX(-50%) scale(1.14); transition: transform 0.45s ease, bottom 0.45s ease; }
+#hud.touch.cut.file .terminal { transform: scale(1.06); }
 #hud .terminal .th { font-size: 12px; letter-spacing: 0.14em; border-bottom: 1px solid rgba(53,242,255,0.35); padding-bottom: 4px; margin-bottom: 6px; }
 #hud .terminal .tl { font-size: 12px; line-height: 1.6; min-height: 40px; color: #dff9ff; }
 /* who is speaking (Stage 680): the portrait beside the lines, framed in the speaker's own colour */

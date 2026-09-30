@@ -8,6 +8,14 @@
  * in the campaign, where the keys are.
  */
 
+/**
+ * The bare terminal is the face of that line (Stage 718). A body in the room, or a portrait,
+ * already has a close-up. The file's own machine does not, until the CRT itself pushes in.
+ */
+export function terminalPush(speaker: string, hasBody: boolean): boolean {
+  return speaker === "terminal" && !hasBody;
+}
+
 /** the footer's line: what the player does next, in the terms of the device in their hands */
 export function terminalFooter(hasChoices: boolean, touch: boolean): string {
   if (touch) return hasChoices ? "TAP A LINE TO CHOOSE" : "TAP TO CONTINUE";
