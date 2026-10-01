@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 836 — Withdrawing owed units tells a phone to tap
+
+**The ask.** THE RUN offered [WITHDRAW TO WALLET] when units were owed. Those brackets are a button on a keyboard. On a phone they read as a key. Withdrawing still moves units already owed. It does not raise the day's cap and it does not buy a stat.
+
+**The change.** A phone sees TAP WITHDRAW TO WALLET. A keyboard still sees the bracketed button. Nothing owed still draws no button.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton("WITHDRAW TO WALLET", this.touchHud)/`).
+
+**Open.** A private room still says [OPEN A PRIVATE ROOM] on a phone.
+
 ## Stage 835 — Claiming a posted prize tells a phone to tap
 
 **The ask.** A posted prize offered [CLAIM]. Those brackets are a button on a keyboard. On a phone they read as a key. Claiming still takes the prize already posted. It does not mint one and it does not buy a stat.
