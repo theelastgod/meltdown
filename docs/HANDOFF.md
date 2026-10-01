@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 837 (opening a private room tells a phone to tap). Stage 836 says TAP when units are owed. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **838** |
+| HEAD | Stage 838 (buying out the season tells a phone to tap). Stage 837 says TAP when a private room can open. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **839** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |

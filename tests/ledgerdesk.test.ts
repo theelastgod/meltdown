@@ -96,6 +96,17 @@ describe("the trip", () => {
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
+  it("buying out the season names a tap on a phone", () => {
+    expect(crewButton("BUY OUT · 48 $CAPITAL", true)).toBe("TAP BUY OUT · 48 $CAPITAL");
+    expect(crewButton("BUY OUT · 48 $CAPITAL", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("BUY OUT · 48 $CAPITAL", false)).toBe("[BUY OUT · 48 $CAPITAL]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const start = file.indexOf("const sinkBlock");
+    const row = file.slice(start, file.indexOf("const runBlock", start));
+    expect(row).toMatch(/data-act="buyseason">\$\{crewButton\(`BUY OUT · \$\{prices\.seasonPass\} \$CAPITAL`, this\.touchHud\)\}/);
+    expect(row).not.toMatch(/\[BUY OUT/);
+  });
+
   it("opening a private room names a tap on a phone", () => {
     expect(crewButton("OPEN A PRIVATE ROOM", true)).toBe("TAP OPEN A PRIVATE ROOM");
     expect(crewButton("OPEN A PRIVATE ROOM", true)).not.toMatch(/\[[A-Z]/);
