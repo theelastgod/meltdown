@@ -23,7 +23,6 @@ import type { CityEventMsg, CityRunMsg, MissionMsg } from "@shared/net/protocol"
 import { eventBanner, eventCard, eventMarker, eventObjective } from "./cityevent";
 import { nearestStart, runCard, runClock, runObjective, splitBanner, startPrompt, type RunCourse, type RunView } from "./cityrun";
 import type { RadarSpot } from "./hud/radar";
-import { HUB_LEVEL_ID } from "@shared/sim/hub";
 import { levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
 import { HOSTS } from "./config";
@@ -34,7 +33,7 @@ import { ENDING_ART } from "./endings";
 import { deskBanner } from "./missionart";
 import { gigThumb } from "./gigart";
 import { protocolIcon, weaponCard } from "./kitart";
-import { loadingFor, travelTo } from "./loading";
+import { explorePageUrl, loadingFor, travelTo } from "./loading";
 import { gatePrompt, gateSigns, gateToTravel, gateTravelUrl, holdProgress, stepGateHold, type GateHold } from "@shared/net/citygates";
 import { inLedgerMouth, LEDGER_HOLD_GATE, ledgerHudLine, nearLedgerDesk } from "@shared/net/cityledger";
 import { runPageUrl } from "./runpage";
@@ -949,11 +948,8 @@ export class Campaign {
       const boxes = [...document.querySelectorAll<HTMLInputElement>("#hud .contracts input[data-wear]")];
       void this.wear(boxes.filter((b) => b.checked).map((b) => b.dataset.wear!));
     } else if (el.dataset.explore) {
-      const u = new URL(location.href);
-      if (this.game.levelId === HUB_LEVEL_ID) u.searchParams.set("level", "lease_row");
-      u.searchParams.set("explore", "1");
-      u.searchParams.delete("mission");
-      travelTo(u.toString(), loadingFor(u.toString()), { replace: true });
+      const url = explorePageUrl(location.href);
+      travelTo(url, loadingFor(url), { replace: true });
     }
   }
 

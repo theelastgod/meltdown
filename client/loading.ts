@@ -77,15 +77,16 @@ export function loadingFor(href: string, over: Partial<LoadingDescriptor> = {}):
   let d: LoadingDescriptor;
   if (mission) {
     d = { kind: crew ? "crew" : "mission", title: placeName(mission.level), line: crew ? `CREW ${crew} · ${mission.title}` : `CONTRACT · ${mission.title}`, art: MISSION_ART[mission.id] ?? GIG_ART[mission.id] ?? LEVEL_ART[mission.level] };
+  } else if (q.get("mode") === "run") {
+    d = { kind: "mode", title: placeName(level), line: "THE RUN · CARRY THE CLAIMS TO A GATE" };
+  } else if (q.get("explore") === "1") {
+    // ahead of the city: a page can still be carrying city=1 when the player asked for the street
+    d = { kind: "district", title: placeName(level), line: "THE STREET · EXPLORE THE DISTRICT" };
   } else if (q.get("mode") === "campaign") {
     // a walk through a city gate (Stage 697) says where it came in from
     const from = q.get("from");
     const via = from && from !== level && LEVEL_INFO.some((l) => l.id === from && l.kind === "district") ? `THE CITY · IN FROM ${placeName(from)}` : "THE CITY · CONTINUE THE CAMPAIGN";
     d = q.get("city") === "1" ? { kind: "play", title: placeName(level), line: via } : { kind: "mode", title: placeName(level), line: "CAMPAIGN · THE DESK: FIXERS, GIGS, THE ARC" };
-  } else if (q.get("mode") === "run") {
-    d = { kind: "mode", title: placeName(level), line: "THE RUN · CARRY THE CLAIMS TO A GATE" };
-  } else if (q.get("explore") === "1") {
-    d = { kind: "district", title: placeName(level), line: "THE STREET · EXPLORE THE DISTRICT" };
   } else if (net && /\/room\/audit-/.test(net)) {
     d = { kind: "district", title: placeName(level), line: "THE AUDIT · THIS WEEK'S ROOM" };
   } else if (net) {
@@ -109,6 +110,19 @@ function session(): Pick<Storage, "getItem" | "setItem" | "removeItem"> | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * A private walk of this district, threat live. The city's flag and its room do not come along:
+ * those are the shared streets, and explore is not them. The office has no street of its own, so
+ * that page walks Lease Row.
+ */
+export function explorePageUrl(href: string): string {
+  const u = new URL(href);
+  if (u.searchParams.get("level") === HUB_LEVEL_ID) u.searchParams.set("level", DEFAULT_LEVEL_ID);
+  u.searchParams.set("explore", "1");
+  for (const k of ["mission", "city", "net", "back", "from", "gate", "mode"]) u.searchParams.delete(k);
+  return u.toString();
 }
 
 /** Write the descriptor the next boot reads. Before navigating, always. */

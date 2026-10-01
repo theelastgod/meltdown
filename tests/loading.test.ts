@@ -11,7 +11,7 @@ import { inCity } from "../shared/net/city";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { CAMPAIGN_DESK, cardsWanted, choiceUrl, MAIN, Menu, MODES, playInfo, playLine, playLoading, playUrl, type MenuHost } from "../client/menu";
-import { bootStage, bootWanted, hideLoading, LEVEL_ART, LOADING_HTML, LOADING_KEY, LOADING_STAGES, loadingFor, loadingView, readLoading, showLoading, stageProgress, travelTo, watchBoot, writeLoading, type BootSignals } from "../client/loading";
+import { bootStage, bootWanted, explorePageUrl, hideLoading, LEVEL_ART, LOADING_HTML, LOADING_KEY, LOADING_STAGES, loadingFor, loadingView, readLoading, showLoading, stageProgress, travelTo, watchBoot, writeLoading, type BootSignals } from "../client/loading";
 import { DEFAULT_SETTINGS } from "../client/settings";
 import { campaignOf } from "../shared/campaign/save";
 import { sandboxAccount } from "../shared/progression/account";
@@ -271,6 +271,22 @@ describe("the loading descriptor", () => {
     travelTo("http://127.0.0.1:5173/?level=repo_depot", loadingFor("http://127.0.0.1:5173/?level=repo_depot"), { replace: true });
     expect(navs[0]).toMatchObject({ how: "replace", cardShown: true, cardTitle: "REPO DEPOT" });
     expect(readLoading(store)?.title).toBe("REPO DEPOT");
+  });
+
+  it("explore from the city is the street, not another walk of the city", () => {
+    const href = "http://x/?level=night_market&mode=campaign&city=1&net=ws://h/campaign/city-night_market&shop=http://h&back=lease_row&from=lease_row&gate=2";
+    const q = new URL(explorePageUrl(href)).searchParams;
+    expect(q.get("explore")).toBe("1");
+    expect(q.get("level")).toBe("night_market");
+    expect(q.get("shop")).toBe("http://h");
+    for (const k of ["city", "net", "mode", "back", "from", "gate"]) expect(q.has(k), k).toBe(false);
+    expect(inCity(q)).toBe(false);
+    expect(loadingFor(explorePageUrl(href))).toMatchObject({ kind: "district", title: "NIGHT MARKET", line: "THE STREET · EXPLORE THE DISTRICT" });
+    expect(new URL(explorePageUrl("http://x/?level=deadletter_office")).searchParams.get("level")).toBe("lease_row");
+    // the city is still on this URL. Reading that branch before explore fails this.
+    expect(loadingFor("http://x/?level=lease_row&mode=campaign&city=1&explore=1").line).toBe("THE STREET · EXPLORE THE DISTRICT");
+    const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(campaign).toMatch(/explorePageUrl\(location\.href\)/);
   });
 
   it("a URL implies its own card when the trip did not write one (a shared link)", () => {

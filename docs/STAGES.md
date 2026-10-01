@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 824 — Explore from the city leaves the city
+
+**The ask.** EXPLORE THIS DISTRICT on the city desk reloaded the city. The page kept `city=1` and the city's room, and the card read that flag before it read the street, so the button brought the same streets back.
+
+**The change.** Explore drops the city flag, its room, and the campaign mode, and the card names the street before it considers the city. The office still walks Lease Row. A city walk that did not ask to explore is unchanged.
+
+**Verified.** `tests/loading.test.ts` reads the page and the card. Leaving `city` on the explore page failed once (`city: expected true to be false`).
+
+**Open.** A phone at the contracts desk still reads `[RUN WITH A CREW]` and `[JOIN A CREW]` as if they were keys.
+
 ## Stage 823 — A crew taken in the city is not the city page
 
 **The ask.** RUN WITH A CREW from the city kept `city=1` beside the contract. A contract taken alone drops that flag. The crew page was still marked as the streets it had just left.
