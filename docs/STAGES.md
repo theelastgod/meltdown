@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 839 — Buying a room-hour tells a phone to tap
+
+**The ask.** Deep Wake offered [+1 · … $CAPITAL] beside the room-hours. Those brackets are a button on a keyboard. On a phone they read as a key. Buying an hour still burns that price in full. The hour is still a server of your own. A private room still banks Scrip, never $CAPITAL, and it still buys no stat.
+
+**The change.** A phone sees TAP +1 · … $CAPITAL. A keyboard still sees the bracketed button.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton(\`+1 · ${prices.roomHour} $CAPITAL`, this.touchHud)/`).
+
+**Open.** A market listing still says its price in brackets on a phone.
+
 ## Stage 838 — Buying out the season tells a phone to tap
 
 **The ask.** Deep Wake offered [BUY OUT · … $CAPITAL] when the pass was still for sale. Those brackets are a button on a keyboard. On a phone they read as a key. Buying out still burns the pass price in full. The pass is still cosmetics. It still buys no stat.
