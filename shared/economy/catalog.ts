@@ -145,6 +145,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(107, "skin_fender", "FENDER", "DARK RUBBER FENDER, MAGENTA WEAR", 62, 0xc26b, "#ff3ec9", "skin_fender_plate"),
   skin(108, "skin_cleat", "CLEAT", "DARK MOORING CLEAT METAL, CYAN AT THE HORN", 74, 0xc26c, "#ffb02e", "skin_cleat_plate"),
   skin(109, "skin_bollard", "BOLLARD", "DARK BOLLARD STEEL, ONE AMBER BAND, NO TEXT", 88, 0xc26d, "#37ff8b", "skin_bollard_plate"),
+  skin(110, "skin_scupper", "SCUPPER", "DARK DECK SCUPPER, A CYAN TRICKLE", 96, 0xc26e, "#8f4dff", "skin_scupper_plate"),
+  skin(111, "skin_coaming", "COAMING", "DARK HATCH COAMING, CYAN ALONG THE LIP", 110, 0xc26f, "#ffd27a", "skin_coaming_plate"),
+  skin(112, "skin_davit", "DAVIT", "DARK DAVIT STEEL, MAGENTA AT THE PIN", 58, 0xc270, "#8fd8ff", "skin_davit_plate"),
+  skin(113, "skin_winch", "WINCH", "DARK WINCH DRUM, CYAN ON THE GROOVE", 82, 0xc271, "#f2f4ff", "skin_winch_plate"),
 ];
 
 /**

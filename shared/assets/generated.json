@@ -2329,5 +2329,41 @@
     "bytes": 115602,
     "sha256": "3464040a7211b168f6689b4495665e3182570018ea0860eba3bacce144ac5f29",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_scupper_plate",
+    "kind": "texture",
+    "file": "skin_scupper_plate.png",
+    "size": 256,
+    "bytes": 124884,
+    "sha256": "440164c24f9d5bf10f88a3cdb9ffd43534326f560d5f7d5a54af1dc46d026ec1",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_coaming_plate",
+    "kind": "texture",
+    "file": "skin_coaming_plate.png",
+    "size": 256,
+    "bytes": 136626,
+    "sha256": "a0c90c78851130d83409908cf33c587b339223a484cf052f70d1fdecb848fa63",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_davit_plate",
+    "kind": "texture",
+    "file": "skin_davit_plate.png",
+    "size": 256,
+    "bytes": 122406,
+    "sha256": "ba914fa330652bd845d0c6377afb2345aabe08cfba3125b4f43e4d4e4d6e9867",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_winch_plate",
+    "kind": "texture",
+    "file": "skin_winch_plate.png",
+    "size": 256,
+    "bytes": 122733,
+    "sha256": "a07e3bb58551d01e9532bb18ad7a67dc33a135263078858f12f27689f4dc028c",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]
