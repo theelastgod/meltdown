@@ -2545,5 +2545,41 @@
     "bytes": 121361,
     "sha256": "ee2c76feb04801a415595b2bdf358978198205f66337af1144aa6e5ff6f417ef",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_antenna_plate",
+    "kind": "texture",
+    "file": "skin_antenna_plate.png",
+    "size": 256,
+    "bytes": 114969,
+    "sha256": "ff1304cad4f186e53d89c75a125dc82dc9e9f8d7788071d66a910d1b39345770",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_dish_plate",
+    "kind": "texture",
+    "file": "skin_dish_plate.png",
+    "size": 256,
+    "bytes": 131284,
+    "sha256": "bd4b6b57c66b74abd04080460530b0f0a19a0eff733dc8ce0f6b11adbfc8ff34",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_radome_plate",
+    "kind": "texture",
+    "file": "skin_radome_plate.png",
+    "size": 256,
+    "bytes": 98949,
+    "sha256": "50b67f4b9accf3a541eb602357daf5b2b95bac7f03b48e1f7dbfea6b076a2f58",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_gantry2_plate",
+    "kind": "texture",
+    "file": "skin_gantry2_plate.png",
+    "size": 256,
+    "bytes": 132693,
+    "sha256": "f67f50fdddebaf1ea5ffc5532f0f988aa69b228036b6dcfc0977d40f7efbf1a5",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]

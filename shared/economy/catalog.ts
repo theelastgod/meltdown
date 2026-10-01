@@ -169,6 +169,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(131, "skin_meter", "METER", "DARK METER GLASS, NO DIGITS, A MAGENTA REFLECTION", 62, 0xc283, "#ff3ec9", "skin_meter_plate"),
   skin(132, "skin_fuse", "FUSE", "DARK FUSE BLOCK, CYAN AT THE CLIP, NO NUMBERS", 74, 0xc284, "#ffb02e", "skin_fuse_plate"),
   skin(133, "skin_relay", "RELAY", "DARK RELAY HOUSING, A THIN CYAN SEAM", 88, 0xc285, "#37ff8b", "skin_relay_plate"),
+  skin(134, "skin_antenna", "ANTENNA", "DARK ANTENNA MAST METAL, MAGENTA AT A CLAMP", 96, 0xc286, "#8f4dff", "skin_antenna_plate"),
+  skin(135, "skin_dish", "DISH", "DARK DISH MESH, CYAN AT THE RIM, NO LOGO", 110, 0xc287, "#ffd27a", "skin_dish_plate"),
+  skin(136, "skin_radome", "RADOME", "DARK RADOME SKIN, ONE CYAN PANEL LINE", 58, 0xc288, "#8fd8ff", "skin_radome_plate"),
+  skin(137, "skin_gantry2", "GANTRY WEB", "DARK GANTRY WEB STEEL, CYAN AT A BOLT", 82, 0xc289, "#f2f4ff", "skin_gantry2_plate"),
 ];
 
 /**
