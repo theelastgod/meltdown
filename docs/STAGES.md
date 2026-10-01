@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 758 — Marrow's feet are darker than the cloak
+
+**The ask.** The shoes under the ragged hem are the cloak at full brightness, so the foot reads as cloth.
+
+**The change.** Those boxes bake shade 0.28. Darker than the cloak, not a void. No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts foot vertices under 0.2 m, and the cloak above them stays shade 1. Leaving the feet unpainted failed once (`the feet wear the cloak: expected 0 to be greater than 20`).
+
+**Open.** The high collar on a bare head still wears the coat.
+
 ## Stage 757 — The Deacon's toes are darker than the robe
 
 **The ask.** The boot toes under the hem are the robe at full brightness, so the foot reads as cloth.

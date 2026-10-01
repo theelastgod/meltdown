@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, DEACON_TOE_SHADE, EMBODIED, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, DEACON_TOE_SHADE, EMBODIED, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -237,6 +237,24 @@ describe("the fixers, in the flesh", () => {
     }
     expect(toes, "the toes wear the robe").toBeGreaterThan(20);
     expect(robe, "the robe went dark with the toes").toBeGreaterThan(20);
+  });
+
+  it("Marrow's feet are darker than the cloak", () => {
+    const g = fixerGeometry("marrow").body;
+    const color = g.getAttribute("color");
+    const pos = g.getAttribute("position");
+    let feet = 0;
+    let cloth = 0;
+    for (let i = 0; i < color.count; i++) {
+      const c = color.getX(i);
+      const y = pos.getY(i);
+      if (Math.abs(c - MARROW_FOOT_SHADE) < 1e-5) {
+        feet++;
+        expect(y).toBeLessThan(0.2);
+      } else if (c === 1 && y > 0.4) cloth++;
+    }
+    expect(feet, "the feet wear the cloak").toBeGreaterThan(20);
+    expect(cloth, "the cloak went dark with the feet").toBeGreaterThan(20);
   });
 });
 

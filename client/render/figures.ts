@@ -50,6 +50,8 @@ export const VESSEL_BOOT_SHADE = 0.2;
 export const WERN_SHOE_SHADE = 0.18;
 /** the Deacon's toes: darker than the robe, not a void */
 export const DEACON_TOE_SHADE = 0.24;
+/** Marrow's feet: darker than the cloak, not a void */
+export const MARROW_FOOT_SHADE = 0.28;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -138,7 +140,8 @@ function marrow(): Parts {
   parts.body.push(cloak);
   // a second, shorter layer over the shoulders
   parts.body.push(lathe([[0.37, 1.02], [0.35, 1.13], [0.29, 1.29], [0.17, 1.44]], 14, { sx: 1.05, sz: 0.95, folds: 7, fold: () => 0.06 }));
-  for (const x of [-0.11, 0.11]) parts.body.push(put(new THREE.BoxGeometry(0.11, 0.18, 0.14), T(x, 0.09, -0.02)));
+  // the feet are the cloak's mesh. Darker than the cloth, so the shoe is not the hem.
+  for (const x of [-0.11, 0.11]) parts.body.push(paint(put(new THREE.BoxGeometry(0.11, 0.18, 0.14), T(x, 0.09, -0.02)), MARROW_FOOT_SHADE));
   hood(parts, { r: 0.19, cy: 1.6, sy: 1.15, sz: 1.2, trail: 0.16, opening: 1.4, rim: 1 });
   // the clock on the back: twelve hours and one hand, eaten
   const zb = surf(CLOAK, 0, 1.12, 9, fold) * 0.95 + 0.018;
