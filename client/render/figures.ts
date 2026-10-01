@@ -10,8 +10,8 @@
  * The art bible decides the lights. Cyan is the wake cells' (the Deacon). Magenta is the Clockeaters'
  * (Marrow). Amber is reserved for VANTAGE, so Ida Vessel — whose terminal colour is amber — wears the
  * Estate's gold instead. Blood-red is "THE KERNEL / campaign power only", which is August Wern and
- * nobody else. Faces are never lit: a hood's inside is its own black material, and a bare head is
- * the same near-black as the coat.
+ * nobody else. Faces are never lit: a hood's inside is its own black material, and a bare
+ * head's face stays unlit. The hair on that head is darker than the coat.
  *
  * Built feet-at-the-origin with the front at -z, like the rig; the caller turns the group to face.
  */
@@ -40,6 +40,8 @@ interface Parts {
 }
 const T = (x: number, y: number, z: number) => new THREE.Matrix4().makeTranslation(x, y, z);
 const put = (g: THREE.BufferGeometry, m: THREE.Matrix4) => g.applyMatrix4(m);
+/** hair on a bare head: darker than the coat (1), not the unlit face (0) */
+export const HAIR_SHADE = 0.46;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -184,9 +186,9 @@ function vessel(): Parts {
   parts.body.push(put(new THREE.BoxGeometry(0.5, 0.06, 0.22), T(0, 1.42, 0)));
   // high collar, head, and the hair drawn back
   parts.body.push(lathe([[0.1, 1.47], [0.105, 1.6]], 12, { gap: 0.9 }));
-  // the head is the coat's mesh. Black vertices keep the street off the face. The hair stays cloth.
+  // the head is the coat's mesh. Black vertices keep the street off the face. The hair is darker than the coat.
   parts.body.push(paint(put(new THREE.SphereGeometry(0.1, 12, 10), T(0, 1.69, 0).multiply(new THREE.Matrix4().makeScale(0.92, 1.12, 1))), 0));
-  parts.body.push(paint(put(new THREE.SphereGeometry(0.107, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.62), T(0, 1.705, 0.018)), 1));
+  parts.body.push(paint(put(new THREE.SphereGeometry(0.107, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.62), T(0, 1.705, 0.018)), HAIR_SHADE));
   // trousers and boots under the coat
   for (const x of [-VESSEL_HIP.x, VESSEL_HIP.x]) for (const g of vesselLeg()) parts.legs.push(put(g, T(x, 0, 0)));
   // slim sleeves, one hand on the hip
@@ -213,7 +215,7 @@ function wern(): Parts {
   parts.body.push(put(new THREE.BoxGeometry(0.58, 0.06, 0.24), T(0, 1.43, 0)));
   parts.body.push(lathe([[0.125, 1.47], [0.14, 1.64]], 12, { gap: 0.8 }));
   parts.body.push(paint(put(new THREE.SphereGeometry(0.105, 12, 10), T(0, 1.73, 0).multiply(new THREE.Matrix4().makeScale(0.9, 1.15, 1))), 0));
-  parts.body.push(paint(put(new THREE.SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), T(0, 1.75, 0.012)), 1));
+  parts.body.push(paint(put(new THREE.SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), T(0, 1.75, 0.012)), HAIR_SHADE));
   for (const x of [-0.1, 0.1]) parts.body.push(put(new THREE.BoxGeometry(0.1, 0.06, 0.24), T(x, 0.03, -0.12)));
   // arms folded behind, the hands meeting at the small of the back
   for (const side of [-1, 1]) {

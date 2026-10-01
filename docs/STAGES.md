@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 752 — The hair is darker than the coat
+
+**The ask.** Ida and Wern have no hood. Stage 743 kept the hair from going black with the face, so the crown wore the coat. A bare head read as cloth with a hole in it.
+
+**The change.** The hair sphere bakes shade 0.46. Darker than the coat, not the unlit face (0). The walk uses the same body. No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts hair vertices on Ida, on Wern, and on the walker, and the coat stays shade 1. Painting the hair as cloth failed once (`vessel hair wears the coat: expected 0 to be greater than 8`).
+
+**Open.** Ida's trousers still wear the coat.
+
 ## Stage 751 — The hood's collar is darker than the hood
 
 **The ask.** The roll at the neck is the cloak at full brightness, so it reads as the hood.

@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -94,17 +94,22 @@ describe("the fixers, in the flesh", () => {
       expect(color, id).toBeTruthy();
       let black = 0;
       let cloth = 0;
+      let hair = 0;
       for (let i = 0; i < color.count; i++) {
         const c = color.getX(i);
         if (c === 0) {
           black++;
           expect(pos.getY(i), id).toBeGreaterThan(1.5);
+        } else if (Math.abs(c - HAIR_SHADE) < 1e-5) {
+          hair++;
+          expect(pos.getY(i), id).toBeGreaterThan(1.6);
         } else {
           cloth++;
           expect(c, id).toBe(1);
         }
       }
       expect(black, id).toBeGreaterThan(30);
+      expect(hair, `${id} hair wears the coat`).toBeGreaterThan(8);
       expect(cloth, id).toBeGreaterThan(200);
     };
     blackOn("vessel", fixerGeometry("vessel").body);
@@ -113,9 +118,15 @@ describe("the fixers, in the flesh", () => {
     const crown = (id: string, g: THREE.BufferGeometry) => {
       const color = g.getAttribute("color");
       const pos = g.getAttribute("position");
+      let hair = 0;
       let cloth = 0;
-      for (let i = 0; i < color.count; i++) if (color.getX(i) === 1 && pos.getY(i) > 1.78) cloth++;
-      expect(cloth, `${id} hair is painted with the face`).toBeGreaterThan(8);
+      for (let i = 0; i < color.count; i++) {
+        if (pos.getY(i) <= 1.78) continue;
+        if (Math.abs(color.getX(i) - HAIR_SHADE) < 1e-5) hair++;
+        else if (color.getX(i) === 1) cloth++;
+      }
+      expect(hair, `${id} hair wears the coat`).toBeGreaterThan(8);
+      expect(cloth, `${id} crown went dark with the hair`).toBe(0);
     };
     crown("vessel", fixerGeometry("vessel").body);
     crown("wern", fixerGeometry("wern").body);
