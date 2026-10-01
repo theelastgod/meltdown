@@ -77,7 +77,8 @@ describe("the trip", () => {
     expect(game).toMatch(/this\.runView\?\.inSafe \|\| this\.campaign\.atLedgerDesk \? "market" : "top"/);
     const map = readFileSync(new URL("../client/worldmap.ts", import.meta.url), "utf8");
     expect(map).toMatch(/data-wm-run="/);
-    expect(map).toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
+    expect(map).toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE NAME DESK BURNS · THE RUN PAYS/);
+    expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
   it("the name desk is not the market panel", () => {

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 806 — The world map named the name desk
+
+**The ask.** The district card on the world map still said the booth was only a market: `LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS`. The booth itself already opens a name desk.
+
+**The change.** `LEDGER DESK AT THE METRO · MARKET SPENDS · THE NAME DESK BURNS · THE RUN PAYS`. The market still spends. The name still burns. THE RUN still pays. Nothing new is paid for standing there.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that line off the map. Putting the old line back failed once (`expected the world map source to match /LEDGER DESK AT THE METRO · MARKET SPENDS · THE NAME DESK BURNS · THE RUN PAYS/`).
+
+**Open.** The phone still has no NAME tab. The name desk is N, or a tap on the booth line.
+
 ## Stage 805 — The booth opened a name desk
 
 **The ask.** Writing a name meant opening the whole Ledger Market: listings, the run, the prizes, the sinks. The booth only named the market.

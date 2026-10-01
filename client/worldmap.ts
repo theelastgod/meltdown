@@ -91,7 +91,7 @@ export function worldMapDetails(v: WorldMapState): string {
   const gates = gateSummary(id).map((g) => `${g.sides.map((s) => SIDE_WORD[s]).join(" · ")} → ${levelDisplayName(g.to)}`).join(" &nbsp; ");
   const go = id === v.here ? '<div class="go here">YOU ARE HERE</div>' : `<div class="go" data-wm-go="${id}">[ TRAVEL TO ${esc(levelDisplayName(id))} ]</div>`;
   // The metro booth is on every plaza. The market spends $CAPITAL. THE RUN is where it is paid.
-  const run = `<div class="dg">LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS</div><div class="go" data-wm-run="${id}">ENTER THE RUN</div>`;
+  const run = `<div class="dg">LEDGER DESK AT THE METRO · MARKET SPENDS · THE NAME DESK BURNS · THE RUN PAYS</div><div class="go" data-wm-run="${id}">ENTER THE RUN</div>`;
   return `<div class="wd"><div class="dh"><b>${esc(levelDisplayName(id))}</b> · ${live ? `${p!.players} ONLINE` : "—"}</div><div class="dn">${who}</div>${ev}${recs}<div class="dg">GATES ${gates}</div>${go}${run}</div>`;
 }
 
