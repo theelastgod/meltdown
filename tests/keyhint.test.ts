@@ -3,7 +3,22 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { cardWalkHit, cardYieldsToDesk, cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, DISTRICT_FOOTER, failedContractLine, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
+import { cardWalkHit, cardYieldsToDesk, cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, crewButton, DISTRICT_FOOTER, failedContractLine, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
+
+describe("the crew controls on the desk", () => {
+  it("names a tap on a phone and the button on a keyboard", () => {
+    expect(crewButton("RUN WITH A CREW", true)).toBe("TAP RUN WITH A CREW");
+    expect(crewButton("JOIN A CREW", true)).toBe("TAP JOIN A CREW");
+    expect(crewButton("RUN WITH A CREW", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("RUN WITH A CREW", false)).toBe("[RUN WITH A CREW]");
+    expect(crewButton("JOIN A CREW", false)).toBe("[JOIN A CREW]");
+    const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(campaign).toMatch(/crewButton\("RUN WITH A CREW", this\.game\.hud\.touch\)/);
+    expect(campaign).toMatch(/crewButton\("JOIN A CREW", this\.game\.hud\.touch\)/);
+    expect(campaign).not.toMatch(/\[RUN WITH A CREW\]/);
+    expect(campaign).not.toMatch(/\[JOIN A CREW\]/);
+  });
+});
 
 describe("a frame's close marker", () => {
   it("names the key on a keyboard", () => {

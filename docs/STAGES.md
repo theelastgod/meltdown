@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 825 — The crew controls tell a phone to tap
+
+**The ask.** The contracts desk offered `[RUN WITH A CREW]` and `[JOIN A CREW]`. Those brackets are a button on a keyboard. On a phone they read as keys, and a phone has no key that matches them.
+
+**The change.** A phone sees TAP RUN WITH A CREW and TAP JOIN A CREW. A keyboard still sees the bracketed buttons. The how-to under the code is unchanged.
+
+**Verified.** `tests/keyhint.test.ts` reads both lines and both call sites. Giving the phone the bracketed button failed once (`expected '[RUN WITH A CREW]' to be 'TAP RUN WITH A CREW'`).
+
+**Open.** EXPLORE THIS DISTRICT on that same desk still wears brackets on a phone.
+
 ## Stage 824 — Explore from the city leaves the city
 
 **The ask.** EXPLORE THIS DISTRICT on the city desk reloaded the city. The page kept `city=1` and the city's room, and the card read that flag before it read the street, so the button brought the same streets back.

@@ -8,7 +8,7 @@
  */
 import { cityPageUrl, inCity } from "@shared/net/city";
 import type { Game } from "./game";
-import { cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, failedContractLine } from "./hud/keyhint";
+import { cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, crewButton, failedContractLine } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
 import { ENDINGS, endingCoda, endingTitle, endingsFor, gateOpen, handlersAlive, resolveEnding, testimonyLine, type Testimony } from "@shared/campaign/testimony";
 import { threatProfile, threatRating, type ThreatProfile } from "@shared/campaign/threat";
@@ -904,7 +904,7 @@ export class Campaign {
     const next = nextMission(c);
     const offers = gigsOnOffer(a, c);
     const alive = handlersAlive(c.testimony);
-    const row = (m: MissionDef, on: boolean, why = "") => `<div class="ct ${on ? "on" : "off"}" data-launch="${on ? m.id : ""}">${gigThumb(m.id)}<div class="nm">${m.kind === "mission" ? `◈ ${String(m.order).padStart(2, "0")} · ` : "▸ "}${m.title} <span class="lv">${levelDisplayName(m.level)}</span></div><div class="br">${m.brief}</div><div class="rw">${[m.reward.scrip ? `+${m.reward.scrip}¢` : "", m.reward.xp ? `+${m.reward.xp} XP` : "", m.reward.protocol ? `PROTOCOL ${PROTOCOLS.find((p) => p.id === m.reward.protocol)?.name ?? m.reward.protocol}` : "", m.reward.weapon ? `WEAPON ${weaponName(m.reward.weapon)}` : "", m.requires?.threat ? `THREAT ≥ ${m.requires.threat}` : ""].filter(Boolean).join(" · ")}${why ? ` · <i>${why}</i>` : ""}${on ? ` · <span class="cy" data-crew="${m.id}">[RUN WITH A CREW]</span>` : ""}</div></div>`;
+    const row = (m: MissionDef, on: boolean, why = "") => `<div class="ct ${on ? "on" : "off"}" data-launch="${on ? m.id : ""}">${gigThumb(m.id)}<div class="nm">${m.kind === "mission" ? `◈ ${String(m.order).padStart(2, "0")} · ` : "▸ "}${m.title} <span class="lv">${levelDisplayName(m.level)}</span></div><div class="br">${m.brief}</div><div class="rw">${[m.reward.scrip ? `+${m.reward.scrip}¢` : "", m.reward.xp ? `+${m.reward.xp} XP` : "", m.reward.protocol ? `PROTOCOL ${PROTOCOLS.find((p) => p.id === m.reward.protocol)?.name ?? m.reward.protocol}` : "", m.reward.weapon ? `WEAPON ${weaponName(m.reward.weapon)}` : "", m.requires?.threat ? `THREAT ≥ ${m.requires.threat}` : ""].filter(Boolean).join(" · ")}${why ? ` · <i>${why}</i>` : ""}${on ? ` · <span class="cy" data-crew="${m.id}">${crewButton("RUN WITH A CREW", this.game.hud.touch)}</span>` : ""}</div></div>`;
     const fixers = (["deacon", "marrow", "vessel"] as const).map((h) => {
       const H = HANDLERS[h];
       const mine = offers.filter((g) => g.fixer === h);
@@ -926,7 +926,7 @@ export class Campaign {
       <div class="cols"><div><div class="sh">THE ARC · ${c.missionsDone.length}/${MAIN_ARC.length}</div>${arc}<div class="sh">FIXERS · GIGS ${c.gigsDone.length}/${GIGS.length}</div>${fixers}</div>
       <div><div class="sh">KERNEL PROTOCOLS · ${c.worn.length}/${MAX_PROTOCOLS} WORN <span class="red">· CAMPAIGN ONLY · STRIPPED AT PVP JOIN</span></div>${protos}
       <div class="sh">CAMPAIGN WEAPONS</div><div class="ln cws">${CAMPAIGN_WEAPONS.map((w) => weaponCard(w, weaponName(w), c.weapons.includes(w as "directive" | "clockeater"))).join("")}</div>
-      <div class="sh">CREW</div><div class="ln">${this.crew ? `IN CREW <b class="ye">${this.crew}</b> · ${this.host ? "YOU HOLD THE TERMINALS" : "THE HOST HOLDS THE TERMINALS"} · TELL A FRIEND THE CODE` : `<input data-crewcode="1" maxlength="8" placeholder="INVITE CODE" style="text-transform:uppercase"> <span class="cy" data-act="joinCrew">[JOIN A CREW]</span> <span class="dim">OR RUN WITH A CREW ON A CONTRACT ABOVE AND READ THE CODE OUT</span>`}</div>
+      <div class="sh">CREW</div><div class="ln">${this.crew ? `IN CREW <b class="ye">${this.crew}</b> · ${this.host ? "YOU HOLD THE TERMINALS" : "THE HOST HOLDS THE TERMINALS"} · TELL A FRIEND THE CODE` : `<input data-crewcode="1" maxlength="8" placeholder="INVITE CODE" style="text-transform:uppercase"> <span class="cy" data-act="joinCrew">${crewButton("JOIN A CREW", this.game.hud.touch)}</span> <span class="dim">OR RUN WITH A CREW ON A CONTRACT ABOVE AND READ THE CODE OUT</span>`}</div>
       <div class="sh">EXPLORE</div><div class="ln dim">TRAVEL TO A DISTRICT FROM THE MAP WITH THE THREAT LIVE: <span class="cy" data-explore="1">[EXPLORE THIS DISTRICT]</span></div></div></div>`;
   }
 

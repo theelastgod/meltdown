@@ -21,6 +21,11 @@ export function openHint(key: string, what: string, touch: boolean): string {
   return touch ? `TAP ${what}` : `[${key}] ${what}`;
 }
 
+/** A crew control on the contracts desk. The brackets are a button, and a phone has no key that matches them. */
+export function crewButton(what: string, touch: boolean): string {
+  return touch ? `TAP ${what}` : `[${what}]`;
+}
+
 /** What a safe zone offers: the market spends, the name desk burns. A phone is not told to press a key. */
 export function safeZoneLine(touch: boolean): string {
   return `SAFE ZONE · ${openHint("TAB", "MARKET", touch)} · ${openHint("N", "NAME", touch)}`;
