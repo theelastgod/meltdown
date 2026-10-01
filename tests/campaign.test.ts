@@ -528,6 +528,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"THE DEACON KEEPS THE LEDGER OF THE WOKEN\. YOUR LINE IS BLANK\. GOOD\."/);
     expect(src).not.toMatch(/"The Deacon keeps the ledger of the woken\. Your line is blank\. Good\."/);
   });
+
+  it("creation Deacon line 2 is CRT, not nodes first", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "creation")!.nodes.find((n) => n.id === "cells")!.lines[1];
+    expect(line).toBe("NODES FIRST. NAMES LATER. COME TO THE OFFICE.");
+    expect(line).not.toBe("Nodes first. Names later. Come to the Office.");
+    expect(src).toMatch(/"NODES FIRST\. NAMES LATER\. COME TO THE OFFICE\."/);
+    expect(src).not.toMatch(/"Nodes first\. Names later\. Come to the Office\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

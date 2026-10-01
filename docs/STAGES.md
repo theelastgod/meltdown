@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 773 — The Deacon's second line said nodes first
+
+**The ask.** His second line still prints as a sentence: `Nodes first. Names later. Come to the Office.` The line above it is already the terminal.
+
+**The change.** `NODES FIRST. NAMES LATER. COME TO THE OFFICE.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the creation script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'Nodes first. Names later. Come to the Office.' to be 'NODES FIRST. NAMES LATER. COME TO THE OFFICE.'`).
+
+**Open.** Burning the lease page still prints as a sentence.
+
 ## Stage 772 — The Deacon's first line said he keeps the ledger
 
 **The ask.** Picking the Wake Cells still opens on a sentence: `The Deacon keeps the ledger of the woken. Your line is blank. Good.` The house pick above it is already the terminal.
