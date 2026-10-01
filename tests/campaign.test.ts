@@ -510,6 +510,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"MARROW\. DON'T SAY YOUR NAME — YOU HAVEN'T GOT ONE AND THAT'S THE POINT\."/);
     expect(src).not.toMatch(/"Marrow\. Don't say your name — you haven't got one and that's the point\."/);
   });
+
+  it("creation Marrow line 2 is CRT, not we meet where the clocks are broken", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "creation")!.nodes.find((n) => n.id === "clockeaters")!.lines[1];
+    expect(line).toBe("WE MEET WHERE THE CLOCKS ARE BROKEN. OFFICE. NOW.");
+    expect(line).not.toBe("We meet where the clocks are broken. Office. Now.");
+    expect(src).toMatch(/"WE MEET WHERE THE CLOCKS ARE BROKEN\. OFFICE\. NOW\."/);
+    expect(src).not.toMatch(/"We meet where the clocks are broken\. Office\. Now\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
