@@ -96,6 +96,17 @@ describe("the trip", () => {
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
+  it("selling a rig plate names a tap on a phone", () => {
+    expect(crewButton("SELL", true)).toBe("TAP SELL");
+    expect(crewButton("SELL", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("SELL", false)).toBe("[SELL]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const start = file.indexOf("const rig =");
+    const row = file.slice(start, file.indexOf("const market", start));
+    expect(row).toMatch(/data-act="sell" data-id="\$\{r\.token\}">\$\{crewButton\("SELL", this\.touchHud\)\}/);
+    expect(row).not.toMatch(/\[SELL\]/);
+  });
+
   it("buying a listing names a tap on a phone", () => {
     expect(crewButton("48 $CAPITAL", true)).toBe("TAP 48 $CAPITAL");
     expect(crewButton("48 $CAPITAL", true)).not.toMatch(/\[[A-Z]/);

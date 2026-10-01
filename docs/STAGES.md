@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 841 — Selling a rig plate tells a phone to tap
+
+**The ask.** A plate on the rig offered [SELL]. Those brackets are a button on a keyboard. On a phone they read as a key. Selling still lists a plate the file already owns. It does not mint one and it does not buy a stat.
+
+**The change.** A phone sees TAP SELL. A keyboard still sees the bracketed button. An empty rig still reads NOTHING ON THE RIG YET.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton("SELL", this.touchHud)/`).
+
+**Open.** The plate's own button still says its name in brackets on a phone.
+
 ## Stage 840 — Buying a listing tells a phone to tap
 
 **The ask.** A market listing offered its price in brackets, [… $CAPITAL]. Those brackets are a button on a keyboard. On a phone they read as a key. Buying still pays that price to the seller, with the same fee. It still buys no stat.
