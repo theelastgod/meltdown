@@ -157,6 +157,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(119, "skin_piling", "PILING", "DARK WET PILING, GREEN ONLY IN THE GRAIN", 110, 0xc277, "#ffd27a", "skin_piling_plate"),
   skin(120, "skin_hullplate", "HULLPLATE", "DARK HULL PLATE, MAGENTA AT A SEAM", 58, 0xc278, "#8fd8ff", "skin_hullplate_plate"),
   skin(121, "skin_ladder", "LADDER", "DARK LADDER RUNGS, CYAN ON THE TOP EDGE", 82, 0xc279, "#f2f4ff", "skin_ladder_plate"),
+  skin(122, "skin_porthole", "PORTHOLE", "DARK PORTHOLE GLASS, A CYAN RIM, NO ROOM INSIDE", 48, 0xc27a, "#35f2ff", "skin_porthole_plate"),
+  skin(123, "skin_cage", "CAGE", "DARK SAFETY CAGE MESH, NO FIGURE, MAGENTA WIRE", 62, 0xc27b, "#ff3ec9", "skin_cage_plate"),
+  skin(124, "skin_transformer", "TRANSFORMER", "DARK TRANSFORMER FINS, CYAN BETWEEN THEM, NO LABELS", 74, 0xc27c, "#ffb02e", "skin_transformer_plate"),
+  skin(125, "skin_busbar", "BUSBAR", "DARK BUS BAR, ONE CYAN INSULATOR", 88, 0xc27d, "#37ff8b", "skin_busbar_plate"),
 ];
 
 /**

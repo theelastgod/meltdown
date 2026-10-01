@@ -2437,5 +2437,41 @@
     "bytes": 127743,
     "sha256": "d8cd420a014a86b8ea29ee6a0d6693d62bf46cc99678e6edae7c2a1c60767e2d",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_porthole_plate",
+    "kind": "texture",
+    "file": "skin_porthole_plate.png",
+    "size": 256,
+    "bytes": 115149,
+    "sha256": "379fbab4a096f8c824e014a9859ff0a438f110da3a473ef1a5169e7767c28589",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_cage_plate",
+    "kind": "texture",
+    "file": "skin_cage_plate.png",
+    "size": 256,
+    "bytes": 151569,
+    "sha256": "2dd64efdd547b3235116bce909c3e068b8da87a288a4c4dc4dcf5dbdc526df62",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_transformer_plate",
+    "kind": "texture",
+    "file": "skin_transformer_plate.png",
+    "size": 256,
+    "bytes": 106131,
+    "sha256": "badc0e239a124b2277a37f931952835e1879f03b0478369dbf8e5ea3cc809966",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_busbar_plate",
+    "kind": "texture",
+    "file": "skin_busbar_plate.png",
+    "size": 256,
+    "bytes": 109287,
+    "sha256": "0eaf8148c84c7d00c6f2521b64a781345c6209ad7a5e235beaa89ab52a401818",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]
