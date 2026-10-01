@@ -96,6 +96,17 @@ describe("the trip", () => {
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
+  it("signing the link names a tap on a phone", () => {
+    expect(crewButton("SIGN THE LINK", true)).toBe("TAP SIGN THE LINK");
+    expect(crewButton("SIGN THE LINK", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("SIGN THE LINK", false)).toBe("[SIGN THE LINK]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const start = file.indexOf("const linked =");
+    const row = file.slice(start, file.indexOf("const name =", start));
+    expect(row).toMatch(/crewButton\("SIGN THE LINK", this\.touchHud\)/);
+    expect(row).not.toMatch(/\[SIGN THE LINK\]/);
+  });
+
   it("the wallet row names a tap on a phone", () => {
     expect(crewButton("LINK A WALLET", true)).toBe("TAP LINK A WALLET");
     expect(crewButton("LINK A WALLET", true)).not.toMatch(/\[[A-Z]/);
