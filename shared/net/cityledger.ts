@@ -58,3 +58,18 @@ export function ledgerHudLine(progress: number, holding: boolean, touch: boolean
   }
   return touch ? "LEDGER DESK · TAP MARKET · TAP NAME · WALK IN TO ENTER THE RUN" : "LEDGER DESK · [TAB] MARKET · [N] NAME · WALK IN TO ENTER THE RUN";
 }
+
+/** The booth line, with the two taps a phone can hit. A keyboard line has neither phrase. */
+export function ledgerDeskHtml(line: string): string {
+  return line.replaceAll("TAP MARKET", '<span data-desk="market">TAP MARKET</span>').replaceAll("TAP NAME", '<span data-desk="name">TAP NAME</span>');
+}
+
+/** Which desk a tap on the booth line hit, or null when it missed both. */
+export function deskHit(target: unknown): "market" | "name" | null {
+  if (!target || typeof target !== "object" || !("closest" in target)) return null;
+  const closest = (target as { closest?: unknown }).closest;
+  if (typeof closest !== "function") return null;
+  const el = closest.call(target, "[data-desk]") as { getAttribute?: (name: string) => string | null } | null;
+  const which = el?.getAttribute?.("data-desk");
+  return which === "market" || which === "name" ? which : null;
+}

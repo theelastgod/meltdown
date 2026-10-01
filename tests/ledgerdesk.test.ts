@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { districtById, generateDistrict } from "../shared/sim/city";
-import { inLedgerMouth, LEDGER_HOLD_GATE, LEDGER_HOLD_M, ledgerDistance, ledgerHudLine, ledgerSpot, nearLedgerDesk } from "../shared/net/cityledger";
+import { deskHit, inLedgerMouth, LEDGER_HOLD_GATE, LEDGER_HOLD_M, ledgerDeskHtml, ledgerDistance, ledgerHudLine, ledgerSpot, nearLedgerDesk } from "../shared/net/cityledger";
 import { holdProgress, stepGateHold } from "../shared/net/citygates";
 import { SIM_DT } from "../shared/sim/constants";
 import { runPageUrl } from "../client/runpage";
@@ -52,6 +52,20 @@ describe("the plaza booth", () => {
     expect(ledgerHudLine(0, false, false)).toBe("LEDGER DESK · [TAB] MARKET · [N] NAME · WALK IN TO ENTER THE RUN");
     expect(ledgerHudLine(0, false, false)).not.toBe("LEDGER DESK · [TAB] MARKET · WALK IN TO ENTER THE RUN");
     expect(ledgerHudLine(0.5, true, false)).toContain("ENTERING THE RUN");
+    const phone = ledgerHudLine(0, false, true);
+    expect(ledgerDeskHtml(phone)).toContain('data-desk="market"');
+    expect(ledgerDeskHtml(phone)).toContain('data-desk="name"');
+    expect(ledgerDeskHtml(ledgerHudLine(0, false, false))).not.toContain("data-desk");
+    const hit = (which: string | null) => ({ closest: (sel: string) => (sel === "[data-desk]" && which ? { getAttribute: () => which } : null) });
+    expect(deskHit(hit("market"))).toBe("market");
+    expect(deskHit(hit("name"))).toBe("name");
+    expect(deskHit(hit(null))).toBe(null);
+    expect(deskHit(null)).toBe(null);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(hud.includes('if (which === "market" && this.marketToggle) this.marketToggle()')).toBe(true);
+    expect(hud.includes('else if (which === "name" && this.gateTap) this.gateTap()')).toBe(true);
+    expect(css.includes("#hud.touch .gatehint.desk { pointer-events: auto; }")).toBe(true);
   });
 });
 

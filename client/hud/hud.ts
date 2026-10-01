@@ -30,6 +30,7 @@ import { linkLabel, linkTone, roomLabel } from "./room";
 import { nodeClockNote, type NodeReadout } from "./node";
 import { gateMarks, nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type GateMark, type RadarGate, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
 import { capitalMark } from "../brand";
+import { deskHit, ledgerDeskHtml } from "@shared/net/cityledger";
 
 /** Terminal chrome matched to the reference clip. Dry by default: no damage numbers, no hitmarker spam. */
 export class Hud {
@@ -463,11 +464,14 @@ export class Hud {
     this.gateLine = line;
     const el = this.q(".gatehint");
     el.hidden = line === null;
-    el.textContent = line ?? "";
+    el.classList.toggle("desk", !!line && line.includes("TAP NAME"));
+    el.innerHTML = line ? ledgerDeskHtml(line) : "";
     if (!this.gateBound) {
       this.gateBound = true;
-      el.onclick = () => {
-        if (this.gateLine?.includes("NAME")) this.gateTap?.();
+      el.onclick = (e) => {
+        const which = deskHit(e.target);
+        if (which === "market" && this.marketToggle) this.marketToggle();
+        else if (which === "name" && this.gateTap) this.gateTap();
       };
     }
   }

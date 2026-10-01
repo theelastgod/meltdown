@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 822 — The booth line opens the desk it names
+
+**The ask.** Standing at the metro booth told a phone `TAP MARKET · TAP NAME`. The line is drawn on a HUD that ignores taps, and the only handler opened the name desk for any click that said NAME. The market never opened. Tab and N still do, on a keyboard.
+
+**The change.** On a phone the two phrases are separate taps. TAP MARKET opens the market. TAP NAME opens the name desk. The rest of the line does not. A keyboard line is unchanged, and it does not take a tap.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads the two taps. Taking the market tap off the line failed once (`expected false to be true`).
+
+**Open.** A crew taken in the city still loads under the city card. The page keeps `city=1` beside the contract.
+
 ## Stage 821 — A crew taken in the city can walk back
 
 **The ask.** RUN WITH A CREW from the city dropped the way home. The closed card said TAP CONTRACTS. B did nothing, because a crew has no local mission for that key to read.
