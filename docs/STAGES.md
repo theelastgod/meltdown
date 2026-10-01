@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 765 — The arms behind Wern's back are darker than the coat
+
+**The ask.** The arms folded behind him are the coat at full brightness, so the hands at the small of the back read as cloth.
+
+**The change.** Those cylinders bake shade 0.5. Darker than the coat, clear of the lining (0.35) and the shoes (0.18). No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts arm vertices above 0.6 m, and the coat and the shoes stay their own shades. Leaving the arms unpainted failed once (`the arms wear the coat: expected 0 to be greater than 20`).
+
+**Open.** Ida's sleeves still wear the coat.
+
 ## Stage 764 — The Deacon's sleeves are darker than the robe
 
 **The ask.** The bells meeting in front of the chest are the robe at full brightness, so the arms read as cloth. The ledger between them was already darker.

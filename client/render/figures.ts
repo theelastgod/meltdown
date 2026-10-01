@@ -62,6 +62,8 @@ export const FIXER_LINING_SHADE = 0.35;
 export const MARROW_MANTLE_SHADE = 0.62;
 /** the Deacon's bell sleeves: darker than the robe, clear of the ledger and the toes */
 export const DEACON_SLEEVE_SHADE = 0.55;
+/** the arms behind Wern's back: darker than the coat, clear of the lining and the shoes */
+export const WERN_ARM_SHADE = 0.5;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -244,10 +246,10 @@ function wern(): Parts {
   parts.body.push(paint(put(new THREE.SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), T(0, 1.75, 0.012)), HAIR_SHADE));
   // the shoes are the coat's mesh. Darker than the cloth, so the toe is not the hem.
   for (const x of [-0.1, 0.1]) parts.body.push(paint(put(new THREE.BoxGeometry(0.1, 0.06, 0.24), T(x, 0.03, -0.12)), WERN_SHOE_SHADE));
-  // arms folded behind, the hands meeting at the small of the back
+  // arms folded behind, the hands meeting at the small of the back. Darker than the coat, so the arm is not the cloth.
   for (const side of [-1, 1]) {
-    parts.body.push(put(new THREE.CylinderGeometry(0.06, 0.065, 0.34, 8), T(side * 0.25, 1.28, 0.05).multiply(new THREE.Matrix4().makeRotationX(-0.35))));
-    parts.body.push(put(new THREE.CylinderGeometry(0.058, 0.062, 0.3, 8), T(side * 0.15, 1.06, 0.2).multiply(new THREE.Matrix4().makeRotationZ(side * 1.1)).multiply(new THREE.Matrix4().makeRotationX(-0.4))));
+    parts.body.push(paint(put(new THREE.CylinderGeometry(0.06, 0.065, 0.34, 8), T(side * 0.25, 1.28, 0.05).multiply(new THREE.Matrix4().makeRotationX(-0.35))), WERN_ARM_SHADE));
+    parts.body.push(paint(put(new THREE.CylinderGeometry(0.058, 0.062, 0.3, 8), T(side * 0.15, 1.06, 0.2).multiply(new THREE.Matrix4().makeRotationZ(side * 1.1)).multiply(new THREE.Matrix4().makeRotationX(-0.4))), WERN_ARM_SHADE));
   }
   // the only red in the room: the coat's front edges and the collar's rim
   for (const side of [-1, 1]) for (let y = 1.4; y > 0.1; y -= 0.075) parts.trim.push(bead(0.012, 0.05, 0.012, ...onLathe(COAT, 1.12, 0.8, Math.PI + side * 0.15, y, 0.012, 4, () => 0.015)));
