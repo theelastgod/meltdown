@@ -8,7 +8,7 @@
  */
 import { cityPageUrl, inCity } from "@shared/net/city";
 import type { Game } from "./game";
-import { cityArrivalLine, cityContractsLine, closeHint, closedContractLine, failedContractLine } from "./hud/keyhint";
+import { cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, failedContractLine } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
 import { ENDINGS, endingCoda, endingTitle, endingsFor, gateOpen, handlersAlive, resolveEnding, testimonyLine, type Testimony } from "@shared/campaign/testimony";
 import { threatProfile, threatRating, type ThreatProfile } from "@shared/campaign/threat";
@@ -542,7 +542,7 @@ export class Campaign {
     this.completion = { id, ok, reason };
     const def = missionById(id)!;
     const rw = def.reward;
-    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", this.backToCity() ? "[J] CONTRACTS · [B] BACK TO THE CITY" : closedContractLine(this.game.hud.touch)].filter(Boolean);
+    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", this.backToCity() ? closedCityLine(this.game.hud.touch) : closedContractLine(this.game.hud.touch)].filter(Boolean);
     this.note(`CONTRACT CLOSED · ${def.title}${ok ? "" : " · " + (reason ?? "")}`);
     this.game.audio.sign();
     if (id === "m7_white_office") {

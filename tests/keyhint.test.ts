@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { cityArrivalLine, cityContractsLine, closeHint, closedContractLine, DISTRICT_FOOTER, failedContractLine, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
+import { cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, DISTRICT_FOOTER, failedContractLine, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
 
 describe("a frame's close marker", () => {
   it("names the key on a keyboard", () => {
@@ -146,7 +146,17 @@ describe("a closed contract", () => {
     expect(closedContractLine(false)).toBe("[J] CONTRACTS");
     const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
     expect(campaign).toMatch(/closedContractLine\(this\.game\.hud\.touch\)/);
-    expect(campaign).toMatch(/\[J\] CONTRACTS · \[B\] BACK TO THE CITY/);
+  });
+});
+
+describe("the way back to the city", () => {
+  it("names the walk on a phone and the key on a keyboard", () => {
+    expect(closedCityLine(true)).toBe("TAP CONTRACTS · BACK TO THE CITY");
+    expect(closedCityLine(true)).not.toMatch(/\[[A-Z]+\]/);
+    expect(closedCityLine(false)).toBe("[J] CONTRACTS · [B] BACK TO THE CITY");
+    const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(campaign).toMatch(/closedCityLine\(this\.game\.hud\.touch\)/);
+    expect(campaign).not.toMatch(/\[J\] CONTRACTS · \[B\] BACK TO THE CITY/);
   });
 });
 
