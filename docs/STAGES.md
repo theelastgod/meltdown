@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 767 — Ida's shoulder cut is darker than the coat
+
+**The ask.** The hard bar across her shoulders is the coat at full brightness, so the Estate's cut reads as the cloth. The collar above it was already darker.
+
+**The change.** That box bakes shade 0.74. Darker than the coat, lighter than the collar (0.68). The walk uses the same bar. No new mesh. Wern's bar is still the coat.
+
+**Verified.** `tests/fixers.test.ts` counts yoke vertices on Ida and on the walker, and the coat and the collar stay their own shades. Leaving the bar unpainted failed once (`vessel yoke wears the coat: expected 0 to be greater than 12`).
+
+**Open.** Wern's shoulder bar still wears the coat.
+
 ## Stage 766 — Ida's sleeves are darker than the coat
 
 **The ask.** The slim sleeves, one hanging and one with the hand on the hip, are the coat at full brightness, so the arm reads as the cloth. The trousers under them were already darker.

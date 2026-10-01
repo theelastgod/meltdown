@@ -66,6 +66,8 @@ export const DEACON_SLEEVE_SHADE = 0.55;
 export const WERN_ARM_SHADE = 0.5;
 /** Ida's sleeves: darker than the coat, clear of the collar and the trousers */
 export const VESSEL_SLEEVE_SHADE = 0.58;
+/** Ida's shoulder yoke. Darker than the coat, lighter than the collar. */
+export const VESSEL_YOKE_SHADE = 0.74;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -212,8 +214,8 @@ function vessel(): Parts {
   // the lining is the coat's mesh. Darker than the cloth, so the opening is not the outside.
   parts.body.push(paint(inside(lathe(COAT.slice(0, 4), 12, { sx: 1.1, sz: 0.8, gap: 0.5 })), FIXER_LINING_SHADE));
   parts.body.push(lathe(COAT.slice(3), 12, { sx: 1.1, sz: 0.8 }));
-  // the Estate's cut: a hard yoke across the shoulders
-  parts.body.push(put(new THREE.BoxGeometry(0.5, 0.06, 0.22), T(0, 1.42, 0)));
+  // the Estate's cut: a hard yoke across the shoulders. Darker than the coat, so the bar is not the cloth.
+  parts.body.push(paint(put(new THREE.BoxGeometry(0.5, 0.06, 0.22), T(0, 1.42, 0)), VESSEL_YOKE_SHADE));
   // high collar, head, and the hair drawn back. The collar is darker than the coat, so the neck is not the cloth.
   parts.body.push(paint(lathe([[0.1, 1.47], [0.105, 1.6]], 12, { gap: 0.9 }), FIXER_COLLAR_SHADE));
   // the head is the coat's mesh. Black vertices keep the street off the face. The hair is darker than the coat.
