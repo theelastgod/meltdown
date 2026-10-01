@@ -127,6 +127,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(89, "skin_felt", "FELT", "DARK ROOFING FELT, ONE CYAN NAIL LINE", 82, 0xc259, "#f2f4ff", "skin_felt_plate"),
   skin(90, "skin_resin", "RESIN", "DARK POURED RESIN, CYAN INCLUSIONS", 48, 0xc25a, "#35f2ff", "skin_resin_plate"),
   skin(91, "skin_slate", "SLATE", "DARK WET SLATE, A CYAN DRIP", 62, 0xc25b, "#ff3ec9", "skin_slate_plate"),
+  skin(92, "skin_copper", "COPPER", "DARK OXIDISED COPPER, NO BRIGHT ORANGE", 74, 0xc25c, "#ffb02e", "skin_copper_plate"),
+  skin(93, "skin_gravel", "GRAVEL", "DARK WET GRAVEL, CYAN IN THE GAPS", 88, 0xc25d, "#37ff8b", "skin_gravel_plate"),
+  skin(94, "skin_lead", "LEAD", "DARK LEAD SHEET, ONE CYAN SCRATCH", 96, 0xc25e, "#8f4dff", "skin_lead_plate"),
+  skin(95, "skin_mastic", "MASTIC", "DARK ROOF MASTIC, A MAGENTA BEAD", 110, 0xc25f, "#ffd27a", "skin_mastic_plate"),
 ];
 
 /**
