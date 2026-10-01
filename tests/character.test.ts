@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { BONE, BOOT_SHADE, BUCKLE_SHADE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, GLOVE_SHADE, REST_BONES, rigReport, trimGeometry } from "../client/render/rig";
+import { BONE, BOOT_SHADE, BUCKLE_SHADE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, GLOVE_SHADE, REST_BONES, rigReport, STRAP_SHADE, trimGeometry } from "../client/render/rig";
 import { citizenBodyGeometry, citizenHoodGeometry, citizenSwing, CITIZEN_LIMBS, CITIZEN_STRIDE, Crowd } from "../client/render/life";
 
 describe("the player's body", () => {
@@ -112,6 +112,24 @@ describe("the player's body", () => {
     }
     expect(buckle, "the buckle wears the cloak").toBeGreaterThan(8);
     expect(belt, "the belt went dark with the buckle").toBeGreaterThan(8);
+  });
+
+  it("the chest strap is darker than the cloth it crosses", () => {
+    const g = cloakGeometry(null);
+    const shade = g.getAttribute("shade");
+    const idx = g.getAttribute("skinIndex");
+    let strap = 0;
+    let chest = 0;
+    for (let i = 0; i < shade.count; i++) {
+      const s = shade.getX(i);
+      const onChest = idx.getX(i) === BONE.chest;
+      if (Math.abs(s - STRAP_SHADE) < 1e-5) {
+        strap++;
+        expect(onChest, "a strap vertex left the chest").toBe(true);
+      } else if (s === 1 && onChest) chest++;
+    }
+    expect(strap, "the strap wears the cloak").toBeGreaterThan(8);
+    expect(chest, "the chest went dark with the strap").toBeGreaterThan(8);
   });
 
   it("no strip-light sits inside the coat's cloth", () => {

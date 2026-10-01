@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 748 — The chest strap is darker than the cloth
+
+**The ask.** The band across the chest is a box of the cloak at full brightness, so it reads as the coat.
+
+**The change.** That box bakes shade 0.78. Darker than the cloth, clear of the buckle (0.62), the glove, the lining, the boot, and the hood void. The office ghost reads the same colour. No new mesh.
+
+**Verified.** `tests/character.test.ts` counts strap vertices on the chest bone, and chest vertices still at shade 1. Dropping the strap shade so it defaulted to 1 failed once (`the strap wears the cloak: expected 0 to be greater than 8`).
+
+**Open.** The shoulder plate still wears the cloak at full brightness.
+
 ## Stage 747 — The buckle is darker than the belt
 
 **The ask.** The clasp on the belt is a box of the cloak at full brightness, so it reads as the belt.

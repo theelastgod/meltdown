@@ -273,6 +273,8 @@ export const BOOT_SHADE = 0.22;
 export const GLOVE_SHADE = 0.48;
 /** the buckle on the cloak mesh: darker than the belt, clear of the glove */
 export const BUCKLE_SHADE = 0.62;
+/** the chest strap on the cloak mesh: darker than the cloth, clear of the buckle */
+export const STRAP_SHADE = 0.78;
 export const BODY_TRIANGLES = 2000;
 export const TRIM_TRIANGLES = 700;
 
@@ -300,7 +302,8 @@ function cloakParts(look = 0): THREE.BufferGeometry[] {
   parts.push(cut(part(lathe([[0.19, 0.965], [0.19, 1.03]], 14, { sx: 1.08, sz: 0.86 }), I.clone(), tubeWeights), sh));
   // the buckle is the cloak mesh. Darker than the belt, so the clasp is not the cloth.
   parts.push(cut(part(new THREE.BoxGeometry(0.075, 0.06, 0.025), at(0, 0.998, -0.19 * 0.86 - 0.01), tubeWeights, BUCKLE_SHADE), sh));
-  parts.push(cut(part(new THREE.BoxGeometry(0.045, 0.5, 0.02), at(-0.01, 1.2, -0.16 * 0.78 - 0.018).multiply(new THREE.Matrix4().makeRotationZ(0.62)), fixed(BONE.chest)), sh));
+  // the strap is the cloak mesh. Darker than the cloth, so the band is not the chest.
+  parts.push(cut(part(new THREE.BoxGeometry(0.045, 0.5, 0.02), at(-0.01, 1.2, -0.16 * 0.78 - 0.018).multiply(new THREE.Matrix4().makeRotationZ(0.62)), fixed(BONE.chest), STRAP_SHADE), sh));
   // a plate on the right shoulder: kitbash, and it breaks the symmetry; the look may move it, double it or leave the shoulder bare
   if (sh.plateR) parts.push(cut(part(new THREE.BoxGeometry(0.14, 0.04, 0.2), at(0.235, 1.445, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.6)), fixed(BONE.chest)), sh));
   if (sh.plateL) parts.push(cut(part(new THREE.BoxGeometry(0.14, 0.04, 0.2), at(-0.235, 1.445, 0).multiply(new THREE.Matrix4().makeRotationZ(0.6)), fixed(BONE.chest)), sh));
