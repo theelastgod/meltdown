@@ -48,6 +48,8 @@ export const TROUSER_SHADE = 0.33;
 export const VESSEL_BOOT_SHADE = 0.2;
 /** Wern's shoes: darker than the coat, not the unlit face */
 export const WERN_SHOE_SHADE = 0.18;
+/** the Deacon's toes: darker than the robe, not a void */
+export const DEACON_TOE_SHADE = 0.24;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -105,8 +107,8 @@ function deacon(): Parts {
   const ROBE: Profile = [[0.36, 0.02], [0.33, 0.3], [0.28, 0.7], [0.24, 1.0], [0.22, 1.2], [0.25, 1.38], [0.21, 1.48], [0.12, 1.56]];
   const fold = (y: number) => 0.05 * Math.min(1, Math.max(0, (1.0 - y) / 1.0));
   parts.body.push(lathe(ROBE, 14, { sx: 1, sz: 0.85, folds: 6, fold }));
-  // toes of two boots under the hem
-  for (const x of [-0.1, 0.1]) parts.body.push(put(new THREE.BoxGeometry(0.1, 0.06, 0.12), T(x, 0.03, -0.3)));
+  // toes of two boots under the hem. Darker than the robe, so the foot is not the cloth.
+  for (const x of [-0.1, 0.1]) parts.body.push(paint(put(new THREE.BoxGeometry(0.1, 0.06, 0.12), T(x, 0.03, -0.3)), DEACON_TOE_SHADE));
   hood(parts, { r: 0.175, cy: 1.66, sy: 1.2, sz: 1.15, trail: 0.1, opening: 1.7, rim: 1 });
   // bell sleeves meeting in front, and the ledger held against the chest
   for (const side of [-1, 1]) {

@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, DEACON_TOE_SHADE, EMBODIED, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -133,9 +133,15 @@ describe("the fixers, in the flesh", () => {
     crown("vessel", fixerGeometry("vessel").body);
     crown("wern", fixerGeometry("wern").body);
     crown("vessel-walk", vesselWalkerGeometry().body);
-    const deacon = fixerGeometry("deacon").body.getAttribute("color");
+    const deaconGeo = fixerGeometry("deacon").body;
+    const deacon = deaconGeo.getAttribute("color");
+    const deaconPos = deaconGeo.getAttribute("position");
     expect(deacon).toBeTruthy();
-    for (let i = 0; i < deacon.count; i++) expect(deacon.getX(i)).toBe(1);
+    for (let i = 0; i < deacon.count; i++) {
+      const c = deacon.getX(i);
+      if (Math.abs(c - DEACON_TOE_SHADE) < 1e-5) expect(deaconPos.getY(i)).toBeLessThan(0.08);
+      else expect(c).toBe(1);
+    }
     const figures = readFileSync(new URL("../client/render/figures.ts", import.meta.url), "utf8");
     const escort = readFileSync(new URL("../client/render/escort.ts", import.meta.url), "utf8");
     expect(figures).toMatch(/new THREE\.MeshStandardMaterial\(\{ color: 0x06070b, roughness: 0\.95, vertexColors: true \}\)/);
@@ -213,6 +219,24 @@ describe("the fixers, in the flesh", () => {
     let leak = 0;
     for (let i = 0; i < ida.count; i++) if (Math.abs(ida.getX(i) - WERN_SHOE_SHADE) < 1e-5) leak++;
     expect(leak, "Ida grew Wern's shoes").toBe(0);
+  });
+
+  it("the Deacon's toes are darker than the robe", () => {
+    const g = fixerGeometry("deacon").body;
+    const color = g.getAttribute("color");
+    const pos = g.getAttribute("position");
+    let toes = 0;
+    let robe = 0;
+    for (let i = 0; i < color.count; i++) {
+      const c = color.getX(i);
+      const y = pos.getY(i);
+      if (Math.abs(c - DEACON_TOE_SHADE) < 1e-5) {
+        toes++;
+        expect(y).toBeLessThan(0.08);
+      } else if (c === 1 && y > 0.2) robe++;
+    }
+    expect(toes, "the toes wear the robe").toBeGreaterThan(20);
+    expect(robe, "the robe went dark with the toes").toBeGreaterThan(20);
   });
 });
 
