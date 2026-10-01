@@ -2473,5 +2473,41 @@
     "bytes": 109287,
     "sha256": "0eaf8148c84c7d00c6f2521b64a781345c6209ad7a5e235beaa89ab52a401818",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_spool_plate",
+    "kind": "texture",
+    "file": "skin_spool_plate.png",
+    "size": 256,
+    "bytes": 125825,
+    "sha256": "1b473303ab853336d818fcca2e9a5617903f3f556399853cbc459bc50562dd6f",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_junction_plate",
+    "kind": "texture",
+    "file": "skin_junction_plate.png",
+    "size": 256,
+    "bytes": 120532,
+    "sha256": "7723bbe6fa36047d61f22e053ea27a1a0bbb99cd01a1b73e9c62a798333c5a02",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_tray_plate",
+    "kind": "texture",
+    "file": "skin_tray_plate.png",
+    "size": 256,
+    "bytes": 122720,
+    "sha256": "cb4dabea1da7bd947af8e610b1fe773136241f7dcad819e84e99b089e80f05cc",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_conduit2_plate",
+    "kind": "texture",
+    "file": "skin_conduit2_plate.png",
+    "size": 256,
+    "bytes": 118417,
+    "sha256": "89d2dcef01c195888295de4fbac904abb981a1ccbf7397217708be40a666c7a1",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]

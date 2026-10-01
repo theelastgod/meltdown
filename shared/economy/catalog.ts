@@ -161,6 +161,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(123, "skin_cage", "CAGE", "DARK SAFETY CAGE MESH, NO FIGURE, MAGENTA WIRE", 62, 0xc27b, "#ff3ec9", "skin_cage_plate"),
   skin(124, "skin_transformer", "TRANSFORMER", "DARK TRANSFORMER FINS, CYAN BETWEEN THEM, NO LABELS", 74, 0xc27c, "#ffb02e", "skin_transformer_plate"),
   skin(125, "skin_busbar", "BUSBAR", "DARK BUS BAR, ONE CYAN INSULATOR", 88, 0xc27d, "#37ff8b", "skin_busbar_plate"),
+  skin(126, "skin_spool", "SPOOL", "DARK CABLE SPOOL, MAGENTA FLANGE, NO TEXT", 96, 0xc27e, "#8f4dff", "skin_spool_plate"),
+  skin(127, "skin_junction", "JUNCTION", "DARK JUNCTION BOX, CYAN AT THE KNOCKOUT, NO WRITING", 110, 0xc27f, "#ffd27a", "skin_junction_plate"),
+  skin(128, "skin_tray", "TRAY", "DARK CABLE TRAY, CYAN ON THE RUNG", 58, 0xc280, "#8fd8ff", "skin_tray_plate"),
+  skin(129, "skin_conduit2", "CONDUIT BEND", "DARK CONDUIT BEND, A CYAN COUPLER, NO MARKS", 82, 0xc281, "#f2f4ff", "skin_conduit2_plate"),
 ];
 
 /**
