@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 783 — Holding the logs makes Ida say you sat on them
+
+**The ask.** If you held the depot logs, her aside still prints a sentence: `You sat on the depot logs. I would have published. I am not sure any more that I would have been right.` Publishing them already reads as the terminal.
+
+**The change.** `YOU SAT ON THE DEPOT LOGS. I WOULD HAVE PUBLISHED. I AM NOT SURE ANY MORE THAT I WOULD HAVE BEEN RIGHT.`
+
+**Verified.** `tests/campaign.test.ts` reads that recall off the leak script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'You sat on the depot logs. I would have published. I am not sure any more that I would have been right.' to be 'YOU SAT ON THE DEPOT LOGS. I WOULD HAVE PUBLISHED. I AM NOT SURE ANY MORE THAT I WOULD HAVE BEEN RIGHT.'`).
+
+**Open.** Wern's first line on the walk still prints as a sentence.
+
 ## Stage 782 — Publishing the logs makes Ida say half the Estate read them
 
 **The ask.** If you published the depot logs, her aside still prints a sentence: `Half the Estate read your depot logs before VANTAGE cut the feeds. That is why I am standing here and not at my desk.` The walk itself is already the terminal.

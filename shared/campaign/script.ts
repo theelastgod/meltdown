@@ -173,7 +173,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
         next: "w1",
         recall: [
           { gate: { all: { "m3:volatility": "publish" } }, lines: ["HALF THE ESTATE READ YOUR DEPOT LOGS BEFORE VANTAGE CUT THE FEEDS. THAT IS WHY I AM STANDING HERE AND NOT AT MY DESK."] },
-          { gate: { all: { "m3:volatility": "hold" } }, lines: ["You sat on the depot logs. I would have published. I am not sure any more that I would have been right."] },
+          { gate: { all: { "m3:volatility": "hold" } }, lines: ["YOU SAT ON THE DEPOT LOGS. I WOULD HAVE PUBLISHED. I AM NOT SURE ANY MORE THAT I WOULD HAVE BEEN RIGHT."] },
         ],
       }),
       n("w1", "wern", ["You've read the models by now. So you know I didn't invent the Meltdown. I forecast it.", "Twelve years of variance, compounding. A city that participates in history is a city that ends."], { next: "w2" }),

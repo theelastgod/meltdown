@@ -618,6 +618,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"HALF THE ESTATE READ YOUR DEPOT LOGS BEFORE VANTAGE CUT THE FEEDS\. THAT IS WHY I AM STANDING HERE AND NOT AT MY DESK\."/);
     expect(src).not.toMatch(/"Half the Estate read your depot logs before VANTAGE cut the feeds\. That is why I am standing here and not at my desk\."/);
   });
+
+  it("m4 hold aside is CRT, not you sat on the depot logs", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "a")!.recall![1]!.lines[0];
+    expect(line).toBe("YOU SAT ON THE DEPOT LOGS. I WOULD HAVE PUBLISHED. I AM NOT SURE ANY MORE THAT I WOULD HAVE BEEN RIGHT.");
+    expect(line).not.toBe("You sat on the depot logs. I would have published. I am not sure any more that I would have been right.");
+    expect(src).toMatch(/"YOU SAT ON THE DEPOT LOGS\. I WOULD HAVE PUBLISHED\. I AM NOT SURE ANY MORE THAT I WOULD HAVE BEEN RIGHT\."/);
+    expect(src).not.toMatch(/"You sat on the depot logs\. I would have published\. I am not sure any more that I would have been right\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
