@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 755 — A socketed chip reads as the terminal
+
+**The ask.** The file showed a socketed chip as a sentence: "+3% range / +4% recoil". The gate above it is already CRT. The chip's own words were not.
+
+**The change.** The line is uppercased where it is drawn. The catalog stays the sentences it was written as. Firmware lines were already CRT. XP under the gate is unchanged.
+
+**Verified.** `tests/endgame.test.ts` requires `line?.toUpperCase()` on the chip row, and the catalog still says `+3% range`. Drawing the sentence failed once (the source no longer matched `line?.toUpperCase()`).
+
+**Open.** The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 754 — Ida's boots are darker than the trousers
 
 **The ask.** The shaft and the sole under the hem are the coat at full brightness, so the foot reads as the leg. The trouser was already darker.

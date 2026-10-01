@@ -103,6 +103,8 @@ describe("the fixers, in the flesh", () => {
         } else if (Math.abs(c - HAIR_SHADE) < 1e-5) {
           hair++;
           expect(pos.getY(i), id).toBeGreaterThan(1.6);
+        } else if (Math.abs(c - TROUSER_SHADE) < 1e-5 || Math.abs(c - VESSEL_BOOT_SHADE) < 1e-5) {
+          // the leg is not the coat; its own checks hold the band
         } else {
           cloth++;
           expect(c, id).toBe(1);

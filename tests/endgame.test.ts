@@ -476,6 +476,14 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/GATE R\$\{gate\.gate\}: \$\{gate\.text\} /);
   });
 
+  it("a socketed chip's words are CRT, not the sentence they were authored as", () => {
+    const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const chip = readFileSync(new URL("../shared/manifest/chips.ts", import.meta.url), "utf8");
+    expect(chip).toMatch(/line: "\+3% range \/ \+4% recoil"/);
+    expect(src).toMatch(/chipById\(id\)\?\.line\?\.toUpperCase\(\)/);
+    expect(src).not.toMatch(/chipById\(id\)\?\.line\)\.filter\(Boolean\)/);
+  });
+
   it("a chip option rank is R, not r", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(src).toMatch(/\} · R\$\{c\.rank\}/);
