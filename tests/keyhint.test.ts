@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { cardYieldsToDesk, cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, DISTRICT_FOOTER, failedContractLine, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
+import { cardWalkHit, cardYieldsToDesk, cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, DISTRICT_FOOTER, failedContractLine, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
 
 describe("a frame's close marker", () => {
   it("names the key on a keyboard", () => {
@@ -151,12 +151,20 @@ describe("a closed contract", () => {
 
 describe("the way back to the city", () => {
   it("names the walk on a phone and the key on a keyboard", () => {
-    expect(closedCityLine(true)).toBe("TAP CONTRACTS · BACK TO THE CITY");
+    expect(closedCityLine(true).replace(/<[^>]+>/g, "")).toBe("TAP CONTRACTS · TAP BACK TO THE CITY");
+    expect(closedCityLine(true)).toContain('data-walk="1"');
     expect(closedCityLine(true)).not.toMatch(/\[[A-Z]+\]/);
     expect(closedCityLine(false)).toBe("[J] CONTRACTS · [B] BACK TO THE CITY");
+    expect(cardWalkHit({ closest: (s: string) => (s === "[data-walk]" ? {} : null) })).toBe(true);
+    expect(cardWalkHit({ closest: () => null })).toBe(false);
+    expect(cardWalkHit(null)).toBe(false);
     const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     expect(campaign).toMatch(/closedCityLine\(this\.game\.hud\.touch\)/);
+    expect(campaign).toMatch(/home \? \(\) => this\.travel\(home\) : null/);
     expect(campaign).not.toMatch(/\[J\] CONTRACTS · \[B\] BACK TO THE CITY/);
+    expect(hud.includes("if (this.touch && cardWalkHit(e.target) && this.cardWalk)")).toBe(true);
+    expect(hud.includes("this.cardWalk = walk")).toBe(true);
   });
 });
 

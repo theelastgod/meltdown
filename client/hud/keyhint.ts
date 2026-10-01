@@ -39,9 +39,19 @@ export function closedContractLine(touch: boolean): string {
   return touch ? "TAP CONTRACTS" : "[J] CONTRACTS";
 }
 
-/** A closed contract taken in the city. B walks back. A phone has no B. */
+/** The words a phone taps to walk home. The rest of the card still opens the desk. */
+export const CITY_WALK = "TAP BACK TO THE CITY";
+
+/** A closed contract taken in the city. B walks back. A phone taps the walk words. */
 export function closedCityLine(touch: boolean): string {
-  return touch ? "TAP CONTRACTS · BACK TO THE CITY" : "[J] CONTRACTS · [B] BACK TO THE CITY";
+  return touch ? `TAP CONTRACTS · <span data-walk="1">${CITY_WALK}</span>` : "[J] CONTRACTS · [B] BACK TO THE CITY";
+}
+
+/** A tap landed on the walk words, not on the rest of the card. */
+export function cardWalkHit(target: unknown): boolean {
+  if (!target || typeof target !== "object" || !("closest" in target)) return false;
+  const closest = (target as { closest?: unknown }).closest;
+  return typeof closest === "function" && !!closest.call(target, "[data-walk]");
 }
 
 /**

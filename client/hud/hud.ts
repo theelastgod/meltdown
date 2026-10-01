@@ -25,7 +25,7 @@ import { footTag, footTagText } from "./footline";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { alertOnCut, platePass, plateTop } from "./faceplate";
 import { terminalFooter, terminalSeat } from "./terminal";
-import { cardYieldsToDesk, closeHint, DISTRICT_FOOTER, receiptSignLine, reloadHint, safeZoneLine, tabOpens } from "./keyhint";
+import { cardWalkHit, cardYieldsToDesk, closeHint, DISTRICT_FOOTER, receiptSignLine, reloadHint, safeZoneLine, tabOpens } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
 import { nodeClockNote, type NodeReadout } from "./node";
 import { gateMarks, nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type GateMark, type RadarGate, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
@@ -60,6 +60,8 @@ export class Hud {
   receiptTap: (() => void) | null = null;
   /** A tap on a contract card. A phone has no J, and the tab row is hidden under the card. */
   cardTap: (() => void) | null = null;
+  /** A tap on the walk words of a city contract card. A phone has no B. */
+  cardWalk: (() => void) | null = null;
   onStamp: (() => void) | null = null;
   private radar: CanvasRenderingContext2D;
   private locked = false;
@@ -197,7 +199,11 @@ export class Hud {
     this.q(".receipt").addEventListener("click", () => {
       if (this.touch && this.receiptTap) this.receiptTap();
     });
-    this.q(".card").addEventListener("click", () => {
+    this.q(".card").addEventListener("click", (e) => {
+      if (this.touch && cardWalkHit(e.target) && this.cardWalk) {
+        this.cardWalk();
+        return;
+      }
       if (this.touch && this.cardTap) this.cardTap();
     });
     this.radar = (root.querySelector(".map canvas") as HTMLCanvasElement).getContext("2d")!;
@@ -814,8 +820,9 @@ export class Hud {
 
   /** a full-screen card (contract closed / failed / ending); seconds 0 = until the next card or contracts */
   private cardTimer = 0;
-  card(title: string, lines: string[], color: "am" | "mg" | "ye" | "cy", seconds: number, art: string | null = null, tap: (() => void) | null = null): void {
+  card(title: string, lines: string[], color: "am" | "mg" | "ye" | "cy", seconds: number, art: string | null = null, tap: (() => void) | null = null, walk: (() => void) | null = null): void {
     this.cardTap = tap;
+    this.cardWalk = walk;
     const el = this.q(".card");
     el.hidden = false;
     el.className = `card ${color}${art ? " art" : ""}`;

@@ -542,9 +542,11 @@ export class Campaign {
     this.completion = { id, ok, reason };
     const def = missionById(id)!;
     const rw = def.reward;
-    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", this.backToCity() ? closedCityLine(this.game.hud.touch) : closedContractLine(this.game.hud.touch)].filter(Boolean);
+    const home = this.backToCity();
+    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", home ? closedCityLine(this.game.hud.touch) : closedContractLine(this.game.hud.touch)].filter(Boolean);
     this.note(`CONTRACT CLOSED · ${def.title}${ok ? "" : " · " + (reason ?? "")}`);
     this.game.audio.sign();
+    const walk = home ? () => this.travel(home) : null;
     if (id === "m7_white_office") {
       const e = resolveEnding(t, this.save.faction);
       this.ending = e.id;
@@ -553,7 +555,7 @@ export class Campaign {
       const coda = endingCoda(t);
       this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", closedContractLine(this.game.hud.touch)], "ye", 0, ENDING_ART[e.id], () => this.toggleContracts());
       this.game.audio.rite(3);
-    } else this.game.hud.card(`CONTRACT CLOSED · ${def.title}`, lines, "am", 0, null, () => this.toggleContracts());
+    } else this.game.hud.card(`CONTRACT CLOSED · ${def.title}`, lines, "am", 0, null, () => this.toggleContracts(), walk);
     this.game.renderer.post.kick(1);
   }
 
