@@ -114,6 +114,7 @@ export const SKINS: readonly SkinDef[] = [
   skin(76, "skin_diamond", "DIAMOND", "DARK DIAMOND RUBBER, NO TEXT", 74, 0xc24c, "#ffb02e", "skin_diamond_plate"),
   skin(77, "skin_slag", "SLAG", "DARK SLAG GLASS, MAGENTA FLECKS", 88, 0xc24d, "#37ff8b", "skin_slag_plate"),
   skin(78, "skin_frost", "FROST", "DARK METAL, A THIN CYAN FROST", 96, 0xc24e, "#8f4dff", "skin_frost_plate"),
+  skin(79, "skin_scratch", "SCRATCH", "SOOT ON STEEL, ONE AMBER SCRATCH", 110, 0xc24f, "#ffd27a", "skin_scratch_plate"),
 ];
 
 /**

@@ -2050,5 +2050,14 @@
     "bytes": 127559,
     "sha256": "5ff8de3d87c7a80c5e9f09caa87350068fcdc4d0fe8e64130474a0006c86d184",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_scratch_plate",
+    "kind": "texture",
+    "file": "skin_scratch_plate.png",
+    "size": 256,
+    "bytes": 113992,
+    "sha256": "7475fc971d1003c822b08961a10ad866203a66a647b851936575184863debba1",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]
