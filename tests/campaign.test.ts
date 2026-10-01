@@ -537,6 +537,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"NODES FIRST\. NAMES LATER\. COME TO THE OFFICE\."/);
     expect(src).not.toMatch(/"Nodes first\. Names later\. Come to the Office\."/);
   });
+
+  it("m1 burn line is CRT, not the page goes up cyan", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m1_file")!.nodes.find((n) => n.id === "burn")!.lines[0];
+    expect(line).toBe("THE PAGE GOES UP CYAN, THEN BLACK. SOMEWHERE A LEDGER LINE BECOMES A QUESTION MARK.");
+    expect(line).not.toBe("The page goes up cyan, then black. Somewhere a ledger line becomes a question mark.");
+    expect(src).toMatch(/"THE PAGE GOES UP CYAN, THEN BLACK\. SOMEWHERE A LEDGER LINE BECOMES A QUESTION MARK\."/);
+    expect(src).not.toMatch(/"The page goes up cyan, then black\. Somewhere a ledger line becomes a question mark\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

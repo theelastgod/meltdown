@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 774 — Burning the lease page said the page goes up cyan
+
+**The ask.** Choosing to burn the lease still prints a sentence: `The page goes up cyan, then black. Somewhere a ledger line becomes a question mark.` The choice above it is already the terminal.
+
+**The change.** `THE PAGE GOES UP CYAN, THEN BLACK. SOMEWHERE A LEDGER LINE BECOMES A QUESTION MARK.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the lease-file script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'The page goes up cyan, then black. Somewhere a ledger line becomes a question mark.' to be 'THE PAGE GOES UP CYAN, THEN BLACK. SOMEWHERE A LEDGER LINE BECOMES A QUESTION MARK.'`).
+
+**Open.** Keeping the page still prints as a sentence. The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 773 — The Deacon's second line said nodes first
 
 **The ask.** His second line still prints as a sentence: `Nodes first. Names later. Come to the Office.` The line above it is already the terminal.

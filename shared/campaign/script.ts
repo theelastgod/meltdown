@@ -125,7 +125,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
           { text: "KEEP IT. EVIDENCE IS A WEAPON.", set: { "m1:lease": "keep" }, next: "keep" },
         ],
       }),
-      n("burn", "you", ["The page goes up cyan, then black. Somewhere a ledger line becomes a question mark."]),
+      n("burn", "you", ["THE PAGE GOES UP CYAN, THEN BLACK. SOMEWHERE A LEDGER LINE BECOMES A QUESTION MARK."]),
       n("keep", "you", ["You fold it into the coat. It weighs more than paper should."]),
     ],
   },
