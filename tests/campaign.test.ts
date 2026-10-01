@@ -780,6 +780,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"OR TAKE THE CHAIR\. FREEZE WHAT YOU MUST\. THAW WHAT YOU DARE\."/);
     expect(src).not.toMatch(/"Or take the chair\. Freeze what you must\. Thaw what you dare\."/);
   });
+
+  it("m7 fire recall is CRT, not they read the fire", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "b")!.recall![0]!.lines[0];
+    expect(line).toBe("THEY READ THE FIRE, YOU KNOW. ALL OF IT. AND THEY WOKE ANYWAY. THAT IS THE PART I COULD NOT FORECAST.");
+    expect(line).not.toBe("They read the fire, you know. All of it. And they woke anyway. That is the part I could not forecast.");
+    expect(src).toMatch(/"THEY READ THE FIRE, YOU KNOW\. ALL OF IT\. AND THEY WOKE ANYWAY\. THAT IS THE PART I COULD NOT FORECAST\."/);
+    expect(src).not.toMatch(/"They read the fire, you know\. All of it\. And they woke anyway\. That is the part I could not forecast\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

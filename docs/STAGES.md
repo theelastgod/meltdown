@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 801 — The fire recall said they read it and woke anyway
+
+**The ask.** Sending the whole broadcast still prints a sentence when Wern remembers it: `They read the fire, you know. All of it. And they woke anyway. That is the part I could not forecast.` The chair line above it is already the terminal.
+
+**The change.** `THEY READ THE FIRE, YOU KNOW. ALL OF IT. AND THEY WOKE ANYWAY. THAT IS THE PART I COULD NOT FORECAST.`
+
+**Verified.** `tests/campaign.test.ts` reads that recall off the office script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'They read the fire, you know. All of it. And they woke anyway. That is the part I could not forecast.' to be 'THEY READ THE FIRE, YOU KNOW. ALL OF IT. AND THEY WOKE ANYWAY. THAT IS THE PART I COULD NOT FORECAST.'`).
+
+**Open.** The redacted-broadcast recall still prints as a sentence.
+
 ## Stage 800 — Taking the chair said freeze what you must
 
 **The ask.** His last offer in the office still prints a sentence: `Or take the chair. Freeze what you must. Thaw what you dare.` The wipe line above it is already the terminal.
