@@ -208,7 +208,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
           { text: "SPARE THE DOCKS. SOMEONE HAS TO SEE THE SHIPS COME IN.", set: { "m5:lattice": "spare_docks" }, next: "spare" },
         ],
       }),
-      n("all", "you", ["Everything. Tonight the city closes its eyes."]),
+      n("all", "you", ["EVERYTHING. TONIGHT THE CITY CLOSES ITS EYES."]),
       n("spare", "deacon", ["The docks keep their lattice. Ships need a witness. So do we."]),
     ],
   },

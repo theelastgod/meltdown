@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 790 — Blinding the lattice said everything tonight
+
+**The ask.** Putting the sensors out still prints a sentence: `Everything. Tonight the city closes its eyes.` The choice above it is already the terminal.
+
+**The change.** `EVERYTHING. TONIGHT THE CITY CLOSES ITS EYES.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the lattice script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'Everything. Tonight the city closes its eyes.' to be 'EVERYTHING. TONIGHT THE CITY CLOSES ITS EYES.'`).
+
+**Open.** Sparing the docks still prints as a sentence. The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 789 — Shielding Ida said you took the light for me
 
 **The ask.** Taking the searchlight for her still prints a sentence: `You took the light for me. Nobody in the Estate ever did that.` The choice above it is already the terminal.

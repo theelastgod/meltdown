@@ -681,6 +681,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"YOU TOOK THE LIGHT FOR ME\. NOBODY IN THE ESTATE EVER DID THAT\."/);
     expect(src).not.toMatch(/"You took the light for me\. Nobody in the Estate ever did that\."/);
   });
+
+  it("m5 lattice line is CRT, not everything tonight the city closes its eyes", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m5_lattice")!.nodes.find((n) => n.id === "all")!.lines[0];
+    expect(line).toBe("EVERYTHING. TONIGHT THE CITY CLOSES ITS EYES.");
+    expect(line).not.toBe("Everything. Tonight the city closes its eyes.");
+    expect(src).toMatch(/"EVERYTHING\. TONIGHT THE CITY CLOSES ITS EYES\."/);
+    expect(src).not.toMatch(/"Everything\. Tonight the city closes its eyes\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
