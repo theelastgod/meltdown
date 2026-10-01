@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 833 — Reconciling the book tells a phone to tap
+
+**The ask.** A signed link offered [RECONCILE] beside the balance. Those brackets are a button on a keyboard. On a phone they read as a key. Reconciling still only checks the book. It does not buy a stat.
+
+**The change.** A phone sees TAP RECONCILE. A keyboard still sees the bracketed button. A row drawn with no document still uses that keyboard button.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that arm of the row. Putting the brackets back failed once (`expected the row to match /crewButton("RECONCILE", this.touchHud)/`).
+
+**Open.** The prizes row still says [REFRESH] on a phone.
+
 ## Stage 832 — Attesting stamps tells a phone to tap
 
 **The ask.** A signed link with stamps still waiting offered [ATTEST]. Those brackets are a button on a keyboard. On a phone they read as a key. Attesting still writes the stamps the file already earned. It does not buy one.

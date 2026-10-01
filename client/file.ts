@@ -104,7 +104,7 @@ export class GhostFile {
 
   /** the touch build (Stage 145): read from the HUD root, the one element both sides agree on */
   private get touchHud(): boolean {
-    return !!document.getElementById("hud")?.classList.contains("touch");
+    return typeof document !== "undefined" && !!document.getElementById("hud")?.classList.contains("touch");
   }
 
   constructor(private online: () => boolean) {
@@ -648,7 +648,7 @@ export class GhostFile {
     const v = this.counterState;
     const info = c.info;
     const wallet = c.address ? `WALLET <b>${c.short()}</b>` : `<span class="btn" data-act="link">${crewButton("LINK A WALLET", this.touchHud)}</span> <span class="dim">ROBINHOOD WALLET · WALLETCONNECT · INJECTED</span>`;
-    const linked = v?.linked ? `LINKED <b>${v.address!.slice(0, 6)}…${v.address!.slice(-4)}</b> · GHOSTFILE <b>${v.ghostfile ? "#" + v.ghostfile : "—"}</b> · STAMPS ON CHAIN <b>${v.stamps}</b>/${this.stamps.length} ${this.stamps.length > v.stamps ? `<span class="btn" data-act="attestStamps">${crewButton("ATTEST", this.touchHud)}</span>` : ""} · $CAPITAL <b>${Number(v.capital).toFixed(0)}</b> <span class="btn" data-act="reconcile">[RECONCILE]</span>` : c.address ? `<span class="btn" data-act="link">${crewButton("SIGN THE LINK", this.touchHud)}</span> <span class="dim">ONE SIWE STATEMENT; THE GHOSTFILE MINTS WITH SPONSORED GAS</span>` : "";
+    const linked = v?.linked ? `LINKED <b>${v.address!.slice(0, 6)}…${v.address!.slice(-4)}</b> · GHOSTFILE <b>${v.ghostfile ? "#" + v.ghostfile : "—"}</b> · STAMPS ON CHAIN <b>${v.stamps}</b>/${this.stamps.length} ${this.stamps.length > v.stamps ? `<span class="btn" data-act="attestStamps">${crewButton("ATTEST", this.touchHud)}</span>` : ""} · $CAPITAL <b>${Number(v.capital).toFixed(0)}</b> <span class="btn" data-act="reconcile">${crewButton("RECONCILE", this.touchHud)}</span>` : c.address ? `<span class="btn" data-act="link">${crewButton("SIGN THE LINK", this.touchHud)}</span> <span class="dim">ONE SIWE STATEMENT; THE GHOSTFILE MINTS WITH SPONSORED GAS</span>` : "";
     const name = this.nameLine();
     const rig = v?.linked ? `RIG ${v.rig.length ? v.rig.map((r) => `<span class="btn ${r.worn ? "on" : ""}" data-act="wear" data-id="${r.worn ? 0 : r.token}">[${r.name}${r.worn ? " · WORN" : ""}]</span> <span class="btn" data-act="sell" data-id="${r.token}">[SELL]</span>`).join(" ") : "<span class='dim'>NOTHING ON THE RIG YET</span>"}` : "";
     const market = (info?.listings ?? []).map((l) => {
