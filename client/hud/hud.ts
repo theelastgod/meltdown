@@ -50,6 +50,8 @@ export class Hud {
   mapToggle: (() => void) | null = null;
   /** The MARKET tab. Unset, the tab is the dead label it was. */
   marketToggle: (() => void) | null = null;
+  /** The CONTRACTS tab. Unset, the tab is the dead label it was. */
+  contractsToggle: (() => void) | null = null;
   onStamp: (() => void) | null = null;
   private radar: CanvasRenderingContext2D;
   private locked = false;
@@ -224,6 +226,7 @@ export class Hud {
       else if (op === "file") document.dispatchEvent(new KeyboardEvent("keydown", { code: "Tab" }));
       else if (op === "graph") document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyG" }));
       else if (op === "market" && this.marketToggle) this.marketToggle();
+      else if (op === "contracts" && this.contractsToggle) this.contractsToggle();
     };
     document.addEventListener("keydown", (e) => {
       if (e.code === "KeyM") {

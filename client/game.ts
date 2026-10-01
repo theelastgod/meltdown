@@ -255,6 +255,8 @@ export class Game {
     this.file.openSection = () => (this.runView?.inSafe || this.campaign.atLedgerDesk ? "market" : "top");
     this.applyIdentity(this.file.identityView());
     this.campaign = new Campaign(this);
+    // the CONTRACTS tab was a label. J still opens the desk; the tab does too.
+    this.hud.contractsToggle = () => this.campaign.toggleContracts();
     this.file.onEndgame = (f) => {
       this.hud.setTheme(f.themePalette());
       this.hud.setSeason(f.endgame.season);

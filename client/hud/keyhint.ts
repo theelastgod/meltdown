@@ -22,11 +22,12 @@ export function openHint(key: string, what: string, touch: boolean): string {
 }
 
 /** What a HUD tab opens. MAP before anything else: a label is matched once. */
-export function tabOpens(label: string): "file" | "graph" | "map" | "market" | null {
+export function tabOpens(label: string): "file" | "graph" | "map" | "market" | "contracts" | null {
   if (/MAP/.test(label)) return "map";
   if (/FILE/.test(label)) return "file";
   if (/GRAPH/.test(label)) return "graph";
   if (/MARKET/.test(label)) return "market";
+  if (/CONTRACTS/.test(label)) return "contracts";
   return null;
 }
 

@@ -31,6 +31,17 @@ describe("the MARKET tab", () => {
   });
 });
 
+describe("the CONTRACTS tab", () => {
+  it("opens the contracts desk, not a dead label", () => {
+    expect(tabOpens("CONTRACTS·")).toBe("contracts");
+    expect(tabOpens("CONTRACTS·")).not.toBeNull();
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/op === "contracts" && this\.contractsToggle/);
+    expect(game).toMatch(/contractsToggle = \(\) => this\.campaign\.toggleContracts\(\)/);
+  });
+});
+
 describe("a hint that opens something else", () => {
   it("names the key on a keyboard and the gesture on a phone", () => {
     expect(openHint("TAB", "MARKET", false)).toBe("[TAB] MARKET");

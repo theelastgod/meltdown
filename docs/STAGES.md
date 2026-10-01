@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 804 — The CONTRACTS tab opened the desk
+
+**The ask.** The tab row draws CONTRACTS and the click does nothing. J opens the desk. The tab does not, so a thumb taps a dead label.
+
+**The change.** `tabOpens` names that label `contracts`. The tab calls `contractsToggle`, and the game opens the same desk J opens.
+
+**Verified.** `tests/keyhint.test.ts` reads the label and the two call sites. Taking `contracts` out of `tabOpens` failed once (`expected null to be 'contracts'`).
+
+**Open.** Writing a name is still the whole Ledger Market panel.
+
 ## Stage 803 — The MARKET tab opened the market
 
 **The ask.** The tab row draws MARKET and the click does nothing. FILE, GRAPH and MAP answer. MARKET does not, so a thumb told to open the market taps a dead label.
