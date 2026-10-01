@@ -582,6 +582,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"THE FEEDS CARRY IT FOR NINE MINUTES BEFORE VANTAGE CUTS THEM\. NINE MINUTES WOKE MORE PEOPLE THAN A YEAR OF NODES\."/);
     expect(src).not.toMatch(/"The feeds carry it for nine minutes before VANTAGE cuts them\. Nine minutes woke more people than a year of nodes\."/);
   });
+
+  it("m3 hold line is CRT, not good truth keeps", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m3_volatility")!.nodes.find((n) => n.id === "hold")!.lines[0];
+    expect(line).toBe("GOOD. TRUTH KEEPS. CLOCKS DON'T.");
+    expect(line).not.toBe("Good. Truth keeps. Clocks don't.");
+    expect(src).toMatch(/"GOOD\. TRUTH KEEPS\. CLOCKS DON'T\."/);
+    expect(src).not.toMatch(/"Good\. Truth keeps\. Clocks don't\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

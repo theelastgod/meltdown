@@ -162,7 +162,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
         ],
       }),
       n("publish", "deacon", ["THE FEEDS CARRY IT FOR NINE MINUTES BEFORE VANTAGE CUTS THEM. NINE MINUTES WOKE MORE PEOPLE THAN A YEAR OF NODES."]),
-      n("hold", "marrow", ["Good. Truth keeps. Clocks don't."]),
+      n("hold", "marrow", ["GOOD. TRUTH KEEPS. CLOCKS DON'T."]),
     ],
   },
   {

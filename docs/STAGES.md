@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 779 — Holding the depot logs said truth keeps
+
+**The ask.** Holding the logs still prints a sentence: `Good. Truth keeps. Clocks don't.` Publishing them already reads as the terminal.
+
+**The change.** `GOOD. TRUTH KEEPS. CLOCKS DON'T.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the depot script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'Good. Truth keeps. Clocks don't.' to be 'GOOD. TRUTH KEEPS. CLOCKS DON'T.'`).
+
+**Open.** Ida's first line on the walk still prints as a sentence.
+
 ## Stage 778 — Publishing the depot logs said the feeds carry it for nine minutes
 
 **The ask.** Publishing the logs still prints a sentence: `The feeds carry it for nine minutes before VANTAGE cuts them. Nine minutes woke more people than a year of nodes.` The choice above it is already the terminal.
