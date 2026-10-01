@@ -735,6 +735,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"SIT, IF YOU LIKE\. OR DON'T\. THE CHAIR IS THE OFFER\."/);
     expect(src).not.toMatch(/"Sit, if you like\. Or don't\. The chair is the offer\."/);
   });
+
+  it("m7 blind recall is CRT, not I have been blind for nine days", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "a")!.recall![0]!.lines[0];
+    expect(line).toBe("I HAVE BEEN BLIND FOR NINE DAYS. DO YOU KNOW WHAT A FORECASTER DOES WITH NO INSTRUMENTS? HE GUESSES. I HAD FORGOTTEN HOW.");
+    expect(line).not.toBe("I have been blind for nine days. Do you know what a forecaster does with no instruments? He guesses. I had forgotten how.");
+    expect(src).toMatch(/"I HAVE BEEN BLIND FOR NINE DAYS\. DO YOU KNOW WHAT A FORECASTER DOES WITH NO INSTRUMENTS\? HE GUESSES\. I HAD FORGOTTEN HOW\."/);
+    expect(src).not.toMatch(/"I have been blind for nine days\. Do you know what a forecaster does with no instruments\? He guesses\. I had forgotten how\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

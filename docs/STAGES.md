@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 796 — The blind recall said nine days without instruments
+
+**The ask.** Blinding the whole lattice still prints a sentence when Wern remembers it: `I have been blind for nine days. Do you know what a forecaster does with no instruments? He guesses. I had forgotten how.` The chair line above it is already the terminal.
+
+**The change.** `I HAVE BEEN BLIND FOR NINE DAYS. DO YOU KNOW WHAT A FORECASTER DOES WITH NO INSTRUMENTS? HE GUESSES. I HAD FORGOTTEN HOW.`
+
+**Verified.** `tests/campaign.test.ts` reads that recall off the office script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'I have been blind for nine days. Do you know what a forecaster does with no instruments? He guesses. I had forgotten how.' to be 'I HAVE BEEN BLIND FOR NINE DAYS. DO YOU KNOW WHAT A FORECASTER DOES WITH NO INSTRUMENTS? HE GUESSES. I HAD FORGOTTEN HOW.'`).
+
+**Open.** Sparing the docks still prints as a sentence when he remembers the one eye.
+
 ## Stage 795 — The chair offer said sit if you like
 
 **The ask.** The second line in the white office still prints a sentence: `Sit, if you like. Or don't. The chair is the offer.` The line above it is already the terminal.
