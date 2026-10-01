@@ -149,6 +149,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(111, "skin_coaming", "COAMING", "DARK HATCH COAMING, CYAN ALONG THE LIP", 110, 0xc26f, "#ffd27a", "skin_coaming_plate"),
   skin(112, "skin_davit", "DAVIT", "DARK DAVIT STEEL, MAGENTA AT THE PIN", 58, 0xc270, "#8fd8ff", "skin_davit_plate"),
   skin(113, "skin_winch", "WINCH", "DARK WINCH DRUM, CYAN ON THE GROOVE", 82, 0xc271, "#f2f4ff", "skin_winch_plate"),
+  skin(114, "skin_pallet", "PALLET", "DARK PALLET WOOD, NEARLY BLACK, CYAN AT A NAIL", 48, 0xc272, "#35f2ff", "skin_pallet_plate"),
+  skin(115, "skin_strap", "STRAP", "DARK WEBBING STRAP, ONE CYAN STITCH, NO WORDS", 62, 0xc273, "#ff3ec9", "skin_strap_plate"),
+  skin(116, "skin_netting", "NETTING", "DARK CARGO NET, MAGENTA AT A KNOT", 74, 0xc274, "#ffb02e", "skin_netting_plate"),
+  skin(117, "skin_foamblock", "FOAMBLOCK", "DARK DOCK FOAM, A CYAN SPLIT", 88, 0xc275, "#37ff8b", "skin_foamblock_plate"),
 ];
 
 /**

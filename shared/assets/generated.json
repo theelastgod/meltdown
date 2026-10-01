@@ -2365,5 +2365,41 @@
     "bytes": 122733,
     "sha256": "a07e3bb58551d01e9532bb18ad7a67dc33a135263078858f12f27689f4dc028c",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_pallet_plate",
+    "kind": "texture",
+    "file": "skin_pallet_plate.png",
+    "size": 256,
+    "bytes": 123153,
+    "sha256": "534ae048567f3f7d75b23cdbe01555146bff7acd31265e2a920247b7eebedc56",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_strap_plate",
+    "kind": "texture",
+    "file": "skin_strap_plate.png",
+    "size": 256,
+    "bytes": 140179,
+    "sha256": "509b8d1606686227e7214cb0e474d139a4ad57add54cb21d9d0d03ea2bce75a4",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_netting_plate",
+    "kind": "texture",
+    "file": "skin_netting_plate.png",
+    "size": 256,
+    "bytes": 125082,
+    "sha256": "9acb755abc61367fcc6d9c792ddab3ebf497b3e6f6967136c2a0c72ed3cbd226",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_foamblock_plate",
+    "kind": "texture",
+    "file": "skin_foamblock_plate.png",
+    "size": 256,
+    "bytes": 139990,
+    "sha256": "cbfb793759152bfcc39b1a01558d8ffe3e1035447a9dfbd5e40e7f52c94fa6c7",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]
