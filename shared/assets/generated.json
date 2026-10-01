@@ -1942,5 +1942,41 @@
     "bytes": 135352,
     "sha256": "c20066055df20891dd8eef9beba1186b732179c351c1184077828b65913280ae",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_gutter_plate",
+    "kind": "texture",
+    "file": "skin_gutter_plate.png",
+    "size": 256,
+    "bytes": 127096,
+    "sha256": "5d28e1e36f42a030db7aea29446424deacc27820f995ccddac9fbbf4c520e79e",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_grate_plate",
+    "kind": "texture",
+    "file": "skin_grate_plate.png",
+    "size": 256,
+    "bytes": 149662,
+    "sha256": "ec9919fcfde95265387e53774323bc5d27b2cc0ddc6874b73f96afc1054d21aa",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_pipe_plate",
+    "kind": "texture",
+    "file": "skin_pipe_plate.png",
+    "size": 256,
+    "bytes": 128908,
+    "sha256": "c9039ef2a20ec607e725d767d62a0cb166b3afa9a5b632b1859217482de1781a",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_patina_plate",
+    "kind": "texture",
+    "file": "skin_patina_plate.png",
+    "size": 256,
+    "bytes": 115849,
+    "sha256": "47afe76cfdd7de9acf30e75327bddacc5b5163968541f5a9e568e798a520d961",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]
