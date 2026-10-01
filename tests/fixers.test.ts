@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, DEACON_LEDGER_SHADE, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, DEACON_LEDGER_SHADE, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_LINING_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -103,7 +103,7 @@ describe("the fixers, in the flesh", () => {
         } else if (Math.abs(c - HAIR_SHADE) < 1e-5) {
           hair++;
           expect(pos.getY(i), id).toBeGreaterThan(1.6);
-        } else if (Math.abs(c - TROUSER_SHADE) < 1e-5 || Math.abs(c - VESSEL_BOOT_SHADE) < 1e-5 || Math.abs(c - WERN_SHOE_SHADE) < 1e-5 || Math.abs(c - FIXER_COLLAR_SHADE) < 1e-5) {
+        } else if (Math.abs(c - TROUSER_SHADE) < 1e-5 || Math.abs(c - VESSEL_BOOT_SHADE) < 1e-5 || Math.abs(c - WERN_SHOE_SHADE) < 1e-5 || Math.abs(c - FIXER_COLLAR_SHADE) < 1e-5 || Math.abs(c - FIXER_LINING_SHADE) < 1e-5) {
           // the leg is not the coat; its own checks hold the band
         } else {
           cloth++;
@@ -304,6 +304,27 @@ describe("the fixers, in the flesh", () => {
       expect(n.hair, `${id} hair went dark with the collar`).toBeGreaterThan(8);
       expect(n.cloth, `${id} coat went dark with the collar`).toBeGreaterThan(20);
     }
+  });
+
+  it("Ida's coat lining is darker than the cloth", () => {
+    const tally = (g: THREE.BufferGeometry) => {
+      const color = g.getAttribute("color");
+      let lining = 0;
+      let cloth = 0;
+      for (let i = 0; i < color.count; i++) {
+        const c = color.getX(i);
+        if (Math.abs(c - FIXER_LINING_SHADE) < 1e-5) lining++;
+        else if (c === 1) cloth++;
+      }
+      return { lining, cloth };
+    };
+    for (const [id, g] of [["vessel", fixerGeometry("vessel").body], ["walk", vesselWalkerGeometry().body]] as const) {
+      const n = tally(g);
+      expect(n.lining, `${id} lining wears the coat`).toBeGreaterThan(20);
+      expect(n.cloth, `${id} coat went dark with the lining`).toBeGreaterThan(20);
+    }
+    const wern = tally(fixerGeometry("wern").body);
+    expect(wern.lining, "Wern's lining went dark with Ida's").toBe(0);
   });
 });
 

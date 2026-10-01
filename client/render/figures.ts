@@ -56,6 +56,8 @@ export const MARROW_FOOT_SHADE = 0.28;
 export const FIXER_COLLAR_SHADE = 0.68;
 /** the ledger on the Deacon's chest: darker than the robe, not a toe */
 export const DEACON_LEDGER_SHADE = 0.42;
+/** the inside of an open coat: darker than the cloth, not the hair */
+export const FIXER_LINING_SHADE = 0.35;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -198,7 +200,8 @@ function vessel(): Parts {
   const parts: Parts = { body: [], trim: [], void: [], legs: [], arms: [] };
   const COAT: Profile = [[0.25, 0.5], [0.23, 0.7], [0.2, 0.95], [0.17, 1.03], [0.19, 1.2], [0.21, 1.38], [0.13, 1.49]];
   parts.body.push(lathe(COAT.slice(0, 4), 12, { sx: 1.1, sz: 0.8, gap: 0.5 }));
-  parts.body.push(inside(lathe(COAT.slice(0, 4), 12, { sx: 1.1, sz: 0.8, gap: 0.5 })));
+  // the lining is the coat's mesh. Darker than the cloth, so the opening is not the outside.
+  parts.body.push(paint(inside(lathe(COAT.slice(0, 4), 12, { sx: 1.1, sz: 0.8, gap: 0.5 })), FIXER_LINING_SHADE));
   parts.body.push(lathe(COAT.slice(3), 12, { sx: 1.1, sz: 0.8 }));
   // the Estate's cut: a hard yoke across the shoulders
   parts.body.push(put(new THREE.BoxGeometry(0.5, 0.06, 0.22), T(0, 1.42, 0)));

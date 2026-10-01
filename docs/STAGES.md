@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 761 — Ida's coat lining is darker than the cloth
+
+**The ask.** The inside of the open coat is the outside at full brightness, so the gap reads as more cloth.
+
+**The change.** That underside bakes shade 0.35. Darker than the coat, clear of the hair and the collar. The walk uses the same body. Wern's lining is still the outside. No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts lining vertices on Ida and on the walker, and the coat stays shade 1. Leaving the lining unpainted failed once (`vessel lining wears the coat: expected 0 to be greater than 20`).
+
+**Open.** Wern's coat lining still wears the outside.
+
 ## Stage 760 — The Deacon's ledger is darker than the robe
 
 **The ask.** The book against the chest is the robe at full brightness, so the ledger reads as cloth. The sigil on its cover was already a light.
