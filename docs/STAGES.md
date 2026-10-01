@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 800 — Taking the chair said freeze what you must
+
+**The ask.** His last offer in the office still prints a sentence: `Or take the chair. Freeze what you must. Thaw what you dare.` The wipe line above it is already the terminal.
+
+**The change.** `OR TAKE THE CHAIR. FREEZE WHAT YOU MUST. THAW WHAT YOU DARE.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the office script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'Or take the chair. Freeze what you must. Thaw what you dare.' to be 'OR TAKE THE CHAIR. FREEZE WHAT YOU MUST. THAW WHAT YOU DARE.'`).
+
+**Open.** The full-broadcast recall still prints as a sentence.
+
 ## Stage 799 — Wiping the ledger said the city remembers nothing
 
 **The ask.** His next line in the office still prints a sentence: `Wipe the ledger and the city remembers nothing — not the fire, not the cage, not you.` The author line above it is already the terminal.

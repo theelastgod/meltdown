@@ -241,7 +241,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
           { gate: { all: { "m5:lattice": "spare_docks" } }, lines: ["YOU LEFT ME THE DOCKS. ONE EYE. I HAVE WATCHED THE SHIPS COME IN EVERY NIGHT SINCE AND UNDERSTOOD NONE OF IT."] },
         ],
       }),
-      n("b", "wern", ["THE LEASE SYSTEM NEEDS AN AUTHOR. I HAVE BEEN THAT AUTHOR FOR TWELVE YEARS AND I AM TIRED.", "WIPE THE LEDGER AND THE CITY REMEMBERS NOTHING — NOT THE FIRE, NOT THE CAGE, NOT YOU.", "Or take the chair. Freeze what you must. Thaw what you dare."], {
+      n("b", "wern", ["THE LEASE SYSTEM NEEDS AN AUTHOR. I HAVE BEEN THAT AUTHOR FOR TWELVE YEARS AND I AM TIRED.", "WIPE THE LEDGER AND THE CITY REMEMBERS NOTHING — NOT THE FIRE, NOT THE CAGE, NOT YOU.", "OR TAKE THE CHAIR. FREEZE WHAT YOU MUST. THAW WHAT YOU DARE."], {
         next: "c",
         recall: [
           { gate: { all: { "m6:broadcast": "full" } }, lines: ["They read the fire, you know. All of it. And they woke anyway. That is the part I could not forecast."] },

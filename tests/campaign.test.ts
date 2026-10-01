@@ -771,6 +771,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"WIPE THE LEDGER AND THE CITY REMEMBERS NOTHING — NOT THE FIRE, NOT THE CAGE, NOT YOU\."/);
     expect(src).not.toMatch(/"Wipe the ledger and the city remembers nothing — not the fire, not the cage, not you\."/);
   });
+
+  it("m7 chair thaw line is CRT, not or take the chair", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "b")!.lines[2];
+    expect(line).toBe("OR TAKE THE CHAIR. FREEZE WHAT YOU MUST. THAW WHAT YOU DARE.");
+    expect(line).not.toBe("Or take the chair. Freeze what you must. Thaw what you dare.");
+    expect(src).toMatch(/"OR TAKE THE CHAIR\. FREEZE WHAT YOU MUST\. THAW WHAT YOU DARE\."/);
+    expect(src).not.toMatch(/"Or take the chair\. Freeze what you must\. Thaw what you dare\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
