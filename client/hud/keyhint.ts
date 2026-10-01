@@ -34,6 +34,11 @@ export function failedContractLine(touch: boolean): string {
   return touch ? "TAP CONTRACTS" : "[J] CONTRACTS · [R] RUN IT AGAIN";
 }
 
+/** A closed contract. The tab opens the desk. A phone has no J. */
+export function closedContractLine(touch: boolean): string {
+  return touch ? "TAP CONTRACTS" : "[J] CONTRACTS";
+}
+
 /** The city's standing objective. A phone opens contracts from the tab. */
 export function cityContractsLine(touch: boolean): string {
   return `${touch ? "TAP CONTRACTS" : "[J] CONTRACTS"} · NO ONE HERE CAN HURT YOU BUT VANTAGE`;

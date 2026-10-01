@@ -8,7 +8,7 @@
  */
 import { cityPageUrl, inCity } from "@shared/net/city";
 import type { Game } from "./game";
-import { cityArrivalLine, cityContractsLine, closeHint, failedContractLine } from "./hud/keyhint";
+import { cityArrivalLine, cityContractsLine, closeHint, closedContractLine, failedContractLine } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
 import { ENDINGS, endingCoda, endingTitle, endingsFor, gateOpen, handlersAlive, resolveEnding, testimonyLine, type Testimony } from "@shared/campaign/testimony";
 import { threatProfile, threatRating, type ThreatProfile } from "@shared/campaign/threat";
@@ -542,7 +542,7 @@ export class Campaign {
     this.completion = { id, ok, reason };
     const def = missionById(id)!;
     const rw = def.reward;
-    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", this.backToCity() ? "[J] CONTRACTS · [B] BACK TO THE CITY" : "[J] CONTRACTS"].filter(Boolean);
+    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", this.backToCity() ? "[J] CONTRACTS · [B] BACK TO THE CITY" : closedContractLine(this.game.hud.touch)].filter(Boolean);
     this.note(`CONTRACT CLOSED · ${def.title}${ok ? "" : " · " + (reason ?? "")}`);
     this.game.audio.sign();
     if (id === "m7_white_office") {
@@ -551,7 +551,7 @@ export class Campaign {
       // the coda after the ending's own lines: the choices no ending gate reads, answered rather
       // than dropped (Stage 656)
       const coda = endingCoda(t);
-      this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", "[J] CONTRACTS"], "ye", 0, ENDING_ART[e.id]);
+      this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", closedContractLine(this.game.hud.touch)], "ye", 0, ENDING_ART[e.id]);
       this.game.audio.rite(3);
     } else this.game.hud.card(`CONTRACT CLOSED · ${def.title}`, lines, "am", 0);
     this.game.renderer.post.kick(1);
@@ -579,7 +579,7 @@ export class Campaign {
         const s = m.settled?.find((x) => x.id === ev.id);
         this.completion = { id: ev.id, ok: s?.ok ?? false, reason: s?.reason };
         const def = missionById(ev.id);
-        this.game.hud.card(`CONTRACT CLOSED · ${def?.title ?? ev.id}`, [s?.ok ? "SETTLED ON EVERY FILE" : `NOT SETTLED · ${s?.reason ?? ""}`, "[J] CONTRACTS"], "am", 0);
+        this.game.hud.card(`CONTRACT CLOSED · ${def?.title ?? ev.id}`, [s?.ok ? "SETTLED ON EVERY FILE" : `NOT SETTLED · ${s?.reason ?? ""}`, closedContractLine(this.game.hud.touch)], "am", 0);
         this.game.audio.sign();
       } else this.onMissionEvent(ev);
     }

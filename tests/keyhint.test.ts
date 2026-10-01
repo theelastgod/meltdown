@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { cityArrivalLine, cityContractsLine, closeHint, DISTRICT_FOOTER, failedContractLine, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
+import { cityArrivalLine, cityContractsLine, closeHint, closedContractLine, DISTRICT_FOOTER, failedContractLine, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
 
 describe("a frame's close marker", () => {
   it("names the key on a keyboard", () => {
@@ -136,6 +136,17 @@ describe("the menu's footer (Stages 152, 163)", () => {
     expect(menuFooter(true, true, true)).toContain("[−]");
     expect(menuFooter(true, true, true)).toContain("[+]");
     expect(menuFooter(true, false, true)).not.toContain("[−]");
+  });
+});
+
+describe("a closed contract", () => {
+  it("names the contracts tab on a phone and the key on a keyboard", () => {
+    expect(closedContractLine(true)).toBe("TAP CONTRACTS");
+    expect(closedContractLine(true)).not.toMatch(/\[[A-Z]+\]/);
+    expect(closedContractLine(false)).toBe("[J] CONTRACTS");
+    const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(campaign).toMatch(/closedContractLine\(this\.game\.hud\.touch\)/);
+    expect(campaign).toMatch(/\[J\] CONTRACTS · \[B\] BACK TO THE CITY/);
   });
 });
 
