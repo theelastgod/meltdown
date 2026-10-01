@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, DEACON_LEDGER_SHADE, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -140,6 +140,7 @@ describe("the fixers, in the flesh", () => {
     for (let i = 0; i < deacon.count; i++) {
       const c = deacon.getX(i);
       if (Math.abs(c - DEACON_TOE_SHADE) < 1e-5) expect(deaconPos.getY(i)).toBeLessThan(0.08);
+      else if (Math.abs(c - DEACON_LEDGER_SHADE) < 1e-5) expect(deaconPos.getY(i)).toBeGreaterThan(0.7);
       else expect(c).toBe(1);
     }
     const figures = readFileSync(new URL("../client/render/figures.ts", import.meta.url), "utf8");
@@ -237,6 +238,27 @@ describe("the fixers, in the flesh", () => {
     }
     expect(toes, "the toes wear the robe").toBeGreaterThan(20);
     expect(robe, "the robe went dark with the toes").toBeGreaterThan(20);
+  });
+
+  it("the Deacon's ledger is darker than the robe", () => {
+    const g = fixerGeometry("deacon").body;
+    const color = g.getAttribute("color");
+    const pos = g.getAttribute("position");
+    let book = 0;
+    let robe = 0;
+    let toes = 0;
+    for (let i = 0; i < color.count; i++) {
+      const c = color.getX(i);
+      const y = pos.getY(i);
+      if (Math.abs(c - DEACON_LEDGER_SHADE) < 1e-5) {
+        book++;
+        expect(y).toBeGreaterThan(0.7);
+      } else if (Math.abs(c - DEACON_TOE_SHADE) < 1e-5) toes++;
+      else if (c === 1 && y > 0.4) robe++;
+    }
+    expect(book, "the ledger wears the robe").toBeGreaterThan(12);
+    expect(robe, "the robe went dark with the ledger").toBeGreaterThan(20);
+    expect(toes, "the toes went dark with the ledger").toBeGreaterThan(8);
   });
 
   it("Marrow's feet are darker than the cloak", () => {

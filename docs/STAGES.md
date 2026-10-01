@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 760 — The Deacon's ledger is darker than the robe
+
+**The ask.** The book against the chest is the robe at full brightness, so the ledger reads as cloth. The sigil on its cover was already a light.
+
+**The change.** That box bakes shade 0.42. Darker than the robe, clear of the toes (0.24). No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts ledger vertices above 0.7 m, and the robe stays shade 1. Leaving the book unpainted failed once (`the ledger wears the robe: expected 0 to be greater than 12`).
+
+**Open.** The inside of an open coat still wears the outside.
+
 ## Stage 759 — A bare head's collar is darker than the coat
 
 **The ask.** The roll at Ida's neck, and Wern's, is the coat at full brightness, so the collar reads as the cloth. The hair above it was already darker.

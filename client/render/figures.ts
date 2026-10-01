@@ -54,6 +54,8 @@ export const DEACON_TOE_SHADE = 0.24;
 export const MARROW_FOOT_SHADE = 0.28;
 /** a bare head's collar: darker than the coat, clear of the hair and the face */
 export const FIXER_COLLAR_SHADE = 0.68;
+/** the ledger on the Deacon's chest: darker than the robe, not a toe */
+export const DEACON_LEDGER_SHADE = 0.42;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -118,7 +120,8 @@ function deacon(): Parts {
   for (const side of [-1, 1]) {
     parts.body.push(put(new THREE.CylinderGeometry(0.07, 0.12, 0.46, 8), T(side * 0.2, 1.18, -0.12).multiply(new THREE.Matrix4().makeRotationZ(side * 0.5)).multiply(new THREE.Matrix4().makeRotationX(0.6))));
   }
-  parts.body.push(put(new THREE.BoxGeometry(0.2, 0.27, 0.045), T(0, 1.02, -0.3).multiply(new THREE.Matrix4().makeRotationX(-0.25))));
+  // the ledger is the robe's mesh. Darker than the cloth, so the book is not the chest.
+  parts.body.push(paint(put(new THREE.BoxGeometry(0.2, 0.27, 0.045), T(0, 1.02, -0.3).multiply(new THREE.Matrix4().makeRotationX(-0.25))), DEACON_LEDGER_SHADE));
   // the stole: two lines of light from the shoulders to the hem
   for (const side of [-1, 1]) {
     const phi = Math.PI + side * 0.33;
