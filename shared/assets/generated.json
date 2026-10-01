@@ -2095,5 +2095,41 @@
     "bytes": 146650,
     "sha256": "fc1342076f3dd0a2b7a00a8ecb0dc818c781737b889717aaaa5e42f1be973f16",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_gasket_plate",
+    "kind": "texture",
+    "file": "skin_gasket_plate.png",
+    "size": 256,
+    "bytes": 121885,
+    "sha256": "236d7ef3bb0f4e17077096a80f4b5ff65d63a604f47967ed6de0b4935b47e5ee",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_tread_plate",
+    "kind": "texture",
+    "file": "skin_tread_plate.png",
+    "size": 256,
+    "bytes": 155786,
+    "sha256": "539097679eb5d90b207d042d2cbcf81e904c78270d9959168f516defb094fbec",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_splice_plate",
+    "kind": "texture",
+    "file": "skin_splice_plate.png",
+    "size": 256,
+    "bytes": 139028,
+    "sha256": "18a5aea86f28f3dfea2f02064f3eadf3fa7e3164324f985bbb7fc0008b24a732",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_hatch_plate",
+    "kind": "texture",
+    "file": "skin_hatch_plate.png",
+    "size": 256,
+    "bytes": 140898,
+    "sha256": "01b6307e3a24b0581a7719275197dc22297671e80401dc7d160d78f4371df434",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]

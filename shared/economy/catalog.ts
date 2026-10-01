@@ -119,6 +119,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(81, "skin_bolts", "BOLTS", "DARK BOLT HEADS IN A GRID, NO STAMPS", 82, 0xc251, "#f2f4ff", "skin_bolts_plate"),
   skin(82, "skin_weld", "WELD", "DARK WELD BEADS, A CYAN HEAT TINT", 48, 0xc252, "#35f2ff", "skin_weld_plate"),
   skin(83, "skin_foil", "FOIL", "DARK CRUMPLED FOIL, A CYAN EDGE", 62, 0xc253, "#ff3ec9", "skin_foil_plate"),
+  skin(84, "skin_gasket", "GASKET", "DARK RUBBER GASKET, A MAGENTA RING", 74, 0xc254, "#ffb02e", "skin_gasket_plate"),
+  skin(85, "skin_tread", "TREAD", "DARK METAL TREAD, CYAN IN THE GROOVES", 88, 0xc255, "#37ff8b", "skin_tread_plate"),
+  skin(86, "skin_splice", "SPLICE", "DARK CABLE SPLICE, CYAN TAPE, NO LABELS", 96, 0xc256, "#8f4dff", "skin_splice_plate"),
+  skin(87, "skin_hatch", "HATCH", "DARK HATCH PLATE, A CYAN RIM", 110, 0xc257, "#ffd27a", "skin_hatch_plate"),
 ];
 
 /**
