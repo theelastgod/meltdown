@@ -44,6 +44,14 @@ export function closedCityLine(touch: boolean): string {
   return touch ? "TAP CONTRACTS · BACK TO THE CITY" : "[J] CONTRACTS · [B] BACK TO THE CITY";
 }
 
+/**
+ * A card with no timer is waiting on the contracts desk. Opening the desk takes that card down.
+ * A timed card (an event, a few seconds) stays up.
+ */
+export function cardYieldsToDesk(cardOpen: boolean, cardTimer: number, deskOpen: boolean): boolean {
+  return deskOpen && cardOpen && cardTimer === 0;
+}
+
 /** The city's standing objective. A phone opens contracts from the tab. */
 export function cityContractsLine(touch: boolean): string {
   return `${touch ? "TAP CONTRACTS" : "[J] CONTRACTS"} · NO ONE HERE CAN HURT YOU BUT VANTAGE`;

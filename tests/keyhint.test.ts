@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, DISTRICT_FOOTER, failedContractLine, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
+import { cardYieldsToDesk, cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, DISTRICT_FOOTER, failedContractLine, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
 
 describe("a frame's close marker", () => {
   it("names the key on a keyboard", () => {
@@ -157,6 +157,17 @@ describe("the way back to the city", () => {
     const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
     expect(campaign).toMatch(/closedCityLine\(this\.game\.hud\.touch\)/);
     expect(campaign).not.toMatch(/\[J\] CONTRACTS · \[B\] BACK TO THE CITY/);
+  });
+});
+
+describe("the contracts desk", () => {
+  it("clears a card that was waiting on it, and leaves a timed card up", () => {
+    expect(cardYieldsToDesk(true, 0, true)).toBe(true);
+    expect(cardYieldsToDesk(true, 7, true)).toBe(false);
+    expect(cardYieldsToDesk(false, 0, true)).toBe(false);
+    expect(cardYieldsToDesk(true, 0, false)).toBe(false);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/if \(cardYieldsToDesk\(this\.cardOpen, this\.cardTimer, open\)\) this\.cardClose\(\)/);
   });
 });
 

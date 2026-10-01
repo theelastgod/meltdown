@@ -25,7 +25,7 @@ import { footTag, footTagText } from "./footline";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { alertOnCut, platePass, plateTop } from "./faceplate";
 import { terminalFooter, terminalSeat } from "./terminal";
-import { closeHint, DISTRICT_FOOTER, receiptSignLine, reloadHint, safeZoneLine, tabOpens } from "./keyhint";
+import { cardYieldsToDesk, closeHint, DISTRICT_FOOTER, receiptSignLine, reloadHint, safeZoneLine, tabOpens } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
 import { nodeClockNote, type NodeReadout } from "./node";
 import { gateMarks, nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type GateMark, type RadarGate, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
@@ -608,6 +608,7 @@ export class Hud {
     const el = this.q(".contracts");
     el.hidden = !open;
     if (open) el.innerHTML = html;
+    if (cardYieldsToDesk(this.cardOpen, this.cardTimer, open)) this.cardClose();
     this.applyQuiet();
   }
 
