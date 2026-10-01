@@ -2059,5 +2059,41 @@
     "bytes": 113992,
     "sha256": "7475fc971d1003c822b08961a10ad866203a66a647b851936575184863debba1",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_louver_plate",
+    "kind": "texture",
+    "file": "skin_louver_plate.png",
+    "size": 256,
+    "bytes": 97838,
+    "sha256": "f112bfc55676727556ec2130166925354b03a45ecf8aaa3501ca3dfb4f8c35b8",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_bolts_plate",
+    "kind": "texture",
+    "file": "skin_bolts_plate.png",
+    "size": 256,
+    "bytes": 119605,
+    "sha256": "ffcd73cc42fc07ce66d2f16f2b21505813aee922ba14bb68df5dda85561379b2",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_weld_plate",
+    "kind": "texture",
+    "file": "skin_weld_plate.png",
+    "size": 256,
+    "bytes": 131599,
+    "sha256": "378426a94e576b6cfff40cf92961ed692255303157a0abb4e1396f40623f10cb",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_foil_plate",
+    "kind": "texture",
+    "file": "skin_foil_plate.png",
+    "size": 256,
+    "bytes": 146650,
+    "sha256": "fc1342076f3dd0a2b7a00a8ecb0dc818c781737b889717aaaa5e42f1be973f16",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]

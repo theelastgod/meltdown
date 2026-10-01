@@ -115,6 +115,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(77, "skin_slag", "SLAG", "DARK SLAG GLASS, MAGENTA FLECKS", 88, 0xc24d, "#37ff8b", "skin_slag_plate"),
   skin(78, "skin_frost", "FROST", "DARK METAL, A THIN CYAN FROST", 96, 0xc24e, "#8f4dff", "skin_frost_plate"),
   skin(79, "skin_scratch", "SCRATCH", "SOOT ON STEEL, ONE AMBER SCRATCH", 110, 0xc24f, "#ffd27a", "skin_scratch_plate"),
+  skin(80, "skin_louver", "LOUVER", "DARK LOUVERS, CYAN ON EVERY THIRD SLAT", 58, 0xc250, "#8fd8ff", "skin_louver_plate"),
+  skin(81, "skin_bolts", "BOLTS", "DARK BOLT HEADS IN A GRID, NO STAMPS", 82, 0xc251, "#f2f4ff", "skin_bolts_plate"),
+  skin(82, "skin_weld", "WELD", "DARK WELD BEADS, A CYAN HEAT TINT", 48, 0xc252, "#35f2ff", "skin_weld_plate"),
+  skin(83, "skin_foil", "FOIL", "DARK CRUMPLED FOIL, A CYAN EDGE", 62, 0xc253, "#ff3ec9", "skin_foil_plate"),
 ];
 
 /**
