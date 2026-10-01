@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 835 — Claiming a posted prize tells a phone to tap
+
+**The ask.** A posted prize offered [CLAIM]. Those brackets are a button on a keyboard. On a phone they read as a key. Claiming still takes the prize already posted. It does not mint one and it does not buy a stat.
+
+**The change.** A phone sees TAP CLAIM. A keyboard still sees the bracketed button. A claimed prize still reads CLAIMED, with no button.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton("CLAIM", this.touchHud)/`).
+
+**Open.** THE RUN still says [WITHDRAW TO WALLET] on a phone when units are owed.
+
 ## Stage 834 — Refreshing prizes tells a phone to tap
 
 **The ask.** The prizes row offered [REFRESH]. Those brackets are a button on a keyboard. On a phone they read as a key. Refreshing still only reads the book. It does not pay a prize and it does not buy a stat.

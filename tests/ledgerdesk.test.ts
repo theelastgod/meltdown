@@ -96,6 +96,17 @@ describe("the trip", () => {
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
+  it("claiming a posted prize names a tap on a phone", () => {
+    expect(crewButton("CLAIM", true)).toBe("TAP CLAIM");
+    expect(crewButton("CLAIM", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("CLAIM", false)).toBe("[CLAIM]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const start = file.indexOf("const prizeBlock");
+    const row = file.slice(start, file.indexOf("const t =", start));
+    expect(row).toMatch(/data-act="claimPrize" data-id="\$\{p\.epoch\}">\$\{crewButton\("CLAIM", this\.touchHud\)\}/);
+    expect(row).not.toMatch(/\[CLAIM\]/);
+  });
+
   it("refreshing prizes names a tap on a phone", () => {
     expect(crewButton("REFRESH", true)).toBe("TAP REFRESH");
     expect(crewButton("REFRESH", true)).not.toMatch(/\[[A-Z]/);
