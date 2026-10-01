@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 789 — Shielding Ida said you took the light for me
+
+**The ask.** Taking the searchlight for her still prints a sentence: `You took the light for me. Nobody in the Estate ever did that.` The choice above it is already the terminal.
+
+**The change.** `YOU TOOK THE LIGHT FOR ME. NOBODY IN THE ESTATE EVER DID THAT.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the leak script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'You took the light for me. Nobody in the Estate ever did that.' to be 'YOU TOOK THE LIGHT FOR ME. NOBODY IN THE ESTATE EVER DID THAT.'`).
+
+**Open.** Blinding the lattice still prints as a sentence.
+
 ## Stage 788 — Wern's last line on the walk said he is not asking you to agree
 
 **The ask.** His last line still prints as a sentence: `I'm not asking you to agree. I'm asking you to notice that you almost do.` The cage line above it is already the terminal.

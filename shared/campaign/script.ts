@@ -190,7 +190,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
           { text: "EXPOSE HER. SHE'S THE DEFECTOR; YOU'RE THE BLANK.", set: { "m4:vessel": "expose" }, next: "expose" },
         ],
       }),
-      n("shield", "vessel", ["You took the light for me. Nobody in the Estate ever did that."]),
+      n("shield", "vessel", ["YOU TOOK THE LIGHT FOR ME. NOBODY IN THE ESTATE EVER DID THAT."]),
       n("expose", "terminal", ["IDA VESSEL IS RE-LEASED. HER FILE CLOSES WITH YOUR GLYPH ON THE LAST LINE."]),
     ],
   },

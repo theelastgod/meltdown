@@ -672,6 +672,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"I'M NOT ASKING YOU TO AGREE\. I'M ASKING YOU TO NOTICE THAT YOU ALMOST DO\."/);
     expect(src).not.toMatch(/"I'm not asking you to agree\. I'm asking you to notice that you almost do\."/);
   });
+
+  it("m4 shield line is CRT, not you took the light for me", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "shield")!.lines[0];
+    expect(line).toBe("YOU TOOK THE LIGHT FOR ME. NOBODY IN THE ESTATE EVER DID THAT.");
+    expect(line).not.toBe("You took the light for me. Nobody in the Estate ever did that.");
+    expect(src).toMatch(/"YOU TOOK THE LIGHT FOR ME\. NOBODY IN THE ESTATE EVER DID THAT\."/);
+    expect(src).not.toMatch(/"You took the light for me\. Nobody in the Estate ever did that\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
