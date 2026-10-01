@@ -627,6 +627,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"YOU SAT ON THE DEPOT LOGS\. I WOULD HAVE PUBLISHED\. I AM NOT SURE ANY MORE THAT I WOULD HAVE BEEN RIGHT\."/);
     expect(src).not.toMatch(/"You sat on the depot logs\. I would have published\. I am not sure any more that I would have been right\."/);
   });
+
+  it("m4 Wern line 1 is CRT, not you've read the models", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "w1")!.lines[0];
+    expect(line).toBe("YOU'VE READ THE MODELS BY NOW. SO YOU KNOW I DIDN'T INVENT THE MELTDOWN. I FORECAST IT.");
+    expect(line).not.toBe("You've read the models by now. So you know I didn't invent the Meltdown. I forecast it.");
+    expect(src).toMatch(/"YOU'VE READ THE MODELS BY NOW\. SO YOU KNOW I DIDN'T INVENT THE MELTDOWN\. I FORECAST IT\."/);
+    expect(src).not.toMatch(/"You've read the models by now\. So you know I didn't invent the Meltdown\. I forecast it\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 784 — Wern's first line on the walk said you've read the models
+
+**The ask.** When he takes the walk, his first line still prints a sentence: `You've read the models by now. So you know I didn't invent the Meltdown. I forecast it.`
+
+**The change.** `YOU'VE READ THE MODELS BY NOW. SO YOU KNOW I DIDN'T INVENT THE MELTDOWN. I FORECAST IT.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the leak script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'You've read the models by now. So you know I didn't invent the Meltdown. I forecast it.' to be 'YOU'VE READ THE MODELS BY NOW. SO YOU KNOW I DIDN'T INVENT THE MELTDOWN. I FORECAST IT.'`).
+
+**Open.** His next line, the twelve years of variance, still prints as a sentence.
+
 ## Stage 783 — Holding the logs makes Ida say you sat on them
 
 **The ask.** If you held the depot logs, her aside still prints a sentence: `You sat on the depot logs. I would have published. I am not sure any more that I would have been right.` Publishing them already reads as the terminal.
