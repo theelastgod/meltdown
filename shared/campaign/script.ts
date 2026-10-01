@@ -169,7 +169,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
     id: "m4_leak",
     start: "a",
     nodes: [
-      n("a", "vessel", ["THIS IS IT. THE DIRECTIVE. WERN'S OWN HAND.", "Read it while we walk. He argues better than any of us."], {
+      n("a", "vessel", ["THIS IS IT. THE DIRECTIVE. WERN'S OWN HAND.", "READ IT WHILE WE WALK. HE ARGUES BETTER THAN ANY OF US."], {
         next: "w1",
         recall: [
           { gate: { all: { "m3:volatility": "publish" } }, lines: ["Half the Estate read your depot logs before VANTAGE cut the feeds. That is why I am standing here and not at my desk."] },

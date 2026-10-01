@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 781 — Ida's second line on the walk said read it while we walk
+
+**The ask.** The next line still prints as a sentence: `Read it while we walk. He argues better than any of us.` The line above it is already the terminal.
+
+**The change.** `READ IT WHILE WE WALK. HE ARGUES BETTER THAN ANY OF US.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the leak script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'Read it while we walk. He argues better than any of us.' to be 'READ IT WHILE WE WALK. HE ARGUES BETTER THAN ANY OF US.'`).
+
+**Open.** If you published the logs, her aside still prints as a sentence.
+
 ## Stage 780 — Ida's first line on the walk said this is the Directive
 
 **The ask.** Meeting her on the walk still opens on a sentence: `This is it. The Directive. Wern's own hand.` The line after it is still a sentence too.

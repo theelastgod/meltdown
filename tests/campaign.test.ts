@@ -600,6 +600,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"THIS IS IT\. THE DIRECTIVE\. WERN'S OWN HAND\."/);
     expect(src).not.toMatch(/"This is it\. The Directive\. Wern's own hand\."/);
   });
+
+  it("m4 Ida line 2 is CRT, not read it while we walk", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "a")!.lines[1];
+    expect(line).toBe("READ IT WHILE WE WALK. HE ARGUES BETTER THAN ANY OF US.");
+    expect(line).not.toBe("Read it while we walk. He argues better than any of us.");
+    expect(src).toMatch(/"READ IT WHILE WE WALK\. HE ARGUES BETTER THAN ANY OF US\."/);
+    expect(src).not.toMatch(/"Read it while we walk\. He argues better than any of us\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
