@@ -189,6 +189,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(151, "skin_cornice", "CORNICE", "DARK CORNICE, MAGENTA IN THE SHADOW GAP", 110, 0xc297, "#ffd27a", "skin_cornice_plate"),
   skin(152, "skin_mullion", "MULLION", "DARK WINDOW MULLION, A CYAN GASKET", 58, 0xc298, "#8fd8ff", "skin_mullion_plate"),
   skin(153, "skin_spandrel", "SPANDREL", "DARK SPANDREL GLASS, ONE MAGENTA REFLECTION", 82, 0xc299, "#f2f4ff", "skin_spandrel_plate"),
+  skin(154, "skin_louvre", "LOUVRE", "DARK LOUVRE BANK, CYAN ON THE FRAME", 48, 0xc29a, "#35f2ff", "skin_louvre_plate"),
+  skin(155, "skin_plinth", "PLINTH", "DARK PLINTH STONE, A CYAN DAMP LINE", 62, 0xc29b, "#ff3ec9", "skin_plinth_plate"),
+  skin(156, "skin_riser", "RISER", "DARK STAIR RISER, MAGENTA AT THE NOSING", 74, 0xc29c, "#ffb02e", "skin_riser_plate"),
+  skin(157, "skin_landing", "LANDING", "DARK LANDING CONCRETE, CYAN IN A JOINT", 88, 0xc29d, "#37ff8b", "skin_landing_plate"),
 ];
 
 /**

@@ -2725,5 +2725,41 @@
     "bytes": 81011,
     "sha256": "1f9f5a06e2fe5def3c21d867bca4692180d980198c89c5f7860b8e357d67a03f",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_louvre_plate",
+    "kind": "texture",
+    "file": "skin_louvre_plate.png",
+    "size": 256,
+    "bytes": 117237,
+    "sha256": "4b52961df5820a6a14deb83e7774c63088ebdb906c73693f15a32926ebfc89c5",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_plinth_plate",
+    "kind": "texture",
+    "file": "skin_plinth_plate.png",
+    "size": 256,
+    "bytes": 129322,
+    "sha256": "f2e31144eaca41407173112e789b08b3e6f911e36f2d9589398e318e45f37291",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_riser_plate",
+    "kind": "texture",
+    "file": "skin_riser_plate.png",
+    "size": 256,
+    "bytes": 134178,
+    "sha256": "6a58ec18b99d0d7531591517774254793adc80ab67606a3cdb74f21deab7ed3b",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_landing_plate",
+    "kind": "texture",
+    "file": "skin_landing_plate.png",
+    "size": 256,
+    "bytes": 113623,
+    "sha256": "b15763ff9a3ae66e6b5b69fcaaaa773698f4b89518e7a62f24e6868ffea47b3c",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]
