@@ -2689,5 +2689,41 @@
     "bytes": 137820,
     "sha256": "ca17a4e5ba047d64500489772fcf3d681443cfcb265a26e430f1bfcaf3ef854c",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_parapet_plate",
+    "kind": "texture",
+    "file": "skin_parapet_plate.png",
+    "size": 256,
+    "bytes": 127586,
+    "sha256": "9403fc278ec6e6573cd6d55141732fc89d697d74ccfc70ae48efc68eff0966c8",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_cornice_plate",
+    "kind": "texture",
+    "file": "skin_cornice_plate.png",
+    "size": 256,
+    "bytes": 121953,
+    "sha256": "400d849ef97e578f22ae25d8ec6515b5b6d6bb0e1126ab230b08421c48a96d40",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_mullion_plate",
+    "kind": "texture",
+    "file": "skin_mullion_plate.png",
+    "size": 256,
+    "bytes": 88705,
+    "sha256": "6f844d195eb96e5ae534ccbd8d540d2b92aaecfaf6cfb5f541a5007a5841cc1d",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_spandrel_plate",
+    "kind": "texture",
+    "file": "skin_spandrel_plate.png",
+    "size": 256,
+    "bytes": 81011,
+    "sha256": "1f9f5a06e2fe5def3c21d867bca4692180d980198c89c5f7860b8e357d67a03f",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]

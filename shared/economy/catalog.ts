@@ -185,6 +185,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(147, "skin_platform", "PLATFORM", "DARK PLATFORM EDGE, A CYAN NOSING, NO TEXT", 62, 0xc293, "#ff3ec9", "skin_platform_plate"),
   skin(148, "skin_tactile", "TACTILE", "DARK TACTILE PAVING, CYAN IN THE DOMES, NO ARROWS", 74, 0xc294, "#ffb02e", "skin_tactile_plate"),
   skin(149, "skin_coping", "COPING", "DARK COPING STONE, WET, A MAGENTA DRIP", 88, 0xc295, "#37ff8b", "skin_coping_plate"),
+  skin(150, "skin_parapet", "PARAPET", "DARK PARAPET CONCRETE, ONE CYAN STREAK", 96, 0xc296, "#8f4dff", "skin_parapet_plate"),
+  skin(151, "skin_cornice", "CORNICE", "DARK CORNICE, MAGENTA IN THE SHADOW GAP", 110, 0xc297, "#ffd27a", "skin_cornice_plate"),
+  skin(152, "skin_mullion", "MULLION", "DARK WINDOW MULLION, A CYAN GASKET", 58, 0xc298, "#8fd8ff", "skin_mullion_plate"),
+  skin(153, "skin_spandrel", "SPANDREL", "DARK SPANDREL GLASS, ONE MAGENTA REFLECTION", 82, 0xc299, "#f2f4ff", "skin_spandrel_plate"),
 ];
 
 /**
