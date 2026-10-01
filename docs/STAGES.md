@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 837 — Opening a private room tells a phone to tap
+
+**The ask.** A file with room-hours offered [OPEN A PRIVATE ROOM]. Those brackets are a button on a keyboard. On a phone they read as a key. Opening still spends an hour already bought. The room still banks Scrip, never $CAPITAL, and it still buys no stat.
+
+**The change.** A phone sees TAP OPEN A PRIVATE ROOM. A keyboard still sees the bracketed button. No hours still draws no button.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton("OPEN A PRIVATE ROOM", this.touchHud)/`).
+
+**Open.** Deep Wake still says [BUY OUT · … $CAPITAL] on a phone.
+
 ## Stage 836 — Withdrawing owed units tells a phone to tap
 
 **The ask.** THE RUN offered [WITHDRAW TO WALLET] when units were owed. Those brackets are a button on a keyboard. On a phone they read as a key. Withdrawing still moves units already owed. It does not raise the day's cap and it does not buy a stat.

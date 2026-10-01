@@ -96,6 +96,17 @@ describe("the trip", () => {
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
+  it("opening a private room names a tap on a phone", () => {
+    expect(crewButton("OPEN A PRIVATE ROOM", true)).toBe("TAP OPEN A PRIVATE ROOM");
+    expect(crewButton("OPEN A PRIVATE ROOM", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("OPEN A PRIVATE ROOM", false)).toBe("[OPEN A PRIVATE ROOM]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const start = file.indexOf("const sinkBlock");
+    const row = file.slice(start, file.indexOf("const runBlock", start));
+    expect(row).toMatch(/data-act="openroom">\$\{crewButton\("OPEN A PRIVATE ROOM", this\.touchHud\)\}/);
+    expect(row).not.toMatch(/\[OPEN A PRIVATE ROOM\]/);
+  });
+
   it("withdrawing owed units names a tap on a phone", () => {
     expect(crewButton("WITHDRAW TO WALLET", true)).toBe("TAP WITHDRAW TO WALLET");
     expect(crewButton("WITHDRAW TO WALLET", true)).not.toMatch(/\[[A-Z]/);
