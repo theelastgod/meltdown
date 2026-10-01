@@ -726,6 +726,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"NO GUARDS\. YOU NOTICED\. THERE'S NOTHING LEFT IN THIS BUILDING THAT A GUN CAN SETTLE\."/);
     expect(src).not.toMatch(/"No guards\. You noticed\. There's nothing left in this building that a gun can settle\."/);
   });
+
+  it("m7 chair line is CRT, not sit if you like", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "a")!.lines[1];
+    expect(line).toBe("SIT, IF YOU LIKE. OR DON'T. THE CHAIR IS THE OFFER.");
+    expect(line).not.toBe("Sit, if you like. Or don't. The chair is the offer.");
+    expect(src).toMatch(/"SIT, IF YOU LIKE\. OR DON'T\. THE CHAIR IS THE OFFER\."/);
+    expect(src).not.toMatch(/"Sit, if you like\. Or don't\. The chair is the offer\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

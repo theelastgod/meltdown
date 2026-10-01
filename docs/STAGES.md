@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 795 — The chair offer said sit if you like
+
+**The ask.** The second line in the white office still prints a sentence: `Sit, if you like. Or don't. The chair is the offer.` The line above it is already the terminal.
+
+**The change.** `SIT, IF YOU LIKE. OR DON'T. THE CHAIR IS THE OFFER.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the office script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'Sit, if you like. Or don't. The chair is the offer.' to be 'SIT, IF YOU LIKE. OR DON'T. THE CHAIR IS THE OFFER.'`).
+
+**Open.** The nine-days-blind recall still prints as a sentence.
+
 ## Stage 794 — Wern's first line in the office said no guards
 
 **The ask.** Walking into the white office still prints a sentence: `No guards. You noticed. There's nothing left in this building that a gun can settle.` The chair line under it is still a sentence.

@@ -234,7 +234,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
     id: "m7_office",
     start: "a",
     nodes: [
-      n("a", "wern", ["NO GUARDS. YOU NOTICED. THERE'S NOTHING LEFT IN THIS BUILDING THAT A GUN CAN SETTLE.", "Sit, if you like. Or don't. The chair is the offer."], {
+      n("a", "wern", ["NO GUARDS. YOU NOTICED. THERE'S NOTHING LEFT IN THIS BUILDING THAT A GUN CAN SETTLE.", "SIT, IF YOU LIKE. OR DON'T. THE CHAIR IS THE OFFER."], {
         next: "b",
         recall: [
           { gate: { all: { "m5:lattice": "all" } }, lines: ["I have been blind for nine days. Do you know what a forecaster does with no instruments? He guesses. I had forgotten how."] },
