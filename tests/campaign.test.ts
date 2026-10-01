@@ -789,6 +789,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"THEY READ THE FIRE, YOU KNOW\. ALL OF IT\. AND THEY WOKE ANYWAY\. THAT IS THE PART I COULD NOT FORECAST\."/);
     expect(src).not.toMatch(/"They read the fire, you know\. All of it\. And they woke anyway\. That is the part I could not forecast\."/);
   });
+
+  it("m7 redacted recall is CRT, not you cut the forecast out", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "b")!.recall![1]!.lines[0];
+    expect(line).toBe("YOU CUT THE FORECAST OUT BEFORE YOU SENT IT. YOU WOKE THEM AND SPARED THEM THE REASON. THAT IS WHAT AN AUTHOR DOES.");
+    expect(line).not.toBe("You cut the forecast out before you sent it. You woke them and spared them the reason. That is what an author does.");
+    expect(src).toMatch(/"YOU CUT THE FORECAST OUT BEFORE YOU SENT IT\. YOU WOKE THEM AND SPARED THEM THE REASON\. THAT IS WHAT AN AUTHOR DOES\."/);
+    expect(src).not.toMatch(/"You cut the forecast out before you sent it\. You woke them and spared them the reason\. That is what an author does\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 802 — The redacted recall said you cut the forecast out
+
+**The ask.** Cutting the forecast still prints a sentence when Wern remembers it: `You cut the forecast out before you sent it. You woke them and spared them the reason. That is what an author does.` The fire recall beside it is already the terminal.
+
+**The change.** `YOU CUT THE FORECAST OUT BEFORE YOU SENT IT. YOU WOKE THEM AND SPARED THEM THE REASON. THAT IS WHAT AN AUTHOR DOES.`
+
+**Verified.** `tests/campaign.test.ts` reads that recall off the office script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'You cut the forecast out before you sent it. You woke them and spared them the reason. That is what an author does.' to be 'YOU CUT THE FORECAST OUT BEFORE YOU SENT IT. YOU WOKE THEM AND SPARED THEM THE REASON. THAT IS WHAT AN AUTHOR DOES.'`).
+
+**Open.** The campaign scripts' spoken lines are the terminal. The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 801 — The fire recall said they read it and woke anyway
 
 **The ask.** Sending the whole broadcast still prints a sentence when Wern remembers it: `They read the fire, you know. All of it. And they woke anyway. That is the part I could not forecast.` The chair line above it is already the terminal.

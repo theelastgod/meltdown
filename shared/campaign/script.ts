@@ -245,7 +245,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
         next: "c",
         recall: [
           { gate: { all: { "m6:broadcast": "full" } }, lines: ["THEY READ THE FIRE, YOU KNOW. ALL OF IT. AND THEY WOKE ANYWAY. THAT IS THE PART I COULD NOT FORECAST."] },
-          { gate: { all: { "m6:broadcast": "redacted" } }, lines: ["You cut the forecast out before you sent it. You woke them and spared them the reason. That is what an author does."] },
+          { gate: { all: { "m6:broadcast": "redacted" } }, lines: ["YOU CUT THE FORECAST OUT BEFORE YOU SENT IT. YOU WOKE THEM AND SPARED THEM THE REASON. THAT IS WHAT AN AUTHOR DOES."] },
         ],
       }),
       n("c", "terminal", ["THE FINAL INPUT IS A CHOICE. THERE IS NO TRIGGER TO PULL."], {
