@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 792 — The full broadcast said they're reading the Meltdown
+
+**The ask.** Sending the whole document still prints a sentence: `They're reading the Meltdown with their own eyes. Some of them are laughing. That's new.` The choice above it is already the terminal.
+
+**The change.** `THEY'RE READING THE MELTDOWN WITH THEIR OWN EYES. SOME OF THEM ARE LAUGHING. THAT'S NEW.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the broadcast script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'They're reading the Meltdown with their own eyes. Some of them are laughing. That's new.' to be 'THEY'RE READING THE MELTDOWN WITH THEIR OWN EYES. SOME OF THEM ARE LAUGHING. THAT'S NEW.'`).
+
+**Open.** The redacted cut still prints as a sentence.
+
 ## Stage 791 — Sparing the docks said ships need a witness
 
 **The ask.** Leaving the docks their lattice still prints a sentence: `The docks keep their lattice. Ships need a witness. So do we.` The choice above it is already the terminal.

@@ -699,6 +699,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"THE DOCKS KEEP THEIR LATTICE\. SHIPS NEED A WITNESS\. SO DO WE\."/);
     expect(src).not.toMatch(/"The docks keep their lattice\. Ships need a witness\. So do we\."/);
   });
+
+  it("m6 full line is CRT, not they're reading the Meltdown", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m6_broadcast")!.nodes.find((n) => n.id === "full")!.lines[0];
+    expect(line).toBe("THEY'RE READING THE MELTDOWN WITH THEIR OWN EYES. SOME OF THEM ARE LAUGHING. THAT'S NEW.");
+    expect(line).not.toBe("They're reading the Meltdown with their own eyes. Some of them are laughing. That's new.");
+    expect(src).toMatch(/"THEY'RE READING THE MELTDOWN WITH THEIR OWN EYES\. SOME OF THEM ARE LAUGHING\. THAT'S NEW\."/);
+    expect(src).not.toMatch(/"They're reading the Meltdown with their own eyes\. Some of them are laughing\. That's new\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

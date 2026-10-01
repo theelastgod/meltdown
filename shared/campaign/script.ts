@@ -226,7 +226,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
           { text: "REDACTED. WAKE THEM WITHOUT THE TERROR.", set: { "m6:broadcast": "redacted" }, next: "redacted" },
         ],
       }),
-      n("full", "deacon", ["They're reading the Meltdown with their own eyes. Some of them are laughing. That's new."]),
+      n("full", "deacon", ["THEY'RE READING THE MELTDOWN WITH THEIR OWN EYES. SOME OF THEM ARE LAUGHING. THAT'S NEW."]),
       n("redacted", "marrow", ["Kind. Kind is a kind of lie. It'll hold for tonight."]),
     ],
   },
