@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 772 — The Deacon's first line said he keeps the ledger
+
+**The ask.** Picking the Wake Cells still opens on a sentence: `The Deacon keeps the ledger of the woken. Your line is blank. Good.` The house pick above it is already the terminal.
+
+**The change.** `THE DEACON KEEPS THE LEDGER OF THE WOKEN. YOUR LINE IS BLANK. GOOD.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the creation script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'The Deacon keeps the ledger of the woken. Your line is blank. Good.' to be 'THE DEACON KEEPS THE LEDGER OF THE WOKEN. YOUR LINE IS BLANK. GOOD.'`).
+
+**Open.** The Deacon's second line still prints as a sentence.
+
 ## Stage 771 — Marrow's second line said we meet where the clocks are broken
 
 **The ask.** After Marrow tells you not to say your name, the next line still prints as a sentence: `We meet where the clocks are broken. Office. Now.` The rest of that screen is the terminal.

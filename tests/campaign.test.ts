@@ -519,6 +519,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"WE MEET WHERE THE CLOCKS ARE BROKEN\. OFFICE\. NOW\."/);
     expect(src).not.toMatch(/"We meet where the clocks are broken\. Office\. Now\."/);
   });
+
+  it("creation Deacon line 1 is CRT, not the Deacon keeps the ledger", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "creation")!.nodes.find((n) => n.id === "cells")!.lines[0];
+    expect(line).toBe("THE DEACON KEEPS THE LEDGER OF THE WOKEN. YOUR LINE IS BLANK. GOOD.");
+    expect(line).not.toBe("The Deacon keeps the ledger of the woken. Your line is blank. Good.");
+    expect(src).toMatch(/"THE DEACON KEEPS THE LEDGER OF THE WOKEN\. YOUR LINE IS BLANK\. GOOD\."/);
+    expect(src).not.toMatch(/"The Deacon keeps the ledger of the woken\. Your line is blank\. Good\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

@@ -104,7 +104,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       }),
       n("estate", "vessel", ["IDA VESSEL. I AUDITED LEASES FOR ELEVEN YEARS BEFORE I READ ONE OF MY OWN.", "COME TO THE OFFICE. BRING THE BLANK YOU WOKE AS."]),
       n("clockeaters", "marrow", ["MARROW. DON'T SAY YOUR NAME — YOU HAVEN'T GOT ONE AND THAT'S THE POINT.", "WE MEET WHERE THE CLOCKS ARE BROKEN. OFFICE. NOW."]),
-      n("cells", "deacon", ["The Deacon keeps the ledger of the woken. Your line is blank. Good.", "Nodes first. Names later. Come to the Office."]),
+      n("cells", "deacon", ["THE DEACON KEEPS THE LEDGER OF THE WOKEN. YOUR LINE IS BLANK. GOOD.", "Nodes first. Names later. Come to the Office."]),
     ],
   },
   {
