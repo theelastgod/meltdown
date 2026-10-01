@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 832 — Attesting stamps tells a phone to tap
+
+**The ask.** A signed link with stamps still waiting offered [ATTEST]. Those brackets are a button on a keyboard. On a phone they read as a key. Attesting still writes the stamps the file already earned. It does not buy one.
+
+**The change.** A phone sees TAP ATTEST. A keyboard still sees the bracketed button.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that arm of the row. Putting the brackets back failed once (`expected the row to match /crewButton("ATTEST", this.touchHud)/`).
+
+**Open.** The same row still says [RECONCILE] on a phone.
+
 ## Stage 831 — Signing the link tells a phone to tap
 
 **The ask.** A wallet connected and not yet signed offered [SIGN THE LINK]. Those brackets are a button on a keyboard. On a phone they read as a key. The statement is still one SIWE signature, and it still buys no stat.
