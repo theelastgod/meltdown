@@ -17,6 +17,8 @@ describe("the crew controls on the desk", () => {
     expect(campaign).toMatch(/crewButton\("JOIN A CREW", this\.game\.hud\.touch\)/);
     expect(campaign).not.toMatch(/\[RUN WITH A CREW\]/);
     expect(campaign).not.toMatch(/\[JOIN A CREW\]/);
+    expect(campaign.includes('crewButton("EXPLORE THIS DISTRICT", this.game.hud.touch)')).toBe(true);
+    expect(campaign.includes("[EXPLORE THIS DISTRICT]")).toBe(false);
   });
 });
 

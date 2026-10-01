@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 826 — Explore tells a phone to tap
+
+**The ask.** EXPLORE THIS DISTRICT on the contracts desk still wore brackets. A phone has no key that matches them. The crew controls beside it already say TAP.
+
+**The change.** A phone sees TAP EXPLORE THIS DISTRICT. A keyboard still sees the bracketed button.
+
+**Verified.** `tests/keyhint.test.ts` reads the call site. Putting the brackets back on the desk failed once (`expected false to be true`).
+
+**Open.** A phone that has turned the trailer sound on still cannot skip it. The line says [SPACE] SKIP, and another tap only unmutes again.
+
 ## Stage 825 — The crew controls tell a phone to tap
 
 **The ask.** The contracts desk offered `[RUN WITH A CREW]` and `[JOIN A CREW]`. Those brackets are a button on a keyboard. On a phone they read as keys, and a phone has no key that matches them.
