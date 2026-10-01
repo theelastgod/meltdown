@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 770 — Marrow's hood is darker than the cloak
+
+**The ask.** The hood over the clock is the cloak at full brightness, so the head reads as the cloth. The layer on the shoulders was already darker.
+
+**The change.** That shell bakes shade 0.72. Darker than the cloak, lighter than the shoulder layer (0.62). The black inside the opening stays a separate void. No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts hood vertices above 1.4 m, and the cloak and the layer stay their own shades. Leaving the hood unpainted failed once (`the hood wears the cloak: expected 0 to be greater than 20`).
+
+**Open.** The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 769 — The Deacon's hood is darker than the robe
 
 **The ask.** The hood over the ledger is the robe at full brightness, so the head reads as the cloth. The sleeves under it were already darker.

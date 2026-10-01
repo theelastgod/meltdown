@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, DEACON_HOOD_SHADE, DEACON_LEDGER_SHADE, DEACON_SLEEVE_SHADE, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_LINING_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, MARROW_MANTLE_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, VESSEL_SLEEVE_SHADE, VESSEL_YOKE_SHADE, WERN_ARM_SHADE, WERN_SHOE_SHADE, WERN_YOKE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, DEACON_HOOD_SHADE, DEACON_LEDGER_SHADE, DEACON_SLEEVE_SHADE, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_LINING_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, MARROW_HOOD_SHADE, MARROW_MANTLE_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, VESSEL_SLEEVE_SHADE, VESSEL_YOKE_SHADE, WERN_ARM_SHADE, WERN_SHOE_SHADE, WERN_YOKE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -513,6 +513,31 @@ describe("the fixers, in the flesh", () => {
     let borrowed = 0;
     for (let i = 0; i < marrow.count; i++) if (Math.abs(marrow.getX(i) - DEACON_HOOD_SHADE) < 1e-5) borrowed++;
     expect(borrowed, "Marrow picked up the Deacon's hood").toBe(0);
+  });
+
+  it("Marrow's hood is darker than the cloak", () => {
+    const g = fixerGeometry("marrow").body;
+    const color = g.getAttribute("color");
+    const pos = g.getAttribute("position");
+    let hood = 0;
+    let cloth = 0;
+    let mantle = 0;
+    for (let i = 0; i < color.count; i++) {
+      const c = color.getX(i);
+      const y = pos.getY(i);
+      if (Math.abs(c - MARROW_HOOD_SHADE) < 1e-5) {
+        hood++;
+        expect(y).toBeGreaterThan(1.4);
+      } else if (Math.abs(c - MARROW_MANTLE_SHADE) < 1e-5) mantle++;
+      else if (c === 1 && y < 1.3) cloth++;
+    }
+    expect(hood, "the hood wears the cloak").toBeGreaterThan(20);
+    expect(cloth, "the cloak went dark with the hood").toBeGreaterThan(20);
+    expect(mantle, "the layer went dark with the hood").toBeGreaterThan(12);
+    const deacon = fixerGeometry("deacon").body.getAttribute("color");
+    let borrowed = 0;
+    for (let i = 0; i < deacon.count; i++) if (Math.abs(deacon.getX(i) - MARROW_HOOD_SHADE) < 1e-5) borrowed++;
+    expect(borrowed, "the Deacon picked up Marrow's hood").toBe(0);
   });
 });
 

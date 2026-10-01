@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 769 (the Deacon's hood is darker than the robe). Stage 768 darkens Wern's shoulder bar. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **770** |
+| HEAD | Stage 770 (Marrow's hood is darker than the cloak). Stage 769 darkens the Deacon's hood. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **771** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |
