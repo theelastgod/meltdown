@@ -181,6 +181,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(143, "skin_ballast", "BALLAST", "DARK TRACK BALLAST, CYAN IN THE GAPS", 110, 0xc28f, "#ffd27a", "skin_ballast_plate"),
   skin(144, "skin_fishplate", "FISHPLATE", "DARK RAIL FISHPLATE, NO STAMPS, A CYAN BOLT", 58, 0xc290, "#8fd8ff", "skin_fishplate_plate"),
   skin(145, "skin_thirdrail", "THIRD RAIL", "DARK COVERED RAIL, A THIN CYAN GAP", 82, 0xc291, "#f2f4ff", "skin_thirdrail_plate"),
+  skin(146, "skin_catenary", "CATENARY", "DARK CATENARY WIRE, MAGENTA AT A HANGER", 48, 0xc292, "#35f2ff", "skin_catenary_plate"),
+  skin(147, "skin_platform", "PLATFORM", "DARK PLATFORM EDGE, A CYAN NOSING, NO TEXT", 62, 0xc293, "#ff3ec9", "skin_platform_plate"),
+  skin(148, "skin_tactile", "TACTILE", "DARK TACTILE PAVING, CYAN IN THE DOMES, NO ARROWS", 74, 0xc294, "#ffb02e", "skin_tactile_plate"),
+  skin(149, "skin_coping", "COPING", "DARK COPING STONE, WET, A MAGENTA DRIP", 88, 0xc295, "#37ff8b", "skin_coping_plate"),
 ];
 
 /**
