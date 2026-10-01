@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 828 — The trailer does not tell a phone to press SPACE
+
+**The ask.** Before the first tap, the trailer said CLICK FOR SOUND · [SPACE] SKIP. A phone can tap. It cannot press SPACE, and the line named a key it does not have.
+
+**The change.** A phone reads TAP FOR SOUND. A keyboard still reads CLICK FOR SOUND · [SPACE] SKIP. The tap after the sound is up is unchanged.
+
+**Verified.** `tests/crawl.test.ts` reads the line and the assignment. Giving the phone the keyboard line failed once (`expected 'CLICK FOR SOUND · [SPACE] SKIP' to be 'TAP FOR SOUND'`).
+
+**Open.** The name desk still says [WRITE IT] on a phone. The brackets read as a key, and a phone has no key that matches them.
+
 ## Stage 827 — A phone can skip the trailer once the sound is on
 
 **The ask.** The first tap on the trailer turns the sound on, and that is right. The line then said [SPACE] SKIP. A phone has no SPACE. Another tap only tried to unmute again, so the trailer could not be skipped.

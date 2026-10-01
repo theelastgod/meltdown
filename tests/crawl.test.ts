@@ -8,7 +8,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { CRAWL_TEXT, DEFAULT_CRAWL, OPENING_TEXT, TRAILER_LINES } from "../client/crawl-text";
-import { crawlWanted, trailerSkipLine, trailerTap } from "../client/crawl";
+import { crawlWanted, trailerOpenLine, trailerSkipLine, trailerTap } from "../client/crawl";
 import { TITLE_CARDS } from "../client/menu";
 import { MAX_TRAILER_SECONDS, TRAILER } from "../shared/assets/video";
 import { lintTrailer } from "../shared/assets/lint";
@@ -46,6 +46,16 @@ describe("a phone that already has the trailer sound", () => {
     const crawl = readFileSync(new URL("../client/crawl.ts", import.meta.url), "utf8");
     expect(crawl).toMatch(/trailerTap\(this\.video\.muted, wantsTouch\(\)\) === "skip"/);
     expect(crawl).toMatch(/this\.hint\.textContent = trailerSkipLine\(wantsTouch\(\)\)/);
+  });
+});
+
+describe("the trailer before the first tap", () => {
+  it("asks a phone to tap for sound and does not name SPACE", () => {
+    expect(trailerOpenLine(true)).toBe("TAP FOR SOUND");
+    expect(trailerOpenLine(true)).not.toMatch(/\[SPACE\]/);
+    expect(trailerOpenLine(false)).toBe("CLICK FOR SOUND · [SPACE] SKIP");
+    const crawl = readFileSync(new URL("../client/crawl.ts", import.meta.url), "utf8");
+    expect(crawl).toMatch(/this\.hint\.textContent = trailerOpenLine\(wantsTouch\(\)\)/);
   });
 });
 

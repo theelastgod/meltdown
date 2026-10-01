@@ -32,6 +32,11 @@ export function trailerSkipLine(touch: boolean): string {
   return touch ? "TAP TO SKIP" : "[SPACE] SKIP";
 }
 
+/** The line under the trailer before the first tap. A phone is not told to press SPACE. */
+export function trailerOpenLine(touch: boolean): string {
+  return touch ? "TAP FOR SOUND" : "CLICK FOR SOUND · [SPACE] SKIP";
+}
+
 const SEEN_KEY = "meltdown.crawl.seen";
 
 export type CrawlPhase = "trailer" | "title";
@@ -99,6 +104,7 @@ export class OpeningCrawl {
     this.title = root.querySelector(".title")!;
     this.prompt = root.querySelector(".prompt")!;
     this.hint = root.querySelector(".skip")!;
+    this.hint.textContent = trailerOpenLine(wantsTouch());
     const v = this.video;
     v.muted = true;
     v.src = `/video/${TRAILER.file}`;
