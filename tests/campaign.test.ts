@@ -663,6 +663,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"YOU CALL IT A CAGE\. ASK THE PEOPLE IN IT WHETHER THEY'D LIKE THE FIRE BACK\."/);
     expect(src).not.toMatch(/"You call it a cage\. Ask the people in it whether they'd like the fire back\."/);
   });
+
+  it("m4 Wern last line is CRT, not I'm not asking you to agree", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "w3")!.lines[0];
+    expect(line).toBe("I'M NOT ASKING YOU TO AGREE. I'M ASKING YOU TO NOTICE THAT YOU ALMOST DO.");
+    expect(line).not.toBe("I'm not asking you to agree. I'm asking you to notice that you almost do.");
+    expect(src).toMatch(/"I'M NOT ASKING YOU TO AGREE\. I'M ASKING YOU TO NOTICE THAT YOU ALMOST DO\."/);
+    expect(src).not.toMatch(/"I'm not asking you to agree\. I'm asking you to notice that you almost do\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

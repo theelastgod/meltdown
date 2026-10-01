@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 788 — Wern's last line on the walk said he is not asking you to agree
+
+**The ask.** His last line still prints as a sentence: `I'm not asking you to agree. I'm asking you to notice that you almost do.` The cage line above it is already the terminal.
+
+**The change.** `I'M NOT ASKING YOU TO AGREE. I'M ASKING YOU TO NOTICE THAT YOU ALMOST DO.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the leak script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'I'm not asking you to agree. I'm asking you to notice that you almost do.' to be 'I'M NOT ASKING YOU TO AGREE. I'M ASKING YOU TO NOTICE THAT YOU ALMOST DO.'`).
+
+**Open.** Shielding Ida still prints as a sentence.
+
 ## Stage 787 — Wern's cage line said you call it a cage
 
 **The ask.** The next line still prints as a sentence: `You call it a cage. Ask the people in it whether they'd like the fire back.` The lease line above it is already the terminal.

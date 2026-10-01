@@ -178,7 +178,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       }),
       n("w1", "wern", ["YOU'VE READ THE MODELS BY NOW. SO YOU KNOW I DIDN'T INVENT THE MELTDOWN. I FORECAST IT.", "TWELVE YEARS OF VARIANCE, COMPOUNDING. A CITY THAT PARTICIPATES IN HISTORY IS A CITY THAT ENDS."], { next: "w2" }),
       n("w2", "wern", ["SO I FROZE IT. A PERMANENT LEASE. NO ONE DREAMS, NO ONE WAKES, NO ONE DIES IN THE FIRE THAT WAS COMING.", "YOU CALL IT A CAGE. ASK THE PEOPLE IN IT WHETHER THEY'D LIKE THE FIRE BACK."], { next: "w3" }),
-      n("w3", "wern", ["I'm not asking you to agree. I'm asking you to notice that you almost do."], {
+      n("w3", "wern", ["I'M NOT ASKING YOU TO AGREE. I'M ASKING YOU TO NOTICE THAT YOU ALMOST DO."], {
         choices: [
           { text: "KEEP THE DIRECTIVE. IF IT'S A WEAPON, IT'S MINE NOW.", set: { "m4:directive": "kept" }, next: "vessel" },
           { text: "GIVE IT TO IDA. THE ESTATE SHOULD HAVE TO READ ITS OWN HAND.", set: { "m4:directive": "given" }, next: "vessel" },
