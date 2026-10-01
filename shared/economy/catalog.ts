@@ -97,6 +97,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(59, "skin_tarp", "TARP", "DARK TARP FOLDS, MAGENTA UNDERSIDE, NO MARKS", 62, 0xc23b, "#ff3ec9", "skin_tarp_plate"),
   skin(60, "skin_mesh", "MESH", "DARK WIRE MESH, CYAN ONLY AT THE CROSSINGS", 74, 0xc23c, "#ffb02e", "skin_mesh_plate"),
   skin(61, "skin_rivet", "RIVET", "DARK RIVETED PLATE, SPARSE CYAN HEADS", 88, 0xc23d, "#37ff8b", "skin_rivet_plate"),
+  skin(62, "skin_hose", "HOSE", "COILED BLACK HOSE, ONE CYAN STRIPE", 96, 0xc23e, "#8f4dff", "skin_hose_plate"),
+  skin(63, "skin_duct", "DUCT", "DARK SQUARE DUCT, A MAGENTA CORNER", 110, 0xc23f, "#ffd27a", "skin_duct_plate"),
+  skin(64, "skin_crack", "CRACK", "NEAR-BLACK CONCRETE, THIN GREEN IN THE CRACKS", 58, 0xc240, "#8fd8ff", "skin_crack_plate"),
+  skin(65, "skin_nosing", "NOSING", "DARK STAIR NOSING, ONE CYAN WEAR LINE", 82, 0xc241, "#f2f4ff", "skin_nosing_plate"),
 ];
 
 /**
