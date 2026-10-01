@@ -717,6 +717,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"KIND\. KIND IS A KIND OF LIE\. IT'LL HOLD FOR TONIGHT\."/);
     expect(src).not.toMatch(/"Kind\. Kind is a kind of lie\. It'll hold for tonight\."/);
   });
+
+  it("m7 Wern line 1 is CRT, not no guards you noticed", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "a")!.lines[0];
+    expect(line).toBe("NO GUARDS. YOU NOTICED. THERE'S NOTHING LEFT IN THIS BUILDING THAT A GUN CAN SETTLE.");
+    expect(line).not.toBe("No guards. You noticed. There's nothing left in this building that a gun can settle.");
+    expect(src).toMatch(/"NO GUARDS\. YOU NOTICED\. THERE'S NOTHING LEFT IN THIS BUILDING THAT A GUN CAN SETTLE\."/);
+    expect(src).not.toMatch(/"No guards\. You noticed\. There's nothing left in this building that a gun can settle\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

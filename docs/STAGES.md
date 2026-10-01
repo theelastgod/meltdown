@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 794 — Wern's first line in the office said no guards
+
+**The ask.** Walking into the white office still prints a sentence: `No guards. You noticed. There's nothing left in this building that a gun can settle.` The chair line under it is still a sentence.
+
+**The change.** `NO GUARDS. YOU NOTICED. THERE'S NOTHING LEFT IN THIS BUILDING THAT A GUN CAN SETTLE.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the office script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'No guards. You noticed. There's nothing left in this building that a gun can settle.' to be 'NO GUARDS. YOU NOTICED. THERE'S NOTHING LEFT IN THIS BUILDING THAT A GUN CAN SETTLE.'`).
+
+**Open.** The chair offer still prints as a sentence.
+
 ## Stage 793 — The redacted cut said kind is a kind of lie
 
 **The ask.** Cutting the forecast still prints a sentence: `Kind. Kind is a kind of lie. It'll hold for tonight.` The choice above it is already the terminal.
