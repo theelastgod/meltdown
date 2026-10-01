@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 763 — The layer over Marrow's shoulders is darker than the cloak
+
+**The ask.** The short cloth over the shoulders is the cloak at full brightness, so the second layer reads as the one under it.
+
+**The change.** That lathe bakes shade 0.62. Darker than the cloak, clear of the feet (0.28). No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts layer vertices above 0.9 m, and the cloak and the feet stay their own shades. Leaving the layer unpainted failed once (`the layer wears the cloak: expected 0 to be greater than 20`).
+
+**Open.** The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 762 — Wern's coat lining is darker than the cloth
 
 **The ask.** The inside of the open greatcoat is the outside at full brightness, so the gap reads as more cloth. Ida's lining was already darker.

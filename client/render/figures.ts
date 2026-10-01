@@ -58,6 +58,8 @@ export const FIXER_COLLAR_SHADE = 0.68;
 export const DEACON_LEDGER_SHADE = 0.42;
 /** the inside of an open coat: darker than the cloth, not the hair */
 export const FIXER_LINING_SHADE = 0.35;
+/** the short layer over Marrow's shoulders: darker than the cloak, clear of the feet */
+export const MARROW_MANTLE_SHADE = 0.62;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -145,8 +147,8 @@ function marrow(): Parts {
   for (let i = 0; i < p.count; i++) if (p.getY(i) < 0.16) p.setY(i, p.getY(i) + (i % 3 === 0 ? 0.07 : i % 3 === 1 ? 0.02 : 0));
   cloak.computeVertexNormals();
   parts.body.push(cloak);
-  // a second, shorter layer over the shoulders
-  parts.body.push(lathe([[0.37, 1.02], [0.35, 1.13], [0.29, 1.29], [0.17, 1.44]], 14, { sx: 1.05, sz: 0.95, folds: 7, fold: () => 0.06 }));
+  // a second, shorter layer over the shoulders. Darker than the cloak, so the layer is not the cloth under it.
+  parts.body.push(paint(lathe([[0.37, 1.02], [0.35, 1.13], [0.29, 1.29], [0.17, 1.44]], 14, { sx: 1.05, sz: 0.95, folds: 7, fold: () => 0.06 }), MARROW_MANTLE_SHADE));
   // the feet are the cloak's mesh. Darker than the cloth, so the shoe is not the hem.
   for (const x of [-0.11, 0.11]) parts.body.push(paint(put(new THREE.BoxGeometry(0.11, 0.18, 0.14), T(x, 0.09, -0.02)), MARROW_FOOT_SHADE));
   hood(parts, { r: 0.19, cy: 1.6, sy: 1.15, sz: 1.2, trail: 0.16, opening: 1.4, rim: 1 });

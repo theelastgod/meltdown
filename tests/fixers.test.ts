@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, DEACON_LEDGER_SHADE, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_LINING_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, DEACON_LEDGER_SHADE, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_LINING_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, MARROW_MANTLE_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -277,6 +277,27 @@ describe("the fixers, in the flesh", () => {
     }
     expect(feet, "the feet wear the cloak").toBeGreaterThan(20);
     expect(cloth, "the cloak went dark with the feet").toBeGreaterThan(20);
+  });
+
+  it("the layer over Marrow's shoulders is darker than the cloak", () => {
+    const g = fixerGeometry("marrow").body;
+    const color = g.getAttribute("color");
+    const pos = g.getAttribute("position");
+    let mantle = 0;
+    let cloth = 0;
+    let feet = 0;
+    for (let i = 0; i < color.count; i++) {
+      const c = color.getX(i);
+      const y = pos.getY(i);
+      if (Math.abs(c - MARROW_MANTLE_SHADE) < 1e-5) {
+        mantle++;
+        expect(y).toBeGreaterThan(0.9);
+      } else if (Math.abs(c - MARROW_FOOT_SHADE) < 1e-5) feet++;
+      else if (c === 1 && y < 1.0) cloth++;
+    }
+    expect(mantle, "the layer wears the cloak").toBeGreaterThan(20);
+    expect(cloth, "the cloak went dark with the layer").toBeGreaterThan(20);
+    expect(feet, "the feet went dark with the layer").toBeGreaterThan(8);
   });
 
   it("a bare head's collar is darker than the coat", () => {
