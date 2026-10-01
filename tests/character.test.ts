@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { BONE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, REST_BONES, rigReport, trimGeometry } from "../client/render/rig";
+import { BONE, BOOT_SHADE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, REST_BONES, rigReport, trimGeometry } from "../client/render/rig";
 import { citizenBodyGeometry, citizenHoodGeometry, citizenSwing, CITIZEN_LIMBS, CITIZEN_STRIDE, Crowd } from "../client/render/life";
 
 describe("the player's body", () => {
@@ -55,6 +55,25 @@ describe("the player's body", () => {
     expect(black).toBe(voids);
     const hub = readFileSync(new URL("../client/render/hub.ts", import.meta.url), "utf8");
     expect(hub).toMatch(/ghostMat = new THREE\.MeshBasicMaterial\(\{ color: PALETTE\.cyan, transparent: true, opacity: 0\.35, blending: THREE\.AdditiveBlending, depthWrite: false, vertexColors: true \}\)/);
+  });
+
+  it("the boots are darker than the cloak they stand under", () => {
+    const g = cloakGeometry(null);
+    const pos = g.getAttribute("position");
+    const shade = g.getAttribute("shade");
+    const idx = g.getAttribute("skinIndex");
+    let boots = 0;
+    let cloth = 0;
+    for (let i = 0; i < pos.count; i++) {
+      const s = shade.getX(i);
+      if (Math.abs(s - BOOT_SHADE) < 1e-5) {
+        boots++;
+        expect(pos.getY(i)).toBeLessThan(0.35);
+        expect(idx.getX(i) === BONE.legL || idx.getX(i) === BONE.legR).toBe(true);
+      } else if (s === 1 && pos.getY(i) > 1) cloth++;
+    }
+    expect(boots, "the boots wear the cloak").toBeGreaterThan(20);
+    expect(cloth, "the coat went dark with the boots").toBeGreaterThan(20);
   });
 
   it("no strip-light sits inside the coat's cloth", () => {

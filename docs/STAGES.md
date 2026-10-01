@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 744 — The boots are darker than the cloak
+
+**The ask.** The Blank's boots are the cloak mesh at full brightness, so the shaft and the sole read as the hem.
+
+**The change.** The boot shaft and the sole bake shade 0.22 on the same cloak. That is darker than the cloth, not the hood void (0) and not the lining (0.3–0.35). The office ghost reads the same colour. No new mesh.
+
+**Verified.** `tests/character.test.ts` counts boot vertices under 0.35 m on the leg bones, and cloth still at shade 1 above 1 m. Dropping the boot shade so it defaulted to 1 failed once (`the boots wear the cloak`).
+
+**Open.** The gloves are still the cloak at full brightness.
+
 ## Stage 743 — The hair stays on the coat
 
 **The ask.** Stage 741 blacked the whole head so the street would miss the face. The hair is the sphere above that, and it went black with it. Ida and Wern read as a hole where the hair should be.

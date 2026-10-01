@@ -267,6 +267,8 @@ function hoodShell(scale: number): THREE.BufferGeometry {
  * scene and again in the wet-floor mirror, at this budget plus the trim's, is 8 x 2 x (2000 + 700)
  * = 43k at the very worst - inside that headroom with room left for the crowd.
  */
+/** boots on the cloak mesh: darker than the cloth, not a void (0) and not the lining (0.3–0.35) */
+export const BOOT_SHADE = 0.22;
 export const BODY_TRIANGLES = 2000;
 export const TRIM_TRIANGLES = 700;
 
@@ -316,8 +318,9 @@ function cloakParts(look = 0): THREE.BufferGeometry[] {
   for (const [leg, x] of [["legL", -0.11], ["legR", 0.11]] as const) {
     parts.push(part(new THREE.CylinderGeometry(0.08, 0.07, 0.4, 8), at(x, 0.77, 0), thighWeights(BONE[leg])));
     parts.push(part(new THREE.CylinderGeometry(0.066, 0.062, 0.3, 8), at(x, 0.43, 0), fixed(BONE[leg])));
-    parts.push(part(new THREE.CylinderGeometry(0.078, 0.083, 0.26, 8), at(x, 0.17, 0.005), fixed(BONE[leg])));
-    parts.push(part(new THREE.BoxGeometry(0.115, 0.075, 0.25), at(x, 0.0375, -0.045), fixed(BONE[leg])));
+    // the boot shaft and the sole are the cloak mesh. Darker than the cloth, so they are not the hem.
+    parts.push(part(new THREE.CylinderGeometry(0.078, 0.083, 0.26, 8), at(x, 0.17, 0.005), fixed(BONE[leg]), BOOT_SHADE));
+    parts.push(part(new THREE.BoxGeometry(0.115, 0.075, 0.25), at(x, 0.0375, -0.045), fixed(BONE[leg]), BOOT_SHADE));
   }
   return parts;
 }
