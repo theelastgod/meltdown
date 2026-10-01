@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 768 — Wern's shoulder bar is darker than the coat
+
+**The ask.** The bar across his shoulders is the coat at full brightness, so the cut reads as the cloth. The collar above it was already darker.
+
+**The change.** That box bakes shade 0.8. Darker than the coat, lighter than the collar (0.68), and not Ida's bar (0.74). No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts bar vertices on Wern, and the coat and the collar stay their own shades. Leaving the bar unpainted failed once (`the bar wears the coat: expected 0 to be greater than 12`).
+
+**Open.** The Deacon's hood still wears the robe.
+
 ## Stage 767 — Ida's shoulder cut is darker than the coat
 
 **The ask.** The hard bar across her shoulders is the coat at full brightness, so the Estate's cut reads as the cloth. The collar above it was already darker.

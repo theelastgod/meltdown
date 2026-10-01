@@ -68,6 +68,8 @@ export const WERN_ARM_SHADE = 0.5;
 export const VESSEL_SLEEVE_SHADE = 0.58;
 /** Ida's shoulder yoke. Darker than the coat, lighter than the collar. */
 export const VESSEL_YOKE_SHADE = 0.74;
+/** Wern's shoulder bar. Darker than the coat, lighter than the collar. */
+export const WERN_YOKE_SHADE = 0.8;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -245,7 +247,8 @@ function wern(): Parts {
   parts.body.push(lathe(COAT, 14, { sx: 1.12, sz: 0.8, folds: 4, fold: () => 0.015, gap: 0.3 }));
   // the lining is the coat's mesh. Darker than the cloth, so the opening is not the outside.
   parts.body.push(paint(inside(lathe(COAT, 14, { sx: 1.12, sz: 0.8, folds: 4, fold: () => 0.015, gap: 0.3 })), FIXER_LINING_SHADE));
-  parts.body.push(put(new THREE.BoxGeometry(0.58, 0.06, 0.24), T(0, 1.43, 0)));
+  // the bar across the shoulders. Darker than the coat, so the cut is not the cloth.
+  parts.body.push(paint(put(new THREE.BoxGeometry(0.58, 0.06, 0.24), T(0, 1.43, 0)), WERN_YOKE_SHADE));
   parts.body.push(paint(lathe([[0.125, 1.47], [0.14, 1.64]], 12, { gap: 0.8 }), FIXER_COLLAR_SHADE));
   parts.body.push(paint(put(new THREE.SphereGeometry(0.105, 12, 10), T(0, 1.73, 0).multiply(new THREE.Matrix4().makeScale(0.9, 1.15, 1))), 0));
   parts.body.push(paint(put(new THREE.SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), T(0, 1.75, 0.012)), HAIR_SHADE));
