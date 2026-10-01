@@ -2617,5 +2617,41 @@
     "bytes": 105086,
     "sha256": "e93f98f75d0bd18f6349de10c39b26e37426d4367c99a41bfda3d6679e33f15f",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_sleeper_plate",
+    "kind": "texture",
+    "file": "skin_sleeper_plate.png",
+    "size": 256,
+    "bytes": 147649,
+    "sha256": "aa360db7dcecf3b88a6bff2c53210f118db95e7fa3927bcf7a2169ad655ba2bd",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_ballast_plate",
+    "kind": "texture",
+    "file": "skin_ballast_plate.png",
+    "size": 256,
+    "bytes": 158187,
+    "sha256": "6222054e63fc99603eec6b4b1d70522116efd325e3838b08e76420e5385ca98c",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_fishplate_plate",
+    "kind": "texture",
+    "file": "skin_fishplate_plate.png",
+    "size": 256,
+    "bytes": 124736,
+    "sha256": "af9f5c5317b2e862c36fd14450013a4d64fc0dfad3f24e3e43345c90799a9c8f",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_thirdrail_plate",
+    "kind": "texture",
+    "file": "skin_thirdrail_plate.png",
+    "size": 256,
+    "bytes": 107263,
+    "sha256": "2488935c3d24f017c522bb2328f53582f807d8aca1b4099735ef6125ba795ae6",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]

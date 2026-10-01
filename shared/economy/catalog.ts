@@ -177,6 +177,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(139, "skin_sheave", "SHEAVE", "DARK SHEAVE GROOVE, CYAN IN THE CUT", 62, 0xc28b, "#ff3ec9", "skin_sheave_plate"),
   skin(140, "skin_counterweight", "COUNTERWEIGHT", "DARK COUNTERWEIGHT BLOCKS, ONE CYAN EDGE", 74, 0xc28c, "#ffb02e", "skin_counterweight_plate"),
   skin(141, "skin_outrigger", "OUTRIGGER", "DARK OUTRIGGER BEAM, MAGENTA AT THE PIN", 88, 0xc28d, "#37ff8b", "skin_outrigger_plate"),
+  skin(142, "skin_sleeper", "SLEEPER", "DARK RAIL SLEEPER, WET, CYAN BETWEEN THE GRAIN", 96, 0xc28e, "#8f4dff", "skin_sleeper_plate"),
+  skin(143, "skin_ballast", "BALLAST", "DARK TRACK BALLAST, CYAN IN THE GAPS", 110, 0xc28f, "#ffd27a", "skin_ballast_plate"),
+  skin(144, "skin_fishplate", "FISHPLATE", "DARK RAIL FISHPLATE, NO STAMPS, A CYAN BOLT", 58, 0xc290, "#8fd8ff", "skin_fishplate_plate"),
+  skin(145, "skin_thirdrail", "THIRD RAIL", "DARK COVERED RAIL, A THIN CYAN GAP", 82, 0xc291, "#f2f4ff", "skin_thirdrail_plate"),
 ];
 
 /**
