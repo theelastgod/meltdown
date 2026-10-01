@@ -123,6 +123,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(85, "skin_tread", "TREAD", "DARK METAL TREAD, CYAN IN THE GROOVES", 88, 0xc255, "#37ff8b", "skin_tread_plate"),
   skin(86, "skin_splice", "SPLICE", "DARK CABLE SPLICE, CYAN TAPE, NO LABELS", 96, 0xc256, "#8f4dff", "skin_splice_plate"),
   skin(87, "skin_hatch", "HATCH", "DARK HATCH PLATE, A CYAN RIM", 110, 0xc257, "#ffd27a", "skin_hatch_plate"),
+  skin(88, "skin_perf", "PERF", "DARK PERFORATED SCREEN, MAGENTA DOTS", 58, 0xc258, "#8fd8ff", "skin_perf_plate"),
+  skin(89, "skin_felt", "FELT", "DARK ROOFING FELT, ONE CYAN NAIL LINE", 82, 0xc259, "#f2f4ff", "skin_felt_plate"),
+  skin(90, "skin_resin", "RESIN", "DARK POURED RESIN, CYAN INCLUSIONS", 48, 0xc25a, "#35f2ff", "skin_resin_plate"),
+  skin(91, "skin_slate", "SLATE", "DARK WET SLATE, A CYAN DRIP", 62, 0xc25b, "#ff3ec9", "skin_slate_plate"),
 ];
 
 /**
