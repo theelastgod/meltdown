@@ -172,7 +172,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
       n("a", "vessel", ["THIS IS IT. THE DIRECTIVE. WERN'S OWN HAND.", "READ IT WHILE WE WALK. HE ARGUES BETTER THAN ANY OF US."], {
         next: "w1",
         recall: [
-          { gate: { all: { "m3:volatility": "publish" } }, lines: ["Half the Estate read your depot logs before VANTAGE cut the feeds. That is why I am standing here and not at my desk."] },
+          { gate: { all: { "m3:volatility": "publish" } }, lines: ["HALF THE ESTATE READ YOUR DEPOT LOGS BEFORE VANTAGE CUT THE FEEDS. THAT IS WHY I AM STANDING HERE AND NOT AT MY DESK."] },
           { gate: { all: { "m3:volatility": "hold" } }, lines: ["You sat on the depot logs. I would have published. I am not sure any more that I would have been right."] },
         ],
       }),

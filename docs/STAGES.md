@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 782 — Publishing the logs makes Ida say half the Estate read them
+
+**The ask.** If you published the depot logs, her aside still prints a sentence: `Half the Estate read your depot logs before VANTAGE cut the feeds. That is why I am standing here and not at my desk.` The walk itself is already the terminal.
+
+**The change.** `HALF THE ESTATE READ YOUR DEPOT LOGS BEFORE VANTAGE CUT THE FEEDS. THAT IS WHY I AM STANDING HERE AND NOT AT MY DESK.`
+
+**Verified.** `tests/campaign.test.ts` reads that recall off the leak script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'Half the Estate read your depot logs before VANTAGE cut the feeds. That is why I am standing here and not at my desk.' to be 'HALF THE ESTATE READ YOUR DEPOT LOGS BEFORE VANTAGE CUT THE FEEDS. THAT IS WHY I AM STANDING HERE AND NOT AT MY DESK.'`).
+
+**Open.** If you held the logs, her aside still prints as a sentence. The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 781 — Ida's second line on the walk said read it while we walk
 
 **The ask.** The next line still prints as a sentence: `Read it while we walk. He argues better than any of us.` The line above it is already the terminal.

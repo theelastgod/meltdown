@@ -609,6 +609,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"READ IT WHILE WE WALK\. HE ARGUES BETTER THAN ANY OF US\."/);
     expect(src).not.toMatch(/"Read it while we walk\. He argues better than any of us\."/);
   });
+
+  it("m4 publish aside is CRT, not half the Estate read your depot logs", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "a")!.recall![0]!.lines[0];
+    expect(line).toBe("HALF THE ESTATE READ YOUR DEPOT LOGS BEFORE VANTAGE CUT THE FEEDS. THAT IS WHY I AM STANDING HERE AND NOT AT MY DESK.");
+    expect(line).not.toBe("Half the Estate read your depot logs before VANTAGE cut the feeds. That is why I am standing here and not at my desk.");
+    expect(src).toMatch(/"HALF THE ESTATE READ YOUR DEPOT LOGS BEFORE VANTAGE CUT THE FEEDS\. THAT IS WHY I AM STANDING HERE AND NOT AT MY DESK\."/);
+    expect(src).not.toMatch(/"Half the Estate read your depot logs before VANTAGE cut the feeds\. That is why I am standing here and not at my desk\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
