@@ -227,7 +227,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
         ],
       }),
       n("full", "deacon", ["THEY'RE READING THE MELTDOWN WITH THEIR OWN EYES. SOME OF THEM ARE LAUGHING. THAT'S NEW."]),
-      n("redacted", "marrow", ["Kind. Kind is a kind of lie. It'll hold for tonight."]),
+      n("redacted", "marrow", ["KIND. KIND IS A KIND OF LIE. IT'LL HOLD FOR TONIGHT."]),
     ],
   },
   {

@@ -708,6 +708,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"THEY'RE READING THE MELTDOWN WITH THEIR OWN EYES\. SOME OF THEM ARE LAUGHING\. THAT'S NEW\."/);
     expect(src).not.toMatch(/"They're reading the Meltdown with their own eyes\. Some of them are laughing\. That's new\."/);
   });
+
+  it("m6 redacted line is CRT, not kind is a kind of lie", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m6_broadcast")!.nodes.find((n) => n.id === "redacted")!.lines[0];
+    expect(line).toBe("KIND. KIND IS A KIND OF LIE. IT'LL HOLD FOR TONIGHT.");
+    expect(line).not.toBe("Kind. Kind is a kind of lie. It'll hold for tonight.");
+    expect(src).toMatch(/"KIND\. KIND IS A KIND OF LIE\. IT'LL HOLD FOR TONIGHT\."/);
+    expect(src).not.toMatch(/"Kind\. Kind is a kind of lie\. It'll hold for tonight\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
