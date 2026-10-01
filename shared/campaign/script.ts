@@ -143,7 +143,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
           { text: "TURN HIM IN TO MARROW'S PEOPLE. THE CLOCKEATERS SETTLE THEIR OWN.", set: { "m2:informant": "turn" }, next: "turn" },
         ],
       }),
-      n("spare", "deacon", ["Mercy is a line item too. I'll log it."]),
+      n("spare", "deacon", ["MERCY IS A LINE ITEM TOO. I'LL LOG IT."]),
       n("turn", "marrow", ["The Clockeaters will handle it. You won't like how. Neither will I."]),
     ],
   },

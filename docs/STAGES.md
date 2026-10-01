@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 776 — Sparing the informant said mercy is a line item
+
+**The ask.** Letting the docks informant run still prints a sentence: `Mercy is a line item too. I'll log it.` The choice above it is already the terminal.
+
+**The change.** `MERCY IS A LINE ITEM TOO. I'LL LOG IT.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the informant script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'Mercy is a line item too. I'll log it.' to be 'MERCY IS A LINE ITEM TOO. I'LL LOG IT.'`).
+
+**Open.** Turning him in still prints as a sentence.
+
 ## Stage 775 — Keeping the lease page said you fold it into the coat
 
 **The ask.** Choosing to keep the lease still prints a sentence: `You fold it into the coat. It weighs more than paper should.` Burning it already reads as the terminal.

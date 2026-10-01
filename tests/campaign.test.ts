@@ -555,6 +555,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"YOU FOLD IT INTO THE COAT\. IT WEIGHS MORE THAN PAPER SHOULD\."/);
     expect(src).not.toMatch(/"You fold it into the coat\. It weighs more than paper should\."/);
   });
+
+  it("m2 spare line is CRT, not mercy is a line item", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m2_informant")!.nodes.find((n) => n.id === "spare")!.lines[0];
+    expect(line).toBe("MERCY IS A LINE ITEM TOO. I'LL LOG IT.");
+    expect(line).not.toBe("Mercy is a line item too. I'll log it.");
+    expect(src).toMatch(/"MERCY IS A LINE ITEM TOO\. I'LL LOG IT\."/);
+    expect(src).not.toMatch(/"Mercy is a line item too\. I'll log it\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
