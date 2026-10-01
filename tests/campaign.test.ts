@@ -636,6 +636,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"YOU'VE READ THE MODELS BY NOW\. SO YOU KNOW I DIDN'T INVENT THE MELTDOWN\. I FORECAST IT\."/);
     expect(src).not.toMatch(/"You've read the models by now\. So you know I didn't invent the Meltdown\. I forecast it\."/);
   });
+
+  it("m4 Wern line 2 is CRT, not twelve years of variance", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "w1")!.lines[1];
+    expect(line).toBe("TWELVE YEARS OF VARIANCE, COMPOUNDING. A CITY THAT PARTICIPATES IN HISTORY IS A CITY THAT ENDS.");
+    expect(line).not.toBe("Twelve years of variance, compounding. A city that participates in history is a city that ends.");
+    expect(src).toMatch(/"TWELVE YEARS OF VARIANCE, COMPOUNDING\. A CITY THAT PARTICIPATES IN HISTORY IS A CITY THAT ENDS\."/);
+    expect(src).not.toMatch(/"Twelve years of variance, compounding\. A city that participates in history is a city that ends\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

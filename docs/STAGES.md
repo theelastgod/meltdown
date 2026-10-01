@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 785 — Wern's second line on the walk said twelve years of variance
+
+**The ask.** The next line still prints as a sentence: `Twelve years of variance, compounding. A city that participates in history is a city that ends.` The line above it is already the terminal.
+
+**The change.** `TWELVE YEARS OF VARIANCE, COMPOUNDING. A CITY THAT PARTICIPATES IN HISTORY IS A CITY THAT ENDS.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the leak script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'Twelve years of variance, compounding. A city that participates in history is a city that ends.' to be 'TWELVE YEARS OF VARIANCE, COMPOUNDING. A CITY THAT PARTICIPATES IN HISTORY IS A CITY THAT ENDS.'`).
+
+**Open.** His next line, the permanent lease, still prints as a sentence.
+
 ## Stage 784 — Wern's first line on the walk said you've read the models
 
 **The ask.** When he takes the walk, his first line still prints a sentence: `You've read the models by now. So you know I didn't invent the Meltdown. I forecast it.`

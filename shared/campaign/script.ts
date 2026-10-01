@@ -176,7 +176,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
           { gate: { all: { "m3:volatility": "hold" } }, lines: ["YOU SAT ON THE DEPOT LOGS. I WOULD HAVE PUBLISHED. I AM NOT SURE ANY MORE THAT I WOULD HAVE BEEN RIGHT."] },
         ],
       }),
-      n("w1", "wern", ["YOU'VE READ THE MODELS BY NOW. SO YOU KNOW I DIDN'T INVENT THE MELTDOWN. I FORECAST IT.", "Twelve years of variance, compounding. A city that participates in history is a city that ends."], { next: "w2" }),
+      n("w1", "wern", ["YOU'VE READ THE MODELS BY NOW. SO YOU KNOW I DIDN'T INVENT THE MELTDOWN. I FORECAST IT.", "TWELVE YEARS OF VARIANCE, COMPOUNDING. A CITY THAT PARTICIPATES IN HISTORY IS A CITY THAT ENDS."], { next: "w2" }),
       n("w2", "wern", ["So I froze it. A permanent lease. No one dreams, no one wakes, no one dies in the fire that was coming.", "You call it a cage. Ask the people in it whether they'd like the fire back."], { next: "w3" }),
       n("w3", "wern", ["I'm not asking you to agree. I'm asking you to notice that you almost do."], {
         choices: [
