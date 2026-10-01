@@ -93,6 +93,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(55, "skin_drum", "DRUM", "DARK BARREL METAL, MAGENTA RIM", 110, 0xc237, "#ffd27a", "skin_drum_plate"),
   skin(56, "skin_carpaint", "CARPAINT", "DARK FACETED CAR PAINT, ONE CYAN HIGHLIGHT LINE", 58, 0xc238, "#8fd8ff", "skin_carpaint_plate"),
   skin(57, "skin_awning", "AWNING", "DARK CANVAS, MAGENTA UNDERSIDE, CYAN STITCH", 82, 0xc239, "#f2f4ff", "skin_awning_plate"),
+  skin(58, "skin_seam", "SEAM", "DARK PANEL SEAMS, A CYAN GASKET LINE", 48, 0xc23a, "#35f2ff", "skin_seam_plate"),
+  skin(59, "skin_tarp", "TARP", "DARK TARP FOLDS, MAGENTA UNDERSIDE, NO MARKS", 62, 0xc23b, "#ff3ec9", "skin_tarp_plate"),
+  skin(60, "skin_mesh", "MESH", "DARK WIRE MESH, CYAN ONLY AT THE CROSSINGS", 74, 0xc23c, "#ffb02e", "skin_mesh_plate"),
+  skin(61, "skin_rivet", "RIVET", "DARK RIVETED PLATE, SPARSE CYAN HEADS", 88, 0xc23d, "#37ff8b", "skin_rivet_plate"),
 ];
 
 /**
