@@ -2509,5 +2509,41 @@
     "bytes": 118417,
     "sha256": "89d2dcef01c195888295de4fbac904abb981a1ccbf7397217708be40a666c7a1",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_switch_plate",
+    "kind": "texture",
+    "file": "skin_switch_plate.png",
+    "size": 256,
+    "bytes": 93959,
+    "sha256": "8e1d3c1b22c10093211c5098160fe82222a14ba928e9694ded1fcc4c47f474cf",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_meter_plate",
+    "kind": "texture",
+    "file": "skin_meter_plate.png",
+    "size": 256,
+    "bytes": 133057,
+    "sha256": "cd82e01af01e8491c7204c664aacfce81e7082b246113cd41ff4a65f1755b9e3",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_fuse_plate",
+    "kind": "texture",
+    "file": "skin_fuse_plate.png",
+    "size": 256,
+    "bytes": 109270,
+    "sha256": "5292f834079e4f76eaa3281d8230647e1cd96e5a894bede2ea0d50e365fd03fa",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_relay_plate",
+    "kind": "texture",
+    "file": "skin_relay_plate.png",
+    "size": 256,
+    "bytes": 121361,
+    "sha256": "ee2c76feb04801a415595b2bdf358978198205f66337af1144aa6e5ff6f417ef",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]

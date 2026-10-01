@@ -165,6 +165,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(127, "skin_junction", "JUNCTION", "DARK JUNCTION BOX, CYAN AT THE KNOCKOUT, NO WRITING", 110, 0xc27f, "#ffd27a", "skin_junction_plate"),
   skin(128, "skin_tray", "TRAY", "DARK CABLE TRAY, CYAN ON THE RUNG", 58, 0xc280, "#8fd8ff", "skin_tray_plate"),
   skin(129, "skin_conduit2", "CONDUIT BEND", "DARK CONDUIT BEND, A CYAN COUPLER, NO MARKS", 82, 0xc281, "#f2f4ff", "skin_conduit2_plate"),
+  skin(130, "skin_switch", "SWITCH", "DARK SWITCH PLATE, ONE CYAN SCREW, NO SYMBOLS", 48, 0xc282, "#35f2ff", "skin_switch_plate"),
+  skin(131, "skin_meter", "METER", "DARK METER GLASS, NO DIGITS, A MAGENTA REFLECTION", 62, 0xc283, "#ff3ec9", "skin_meter_plate"),
+  skin(132, "skin_fuse", "FUSE", "DARK FUSE BLOCK, CYAN AT THE CLIP, NO NUMBERS", 74, 0xc284, "#ffb02e", "skin_fuse_plate"),
+  skin(133, "skin_relay", "RELAY", "DARK RELAY HOUSING, A THIN CYAN SEAM", 88, 0xc285, "#37ff8b", "skin_relay_plate"),
 ];
 
 /**
