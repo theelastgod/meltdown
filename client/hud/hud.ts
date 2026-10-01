@@ -52,6 +52,8 @@ export class Hud {
   marketToggle: (() => void) | null = null;
   /** The CONTRACTS tab. Unset, the tab is the dead label it was. */
   contractsToggle: (() => void) | null = null;
+  /** The NAME tab. Unset, the tab is the dead label it was. */
+  nameToggle: (() => void) | null = null;
   /** A tap on the booth line when it names the name desk. */
   gateTap: (() => void) | null = null;
   onStamp: (() => void) | null = null;
@@ -183,7 +185,7 @@ export class Hud {
       <div class="bottom">
         <div class="slots"><div class="slot on">╪</div><div class="slot">▦</div><div class="slot">▦</div><div class="slot mg">◈</div></div>
         <div class="center"><b class="fileno">#—</b> · <span class="filenm">BLANK</span> · <span class="vel">0.0 m/s</span> · <span class="stance">STAND</span></div>
-        <div class="tabs"><div class="tab">FILE<span class="n">·</span></div><div class="tab">GRAPH<span class="n">·</span></div><div class="tab">MAP<span class="n">·</span></div><div class="tab">MARKET<span class="n">·</span></div><div class="tab">CONTRACTS<span class="n">·</span></div></div>
+        <div class="tabs"><div class="tab">FILE<span class="n">·</span></div><div class="tab">GRAPH<span class="n">·</span></div><div class="tab">MAP<span class="n">·</span></div><div class="tab">MARKET<span class="n">·</span></div><div class="tab">CONTRACTS<span class="n">·</span></div><div class="tab">NAME<span class="n">·</span></div></div>
       </div>
       <div class="keys">WASD · HOLD CLICK fire · R reload · SPACE jump · CTRL slide · SHIFT sprint</div>
     `;
@@ -229,6 +231,7 @@ export class Hud {
       else if (op === "graph") document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyG" }));
       else if (op === "market" && this.marketToggle) this.marketToggle();
       else if (op === "contracts" && this.contractsToggle) this.contractsToggle();
+      else if (op === "name" && this.nameToggle) this.nameToggle();
     };
     document.addEventListener("keydown", (e) => {
       if (e.code === "KeyM") {

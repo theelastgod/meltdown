@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 807 — The NAME tab opened the name desk
+
+**The ask.** A phone has no N key. The tab row drew FILE, GRAPH, MAP, MARKET and CONTRACTS, and not NAME, so the name desk was only a booth line or a key the phone does not have.
+
+**The change.** The row draws NAME. `tabOpens` names that label `name`. The tab calls `nameToggle`, and the game opens the name desk. N still opens it. The market tab still opens the market.
+
+**Verified.** `tests/keyhint.test.ts` reads the label, the tab, and the two call sites. Taking `name` out of `tabOpens` failed once (`expected null to be 'name'`).
+
+**Open.** THE RUN's safe zone still names only the market.
+
 ## Stage 806 — The world map named the name desk
 
 **The ask.** The district card on the world map still said the booth was only a market: `LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS`. The booth itself already opens a name desk.

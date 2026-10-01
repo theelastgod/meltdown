@@ -42,6 +42,18 @@ describe("the CONTRACTS tab", () => {
   });
 });
 
+describe("the NAME tab", () => {
+  it("opens the name desk, not a dead label", () => {
+    expect(tabOpens("NAME·")).toBe("name");
+    expect(tabOpens("NAME·")).not.toBeNull();
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/class="tab">NAME<span/);
+    expect(hud).toMatch(/op === "name" && this\.nameToggle/);
+    expect(game).toMatch(/nameToggle = \(\) => this\.file\.toggle\(true, "name"\)/);
+  });
+});
+
 describe("a hint that opens something else", () => {
   it("names the key on a keyboard and the gesture on a phone", () => {
     expect(openHint("TAB", "MARKET", false)).toBe("[TAB] MARKET");

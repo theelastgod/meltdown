@@ -231,6 +231,8 @@ export class Game {
     this.hud.marketToggle = () => this.file.toggle(true, "market");
     // the booth's name line is the name desk, not the listings
     this.hud.gateTap = () => this.file.toggle(true, "name");
+    // the NAME tab is how a phone opens the desk. N still opens it.
+    this.hud.nameToggle = () => this.file.toggle(true, "name");
     this.hud.setFile(this.file.view());
     this.file.onChange = (f) => {
       // offline the loadout applies at once; online the server decides at the next link
