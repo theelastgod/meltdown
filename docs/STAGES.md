@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 840 — Buying a listing tells a phone to tap
+
+**The ask.** A market listing offered its price in brackets, [… $CAPITAL]. Those brackets are a button on a keyboard. On a phone they read as a key. Buying still pays that price to the seller, with the same fee. It still buys no stat.
+
+**The change.** A phone sees TAP and the price. A keyboard still sees the bracketed price.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton(\`${l.price} $CAPITAL`, this.touchHud)/`).
+
+**Open.** The rig still says [SELL] on a phone.
+
 ## Stage 839 — Buying a room-hour tells a phone to tap
 
 **The ask.** Deep Wake offered [+1 · … $CAPITAL] beside the room-hours. Those brackets are a button on a keyboard. On a phone they read as a key. Buying an hour still burns that price in full. The hour is still a server of your own. A private room still banks Scrip, never $CAPITAL, and it still buys no stat.
