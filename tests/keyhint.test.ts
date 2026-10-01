@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { closeHint, menuFooter, openHint, settingsLine } from "../client/hud/keyhint";
+import { closeHint, menuFooter, openHint, settingsLine, tabOpens } from "../client/hud/keyhint";
 
 describe("a frame's close marker", () => {
   it("names the key on a keyboard", () => {
@@ -17,6 +17,17 @@ describe("a frame's close marker", () => {
   });
   it("never puts a bracketed key in front of a thumb", () => {
     for (const k of ["TAB", "C", "G", "M"]) expect(closeHint(k, true)).not.toMatch(/\[[A-Z]+\]/);
+  });
+});
+
+describe("the MARKET tab", () => {
+  it("opens the market, not a dead label", () => {
+    expect(tabOpens("MARKET·")).toBe("market");
+    expect(tabOpens("MARKET·")).not.toBeNull();
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/op === "market" && this\.marketToggle/);
+    expect(game).toMatch(/marketToggle = \(\) => this\.file\.toggle\(true, "market"\)/);
   });
 });
 

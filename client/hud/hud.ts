@@ -25,7 +25,7 @@ import { footTag, footTagText } from "./footline";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { alertOnCut, platePass, plateTop } from "./faceplate";
 import { terminalFooter, terminalSeat } from "./terminal";
-import { closeHint, openHint } from "./keyhint";
+import { closeHint, openHint, tabOpens } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
 import { nodeClockNote, type NodeReadout } from "./node";
 import { gateMarks, nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type GateMark, type RadarGate, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
@@ -48,6 +48,8 @@ export class Hud {
    * the WORLD MAP in the city. Unset, the tab is the district select it always was.
    */
   mapToggle: (() => void) | null = null;
+  /** The MARKET tab. Unset, the tab is the dead label it was. */
+  marketToggle: (() => void) | null = null;
   onStamp: (() => void) | null = null;
   private radar: CanvasRenderingContext2D;
   private locked = false;
@@ -214,12 +216,14 @@ export class Hud {
     tabs.onclick = (e) => {
       const t = (e.target as HTMLElement).closest(".tab") as HTMLElement | null;
       if (!t) return;
-      if (/MAP/.test(t.textContent ?? "")) {
+      const op = tabOpens(t.textContent ?? "");
+      if (op === "map") {
         if (this.mapToggle) this.mapToggle();
         else panel.hidden = !panel.hidden;
       }
-      else if (/FILE/.test(t.textContent ?? "")) document.dispatchEvent(new KeyboardEvent("keydown", { code: "Tab" }));
-      else if (/GRAPH/.test(t.textContent ?? "")) document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyG" }));
+      else if (op === "file") document.dispatchEvent(new KeyboardEvent("keydown", { code: "Tab" }));
+      else if (op === "graph") document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyG" }));
+      else if (op === "market" && this.marketToggle) this.marketToggle();
     };
     document.addEventListener("keydown", (e) => {
       if (e.code === "KeyM") {

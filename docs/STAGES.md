@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 803 — The MARKET tab opened the market
+
+**The ask.** The tab row draws MARKET and the click does nothing. FILE, GRAPH and MAP answer. MARKET does not, so a thumb told to open the market taps a dead label.
+
+**The change.** `tabOpens` names that label `market`. The tab calls `marketToggle`, and the game opens the file on the market. Tab itself is unchanged.
+
+**Verified.** `tests/keyhint.test.ts` reads the label and the two call sites. Taking `market` out of `tabOpens` failed once (`expected null to be 'market'`).
+
+**Open.** The CONTRACTS tab is still a dead label.
+
 ## Stage 802 — The redacted recall said you cut the forecast out
 
 **The ask.** Cutting the forecast still prints a sentence when Wern remembers it: `You cut the forecast out before you sent it. You woke them and spared them the reason. That is what an author does.` The fire recall beside it is already the terminal.
