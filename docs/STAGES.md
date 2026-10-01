@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 754 — Ida's boots are darker than the trousers
+
+**The ask.** The shaft and the sole under the hem are the coat at full brightness, so the foot reads as the leg. The trouser was already darker.
+
+**The change.** The boot shaft and the sole bake shade 0.2. Darker than the trouser (0.33), not the unlit face. The walk uses the same leg. No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts boot vertices on the standing figure and on the walker, and the trouser stays shade 0.33. Leaving the boot unpainted failed once (`the boots wear the coat: expected 0 to be greater than 12`).
+
+**Open.** A socketed chip in the file still reads as a sentence.
+
 ## Stage 753 — Ida's trousers are darker than the coat
 
 **The ask.** The leg under the hem is the coat mesh at full brightness, so the stride reads as cloth that has not ended. The boot was left as the coat.

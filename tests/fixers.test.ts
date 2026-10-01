@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, TROUSER_SHADE, VESSEL_HIP, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -153,7 +153,7 @@ describe("the fixers, in the flesh", () => {
           trouser++;
           expect(y).toBeLessThan(hip + 0.02);
           expect(y).toBeGreaterThan(hip - 0.55);
-        } else if (c === 1 && y < hip - 0.45) boot++;
+        } else if (y < hip - 0.45 && Math.abs(c - TROUSER_SHADE) > 1e-5) boot++;
       }
       return { trouser, boot };
     };
@@ -165,6 +165,30 @@ describe("the fixers, in the flesh", () => {
     expect(walk.boot, "the walking boot went dark with the trouser").toBeGreaterThan(8);
     const wern = fixerGeometry("wern").body.getAttribute("color");
     for (let i = 0; i < wern.count; i++) expect(Math.abs(wern.getX(i) - TROUSER_SHADE)).toBeGreaterThan(1e-5);
+  });
+
+  it("Ida's boots are darker than the trousers", () => {
+    const tally = (g: THREE.BufferGeometry, hip: number) => {
+      const color = g.getAttribute("color");
+      const pos = g.getAttribute("position");
+      let boot = 0;
+      let trouser = 0;
+      for (let i = 0; i < color.count; i++) {
+        const c = color.getX(i);
+        const y = pos.getY(i);
+        if (Math.abs(c - VESSEL_BOOT_SHADE) < 1e-5) {
+          boot++;
+          expect(y).toBeLessThan(hip - 0.4);
+        } else if (Math.abs(c - TROUSER_SHADE) < 1e-5) trouser++;
+      }
+      return { boot, trouser };
+    };
+    const stand = tally(fixerGeometry("vessel").body, VESSEL_HIP.y);
+    const walk = tally(vesselWalkerGeometry().leg, 0);
+    expect(stand.boot, "the boots wear the coat").toBeGreaterThan(12);
+    expect(walk.boot, "the walking boots wear the coat").toBeGreaterThan(12);
+    expect(stand.trouser, "the trouser went dark with the boot").toBeGreaterThan(20);
+    expect(walk.trouser, "the walking trouser went dark with the boot").toBeGreaterThan(16);
   });
 });
 

@@ -44,6 +44,8 @@ const put = (g: THREE.BufferGeometry, m: THREE.Matrix4) => g.applyMatrix4(m);
 export const HAIR_SHADE = 0.46;
 /** Ida's trousers: darker than the coat, not the hair and not a boot */
 export const TROUSER_SHADE = 0.33;
+/** Ida's boots: darker than the trouser, not the unlit face */
+export const VESSEL_BOOT_SHADE = 0.2;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -162,10 +164,11 @@ export const VESSEL_HIP = { x: 0.09, y: 0.72 } as const;
 /** one of Ida's legs, trouser, boot and shoe, standing under a hip at x = 0 */
 function vesselLeg(): THREE.BufferGeometry[] {
   return [
-    // the trouser is the coat's mesh. Darker than the cloth, so the leg is not the hem. The boot stays cloth.
+    // the trouser is the coat's mesh. Darker than the cloth, so the leg is not the hem.
     paint(put(new THREE.CylinderGeometry(0.065, 0.058, 0.5, 8), T(0, VESSEL_HIP.y - 0.25, 0)), TROUSER_SHADE),
-    put(new THREE.CylinderGeometry(0.068, 0.072, 0.24, 8), T(0, 0.12, 0)),
-    put(new THREE.BoxGeometry(0.1, 0.06, 0.22), T(0, 0.03, -0.04)),
+    // the boot shaft and the sole are the coat's mesh. Darker than the trouser, so the foot is not the leg.
+    paint(put(new THREE.CylinderGeometry(0.068, 0.072, 0.24, 8), T(0, 0.12, 0)), VESSEL_BOOT_SHADE),
+    paint(put(new THREE.BoxGeometry(0.1, 0.06, 0.22), T(0, 0.03, -0.04)), VESSEL_BOOT_SHADE),
   ];
 }
 /** the height of Ida's shoulders: the pivot her arms swing on when she walks (Stage 685) */
