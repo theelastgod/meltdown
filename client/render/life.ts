@@ -112,13 +112,17 @@ export function citizenSwing(time: number, speed: number, phase: number, idle: b
   return idle ? 0 : CITIZEN_STRIDE * Math.cos(time * 6 * speed + phase);
 }
 
-/** Shoes are not the coat. One instance colour on the limb mesh the crowd already draws: dark on a shoe, white on cloth, so the plate stays and the feet read as feet. */
+/** Shoes are not the coat, and the shin below the hem is not the coat either. One instance colour on the limb mesh the crowd already draws. */
 const LIMB_SHOE = new THREE.Color(0x14110e);
+const LIMB_SHIN = new THREE.Color(0x4a433c);
 const LIMB_CLOTH = new THREE.Color(1, 1, 1);
 export function paintCitizenLimbs(mesh: THREE.InstancedMesh, citizens: number): void {
   const n = CITIZEN_LIMBS.length;
   for (let i = 0; i < citizens; i++) {
-    for (let k = 0; k < n; k++) mesh.setColorAt(i * n + k, CITIZEN_LIMBS[k]!.kind === "shoe" ? LIMB_SHOE : LIMB_CLOTH);
+    for (let k = 0; k < n; k++) {
+      const kind = CITIZEN_LIMBS[k]!.kind;
+      mesh.setColorAt(i * n + k, kind === "shoe" ? LIMB_SHOE : kind === "shin" ? LIMB_SHIN : LIMB_CLOTH);
+    }
   }
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 }

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 746 — A citizen's shins are not the coat
+
+**The ask.** Shoes were already darker than the coat. The shins under the hem still took the coat's colour, so the legs read as cloth that had not ended.
+
+**The change.** The shin instances on the limb mesh the crowd already draws take colour `0x4a433c`. Darker than the sleeve, lighter than the shoe. The wake cell uses the same paint. No new mesh.
+
+**Verified.** `tests/character.test.ts` reads a crowd's shin, shoe, and sleeve colours. Painting the shin as cloth failed once (`the shin wears the coat: expected 1 to be less than 0.4`).
+
+**Open.** The belt buckle still wears the cloak at full brightness.
+
 ## Stage 745 — The gloves are darker than the sleeves
 
 **The ask.** The gloves are a box on the cloak at full brightness, so the hands read as the cuff.

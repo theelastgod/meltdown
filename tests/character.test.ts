@@ -188,6 +188,19 @@ describe("a leased citizen", () => {
     expect(escort).toMatch(/paintCitizenLimbs\(this\.cellLimbs, n\)/);
   });
 
+  it("a shin is darker than the coat and lighter than the shoe", () => {
+    const crowd = new Crowd([{ x0: -4, z0: 0, x1: 4, z1: 0 }], 4, 3);
+    const shin = new THREE.Color();
+    const shoe = new THREE.Color();
+    const arm = new THREE.Color();
+    crowd.limbs.getColorAt(CITIZEN_LIMBS.findIndex((l) => l.kind === "shin"), shin);
+    crowd.limbs.getColorAt(CITIZEN_LIMBS.findIndex((l) => l.kind === "shoe"), shoe);
+    crowd.limbs.getColorAt(CITIZEN_LIMBS.findIndex((l) => l.kind === "arm"), arm);
+    expect(shin.r, "the shin wears the coat").toBeLessThan(0.4);
+    expect(shin.r, "the shin was painted as a shoe").toBeGreaterThan(shoe.r + 0.05);
+    expect(arm.r, "the sleeve went dark with the shin").toBeGreaterThan(0.9);
+  });
+
   it("costs what a crowd can afford: under 360 triangles a citizen with its lamp and umbrella", () => {
     const tris = (g: THREE.BufferGeometry) => (g.index ? g.index.count : g.getAttribute("position").count) / 3;
     // coat + hood + one box per limb + lamp + umbrella
