@@ -29,6 +29,11 @@ export function safeZoneLine(touch: boolean): string {
 /** The district select's footer. Travel reloads. The room, not this page, picks the district online. */
 export const DISTRICT_FOOTER = "TRAVEL RELOADS THE CLIENT. ONLINE, THE ROOM DECIDES THE DISTRICT.";
 
+/** An empty magazine. A phone reloads on the pad labelled RLD. */
+export function reloadHint(touch: boolean): string {
+  return touch ? "▼ TAP RLD" : "▼ RELOAD [R]";
+}
+
 /** The ledger entry's sign line. A phone has no Enter, so the receipt stays up until a tap. */
 export function receiptSignLine(touch: boolean): string {
   return touch ? "TAP TO SIGN" : "[ENTER] SIGN";

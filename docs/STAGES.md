@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 812 — An empty magazine names the reload pad
+
+**The ask.** An empty magazine still said `▼ RELOAD [R]`. A phone has no R. The pad on the screen is labelled RLD.
+
+**The change.** A phone reads `▼ TAP RLD`. A keyboard still reads `▼ RELOAD [R]`. The line is written when the magazine goes empty.
+
+**Verified.** `tests/keyhint.test.ts` reads the line. Putting the keyboard line back on a phone failed once (`expected '▼ RELOAD [R]' to be '▼ TAP RLD'`).
+
+**Open.** The city's objective still tells a phone to press J.
+
 ## Stage 811 — A phone can sign the ledger entry
 
 **The ask.** After a match the receipt says `[ENTER] SIGN`. A phone has no Enter, the HUD ignores taps, and the entry stays on the screen.

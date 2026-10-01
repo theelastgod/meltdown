@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { closeHint, DISTRICT_FOOTER, menuFooter, openHint, receiptSignLine, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
+import { closeHint, DISTRICT_FOOTER, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
 
 describe("a frame's close marker", () => {
   it("names the key on a keyboard", () => {
@@ -136,6 +136,16 @@ describe("the menu's footer (Stages 152, 163)", () => {
     expect(menuFooter(true, true, true)).toContain("[−]");
     expect(menuFooter(true, true, true)).toContain("[+]");
     expect(menuFooter(true, false, true)).not.toContain("[−]");
+  });
+});
+
+describe("an empty magazine", () => {
+  it("names the pad on a phone and the key on a keyboard", () => {
+    expect(reloadHint(true)).toBe("▼ TAP RLD");
+    expect(reloadHint(true)).not.toMatch(/\[[A-Z]+\]/);
+    expect(reloadHint(false)).toBe("▼ RELOAD [R]");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/reloadHint\(this\.touch\)/);
   });
 });
 

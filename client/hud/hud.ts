@@ -25,7 +25,7 @@ import { footTag, footTagText } from "./footline";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { alertOnCut, platePass, plateTop } from "./faceplate";
 import { terminalFooter, terminalSeat } from "./terminal";
-import { closeHint, DISTRICT_FOOTER, receiptSignLine, safeZoneLine, tabOpens } from "./keyhint";
+import { closeHint, DISTRICT_FOOTER, receiptSignLine, reloadHint, safeZoneLine, tabOpens } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
 import { nodeClockNote, type NodeReadout } from "./node";
 import { gateMarks, nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type GateMark, type RadarGate, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
@@ -927,6 +927,7 @@ export class Hud {
       box.classList.toggle("empty", read.state === "empty");
       box.classList.toggle("reloading", read.state === "reloading");
       this.q(".xh").classList.toggle("reloading", read.state === "reloading");
+      if (read.state === "empty") this.q(".ammo .hint").textContent = reloadHint(this.touch);
     }
     if (read.state === "reloading") {
       const ring = this.q(".xh .rl");
