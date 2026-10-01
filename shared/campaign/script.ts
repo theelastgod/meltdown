@@ -161,7 +161,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
           { text: "HOLD IT. A TRUTH SPENT EARLY BUYS NOTHING.", set: { "m3:volatility": "hold" }, next: "hold" },
         ],
       }),
-      n("publish", "deacon", ["The feeds carry it for nine minutes before VANTAGE cuts them. Nine minutes woke more people than a year of nodes."]),
+      n("publish", "deacon", ["THE FEEDS CARRY IT FOR NINE MINUTES BEFORE VANTAGE CUTS THEM. NINE MINUTES WOKE MORE PEOPLE THAN A YEAR OF NODES."]),
       n("hold", "marrow", ["Good. Truth keeps. Clocks don't."]),
     ],
   },

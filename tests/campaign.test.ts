@@ -573,6 +573,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"THE CLOCKEATERS WILL HANDLE IT\. YOU WON'T LIKE HOW\. NEITHER WILL I\."/);
     expect(src).not.toMatch(/"The Clockeaters will handle it\. You won't like how\. Neither will I\."/);
   });
+
+  it("m3 publish line is CRT, not the feeds carry it for nine minutes", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m3_volatility")!.nodes.find((n) => n.id === "publish")!.lines[0];
+    expect(line).toBe("THE FEEDS CARRY IT FOR NINE MINUTES BEFORE VANTAGE CUTS THEM. NINE MINUTES WOKE MORE PEOPLE THAN A YEAR OF NODES.");
+    expect(line).not.toBe("The feeds carry it for nine minutes before VANTAGE cuts them. Nine minutes woke more people than a year of nodes.");
+    expect(src).toMatch(/"THE FEEDS CARRY IT FOR NINE MINUTES BEFORE VANTAGE CUTS THEM\. NINE MINUTES WOKE MORE PEOPLE THAN A YEAR OF NODES\."/);
+    expect(src).not.toMatch(/"The feeds carry it for nine minutes before VANTAGE cuts them\. Nine minutes woke more people than a year of nodes\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

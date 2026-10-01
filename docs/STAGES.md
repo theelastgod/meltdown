@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 778 — Publishing the depot logs said the feeds carry it for nine minutes
+
+**The ask.** Publishing the logs still prints a sentence: `The feeds carry it for nine minutes before VANTAGE cuts them. Nine minutes woke more people than a year of nodes.` The choice above it is already the terminal.
+
+**The change.** `THE FEEDS CARRY IT FOR NINE MINUTES BEFORE VANTAGE CUTS THEM. NINE MINUTES WOKE MORE PEOPLE THAN A YEAR OF NODES.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the depot script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'The feeds carry it for nine minutes before VANTAGE cuts them. Nine minutes woke more people than a year of nodes.' to be 'THE FEEDS CARRY IT FOR NINE MINUTES BEFORE VANTAGE CUTS THEM. NINE MINUTES WOKE MORE PEOPLE THAN A YEAR OF NODES.'`).
+
+**Open.** Holding the logs still prints as a sentence. The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 777 — Turning the informant in said the Clockeaters will handle it
 
 **The ask.** Handing him to Marrow still prints a sentence: `The Clockeaters will handle it. You won't like how. Neither will I.` Sparing him already reads as the terminal.
