@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 747 — The buckle is darker than the belt
+
+**The ask.** The clasp on the belt is a box of the cloak at full brightness, so it reads as the belt.
+
+**The change.** That box bakes shade 0.62. Darker than the belt, clear of the glove (0.48), the lining, the boot, and the hood void. The office ghost reads the same colour. No new mesh.
+
+**Verified.** `tests/character.test.ts` counts buckle vertices on the front of the belt, and belt vertices still at shade 1. Dropping the buckle shade so it defaulted to 1 failed once (`the buckle wears the cloak: expected 0 to be greater than 8`).
+
+**Open.** The chest strap still wears the cloak at full brightness.
+
 ## Stage 746 — A citizen's shins are not the coat
 
 **The ask.** Shoes were already darker than the coat. The shins under the hem still took the coat's colour, so the legs read as cloth that had not ended.

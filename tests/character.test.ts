@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { BONE, BOOT_SHADE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, GLOVE_SHADE, REST_BONES, rigReport, trimGeometry } from "../client/render/rig";
+import { BONE, BOOT_SHADE, BUCKLE_SHADE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, GLOVE_SHADE, REST_BONES, rigReport, trimGeometry } from "../client/render/rig";
 import { citizenBodyGeometry, citizenHoodGeometry, citizenSwing, CITIZEN_LIMBS, CITIZEN_STRIDE, Crowd } from "../client/render/life";
 
 describe("the player's body", () => {
@@ -92,6 +92,26 @@ describe("the player's body", () => {
     }
     expect(gloves, "the gloves wear the cloak").toBeGreaterThan(8);
     expect(sleeves, "the sleeves went dark with the gloves").toBeGreaterThan(8);
+  });
+
+  it("the buckle is darker than the belt it closes", () => {
+    const g = cloakGeometry(null);
+    const pos = g.getAttribute("position");
+    const shade = g.getAttribute("shade");
+    let buckle = 0;
+    let belt = 0;
+    for (let i = 0; i < pos.count; i++) {
+      const s = shade.getX(i);
+      const y = pos.getY(i);
+      if (Math.abs(s - BUCKLE_SHADE) < 1e-5) {
+        buckle++;
+        expect(y).toBeGreaterThan(0.9);
+        expect(y).toBeLessThan(1.08);
+        expect(pos.getZ(i)).toBeLessThan(-0.1);
+      } else if (s === 1 && y > 0.96 && y < 1.04) belt++;
+    }
+    expect(buckle, "the buckle wears the cloak").toBeGreaterThan(8);
+    expect(belt, "the belt went dark with the buckle").toBeGreaterThan(8);
   });
 
   it("no strip-light sits inside the coat's cloth", () => {
