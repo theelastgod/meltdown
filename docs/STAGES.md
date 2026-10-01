@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 751 — The hood's collar is darker than the hood
+
+**The ask.** The roll at the neck is the cloak at full brightness, so it reads as the hood.
+
+**The change.** That lathe bakes shade 0.68. Darker than the hood, clear of the strap (0.78), the buckle (0.62), and the void inside the opening (0). The office ghost reads the same colour. No new mesh.
+
+**Verified.** `tests/character.test.ts` counts collar vertices on the head bone, the hood still at shade 1, and the opening still at shade 0. Dropping the collar shade so it defaulted to 1 failed once (`the collar wears the hood: expected 0 to be greater than 20`).
+
+**Open.** The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 750 — The belt is darker than the coat
 
 **The ask.** The band around the waist is the cloak at full brightness, so the belt reads as the coat. The clasp was already darker.

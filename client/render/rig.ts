@@ -279,6 +279,8 @@ export const STRAP_SHADE = 0.78;
 export const PLATE_SHADE = 0.55;
 /** the belt on the cloak mesh: darker than the cloth, clear of the lining and the buckle */
 export const BELT_SHADE = 0.4;
+/** the hood's collar on the cloak mesh: darker than the hood, clear of the strap and the void */
+export const COLLAR_SHADE = 0.68;
 export const BODY_TRIANGLES = 2000;
 export const TRIM_TRIANGLES = 700;
 
@@ -312,7 +314,8 @@ function cloakParts(look = 0): THREE.BufferGeometry[] {
   if (sh.plateR) parts.push(cut(part(new THREE.BoxGeometry(0.14, 0.04, 0.2), at(0.235, 1.445, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.6)), fixed(BONE.chest), PLATE_SHADE), sh));
   if (sh.plateL) parts.push(cut(part(new THREE.BoxGeometry(0.14, 0.04, 0.2), at(-0.235, 1.445, 0).multiply(new THREE.Matrix4().makeRotationZ(0.6)), fixed(BONE.chest), PLATE_SHADE), sh));
   // the hood: a cowl at the neck, the shell with its face cut away and its crown pulled back, a void inside it
-  parts.push(part(lathe([[0.19, 1.44], [0.175, 1.5], [0.15, 1.56]], 12, { sx: 1.05, sz: 1, folds: 5, fold: () => 0.05 }), I.clone(), fixed(BONE.head)));
+  // the collar is the cloak mesh. Darker than the hood, so the neck is not the cowl.
+  parts.push(part(lathe([[0.19, 1.44], [0.175, 1.5], [0.15, 1.56]], 12, { sx: 1.05, sz: 1, folds: 5, fold: () => 0.05 }), I.clone(), fixed(BONE.head), COLLAR_SHADE));
   parts.push(part(hoodShell(1), I.clone(), fixed(BONE.head)));
   // faces are never lit: what the hood opening shows is its own inside, baked to black
   parts.push(part(inside(hoodShell(0.93)), I.clone(), fixed(BONE.head), 0));

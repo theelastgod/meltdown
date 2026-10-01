@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { encodeLook } from "@shared/identity/look";
-import { BELT_SHADE, BONE, BOOT_SHADE, BUCKLE_SHADE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, GLOVE_SHADE, PLATE_SHADE, REST_BONES, rigReport, STRAP_SHADE, trimGeometry } from "../client/render/rig";
+import { BELT_SHADE, BONE, BOOT_SHADE, BUCKLE_SHADE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, COLLAR_SHADE, GLOVE_SHADE, PLATE_SHADE, REST_BONES, rigReport, STRAP_SHADE, trimGeometry } from "../client/render/rig";
 import { citizenBodyGeometry, citizenHoodGeometry, citizenSwing, CITIZEN_LIMBS, CITIZEN_STRIDE, Crowd } from "../client/render/life";
 
 describe("the player's body", () => {
@@ -177,6 +177,29 @@ describe("the player's body", () => {
     expect(belt, "the belt wears the coat").toBeGreaterThan(20);
     expect(buckle, "the buckle went dark with the belt").toBeGreaterThan(8);
     expect(cloth, "the coat went dark with the belt").toBeGreaterThan(20);
+  });
+
+  it("the hood's collar is darker than the hood it sits under", () => {
+    const g = cloakGeometry(null);
+    const pos = g.getAttribute("position");
+    const shade = g.getAttribute("shade");
+    const idx = g.getAttribute("skinIndex");
+    let collar = 0;
+    let hood = 0;
+    let voidN = 0;
+    for (let i = 0; i < pos.count; i++) {
+      if (idx.getX(i) !== BONE.head) continue;
+      const s = shade.getX(i);
+      if (Math.abs(s - COLLAR_SHADE) < 1e-5) {
+        collar++;
+        expect(pos.getY(i)).toBeGreaterThan(1.35);
+        expect(pos.getY(i)).toBeLessThan(1.62);
+      } else if (s === 1) hood++;
+      else if (s === 0) voidN++;
+    }
+    expect(collar, "the collar wears the hood").toBeGreaterThan(20);
+    expect(hood, "the hood went dark with the collar").toBeGreaterThan(20);
+    expect(voidN, "the opening went dark with the collar").toBeGreaterThan(8);
   });
 
   it("no strip-light sits inside the coat's cloth", () => {
