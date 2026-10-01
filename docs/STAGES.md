@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 786 — Wern's lease line said so I froze it
+
+**The ask.** The next line still prints as a sentence: `So I froze it. A permanent lease. No one dreams, no one wakes, no one dies in the fire that was coming.`
+
+**The change.** `SO I FROZE IT. A PERMANENT LEASE. NO ONE DREAMS, NO ONE WAKES, NO ONE DIES IN THE FIRE THAT WAS COMING.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the leak script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'So I froze it. A permanent lease. No one dreams, no one wakes, no one dies in the fire that was coming.' to be 'SO I FROZE IT. A PERMANENT LEASE. NO ONE DREAMS, NO ONE WAKES, NO ONE DIES IN THE FIRE THAT WAS COMING.'`).
+
+**Open.** Calling the lease a cage still prints as a sentence. The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 785 — Wern's second line on the walk said twelve years of variance
 
 **The ask.** The next line still prints as a sentence: `Twelve years of variance, compounding. A city that participates in history is a city that ends.` The line above it is already the terminal.

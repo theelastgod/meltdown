@@ -645,6 +645,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"TWELVE YEARS OF VARIANCE, COMPOUNDING\. A CITY THAT PARTICIPATES IN HISTORY IS A CITY THAT ENDS\."/);
     expect(src).not.toMatch(/"Twelve years of variance, compounding\. A city that participates in history is a city that ends\."/);
   });
+
+  it("m4 Wern lease line is CRT, not so I froze it", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "w2")!.lines[0];
+    expect(line).toBe("SO I FROZE IT. A PERMANENT LEASE. NO ONE DREAMS, NO ONE WAKES, NO ONE DIES IN THE FIRE THAT WAS COMING.");
+    expect(line).not.toBe("So I froze it. A permanent lease. No one dreams, no one wakes, no one dies in the fire that was coming.");
+    expect(src).toMatch(/"SO I FROZE IT\. A PERMANENT LEASE\. NO ONE DREAMS, NO ONE WAKES, NO ONE DIES IN THE FIRE THAT WAS COMING\."/);
+    expect(src).not.toMatch(/"So I froze it\. A permanent lease\. No one dreams, no one wakes, no one dies in the fire that was coming\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
