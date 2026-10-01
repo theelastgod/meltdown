@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { closeHint, DISTRICT_FOOTER, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
+import { cityArrivalLine, cityContractsLine, closeHint, DISTRICT_FOOTER, menuFooter, openHint, receiptSignLine, reloadHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
 
 describe("a frame's close marker", () => {
   it("names the key on a keyboard", () => {
@@ -136,6 +136,20 @@ describe("the menu's footer (Stages 152, 163)", () => {
     expect(menuFooter(true, true, true)).toContain("[−]");
     expect(menuFooter(true, true, true)).toContain("[+]");
     expect(menuFooter(true, false, true)).not.toContain("[−]");
+  });
+});
+
+describe("the city objective", () => {
+  it("names the contracts tab on a phone and the key on a keyboard", () => {
+    expect(cityContractsLine(true)).toBe("TAP CONTRACTS · NO ONE HERE CAN HURT YOU BUT VANTAGE");
+    expect(cityContractsLine(true)).not.toMatch(/\[[A-Z]+\]/);
+    expect(cityContractsLine(false)).toBe("[J] CONTRACTS · NO ONE HERE CAN HURT YOU BUT VANTAGE");
+    expect(cityArrivalLine("LEASE ROW", true)).toBe("THE CITY · LEASE ROW · EVERYONE ONLINE WALKS THESE STREETS · TAP CONTRACTS");
+    expect(cityArrivalLine("LEASE ROW", true)).not.toMatch(/\[[A-Z]+\]/);
+    expect(cityArrivalLine("LEASE ROW", false)).toBe("THE CITY · LEASE ROW · EVERYONE ONLINE WALKS THESE STREETS · [J] CONTRACTS");
+    const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(campaign).toMatch(/cityContractsLine\(this\.game\.hud\.touch\)/);
+    expect(campaign).toMatch(/cityArrivalLine\(levelDisplayName\(this\.game\.levelId\), this\.game\.hud\.touch\)/);
   });
 });
 

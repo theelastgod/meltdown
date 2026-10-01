@@ -8,7 +8,7 @@
  */
 import { cityPageUrl, inCity } from "@shared/net/city";
 import type { Game } from "./game";
-import { closeHint } from "./hud/keyhint";
+import { cityArrivalLine, cityContractsLine, closeHint } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
 import { ENDINGS, endingCoda, endingTitle, endingsFor, gateOpen, handlersAlive, resolveEnding, testimonyLine, type Testimony } from "@shared/campaign/testimony";
 import { threatProfile, threatRating, type ThreatProfile } from "@shared/campaign/threat";
@@ -186,7 +186,7 @@ export class Campaign {
       // the gates are doors here, and the map says where each one goes (Stage 704)
       this.game.hud.setRadarGates(radarGates(gateSigns(this.game.world.level, this.mode)));
       this.cityObjective();
-      this.note(`THE CITY · ${levelDisplayName(this.game.levelId)} · EVERYONE ONLINE WALKS THESE STREETS · [J] CONTRACTS`);
+      this.note(cityArrivalLine(levelDisplayName(this.game.levelId), this.game.hud.touch));
       // the room may have told us about its public event before the file came back
       if (this.cityEvent) this.onCityEventMsg(this.cityEvent);
       return;
@@ -588,7 +588,7 @@ export class Campaign {
   // ---- the city's public events (Stage 699) ----
 
   private cityObjective(): void {
-    this.game.hud.setObjective(`◈ THE CITY · ${levelDisplayName(this.game.levelId)}`, "[J] CONTRACTS · NO ONE HERE CAN HURT YOU BUT VANTAGE", null);
+    this.game.hud.setObjective(`◈ THE CITY · ${levelDisplayName(this.game.levelId)}`, cityContractsLine(this.game.hud.touch), null);
   }
 
   /**

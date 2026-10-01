@@ -29,6 +29,16 @@ export function safeZoneLine(touch: boolean): string {
 /** The district select's footer. Travel reloads. The room, not this page, picks the district online. */
 export const DISTRICT_FOOTER = "TRAVEL RELOADS THE CLIENT. ONLINE, THE ROOM DECIDES THE DISTRICT.";
 
+/** The city's standing objective. A phone opens contracts from the tab. */
+export function cityContractsLine(touch: boolean): string {
+  return `${touch ? "TAP CONTRACTS" : "[J] CONTRACTS"} · NO ONE HERE CAN HURT YOU BUT VANTAGE`;
+}
+
+/** The line the city writes when the file arrives. */
+export function cityArrivalLine(district: string, touch: boolean): string {
+  return `THE CITY · ${district} · EVERYONE ONLINE WALKS THESE STREETS · ${touch ? "TAP CONTRACTS" : "[J] CONTRACTS"}`;
+}
+
 /** An empty magazine. A phone reloads on the pad labelled RLD. */
 export function reloadHint(touch: boolean): string {
   return touch ? "▼ TAP RLD" : "▼ RELOAD [R]";

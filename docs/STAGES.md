@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 813 — The city names the contracts tab
+
+**The ask.** Walking into the city still told a phone to press J: the objective said `[J] CONTRACTS`, and so did the arrival line. The tab is already on the phone.
+
+**The change.** A phone reads `TAP CONTRACTS` on the objective and on the arrival line. A keyboard still reads `[J] CONTRACTS`. Nothing new is paid for arriving.
+
+**Verified.** `tests/keyhint.test.ts` reads both lines. Putting the key back on the objective failed once (`expected '[J] CONTRACTS · NO ONE HERE CAN HURT YOU BUT VANTAGE' to be 'TAP CONTRACTS · NO ONE HERE CAN HURT YOU BUT VANTAGE'`).
+
+**Open.** A failed contract still tells a phone to press J and R.
+
 ## Stage 812 — An empty magazine names the reload pad
 
 **The ask.** An empty magazine still said `▼ RELOAD [R]`. A phone has no R. The pad on the screen is labelled RLD.
