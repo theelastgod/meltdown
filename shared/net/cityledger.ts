@@ -56,5 +56,5 @@ export function ledgerHudLine(progress: number, holding: boolean, touch: boolean
     const done = Math.max(0, Math.min(n, Math.floor(progress * n)));
     return `LEDGER DESK · ENTERING THE RUN ${"▮".repeat(done)}${"▯".repeat(n - done)}`;
   }
-  return touch ? "LEDGER DESK · TAP MARKET · WALK IN TO ENTER THE RUN" : "LEDGER DESK · [TAB] MARKET · WALK IN TO ENTER THE RUN";
+  return touch ? "LEDGER DESK · TAP MARKET · TAP NAME · WALK IN TO ENTER THE RUN" : "LEDGER DESK · [TAB] MARKET · [N] NAME · WALK IN TO ENTER THE RUN";
 }

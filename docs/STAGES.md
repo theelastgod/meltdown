@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 805 — The booth opened a name desk
+
+**The ask.** Writing a name meant opening the whole Ledger Market: listings, the run, the prizes, the sinks. The booth only named the market.
+
+**The change.** N, and a tap on the booth line when it says NAME, open a panel that is the name and the burn. It does not draw the market. The name still burns $CAPITAL by length. It still buys no stat. Tab still opens the market.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads the desk source and the booth line. Putting the old booth line back failed once (`expected 'LEDGER DESK · TAP MARKET · WALK IN TO ENTER THE RUN' to be 'LEDGER DESK · TAP MARKET · TAP NAME · WALK IN TO ENTER THE RUN'`).
+
+**Open.** The world map still calls the booth only a market.
+
 ## Stage 804 — The CONTRACTS tab opened the desk
 
 **The ask.** The tab row draws CONTRACTS and the click does nothing. J opens the desk. The tab does not, so a thumb taps a dead label.

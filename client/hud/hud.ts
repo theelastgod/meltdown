@@ -52,6 +52,8 @@ export class Hud {
   marketToggle: (() => void) | null = null;
   /** The CONTRACTS tab. Unset, the tab is the dead label it was. */
   contractsToggle: (() => void) | null = null;
+  /** A tap on the booth line when it names the name desk. */
+  gateTap: (() => void) | null = null;
   onStamp: (() => void) | null = null;
   private radar: CanvasRenderingContext2D;
   private locked = false;
@@ -442,7 +444,14 @@ export class Hud {
     const el = this.q(".gatehint");
     el.hidden = line === null;
     el.textContent = line ?? "";
+    if (!this.gateBound) {
+      this.gateBound = true;
+      el.onclick = () => {
+        if (this.gateLine?.includes("NAME")) this.gateTap?.();
+      };
+    }
   }
+  private gateBound = false;
   private gateLine: string | null = null;
   /** the gate line as shown, for the probe */
   get gateText(): string | null {

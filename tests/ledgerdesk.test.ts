@@ -47,9 +47,10 @@ describe("the plaza booth", () => {
     expect(hold.go).toBe(true);
     expect(ticks).toBe(Math.round(1 / SIM_DT));
     expect(holdProgress(hold.hold)).toBe(1);
-    expect(ledgerHudLine(0, false, true)).toBe("LEDGER DESK · TAP MARKET · WALK IN TO ENTER THE RUN");
+    expect(ledgerHudLine(0, false, true)).toBe("LEDGER DESK · TAP MARKET · TAP NAME · WALK IN TO ENTER THE RUN");
     expect(ledgerHudLine(0, false, true)).not.toMatch(/\[[A-Z]+\]/);
-    expect(ledgerHudLine(0, false, false)).toBe("LEDGER DESK · [TAB] MARKET · WALK IN TO ENTER THE RUN");
+    expect(ledgerHudLine(0, false, false)).toBe("LEDGER DESK · [TAB] MARKET · [N] NAME · WALK IN TO ENTER THE RUN");
+    expect(ledgerHudLine(0, false, false)).not.toBe("LEDGER DESK · [TAB] MARKET · WALK IN TO ENTER THE RUN");
     expect(ledgerHudLine(0.5, true, false)).toContain("ENTERING THE RUN");
   });
 });
@@ -77,5 +78,16 @@ describe("the trip", () => {
     const map = readFileSync(new URL("../client/worldmap.ts", import.meta.url), "utf8");
     expect(map).toMatch(/data-wm-run="/);
     expect(map).toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
+  });
+
+  it("the name desk is not the market panel", () => {
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const desk = file.slice(file.indexOf("nameDeskHtml():"), file.indexOf("counterHtml():"));
+    expect(desk).toMatch(/▲ NAME DESK/);
+    expect(desk).not.toMatch(/LEDGER MARKET/);
+    expect(file).toMatch(/e\.code === "KeyN"/);
+    expect(file).toMatch(/panelSection === "name"/);
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(game).toMatch(/gateTap = \(\) => this\.file\.toggle\(true, "name"\)/);
   });
 });

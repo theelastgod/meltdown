@@ -229,6 +229,8 @@ export class Game {
     this.file.mount(hudRoot);
     // the MARKET tab was a label. It opens the same panel Tab opens from a kiosk, on the market.
     this.hud.marketToggle = () => this.file.toggle(true, "market");
+    // the booth's name line is the name desk, not the listings
+    this.hud.gateTap = () => this.file.toggle(true, "name");
     this.hud.setFile(this.file.view());
     this.file.onChange = (f) => {
       // offline the loadout applies at once; online the server decides at the next link

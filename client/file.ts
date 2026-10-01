@@ -228,6 +228,8 @@ export class GhostFile {
   onJoinAudit: (() => void) | null = null;
   /** which section Tab opens on: the game answers "market" from a safe zone's kiosk */
   openSection: () => "top" | "market" = () => "top";
+  /** which panel is up: the name desk is not the market */
+  panelSection: "top" | "market" | "name" = "top";
 
   /** Fetch the endgame board (host-wide) and the file's daily progress. */
   async loadEndgame(): Promise<boolean> {
@@ -593,6 +595,10 @@ export class GhostFile {
         e.preventDefault();
         this.toggle(undefined, this.openSection());
       }
+      if (e.code === "KeyN" && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+        if (this.open && this.panelSection === "name") this.toggle(false);
+        else this.toggle(true, "name");
+      }
       if (e.code === "KeyG") this.toggleGraph();
       if (e.code === "Escape") {
         if (this.open) this.toggle(false);
@@ -618,6 +624,23 @@ export class GhostFile {
     this.render();
   }
 
+  /** The name row. Empty until the other book can see the wallet. A burn, never a stat. */
+  private nameLine(): string {
+    const v = this.counterState;
+    if (!v?.linked) return "";
+    if (v.name) return `NAME <b class="ye">${v.name}</b> <span class="dim">WRITTEN WHERE THEY CAN'T REDACT IT</span>`;
+    if (v.nameOpen) return `NAME <input data-name="1" maxlength="24" placeholder="3–24 · A-Z 0-9 _ -"> <span class="btn" data-act="registerName">[WRITE IT]</span> <span class="dim">${nameFee(3)}–${nameFee(12)} $CAPITAL BY LENGTH, BURNED</span>`;
+    return `NAME <span class="dim">THE REGISTRY OPENS AT DEPTH ${NAME_DEPTH}</span>`;
+  }
+
+  /** The name desk: the name, and nothing the market sells. */
+  nameDeskHtml(): string {
+    const name = this.nameLine();
+    return `<div class="hd">▲ NAME DESK <span class="x" data-act="close">${closeHint("N", this.touchHud)}</span></div>
+      <div class="ln dim">A NAME IS BURNED. IT DOES NOT BUY DAMAGE. IT DOES NOT BUY ARMOR. IT DOES NOT BUY A NODE.</div>
+      <div class="ln">${name || `<span class="dim">LINK A WALLET. THE DESK WRITES NOTHING UNTIL THE OTHER BOOK CAN SEE YOU.</span>`}</div>`;
+  }
+
   /** COUNTER-LEDGER // $CAPITAL: the wallet link, the Ghostfile, the stamps on chain, the name, the rig and the market. Identity and ownership only. */
   counterHtml(): string {
     const c = this.counter;
@@ -626,7 +649,7 @@ export class GhostFile {
     const info = c.info;
     const wallet = c.address ? `WALLET <b>${c.short()}</b>` : `<span class="btn" data-act="link">[LINK A WALLET]</span> <span class="dim">ROBINHOOD WALLET · WALLETCONNECT · INJECTED</span>`;
     const linked = v?.linked ? `LINKED <b>${v.address!.slice(0, 6)}…${v.address!.slice(-4)}</b> · GHOSTFILE <b>${v.ghostfile ? "#" + v.ghostfile : "—"}</b> · STAMPS ON CHAIN <b>${v.stamps}</b>/${this.stamps.length} ${this.stamps.length > v.stamps ? `<span class="btn" data-act="attestStamps">[ATTEST]</span>` : ""} · $CAPITAL <b>${Number(v.capital).toFixed(0)}</b> <span class="btn" data-act="reconcile">[RECONCILE]</span>` : c.address ? `<span class="btn" data-act="link">[SIGN THE LINK]</span> <span class="dim">ONE SIWE STATEMENT; THE GHOSTFILE MINTS WITH SPONSORED GAS</span>` : "";
-    const name = v?.linked ? (v.name ? `NAME <b class="ye">${v.name}</b> <span class="dim">WRITTEN WHERE THEY CAN'T REDACT IT</span>` : v.nameOpen ? `NAME <input data-name="1" maxlength="24" placeholder="3–24 · A-Z 0-9 _ -"> <span class="btn" data-act="registerName">[WRITE IT]</span> <span class="dim">${nameFee(3)}–${nameFee(12)} $CAPITAL BY LENGTH, BURNED</span>` : `NAME <span class="dim">THE REGISTRY OPENS AT DEPTH ${NAME_DEPTH}</span>`) : "";
+    const name = this.nameLine();
     const rig = v?.linked ? `RIG ${v.rig.length ? v.rig.map((r) => `<span class="btn ${r.worn ? "on" : ""}" data-act="wear" data-id="${r.worn ? 0 : r.token}">[${r.name}${r.worn ? " · WORN" : ""}]</span> <span class="btn" data-act="sell" data-id="${r.token}">[SELL]</span>`).join(" ") : "<span class='dim'>NOTHING ON THE RIG YET</span>"}` : "";
     const market = (info?.listings ?? []).map((l) => {
       const s = v?.skins.find((k) => k.token === l.token);
@@ -767,8 +790,9 @@ export class GhostFile {
     return this.open;
   }
 
-  toggle(on = !this.open, section: "top" | "market" = "top"): void {
+  toggle(on = !this.open, section: "top" | "market" | "name" = "top"): void {
     this.open = on;
+    if (on) this.panelSection = section;
     if (on) void this.ensureCounter(); // opening the ledger is the first moment the chain client is wanted
     if (this.panel) this.panel.hidden = !on;
     if (on) document.exitPointerLock?.();
@@ -779,6 +803,10 @@ export class GhostFile {
 
   render(): void {
     if (!this.panel || !this.open) return;
+    if (this.panelSection === "name") {
+      this.panel.innerHTML = this.nameDeskHtml();
+      return;
+    }
     const v = this.view();
     const attested = Array.isArray(this.raw.attested) ? (this.raw.attested as string[]) : [];
     const keystone = typeof this.raw.keystone === "string" ? this.raw.keystone : null;
