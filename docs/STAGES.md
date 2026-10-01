@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 830 — The wallet row tells a phone to tap
+
+**The ask.** The Counter-Ledger offered [LINK A WALLET] when nothing was connected. Those brackets are a button on a keyboard. On a phone they read as a key, and a phone has no key that matches them. Linking still burns nothing and buys no stat.
+
+**The change.** A phone sees TAP LINK A WALLET. A keyboard still sees the bracketed button. The sentence on the name desk is unchanged.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads the row. Putting the brackets back failed once (`expected the row to match /crewButton("LINK A WALLET", this.touchHud)/`).
+
+**Open.** Once a wallet is connected and not yet signed, the same row still says [SIGN THE LINK] on a phone.
+
 ## Stage 829 — The name desk tells a phone to tap
 
 **The ask.** The name desk offered [WRITE IT]. Those brackets are a button on a keyboard. On a phone they read as a key, and a phone has no key that matches them. The burn is unchanged.
