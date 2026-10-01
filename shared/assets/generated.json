@@ -2239,5 +2239,41 @@
     "bytes": 126304,
     "sha256": "3a46d04ad47dbc3b09dfe16893697313a2de3d3a8213532aeebe2fb23ea49486",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_manhole_plate",
+    "kind": "texture",
+    "file": "skin_manhole_plate.png",
+    "size": 256,
+    "bytes": 139765,
+    "sha256": "7b8d330dcaad52693676e2132616ba6da427f3e4be22a12378fe436cebe9b9fa",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_catwalk_plate",
+    "kind": "texture",
+    "file": "skin_catwalk_plate.png",
+    "size": 256,
+    "bytes": 126291,
+    "sha256": "d770ab1195cbbae3fdcc0383f2cef079e35da61ee3876a983ff77e27b5c51da9",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_joist_plate",
+    "kind": "texture",
+    "file": "skin_joist_plate.png",
+    "size": 256,
+    "bytes": 111913,
+    "sha256": "d2f92fab83afcadad234f2bd7e9cc8a0368e8250ab72d81918fb42cc5f7a6bd7",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_flashing_plate",
+    "kind": "texture",
+    "file": "skin_flashing_plate.png",
+    "size": 256,
+    "bytes": 122997,
+    "sha256": "471948b8f5b014aaeb5032ee29e51ce6d746c198fc1c6c08531f442c3785c26c",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]

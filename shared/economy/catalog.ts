@@ -135,6 +135,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(97, "skin_corrugate", "CORRUGATE", "DARK CORRUGATED SHEET, CYAN IN THE VALLEY", 82, 0xc261, "#f2f4ff", "skin_corrugate_plate"),
   skin(98, "skin_membrane", "MEMBRANE", "DARK ROOF MEMBRANE, ONE CYAN SEAM", 48, 0xc262, "#35f2ff", "skin_membrane_plate"),
   skin(99, "skin_insulator", "INSULATOR", "DARK CERAMIC INSULATOR, A CYAN GLAZE CRACK", 62, 0xc263, "#ff3ec9", "skin_insulator_plate"),
+  skin(100, "skin_manhole", "MANHOLE", "DARK MANHOLE TREAD, NO LETTERS, CYAN IN THE CAST", 74, 0xc264, "#ffb02e", "skin_manhole_plate"),
+  skin(101, "skin_catwalk", "CATWALK", "DARK CATWALK GRATING, MAGENTA AT THE FAR EDGE", 88, 0xc265, "#37ff8b", "skin_catwalk_plate"),
+  skin(102, "skin_joist", "JOIST", "DARK JOIST STEEL, ONE CYAN FLANGE", 96, 0xc266, "#8f4dff", "skin_joist_plate"),
+  skin(103, "skin_flashing", "FLASHING", "DARK METAL FLASHING, A CYAN DRIP EDGE", 110, 0xc267, "#ffd27a", "skin_flashing_plate"),
 ];
 
 /**
