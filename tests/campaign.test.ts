@@ -690,6 +690,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"EVERYTHING\. TONIGHT THE CITY CLOSES ITS EYES\."/);
     expect(src).not.toMatch(/"Everything\. Tonight the city closes its eyes\."/);
   });
+
+  it("m5 spare line is CRT, not the docks keep their lattice", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m5_lattice")!.nodes.find((n) => n.id === "spare")!.lines[0];
+    expect(line).toBe("THE DOCKS KEEP THEIR LATTICE. SHIPS NEED A WITNESS. SO DO WE.");
+    expect(line).not.toBe("The docks keep their lattice. Ships need a witness. So do we.");
+    expect(src).toMatch(/"THE DOCKS KEEP THEIR LATTICE\. SHIPS NEED A WITNESS\. SO DO WE\."/);
+    expect(src).not.toMatch(/"The docks keep their lattice\. Ships need a witness\. So do we\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

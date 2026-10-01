@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 791 — Sparing the docks said ships need a witness
+
+**The ask.** Leaving the docks their lattice still prints a sentence: `The docks keep their lattice. Ships need a witness. So do we.` The choice above it is already the terminal.
+
+**The change.** `THE DOCKS KEEP THEIR LATTICE. SHIPS NEED A WITNESS. SO DO WE.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the lattice script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'The docks keep their lattice. Ships need a witness. So do we.' to be 'THE DOCKS KEEP THEIR LATTICE. SHIPS NEED A WITNESS. SO DO WE.'`).
+
+**Open.** The full broadcast still prints as a sentence.
+
 ## Stage 790 — Blinding the lattice said everything tonight
 
 **The ask.** Putting the sensors out still prints a sentence: `Everything. Tonight the city closes its eyes.` The choice above it is already the terminal.

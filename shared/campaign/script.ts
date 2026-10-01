@@ -209,7 +209,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
         ],
       }),
       n("all", "you", ["EVERYTHING. TONIGHT THE CITY CLOSES ITS EYES."]),
-      n("spare", "deacon", ["The docks keep their lattice. Ships need a witness. So do we."]),
+      n("spare", "deacon", ["THE DOCKS KEEP THEIR LATTICE. SHIPS NEED A WITNESS. SO DO WE."]),
     ],
   },
   {
