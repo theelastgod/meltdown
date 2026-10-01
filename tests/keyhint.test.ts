@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { closeHint, menuFooter, openHint, settingsLine, tabOpens } from "../client/hud/keyhint";
+import { closeHint, menuFooter, openHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
 
 describe("a frame's close marker", () => {
   it("names the key on a keyboard", () => {
@@ -51,6 +51,18 @@ describe("the NAME tab", () => {
     expect(hud).toMatch(/class="tab">NAME<span/);
     expect(hud).toMatch(/op === "name" && this\.nameToggle/);
     expect(game).toMatch(/nameToggle = \(\) => this\.file\.toggle\(true, "name"\)/);
+  });
+});
+
+describe("a safe zone", () => {
+  it("names the market and the name desk, and a phone is not told to press a key", () => {
+    expect(safeZoneLine(true)).toBe("SAFE ZONE · TAP MARKET · TAP NAME");
+    expect(safeZoneLine(true)).not.toMatch(/\[[A-Z]+\]/);
+    expect(safeZoneLine(false)).toBe("SAFE ZONE · [TAB] MARKET · [N] NAME");
+    expect(safeZoneLine(false)).not.toBe("SAFE ZONE · [TAB] MARKET");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/safeZoneLine\(this\.touch\)/);
+    expect(hud).not.toMatch(/SAFE ZONE · <span class="zone">\$\{openHint\("TAB", "MARKET"/);
   });
 });
 

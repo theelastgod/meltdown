@@ -25,7 +25,7 @@ import { footTag, footTagText } from "./footline";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { alertOnCut, platePass, plateTop } from "./faceplate";
 import { terminalFooter, terminalSeat } from "./terminal";
-import { closeHint, openHint, tabOpens } from "./keyhint";
+import { closeHint, safeZoneLine, tabOpens } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
 import { nodeClockNote, type NodeReadout } from "./node";
 import { gateMarks, nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type GateMark, type RadarGate, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
@@ -389,7 +389,7 @@ export class Hud {
     el.hidden = !v;
     document.getElementById("hud")?.classList.toggle("safe", !!v?.inSafe);
     if (!v) return;
-    const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? `SAFE ZONE · <span class="zone">${openHint("TAB", "MARKET", this.touch)}</span>` : `<span class="pvp">PVP ZONE</span>`;
+    const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? `<span class="zone">${safeZoneLine(this.touch)}</span>` : `<span class="pvp">PVP ZONE</span>`;
     el.innerHTML = `${capitalMark()}CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · OWED <b>${v.owed}</b> ${unitsLabel(v.owed)} · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${claimsWord(v.claims)}`;
   }
 

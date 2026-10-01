@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 808 — A safe zone named the name desk
+
+**The ask.** Standing in a safe zone still offered only the market: `SAFE ZONE · [TAB] MARKET`. The name desk already burns, and the strip did not say so.
+
+**The change.** `SAFE ZONE · [TAB] MARKET · [N] NAME` on a keyboard, and `SAFE ZONE · TAP MARKET · TAP NAME` on a phone. TAP MARKET is still there. A phone is still not shown a bracketed key. Nothing new is paid for standing in the zone.
+
+**Verified.** `tests/keyhint.test.ts` reads the line. Putting the old phone line back failed once (`expected 'SAFE ZONE · TAP MARKET' to be 'SAFE ZONE · TAP MARKET · TAP NAME'`).
+
+**Open.** The district select still prints its footer as a sentence.
+
 ## Stage 807 — The NAME tab opened the name desk
 
 **The ask.** A phone has no N key. The tab row drew FILE, GRAPH, MAP, MARKET and CONTRACTS, and not NAME, so the name desk was only a booth line or a key the phone does not have.

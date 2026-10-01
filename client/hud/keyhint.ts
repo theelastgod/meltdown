@@ -21,6 +21,11 @@ export function openHint(key: string, what: string, touch: boolean): string {
   return touch ? `TAP ${what}` : `[${key}] ${what}`;
 }
 
+/** What a safe zone offers: the market spends, the name desk burns. A phone is not told to press a key. */
+export function safeZoneLine(touch: boolean): string {
+  return `SAFE ZONE · ${openHint("TAB", "MARKET", touch)} · ${openHint("N", "NAME", touch)}`;
+}
+
 /** What a HUD tab opens. MAP before anything else: a label is matched once. */
 export function tabOpens(label: string): "file" | "graph" | "map" | "market" | "contracts" | "name" | null {
   if (/MAP/.test(label)) return "map";
