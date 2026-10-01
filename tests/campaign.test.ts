@@ -654,6 +654,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"SO I FROZE IT\. A PERMANENT LEASE\. NO ONE DREAMS, NO ONE WAKES, NO ONE DIES IN THE FIRE THAT WAS COMING\."/);
     expect(src).not.toMatch(/"So I froze it\. A permanent lease\. No one dreams, no one wakes, no one dies in the fire that was coming\."/);
   });
+
+  it("m4 Wern cage line is CRT, not you call it a cage", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "w2")!.lines[1];
+    expect(line).toBe("YOU CALL IT A CAGE. ASK THE PEOPLE IN IT WHETHER THEY'D LIKE THE FIRE BACK.");
+    expect(line).not.toBe("You call it a cage. Ask the people in it whether they'd like the fire back.");
+    expect(src).toMatch(/"YOU CALL IT A CAGE\. ASK THE PEOPLE IN IT WHETHER THEY'D LIKE THE FIRE BACK\."/);
+    expect(src).not.toMatch(/"You call it a cage\. Ask the people in it whether they'd like the fire back\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
