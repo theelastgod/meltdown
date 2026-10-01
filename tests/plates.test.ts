@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { ASSETS } from "../shared/assets/manifest";
 import { CLIENT_RENDER_SOURCES, lintPlatesAreDrawn } from "../shared/assets/lint";
 import { PLATE_POOLS, platePick, pooledPlates, reachablePlates, SHIPPED_DISTRICT_SEEDS, UNDRAWN_PLATES, type PlateFamily } from "../shared/assets/plates";
+import { SKINS } from "../shared/economy/catalog";
 
 const families = Object.keys(PLATE_POOLS) as PlateFamily[];
 
@@ -51,6 +52,15 @@ describe("the plate a district wears", () => {
     const city = readFileSync(new URL("../client/render/city.ts", import.meta.url), "utf8");
     expect(city).toMatch(/bindPlate\(M\.awningMg, platePick\("awning", seed\)\)/);
     expect(city).toMatch(/bindPlate\(M\.metro, platePick\("metro", seed\)\)/);
+  });
+
+  it("wears every rig plate from seam through teardrop, which a catalog line alone does not do", () => {
+    const mill = SKINS.filter((s) => s.token >= 58 && s.token <= 162 && s.texture).map((s) => s.texture!);
+    expect(mill).toHaveLength(105);
+    const reach = new Set(reachablePlates());
+    // Quoted in catalog.ts, these already pass the asset lint. Taking one out of its pool fails here.
+    expect(mill.filter((id) => !reach.has(id))).toEqual([]);
+    for (const pool of Object.values(PLATE_POOLS)) expect(pool.length).toBeLessThanOrEqual(SHIPPED_DISTRICT_SEEDS.length);
   });
 });
 
