@@ -106,6 +106,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(68, "skin_grate", "GRATE", "DARK STORM GRATE, CYAN LIGHT IN THE SLOTS", 74, 0xc244, "#ffb02e", "skin_grate_plate"),
   skin(69, "skin_pipe", "PIPE", "BUNDLED BLACK PIPES, ONE CYAN BAND, NO LABELS", 88, 0xc245, "#37ff8b", "skin_pipe_plate"),
   skin(70, "skin_patina", "PATINA", "DARK STEEL WITH A COOL DULL PATINA, NO BRIGHT RUST", 96, 0xc246, "#8f4dff", "skin_patina_plate"),
+  skin(71, "skin_glass", "GLASS", "BLACK GLASS, A THIN MAGENTA EDGE", 110, 0xc247, "#ffd27a", "skin_glass_plate"),
+  skin(72, "skin_cloth", "CLOTH", "DARK HANGING CLOTH, MAGENTA HEM, NO LETTERS", 58, 0xc248, "#8fd8ff", "skin_cloth_plate"),
+  skin(73, "skin_tube", "TUBE", "DARK WALL, ONE THIN CYAN TUBE, NO SIGN", 82, 0xc249, "#f2f4ff", "skin_tube_plate"),
+  skin(74, "skin_foam", "FOAM", "DARK ACOUSTIC FOAM, ONE CYAN PIT", 48, 0xc24a, "#35f2ff", "skin_foam_plate"),
 ];
 
 /**
