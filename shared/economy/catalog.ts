@@ -101,6 +101,7 @@ export const SKINS: readonly SkinDef[] = [
   skin(63, "skin_duct", "DUCT", "DARK SQUARE DUCT, A MAGENTA CORNER", 110, 0xc23f, "#ffd27a", "skin_duct_plate"),
   skin(64, "skin_crack", "CRACK", "NEAR-BLACK CONCRETE, THIN GREEN IN THE CRACKS", 58, 0xc240, "#8fd8ff", "skin_crack_plate"),
   skin(65, "skin_nosing", "NOSING", "DARK STAIR NOSING, ONE CYAN WEAR LINE", 82, 0xc241, "#f2f4ff", "skin_nosing_plate"),
+  skin(66, "skin_kerb", "KERB", "DARK KERB STONE, WET, A CYAN EDGE", 48, 0xc242, "#35f2ff", "skin_kerb_plate"),
 ];
 
 /**
