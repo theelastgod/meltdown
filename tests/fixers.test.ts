@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, TROUSER_SHADE, VESSEL_HIP, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -138,6 +138,33 @@ describe("the fixers, in the flesh", () => {
     const escort = readFileSync(new URL("../client/render/escort.ts", import.meta.url), "utf8");
     expect(figures).toMatch(/new THREE\.MeshStandardMaterial\(\{ color: 0x06070b, roughness: 0\.95, vertexColors: true \}\)/);
     expect(escort).toMatch(/new THREE\.MeshStandardMaterial\(\{ color: 0x06070b, roughness: 0\.95, vertexColors: true \}\)/);
+  });
+
+  it("Ida's trousers are darker than the coat", () => {
+    const tally = (g: THREE.BufferGeometry, hip: number) => {
+      const color = g.getAttribute("color");
+      const pos = g.getAttribute("position");
+      let trouser = 0;
+      let boot = 0;
+      for (let i = 0; i < color.count; i++) {
+        const c = color.getX(i);
+        const y = pos.getY(i);
+        if (Math.abs(c - TROUSER_SHADE) < 1e-5) {
+          trouser++;
+          expect(y).toBeLessThan(hip + 0.02);
+          expect(y).toBeGreaterThan(hip - 0.55);
+        } else if (c === 1 && y < hip - 0.45) boot++;
+      }
+      return { trouser, boot };
+    };
+    const stand = tally(fixerGeometry("vessel").body, VESSEL_HIP.y);
+    const walk = tally(vesselWalkerGeometry().leg, 0);
+    expect(stand.trouser, "the trousers wear the coat").toBeGreaterThan(20);
+    expect(walk.trouser, "the walk wears the coat").toBeGreaterThan(16);
+    expect(stand.boot, "the boot went dark with the trouser").toBeGreaterThan(8);
+    expect(walk.boot, "the walking boot went dark with the trouser").toBeGreaterThan(8);
+    const wern = fixerGeometry("wern").body.getAttribute("color");
+    for (let i = 0; i < wern.count; i++) expect(Math.abs(wern.getX(i) - TROUSER_SHADE)).toBeGreaterThan(1e-5);
   });
 });
 

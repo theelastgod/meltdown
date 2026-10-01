@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 753 — Ida's trousers are darker than the coat
+
+**The ask.** The leg under the hem is the coat mesh at full brightness, so the stride reads as cloth that has not ended. The boot was left as the coat.
+
+**The change.** The trouser cylinder bakes shade 0.33. Darker than the coat, clear of the hair (0.46) and the unlit face. The walk uses the same leg. No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts trouser vertices on the standing figure and on the walker, and boot vertices still at shade 1. Leaving the trouser unpainted failed once (`the trousers wear the coat: expected 0 to be greater than 20`).
+
+**Open.** Ida's boots still wear the coat.
+
 ## Stage 752 — The hair is darker than the coat
 
 **The ask.** Ida and Wern have no hood. Stage 743 kept the hair from going black with the face, so the crown wore the coat. A bare head read as cloth with a hole in it.

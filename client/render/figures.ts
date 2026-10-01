@@ -42,6 +42,8 @@ const T = (x: number, y: number, z: number) => new THREE.Matrix4().makeTranslati
 const put = (g: THREE.BufferGeometry, m: THREE.Matrix4) => g.applyMatrix4(m);
 /** hair on a bare head: darker than the coat (1), not the unlit face (0) */
 export const HAIR_SHADE = 0.46;
+/** Ida's trousers: darker than the coat, not the hair and not a boot */
+export const TROUSER_SHADE = 0.33;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -160,7 +162,8 @@ export const VESSEL_HIP = { x: 0.09, y: 0.72 } as const;
 /** one of Ida's legs, trouser, boot and shoe, standing under a hip at x = 0 */
 function vesselLeg(): THREE.BufferGeometry[] {
   return [
-    put(new THREE.CylinderGeometry(0.065, 0.058, 0.5, 8), T(0, VESSEL_HIP.y - 0.25, 0)),
+    // the trouser is the coat's mesh. Darker than the cloth, so the leg is not the hem. The boot stays cloth.
+    paint(put(new THREE.CylinderGeometry(0.065, 0.058, 0.5, 8), T(0, VESSEL_HIP.y - 0.25, 0)), TROUSER_SHADE),
     put(new THREE.CylinderGeometry(0.068, 0.072, 0.24, 8), T(0, 0.12, 0)),
     put(new THREE.BoxGeometry(0.1, 0.06, 0.22), T(0, 0.03, -0.04)),
   ];
