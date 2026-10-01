@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 842 — Wearing a rig plate tells a phone to tap
+
+**The ask.** A plate on the rig offered its name in brackets, and WORN once it was on. Those brackets are a button on a keyboard. On a phone they read as a key. Wearing still only changes which plate is on. It does not buy a stat.
+
+**The change.** A phone sees TAP and the plate's name. A keyboard still sees the bracketed name. An empty rig still reads NOTHING ON THE RIG YET.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton(\`${r.name}${r.worn ? " · WORN" : ""}`, this.touchHud)/`).
+
+**Open.** The Audit row still says [JOIN THE AUDIT] on a phone.
+
 ## Stage 841 — Selling a rig plate tells a phone to tap
 
 **The ask.** A plate on the rig offered [SELL]. Those brackets are a button on a keyboard. On a phone they read as a key. Selling still lists a plate the file already owns. It does not mint one and it does not buy a stat.

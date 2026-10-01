@@ -96,6 +96,18 @@ describe("the trip", () => {
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
+  it("wearing a rig plate names a tap on a phone", () => {
+    expect(crewButton("TEARDROP", true)).toBe("TAP TEARDROP");
+    expect(crewButton("TEARDROP · WORN", true)).toBe("TAP TEARDROP · WORN");
+    expect(crewButton("TEARDROP", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("TEARDROP", false)).toBe("[TEARDROP]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const start = file.indexOf("const rig =");
+    const row = file.slice(start, file.indexOf("const market", start));
+    expect(row).toMatch(/data-act="wear" data-id="\$\{r\.worn \? 0 : r\.token\}">\$\{crewButton\(`\$\{r\.name\}\$\{r\.worn \? " · WORN" : ""\}`, this\.touchHud\)\}/);
+    expect(row).not.toMatch(/data-act="wear"[^>]*>\[/);
+  });
+
   it("selling a rig plate names a tap on a phone", () => {
     expect(crewButton("SELL", true)).toBe("TAP SELL");
     expect(crewButton("SELL", true)).not.toMatch(/\[[A-Z]/);
