@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 798 — The lease still needs an author, in the terminal
+
+**The ask.** His next line in the office still prints a sentence: `The lease system needs an author. I have been that author for twelve years and I am tired.` The one-eye recall above it is already the terminal.
+
+**The change.** `THE LEASE SYSTEM NEEDS AN AUTHOR. I HAVE BEEN THAT AUTHOR FOR TWELVE YEARS AND I AM TIRED.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the office script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'The lease system needs an author. I have been that author for twelve years and I am tired.' to be 'THE LEASE SYSTEM NEEDS AN AUTHOR. I HAVE BEEN THAT AUTHOR FOR TWELVE YEARS AND I AM TIRED.'`).
+
+**Open.** Wiping the ledger still prints as a sentence.
+
 ## Stage 797 — The one-eye recall said you left me the docks
 
 **The ask.** Sparing the docks still prints a sentence when Wern remembers it: `You left me the docks. One eye. I have watched the ships come in every night since and understood none of it.` The blind recall beside it is already the terminal.

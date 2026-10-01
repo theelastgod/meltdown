@@ -753,6 +753,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"YOU LEFT ME THE DOCKS\. ONE EYE\. I HAVE WATCHED THE SHIPS COME IN EVERY NIGHT SINCE AND UNDERSTOOD NONE OF IT\."/);
     expect(src).not.toMatch(/"You left me the docks\. One eye\. I have watched the ships come in every night since and understood none of it\."/);
   });
+
+  it("m7 author line is CRT, not the lease system needs an author", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "b")!.lines[0];
+    expect(line).toBe("THE LEASE SYSTEM NEEDS AN AUTHOR. I HAVE BEEN THAT AUTHOR FOR TWELVE YEARS AND I AM TIRED.");
+    expect(line).not.toBe("The lease system needs an author. I have been that author for twelve years and I am tired.");
+    expect(src).toMatch(/"THE LEASE SYSTEM NEEDS AN AUTHOR\. I HAVE BEEN THAT AUTHOR FOR TWELVE YEARS AND I AM TIRED\."/);
+    expect(src).not.toMatch(/"The lease system needs an author\. I have been that author for twelve years and I am tired\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
