@@ -277,6 +277,8 @@ export const BUCKLE_SHADE = 0.62;
 export const STRAP_SHADE = 0.78;
 /** a shoulder plate on the cloak mesh: darker than the strap, clear of the buckle */
 export const PLATE_SHADE = 0.55;
+/** the belt on the cloak mesh: darker than the cloth, clear of the lining and the buckle */
+export const BELT_SHADE = 0.4;
 export const BODY_TRIANGLES = 2000;
 export const TRIM_TRIANGLES = 700;
 
@@ -300,8 +302,8 @@ function cloakParts(look = 0): THREE.BufferGeometry[] {
   // the coat below the belt, split at the front, folded toward the hem; its inside is in shadow
   parts.push(cut(part(lathe(coat, 16, { ...SKIRT_S, folds: 7, fold: skirtFold, gap: SKIRT_GAP }), I.clone(), tubeWeights), sh));
   parts.push(cut(part(inside(lathe(coat, 16, { ...SKIRT_S, folds: 7, fold: skirtFold, gap: SKIRT_GAP })), I.clone(), tubeWeights, 0.35), sh));
-  // belt, buckle, and a strap across the chest
-  parts.push(cut(part(lathe([[0.19, 0.965], [0.19, 1.03]], 14, { sx: 1.08, sz: 0.86 }), I.clone(), tubeWeights), sh));
+  // belt, buckle, and a strap across the chest. The belt is the cloak mesh, darker than the coat.
+  parts.push(cut(part(lathe([[0.19, 0.965], [0.19, 1.03]], 14, { sx: 1.08, sz: 0.86 }), I.clone(), tubeWeights, BELT_SHADE), sh));
   // the buckle is the cloak mesh. Darker than the belt, so the clasp is not the cloth.
   parts.push(cut(part(new THREE.BoxGeometry(0.075, 0.06, 0.025), at(0, 0.998, -0.19 * 0.86 - 0.01), tubeWeights, BUCKLE_SHADE), sh));
   // the strap is the cloak mesh. Darker than the cloth, so the band is not the chest.

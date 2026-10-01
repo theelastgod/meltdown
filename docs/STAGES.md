@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 750 — The belt is darker than the coat
+
+**The ask.** The band around the waist is the cloak at full brightness, so the belt reads as the coat. The clasp was already darker.
+
+**The change.** That lathe bakes shade 0.4. Darker than the coat, clear of the lining (0.35), the buckle (0.62), and the hood void. The office ghost reads the same colour. No new mesh.
+
+**Verified.** `tests/character.test.ts` counts belt vertices between the hips and the chest, and the coat above them stays shade 1. Dropping the belt shade so it defaulted to 1 failed once (`the belt wears the coat: expected 0 to be greater than 20`).
+
+**Open.** The hood's collar still wears the cloak at full brightness.
+
 ## Stage 749 — A shoulder plate is darker than the strap
 
 **The ask.** The plate on the shoulder is a box of the cloak at full brightness, so it reads as the coat. A look can wear it on the right, the left, or both.
