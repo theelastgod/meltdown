@@ -762,6 +762,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"THE LEASE SYSTEM NEEDS AN AUTHOR\. I HAVE BEEN THAT AUTHOR FOR TWELVE YEARS AND I AM TIRED\."/);
     expect(src).not.toMatch(/"The lease system needs an author\. I have been that author for twelve years and I am tired\."/);
   });
+
+  it("m7 wipe line is CRT, not wipe the ledger and the city remembers nothing", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "b")!.lines[1];
+    expect(line).toBe("WIPE THE LEDGER AND THE CITY REMEMBERS NOTHING — NOT THE FIRE, NOT THE CAGE, NOT YOU.");
+    expect(line).not.toBe("Wipe the ledger and the city remembers nothing — not the fire, not the cage, not you.");
+    expect(src).toMatch(/"WIPE THE LEDGER AND THE CITY REMEMBERS NOTHING — NOT THE FIRE, NOT THE CAGE, NOT YOU\."/);
+    expect(src).not.toMatch(/"Wipe the ledger and the city remembers nothing — not the fire, not the cage, not you\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
