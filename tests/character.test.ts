@@ -9,7 +9,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { BONE, BOOT_SHADE, BUCKLE_SHADE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, GLOVE_SHADE, REST_BONES, rigReport, STRAP_SHADE, trimGeometry } from "../client/render/rig";
+import { encodeLook } from "@shared/identity/look";
+import { BONE, BOOT_SHADE, BUCKLE_SHADE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, GLOVE_SHADE, PLATE_SHADE, REST_BONES, rigReport, STRAP_SHADE, trimGeometry } from "../client/render/rig";
 import { citizenBodyGeometry, citizenHoodGeometry, citizenSwing, CITIZEN_LIMBS, CITIZEN_STRIDE, Crowd } from "../client/render/life";
 
 describe("the player's body", () => {
@@ -130,6 +131,30 @@ describe("the player's body", () => {
     }
     expect(strap, "the strap wears the cloak").toBeGreaterThan(8);
     expect(chest, "the chest went dark with the strap").toBeGreaterThan(8);
+  });
+
+  it("a shoulder plate is darker than the strap beside it", () => {
+    const both = cloakGeometry(null, encodeLook({ body: 0, build: 0, coat: 0, kit: 2 }));
+    const shade = both.getAttribute("shade");
+    const idx = both.getAttribute("skinIndex");
+    const pos = both.getAttribute("position");
+    let plates = 0;
+    let strap = 0;
+    for (let i = 0; i < shade.count; i++) {
+      const s = shade.getX(i);
+      if (Math.abs(s - PLATE_SHADE) < 1e-5) {
+        plates++;
+        expect(idx.getX(i), "a plate vertex left the chest").toBe(BONE.chest);
+        expect(pos.getY(i), "a plate vertex left the shoulder").toBeGreaterThan(1.25);
+      } else if (Math.abs(s - STRAP_SHADE) < 1e-5) strap++;
+    }
+    expect(plates, "the plates wear the cloak").toBeGreaterThan(30);
+    expect(strap, "the strap went dark with the plates").toBeGreaterThan(8);
+    const bare = cloakGeometry(null, encodeLook({ body: 0, build: 0, coat: 0, kit: 3 }));
+    const bareShade = bare.getAttribute("shade");
+    let barePlates = 0;
+    for (let i = 0; i < bareShade.count; i++) if (Math.abs(bareShade.getX(i) - PLATE_SHADE) < 1e-5) barePlates++;
+    expect(barePlates, "a bare shoulder grew a plate").toBe(0);
   });
 
   it("no strip-light sits inside the coat's cloth", () => {

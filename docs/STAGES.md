@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 749 — A shoulder plate is darker than the strap
+
+**The ask.** The plate on the shoulder is a box of the cloak at full brightness, so it reads as the coat. A look can wear it on the right, the left, or both.
+
+**The change.** Each plate bakes shade 0.55. Darker than the strap (0.78), clear of the buckle (0.62), the glove, the lining, the boot, and the hood void. A bare shoulder grows no plate. The office ghost reads the same colour. No new mesh.
+
+**Verified.** `tests/character.test.ts` counts plate vertices on both shoulders of the two-plate look, and none on a bare shoulder. Dropping both plate shades so they defaulted to 1 failed once (`the plates wear the cloak: expected 0 to be greater than 30`).
+
+**Open.** The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 748 — The chest strap is darker than the cloth
 
 **The ask.** The band across the chest is a box of the cloak at full brightness, so it reads as the coat.

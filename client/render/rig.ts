@@ -275,6 +275,8 @@ export const GLOVE_SHADE = 0.48;
 export const BUCKLE_SHADE = 0.62;
 /** the chest strap on the cloak mesh: darker than the cloth, clear of the buckle */
 export const STRAP_SHADE = 0.78;
+/** a shoulder plate on the cloak mesh: darker than the strap, clear of the buckle */
+export const PLATE_SHADE = 0.55;
 export const BODY_TRIANGLES = 2000;
 export const TRIM_TRIANGLES = 700;
 
@@ -304,9 +306,9 @@ function cloakParts(look = 0): THREE.BufferGeometry[] {
   parts.push(cut(part(new THREE.BoxGeometry(0.075, 0.06, 0.025), at(0, 0.998, -0.19 * 0.86 - 0.01), tubeWeights, BUCKLE_SHADE), sh));
   // the strap is the cloak mesh. Darker than the cloth, so the band is not the chest.
   parts.push(cut(part(new THREE.BoxGeometry(0.045, 0.5, 0.02), at(-0.01, 1.2, -0.16 * 0.78 - 0.018).multiply(new THREE.Matrix4().makeRotationZ(0.62)), fixed(BONE.chest), STRAP_SHADE), sh));
-  // a plate on the right shoulder: kitbash, and it breaks the symmetry; the look may move it, double it or leave the shoulder bare
-  if (sh.plateR) parts.push(cut(part(new THREE.BoxGeometry(0.14, 0.04, 0.2), at(0.235, 1.445, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.6)), fixed(BONE.chest)), sh));
-  if (sh.plateL) parts.push(cut(part(new THREE.BoxGeometry(0.14, 0.04, 0.2), at(-0.235, 1.445, 0).multiply(new THREE.Matrix4().makeRotationZ(0.6)), fixed(BONE.chest)), sh));
+  // a plate is the cloak mesh. Darker than the strap, so the shoulder is not the cloth. The look may move it, double it, or leave the shoulder bare.
+  if (sh.plateR) parts.push(cut(part(new THREE.BoxGeometry(0.14, 0.04, 0.2), at(0.235, 1.445, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.6)), fixed(BONE.chest), PLATE_SHADE), sh));
+  if (sh.plateL) parts.push(cut(part(new THREE.BoxGeometry(0.14, 0.04, 0.2), at(-0.235, 1.445, 0).multiply(new THREE.Matrix4().makeRotationZ(0.6)), fixed(BONE.chest), PLATE_SHADE), sh));
   // the hood: a cowl at the neck, the shell with its face cut away and its crown pulled back, a void inside it
   parts.push(part(lathe([[0.19, 1.44], [0.175, 1.5], [0.15, 1.56]], 12, { sx: 1.05, sz: 1, folds: 5, fold: () => 0.05 }), I.clone(), fixed(BONE.head)));
   parts.push(part(hoodShell(1), I.clone(), fixed(BONE.head)));
