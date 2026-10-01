@@ -139,6 +139,8 @@ export const SKINS: readonly SkinDef[] = [
   skin(101, "skin_catwalk", "CATWALK", "DARK CATWALK GRATING, MAGENTA AT THE FAR EDGE", 88, 0xc265, "#37ff8b", "skin_catwalk_plate"),
   skin(102, "skin_joist", "JOIST", "DARK JOIST STEEL, ONE CYAN FLANGE", 96, 0xc266, "#8f4dff", "skin_joist_plate"),
   skin(103, "skin_flashing", "FLASHING", "DARK METAL FLASHING, A CYAN DRIP EDGE", 110, 0xc267, "#ffd27a", "skin_flashing_plate"),
+  skin(104, "skin_lintel", "LINTEL", "DARK LINTEL CONCRETE, A THIN CYAN STREAK", 58, 0xc268, "#8fd8ff", "skin_lintel_plate"),
+  skin(105, "skin_sill", "SILL", "DARK WINDOW SILL STONE, WET, MAGENTA REFLECTION", 82, 0xc269, "#f2f4ff", "skin_sill_plate"),
 ];
 
 /**

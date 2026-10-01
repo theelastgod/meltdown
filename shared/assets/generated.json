@@ -2275,5 +2275,23 @@
     "bytes": 122997,
     "sha256": "471948b8f5b014aaeb5032ee29e51ce6d746c198fc1c6c08531f442c3785c26c",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_lintel_plate",
+    "kind": "texture",
+    "file": "skin_lintel_plate.png",
+    "size": 256,
+    "bytes": 125856,
+    "sha256": "57231c4f681efa7f399e94eb55dd4c2ba6a6f77b5eed3f1176faddc6631e6141",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_sill_plate",
+    "kind": "texture",
+    "file": "skin_sill_plate.png",
+    "size": 256,
+    "bytes": 152967,
+    "sha256": "02ac67b02054e3a7db2a4c7361aa8a99e2e69da385f4ecb33cd4dafbb7309ae3",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]
