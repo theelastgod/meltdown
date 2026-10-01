@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 764 — The Deacon's sleeves are darker than the robe
+
+**The ask.** The bells meeting in front of the chest are the robe at full brightness, so the arms read as cloth. The ledger between them was already darker.
+
+**The change.** Those cylinders bake shade 0.55. Darker than the robe, clear of the ledger (0.42) and the toes (0.24). No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts sleeve vertices above 0.5 m, and the robe and the ledger stay their own shades. Leaving the sleeves unpainted failed once (`the sleeves wear the robe: expected 0 to be greater than 20`).
+
+**Open.** The arms behind Wern's back still wear the coat.
+
 ## Stage 763 — The layer over Marrow's shoulders is darker than the cloak
 
 **The ask.** The short cloth over the shoulders is the cloak at full brightness, so the second layer reads as the one under it.
