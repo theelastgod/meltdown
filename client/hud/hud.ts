@@ -25,7 +25,7 @@ import { footTag, footTagText } from "./footline";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { alertOnCut, platePass, plateTop } from "./faceplate";
 import { terminalFooter, terminalSeat } from "./terminal";
-import { closeHint, DISTRICT_FOOTER, safeZoneLine, tabOpens } from "./keyhint";
+import { closeHint, DISTRICT_FOOTER, receiptSignLine, safeZoneLine, tabOpens } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
 import { nodeClockNote, type NodeReadout } from "./node";
 import { gateMarks, nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type GateMark, type RadarGate, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
@@ -56,6 +56,8 @@ export class Hud {
   nameToggle: (() => void) | null = null;
   /** A tap on the booth line when it names the name desk. */
   gateTap: (() => void) | null = null;
+  /** A tap on the ledger receipt. A phone has no Enter. */
+  receiptTap: (() => void) | null = null;
   onStamp: (() => void) | null = null;
   private radar: CanvasRenderingContext2D;
   private locked = false;
@@ -190,6 +192,9 @@ export class Hud {
       <div class="keys">WASD · HOLD CLICK FIRE · R RELOAD · SPACE JUMP · CTRL SLIDE · SHIFT SPRINT</div>
     `;
     this.q = (s) => root.querySelector(s) as HTMLElement;
+    this.q(".receipt").addEventListener("click", () => {
+      if (this.touch && this.receiptTap) this.receiptTap();
+    });
     this.radar = (root.querySelector(".map canvas") as HTMLCanvasElement).getContext("2d")!;
     this.dmgWedges.push(...Array.from(root.querySelectorAll<HTMLElement>(".dmg i")));
     this.threatArrows.push(...Array.from(root.querySelectorAll<HTMLElement>(".thr i")));
@@ -352,6 +357,7 @@ export class Hud {
     r.stamped = false;
     this.q(".receipt .rl").innerHTML = "";
     this.q(".receipt .rst").textContent = "PRINTING…";
+    this.q(".receipt .rf").textContent = receiptSignLine(this.touch);
     this.q(".receipt").hidden = false;
     this.q(".receipt").classList.remove("stamped");
   }

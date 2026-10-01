@@ -199,6 +199,7 @@ export class Game {
     this.mobile = wantsTouch();
     this.renderer = new Renderer(canvas, this.world.level, undefined, this.mobile, city);
     this.hud = new Hud(hudRoot);
+    this.hud.receiptTap = () => this.sign();
     if (this.mobile) {
       hudRoot.classList.add("touch");
       this.touch = new TouchControls(hudRoot);

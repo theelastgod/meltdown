@@ -29,6 +29,11 @@ export function safeZoneLine(touch: boolean): string {
 /** The district select's footer. Travel reloads. The room, not this page, picks the district online. */
 export const DISTRICT_FOOTER = "TRAVEL RELOADS THE CLIENT. ONLINE, THE ROOM DECIDES THE DISTRICT.";
 
+/** The ledger entry's sign line. A phone has no Enter, so the receipt stays up until a tap. */
+export function receiptSignLine(touch: boolean): string {
+  return touch ? "TAP TO SIGN" : "[ENTER] SIGN";
+}
+
 /** What a HUD tab opens. MAP before anything else: a label is matched once. */
 export function tabOpens(label: string): "file" | "graph" | "map" | "market" | "contracts" | "name" | null {
   if (/MAP/.test(label)) return "map";

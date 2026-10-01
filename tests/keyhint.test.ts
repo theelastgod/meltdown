@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { closeHint, DISTRICT_FOOTER, menuFooter, openHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
+import { closeHint, DISTRICT_FOOTER, menuFooter, openHint, receiptSignLine, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
 
 describe("a frame's close marker", () => {
   it("names the key on a keyboard", () => {
@@ -136,5 +136,20 @@ describe("the menu's footer (Stages 152, 163)", () => {
     expect(menuFooter(true, true, true)).toContain("[−]");
     expect(menuFooter(true, true, true)).toContain("[+]");
     expect(menuFooter(true, false, true)).not.toContain("[−]");
+  });
+});
+
+describe("the ledger receipt", () => {
+  it("tells a phone to tap, and a keyboard to press enter", () => {
+    expect(receiptSignLine(true)).toBe("TAP TO SIGN");
+    expect(receiptSignLine(true)).not.toMatch(/\[[A-Z]+\]/);
+    expect(receiptSignLine(false)).toBe("[ENTER] SIGN");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/receiptSignLine\(this\.touch\)/);
+    expect(hud).toMatch(/if \(this\.touch && this\.receiptTap\) this\.receiptTap\(\)/);
+    expect(css).toMatch(/#hud\.touch \.receipt \{ pointer-events: auto; \}/);
+    expect(game).toMatch(/receiptTap = \(\) => this\.sign\(\)/);
   });
 });

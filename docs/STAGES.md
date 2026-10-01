@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 811 — A phone can sign the ledger entry
+
+**The ask.** After a match the receipt says `[ENTER] SIGN`. A phone has no Enter, the HUD ignores taps, and the entry stays on the screen.
+
+**The change.** A phone reads `TAP TO SIGN`. The receipt takes the tap, and the tap signs once the stamp has landed. A keyboard still reads `[ENTER] SIGN`.
+
+**Verified.** `tests/keyhint.test.ts` reads the line. Putting the keyboard line back on a phone failed once (`expected '[ENTER] SIGN' to be 'TAP TO SIGN'`).
+
+**Open.** An empty magazine still tells a phone to press R. The pad is labelled RLD.
+
 ## Stage 810 — The tutorial line reads as the terminal
 
 **The ask.** The line at the foot of the screen still taught in sentence case: `HOLD CLICK fire`, `R reload`, `SPACE jump`, `CTRL slide`, `SHIFT sprint`. The keys were already the terminal.
