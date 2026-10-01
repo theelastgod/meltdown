@@ -2014,5 +2014,41 @@
     "bytes": 118797,
     "sha256": "55459d927e11b3bada328ab7a66d69fc6bacc0fa281da625192e04ed27dce475",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_grout_plate",
+    "kind": "texture",
+    "file": "skin_grout_plate.png",
+    "size": 256,
+    "bytes": 111749,
+    "sha256": "88c935b52c3d4d6334fb60472ed263a477c5633943a0c9c46a40184e7a08fd39",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_diamond_plate",
+    "kind": "texture",
+    "file": "skin_diamond_plate.png",
+    "size": 256,
+    "bytes": 122137,
+    "sha256": "507e5814c46d765006692fc7af5ad16adb26f5e3849a63aaf5cbc63d27fbd709",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_slag_plate",
+    "kind": "texture",
+    "file": "skin_slag_plate.png",
+    "size": 256,
+    "bytes": 158946,
+    "sha256": "c645653553c73df2e06855c48a6789ea19ed4b734428bc25ebbdca00958a9e00",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_frost_plate",
+    "kind": "texture",
+    "file": "skin_frost_plate.png",
+    "size": 256,
+    "bytes": 127559,
+    "sha256": "5ff8de3d87c7a80c5e9f09caa87350068fcdc4d0fe8e64130474a0006c86d184",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]
