@@ -26,6 +26,9 @@ export function safeZoneLine(touch: boolean): string {
   return `SAFE ZONE · ${openHint("TAB", "MARKET", touch)} · ${openHint("N", "NAME", touch)}`;
 }
 
+/** The district select's footer. Travel reloads. The room, not this page, picks the district online. */
+export const DISTRICT_FOOTER = "TRAVEL RELOADS THE CLIENT. ONLINE, THE ROOM DECIDES THE DISTRICT.";
+
 /** What a HUD tab opens. MAP before anything else: a label is matched once. */
 export function tabOpens(label: string): "file" | "graph" | "map" | "market" | "contracts" | "name" | null {
   if (/MAP/.test(label)) return "map";

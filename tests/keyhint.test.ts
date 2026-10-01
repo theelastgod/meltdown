@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { closeHint, menuFooter, openHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
+import { closeHint, DISTRICT_FOOTER, menuFooter, openHint, safeZoneLine, settingsLine, tabOpens } from "../client/hud/keyhint";
 
 describe("a frame's close marker", () => {
   it("names the key on a keyboard", () => {
@@ -63,6 +63,16 @@ describe("a safe zone", () => {
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     expect(hud).toMatch(/safeZoneLine\(this\.touch\)/);
     expect(hud).not.toMatch(/SAFE ZONE · <span class="zone">\$\{openHint\("TAB", "MARKET"/);
+  });
+});
+
+describe("the district select", () => {
+  it("prints its footer as the terminal, not a sentence", () => {
+    expect(DISTRICT_FOOTER).toBe("TRAVEL RELOADS THE CLIENT. ONLINE, THE ROOM DECIDES THE DISTRICT.");
+    expect(DISTRICT_FOOTER).not.toBe("travel reloads the client; online, the room decides the district");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/\$\{DISTRICT_FOOTER\}/);
+    expect(hud).not.toMatch(/travel reloads the client/);
   });
 });
 

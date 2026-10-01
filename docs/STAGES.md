@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 809 — The district select footer reads as the terminal
+
+**The ask.** Opening the district list still printed a sentence under it: `travel reloads the client; online, the room decides the district`. The title above it is already the terminal.
+
+**The change.** `TRAVEL RELOADS THE CLIENT. ONLINE, THE ROOM DECIDES THE DISTRICT.`
+
+**Verified.** `tests/keyhint.test.ts` reads that footer. Putting the sentence back failed once (`expected 'travel reloads the client; online, the room decides the district' to be 'TRAVEL RELOADS THE CLIENT. ONLINE, THE ROOM DECIDES THE DISTRICT.'`).
+
+**Open.** The tutorial line still says fire, reload, jump, slide and sprint in sentence case.
+
 ## Stage 808 — A safe zone named the name desk
 
 **The ask.** Standing in a safe zone still offered only the market: `SAFE ZONE · [TAB] MARKET`. The name desk already burns, and the strip did not say so.

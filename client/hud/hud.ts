@@ -25,7 +25,7 @@ import { footTag, footTagText } from "./footline";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { alertOnCut, platePass, plateTop } from "./faceplate";
 import { terminalFooter, terminalSeat } from "./terminal";
-import { closeHint, safeZoneLine, tabOpens } from "./keyhint";
+import { closeHint, DISTRICT_FOOTER, safeZoneLine, tabOpens } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
 import { nodeClockNote, type NodeReadout } from "./node";
 import { gateMarks, nodeColour, nodeMarks, spotMarks, SPOT_COLOURS, toMap, type GateMark, type RadarGate, type RadarNode, type RadarSpot, mapFooter, mapFoot, mapFootText, MAP_FOOT_FORMS } from "./radar";
@@ -173,7 +173,7 @@ export class Hud {
       <div class="side"><div><span class="k">▸</span> <span class="roomband">OFFLINE</span><span class="linkms"></span></div><div class="perf"></div></div>
 
       <div class="log"></div>
-      <div class="p cy travel" hidden><div class="t">▲ NEO-CHINA · DISTRICT SELECT <span class="x" data-travel="close"></span></div><div class="list"></div><div class="f">travel reloads the client; online, the room decides the district</div></div>
+      <div class="p cy travel" hidden><div class="t">▲ NEO-CHINA · DISTRICT SELECT <span class="x" data-travel="close"></span></div><div class="list"></div><div class="f">${DISTRICT_FOOTER}</div></div>
       <div class="p mg prompt">▲ CLICK TO WAKE · <span style="color:var(--cy)">WASD</span> MOVE · <span style="color:var(--cy)">SHIFT</span> SPRINT · <span style="color:var(--cy)">CTRL</span> SLIDE · <span style="color:var(--cy)">SPACE</span> JUMP</div>
       <div class="p mg prompt-touch">▲ TAP TO WAKE · <span style="color:var(--cy)">LEFT</span> STICK MOVES · PUSH TO <span style="color:var(--cy)">SPRINT</span> · <span style="color:var(--cy)">RIGHT</span> DRAG AIMS</div>
 

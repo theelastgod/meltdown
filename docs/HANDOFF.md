@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 808 (a safe zone names the name desk). Stage 807 opens that desk from its tab. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **809** |
+| HEAD | Stage 809 (the district select footer is the terminal). Stage 808 names the name desk in a safe zone. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **810** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |
