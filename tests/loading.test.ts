@@ -275,6 +275,7 @@ describe("the loading descriptor", () => {
 
   it("a URL implies its own card when the trip did not write one (a shared link)", () => {
     expect(loadingFor("http://x/?level=lease_row&mission=m1_wake_unlisted")).toMatchObject({ kind: "mission", title: "LEASE ROW", line: "CONTRACT · WAKE UNLISTED", art: MISSION_ART.m1_wake_unlisted });
+    expect(loadingFor("http://x/?city=1&mode=campaign&level=lease_row&mission=m1_wake_unlisted&net=ws://h/campaign/crew-ABCDEFGH?mission=m1_wake_unlisted&level=lease_row").line.startsWith("CREW ")).toBe(true);
     expect(loadingFor("http://x/?level=lease_row&net=ws://h/room/neochina-lease_row?level=lease_row")).toMatchObject({ kind: "district", title: "LEASE ROW", line: "WAKE · THE PUBLIC ROOM" });
     expect(loadingFor("http://x/?level=repo_depot&mode=run&net=ws://h/room/r")).toMatchObject({ title: "REPO DEPOT", line: "THE RUN · CARRY THE CLAIMS TO A GATE", art: "/districts/repo_depot.jpg" });
     expect(loadingFor("http://x/?level=deadletter_docks&city=1")).toMatchObject({ title: "DEADLETTER DOCKS", art: "/districts/deadletter_docks.jpg" });

@@ -53,7 +53,8 @@ export function crewCodeFromSocket(net: string | null | undefined): string | nul
 /** the page a crew member loads: the district, co-op mode, the contract, the room's socket, the shop kept, and the city to walk back to when the contract was taken there */
 export function crewPageUrl(base: string, o: { wsBase: string; code: string; mission: string; level: string; shop?: string | null; back?: string | null }): string {
   const u = new URL(base);
-  for (const k of ["explore", "menu", "crawl"]) u.searchParams.delete(k);
+  // a contract taken alone drops the city flag. A crew is that same contract: the flag must not ride along, or the page is still the city's.
+  for (const k of ["explore", "menu", "crawl", "city"]) u.searchParams.delete(k);
   u.searchParams.set("level", o.level);
   u.searchParams.set("mode", "campaign");
   u.searchParams.set("mission", o.mission);

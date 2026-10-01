@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 823 — A crew taken in the city is not the city page
+
+**The ask.** RUN WITH A CREW from the city kept `city=1` beside the contract. A contract taken alone drops that flag. The crew page was still marked as the streets it had just left.
+
+**The change.** The crew page drops `city`, the way a solo contract does. `back` still names the district to walk home to.
+
+**Verified.** `tests/crew.test.ts` reads the page a city crew loads. Putting `city` back on that page failed once (`expected true to be false`).
+
+**Open.** EXPLORE THIS DISTRICT from the city reloads the city card. The page keeps `city=1` and the city's room, and that card is read before the street.
+
 ## Stage 822 — The booth line opens the desk it names
 
 **The ask.** Standing at the metro booth told a phone `TAP MARKET · TAP NAME`. The line is drawn on a HUD that ignores taps, and the only handler opened the name desk for any click that said NAME. The market never opened. Tab and N still do, on a keyboard.
