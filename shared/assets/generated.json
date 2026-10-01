@@ -2401,5 +2401,41 @@
     "bytes": 139990,
     "sha256": "cbfb793759152bfcc39b1a01558d8ffe3e1035447a9dfbd5e40e7f52c94fa6c7",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_keel_plate",
+    "kind": "texture",
+    "file": "skin_keel_plate.png",
+    "size": 256,
+    "bytes": 109286,
+    "sha256": "05de5fef9dd98cc312497124bc690423e7c3715c5882b8db783f217903bb1575",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_piling_plate",
+    "kind": "texture",
+    "file": "skin_piling_plate.png",
+    "size": 256,
+    "bytes": 154900,
+    "sha256": "66d0491474120c07fb719470ea382292c254b6164055c6abb06828e165ccf515",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_hullplate_plate",
+    "kind": "texture",
+    "file": "skin_hullplate_plate.png",
+    "size": 256,
+    "bytes": 106818,
+    "sha256": "a3c21d392cc48796be2e596da5bf83a86cea3c4d03ff3528c1d603b70c8018b7",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_ladder_plate",
+    "kind": "texture",
+    "file": "skin_ladder_plate.png",
+    "size": 256,
+    "bytes": 127743,
+    "sha256": "d8cd420a014a86b8ea29ee6a0d6693d62bf46cc99678e6edae7c2a1c60767e2d",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]
