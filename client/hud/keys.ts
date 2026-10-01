@@ -26,11 +26,11 @@ export const NOTHING_SEEN: Seen = { moved: false, fired: false, reloaded: false,
 
 const LESSONS: readonly [keyof Seen, string][] = [
   ["moved", "WASD"],
-  ["fired", "HOLD CLICK fire"],
-  ["reloaded", "R reload"],
-  ["jumped", "SPACE jump"],
-  ["slid", "CTRL slide"],
-  ["sprinted", "SHIFT sprint"],
+  ["fired", "HOLD CLICK FIRE"],
+  ["reloaded", "R RELOAD"],
+  ["jumped", "SPACE JUMP"],
+  ["slid", "CTRL SLIDE"],
+  ["sprinted", "SHIFT SPRINT"],
 ];
 
 /** the line for what is still to learn; empty once everything has been done */

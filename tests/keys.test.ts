@@ -4,11 +4,12 @@ import { keysLine, learn, NOTHING_SEEN } from "../client/hud/keys";
 
 describe("keysLine", () => {
   it("teaches everything to a file that has done nothing", () => {
-    expect(keysLine(NOTHING_SEEN)).toBe("WASD · HOLD CLICK fire · R reload · SPACE jump · CTRL slide · SHIFT sprint");
+    expect(keysLine(NOTHING_SEEN)).toBe("WASD · HOLD CLICK FIRE · R RELOAD · SPACE JUMP · CTRL SLIDE · SHIFT SPRINT");
+    expect(keysLine(NOTHING_SEEN)).not.toBe("WASD · HOLD CLICK fire · R reload · SPACE jump · CTRL slide · SHIFT sprint");
   });
   it("drops each lesson once it is done, in the line's order", () => {
-    expect(keysLine({ ...NOTHING_SEEN, moved: true, sprinted: true })).toBe("HOLD CLICK fire · R reload · SPACE jump · CTRL slide");
-    expect(keysLine({ ...NOTHING_SEEN, moved: true, fired: true, jumped: true, slid: true, sprinted: true })).toBe("R reload");
+    expect(keysLine({ ...NOTHING_SEEN, moved: true, sprinted: true })).toBe("HOLD CLICK FIRE · R RELOAD · SPACE JUMP · CTRL SLIDE");
+    expect(keysLine({ ...NOTHING_SEEN, moved: true, fired: true, jumped: true, slid: true, sprinted: true })).toBe("R RELOAD");
   });
   it("is empty once everything has been done", () => {
     expect(keysLine({ moved: true, fired: true, reloaded: true, jumped: true, slid: true, sprinted: true })).toBe("");

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 810 — The tutorial line reads as the terminal
+
+**The ask.** The line at the foot of the screen still taught in sentence case: `HOLD CLICK fire`, `R reload`, `SPACE jump`, `CTRL slide`, `SHIFT sprint`. The keys were already the terminal.
+
+**The change.** `WASD · HOLD CLICK FIRE · R RELOAD · SPACE JUMP · CTRL SLIDE · SHIFT SPRINT`. A lesson still drops once it has been done. The first-frame markup matches the line the sim writes.
+
+**Verified.** `tests/keys.test.ts` reads the full line. Putting the sentence back failed once (`expected 'WASD · HOLD CLICK fire · R reload · SPACE jump · CTRL slide · SHIFT sprint' to be 'WASD · HOLD CLICK FIRE · R RELOAD · SPACE JUMP · CTRL SLIDE · SHIFT SPRINT'`).
+
+**Open.** The phone's wake prompt still says stick, sprint and drag in sentence case.
+
 ## Stage 809 — The district select footer reads as the terminal
 
 **The ask.** Opening the district list still printed a sentence under it: `travel reloads the client; online, the room decides the district`. The title above it is already the terminal.

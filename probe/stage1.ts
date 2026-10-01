@@ -90,7 +90,7 @@ async function main(): Promise<void> {
     });
     await gapPage.close();
     const drawnAt = Math.max(gap.restBefore, gap.restAfter);
-    check("a sprint that begins and ends between two drawn frames is still learned", /SHIFT sprint/.test(gap.before) && gap.top >= 6.2 && drawnAt < 0.5 && !/SHIFT sprint/.test(gap.after), `the sim reached ${gap.top.toFixed(2)} m/s while no drawn frame saw above ${drawnAt.toFixed(2)} · line "${gap.before}" \u2192 "${gap.after || "(empty)"}"`);
+    check("a sprint that begins and ends between two drawn frames is still learned", /SHIFT SPRINT/.test(gap.before) && gap.top >= 6.2 && drawnAt < 0.5 && !/SHIFT SPRINT/.test(gap.after), `the sim reached ${gap.top.toFixed(2)} m/s while no drawn frame saw above ${drawnAt.toFixed(2)} · line "${gap.before}" \u2192 "${gap.after || "(empty)"}"`);
 
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     const errors: string[] = [];
@@ -179,7 +179,7 @@ async function main(): Promise<void> {
     // what the file has not done; the bot did not reload, so R reload is what is left (or nothing,
     // if the magazine ran out and it did)
     const keysAfter = await page.evaluate(() => { const k = document.querySelector("#hud .keys") as HTMLElement; return { text: k.textContent ?? "", hidden: k.hidden }; });
-    check("the tutorial line teaches everything to a file that has done nothing, and after the run only what it has not done", keysBefore === "WASD · HOLD CLICK fire · R reload · SPACE jump · CTRL slide · SHIFT sprint" && !/WASD|HOLD CLICK|SPACE|CTRL|SHIFT/.test(keysAfter.text) && (keysAfter.text === "R reload" || (keysAfter.text === "" && keysAfter.hidden)), `before: "${keysBefore}" · after: "${keysAfter.text}" (hidden ${keysAfter.hidden})`);
+    check("the tutorial line teaches everything to a file that has done nothing, and after the run only what it has not done", keysBefore === "WASD · HOLD CLICK FIRE · R RELOAD · SPACE JUMP · CTRL SLIDE · SHIFT SPRINT" && !/WASD|HOLD CLICK|SPACE|CTRL|SHIFT/.test(keysAfter.text) && (keysAfter.text === "R RELOAD" || (keysAfter.text === "" && keysAfter.hidden)), `before: "${keysBefore}" · after: "${keysAfter.text}" (hidden ${keysAfter.hidden})`);
     // Stage 164: the tutorial is folded on drawn frames only, and five of its six facts are the
     // sim's own running totals — shots, jumps, slides, and a reload that lasts long enough to land
     // in any frame. Sprinting was the one read from the frame's instantaneous speed, so a sprint
@@ -189,10 +189,10 @@ async function main(): Promise<void> {
     // drawn line, the sprint one included.
     const simFacts: [string, boolean][] = [
       ["WASD", state.stats.topSpeed > 0.5],
-      ["HOLD CLICK fire", state.stats.shots > 0],
-      ["SPACE jump", state.stats.jumps > 0],
-      ["CTRL slide", state.stats.slides > 0],
-      ["SHIFT sprint", state.stats.topSpeed >= 6.2],
+      ["HOLD CLICK FIRE", state.stats.shots > 0],
+      ["SPACE JUMP", state.stats.jumps > 0],
+      ["CTRL SLIDE", state.stats.slides > 0],
+      ["SHIFT SPRINT", state.stats.topSpeed >= 6.2],
     ];
     const undone = simFacts.filter(([, done]) => !done).map(([text]) => text);
     const stillOffered = simFacts.filter(([, done]) => done).map(([text]) => text).filter((text) => keysAfter.text.includes(text));

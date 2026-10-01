@@ -187,7 +187,7 @@ export class Hud {
         <div class="center"><b class="fileno">#—</b> · <span class="filenm">BLANK</span> · <span class="vel">0.0 m/s</span> · <span class="stance">STAND</span></div>
         <div class="tabs"><div class="tab">FILE<span class="n">·</span></div><div class="tab">GRAPH<span class="n">·</span></div><div class="tab">MAP<span class="n">·</span></div><div class="tab">MARKET<span class="n">·</span></div><div class="tab">CONTRACTS<span class="n">·</span></div><div class="tab">NAME<span class="n">·</span></div></div>
       </div>
-      <div class="keys">WASD · HOLD CLICK fire · R reload · SPACE jump · CTRL slide · SHIFT sprint</div>
+      <div class="keys">WASD · HOLD CLICK FIRE · R RELOAD · SPACE JUMP · CTRL SLIDE · SHIFT SPRINT</div>
     `;
     this.q = (s) => root.querySelector(s) as HTMLElement;
     this.radar = (root.querySelector(".map canvas") as HTMLCanvasElement).getContext("2d")!;
