@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 820 — The ending card names the walk home
+
+**The ask.** Closing the white office still ended on TAP CONTRACTS, even when the contract was taken in the city. The other closed card already named the walk. This one did not, so a phone had no way home from the ending.
+
+**The change.** The ending uses the same foot as a closed city contract, and the same walk. Taken anywhere else, it still says TAP CONTRACTS. A keyboard still uses B.
+
+**Verified.** `tests/keyhint.test.ts` reads the ending's foot. Putting the contracts line back on the ending failed once (`expected false to be true`).
+
+**Open.** A crew taken in the city still has no way home. The booth line still says TAP MARKET and the tap does nothing.
+
 ## Stage 819 — A phone can walk back from a closed city contract
 
 **The ask.** A phone that closed a city contract could tap the card, and the tap opened the desk. The line said BACK TO THE CITY and nothing on the card walked. B still walks back on a keyboard.

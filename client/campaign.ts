@@ -543,7 +543,8 @@ export class Campaign {
     const def = missionById(id)!;
     const rw = def.reward;
     const home = this.backToCity();
-    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", home ? closedCityLine(this.game.hud.touch) : closedContractLine(this.game.hud.touch)].filter(Boolean);
+    const foot = home ? closedCityLine(this.game.hud.touch) : closedContractLine(this.game.hud.touch);
+    const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", foot].filter(Boolean);
     this.note(`CONTRACT CLOSED · ${def.title}${ok ? "" : " · " + (reason ?? "")}`);
     this.game.audio.sign();
     const walk = home ? () => this.travel(home) : null;
@@ -553,7 +554,7 @@ export class Campaign {
       // the coda after the ending's own lines: the choices no ending gate reads, answered rather
       // than dropped (Stage 656)
       const coda = endingCoda(t);
-      this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", closedContractLine(this.game.hud.touch)], "ye", 0, ENDING_ART[e.id], () => this.toggleContracts());
+      this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", foot], "ye", 0, ENDING_ART[e.id], () => this.toggleContracts(), walk);
       this.game.audio.rite(3);
     } else this.game.hud.card(`CONTRACT CLOSED · ${def.title}`, lines, "am", 0, null, () => this.toggleContracts(), walk);
     this.game.renderer.post.kick(1);

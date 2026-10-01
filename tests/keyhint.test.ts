@@ -168,6 +168,15 @@ describe("the way back to the city", () => {
   });
 });
 
+describe("the ending card", () => {
+  it("names the walk home when the contract was taken in the city", () => {
+    const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    const complete = campaign.slice(campaign.indexOf("private async complete"), campaign.indexOf("onMissionMsg"));
+    expect(complete.includes('"", "MELTDOWN", foot')).toBe(true);
+    expect((complete.match(/this\.toggleContracts\(\), walk/g) ?? []).length).toBe(2);
+  });
+});
+
 describe("the contracts desk", () => {
   it("clears a card that was waiting on it, and leaves a timed card up", () => {
     expect(cardYieldsToDesk(true, 0, true)).toBe(true);
