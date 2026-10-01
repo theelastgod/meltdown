@@ -269,6 +269,8 @@ function hoodShell(scale: number): THREE.BufferGeometry {
  */
 /** boots on the cloak mesh: darker than the cloth, not a void (0) and not the lining (0.3–0.35) */
 export const BOOT_SHADE = 0.22;
+/** gloves on the cloak mesh: darker than the sleeve, clear of the boot and the lining */
+export const GLOVE_SHADE = 0.48;
 export const BODY_TRIANGLES = 2000;
 export const TRIM_TRIANGLES = 700;
 
@@ -310,7 +312,8 @@ function cloakParts(look = 0): THREE.BufferGeometry[] {
     const f = REST_BONES[fore].world;
     parts.push(part(new THREE.CylinderGeometry(0.062, 0.074, UPPER_ARM, 8), at(u[0], u[1] - UPPER_ARM / 2, u[2]), fixed(BONE[upper])));
     parts.push(part(new THREE.CylinderGeometry(0.066, 0.084, FORE_ARM - 0.04, 8), at(f[0], f[1] - (FORE_ARM - 0.04) / 2, f[2]), fixed(BONE[fore])));
-    parts.push(part(new THREE.BoxGeometry(0.06, 0.085, 0.05), at(f[0], f[1] - FORE_ARM + 0.005, f[2]), fixed(BONE[fore])));
+    // the glove is the cloak mesh. Darker than the sleeve, so the hand is not the cuff.
+    parts.push(part(new THREE.BoxGeometry(0.06, 0.085, 0.05), at(f[0], f[1] - FORE_ARM + 0.005, f[2]), fixed(BONE[fore]), GLOVE_SHADE));
   };
   arm("upperR", "foreR");
   arm("upperL", "foreL");

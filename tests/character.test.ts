@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { BONE, BOOT_SHADE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, REST_BONES, rigReport, trimGeometry } from "../client/render/rig";
+import { BONE, BOOT_SHADE, buildRig, cloakGeometry, COAT_SCALE, coatSurfaceRadius, GLOVE_SHADE, REST_BONES, rigReport, trimGeometry } from "../client/render/rig";
 import { citizenBodyGeometry, citizenHoodGeometry, citizenSwing, CITIZEN_LIMBS, CITIZEN_STRIDE, Crowd } from "../client/render/life";
 
 describe("the player's body", () => {
@@ -74,6 +74,24 @@ describe("the player's body", () => {
     }
     expect(boots, "the boots wear the cloak").toBeGreaterThan(20);
     expect(cloth, "the coat went dark with the boots").toBeGreaterThan(20);
+  });
+
+  it("the gloves are darker than the sleeves they hang from", () => {
+    const g = cloakGeometry(null);
+    const shade = g.getAttribute("shade");
+    const idx = g.getAttribute("skinIndex");
+    let gloves = 0;
+    let sleeves = 0;
+    for (let i = 0; i < shade.count; i++) {
+      const s = shade.getX(i);
+      const arm = idx.getX(i) === BONE.foreL || idx.getX(i) === BONE.foreR;
+      if (Math.abs(s - GLOVE_SHADE) < 1e-5) {
+        gloves++;
+        expect(arm, "a glove vertex left the forearm").toBe(true);
+      } else if (s === 1 && arm) sleeves++;
+    }
+    expect(gloves, "the gloves wear the cloak").toBeGreaterThan(8);
+    expect(sleeves, "the sleeves went dark with the gloves").toBeGreaterThan(8);
   });
 
   it("no strip-light sits inside the coat's cloth", () => {
