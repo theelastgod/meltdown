@@ -173,6 +173,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(135, "skin_dish", "DISH", "DARK DISH MESH, CYAN AT THE RIM, NO LOGO", 110, 0xc287, "#ffd27a", "skin_dish_plate"),
   skin(136, "skin_radome", "RADOME", "DARK RADOME SKIN, ONE CYAN PANEL LINE", 58, 0xc288, "#8fd8ff", "skin_radome_plate"),
   skin(137, "skin_gantry2", "GANTRY WEB", "DARK GANTRY WEB STEEL, CYAN AT A BOLT", 82, 0xc289, "#f2f4ff", "skin_gantry2_plate"),
+  skin(138, "skin_cranehook", "HOOK", "DARK CRANE HOOK STEEL, MAGENTA AT THE TIP", 48, 0xc28a, "#35f2ff", "skin_cranehook_plate"),
+  skin(139, "skin_sheave", "SHEAVE", "DARK SHEAVE GROOVE, CYAN IN THE CUT", 62, 0xc28b, "#ff3ec9", "skin_sheave_plate"),
+  skin(140, "skin_counterweight", "COUNTERWEIGHT", "DARK COUNTERWEIGHT BLOCKS, ONE CYAN EDGE", 74, 0xc28c, "#ffb02e", "skin_counterweight_plate"),
+  skin(141, "skin_outrigger", "OUTRIGGER", "DARK OUTRIGGER BEAM, MAGENTA AT THE PIN", 88, 0xc28d, "#37ff8b", "skin_outrigger_plate"),
 ];
 
 /**

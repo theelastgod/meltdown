@@ -2581,5 +2581,41 @@
     "bytes": 132693,
     "sha256": "f67f50fdddebaf1ea5ffc5532f0f988aa69b228036b6dcfc0977d40f7efbf1a5",
     "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_cranehook_plate",
+    "kind": "texture",
+    "file": "skin_cranehook_plate.png",
+    "size": 256,
+    "bytes": 133715,
+    "sha256": "b544e95d6fe4e5cae33bb8dd82da681f740af8963e6bbfb9836308585612e2bb",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_sheave_plate",
+    "kind": "texture",
+    "file": "skin_sheave_plate.png",
+    "size": 256,
+    "bytes": 105165,
+    "sha256": "2177e96885e9f09e7546e2f7e6617acc2b746ff766185fdf523758d520c9243f",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_counterweight_plate",
+    "kind": "texture",
+    "file": "skin_counterweight_plate.png",
+    "size": 256,
+    "bytes": 99860,
+    "sha256": "0ae748b7587b496b57e6c3b8dc78cd5fd9ca391c85c76a1234f056102b7bfdba",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
+  },
+  {
+    "id": "skin_outrigger_plate",
+    "kind": "texture",
+    "file": "skin_outrigger_plate.png",
+    "size": 256,
+    "bytes": 105086,
+    "sha256": "e93f98f75d0bd18f6349de10c39b26e37426d4367c99a41bfda3d6679e33f15f",
+    "provenance": "generated (Higgsfield gpt_image_2, 2026-10-01), conditioned by tools/asset-add.ts"
   }
 ]
