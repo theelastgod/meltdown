@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 818 — A phone can open the desk from the card
+
+**The ask.** A closed contract, a failed one, and an ending told a phone to tap CONTRACTS. The tab row is hidden while the card is up, and the card ignored the tap. The desk never opened.
+
+**The change.** A tap on those cards opens the desk, which takes the card down. A keyboard still uses J. An event card and a round card do not take the tap.
+
+**Verified.** `tests/keyhint.test.ts` reads the tap. Taking the tap off the card failed once (`expected false to be true`).
+
+**Open.** A phone that closed a city contract still cannot walk back. The tap opens the desk. B still walks back on a keyboard. The ending card still does not name that walk.
+
 ## Stage 817 — The contracts desk clears the card
 
 **The ask.** A closed contract said to open the desk, and the desk opened underneath the card. The card covers the screen. J and the tab did nothing a player could see. A card that counts down, an event's few seconds, is not that card.

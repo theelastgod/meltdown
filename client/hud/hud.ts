@@ -58,6 +58,8 @@ export class Hud {
   gateTap: (() => void) | null = null;
   /** A tap on the ledger receipt. A phone has no Enter. */
   receiptTap: (() => void) | null = null;
+  /** A tap on a contract card. A phone has no J, and the tab row is hidden under the card. */
+  cardTap: (() => void) | null = null;
   onStamp: (() => void) | null = null;
   private radar: CanvasRenderingContext2D;
   private locked = false;
@@ -194,6 +196,9 @@ export class Hud {
     this.q = (s) => root.querySelector(s) as HTMLElement;
     this.q(".receipt").addEventListener("click", () => {
       if (this.touch && this.receiptTap) this.receiptTap();
+    });
+    this.q(".card").addEventListener("click", () => {
+      if (this.touch && this.cardTap) this.cardTap();
     });
     this.radar = (root.querySelector(".map canvas") as HTMLCanvasElement).getContext("2d")!;
     this.dmgWedges.push(...Array.from(root.querySelectorAll<HTMLElement>(".dmg i")));
@@ -809,7 +814,8 @@ export class Hud {
 
   /** a full-screen card (contract closed / failed / ending); seconds 0 = until the next card or contracts */
   private cardTimer = 0;
-  card(title: string, lines: string[], color: "am" | "mg" | "ye" | "cy", seconds: number, art: string | null = null): void {
+  card(title: string, lines: string[], color: "am" | "mg" | "ye" | "cy", seconds: number, art: string | null = null, tap: (() => void) | null = null): void {
+    this.cardTap = tap;
     const el = this.q(".card");
     el.hidden = false;
     el.className = `card ${color}${art ? " art" : ""}`;

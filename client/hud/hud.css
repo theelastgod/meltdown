@@ -622,6 +622,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
    rules are what make it pass. */
 #hud.touch .keys { display: none; }                      /* "WASD · HOLD CLICK fire · R reload" */
 #hud.touch .receipt { pointer-events: auto; }            /* the HUD root ignores pointers; a phone signs by tapping */
+#hud.touch .card { pointer-events: auto; }               /* a phone opens the desk by tapping the card */
 #hud.touch .rack { display: none; }                      /* slot 1-8 is the WPN pad */
 #hud.touch .nades { display: none; }                     /* the NADE pad carries the selected one */
 

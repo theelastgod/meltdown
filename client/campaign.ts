@@ -331,7 +331,7 @@ export class Campaign {
         break;
       case "failed":
         hud.setRadarSpots([]);
-        hud.card("CONTRACT FAILED", [ev.reason, "THE FILE RE-LEASES. THE CONTRACT STAYS OPEN.", failedContractLine(this.game.hud.touch)], "mg", 0);
+        hud.card("CONTRACT FAILED", [ev.reason, "THE FILE RE-LEASES. THE CONTRACT STAYS OPEN.", failedContractLine(this.game.hud.touch)], "mg", 0, null, () => this.toggleContracts());
         this.note(`CONTRACT FAILED · ${ev.reason}`);
         this.game.audio.debtOwed();
         break;
@@ -551,9 +551,9 @@ export class Campaign {
       // the coda after the ending's own lines: the choices no ending gate reads, answered rather
       // than dropped (Stage 656)
       const coda = endingCoda(t);
-      this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", closedContractLine(this.game.hud.touch)], "ye", 0, ENDING_ART[e.id]);
+      this.game.hud.card(e.title, [...e.lines, ...(coda.length ? ["", ...coda] : []), "", "MELTDOWN", closedContractLine(this.game.hud.touch)], "ye", 0, ENDING_ART[e.id], () => this.toggleContracts());
       this.game.audio.rite(3);
-    } else this.game.hud.card(`CONTRACT CLOSED · ${def.title}`, lines, "am", 0);
+    } else this.game.hud.card(`CONTRACT CLOSED · ${def.title}`, lines, "am", 0, null, () => this.toggleContracts());
     this.game.renderer.post.kick(1);
   }
 
@@ -579,7 +579,7 @@ export class Campaign {
         const s = m.settled?.find((x) => x.id === ev.id);
         this.completion = { id: ev.id, ok: s?.ok ?? false, reason: s?.reason };
         const def = missionById(ev.id);
-        this.game.hud.card(`CONTRACT CLOSED · ${def?.title ?? ev.id}`, [s?.ok ? "SETTLED ON EVERY FILE" : `NOT SETTLED · ${s?.reason ?? ""}`, closedContractLine(this.game.hud.touch)], "am", 0);
+        this.game.hud.card(`CONTRACT CLOSED · ${def?.title ?? ev.id}`, [s?.ok ? "SETTLED ON EVERY FILE" : `NOT SETTLED · ${s?.reason ?? ""}`, closedContractLine(this.game.hud.touch)], "am", 0, null, () => this.toggleContracts());
         this.game.audio.sign();
       } else this.onMissionEvent(ev);
     }

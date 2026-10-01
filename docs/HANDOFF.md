@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 817 (the contracts desk clears the card). Stage 816 names the walk back to the city. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **818** |
+| HEAD | Stage 818 (a phone can open the desk from the card). Stage 817 clears that card when the desk opens. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **819** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |

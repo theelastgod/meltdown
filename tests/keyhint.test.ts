@@ -171,6 +171,18 @@ describe("the contracts desk", () => {
   });
 });
 
+describe("a phone on a contract card", () => {
+  it("opens the desk from the card", () => {
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(hud.includes("if (this.touch && this.cardTap) this.cardTap()")).toBe(true);
+    expect(hud).toMatch(/this\.cardTap = tap/);
+    expect(css).toMatch(/#hud\.touch \.card \{ pointer-events: auto; \}/);
+    expect(campaign.match(/\(\) => this\.toggleContracts\(\)/g)?.length).toBe(4);
+  });
+});
+
 describe("a failed contract", () => {
   it("names the contracts tab on a phone and the keys on a keyboard", () => {
     expect(failedContractLine(true)).toBe("TAP CONTRACTS");
