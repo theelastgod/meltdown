@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 814 — A failed contract names the tab
+
+**The ask.** A failed contract still told a phone to press J and R: `[J] CONTRACTS · [R] RUN IT AGAIN`. A phone has neither key. The contracts tab is already on the screen. R still reloads the page on a keyboard.
+
+**The change.** A phone reads `TAP CONTRACTS`. A keyboard still reads `[J] CONTRACTS · [R] RUN IT AGAIN`.
+
+**Verified.** `tests/keyhint.test.ts` reads the line. Putting the keys back on a phone failed once (`expected '[J] CONTRACTS · [R] RUN IT AGAIN' to be 'TAP CONTRACTS'`).
+
+**Open.** A closed contract still tells a phone to press J, and the way back to the city still tells it to press B.
+
 ## Stage 813 — The city names the contracts tab
 
 **The ask.** Walking into the city still told a phone to press J: the objective said `[J] CONTRACTS`, and so did the arrival line. The tab is already on the phone.

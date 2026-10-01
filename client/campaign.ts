@@ -8,7 +8,7 @@
  */
 import { cityPageUrl, inCity } from "@shared/net/city";
 import type { Game } from "./game";
-import { cityArrivalLine, cityContractsLine, closeHint } from "./hud/keyhint";
+import { cityArrivalLine, cityContractsLine, closeHint, failedContractLine } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
 import { ENDINGS, endingCoda, endingTitle, endingsFor, gateOpen, handlersAlive, resolveEnding, testimonyLine, type Testimony } from "@shared/campaign/testimony";
 import { threatProfile, threatRating, type ThreatProfile } from "@shared/campaign/threat";
@@ -331,7 +331,7 @@ export class Campaign {
         break;
       case "failed":
         hud.setRadarSpots([]);
-        hud.card("CONTRACT FAILED", [ev.reason, "THE FILE RE-LEASES. THE CONTRACT STAYS OPEN.", "[J] CONTRACTS · [R] RUN IT AGAIN"], "mg", 0);
+        hud.card("CONTRACT FAILED", [ev.reason, "THE FILE RE-LEASES. THE CONTRACT STAYS OPEN.", failedContractLine(this.game.hud.touch)], "mg", 0);
         this.note(`CONTRACT FAILED · ${ev.reason}`);
         this.game.audio.debtOwed();
         break;

@@ -29,6 +29,11 @@ export function safeZoneLine(touch: boolean): string {
 /** The district select's footer. Travel reloads. The room, not this page, picks the district online. */
 export const DISTRICT_FOOTER = "TRAVEL RELOADS THE CLIENT. ONLINE, THE ROOM DECIDES THE DISTRICT.";
 
+/** A failed contract. R reloads the page; a phone has no R, and the tab opens the desk. */
+export function failedContractLine(touch: boolean): string {
+  return touch ? "TAP CONTRACTS" : "[J] CONTRACTS · [R] RUN IT AGAIN";
+}
+
 /** The city's standing objective. A phone opens contracts from the tab. */
 export function cityContractsLine(touch: boolean): string {
   return `${touch ? "TAP CONTRACTS" : "[J] CONTRACTS"} · NO ONE HERE CAN HURT YOU BUT VANTAGE`;
