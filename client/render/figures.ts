@@ -64,6 +64,8 @@ export const MARROW_MANTLE_SHADE = 0.62;
 export const DEACON_SLEEVE_SHADE = 0.55;
 /** the arms behind Wern's back: darker than the coat, clear of the lining and the shoes */
 export const WERN_ARM_SHADE = 0.5;
+/** Ida's sleeves: darker than the coat, clear of the collar and the trousers */
+export const VESSEL_SLEEVE_SHADE = 0.58;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -195,10 +197,11 @@ function vesselLeg(): THREE.BufferGeometry[] {
 export const VESSEL_SHOULDER = 1.4;
 /** one of Ida's slim sleeves as she stands: the left (-1) hanging, the right (+1) with its hand on her hip */
 function vesselArm(side: -1 | 1): THREE.BufferGeometry[] {
-  if (side < 0) return [put(new THREE.CylinderGeometry(0.055, 0.06, 0.58, 8), T(-0.25, 1.12, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.06)))];
+  // the sleeve is the coat's mesh. Darker than the cloth, so the arm is not the coat.
+  if (side < 0) return [paint(put(new THREE.CylinderGeometry(0.055, 0.06, 0.58, 8), T(-0.25, 1.12, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.06))), VESSEL_SLEEVE_SHADE)];
   return [
-    put(new THREE.CylinderGeometry(0.055, 0.06, 0.32, 8), T(0.27, 1.27, 0).multiply(new THREE.Matrix4().makeRotationZ(0.5))),
-    put(new THREE.CylinderGeometry(0.052, 0.056, 0.3, 8), T(0.3, 1.02, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.55))),
+    paint(put(new THREE.CylinderGeometry(0.055, 0.06, 0.32, 8), T(0.27, 1.27, 0).multiply(new THREE.Matrix4().makeRotationZ(0.5))), VESSEL_SLEEVE_SHADE),
+    paint(put(new THREE.CylinderGeometry(0.052, 0.056, 0.3, 8), T(0.3, 1.02, 0).multiply(new THREE.Matrix4().makeRotationZ(-0.55))), VESSEL_SLEEVE_SHADE),
   ];
 }
 

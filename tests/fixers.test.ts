@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, DEACON_LEDGER_SHADE, DEACON_SLEEVE_SHADE, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_LINING_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, MARROW_MANTLE_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_ARM_SHADE, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, DEACON_LEDGER_SHADE, DEACON_SLEEVE_SHADE, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_LINING_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, MARROW_MANTLE_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, VESSEL_SLEEVE_SHADE, WERN_ARM_SHADE, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -103,7 +103,7 @@ describe("the fixers, in the flesh", () => {
         } else if (Math.abs(c - HAIR_SHADE) < 1e-5) {
           hair++;
           expect(pos.getY(i), id).toBeGreaterThan(1.6);
-        } else if (Math.abs(c - TROUSER_SHADE) < 1e-5 || Math.abs(c - VESSEL_BOOT_SHADE) < 1e-5 || Math.abs(c - WERN_SHOE_SHADE) < 1e-5 || Math.abs(c - WERN_ARM_SHADE) < 1e-5 || Math.abs(c - FIXER_COLLAR_SHADE) < 1e-5 || Math.abs(c - FIXER_LINING_SHADE) < 1e-5) {
+        } else if (Math.abs(c - TROUSER_SHADE) < 1e-5 || Math.abs(c - VESSEL_BOOT_SHADE) < 1e-5 || Math.abs(c - VESSEL_SLEEVE_SHADE) < 1e-5 || Math.abs(c - WERN_SHOE_SHADE) < 1e-5 || Math.abs(c - WERN_ARM_SHADE) < 1e-5 || Math.abs(c - FIXER_COLLAR_SHADE) < 1e-5 || Math.abs(c - FIXER_LINING_SHADE) < 1e-5) {
           // the leg is not the coat; its own checks hold the band
         } else {
           cloth++;
@@ -404,6 +404,32 @@ describe("the fixers, in the flesh", () => {
     expect(arms, "the arms wear the coat").toBeGreaterThan(20);
     expect(cloth, "the coat went dark with the arms").toBeGreaterThan(20);
     expect(shoes, "the shoes went dark with the arms").toBeGreaterThan(8);
+  });
+
+  it("Ida's sleeves are darker than the coat", () => {
+    const tally = (g: THREE.BufferGeometry) => {
+      const color = g.getAttribute("color");
+      const pos = g.getAttribute("position");
+      let sleeves = 0;
+      let cloth = 0;
+      let trousers = 0;
+      for (let i = 0; i < color.count; i++) {
+        const c = color.getX(i);
+        const y = pos.getY(i);
+        if (Math.abs(c - VESSEL_SLEEVE_SHADE) < 1e-5) {
+          sleeves++;
+          expect(y).toBeGreaterThan(0.7);
+        } else if (Math.abs(c - TROUSER_SHADE) < 1e-5) trousers++;
+        else if (c === 1 && y > 0.5 && y < 1.45) cloth++;
+      }
+      return { sleeves, cloth, trousers };
+    };
+    for (const [id, g] of [["vessel", fixerGeometry("vessel").body], ["walk", vesselWalkerGeometry().body]] as const) {
+      const n = tally(g);
+      expect(n.sleeves, `${id} sleeves wear the coat`).toBeGreaterThan(20);
+      expect(n.cloth, `${id} coat went dark with the sleeves`).toBeGreaterThan(20);
+      if (id === "vessel") expect(n.trousers, "the trousers went dark with the sleeves").toBeGreaterThan(16);
+    }
   });
 });
 

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 766 — Ida's sleeves are darker than the coat
+
+**The ask.** The slim sleeves, one hanging and one with the hand on the hip, are the coat at full brightness, so the arm reads as the cloth. The trousers under them were already darker.
+
+**The change.** Those cylinders bake shade 0.58. Darker than the coat, clear of the collar (0.68) and the trousers (0.33). The walk uses the same sleeves. No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts sleeve vertices on Ida and on the walker, and the coat stays shade 1. Leaving the sleeves unpainted failed once (`vessel sleeves wear the coat: expected 0 to be greater than 20`).
+
+**Open.** The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 765 — The arms behind Wern's back are darker than the coat
 
 **The ask.** The arms folded behind him are the coat at full brightness, so the hands at the small of the back read as cloth.

@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 765 (the arms behind Wern's back are darker than the coat). Stage 764 darkens the Deacon's sleeves. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **766** |
+| HEAD | Stage 766 (Ida's sleeves are darker than the coat). Stage 765 darkens the arms behind Wern's back. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **767** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |
