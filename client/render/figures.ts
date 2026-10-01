@@ -46,6 +46,8 @@ export const HAIR_SHADE = 0.46;
 export const TROUSER_SHADE = 0.33;
 /** Ida's boots: darker than the trouser, not the unlit face */
 export const VESSEL_BOOT_SHADE = 0.2;
+/** Wern's shoes: darker than the coat, not the unlit face */
+export const WERN_SHOE_SHADE = 0.18;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -222,7 +224,8 @@ function wern(): Parts {
   parts.body.push(lathe([[0.125, 1.47], [0.14, 1.64]], 12, { gap: 0.8 }));
   parts.body.push(paint(put(new THREE.SphereGeometry(0.105, 12, 10), T(0, 1.73, 0).multiply(new THREE.Matrix4().makeScale(0.9, 1.15, 1))), 0));
   parts.body.push(paint(put(new THREE.SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), T(0, 1.75, 0.012)), HAIR_SHADE));
-  for (const x of [-0.1, 0.1]) parts.body.push(put(new THREE.BoxGeometry(0.1, 0.06, 0.24), T(x, 0.03, -0.12)));
+  // the shoes are the coat's mesh. Darker than the cloth, so the toe is not the hem.
+  for (const x of [-0.1, 0.1]) parts.body.push(paint(put(new THREE.BoxGeometry(0.1, 0.06, 0.24), T(x, 0.03, -0.12)), WERN_SHOE_SHADE));
   // arms folded behind, the hands meeting at the small of the back
   for (const side of [-1, 1]) {
     parts.body.push(put(new THREE.CylinderGeometry(0.06, 0.065, 0.34, 8), T(side * 0.25, 1.28, 0.05).multiply(new THREE.Matrix4().makeRotationX(-0.35))));

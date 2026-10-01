@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 756 — Wern's shoes are darker than the coat
+
+**The ask.** The toes under the hem are the coat at full brightness, so the foot reads as the cloth. The hair was already darker.
+
+**The change.** Those boxes bake shade 0.18. Darker than the coat, not the unlit face. No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts shoe vertices under 0.08 m, and the coat above them stays shade 1. Leaving the shoes unpainted failed once (`the shoes wear the coat: expected 0 to be greater than 20`).
+
+**Open.** The Deacon's toes still wear the robe.
+
 ## Stage 755 — A socketed chip reads as the terminal
 
 **The ask.** The file showed a socketed chip as a sentence: "+3% range / +4% recoil". The gate above it is already CRT. The chip's own words were not.

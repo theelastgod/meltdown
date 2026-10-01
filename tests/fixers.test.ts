@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, EMBODIED, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, WERN_SHOE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -103,7 +103,7 @@ describe("the fixers, in the flesh", () => {
         } else if (Math.abs(c - HAIR_SHADE) < 1e-5) {
           hair++;
           expect(pos.getY(i), id).toBeGreaterThan(1.6);
-        } else if (Math.abs(c - TROUSER_SHADE) < 1e-5 || Math.abs(c - VESSEL_BOOT_SHADE) < 1e-5) {
+        } else if (Math.abs(c - TROUSER_SHADE) < 1e-5 || Math.abs(c - VESSEL_BOOT_SHADE) < 1e-5 || Math.abs(c - WERN_SHOE_SHADE) < 1e-5) {
           // the leg is not the coat; its own checks hold the band
         } else {
           cloth++;
@@ -191,6 +191,28 @@ describe("the fixers, in the flesh", () => {
     expect(walk.boot, "the walking boots wear the coat").toBeGreaterThan(12);
     expect(stand.trouser, "the trouser went dark with the boot").toBeGreaterThan(20);
     expect(walk.trouser, "the walking trouser went dark with the boot").toBeGreaterThan(16);
+  });
+
+  it("Wern's shoes are darker than the coat", () => {
+    const g = fixerGeometry("wern").body;
+    const color = g.getAttribute("color");
+    const pos = g.getAttribute("position");
+    let shoes = 0;
+    let cloth = 0;
+    for (let i = 0; i < color.count; i++) {
+      const c = color.getX(i);
+      const y = pos.getY(i);
+      if (Math.abs(c - WERN_SHOE_SHADE) < 1e-5) {
+        shoes++;
+        expect(y).toBeLessThan(0.08);
+      } else if (c === 1 && y > 0.2) cloth++;
+    }
+    expect(shoes, "the shoes wear the coat").toBeGreaterThan(20);
+    expect(cloth, "the coat went dark with the shoes").toBeGreaterThan(20);
+    const ida = fixerGeometry("vessel").body.getAttribute("color");
+    let leak = 0;
+    for (let i = 0; i < ida.count; i++) if (Math.abs(ida.getX(i) - WERN_SHOE_SHADE) < 1e-5) leak++;
+    expect(leak, "Ida grew Wern's shoes").toBe(0);
   });
 });
 
