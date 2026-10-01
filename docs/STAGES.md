@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 777 — Turning the informant in said the Clockeaters will handle it
+
+**The ask.** Handing him to Marrow still prints a sentence: `The Clockeaters will handle it. You won't like how. Neither will I.` Sparing him already reads as the terminal.
+
+**The change.** `THE CLOCKEATERS WILL HANDLE IT. YOU WON'T LIKE HOW. NEITHER WILL I.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the informant script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'The Clockeaters will handle it. You won't like how. Neither will I.' to be 'THE CLOCKEATERS WILL HANDLE IT. YOU WON'T LIKE HOW. NEITHER WILL I.'`).
+
+**Open.** Publishing the depot logs still prints as a sentence.
+
 ## Stage 776 — Sparing the informant said mercy is a line item
 
 **The ask.** Letting the docks informant run still prints a sentence: `Mercy is a line item too. I'll log it.` The choice above it is already the terminal.

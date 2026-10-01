@@ -564,6 +564,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"MERCY IS A LINE ITEM TOO\. I'LL LOG IT\."/);
     expect(src).not.toMatch(/"Mercy is a line item too\. I'll log it\."/);
   });
+
+  it("m2 turn line is CRT, not the Clockeaters will handle it", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m2_informant")!.nodes.find((n) => n.id === "turn")!.lines[0];
+    expect(line).toBe("THE CLOCKEATERS WILL HANDLE IT. YOU WON'T LIKE HOW. NEITHER WILL I.");
+    expect(line).not.toBe("The Clockeaters will handle it. You won't like how. Neither will I.");
+    expect(src).toMatch(/"THE CLOCKEATERS WILL HANDLE IT\. YOU WON'T LIKE HOW\. NEITHER WILL I\."/);
+    expect(src).not.toMatch(/"The Clockeaters will handle it\. You won't like how\. Neither will I\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

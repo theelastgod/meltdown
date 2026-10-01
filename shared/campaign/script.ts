@@ -144,7 +144,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
         ],
       }),
       n("spare", "deacon", ["MERCY IS A LINE ITEM TOO. I'LL LOG IT."]),
-      n("turn", "marrow", ["The Clockeaters will handle it. You won't like how. Neither will I."]),
+      n("turn", "marrow", ["THE CLOCKEATERS WILL HANDLE IT. YOU WON'T LIKE HOW. NEITHER WILL I."]),
     ],
   },
   {
