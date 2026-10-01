@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 780 — Ida's first line on the walk said this is the Directive
+
+**The ask.** Meeting her on the walk still opens on a sentence: `This is it. The Directive. Wern's own hand.` The line after it is still a sentence too.
+
+**The change.** `THIS IS IT. THE DIRECTIVE. WERN'S OWN HAND.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the leak script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'This is it. The Directive. Wern's own hand.' to be 'THIS IS IT. THE DIRECTIVE. WERN'S OWN HAND.'`).
+
+**Open.** Her second line on the walk still prints as a sentence.
+
 ## Stage 779 — Holding the depot logs said truth keeps
 
 **The ask.** Holding the logs still prints a sentence: `Good. Truth keeps. Clocks don't.` Publishing them already reads as the terminal.

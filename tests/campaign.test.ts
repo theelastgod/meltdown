@@ -591,6 +591,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"GOOD\. TRUTH KEEPS\. CLOCKS DON'T\."/);
     expect(src).not.toMatch(/"Good\. Truth keeps\. Clocks don't\."/);
   });
+
+  it("m4 Ida line 1 is CRT, not this is it the Directive", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m4_leak")!.nodes.find((n) => n.id === "a")!.lines[0];
+    expect(line).toBe("THIS IS IT. THE DIRECTIVE. WERN'S OWN HAND.");
+    expect(line).not.toBe("This is it. The Directive. Wern's own hand.");
+    expect(src).toMatch(/"THIS IS IT\. THE DIRECTIVE\. WERN'S OWN HAND\."/);
+    expect(src).not.toMatch(/"This is it\. The Directive\. Wern's own hand\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
