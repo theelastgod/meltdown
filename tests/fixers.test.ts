@@ -323,8 +323,23 @@ describe("the fixers, in the flesh", () => {
       expect(n.lining, `${id} lining wears the coat`).toBeGreaterThan(20);
       expect(n.cloth, `${id} coat went dark with the lining`).toBeGreaterThan(20);
     }
-    const wern = tally(fixerGeometry("wern").body);
-    expect(wern.lining, "Wern's lining went dark with Ida's").toBe(0);
+  });
+
+  it("Wern's coat lining is darker than the cloth", () => {
+    const g = fixerGeometry("wern").body;
+    const color = g.getAttribute("color");
+    let lining = 0;
+    let cloth = 0;
+    let shoes = 0;
+    for (let i = 0; i < color.count; i++) {
+      const c = color.getX(i);
+      if (Math.abs(c - FIXER_LINING_SHADE) < 1e-5) lining++;
+      else if (Math.abs(c - WERN_SHOE_SHADE) < 1e-5) shoes++;
+      else if (c === 1) cloth++;
+    }
+    expect(lining, "the lining wears the coat").toBeGreaterThan(20);
+    expect(cloth, "the coat went dark with the lining").toBeGreaterThan(20);
+    expect(shoes, "the shoes went dark with the lining").toBeGreaterThan(8);
   });
 });
 

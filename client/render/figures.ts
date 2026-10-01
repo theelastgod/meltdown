@@ -232,7 +232,8 @@ function wern(): Parts {
   const parts: Parts = { body: [], trim: [], void: [], legs: [], arms: [] };
   const COAT: Profile = [[0.34, 0.06], [0.31, 0.4], [0.27, 0.8], [0.24, 1.05], [0.23, 1.2], [0.26, 1.38], [0.25, 1.45], [0.15, 1.53]];
   parts.body.push(lathe(COAT, 14, { sx: 1.12, sz: 0.8, folds: 4, fold: () => 0.015, gap: 0.3 }));
-  parts.body.push(inside(lathe(COAT, 14, { sx: 1.12, sz: 0.8, folds: 4, fold: () => 0.015, gap: 0.3 })));
+  // the lining is the coat's mesh. Darker than the cloth, so the opening is not the outside.
+  parts.body.push(paint(inside(lathe(COAT, 14, { sx: 1.12, sz: 0.8, folds: 4, fold: () => 0.015, gap: 0.3 })), FIXER_LINING_SHADE));
   parts.body.push(put(new THREE.BoxGeometry(0.58, 0.06, 0.24), T(0, 1.43, 0)));
   parts.body.push(paint(lathe([[0.125, 1.47], [0.14, 1.64]], 12, { gap: 0.8 }), FIXER_COLLAR_SHADE));
   parts.body.push(paint(put(new THREE.SphereGeometry(0.105, 12, 10), T(0, 1.73, 0).multiply(new THREE.Matrix4().makeScale(0.9, 1.15, 1))), 0));

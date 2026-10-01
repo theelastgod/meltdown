@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 762 — Wern's coat lining is darker than the cloth
+
+**The ask.** The inside of the open greatcoat is the outside at full brightness, so the gap reads as more cloth. Ida's lining was already darker.
+
+**The change.** That underside bakes shade 0.35. Darker than the coat, clear of the shoes and the collar. No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts lining vertices on Wern, and the coat and the shoes stay their own shades. Leaving the lining unpainted failed once (`the lining wears the coat: expected 0 to be greater than 20`).
+
+**Open.** The short layer over Marrow's shoulders still wears the cloak.
+
 ## Stage 761 — Ida's coat lining is darker than the cloth
 
 **The ask.** The inside of the open coat is the outside at full brightness, so the gap reads as more cloth.
