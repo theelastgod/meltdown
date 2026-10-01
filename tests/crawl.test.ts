@@ -8,7 +8,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { CRAWL_TEXT, DEFAULT_CRAWL, OPENING_TEXT, TRAILER_LINES } from "../client/crawl-text";
-import { crawlWanted } from "../client/crawl";
+import { crawlWanted, trailerSkipLine, trailerTap } from "../client/crawl";
 import { TITLE_CARDS } from "../client/menu";
 import { MAX_TRAILER_SECONDS, TRAILER } from "../shared/assets/video";
 import { lintTrailer } from "../shared/assets/lint";
@@ -32,6 +32,20 @@ describe("the opening plays once", () => {
   it("the boot reads the seen flag and the setting, rather than a gate that ignores both", () => {
     const main = readFileSync(new URL("../client/main.ts", import.meta.url), "utf8");
     expect(main).toMatch(/crawlWanted\(bootQ, crawlSeen\(\), game\.settings\.crawlEveryTime\)/);
+  });
+});
+
+describe("a phone that already has the trailer sound", () => {
+  it("skips on the next tap, and is not told to press SPACE", () => {
+    expect(trailerTap(false, true)).toBe("skip");
+    expect(trailerSkipLine(true)).toBe("TAP TO SKIP");
+    expect(trailerSkipLine(true)).not.toMatch(/\[SPACE\]/);
+    expect(trailerTap(true, true)).toBe("unmute");
+    expect(trailerTap(false, false)).toBe("unmute");
+    expect(trailerSkipLine(false)).toBe("[SPACE] SKIP");
+    const crawl = readFileSync(new URL("../client/crawl.ts", import.meta.url), "utf8");
+    expect(crawl).toMatch(/trailerTap\(this\.video\.muted, wantsTouch\(\)\) === "skip"/);
+    expect(crawl).toMatch(/this\.hint\.textContent = trailerSkipLine\(wantsTouch\(\)\)/);
   });
 });
 

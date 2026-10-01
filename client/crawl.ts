@@ -9,7 +9,8 @@
  *
  * It shows on a browser's first visit and never again, unless OPENING TRAILER EVERY VISIT is on.
  * A browser will not play sound before a gesture, so it starts muted: the first click turns the
- * sound on and does not skip; SPACE, ENTER or ESC skip to the title. It is marked seen the moment it
+ * sound on and does not skip. SPACE, ENTER or ESC skip to the title. A phone has no SPACE, so the
+ * tap after the sound is up skips. It is marked seen the moment it
  * starts playing, so a reload halfway through does not play it again. It fails soft: a trailer that
  * cannot load or decode goes straight to the title.
  *
@@ -18,6 +19,18 @@
  */
 import { TRAILER } from "@shared/assets/video";
 import type { GameAudio } from "./audio";
+import { wantsTouch } from "./touch";
+
+/** A tap on the trailer. The first one is sound. A phone has no SPACE, so the next tap skips. A keyboard click still only unmutes. */
+export function trailerTap(muted: boolean, touch: boolean): "unmute" | "skip" {
+  if (muted || !touch) return "unmute";
+  return "skip";
+}
+
+/** The line under the trailer once sound is on. A phone is not told to press SPACE. */
+export function trailerSkipLine(touch: boolean): string {
+  return touch ? "TAP TO SKIP" : "[SPACE] SKIP";
+}
 
 const SEEN_KEY = "meltdown.crawl.seen";
 
@@ -100,6 +113,7 @@ export class OpeningCrawl {
     root.addEventListener("click", (e) => {
       e.stopPropagation();
       if (this.phase === "title") this.finish(true);
+      else if (trailerTap(this.video.muted, wantsTouch()) === "skip") this.skip();
       else this.unmute();
     });
     document.addEventListener("keydown", this.onKey);
@@ -118,7 +132,7 @@ export class OpeningCrawl {
     if (!this.video.muted) return;
     this.video.muted = false;
     this.audio?.resume();
-    this.hint.textContent = "[SPACE] SKIP";
+    this.hint.textContent = trailerSkipLine(wantsTouch());
   }
 
   private onKey = (e: KeyboardEvent): void => {

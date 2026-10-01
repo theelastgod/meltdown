@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 827 — A phone can skip the trailer once the sound is on
+
+**The ask.** The first tap on the trailer turns the sound on, and that is right. The line then said [SPACE] SKIP. A phone has no SPACE. Another tap only tried to unmute again, so the trailer could not be skipped.
+
+**The change.** After the sound is up, a phone reads TAP TO SKIP and the next tap skips to the title. A keyboard click still only unmutes. SPACE, ENTER and ESC still skip.
+
+**Verified.** `tests/crawl.test.ts` reads the tap and the line. Sending that tap back to unmute failed once (`expected 'unmute' to be 'skip'`).
+
+**Open.** Before that first tap, the same line still says CLICK FOR SOUND · [SPACE] SKIP, so a phone is told to press SPACE before it has made a sound.
+
 ## Stage 826 — Explore tells a phone to tap
 
 **The ask.** EXPLORE THIS DISTRICT on the contracts desk still wore brackets. A phone has no key that matches them. The crew controls beside it already say TAP.
