@@ -504,10 +504,19 @@ export class Campaign {
     // J, not C: C is crouch, and the desk used to open every time the player ducked (Stage 692)
     if (e.code === "KeyJ") this.toggleContracts();
     if (e.code === "KeyR" && this.mission?.status === "failed") travelTo(location.href, loadingFor(location.href), { replace: true });
-    if (e.code === "KeyB" && this.mission && this.mission.status !== "running") {
-      const url = this.backToCity();
-      if (url) this.travel(url);
+    if (e.code === "KeyB") {
+      // a crew has no local mission; the card is the contract being over
+      const over = this.mission ? this.mission.status !== "running" : this.completion !== null;
+      if (over) {
+        const url = this.backToCity();
+        if (url) this.travel(url);
+      }
     }
+  }
+
+  /** The city a crew should walk back to: this district, when the desk was opened there. */
+  private cityBack(): string | null {
+    return this.mode === "city" ? this.game.levelId : new URLSearchParams(location.search).get("back");
   }
 
   /** where a contract taken in the city goes back to when it is over (Stage 692), or null when it was not taken there */
@@ -582,7 +591,10 @@ export class Campaign {
         const s = m.settled?.find((x) => x.id === ev.id);
         this.completion = { id: ev.id, ok: s?.ok ?? false, reason: s?.reason };
         const def = missionById(ev.id);
-        this.game.hud.card(`CONTRACT CLOSED · ${def?.title ?? ev.id}`, [s?.ok ? "SETTLED ON EVERY FILE" : `NOT SETTLED · ${s?.reason ?? ""}`, closedContractLine(this.game.hud.touch)], "am", 0, null, () => this.toggleContracts());
+        const home = this.backToCity();
+        const foot = home ? closedCityLine(this.game.hud.touch) : closedContractLine(this.game.hud.touch);
+        const walk = home ? () => this.travel(home) : null;
+        this.game.hud.card(`CONTRACT CLOSED · ${def?.title ?? ev.id}`, [s?.ok ? "SETTLED ON EVERY FILE" : `NOT SETTLED · ${s?.reason ?? ""}`, foot], "am", 0, null, () => this.toggleContracts(), walk);
         this.game.audio.sign();
       } else this.onMissionEvent(ev);
     }
@@ -855,7 +867,7 @@ export class Campaign {
     if (!hosts) return { ok: false, reason: "no campaign host: a crew needs the ledger" };
     const def = missionById(id)!;
     const code = newCrewCode();
-    const url = crewPageUrl(location.href, { wsBase: hosts.ws, code, mission: id, level: def.level, shop: new URLSearchParams(location.search).get("shop") });
+    const url = crewPageUrl(location.href, { wsBase: hosts.ws, code, mission: id, level: def.level, shop: new URLSearchParams(location.search).get("shop"), back: this.cityBack() });
     this.crewTarget = { code, url };
     this.travel(url);
     return { ok: true, code, url };
@@ -875,7 +887,7 @@ export class Campaign {
     }
     if (!info.ok) return { ok: false, reason: info.reason, code, info };
     if (info.status === "complete" || info.status === "failed") return { ok: false, reason: `that crew's contract is ${info.status}`, code, info };
-    const url = crewPageUrl(location.href, { wsBase: hosts.ws, code, mission: info.mission, level: info.level, shop: new URLSearchParams(location.search).get("shop") });
+    const url = crewPageUrl(location.href, { wsBase: hosts.ws, code, mission: info.mission, level: info.level, shop: new URLSearchParams(location.search).get("shop"), back: this.cityBack() });
     this.crewTarget = { code, url };
     this.travel(url);
     return { ok: true, code, url, info };

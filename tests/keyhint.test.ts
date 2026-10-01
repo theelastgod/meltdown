@@ -168,6 +168,18 @@ describe("the way back to the city", () => {
   });
 });
 
+describe("a crew taken in the city", () => {
+  it("keeps the way home and names it when the contract closes", () => {
+    const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    const crew = readFileSync(new URL("../shared/net/crew.ts", import.meta.url), "utf8");
+    expect(crew.includes('if (o.back) u.searchParams.set("back", o.back)')).toBe(true);
+    expect((campaign.match(/back: this\.cityBack\(\)/g) ?? []).length).toBe(2);
+    const mirror = campaign.slice(campaign.indexOf("onMissionMsg(m: MissionMsg)"), campaign.indexOf("the city's public events"));
+    expect(mirror.includes("const foot = home ? closedCityLine(this.game.hud.touch) : closedContractLine(this.game.hud.touch)")).toBe(true);
+    expect(mirror.includes("() => this.toggleContracts(), walk")).toBe(true);
+  });
+});
+
 describe("the ending card", () => {
   it("names the walk home when the contract was taken in the city", () => {
     const campaign = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");

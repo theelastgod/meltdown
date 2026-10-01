@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 821 — A crew taken in the city can walk back
+
+**The ask.** RUN WITH A CREW from the city dropped the way home. The closed card said TAP CONTRACTS. B did nothing, because a crew has no local mission for that key to read.
+
+**The change.** The crew page keeps `back` as the district the desk was opened in. The closed card names the same walk as a solo contract, and the tap takes it. B walks back once the contract is over, including a crew. A contract opened anywhere else still has no way home to name.
+
+**Verified.** `tests/keyhint.test.ts` reads the crew page and the closed card. Taking `back` off the crew page failed once (`expected false to be true`).
+
+**Open.** The booth line still says TAP MARKET and TAP NAME, and the tap does nothing.
+
 ## Stage 820 — The ending card names the walk home
 
 **The ask.** Closing the white office still ended on TAP CONTRACTS, even when the contract was taken in the city. The other closed card already named the walk. This one did not, so a phone had no way home from the ending.

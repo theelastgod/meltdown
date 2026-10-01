@@ -40,6 +40,9 @@ describe("a crew code names a co-op room", () => {
     expect(url.searchParams.get("mission")).toBe("m1_wake_unlisted");
     expect(url.searchParams.get("shop")).toBe("http://h:1");
     expect(url.searchParams.get("headless")).toBe("1"); // the rest of the page's query survives
+    const fromCity = new URL(crewPageUrl("http://127.0.0.1:5173/?city=1", { wsBase: "ws://h:1", code: "ABCDEFGH", mission: "m1_wake_unlisted", level: "lease_row", back: "lease_row" }));
+    expect(fromCity.searchParams.get("back")).toBe("lease_row");
+    expect(fromCity.searchParams.get("mission")).toBe("m1_wake_unlisted");
     expect(url.searchParams.get("explore")).toBeNull(); // a mode that would fight co-op does not
     expect(url.searchParams.get("net")).toBe(crewSocket("ws://h:1", "ABCDEFGH", "m1_wake_unlisted", "lease_row"));
     expect(crewCodeFromSocket(url.searchParams.get("net"))).toBe("ABCDEFGH");

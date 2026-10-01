@@ -50,8 +50,8 @@ export function crewCodeFromSocket(net: string | null | undefined): string | nul
   }
 }
 
-/** the page a crew member loads: the district, co-op mode, the contract, the room's socket, the shop kept */
-export function crewPageUrl(base: string, o: { wsBase: string; code: string; mission: string; level: string; shop?: string | null }): string {
+/** the page a crew member loads: the district, co-op mode, the contract, the room's socket, the shop kept, and the city to walk back to when the contract was taken there */
+export function crewPageUrl(base: string, o: { wsBase: string; code: string; mission: string; level: string; shop?: string | null; back?: string | null }): string {
   const u = new URL(base);
   for (const k of ["explore", "menu", "crawl"]) u.searchParams.delete(k);
   u.searchParams.set("level", o.level);
@@ -59,6 +59,7 @@ export function crewPageUrl(base: string, o: { wsBase: string; code: string; mis
   u.searchParams.set("mission", o.mission);
   u.searchParams.set("net", crewSocket(o.wsBase, o.code, o.mission, o.level));
   if (o.shop) u.searchParams.set("shop", o.shop);
+  if (o.back) u.searchParams.set("back", o.back);
   return u.toString();
 }
 
