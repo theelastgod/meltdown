@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 797 — The one-eye recall said you left me the docks
+
+**The ask.** Sparing the docks still prints a sentence when Wern remembers it: `You left me the docks. One eye. I have watched the ships come in every night since and understood none of it.` The blind recall beside it is already the terminal.
+
+**The change.** `YOU LEFT ME THE DOCKS. ONE EYE. I HAVE WATCHED THE SHIPS COME IN EVERY NIGHT SINCE AND UNDERSTOOD NONE OF IT.`
+
+**Verified.** `tests/campaign.test.ts` reads that recall off the office script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'You left me the docks. One eye. I have watched the ships come in every night since and understood none of it.' to be 'YOU LEFT ME THE DOCKS. ONE EYE. I HAVE WATCHED THE SHIPS COME IN EVERY NIGHT SINCE AND UNDERSTOOD NONE OF IT.'`).
+
+**Open.** The lease still needs an author, and that line still prints as a sentence.
+
 ## Stage 796 — The blind recall said nine days without instruments
 
 **The ask.** Blinding the whole lattice still prints a sentence when Wern remembers it: `I have been blind for nine days. Do you know what a forecaster does with no instruments? He guesses. I had forgotten how.` The chair line above it is already the terminal.

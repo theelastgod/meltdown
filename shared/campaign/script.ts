@@ -238,7 +238,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
         next: "b",
         recall: [
           { gate: { all: { "m5:lattice": "all" } }, lines: ["I HAVE BEEN BLIND FOR NINE DAYS. DO YOU KNOW WHAT A FORECASTER DOES WITH NO INSTRUMENTS? HE GUESSES. I HAD FORGOTTEN HOW."] },
-          { gate: { all: { "m5:lattice": "spare_docks" } }, lines: ["You left me the docks. One eye. I have watched the ships come in every night since and understood none of it."] },
+          { gate: { all: { "m5:lattice": "spare_docks" } }, lines: ["YOU LEFT ME THE DOCKS. ONE EYE. I HAVE WATCHED THE SHIPS COME IN EVERY NIGHT SINCE AND UNDERSTOOD NONE OF IT."] },
         ],
       }),
       n("b", "wern", ["The lease system needs an author. I have been that author for twelve years and I am tired.", "Wipe the ledger and the city remembers nothing — not the fire, not the cage, not you.", "Or take the chair. Freeze what you must. Thaw what you dare."], {

@@ -744,6 +744,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"I HAVE BEEN BLIND FOR NINE DAYS\. DO YOU KNOW WHAT A FORECASTER DOES WITH NO INSTRUMENTS\? HE GUESSES\. I HAD FORGOTTEN HOW\."/);
     expect(src).not.toMatch(/"I have been blind for nine days\. Do you know what a forecaster does with no instruments\? He guesses\. I had forgotten how\."/);
   });
+
+  it("m7 docks recall is CRT, not you left me the docks", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m7_office")!.nodes.find((n) => n.id === "a")!.recall![1]!.lines[0];
+    expect(line).toBe("YOU LEFT ME THE DOCKS. ONE EYE. I HAVE WATCHED THE SHIPS COME IN EVERY NIGHT SINCE AND UNDERSTOOD NONE OF IT.");
+    expect(line).not.toBe("You left me the docks. One eye. I have watched the ships come in every night since and understood none of it.");
+    expect(src).toMatch(/"YOU LEFT ME THE DOCKS\. ONE EYE\. I HAVE WATCHED THE SHIPS COME IN EVERY NIGHT SINCE AND UNDERSTOOD NONE OF IT\."/);
+    expect(src).not.toMatch(/"You left me the docks\. One eye\. I have watched the ships come in every night since and understood none of it\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {
