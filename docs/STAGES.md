@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 829 — The name desk tells a phone to tap
+
+**The ask.** The name desk offered [WRITE IT]. Those brackets are a button on a keyboard. On a phone they read as a key, and a phone has no key that matches them. The burn is unchanged.
+
+**The change.** A phone sees TAP WRITE IT. A keyboard still sees the bracketed button. The name still burns $CAPITAL and buys no stat.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads the row. Putting the brackets back failed once (`expected the row to match crewButton("WRITE IT", this.touchHud)`).
+
+**Open.** The wallet row still says [LINK A WALLET] on a phone.
+
 ## Stage 828 — The trailer does not tell a phone to press SPACE
 
 **The ask.** Before the first tap, the trailer said CLICK FOR SOUND · [SPACE] SKIP. A phone can tap. It cannot press SPACE, and the line named a key it does not have.

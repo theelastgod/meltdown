@@ -12,6 +12,7 @@ import { holdProgress, stepGateHold } from "../shared/net/citygates";
 import { SIM_DT } from "../shared/sim/constants";
 import { runPageUrl } from "../client/runpage";
 import { cityPageUrl } from "../shared/net/city";
+import { crewButton } from "../client/hud/keyhint";
 
 const night = generateDistrict(districtById("night_market")!);
 const lease = generateDistrict(districtById("lease_row")!);
@@ -93,6 +94,16 @@ describe("the trip", () => {
     expect(map).toMatch(/data-wm-run="/);
     expect(map).toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE NAME DESK BURNS · THE RUN PAYS/);
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
+  });
+
+  it("the name desk's write control names a tap on a phone", () => {
+    expect(crewButton("WRITE IT", true)).toBe("TAP WRITE IT");
+    expect(crewButton("WRITE IT", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("WRITE IT", false)).toBe("[WRITE IT]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const row = file.slice(file.indexOf("nameLine():"), file.indexOf("nameDeskHtml():"));
+    expect(row).toMatch(/crewButton\("WRITE IT", this\.touchHud\)/);
+    expect(row).not.toMatch(/\[WRITE IT\]/);
   });
 
   it("the name desk is not the market panel", () => {

@@ -6,7 +6,7 @@
  * the server refuses illegal loadouts at spawn, it never strips them.
  */
 import { ALL_ITEMS, KEYSTONES, LEDGER_ITEMS, MAX_ATTESTED, itemById, ledgerTradeText, type LedgerItem } from "@shared/manifest/items";
-import { closeHint } from "./hud/keyhint";
+import { closeHint, crewButton } from "./hud/keyhint";
 import { DEFAULT_LOADOUT, netDelta, validateLoadout, WEAPON_DEPTH, type Loadout, type Ranks } from "@shared/manifest/loadout";
 import { BUDGET_PER_PERCENT, ADDITIVE } from "@shared/manifest/stats";
 import { xpForDepth, totalXpToReach } from "@shared/progression/depth";
@@ -629,7 +629,7 @@ export class GhostFile {
     const v = this.counterState;
     if (!v?.linked) return "";
     if (v.name) return `NAME <b class="ye">${v.name}</b> <span class="dim">WRITTEN WHERE THEY CAN'T REDACT IT</span>`;
-    if (v.nameOpen) return `NAME <input data-name="1" maxlength="24" placeholder="3–24 · A-Z 0-9 _ -"> <span class="btn" data-act="registerName">[WRITE IT]</span> <span class="dim">${nameFee(3)}–${nameFee(12)} $CAPITAL BY LENGTH, BURNED</span>`;
+    if (v.nameOpen) return `NAME <input data-name="1" maxlength="24" placeholder="3–24 · A-Z 0-9 _ -"> <span class="btn" data-act="registerName">${crewButton("WRITE IT", this.touchHud)}</span> <span class="dim">${nameFee(3)}–${nameFee(12)} $CAPITAL BY LENGTH, BURNED</span>`;
     return `NAME <span class="dim">THE REGISTRY OPENS AT DEPTH ${NAME_DEPTH}</span>`;
   }
 
