@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { ATTEND, attend, attendTarget, buildFixer, DEACON_LEDGER_SHADE, DEACON_SLEEVE_SHADE, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_LINING_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, MARROW_MANTLE_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, VESSEL_SLEEVE_SHADE, VESSEL_YOKE_SHADE, WERN_ARM_SHADE, WERN_SHOE_SHADE, WERN_YOKE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
+import { ATTEND, attend, attendTarget, buildFixer, DEACON_HOOD_SHADE, DEACON_LEDGER_SHADE, DEACON_SLEEVE_SHADE, DEACON_TOE_SHADE, EMBODIED, FIXER_COLLAR_SHADE, FIXER_LINING_SHADE, FIXER_SCALE, FIXER_TRIM, HAIR_SHADE, MARROW_FOOT_SHADE, MARROW_MANTLE_SHADE, TROUSER_SHADE, VESSEL_BOOT_SHADE, VESSEL_HIP, VESSEL_SLEEVE_SHADE, VESSEL_YOKE_SHADE, WERN_ARM_SHADE, WERN_SHOE_SHADE, WERN_YOKE_SHADE, fixerGeometry, vesselWalkerGeometry, type FixerBody } from "../client/render/figures";
 import { PALETTE } from "../client/render/city";
 import { officeVisitor } from "../shared/campaign/save";
 import { emptyCampaign } from "../shared/campaign/save";
@@ -142,6 +142,7 @@ describe("the fixers, in the flesh", () => {
       if (Math.abs(c - DEACON_TOE_SHADE) < 1e-5) expect(deaconPos.getY(i)).toBeLessThan(0.08);
       else if (Math.abs(c - DEACON_LEDGER_SHADE) < 1e-5) expect(deaconPos.getY(i)).toBeGreaterThan(0.7);
       else if (Math.abs(c - DEACON_SLEEVE_SHADE) < 1e-5) expect(deaconPos.getY(i)).toBeGreaterThan(0.5);
+      else if (Math.abs(c - DEACON_HOOD_SHADE) < 1e-5) expect(deaconPos.getY(i)).toBeGreaterThan(1.4);
       else expect(c).toBe(1);
     }
     const figures = readFileSync(new URL("../client/render/figures.ts", import.meta.url), "utf8");
@@ -487,6 +488,31 @@ describe("the fixers, in the flesh", () => {
     let borrowed = 0;
     for (let i = 0; i < ida.count; i++) if (Math.abs(ida.getX(i) - WERN_YOKE_SHADE) < 1e-5) borrowed++;
     expect(borrowed, "Ida picked up Wern's bar").toBe(0);
+  });
+
+  it("the Deacon's hood is darker than the robe", () => {
+    const g = fixerGeometry("deacon").body;
+    const color = g.getAttribute("color");
+    const pos = g.getAttribute("position");
+    let hood = 0;
+    let robe = 0;
+    let sleeves = 0;
+    for (let i = 0; i < color.count; i++) {
+      const c = color.getX(i);
+      const y = pos.getY(i);
+      if (Math.abs(c - DEACON_HOOD_SHADE) < 1e-5) {
+        hood++;
+        expect(y).toBeGreaterThan(1.4);
+      } else if (Math.abs(c - DEACON_SLEEVE_SHADE) < 1e-5) sleeves++;
+      else if (c === 1 && y < 1.4) robe++;
+    }
+    expect(hood, "the hood wears the robe").toBeGreaterThan(20);
+    expect(robe, "the robe went dark with the hood").toBeGreaterThan(20);
+    expect(sleeves, "the sleeves went dark with the hood").toBeGreaterThan(12);
+    const marrow = fixerGeometry("marrow").body.getAttribute("color");
+    let borrowed = 0;
+    for (let i = 0; i < marrow.count; i++) if (Math.abs(marrow.getX(i) - DEACON_HOOD_SHADE) < 1e-5) borrowed++;
+    expect(borrowed, "Marrow picked up the Deacon's hood").toBe(0);
   });
 });
 

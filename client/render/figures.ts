@@ -62,6 +62,8 @@ export const FIXER_LINING_SHADE = 0.35;
 export const MARROW_MANTLE_SHADE = 0.62;
 /** the Deacon's bell sleeves: darker than the robe, clear of the ledger and the toes */
 export const DEACON_SLEEVE_SHADE = 0.55;
+/** The Deacon's hood shell. Darker than the robe, clear of the sleeves. */
+export const DEACON_HOOD_SHADE = 0.64;
 /** the arms behind Wern's back: darker than the coat, clear of the lining and the shoes */
 export const WERN_ARM_SHADE = 0.5;
 /** Ida's sleeves: darker than the coat, clear of the collar and the trousers */
@@ -96,7 +98,7 @@ function onLathe(pr: Profile, sx: number, sz: number, phi: number, y: number, ou
 }
 
 /** a hood with its face cut away toward -z: the shell, and the black inside the opening shows */
-function hood(parts: Parts, o: { r: number; cy: number; sy: number; sz: number; trail: number; opening: number; rim: number }): void {
+function hood(parts: Parts, o: { r: number; cy: number; sy: number; sz: number; trail: number; opening: number; rim: number }, shade?: number): void {
   const shell = (k: number) => {
     const g = new THREE.SphereGeometry(o.r * k, 14, 9, (3 * Math.PI) / 2 + o.opening / 2, Math.PI * 2 - o.opening, 0, Math.PI * 0.72);
     const p = g.getAttribute("position");
@@ -107,7 +109,8 @@ function hood(parts: Parts, o: { r: number; cy: number; sy: number; sz: number; 
     g.computeVertexNormals();
     return g;
   };
-  parts.body.push(shell(1));
+  const outer = shell(1);
+  parts.body.push(shade === undefined ? outer : paint(outer, shade));
   parts.void.push(inside(shell(0.93)));
   // the rim of the opening, lit, from crown to jaw
   for (const side of [-1, 1]) {
@@ -129,7 +132,8 @@ function deacon(): Parts {
   parts.body.push(lathe(ROBE, 14, { sx: 1, sz: 0.85, folds: 6, fold }));
   // toes of two boots under the hem. Darker than the robe, so the foot is not the cloth.
   for (const x of [-0.1, 0.1]) parts.body.push(paint(put(new THREE.BoxGeometry(0.1, 0.06, 0.12), T(x, 0.03, -0.3)), DEACON_TOE_SHADE));
-  hood(parts, { r: 0.175, cy: 1.66, sy: 1.2, sz: 1.15, trail: 0.1, opening: 1.7, rim: 1 });
+  // the hood is the robe's mesh. Darker than the cloth, so the head is not the robe.
+  hood(parts, { r: 0.175, cy: 1.66, sy: 1.2, sz: 1.15, trail: 0.1, opening: 1.7, rim: 1 }, DEACON_HOOD_SHADE);
   // bell sleeves meeting in front. Darker than the robe, so the arm is not the cloth.
   for (const side of [-1, 1]) {
     parts.body.push(paint(put(new THREE.CylinderGeometry(0.07, 0.12, 0.46, 8), T(side * 0.2, 1.18, -0.12).multiply(new THREE.Matrix4().makeRotationZ(side * 0.5)).multiply(new THREE.Matrix4().makeRotationX(0.6))), DEACON_SLEEVE_SHADE));
