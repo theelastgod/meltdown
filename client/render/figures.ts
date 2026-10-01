@@ -52,6 +52,8 @@ export const WERN_SHOE_SHADE = 0.18;
 export const DEACON_TOE_SHADE = 0.24;
 /** Marrow's feet: darker than the cloak, not a void */
 export const MARROW_FOOT_SHADE = 0.28;
+/** a bare head's collar: darker than the coat, clear of the hair and the face */
+export const FIXER_COLLAR_SHADE = 0.68;
 /** vertex colour on a part: 0 is unlit (a bare head), 1 is the coat as it was */
 function paint(g: THREE.BufferGeometry, v: number): THREE.BufferGeometry {
   const n = g.getAttribute("position").count;
@@ -197,8 +199,8 @@ function vessel(): Parts {
   parts.body.push(lathe(COAT.slice(3), 12, { sx: 1.1, sz: 0.8 }));
   // the Estate's cut: a hard yoke across the shoulders
   parts.body.push(put(new THREE.BoxGeometry(0.5, 0.06, 0.22), T(0, 1.42, 0)));
-  // high collar, head, and the hair drawn back
-  parts.body.push(lathe([[0.1, 1.47], [0.105, 1.6]], 12, { gap: 0.9 }));
+  // high collar, head, and the hair drawn back. The collar is darker than the coat, so the neck is not the cloth.
+  parts.body.push(paint(lathe([[0.1, 1.47], [0.105, 1.6]], 12, { gap: 0.9 }), FIXER_COLLAR_SHADE));
   // the head is the coat's mesh. Black vertices keep the street off the face. The hair is darker than the coat.
   parts.body.push(paint(put(new THREE.SphereGeometry(0.1, 12, 10), T(0, 1.69, 0).multiply(new THREE.Matrix4().makeScale(0.92, 1.12, 1))), 0));
   parts.body.push(paint(put(new THREE.SphereGeometry(0.107, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.62), T(0, 1.705, 0.018)), HAIR_SHADE));
@@ -226,7 +228,7 @@ function wern(): Parts {
   parts.body.push(lathe(COAT, 14, { sx: 1.12, sz: 0.8, folds: 4, fold: () => 0.015, gap: 0.3 }));
   parts.body.push(inside(lathe(COAT, 14, { sx: 1.12, sz: 0.8, folds: 4, fold: () => 0.015, gap: 0.3 })));
   parts.body.push(put(new THREE.BoxGeometry(0.58, 0.06, 0.24), T(0, 1.43, 0)));
-  parts.body.push(lathe([[0.125, 1.47], [0.14, 1.64]], 12, { gap: 0.8 }));
+  parts.body.push(paint(lathe([[0.125, 1.47], [0.14, 1.64]], 12, { gap: 0.8 }), FIXER_COLLAR_SHADE));
   parts.body.push(paint(put(new THREE.SphereGeometry(0.105, 12, 10), T(0, 1.73, 0).multiply(new THREE.Matrix4().makeScale(0.9, 1.15, 1))), 0));
   parts.body.push(paint(put(new THREE.SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), T(0, 1.75, 0.012)), HAIR_SHADE));
   // the shoes are the coat's mesh. Darker than the cloth, so the toe is not the hem.

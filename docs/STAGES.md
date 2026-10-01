@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 759 — A bare head's collar is darker than the coat
+
+**The ask.** The roll at Ida's neck, and Wern's, is the coat at full brightness, so the collar reads as the cloth. The hair above it was already darker.
+
+**The change.** Those lathes bake shade 0.68. Darker than the coat, clear of the hair (0.46) and the unlit face. The walk uses the same body. No new mesh.
+
+**Verified.** `tests/fixers.test.ts` counts collar vertices on Ida, on Wern, and on the walker, and the hair stays shade 0.46. Leaving the collars unpainted failed once (`vessel collar wears the coat: expected 0 to be greater than 12`).
+
+**Open.** The name-change kiosk is still the whole Ledger Market panel.
+
 ## Stage 758 — Marrow's feet are darker than the cloak
 
 **The ask.** The shoes under the ragged hem are the cloak at full brightness, so the foot reads as cloth.
