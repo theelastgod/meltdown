@@ -193,6 +193,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(155, "skin_plinth", "PLINTH", "DARK PLINTH STONE, A CYAN DAMP LINE", 62, 0xc29b, "#ff3ec9", "skin_plinth_plate"),
   skin(156, "skin_riser", "RISER", "DARK STAIR RISER, MAGENTA AT THE NOSING", 74, 0xc29c, "#ffb02e", "skin_riser_plate"),
   skin(157, "skin_landing", "LANDING", "DARK LANDING CONCRETE, CYAN IN A JOINT", 88, 0xc29d, "#37ff8b", "skin_landing_plate"),
+  skin(158, "skin_baluster", "BALUSTER", "DARK BALUSTER STEEL, MAGENTA AT THE FOOT", 96, 0xc29e, "#8f4dff", "skin_baluster_plate"),
+  skin(159, "skin_handrail", "HANDRAIL", "DARK HANDRAIL TUBE, ONE CYAN HIGHLIGHT", 110, 0xc29f, "#ffd27a", "skin_handrail_plate"),
+  skin(160, "skin_grating", "GRATING", "DARK FLOOR GRATING, CYAN THROUGH THE HOLES", 58, 0xc2a0, "#8fd8ff", "skin_grating_plate"),
+  skin(161, "skin_chequer", "CHEQUER", "DARK CHEQUER PLATE, NO PAINT, A CYAN SCRATCH", 82, 0xc2a1, "#f2f4ff", "skin_chequer_plate"),
 ];
 
 /**
