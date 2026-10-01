@@ -141,6 +141,10 @@ export const SKINS: readonly SkinDef[] = [
   skin(103, "skin_flashing", "FLASHING", "DARK METAL FLASHING, A CYAN DRIP EDGE", 110, 0xc267, "#ffd27a", "skin_flashing_plate"),
   skin(104, "skin_lintel", "LINTEL", "DARK LINTEL CONCRETE, A THIN CYAN STREAK", 58, 0xc268, "#8fd8ff", "skin_lintel_plate"),
   skin(105, "skin_sill", "SILL", "DARK WINDOW SILL STONE, WET, MAGENTA REFLECTION", 82, 0xc269, "#f2f4ff", "skin_sill_plate"),
+  skin(106, "skin_pier", "PIER", "DARK PIER TIMBER, NEARLY BLACK, ONE CYAN BOLT", 48, 0xc26a, "#35f2ff", "skin_pier_plate"),
+  skin(107, "skin_fender", "FENDER", "DARK RUBBER FENDER, MAGENTA WEAR", 62, 0xc26b, "#ff3ec9", "skin_fender_plate"),
+  skin(108, "skin_cleat", "CLEAT", "DARK MOORING CLEAT METAL, CYAN AT THE HORN", 74, 0xc26c, "#ffb02e", "skin_cleat_plate"),
+  skin(109, "skin_bollard", "BOLLARD", "DARK BOLLARD STEEL, ONE AMBER BAND, NO TEXT", 88, 0xc26d, "#37ff8b", "skin_bollard_plate"),
 ];
 
 /**
