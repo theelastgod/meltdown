@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 775 — Keeping the lease page said you fold it into the coat
+
+**The ask.** Choosing to keep the lease still prints a sentence: `You fold it into the coat. It weighs more than paper should.` Burning it already reads as the terminal.
+
+**The change.** `YOU FOLD IT INTO THE COAT. IT WEIGHS MORE THAN PAPER SHOULD.`
+
+**Verified.** `tests/campaign.test.ts` reads that line off the lease-file script and refuses the sentence-case source. Putting the sentence back failed once (`expected 'You fold it into the coat. It weighs more than paper should.' to be 'YOU FOLD IT INTO THE COAT. IT WEIGHS MORE THAN PAPER SHOULD.'`).
+
+**Open.** Sparing the docks informant still prints as a sentence.
+
 ## Stage 774 — Burning the lease page said the page goes up cyan
 
 **The ask.** Choosing to burn the lease still prints a sentence: `The page goes up cyan, then black. Somewhere a ledger line becomes a question mark.` The choice above it is already the terminal.

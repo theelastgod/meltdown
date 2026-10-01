@@ -546,6 +546,15 @@ describe("campaign data", () => {
     expect(src).toMatch(/"THE PAGE GOES UP CYAN, THEN BLACK\. SOMEWHERE A LEDGER LINE BECOMES A QUESTION MARK\."/);
     expect(src).not.toMatch(/"The page goes up cyan, then black\. Somewhere a ledger line becomes a question mark\."/);
   });
+
+  it("m1 keep line is CRT, not you fold it into the coat", () => {
+    const src = readFileSync(new URL("../shared/campaign/script.ts", import.meta.url), "utf8");
+    const line = SCRIPTS.find((s) => s.id === "m1_file")!.nodes.find((n) => n.id === "keep")!.lines[0];
+    expect(line).toBe("YOU FOLD IT INTO THE COAT. IT WEIGHS MORE THAN PAPER SHOULD.");
+    expect(line).not.toBe("You fold it into the coat. It weighs more than paper should.");
+    expect(src).toMatch(/"YOU FOLD IT INTO THE COAT\. IT WEIGHS MORE THAN PAPER SHOULD\."/);
+    expect(src).not.toMatch(/"You fold it into the coat\. It weighs more than paper should\."/);
+  });
 });
 
 describe("the contracts list names the protocol the settlement does", () => {

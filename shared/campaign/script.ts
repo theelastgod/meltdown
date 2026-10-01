@@ -126,7 +126,7 @@ export const SCRIPTS: readonly ScriptDef[] = [
         ],
       }),
       n("burn", "you", ["THE PAGE GOES UP CYAN, THEN BLACK. SOMEWHERE A LEDGER LINE BECOMES A QUESTION MARK."]),
-      n("keep", "you", ["You fold it into the coat. It weighs more than paper should."]),
+      n("keep", "you", ["YOU FOLD IT INTO THE COAT. IT WEIGHS MORE THAN PAPER SHOULD."]),
     ],
   },
   {
