@@ -40,6 +40,9 @@
  *
  * The last quarter on the phone (Stage 902). The rack's short name turns
  * amber. On the phone that word stayed the same cyan as a full magazine.
+ *
+ * The rank beside it (Stage 903). An empty magazine turns that short name
+ * magenta. The rank beside the name stayed the same cyan as a full magazine.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 import { lowLine } from "./ammo";
@@ -124,9 +127,24 @@ export function phoneNameHtml(label: string, tone: "" | "low" | "empty"): string
   return `<em${mark ? ` class="${mark}"` : ""}>${label}</em>`;
 }
 
+/**
+ * The rank beside the short name on the phone when that magazine is empty (Stage 903).
+ * The name turns magenta. This rank stayed the same cyan as a full magazine.
+ * The last quarter is not this.
+ */
+export function phoneRankEmpty(tone: "" | "low" | "empty"): boolean {
+  return tone === "empty";
+}
+
+/** The rank beside the short name. Empty marks it magenta. A full magazine leaves it cyan. */
+export function phoneRankHtml(rank: number, tone: "" | "low" | "empty"): string {
+  const label = rackRankMark(rank);
+  return phoneRankEmpty(tone) ? `<b class="empty">${label}</b>` : label;
+}
+
 export function phoneRankSlot(label: string, rank: number, rounds: number | string, on: boolean, tone: "" | "low" | "empty" = "", next = false): string {
   const name = label.trim();
   const cls = on ? "on" : next ? "next" : "";
   const mark = next && !on ? "▸ " : "";
-  return `<span${cls ? ` class="${cls}"` : ""}>${mark}${phoneNameHtml(name, tone)} ${rackRoundHtml(rounds, tone)} ${rackRankMark(rank)}</span>`;
+  return `<span${cls ? ` class="${cls}"` : ""}>${mark}${phoneNameHtml(name, tone)} ${rackRoundHtml(rounds, tone)} ${phoneRankHtml(rank, tone)}</span>`;
 }
