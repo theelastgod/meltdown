@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 846 — Buying a cosmetic tells a phone to tap
+
+**The ask.** The Wakelight shop offered a cosmetic's price in brackets, […◆]. Those brackets are a button on a keyboard. On a phone they read as a key. Buying still spends Wakelight the file already has. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** A phone sees TAP and the price. A keyboard still sees the bracketed price. A cosmetic already owned still reads OWNED, or its wear button, which is a different control.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton(\`${c.wakelight}◆`, this.touchHud)/`).
+
+**Open.** A theme the file already owns still says [WEAR] or [WORN] on a phone. The season-pass row says the same.
+
 ## Stage 845 — Burning the file tells a phone to tap
 
 **The ask.** Rewrite offered [BURN THE FILE — KEEP THE STAMPS AND THE GLYPH'S AGE — +500 WAKELIGHT]. Those brackets are a button on a keyboard. On a phone they read as a key. Burning still resets the file at Depth 50 and pays Wakelight. It does not pay $CAPITAL and it does not buy a stat.

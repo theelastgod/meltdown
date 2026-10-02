@@ -96,6 +96,17 @@ describe("the trip", () => {
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
+  it("buying a cosmetic names a tap on a phone", () => {
+    expect(crewButton("40◆", true)).toBe("TAP 40◆");
+    expect(crewButton("40◆", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("40◆", false)).toBe("[40◆]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const start = file.indexOf("const shop = COSMETICS.map");
+    const row = file.slice(start, file.indexOf("const passShop", start));
+    expect(row).toMatch(/data-act="buyCosmetic" data-id="\$\{c\.id\}">\$\{crewButton\(`\$\{c\.wakelight\}◆`, this\.touchHud\)\}/);
+    expect(row).not.toMatch(/data-act="buyCosmetic"[^>]*>\[/);
+  });
+
   it("burning the file names a tap on a phone", () => {
     const label = "BURN THE FILE — KEEP THE STAMPS AND THE GLYPH'S AGE — +500 WAKELIGHT";
     expect(crewButton(label, true)).toBe(`TAP ${label}`);
