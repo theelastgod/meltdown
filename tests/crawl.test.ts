@@ -66,6 +66,8 @@ describe("the trailer before the first tap", () => {
     expect(trailerOpenLine(true)).not.toMatch(/\[SPACE\]/);
     expect(trailerOpenLine(false)).toBe("CLICK FOR SOUND · [SPACE] SKIP");
     const crawl = readFileSync(new URL("../client/crawl.ts", import.meta.url), "utf8");
+    expect(crawl).toMatch(/class="skip">\$\{trailerOpenLine\(touch\)\}/);
+    expect(crawl).not.toMatch(/class="skip">CLICK FOR SOUND/);
     expect(crawl).toMatch(/this\.hint\.textContent = trailerOpenLine\(wantsTouch\(\)\)/);
   });
 });

@@ -103,7 +103,7 @@ export class OpeningCrawl {
     const root = document.createElement("div");
     root.id = "crawl";
     const touch = wantsTouch();
-    root.innerHTML = `<video class="tv" playsinline muted preload="auto"></video><div class="title" hidden><div class="word">MELTDOWN</div><div class="prompt">${titleWakeLine(touch)}</div></div><div class="skip">CLICK FOR SOUND · [SPACE] SKIP</div><div class="scan"></div>`;
+    root.innerHTML = `<video class="tv" playsinline muted preload="auto"></video><div class="title" hidden><div class="word">MELTDOWN</div><div class="prompt">${titleWakeLine(touch)}</div></div><div class="skip">${trailerOpenLine(touch)}</div><div class="scan"></div>`;
     document.body.appendChild(root);
     this.root = root;
     this.video = root.querySelector("video")!;

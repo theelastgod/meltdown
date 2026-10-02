@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 859 — The trailer's skip line tells a phone to tap
+
+**The ask.** The trailer's skip line said CLICK FOR SOUND · [SPACE] SKIP before the line was written. Those words name a click and a key. On a phone they read as a click and SPACE, and a phone has neither. The first tap still turns the sound on. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** The markup uses the same open line the trailer writes. A phone already reads TAP FOR SOUND. A keyboard still reads CLICK FOR SOUND · [SPACE] SKIP. Once the sound is up, the line is still TAP TO SKIP, or [SPACE] SKIP.
+
+**Verified.** `tests/crawl.test.ts` reads the markup. Putting the click and SPACE back failed once (`expected the source to match /class="skip">\$\{trailerOpenLine\(touch\)\}/`).
+
+**Open.** After the first thumb, a phone still reads ▲ TAP TO WAKE for the rest of the session. A locked pointer takes the keyboard line down. The phone's line does not.
+
 ## Stage 858 — A long load tells a phone to tap
 
 **The ask.** A load that has gone on long enough, or failed, said TAP, CLICK OR PRESS ENTER TO CONTINUE. A phone can tap. It cannot press Enter. The card still lets the player through. It does not spend $CAPITAL and it does not buy a stat.
