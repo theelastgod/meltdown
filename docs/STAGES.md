@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 877 — An empty gun's count is not the same yellow as a full one
+
+**The ask.** A gun with no rounds painted that count the same yellow as a full magazine. The corner turns magenta when the gun in hand is empty, and amber on the last quarter. The rack and the phone list did not. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** An empty count is magenta and the last quarter is amber, on the rack and on the phone list, at the same lines the corner uses. A gun with no magazine stays the plain ∞. A full count stays yellow.
+
+**Verified.** `tests/rack.test.ts` reads the tone. Painting every count plain failed once (`expected '' to be 'empty'`).
+
+**Open.** The phone list marks the gun in hand. It does not mark the gun the next WPN tap selects. The grenade cycle pad names its next one.
+
 ## Stage 876 — The phone list says the rounds in that gun
 
 **The ask.** The phone list named a gun and its rank. It did not say the rounds in that gun. The rack did. The count is not a stat you buy. It does not spend $CAPITAL.

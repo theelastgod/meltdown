@@ -10,7 +10,7 @@ import { houseName } from "@shared/endgame/season";
 import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
-import { phoneRankSlot, rackLabel, rackRankMark } from "./rack";
+import { phoneRankSlot, rackLabel, rackRankMark, rackRoundHtml, rackRoundTone } from "./rack";
 import { heldGateLine, heldRankPace, heldWeaponLine } from "./weaponline";
 import { motionWord } from "./stance";
 import { keysLine, learn, NOTHING_SEEN, padsLine, type Seen } from "./keys";
@@ -992,8 +992,8 @@ export class Hud {
     const rackSig = `${p.weapon.slot}:${p.weapon.ammo.join(",")}:${ranks.join(",")}`;
     if (this.rackKey !== rackSig) {
       this.rackKey = rackSig;
-      this.q(".rack").innerHTML = WEAPON_LIST.map((w, i) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}<i>${w.magSize ? p.weapon.ammo[w.slot] : "∞"}</i><b data-r="${rackRankMark(ranks[i] ?? 1)}"></b></span>`).join("");
-      this.q(".pranks").innerHTML = WEAPON_LIST.map((w, i) => phoneRankSlot(rackLabel(w.name), ranks[i] ?? 1, w.magSize ? (p.weapon.ammo[w.slot] ?? 0) : "∞", w.slot === p.weapon.slot)).join("");
+      this.q(".rack").innerHTML = WEAPON_LIST.map((w, i) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}${rackRoundHtml(w.magSize ? (p.weapon.ammo[w.slot] ?? 0) : "∞", rackRoundTone(w.magSize, p.weapon.ammo[w.slot] ?? 0))}<b data-r="${rackRankMark(ranks[i] ?? 1)}"></b></span>`).join("");
+      this.q(".pranks").innerHTML = WEAPON_LIST.map((w, i) => phoneRankSlot(rackLabel(w.name), ranks[i] ?? 1, w.magSize ? (p.weapon.ammo[w.slot] ?? 0) : "∞", w.slot === p.weapon.slot, rackRoundTone(w.magSize, p.weapon.ammo[w.slot] ?? 0))).join("");
     }
     const nk = p.weapon.grenadeSel + ":" + p.weapon.grenades.join(",");
     if (this.nadeKey !== nk) {

@@ -18,8 +18,12 @@
  *
  * The rounds (Stage 876). The phone list named the gun and its rank. The rack already
  * painted the rounds in that gun. A phone hides the rack, so those rounds were gone.
+ *
+ * The tone (Stage 877). That count stayed yellow when the gun was empty and when it
+ * was on its last quarter. The corner already turns magenta and amber for those.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
+import { lowLine } from "./ammo";
 
 export { weaponShortLabel as rackLabel } from "@shared/weapons/manifest";
 
@@ -30,11 +34,25 @@ export function rackRankMark(rank: number): string {
   return `R${String(n).padStart(2, "0")}`;
 }
 
+/** Empty and the last quarter, the same lines the corner uses. A gun with no magazine stays plain. */
+export function rackRoundTone(magSize: number, ammo: number): "" | "low" | "empty" {
+  if (!(magSize > 0)) return "";
+  const n = Number.isFinite(ammo) ? ammo : 0;
+  if (n <= 0) return "empty";
+  if (n <= lowLine(magSize)) return "low";
+  return "";
+}
+
+/** The round count, yellow unless the tone says it is low or empty. */
+export function rackRoundHtml(rounds: number | string, tone: "" | "low" | "empty" = ""): string {
+  return `<i${tone ? ` class="${tone}"` : ""}>${rounds}</i>`;
+}
+
 /**
  * One gun on the phone list. The rack is hidden there. The gun in hand is marked on.
  * `rounds` is the same count the rack paints: the magazine, or ∞ when the gun has none.
  */
-export function phoneRankSlot(label: string, rank: number, rounds: number | string, on: boolean): string {
+export function phoneRankSlot(label: string, rank: number, rounds: number | string, on: boolean, tone: "" | "low" | "empty" = ""): string {
   const name = label.trim();
-  return `<span${on ? ` class="on"` : ""}>${name} <i>${rounds}</i> ${rackRankMark(rank)}</span>`;
+  return `<span${on ? ` class="on"` : ""}>${name} ${rackRoundHtml(rounds, tone)} ${rackRankMark(rank)}</span>`;
 }
