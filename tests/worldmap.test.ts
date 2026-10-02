@@ -124,12 +124,15 @@ describe("what the map shows", () => {
     expect(d).toMatch(/\[TRAVEL TO NIGHT MARKET\]/);
     const phone = worldMapDetails(state({ presence: p, selected: "night_market", touch: true }));
     expect(phone).toMatch(/TAP TRAVEL TO NIGHT MARKET/);
+    expect(phone).toMatch(/TAP THE RUN/);
+    expect(phone).not.toMatch(/ENTER THE RUN/);
     expect(phone).not.toMatch(/\[TRAVEL TO/);
     const here = worldMapDetails(state({ presence: p, selected: "lease_row" }));
     expect(here).not.toMatch(/data-wm-go/);
     expect(here).toMatch(/YOU ARE HERE/);
     expect(here).toMatch(/NO PUBLIC EVENT RUNNING/);
     expect(here).toMatch(/data-wm-run="lease_row"/);
+    expect(here).toMatch(/>ENTER THE RUN</);
     expect(here).toMatch(/LEDGER DESK AT THE METRO/);
     expect(worldMapHtml(layout, state({ touch: true }))).not.toMatch(/data-wm-run="[^"]*".*\[[A-Z]+\]/);
   });

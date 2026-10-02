@@ -99,6 +99,11 @@ export function graphOpenLine(touch: boolean): string {
   return touch ? "TAP GRAPH" : "G OPENS THE WHOLE GRAPH";
 }
 
+/** The world map's way into THE RUN. A phone taps. ENTER reads as a key it does not have. */
+export function runButton(touch: boolean): string {
+  return touch ? "TAP THE RUN" : "ENTER THE RUN";
+}
+
 /** The ledger entry's sign line. A phone has no Enter, so the receipt stays up until a tap. */
 export function receiptSignLine(touch: boolean): string {
   return touch ? "TAP TO SIGN" : "[ENTER] SIGN";
