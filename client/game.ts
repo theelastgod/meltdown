@@ -37,7 +37,7 @@ import { lookYawPitch } from "./render/feel";
 import { stepCues, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
 import { shotPass } from "./nearmiss";
-import { ammoRead, firePadHot, firePadLow, lastRoundsEdge, reloadPadHot } from "./hud/ammo";
+import { ammoRead, firePadHot, firePadLow, lastRoundsEdge, reloadPadHot, reloadPadLow } from "./hud/ammo";
 import { momentLine, runMoments } from "./runcue";
 import { shieldLine, shieldMoments } from "./shieldcue";
 import { freshestVantage, targetRead } from "./hud/target";
@@ -1631,6 +1631,7 @@ export class Game {
     {
       const mag = ammoRead(p.weapon.ammo[p.weapon.slot] ?? 0, weaponDefOf(p).magSize, p.weapon.reloadTimer, p.weapon.reloadTotal, p.weapon.reloadSeated);
       this.touch?.setMagazineEmpty(reloadPadHot(mag.state));
+      this.touch?.setMagazineLow(reloadPadLow(mag.state));
       this.touch?.setFireEmpty(firePadHot(mag.state));
       this.touch?.setFireLow(firePadLow(mag.state));
     }

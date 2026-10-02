@@ -42,6 +42,14 @@ export function reloadPadHot(state: AmmoState): boolean {
 }
 
 /**
+ * The reload pad on the last quarter (Stage 892). The fire pad turns amber. The pad the corner
+ * points at stayed the same cyan as a full magazine. Empty stays magenta.
+ */
+export function reloadPadLow(state: AmmoState): boolean {
+  return state === "low";
+}
+
+/**
  * The fire pad (Stage 886). An empty magazine marks the reload pad. The trigger you are
  * holding stayed the same cyan as a full gun. The last quarter is not this: that one is amber.
  */

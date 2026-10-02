@@ -173,6 +173,11 @@ export class TouchControls {
     this.root.querySelector(".tc-reload")?.classList.toggle("empty", empty);
   }
 
+  /** The last quarter (Stage 892). The fire pad turns amber. The reload pad has to say it too. */
+  setMagazineLow(low: boolean): void {
+    this.root.querySelector(".tc-reload")?.classList.toggle("low", low);
+  }
+
   /** The trigger (Stage 886). An empty magazine marks the reload pad. The fire pad has to say it too. */
   setFireEmpty(empty: boolean): void {
     this.root.querySelector(".tc-fire")?.classList.toggle("empty", empty);
