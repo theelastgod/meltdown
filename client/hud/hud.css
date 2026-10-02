@@ -649,6 +649,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .thumbs .tc-jump   { right: calc(16px + env(safe-area-inset-right)); bottom: calc(106px + env(safe-area-inset-bottom)); width: 56px; height: 56px; }
 #hud .thumbs .tc-jump.low { color: var(--am); border-color: var(--am); text-shadow: 0 0 4px rgba(255,176,46,0.6); }
 #hud .thumbs .tc-jump.empty { color: var(--mg); border-color: var(--mg); text-shadow: 0 0 4px rgba(255,62,201,0.6); }
+#hud .thumbs .tc-jump.on.empty { background: rgba(255,62,201,0.22); box-shadow: 0 0 12px rgba(255,62,201,0.5); }
 #hud .thumbs .tc-crouch { right: calc(106px + env(safe-area-inset-right)); bottom: calc(82px + env(safe-area-inset-bottom)); width: 52px; height: 52px; }
 #hud .thumbs .tc-crouch.low { color: var(--am); border-color: var(--am); text-shadow: 0 0 4px rgba(255,176,46,0.6); }
 #hud .thumbs .tc-crouch.empty { color: var(--mg); border-color: var(--mg); text-shadow: 0 0 4px rgba(255,62,201,0.6); }
