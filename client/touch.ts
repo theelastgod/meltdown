@@ -258,6 +258,11 @@ export class TouchControls {
     this.root.querySelector(".tc-pause")?.classList.toggle("low", low);
   }
 
+  /** An empty magazine (Stage 925). The pause pad already says so. The ring of the move stick has to say it too. */
+  setStickRingEmpty(empty: boolean): void {
+    this.root.querySelector(".tc-ring")?.classList.toggle("empty", empty);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();

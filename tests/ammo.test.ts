@@ -4,7 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { altPadHot, altPadLow, ammoRead, chargeRead, coneEmpty, coneLow, firePadHot, firePadLow, grenadePadHot, grenadePadLow, jumpPadHot, jumpPadLow, lastRoundsEdge, LOW_FRAC, lowLine, nameEmpty, nameLow, nextGrenadePadHot, nextGrenadePadLow, pausePadHot, pausePadLow, reloadPadHot, reloadPadLow, reticleEmpty, reticleLow, sizeEmpty, sizeLow, slashEmpty, slashLow, slidePadHot, slidePadLow, weaponPadHot, weaponPadLow } from "../client/hud/ammo";
+import { altPadHot, altPadLow, ammoRead, chargeRead, coneEmpty, coneLow, firePadHot, firePadLow, grenadePadHot, grenadePadLow, jumpPadHot, jumpPadLow, lastRoundsEdge, LOW_FRAC, lowLine, nameEmpty, nameLow, nextGrenadePadHot, nextGrenadePadLow, pausePadHot, pausePadLow, reloadPadHot, reloadPadLow, reticleEmpty, reticleLow, sizeEmpty, sizeLow, slashEmpty, slashLow, slidePadHot, slidePadLow, stickRingHot, weaponPadHot, weaponPadLow } from "../client/hud/ammo";
 
 describe("lowLine", () => {
   it("is the last quarter, rounded up, and never under a round", () => {
@@ -140,6 +140,21 @@ describe("the fire pad on the last quarter", () => {
     expect(touch).toMatch(/querySelector\("\.tc-fire"\)\?\.classList\.toggle\("low", low\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.thumbs \.tc-fire\.low \{ color: var\(--am\)/);
+  });
+});
+
+describe("the ring of the move stick", () => {
+  it("turns magenta only when the magazine is empty", () => {
+    expect(stickRingHot("empty")).toBe(true);
+    expect(stickRingHot("low")).toBe(false);
+    expect(stickRingHot("ok")).toBe(false);
+    expect(stickRingHot("reloading")).toBe(false);
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(game).toMatch(/setStickRingEmpty\(stickRingHot\(mag\.state\)\)/);
+    const touch = readFileSync(new URL("../client/touch.ts", import.meta.url), "utf8");
+    expect(touch).toMatch(/querySelector\("\.tc-ring"\)\?\.classList\.toggle\("empty", empty\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.thumbs \.tc-ring\.empty \{ border-color: var\(--mg\)/);
   });
 });
 
