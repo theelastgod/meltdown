@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 851 — Setting an alias tells a phone to tap
+
+**The ask.** An alias row offered [SET]. Those brackets are a button on a keyboard. On a phone they read as a key. Setting still writes the name in the field. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** A phone sees TAP SET. A keyboard still sees the bracketed button. An empty alias still reads EMPTY.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton("SET", this.touchHud)/`).
+
+**Open.** The file's primary weapon still says its name in brackets on a phone.
+
 ## Stage 850 — Saving a preset tells a phone to tap
 
 **The ask.** A preset row offered [SAVE CURRENT]. Those brackets are a button on a keyboard. On a phone they read as a key. Saving still writes the file's current sheet into that slot. It does not spend $CAPITAL and it does not buy a stat.

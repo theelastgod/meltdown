@@ -96,6 +96,17 @@ describe("the trip", () => {
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
+  it("setting an alias names a tap on a phone", () => {
+    expect(crewButton("SET", true)).toBe("TAP SET");
+    expect(crewButton("SET", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("SET", false)).toBe("[SET]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const start = file.indexOf("const aliases =");
+    const row = file.slice(start, file.indexOf("return `<div class=\"sh\">DAILY CONTRACTS", start));
+    expect(row).toMatch(/data-act="setAlias" data-id="\$\{i \+ 1\}">\$\{crewButton\("SET", this\.touchHud\)\}/);
+    expect(row).not.toMatch(/\[SET\]/);
+  });
+
   it("saving a preset names a tap on a phone", () => {
     expect(crewButton("SAVE CURRENT", true)).toBe("TAP SAVE CURRENT");
     expect(crewButton("SAVE CURRENT", true)).not.toMatch(/\[[A-Z]/);
