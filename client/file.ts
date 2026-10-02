@@ -699,7 +699,7 @@ export class GhostFile {
     const slots = a ? slotsOf(a) : { aliases: 1, presets: 1 };
     const owned = a?.cosmetics ?? [];
     const shop = COSMETICS.map((c) => `<div class="cos ${owned.includes(c.id) ? "owned" : ""}"><b>${c.name}</b> <span class="dim">${c.line}</span> · ${owned.includes(c.id) ? (c.kind === "theme" ? `<span class="btn" data-act="theme" data-id="${c.id}">${crewButton(a?.theme === c.id ? "WORN" : "WEAR", this.touchHud)}</span>` : "OWNED") : `<span class="btn ${(a?.wallet.wakelight ?? 0) >= c.wakelight ? "" : "off"}" data-act="buyCosmetic" data-id="${c.id}">${crewButton(`${c.wakelight}◆`, this.touchHud)}</span>`}</div>`).join("");
-    const passShop = SEASON_PASS_COSMETICS.filter((c) => owned.includes(c.id)).map((c) => `<div class="cos owned"><b>${c.name}</b> <span class="dim">${c.line}</span> · ${c.kind === "theme" ? `<span class="btn" data-act="theme" data-id="${c.id}">[${a?.theme === c.id ? "WORN" : "WEAR"}]</span>` : "OWNED"}</div>`).join("");
+    const passShop = SEASON_PASS_COSMETICS.filter((c) => owned.includes(c.id)).map((c) => `<div class="cos owned"><b>${c.name}</b> <span class="dim">${c.line}</span> · ${c.kind === "theme" ? `<span class="btn" data-act="theme" data-id="${c.id}">${crewButton(a?.theme === c.id ? "WORN" : "WEAR", this.touchHud)}</span>` : "OWNED"}</div>`).join("");
     const presets = Array.from({ length: slots.presets }, (_, i) => {
       const p = a?.presets?.[i];
       return `<div class="ct"><span>PRESET ${i + 1} · ${p ? p.name : "<span class='dim'>EMPTY</span>"}</span><span>${p ? `<span class="btn" data-act="loadPreset" data-id="${i + 1}">[LOAD]</span> ` : ""}<span class="btn" data-act="savePreset" data-id="${i + 1}">[SAVE CURRENT]</span></span></div>`;

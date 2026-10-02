@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 847 (wearing an owned theme tells a phone to tap). Stage 846 says TAP and the price. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **848** |
+| HEAD | Stage 848 (wearing a season-pass theme tells a phone to tap). Stage 847 says TAP WEAR or TAP WORN. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **849** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |
