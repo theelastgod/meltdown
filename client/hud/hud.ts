@@ -12,7 +12,7 @@ import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
 import { rackLabel } from "./rack";
 import { motionWord } from "./stance";
-import { keysLine, learn, NOTHING_SEEN, type Seen } from "./keys";
+import { keysLine, learn, NOTHING_SEEN, padsLine, type Seen } from "./keys";
 import { SPRINT_READ } from "./stance";
 import { roundCard, type RoundStats } from "./round";
 import { claimsWord, unitsLabel } from "../runcue";
@@ -183,6 +183,7 @@ export class Hud {
       <div class="p cy travel" hidden><div class="t">▲ NEO-CHINA · DISTRICT SELECT <span class="x" data-travel="close"></span></div><div class="list"></div><div class="f">${DISTRICT_FOOTER}</div></div>
       <div class="p mg prompt">▲ CLICK TO WAKE · <span style="color:var(--cy)">WASD</span> MOVE · <span style="color:var(--cy)">SHIFT</span> SPRINT · <span style="color:var(--cy)">CTRL</span> SLIDE · <span style="color:var(--cy)">SPACE</span> JUMP</div>
       <div class="p mg prompt-touch">▲ TAP TO WAKE · <span style="color:var(--cy)">LEFT</span> STICK MOVES · PUSH TO <span style="color:var(--cy)">SPRINT</span> · <span style="color:var(--cy)">RIGHT</span> DRAG AIMS</div>
+      <div class="pads" hidden></div>
 
       <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="hint">${reloadHint(this.touch)}</div><div class="rack"></div><div class="nades"></div></div>
       <div class="overlay flag">▲ FLAGGED — VANTAGE SEARCHLIGHT</div>
@@ -670,14 +671,18 @@ export class Hud {
       const rowSeat = `${phoneRowTop(this.phoneRowBase, mission.offsetParent !== null && panel.width > 0 ? this.missionBottom : null)}px`;
       if (rowEl.style.top !== rowSeat) rowEl.style.top = rowSeat;
       const rowBottom = rowEl.getBoundingClientRect().bottom - rootTop;
-      const legend = this.q(".prompt-touch");
-      const lc = getComputedStyle(legend);
-      const legendShown = lc.display !== "none" && lc.visibility !== "hidden" && Number(lc.opacity) > 0.05;
+      const wake = this.q(".prompt-touch");
+      const pads = this.q(".pads");
+      const shown = (el: HTMLElement) => {
+        const c = getComputedStyle(el);
+        return !el.hidden && c.display !== "none" && c.visibility !== "hidden" && Number(c.opacity) > 0.05;
+      };
+      const lesson = shown(wake) ? wake : shown(pads) ? pads : null;
       let under = rowBottom;
-      if (legendShown) {
+      if (lesson) {
         const seat = `${Math.ceil(rowBottom) + FLAG_GAP}px`;
-        if (legend.style.top !== seat) legend.style.top = seat;
-        under = legend.getBoundingClientRect().bottom - rootTop;
+        if (lesson.style.top !== seat) lesson.style.top = seat;
+        under = lesson.getBoundingClientRect().bottom - rootTop;
       }
       this.stackShift = stackShift(under);
       // what the alert has above it on this device that the stack's top does not describe
@@ -914,6 +919,15 @@ export class Hud {
       const keys = this.q(".keys");
       keys.textContent = line;
       keys.hidden = line === "";
+    }
+    // once the wake line is down, a phone is told which pad it has not used (Stage 862). The
+    // keyboard line stays hidden, and it keeps naming keys.
+    if (this.touch) {
+      const pads = this.q(".pads");
+      const line = padsLine(seen);
+      const show = this.locked && line !== "";
+      if (pads.textContent !== line) pads.textContent = line;
+      if (pads.hidden !== !show) pads.hidden = !show;
     }
     // a dead file has no gun (Stage 128): the gun's chrome goes with the file and comes back with it
     if (this.dead !== !p.alive) {

@@ -39,6 +39,24 @@ export function keysLine(seen: Seen): string {
 }
 
 /**
+ * The same lessons, named as the pads a phone actually has (Stage 862). The keyboard line stays
+ * at the foot of the desktop and stays hidden on a phone. A phone reads the stick and the pads.
+ */
+const PAD_LESSONS: readonly [keyof Seen, string][] = [
+  ["moved", "LEFT STICK"],
+  ["fired", "FIRE"],
+  ["reloaded", "RLD"],
+  ["jumped", "JUMP"],
+  ["slid", "SLIDE"],
+  ["sprinted", "PUSH"],
+];
+
+/** which pads are still unused; empty once every lesson has been done */
+export function padsLine(seen: Seen): string {
+  return PAD_LESSONS.filter(([k]) => !seen[k]).map(([, text]) => text).join(" · ");
+}
+
+/**
  * what this frame teaches, from the file's own state: a lesson once seen stays seen. Every fact
  * here is cumulative, so a frame missed is not a lesson missed — `topSpeed` is the sim's
  * high-water mark, not the speed this frame happens to be drawn at (Stage 164).

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 862 — A woken phone is told which pad it has not used
+
+**The ask.** Once the wake line was down, a phone was not told which pad it had not used. The line at the foot of the screen stayed hidden, and it only names keyboard keys. The lessons still drop as the file does them. They do not spend $CAPITAL and they do not buy a stat.
+
+**The change.** After the first thumb, a phone reads the pads it has not used: LEFT STICK, FIRE, RLD, JUMP, SLIDE, PUSH. That line takes the wake line's seat, and it goes once every lesson is done. A keyboard still reads WASD · HOLD CLICK FIRE · R RELOAD · SPACE JUMP · CTRL SLIDE · SHIFT SPRINT, and that line stays hidden on a phone. The stance line stays hidden too.
+
+**Verified.** `tests/keys.test.ts` reads the pads and the seat. Hiding the line again failed once (`expected the source to match /const show = this\.locked && line !== ""/`).
+
+**Open.** The ledger graph's footer still says CLICK on a phone.
+
 ## Stage 861 — An empty magazine tells a phone to tap
 
 **The ask.** An empty magazine's markup said ▼ RELOAD [R] before the line was written. Those brackets are a key. On a phone they read as R, and a phone reloads on the pad labelled RLD. The line still appears when the magazine is empty. It does not spend $CAPITAL and it does not buy a stat.

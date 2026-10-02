@@ -1,7 +1,7 @@
 /** The tutorial never left (Stage 130); its facts are cumulative (Stage 164). */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { keysLine, learn, NOTHING_SEEN } from "../client/hud/keys";
+import { keysLine, learn, NOTHING_SEEN, padsLine } from "../client/hud/keys";
 
 describe("keysLine", () => {
   it("teaches everything to a file that has done nothing", () => {
@@ -43,6 +43,22 @@ describe("learn", () => {
     // and moving is not sprinting: the walk read is a different line
     expect(learn(NOTHING_SEEN, { ...still, topSpeed: 0.51 })).toEqual({ ...NOTHING_SEEN, moved: true });
     expect(learn(NOTHING_SEEN, { ...still, topSpeed: 0.5 })).toEqual(NOTHING_SEEN);
+  });
+});
+
+describe("a phone whose wake line is down", () => {
+  it("is told which pad it has not used, and the keyboard line stays hidden", () => {
+    expect(padsLine(NOTHING_SEEN)).toBe("LEFT STICK · FIRE · RLD · JUMP · SLIDE · PUSH");
+    expect(padsLine({ ...NOTHING_SEEN, moved: true, sprinted: true })).toBe("FIRE · RLD · JUMP · SLIDE");
+    expect(padsLine({ moved: true, fired: true, reloaded: true, jumped: true, slid: true, sprinted: true })).toBe("");
+    expect(padsLine(NOTHING_SEEN)).not.toMatch(/WASD|CLICK|SPACE|CTRL|SHIFT|\[[A-Z]/);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(hud).toMatch(/const show = this\.locked && line !== "";\s*if \(pads\.textContent !== line\) pads\.textContent = line;/);
+    expect(hud).toMatch(/const lesson = shown\(wake\) \? wake : shown\(pads\) \? pads : null;/);
+    expect(css).toMatch(/#hud\.touch \.keys \{ display: none; \}/);
+    expect(css).toMatch(/#hud\.touch \.center \{ display: none; \}/);
+    expect(css).toMatch(/#hud\.touch \.pads:not\(\[hidden\]\) \{ display: block;/);
   });
 });
 
