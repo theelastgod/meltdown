@@ -4,7 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ammoRead, chargeRead, coneEmpty, coneLow, firePadHot, firePadLow, lastRoundsEdge, LOW_FRAC, lowLine, nameEmpty, nameLow, reloadPadHot, reloadPadLow, reticleEmpty, reticleLow, sizeEmpty } from "../client/hud/ammo";
+import { ammoRead, chargeRead, coneEmpty, coneLow, firePadHot, firePadLow, lastRoundsEdge, LOW_FRAC, lowLine, nameEmpty, nameLow, reloadPadHot, reloadPadLow, reticleEmpty, reticleLow, sizeEmpty, sizeLow } from "../client/hud/ammo";
 
 describe("lowLine", () => {
   it("is the last quarter, rounded up, and never under a round", () => {
@@ -179,6 +179,19 @@ describe("the cone on the last quarter", () => {
     expect(hud).toMatch(/this\.q\("\.xh \.sp"\)\.classList\.toggle\("low", coneLow\(read\.state\)\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.xh \.sp\.low \{ border-color: rgba\(255,176,46/);
+  });
+});
+
+describe("the size beside the count on the last quarter", () => {
+  it("turns amber only on the last quarter", () => {
+    expect(sizeLow("low")).toBe(true);
+    expect(sizeLow("empty")).toBe(false);
+    expect(sizeLow("ok")).toBe(false);
+    expect(sizeLow("reloading")).toBe(false);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/this\.q\("\.mag"\)\.classList\.toggle\("low", sizeLow\(read\.state\)\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.ammo \.mag\.low \{ color: var\(--am\)/);
   });
 });
 
