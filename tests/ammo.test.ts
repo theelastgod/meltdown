@@ -143,6 +143,18 @@ describe("the fire pad on the last quarter", () => {
   });
 });
 
+describe("holding the fire pad", () => {
+  it("fills magenta only when the magazine is empty", () => {
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.thumbs \.tc-fire\.on\.empty \{ background: rgba\(255,62,201,0\.22\); box-shadow: 0 0 12px rgba\(255,62,201,0\.5\)/);
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(game).toMatch(/setFireEmpty\(firePadHot\(mag\.state\)\)/);
+    const touch = readFileSync(new URL("../client/touch.ts", import.meta.url), "utf8");
+    expect(touch).toMatch(/querySelector\("\.tc-fire"\)\?\.classList\.toggle\("empty", empty\)/);
+    expect(touch).toMatch(/pad\.el\.classList\.add\("on"\)/);
+  });
+});
+
 describe("the knob of the move stick on the last quarter", () => {
   it("turns amber only on the last quarter", () => {
     expect(stickKnobLow("low")).toBe(true);
