@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 943 — The south wall of Lease Row opens onto a yard
+
+**The ask.** The north edge of LEASE ROW is open ground. The south wall is still a solid facade.
+
+**The change.** The south facade, on its east run and clear of the gates, is a full-height opening onto a fenced lot. A sign on the street side reads SOUTH YARD. Standing out there, the line reads SOUTH YARD. THE WALL IS BEHIND YOU. The fence is above a mantle. The north opening, the noodle shop, and the pawn room stay open. The other districts, and LEASE ROW's old 3×3, keep a solid wall. The opening uses the facade and the fence the district already draws. A header over the cut was left out: that third facade put the frame over 190k.
+
+**Verified.** `tests/yard.test.ts`: the street, the passage, and the ground outside are open; the wall beside the opening and the far fence are solid; the line is the yard's, and the north lot still says the street has ended; every gate is more than 20 m from the passage. Leaving the solid facade in place failed the passage check. `tests/wild.test.ts`, `tests/shop.test.ts`, and `tests/pawn.test.ts` still open what they opened. `tests/citysize.test.ts` and `tests/newdistricts.test.ts` kept the 3×3 hashes. `tests/citycost.test.ts` stayed inside 190k triangles and added no batch. The non-city dressing fingerprint for LEASE ROW was re-recorded; the other four districts stayed the bytes they were.
+
+**Open.** The other districts are still solid blocks with a solid edge. The east and west walls of LEASE ROW are still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 942 — The south-west warehouse on Lease Row is a room
 
 **The ask.** One warehouse is a room. The south-west stack on LEASE ROW is still a solid block, on the same street as everyone else.

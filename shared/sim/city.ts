@@ -629,6 +629,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const shop = openLeaseShop(c);
   const wild = openLeaseWild(c);
   const pawn = openLeasePawn(c);
+  const yard = openLeaseYard(c);
 
   // district rig: two big casts on opposite corners. Cyan and magenta carry the city everywhere; an amber
   // district gets its threat colour from the local VANTAGE lights (lots, towers, fences), never the rig.
@@ -721,6 +722,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(shop ? { shop } : {}),
     ...(wild ? { wild } : {}),
     ...(pawn ? { pawn } : {}),
+    ...(yard ? { yard } : {}),
   };
 }
 
@@ -763,6 +765,44 @@ function openLeaseWild(c: Ctx): WildEdge | null {
     passage: v3(midX, 0, (inner + zOut) / 2),
     outside: v3(midX, 0, zOut - 8),
     line: "PAST THE LEASE. THE STREET ENDS HERE.",
+  };
+}
+
+/**
+ * The south wall of LEASE ROW is the same solid facade. One opening, on the east run and clear of
+ * the gates, runs through it onto a fenced lot. The north opening is not this one.
+ */
+function openLeaseYard(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "lease_row" || districtGrid(c.spec) !== 5) return null;
+  const inner = c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.min.z === inner && b.min.y === 0 && b.max.y === 36 && b.min.x < 30 && b.max.x > 100);
+  if (i < 0) throw new Error("lease row yard: the south wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  const midX = 66;
+  const doorW = 3;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  // a lintel would be a third facade, and a third facade puts the frame over 190k. The cut runs the full height of the wall.
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, dx0, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx1, 0, wall.min.z, wall.max.x, 36, wall.max.z, "facade"));
+  const zOut = wall.max.z;
+  const yF = 2.2;
+  const x0 = midX - 8;
+  const x1 = midX + 8;
+  const zFar = zOut + 10;
+  const t = 0.35;
+  c.boxes.push(box(x0, 0, zOut, dx0, yF, zOut + t, "fence"));
+  c.boxes.push(box(dx1, 0, zOut, x1, yF, zOut + t, "fence"));
+  c.boxes.push(box(x0, 0, zFar - t, x1, yF, zFar, "fence"));
+  c.boxes.push(box(x0, 0, zOut, x0 + t, yF, zFar, "fence"));
+  c.boxes.push(box(x1 - t, 0, zOut, x1, yF, zFar, "fence"));
+  addSign(c, "SOUTH YARD", midX, 2.7, inner - 0.06, Math.PI, 4, COLORS.cyan);
+  return {
+    street: v3(midX, 0, inner - 2.2),
+    passage: v3(midX, 0, (inner + zOut) / 2),
+    outside: v3(midX, 0, zOut + 5),
+    line: "SOUTH YARD. THE WALL IS BEHIND YOU.",
   };
 }
 
