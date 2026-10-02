@@ -21,6 +21,9 @@
  *
  * The tone (Stage 877). That count stayed yellow when the gun was empty and when it
  * was on its last quarter. The corner already turns magenta and amber for those.
+ *
+ * The next gun (Stage 878). The phone list marked the gun in hand. It did not mark
+ * the gun the next WPN tap selects. The grenade cycle pad already names its next one.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 import { lowLine } from "./ammo";
@@ -52,7 +55,9 @@ export function rackRoundHtml(rounds: number | string, tone: "" | "low" | "empty
  * One gun on the phone list. The rack is hidden there. The gun in hand is marked on.
  * `rounds` is the same count the rack paints: the magazine, or ∞ when the gun has none.
  */
-export function phoneRankSlot(label: string, rank: number, rounds: number | string, on: boolean, tone: "" | "low" | "empty" = ""): string {
+export function phoneRankSlot(label: string, rank: number, rounds: number | string, on: boolean, tone: "" | "low" | "empty" = "", next = false): string {
   const name = label.trim();
-  return `<span${on ? ` class="on"` : ""}>${name} ${rackRoundHtml(rounds, tone)} ${rackRankMark(rank)}</span>`;
+  const cls = on ? "on" : next ? "next" : "";
+  const mark = next && !on ? "▸ " : "";
+  return `<span${cls ? ` class="${cls}"` : ""}>${mark}${name} ${rackRoundHtml(rounds, tone)} ${rackRankMark(rank)}</span>`;
 }

@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 877 (an empty gun's count is not the same yellow as a full one). Stage 876 says the rounds on the phone list. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **878** |
+| HEAD | Stage 878 (the phone list marks the gun the next tap selects). Stage 877 paints an empty count magenta. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **879** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |

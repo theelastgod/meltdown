@@ -42,7 +42,7 @@ describe("rackLabel", () => {
     expect(phoneRankSlot("LEASE-BREAKER", 1, 30, true)).toBe(`<span class="on">LEASE-BREAKER <i>30</i> R01</span>`);
     expect(phoneRankSlot("DIRECTIVE", 29, 12, false)).toBe("<span>DIRECTIVE <i>12</i> R29</span>");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
-    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, w\.magSize \? \(p\.weapon\.ammo\[w\.slot\] \?\? 0\) : "∞", w\.slot === p\.weapon\.slot, rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0\)\)/);
+    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, w\.magSize \? \(p\.weapon\.ammo\[w\.slot\] \?\? 0\) : "∞", w\.slot === p\.weapon\.slot, rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0\), w\.slot === nextSlot\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud\.touch \.pranks \{ display: flex/);
     expect(css).toMatch(/#hud\.touch \.rack \{ display: none/);
@@ -52,7 +52,7 @@ describe("rackLabel", () => {
     expect(phoneRankSlot("SHOCK", 1, "∞", true)).toBe(`<span class="on">SHOCK <i>∞</i> R01</span>`);
     expect(phoneRankSlot("DIRECTIVE", 30, 0, false)).toBe("<span>DIRECTIVE <i>0</i> MASTERED</span>");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
-    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, w\.magSize \? \(p\.weapon\.ammo\[w\.slot\] \?\? 0\) : "∞", w\.slot === p\.weapon\.slot, rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0\)\)/);
+    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, w\.magSize \? \(p\.weapon\.ammo\[w\.slot\] \?\? 0\) : "∞", w\.slot === p\.weapon\.slot, rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0\), w\.slot === nextSlot\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.rack i, #hud \.nades i, #hud \.pranks i/);
   });
@@ -79,5 +79,15 @@ describe("rackLabel", () => {
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.rack i\.empty, #hud \.pranks i\.empty \{ color: var\(--mg\)/);
     expect(css).toMatch(/#hud \.rack i\.low, #hud \.pranks i\.low \{ color: var\(--am\)/);
+  });
+  it("marks the gun the next WPN tap selects", () => {
+    expect(phoneRankSlot("STACK", 3, 40, false, "", true)).toBe(`<span class="next">▸ STACK <i>40</i> R03</span>`);
+    expect(phoneRankSlot("STACK", 3, 40, true, "", true)).toBe(`<span class="on">STACK <i>40</i> R03</span>`);
+    expect(phoneRankSlot("STACK", 3, 40, false)).toBe("<span>STACK <i>40</i> R03</span>");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/const nextSlot = cycleSlot\(p\.weapon\.slot, 1\)/);
+    expect(hud).toMatch(/w\.slot === nextSlot\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud\.touch \.pranks span\.next \{ color: var\(--ye\)/);
   });
 });

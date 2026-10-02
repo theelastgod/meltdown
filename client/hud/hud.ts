@@ -1,3 +1,4 @@
+import { cycleSlot } from "@shared/sim/input";
 import type { PlayerState } from "@shared/sim/player";
 import { ledgered, stampTitle } from "./kill";
 import { weaponDefOf } from "@shared/sim/player";
@@ -992,8 +993,9 @@ export class Hud {
     const rackSig = `${p.weapon.slot}:${p.weapon.ammo.join(",")}:${ranks.join(",")}`;
     if (this.rackKey !== rackSig) {
       this.rackKey = rackSig;
+      const nextSlot = cycleSlot(p.weapon.slot, 1);
       this.q(".rack").innerHTML = WEAPON_LIST.map((w, i) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}${rackRoundHtml(w.magSize ? (p.weapon.ammo[w.slot] ?? 0) : "∞", rackRoundTone(w.magSize, p.weapon.ammo[w.slot] ?? 0))}<b data-r="${rackRankMark(ranks[i] ?? 1)}"></b></span>`).join("");
-      this.q(".pranks").innerHTML = WEAPON_LIST.map((w, i) => phoneRankSlot(rackLabel(w.name), ranks[i] ?? 1, w.magSize ? (p.weapon.ammo[w.slot] ?? 0) : "∞", w.slot === p.weapon.slot, rackRoundTone(w.magSize, p.weapon.ammo[w.slot] ?? 0))).join("");
+      this.q(".pranks").innerHTML = WEAPON_LIST.map((w, i) => phoneRankSlot(rackLabel(w.name), ranks[i] ?? 1, w.magSize ? (p.weapon.ammo[w.slot] ?? 0) : "∞", w.slot === p.weapon.slot, rackRoundTone(w.magSize, p.weapon.ammo[w.slot] ?? 0), w.slot === nextSlot)).join("");
     }
     const nk = p.weapon.grenadeSel + ":" + p.weapon.grenades.join(",");
     if (this.nadeKey !== nk) {

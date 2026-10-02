@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 878 — The phone list marks the gun the next tap selects
+
+**The ask.** The phone list marked the gun in hand. It did not mark the gun the next WPN tap selects. The grenade cycle pad names its next one. The rank is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** The gun the WPN pad cycles to wears a ▸ and reads amber. The gun in hand stays the bright one. A keyboard still reads the rack, which has no next mark, because the wheel goes both ways.
+
+**Verified.** `tests/rack.test.ts` reads the mark. Taking it off failed once (`expected '<span class="next">STACK <i>40</i> R03</span>' to be '<span class="next">▸ STACK <i>40</i> R03</span>'`).
+
+**Open.** Before a reload seats, the corner says --. The rack and the phone list still say 0.
+
 ## Stage 877 — An empty gun's count is not the same yellow as a full one
 
 **The ask.** A gun with no rounds painted that count the same yellow as a full magazine. The corner turns magenta when the gun in hand is empty, and amber on the last quarter. The rack and the phone list did not. The count is not a stat you buy. It does not spend $CAPITAL.

@@ -638,6 +638,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .pranks { display: none; }
 #hud.touch .pranks { display: flex; flex-wrap: wrap; row-gap: 2px; gap: 4px; justify-content: flex-end; margin-top: 4px; font-size: 9px; color: rgba(53,242,255,0.7); }
 #hud.touch .pranks span.on { color: var(--cy); }
+#hud.touch .pranks span.next { color: var(--ye); }
 #hud.touch .rack { display: none; }                      /* slot 1-8 is the WPN pad; the phone list above names the ranks */
 #hud.touch .nades { display: none; }                     /* the NADE pad carries the selected one */
 
