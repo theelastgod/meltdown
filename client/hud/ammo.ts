@@ -203,6 +203,15 @@ export function stickRingLow(state: AmmoState): boolean {
 }
 
 /**
+ * The knob of the move stick (Stage 927). An empty magazine turns the ring
+ * magenta. That knob stayed the same cyan as a full magazine. The last
+ * quarter is not this.
+ */
+export function stickKnobHot(state: AmmoState): boolean {
+  return state === "empty";
+}
+
+/**
  * The crosshair on the last quarter (Stage 888). The corner, the bar, and the fire pad turn
  * amber. The mark you aim with stayed the same cyan as a full magazine. Empty is not this.
  */

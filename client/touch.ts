@@ -268,6 +268,11 @@ export class TouchControls {
     this.root.querySelector(".tc-ring")?.classList.toggle("low", low);
   }
 
+  /** An empty magazine (Stage 927). The ring already says so. The knob of the move stick has to say it too. */
+  setStickKnobEmpty(empty: boolean): void {
+    this.root.querySelector(".tc-knob")?.classList.toggle("empty", empty);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();
