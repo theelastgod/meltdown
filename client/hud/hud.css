@@ -201,6 +201,8 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .rack span.num.low { color: var(--am); }
 #hud .rack > span.empty { border-color: var(--mg); }
 #hud .rack > span.on.empty { box-shadow: 0 0 6px rgba(255,62,201,0.35); }
+#hud .rack > span.low { border-color: var(--am); }
+#hud .rack > span.on.low { box-shadow: 0 0 6px rgba(255,176,46,0.35); }
 #hud .nades { display: flex; flex-wrap: wrap; row-gap: 3px; gap: 6px; justify-content: flex-end; margin-top: 3px; font-size: 9px; color: rgba(255,62,201,0.6); }
 #hud .nades span { padding: 1px 4px; border: 1px solid rgba(255,62,201,0.25); }
 #hud .nades span.on { color: var(--mg); border-color: var(--mg); }

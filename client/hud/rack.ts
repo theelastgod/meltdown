@@ -61,6 +61,9 @@
  *
  * The frame (Stage 909). An empty magazine turns that number magenta.
  * The frame around it stayed the same cyan as a full magazine.
+ *
+ * The last quarter (Stage 910). That number turns amber. The frame around
+ * it stayed the same cyan as a full magazine.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 import { lowLine } from "./ammo";
@@ -123,11 +126,20 @@ export function rackFrameEmpty(tone: "" | "low" | "empty"): boolean {
   return tone === "empty";
 }
 
-/** Classes on one rack chip. Held is on. An empty magazine marks the frame. */
+/**
+ * The frame around the slot number on the last quarter (Stage 910). The number
+ * turns amber. This frame stayed the same cyan as a full magazine. Empty stays magenta.
+ */
+export function rackFrameLow(tone: "" | "low" | "empty"): boolean {
+  return tone === "low";
+}
+
+/** Classes on one rack chip. Held is on. Empty marks the frame magenta. The last quarter marks it amber. */
 export function rackChipClass(on: boolean, tone: "" | "low" | "empty"): string {
   const parts: string[] = [];
   if (on) parts.push("on");
   if (rackFrameEmpty(tone)) parts.push("empty");
+  else if (rackFrameLow(tone)) parts.push("low");
   return parts.join(" ");
 }
 

@@ -5,7 +5,26 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { WEAPON_LIST } from "../shared/weapons/manifest";
-import { phoneNameEmpty, phoneNameHtml, phoneNameLow, phoneRankEmpty, phoneRankHtml, phoneRankLow, phoneRankSlot, rackChipClass, rackFrameEmpty, rackLabel, rackNameEmpty, rackNameHtml, rackNameLow, rackRankAttr, rackRankEmpty, rackRankLow, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone, rackSlotEmpty, rackSlotHtml, rackSlotLow } from "../client/hud/rack";
+import { phoneNameEmpty, phoneNameHtml, phoneNameLow, phoneRankEmpty, phoneRankHtml, phoneRankLow, phoneRankSlot, rackChipClass, rackFrameEmpty, rackFrameLow, rackLabel, rackNameEmpty, rackNameHtml, rackNameLow, rackRankAttr, rackRankEmpty, rackRankLow, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone, rackSlotEmpty, rackSlotHtml, rackSlotLow } from "../client/hud/rack";
+
+describe("the frame around the slot number on the last quarter", () => {
+  it("turns amber only on the last quarter", () => {
+    expect(rackFrameLow("low")).toBe(true);
+    expect(rackFrameLow("empty")).toBe(false);
+    expect(rackFrameLow("")).toBe(false);
+    expect(rackChipClass(true, "low")).toBe("on low");
+    expect(rackChipClass(false, "low")).toBe("low");
+    expect(rackChipClass(true, "empty")).toBe("on empty");
+    expect(rackChipClass(false, "")).toBe("");
+    const src = readFileSync(new URL("../client/hud/rack.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/rackFrameLow\(tone\)/);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/rackChipClass\(w\.slot === p\.weapon\.slot, tone\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.rack > span\.low \{ border-color: var\(--am\)/);
+    expect(css).toMatch(/#hud \.rack > span\.on\.low \{ box-shadow: 0 0 6px rgba\(255,176,46,0\.35\)/);
+  });
+});
 
 describe("the frame around the slot number when the magazine is empty", () => {
   it("turns magenta only when that gun's magazine is empty", () => {
