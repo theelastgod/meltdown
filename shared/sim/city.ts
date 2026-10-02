@@ -633,6 +633,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const night = openLeaseNight(c);
   const east = openLeaseEast(c);
   const cold = openDocksCold(c);
+  const impound = openDepotImpound(c);
 
   // district rig: two big casts on opposite corners. Cyan and magenta carry the city everywhere; an amber
   // district gets its threat colour from the local VANTAGE lights (lots, towers, fences), never the rig.
@@ -729,6 +730,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(night ? { night } : {}),
     ...(east ? { east } : {}),
     ...(cold ? { cold } : {}),
+    ...(impound ? { impound } : {}),
   };
 }
 
@@ -818,14 +820,26 @@ function openLeaseYard(c: Ctx): WildEdge | null {
  * step metal the stairs already draw, so the district gains no material.
  */
 function openDocksCold(c: Ctx): ShopSpot | null {
-  if (c.spec.id !== "deadletter_docks") return null;
-  const { x0, z0, x1, z1 } = blockRect(c.H, 1, 0);
+  return openWarehouse(c, "deadletter_docks", 1, 0, "COLD STORE", "COLD STORE · THE HATCH IS OPEN. CASH FOR THE MANIFEST. THE GUN STAYS AS IT IS.", "docks cold store", "cyan");
+}
+
+/** The south-east stack on REPO DEPOT is the impound counter. Cash for a release, no gun. */
+function openDepotImpound(c: Ctx): ShopSpot | null {
+  return openWarehouse(c, "repo_depot", 2, 2, "IMPOUND", "IMPOUND · THE COUNTER IS OPEN. CASH FOR THE RELEASE. THE GUN STAYS AS IT IS.", "depot impound", "amber");
+}
+
+/**
+ * One warehouse ground floor becomes a room. The shell is the step metal the stairs already draw.
+ */
+function openWarehouse(c: Ctx, id: string, bx: number, bz: number, sign: string, line: string, what: string, light: "cyan" | "amber"): ShopSpot | null {
+  if (c.spec.id !== id) return null;
+  const { x0, z0, x1, z1 } = blockRect(c.H, bx, bz);
   const bx0 = x0 + 1;
   const bz0 = z0 + 6;
   const bx1 = x1 - 1;
   const bz1 = z1 - 1;
   const i = c.boxes.findIndex((b) => b.tag === "base" && b.min.x === bx0 && b.min.y === 0 && b.min.z === bz0 && b.max.x === bx1 && b.max.y === 4.2 && b.max.z === bz1);
-  if (i < 0) throw new Error("docks cold store: the warehouse floor is not where the stack put it");
+  if (i < 0) throw new Error(`${what}: the warehouse floor is not where the stack put it`);
   c.boxes.splice(i, 1);
   const t = 0.45;
   const doorW = 2.4;
@@ -853,12 +867,12 @@ function openDocksCold(c: Ctx): ShopSpot | null {
   const cz = bz0 + t + 0.15;
   c.boxes.push(box(midX - 1.8, 0, cz + 0.7, midX + 1.8, 1.05, cz + 1.7, "step"));
   c.decor.push(box(bx0 + t, 3.5, bz0 + t, bx1 - t, 3.65, bz1 - t, "ceiling"));
-  c.lights.push({ x: midX, y: 3.2, z: (bz0 + bz1) / 2, color: "cyan", intensity: 8, range: 14 });
-  addSign(c, "COLD STORE", midX, 3.3, bz1 + 0.04, 0, 3.2, COLORS.cyan);
+  c.lights.push({ x: midX, y: 3.2, z: (bz0 + bz1) / 2, color: light, intensity: 8, range: 14 });
+  addSign(c, sign, midX, 3.3, bz1 + 0.04, 0, 3.2, light === "amber" ? COLORS.amber : COLORS.cyan);
   const counter = v3(midX, 0, cz + 1.7 + 0.9);
   const inside = v3(midX, 0, (counter.z + (bz1 - t)) / 2);
   const mouth = v3(midX, 0, bz1 + 0.45);
-  return { mouth, inside, counter, line: "COLD STORE · THE HATCH IS OPEN. CASH FOR THE MANIFEST. THE GUN STAYS AS IT IS." };
+  return { mouth, inside, counter, line };
 }
 
 /**

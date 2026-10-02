@@ -1,0 +1,12 @@
+Stage 947 — REPO DEPOT impound
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  repo_depot city: 110,666 triangles, 33 batches, 308 boxes
+  deadletter_docks city: 92,256 triangles, 36 batches, 291 boxes (unchanged)
+  lease_row city: 189,998 triangles (unchanged; two under 190k)
+
+Depot hash with the room: ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da
+Depot hash with the floor sealed: 11ea845b42e65c3a0f4348a6eae63a3231a6daa657f880de6cef8a50f40ad69d
+Non-city dressing fingerprint: 0d154e08ffb9b5cc
+
+Sealing the floor (the warehouse splice commented out) failed tests/impound.test.ts on the inside of the room.

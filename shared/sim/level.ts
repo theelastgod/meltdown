@@ -157,6 +157,10 @@ export interface LevelDef {
    * The north warehouse on DEADLETTER DOCKS (Stage 946). The hatch takes cash and changes no gun.
    */
   cold?: ShopSpot;
+  /**
+   * The south-east warehouse on REPO DEPOT (Stage 947). The counter takes cash and changes no gun.
+   */
+  impound?: ShopSpot;
 }
 
 /** Feet positions for the one opening in the city wall. */
