@@ -1623,7 +1623,8 @@ export class Game {
     const gate = ch?.text ?? "";
     const have = ch && held ? (held.counters[ch.counter] ?? 0) : 0;
     const need = ch?.need ?? 0;
-    this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt, heldRank, gate, have, need);
+    const heldXp = this.file.mastery[weaponDefOf(p).id]?.xp ?? 0;
+    this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt, heldRank, gate, have, need, heldXp);
     // Stage 143: the phone's grenade pads say what they throw and what the next tap selects
     this.touch?.setGrenades(p.weapon.grenadeSel, p.weapon.grenades, GRENADE_LIST.map((g) => g.name));
     // the last quarter of the magazine is heard, once, on the round that crosses into it (Stage

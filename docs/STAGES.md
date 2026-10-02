@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 871 — The gun says the XP into the next rank
+
+**The ask.** Between gates the gun did not say the XP into the next rank. The file page did. A rank-up was still the only time the number moved. The XP is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** With no gate holding the rank, the line under it reads the XP into the next rank, the same sum the file page uses. A gate still takes that line. The last rank leaves it down.
+
+**Verified.** `tests/weaponline.test.ts` reads the pace. Dropping it off the gun failed once (`expected '' to be '40/492 XP'`).
+
+**Open.** At the last rank the file says MASTERED. The gun says R30 and nothing under it.
+
 ## Stage 870 — The gun says how far through the gate
 
 **The ask.** The gun named the challenge holding the rank and not how far through it you are. The file page shows the count. The count is not a stat you buy. It does not spend $CAPITAL.

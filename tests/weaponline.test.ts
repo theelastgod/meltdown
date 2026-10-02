@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { heldGateLine, heldWeaponLine } from "../client/hud/weaponline";
+import { xpForRank } from "../shared/progression/mastery";
+import { heldGateLine, heldRankPace, heldWeaponLine } from "../client/hud/weaponline";
 
 describe("the gun in hand", () => {
   it("says the rank the file has with it", () => {
@@ -37,5 +38,17 @@ describe("the gun in hand", () => {
     const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(game).toMatch(/held\.counters\[ch\.counter\]/);
     expect(game).toMatch(/ch\?\.need/);
+  });
+
+  it("says the XP into the next rank", () => {
+    const spent = [1, 2, 3].reduce((a, r) => a + xpForRank(r), 0);
+    expect(heldRankPace(4, spent + 40)).toBe(`40/${xpForRank(4)} XP`);
+    expect(heldRankPace(1, 0)).toBe(`0/${xpForRank(1)} XP`);
+    expect(heldRankPace(1, Number.NaN)).toBe(`0/${xpForRank(1)} XP`);
+    expect(heldRankPace(30, 1)).toBe("");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/heldRankPace\(rank, xp\)/);
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(game).toMatch(/this\.file\.mastery\[weaponDefOf\(p\)\.id\]\?\.xp \?\? 0/);
   });
 });
