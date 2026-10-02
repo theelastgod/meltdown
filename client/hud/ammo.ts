@@ -141,6 +141,14 @@ export function grenadePadHot(state: AmmoState): boolean {
 }
 
 /**
+ * The grenade pad on the last quarter (Stage 920). The slide pad turns amber.
+ * The grenade stayed the same cyan as a full magazine. Empty stays magenta.
+ */
+export function grenadePadLow(state: AmmoState): boolean {
+  return state === "low";
+}
+
+/**
  * The crosshair on the last quarter (Stage 888). The corner, the bar, and the fire pad turn
  * amber. The mark you aim with stayed the same cyan as a full magazine. Empty is not this.
  */

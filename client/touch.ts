@@ -233,6 +233,11 @@ export class TouchControls {
     this.root.querySelector(".tc-nade")?.classList.toggle("empty", empty);
   }
 
+  /** The last quarter (Stage 920). The slide pad turns amber. The grenade pad has to say it too. */
+  setGrenadeLow(low: boolean): void {
+    this.root.querySelector(".tc-nade")?.classList.toggle("low", low);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();
