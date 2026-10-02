@@ -651,6 +651,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .thumbs .tc-nade.low { color: var(--am); border-color: var(--am); text-shadow: 0 0 4px rgba(255,176,46,0.6); }
 #hud .thumbs .tc-nade.empty { color: var(--mg); border-color: var(--mg); text-shadow: 0 0 4px rgba(255,62,201,0.6); }
 #hud .thumbs .tc-nadenext { right: calc(142px + env(safe-area-inset-right)); bottom: calc(148px + env(safe-area-inset-bottom)); width: 46px; height: 46px; font-size: 7px; }  /* Stage 143: the cycle pad, beside the throw pad */
+#hud .thumbs .tc-nadenext.low { color: var(--am); border-color: var(--am); text-shadow: 0 0 4px rgba(255,176,46,0.6); }
 #hud .thumbs .tc-nadenext.empty { color: var(--mg); border-color: var(--mg); text-shadow: 0 0 4px rgba(255,62,201,0.6); }
 #hud .thumbs .tc-nade i, #hud .thumbs .tc-nadenext i { font-style: normal; color: var(--ye); text-shadow: 0 0 4px rgba(255,227,74,0.55); }
 #hud .thumbs .tc-nade i.empty, #hud .thumbs .tc-nadenext i.empty { color: var(--mg); text-shadow: 0 0 4px rgba(255,62,201,0.6); }
