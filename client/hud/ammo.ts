@@ -125,6 +125,14 @@ export function slidePadHot(state: AmmoState): boolean {
 }
 
 /**
+ * The slide pad on the last quarter (Stage 918). The jump pad turns amber.
+ * The slide stayed the same cyan as a full magazine. Empty stays magenta.
+ */
+export function slidePadLow(state: AmmoState): boolean {
+  return state === "low";
+}
+
+/**
  * The crosshair on the last quarter (Stage 888). The corner, the bar, and the fire pad turn
  * amber. The mark you aim with stayed the same cyan as a full magazine. Empty is not this.
  */

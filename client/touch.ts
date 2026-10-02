@@ -223,6 +223,11 @@ export class TouchControls {
     this.root.querySelector(".tc-crouch")?.classList.toggle("empty", empty);
   }
 
+  /** The last quarter (Stage 918). The jump pad turns amber. The slide pad has to say it too. */
+  setSlideLow(low: boolean): void {
+    this.root.querySelector(".tc-crouch")?.classList.toggle("low", low);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();
