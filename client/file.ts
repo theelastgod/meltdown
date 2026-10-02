@@ -702,7 +702,7 @@ export class GhostFile {
     const passShop = SEASON_PASS_COSMETICS.filter((c) => owned.includes(c.id)).map((c) => `<div class="cos owned"><b>${c.name}</b> <span class="dim">${c.line}</span> · ${c.kind === "theme" ? `<span class="btn" data-act="theme" data-id="${c.id}">${crewButton(a?.theme === c.id ? "WORN" : "WEAR", this.touchHud)}</span>` : "OWNED"}</div>`).join("");
     const presets = Array.from({ length: slots.presets }, (_, i) => {
       const p = a?.presets?.[i];
-      return `<div class="ct"><span>PRESET ${i + 1} · ${p ? p.name : "<span class='dim'>EMPTY</span>"}</span><span>${p ? `<span class="btn" data-act="loadPreset" data-id="${i + 1}">[LOAD]</span> ` : ""}<span class="btn" data-act="savePreset" data-id="${i + 1}">[SAVE CURRENT]</span></span></div>`;
+      return `<div class="ct"><span>PRESET ${i + 1} · ${p ? p.name : "<span class='dim'>EMPTY</span>"}</span><span>${p ? `<span class="btn" data-act="loadPreset" data-id="${i + 1}">${crewButton("LOAD", this.touchHud)}</span> ` : ""}<span class="btn" data-act="savePreset" data-id="${i + 1}">[SAVE CURRENT]</span></span></div>`;
     }).join("");
     const aliases = Array.from({ length: slots.aliases }, (_, i) => `<div class="ct"><span>ALIAS ${i + 1} · ${a?.aliases?.[i] ?? "<span class='dim'>EMPTY</span>"}</span><span><input type="text" maxlength="16" data-alias="${i + 1}" placeholder="A NAME THE CITY MAY CALL YOU"> <span class="btn" data-act="setAlias" data-id="${i + 1}">[SET]</span></span></div>`).join("");
     return `<div class="sh">DAILY CONTRACTS · DAY ${eg.day}</div>${contracts}

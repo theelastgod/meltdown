@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 849 — Loading a preset tells a phone to tap
+
+**The ask.** A saved preset offered [LOAD]. Those brackets are a button on a keyboard. On a phone they read as a key. Loading still puts that preset on the file. It does not spend $CAPITAL and it does not buy a stat the preset did not already hold.
+
+**The change.** A phone sees TAP LOAD. A keyboard still sees the bracketed button. An empty preset still has no load button.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton("LOAD", this.touchHud)/`).
+
+**Open.** The same row still says [SAVE CURRENT] on a phone.
+
 ## Stage 848 — Wearing a season-pass theme tells a phone to tap
 
 **The ask.** A theme from the season pass offered [WEAR] or [WORN]. Those brackets are a button on a keyboard. On a phone they read as a key. Wearing still only changes the palette. The pass is still cosmetics. It does not buy a stat.
