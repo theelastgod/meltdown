@@ -197,11 +197,12 @@ export class Game {
     // A phone has no pointer lock, no keyboard and no mouse, so it gets thumbs and a cheaper frame
     // (Stage 32). Both decided once, here, from the same answer.
     this.mobile = wantsTouch();
+    // The HUD markup reads this class. It has to be on before the receipt's sign line is built.
+    if (this.mobile) hudRoot.classList.add("touch");
     this.renderer = new Renderer(canvas, this.world.level, undefined, this.mobile, city);
     this.hud = new Hud(hudRoot);
     this.hud.receiptTap = () => this.sign();
     if (this.mobile) {
-      hudRoot.classList.add("touch");
       this.touch = new TouchControls(hudRoot);
       if (new URLSearchParams(location.search).get("touch") === "1") this.touch.root.classList.add("forced");
       this.input.touch = this.touch;

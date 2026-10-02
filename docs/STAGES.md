@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 855 — The receipt's markup tells a phone to tap
+
+**The ask.** The receipt's markup said [ENTER] SIGN before the line was written. Those brackets are a key. On a phone they read as Enter, and a phone has no Enter. Signing still waits for the stamp. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** The markup uses the same sign line the receipt writes. The phone class is on before that markup is built, so a phone already reads TAP TO SIGN. A keyboard still reads [ENTER] SIGN. The receipt still writes that line when it opens.
+
+**Verified.** `tests/keyhint.test.ts` reads the markup and that the phone class comes before the HUD. Putting [ENTER] SIGN back in the markup failed once (`expected the hud to match /class="rf">\$\{receiptSignLine\(this\.touch\)\}<\/div>/`).
+
+**Open.** The trailer's title still says ▲ CLICK TO WAKE on a phone.
+
 ## Stage 854 — Travel on the map tells a phone to tap
 
 **The ask.** The world map offered [ TRAVEL TO … ] for another district. Those brackets are a button on a keyboard. On a phone they read as a key. Travel still reloads that district's city room. It does not spend $CAPITAL and it does not buy a stat.

@@ -271,8 +271,11 @@ describe("the ledger receipt", () => {
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/class="rf">\$\{receiptSignLine\(this\.touch\)\}<\/div>/);
+    expect(hud).not.toMatch(/class="rf">\[ENTER\] SIGN<\/div>/);
     expect(hud).toMatch(/receiptSignLine\(this\.touch\)/);
     expect(hud).toMatch(/if \(this\.touch && this\.receiptTap\) this\.receiptTap\(\)/);
+    expect(game.indexOf('hudRoot.classList.add("touch")')).toBeLessThan(game.indexOf("new Hud("));
     expect(css).toMatch(/#hud\.touch \.receipt \{ pointer-events: auto; \}/);
     expect(game).toMatch(/receiptTap = \(\) => this\.sign\(\)/);
   });
