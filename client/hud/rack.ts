@@ -46,11 +46,28 @@
  *
  * The last quarter (Stage 904). The short name turns amber. The rank beside
  * that name stayed the same cyan as a full magazine.
+ *
+ * The rank on the rack (Stage 905). An empty magazine turns the rank on the
+ * phone magenta. On the rack that rank stayed the same cyan as a full magazine.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 import { lowLine } from "./ammo";
 
 export { weaponShortLabel as rackLabel } from "@shared/weapons/manifest";
+
+/**
+ * The rank on the rack when that gun's magazine is empty (Stage 905).
+ * The phone turns magenta. The rack paints this rank through the mark, and
+ * it stayed the same cyan as a full magazine. The last quarter is not this.
+ */
+export function rackRankEmpty(tone: "" | "low" | "empty"): boolean {
+  return tone === "empty";
+}
+
+/** A class on the rack's rank mark. Empty is magenta. Anything else stays cyan. */
+export function rackRankAttr(tone: "" | "low" | "empty"): string {
+  return rackRankEmpty(tone) ? ` class="empty"` : "";
+}
 
 /** The rank a slot wears. R01 through the rank before the last. MASTERED at the cap. */
 export function rackRankMark(rank: number): string {
