@@ -146,6 +146,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .ammo .wname.empty { color: var(--mg); }
 #hud .ammo .mag.empty { color: var(--mg); }
 #hud .ammo .mag.low { color: var(--am); }
+#hud .ammo .slash.empty { color: var(--mg); }
 #hud .ammo.empty .hint { display: block; }
 #hud .ammo.reloading .big { color: rgba(53,242,255,0.55); }
 @keyframes ammoblink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }

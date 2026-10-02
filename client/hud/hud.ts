@@ -9,7 +9,7 @@ import { LEVEL_INFO, levelDisplayName, type LevelDef } from "@shared/sim/level";
 import { districtName } from "./district";
 import { houseName } from "@shared/endgame/season";
 import { HIT_MAX, type HitMark } from "./damage";
-import { ammoRead, chargeRead, coneEmpty, coneLow, nameEmpty, nameLow, reticleEmpty, reticleLow, sizeEmpty, sizeLow } from "./ammo";
+import { ammoRead, chargeRead, coneEmpty, coneLow, nameEmpty, nameLow, reticleEmpty, reticleLow, sizeEmpty, sizeLow, slashEmpty } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
 import { nadeSlot, nextGrenade } from "./grenadepad";
 import { phoneRankSlot, rackLabel, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "./rack";
@@ -188,7 +188,7 @@ export class Hud {
       <div class="p mg prompt-touch">▲ TAP TO WAKE · <span style="color:var(--cy)">LEFT</span> STICK MOVES · PUSH TO <span style="color:var(--cy)">SPRINT</span> · <span style="color:var(--cy)">RIGHT</span> DRAG AIMS</div>
       <div class="pads" hidden></div>
 
-      <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="w wgate hold" hidden></div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="hint">${reloadHint(this.touch)}</div><div class="rack"></div><div class="pranks"></div><div class="nades"></div></div>
+      <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="w wgate hold" hidden></div><div class="big"><span class="ammon">30</span> <span class="w"><span class="slash">/</span> <span class="mag">30</span></span></div><div class="hint">${reloadHint(this.touch)}</div><div class="rack"></div><div class="pranks"></div><div class="nades"></div></div>
       <div class="overlay flag">▲ FLAGGED — VANTAGE SEARCHLIGHT</div>
       <div class="overlay stun">STUNNED</div>
       <div class="emp"></div>
@@ -971,6 +971,7 @@ export class Hud {
       this.q(".wname").classList.toggle("low", nameLow(read.state));
       this.q(".mag").classList.toggle("empty", sizeEmpty(read.state));
       this.q(".mag").classList.toggle("low", sizeLow(read.state));
+      this.q(".slash").classList.toggle("empty", slashEmpty(read.state));
       this.q(".xh").classList.toggle("reloading", read.state === "reloading");
       if (read.state === "empty") this.q(".ammo .hint").textContent = reloadHint(this.touch);
     }

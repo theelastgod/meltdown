@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 897 — An empty magazine marks the slash beside the count
+
+**The ask.** An empty magazine turns the count, the name, and the size magenta. The slash between that count and that size stayed cyan, the same as a full magazine. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** That slash turns magenta when the magazine is empty. The last quarter, a full magazine, and a reload in progress leave it cyan.
+
+**Verified.** `tests/ammo.test.ts` reads the mark. Leaving the empty magazine cold failed once (`expected false to be true`).
+
+**Open.** On the last quarter the size turns amber. The slash between the count and that size stays cyan, the same as a full magazine.
+
 ## Stage 896 — The size beside the count turns amber on the last quarter
 
 **The ask.** On the last quarter the count turns amber. The size printed beside that count stayed cyan, the same as a full magazine. The count is not a stat you buy. It does not spend $CAPITAL.
