@@ -109,6 +109,14 @@ export function jumpPadHot(state: AmmoState): boolean {
 }
 
 /**
+ * The jump pad on the last quarter (Stage 916). The alt pad turns amber.
+ * The jump stayed the same cyan as a full magazine. Empty stays magenta.
+ */
+export function jumpPadLow(state: AmmoState): boolean {
+  return state === "low";
+}
+
+/**
  * The crosshair on the last quarter (Stage 888). The corner, the bar, and the fire pad turn
  * amber. The mark you aim with stayed the same cyan as a full magazine. Empty is not this.
  */

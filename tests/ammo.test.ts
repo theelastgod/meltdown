@@ -4,7 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { altPadHot, altPadLow, ammoRead, chargeRead, coneEmpty, coneLow, firePadHot, firePadLow, jumpPadHot, lastRoundsEdge, LOW_FRAC, lowLine, nameEmpty, nameLow, reloadPadHot, reloadPadLow, reticleEmpty, reticleLow, sizeEmpty, sizeLow, slashEmpty, slashLow, weaponPadHot, weaponPadLow } from "../client/hud/ammo";
+import { altPadHot, altPadLow, ammoRead, chargeRead, coneEmpty, coneLow, firePadHot, firePadLow, jumpPadHot, jumpPadLow, lastRoundsEdge, LOW_FRAC, lowLine, nameEmpty, nameLow, reloadPadHot, reloadPadLow, reticleEmpty, reticleLow, sizeEmpty, sizeLow, slashEmpty, slashLow, weaponPadHot, weaponPadLow } from "../client/hud/ammo";
 
 describe("lowLine", () => {
   it("is the last quarter, rounded up, and never under a round", () => {
@@ -140,6 +140,21 @@ describe("the fire pad on the last quarter", () => {
     expect(touch).toMatch(/querySelector\("\.tc-fire"\)\?\.classList\.toggle\("low", low\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.thumbs \.tc-fire\.low \{ color: var\(--am\)/);
+  });
+});
+
+describe("the jump pad on the last quarter", () => {
+  it("turns amber only on the last quarter", () => {
+    expect(jumpPadLow("low")).toBe(true);
+    expect(jumpPadLow("empty")).toBe(false);
+    expect(jumpPadLow("ok")).toBe(false);
+    expect(jumpPadLow("reloading")).toBe(false);
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(game).toMatch(/setJumpLow\(jumpPadLow\(mag\.state\)\)/);
+    const touch = readFileSync(new URL("../client/touch.ts", import.meta.url), "utf8");
+    expect(touch).toMatch(/querySelector\("\.tc-jump"\)\?\.classList\.toggle\("low", low\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.thumbs \.tc-jump\.low \{ color: var\(--am\)/);
   });
 });
 
