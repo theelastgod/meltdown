@@ -961,6 +961,7 @@ export class Hud {
       box.classList.toggle("low", read.state === "low");
       box.classList.toggle("empty", read.state === "empty");
       box.classList.toggle("reloading", read.state === "reloading");
+      this.q(".ammobar").classList.toggle("low", read.state === "low");
       this.q(".xh").classList.toggle("reloading", read.state === "reloading");
       if (read.state === "empty") this.q(".ammo .hint").textContent = reloadHint(this.touch);
     }

@@ -135,7 +135,8 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 /* the magazine says where it is (Stage 100) */
 #hud .ammo .hint { display: none; font-size: 10px; letter-spacing: 0.18em; color: var(--mg); margin-top: 2px; animation: ammoblink 0.8s steps(2, end) infinite; }
 #hud .ammo.low .big { color: var(--am); text-shadow: 0 0 6px rgba(255,176,46,0.6); }
-#hud .ammo.low .ammobar { background: var(--am); box-shadow: 0 0 5px var(--am); }
+/* the bar lives in the status row, not under .ammo (Stage 880) */
+#hud .ammobar.low { background: var(--am); box-shadow: 0 0 5px var(--am); }
 #hud .ammo.empty .big { color: var(--mg); text-shadow: 0 0 6px rgba(255,62,201,0.6); }
 #hud .ammo.empty .hint { display: block; }
 #hud .ammo.reloading .big { color: rgba(53,242,255,0.55); }

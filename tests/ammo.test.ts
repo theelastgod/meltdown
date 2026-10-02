@@ -2,6 +2,7 @@
  * The magazine that ran out without a word (Stage 100): the low line, the four states, the reload
  * fraction, and the one edge that is heard.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ammoRead, chargeRead, lastRoundsEdge, LOW_FRAC, lowLine } from "../client/hud/ammo";
 
@@ -69,5 +70,15 @@ describe("chargeRead (Stage 106)", () => {
   it("clamps a value the sim would never send", () => {
     expect(chargeRead(true, 1.3).frac).toBe(1);
     expect(chargeRead(true, -0.2).frac).toBe(0);
+  });
+});
+
+describe("the magazine bar", () => {
+  it("turns amber on the last quarter, on the bar itself", () => {
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/this\.q\("\.ammobar"\)\.classList\.toggle\("low", read\.state === "low"\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.ammobar\.low \{ background: var\(--am\)/);
+    expect(css).not.toMatch(/#hud \.ammo\.low \.ammobar/);
   });
 });

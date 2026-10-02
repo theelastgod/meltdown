@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 880 — The magazine bar turns amber on the last quarter
+
+**The ask.** On the last quarter the corner turns amber. The magazine bar stayed yellow. The rule that would paint it sat on the ammo block, and the bar is not in that block. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** The bar itself takes the low mark, and the amber rule is on that mark. A fuller magazine stays yellow. An empty magazine is still the corner's magenta, and the bar is already at nothing.
+
+**Verified.** `tests/ammo.test.ts` reads the rule. Putting it back on the ammo block failed once (`expected the sheet to match /#hud .ammobar.low { background: var(--am)/`).
+
+**Open.** A grenade with none left paints that count the same yellow as one you still have. An empty gun is magenta.
+
 ## Stage 879 — Before the magazine seats, the rack says --
 
 **The ask.** Before a reload seats, the corner says --. The rack and the phone list still said 0. The count is not a stat you buy. It does not spend $CAPITAL.
