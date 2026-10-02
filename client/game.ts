@@ -1617,7 +1617,8 @@ export class Game {
     // the shots the map heard (Stage 104), pruned on the map's own clock
     this.pings = prunePings(this.pings, this.hud.mapClock);
     this.hud.setRadarPings(this.pings);
-    this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt);
+    const heldRank = this.file.mastery[weaponDefOf(p).id]?.rank ?? 1;
+    this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt, heldRank);
     // Stage 143: the phone's grenade pads say what they throw and what the next tap selects
     this.touch?.setGrenades(p.weapon.grenadeSel, p.weapon.grenades, GRENADE_LIST.map((g) => g.name));
     // the last quarter of the magazine is heard, once, on the round that crosses into it (Stage

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 868 — The gun in hand says its rank
+
+**The ask.** The gun in hand said its name and nothing of the rank the file has with it. The file page says the rank. A rank-up is one log line, then the number is gone. The rank is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** The name reads LEASE-BREAKER · R01, and the alt or the charge still follows. The number is the file's rank with that gun.
+
+**Verified.** `tests/weaponline.test.ts` reads the line. Dropping the rank off the name failed once (`expected the source to match /heldWeaponLine\(def\.name, rank, tail\)/`).
+
+**Open.** The challenge holding that rank is still only on the file page. The gun says the rank and not the gate.
+
 ## Stage 867 — A fixer's choices do not lead with the key
 
 **The ask.** A fixer's choices led with 1, 2, 3, 4. Those numbers are the keys. The footer already said TAP A LINE on a phone. A phone has no number row. The tap still chooses. It does not spend $CAPITAL and it does not buy a stat.
