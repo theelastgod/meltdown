@@ -178,6 +178,11 @@ export class TouchControls {
     this.root.querySelector(".tc-fire")?.classList.toggle("empty", empty);
   }
 
+  /** The last quarter (Stage 887). The corner and the bar turn amber. The fire pad has to say it too. */
+  setFireLow(low: boolean): void {
+    this.root.querySelector(".tc-fire")?.classList.toggle("low", low);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();
