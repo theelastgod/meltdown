@@ -173,6 +173,11 @@ export class TouchControls {
     this.root.querySelector(".tc-reload")?.classList.toggle("empty", empty);
   }
 
+  /** The trigger (Stage 886). An empty magazine marks the reload pad. The fire pad has to say it too. */
+  setFireEmpty(empty: boolean): void {
+    this.root.querySelector(".tc-fire")?.classList.toggle("empty", empty);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();

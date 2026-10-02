@@ -4,7 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ammoRead, chargeRead, lastRoundsEdge, LOW_FRAC, lowLine, reloadPadHot } from "../client/hud/ammo";
+import { ammoRead, chargeRead, firePadHot, lastRoundsEdge, LOW_FRAC, lowLine, reloadPadHot } from "../client/hud/ammo";
 
 describe("lowLine", () => {
   it("is the last quarter, rounded up, and never under a round", () => {
@@ -95,5 +95,20 @@ describe("the reload pad", () => {
     expect(touch).toMatch(/querySelector\("\.tc-reload"\)\?\.classList\.toggle\("empty", empty\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.thumbs \.tc-reload\.empty \{ color: var\(--mg\)/);
+  });
+});
+
+describe("the fire pad", () => {
+  it("turns magenta only when the magazine is empty", () => {
+    expect(firePadHot("empty")).toBe(true);
+    expect(firePadHot("low")).toBe(false);
+    expect(firePadHot("ok")).toBe(false);
+    expect(firePadHot("reloading")).toBe(false);
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(game).toMatch(/setFireEmpty\(firePadHot\(mag\.state\)\)/);
+    const touch = readFileSync(new URL("../client/touch.ts", import.meta.url), "utf8");
+    expect(touch).toMatch(/querySelector\("\.tc-fire"\)\?\.classList\.toggle\("empty", empty\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.thumbs \.tc-fire\.empty \{ color: var\(--mg\)/);
   });
 });
