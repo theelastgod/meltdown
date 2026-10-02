@@ -263,6 +263,11 @@ export class TouchControls {
     this.root.querySelector(".tc-ring")?.classList.toggle("empty", empty);
   }
 
+  /** The last quarter (Stage 926). The pause pad turns amber. The ring of the move stick has to say it too. */
+  setStickRingLow(low: boolean): void {
+    this.root.querySelector(".tc-ring")?.classList.toggle("low", low);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();

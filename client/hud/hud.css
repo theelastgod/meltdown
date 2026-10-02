@@ -617,6 +617,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .thumbs { position: absolute; inset: 0; pointer-events: none; }
 #hud .thumbs .tc-ring, #hud .thumbs .tc-knob { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); opacity: 0; transition: opacity 90ms linear; pointer-events: none; }
 #hud .thumbs .tc-ring { width: 92px; height: 92px; border: 1px solid var(--cy); box-shadow: 0 0 8px rgba(53,242,255,0.25), inset 0 0 12px rgba(53,242,255,0.08); }
+#hud .thumbs .tc-ring.low { border-color: var(--am); box-shadow: 0 0 8px rgba(255,176,46,0.25), inset 0 0 12px rgba(255,176,46,0.08); }
 #hud .thumbs .tc-ring.empty { border-color: var(--mg); box-shadow: 0 0 8px rgba(255,62,201,0.25), inset 0 0 12px rgba(255,62,201,0.08); }
 #hud .thumbs .tc-knob { width: 38px; height: 38px; background: rgba(53,242,255,0.14); border: 1px solid var(--cy); box-shadow: 0 0 6px rgba(53,242,255,0.4); }
 #hud .thumbs.stick-on .tc-ring, #hud .thumbs.stick-on .tc-knob { opacity: 0.85; }
