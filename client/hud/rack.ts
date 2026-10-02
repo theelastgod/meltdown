@@ -43,6 +43,9 @@
  *
  * The rank beside it (Stage 903). An empty magazine turns that short name
  * magenta. The rank beside the name stayed the same cyan as a full magazine.
+ *
+ * The last quarter (Stage 904). The short name turns amber. The rank beside
+ * that name stayed the same cyan as a full magazine.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 import { lowLine } from "./ammo";
@@ -136,10 +139,20 @@ export function phoneRankEmpty(tone: "" | "low" | "empty"): boolean {
   return tone === "empty";
 }
 
-/** The rank beside the short name. Empty marks it magenta. A full magazine leaves it cyan. */
+/**
+ * The rank beside the short name on the phone on the last quarter (Stage 904).
+ * The name turns amber. This rank stayed the same cyan as a full magazine.
+ * Empty stays magenta.
+ */
+export function phoneRankLow(tone: "" | "low" | "empty"): boolean {
+  return tone === "low";
+}
+
+/** The rank beside the short name. Empty marks it magenta. The last quarter marks it amber. */
 export function phoneRankHtml(rank: number, tone: "" | "low" | "empty"): string {
   const label = rackRankMark(rank);
-  return phoneRankEmpty(tone) ? `<b class="empty">${label}</b>` : label;
+  const mark = phoneRankEmpty(tone) ? "empty" : phoneRankLow(tone) ? "low" : "";
+  return mark ? `<b class="${mark}">${label}</b>` : label;
 }
 
 export function phoneRankSlot(label: string, rank: number, rounds: number | string, on: boolean, tone: "" | "low" | "empty" = "", next = false): string {
