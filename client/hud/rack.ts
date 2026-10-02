@@ -31,6 +31,9 @@
  * The short name (Stage 899). An empty magazine turns the gun's name magenta.
  * On the rack that word stayed the same cyan as a full magazine. The count
  * beside it was already magenta.
+ *
+ * The last quarter (Stage 900). The gun's name turns amber. On the rack that
+ * short name stayed the same cyan as a full magazine.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 import { lowLine } from "./ammo";
@@ -74,9 +77,18 @@ export function rackNameEmpty(tone: "" | "low" | "empty"): boolean {
   return tone === "empty";
 }
 
-/** The short name. Empty marks it. The last quarter stays the slot's own cyan. */
+/**
+ * The short name on the rack on the last quarter (Stage 900). The corner name
+ * turns amber. This word stayed the same cyan as a full magazine. Empty stays magenta.
+ */
+export function rackNameLow(tone: "" | "low" | "empty"): boolean {
+  return tone === "low";
+}
+
+/** The short name. Empty marks it magenta. The last quarter marks it amber. */
 export function rackNameHtml(label: string, tone: "" | "low" | "empty"): string {
-  return `<em${rackNameEmpty(tone) ? ` class="empty"` : ""}>${label}</em>`;
+  const mark = rackNameEmpty(tone) ? "empty" : rackNameLow(tone) ? "low" : "";
+  return `<em${mark ? ` class="${mark}"` : ""}>${label}</em>`;
 }
 
 /**
