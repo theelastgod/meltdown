@@ -105,6 +105,14 @@ export function nameEmpty(state: AmmoState): boolean {
   return state === "empty";
 }
 
+/**
+ * The gun's name on the last quarter (Stage 894). The count turns amber. The name stayed the
+ * same cyan as a full magazine. Empty stays magenta.
+ */
+export function nameLow(state: AmmoState): boolean {
+  return state === "low";
+}
+
 export function ammoRead(ammo: number, magSize: number, reloadTimer: number, reloadTotal: number, reloadSeated: boolean): AmmoRead {
   if (magSize <= 0) return { state: "ok", reloadFrac: 0, seated: false };
   if (reloadTimer > 0 && reloadTotal > 0) return { state: "reloading", reloadFrac: Math.min(1, Math.max(0, 1 - reloadTimer / reloadTotal)), seated: reloadSeated };
