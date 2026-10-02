@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { hostPush, TERMINAL_GAP, TERMINAL_INSET, terminalFooter, terminalPush, terminalSeat } from "../client/hud/terminal";
+import { hostPush, TERMINAL_GAP, TERMINAL_INSET, terminalChoice, terminalFooter, terminalPush, terminalSeat } from "../client/hud/terminal";
 
 describe("the terminal's footer", () => {
   it("offers the keys on a keyboard", () => {
@@ -17,6 +17,15 @@ describe("the terminal's footer", () => {
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     expect(hud).toMatch(/class="tf">\$\{terminalFooter\(false, this\.touch\)\}<\/div>/);
     expect(hud).not.toMatch(/\[ENTER\] CONTINUE · \[1–4\] CHOOSE/);
+  });
+  it("does not lead a phone's choice with the key", () => {
+    expect(terminalChoice(0, "THE ESTATE", true)).toBe("THE ESTATE");
+    expect(terminalChoice(2, "THE CELLS", true)).toBe("THE CELLS");
+    expect(terminalChoice(0, "THE ESTATE", false)).toBe("<b>1</b> THE ESTATE");
+    expect(terminalChoice(0, "THE ESTATE", true)).not.toMatch(/<b>1<\/b>/);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/terminalChoice\(i, c, this\.touch\)/);
+    expect(hud).not.toMatch(/<b>\$\{i \+ 1\}<\/b>/);
   });
 });
 

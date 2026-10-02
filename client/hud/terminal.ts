@@ -30,6 +30,11 @@ export function terminalFooter(hasChoices: boolean, touch: boolean): string {
   return hasChoices ? "[1–4] CHOOSE" : "[ENTER] CONTINUE";
 }
 
+/** One choice. The number is the key. A phone taps the line and has no such key. */
+export function terminalChoice(index: number, text: string, touch: boolean): string {
+  return touch ? text : `<b>${index + 1}</b> ${text}`;
+}
+
 /** the gap the seat keeps from the row above it and from the pads beside it (px) */
 export const TERMINAL_GAP = 8;
 /** the inset the seat keeps from the view's bottom (px) */

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 867 — A fixer's choices do not lead with the key
+
+**The ask.** A fixer's choices led with 1, 2, 3, 4. Those numbers are the keys. The footer already said TAP A LINE on a phone. A phone has no number row. The tap still chooses. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** A phone reads the line and nothing in front of it. A keyboard still reads the number, then the line.
+
+**Verified.** `tests/terminal.test.ts` reads the choice. Putting the number back failed once (`expected the source to match /terminalChoice\(i, c, this\.touch\)/`).
+
+**Open.** The gun in hand does not say its mastery rank. The file page does. A rank-up is one log line, then the number is gone.
+
 ## Stage 866 — Settings names the drag on a phone
 
 **The ask.** Settings said MOUSE SENSITIVITY. The same multiplier scales the drag. On a phone it reads as a mouse, and a phone has no mouse. The number still steps the same way. It does not spend $CAPITAL and it does not buy a stat.

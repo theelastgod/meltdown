@@ -24,7 +24,7 @@ import { ALL_GROUPS, quietFor } from "./quiet";
 import { footTag, footTagText } from "./footline";
 import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { alertOnCut, platePass, plateTop } from "./faceplate";
-import { terminalFooter, terminalSeat } from "./terminal";
+import { terminalChoice, terminalFooter, terminalSeat } from "./terminal";
 import { cardWalkHit, cardYieldsToDesk, closeHint, DISTRICT_FOOTER, receiptSignLine, reloadHint, safeZoneLine, tabOpens } from "./keyhint";
 import { linkLabel, linkTone, roomLabel } from "./room";
 import { nodeClockNote, type NodeReadout } from "./node";
@@ -554,7 +554,7 @@ export class Hud {
   private finishTerminal(): void {
     const t = this.term;
     t.ready = true;
-    if (t.choices) this.q(".terminal .tc").innerHTML = t.choices.map((c, i) => `<div class="ch"><b>${i + 1}</b> ${c}</div>`).join("");
+    if (t.choices) this.q(".terminal .tc").innerHTML = t.choices.map((c, i) => `<div class="ch">${terminalChoice(i, c, this.touch)}</div>`).join("");
   }
 
   terminalClose(): void {
