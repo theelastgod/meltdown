@@ -203,6 +203,11 @@ export class TouchControls {
     this.root.querySelector(".tc-alt")?.classList.toggle("empty", empty);
   }
 
+  /** The last quarter (Stage 914). The weapon pad turns amber. The alt pad has to say it too. */
+  setAltLow(low: boolean): void {
+    this.root.querySelector(".tc-alt")?.classList.toggle("low", low);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();

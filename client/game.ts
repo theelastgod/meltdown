@@ -37,7 +37,7 @@ import { lookYawPitch } from "./render/feel";
 import { stepCues, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
 import { shotPass } from "./nearmiss";
-import { altPadHot, ammoRead, firePadHot, firePadLow, lastRoundsEdge, reloadPadHot, reloadPadLow, weaponPadHot, weaponPadLow } from "./hud/ammo";
+import { altPadHot, altPadLow, ammoRead, firePadHot, firePadLow, lastRoundsEdge, reloadPadHot, reloadPadLow, weaponPadHot, weaponPadLow } from "./hud/ammo";
 import { momentLine, runMoments } from "./runcue";
 import { shieldLine, shieldMoments } from "./shieldcue";
 import { freshestVantage, targetRead } from "./hud/target";
@@ -1637,6 +1637,7 @@ export class Game {
       this.touch?.setWeaponEmpty(weaponPadHot(mag.state));
       this.touch?.setWeaponLow(weaponPadLow(mag.state));
       this.touch?.setAltEmpty(altPadHot(mag.state));
+      this.touch?.setAltLow(altPadLow(mag.state));
     }
     // the last quarter of the magazine is heard, once, on the round that crosses into it (Stage
     // 100); a swap starts the count over on the new weapon rather than comparing across guns
