@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 875 — The rack says MASTERED at the last rank
+
+**The ask.** At the last rank the file says MASTERED. The rack and the phone list said R30. The cap is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** Rank 30 reads MASTERED on the rack and on the phone list, the same word the file uses. A lower rank still reads R01.
+
+**Verified.** `tests/rack.test.ts` reads the word. Putting R30 back failed once (`expected 'R30' to be 'MASTERED'`).
+
+**Open.** The phone list names a gun and its rank. It does not say the rounds in that gun. The rack does.
+
 ## Stage 874 — A phone names every gun's rank
 
 **The ask.** On a phone the rack is hidden. A gun you are not holding did not say its rank. The gun in hand already did. The rank is not a stat you buy. It does not spend $CAPITAL.

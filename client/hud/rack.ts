@@ -12,14 +12,18 @@
  *
  * The phone (Stage 874). The rack is hidden there, so a gun you are not holding said nothing
  * about its rank. The phone line names every gun and the rank.
+ *
+ * The cap (Stage 875). At the last rank the file says MASTERED. The rack and the phone
+ * list said R30.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 
 export { weaponShortLabel as rackLabel } from "@shared/weapons/manifest";
 
-/** The rank a slot wears. R01 through the last rank. */
+/** The rank a slot wears. R01 through the rank before the last. MASTERED at the cap. */
 export function rackRankMark(rank: number): string {
   const n = Number.isFinite(rank) ? Math.max(1, Math.min(MAX_RANK, Math.floor(rank))) : 1;
+  if (n >= MAX_RANK) return "MASTERED";
   return `R${String(n).padStart(2, "0")}`;
 }
 
