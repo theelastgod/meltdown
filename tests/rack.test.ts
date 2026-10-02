@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { WEAPON_LIST } from "../shared/weapons/manifest";
-import { rackLabel, rackRankMark } from "../client/hud/rack";
+import { phoneRankSlot, rackLabel, rackRankMark } from "../client/hud/rack";
 
 describe("rackLabel", () => {
   it("is the first word for a name that starts with one", () => {
@@ -36,5 +36,15 @@ describe("rackLabel", () => {
     expect(css).toMatch(/content: attr\(data-r\)/);
     const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(game).toMatch(/WEAPON_LIST\.map\(\(w\) => this\.file\.mastery\[w\.id\]\?\.rank \?\? 1\)/);
+  });
+  it("names every gun's rank on a phone, where the rack is hidden", () => {
+    expect(phoneRankSlot("REPO", 12, false)).toBe("<span>REPO R12</span>");
+    expect(phoneRankSlot("LEASE-BREAKER", 1, true)).toBe(`<span class="on">LEASE-BREAKER R01</span>`);
+    expect(phoneRankSlot("DIRECTIVE", 30, false)).toBe("<span>DIRECTIVE R30</span>");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, w\.slot === p\.weapon\.slot\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud\.touch \.pranks \{ display: flex/);
+    expect(css).toMatch(/#hud\.touch \.rack \{ display: none/);
   });
 });

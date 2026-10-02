@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 873 (the rack says each gun's rank). Stage 872 says MASTERED at the last rank. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **874** |
+| HEAD | Stage 874 (a phone names every gun's rank). Stage 873 says the rank on the rack. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **875** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |

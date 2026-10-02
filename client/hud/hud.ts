@@ -10,7 +10,7 @@ import { houseName } from "@shared/endgame/season";
 import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
-import { rackLabel, rackRankMark } from "./rack";
+import { phoneRankSlot, rackLabel, rackRankMark } from "./rack";
 import { heldGateLine, heldRankPace, heldWeaponLine } from "./weaponline";
 import { motionWord } from "./stance";
 import { keysLine, learn, NOTHING_SEEN, padsLine, type Seen } from "./keys";
@@ -186,7 +186,7 @@ export class Hud {
       <div class="p mg prompt-touch">▲ TAP TO WAKE · <span style="color:var(--cy)">LEFT</span> STICK MOVES · PUSH TO <span style="color:var(--cy)">SPRINT</span> · <span style="color:var(--cy)">RIGHT</span> DRAG AIMS</div>
       <div class="pads" hidden></div>
 
-      <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="w wgate hold" hidden></div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="hint">${reloadHint(this.touch)}</div><div class="rack"></div><div class="nades"></div></div>
+      <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="w wgate hold" hidden></div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="hint">${reloadHint(this.touch)}</div><div class="rack"></div><div class="pranks"></div><div class="nades"></div></div>
       <div class="overlay flag">▲ FLAGGED — VANTAGE SEARCHLIGHT</div>
       <div class="overlay stun">STUNNED</div>
       <div class="emp"></div>
@@ -993,6 +993,7 @@ export class Hud {
     if (this.rackKey !== rackSig) {
       this.rackKey = rackSig;
       this.q(".rack").innerHTML = WEAPON_LIST.map((w, i) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}<i>${w.magSize ? p.weapon.ammo[w.slot] : "∞"}</i><b data-r="${rackRankMark(ranks[i] ?? 1)}"></b></span>`).join("");
+      this.q(".pranks").innerHTML = WEAPON_LIST.map((w, i) => phoneRankSlot(rackLabel(w.name), ranks[i] ?? 1, w.slot === p.weapon.slot)).join("");
     }
     const nk = p.weapon.grenadeSel + ":" + p.weapon.grenades.join(",");
     if (this.nadeKey !== nk) {
