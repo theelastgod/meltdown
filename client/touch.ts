@@ -238,6 +238,11 @@ export class TouchControls {
     this.root.querySelector(".tc-nade")?.classList.toggle("low", low);
   }
 
+  /** An empty magazine (Stage 921). The grenade pad already says so. The pad that picks the next grenade has to say it too. */
+  setNextGrenadeEmpty(empty: boolean): void {
+    this.root.querySelector(".tc-nadenext")?.classList.toggle("empty", empty);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();
