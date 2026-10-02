@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { grenadePad, nadeCountHtml, nextGrenade } from "../client/hud/grenadepad";
+import { grenadePad, nadeCountHtml, nadeSlot, nextGrenade } from "../client/hud/grenadepad";
 
 const NAMES = ["FRAG", "SMOKE", "EMP"];
 
@@ -35,9 +35,22 @@ describe("the pads' labels", () => {
     expect(nadeCountHtml(2)).toBe("<i>2</i>");
     expect(nadeCountHtml(0)).toBe(`<i class="empty">0</i>`);
     expect(nadeCountHtml(Number.NaN)).toBe(`<i class="empty">0</i>`);
+    const src = readFileSync(new URL("../client/hud/grenadepad.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/nadeCountHtml\(count\)/);
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
-    expect(hud).toMatch(/nadeCountHtml\(p\.weapon\.grenades\[i\] \?\? 0\)/);
+    expect(hud).toMatch(/nadeSlot\(g\.name, p\.weapon\.grenades\[i\] \?\? 0/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.nades i\.empty \{ color: var\(--mg\)/);
+  });
+  it("marks the grenade the next cycle selects", () => {
+    expect(nadeSlot("SMOKE", 1, false, true)).toBe(`<span class="next">▸ SMOKE <i>1</i></span>`);
+    expect(nadeSlot("FRAG", 2, true, false)).toBe(`<span class="on">FRAG <i>2</i></span>`);
+    expect(nadeSlot("FRAG", 0, true, true)).toBe(`<span class="on">FRAG <i class="empty">0</i></span>`);
+    expect(nadeSlot("EMP", 1, false, false)).toBe("<span>EMP <i>1</i></span>");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/const nextG = nextGrenade\(p\.weapon\.grenadeSel, GRENADE_LIST\.length\)/);
+    expect(hud).toMatch(/i === nextG\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.nades span\.next \{ color: var\(--ye\)/);
   });
 });

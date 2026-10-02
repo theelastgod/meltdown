@@ -11,7 +11,7 @@ import { houseName } from "@shared/endgame/season";
 import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
-import { nadeCountHtml } from "./grenadepad";
+import { nadeSlot, nextGrenade } from "./grenadepad";
 import { phoneRankSlot, rackLabel, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "./rack";
 import { heldGateLine, heldRankPace, heldWeaponLine } from "./weaponline";
 import { motionWord } from "./stance";
@@ -1003,7 +1003,8 @@ export class Hud {
     const nk = p.weapon.grenadeSel + ":" + p.weapon.grenades.join(",");
     if (this.nadeKey !== nk) {
       this.nadeKey = nk;
-      this.q(".nades").innerHTML = GRENADE_LIST.map((g, i) => `<span class="${i === p.weapon.grenadeSel ? "on" : ""}">${g.name} ${nadeCountHtml(p.weapon.grenades[i] ?? 0)}</span>`).join("");
+      const nextG = nextGrenade(p.weapon.grenadeSel, GRENADE_LIST.length);
+      this.q(".nades").innerHTML = GRENADE_LIST.map((g, i) => nadeSlot(g.name, p.weapon.grenades[i] ?? 0, i === p.weapon.grenadeSel, i === nextG)).join("");
     }
     this.q(".stun").classList.toggle("on", p.weapon.stunTimer > 0);
     const emp = this.q(".emp");

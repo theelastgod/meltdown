@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 882 — The grenade row marks the one the next cycle selects
+
+**The ask.** The grenade row marked the one selected. It did not mark the one the next cycle selects. The phone's cycle pad does. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** The grenade the next cycle reaches wears a ▸ and reads yellow. The one selected stays the lit one. A phone still hides the row. Its cycle pad already names the next one.
+
+**Verified.** `tests/grenadepad.test.ts` reads the mark. Taking it off failed once (`expected '<span class="next">SMOKE <i>1</i></span>' to be '<span class="next">▸ SMOKE <i>1</i></span>'`).
+
+**Open.** The phone hides the grenade row, so a spent grenade's zero stays in the button's own colour. The row paints that zero magenta.
+
 ## Stage 881 — An empty grenade is not the same yellow as one you have
 
 **The ask.** A grenade with none left painted that count the same yellow as one you still have. An empty gun is magenta. The count is not a stat you buy. It does not spend $CAPITAL.

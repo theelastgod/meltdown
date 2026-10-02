@@ -184,6 +184,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .nades { display: flex; flex-wrap: wrap; row-gap: 3px; gap: 6px; justify-content: flex-end; margin-top: 3px; font-size: 9px; color: rgba(255,62,201,0.6); }
 #hud .nades span { padding: 1px 4px; border: 1px solid rgba(255,62,201,0.25); }
 #hud .nades span.on { color: var(--mg); border-color: var(--mg); }
+#hud .nades span.next { color: var(--ye); }
 #hud .nades i.empty { color: var(--mg); }
 #hud .overlay { position: absolute; left: 50%; transform: translateX(-50%); padding: 4px 12px; border: 1px solid var(--am); color: var(--am); background: var(--pan); font-size: 12px; letter-spacing: 0.15em; opacity: 0; text-shadow: 0 0 6px rgba(255,176,46,0.6); }
 #hud .overlay.on { opacity: 1; }

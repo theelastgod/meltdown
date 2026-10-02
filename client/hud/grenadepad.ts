@@ -13,6 +13,9 @@
  *
  * The count (Stage 881). The row painted 0 in the same yellow as a grenade you still
  * have. An empty gun is already magenta.
+ *
+ * The next one (Stage 882). The row marked the grenade in hand. It did not mark the
+ * one the next cycle selects. The phone's cycle pad already does.
  */
 
 /** the index the sim moves to on the next cycle: the list's next, wrapping, whatever the counts */
@@ -25,6 +28,13 @@ export function nextGrenade(sel: number, count: number): number {
 export function nadeCountHtml(count: number): string {
   const n = Number.isFinite(count) ? count : 0;
   return `<i${n <= 0 ? ` class="empty"` : ""}>${n}</i>`;
+}
+
+/** One grenade on the row. The selected one stays lit. The next cycle wears a mark, the same one the phone's pad uses. */
+export function nadeSlot(name: string, count: number, on: boolean, next: boolean): string {
+  const mark = next && !on ? "▸ " : "";
+  const cls = on ? "on" : next ? "next" : "";
+  return `<span${cls ? ` class="${cls}"` : ""}>${mark}${name} ${nadeCountHtml(count)}</span>`;
 }
 
 /** the two pads' labels: what a tap throws, and what the next cycle selects */
