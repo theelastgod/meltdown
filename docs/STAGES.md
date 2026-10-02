@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 879 — Before the magazine seats, the rack says --
+
+**The ask.** Before a reload seats, the corner says --. The rack and the phone list still said 0. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** While that gun's magazine is not in yet, the rack and the phone list say --, the same mark as the corner, and the count is not painted empty. Once it seats, they say the rounds. A gun that is not reloading still says its count. A gun with no magazine stays ∞.
+
+**Verified.** `tests/rack.test.ts` reads the mark. Putting 0 back failed once (`expected 0 to be '--'`).
+
+**Open.** On the last quarter the corner turns amber. The magazine bar stays yellow. The rule that would paint it sits on the ammo block, and the bar is not in that block.
+
 ## Stage 878 — The phone list marks the gun the next tap selects
 
 **The ask.** The phone list marked the gun in hand. It did not mark the gun the next WPN tap selects. The grenade cycle pad names its next one. The rank is not a stat you buy. It does not spend $CAPITAL.

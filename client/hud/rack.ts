@@ -24,6 +24,9 @@
  *
  * The next gun (Stage 878). The phone list marked the gun in hand. It did not mark
  * the gun the next WPN tap selects. The grenade cycle pad already names its next one.
+ *
+ * Before the seat (Stage 879). The corner says -- while the magazine is not in.
+ * The rack and the phone list still said 0, the empty count.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 import { lowLine } from "./ammo";
@@ -37,13 +40,20 @@ export function rackRankMark(rank: number): string {
   return `R${String(n).padStart(2, "0")}`;
 }
 
-/** Empty and the last quarter, the same lines the corner uses. A gun with no magazine stays plain. */
-export function rackRoundTone(magSize: number, ammo: number): "" | "low" | "empty" {
-  if (!(magSize > 0)) return "";
+/** Empty and the last quarter, the same lines the corner uses. A gun with no magazine stays plain. Before the magazine seats, the count is not a number. */
+export function rackRoundTone(magSize: number, ammo: number, unseated = false): "" | "low" | "empty" {
+  if (unseated || !(magSize > 0)) return "";
   const n = Number.isFinite(ammo) ? ammo : 0;
   if (n <= 0) return "empty";
   if (n <= lowLine(magSize)) return "low";
   return "";
+}
+
+/** The count the rack and the phone list print. -- until that gun's magazine seats, the same mark as the corner. */
+export function rackRoundShown(magSize: number, ammo: number, unseated: boolean): number | string {
+  if (!(magSize > 0)) return "∞";
+  if (unseated) return "--";
+  return Number.isFinite(ammo) ? ammo : 0;
 }
 
 /** The round count, yellow unless the tone says it is low or empty. */

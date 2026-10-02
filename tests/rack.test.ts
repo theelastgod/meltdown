@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { WEAPON_LIST } from "../shared/weapons/manifest";
-import { phoneRankSlot, rackLabel, rackRankMark, rackRoundHtml, rackRoundTone } from "../client/hud/rack";
+import { phoneRankSlot, rackLabel, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "../client/hud/rack";
 
 describe("rackLabel", () => {
   it("is the first word for a name that starts with one", () => {
@@ -42,7 +42,7 @@ describe("rackLabel", () => {
     expect(phoneRankSlot("LEASE-BREAKER", 1, 30, true)).toBe(`<span class="on">LEASE-BREAKER <i>30</i> R01</span>`);
     expect(phoneRankSlot("DIRECTIVE", 29, 12, false)).toBe("<span>DIRECTIVE <i>12</i> R29</span>");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
-    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, w\.magSize \? \(p\.weapon\.ammo\[w\.slot\] \?\? 0\) : "∞", w\.slot === p\.weapon\.slot, rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0\), w\.slot === nextSlot\)/);
+    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, rackRoundShown\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\), w\.slot === p\.weapon\.slot, rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\), w\.slot === nextSlot\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud\.touch \.pranks \{ display: flex/);
     expect(css).toMatch(/#hud\.touch \.rack \{ display: none/);
@@ -52,7 +52,7 @@ describe("rackLabel", () => {
     expect(phoneRankSlot("SHOCK", 1, "∞", true)).toBe(`<span class="on">SHOCK <i>∞</i> R01</span>`);
     expect(phoneRankSlot("DIRECTIVE", 30, 0, false)).toBe("<span>DIRECTIVE <i>0</i> MASTERED</span>");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
-    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, w\.magSize \? \(p\.weapon\.ammo\[w\.slot\] \?\? 0\) : "∞", w\.slot === p\.weapon\.slot, rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0\), w\.slot === nextSlot\)/);
+    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, rackRoundShown\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\), w\.slot === p\.weapon\.slot, rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\), w\.slot === nextSlot\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.rack i, #hud \.nades i, #hud \.pranks i/);
   });
@@ -74,7 +74,7 @@ describe("rackLabel", () => {
     expect(rackRoundHtml("∞")).toBe("<i>∞</i>");
     expect(phoneRankSlot("REPO", 12, 0, false, "empty")).toBe(`<span>REPO <i class="empty">0</i> R12</span>`);
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
-    const tones = hud.match(/rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0\)/g) ?? [];
+    const tones = hud.match(/rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\)/g) ?? [];
     expect(tones).toHaveLength(2);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.rack i\.empty, #hud \.pranks i\.empty \{ color: var\(--mg\)/);
@@ -89,5 +89,21 @@ describe("rackLabel", () => {
     expect(hud).toMatch(/w\.slot === nextSlot\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud\.touch \.pranks span\.next \{ color: var\(--ye\)/);
+  });
+  it("says -- before the magazine seats, on the rack and the phone", () => {
+    expect(rackRoundShown(30, 0, true)).toBe("--");
+    expect(rackRoundShown(30, 12, true)).toBe("--");
+    expect(rackRoundShown(30, 0, false)).toBe(0);
+    expect(rackRoundShown(30, 12, false)).toBe(12);
+    expect(rackRoundShown(0, 0, true)).toBe("∞");
+    expect(rackRoundTone(30, 0, true)).toBe("");
+    expect(rackRoundTone(30, 8, true)).toBe("");
+    expect(rackRoundHtml("--")).toBe("<i>--</i>");
+    expect(phoneRankSlot("REPO", 12, "--", true)).toBe(`<span class="on">REPO <i>--</i> R12</span>`);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/const seating = p\.weapon\.reloadTimer > 0 && !p\.weapon\.reloadSeated/);
+    expect(hud).toMatch(/\$\{seating \? 1 : 0\}/);
+    const shown = hud.match(/rackRoundShown\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\)/g) ?? [];
+    expect(shown).toHaveLength(2);
   });
 });

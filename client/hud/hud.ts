@@ -11,7 +11,7 @@ import { houseName } from "@shared/endgame/season";
 import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
-import { phoneRankSlot, rackLabel, rackRankMark, rackRoundHtml, rackRoundTone } from "./rack";
+import { phoneRankSlot, rackLabel, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "./rack";
 import { heldGateLine, heldRankPace, heldWeaponLine } from "./weaponline";
 import { motionWord } from "./stance";
 import { keysLine, learn, NOTHING_SEEN, padsLine, type Seen } from "./keys";
@@ -990,12 +990,13 @@ export class Hud {
     if (wgate.hidden !== (under === "")) wgate.hidden = under === "";
     wgate.classList.toggle("hold", gateLine !== "");
     wgate.classList.toggle("done", under === "MASTERED");
-    const rackSig = `${p.weapon.slot}:${p.weapon.ammo.join(",")}:${ranks.join(",")}`;
+    const seating = p.weapon.reloadTimer > 0 && !p.weapon.reloadSeated;
+    const rackSig = `${p.weapon.slot}:${p.weapon.ammo.join(",")}:${ranks.join(",")}:${seating ? 1 : 0}`;
     if (this.rackKey !== rackSig) {
       this.rackKey = rackSig;
       const nextSlot = cycleSlot(p.weapon.slot, 1);
-      this.q(".rack").innerHTML = WEAPON_LIST.map((w, i) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}${rackRoundHtml(w.magSize ? (p.weapon.ammo[w.slot] ?? 0) : "∞", rackRoundTone(w.magSize, p.weapon.ammo[w.slot] ?? 0))}<b data-r="${rackRankMark(ranks[i] ?? 1)}"></b></span>`).join("");
-      this.q(".pranks").innerHTML = WEAPON_LIST.map((w, i) => phoneRankSlot(rackLabel(w.name), ranks[i] ?? 1, w.magSize ? (p.weapon.ammo[w.slot] ?? 0) : "∞", w.slot === p.weapon.slot, rackRoundTone(w.magSize, p.weapon.ammo[w.slot] ?? 0), w.slot === nextSlot)).join("");
+      this.q(".rack").innerHTML = WEAPON_LIST.map((w, i) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}${rackRoundHtml(rackRoundShown(w.magSize, p.weapon.ammo[w.slot] ?? 0, seating && w.slot === p.weapon.slot), rackRoundTone(w.magSize, p.weapon.ammo[w.slot] ?? 0, seating && w.slot === p.weapon.slot))}<b data-r="${rackRankMark(ranks[i] ?? 1)}"></b></span>`).join("");
+      this.q(".pranks").innerHTML = WEAPON_LIST.map((w, i) => phoneRankSlot(rackLabel(w.name), ranks[i] ?? 1, rackRoundShown(w.magSize, p.weapon.ammo[w.slot] ?? 0, seating && w.slot === p.weapon.slot), w.slot === p.weapon.slot, rackRoundTone(w.magSize, p.weapon.ammo[w.slot] ?? 0, seating && w.slot === p.weapon.slot), w.slot === nextSlot)).join("");
     }
     const nk = p.weapon.grenadeSel + ":" + p.weapon.grenades.join(",");
     if (this.nadeKey !== nk) {
