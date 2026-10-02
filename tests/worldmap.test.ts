@@ -121,6 +121,10 @@ describe("what the map shows", () => {
     expect(d).toMatch(/HOLD THE CORNER · HOLD · 42S LEFT/);
     expect(d).toMatch(/HIGH LINE · 31\.3S · ALPHA/);
     expect(d).toMatch(/data-wm-go="night_market"/);
+    expect(d).toMatch(/\[TRAVEL TO NIGHT MARKET\]/);
+    const phone = worldMapDetails(state({ presence: p, selected: "night_market", touch: true }));
+    expect(phone).toMatch(/TAP TRAVEL TO NIGHT MARKET/);
+    expect(phone).not.toMatch(/\[TRAVEL TO/);
     const here = worldMapDetails(state({ presence: p, selected: "lease_row" }));
     expect(here).not.toMatch(/data-wm-go/);
     expect(here).toMatch(/YOU ARE HERE/);

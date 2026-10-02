@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 854 — Travel on the map tells a phone to tap
+
+**The ask.** The world map offered [ TRAVEL TO … ] for another district. Those brackets are a button on a keyboard. On a phone they read as a key. Travel still reloads that district's city room. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** A phone sees TAP TRAVEL TO and the district. A keyboard still sees the bracketed trip. Where you already are still reads YOU ARE HERE, with no button.
+
+**Verified.** `tests/worldmap.test.ts` reads the card. Putting the old brackets back failed once (`expected the card to match /\[TRAVEL TO NIGHT MARKET\]/`).
+
+**Open.** The receipt's markup still says [ENTER] SIGN before the line is written.
+
 ## Stage 853 — The secondary weapon tells a phone to tap
 
 **The ask.** The file offered the secondary weapon's name in brackets. Those brackets are a button on a keyboard. On a phone they read as a key. Choosing it still only changes which weapon is in that hand. It does not spend $CAPITAL and it does not buy a stat.
