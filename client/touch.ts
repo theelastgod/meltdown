@@ -273,6 +273,11 @@ export class TouchControls {
     this.root.querySelector(".tc-knob")?.classList.toggle("empty", empty);
   }
 
+  /** The last quarter (Stage 928). The ring turns amber. The knob of the move stick has to say it too. */
+  setStickKnobLow(low: boolean): void {
+    this.root.querySelector(".tc-knob")?.classList.toggle("low", low);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();
