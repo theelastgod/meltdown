@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 860 — A woken phone loses the wake line
+
+**The ask.** After the first thumb, a phone still read ▲ TAP TO WAKE for the rest of the session. A locked pointer takes the keyboard line down. A phone has no pointer lock, so that line never moved. The first thumb still starts the session. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** The first thumb marks the session awake, and the phone's wake line takes the same off class the keyboard line takes when the pointer locks. Before that thumb, the line stays up.
+
+**Verified.** `tests/keys.test.ts` reads the gesture and the off rule. Leaving the gesture as audio only failed once (`expected the source to match /this\.touch\.onGesture = \(\) => \{\s*this\.audio\.resume\(\);\s*this\.hud\.setLocked\(true\);\s*\}/`).
+
+**Open.** An empty magazine's markup still says ▼ RELOAD [R] before the line is written.
+
 ## Stage 859 — The trailer's skip line tells a phone to tap
 
 **The ask.** The trailer's skip line said CLICK FOR SOUND · [SPACE] SKIP before the line was written. Those words name a click and a key. On a phone they read as a click and SPACE, and a phone has neither. The first tap still turns the sound on. It does not spend $CAPITAL and it does not buy a stat.

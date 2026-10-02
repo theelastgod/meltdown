@@ -275,6 +275,7 @@ export class Hud {
   setLocked(locked: boolean): void {
     this.locked = locked;
     this.q(".prompt").classList.toggle("off", locked);
+    this.q(".prompt-touch").classList.toggle("off", locked);
   }
 
   /** A CRT theme: swap the palette variables on the HUD root (null: the default). */

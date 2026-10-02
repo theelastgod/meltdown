@@ -647,6 +647,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.touch .terminal { left: 12px; bottom: auto; width: auto; max-width: none; transform: none; overflow: auto; }  /* Stage 138: seated under the row, short of the pads, by the layout */
 #hud.touch .terminal .ch { padding: 7px 8px; }
 #hud.touch .prompt-touch { display: block; left: 50%; right: auto; transform: translateX(-50%); bottom: auto; top: calc(62px + env(safe-area-inset-top)); white-space: nowrap; font-size: 9px; }
+#hud.touch .prompt-touch.off { display: none; }
 /* the dock keeps the left edge and stops well short of the right thumb's arc */
 #hud.touch .bottom { max-width: calc(100vw - 270px); flex-wrap: wrap; gap: 4px; }
 #hud.touch .bottom .tabs { font-size: 9px; }

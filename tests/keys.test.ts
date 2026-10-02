@@ -1,4 +1,5 @@
 /** The tutorial never left (Stage 130); its facts are cumulative (Stage 164). */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { keysLine, learn, NOTHING_SEEN } from "../client/hud/keys";
 
@@ -42,5 +43,16 @@ describe("learn", () => {
     // and moving is not sprinting: the walk read is a different line
     expect(learn(NOTHING_SEEN, { ...still, topSpeed: 0.51 })).toEqual({ ...NOTHING_SEEN, moved: true });
     expect(learn(NOTHING_SEEN, { ...still, topSpeed: 0.5 })).toEqual(NOTHING_SEEN);
+  });
+});
+
+describe("a phone that has already woken", () => {
+  it("takes the wake line down, the way a locked pointer takes the keyboard line down", () => {
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/this\.q\("\.prompt-touch"\)\.classList\.toggle\("off", locked\)/);
+    expect(css).toMatch(/#hud\.touch \.prompt-touch\.off \{ display: none; \}/);
+    expect(game).toMatch(/this\.touch\.onGesture = \(\) => \{\s*this\.audio\.resume\(\);\s*this\.hud\.setLocked\(true\);\s*\}/);
   });
 });

@@ -207,7 +207,10 @@ export class Game {
       if (new URLSearchParams(location.search).get("touch") === "1") this.touch.root.classList.add("forced");
       this.input.touch = this.touch;
       this.input.aimAssist = (yaw, pitch) => this.touchAimAssist(yaw, pitch);
-      this.touch.onGesture = () => this.audio.resume();
+      this.touch.onGesture = () => {
+        this.audio.resume();
+        this.hud.setLocked(true);
+      };
     }
     {
       const q = new URLSearchParams(location.search);
