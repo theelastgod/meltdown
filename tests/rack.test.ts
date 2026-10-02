@@ -38,19 +38,28 @@ describe("rackLabel", () => {
     expect(game).toMatch(/WEAPON_LIST\.map\(\(w\) => this\.file\.mastery\[w\.id\]\?\.rank \?\? 1\)/);
   });
   it("names every gun's rank on a phone, where the rack is hidden", () => {
-    expect(phoneRankSlot("REPO", 12, false)).toBe("<span>REPO R12</span>");
-    expect(phoneRankSlot("LEASE-BREAKER", 1, true)).toBe(`<span class="on">LEASE-BREAKER R01</span>`);
-    expect(phoneRankSlot("DIRECTIVE", 29, false)).toBe("<span>DIRECTIVE R29</span>");
+    expect(phoneRankSlot("REPO", 12, 6, false)).toBe("<span>REPO <i>6</i> R12</span>");
+    expect(phoneRankSlot("LEASE-BREAKER", 1, 30, true)).toBe(`<span class="on">LEASE-BREAKER <i>30</i> R01</span>`);
+    expect(phoneRankSlot("DIRECTIVE", 29, 12, false)).toBe("<span>DIRECTIVE <i>12</i> R29</span>");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
-    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, w\.slot === p\.weapon\.slot\)/);
+    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, w\.magSize \? \(p\.weapon\.ammo\[w\.slot\] \?\? 0\) : "∞", w\.slot === p\.weapon\.slot\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud\.touch \.pranks \{ display: flex/);
     expect(css).toMatch(/#hud\.touch \.rack \{ display: none/);
   });
+  it("says the rounds in that gun on a phone, the same count the rack paints", () => {
+    expect(phoneRankSlot("REPO", 12, 6, false)).toBe("<span>REPO <i>6</i> R12</span>");
+    expect(phoneRankSlot("SHOCK", 1, "∞", true)).toBe(`<span class="on">SHOCK <i>∞</i> R01</span>`);
+    expect(phoneRankSlot("DIRECTIVE", 30, 0, false)).toBe("<span>DIRECTIVE <i>0</i> MASTERED</span>");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, w\.magSize \? \(p\.weapon\.ammo\[w\.slot\] \?\? 0\) : "∞", w\.slot === p\.weapon\.slot\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.rack i, #hud \.nades i, #hud \.pranks i/);
+  });
   it("says MASTERED at the last rank", () => {
     expect(rackRankMark(30)).toBe("MASTERED");
     expect(rackRankMark(29)).not.toBe("MASTERED");
-    expect(phoneRankSlot("DIRECTIVE", 30, false)).toBe("<span>DIRECTIVE MASTERED</span>");
+    expect(phoneRankSlot("DIRECTIVE", 30, 12, false)).toBe("<span>DIRECTIVE <i>12</i> MASTERED</span>");
     const src = readFileSync(new URL("../client/hud/rack.ts", import.meta.url), "utf8");
     expect(src).toMatch(/n >= MAX_RANK\) return "MASTERED"/);
   });

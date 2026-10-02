@@ -15,6 +15,9 @@
  *
  * The cap (Stage 875). At the last rank the file says MASTERED. The rack and the phone
  * list said R30.
+ *
+ * The rounds (Stage 876). The phone list named the gun and its rank. The rack already
+ * painted the rounds in that gun. A phone hides the rack, so those rounds were gone.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 
@@ -27,8 +30,11 @@ export function rackRankMark(rank: number): string {
   return `R${String(n).padStart(2, "0")}`;
 }
 
-/** One gun on the phone list. The rack is hidden there. The gun in hand is marked on. */
-export function phoneRankSlot(label: string, rank: number, on: boolean): string {
+/**
+ * One gun on the phone list. The rack is hidden there. The gun in hand is marked on.
+ * `rounds` is the same count the rack paints: the magazine, or ∞ when the gun has none.
+ */
+export function phoneRankSlot(label: string, rank: number, rounds: number | string, on: boolean): string {
   const name = label.trim();
-  return `<span${on ? ` class="on"` : ""}>${name} ${rackRankMark(rank)}</span>`;
+  return `<span${on ? ` class="on"` : ""}>${name} <i>${rounds}</i> ${rackRankMark(rank)}</span>`;
 }

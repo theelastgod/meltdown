@@ -993,7 +993,7 @@ export class Hud {
     if (this.rackKey !== rackSig) {
       this.rackKey = rackSig;
       this.q(".rack").innerHTML = WEAPON_LIST.map((w, i) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}<i>${w.magSize ? p.weapon.ammo[w.slot] : "∞"}</i><b data-r="${rackRankMark(ranks[i] ?? 1)}"></b></span>`).join("");
-      this.q(".pranks").innerHTML = WEAPON_LIST.map((w, i) => phoneRankSlot(rackLabel(w.name), ranks[i] ?? 1, w.slot === p.weapon.slot)).join("");
+      this.q(".pranks").innerHTML = WEAPON_LIST.map((w, i) => phoneRankSlot(rackLabel(w.name), ranks[i] ?? 1, w.magSize ? (p.weapon.ammo[w.slot] ?? 0) : "∞", w.slot === p.weapon.slot)).join("");
     }
     const nk = p.weapon.grenadeSel + ":" + p.weapon.grenades.join(",");
     if (this.nadeKey !== nk) {

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 876 — The phone list says the rounds in that gun
+
+**The ask.** The phone list named a gun and its rank. It did not say the rounds in that gun. The rack did. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** Each name on the phone list wears the same count the rack paints: the rounds in that gun, or ∞ when it has no magazine. The count is yellow, the same as the rack. A keyboard still reads the rack.
+
+**Verified.** `tests/rack.test.ts` reads the count. Dropping it off the phone list failed once (`expected '<span>REPO R12</span>' to be '<span>REPO <i>6</i> R12</span>'`).
+
+**Open.** A gun with no rounds paints that count the same yellow as a full magazine. The corner turns magenta when the gun in hand is empty, and amber on the last quarter. The rack and the phone list do not.
+
 ## Stage 875 — The rack says MASTERED at the last rank
 
 **The ask.** At the last rank the file says MASTERED. The rack and the phone list said R30. The cap is not a stat you buy. It does not spend $CAPITAL.
