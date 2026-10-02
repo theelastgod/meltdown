@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 882 (the grenade row marks the one the next cycle selects). Stage 881 paints an empty grenade magenta. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **883** |
+| HEAD | Stage 883 (a spent grenade's zero is magenta on the phone). Stage 882 marks the grenade the next cycle selects. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **884** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |

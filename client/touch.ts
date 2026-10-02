@@ -18,7 +18,7 @@
  *
  * Nothing here touches the sim. It produces the same `InputFrame` the keyboard does.
  */
-import { grenadePad } from "./hud/grenadepad";
+import { grenadePadHtml } from "./hud/grenadepad";
 import { Btn, cycleSlot } from "@shared/sim/input";
 
 /** Radius the stick travels before it is at full deflection, in CSS pixels. */
@@ -156,14 +156,15 @@ export class TouchControls {
    * when the words change.
    */
   setGrenades(sel: number, counts: readonly number[], names: readonly string[]): void {
-    const { throwLabel, cycleLabel } = grenadePad(sel, counts, names);
-    const key = `${throwLabel}|${cycleLabel}`;
+    const { throwHtml, cycleHtml } = grenadePadHtml(sel, counts, names);
+    const key = `${throwHtml}|${cycleHtml}`;
     if (key === this.nadeKey) return;
     this.nadeKey = key;
     const t = this.root.querySelector(".tc-nade");
     const c = this.root.querySelector(".tc-nadenext");
-    if (t) t.textContent = throwLabel;
-    if (c) c.textContent = cycleLabel;
+    // one child: the pad is a grid, and a loose count would stack under the name
+    if (t) t.innerHTML = `<span>${throwHtml}</span>`;
+    if (c) c.innerHTML = `<span>${cycleHtml}</span>`;
   }
   private nadeKey = "";
 

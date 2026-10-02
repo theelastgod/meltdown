@@ -3,7 +3,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { grenadePad, nadeCountHtml, nadeSlot, nextGrenade } from "../client/hud/grenadepad";
+import { grenadePad, grenadePadHtml, nadeCountHtml, nadeSlot, nextGrenade } from "../client/hud/grenadepad";
 
 const NAMES = ["FRAG", "SMOKE", "EMP"];
 
@@ -52,5 +52,16 @@ describe("the pads' labels", () => {
     expect(hud).toMatch(/i === nextG\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.nades span\.next \{ color: var\(--ye\)/);
+  });
+  it("paints a spent zero magenta on the phone, where the row is hidden", () => {
+    expect(grenadePadHtml(1, [2, 0, 1], NAMES).throwHtml).toBe(`SMOKE <i class="empty">0</i>`);
+    expect(grenadePadHtml(0, [2, 0, 1], NAMES).cycleHtml).toBe(`▸SMOKE <i class="empty">0</i>`);
+    expect(grenadePadHtml(0, [2, 1, 1], NAMES)).toEqual({ throwHtml: "FRAG <i>2</i>", cycleHtml: "▸SMOKE <i>1</i>" });
+    expect(grenadePadHtml(0, [], [])).toEqual({ throwHtml: "NADE", cycleHtml: "NADE" });
+    const touch = readFileSync(new URL("../client/touch.ts", import.meta.url), "utf8");
+    expect(touch).toMatch(/grenadePadHtml\(sel, counts, names\)/);
+    expect(touch).toMatch(/innerHTML = `<span>\$\{throwHtml\}<\/span>`/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.thumbs \.tc-nade i\.empty, #hud \.thumbs \.tc-nadenext i\.empty \{ color: var\(--mg\)/);
   });
 });

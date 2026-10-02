@@ -16,6 +16,9 @@
  *
  * The next one (Stage 882). The row marked the grenade in hand. It did not mark the
  * one the next cycle selects. The phone's cycle pad already does.
+ *
+ * The phone (Stage 883). The row is hidden there, so a spent zero stayed in the
+ * button's own colour. The same empty mark the row uses now sits on the pad.
  */
 
 /** the index the sim moves to on the next cycle: the list's next, wrapping, whatever the counts */
@@ -44,4 +47,14 @@ export function grenadePad(sel: number, counts: readonly number[], names: readon
   const at = ((sel % n) + n) % n;
   const next = (at + 1) % n;
   return { throwLabel: `${names[at]} ${counts[at]}`, cycleLabel: `▸${names[next]} ${counts[next]}` };
+}
+
+/** The same words, with the count marked. A phone hides the row, so the zero has to be magenta here. */
+export function grenadePadHtml(sel: number, counts: readonly number[], names: readonly string[]): { throwHtml: string; cycleHtml: string } {
+  const n = Math.min(counts.length, names.length);
+  if (n === 0) return { throwHtml: "NADE", cycleHtml: "NADE" };
+  const at = ((sel % n) + n) % n;
+  const next = (at + 1) % n;
+  const shown = (i: number): string => nadeCountHtml(Number.isFinite(counts[i]) ? counts[i]! : 0);
+  return { throwHtml: `${names[at]} ${shown(at)}`, cycleHtml: `▸${names[next]} ${shown(next)}` };
 }
