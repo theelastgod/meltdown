@@ -34,6 +34,9 @@
  *
  * The last quarter (Stage 900). The gun's name turns amber. On the rack that
  * short name stayed the same cyan as a full magazine.
+ *
+ * The phone (Stage 901). The rack is hidden there. An empty magazine turns
+ * the rack's short name magenta. On the phone that word stayed cyan.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 import { lowLine } from "./ammo";
@@ -95,9 +98,23 @@ export function rackNameHtml(label: string, tone: "" | "low" | "empty"): string 
  * One gun on the phone list. The rack is hidden there. The gun in hand is marked on.
  * `rounds` is the same count the rack paints: the magazine, or ∞ when the gun has none.
  */
+/**
+ * The short name on the phone when that gun's magazine is empty (Stage 901).
+ * The rack turns magenta. A phone hides the rack, so this word stayed the same
+ * cyan as a full magazine. The last quarter is not this.
+ */
+export function phoneNameEmpty(tone: "" | "low" | "empty"): boolean {
+  return tone === "empty";
+}
+
+/** The short name on the phone. Empty marks it. The last quarter stays the line's own colour. */
+export function phoneNameHtml(label: string, tone: "" | "low" | "empty"): string {
+  return `<em${phoneNameEmpty(tone) ? ` class="empty"` : ""}>${label}</em>`;
+}
+
 export function phoneRankSlot(label: string, rank: number, rounds: number | string, on: boolean, tone: "" | "low" | "empty" = "", next = false): string {
   const name = label.trim();
   const cls = on ? "on" : next ? "next" : "";
   const mark = next && !on ? "▸ " : "";
-  return `<span${cls ? ` class="${cls}"` : ""}>${mark}${name} ${rackRoundHtml(rounds, tone)} ${rackRankMark(rank)}</span>`;
+  return `<span${cls ? ` class="${cls}"` : ""}>${mark}${phoneNameHtml(name, tone)} ${rackRoundHtml(rounds, tone)} ${rackRankMark(rank)}</span>`;
 }

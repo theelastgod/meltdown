@@ -5,7 +5,24 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { WEAPON_LIST } from "../shared/weapons/manifest";
-import { phoneRankSlot, rackLabel, rackNameEmpty, rackNameHtml, rackNameLow, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "../client/hud/rack";
+import { phoneNameEmpty, phoneNameHtml, phoneRankSlot, rackLabel, rackNameEmpty, rackNameHtml, rackNameLow, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "../client/hud/rack";
+
+describe("the short name on the phone when the magazine is empty", () => {
+  it("turns magenta only when that gun's magazine is empty", () => {
+    expect(phoneNameEmpty("empty")).toBe(true);
+    expect(phoneNameEmpty("low")).toBe(false);
+    expect(phoneNameEmpty("")).toBe(false);
+    expect(phoneNameHtml("REPO", "empty")).toBe(`<em class="empty">REPO</em>`);
+    expect(phoneNameHtml("REPO", "low")).not.toContain("empty");
+    expect(phoneNameHtml("REPO", "")).toBe("<em>REPO</em>");
+    expect(phoneRankSlot("REPO", 12, 0, false, "empty")).toBe(`<span><em class="empty">REPO</em> <i class="empty">0</i> R12</span>`);
+    const src = readFileSync(new URL("../client/hud/rack.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/phoneNameHtml\(name, tone\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.pranks em \{ font-style: normal/);
+    expect(css).toMatch(/#hud \.pranks em\.empty \{ color: var\(--mg\)/);
+  });
+});
 
 describe("the short name on the rack on the last quarter", () => {
   it("turns amber only on the last quarter", () => {
@@ -72,9 +89,9 @@ describe("rackLabel", () => {
     expect(game).toMatch(/WEAPON_LIST\.map\(\(w\) => this\.file\.mastery\[w\.id\]\?\.rank \?\? 1\)/);
   });
   it("names every gun's rank on a phone, where the rack is hidden", () => {
-    expect(phoneRankSlot("REPO", 12, 6, false)).toBe("<span>REPO <i>6</i> R12</span>");
-    expect(phoneRankSlot("LEASE-BREAKER", 1, 30, true)).toBe(`<span class="on">LEASE-BREAKER <i>30</i> R01</span>`);
-    expect(phoneRankSlot("DIRECTIVE", 29, 12, false)).toBe("<span>DIRECTIVE <i>12</i> R29</span>");
+    expect(phoneRankSlot("REPO", 12, 6, false)).toBe("<span><em>REPO</em> <i>6</i> R12</span>");
+    expect(phoneRankSlot("LEASE-BREAKER", 1, 30, true)).toBe(`<span class="on"><em>LEASE-BREAKER</em> <i>30</i> R01</span>`);
+    expect(phoneRankSlot("DIRECTIVE", 29, 12, false)).toBe("<span><em>DIRECTIVE</em> <i>12</i> R29</span>");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, rackRoundShown\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\), w\.slot === p\.weapon\.slot, rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\), w\.slot === nextSlot\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
@@ -82,9 +99,9 @@ describe("rackLabel", () => {
     expect(css).toMatch(/#hud\.touch \.rack \{ display: none/);
   });
   it("says the rounds in that gun on a phone, the same count the rack paints", () => {
-    expect(phoneRankSlot("REPO", 12, 6, false)).toBe("<span>REPO <i>6</i> R12</span>");
-    expect(phoneRankSlot("SHOCK", 1, "∞", true)).toBe(`<span class="on">SHOCK <i>∞</i> R01</span>`);
-    expect(phoneRankSlot("DIRECTIVE", 30, 0, false)).toBe("<span>DIRECTIVE <i>0</i> MASTERED</span>");
+    expect(phoneRankSlot("REPO", 12, 6, false)).toBe("<span><em>REPO</em> <i>6</i> R12</span>");
+    expect(phoneRankSlot("SHOCK", 1, "∞", true)).toBe(`<span class="on"><em>SHOCK</em> <i>∞</i> R01</span>`);
+    expect(phoneRankSlot("DIRECTIVE", 30, 0, false)).toBe("<span><em>DIRECTIVE</em> <i>0</i> MASTERED</span>");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     expect(hud).toMatch(/phoneRankSlot\(rackLabel\(w\.name\), ranks\[i\] \?\? 1, rackRoundShown\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\), w\.slot === p\.weapon\.slot, rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\), w\.slot === nextSlot\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
@@ -93,7 +110,7 @@ describe("rackLabel", () => {
   it("says MASTERED at the last rank", () => {
     expect(rackRankMark(30)).toBe("MASTERED");
     expect(rackRankMark(29)).not.toBe("MASTERED");
-    expect(phoneRankSlot("DIRECTIVE", 30, 12, false)).toBe("<span>DIRECTIVE <i>12</i> MASTERED</span>");
+    expect(phoneRankSlot("DIRECTIVE", 30, 12, false)).toBe("<span><em>DIRECTIVE</em> <i>12</i> MASTERED</span>");
     const src = readFileSync(new URL("../client/hud/rack.ts", import.meta.url), "utf8");
     expect(src).toMatch(/n >= MAX_RANK\) return "MASTERED"/);
   });
@@ -106,7 +123,7 @@ describe("rackLabel", () => {
     expect(rackRoundHtml(0, "empty")).toBe(`<i class="empty">0</i>`);
     expect(rackRoundHtml(8, "low")).toBe(`<i class="low">8</i>`);
     expect(rackRoundHtml("∞")).toBe("<i>∞</i>");
-    expect(phoneRankSlot("REPO", 12, 0, false, "empty")).toBe(`<span>REPO <i class="empty">0</i> R12</span>`);
+    expect(phoneRankSlot("REPO", 12, 0, false, "empty")).toBe(`<span><em class="empty">REPO</em> <i class="empty">0</i> R12</span>`);
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     const tones = hud.match(/rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\)/g) ?? [];
     expect(tones).toHaveLength(2);
@@ -115,9 +132,9 @@ describe("rackLabel", () => {
     expect(css).toMatch(/#hud \.rack i\.low, #hud \.pranks i\.low \{ color: var\(--am\)/);
   });
   it("marks the gun the next WPN tap selects", () => {
-    expect(phoneRankSlot("STACK", 3, 40, false, "", true)).toBe(`<span class="next">▸ STACK <i>40</i> R03</span>`);
-    expect(phoneRankSlot("STACK", 3, 40, true, "", true)).toBe(`<span class="on">STACK <i>40</i> R03</span>`);
-    expect(phoneRankSlot("STACK", 3, 40, false)).toBe("<span>STACK <i>40</i> R03</span>");
+    expect(phoneRankSlot("STACK", 3, 40, false, "", true)).toBe(`<span class="next">▸ <em>STACK</em> <i>40</i> R03</span>`);
+    expect(phoneRankSlot("STACK", 3, 40, true, "", true)).toBe(`<span class="on"><em>STACK</em> <i>40</i> R03</span>`);
+    expect(phoneRankSlot("STACK", 3, 40, false)).toBe("<span><em>STACK</em> <i>40</i> R03</span>");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     expect(hud).toMatch(/const nextSlot = cycleSlot\(p\.weapon\.slot, 1\)/);
     expect(hud).toMatch(/w\.slot === nextSlot\)/);
@@ -133,7 +150,7 @@ describe("rackLabel", () => {
     expect(rackRoundTone(30, 0, true)).toBe("");
     expect(rackRoundTone(30, 8, true)).toBe("");
     expect(rackRoundHtml("--")).toBe("<i>--</i>");
-    expect(phoneRankSlot("REPO", 12, "--", true)).toBe(`<span class="on">REPO <i>--</i> R12</span>`);
+    expect(phoneRankSlot("REPO", 12, "--", true)).toBe(`<span class="on"><em>REPO</em> <i>--</i> R12</span>`);
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     expect(hud).toMatch(/const seating = p\.weapon\.reloadTimer > 0 && !p\.weapon\.reloadSeated/);
     expect(hud).toMatch(/\$\{seating \? 1 : 0\}/);
