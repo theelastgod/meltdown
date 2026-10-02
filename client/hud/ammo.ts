@@ -33,6 +33,14 @@ export function lowLine(magSize: number): number {
   return Math.max(1, Math.ceil(magSize * LOW_FRAC));
 }
 
+/**
+ * The reload pad (Stage 885). An empty magazine turns the corner magenta and points at that pad.
+ * The pad stayed the same cyan as a full gun. Low and a reload in progress are not that empty.
+ */
+export function reloadPadHot(state: AmmoState): boolean {
+  return state === "empty";
+}
+
 export function ammoRead(ammo: number, magSize: number, reloadTimer: number, reloadTotal: number, reloadSeated: boolean): AmmoRead {
   if (magSize <= 0) return { state: "ok", reloadFrac: 0, seated: false };
   if (reloadTimer > 0 && reloadTotal > 0) return { state: "reloading", reloadFrac: Math.min(1, Math.max(0, 1 - reloadTimer / reloadTotal)), seated: reloadSeated };

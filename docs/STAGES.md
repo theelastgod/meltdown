@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 885 — An empty magazine marks the reload pad
+
+**The ask.** An empty magazine turns the corner magenta and points at the reload pad. That pad stayed the same cyan as a full gun. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** The reload pad turns magenta while the magazine is empty. A low magazine and a reload in progress leave it the button's own colour.
+
+**Verified.** `tests/ammo.test.ts` reads the mark. Pointing it at the last quarter instead failed once (`expected false to be true`).
+
+**Open.** An empty magazine marks the reload pad. The fire pad stays the same cyan, so the trigger you are holding still looks ready.
+
 ## Stage 884 — A grenade you still have is yellow on the phone
 
 **The ask.** A grenade you still have paints that count yellow on the row. On the phone the count stayed the button's own colour, the same cyan as the name. The count is not a stat you buy. It does not spend $CAPITAL.

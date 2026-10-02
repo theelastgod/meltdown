@@ -168,6 +168,11 @@ export class TouchControls {
   }
   private nadeKey = "";
 
+  /** An empty magazine (Stage 885). The corner already says so. The pad the hint points at has to as well. */
+  setMagazineEmpty(empty: boolean): void {
+    this.root.querySelector(".tc-reload")?.classList.toggle("empty", empty);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();
