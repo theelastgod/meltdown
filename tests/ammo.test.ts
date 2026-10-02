@@ -143,6 +143,18 @@ describe("the fire pad on the last quarter", () => {
   });
 });
 
+describe("holding the alt pad", () => {
+  it("fills magenta only when the magazine is empty", () => {
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.thumbs \.tc-alt\.on\.empty \{ background: rgba\(255,62,201,0\.22\); box-shadow: 0 0 12px rgba\(255,62,201,0\.5\)/);
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(game).toMatch(/setAltEmpty\(altPadHot\(mag\.state\)\)/);
+    const touch = readFileSync(new URL("../client/touch.ts", import.meta.url), "utf8");
+    expect(touch).toMatch(/querySelector\("\.tc-alt"\)\?\.classList\.toggle\("empty", empty\)/);
+    expect(touch).toMatch(/pad\.el\.classList\.add\("on"\)/);
+  });
+});
+
 describe("holding the fire pad on the last quarter", () => {
   it("fills amber only on the last quarter", () => {
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
