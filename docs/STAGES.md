@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 938 — Holding the reload pad fills amber on the last quarter
+
+**The ask.** On the last quarter the reload pad turns amber. Holding that pad still filled it cyan, the same as a full magazine. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** The fill of a held reload pad turns amber on the last quarter. An empty magazine stays magenta. A full magazine and a reload in progress leave that fill cyan. The letters and the border were already amber.
+
+**Verified.** `tests/ammo.test.ts` reads the fill. Taking the held fill back to cyan failed once (the stylesheet no longer matched).
+
+**Open.** An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan, the same as a full magazine.
+
 ## Stage 937 — Holding the reload pad fills magenta when the magazine is empty
 
 **The ask.** An empty magazine turns the reload pad magenta. Holding that pad still filled it cyan, the same as a full magazine. The count is not a stat you buy. It does not spend $CAPITAL.

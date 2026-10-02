@@ -658,6 +658,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .thumbs .tc-crouch.on.empty { background: rgba(255,62,201,0.22); box-shadow: 0 0 12px rgba(255,62,201,0.5); }
 #hud .thumbs .tc-reload { right: calc(170px + env(safe-area-inset-right)); bottom: calc(30px + env(safe-area-inset-bottom)); width: 48px; height: 48px; }
 #hud .thumbs .tc-reload.low { color: var(--am); border-color: var(--am); text-shadow: 0 0 4px rgba(255,176,46,0.6); }
+#hud .thumbs .tc-reload.on.low { background: rgba(255,176,46,0.22); box-shadow: 0 0 12px rgba(255,176,46,0.5); }
 #hud .thumbs .tc-reload.empty { color: var(--mg); border-color: var(--mg); text-shadow: 0 0 4px rgba(255,62,201,0.6); }
 #hud .thumbs .tc-reload.on.empty { background: rgba(255,62,201,0.22); box-shadow: 0 0 12px rgba(255,62,201,0.5); }
 #hud .thumbs .tc-nade   { right: calc(84px + env(safe-area-inset-right)); bottom: calc(148px + env(safe-area-inset-bottom)); width: 46px; height: 46px; font-size: 7px; }
