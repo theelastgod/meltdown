@@ -241,9 +241,9 @@ describe("a failed contract", () => {
 
 describe("the city objective", () => {
   it("names the contracts tab on a phone and the key on a keyboard", () => {
-    expect(cityContractsLine(true)).toBe("TAP CONTRACTS · NO ONE HERE CAN HURT YOU BUT VANTAGE");
+    expect(cityContractsLine(true)).toBe("TAP CONTRACTS · THEY PLAY ON THIS STREET, WITH EVERYONE ELSE");
     expect(cityContractsLine(true)).not.toMatch(/\[[A-Z]+\]/);
-    expect(cityContractsLine(false)).toBe("[J] CONTRACTS · NO ONE HERE CAN HURT YOU BUT VANTAGE");
+    expect(cityContractsLine(false)).toBe("[J] CONTRACTS · THEY PLAY ON THIS STREET, WITH EVERYONE ELSE");
     expect(cityArrivalLine("LEASE ROW", true)).toBe("THE CITY · LEASE ROW · EVERYONE ONLINE WALKS THESE STREETS · TAP CONTRACTS");
     expect(cityArrivalLine("LEASE ROW", true)).not.toMatch(/\[[A-Z]+\]/);
     expect(cityArrivalLine("LEASE ROW", false)).toBe("THE CITY · LEASE ROW · EVERYONE ONLINE WALKS THESE STREETS · [J] CONTRACTS");

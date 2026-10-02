@@ -745,7 +745,9 @@ export class Game {
         }
         break;
       }
-      case "kill":
+      case "kill": {
+        const downed = (["dummy", "player", "wasp", "mech"] as const)[ev.victimKind];
+        if (downed) this.campaign?.noteStreetKill(downed);
         if (ev.playerId === me) {
           // shooter-side: the tier follows the weapon in hand at the confirm (the file's own mastery; nothing leaves the client)
           this.audio.kill(this.killTier(weaponDefOf(this.player).id));
@@ -755,6 +757,7 @@ export class Game {
           this.hud.push(`FILE #${me} ⟶ ${victimLabel(kind)}-${String(ev.victimId).padStart(2, "0")}${ev.ttkTicks ? ttkNote(ev.ttkTicks / SIM_HZ) : ""}`, "mg");
         } else this.hud.push(`FILE #${ev.playerId} ⟶ ${victimLabel(["dummy", "player", "wasp", "mech"][ev.victimKind] ?? "player")}-${String(ev.victimId).padStart(2, "0")}`, "k");
         break;
+      }
       case "death":
         if (ev.playerId === me) this.fileClosed(ev.killerId);
         break;

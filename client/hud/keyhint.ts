@@ -69,7 +69,7 @@ export function cardYieldsToDesk(cardOpen: boolean, cardTimer: number, deskOpen:
 
 /** The city's standing objective. A phone opens contracts from the tab. */
 export function cityContractsLine(touch: boolean): string {
-  return `${touch ? "TAP CONTRACTS" : "[J] CONTRACTS"} · NO ONE HERE CAN HURT YOU BUT VANTAGE`;
+  return `${touch ? "TAP CONTRACTS" : "[J] CONTRACTS"} · THEY PLAY ON THIS STREET, WITH EVERYONE ELSE`;
 }
 
 /** The line the city writes when the file arrives. */

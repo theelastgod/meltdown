@@ -3,7 +3,7 @@
  *  Two files walk into LEASE ROW's city on the campaign host: the same room, each on the other's
  *  screen, the objective line naming THE CITY. No player can hurt another there, and the patrols
  *  run. The contracts desk opens on J and crouch (C) no longer opens it. A contract taken in the
- *  city is played off it and knows the way back.
+ *  city stays on that street, in the same room as the other files.
  *
  *   npm run probe:world
  */
@@ -247,23 +247,32 @@ async function main(): Promise<void> {
     await late.close();
     await a.evaluate(() => window.__game.setBot(null));
 
-    // ---------------- a contract taken in the city knows the way back ----------------
-    const nav = a.waitForURL(/mission=/, { timeout: 20000, waitUntil: "commit" }).then(() => true, () => false);
+    // ---------------- a contract taken in the city stays on the street ----------------
     // the desk reads the file the ledger host keeps, house and all
     await a.waitForFunction(() => window.__game.campaign().faction === "cells", null, { timeout: 20000, polling: 100 }).catch(() => undefined);
+    const playersBefore = ((await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { city?: { players: number } }> }).rooms["city:lease_row"]?.city?.players ?? 0;
     await a.evaluate(() => window.__game.game.campaign.launch("m1_wake_unlisted"));
-    const left = await nav;
-    const q = new URL(a.url()).searchParams;
-    await a.waitForFunction(() => window.__game?.ready === true, null, { timeout: 60000, polling: 100 });
-    const back = await a.evaluate(() => window.__game.campaign().backToCity);
-    // a contract is played off the city: its gates are chain-link, not doors (Stage 704)
-    const contractDoors = await a.evaluate(() => window.__game.game.renderer.gateDoors.length);
-    const bq = back ? new URL(back).searchParams : null;
+    const stayed = await a.evaluate(() => {
+      const q = new URLSearchParams(location.search);
+      const c = window.__game.campaign();
+      return {
+        mission: q.get("mission"),
+        city: q.get("city"),
+        net: q.has("net"),
+        mode: c.mode,
+        title: c.mission?.title ?? "",
+        objective: c.mission?.objective ?? "",
+        doors: window.__game.game.renderer.gateDoors.length,
+        remotes: window.__game.net()?.remotes.length ?? 0,
+      };
+    });
+    const playersAfter = ((await (await fetch(`${HOST}/stats`)).json()) as { rooms: Record<string, { city?: { players: number } }> }).rooms["city:lease_row"]?.city?.players ?? 0;
     check(
-      "a contract taken in the city is played off it, and knows the way back to the same city",
-      left && contractDoors === 0 && q.get("mission") === "m1_wake_unlisted" && !q.has("net") && !q.has("city") && q.get("back") === "lease_row" && !!bq && bq.get("city") === "1" && !bq.has("back") && !bq.has("mission") && new URL(bq.get("net") ?? "http://x").pathname === `/campaign/${cityRoomName("lease_row")}`,
-      `left ${left} · doors on the contract page ${contractDoors} · mission ${q.get("mission")} net ${q.get("net")} back ${q.get("back")} · way back ${back}`,
+      "a contract taken in the city is played on that street, in the same room as the other files",
+      stayed.mission === null && stayed.city === "1" && stayed.net && stayed.mode === "city" && stayed.title === "WAKE UNLISTED" && stayed.objective === "READ THE STREET" && stayed.doors > 0 && stayed.remotes >= 1 && playersAfter >= playersBefore && playersAfter >= 1,
+      `mission ${stayed.mission} city ${stayed.city} net ${stayed.net} mode ${stayed.mode} · ${stayed.title} / ${stayed.objective} · doors ${stayed.doors} · remotes ${stayed.remotes} · room ${playersBefore} → ${playersAfter}`,
     );
+
     // ---------------- the districts are joined: BRAVO walks through the nearest of LEASE ROW's gates ----------------
     // (Stage 697) Whichever gate is nearest BRAVO (spawns sit by the gates): BRAVO sprints to a point
     // inside it, then into its mouth, and stands there. The HUD names the neighbour, and a second later

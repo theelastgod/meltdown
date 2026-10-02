@@ -165,6 +165,12 @@ export interface PlayerState {
   /** Tick at which this player last took damage from full health (TTK bookkeeping). */
   firstDamageTick: number;
   lastAttacker: number;
+  /**
+   * Seconds a fresh life in a PvE world stays off the patrols' guns. The city ends its loading
+   * grace on the first input, which is the moment the street appears; a mech already covering
+   * that corner used to open fire in the same second. Firing, or the timer, puts you on the street.
+   */
+  streetShield: number;
 }
 
 export function createPlayer(id: number, name: string, spawn: SpawnPoint): PlayerState {
@@ -204,6 +210,7 @@ export function createPlayer(id: number, name: string, spawn: SpawnPoint): Playe
     kit: emptyKit(),
     firstDamageTick: -1,
     lastAttacker: -1,
+    streetShield: 0,
   };
   reviveMotion(p, spawn); // one definition of a life's motion, for the first life and every later one
   return p;

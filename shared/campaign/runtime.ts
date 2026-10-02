@@ -58,6 +58,14 @@ export interface MissionState {
   threat: ThreatProfile;
   /** total VANTAGE spawned by this contract (probe bookkeeping) */
   spawned: { wasps: number; mechs: number; dummies: number };
+  /**
+   * Played on the district's shared street, among everyone already there.
+   * The contract does not bring its own patrols: the city's wasps and mechs are the threat,
+   * a relay breaks when someone stands on it, and a hold does not pour a private wave into the room.
+   */
+  street: boolean;
+  /** destroy spots already broken, by index, when `street` (no private dummies) */
+  broken: number[];
 }
 
 function lcg(seed: number): () => number {
@@ -113,8 +121,11 @@ export function spawnThreat(world: World, threat: ThreatProfile, seed = 7): { wa
   return { wasps, mechs };
 }
 
-/** Build a contract's state and place its VANTAGE presence and Threat patrols. */
-export function createMission(id: string, world: World, testimony: Testimony, faction: FactionId | null, threatRating: number): MissionState | null {
+/**
+ * Build a contract's state and place its VANTAGE presence and Threat patrols.
+ * `street` plays it in the shared city: no extra patrols are added to the room everyone is in.
+ */
+export function createMission(id: string, world: World, testimony: Testimony, faction: FactionId | null, threatRating: number, street = false): MissionState | null {
   const def = missionById(id);
   if (!def) return null;
   const threat = threatProfile(threatRating);
@@ -130,7 +141,11 @@ export function createMission(id: string, world: World, testimony: Testimony, fa
       extraMechs += v.extraMechs ?? 0;
     }
   }
-  const st: MissionState = { def, objectives: [...prepend, ...objectives], index: 0, status: "running", progress: 0, ticks: 0, targets: [], escort: null, dialogue: null, testimony: { ...testimony }, wavesSpawned: 0, downTicks: 0, events: [], threat, spawned: { wasps: 0, mechs: 0, dummies: 0 } };
+  const st: MissionState = { def, objectives: [...prepend, ...objectives], index: 0, status: "running", progress: 0, ticks: 0, targets: [], escort: null, dialogue: null, testimony: { ...testimony }, wavesSpawned: 0, downTicks: 0, events: [], threat, spawned: { wasps: 0, mechs: 0, dummies: 0 }, street, broken: [] };
+  if (street) {
+    startObjective(st, world);
+    return st;
+  }
   const rnd = lcg(11 + world.seed);
   const anchors = world.level.nodes.length ? world.level.nodes.map((n) => n.pos) : world.level.spawns.map((s) => s.pos);
   for (let i = 0; i < def.wasps + extraWasps; i++) {
@@ -157,6 +172,15 @@ export function current(st: MissionState): Objective | null {
   return st.objectives[st.index] ?? null;
 }
 
+/** A wasp or mech downed on the shared street counts for the contract being played there. */
+export function noteStreetKill(st: MissionState, kind: "dummy" | "player" | "wasp" | "mech"): void {
+  if (!st.street || st.status !== "running") return;
+  const o = current(st);
+  if (!o || o.kind !== "kill") return;
+  if (o.target !== "any" && o.target !== kind) return;
+  st.progress++;
+}
+
 function startObjective(st: MissionState, world: World): void {
   const o = current(st);
   st.progress = 0;
@@ -165,9 +189,11 @@ function startObjective(st: MissionState, world: World): void {
   st.escort = null;
   st.dialogue = null;
   st.wavesSpawned = 0;
+  st.broken = [];
   if (!o) return;
   st.events.push({ type: "objective", index: st.index, text: o.text });
   if (o.kind === "destroy") {
+    if (st.street) return; // the post is already on the street; standing on it breaks it
     for (const s of o.spots) {
       const p = resolveSpot(world.level, s);
       const d = world.spawnDummy(v3(p.x, 0, p.z));
@@ -245,8 +271,17 @@ export function stepMission(st: MissionState, world: World, events: readonly Sim
       break;
     }
     case "destroy": {
-      st.progress = st.targets.filter((id) => !world.dummies.find((d) => d.id === id)?.alive).length;
-      done = st.progress >= st.targets.length;
+      if (st.street) {
+        for (let i = 0; i < o.spots.length; i++) {
+          if (st.broken.includes(i)) continue;
+          if (nearAny(world, resolveSpot(world.level, o.spots[i]!), 3)) st.broken.push(i);
+        }
+        st.progress = st.broken.length;
+        done = st.broken.length >= o.spots.length;
+      } else {
+        st.progress = st.targets.filter((id) => !world.dummies.find((d) => d.id === id)?.alive).length;
+        done = st.progress >= st.targets.length;
+      }
       break;
     }
     case "survive":
@@ -255,7 +290,8 @@ export function stepMission(st: MissionState, world: World, events: readonly Sim
       const inside = !at || nearAny(world, at, o.radius ?? 6);
       if (inside) st.progress += SIM_DT;
       const waves = o.waves ?? 0;
-      if (waves > 0) {
+      // a street hold is answered by the patrols already in the district, not a private wave
+      if (waves > 0 && !st.street) {
         const every = o.seconds / (waves + 1);
         if (st.wavesSpawned < waves && st.progress >= every * (st.wavesSpawned + 1) - 1e-6) spawnWave(st, world, at ?? alivePlayers(world)[0]?.pos ?? v3(0, 0, 0), 2 + Math.floor(st.threat.rating / 3));
       }

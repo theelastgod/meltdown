@@ -4,7 +4,8 @@
  * One persistent co-op room per district on the campaign host, `city-<district>`, where every file
  * that pressed PLAY in that district roams the same streets under the same patrols. It is PvE: the
  * district's machines can kill a player, another player cannot. The contracts desk opens from
- * anywhere in it; a contract is played in its own instance and the file comes back to the city.
+ * anywhere in it. A contract for a district is played on that district's street, in the same
+ * room as everyone else. The white office is still its own room.
  */
 import { LEVEL_INFO } from "../sim/level";
 
@@ -48,7 +49,8 @@ export function citySocket(wsBase: string, level: string, arrive?: CityArrival |
 export function cityPageUrl(base: string, o: { wsBase: string; level: string; shop?: string | null; arrive?: CityArrival | null }): string {
   const u = new URL(base);
   // an arrival belongs to its own trip: one carried over from an earlier gate would place the file at the wrong one
-  for (const k of ["explore", "menu", "crawl", "mission", "net", "ai", "back", "from", "gate"]) u.searchParams.delete(k);
+  // `job` is a contract carried into one district on purpose. A gate or a map trip must not take it along.
+  for (const k of ["explore", "menu", "crawl", "mission", "job", "net", "ai", "back", "from", "gate"]) u.searchParams.delete(k);
   const d = cityDistrict(o.level);
   u.searchParams.set("level", d);
   u.searchParams.set("mode", "campaign");
@@ -64,3 +66,20 @@ export function cityPageUrl(base: string, o: { wsBase: string; level: string; sh
 
 /** whether a page is walking the city */
 export const inCity = (q: URLSearchParams): boolean => q.get("city") === "1" && !!q.get("net") && !q.has("mission");
+
+/**
+ * Where a contract goes when the desk is opened on the city street.
+ * A district contract stays in the multiplayer room (this district, or the one it names).
+ * Anything that is not a district — the white office — still leaves for its own room.
+ */
+export function cityContractPlan(onTheStreet: boolean, here: string, missionLevel: string): "stay" | "travel" | "solo" {
+  if (!onTheStreet || !CITY_DISTRICTS.includes(missionLevel)) return "solo";
+  return cityDistrict(here) === missionLevel ? "stay" : "travel";
+}
+
+/** The city page for a contract that has to be walked in another district, still in that district's room. */
+export function streetJobUrl(base: string, o: { wsBase: string; level: string; shop?: string | null; job: string }): string {
+  const u = new URL(cityPageUrl(base, o));
+  u.searchParams.set("job", o.job);
+  return u.toString();
+}

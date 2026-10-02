@@ -6,7 +6,7 @@
  * file goes through the ledger host's /file/:id/campaign endpoint when one
  * is linked, and a local save otherwise.
  */
-import { cityPageUrl, inCity } from "@shared/net/city";
+import { cityContractPlan, cityPageUrl, inCity, streetJobUrl } from "@shared/net/city";
 import type { Game } from "./game";
 import { cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, crewButton, failedContractLine } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
@@ -16,7 +16,7 @@ import { PROTOCOLS, protocolMods, MAX_PROTOCOLS } from "@shared/campaign/protoco
 import { linesAt, recallIndex, scriptById, type ScriptNode } from "@shared/campaign/script";
 import { GIGS, MAIN_ARC, missionById, type MissionDef } from "@shared/campaign/missions";
 import { campaignOf, canLaunch, completeContract, gigsOnOffer, nextMission, pickFaction, wearProtocols, type CampaignSave } from "@shared/campaign/save";
-import { createMission, drainMissionEvents, missionView, resolveDialogue, resolveSpot, spawnThreat, stepMission, type MissionState } from "@shared/campaign/runtime";
+import { createMission, drainMissionEvents, missionView, noteStreetKill, resolveDialogue, resolveSpot, spawnThreat, stepMission, type MissionState } from "@shared/campaign/runtime";
 import { sandboxAccount, type Account } from "@shared/progression/account";
 import type { SimEvent } from "@shared/sim/world";
 import type { CityEventMsg, CityRunMsg, MissionMsg } from "@shared/net/protocol";
@@ -34,7 +34,7 @@ import { deskBanner } from "./missionart";
 import { gigThumb } from "./gigart";
 import { protocolIcon, weaponCard } from "./kitart";
 import { explorePageUrl, loadingFor, travelTo } from "./loading";
-import { gatePrompt, gateSigns, gateToTravel, gateTravelUrl, holdProgress, stepGateHold, type GateHold } from "@shared/net/citygates";
+import { cityWsBase, gatePrompt, gateSigns, gateToTravel, gateTravelUrl, holdProgress, stepGateHold, type GateHold } from "@shared/net/citygates";
 import { inLedgerMouth, LEDGER_HOLD_GATE, ledgerHudLine, nearLedgerDesk } from "@shared/net/cityledger";
 import { runPageUrl } from "./runpage";
 import { radarGates } from "./hud/radar";
@@ -188,6 +188,8 @@ export class Campaign {
       this.note(cityArrivalLine(levelDisplayName(this.game.levelId), this.game.hud.touch));
       // the room may have told us about its public event before the file came back
       if (this.cityEvent) this.onCityEventMsg(this.cityEvent);
+      const job = new URLSearchParams(location.search).get("job");
+      if (job) this.beginStreet(job);
       return;
     }
     if (this.game.online) {
@@ -295,8 +297,15 @@ export class Campaign {
   /** One sim tick (offline modes): step the mission and present what happened. */
   tick(events: readonly SimEvent[]): void {
     if (this.mode === "city") {
-      this.cityRunHud();
-      return this.cityGates();
+      const onStreet = this.mission?.street && this.mission.status === "running";
+      if (!onStreet) this.cityRunHud();
+      this.cityGates();
+      if (onStreet && this.mission) {
+        stepMission(this.mission, this.game.world, events);
+        for (const ev of drainMissionEvents(this.mission)) this.onMissionEvent(ev);
+        this.syncFx();
+      }
+      return;
     }
     if (this.mode !== "mission" || !this.mission) return;
     stepMission(this.mission, this.game.world, events);
@@ -349,9 +358,14 @@ export class Campaign {
       const p = resolveSpot(level, o.kind === "reach" ? o.at : o.at!);
       marker = { x: p.x, y: p.y, z: p.z };
     }
-    fx.setMarker(marker);
     fx.setEscort(v.escort);
-    const targets = o?.kind === "destroy" ? st.targets.map((id) => this.game.world.dummies.find((d) => d.id === id)).filter((d) => d && d.alive).map((d) => ({ x: d!.pos.x, y: d!.pos.y, z: d!.pos.z })) : [];
+    const targets = o?.kind === "destroy"
+      ? st.street
+        ? o.spots.flatMap((s, i) => (st.broken.includes(i) ? [] : [resolveSpot(level, s)])).map((p) => ({ x: p.x, y: p.y, z: p.z }))
+        : st.targets.map((id) => this.game.world.dummies.find((d) => d.id === id)).filter((d) => d && d.alive).map((d) => ({ x: d!.pos.x, y: d!.pos.y, z: d!.pos.z }))
+      : [];
+    if (!marker && o?.kind === "destroy" && st.street && targets[0]) marker = targets[0];
+    fx.setMarker(marker);
     fx.setTargets(targets);
     // and the map gets the same three things (Stage 92): the contract has been a marker in the world
     // since Stage 10 and nothing in the corner of the screen, so a goal behind you was a goal you
@@ -619,12 +633,15 @@ export class Campaign {
     // a street run in progress has the objective line and the beam (Stage 703); the event keeps its spots on the map
     const running = this.runActive();
     if (!ev || ev.status !== "running") {
-      if (!running) fx.setMarker(null);
-      fx.setEscort(null);
-      fx.setTargets([]);
+      const onStreet = this.mission?.street && this.mission.status === "running";
+      if (!running && !onStreet) {
+        fx.setMarker(null);
+        fx.setEscort(null);
+        fx.setTargets([]);
+      }
       this.eventSpots = [];
-      this.cityRadar();
-      if (!running) this.cityObjective();
+      if (!onStreet) this.cityRadar();
+      if (!running && !onStreet) this.cityObjective();
       const card = eventCard(m);
       if (ev && card && ev.id !== this.cityEventClosed) {
         this.cityEventClosed = ev.id;
@@ -643,15 +660,16 @@ export class Campaign {
     }
     const me = this.game.player;
     const marker = eventMarker(ev);
-    if (!running) {
+    const onStreet = this.mission?.street && this.mission.status === "running";
+    if (!running && !onStreet) {
       const o = eventObjective(ev, me ? { x: me.pos.x, z: me.pos.z } : null);
       hud.setObjective(o.title, o.text, o.progress);
       this.runLine = "";
       fx.setMarker(ev.kind === "escort" ? null : marker);
     }
-    fx.setEscort(ev.escort ? { x: ev.escort.x, z: ev.escort.z, heading: ev.escort.heading, waiting: ev.escort.waiting, who: "cell" } : null);
+    if (!onStreet) fx.setEscort(ev.escort ? { x: ev.escort.x, z: ev.escort.z, heading: ev.escort.heading, waiting: ev.escort.waiting, who: "cell" } : null);
     this.eventSpots = [{ kind: "goal" as const, x: marker.x, z: marker.z }, ...(ev.escort ? [{ kind: "escort" as const, x: ev.escort.x, z: ev.escort.z }] : []), ...ev.targets.map((t) => ({ kind: "target" as const, x: t.x, z: t.z }))];
-    this.cityRadar();
+    if (!onStreet) this.cityRadar();
   }
 
   // ---- street runs (Stage 703) ----
@@ -822,12 +840,49 @@ export class Campaign {
     return this.save.worn;
   }
 
-  /** Launch a contract: travel to its district with the mission on the URL (offline solo). */
+  /**
+   * A kill on the shared street, from the room. Anyone's wasp or mech counts: the contract
+   * is in the same room as the other files.
+   */
+  noteStreetKill(kind: "dummy" | "player" | "wasp" | "mech"): void {
+    if (this.mission?.street) noteStreetKill(this.mission, kind);
+  }
+
+  /** Start a contract in this room. The page stays on the city. The patrols already here are the threat. */
+  private beginStreet(id: string): void {
+    const def = missionById(id);
+    if (!def) return this.note(`UNKNOWN CONTRACT ${id}`);
+    if (def.level !== this.game.levelId) return this.note(`${def.title} PLAYS IN ${levelDisplayName(def.level)}`);
+    const launch = canLaunch(this.account(), this.save, id);
+    if (!launch.ok) this.note(`CONTRACT NOT ON OFFER · ${launch.reason} — ON THE STREET ANYWAY`);
+    const st = createMission(id, this.game.world, this.save.testimony, this.save.faction, this.threat.rating, true);
+    if (!st) return;
+    this.mission = st;
+    if (this.contractsOpen) this.toggleContracts(false);
+    this.note(`CONTRACT · ${def.title} · ON THE STREET WITH EVERYONE ELSE`);
+    this.game.audio.pa();
+    for (const ev of drainMissionEvents(st)) this.onMissionEvent(ev);
+    this.syncFx();
+  }
+
+  /** Launch a contract. On the city street it stays in this room. Anywhere else it travels to its own. */
   launch(id: string): { ok: boolean; reason?: string } {
     const a = this.account();
     const r = canLaunch(a, this.save, id);
     if (!r.ok) return r;
     const def = missionById(id)!;
+    const plan = cityContractPlan(this.mode === "city", this.game.levelId, def.level);
+    if (plan === "stay") {
+      this.beginStreet(id);
+      return { ok: true };
+    }
+    if (plan === "travel") {
+      const wsBase = cityWsBase(new URLSearchParams(location.search).get("net")) ?? this.crewHosts()?.ws ?? null;
+      if (!wsBase) return { ok: false, reason: "no campaign host: the street has nowhere to go" };
+      const url = streetJobUrl(location.href, { wsBase, level: def.level, shop: new URLSearchParams(location.search).get("shop"), job: id });
+      this.travel(url);
+      return { ok: true };
+    }
     const u = new URL(location.href);
     // a contract taken in the city (Stage 692) remembers which city to come back to
     if (this.mode === "city") u.searchParams.set("back", this.game.levelId);

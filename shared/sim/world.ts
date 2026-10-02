@@ -100,6 +100,12 @@ export type SimEvent =
   | ({ tick: number; playerId: number } & WakeEvent);
 
 export const DUMMY_RADIUS = MOVE.capsuleRadius;
+
+/**
+ * How long a fresh life in a PvE world (the city) is unseen by wasps and mechs.
+ * Long enough to see the street you just opened into. A shot you fire ends it early.
+ */
+export const STREET_SHIELD_SECONDS = 8;
 export const DUMMY_HEIGHT = MOVE.standHeight;
 export const WASP_RADIUS = 0.45;
 export const WASP_HEIGHT = 0.9;
@@ -223,6 +229,7 @@ export class World {
     this.nextSpawn++;
     const p = createPlayer(id, name, spawn);
     p.team = team;
+    if (!this.pvp) p.streetShield = STREET_SHIELD_SECONDS;
     this.setLoadout(p, loadout);
     this.players.set(id, p);
     return p;
@@ -281,15 +288,22 @@ export class World {
     // before the later one's trigger was ever read, and `applyInput`'s `if (!p.alive) return` threw
     // that shot away. A symmetric duel was decided by join order and a trade kill was impossible
     // (Stage 653).
-    for (const s of shots) this.resolveRequest(s.p, s.r, s.viewTick, s.viewFrac, opts);
+    for (const s of shots) {
+      // a shot is you stepping onto the street: the patrols can answer it
+      s.p.streetShield = 0;
+      this.resolveRequest(s.p, s.r, s.viewTick, s.viewFrac, opts);
+    }
     for (const p of this.players.values()) {
       if (p.pos.y < this.level.killY && p.alive) this.killPlayer(p, -1, "fall", opts);
       if (!p.alive && !opts.predictOnly) {
         p.respawnTimer -= SIM_DT;
         if (p.respawnTimer <= 0) {
           respawnPlayer(p, this.level.spawns[(p.id + this.tick) % this.level.spawns.length]!);
+          if (!this.pvp) p.streetShield = STREET_SHIELD_SECONDS;
           this.emit({ tick: this.tick, playerId: p.id, type: "respawn" }, opts);
         }
+      } else if (p.alive && !opts.predictOnly && !this.arriving.has(p.id) && p.streetShield > 0) {
+        p.streetShield = Math.max(0, p.streetShield - SIM_DT);
       }
     }
     if (!opts.predictOnly) {
@@ -711,6 +725,7 @@ export class World {
     const targets: SightTarget[] = [];
     for (const p of this.players.values()) {
       if (this.arriving.has(p.id)) continue; // not on the street yet (Stage 699)
+      if (p.streetShield > 0) continue; // a fresh life, unseen until it fires or the shield runs out
       const build = modsFor(p).droneDetect * (0.85 + 0.15 * modsFor(p).footstep);
       targets.push({ id: p.id, eye: eyePos(p), chest: v3(p.pos.x, p.pos.y + p.height * 0.55, p.pos.z), alive: p.alive, detectMult: build * this.threatDetectMult });
     }

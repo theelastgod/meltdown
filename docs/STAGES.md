@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 939 — The campaign plays on the city street, and opening it no longer kills you
+
+**The ask.** A file was dying in the first second of the city. The loading grace ends on the first input, which is the moment the street appears, and a patrol already covering that corner opens fire then. Taking a contract left that room for a solo reload. The campaign should be on the street with everyone else.
+
+**The change.** A fresh life in a PvE world is unseen by wasps and mechs for 8 seconds, or until it fires. A match does not get that. A district contract taken in the city stays in that district's room: no private patrol is added, a relay breaks when someone stands on it, a hold does not pour a wave into the room, and a wasp anyone downs counts. A contract for another district travels to that district's city. The white office still has its own room. The city's objective line says the contracts play on this street.
+
+**Verified.** `tests/streetshield.test.ts`: two seconds under a wasp at full health and untargeted, then damage once the shield is cleared; a shot ends it; a match has none. `tests/streetcontract.test.ts`: stay / travel / solo, a gate trip drops the job, no added patrols, standing on B breaks the post, ten seconds of a hold adds no wave, another file's wasp counts. Putting the shield skip back fails the full-health check. `tests/keyhint.test.ts` reads the new objective line.
+
+**Open.** An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan, the same as a full magazine. Building interiors and wilderness are not in this stage.
+
 ## Stage 938 — Holding the reload pad fills amber on the last quarter
 
 **The ask.** On the last quarter the reload pad turns amber. Holding that pad still filled it cyan, the same as a full magazine. The count is not a stat you buy. It does not spend $CAPITAL.
