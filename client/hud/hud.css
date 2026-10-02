@@ -142,6 +142,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 /* the bar lives in the status row, not under .ammo (Stage 880) */
 #hud .ammobar.low { background: var(--am); box-shadow: 0 0 5px var(--am); }
 #hud .ammo.empty .big { color: var(--mg); text-shadow: 0 0 6px rgba(255,62,201,0.6); }
+#hud .ammo .wname.empty { color: var(--mg); }
 #hud .ammo.empty .hint { display: block; }
 #hud .ammo.reloading .big { color: rgba(53,242,255,0.55); }
 @keyframes ammoblink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
