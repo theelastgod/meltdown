@@ -695,7 +695,7 @@ export class GhostFile {
     const myAudit = a?.audits && au && a.audits.week === au.week ? `BEST ${a.audits.best} · ${a.audits.played} PLAYED` : "NOT PLAYED YET";
     const audit = au ? `<div class="ln"><b>${au.name}</b> · WEEK ${au.week} · ${au.line}${au.weapons.length ? ` · <span class="dim">${au.weapons.map(weaponName).join(", ")}</span>` : ""} · <span class="btn" data-act="joinAudit">${crewButton("JOIN THE AUDIT", this.touchHud)}</span> <span class="dim">${myAudit}</span></div><div class="board">${board}</div>` : "<div class='dim'>LOADING…</div>";
     const rw = a ? canRewrite(a) : { ok: false, reason: "NO FILE" };
-    const rewriteBox = `<div class="rew">REWRITE · ${a?.rewrites ?? 0} SO FAR · ${rw.ok ? `<span class="btn" data-act="rewrite">[BURN THE FILE — KEEP THE STAMPS AND THE GLYPH'S AGE — +500 WAKELIGHT]</span>` : `<span class="dim">${rw.reason}</span>`}</div>`;
+    const rewriteBox = `<div class="rew">REWRITE · ${a?.rewrites ?? 0} SO FAR · ${rw.ok ? `<span class="btn" data-act="rewrite">${crewButton("BURN THE FILE — KEEP THE STAMPS AND THE GLYPH'S AGE — +500 WAKELIGHT", this.touchHud)}</span>` : `<span class="dim">${rw.reason}</span>`}</div>`;
     const slots = a ? slotsOf(a) : { aliases: 1, presets: 1 };
     const owned = a?.cosmetics ?? [];
     const shop = COSMETICS.map((c) => `<div class="cos ${owned.includes(c.id) ? "owned" : ""}"><b>${c.name}</b> <span class="dim">${c.line}</span> · ${owned.includes(c.id) ? (c.kind === "theme" ? `<span class="btn" data-act="theme" data-id="${c.id}">[${a?.theme === c.id ? "WORN" : "WEAR"}]</span>` : "OWNED") : `<span class="btn ${(a?.wallet.wakelight ?? 0) >= c.wakelight ? "" : "off"}" data-act="buyCosmetic" data-id="${c.id}">[${c.wakelight}◆]</span>`}</div>`).join("");
