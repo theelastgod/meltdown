@@ -39,6 +39,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .xh.cone .sp { display: block; }
 #hud .xh.arc .sp { border-color: rgba(255,176,46,0.5); }
 #hud .xh .sp.low { border-color: rgba(255,176,46,0.55); box-shadow: 0 0 3px rgba(255,176,46,0.35), inset 0 0 3px rgba(255,176,46,0.2); }
+#hud .xh .sp.empty { border-color: rgba(255,62,201,0.55); box-shadow: 0 0 3px rgba(255,62,201,0.35), inset 0 0 3px rgba(255,62,201,0.2); }
 /* what my last round did to a VANTAGE body (Stage 103): under the reticle, for two seconds */
 #hud .xh .tg { display: none; position: absolute; left: 50%; top: 22px; transform: translateX(-50%); white-space: nowrap; font-size: 10px; letter-spacing: 0.12em; color: var(--am); text-shadow: 0 0 4px rgba(0,0,0,0.9); }
 #hud .xh .tg.on { display: block; }

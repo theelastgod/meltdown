@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 891 — An empty magazine marks the cone
+
+**The ask.** An empty magazine turns the cross magenta. The cone the next round leaves in stayed cyan, the same as a full magazine. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** That ring turns magenta when the magazine is empty. The last quarter stays amber. A full magazine and a reload in progress leave it cyan.
+
+**Verified.** `tests/ammo.test.ts` reads the mark. Leaving the empty magazine cold failed once (`expected false to be true`).
+
+**Open.** On the last quarter the fire pad turns amber. The reload pad stays cyan, the same as a full magazine.
+
 ## Stage 890 — The cone turns amber on the last quarter
 
 **The ask.** On the last quarter the cross turns amber. The cone the next round leaves in stayed cyan, the same as a full magazine. The count is not a stat you buy. It does not spend $CAPITAL.

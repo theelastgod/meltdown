@@ -9,7 +9,7 @@ import { LEVEL_INFO, levelDisplayName, type LevelDef } from "@shared/sim/level";
 import { districtName } from "./district";
 import { houseName } from "@shared/endgame/season";
 import { HIT_MAX, type HitMark } from "./damage";
-import { ammoRead, chargeRead, coneLow, reticleEmpty, reticleLow } from "./ammo";
+import { ammoRead, chargeRead, coneEmpty, coneLow, reticleEmpty, reticleLow } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
 import { nadeSlot, nextGrenade } from "./grenadepad";
 import { phoneRankSlot, rackLabel, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "./rack";
@@ -966,6 +966,7 @@ export class Hud {
       this.q(".xh").classList.toggle("low", reticleLow(read.state));
       this.q(".xh").classList.toggle("empty", reticleEmpty(read.state));
       this.q(".xh .sp").classList.toggle("low", coneLow(read.state));
+      this.q(".xh .sp").classList.toggle("empty", coneEmpty(read.state));
       this.q(".xh").classList.toggle("reloading", read.state === "reloading");
       if (read.state === "empty") this.q(".ammo .hint").textContent = reloadHint(this.touch);
     }

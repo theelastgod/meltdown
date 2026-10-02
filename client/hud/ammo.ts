@@ -81,6 +81,14 @@ export function coneLow(state: AmmoState): boolean {
   return state === "low";
 }
 
+/**
+ * The cone when the magazine is empty (Stage 891). The cross turns magenta. The ring the next
+ * round leaves in stayed the same cyan as a full magazine. The last quarter is amber.
+ */
+export function coneEmpty(state: AmmoState): boolean {
+  return state === "empty";
+}
+
 export function ammoRead(ammo: number, magSize: number, reloadTimer: number, reloadTotal: number, reloadSeated: boolean): AmmoRead {
   if (magSize <= 0) return { state: "ok", reloadFrac: 0, seated: false };
   if (reloadTimer > 0 && reloadTotal > 0) return { state: "reloading", reloadFrac: Math.min(1, Math.max(0, 1 - reloadTimer / reloadTotal)), seated: reloadSeated };
