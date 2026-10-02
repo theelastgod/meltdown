@@ -131,6 +131,10 @@ export interface LevelDef {
    */
   shop?: ShopSpot;
   /**
+   * The south-west warehouse on LEASE ROW (Stage 942). The window takes cash and changes no gun.
+   */
+  pawn?: ShopSpot;
+  /**
    * A hole in the perimeter wall onto open ground (Stage 941). The street ends there.
    * Nothing out there pays a gun.
    */

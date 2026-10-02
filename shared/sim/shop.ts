@@ -20,11 +20,18 @@ export function wildLine(pos: Vec3, level: Pick<LevelDef, "wild">): string | nul
   return w.line;
 }
 
-export function shopLine(pos: Vec3, level: Pick<LevelDef, "shop">): string | null {
-  const s = level.shop;
-  if (!s) return null;
-  const dx = pos.x - s.counter.x;
-  const dz = pos.z - s.counter.z;
-  if (dx * dx + dz * dz > SHOP_TALK_RADIUS * SHOP_TALK_RADIUS) return null;
-  return s.line;
+export function shopLine(pos: Vec3, level: Pick<LevelDef, "shop" | "pawn">): string | null {
+  const spots = [level.shop, level.pawn].filter((s): s is NonNullable<typeof s> => !!s);
+  let best: (typeof spots)[number] | null = null;
+  let bestD = SHOP_TALK_RADIUS * SHOP_TALK_RADIUS;
+  for (const s of spots) {
+    const dx = pos.x - s.counter.x;
+    const dz = pos.z - s.counter.z;
+    const d = dx * dx + dz * dz;
+    if (d <= bestD) {
+      best = s;
+      bestD = d;
+    }
+  }
+  return best ? best.line : null;
 }

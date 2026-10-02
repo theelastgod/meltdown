@@ -624,10 +624,11 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     addSign(c, big[(i + 1) % big.length]!, -H - 0.05, 7 + (i % 2) * 7, -p, Math.PI / 2, 12, i % 2 ? COLORS.magenta : COLORS.cyan);
   }
 
-  // LEASE ROW's north-west warehouse is a room (Stage 940). Done last so the roll that dressed the
+  // LEASE ROW's warehouses are rooms (Stages 940 and 942). Done last so the roll that dressed the
   // district is the roll it always was; the 3×3 districts are not touched.
   const shop = openLeaseShop(c);
   const wild = openLeaseWild(c);
+  const pawn = openLeasePawn(c);
 
   // district rig: two big casts on opposite corners. Cyan and magenta carry the city everywhere; an amber
   // district gets its threat colour from the local VANTAGE lights (lots, towers, fences), never the rig.
@@ -719,6 +720,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     claims,
     ...(shop ? { shop } : {}),
     ...(wild ? { wild } : {}),
+    ...(pawn ? { pawn } : {}),
   };
 }
 
@@ -770,14 +772,27 @@ function openLeaseWild(c: Ctx): WildEdge | null {
  * district's own slab, so the room is the street you were already on.
  */
 function openLeaseShop(c: Ctx): ShopSpot | null {
+  return openStackRoom(c, 0, 0, "NOODLE 24", "NOODLE 24 · THE CLERK IS IN. CASH FOR THE BOWL. THE GUN STAYS AS IT IS.", "lease row shop");
+}
+
+/**
+ * The stack at the south-west corner is the same kind of warehouse. Its ground floor is a second
+ * room, with the window on the south apron. It takes cash and changes no gun.
+ */
+function openLeasePawn(c: Ctx): ShopSpot | null {
+  return openStackRoom(c, 0, 4, "PAWN", "PAWN · THE WINDOW IS OPEN. CASH FOR THE PIECE. THE GUN STAYS AS IT IS.", "lease row pawn");
+}
+
+/** One warehouse ground floor becomes a room. Stall and crate are already on the row's markets. */
+function openStackRoom(c: Ctx, bx: number, bz: number, sign: string, line: string, what: string): ShopSpot | null {
   if (c.spec.id !== "lease_row" || districtGrid(c.spec) !== 5) return null;
-  const { x0, z0, x1, z1 } = blockRect(c.H, 0, 0);
+  const { x0, z0, x1, z1 } = blockRect(c.H, bx, bz);
   const bx0 = x0 + 1;
   const bz0 = z0 + 6;
   const bx1 = x1 - 1;
   const bz1 = z1 - 1;
   const i = c.boxes.findIndex((b) => b.tag === "base" && b.min.x === bx0 && b.min.y === 0 && b.min.z === bz0 && b.max.x === bx1 && b.max.y === 4.2 && b.max.z === bz1);
-  if (i < 0) throw new Error("lease row shop: the warehouse floor is not where the stack put it");
+  if (i < 0) throw new Error(`${what}: the warehouse floor is not where the stack put it`);
   c.boxes.splice(i, 1);
   const t = 0.45;
   const doorW = 2.4;
@@ -785,8 +800,8 @@ function openLeaseShop(c: Ctx): ShopSpot | null {
   const midX = (bx0 + bx1) / 2;
   const dx0 = midX - doorW / 2;
   const dx1 = midX + doorW / 2;
-  const wall = (ax: number, ay: number, az: number, bx: number, by: number, bz: number): void => {
-    c.boxes.push(box(ax, ay, az, bx, by, bz, "base"));
+  const wall = (ax: number, ay: number, az: number, bx2: number, by: number, bz2: number): void => {
+    c.boxes.push(box(ax, ay, az, bx2, by, bz2, "base"));
   };
   wall(bx0, 0, bz0, bx1, 4.2, bz0 + t);
   wall(bx0, 0, bz0 + t, bx0 + t, 4.2, bz1);
@@ -804,16 +819,15 @@ function openLeaseShop(c: Ctx): ShopSpot | null {
     return !hit;
   });
   const cz = bz0 + t + 0.15;
-  // stall and crate are already on the row's markets, so the room adds no material
   c.boxes.push(box(midX - 0.35, 0, cz, midX + 0.35, 1.75, cz + 0.55, "crate"));
   c.boxes.push(box(midX - 1.8, 0, cz + 0.7, midX + 1.8, 1.05, cz + 1.7, "stall"));
   c.decor.push(box(bx0 + t, 3.5, bz0 + t, bx1 - t, 3.65, bz1 - t, "ceiling"));
   c.lights.push({ x: midX, y: 3.2, z: (bz0 + bz1) / 2, color: "amber", intensity: 8, range: 14 });
-  addSign(c, "NOODLE 24", midX, 3.3, bz1 + 0.04, 0, 3.2, COLORS.yellow);
+  addSign(c, sign, midX, 3.3, bz1 + 0.04, 0, 3.2, COLORS.yellow);
   const counter = v3(midX, 0, cz + 1.7 + 0.9);
   const inside = v3(midX, 0, (counter.z + (bz1 - t)) / 2);
   const mouth = v3(midX, 0, bz1 + 0.45);
-  return { mouth, inside, counter, line: "NOODLE 24 · THE CLERK IS IN. CASH FOR THE BOWL. THE GUN STAYS AS IT IS." };
+  return { mouth, inside, counter, line };
 }
 
 // ---------------------------------------------------------------------------

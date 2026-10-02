@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 942 — The south-west warehouse on Lease Row is a room
+
+**The ask.** One warehouse is a room. The south-west stack on LEASE ROW is still a solid block, on the same street as everyone else.
+
+**The change.** That warehouse's ground floor is four walls and a door onto the south apron. Inside, a stall is the window and a crate stands behind it. Standing at the window, the line reads PAWN · THE WINDOW IS OPEN. CASH FOR THE PIECE. THE GUN STAYS AS IT IS. The piece changes no gun. The noodle shop stays open. The north opening stays open. The other districts, and LEASE ROW's old 3×3, are the blocks they were. The window uses the stall and the crate the markets already draw.
+
+**Verified.** `tests/pawn.test.ts`: the doorway, the opening, and the floor inside are open; the jamb and the counter are solid; the window answers at the counter and not from the middle of the room; the noodle clerk still answers at the other counter. Leaving the solid floor in place failed the doorway check. `tests/shop.test.ts` and `tests/wild.test.ts` still open the noodle shop and the north lot. `tests/citysize.test.ts` (16) and `tests/newdistricts.test.ts` kept the 3×3 hashes. `tests/citycost.test.ts` (4) stayed inside the triangle budget and added no batch. The non-city dressing fingerprint for LEASE ROW was re-recorded; the other four districts stayed the bytes they were. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean. `npm test` was 2010 passed, with city-path timeouts under load that passed alone.
+
+**Open.** The other districts are still solid blocks with a solid edge. The south, east, and west walls of LEASE ROW are still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 941 — The north wall of Lease Row opens onto open ground
 
 **The ask.** The edge of the city is a wall. Past the streets there should be outside, where the wall already meets the slab.
