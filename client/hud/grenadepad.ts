@@ -10,12 +10,21 @@
  * the cycle pad names what the next tap selects and how many of those are left. The sim cycles
  * blindly through the list (`(sel + 1) % n`), whatever the counts, so the label does too: the pad
  * tells the truth about where the tap goes, empty or not.
+ *
+ * The count (Stage 881). The row painted 0 in the same yellow as a grenade you still
+ * have. An empty gun is already magenta.
  */
 
 /** the index the sim moves to on the next cycle: the list's next, wrapping, whatever the counts */
 export function nextGrenade(sel: number, count: number): number {
   if (count <= 0) return 0;
   return ((((sel % count) + count) % count) + 1) % count;
+}
+
+/** The count on the row. Magenta at none, the same empty a gun uses. Yellow while any are left. */
+export function nadeCountHtml(count: number): string {
+  const n = Number.isFinite(count) ? count : 0;
+  return `<i${n <= 0 ? ` class="empty"` : ""}>${n}</i>`;
 }
 
 /** the two pads' labels: what a tap throws, and what the next cycle selects */

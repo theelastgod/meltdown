@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 881 — An empty grenade is not the same yellow as one you have
+
+**The ask.** A grenade with none left painted that count the same yellow as one you still have. An empty gun is magenta. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** None left is magenta on the grenade row, the same empty a gun uses. A count you still have stays yellow. The phone hides that row. Its pad still writes the number in the button's own colour.
+
+**Verified.** `tests/grenadepad.test.ts` reads the mark. Painting it plain failed once (`expected '<i>0</i>' to be '<i class="empty">0</i>'`).
+
+**Open.** The grenade row marks the one selected. It does not mark the one the next cycle selects. The phone's cycle pad does.
+
 ## Stage 880 — The magazine bar turns amber on the last quarter
 
 **The ask.** On the last quarter the corner turns amber. The magazine bar stayed yellow. The rule that would paint it sat on the ammo block, and the bar is not in that block. The count is not a stat you buy. It does not spend $CAPITAL.
