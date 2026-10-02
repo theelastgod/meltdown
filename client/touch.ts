@@ -208,6 +208,11 @@ export class TouchControls {
     this.root.querySelector(".tc-alt")?.classList.toggle("low", low);
   }
 
+  /** An empty magazine (Stage 915). The alt pad already says so. The jump pad has to say it too. */
+  setJumpEmpty(empty: boolean): void {
+    this.root.querySelector(".tc-jump")?.classList.toggle("empty", empty);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();
