@@ -130,6 +130,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 /* the challenge holding the rank (Stage 869): under the name, magenta, and down when nothing holds it */
 #hud .ammo .wgate { display: block; max-width: min(240px, 46vw); margin-left: auto; margin-bottom: 2px; line-height: 1.25; color: rgba(53,242,255,0.55); }
 #hud .ammo .wgate.hold { color: var(--mg); }
+#hud .ammo .wgate.done { color: var(--gr); }
 #hud .ammo .wgate[hidden] { display: none; }
 /* the magazine says where it is (Stage 100) */
 #hud .ammo .hint { display: none; font-size: 10px; letter-spacing: 0.18em; color: var(--mg); margin-top: 2px; animation: ammoblink 0.8s steps(2, end) infinite; }

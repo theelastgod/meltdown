@@ -988,6 +988,7 @@ export class Hud {
     if (wgate.textContent !== under) wgate.textContent = under;
     if (wgate.hidden !== (under === "")) wgate.hidden = under === "";
     wgate.classList.toggle("hold", gateLine !== "");
+    wgate.classList.toggle("done", under === "MASTERED");
     if (this.rackKey !== p.weapon.slot + ":" + p.weapon.ammo.join(",")) {
       this.rackKey = p.weapon.slot + ":" + p.weapon.ammo.join(",");
       this.q(".rack").innerHTML = WEAPON_LIST.map((w) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}<i>${w.magSize ? p.weapon.ammo[w.slot] : "∞"}</i></span>`).join("");

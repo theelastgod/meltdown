@@ -4,6 +4,7 @@
  * The gate (Stage 869). The file page says the challenge holding that rank. The gun said the rank only.
  * The count (Stage 870). The file page says how far through that challenge. The gun named it and not the count.
  * The pace (Stage 871). Between gates the file page says the XP into the next rank. The gun did not.
+ * The cap (Stage 872). At the last rank the file says MASTERED. The gun said R30 and nothing under it.
  */
 import { MAX_RANK, xpForRank } from "@shared/progression/mastery";
 
@@ -24,10 +25,10 @@ export function heldGateLine(text: string | null | undefined, have?: number, nee
   return `${body} · ${n}/${Math.floor(need)}`;
 }
 
-/** XP into the next rank, the same sum the file page uses. Empty at the last rank. */
+/** XP into the next rank, the same sum the file page uses. MASTERED at the last rank. */
 export function heldRankPace(rank: number, xp: number): string {
   const r = Number.isFinite(rank) ? Math.max(1, Math.min(MAX_RANK, Math.floor(rank))) : 1;
-  if (r >= MAX_RANK) return "";
+  if (r >= MAX_RANK) return "MASTERED";
   const x = Number.isFinite(xp) ? Math.max(0, Math.floor(xp)) : 0;
   const spent = Array.from({ length: r - 1 }, (_, i) => xpForRank(i + 1)).reduce((a, b) => a + b, 0);
   return `${x - spent}/${xpForRank(r)} XP`;

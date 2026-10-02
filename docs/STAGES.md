@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 872 — The gun says MASTERED at the last rank
+
+**The ask.** At the last rank the file says MASTERED. The gun said R30 and nothing under it. The cap is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** At rank 30 the line under the gun reads MASTERED, in the same green the file uses. A lower rank still reads the XP into the next one, and a gate still takes the line.
+
+**Verified.** `tests/weaponline.test.ts` reads the word. Putting the blank line back failed once (`expected '' to be 'MASTERED'`).
+
+**Open.** The rack names each gun and its rounds. It does not say that gun's rank. On a phone the rack is hidden, so a gun you are not holding does not say its rank.
+
 ## Stage 871 — The gun says the XP into the next rank
 
 **The ask.** Between gates the gun did not say the XP into the next rank. The file page did. A rank-up was still the only time the number moved. The XP is not a stat you buy. It does not spend $CAPITAL.

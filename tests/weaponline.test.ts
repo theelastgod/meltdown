@@ -45,10 +45,18 @@ describe("the gun in hand", () => {
     expect(heldRankPace(4, spent + 40)).toBe(`40/${xpForRank(4)} XP`);
     expect(heldRankPace(1, 0)).toBe(`0/${xpForRank(1)} XP`);
     expect(heldRankPace(1, Number.NaN)).toBe(`0/${xpForRank(1)} XP`);
-    expect(heldRankPace(30, 1)).toBe("");
+    expect(heldRankPace(30, 1)).toBe("MASTERED");
+    expect(heldRankPace(30, Number.NaN)).toBe("MASTERED");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
     expect(hud).toMatch(/heldRankPace\(rank, xp\)/);
     const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(game).toMatch(/this\.file\.mastery\[weaponDefOf\(p\)\.id\]\?\.xp \?\? 0/);
+  });
+
+  it("says MASTERED at the last rank", () => {
+    expect(heldRankPace(30, 0)).toBe("MASTERED");
+    expect(heldRankPace(29, 0)).not.toBe("MASTERED");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/under === "MASTERED"/);
   });
 });
