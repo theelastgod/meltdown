@@ -2,6 +2,7 @@
  * The gun in hand (Stage 868). The file page says the rank. The gun you are holding did not:
  * a rank-up was one log line, and then the number was gone.
  * The gate (Stage 869). The file page says the challenge holding that rank. The gun said the rank only.
+ * The count (Stage 870). The file page says how far through that challenge. The gun named it and not the count.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 
@@ -11,9 +12,13 @@ export function heldWeaponLine(name: string, rank: number, tail: string): string
   return `${name} · R${String(n).padStart(2, "0")}${tail}`;
 }
 
-/** The challenge holding the rank. Empty when this gun is not held at a gate. */
-export function heldGateLine(text: string | null | undefined): string {
+/** The challenge holding the rank, and how far through it. Empty when this gun is not held at a gate. */
+export function heldGateLine(text: string | null | undefined, have?: number, need?: number): string {
   const t = (text ?? "").trim();
   if (!t) return "";
-  return `GATE · ${t.toUpperCase()}`;
+  const body = `GATE · ${t.toUpperCase()}`;
+  if (need === undefined || !Number.isFinite(need) || need <= 0) return body;
+  const got = have ?? NaN;
+  const n = Number.isFinite(got) ? Math.max(0, Math.floor(got)) : 0;
+  return `${body} · ${n}/${Math.floor(need)}`;
 }

@@ -21,8 +21,21 @@ describe("the gun in hand", () => {
     expect(heldGateLine("  ")).toBe("");
     expect(heldGateLine(null)).toBe("");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
-    expect(hud).toMatch(/heldGateLine\(gate\)/);
+    expect(hud).toMatch(/heldGateLine\(gate/);
     const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(game).toMatch(/gateFor\(weaponDefOf\(p\)\.id, held\)/);
+  });
+
+  it("says how far through that challenge", () => {
+    expect(heldGateLine("10 headshot kills", 3, 10)).toBe("GATE · 10 HEADSHOT KILLS · 3/10");
+    expect(heldGateLine("5 kills mid-slide", 0, 5)).toBe("GATE · 5 KILLS MID-SLIDE · 0/5");
+    expect(heldGateLine("10 headshot kills", 12, 10)).toBe("GATE · 10 HEADSHOT KILLS · 12/10");
+    expect(heldGateLine("", 3, 10)).toBe("");
+    expect(heldGateLine("10 headshot kills", 3, 0)).toBe("GATE · 10 HEADSHOT KILLS");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/heldGateLine\(gate, have, need\)/);
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(game).toMatch(/held\.counters\[ch\.counter\]/);
+    expect(game).toMatch(/ch\?\.need/);
   });
 });

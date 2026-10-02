@@ -909,7 +909,7 @@ export class Hud {
     }
   }
 
-  update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60, rank = 1, gate = ""): void {
+  update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60, rank = 1, gate = "", have = 0, need = 0): void {
     // the tutorial teaches only what the file has not yet done (Stage 130), read from the sim's own
     // running totals rather than this frame's speed: it is folded on drawn frames, and a sprint
     // that peaks between two of them is still a sprint the file performed (Stage 164)
@@ -982,7 +982,7 @@ export class Hud {
     }
     const tail = (p.weapon.altActive ? (def.alt.kind === "slug" ? " · CHOKED" : def.alt.kind === "ads" ? " · OPTIC" : " · BRACED") : "") + (p.weapon.charging ? ` · CHARGE ${Math.round(p.weapon.charge * 100)}%` : "");
     this.q(".wname").textContent = heldWeaponLine(def.name, rank, tail);
-    const under = heldGateLine(gate);
+    const under = heldGateLine(gate, have, need);
     const wgate = this.q(".wgate");
     if (wgate.textContent !== under) wgate.textContent = under;
     if (wgate.hidden !== (under === "")) wgate.hidden = under === "";
