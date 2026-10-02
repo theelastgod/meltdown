@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 844 — Claiming a finished daily tells a phone to tap
+
+**The ask.** A finished daily offered [CLAIM]. Those brackets are a button on a keyboard. On a phone they read as a key. Claiming still pays that contract's Scrip and Wakelight, once. It does not pay $CAPITAL and it does not buy a stat.
+
+**The change.** A phone sees TAP CLAIM. A keyboard still sees the bracketed button. A contract already claimed still reads CLAIMED, with no button.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton("CLAIM", this.touchHud)/`).
+
+**Open.** Rewrite still says [BURN THE FILE — KEEP THE STAMPS AND THE GLYPH'S AGE — +500 WAKELIGHT] on a phone.
+
 ## Stage 843 — Joining the Audit tells a phone to tap
 
 **The ask.** The week's playlist offered [JOIN THE AUDIT]. Those brackets are a button on a keyboard. On a phone they read as a key. Joining still opens that week's playlist. It does not pay $CAPITAL and it does not buy a stat.
