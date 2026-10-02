@@ -19,6 +19,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .xh { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%); }
 #hud .xh::before, #hud .xh::after { content: ""; position: absolute; background: var(--cy); box-shadow: 0 0 3px var(--cy); }
 #hud .xh.low::before, #hud .xh.low::after { background: var(--am); box-shadow: 0 0 3px var(--am); }
+#hud .xh.empty::before, #hud .xh.empty::after { background: var(--mg); box-shadow: 0 0 3px var(--mg); }
 #hud .xh::before { left: 50%; top: 0; width: 2px; height: 100%; transform: translateX(-50%); }
 #hud .xh::after { top: 50%; left: 0; height: 2px; width: 100%; transform: translateY(-50%); }
 #hud .xh i { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; transform: translate(-50%,-50%); background: var(--bg); }

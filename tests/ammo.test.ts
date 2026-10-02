@@ -4,7 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ammoRead, chargeRead, firePadHot, firePadLow, lastRoundsEdge, LOW_FRAC, lowLine, reloadPadHot, reticleLow } from "../client/hud/ammo";
+import { ammoRead, chargeRead, firePadHot, firePadLow, lastRoundsEdge, LOW_FRAC, lowLine, reloadPadHot, reticleEmpty, reticleLow } from "../client/hud/ammo";
 
 describe("lowLine", () => {
   it("is the last quarter, rounded up, and never under a round", () => {
@@ -138,5 +138,18 @@ describe("the crosshair on the last quarter", () => {
     expect(hud).toMatch(/this\.q\("\.xh"\)\.classList\.toggle\("low", reticleLow\(read\.state\)\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.xh\.low::before, #hud \.xh\.low::after \{ background: var\(--am\)/);
+  });
+});
+
+describe("the crosshair when the magazine is empty", () => {
+  it("turns magenta only when the magazine is empty", () => {
+    expect(reticleEmpty("empty")).toBe(true);
+    expect(reticleEmpty("low")).toBe(false);
+    expect(reticleEmpty("ok")).toBe(false);
+    expect(reticleEmpty("reloading")).toBe(false);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/this\.q\("\.xh"\)\.classList\.toggle\("empty", reticleEmpty\(read\.state\)\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.xh\.empty::before, #hud \.xh\.empty::after \{ background: var\(--mg\)/);
   });
 });
