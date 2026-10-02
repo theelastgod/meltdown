@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 944 — The south-east warehouse on Lease Row is a room
+
+**The ask.** Two warehouses are rooms. The south-east stack on LEASE ROW is still a solid ground floor.
+
+**The change.** That ground floor is open, under the upper floor that was already there. A jamb stands on the west side of the south opening, and a metal counter stands inside. Standing at the counter, the line reads NIGHT CO · THE COUNTER IS OPEN. CASH FOR THE CUP. THE GUN STAYS AS IT IS. The cup changes no gun. The noodle shop, the pawn room, the north lot, and the south yard stay open. The other districts, and LEASE ROW's old 3×3, are the blocks they were. A full shell of shop walls did not fit: the city frame was over 190k. The jamb and the counter use the metal the stairs already draw.
+
+**Verified.** `tests/night.test.ts`: the doorway, the opening, and the floor inside are open; the jamb and the counter are solid; the counter answers there and not from the middle of the room; the other two counters and both lots still answer. Leaving the solid floor in place failed the doorway check. `tests/shop.test.ts`, `tests/pawn.test.ts`, `tests/wild.test.ts`, and `tests/yard.test.ts` still open what they opened. `tests/citysize.test.ts` and `tests/newdistricts.test.ts` kept the 3×3 hashes. `tests/citycost.test.ts` stayed inside 190k triangles and added no batch. The non-city dressing fingerprint for LEASE ROW was re-recorded; the other four districts stayed the bytes they were. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean.
+
+**Open.** The other districts are still solid blocks with a solid edge. The east and west walls of LEASE ROW are still solid. The city frame has almost no triangles left. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 943 — The south wall of Lease Row opens onto a yard
 
 **The ask.** The north edge of LEASE ROW is open ground. The south wall is still a solid facade.

@@ -60,9 +60,9 @@ function fingerprint(scene: THREE.Object3D, log: readonly string[]): string {
   return h.digest("hex").slice(0, 16);
 }
 
-/** recorded from the dressing as it was before Stage 704. LEASE ROW was re-recorded at Stage 943: the south yard is part of the district's own dressing, and the other four districts are the bytes they were. */
+/** recorded from the dressing as it was before Stage 704. LEASE ROW was re-recorded at Stage 944: the night counter is part of the district's own dressing, and the other four districts are the bytes they were. */
 const BEFORE: Record<string, string> = {
-  lease_row: "9b42ecc194d5d8d2",
+  lease_row: "9f873063ea69a4cb",
   deadletter_docks: "de09c8297ca39d38",
   repo_depot: "c2a715be59e8dbd0",
   // Stage 701's districts, recorded on the Stage 703 commit, before the doors: the three above

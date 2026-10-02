@@ -630,6 +630,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const wild = openLeaseWild(c);
   const pawn = openLeasePawn(c);
   const yard = openLeaseYard(c);
+  const night = openLeaseNight(c);
 
   // district rig: two big casts on opposite corners. Cyan and magenta carry the city everywhere; an amber
   // district gets its threat colour from the local VANTAGE lights (lots, towers, fences), never the rig.
@@ -723,6 +724,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(wild ? { wild } : {}),
     ...(pawn ? { pawn } : {}),
     ...(yard ? { yard } : {}),
+    ...(night ? { night } : {}),
   };
 }
 
@@ -823,8 +825,16 @@ function openLeasePawn(c: Ctx): ShopSpot | null {
   return openStackRoom(c, 0, 4, "PAWN", "PAWN · THE WINDOW IS OPEN. CASH FOR THE PIECE. THE GUN STAYS AS IT IS.", "lease row pawn");
 }
 
+/**
+ * The south-east stack is the last solid warehouse. Its ground floor is a third room. Cash, no gun.
+ * The shell is two jambs and a metal counter: a full base wall, and even a stall, put the city frame over 190k.
+ */
+function openLeaseNight(c: Ctx): ShopSpot | null {
+  return openStackRoom(c, 4, 4, "NIGHT CO", "NIGHT CO · THE COUNTER IS OPEN. CASH FOR THE CUP. THE GUN STAYS AS IT IS.", "lease row night", "door");
+}
+
 /** One warehouse ground floor becomes a room. Stall and crate are already on the row's markets. */
-function openStackRoom(c: Ctx, bx: number, bz: number, sign: string, line: string, what: string): ShopSpot | null {
+function openStackRoom(c: Ctx, bx: number, bz: number, sign: string, line: string, what: string, shell: "full" | "door" = "full"): ShopSpot | null {
   if (c.spec.id !== "lease_row" || districtGrid(c.spec) !== 5) return null;
   const { x0, z0, x1, z1 } = blockRect(c.H, bx, bz);
   const bx0 = x0 + 1;
@@ -840,15 +850,18 @@ function openStackRoom(c: Ctx, bx: number, bz: number, sign: string, line: strin
   const midX = (bx0 + bx1) / 2;
   const dx0 = midX - doorW / 2;
   const dx1 = midX + doorW / 2;
+  const wallTag = shell === "door" ? "step" : "base";
   const wall = (ax: number, ay: number, az: number, bx2: number, by: number, bz2: number): void => {
-    c.boxes.push(box(ax, ay, az, bx2, by, bz2, "base"));
+    c.boxes.push(box(ax, ay, az, bx2, by, bz2, wallTag));
   };
-  wall(bx0, 0, bz0, bx1, 4.2, bz0 + t);
-  wall(bx0, 0, bz0 + t, bx0 + t, 4.2, bz1);
-  wall(bx1 - t, 0, bz0 + t, bx1, 4.2, bz1);
+  if (shell === "full") {
+    wall(bx0, 0, bz0, bx1, 4.2, bz0 + t);
+    wall(bx0, 0, bz0 + t, bx0 + t, 4.2, bz1);
+    wall(bx1 - t, 0, bz0 + t, bx1, 4.2, bz1);
+    wall(dx0, doorH, bz1 - t, dx1, 4.2, bz1);
+    wall(dx1, 0, bz1 - t, bx1, 4.2, bz1);
+  }
   wall(bx0, 0, bz1 - t, dx0, 4.2, bz1);
-  wall(dx1, 0, bz1 - t, bx1, 4.2, bz1);
-  wall(dx0, doorH, bz1 - t, dx1, 4.2, bz1);
   // a machine left in the doorway would seal the room the walls just opened
   const mx0 = dx0 - 0.3;
   const mx1 = dx1 + 0.3;
@@ -859,9 +872,13 @@ function openStackRoom(c: Ctx, bx: number, bz: number, sign: string, line: strin
     return !hit;
   });
   const cz = bz0 + t + 0.15;
-  c.boxes.push(box(midX - 0.35, 0, cz, midX + 0.35, 1.75, cz + 0.55, "crate"));
-  c.boxes.push(box(midX - 1.8, 0, cz + 0.7, midX + 1.8, 1.05, cz + 1.7, "stall"));
-  c.decor.push(box(bx0 + t, 3.5, bz0 + t, bx1 - t, 3.65, bz1 - t, "ceiling"));
+  if (shell === "full") {
+    c.boxes.push(box(midX - 0.35, 0, cz, midX + 0.35, 1.75, cz + 0.55, "crate"));
+    c.boxes.push(box(midX - 1.8, 0, cz + 0.7, midX + 1.8, 1.05, cz + 1.7, "stall"));
+    c.decor.push(box(bx0 + t, 3.5, bz0 + t, bx1 - t, 3.65, bz1 - t, "ceiling"));
+  } else {
+    c.boxes.push(box(midX - 1.8, 0, cz + 0.7, midX + 1.8, 1.05, cz + 1.7, "step"));
+  }
   c.lights.push({ x: midX, y: 3.2, z: (bz0 + bz1) / 2, color: "amber", intensity: 8, range: 14 });
   addSign(c, sign, midX, 3.3, bz1 + 0.04, 0, 3.2, COLORS.yellow);
   const counter = v3(midX, 0, cz + 1.7 + 0.9);

@@ -27,8 +27,8 @@ export function wildLine(pos: Vec3, level: Pick<LevelDef, "wild" | "yard">): str
   return best ? best.line : null;
 }
 
-export function shopLine(pos: Vec3, level: Pick<LevelDef, "shop" | "pawn">): string | null {
-  const spots = [level.shop, level.pawn].filter((s): s is NonNullable<typeof s> => !!s);
+export function shopLine(pos: Vec3, level: Pick<LevelDef, "shop" | "pawn" | "night">): string | null {
+  const spots = [level.shop, level.pawn, level.night].filter((s): s is NonNullable<typeof s> => !!s);
   let best: (typeof spots)[number] | null = null;
   let bestD = SHOP_TALK_RADIUS * SHOP_TALK_RADIUS;
   for (const s of spots) {
