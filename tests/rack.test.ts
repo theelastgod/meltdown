@@ -1,9 +1,11 @@
 /**
  * The rack called the DIRECTIVE "THE" (Stage 109): the one-word label for every weapon.
+ * The rank (Stage 873): the rack names the gun and its rounds, and the rank beside them.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { WEAPON_LIST } from "../shared/weapons/manifest";
-import { rackLabel } from "../client/hud/rack";
+import { rackLabel, rackRankMark } from "../client/hud/rack";
 
 describe("rackLabel", () => {
   it("is the first word for a name that starts with one", () => {
@@ -20,5 +22,19 @@ describe("rackLabel", () => {
   it("a name that is nothing but an article keeps it, and an empty name is empty", () => {
     expect(rackLabel("THE")).toBe("THE");
     expect(rackLabel("  ")).toBe("");
+  });
+  it("says the rank beside the rounds", () => {
+    expect(rackRankMark(1)).toBe("R01");
+    expect(rackRankMark(12)).toBe("R12");
+    expect(rackRankMark(30)).toBe("R30");
+    expect(rackRankMark(0)).toBe("R01");
+    expect(rackRankMark(Number.NaN)).toBe("R01");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/rackRankMark\(ranks\[i\] \?\? 1\)/);
+    expect(hud).toMatch(/ranks\.join\(","\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/content: attr\(data-r\)/);
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(game).toMatch(/WEAPON_LIST\.map\(\(w\) => this\.file\.mastery\[w\.id\]\?\.rank \?\? 1\)/);
   });
 });

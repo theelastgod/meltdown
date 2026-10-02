@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 873 — The rack says each gun's rank
+
+**The ask.** The rack named each gun and its rounds. It did not say that gun's rank. The rank is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** Each slot wears its rank beside the rounds: R01, R12, R30. The mark is painted on the slot, not written into the slot's text, so the name a reader strips trailing digits down to is still the name. A phone still hides the rack.
+
+**Verified.** `tests/rack.test.ts` reads the mark. Taking it off the slot failed once (`expected the source to match /rackRankMark\(ranks\[i\] \?\? 1\)/`).
+
+**Open.** On a phone the rack is hidden, so a gun you are not holding does not say its rank.
+
 ## Stage 872 — The gun says MASTERED at the last rank
 
 **The ask.** At the last rank the file says MASTERED. The gun said R30 and nothing under it. The cap is not a stat you buy. It does not spend $CAPITAL.

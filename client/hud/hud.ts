@@ -10,7 +10,7 @@ import { houseName } from "@shared/endgame/season";
 import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
-import { rackLabel } from "./rack";
+import { rackLabel, rackRankMark } from "./rack";
 import { heldGateLine, heldRankPace, heldWeaponLine } from "./weaponline";
 import { motionWord } from "./stance";
 import { keysLine, learn, NOTHING_SEEN, padsLine, type Seen } from "./keys";
@@ -909,7 +909,7 @@ export class Hud {
     }
   }
 
-  update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60, rank = 1, gate = "", have = 0, need = 0, xp = 0): void {
+  update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60, rank = 1, gate = "", have = 0, need = 0, xp = 0, ranks: readonly number[] = []): void {
     // the tutorial teaches only what the file has not yet done (Stage 130), read from the sim's own
     // running totals rather than this frame's speed: it is folded on drawn frames, and a sprint
     // that peaks between two of them is still a sprint the file performed (Stage 164)
@@ -989,9 +989,10 @@ export class Hud {
     if (wgate.hidden !== (under === "")) wgate.hidden = under === "";
     wgate.classList.toggle("hold", gateLine !== "");
     wgate.classList.toggle("done", under === "MASTERED");
-    if (this.rackKey !== p.weapon.slot + ":" + p.weapon.ammo.join(",")) {
-      this.rackKey = p.weapon.slot + ":" + p.weapon.ammo.join(",");
-      this.q(".rack").innerHTML = WEAPON_LIST.map((w) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}<i>${w.magSize ? p.weapon.ammo[w.slot] : "∞"}</i></span>`).join("");
+    const rackSig = `${p.weapon.slot}:${p.weapon.ammo.join(",")}:${ranks.join(",")}`;
+    if (this.rackKey !== rackSig) {
+      this.rackKey = rackSig;
+      this.q(".rack").innerHTML = WEAPON_LIST.map((w, i) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}<i>${w.magSize ? p.weapon.ammo[w.slot] : "∞"}</i><b data-r="${rackRankMark(ranks[i] ?? 1)}"></b></span>`).join("");
     }
     const nk = p.weapon.grenadeSel + ":" + p.weapon.grenades.join(",");
     if (this.nadeKey !== nk) {
