@@ -21,6 +21,7 @@ import { crewCodeFromSocket } from "@shared/net/crew";
 import { MISSION_ART } from "./missionart";
 import { GIG_ART } from "./gigart";
 import { linkStatusLine } from "./hud/room";
+import { wantsTouch } from "./touch";
 
 export const LOADING_KEY = "meltdown.loading";
 
@@ -349,7 +350,7 @@ export class LoadingCard {
     this.dismissable = true;
     const go = this.q(".go");
     go.hidden = false;
-    go.textContent = `${why ? "" : "STILL WAITING · "}TAP, CLICK OR PRESS ENTER TO CONTINUE`;
+    go.textContent = loadingContinueLine(wantsTouch(), !why);
   }
 
   hide(fade = true): void {
@@ -372,6 +373,12 @@ export class LoadingCard {
   view(): LoadingView {
     return { shown: this.shown, title: this.desc.title, line: this.desc.line, kind: this.desc.kind, stage: this.stage, label: stageLabel(this.stage), progress: stageProgress(this.stage), error: this.error, art: this.desc.art ?? null, tip: LOADING_TIPS[this.tip]!, through: this.dismissable };
   }
+}
+
+/** A card that has waited long enough, or failed. A phone has no Enter. */
+export function loadingContinueLine(touch: boolean, waiting: boolean): string {
+  const how = touch ? "TAP TO CONTINUE" : "CLICK OR PRESS ENTER TO CONTINUE";
+  return waiting ? `STILL WAITING · ${how}` : how;
 }
 
 let current: LoadingCard | null = null;

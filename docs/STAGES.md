@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 858 — A long load tells a phone to tap
+
+**The ask.** A load that has gone on long enough, or failed, said TAP, CLICK OR PRESS ENTER TO CONTINUE. A phone can tap. It cannot press Enter. The card still lets the player through. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** A phone reads TAP TO CONTINUE, and STILL WAITING · TAP TO CONTINUE when the wait is the reason. A keyboard still reads CLICK OR PRESS ENTER TO CONTINUE.
+
+**Verified.** `tests/loading.test.ts` reads the line. Putting the Enter line back on a phone failed once (`expected the source to match /loadingContinueLine\(wantsTouch\(\), !why\)/`).
+
+**Open.** The trailer's skip line still says CLICK FOR SOUND · [SPACE] SKIP before the line is written.
+
 ## Stage 857 — The terminal's markup tells a phone to tap
 
 **The ask.** The terminal's markup said [ENTER] CONTINUE · [1–4] CHOOSE before the line was written. Those brackets are keys. On a phone they read as keys a phone does not have. The terminal still writes the real footer when a line is up. It does not spend $CAPITAL and it does not buy a stat.

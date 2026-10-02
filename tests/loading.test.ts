@@ -11,7 +11,7 @@ import { inCity } from "../shared/net/city";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { CAMPAIGN_DESK, cardsWanted, choiceUrl, MAIN, Menu, MODES, playInfo, playLine, playLoading, playUrl, type MenuHost } from "../client/menu";
-import { bootStage, bootWanted, explorePageUrl, hideLoading, LEVEL_ART, LOADING_HTML, LOADING_KEY, LOADING_STAGES, loadingFor, loadingView, readLoading, showLoading, stageProgress, travelTo, watchBoot, writeLoading, type BootSignals } from "../client/loading";
+import { bootStage, bootWanted, explorePageUrl, hideLoading, LEVEL_ART, LOADING_HTML, LOADING_KEY, LOADING_STAGES, loadingContinueLine, loadingFor, loadingView, readLoading, showLoading, stageProgress, travelTo, watchBoot, writeLoading, type BootSignals } from "../client/loading";
 import { DEFAULT_SETTINGS } from "../client/settings";
 import { campaignOf } from "../shared/campaign/save";
 import { sandboxAccount } from "../shared/progression/account";
@@ -369,6 +369,19 @@ describe("the loading descriptor", () => {
     expect(paint).toBeLessThan(main.indexOf("const game = new Game("));
     // and watched on the game's own signals until it is playable
     expect(main).toMatch(/watchBoot\(bootCard, \(\) => \(\{ built: true, frames: game\.drawing \? game\.stats\.frames : 1, networked, net: game\.net \? \{ status: game\.net\.status, reason: game\.net\.kickReason, synced: game\.synced \} : null \}\)\)/);
+  });
+});
+
+describe("a load that has gone on long enough", () => {
+  it("tells a phone to tap and a keyboard to press enter", () => {
+    expect(loadingContinueLine(true, true)).toBe("STILL WAITING · TAP TO CONTINUE");
+    expect(loadingContinueLine(true, false)).toBe("TAP TO CONTINUE");
+    expect(loadingContinueLine(true, true)).not.toMatch(/ENTER/);
+    expect(loadingContinueLine(false, true)).toBe("STILL WAITING · CLICK OR PRESS ENTER TO CONTINUE");
+    expect(loadingContinueLine(false, false)).toBe("CLICK OR PRESS ENTER TO CONTINUE");
+    const src = readFileSync(new URL("../client/loading.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/loadingContinueLine\(wantsTouch\(\), !why\)/);
+    expect(src).not.toMatch(/TAP, CLICK OR PRESS ENTER TO CONTINUE/);
   });
 });
 
