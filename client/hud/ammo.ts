@@ -176,6 +176,15 @@ export function pausePadHot(state: AmmoState): boolean {
 }
 
 /**
+ * The pause pad on the last quarter (Stage 924). The pad that picks the next
+ * grenade turns amber. The pause stayed the same cyan as a full magazine.
+ * Empty stays magenta.
+ */
+export function pausePadLow(state: AmmoState): boolean {
+  return state === "low";
+}
+
+/**
  * The crosshair on the last quarter (Stage 888). The corner, the bar, and the fire pad turn
  * amber. The mark you aim with stayed the same cyan as a full magazine. Empty is not this.
  */

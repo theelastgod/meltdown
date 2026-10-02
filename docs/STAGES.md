@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 924 — The pause pad turns amber on the last quarter
+
+**The ask.** On the last quarter the pad that picks the next grenade turns amber. The pause pad stayed cyan, the same as a full magazine. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** That pad turns amber on the last quarter. An empty magazine stays magenta. A full magazine and a reload in progress leave it cyan.
+
+**Verified.** `tests/ammo.test.ts` reads the mark. Leaving the last quarter cold failed once (`expected false to be true`).
+
+**Open.** An empty magazine turns the pause pad magenta. The ring of the move stick stays cyan, the same as a full magazine.
+
 ## Stage 923 — An empty magazine marks the pause pad
 
 **The ask.** An empty magazine turns the pad that picks the next grenade magenta. The pause pad stayed cyan, the same as a full magazine. The count is not a stat you buy. It does not spend $CAPITAL.

@@ -253,6 +253,11 @@ export class TouchControls {
     this.root.querySelector(".tc-pause")?.classList.toggle("empty", empty);
   }
 
+  /** The last quarter (Stage 924). The pad that picks the next grenade turns amber. The pause pad has to say it too. */
+  setPauseLow(low: boolean): void {
+    this.root.querySelector(".tc-pause")?.classList.toggle("low", low);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();
