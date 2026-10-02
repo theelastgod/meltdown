@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 861 — An empty magazine tells a phone to tap
+
+**The ask.** An empty magazine's markup said ▼ RELOAD [R] before the line was written. Those brackets are a key. On a phone they read as R, and a phone reloads on the pad labelled RLD. The line still appears when the magazine is empty. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** The markup uses the same reload line the HUD writes when the magazine goes empty. A phone already reads ▼ TAP RLD. A keyboard still reads ▼ RELOAD [R].
+
+**Verified.** `tests/keyhint.test.ts` reads the markup. Putting [R] back failed once (`expected the source to match /class="hint">\$\{reloadHint\(this\.touch\)\}/`).
+
+**Open.** Once the wake line is down, a phone is not told which pad it has not used. The foot line stays hidden, and it only names keyboard keys.
+
 ## Stage 860 — A woken phone loses the wake line
 
 **The ask.** After the first thumb, a phone still read ▲ TAP TO WAKE for the rest of the session. A locked pointer takes the keyboard line down. A phone has no pointer lock, so that line never moved. The first thumb still starts the session. It does not spend $CAPITAL and it does not buy a stat.

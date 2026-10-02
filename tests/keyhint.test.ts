@@ -259,6 +259,8 @@ describe("an empty magazine", () => {
     expect(reloadHint(true)).not.toMatch(/\[[A-Z]+\]/);
     expect(reloadHint(false)).toBe("▼ RELOAD [R]");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/class="hint">\$\{reloadHint\(this\.touch\)\}/);
+    expect(hud).not.toMatch(/class="hint">▼ RELOAD \[R\]/);
     expect(hud).toMatch(/reloadHint\(this\.touch\)/);
   });
 });

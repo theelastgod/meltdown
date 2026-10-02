@@ -184,7 +184,7 @@ export class Hud {
       <div class="p mg prompt">▲ CLICK TO WAKE · <span style="color:var(--cy)">WASD</span> MOVE · <span style="color:var(--cy)">SHIFT</span> SPRINT · <span style="color:var(--cy)">CTRL</span> SLIDE · <span style="color:var(--cy)">SPACE</span> JUMP</div>
       <div class="p mg prompt-touch">▲ TAP TO WAKE · <span style="color:var(--cy)">LEFT</span> STICK MOVES · PUSH TO <span style="color:var(--cy)">SPRINT</span> · <span style="color:var(--cy)">RIGHT</span> DRAG AIMS</div>
 
-      <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="hint">▼ RELOAD [R]</div><div class="rack"></div><div class="nades"></div></div>
+      <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="hint">${reloadHint(this.touch)}</div><div class="rack"></div><div class="nades"></div></div>
       <div class="overlay flag">▲ FLAGGED — VANTAGE SEARCHLIGHT</div>
       <div class="overlay stun">STUNNED</div>
       <div class="emp"></div>
