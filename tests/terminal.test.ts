@@ -13,6 +13,10 @@ describe("the terminal's footer", () => {
   it("and a tap on a phone", () => {
     expect(terminalFooter(true, true)).toBe("TAP A LINE TO CHOOSE");
     expect(terminalFooter(false, true)).toBe("TAP TO CONTINUE");
+    expect(terminalFooter(false, true)).not.toMatch(/\[[A-Z0-9]/);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/class="tf">\$\{terminalFooter\(false, this\.touch\)\}<\/div>/);
+    expect(hud).not.toMatch(/\[ENTER\] CONTINUE · \[1–4\] CHOOSE/);
   });
 });
 

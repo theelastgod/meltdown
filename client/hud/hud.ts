@@ -172,7 +172,7 @@ export class Hud {
       <div class="p am receipt" hidden><div class="rh">▲ LEDGER ENTRY · VANTAGE CLEARING HOUSE</div><div class="rl"></div><div class="rs">◆ <span class="rst">PRINTING…</span></div><div class="rf">${receiptSignLine(this.touch)}</div></div>
       <div class="rite" hidden><div class="rn"></div><div class="rt"></div><div class="rlines"></div></div>
       <div class="letter top"></div><div class="letter bot"></div><div class="faceplate" hidden><img class="a" alt=""><img class="b" alt=""></div>
-      <div class="p cy terminal" hidden><div class="th"><span class="sg"></span> <span class="sp"></span></div><div class="tb"><img class="pt" alt="" hidden><div class="tx"><div class="tl"></div><div class="tc"></div></div></div><div class="tf">[ENTER] CONTINUE · [1–4] CHOOSE</div></div>
+      <div class="p cy terminal" hidden><div class="th"><span class="sg"></span> <span class="sp"></span></div><div class="tb"><img class="pt" alt="" hidden><div class="tx"><div class="tl"></div><div class="tc"></div></div></div><div class="tf">${terminalFooter(false, this.touch)}</div></div>
       <div class="contracts" hidden></div>
       <div class="card" hidden><img class="cart" alt="" hidden><div class="ct"></div><div class="cl"></div></div>
 

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 857 — The terminal's markup tells a phone to tap
+
+**The ask.** The terminal's markup said [ENTER] CONTINUE · [1–4] CHOOSE before the line was written. Those brackets are keys. On a phone they read as keys a phone does not have. The terminal still writes the real footer when a line is up. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** The markup uses the same footer the terminal writes, with no choices yet. A phone reads TAP TO CONTINUE. A keyboard reads [ENTER] CONTINUE. A line with choices still says TAP A LINE TO CHOOSE, or [1–4] CHOOSE.
+
+**Verified.** `tests/terminal.test.ts` reads the markup. Putting both keys back failed once (`expected the hud to match /class="tf">\$\{terminalFooter\(false, this\.touch\)\}<\/div>/`).
+
+**Open.** A long load still says TAP, CLICK OR PRESS ENTER TO CONTINUE on a phone.
+
 ## Stage 856 — The trailer's title tells a phone to tap
 
 **The ask.** The title under the trailer said ▲ CLICK TO WAKE. A phone taps. It does not click. The tap still ends the trailer and wakes the game. It does not spend $CAPITAL and it does not buy a stat.
