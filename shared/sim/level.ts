@@ -153,6 +153,10 @@ export interface LevelDef {
    * Nothing out there pays a gun.
    */
   east?: WildEdge;
+  /**
+   * The north warehouse on DEADLETTER DOCKS (Stage 946). The hatch takes cash and changes no gun.
+   */
+  cold?: ShopSpot;
 }
 
 /** Feet positions for the one opening in the city wall. */

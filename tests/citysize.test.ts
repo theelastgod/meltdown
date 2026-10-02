@@ -7,6 +7,8 @@
  * 3×3 district must come out byte for byte what it was. The hashes below were taken on the generator
  * as it stood before the grid was a property (commit 451a761), for all three districts as they were
  * then, and LEASE ROW's old 3×3 spec is kept here so its old level can still be built and compared.
+ * Stage 946 re-pinned DEADLETTER DOCKS only: the cold store is in that level. The depot and the
+ * old LEASE ROW 3×3 stay on the pre-grid bytes.
  *
  * The second is that the 5×5 district plays: every node reachable from every spawn, everything the
  * sim sends over the wire well inside what a position can carry, the claims and safe zones on
@@ -42,18 +44,28 @@ const BEFORE: Record<string, string> = {
   repo_depot: "11ea845b42e65c3a0f4348a6eae63a3231a6daa657f880de6cef8a50f40ad69d",
 };
 
+/** Docks after Stage 946 opened the north warehouse. The pre-room bytes stay in BEFORE. */
+const DOCKS_COLD = "9fbfdacea66b13b474838d46baba9fd853531edc829ccd84f27773e807628df9";
+
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
 
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("the docks and the depot, which did not change, hash exactly as they did before the grid was a property", () => {
-    for (const id of ["deadletter_docks", "repo_depot"]) {
-      const spec = districtById(id)!;
-      expect(districtGrid(spec), id).toBe(3);
-      expect(hash(spec), id).toBe(BEFORE[id]);
-    }
+  it("the depot, which did not change, hashes exactly as it did before the grid was a property", () => {
+    const spec = districtById("repo_depot")!;
+    expect(districtGrid(spec)).toBe(3);
+    expect(hash(spec)).toBe(BEFORE["repo_depot"]);
+  });
+
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store (Stage 946)", () => {
+    const spec = districtById("deadletter_docks")!;
+    expect(districtGrid(spec)).toBe(3);
+    expect(hash(spec)).toBe(DOCKS_COLD);
+    expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
+    // the pin is not the pre-room level: sealing the store would put the old hash back
+    expect(DOCKS_COLD).not.toBe(BEFORE["deadletter_docks"]);
   });
 
   it("LEASE ROW's old 3×3 spec still builds its old level, byte for byte", () => {

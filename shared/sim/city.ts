@@ -632,6 +632,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const yard = openLeaseYard(c);
   const night = openLeaseNight(c);
   const east = openLeaseEast(c);
+  const cold = openDocksCold(c);
 
   // district rig: two big casts on opposite corners. Cyan and magenta carry the city everywhere; an amber
   // district gets its threat colour from the local VANTAGE lights (lots, towers, fences), never the rig.
@@ -727,6 +728,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(yard ? { yard } : {}),
     ...(night ? { night } : {}),
     ...(east ? { east } : {}),
+    ...(cold ? { cold } : {}),
   };
 }
 
@@ -808,6 +810,55 @@ function openLeaseYard(c: Ctx): WildEdge | null {
     outside: v3(midX, 0, zOut + 5),
     line: "SOUTH YARD. THE WALL IS BEHIND YOU.",
   };
+}
+
+/**
+ * The north stack on DEADLETTER DOCKS is a solid warehouse. Its ground floor is a cold store:
+ * metal walls, a hatch onto the south apron, a metal counter. Cash, no gun. The shell uses the
+ * step metal the stairs already draw, so the district gains no material.
+ */
+function openDocksCold(c: Ctx): ShopSpot | null {
+  if (c.spec.id !== "deadletter_docks") return null;
+  const { x0, z0, x1, z1 } = blockRect(c.H, 1, 0);
+  const bx0 = x0 + 1;
+  const bz0 = z0 + 6;
+  const bx1 = x1 - 1;
+  const bz1 = z1 - 1;
+  const i = c.boxes.findIndex((b) => b.tag === "base" && b.min.x === bx0 && b.min.y === 0 && b.min.z === bz0 && b.max.x === bx1 && b.max.y === 4.2 && b.max.z === bz1);
+  if (i < 0) throw new Error("docks cold store: the warehouse floor is not where the stack put it");
+  c.boxes.splice(i, 1);
+  const t = 0.45;
+  const doorW = 2.4;
+  const doorH = 2.4;
+  const midX = (bx0 + bx1) / 2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  const wall = (ax: number, ay: number, az: number, bx2: number, by: number, bz2: number): void => {
+    c.boxes.push(box(ax, ay, az, bx2, by, bz2, "step"));
+  };
+  wall(bx0, 0, bz0, bx1, 4.2, bz0 + t);
+  wall(bx0, 0, bz0 + t, bx0 + t, 4.2, bz1);
+  wall(bx1 - t, 0, bz0 + t, bx1, 4.2, bz1);
+  wall(dx0, doorH, bz1 - t, dx1, 4.2, bz1);
+  wall(dx1, 0, bz1 - t, bx1, 4.2, bz1);
+  wall(bx0, 0, bz1 - t, dx0, 4.2, bz1);
+  const mx0 = dx0 - 0.3;
+  const mx1 = dx1 + 0.3;
+  const mz1 = bz1 + 1.6;
+  c.boxes = c.boxes.filter((b) => {
+    if (b.tag !== "vending" && b.tag !== "crate" && b.tag !== "car" && b.tag !== "dumpster") return true;
+    const hit = b.min.x < mx1 && b.max.x > mx0 && b.min.z < mz1 && b.max.z > bz1 - t && b.min.y < doorH;
+    return !hit;
+  });
+  const cz = bz0 + t + 0.15;
+  c.boxes.push(box(midX - 1.8, 0, cz + 0.7, midX + 1.8, 1.05, cz + 1.7, "step"));
+  c.decor.push(box(bx0 + t, 3.5, bz0 + t, bx1 - t, 3.65, bz1 - t, "ceiling"));
+  c.lights.push({ x: midX, y: 3.2, z: (bz0 + bz1) / 2, color: "cyan", intensity: 8, range: 14 });
+  addSign(c, "COLD STORE", midX, 3.3, bz1 + 0.04, 0, 3.2, COLORS.cyan);
+  const counter = v3(midX, 0, cz + 1.7 + 0.9);
+  const inside = v3(midX, 0, (counter.z + (bz1 - t)) / 2);
+  const mouth = v3(midX, 0, bz1 + 0.45);
+  return { mouth, inside, counter, line: "COLD STORE · THE HATCH IS OPEN. CASH FOR THE MANIFEST. THE GUN STAYS AS IT IS." };
 }
 
 /**

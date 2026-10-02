@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 946 — The north warehouse on Deadletter Docks is a room
+
+**The ask.** LEASE ROW's city frame has two triangles left. The other districts are still solid blocks. DEADLETTER DOCKS still has a solid warehouse on its north street.
+
+**The change.** That warehouse's ground floor is open, under the upper floor that was already there. Metal walls, a hatch onto the south apron, and a metal counter. Standing at the counter, the line reads COLD STORE · THE HATCH IS OPEN. CASH FOR THE MANIFEST. THE GUN STAYS AS IT IS. The manifest changes no gun. The walls and the counter use the step metal the stairs already draw. LEASE ROW's rooms and lots stay open. REPO DEPOT, NIGHT MARKET, RELAY HEIGHTS, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/cold.test.ts`: the doorway, the opening, and the floor inside are open; the jamb and the counter are solid; the counter answers there and not from the middle of the room. Sealing the floor failed that check and put the docks hash back to `9552cae19d3d26499f6b5b52f93b294bb02c79dd26b74c9f89e0c29bb9b1746d`. The open level hashes to `9fbfdacea66b13b474838d46baba9fd853531edc829ccd84f27773e807628df9`. `tests/citysize.test.ts` kept the depot and the old 3×3 hashes. `tests/newdistricts.test.ts` kept the market and the heights. `tests/citycost.test.ts` stayed inside 190k: the docks' city frame measured 92,256 triangles and 36 batches. LEASE ROW's city frame stayed 189,998. The non-city dressing fingerprint for the docks was re-recorded (`a127eb4afb74a3fb`); the other four districts stayed the bytes they were. The lease-row path test timed out once under load and passed alone. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean.
+
+**Open.** REPO DEPOT, NIGHT MARKET, and RELAY HEIGHTS are still solid blocks with a solid edge. The west wall of LEASE ROW is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 945 — The east wall of Lease Row opens onto a lot
 
 **The ask.** The east wall of LEASE ROW is still a solid facade. The city frame has almost no triangles left.
