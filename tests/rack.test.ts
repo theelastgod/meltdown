@@ -5,7 +5,26 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { WEAPON_LIST } from "../shared/weapons/manifest";
-import { phoneRankSlot, rackLabel, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "../client/hud/rack";
+import { phoneRankSlot, rackLabel, rackNameEmpty, rackNameHtml, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "../client/hud/rack";
+
+describe("the short name on the rack when the magazine is empty", () => {
+  it("turns magenta only when that gun's magazine is empty", () => {
+    expect(rackNameEmpty("empty")).toBe(true);
+    expect(rackNameEmpty("low")).toBe(false);
+    expect(rackNameEmpty("")).toBe(false);
+    expect(rackNameHtml("LEASE-BREAKER", "empty")).toBe(`<em class="empty">LEASE-BREAKER</em>`);
+    expect(rackNameHtml("LEASE-BREAKER", "low")).not.toContain("empty");
+    expect(rackNameHtml("LEASE-BREAKER", "")).toBe("<em>LEASE-BREAKER</em>");
+    const src = readFileSync(new URL("../client/hud/rack.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/return tone === "empty"/);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/rackNameHtml\(rackLabel\(w\.name\), tone\)/);
+    expect(hud).toMatch(/const tone = rackRoundTone\(w\.magSize, p\.weapon\.ammo\[w\.slot\] \?\? 0, seating && w\.slot === p\.weapon\.slot\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.rack em \{ font-style: normal/);
+    expect(css).toMatch(/#hud \.rack em\.empty \{ color: var\(--mg\)/);
+  });
+});
 
 describe("rackLabel", () => {
   it("is the first word for a name that starts with one", () => {

@@ -27,6 +27,10 @@
  *
  * Before the seat (Stage 879). The corner says -- while the magazine is not in.
  * The rack and the phone list still said 0, the empty count.
+ *
+ * The short name (Stage 899). An empty magazine turns the gun's name magenta.
+ * On the rack that word stayed the same cyan as a full magazine. The count
+ * beside it was already magenta.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 import { lowLine } from "./ammo";
@@ -59,6 +63,20 @@ export function rackRoundShown(magSize: number, ammo: number, unseated: boolean)
 /** The round count, yellow unless the tone says it is low or empty. */
 export function rackRoundHtml(rounds: number | string, tone: "" | "low" | "empty" = ""): string {
   return `<i${tone ? ` class="${tone}"` : ""}>${rounds}</i>`;
+}
+
+/**
+ * The short name on the rack when that gun's magazine is empty (Stage 899).
+ * The corner name turns magenta. This word stayed the same cyan as a full magazine.
+ * The last quarter is not this.
+ */
+export function rackNameEmpty(tone: "" | "low" | "empty"): boolean {
+  return tone === "empty";
+}
+
+/** The short name. Empty marks it. The last quarter stays the slot's own cyan. */
+export function rackNameHtml(label: string, tone: "" | "low" | "empty"): string {
+  return `<em${rackNameEmpty(tone) ? ` class="empty"` : ""}>${label}</em>`;
 }
 
 /**

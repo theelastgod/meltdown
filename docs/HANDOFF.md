@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 898 (the slash beside the count turns amber on the last quarter). Stage 897 marks that slash when the magazine is empty. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **899** |
+| HEAD | Stage 899 (an empty magazine marks the short name on the rack). Stage 898 turns the slash beside the count amber on the last quarter. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **900** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |

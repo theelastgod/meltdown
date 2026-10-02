@@ -189,6 +189,8 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .rack i, #hud .nades i, #hud .pranks i { font-style: normal; color: var(--ye); margin-left: 3px; }
 #hud .rack i.empty, #hud .pranks i.empty { color: var(--mg); }
 #hud .rack i.low, #hud .pranks i.low { color: var(--am); }
+#hud .rack em { font-style: normal; }
+#hud .rack em.empty { color: var(--mg); }
 #hud .rack b { font-weight: normal; }
 #hud .rack b::before { content: attr(data-r); margin-left: 4px; color: var(--cy); }
 #hud .nades { display: flex; flex-wrap: wrap; row-gap: 3px; gap: 6px; justify-content: flex-end; margin-top: 3px; font-size: 9px; color: rgba(255,62,201,0.6); }
