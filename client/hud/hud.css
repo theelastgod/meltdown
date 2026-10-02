@@ -646,6 +646,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .thumbs .tc-nade i, #hud .thumbs .tc-nadenext i { font-style: normal; color: var(--ye); text-shadow: 0 0 4px rgba(255,227,74,0.55); }
 #hud .thumbs .tc-nade i.empty, #hud .thumbs .tc-nadenext i.empty { color: var(--mg); text-shadow: 0 0 4px rgba(255,62,201,0.6); }
 #hud .thumbs .tc-slot   { left: calc(14px + env(safe-area-inset-left)); bottom: calc(16px + env(safe-area-inset-bottom)); width: 48px; height: 48px; }
+#hud .thumbs .tc-slot.empty { color: var(--mg); border-color: var(--mg); text-shadow: 0 0 4px rgba(255,62,201,0.6); }
 #hud .thumbs .tc-pause  { right: calc(112px + env(safe-area-inset-right)); top: calc(12px + env(safe-area-inset-top)); width: 44px; height: 44px; font-size: 8px; }  /* Stage 141: a thumb's width, left of the map, clear of it and the mission panel */
 
 /* The terminal chrome was drawn for a 1080-tall desktop. On a phone the panels have to give up

@@ -188,6 +188,11 @@ export class TouchControls {
     this.root.querySelector(".tc-fire")?.classList.toggle("low", low);
   }
 
+  /** An empty magazine (Stage 911). The rack frame already says so. The weapon pad has to say it too. */
+  setWeaponEmpty(empty: boolean): void {
+    this.root.querySelector(".tc-slot")?.classList.toggle("empty", empty);
+  }
+
   private padAt(x: number, y: number): Pad | null {
     for (const p of this.pads) {
       const r = p.el.getBoundingClientRect();

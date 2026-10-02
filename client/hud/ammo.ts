@@ -66,6 +66,15 @@ export function firePadLow(state: AmmoState): boolean {
 }
 
 /**
+ * The weapon pad (Stage 911). An empty magazine turns the frame around the slot
+ * number magenta. The pad that cycles the gun stayed the same cyan as a full
+ * magazine. The last quarter is not this.
+ */
+export function weaponPadHot(state: AmmoState): boolean {
+  return state === "empty";
+}
+
+/**
  * The crosshair on the last quarter (Stage 888). The corner, the bar, and the fire pad turn
  * amber. The mark you aim with stayed the same cyan as a full magazine. Empty is not this.
  */
