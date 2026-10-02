@@ -84,6 +84,15 @@ export function weaponPadLow(state: AmmoState): boolean {
 }
 
 /**
+ * The alt pad (Stage 913). An empty magazine turns the weapon pad magenta.
+ * The other trigger stayed the same cyan as a full magazine. The last quarter
+ * is not this.
+ */
+export function altPadHot(state: AmmoState): boolean {
+  return state === "empty";
+}
+
+/**
  * The crosshair on the last quarter (Stage 888). The corner, the bar, and the fire pad turn
  * amber. The mark you aim with stayed the same cyan as a full magazine. Empty is not this.
  */
