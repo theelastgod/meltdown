@@ -96,6 +96,17 @@ describe("the trip", () => {
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
+  it("joining the audit names a tap on a phone", () => {
+    expect(crewButton("JOIN THE AUDIT", true)).toBe("TAP JOIN THE AUDIT");
+    expect(crewButton("JOIN THE AUDIT", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("JOIN THE AUDIT", false)).toBe("[JOIN THE AUDIT]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const start = file.indexOf("const audit =");
+    const row = file.slice(start, file.indexOf("const rw =", start));
+    expect(row).toMatch(/data-act="joinAudit">\$\{crewButton\("JOIN THE AUDIT", this\.touchHud\)\}/);
+    expect(row).not.toMatch(/\[JOIN THE AUDIT\]/);
+  });
+
   it("wearing a rig plate names a tap on a phone", () => {
     expect(crewButton("TEARDROP", true)).toBe("TAP TEARDROP");
     expect(crewButton("TEARDROP · WORN", true)).toBe("TAP TEARDROP · WORN");
