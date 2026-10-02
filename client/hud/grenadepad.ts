@@ -19,6 +19,9 @@
  *
  * The phone (Stage 883). The row is hidden there, so a spent zero stayed in the
  * button's own colour. The same empty mark the row uses now sits on the pad.
+ *
+ * A count you still have (Stage 884). The row paints that number yellow. On the
+ * phone it stayed the button's cyan, the same colour as the name.
  */
 
 /** the index the sim moves to on the next cycle: the list's next, wrapping, whatever the counts */

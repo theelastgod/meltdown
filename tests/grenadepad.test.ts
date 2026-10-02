@@ -64,4 +64,10 @@ describe("the pads' labels", () => {
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.thumbs \.tc-nade i\.empty, #hud \.thumbs \.tc-nadenext i\.empty \{ color: var\(--mg\)/);
   });
+  it("paints a grenade you still have yellow on the phone, the same as the row", () => {
+    expect(grenadePadHtml(0, [2, 1, 1], NAMES).throwHtml).toBe("FRAG <i>2</i>");
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.thumbs \.tc-nade i, #hud \.thumbs \.tc-nadenext i \{ font-style: normal; color: var\(--ye\)/);
+    expect(css).toMatch(/#hud \.nades i, #hud \.pranks i \{ font-style: normal; color: var\(--ye\)/);
+  });
 });

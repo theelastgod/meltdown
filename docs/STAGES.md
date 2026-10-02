@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 884 — A grenade you still have is yellow on the phone
+
+**The ask.** A grenade you still have paints that count yellow on the row. On the phone the count stayed the button's own colour, the same cyan as the name. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** The number on the throw pad and the cycle pad is yellow, the same as the row. A spent zero stays magenta. The name stays the button's cyan.
+
+**Verified.** `tests/grenadepad.test.ts` reads the colour. Taking the yellow off failed once (`expected the sheet to match /#hud .thumbs .tc-nade i, #hud .thumbs .tc-nadenext i { font-style: normal; color: var(--ye)/`).
+
+**Open.** An empty magazine turns the corner magenta and points at the reload pad. That pad stays the same cyan as a full gun.
+
 ## Stage 883 — A spent grenade's zero is magenta on the phone
 
 **The ask.** The phone hides the grenade row, so a spent grenade's zero stayed in the button's own colour. The row paints that zero magenta. The count is not a stat you buy. It does not spend $CAPITAL.
