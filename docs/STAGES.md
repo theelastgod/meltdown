@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 853 — The secondary weapon tells a phone to tap
+
+**The ask.** The file offered the secondary weapon's name in brackets. Those brackets are a button on a keyboard. On a phone they read as a key. Choosing it still only changes which weapon is in that hand. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** A phone sees TAP and the weapon's name. A keyboard still sees the bracketed name. The depth beside it is unchanged.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton(wname(this.raw.secondary), this.touchHud)/`).
+
+**Open.** The world map still says [ TRAVEL TO … ] on a phone.
+
 ## Stage 852 — The primary weapon tells a phone to tap
 
 **The ask.** The file offered the primary weapon's name in brackets. Those brackets are a button on a keyboard. On a phone they read as a key. Choosing it still only changes which weapon is in that hand. It does not spend $CAPITAL and it does not buy a stat.

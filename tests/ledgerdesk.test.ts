@@ -96,6 +96,17 @@ describe("the trip", () => {
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
+  it("the secondary weapon names a tap on a phone", () => {
+    expect(crewButton("RIFLE", true)).toBe("TAP RIFLE");
+    expect(crewButton("RIFLE", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("RIFLE", false)).toBe("[RIFLE]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const start = file.indexOf("SECONDARY <span");
+    const row = file.slice(start, file.indexOf("</span> <span class=\"dim\">", start));
+    expect(row).toMatch(/data-act="secondary">\$\{crewButton\(wname\(this\.raw\.secondary\), this\.touchHud\)\}/);
+    expect(row).not.toMatch(/data-act="secondary">\[/);
+  });
+
   it("the primary weapon names a tap on a phone", () => {
     expect(crewButton("SIDEARM", true)).toBe("TAP SIDEARM");
     expect(crewButton("SIDEARM", true)).not.toMatch(/\[[A-Z]/);
