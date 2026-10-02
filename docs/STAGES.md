@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 856 — The trailer's title tells a phone to tap
+
+**The ask.** The title under the trailer said ▲ CLICK TO WAKE. A phone taps. It does not click. The tap still ends the trailer and wakes the game. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** A phone reads ▲ TAP TO WAKE. A keyboard still reads ▲ CLICK TO WAKE.
+
+**Verified.** `tests/crawl.test.ts` reads the title. Putting the click back failed once (`expected the crawl to match /class="prompt">\$\{titleWakeLine\(touch\)\}/`).
+
+**Open.** The terminal's markup still says [ENTER] CONTINUE · [1–4] CHOOSE before the line is written.
+
 ## Stage 855 — The receipt's markup tells a phone to tap
 
 **The ask.** The receipt's markup said [ENTER] SIGN before the line was written. Those brackets are a key. On a phone they read as Enter, and a phone has no Enter. Signing still waits for the stamp. It does not spend $CAPITAL and it does not buy a stat.

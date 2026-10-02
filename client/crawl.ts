@@ -37,6 +37,11 @@ export function trailerOpenLine(touch: boolean): string {
   return touch ? "TAP FOR SOUND" : "CLICK FOR SOUND · [SPACE] SKIP";
 }
 
+/** The title under the trailer. A phone taps. It does not click. */
+export function titleWakeLine(touch: boolean): string {
+  return touch ? "▲ TAP TO WAKE" : "▲ CLICK TO WAKE";
+}
+
 const SEEN_KEY = "meltdown.crawl.seen";
 
 export type CrawlPhase = "trailer" | "title";
@@ -97,7 +102,8 @@ export class OpeningCrawl {
     this.finished = new Promise((r) => (this.resolve = r));
     const root = document.createElement("div");
     root.id = "crawl";
-    root.innerHTML = `<video class="tv" playsinline muted preload="auto"></video><div class="title" hidden><div class="word">MELTDOWN</div><div class="prompt">▲ CLICK TO WAKE</div></div><div class="skip">CLICK FOR SOUND · [SPACE] SKIP</div><div class="scan"></div>`;
+    const touch = wantsTouch();
+    root.innerHTML = `<video class="tv" playsinline muted preload="auto"></video><div class="title" hidden><div class="word">MELTDOWN</div><div class="prompt">${titleWakeLine(touch)}</div></div><div class="skip">CLICK FOR SOUND · [SPACE] SKIP</div><div class="scan"></div>`;
     document.body.appendChild(root);
     this.root = root;
     this.video = root.querySelector("video")!;

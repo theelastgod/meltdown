@@ -8,7 +8,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { CRAWL_TEXT, DEFAULT_CRAWL, OPENING_TEXT, TRAILER_LINES } from "../client/crawl-text";
-import { crawlWanted, trailerOpenLine, trailerSkipLine, trailerTap } from "../client/crawl";
+import { crawlWanted, titleWakeLine, trailerOpenLine, trailerSkipLine, trailerTap } from "../client/crawl";
 import { TITLE_CARDS } from "../client/menu";
 import { MAX_TRAILER_SECONDS, TRAILER } from "../shared/assets/video";
 import { lintTrailer } from "../shared/assets/lint";
@@ -46,6 +46,17 @@ describe("a phone that already has the trailer sound", () => {
     const crawl = readFileSync(new URL("../client/crawl.ts", import.meta.url), "utf8");
     expect(crawl).toMatch(/trailerTap\(this\.video\.muted, wantsTouch\(\)\) === "skip"/);
     expect(crawl).toMatch(/this\.hint\.textContent = trailerSkipLine\(wantsTouch\(\)\)/);
+  });
+});
+
+describe("the title under the trailer", () => {
+  it("tells a phone to tap and a keyboard to click", () => {
+    expect(titleWakeLine(true)).toBe("▲ TAP TO WAKE");
+    expect(titleWakeLine(true)).not.toMatch(/CLICK/);
+    expect(titleWakeLine(false)).toBe("▲ CLICK TO WAKE");
+    const crawl = readFileSync(new URL("../client/crawl.ts", import.meta.url), "utf8");
+    expect(crawl).toMatch(/class="prompt">\$\{titleWakeLine\(touch\)\}/);
+    expect(crawl).not.toMatch(/class="prompt">▲ CLICK TO WAKE/);
   });
 });
 
