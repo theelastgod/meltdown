@@ -18,7 +18,7 @@ import { LookPreview } from "./render/lookpreview";
 import { HUB_LEVEL_ID } from "@shared/sim/hub";
 import { LEVEL_INFO } from "@shared/sim/level";
 import { HOSTS } from "./config";
-import { DEFAULT_SETTINGS, formatSetting, loadSettings, saveSettings, SETTING_LABELS, stepSetting, type Settings } from "./settings";
+import { DEFAULT_SETTINGS, formatSetting, loadSettings, saveSettings, sensitivityLabel, SETTING_LABELS, stepSetting, type Settings } from "./settings";
 import { wantsTouch } from "./touch";
 import { menuFooter, settingsLine } from "./hud/keyhint";
 import type { GameAudio } from "./audio";
@@ -438,7 +438,7 @@ export class Menu {
       case "wake":
         return [...LEVEL_INFO.filter((l) => l.kind === "district").map((l) => ({ id: `${this.pick}:${l.id}`, label: l.displayName, line: districtPickLine(this.pick, l) })), { id: "back", label: "BACK", line: "" }];
       case "settings":
-        return [...(Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]).map((k) => ({ id: `set:${k}`, label: SETTING_LABELS[k], line: formatSetting(this.host.settings, k) })), { id: "back", label: "BACK", line: "" }];
+        return [...(Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]).map((k) => ({ id: `set:${k}`, label: k === "sensitivity" ? sensitivityLabel(wantsTouch()) : SETTING_LABELS[k], line: formatSetting(this.host.settings, k) })), { id: "back", label: "BACK", line: "" }];
       case "character": {
         const l = decodeLook(this.host.look());
         return [...LOOK_FIELDS.map((f) => ({ id: `look:${f.key}`, label: f.label, line: f.options[l[f.key]]?.label ?? "" })), { id: "back", label: "BACK", line: "" }];

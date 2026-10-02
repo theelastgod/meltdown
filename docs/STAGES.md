@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 866 — Settings names the drag on a phone
+
+**The ask.** Settings said MOUSE SENSITIVITY. The same multiplier scales the drag. On a phone it reads as a mouse, and a phone has no mouse. The number still steps the same way. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** A phone reads DRAG SENSITIVITY. A keyboard still reads MOUSE SENSITIVITY. The multiplier on the drag is unchanged.
+
+**Verified.** `tests/settings.test.ts` reads the label. Putting the keyboard label back on every row failed once (`expected the source to match /sensitivityLabel\(wantsTouch\(\)\)/`).
+
+**Open.** A fixer's choices still lead with 1, 2, 3, 4 on a phone. Those numbers are the keys. The footer already says TAP A LINE.
+
 ## Stage 865 — The world map tells a phone to tap the run
 
 **The ask.** The world map's run control said ENTER THE RUN. Travel on that map already said TAP. ENTER reads as a key. On a phone it reads as Enter, and a phone has no Enter. The control still opens THE RUN. It does not spend $CAPITAL and it does not buy a stat.

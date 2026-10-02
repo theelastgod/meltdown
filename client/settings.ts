@@ -4,7 +4,7 @@
  * are the audio buses. Values are clamped on read, so a hand-edited store cannot break the game.
  */
 export interface Settings {
-  /** mouse sensitivity multiplier */
+  /** look multiplier: a mouse on a desk, a drag on a phone. The same number either way. */
   sensitivity: number;
   /** vertical field of view, degrees */
   fov: number;
@@ -83,6 +83,11 @@ export const SETTING_LABELS: Record<keyof Settings, string> = {
   crawlEveryTime: "OPENING TRAILER EVERY VISIT",
   firstPerson: "FIRST-PERSON VIEW",
 };
+
+/** The look multiplier's name. A phone drags. A keyboard uses a mouse. */
+export function sensitivityLabel(touch: boolean): string {
+  return touch ? "DRAG SENSITIVITY" : SETTING_LABELS.sensitivity;
+}
 
 export function formatSetting(s: Settings, key: keyof Settings): string {
   const v = s[key];

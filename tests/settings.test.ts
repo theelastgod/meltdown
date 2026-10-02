@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { clampSettings, DEFAULT_SETTINGS, formatSetting, stepSetting } from "../client/settings";
+import { clampSettings, DEFAULT_SETTINGS, formatSetting, sensitivityLabel, stepSetting } from "../client/settings";
 
 describe("settings", () => {
   it("clamps a hand-edited store to sane ranges and keeps the defaults for anything missing or malformed", () => {
@@ -22,5 +23,12 @@ describe("settings", () => {
     expect(formatSetting(s, "fov")).toBe("105°");
     expect(formatSetting(DEFAULT_SETTINGS, "master")).toBe("70%");
     expect(formatSetting(DEFAULT_SETTINGS, "sensitivity")).toBe("1.00×");
+  });
+  it("names the drag on a phone and the mouse on a keyboard", () => {
+    expect(sensitivityLabel(true)).toBe("DRAG SENSITIVITY");
+    expect(sensitivityLabel(false)).toBe("MOUSE SENSITIVITY");
+    expect(sensitivityLabel(true)).not.toMatch(/MOUSE/);
+    const menu = readFileSync(new URL("../client/menu.ts", import.meta.url), "utf8");
+    expect(menu).toMatch(/k === "sensitivity" \? sensitivityLabel\(wantsTouch\(\)\) : SETTING_LABELS\[k\]/);
   });
 });
