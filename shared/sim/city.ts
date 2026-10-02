@@ -17,7 +17,7 @@ import type { ClaimDef, ZoneDef } from "./run";
  */
 import { v3, type Vec3 } from "../math/vec3";
 import { box, type Box } from "./box";
-import type { LevelDef, LightDef, SignDef, ShopSpot, SpawnPoint, TrafficLane, DistrictCast, WalkLoop, StreetExit, AdPanel, TramLine } from "./level";
+import type { LevelDef, LightDef, SignDef, ShopSpot, WildEdge, SpawnPoint, TrafficLane, DistrictCast, WalkLoop, StreetExit, AdPanel, TramLine } from "./level";
 
 export interface DistrictSpec {
   id: string;
@@ -627,6 +627,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   // LEASE ROW's north-west warehouse is a room (Stage 940). Done last so the roll that dressed the
   // district is the roll it always was; the 3×3 districts are not touched.
   const shop = openLeaseShop(c);
+  const wild = openLeaseWild(c);
 
   // district rig: two big casts on opposite corners. Cyan and magenta carry the city everywhere; an amber
   // district gets its threat colour from the local VANTAGE lights (lots, towers, fences), never the rig.
@@ -717,6 +718,49 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     zones,
     claims,
     ...(shop ? { shop } : {}),
+    ...(wild ? { wild } : {}),
+  };
+}
+
+/**
+ * The north wall of LEASE ROW is a solid facade thirty metres thick. One opening, clear of the
+ * gates, runs through it onto the slab that was already there. A fence above mantle height holds
+ * the lot. The gates are not this opening.
+ */
+function openLeaseWild(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "lease_row" || districtGrid(c.spec) !== 5) return null;
+  const inner = -c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.max.z === inner && b.min.y === 0 && b.max.y === 36 && b.min.x < -80 && b.max.x > -30);
+  if (i < 0) throw new Error("lease row edge: the north wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  const midX = -66;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, dx0, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx1, 0, wall.min.z, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx0, doorH, wall.min.z, dx1, 36, wall.max.z, "facade"));
+  const zOut = wall.min.z;
+  const yF = 2.2;
+  const x0 = midX - 14;
+  const x1 = midX + 14;
+  const zFar = zOut - 16;
+  const t = 0.35;
+  c.boxes.push(box(x0, 0, zOut - t, dx0, yF, zOut, "fence"));
+  c.boxes.push(box(dx1, 0, zOut - t, x1, yF, zOut, "fence"));
+  c.boxes.push(box(x0, 0, zFar, x1, yF, zFar + t, "fence"));
+  c.boxes.push(box(x0, 0, zFar, x0 + t, yF, zOut, "fence"));
+  c.boxes.push(box(x1 - t, 0, zFar, x1, yF, zOut, "fence"));
+  c.boxes.push(box(midX - 8, 0, zFar + 4, midX - 6, 0.5, zFar + 6, "planter"));
+  c.boxes.push(box(midX + 5, 0, zOut - 6, midX + 7, 0.9, zOut - 4, "crate"));
+  addSign(c, "CITY LIMIT", midX, 2.7, inner + 0.06, 0, 4, COLORS.cyan);
+  return {
+    street: v3(midX, 0, inner + 2.2),
+    passage: v3(midX, 0, (inner + zOut) / 2),
+    outside: v3(midX, 0, zOut - 8),
+    line: "PAST THE LEASE. THE STREET ENDS HERE.",
   };
 }
 

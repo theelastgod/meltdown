@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 941 — The north wall of Lease Row opens onto open ground
+
+**The ask.** The edge of the city is a wall. Past the streets there should be outside, where the wall already meets the slab.
+
+**The change.** The north facade of LEASE ROW, clear of the gates, is an opening through the wall onto the ground that was already beyond it. A fence above mantle height rings that lot. A sign on the street side reads CITY LIMIT. Standing out there, the line reads PAST THE LEASE. THE STREET ENDS HERE. The gates still travel. The other districts, and LEASE ROW's old 3×3, keep a solid wall. The opening uses the facade, fence, planter, and crate the district already draws.
+
+**Verified.** `tests/wild.test.ts`: the street, the passage, and the ground outside are open; the wall beside the opening and the far fence are solid; the line is drawn from the campaign; every gate is more than 20 m from the passage. Leaving the solid facade in place failed the passage check. `tests/shop.test.ts` still opens the warehouse. `tests/citysize.test.ts` (16) and `tests/citycost.test.ts` (4) passed, including the old hashes and the batch budget. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean.
+
+**Open.** The other districts are still solid blocks with a solid edge. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 940 — A warehouse on Lease Row is a room
 
 **The ask.** The buildings are solid blocks. The city should have an inside: a store, and someone to talk to, on the same street as everyone else.

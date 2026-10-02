@@ -130,6 +130,22 @@ export interface LevelDef {
    * The shop sells nothing that changes a gun.
    */
   shop?: ShopSpot;
+  /**
+   * A hole in the perimeter wall onto open ground (Stage 941). The street ends there.
+   * Nothing out there pays a gun.
+   */
+  wild?: WildEdge;
+}
+
+/** Feet positions for the one opening in the city wall. */
+export interface WildEdge {
+  /** on the street, city side of the opening */
+  street: Vec3;
+  /** in the passage through the wall */
+  passage: Vec3;
+  /** on the open ground outside */
+  outside: Vec3;
+  line: string;
 }
 
 /** Feet positions for the one walk-in shop, and the line the clerk gives. */
