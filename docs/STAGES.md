@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 864 — The file tells a phone to tap the graph
+
+**The ask.** The file said G OPENS THE WHOLE GRAPH. G is a key. On a phone it reads as a key a phone does not have. The GRAPH tab still opens the graph. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** A phone reads TAP GRAPH. A keyboard still reads G OPENS THE WHOLE GRAPH.
+
+**Verified.** `tests/endgame.test.ts` reads the hint. Putting G back on the file failed once (`expected the source to match /graphOpenLine\(this\.touchHud\)/`).
+
+**Open.** The world map still says ENTER THE RUN on a phone. Travel on that map already says TAP.
+
 ## Stage 863 — The ledger graph tells a phone to tap
 
 **The ask.** The ledger graph's footer said CLICK A LEASED NODE, or CLICK TO ATTEST in the sandbox. A phone taps a node. It does not click. Buying and attesting still work. They do not spend $CAPITAL and they do not buy a stat.

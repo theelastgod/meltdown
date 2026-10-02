@@ -6,7 +6,7 @@
  * the server refuses illegal loadouts at spawn, it never strips them.
  */
 import { ALL_ITEMS, KEYSTONES, LEDGER_ITEMS, MAX_ATTESTED, itemById, ledgerTradeText, type LedgerItem } from "@shared/manifest/items";
-import { closeHint, crewButton, graphSandboxLine, graphShopLine } from "./hud/keyhint";
+import { closeHint, crewButton, graphOpenLine, graphSandboxLine, graphShopLine } from "./hud/keyhint";
 import { DEFAULT_LOADOUT, netDelta, validateLoadout, WEAPON_DEPTH, type Loadout, type Ranks } from "@shared/manifest/loadout";
 import { BUDGET_PER_PERCENT, ADDITIVE } from "@shared/manifest/stats";
 import { xpForDepth, totalXpToReach } from "@shared/progression/depth";
@@ -852,7 +852,7 @@ export class GhostFile {
       <div class="ln dim">RITES ${CHAPTERS.map((c) => `${v.identity.chapters.includes(c.chapter) ? "▣" : "▢"} ${c.numeral} ${c.title} (D${c.depth})`).join(" · ")} · ${v.identity.unlocked.length}/${MONIKERS.length} MONIKERS EARNED</div>
       <div class="ln">PRIMARY <span class="wp" data-act="primary">${crewButton(wname(this.raw.primary), this.touchHud)}</span> · SECONDARY <span class="wp" data-act="secondary">${crewButton(wname(this.raw.secondary), this.touchHud)}</span> <span class="dim">(D${WEAPON_DEPTH[this.raw.primary as WeaponId] ?? "?"} / D${WEAPON_DEPTH[this.raw.secondary as WeaponId] ?? "?"})</span></div>
       <div class="cols">
-        <div><div class="sh">ATTESTED NODES · ≤ ${MAX_ATTESTED} · CONNECTED <span class="dim">(G OPENS THE WHOLE GRAPH)</span></div>${LEDGER_ITEMS.filter((n) => this.owned.includes(n.id) && (attested.includes(n.id) || n.ring === 1)).map(row).join("")}
+        <div><div class="sh">ATTESTED NODES · ≤ ${MAX_ATTESTED} · CONNECTED <span class="dim">(${graphOpenLine(this.touchHud)})</span></div>${LEDGER_ITEMS.filter((n) => this.owned.includes(n.id) && (attested.includes(n.id) || n.ring === 1)).map(row).join("")}
           <div class="sh">KEYSTONE · ONE · LINKED</div>${KEYSTONES.map(row).join("")}</div>
         <div><div class="sh">WEAPON MASTERY · CHIPS · FIRMWARE</div><div class="kit">${kit}</div>
           <div class="sh">ATTESTATION STAMPS · ${this.stamps.length}/${STAMPS.length}</div><div class="stamps">${stampRows}</div>

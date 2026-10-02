@@ -436,10 +436,13 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/CLICK TO ATTEST/);
   });
 
-  it("the graph hint is G OPENS THE WHOLE GRAPH, not G opens the whole graph", () => {
+  it("the graph hint is G OPENS THE WHOLE GRAPH, and a phone taps the tab", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
-    expect(src).toMatch(/\(G OPENS THE WHOLE GRAPH\)/);
-    expect(src).not.toMatch(/\(G opens the whole graph\)/);
+    const hint = readFileSync(new URL("../client/hud/keyhint.ts", import.meta.url), "utf8");
+    expect(hint).toMatch(/return touch \? "TAP GRAPH" : "G OPENS THE WHOLE GRAPH"/);
+    expect(hint).not.toMatch(/G opens the whole graph/);
+    expect(src).toMatch(/\$\{graphOpenLine\(this\.touchHud\)\}/);
+    expect(src).not.toMatch(/\(G OPENS THE WHOLE GRAPH\)/);
   });
 
   it("an alias field is CRT, not a name the city may call you", () => {

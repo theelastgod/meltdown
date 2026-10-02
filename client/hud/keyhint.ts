@@ -94,6 +94,11 @@ export function graphSandboxLine(touch: boolean): string {
   return touch ? "SANDBOX: EVERY NODE IS IN THE FILE — TAP TO ATTEST" : "SANDBOX: EVERY NODE IS IN THE FILE — CLICK TO ATTEST";
 }
 
+/** How the file opens the whole graph. A phone uses the GRAPH tab. It has no G. */
+export function graphOpenLine(touch: boolean): string {
+  return touch ? "TAP GRAPH" : "G OPENS THE WHOLE GRAPH";
+}
+
 /** The ledger entry's sign line. A phone has no Enter, so the receipt stays up until a tap. */
 export function receiptSignLine(touch: boolean): string {
   return touch ? "TAP TO SIGN" : "[ENTER] SIGN";
