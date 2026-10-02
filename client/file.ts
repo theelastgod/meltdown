@@ -6,7 +6,7 @@
  * the server refuses illegal loadouts at spawn, it never strips them.
  */
 import { ALL_ITEMS, KEYSTONES, LEDGER_ITEMS, MAX_ATTESTED, itemById, ledgerTradeText, type LedgerItem } from "@shared/manifest/items";
-import { closeHint, crewButton } from "./hud/keyhint";
+import { closeHint, crewButton, graphSandboxLine, graphShopLine } from "./hud/keyhint";
 import { DEFAULT_LOADOUT, netDelta, validateLoadout, WEAPON_DEPTH, type Loadout, type Ranks } from "@shared/manifest/loadout";
 import { BUDGET_PER_PERCENT, ADDITIVE } from "@shared/manifest/stats";
 import { xpForDepth, totalXpToReach } from "@shared/progression/depth";
@@ -783,7 +783,7 @@ export class GhostFile {
         <text x="${cx}" y="${cy - radii[0]! - 24}" class="lbl">RING I · DEPTH 1–4</text><text x="${cx}" y="${cy - radii[1]! - 24}" class="lbl">RING II · DEPTH 6–14</text><text x="${cx}" y="${cy - radii[2]! - 16}" class="lbl">RING III · DEPTH 16–30</text>
         ${links}${nodes}
       </svg>
-      <div class="ft ${v.ok ? "" : "bad"}">${this.shop ? "CLICK A LEASED NODE TO BUY IT WITH SCRIP (VIOLET → GREEN); CLICK AN OWNED NODE TO ATTEST IT" : "SANDBOX: EVERY NODE IS IN THE FILE — CLICK TO ATTEST"} · ${v.ok ? "ATTESTATION LEGAL" : "ILLEGAL: " + v.errors.map((e) => e.detail).join("; ")}</div>`;
+      <div class="ft ${v.ok ? "" : "bad"}">${this.shop ? graphShopLine(this.touchHud) : graphSandboxLine(this.touchHud)} · ${v.ok ? "ATTESTATION LEGAL" : "ILLEGAL: " + v.errors.map((e) => e.detail).join("; ")}</div>`;
   }
 
   get isOpen(): boolean {

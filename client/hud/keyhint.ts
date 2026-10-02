@@ -82,6 +82,18 @@ export function reloadHint(touch: boolean): string {
   return touch ? "▼ TAP RLD" : "▼ RELOAD [R]";
 }
 
+/** The ledger graph's shop footer. A phone taps a node. It does not click. */
+export function graphShopLine(touch: boolean): string {
+  return touch
+    ? "TAP A LEASED NODE TO BUY IT WITH SCRIP (VIOLET → GREEN); TAP AN OWNED NODE TO ATTEST IT"
+    : "CLICK A LEASED NODE TO BUY IT WITH SCRIP (VIOLET → GREEN); CLICK AN OWNED NODE TO ATTEST IT";
+}
+
+/** The ledger graph's sandbox footer. A phone taps a node. It does not click. */
+export function graphSandboxLine(touch: boolean): string {
+  return touch ? "SANDBOX: EVERY NODE IS IN THE FILE — TAP TO ATTEST" : "SANDBOX: EVERY NODE IS IN THE FILE — CLICK TO ATTEST";
+}
+
 /** The ledger entry's sign line. A phone has no Enter, so the receipt stays up until a tap. */
 export function receiptSignLine(touch: boolean): string {
   return touch ? "TAP TO SIGN" : "[ENTER] SIGN";

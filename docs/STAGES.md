@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 863 — The ledger graph tells a phone to tap
+
+**The ask.** The ledger graph's footer said CLICK A LEASED NODE, or CLICK TO ATTEST in the sandbox. A phone taps a node. It does not click. Buying and attesting still work. They do not spend $CAPITAL and they do not buy a stat.
+
+**The change.** A phone reads TAP A LEASED NODE, or TAP TO ATTEST. A keyboard still reads CLICK.
+
+**Verified.** `tests/endgame.test.ts` reads the footer. Putting CLICK back on the graph failed once (`expected the source to match /graphShopLine\(this\.touchHud\)/`).
+
+**Open.** The file still says G OPENS THE WHOLE GRAPH on a phone.
+
 ## Stage 862 — A woken phone is told which pad it has not used
 
 **The ask.** Once the wake line was down, a phone was not told which pad it had not used. The line at the foot of the screen stayed hidden, and it only names keyboard keys. The lessons still drop as the file does them. They do not spend $CAPITAL and they do not buy a stat.

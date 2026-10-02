@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 862 (a woken phone is told which pad it has not used). Stage 861 tells an empty magazine to tap. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **863** |
+| HEAD | Stage 863 (the ledger graph tells a phone to tap). Stage 862 names the pads a woken phone has not used. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **864** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |

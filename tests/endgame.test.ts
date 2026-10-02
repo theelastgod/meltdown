@@ -416,16 +416,24 @@ describe("the FILE shop counts slots", () => {
     expect(src).not.toMatch(/" · chain " \+ info\.chainId/);
   });
 
-  it("the Ledger Graph shop footer is CRT, not click a leased node", () => {
+  it("the Ledger Graph shop footer is CRT, and a phone taps", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
-    expect(src).toMatch(/CLICK A LEASED NODE TO BUY IT WITH SCRIP \(VIOLET → GREEN\); CLICK AN OWNED NODE TO ATTEST IT/);
-    expect(src).not.toMatch(/click a leased node to buy it with Scrip/);
+    const hint = readFileSync(new URL("../client/hud/keyhint.ts", import.meta.url), "utf8");
+    expect(hint).toMatch(/CLICK A LEASED NODE TO BUY IT WITH SCRIP \(VIOLET → GREEN\); CLICK AN OWNED NODE TO ATTEST IT/);
+    expect(hint).toMatch(/TAP A LEASED NODE TO BUY IT WITH SCRIP \(VIOLET → GREEN\); TAP AN OWNED NODE TO ATTEST IT/);
+    expect(hint).not.toMatch(/click a leased node to buy it with Scrip/);
+    expect(src).toMatch(/graphShopLine\(this\.touchHud\)/);
+    expect(src).not.toMatch(/CLICK A LEASED NODE/);
   });
 
-  it("the Ledger Graph sandbox footer is CRT, not sandbox: every node", () => {
+  it("the Ledger Graph sandbox footer is CRT, and a phone taps", () => {
     const src = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
-    expect(src).toMatch(/SANDBOX: EVERY NODE IS IN THE FILE — CLICK TO ATTEST/);
-    expect(src).not.toMatch(/sandbox: every node is in the file — click to attest/);
+    const hint = readFileSync(new URL("../client/hud/keyhint.ts", import.meta.url), "utf8");
+    expect(hint).toMatch(/SANDBOX: EVERY NODE IS IN THE FILE — CLICK TO ATTEST/);
+    expect(hint).toMatch(/SANDBOX: EVERY NODE IS IN THE FILE — TAP TO ATTEST/);
+    expect(hint).not.toMatch(/sandbox: every node is in the file — click to attest/);
+    expect(src).toMatch(/graphSandboxLine\(this\.touchHud\)/);
+    expect(src).not.toMatch(/CLICK TO ATTEST/);
   });
 
   it("the graph hint is G OPENS THE WHOLE GRAPH, not G opens the whole graph", () => {
