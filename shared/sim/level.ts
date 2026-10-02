@@ -125,6 +125,22 @@ export interface LevelDef {
   zones?: ZoneDef[];
   /** THE RUN: where $CAPITAL claims lie; deeper into the district is worth more. */
   claims?: ClaimDef[];
+  /**
+   * A room you can walk into off the street (Stage 940). The counter is where the clerk answers.
+   * The shop sells nothing that changes a gun.
+   */
+  shop?: ShopSpot;
+}
+
+/** Feet positions for the one walk-in shop, and the line the clerk gives. */
+export interface ShopSpot {
+  /** in the doorway, still on the apron */
+  mouth: Vec3;
+  /** on the open floor inside */
+  inside: Vec3;
+  /** in front of the counter */
+  counter: Vec3;
+  line: string;
 }
 
 /**

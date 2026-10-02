@@ -17,7 +17,7 @@ import type { ClaimDef, ZoneDef } from "./run";
  */
 import { v3, type Vec3 } from "../math/vec3";
 import { box, type Box } from "./box";
-import type { LevelDef, LightDef, SignDef, SpawnPoint, TrafficLane, DistrictCast, WalkLoop, StreetExit, AdPanel, TramLine } from "./level";
+import type { LevelDef, LightDef, SignDef, ShopSpot, SpawnPoint, TrafficLane, DistrictCast, WalkLoop, StreetExit, AdPanel, TramLine } from "./level";
 
 export interface DistrictSpec {
   id: string;
@@ -624,6 +624,10 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     addSign(c, big[(i + 1) % big.length]!, -H - 0.05, 7 + (i % 2) * 7, -p, Math.PI / 2, 12, i % 2 ? COLORS.magenta : COLORS.cyan);
   }
 
+  // LEASE ROW's north-west warehouse is a room (Stage 940). Done last so the roll that dressed the
+  // district is the roll it always was; the 3×3 districts are not touched.
+  const shop = openLeaseShop(c);
+
   // district rig: two big casts on opposite corners. Cyan and magenta carry the city everywhere; an amber
   // district gets its threat colour from the local VANTAGE lights (lots, towers, fences), never the rig.
   const key: LightDef["color"] = spec.cast === "cyan" ? "cyan" : "magenta";
@@ -712,7 +716,60 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     nodes,
     zones,
     claims,
+    ...(shop ? { shop } : {}),
   };
+}
+
+/**
+ * The stack at the north-west corner of LEASE ROW is a solid warehouse. Its ground floor becomes
+ * four walls, a door onto the south apron, a counter, and a clerk. The floor under it is the
+ * district's own slab, so the room is the street you were already on.
+ */
+function openLeaseShop(c: Ctx): ShopSpot | null {
+  if (c.spec.id !== "lease_row" || districtGrid(c.spec) !== 5) return null;
+  const { x0, z0, x1, z1 } = blockRect(c.H, 0, 0);
+  const bx0 = x0 + 1;
+  const bz0 = z0 + 6;
+  const bx1 = x1 - 1;
+  const bz1 = z1 - 1;
+  const i = c.boxes.findIndex((b) => b.tag === "base" && b.min.x === bx0 && b.min.y === 0 && b.min.z === bz0 && b.max.x === bx1 && b.max.y === 4.2 && b.max.z === bz1);
+  if (i < 0) throw new Error("lease row shop: the warehouse floor is not where the stack put it");
+  c.boxes.splice(i, 1);
+  const t = 0.45;
+  const doorW = 2.4;
+  const doorH = 2.4;
+  const midX = (bx0 + bx1) / 2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  const wall = (ax: number, ay: number, az: number, bx: number, by: number, bz: number): void => {
+    c.boxes.push(box(ax, ay, az, bx, by, bz, "base"));
+  };
+  wall(bx0, 0, bz0, bx1, 4.2, bz0 + t);
+  wall(bx0, 0, bz0 + t, bx0 + t, 4.2, bz1);
+  wall(bx1 - t, 0, bz0 + t, bx1, 4.2, bz1);
+  wall(bx0, 0, bz1 - t, dx0, 4.2, bz1);
+  wall(dx1, 0, bz1 - t, bx1, 4.2, bz1);
+  wall(dx0, doorH, bz1 - t, dx1, 4.2, bz1);
+  // a machine left in the doorway would seal the room the walls just opened
+  const mx0 = dx0 - 0.3;
+  const mx1 = dx1 + 0.3;
+  const mz1 = bz1 + 1.6;
+  c.boxes = c.boxes.filter((b) => {
+    if (b.tag !== "vending" && b.tag !== "crate" && b.tag !== "car" && b.tag !== "dumpster") return true;
+    const hit = b.min.x < mx1 && b.max.x > mx0 && b.min.z < mz1 && b.max.z > bz1 - t && b.min.y < doorH;
+    return !hit;
+  });
+  const cz = bz0 + t + 0.15;
+  // stall and crate are already on the row's markets, so the room adds no material
+  c.boxes.push(box(midX - 0.35, 0, cz, midX + 0.35, 1.75, cz + 0.55, "crate"));
+  c.boxes.push(box(midX - 1.8, 0, cz + 0.7, midX + 1.8, 1.05, cz + 1.7, "stall"));
+  c.decor.push(box(bx0 + t, 3.5, bz0 + t, bx1 - t, 3.65, bz1 - t, "ceiling"));
+  c.lights.push({ x: midX, y: 3.2, z: (bz0 + bz1) / 2, color: "amber", intensity: 8, range: 14 });
+  addSign(c, "NOODLE 24", midX, 3.3, bz1 + 0.04, 0, 3.2, COLORS.yellow);
+  const counter = v3(midX, 0, cz + 1.7 + 0.9);
+  const inside = v3(midX, 0, (counter.z + (bz1 - t)) / 2);
+  const mouth = v3(midX, 0, bz1 + 0.45);
+  return { mouth, inside, counter, line: "NOODLE 24 · THE CLERK IS IN. CASH FOR THE BOWL. THE GUN STAYS AS IT IS." };
 }
 
 // ---------------------------------------------------------------------------

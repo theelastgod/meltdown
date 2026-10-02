@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 940 — A warehouse on Lease Row is a room
+
+**The ask.** The buildings are solid blocks. The city should have an inside: a store, and someone to talk to, on the same street as everyone else.
+
+**The change.** The north-west warehouse on LEASE ROW is no longer a solid ground floor. It is four walls and a door onto the south apron. Inside, a stall is the counter and a crate is the clerk. Standing at the counter, the line reads NOODLE 24 · THE CLERK IS IN. CASH FOR THE BOWL. THE GUN STAYS AS IT IS. The bowl changes no gun. The other districts, and LEASE ROW's old 3×3, are the blocks they were. The counter uses the stall and the crate the markets already draw.
+
+**Verified.** `tests/shop.test.ts`: the doorway, the opening, and the floor inside are open; the jamb and the counter are solid; the clerk answers at the counter and not from the middle of the room; the campaign draws that line. Leaving the solid floor in place failed those checks. `tests/citysize.test.ts` (16) kept the old 3×3 hashes and every spawn still reaches every node. `tests/citycost.test.ts`: the 5×5 frame stays inside 190k triangles and adds no batch over the 3×3. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean.
+
+**Open.** The edge of the city is still a wall. The other districts are still solid blocks. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 939 — The campaign plays on the city street, and opening it no longer kills you
 
 **The ask.** A file was dying in the first second of the city. The loading grace ends on the first input, which is the moment the street appears, and a patrol already covering that corner opens fire then. Taking a contract left that room for a solo reload. The campaign should be on the street with everyone else.

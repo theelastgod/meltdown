@@ -36,6 +36,7 @@ import { protocolIcon, weaponCard } from "./kitart";
 import { explorePageUrl, loadingFor, travelTo } from "./loading";
 import { cityWsBase, gatePrompt, gateSigns, gateToTravel, gateTravelUrl, holdProgress, stepGateHold, type GateHold } from "@shared/net/citygates";
 import { inLedgerMouth, LEDGER_HOLD_GATE, ledgerHudLine, nearLedgerDesk } from "@shared/net/cityledger";
+import { shopLine } from "@shared/sim/shop";
 import { runPageUrl } from "./runpage";
 import { radarGates } from "./hud/radar";
 import { SIM_DT } from "@shared/sim/constants";
@@ -265,8 +266,10 @@ export class Campaign {
     const step = stepGateHold(this.gateHold, at ?? (mouth ? LEDGER_HOLD_GATE : null), SIM_DT);
     this.gateHold = step.hold;
     const near = live ? gatePrompt(p.pos, level, this.mode) : null;
+    const clerk = live && at === null && !desk ? shopLine(p.pos, level) : null;
     if (near) g.hud.setGate(gateLine(near.to.district, holdProgress(this.gateHold), at !== null));
     else if (desk) g.hud.setGate(ledgerHudLine(holdProgress(this.gateHold), mouth, g.hud.touch));
+    else if (clerk) g.hud.setGate(clerk);
     else g.hud.setGate(null);
     if (step.go && at !== null) this.walkThrough(at);
     else if (step.go && mouth) this.enterRun();
