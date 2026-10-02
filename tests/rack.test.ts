@@ -5,7 +5,23 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { WEAPON_LIST } from "../shared/weapons/manifest";
-import { phoneNameEmpty, phoneNameHtml, phoneRankSlot, rackLabel, rackNameEmpty, rackNameHtml, rackNameLow, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "../client/hud/rack";
+import { phoneNameEmpty, phoneNameHtml, phoneNameLow, phoneRankSlot, rackLabel, rackNameEmpty, rackNameHtml, rackNameLow, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "../client/hud/rack";
+
+describe("the short name on the phone on the last quarter", () => {
+  it("turns amber only on the last quarter", () => {
+    expect(phoneNameLow("low")).toBe(true);
+    expect(phoneNameLow("empty")).toBe(false);
+    expect(phoneNameLow("")).toBe(false);
+    expect(phoneNameHtml("REPO", "low")).toBe(`<em class="low">REPO</em>`);
+    expect(phoneNameHtml("REPO", "empty")).toBe(`<em class="empty">REPO</em>`);
+    expect(phoneNameHtml("REPO", "")).toBe("<em>REPO</em>");
+    expect(phoneRankSlot("REPO", 12, 8, false, "low")).toBe(`<span><em class="low">REPO</em> <i class="low">8</i> R12</span>`);
+    const src = readFileSync(new URL("../client/hud/rack.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/phoneNameLow\(tone\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.pranks em\.low \{ color: var\(--am\)/);
+  });
+});
 
 describe("the short name on the phone when the magazine is empty", () => {
   it("turns magenta only when that gun's magazine is empty", () => {

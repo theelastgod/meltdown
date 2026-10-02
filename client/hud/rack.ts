@@ -37,6 +37,9 @@
  *
  * The phone (Stage 901). The rack is hidden there. An empty magazine turns
  * the rack's short name magenta. On the phone that word stayed cyan.
+ *
+ * The last quarter on the phone (Stage 902). The rack's short name turns
+ * amber. On the phone that word stayed the same cyan as a full magazine.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 import { lowLine } from "./ammo";
@@ -107,9 +110,18 @@ export function phoneNameEmpty(tone: "" | "low" | "empty"): boolean {
   return tone === "empty";
 }
 
-/** The short name on the phone. Empty marks it. The last quarter stays the line's own colour. */
+/**
+ * The short name on the phone on the last quarter (Stage 902). The rack turns
+ * amber. This word stayed the same cyan as a full magazine. Empty stays magenta.
+ */
+export function phoneNameLow(tone: "" | "low" | "empty"): boolean {
+  return tone === "low";
+}
+
+/** The short name on the phone. Empty marks it magenta. The last quarter marks it amber. */
 export function phoneNameHtml(label: string, tone: "" | "low" | "empty"): string {
-  return `<em${phoneNameEmpty(tone) ? ` class="empty"` : ""}>${label}</em>`;
+  const mark = phoneNameEmpty(tone) ? "empty" : phoneNameLow(tone) ? "low" : "";
+  return `<em${mark ? ` class="${mark}"` : ""}>${label}</em>`;
 }
 
 export function phoneRankSlot(label: string, rank: number, rounds: number | string, on: boolean, tone: "" | "low" | "empty" = "", next = false): string {
