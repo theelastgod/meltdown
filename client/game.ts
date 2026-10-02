@@ -30,7 +30,7 @@ import type { ArcSpec } from "./render/ballistic";
 import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
 import { impactRead, landedDamage, WASP_SHOT } from "./hit";
 import { bodyKey, closeLine, closeRead, forgetOldHits, rememberHit, type LandedHit, ttkNote, victimLabel, weaponName } from "./hud/kill";
-import { challengeClearedLine, MAX_RANK, masteryRankLine } from "@shared/progression/mastery";
+import { challengeClearedLine, gateFor, MAX_RANK, masteryRankLine } from "@shared/progression/mastery";
 import { threatMarks, type LiveProjectile } from "./hud/threat";
 import { waspLocks, type WaspSeen } from "./vantage";
 import { lookYawPitch } from "./render/feel";
@@ -1617,8 +1617,10 @@ export class Game {
     // the shots the map heard (Stage 104), pruned on the map's own clock
     this.pings = prunePings(this.pings, this.hud.mapClock);
     this.hud.setRadarPings(this.pings);
+    const held = this.file.mastery[weaponDefOf(p).id];
     const heldRank = this.file.mastery[weaponDefOf(p).id]?.rank ?? 1;
-    this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt, heldRank);
+    const gate = held ? (gateFor(weaponDefOf(p).id, held)?.text ?? "") : "";
+    this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt, heldRank, gate);
     // Stage 143: the phone's grenade pads say what they throw and what the next tap selects
     this.touch?.setGrenades(p.weapon.grenadeSel, p.weapon.grenades, GRENADE_LIST.map((g) => g.name));
     // the last quarter of the magazine is heard, once, on the round that crosses into it (Stage

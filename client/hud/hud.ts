@@ -11,7 +11,7 @@ import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
 import { rackLabel } from "./rack";
-import { heldWeaponLine } from "./weaponline";
+import { heldGateLine, heldWeaponLine } from "./weaponline";
 import { motionWord } from "./stance";
 import { keysLine, learn, NOTHING_SEEN, padsLine, type Seen } from "./keys";
 import { SPRINT_READ } from "./stance";
@@ -186,7 +186,7 @@ export class Hud {
       <div class="p mg prompt-touch">▲ TAP TO WAKE · <span style="color:var(--cy)">LEFT</span> STICK MOVES · PUSH TO <span style="color:var(--cy)">SPRINT</span> · <span style="color:var(--cy)">RIGHT</span> DRAG AIMS</div>
       <div class="pads" hidden></div>
 
-      <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="hint">${reloadHint(this.touch)}</div><div class="rack"></div><div class="nades"></div></div>
+      <div class="ammo"><div class="w wname">LEASE-BREAKER</div><div class="w wgate hold" hidden></div><div class="big"><span class="ammon">30</span> <span class="w">/ <span class="mag">30</span></span></div><div class="hint">${reloadHint(this.touch)}</div><div class="rack"></div><div class="nades"></div></div>
       <div class="overlay flag">▲ FLAGGED — VANTAGE SEARCHLIGHT</div>
       <div class="overlay stun">STUNNED</div>
       <div class="emp"></div>
@@ -909,7 +909,7 @@ export class Hud {
     }
   }
 
-  update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60, rank = 1): void {
+  update(p: PlayerState, speed: number, fps: number, tickHz: number, dummies: readonly Dummy[], dt = 1 / 60, rank = 1, gate = ""): void {
     // the tutorial teaches only what the file has not yet done (Stage 130), read from the sim's own
     // running totals rather than this frame's speed: it is folded on drawn frames, and a sprint
     // that peaks between two of them is still a sprint the file performed (Stage 164)
@@ -982,6 +982,10 @@ export class Hud {
     }
     const tail = (p.weapon.altActive ? (def.alt.kind === "slug" ? " · CHOKED" : def.alt.kind === "ads" ? " · OPTIC" : " · BRACED") : "") + (p.weapon.charging ? ` · CHARGE ${Math.round(p.weapon.charge * 100)}%` : "");
     this.q(".wname").textContent = heldWeaponLine(def.name, rank, tail);
+    const under = heldGateLine(gate);
+    const wgate = this.q(".wgate");
+    if (wgate.textContent !== under) wgate.textContent = under;
+    if (wgate.hidden !== (under === "")) wgate.hidden = under === "";
     if (this.rackKey !== p.weapon.slot + ":" + p.weapon.ammo.join(",")) {
       this.rackKey = p.weapon.slot + ":" + p.weapon.ammo.join(",");
       this.q(".rack").innerHTML = WEAPON_LIST.map((w) => `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackLabel(w.name)}<i>${w.magSize ? p.weapon.ammo[w.slot] : "∞"}</i></span>`).join("");

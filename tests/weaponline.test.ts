@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { heldWeaponLine } from "../client/hud/weaponline";
+import { heldGateLine, heldWeaponLine } from "../client/hud/weaponline";
 
 describe("the gun in hand", () => {
   it("says the rank the file has with it", () => {
@@ -12,5 +12,17 @@ describe("the gun in hand", () => {
     expect(hud).toMatch(/heldWeaponLine\(def\.name, rank, tail\)/);
     const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(game).toMatch(/this\.file\.mastery\[weaponDefOf\(p\)\.id\]\?\.rank \?\? 1/);
+  });
+
+  it("says the challenge holding that rank", () => {
+    expect(heldGateLine("10 headshot kills")).toBe("GATE · 10 HEADSHOT KILLS");
+    expect(heldGateLine("2 double kills (two files within 4 s)")).toBe("GATE · 2 DOUBLE KILLS (TWO FILES WITHIN 4 S)");
+    expect(heldGateLine("")).toBe("");
+    expect(heldGateLine("  ")).toBe("");
+    expect(heldGateLine(null)).toBe("");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/heldGateLine\(gate\)/);
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(game).toMatch(/gateFor\(weaponDefOf\(p\)\.id, held\)/);
   });
 });

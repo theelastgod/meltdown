@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 869 — The gun in hand says the gate
+
+**The ask.** The challenge holding that rank was only on the file page. The gun said the rank and not the gate. The rank is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** Under the rank, a held gate reads GATE · 10 HEADSHOT KILLS. Nothing holding the rank, and that line stays down. The rank, the alt, and the charge are unchanged.
+
+**Verified.** `tests/weaponline.test.ts` reads the line. Dropping the gate off the gun failed once (`expected '' to be 'GATE · 10 HEADSHOT KILLS'`).
+
+**Open.** The gun names the challenge and not how far through it you are. The file page shows the count.
+
 ## Stage 868 — The gun in hand says its rank
 
 **The ask.** The gun in hand said its name and nothing of the rank the file has with it. The file page says the rank. A rank-up is one log line, then the number is gone. The rank is not a stat you buy. It does not spend $CAPITAL.
