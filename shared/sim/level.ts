@@ -148,6 +148,11 @@ export interface LevelDef {
    * Nothing out there pays a gun.
    */
   yard?: WildEdge;
+  /**
+   * The east wall of LEASE ROW (Stage 945). A slot at the north end, clear of the gates.
+   * Nothing out there pays a gun.
+   */
+  east?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */

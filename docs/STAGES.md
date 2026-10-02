@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 945 — The east wall of Lease Row opens onto a lot
+
+**The ask.** The east wall of LEASE ROW is still a solid facade. The city frame has almost no triangles left.
+
+**The change.** Three metres at the north end of that wall, clear of the gates, are open onto the slab that was already there. The cut is the same facade moved south, so it adds no box. A sign on the street side reads EAST LOT. Standing out there, the line reads EAST LOT. THE WALL IS BEHIND YOU. The walk sits just south of the north sidewalk, which is proud of the slab. The north lot, the south yard, and the three rooms stay open. The other districts, and LEASE ROW's old 3×3, keep a solid wall.
+
+**Verified.** `tests/east.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot is solid; the line is the lot's, and the other edges and counters still answer; every gate is more than 20 m from the passage. Leaving the solid facade in place failed the street check. `tests/night.test.ts`, `tests/yard.test.ts`, and `tests/wild.test.ts` still open what they opened. `tests/citysize.test.ts` and `tests/newdistricts.test.ts` kept the 3×3 hashes. `tests/citycost.test.ts` stayed inside 190k triangles and added no batch. The non-city dressing fingerprint for LEASE ROW was re-recorded; the other four districts stayed the bytes they were. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean.
+
+**Open.** The other districts are still solid blocks with a solid edge. The west wall of LEASE ROW is still solid. The city frame has two triangles left. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 944 — The south-east warehouse on Lease Row is a room
 
 **The ask.** Two warehouses are rooms. The south-east stack on LEASE ROW is still a solid ground floor.

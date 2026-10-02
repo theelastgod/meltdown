@@ -631,6 +631,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const pawn = openLeasePawn(c);
   const yard = openLeaseYard(c);
   const night = openLeaseNight(c);
+  const east = openLeaseEast(c);
 
   // district rig: two big casts on opposite corners. Cyan and magenta carry the city everywhere; an amber
   // district gets its threat colour from the local VANTAGE lights (lots, towers, fences), never the rig.
@@ -725,6 +726,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(pawn ? { pawn } : {}),
     ...(yard ? { yard } : {}),
     ...(night ? { night } : {}),
+    ...(east ? { east } : {}),
   };
 }
 
@@ -826,8 +828,31 @@ function openLeasePawn(c: Ctx): ShopSpot | null {
 }
 
 /**
+ * The east wall's north run is a solid facade. Three metres at its north end, clear of the gates,
+ * are left open onto the slab. No new box: the city frame has no room for another facade or a fence.
+ */
+function openLeaseEast(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "lease_row" || districtGrid(c.spec) !== 5) return null;
+  const inner = c.H;
+  const wall = c.boxes.find((b) => b.tag === "facade" && b.min.x === inner && b.min.y === 0 && b.max.y === 36 && b.min.z === -inner && b.max.z < -20);
+  if (!wall) throw new Error("lease row east: the east wall is not where the facade put it");
+  const gap = 3;
+  wall.min.z = -inner + gap;
+  // the north sidewalk is 0.1 m proud and ends 1.5 m in from the corner, so the slot's centre is not walkable
+  const midZ = -inner + gap - 0.5;
+  const xOut = wall.max.x;
+  addSign(c, "EAST LOT", inner - 0.06, 2.7, midZ, -Math.PI / 2, 4, COLORS.cyan);
+  return {
+    street: v3(inner - 2.2, 0, midZ),
+    passage: v3((inner + xOut) / 2, 0, midZ),
+    outside: v3(xOut + 4, 0, midZ),
+    line: "EAST LOT. THE WALL IS BEHIND YOU.",
+  };
+}
+
+/**
  * The south-east stack is the last solid warehouse. Its ground floor is a third room. Cash, no gun.
- * The shell is two jambs and a metal counter: a full base wall, and even a stall, put the city frame over 190k.
+ * The shell is one jamb and a metal counter: a full base wall, and even a stall, put the city frame over 190k.
  */
 function openLeaseNight(c: Ctx): ShopSpot | null {
   return openStackRoom(c, 4, 4, "NIGHT CO", "NIGHT CO · THE COUNTER IS OPEN. CASH FOR THE CUP. THE GUN STAYS AS IT IS.", "lease row night", "door");
