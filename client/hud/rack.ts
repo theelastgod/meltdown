@@ -58,6 +58,9 @@
  *
  * The last quarter (Stage 908). That rank turns amber. The slot number
  * beside the name stayed the same cyan as a full magazine.
+ *
+ * The frame (Stage 909). An empty magazine turns that number magenta.
+ * The frame around it stayed the same cyan as a full magazine.
  */
 import { MAX_RANK } from "@shared/progression/mastery";
 import { lowLine } from "./ammo";
@@ -109,6 +112,23 @@ export function rackSlotLow(tone: "" | "low" | "empty"): boolean {
 export function rackSlotHtml(slot: number, tone: "" | "low" | "empty"): string {
   const mark = rackSlotEmpty(tone) ? "empty" : rackSlotLow(tone) ? "low" : "";
   return `<span class="num${mark ? ` ${mark}` : ""}">${slot}</span>`;
+}
+
+/**
+ * The frame around the slot number when that magazine is empty (Stage 909).
+ * The number turns magenta. The frame stayed the same cyan as a full magazine.
+ * The last quarter is not this.
+ */
+export function rackFrameEmpty(tone: "" | "low" | "empty"): boolean {
+  return tone === "empty";
+}
+
+/** Classes on one rack chip. Held is on. An empty magazine marks the frame. */
+export function rackChipClass(on: boolean, tone: "" | "low" | "empty"): string {
+  const parts: string[] = [];
+  if (on) parts.push("on");
+  if (rackFrameEmpty(tone)) parts.push("empty");
+  return parts.join(" ");
 }
 
 /** The rank a slot wears. R01 through the rank before the last. MASTERED at the cap. */

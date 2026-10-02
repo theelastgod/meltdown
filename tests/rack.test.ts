@@ -5,7 +5,27 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { WEAPON_LIST } from "../shared/weapons/manifest";
-import { phoneNameEmpty, phoneNameHtml, phoneNameLow, phoneRankEmpty, phoneRankHtml, phoneRankLow, phoneRankSlot, rackLabel, rackNameEmpty, rackNameHtml, rackNameLow, rackRankAttr, rackRankEmpty, rackRankLow, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone, rackSlotEmpty, rackSlotHtml, rackSlotLow } from "../client/hud/rack";
+import { phoneNameEmpty, phoneNameHtml, phoneNameLow, phoneRankEmpty, phoneRankHtml, phoneRankLow, phoneRankSlot, rackChipClass, rackFrameEmpty, rackLabel, rackNameEmpty, rackNameHtml, rackNameLow, rackRankAttr, rackRankEmpty, rackRankLow, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone, rackSlotEmpty, rackSlotHtml, rackSlotLow } from "../client/hud/rack";
+
+describe("the frame around the slot number when the magazine is empty", () => {
+  it("turns magenta only when that gun's magazine is empty", () => {
+    expect(rackFrameEmpty("empty")).toBe(true);
+    expect(rackFrameEmpty("low")).toBe(false);
+    expect(rackFrameEmpty("")).toBe(false);
+    expect(rackChipClass(true, "empty")).toBe("on empty");
+    expect(rackChipClass(false, "empty")).toBe("empty");
+    expect(rackChipClass(true, "low")).not.toContain("empty");
+    expect(rackChipClass(true, "")).toBe("on");
+    expect(rackChipClass(false, "")).toBe("");
+    const src = readFileSync(new URL("../client/hud/rack.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/rackFrameEmpty\(tone\)/);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/rackChipClass\(w\.slot === p\.weapon\.slot, tone\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.rack > span\.empty \{ border-color: var\(--mg\)/);
+    expect(css).toMatch(/#hud \.rack > span\.on\.empty \{ box-shadow: 0 0 6px rgba\(255,62,201,0\.35\)/);
+  });
+});
 
 describe("the slot number on the rack on the last quarter", () => {
   it("turns amber only on the last quarter", () => {
