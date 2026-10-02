@@ -96,6 +96,19 @@ describe("the trip", () => {
     expect(map).not.toMatch(/LEDGER DESK AT THE METRO · MARKET SPENDS · THE RUN PAYS/);
   });
 
+  it("wearing an owned theme names a tap on a phone", () => {
+    expect(crewButton("WEAR", true)).toBe("TAP WEAR");
+    expect(crewButton("WORN", true)).toBe("TAP WORN");
+    expect(crewButton("WEAR", true)).not.toMatch(/\[[A-Z]/);
+    expect(crewButton("WEAR", false)).toBe("[WEAR]");
+    expect(crewButton("WORN", false)).toBe("[WORN]");
+    const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
+    const start = file.indexOf("const shop = COSMETICS.map");
+    const row = file.slice(start, file.indexOf("const passShop", start));
+    expect(row).toMatch(/data-act="theme" data-id="\$\{c\.id\}">\$\{crewButton\(a\?\.theme === c\.id \? "WORN" : "WEAR", this\.touchHud\)\}/);
+    expect(row).not.toMatch(/data-act="theme"[^>]*>\[/);
+  });
+
   it("buying a cosmetic names a tap on a phone", () => {
     expect(crewButton("40◆", true)).toBe("TAP 40◆");
     expect(crewButton("40◆", true)).not.toMatch(/\[[A-Z]/);

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 847 — Wearing an owned theme tells a phone to tap
+
+**The ask.** A theme the file already owns offered [WEAR] or [WORN]. Those brackets are a button on a keyboard. On a phone they read as a key. Wearing still only changes the palette. It does not spend $CAPITAL and it does not buy a stat.
+
+**The change.** A phone sees TAP WEAR or TAP WORN. A keyboard still sees the bracketed word. A cosmetic that is not a theme still reads OWNED.
+
+**Verified.** `tests/ledgerdesk.test.ts` reads that button. Putting the brackets back failed once (`expected the row to match /crewButton(a?.theme === c.id ? "WORN" : "WEAR", this.touchHud)/`).
+
+**Open.** The season-pass row says [WEAR] or [WORN] on a phone.
+
 ## Stage 846 — Buying a cosmetic tells a phone to tap
 
 **The ask.** The Wakelight shop offered a cosmetic's price in brackets, […◆]. Those brackets are a button on a keyboard. On a phone they read as a key. Buying still spends Wakelight the file already has. It does not spend $CAPITAL and it does not buy a stat.
