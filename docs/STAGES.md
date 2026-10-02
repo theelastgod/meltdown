@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 907 — An empty magazine marks the slot number on the rack
+
+**The ask.** An empty magazine turns the rank on the rack magenta. The slot number beside that name stayed cyan, the same as a full magazine. The count is not a stat you buy. It does not spend $CAPITAL.
+
+**The change.** That slot number turns magenta when the magazine is empty. The last quarter, a full magazine, and a reload in progress leave it cyan.
+
+**Verified.** `tests/rack.test.ts` reads the mark. Leaving the empty magazine cold failed once (`expected false to be true`).
+
+**Open.** On the last quarter the rank on the rack turns amber. The slot number beside that name stays cyan, the same as a full magazine.
+
 ## Stage 906 — The rank on the rack turns amber on the last quarter
 
 **The ask.** On the last quarter the rank beside the name on the phone turns amber. On the rack that rank stayed cyan, the same as a full magazine. The count is not a stat you buy. It does not spend $CAPITAL.

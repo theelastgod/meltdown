@@ -5,7 +5,25 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { WEAPON_LIST } from "../shared/weapons/manifest";
-import { phoneNameEmpty, phoneNameHtml, phoneNameLow, phoneRankEmpty, phoneRankHtml, phoneRankLow, phoneRankSlot, rackLabel, rackNameEmpty, rackNameHtml, rackNameLow, rackRankAttr, rackRankEmpty, rackRankLow, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "../client/hud/rack";
+import { phoneNameEmpty, phoneNameHtml, phoneNameLow, phoneRankEmpty, phoneRankHtml, phoneRankLow, phoneRankSlot, rackLabel, rackNameEmpty, rackNameHtml, rackNameLow, rackRankAttr, rackRankEmpty, rackRankLow, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone, rackSlotEmpty, rackSlotHtml } from "../client/hud/rack";
+
+describe("the slot number on the rack when the magazine is empty", () => {
+  it("turns magenta only when that gun's magazine is empty", () => {
+    expect(rackSlotEmpty("empty")).toBe(true);
+    expect(rackSlotEmpty("low")).toBe(false);
+    expect(rackSlotEmpty("")).toBe(false);
+    expect(rackSlotHtml(2, "empty")).toBe(`<span class="num empty">2</span>`);
+    expect(rackSlotHtml(2, "low")).not.toContain("empty");
+    expect(rackSlotHtml(2, "")).toBe(`<span class="num">2</span>`);
+    const src = readFileSync(new URL("../client/hud/rack.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/rackSlotEmpty\(tone\)/);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/rackSlotHtml\(w\.slot, tone\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.rack span\.num \{ padding: 0; border: none; box-shadow: none/);
+    expect(css).toMatch(/#hud \.rack span\.num\.empty \{ color: var\(--mg\)/);
+  });
+});
 
 describe("the rank on the rack on the last quarter", () => {
   it("turns amber only on the last quarter", () => {

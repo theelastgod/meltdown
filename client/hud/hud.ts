@@ -12,7 +12,7 @@ import { HIT_MAX, type HitMark } from "./damage";
 import { ammoRead, chargeRead, coneEmpty, coneLow, nameEmpty, nameLow, reticleEmpty, reticleLow, sizeEmpty, sizeLow, slashEmpty, slashLow } from "./ammo";
 import { CONE_MIN_PX } from "./spread";
 import { nadeSlot, nextGrenade } from "./grenadepad";
-import { phoneRankSlot, rackLabel, rackNameHtml, rackRankAttr, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone } from "./rack";
+import { phoneRankSlot, rackLabel, rackNameHtml, rackRankAttr, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone, rackSlotHtml } from "./rack";
 import { heldGateLine, heldRankPace, heldWeaponLine } from "./weaponline";
 import { motionWord } from "./stance";
 import { keysLine, learn, NOTHING_SEEN, padsLine, type Seen } from "./keys";
@@ -1009,7 +1009,7 @@ export class Hud {
       const nextSlot = cycleSlot(p.weapon.slot, 1);
       this.q(".rack").innerHTML = WEAPON_LIST.map((w, i) => {
         const tone = rackRoundTone(w.magSize, p.weapon.ammo[w.slot] ?? 0, seating && w.slot === p.weapon.slot);
-        return `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${w.slot} ${rackNameHtml(rackLabel(w.name), tone)}${rackRoundHtml(rackRoundShown(w.magSize, p.weapon.ammo[w.slot] ?? 0, seating && w.slot === p.weapon.slot), tone)}<b data-r="${rackRankMark(ranks[i] ?? 1)}"${rackRankAttr(tone)}></b></span>`;
+        return `<span class="${w.slot === p.weapon.slot ? "on" : ""}">${rackSlotHtml(w.slot, tone)} ${rackNameHtml(rackLabel(w.name), tone)}${rackRoundHtml(rackRoundShown(w.magSize, p.weapon.ammo[w.slot] ?? 0, seating && w.slot === p.weapon.slot), tone)}<b data-r="${rackRankMark(ranks[i] ?? 1)}"${rackRankAttr(tone)}></b></span>`;
       }).join("");
       this.q(".pranks").innerHTML = WEAPON_LIST.map((w, i) => phoneRankSlot(rackLabel(w.name), ranks[i] ?? 1, rackRoundShown(w.magSize, p.weapon.ammo[w.slot] ?? 0, seating && w.slot === p.weapon.slot), w.slot === p.weapon.slot, rackRoundTone(w.magSize, p.weapon.ammo[w.slot] ?? 0, seating && w.slot === p.weapon.slot), w.slot === nextSlot)).join("");
     }
