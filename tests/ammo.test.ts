@@ -4,7 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ammoRead, chargeRead, firePadHot, firePadLow, lastRoundsEdge, LOW_FRAC, lowLine, reloadPadHot } from "../client/hud/ammo";
+import { ammoRead, chargeRead, firePadHot, firePadLow, lastRoundsEdge, LOW_FRAC, lowLine, reloadPadHot, reticleLow } from "../client/hud/ammo";
 
 describe("lowLine", () => {
   it("is the last quarter, rounded up, and never under a round", () => {
@@ -125,5 +125,18 @@ describe("the fire pad on the last quarter", () => {
     expect(touch).toMatch(/querySelector\("\.tc-fire"\)\?\.classList\.toggle\("low", low\)/);
     const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
     expect(css).toMatch(/#hud \.thumbs \.tc-fire\.low \{ color: var\(--am\)/);
+  });
+});
+
+describe("the crosshair on the last quarter", () => {
+  it("turns amber only on the last quarter", () => {
+    expect(reticleLow("low")).toBe(true);
+    expect(reticleLow("empty")).toBe(false);
+    expect(reticleLow("ok")).toBe(false);
+    expect(reticleLow("reloading")).toBe(false);
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toMatch(/this\.q\("\.xh"\)\.classList\.toggle\("low", reticleLow\(read\.state\)\)/);
+    const css = readFileSync(new URL("../client/hud/hud.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#hud \.xh\.low::before, #hud \.xh\.low::after \{ background: var\(--am\)/);
   });
 });

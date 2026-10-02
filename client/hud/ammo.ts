@@ -57,6 +57,14 @@ export function firePadLow(state: AmmoState): boolean {
   return state === "low";
 }
 
+/**
+ * The crosshair on the last quarter (Stage 888). The corner, the bar, and the fire pad turn
+ * amber. The mark you aim with stayed the same cyan as a full magazine. Empty is not this.
+ */
+export function reticleLow(state: AmmoState): boolean {
+  return state === "low";
+}
+
 export function ammoRead(ammo: number, magSize: number, reloadTimer: number, reloadTotal: number, reloadSeated: boolean): AmmoRead {
   if (magSize <= 0) return { state: "ok", reloadFrac: 0, seated: false };
   if (reloadTimer > 0 && reloadTotal > 0) return { state: "reloading", reloadFrac: Math.min(1, Math.max(0, 1 - reloadTimer / reloadTotal)), seated: reloadSeated };
