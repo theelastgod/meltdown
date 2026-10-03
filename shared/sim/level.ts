@@ -205,6 +205,11 @@ export interface LevelDef {
    * Nothing out there pays a gun.
    */
   span?: WildEdge;
+  /**
+   * The south-west wall of REPO DEPOT (Stage 959). A fenced lot, clear of the gates.
+   * Nothing out there pays a gun.
+   */
+  bay?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */

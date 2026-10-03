@@ -66,8 +66,11 @@ const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830a
 /** Depot after Stage 953 opened the west wall. Sealing the east ramp puts this hash back. */
 const DEPOT_APRON = "8649dcfc8056d19c1b39ef460cf1a9ac6d167a49c68570694b1b753369b557b1";
 
-/** Depot after Stage 954 opened the east wall. The apron bytes stay in DEPOT_APRON. */
+/** Depot after Stage 954 opened the east wall. Sealing the south bay puts this hash back. */
 const DEPOT_RAMP = "179d0aaba7b73e0802d4b03833efb238893d9c90177e9d3207d57c22c209ad5b";
+
+/** Depot after Stage 959 opened the south wall. The ramp bytes stay in DEPOT_RAMP. */
+const DEPOT_BAY = "dd855c44f5502260163a68e3ccc81bbe74cff6a33105847febe7a8365a1a2117";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -75,14 +78,16 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, and the east ramp (Stage 954)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, and the south bay (Stage 959)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_RAMP);
+    expect(hash(spec)).toBe(DEPOT_BAY);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
-    // the pin is not the sealed wall: closing the ramp would put the apron hash back
+    expect(generateDistrict(spec).bay?.line).toMatch(/SOUTH BAY/);
+    // the pin is not the sealed wall: closing the bay would put the ramp hash back
+    expect(DEPOT_BAY).not.toBe(DEPOT_RAMP);
     expect(DEPOT_RAMP).not.toBe(DEPOT_APRON);
     expect(DEPOT_APRON).not.toBe(DEPOT_IMPOUND);
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);

@@ -1,0 +1,14 @@
+Stage 959 — REPO DEPOT south bay
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  repo_depot city: 116,910 triangles, 33 batches, 329 boxes
+  relay_heights city: 92,910 triangles, 32 batches (unchanged)
+  night_market city: 117,122 triangles, 33 batches (unchanged)
+  deadletter_docks city: 97,624 triangles, 36 batches (unchanged)
+  lease_row city: 189,998 triangles (unchanged; two under 190k)
+
+Depot hash with the bay: dd855c44f5502260163a68e3ccc81bbe74cff6a33105847febe7a8365a1a2117
+Depot hash with the wall sealed: 179d0aaba7b73e0802d4b03833efb238893d9c90177e9d3207d57c22c209ad5b
+Non-city dressing fingerprint: c97a8ae28a78be00
+
+Not calling openDepotBay failed tests/bay.test.ts. The street, the passage, and the ground outside were gone.
