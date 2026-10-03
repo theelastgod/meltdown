@@ -230,6 +230,11 @@ export interface LevelDef {
    * Nothing out there pays a gun.
    */
   aisle?: WildEdge;
+  /**
+   * The south-west wall of NIGHT MARKET (Stage 964). A fenced lot, clear of the gates.
+   * Nothing out there pays a gun.
+   */
+  booth?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
