@@ -1,0 +1,14 @@
+Stage 954 — REPO DEPOT east ramp
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  repo_depot city: 114,354 triangles, 33 batches, 322 boxes
+  deadletter_docks city: 93,948 triangles, 36 batches (unchanged)
+  lease_row city: 189,998 triangles (unchanged; two under 190k)
+  night_market city: 115,546 triangles, 33 batches (unchanged)
+  relay_heights city: 90,166 triangles, 32 batches (unchanged)
+
+Depot hash with the ramp: 179d0aaba7b73e0802d4b03833efb238893d9c90177e9d3207d57c22c209ad5b
+Depot hash with the wall sealed: 8649dcfc8056d19c1b39ef460cf1a9ac6d167a49c68570694b1b753369b557b1
+Non-city dressing fingerprint: 7e2c7dee82b41774
+
+Not calling openDepotRamp failed tests/ramp.test.ts. The street, the passage, and the ground outside were gone.

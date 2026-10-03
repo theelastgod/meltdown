@@ -9,8 +9,8 @@
  * then, and LEASE ROW's old 3×3 spec is kept here so its old level can still be built and compared.
  * Stage 946 re-pinned DEADLETTER DOCKS only: the cold store is in that level. Stage 952 re-pinned
  * it again: the south pier is in that level. Stage 947 re-pinned REPO DEPOT only: the impound is
- * in that level. Stage 953 re-pinned it again: the west apron is in that level. LEASE ROW's old
- * 3×3 stays on the pre-grid bytes.
+ * in that level. Stage 953 re-pinned it again: the west apron is in that level. Stage 954
+ * re-pinned it again: the east ramp is in that level. LEASE ROW's old 3×3 stays on the pre-grid bytes.
  *
  * The second is that the 5×5 district plays: every node reachable from every spawn, everything the
  * sim sends over the wire well inside what a position can carry, the claims and safe zones on
@@ -55,8 +55,11 @@ const DOCKS_BERTH = "9923ed58bcfde59906b477616970b516b199edfa4c43398d62522480889
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
 
-/** Depot after Stage 953 opened the west wall. The impound bytes stay in DEPOT_IMPOUND. */
+/** Depot after Stage 953 opened the west wall. Sealing the east ramp puts this hash back. */
 const DEPOT_APRON = "8649dcfc8056d19c1b39ef460cf1a9ac6d167a49c68570694b1b753369b557b1";
+
+/** Depot after Stage 954 opened the east wall. The apron bytes stay in DEPOT_APRON. */
+const DEPOT_RAMP = "179d0aaba7b73e0802d4b03833efb238893d9c90177e9d3207d57c22c209ad5b";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -64,13 +67,15 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound and the west apron (Stage 953)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, and the east ramp (Stage 954)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_APRON);
+    expect(hash(spec)).toBe(DEPOT_RAMP);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
-    // the pin is not the sealed wall: closing the apron would put the impound hash back
+    expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
+    // the pin is not the sealed wall: closing the ramp would put the apron hash back
+    expect(DEPOT_RAMP).not.toBe(DEPOT_APRON);
     expect(DEPOT_APRON).not.toBe(DEPOT_IMPOUND);
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });

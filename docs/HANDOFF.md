@@ -19,8 +19,8 @@ Read order: this file (≈15 min) → the top five entries of `docs/STAGES.md` �
 | | |
 | --- | --- |
 | Repo / branch | `theelastgod/meltdown`, branch `claude/meltdown-game-design-uovda4` — **work here, push here, nowhere else** |
-| HEAD | Stage 953 (the west wall of REPO DEPOT opens onto an apron). Stage 952 opens the south-west wall of DEADLETTER DOCKS onto a pier. Stage 951 is the phone HUD. Stage 950 opens the north-west wall of NIGHT MARKET onto a lot. Stage 949 is the heights cold rack. Stage 948 is the artwork handoff. Stage 706 is already merged — do not apply the patch again. |
-| Next stage number | **954** |
+| HEAD | Stage 954 (the east wall of REPO DEPOT opens onto a ramp). Stage 953 opens the west wall of REPO DEPOT onto an apron. Stage 952 opens the south-west wall of DEADLETTER DOCKS onto a pier. Stage 951 is the phone HUD. Stage 950 opens the north-west wall of NIGHT MARKET onto a lot. Stage 949 is the heights cold rack. Stage 948 is the artwork handoff. Stage 706 is already merged — do not apply the patch again. |
+| Next stage number | **955** |
 | Unit tests | 1793 passed under load at Stage 720, with 6 city-path timeouts that pass alone. `tests/faceshot.test.ts` (17) green at Stage 735. |
 | Probes | 24 Playwright probes in `.github/workflows/verify.yml`; `probe:world` is the city's |
 | Lints | `fairness` (89 recorded debt, 0 new), `campaign`, `economy`, `progression`, `assets` — all clean |
