@@ -403,7 +403,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.touch .faceplate { top: 12vh; width: min(34vh, 70vw); }
 #hud .terminal { left: 50%; bottom: 120px; transform: translateX(-50%); width: 640px; max-width: 92vw; padding: 10px 14px; pointer-events: auto; }
 #hud.cut.file:not(.touch) .terminal { bottom: 18vh; transform: translateX(-50%) scale(1.14); transition: transform 0.45s ease, bottom 0.45s ease; }
-#hud.touch.cut.file .terminal { transform: scale(1.06); }
+#hud.touch.cut.file .terminal { transform: none; }  /* Stage 951: the 6% push grew over the reload pad and the weapon slot */
 #hud .terminal .th { font-size: 12px; letter-spacing: 0.14em; border-bottom: 1px solid rgba(53,242,255,0.35); padding-bottom: 4px; margin-bottom: 6px; }
 #hud .terminal .tl { font-size: 12px; line-height: 1.6; min-height: 40px; color: #dff9ff; }
 /* who is speaking (Stage 680): the portrait beside the lines, framed in the speaker's own colour */
@@ -695,7 +695,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.touch .card { pointer-events: auto; }               /* a phone opens the desk by tapping the card */
 #hud.touch .card [data-walk] { color: var(--cy); border-bottom: 1px solid var(--cy); cursor: pointer; }
 #hud .pranks { display: none; }
-#hud.touch .pranks { display: flex; flex-wrap: wrap; row-gap: 2px; gap: 4px; justify-content: flex-end; margin-top: 4px; font-size: 9px; color: rgba(53,242,255,0.7); }
+#hud.touch .pranks { display: flex; flex-wrap: nowrap; overflow: hidden; max-height: 14px; gap: 4px; justify-content: flex-end; margin-top: 2px; font-size: 9px; color: rgba(53,242,255,0.7); }
 #hud.touch .pranks span.on { color: var(--cy); }
 #hud.touch .pranks span.next { color: var(--ye); }
 #hud .pranks em { font-style: normal; }
@@ -710,18 +710,19 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.touch .map { right: calc(10px + env(safe-area-inset-right)); top: calc(6px + env(safe-area-inset-top)); width: 84px; padding: 3px; }
 #hud.touch .map canvas { width: 78px; height: 58px; }
 #hud.touch .map .f { font-size: 8px; }
-/* the tab dock is the one thing a thumb still needs down there, so it keeps the left edge and the
-   ammo readout moves up out of the fire pad's arc */
-/* the dock moves under the status panel: the bottom belt is the PA ticker's and the thumbs' */
-#hud.touch .bottom { left: calc(10px + env(safe-area-inset-left)); right: auto; bottom: auto; top: calc(72px + env(safe-area-inset-top)); height: auto; }
-/* the ammo readout sits inboard of the pads, clear of the map above it */
-#hud.touch .ammo { position: absolute; right: calc(250px + env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); top: auto; text-align: right; }
-#hud.touch .ammo .big { font-size: 22px; }
+/* the slot-and-tab row sits under the file header, one line, and stops short of the map */
+#hud.touch .bottom { left: calc(10px + env(safe-area-inset-left)); right: auto; bottom: auto; top: calc(72px + env(safe-area-inset-top)); height: auto; width: max-content; max-width: calc(100vw - 128px - env(safe-area-inset-left)); flex-wrap: nowrap; gap: 4px; overflow: hidden; }
+#hud.touch .bottom .slots { flex: 0 0 auto; }
+#hud.touch .tab { padding: 4px 6px; }
+/* the ammo column sits under the map, clear of the pause pad above it and the grenade pads below */
+#hud.touch .ammo { position: absolute; right: calc(10px + env(safe-area-inset-right)); top: calc(104px + env(safe-area-inset-top)); bottom: auto; width: 96px; text-align: right; overflow: hidden; }
+#hud.touch .ammo .big { font-size: 18px; line-height: 1; }
+#hud.touch .ammo .wgate { max-width: 96px; }
 /* one prompt or the other, never both */
 #hud .prompt-touch { display: none; }
 #hud.touch .prompt { display: none; }
 #hud.touch .center { display: none; }  /* Stage 139: no stance line on the phone; the row is the slots and the tabs on one line */
-#hud.touch .log { bottom: 72px; width: 420px; }  /* Stage 139: under the stack, above the weapon pad; Stage 140: wide enough for the PA in two rows */
+#hud.touch .log { bottom: 72px; width: 420px; }  /* Stage 139: under the stack, above the weapon pad; Stage 140: wide enough that three PA lines stay under the alert */
 #hud.touch .terminal { left: 12px; bottom: auto; width: auto; max-width: none; transform: none; overflow: auto; }  /* Stage 138: seated under the row, short of the pads, by the layout */
 #hud.touch .terminal .ch { padding: 7px 8px; }
 #hud.touch .prompt-touch { display: block; left: 50%; right: auto; transform: translateX(-50%); bottom: auto; top: calc(62px + env(safe-area-inset-top)); white-space: nowrap; font-size: 9px; }
@@ -730,9 +731,9 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .pads { display: none; }
 #hud.touch .pads:not([hidden]) { display: block; position: absolute; left: 50%; right: auto; transform: translateX(-50%); bottom: auto; top: calc(62px + env(safe-area-inset-top)); white-space: nowrap; font-size: 9px; color: rgba(53,242,255,0.45); text-align: center; }
 #hud.touch.q-prompt .pads { display: none !important; }
-/* the dock keeps the left edge and stops well short of the right thumb's arc */
-#hud.touch .bottom { max-width: calc(100vw - 270px); flex-wrap: wrap; gap: 4px; }
-#hud.touch .bottom .tabs { font-size: 9px; }
+#hud.touch .bottom .tabs { flex: 0 1 auto; min-width: 0; font-size: 9px; }
+/* the room line sits above the weapon pad, left of the log, instead of across the aim */
+#hud.touch .side { left: calc(8px + env(safe-area-inset-left)); right: auto; top: auto; bottom: calc(78px + env(safe-area-inset-bottom)); width: 56px; text-align: left; }
 
 /* the frame monitor (Stage 50): only with ?perf=1 */
 #hud .perf { right: 14px; bottom: 14px; max-width: 420px; line-height: 1.5; }

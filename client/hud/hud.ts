@@ -25,7 +25,7 @@ import { pingMarks, type Ping } from "./ping";
 import { THREAT_MAX, type ThreatMark } from "./threat";
 import { ALL_GROUPS, quietFor } from "./quiet";
 import { footTag, footTagText } from "./footline";
-import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneRowTop, rightBandWidth, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
+import { alertTop, FLAG_GAP, flagTop, footRow, frameSeat, logClears, logLines, missionRow, nodeFootTop, phoneAmmoWidth, phoneRowTop, stackShift, STATUS_GAP, STATUS_MIN, statusHead, statusLineFit, statusWidth } from "./layout";
 import { alertOnCut, platePass, plateTop } from "./faceplate";
 import { terminalChoice, terminalFooter, terminalSeat } from "./terminal";
 import { cardWalkHit, cardYieldsToDesk, closeHint, DISTRICT_FOOTER, receiptSignLine, reloadHint, safeZoneLine, tabOpens } from "./keyhint";
@@ -641,7 +641,7 @@ export class Hud {
    */
   private layout(): void {
     const w = this.root.clientWidth;
-    if (w > 0) this.q(".ammo").style.maxWidth = `${rightBandWidth(w, 14)}px`;
+    if (w > 0) this.q(".ammo").style.maxWidth = `${phoneAmmoWidth(this.root.classList.contains("touch"), w)}px`;
     const rootBox = this.root.getBoundingClientRect();
     const rootTop = rootBox.top;
     const mission = this.q(".mission");

@@ -23,6 +23,18 @@ export function rightBandWidth(viewWidth: number, inset: number): number {
 }
 
 /**
+ * How wide the ammo column is (Stage 951).
+ *
+ * On a desktop it is the right band. On a phone that band is most of the width, and the column was
+ * anchored in the thumb arc, so the count and the rank chips covered the pads. The phone keeps a
+ * short column under the map. The desktop band is unchanged.
+ */
+export const PHONE_AMMO_WIDTH = 96;
+export function phoneAmmoWidth(touch: boolean, viewWidth: number): number {
+  return touch ? PHONE_AMMO_WIDTH : rightBandWidth(viewWidth, 14);
+}
+
+/**
  * Where the alert's top goes, given the bottom of the panel above it, and of the node line and the
  * searchlight warning when they are up (Stage 120).
  *

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 951 — A landscape phone can see the lane
+
+**The ask.** On a phone the HUD was stacked on the thumbs. The slot-and-tab row wrapped onto a second line, the ammo count sat in the fire arc, and the log ran across the lane.
+
+**The change.** The row stays one line and stops short of the map. The ammo column is 96 px under the map, and the rank chips stay on one line inside it. The log stays 420 px wide, which is what keeps three lines under the alert. The room line sits above the weapon pad. The terminal's close-up does not scale over the reload pad or that weapon pad. No pad moved, and none is under 44 px. The desktop band is unchanged.
+
+**Verified.** `tests/phonehud.test.ts`: a phone's ammo column is 96 px and a desktop's is still the right band. Giving the phone that band failed the check. The stylesheet no longer reserves 270 px for the row or anchors the ammo 250 px in from the right, and the terminal close-up does not scale. `tests/rack.test.ts` still finds the phone rank row. On an 844×390 phone the row is 46 px, the pads stay clear of each other and of the panels, a thumb walks, aims, and fires, and the creation terminal sits short of the pads. The wake stack keeps three PA lines under the alert. The probe's second page did not finish loading its textures inside 30 s while the first page was still open. That timeout was not raised.
+
+**Open.** The west wall of LEASE ROW is still solid. DEADLETTER DOCKS has a cold store and a solid south wall. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 950 — The north-west wall of Night Market opens onto a lot
 
 **The ask.** RELAY HEIGHTS already has a cold rack. NIGHT MARKET is still a solid block. Its north wall is a facade, and the two north gates sit in the middle of it.
