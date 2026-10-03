@@ -44,6 +44,16 @@ export function counterOpLine(op: string, ok: boolean, reason?: string): string 
 interface Eip1193 {
   request(args: { method: string; params?: unknown[] }): Promise<unknown>;
   on?(event: string, handler: (arg: unknown) => void): void;
+  providers?: Eip1193[];
+}
+
+/** The browser wallet, including a wallet app's own browser. Several wallets share one `ethereum`. */
+function injectedProvider(): Eip1193 | null {
+  const eth = (window as unknown as { ethereum?: Eip1193 }).ethereum;
+  if (!eth) return null;
+  const list = eth.providers;
+  if (Array.isArray(list) && list.length > 0) return list[0] ?? eth;
+  return eth;
 }
 
 export class CounterClient {
@@ -104,6 +114,9 @@ export class CounterClient {
       const ok = await this.connectVia(via);
       if (ok) void this.readHoldings();
       return ok;
+    } catch (e) {
+      this.say(`WALLET REFUSED: ${crtPhrase(String((e as Error).message ?? e).slice(0, 80))}`);
+      return false;
     } finally {
       this.connecting = false;
       this.onChange?.();
@@ -116,9 +129,14 @@ export class CounterClient {
     const q = new URLSearchParams(location.search);
     const key = q.get("wallet");
     const chain = this.chain();
-    const transport = http(this.info.rpc ?? "");
-    this.pub = createPublicClient({ chain, transport });
+    const rpc = this.info.rpc ?? "";
+    const transport = rpc ? http(rpc) : null;
+    this.pub = transport ? createPublicClient({ chain, transport }) : null;
     if (key && /^0x[0-9a-fA-F]{64}$/.test(key)) {
+      if (!transport) {
+        this.say("THE LEDGER HAS NO CHAIN PUBLISHED YET");
+        return false;
+      }
       const acct = privateKeyToAccount(key as Hex);
       this.wallet = createWalletClient({ chain, transport, account: acct });
       this.address = acct.address;
@@ -126,12 +144,12 @@ export class CounterClient {
       this.say(`WALLET · ${this.short()} (LOCAL ACCOUNT)`);
       return true;
     }
-    if (via === "walletconnect") {
+    const eth = injectedProvider();
+    if (via === "walletconnect" && !eth) {
       // the WalletConnect relay (a Reown project id and its provider package) is not in this build
       this.say("WALLETCONNECT IS NOT IN THIS BUILD YET: USE A BROWSER WALLET, OR OPEN THIS PAGE IN YOUR WALLET APP'S BROWSER");
       return false;
     }
-    const eth = (window as unknown as { ethereum?: Eip1193 }).ethereum;
     if (!eth) {
       this.say("NO WALLET: OPEN IN A BROWSER WITH ROBINHOOD WALLET, METAMASK OR RABBY, OR LINK OVER WALLETCONNECT");
       return false;
@@ -205,7 +223,10 @@ export class CounterClient {
   /** Ask the injected wallet to move to the ledger's chain, adding the chain when the wallet does not know it. */
   async switchChain(): Promise<boolean> {
     const eth = this.eth;
-    if (!this.info) return false;
+    if (!this.info || !this.info.chainId || this.info.reason) {
+      this.say("THE LEDGER HAS NO CHAIN PUBLISHED YET");
+      return false;
+    }
     if (!eth) return this.walletChain === this.info.chainId;
     const chainId = `0x${this.info.chainId.toString(16)}`;
     const refused = (e: unknown) => {
@@ -246,6 +267,8 @@ export class CounterClient {
     const pub = this.pub;
     const address = this.address;
     if (!pub || !address || !this.info) return null;
+    // chain 0 has no contracts: a read would throw and the page would say the wallet failed
+    if (!this.info.chainId || this.info.reason || !this.info.contracts?.capital || !this.info.contracts?.ghostfile) return null;
     try {
       const [bal, token] = await Promise.all([
         pub.readContract({ address: this.info.contracts.capital, abi: ABI["$CAPITAL"]!.abi as never, functionName: "balanceOf", args: [address] }) as Promise<bigint>,

@@ -16,7 +16,7 @@ import { bootDevnetLedger, DEV_KEYS } from "../server/chain/boot";
 import { emptyCounter, SIWE_STATEMENT } from "../shared/economy/counter";
 import { sandboxAccount } from "../shared/progression/account";
 import { CounterClient } from "../client/counter";
-import { shortAddress, walletAct, walletEntries, walletHtml, walletState, WALLET_SAFETY, type WalletActor, type WalletSource } from "../client/wallet";
+import { ledgerChainId, shortAddress, walletAct, walletEntries, walletHtml, walletState, WALLET_SAFETY, type WalletActor, type WalletSource } from "../client/wallet";
 import { MAIN, Menu, type MenuHost } from "../client/menu";
 import { DEFAULT_SETTINGS } from "../client/settings";
 import { GhostFile } from "../client/file";
@@ -220,6 +220,19 @@ describe("the WALLET page against the real Counter-Ledger client", () => {
     expect(asked).toContain("wallet_revokePermissions");
   });
 
+  it("a wallet on a real chain stays connected when the ledger has published no chain", async () => {
+    const bare = { chainId: 0, devnet: false, reason: "CHAIN NOT CONFIGURED: the counter-ledger waits for Robinhood Chain's testnet parameters (CHAIN_ID, CHAIN_RPC, CONTRACTS)" };
+    expect(ledgerChainId(bare)).toBeNull();
+    const s = walletState(src({ info: bare, address: ADDR, walletChain: 4663 }), true);
+    expect(s.status).toBe("connected");
+    expect(s.chainId).toBeNull();
+    const t = text(walletHtml(s));
+    expect(t).toMatch(/STATUS CONNECTED/);
+    expect(t).toMatch(/CHAIN NOT CONFIGURED/);
+    expect(t).not.toMatch(/WRONG NETWORK|CHAIN 0/);
+    expect(walletEntries(s).map((e) => e.id)).not.toContain("switch");
+  });
+
   it("WALLETCONNECT with no headless account says it is not in this build, and connects nothing", async () => {
     at("");
     vi.stubGlobal("window", {});
@@ -227,6 +240,27 @@ describe("the WALLET page against the real Counter-Ledger client", () => {
     expect(await walletAct(c, "walletconnect")).toBe(false);
     expect(walletState(c, true).status).toBe("none");
     expect(c.last).toMatch(/WALLETCONNECT IS NOT IN THIS BUILD YET/);
+  });
+
+  it("WALLETCONNECT uses the browser wallet when the page is open inside one, and an unpublished chain does not fail the read", async () => {
+    at("");
+    const ethereum = {
+      request: async ({ method }: { method: string }) => (method === "eth_requestAccounts" ? [player2.address] : method === "eth_chainId" ? "0x1" : null),
+      on: () => undefined,
+    };
+    vi.stubGlobal("window", { ethereum });
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (String(url).endsWith("/counter")) {
+        return { json: async () => ({ chainId: 0, devnet: false, contracts: {}, signer: null, statement: "", listings: [], treasury: null, reason: "CHAIN NOT CONFIGURED: the counter-ledger waits" }) };
+      }
+      throw new Error(String(url));
+    });
+    const c = new CounterClient("https://ledger.test", "sandbox-wc-injected", () => {});
+    expect(await walletAct(c, "walletconnect")).toBe(true);
+    expect(c.address).toBe(player2.address);
+    expect(walletState(c, true).status).toBe("connected");
+    expect(c.last).not.toMatch(/WALLET READ FAILED/);
+    expect(await c.readHoldings()).toBeNull();
   });
 
   it("one connection: a wallet connected on the WALLET page is the FILE page's Counter-Ledger wallet, and the FILE page's connect is the WALLET page's", async () => {

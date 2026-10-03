@@ -46,6 +46,8 @@ export interface WalletState {
   capital: string | null;
   ghostfile: number | null;
   line: string;
+  /** the host's own reason, when the ledger has no chain to read */
+  note: string;
 }
 
 export const WALLET_SAFETY = "THE GAME NEVER ASKS FOR YOUR SEED PHRASE, AND NEVER SENDS FROM YOUR WALLET WITHOUT A SIGNATURE PROMPT IN YOUR WALLET.";
@@ -60,23 +62,35 @@ export function chainName(info: WalletSource["info"]): string {
   return info ? (info.devnet ? "MELTDOWN DEVNET" : "ROBINHOOD CHAIN") : "ROBINHOOD CHAIN";
 }
 
+/**
+ * The chain the ledger can actually sign against.
+ * Chain 0, or a host that answered with a reason, is not a network: comparing the wallet to it
+ * marked every real wallet WRONG NETWORK and SWITCH NETWORK asked for chain 0.
+ */
+export function ledgerChainId(info: WalletSource["info"]): number | null {
+  if (!info || info.reason || !info.chainId) return null;
+  return info.chainId;
+}
+
 /** The page's state from the client (null: the chain client is not loaded, or there is no host). */
 export function walletState(c: WalletSource | null, reachable: boolean): WalletState {
   const info = c?.info ?? null;
   const address = c?.address ?? null;
   const walletChain = c?.walletChain ?? null;
-  const status: WalletStatus = c?.connecting ? "connecting" : !address ? "none" : info && walletChain !== null && walletChain !== info.chainId ? "wrong-chain" : "connected";
+  const chainId = ledgerChainId(info);
+  const status: WalletStatus = c?.connecting ? "connecting" : !address ? "none" : chainId !== null && walletChain !== null && walletChain !== chainId ? "wrong-chain" : "connected";
   return {
     status,
     reachable,
     loading: reachable && (!c || !info),
     address,
-    chainId: info?.chainId ?? null,
+    chainId,
     chainName: chainName(info),
     walletChain,
     capital: address ? (c?.holdings?.capital ?? null) : null,
     ghostfile: address ? (c?.holdings?.ghostfile ?? null) : null,
     line: c?.last ?? "",
+    note: chainId === null && info?.reason ? info.reason : "",
   };
 }
 
@@ -101,6 +115,7 @@ export function walletHtml(s: WalletState): string {
     rows.push(`<div class="ln">GHOSTFILE ${s.ghostfile === null ? "<b>…</b>" : s.ghostfile > 0 ? `<b>#${s.ghostfile} BOUND</b> <span class="dim">SOULBOUND TO THIS WALLET</span>` : `<b>NOT BOUND</b> <span class="dim">SIGN THE LINK IN FILE → COUNTER-LEDGER</span>`}</div>`);
   }
   rows.push(`<div class="ln safe">${WALLET_SAFETY}</div>`);
+  if (s.note) rows.push(`<div class="ln dim">${s.note}</div>`);
   if (s.line) rows.push(`<div class="ln am">${s.line}</div>`);
   return rows.join("");
 }
