@@ -1,0 +1,14 @@
+Stage 955 — DEADLETTER DOCKS east quay
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  deadletter_docks city: 95,348 triangles, 36 batches, 305 boxes
+  repo_depot city: 114,354 triangles, 33 batches (unchanged)
+  lease_row city: 189,998 triangles (unchanged; two under 190k)
+  night_market city: 115,546 triangles, 33 batches (unchanged)
+  relay_heights city: 90,166 triangles, 32 batches (unchanged)
+
+Docks hash with the quay: e1d69b5777f6b047abbdf361a7b17367944dab699f709de295189eeeef9e2f44
+Docks hash with the wall sealed: 9923ed58bcfde59906b477616970b516b199edfa4c43398d62522480889d992a
+Non-city dressing fingerprint: ed19411de9ce427e
+
+Not calling openDocksQuay failed tests/quay.test.ts. The street, the passage, and the ground outside were gone.

@@ -8,7 +8,8 @@
  * as it stood before the grid was a property (commit 451a761), for all three districts as they were
  * then, and LEASE ROW's old 3×3 spec is kept here so its old level can still be built and compared.
  * Stage 946 re-pinned DEADLETTER DOCKS only: the cold store is in that level. Stage 952 re-pinned
- * it again: the south pier is in that level. Stage 947 re-pinned REPO DEPOT only: the impound is
+ * it again: the south pier is in that level. Stage 955 re-pinned it again: the east quay is in
+ * that level. Stage 947 re-pinned REPO DEPOT only: the impound is
  * in that level. Stage 953 re-pinned it again: the west apron is in that level. Stage 954
  * re-pinned it again: the east ramp is in that level. LEASE ROW's old 3×3 stays on the pre-grid bytes.
  *
@@ -49,8 +50,11 @@ const BEFORE: Record<string, string> = {
 /** Docks after Stage 946 opened the north warehouse. Sealing the south pier puts this hash back. */
 const DOCKS_COLD = "9fbfdacea66b13b474838d46baba9fd853531edc829ccd84f27773e807628df9";
 
-/** Docks after Stage 952 opened the south-west wall. The cold-store bytes stay in DOCKS_COLD. */
+/** Docks after Stage 952 opened the south-west wall. Sealing the east quay puts this hash back. */
 const DOCKS_BERTH = "9923ed58bcfde59906b477616970b516b199edfa4c43398d62522480889d992a";
+
+/** Docks after Stage 955 opened the east wall. The pier bytes stay in DOCKS_BERTH. */
+const DOCKS_QUAY = "e1d69b5777f6b047abbdf361a7b17367944dab699f709de295189eeeef9e2f44";
 
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -80,13 +84,15 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store and the south pier (Stage 952)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, and the east quay (Stage 955)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_BERTH);
+    expect(hash(spec)).toBe(DOCKS_QUAY);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
     expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
-    // the pin is not the sealed wall: closing the pier would put the cold-store hash back
+    expect(generateDistrict(spec).quay?.line).toMatch(/EAST QUAY/);
+    // the pin is not the sealed wall: closing the quay would put the pier hash back
+    expect(DOCKS_QUAY).not.toBe(DOCKS_BERTH);
     expect(DOCKS_BERTH).not.toBe(DOCKS_COLD);
     expect(DOCKS_COLD).not.toBe(BEFORE["deadletter_docks"]);
   });
