@@ -27,10 +27,10 @@ const NEW = ["night_market", "relay_heights"] as const;
 const spec = (id: string): DistrictSpec => districtById(id)!;
 const hash = (s: DistrictSpec): string => createHash("sha256").update(JSON.stringify(generateDistrict(s))).digest("hex");
 
-/** sha256 of JSON.stringify(generateDistrict(spec)). Night market was re-pinned at Stage 964, when the west wall opened. Relay heights was re-pinned at Stage 962, when the north wall opened. */
+/** sha256 of JSON.stringify(generateDistrict(spec)). Night market was re-pinned at Stage 964, when the west wall opened. Relay heights was re-pinned at Stage 965, when the east wall opened. */
 const PINNED: Record<(typeof NEW)[number], string> = {
   night_market: "7e3e9c271d55509421a29e671f514ea0cb421b6a81174023293b57e20c0a5973",
-  relay_heights: "715a09c1dc264b54c7e5ef95b03055325358e26cacf1bb2ea565d9f3c638a86a",
+  relay_heights: "8047bc2467aaf5e41f7c22aee5753d2e76464cc6022772fbcb2ef9acc60a9819",
 };
 /** Night market before Stage 950. Sealing the north lot puts this hash back. */
 const NIGHT_SEALED = "49596a55f53b93a510a3e9ef2c20a0f7a3a98afe8521cc3761f9839c79bb2e56";
@@ -44,6 +44,8 @@ const NIGHT_AISLE = "96a663639a841094d02087f445021b28ee796cb666f7ceaa5bf5cb10805
 const RELAY_RACK = "0960af48b982c704f216cd0a42232cc5bf4b8f2e8cc5d53164d31cd440ee7cd7";
 /** Relay heights after Stage 958. Sealing the north ledge puts this hash back. */
 const RELAY_SPAN = "94c6972252f0a4b2e0ba65254c138e0b9fdaea96c4bb798d5c066ec3e3ec15a6";
+/** Relay heights after Stage 962. Sealing the east mast puts this hash back. */
+const RELAY_LEDGE = "715a09c1dc264b54c7e5ef95b03055325358e26cacf1bb2ea565d9f3c638a86a";
 
 describe("the city has five districts", () => {
   it("the two new ones are in the generator, the level registry, the city's rooms and the season's graph, after the three it had", () => {
@@ -111,9 +113,11 @@ describe("the city has five districts", () => {
     expect(PINNED.night_market).not.toBe(NIGHT_AISLE);
     expect(PINNED.relay_heights).not.toBe(RELAY_RACK);
     expect(PINNED.relay_heights).not.toBe(RELAY_SPAN);
+    expect(PINNED.relay_heights).not.toBe(RELAY_LEDGE);
     expect(generateDistrict(spec("night_market")).stall?.line).toMatch(/SOUTH ROW/);
     expect(generateDistrict(spec("relay_heights")).span?.line).toMatch(/SOUTH SPAN/);
     expect(generateDistrict(spec("relay_heights")).ledge?.line).toMatch(/NORTH LEDGE/);
+    expect(generateDistrict(spec("relay_heights")).mast?.line).toMatch(/EAST MAST/);
     expect(generateDistrict(spec("night_market")).lane?.line).toMatch(/OPEN AIR/);
     expect(generateDistrict(spec("night_market")).aisle?.line).toMatch(/EAST AISLE/);
     expect(generateDistrict(spec("night_market")).booth?.line).toMatch(/WEST BOOTH/);
