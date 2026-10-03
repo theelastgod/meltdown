@@ -634,6 +634,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const east = openLeaseEast(c);
   const cold = openDocksCold(c);
   const impound = openDepotImpound(c);
+  const rack = openRelayRack(c);
 
   // district rig: two big casts on opposite corners. Cyan and magenta carry the city everywhere; an amber
   // district gets its threat colour from the local VANTAGE lights (lots, towers, fences), never the rig.
@@ -731,6 +732,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(east ? { east } : {}),
     ...(cold ? { cold } : {}),
     ...(impound ? { impound } : {}),
+    ...(rack ? { rack } : {}),
   };
 }
 
@@ -826,6 +828,11 @@ function openDocksCold(c: Ctx): ShopSpot | null {
 /** The south-east stack on REPO DEPOT is the impound counter. Cash for a release, no gun. */
 function openDepotImpound(c: Ctx): ShopSpot | null {
   return openWarehouse(c, "repo_depot", 2, 2, "IMPOUND", "IMPOUND · THE COUNTER IS OPEN. CASH FOR THE RELEASE. THE GUN STAYS AS IT IS.", "depot impound", "amber");
+}
+
+/** The east stack on RELAY HEIGHTS is the cold rack. Cash for the lease, no gun. */
+function openRelayRack(c: Ctx): ShopSpot | null {
+  return openWarehouse(c, "relay_heights", 2, 1, "COLD RACK", "COLD RACK · THE HATCH IS OPEN. CASH FOR THE LEASE. THE GUN STAYS AS IT IS.", "relay cold rack", "cyan");
 }
 
 /**

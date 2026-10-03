@@ -1,0 +1,14 @@
+Stage 949 — RELAY HEIGHTS cold rack
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  relay_heights city: 90,166 triangles, 32 batches, 270 boxes
+  night_market city: 113,310 triangles, 33 batches, 286 boxes (unchanged)
+  repo_depot city: 110,666 triangles, 33 batches, 308 boxes (unchanged)
+  deadletter_docks city: 92,256 triangles, 36 batches, 291 boxes (unchanged)
+  lease_row city: 189,998 triangles (unchanged; two under 190k)
+
+Relay hash with the room: 0960af48b982c704f216cd0a42232cc5bf4b8f2e8cc5d53164d31cd440ee7cd7
+Relay hash with the floor sealed: 79565efddc6abd0de4a9d9b59e702168e30119474702929b2c591783db510521
+Non-city dressing fingerprint: 66042cec88f9b890
+
+Sealing the floor (the opener not called) failed tests/relayrack.test.ts. The sealed level hashed back to the pre-room pin. The weapon rack HUD tests stay in tests/rack.test.ts.

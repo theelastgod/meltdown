@@ -161,6 +161,10 @@ export interface LevelDef {
    * The south-east warehouse on REPO DEPOT (Stage 947). The counter takes cash and changes no gun.
    */
   impound?: ShopSpot;
+  /**
+   * The east warehouse on RELAY HEIGHTS (Stage 949). The hatch takes cash and changes no gun.
+   */
+  rack?: ShopSpot;
 }
 
 /** Feet positions for the one opening in the city wall. */

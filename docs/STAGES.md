@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 949 — The east warehouse on Relay Heights is a room
+
+**The ask.** LEASE ROW's city frame has two triangles left. REPO DEPOT already has an impound. RELAY HEIGHTS still has a solid warehouse on its east street.
+
+**The change.** That warehouse's ground floor is open, under the upper floor that was already there. Metal walls, a hatch onto the south apron, and a metal counter. Standing at the counter, the line reads COLD RACK · THE HATCH IS OPEN. CASH FOR THE LEASE. THE GUN STAYS AS IT IS. The lease changes no gun. The walls and the counter use the step metal the stairs already draw. LEASE ROW's rooms and lots stay open. DEADLETTER DOCKS, REPO DEPOT, NIGHT MARKET, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/relayrack.test.ts`: the doorway, the opening, and the floor inside are open; the jamb and the counter are solid; the counter answers there and not from the middle of the room. Not calling the opener failed that check and put the heights hash back to `79565efddc6abd0de4a9d9b59e702168e30119474702929b2c591783db510521`. The open level hashes to `0960af48b982c704f216cd0a42232cc5bf4b8f2e8cc5d53164d31cd440ee7cd7`. `tests/newdistricts.test.ts` kept the market hash. `tests/citysize.test.ts` kept the docks hash, the depot hash, and the old 3×3 hash. `tests/citycost.test.ts` stayed inside 190k: the heights' city frame measured 90,166 triangles and 32 batches. LEASE ROW's city frame stayed 189,998. The docks stayed 92,256. The depot stayed 110,666. The non-city dressing fingerprint for the heights was re-recorded (`66042cec88f9b890`); the other four districts stayed the bytes they were. The lease-row path test timed out under load and again alone, at about six seconds of nav on this machine; the district's boxes were not touched and the timeout was not raised. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean.
+
+**Open.** NIGHT MARKET is still a solid block with a solid edge. The west wall of LEASE ROW is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 948 — Complete the remaining asset handoff
 
 **The change.** Thirty generated surface textures, eight district arrival cards, and five speaker portraits are installed. Sixteen priority environment tiles, two coats and five weapon/machine textures replace existing ids. Seven new tiles join the permitted crate, car, cone, barrel, chain, alternate-awning and office-wall pools. Every new tile is drawn. The 66 undrawn plates, nine-entry pools, primary awning deal, geometry and wet-floor blend stay unchanged. Slab luminance normalization is measured from the replacement image.

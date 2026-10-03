@@ -27,10 +27,10 @@ const NEW = ["night_market", "relay_heights"] as const;
 const spec = (id: string): DistrictSpec => districtById(id)!;
 const hash = (s: DistrictSpec): string => createHash("sha256").update(JSON.stringify(generateDistrict(s))).digest("hex");
 
-/** sha256 of JSON.stringify(generateDistrict(spec)), taken when each district was added: a later change to the generator or the spec that moves either shows here */
+/** sha256 of JSON.stringify(generateDistrict(spec)). Night market is the level it was added with. Relay heights was re-pinned at Stage 949, when the east warehouse opened. */
 const PINNED: Record<(typeof NEW)[number], string> = {
   night_market: "49596a55f53b93a510a3e9ef2c20a0f7a3a98afe8521cc3761f9839c79bb2e56",
-  relay_heights: "79565efddc6abd0de4a9d9b59e702168e30119474702929b2c591783db510521",
+  relay_heights: "0960af48b982c704f216cd0a42232cc5bf4b8f2e8cc5d53164d31cd440ee7cd7",
 };
 
 describe("the city has five districts", () => {
