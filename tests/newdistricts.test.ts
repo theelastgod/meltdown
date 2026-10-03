@@ -27,11 +27,13 @@ const NEW = ["night_market", "relay_heights"] as const;
 const spec = (id: string): DistrictSpec => districtById(id)!;
 const hash = (s: DistrictSpec): string => createHash("sha256").update(JSON.stringify(generateDistrict(s))).digest("hex");
 
-/** sha256 of JSON.stringify(generateDistrict(spec)). Night market is the level it was added with. Relay heights was re-pinned at Stage 949, when the east warehouse opened. */
+/** sha256 of JSON.stringify(generateDistrict(spec)). Night market was re-pinned at Stage 950, when the north-west wall opened. Relay heights was re-pinned at Stage 949. */
 const PINNED: Record<(typeof NEW)[number], string> = {
-  night_market: "49596a55f53b93a510a3e9ef2c20a0f7a3a98afe8521cc3761f9839c79bb2e56",
+  night_market: "b1a6ca161b94a4dbfe5c578015731fa57ce8fc8efa1bcd694801fec4af6f467c",
   relay_heights: "0960af48b982c704f216cd0a42232cc5bf4b8f2e8cc5d53164d31cd440ee7cd7",
 };
+/** Night market before Stage 950. Sealing the lot puts this hash back. */
+const NIGHT_SEALED = "49596a55f53b93a510a3e9ef2c20a0f7a3a98afe8521cc3761f9839c79bb2e56";
 
 describe("the city has five districts", () => {
   it("the two new ones are in the generator, the level registry, the city's rooms and the season's graph, after the three it had", () => {
@@ -93,6 +95,7 @@ describe("the city has five districts", () => {
       // the grid written out builds the same level as the default
       expect(hash({ ...s, grid: 3 }), id).toBe(PINNED[id]);
     }
+    expect(PINNED.night_market).not.toBe(NIGHT_SEALED);
   });
 
   it("each is a place a crew can play: the patrols the spec asks for, claims for THE RUN, two safe zones, a picture on the loading card", () => {

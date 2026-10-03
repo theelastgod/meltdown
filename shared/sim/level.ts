@@ -165,6 +165,11 @@ export interface LevelDef {
    * The east warehouse on RELAY HEIGHTS (Stage 949). The hatch takes cash and changes no gun.
    */
   rack?: ShopSpot;
+  /**
+   * The north-west wall of NIGHT MARKET (Stage 950). A fenced lot, clear of the gates.
+   * Nothing out there pays a gun.
+   */
+  lane?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */

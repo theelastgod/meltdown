@@ -1,0 +1,12 @@
+Stage 950 — NIGHT MARKET open-air lot
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  night_market city: 115,546 triangles, 33 batches, 293 boxes
+  relay_heights city: 90,166 triangles, 32 batches, 270 boxes (unchanged)
+  lease_row city: 189,998 triangles (unchanged; two under 190k)
+
+Market hash with the lot: b1a6ca161b94a4dbfe5c578015731fa57ce8fc8efa1bcd694801fec4af6f467c
+Market hash with the wall sealed: 49596a55f53b93a510a3e9ef2c20a0f7a3a98afe8521cc3761f9839c79bb2e56
+Non-city dressing fingerprint: 8f2efebb3728b317
+
+Not calling openNightLane failed tests/lane.test.ts. The street, the passage, and the ground outside were gone.

@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 950 — The north-west wall of Night Market opens onto a lot
+
+**The ask.** RELAY HEIGHTS already has a cold rack. NIGHT MARKET is still a solid block. Its north wall is a facade, and the two north gates sit in the middle of it.
+
+**The change.** Three metres on the west run of that wall, clear of both gates, are open onto the slab that was already there. A fence above mantle height holds the lot. A sign on the street side reads OPEN AIR. Standing out there, the line reads OPEN AIR. THE MARKET WALL IS BEHIND YOU. The lot changes no gun. LEASE ROW's rooms and lots stay open. The cold rack, the impound, and the docks cold store stay open. LEASE ROW's old 3×3 stays the bytes it was.
+
+**Verified.** `tests/lane.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the market hash back to `49596a55f53b93a510a3e9ef2c20a0f7a3a98afe8521cc3761f9839c79bb2e56`. The open level hashes to `b1a6ca161b94a4dbfe5c578015731fa57ce8fc8efa1bcd694801fec4af6f467c`. `tests/newdistricts.test.ts` kept the heights hash. `tests/citysize.test.ts` kept the docks hash, the depot hash, and the old 3×3 hash. `tests/citycost.test.ts` stayed inside 190k: the market's city frame measured 115,546 triangles and 33 batches. LEASE ROW's city frame stayed 189,998. RELAY HEIGHTS stayed 90,166. The non-city dressing fingerprint for the market was re-recorded (`8f2efebb3728b317`); the other four districts stayed the bytes they were. The lease-row path test timed out under load. The district's boxes were not touched and the timeout was not raised. Typecheck was clean on the previous stage; this stage adds no economy, progression, or campaign grant.
+
+**Open.** The west wall of LEASE ROW is still solid. DEADLETTER DOCKS has a cold store and a solid south wall. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 949 — The east warehouse on Relay Heights is a room
 
 **The ask.** LEASE ROW's city frame has two triangles left. REPO DEPOT already has an impound. RELAY HEIGHTS still has a solid warehouse on its east street.
