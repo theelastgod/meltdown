@@ -7,8 +7,9 @@
  * 3×3 district must come out byte for byte what it was. The hashes below were taken on the generator
  * as it stood before the grid was a property (commit 451a761), for all three districts as they were
  * then, and LEASE ROW's old 3×3 spec is kept here so its old level can still be built and compared.
- * Stage 946 re-pinned DEADLETTER DOCKS only: the cold store is in that level. Stage 947 re-pinned
- * REPO DEPOT only: the impound is in that level. LEASE ROW's old 3×3 stays on the pre-grid bytes.
+ * Stage 946 re-pinned DEADLETTER DOCKS only: the cold store is in that level. Stage 952 re-pinned
+ * it again: the south pier is in that level. Stage 947 re-pinned REPO DEPOT only: the impound is
+ * in that level. LEASE ROW's old 3×3 stays on the pre-grid bytes.
  *
  * The second is that the 5×5 district plays: every node reachable from every spawn, everything the
  * sim sends over the wire well inside what a position can carry, the claims and safe zones on
@@ -44,8 +45,11 @@ const BEFORE: Record<string, string> = {
   repo_depot: "11ea845b42e65c3a0f4348a6eae63a3231a6daa657f880de6cef8a50f40ad69d",
 };
 
-/** Docks after Stage 946 opened the north warehouse. The pre-room bytes stay in BEFORE. */
+/** Docks after Stage 946 opened the north warehouse. Sealing the south pier puts this hash back. */
 const DOCKS_COLD = "9fbfdacea66b13b474838d46baba9fd853531edc829ccd84f27773e807628df9";
+
+/** Docks after Stage 952 opened the south-west wall. The cold-store bytes stay in DOCKS_COLD. */
+const DOCKS_BERTH = "9923ed58bcfde59906b477616970b516b199edfa4c43398d62522480889d992a";
 
 /** Depot after Stage 947 opened the south-east warehouse. The sealed-floor bytes stay in BEFORE. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -65,12 +69,14 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store (Stage 946)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store and the south pier (Stage 952)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_COLD);
+    expect(hash(spec)).toBe(DOCKS_BERTH);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
-    // the pin is not the pre-room level: sealing the store would put the old hash back
+    expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
+    // the pin is not the sealed wall: closing the pier would put the cold-store hash back
+    expect(DOCKS_BERTH).not.toBe(DOCKS_COLD);
     expect(DOCKS_COLD).not.toBe(BEFORE["deadletter_docks"]);
   });
 

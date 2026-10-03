@@ -11,8 +11,8 @@ export const SHOP_TALK_RADIUS = 2.2;
 /** How close to the open ground the edge still announces itself, in metres. */
 export const WILD_TALK_RADIUS = 3.5;
 
-export function wildLine(pos: Vec3, level: Pick<LevelDef, "wild" | "yard" | "east" | "lane">): string | null {
-  const spots = [level.wild, level.yard, level.east, level.lane].filter((w): w is NonNullable<typeof w> => !!w);
+export function wildLine(pos: Vec3, level: Pick<LevelDef, "wild" | "yard" | "east" | "lane" | "berth">): string | null {
+  const spots = [level.wild, level.yard, level.east, level.lane, level.berth].filter((w): w is NonNullable<typeof w> => !!w);
   let best: (typeof spots)[number] | null = null;
   let bestD = WILD_TALK_RADIUS * WILD_TALK_RADIUS;
   for (const w of spots) {

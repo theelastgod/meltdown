@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 952 — The south-west wall of Deadletter Docks opens onto a pier
+
+**The ask.** LEASE ROW's city frame has two triangles left. NIGHT MARKET already has an open-air lot. DEADLETTER DOCKS has a cold store, and its south wall is still a solid facade.
+
+**The change.** Three metres on the west run of that wall, clear of both south gates, are open onto the slab that was already there. A fence above mantle height holds the lot. A sign on the street side reads SOUTH PIER. Standing out there, the line reads SOUTH PIER. THE DOCK WALL IS BEHIND YOU. The lot changes no gun. The cold store stays open. LEASE ROW's rooms and lots stay open. The impound, the cold rack, the market lot, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/berth.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the docks hash back to `9fbfdacea66b13b474838d46baba9fd853531edc829ccd84f27773e807628df9`. The open level hashes to `9923ed58bcfde59906b477616970b516b199edfa4c43398d62522480889d992a`. `tests/citysize.test.ts` kept the depot hash and the old 3×3 hash. `tests/newdistricts.test.ts` kept the market hash and the heights hash. `tests/citycost.test.ts` stayed inside 190k: the docks' city frame measured 93,948 triangles and 36 batches. LEASE ROW's city frame stayed 189,998. The depot stayed 110,666. NIGHT MARKET stayed 115,546. RELAY HEIGHTS stayed 90,166. The non-city dressing fingerprint for the docks was re-recorded (`c2a7950674bbb8cc`); the other four districts stayed the bytes they were. `npm test` was 2036 passed, with six city-room timeouts under load (`city.test.ts`, `cityevents.test.ts`, `cityroom.test.ts`, `citypresence.test.ts`, `arrivalgrace.test.ts`) that passed when those files ran alone. The timeouts were not raised. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean.
+
+**Open.** The west wall of LEASE ROW is still solid. REPO DEPOT's west wall is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 951 — A landscape phone can see the lane
 
 **The ask.** On a phone the HUD was stacked on the thumbs. The slot-and-tab row wrapped onto a second line, the ammo count sat in the fire arc, and the log ran across the lane.
