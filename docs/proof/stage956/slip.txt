@@ -1,0 +1,14 @@
+Stage 956 — DEADLETTER DOCKS north slip
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  deadletter_docks city: 97,624 triangles, 36 batches, 312 boxes
+  repo_depot city: 114,354 triangles, 33 batches (unchanged)
+  lease_row city: 189,998 triangles (unchanged; two under 190k)
+  night_market city: 115,546 triangles, 33 batches (unchanged)
+  relay_heights city: 90,166 triangles, 32 batches (unchanged)
+
+Docks hash with the slip: c234d02d3b1380193683dd885277323b3f6d50b93373658900dc51b5f9839e23
+Docks hash with the wall sealed: e1d69b5777f6b047abbdf361a7b17367944dab699f709de295189eeeef9e2f44
+Non-city dressing fingerprint: b4858ee348ed84d5
+
+Not calling openDocksSlip failed tests/slip.test.ts. The street, the passage, and the ground outside were gone.
