@@ -1,0 +1,14 @@
+Stage 958 — RELAY HEIGHTS south span
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  relay_heights city: 92,910 triangles, 32 batches, 277 boxes
+  night_market city: 117,122 triangles, 33 batches (unchanged)
+  deadletter_docks city: 97,624 triangles, 36 batches (unchanged)
+  repo_depot city: 114,354 triangles, 33 batches (unchanged)
+  lease_row city: 189,998 triangles (unchanged; two under 190k)
+
+Heights hash with the span: 94c6972252f0a4b2e0ba65254c138e0b9fdaea96c4bb798d5c066ec3e3ec15a6
+Heights hash with the wall sealed: 0960af48b982c704f216cd0a42232cc5bf4b8f2e8cc5d53164d31cd440ee7cd7
+Non-city dressing fingerprint: 25440e692a653426
+
+Not calling openRelaySpan failed tests/span.test.ts. The street, the passage, and the ground outside were gone.

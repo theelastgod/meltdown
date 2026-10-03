@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 958 — The south wall of Relay Heights opens onto a span
+
+**The ask.** RELAY HEIGHTS has a cold rack. Its south wall is still a solid facade, and the two south gates sit in the middle of it.
+
+**The change.** Three metres on the west run of that wall, clear of both south gates, are open onto the slab that was already there. A fence above mantle height holds the lot. A sign on the street side reads SOUTH SPAN. Standing out there, the line reads SOUTH SPAN. THE TOWER WALL IS BEHIND YOU. The lot changes no gun. The cold rack stays open. The market row, the docks slip, the depot ramp, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/span.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the heights hash back to `0960af48b982c704f216cd0a42232cc5bf4b8f2e8cc5d53164d31cd440ee7cd7`. The open level hashes to `94c6972252f0a4b2e0ba65254c138e0b9fdaea96c4bb798d5c066ec3e3ec15a6`. `tests/newdistricts.test.ts` kept the market hash. `tests/citysize.test.ts` kept the docks hash, the depot hash, and the old 3×3 hash. `tests/citycost.test.ts` stayed inside 190k: the heights' city frame measured 92,910 triangles and 32 batches. LEASE ROW's city frame stayed 189,998. The docks stayed 97,624. The depot stayed 114,354. NIGHT MARKET stayed 117,122. The non-city dressing fingerprint for the heights was re-recorded (`25440e692a653426`); the other four districts stayed the bytes they were. `npm test` was 2054 passed, with six timeouts under load (`arrivalgrace.test.ts`, `city.test.ts`, `cityevents.test.ts`, `citypresence.test.ts`, `cityroom.test.ts`, `citysize.test.ts`). Run on their own, those files passed. The spawn-to-node check and the city-room damage check still crossed 5 s while the machine was warm, then finished in 3.1 s and 4.0 s. The timeouts were not raised. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean.
+
+**Open.** The west wall of LEASE ROW is still solid. The south wall of REPO DEPOT is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 957 — The south wall of Night Market opens onto a row
 
 **The ask.** NIGHT MARKET already has an open-air lot on its north-west wall. Its south wall is still a solid facade, and the two south gates sit in the middle of it.
