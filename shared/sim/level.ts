@@ -250,6 +250,11 @@ export interface LevelDef {
    * Nothing out there pays a gun.
    */
   spire?: WildEdge;
+  /**
+   * The south-east wall of DEADLETTER DOCKS (Stage 968). A fenced lot, clear of the gates.
+   * Nothing out there pays a gun.
+   */
+  cleat?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */

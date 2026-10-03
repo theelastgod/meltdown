@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 968 — The south wall of Deadletter Docks opens onto a cleat
+
+**The ask.** DEADLETTER DOCKS has a cold store, a south pier, an east quay, a north slip, a west wharf, and a north keel. The east run of its south wall is still a solid facade, and the two south gates sit in the middle of it.
+
+**The change.** Three metres on that east run, clear of both south gates, are open onto the slab that was already there. A fence above mantle height holds the lot. A sign on the street side reads SOUTH CLEAT. Standing out there, the line reads SOUTH CLEAT. THE DOCK WALL IS BEHIND YOU. The lot changes no gun. The cold store, the pier, the quay, the slip, the wharf, and the keel stay open. The heights spire, the market booth, the depot crest, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/cleat.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the docks hash back to `4445c9db5396f2e842f42ccf0cc0ed6af75f3d5c4ea23e1940d1058bec16e9c2`. The open level hashes to `0df3a03e15dc633e3902fcbfe11a41b70d53c8c3e7edec6c2c13d202e636a2e4`. `tests/citysize.test.ts` kept the depot hash and the old 3×3 hash. `tests/newdistricts.test.ts` kept the market hash and the heights hash. `tests/citycost.test.ts` stayed inside 190k: the docks' city frame measured 102,780 triangles and 36 batches. LEASE ROW's city frame stayed 189,998. The depot stayed 117,758. NIGHT MARKET stayed 120,690. RELAY HEIGHTS stayed 98,418. The non-city dressing fingerprint for the docks was re-recorded (`b3e800c5b51d5bd8`); the other four districts stayed the bytes they were. `tests/cleat.test.ts`, `tests/keel.test.ts`, `tests/newdistricts.test.ts`, `tests/citygatedoors.test.ts`, `tests/citycost.test.ts`, and `tests/citysize.test.ts` passed. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean.
+
+**Open.** The west wall of LEASE ROW is still solid. The south run of DEADLETTER DOCKS' east wall is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 967 — The west wall of Relay Heights opens onto a spire
 
 **The ask.** RELAY HEIGHTS has a cold rack, a south span, a north ledge, and an east mast. Its west wall is still a solid facade, and the two west gates sit in the middle of it.
