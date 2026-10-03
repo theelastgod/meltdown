@@ -1,0 +1,10 @@
+{
+  "id": "tex_wet_cobble",
+  "prompt": "Use case: stylized-concept. A production material tile for MELTDOWN low-poly cyberpunk city at night. Square1024 fullbleed seamless repeat, perfectly orthographic flat plane, no perspective or surrounding scene. Even diffuse lighting; no neon reflections, glow, cast shadows, object silhouettes, text, labels or border. Quiet restrained detail legible at256px. Dark blue-gray basalt cobblestones in staggered straight rows, worn flat faces, narrow recessed black joints, irregular damp staining. Fine restrained chips. Top-down. Avoid daylight appearance and shiny reflections; engine supplies wet lighting.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-2921f0e6-a2d7-4322-9222-28927244a6dd.png",
+  "conditioned": true,
+  "file": "public/assets/tex_wet_cobble.png",
+  "size": 256,
+  "bytes": 150403,
+  "sha256": "5e55d45eef64e4fc1d2c5c8f2de97d7313e72bc5291f3734438481f2d5d14754"
+}

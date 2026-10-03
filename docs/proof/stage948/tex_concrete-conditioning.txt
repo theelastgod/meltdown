@@ -1,0 +1,5 @@
+wrote public/assets/tex_concrete.png — 256×256, 136.3 KB
+
+manifest line:
+
+  { id: "tex_concrete", kind: "texture", file: "tex_concrete.png", size: 256, bytes: 139536, sha256: "6ec4f322594ba44c5f8d4fbc32ab3fdc9617008179b05eec26ebb7ee3b9c9003", provenance: "…" },

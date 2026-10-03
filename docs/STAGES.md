@@ -1641,6 +1641,14 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 948 — Complete the remaining asset handoff
+
+**The change.** Thirty generated surface textures, eight district arrival cards, and five speaker portraits are installed. Sixteen priority environment tiles, two coats and five weapon/machine textures replace existing ids. Seven new tiles join the permitted crate, car, cone, barrel, chain, alternate-awning and office-wall pools. Every new tile is drawn. The 66 undrawn plates, nine-entry pools, primary awning deal, geometry and wet-floor blend stay unchanged. Slab luminance normalization is measured from the replacement image.
+
+**Verified.** Asset lint passes: 339 assets, 47,477.6 KiB, no violations. All 75 targeted tests pass; client/server type checks and the production build pass. All 43 images decode; district cards are exactly 960×411 and below 150,000 bytes. Existing mission, gig, ending, kit and icon inventory is complete. Prompts, hashes, conditioning, contact sheets and rendered frames are in `docs/proof/stage948/`.
+
+**Open.** The local look probe passes 17/19 checks with no page errors. Street luma remains outside the existing bound (0.142 versus baseline CI's 0.145); local software rendering also misses the simulation-rate check (13 ticks/s, 1.8 fps). Baseline Stage 947 CI additionally fails campaign, world, ship, mobile and tps. No test bounds were weakened. Production deployment is held; this stage completes the artwork handoff, not release certification.
+
 ## Stage 947 — The south-east warehouse on Repo Depot is a room
 
 **The ask.** LEASE ROW's city frame has two triangles left. DEADLETTER DOCKS already has a cold store. REPO DEPOT's south-east warehouse is still a solid block.

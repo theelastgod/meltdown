@@ -1,0 +1,303 @@
+[
+  {
+    "id": "deacon",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.011383901288835976,
+    "transparentFraction": 0
+  },
+  {
+    "id": "deadletter_docks",
+    "width": 960,
+    "height": 411,
+    "linearLuma": 0.05703886872242611,
+    "transparentFraction": 0
+  },
+  {
+    "id": "deadletter_office",
+    "width": 960,
+    "height": 411,
+    "linearLuma": 0.03172542166572188,
+    "transparentFraction": 0
+  },
+  {
+    "id": "drainage_yard",
+    "width": 960,
+    "height": 411,
+    "linearLuma": 0.032309657350440786,
+    "transparentFraction": 0
+  },
+  {
+    "id": "lease_row",
+    "width": 960,
+    "height": 411,
+    "linearLuma": 0.04307068891142526,
+    "transparentFraction": 0
+  },
+  {
+    "id": "marrow",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.011113780549394445,
+    "transparentFraction": 0
+  },
+  {
+    "id": "night_market",
+    "width": 960,
+    "height": 411,
+    "linearLuma": 0.03096051846756012,
+    "transparentFraction": 0
+  },
+  {
+    "id": "relay_heights",
+    "width": 960,
+    "height": 411,
+    "linearLuma": 0.03276711493786892,
+    "transparentFraction": 0
+  },
+  {
+    "id": "repo_depot",
+    "width": 960,
+    "height": 411,
+    "linearLuma": 0.030162822213224305,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_asphalt_2",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.06364385408127302,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_awning_patched",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.1728193955812329,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_barrel_seamed",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.12117936243002317,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_brick_amber",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.020298185069844828,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_brick_cyan",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.028130469564784596,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_car_weathered",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.15439466685025127,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_chain_woven",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.037963214034777974,
+    "transparentFraction": 0.81805419921875
+  },
+  {
+    "id": "tex_cloak",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.027137756494731293,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_concrete",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.11384644647161202,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_cone_scuffed",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.3076987484509318,
+    "transparentFraction": 0.00048828125
+  },
+  {
+    "id": "tex_crate_slats",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.12371243354237117,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_crowd_coat",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.07851727102823904,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_directive_core",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.020977087892105444,
+    "transparentFraction": 0.4087371826171875
+  },
+  {
+    "id": "tex_facade",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.007334771293143261,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_facade_amber",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.008230955191623087,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_facade_cyan",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.01242226234142264,
+    "transparentFraction": 0.0038604736328125
+  },
+  {
+    "id": "tex_mech_hull",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.09995052035787264,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_metal",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.14705809242743903,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_neon_brick",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.017273787246639076,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_officewall_ribbed",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.7126565812636987,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_pavement",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.03646562468458639,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_plaza_asphalt",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.026487772902513515,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_plaza_slab",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.030568912041489617,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_plaza_terrazzo",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.020444607368077714,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_plaza_tread",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.16594633654091054,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_wasp_hull",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.10777939658741081,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_weapon_body",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.17894619335970213,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_weapon_dark",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.10378504371235073,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_wet_asphalt",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.019949773971769662,
+    "transparentFraction": 0
+  },
+  {
+    "id": "tex_wet_cobble",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.025002312550355555,
+    "transparentFraction": 0
+  },
+  {
+    "id": "vantage",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.009195534031077979,
+    "transparentFraction": 0
+  },
+  {
+    "id": "vessel",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.009422884332034186,
+    "transparentFraction": 0
+  },
+  {
+    "id": "wern",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.025936634484994392,
+    "transparentFraction": 0
+  },
+  {
+    "id": "white_office",
+    "width": 960,
+    "height": 411,
+    "linearLuma": 0.35679405755597343,
+    "transparentFraction": 0
+  }
+]

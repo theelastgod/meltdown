@@ -1,0 +1,5 @@
+wrote public/assets/tex_asphalt_2.png — 256×256, 151.0 KB
+
+manifest line:
+
+  { id: "tex_asphalt_2", kind: "texture", file: "tex_asphalt_2.png", size: 256, bytes: 154653, sha256: "72ac1d18b434b829bb1158825d10ce2ce69e97da17f4f19ea80500bff0515ae7", provenance: "…" },

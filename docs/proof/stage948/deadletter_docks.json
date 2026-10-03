@@ -1,0 +1,14 @@
+{
+  "id": "deadletter_docks",
+  "kind": "district",
+  "brief": "DEADLETTER DOCKS: cyan container piers, boxy cold-store warehouse with an open metal hatch, angular cargo cranes fading in cyan haze, wet loading apron leading toward black water. Tiny faceless courier silhouette. Magenta secondary edge accents.",
+  "prompt": "Use case: stylized-concept. One finished wide 21:9 arrival illustration for MELTDOWN browser game, to crop to960x411. Cohesive low-poly kitbash 3D concept art with sharp slab geometry, dark wet materials, thin physically attached cyan #35F2FF and magenta #FF3EC9 edge strip lights, pure black sky, colored night haze, restrained bloom, long rain-reflection smears. Cinematic yet grounded in simple game geometry, not photoreal futuristic megacity. NO readable text, logos, HUD, watermark, border, collage, visible faces, daylight or generic saturated rainbow. Keep important silhouettes within central75percent to survive wide crop. Location: DEADLETTER DOCKS: cyan container piers, boxy cold-store warehouse with an open metal hatch, angular cargo cranes fading in cyan haze, wet loading apron leading toward black water. Tiny faceless courier silhouette. Magenta secondary edge accents.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-2da0b0a2-b358-4273-9171-2d39b95cc4f3.png",
+  "conditioned": true,
+  "file": "public/districts/deadletter_docks.jpg",
+  "width": 960,
+  "height": 411,
+  "bytes": 131199,
+  "sha256": "607029b9b419f7bc50405b42863f6cabbb69b710d71e49d2cf87f6d3c4689a0c",
+  "conditioning": "sips centered aspect-ratio crop; resize; JPEG quality75"
+}

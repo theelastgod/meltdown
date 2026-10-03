@@ -1,0 +1,10 @@
+{
+  "id": "tex_brick_cyan",
+  "prompt": "Use case: stylized-concept. Production seamless square1024 material albedo for MELTDOWN, near-black low-poly cyberpunk. Orthographic front-on plane, evenly diffusely lit, no perspective, scene, objects, text/logos/border, colored lighting, neon glow, reflections or bright highlights. Restrained industrial detail must read at256px. Dark desaturated blue-slate industrial bricks in clean offset long rows with deep narrow charcoal grout. Faint salt streaks and small edge chips. Cyan comes from game lights, not glowing seams. Cool dark brick mass.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-839084f9-1839-4ca2-978f-057e8fde9e73.png",
+  "conditioned": true,
+  "file": "public/assets/tex_brick_cyan.png",
+  "size": 256,
+  "bytes": 139677,
+  "sha256": "04af038a6f39174add6571effe640c71c8ec7ab7296a10f07bd954b2ff8e670c"
+}

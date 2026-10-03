@@ -1,0 +1,10 @@
+{
+  "id": "tex_concrete",
+  "prompt": "Use case: stylized-concept. A production material tile for MELTDOWN low-poly cyberpunk city at night. Square1024 fullbleed seamless repeat, perfectly orthographic flat plane, no perspective or surrounding scene. Even diffuse lighting; no neon reflections, glow, cast shadows, object silhouettes, text, labels or border. Quiet restrained detail legible at256px. Weathered medium-dark cool gray poured concrete panel material. Subtle horizontal boardform impressions, widely spaced tiny tie holes, faint water streaks and sparse hairline fractures. Front-on. This is multiplied by very dark blue in engine, so keep the broad concrete surfaces legible.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-150d3d3b-3311-4e83-b1e5-ac623318d068.png",
+  "conditioned": true,
+  "file": "public/assets/tex_concrete.png",
+  "size": 256,
+  "bytes": 139536,
+  "sha256": "6ec4f322594ba44c5f8d4fbc32ab3fdc9617008179b05eec26ebb7ee3b9c9003"
+}

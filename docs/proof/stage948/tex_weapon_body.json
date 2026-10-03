@@ -1,0 +1,12 @@
+{
+  "id": "tex_weapon_body",
+  "kind": "texture",
+  "brief": "Neutral medium-gray machined steel receiver material with broad restrained mechanical panels, fine brushed grain, shallow clean recessed seams and sparse small flush fasteners. No gun illustration, no neon or color accent. Dark gunmetal supplied by engine.",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Neutral medium-gray machined steel receiver material with broad restrained mechanical panels, fine brushed grain, shallow clean recessed seams and sparse small flush fasteners. No gun illustration, no neon or color accent. Dark gunmetal supplied by engine.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-a1e1d8b7-040d-42f4-a1d3-30d8aa8498ae.png",
+  "conditioned": true,
+  "file": "public/assets/tex_weapon_body.png",
+  "size": 256,
+  "bytes": 133757,
+  "sha256": "fb40b3b37e9053764509785a05dbfcf968ce9604464b7e8999cbd467e58e128a"
+}

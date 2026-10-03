@@ -1,0 +1,5 @@
+wrote public/assets/tex_cone_scuffed.png — 256×256, 138.1 KB
+
+manifest line:
+
+  { id: "tex_cone_scuffed", kind: "texture", file: "tex_cone_scuffed.png", size: 256, bytes: 141445, sha256: "d859a46c4fb1bae598ecca91b56b62d89316d97eea27d4109dd1d85c5d6924f5", provenance: "…" },

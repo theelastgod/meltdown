@@ -1,0 +1,5 @@
+wrote public/assets/tex_brick_amber.png — 256×256, 138.7 KB
+
+manifest line:
+
+  { id: "tex_brick_amber", kind: "texture", file: "tex_brick_amber.png", size: 256, bytes: 142021, sha256: "ff1e149f9a7cce1936e1621b58124f25003ad57182ea56f6eb1e97bd01be91aa", provenance: "…" },

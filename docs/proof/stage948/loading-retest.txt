@@ -1,0 +1,51 @@
+
+ RUN  v3.2.7 /Users/wendellphillips/meltdown
+
+ ❯ tests/loading.test.ts (26 tests | 1 failed) 191ms
+   ✓ PLAY's one URL > walks the city: LEASE ROW's shared room on the campaign host, in campaign mode, the ledger kept for the file (Stage 692) 14ms
+   ✓ PLAY's one URL > drops what the page it leaves was doing (a room, a mission, a stale city flag) and keeps the account 5ms
+   ✓ PLAY's one URL > is the URL the menu's PLAY loads (one place to switch the target) 13ms
+   ✓ the main menu > lists PLAY / CHARACTER / MODES / FILE / WALLET / SETTINGS, in that order, with PLAY preselected 3ms
+   ✓ the main menu > PLAY's line names what it does and where, from the file's campaign save 9ms
+   ✓ the main menu > MODES is a screen of its own: WAKE, THE RUN, THE RANGE, THE OFFICE and BACK, each with its old line; ESC is back on MODES 4ms
+   ✓ the main menu > every old id still chooses when called directly: wake and run list the districts (and back to MODES), range, office and campaign are URLs 11ms
+   ✓ the title cards > play when the trailer did not open this boot, and not when it did (or on the way back from a game) 1ms
+   ✓ the title cards > the menu goes straight to its list when told, and plays them otherwise 1ms
+   ✓ the title cards > the boot asks after the trailer: a crawl that played starts the menu without them 3ms
+   ✓ the loading descriptor > a menu choice shows the card and writes the descriptor before the page goes; the next boot reads it back, once 9ms
+   ✓ the loading descriptor > PLAY too: its card is on the page and in the store at the moment it navigates 3ms
+   ✓ the loading descriptor > under nonav the card shows with the destination and nothing is written or loaded 2ms
+   ✓ the loading descriptor > the game's and the campaign's trips go through the same card: no bare reload left in either 13ms
+   ✓ the loading descriptor > explore from the city is the street, not another walk of the city 5ms
+   × the loading descriptor > a URL implies its own card when the trip did not write one (a shared link) 48ms
+     → deadletter_docks: expected 165098 to be less than 150000
+   ✓ the loading descriptor > the reload's first frame is the card: index.html paints it from the descriptor before the bundle, with the card's own markup, never under the probes 3ms
+   ✓ the loading descriptor > a descriptor that is not one (hand-edited, half-written) is ignored, not trusted 1ms
+   ✓ the loading descriptor > the boot shows it after a trip and on a deep link; the title menu is its own first screen; headless probes only when asked 9ms
+   ✓ a load that has gone on long enough > tells a phone to tap and a keyboard to press enter 1ms
+   ✓ the card's stages > walk LOADING THE DISTRICT, BUILDING THE CITY, LINKING, READY, with a bar that only grows 1ms
+   ✓ the card's stages > offline: the district until the world is built, the city until a frame is drawn, then ready 1ms
+   ✓ the card's stages > in a room: linking until the room let the file in and its first exact state arrived 2ms
+   ✓ the card's stages > a join that fails shows the line the HUD prints for it rather than spinning 1ms
+   ✓ the card's stages > the boot's watch walks the card through them on the game's signals and takes it down at READY 16ms
+   ✓ the card's stages > the watch never holds the screen: a failed join shows its line and lets the player through, and so does a long wait 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/loading.test.ts > the loading descriptor > a URL implies its own card when the trip did not write one (a shared link)
+AssertionError: deadletter_docks: expected 165098 to be less than 150000
+ ❯ tests/loading.test.ts:324:28
+    322|       expect(w, id).toBe(960);
+    323|       expect(h, id).toBe(411);
+    324|       expect(b.length, id).toBeLessThan(150_000);
+       |                            ^
+    325|     }
+    326|     expect(loadingFor(playUrl(BASE))).toMatchObject({ kind: "play", ti…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  22:50:31
+   Duration  4.59s (transform 2.21s, setup 0ms, collect 3.10s, tests 191ms, environment 1ms, prepare 353ms)

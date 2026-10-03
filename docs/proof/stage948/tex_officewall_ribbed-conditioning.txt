@@ -1,0 +1,5 @@
+wrote public/assets/tex_officewall_ribbed.png — 256×256, 114.3 KB
+
+manifest line:
+
+  { id: "tex_officewall_ribbed", kind: "texture", file: "tex_officewall_ribbed.png", size: 256, bytes: 117050, sha256: "7cfe2e5857fe54a0d6c8b7b7af2e37f60c8663f2f695ed4d4ceb513c6fc11468", provenance: "…" },

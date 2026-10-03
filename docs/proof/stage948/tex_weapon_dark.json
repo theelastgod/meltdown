@@ -1,0 +1,12 @@
+{
+  "id": "tex_weapon_dark",
+  "kind": "texture",
+  "brief": "Neutral medium-gray molded technical grip polymer with fine shallow ribbing and restrained stippled sections, modest edge wear. No weapon or grenade depiction. Uniform flat material, dark engine tint supplies final black appearance.",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Neutral medium-gray molded technical grip polymer with fine shallow ribbing and restrained stippled sections, modest edge wear. No weapon or grenade depiction. Uniform flat material, dark engine tint supplies final black appearance.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-d360c327-8633-4520-b821-8d1d5d6d3e94.png",
+  "conditioned": true,
+  "file": "public/assets/tex_weapon_dark.png",
+  "size": 256,
+  "bytes": 135078,
+  "sha256": "2035965d5e4838449deaf945f29b1db973d27eb0972e2a03f84bb4b36b4d42e4"
+}

@@ -1,0 +1,5 @@
+wrote public/assets/tex_plaza_asphalt.png — 256×256, 149.5 KB
+
+manifest line:
+
+  { id: "tex_plaza_asphalt", kind: "texture", file: "tex_plaza_asphalt.png", size: 256, bytes: 153132, sha256: "f497a014a473c5924e475426a082b456a1337bf29e0bc75cbc3819a44c5d0606", provenance: "…" },

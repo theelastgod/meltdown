@@ -1,0 +1,165 @@
+{
+  "reference": {
+    "meanLuma": 0.13324019641517404,
+    "darkFrac": 0.6222593245967741,
+    "neonFrac": 0.04103545960274791,
+    "hue": {
+      "cyan": 0.374827410568705,
+      "magenta": 0.13811758127037824,
+      "yellow": 0.08809007134945011,
+      "green": 0.2990462946291703,
+      "red": 0.024140358179897185,
+      "blue": 0.06675825013163811,
+      "other": 0.009020033870761066
+    }
+  },
+  "shots": {
+    "lane": {
+      "width": 1280,
+      "height": 720,
+      "meanLuma": 0.10381820530961906,
+      "darkFrac": 0.6471907552083334,
+      "neonFrac": 0.04805989583333333,
+      "hue": {
+        "cyan": 0.6016210602366115,
+        "magenta": 0.07416689244107288,
+        "yellow": 0.10360787501128872,
+        "green": 0.14153797525512507,
+        "red": 0.04086516752460941,
+        "blue": 0.030660164363767724,
+        "other": 0.0075408651675246095
+      }
+    },
+    "arena": {
+      "width": 1280,
+      "height": 720,
+      "meanLuma": 0.0765756994365156,
+      "darkFrac": 0.7995431857638889,
+      "neonFrac": 0.04978190104166667,
+      "hue": {
+        "cyan": 0.4715447154471545,
+        "magenta": 0.08607423875847338,
+        "yellow": 0.06281741101593322,
+        "green": 0.186337975980296,
+        "red": 0.07253863423352733,
+        "blue": 0.11565204123891105,
+        "other": 0.005034983325704571
+      }
+    },
+    "skyline": {
+      "width": 1280,
+      "height": 720,
+      "meanLuma": 0.08050299757615606,
+      "darkFrac": 0.8047146267361112,
+      "neonFrac": 0.05814887152777778,
+      "hue": {
+        "cyan": 0.448460533681657,
+        "magenta": 0.07911923866392984,
+        "yellow": 0.06963985818249674,
+        "green": 0.1536294084717298,
+        "red": 0.1145362940847173,
+        "blue": 0.1274304907632021,
+        "other": 0.007184176152267214
+      }
+    }
+  },
+  "checks": [
+    {
+      "name": "artifact: stage3-lane.png",
+      "pass": true,
+      "detail": "stage3-lane.png, nothing over it"
+    },
+    {
+      "name": "the street is measured on its own rather than averaged into the skyline, and has not drifted further from the clip",
+      "pass": false,
+      "detail": "street dark 35.7% luma 0.142 · skyline luma 0.076 · street is 1.86x the skyline · whole frame 65% against the clip's 62%"
+    },
+    {
+      "name": "artifact: stage3-arena.png",
+      "pass": true,
+      "detail": "stage3-arena.png, nothing over it"
+    },
+    {
+      "name": "artifact: stage3-skyline.png",
+      "pass": true,
+      "detail": "stage3-skyline.png, nothing over it"
+    },
+    {
+      "name": "post chain active at reduced internal resolution",
+      "pass": true,
+      "detail": "post=true scale=0.6"
+    },
+    {
+      "name": "lane: near-black base like the clip (dark 62% ref)",
+      "pass": true,
+      "detail": "dark 65%"
+    },
+    {
+      "name": "lane: mean luma in the clip's band (ref 0.133)",
+      "pass": true,
+      "detail": "luma 0.104"
+    },
+    {
+      "name": "lane: neon coverage in the clip's band (ref 4.1%)",
+      "pass": true,
+      "detail": "neon 4.8%"
+    },
+    {
+      "name": "lane: cyan + magenta dominate the neon (ref 51%)",
+      "pass": true,
+      "detail": "cy+mg 68%"
+    },
+    {
+      "name": "arena: near-black base like the clip (dark 62% ref)",
+      "pass": true,
+      "detail": "dark 80%"
+    },
+    {
+      "name": "arena: mean luma in the clip's band (ref 0.133)",
+      "pass": true,
+      "detail": "luma 0.077"
+    },
+    {
+      "name": "arena: neon coverage in the clip's band (ref 4.1%)",
+      "pass": true,
+      "detail": "neon 5.0%"
+    },
+    {
+      "name": "arena: cyan + magenta dominate the neon (ref 51%)",
+      "pass": true,
+      "detail": "cy+mg 56%"
+    },
+    {
+      "name": "skyline: near-black base like the clip (dark 62% ref)",
+      "pass": true,
+      "detail": "dark 80%"
+    },
+    {
+      "name": "skyline: mean luma in the clip's band (ref 0.133)",
+      "pass": true,
+      "detail": "luma 0.081"
+    },
+    {
+      "name": "skyline: neon coverage in the clip's band (ref 4.1%)",
+      "pass": true,
+      "detail": "neon 5.8%"
+    },
+    {
+      "name": "skyline: cyan + magenta dominate the neon (ref 51%)",
+      "pass": true,
+      "detail": "cy+mg 53%"
+    },
+    {
+      "name": "sim holds 60 Hz under the full post chain",
+      "pass": false,
+      "detail": "13.0 ticks/s at 1.8 fps (SwiftShader, 480x270)"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": "clean console"
+    }
+  ],
+  "simHz": 13.039378924350567,
+  "renderFps": 1.7724211272592518
+}

@@ -1,0 +1,13 @@
+{
+  "id": "tex_crate_slats",
+  "family": "crate",
+  "brief": "Flat reclaimed gray timber slats with a few thin steel reinforcing bands, small fasteners and restrained edge wear. A tile for stall counters and crates, not a whole crate. Neutral medium gray for a dark brown engine tint.",
+  "kind": "texture",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Flat reclaimed gray timber slats with a few thin steel reinforcing bands, small fasteners and restrained edge wear. A tile for stall counters and crates, not a whole crate. Neutral medium gray for a dark brown engine tint.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-e98282f7-15c8-4cc7-b33e-ec54f096a2fb.png",
+  "conditioned": true,
+  "file": "public/assets/tex_crate_slats.png",
+  "size": 256,
+  "bytes": 158315,
+  "sha256": "99ac85337aaf01b61ebb140816fbee988866ee2e57931976fe3ae9a4c35472db"
+}

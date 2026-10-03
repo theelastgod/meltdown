@@ -1,0 +1,12 @@
+{
+  "id": "tex_mech_hull",
+  "kind": "texture",
+  "brief": "Medium-gray heavy cast-steel armor, broad offset rectangular plate seams, subtle coarse casting grain, sparse industrial bolts and rubbed edges. No robot illustration or colored light. Engine supplies near-black warm gunmetal and amber trim.",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Medium-gray heavy cast-steel armor, broad offset rectangular plate seams, subtle coarse casting grain, sparse industrial bolts and rubbed edges. No robot illustration or colored light. Engine supplies near-black warm gunmetal and amber trim.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-1f84993b-798b-4fdb-b262-8929d9d8b792.png",
+  "conditioned": true,
+  "file": "public/assets/tex_mech_hull.png",
+  "size": 256,
+  "bytes": 152498,
+  "sha256": "b34e59b9a7f95dd3ae84ef3c6f9cb57f3486127fde9078fc726abbd71ac0aa4f"
+}

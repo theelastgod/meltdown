@@ -1,0 +1,5 @@
+wrote public/assets/tex_pavement.png — 256×256, 137.0 KB
+
+manifest line:
+
+  { id: "tex_pavement", kind: "texture", file: "tex_pavement.png", size: 256, bytes: 140273, sha256: "d606996b33099524157964fcd4f255a97112540c1de5b2b43b5352038099ddaa", provenance: "…" },

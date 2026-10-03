@@ -1,0 +1,13 @@
+{
+  "id": "tex_officewall_ribbed",
+  "family": "officewall",
+  "brief": "Pale cool ivory architectural acoustic panels in a restrained regular grid, tiny perforations, thin recessed gray seams, subtle vertical ribs. Clean austere office material, no grime or glowing edges. Flat diffuse illumination.",
+  "kind": "texture",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Pale cool ivory architectural acoustic panels in a restrained regular grid, tiny perforations, thin recessed gray seams, subtle vertical ribs. Clean austere office material, no grime or glowing edges. Flat diffuse illumination.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-d9f4301b-e429-4815-96e9-1701dfa6edf7.png",
+  "conditioned": true,
+  "file": "public/assets/tex_officewall_ribbed.png",
+  "size": 256,
+  "bytes": 117050,
+  "sha256": "7cfe2e5857fe54a0d6c8b7b7af2e37f60c8663f2f695ed4d4ceb513c6fc11468"
+}

@@ -1,0 +1,5 @@
+wrote public/assets/tex_awning_patched.png — 256×256, 140.1 KB
+
+manifest line:
+
+  { id: "tex_awning_patched", kind: "texture", file: "tex_awning_patched.png", size: 256, bytes: 143453, sha256: "24101ab0879b36c10c9f838a4067fce8dee08f17ecf11a0e4dab28a7212dec21", provenance: "…" },

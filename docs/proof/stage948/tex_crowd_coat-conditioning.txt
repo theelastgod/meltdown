@@ -1,0 +1,5 @@
+wrote public/assets/tex_crowd_coat.png — 256×256, 136.3 KB
+
+manifest line:
+
+  { id: "tex_crowd_coat", kind: "texture", file: "tex_crowd_coat.png", size: 256, bytes: 139546, sha256: "579ed83ed15d5dcbd29436aab62272ab1f7db7b19086ca8921820507d6c4bce3", provenance: "…" },

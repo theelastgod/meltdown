@@ -1,0 +1,14 @@
+{
+  "id": "marrow",
+  "kind": "portrait",
+  "brief": "MARROW, a Clockeater: layered asymmetric charcoal cloak, short shoulder mantle, angular deep hood, narrow magenta trim, slightly tilted vigilant pose. Hood interior absolute black with no visible face, eyes or skin.",
+  "prompt": "Use case: stylized-concept. One square1024 character portrait for MELTDOWN cyberpunk game, delivered at256x256. Low-poly angular kitbash 3D illustration, near-black technical cloth, precise thin strip light only on garment edges. Chest-up centered readable silhouette, dark uncluttered background, face always an absolute unlit black void. No eyes, nose, mouth or illuminated skin; no glowing eyes. Not photoreal actor, not generic armored soldier. No typography, symbols, logo, frame, UI or collage. Distinct character: MARROW, a Clockeater: layered asymmetric charcoal cloak, short shoulder mantle, angular deep hood, narrow magenta trim, slightly tilted vigilant pose. Hood interior absolute black with no visible face, eyes or skin.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-cfb6d9fd-6ab6-4fa7-8723-bbe53a6436c3.png",
+  "conditioned": true,
+  "file": "public/portraits/marrow.jpg",
+  "width": 256,
+  "height": 256,
+  "bytes": 20002,
+  "sha256": "a587af35459e1312de4a0a745d74231761080adf0f86c63421674d48df9396c8",
+  "conditioning": "sips centered aspect-ratio crop; resize; JPEG quality85"
+}

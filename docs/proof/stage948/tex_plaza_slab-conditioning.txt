@@ -1,0 +1,5 @@
+wrote public/assets/tex_plaza_slab.png — 256×256, 143.5 KB
+
+manifest line:
+
+  { id: "tex_plaza_slab", kind: "texture", file: "tex_plaza_slab.png", size: 256, bytes: 146915, sha256: "755965cffaf24d27c8d21acd53eb7d3a3a7fa4647714e0786f4d0a152cbc3720", provenance: "…" },

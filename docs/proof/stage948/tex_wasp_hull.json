@@ -1,0 +1,12 @@
+{
+  "id": "tex_wasp_hull",
+  "kind": "texture",
+  "brief": "Medium-gray lightweight composite armor, broad angular flush panels with subtle fine weave and a few countersunk screws. Restrained abrasion. No drone, green sign, neon, text or circuit illustration. Engine supplies near-black tint and amber threat lights.",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Medium-gray lightweight composite armor, broad angular flush panels with subtle fine weave and a few countersunk screws. Restrained abrasion. No drone, green sign, neon, text or circuit illustration. Engine supplies near-black tint and amber threat lights.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-40a2db7f-7046-46d0-9aee-448aabd1a72d.png",
+  "conditioned": true,
+  "file": "public/assets/tex_wasp_hull.png",
+  "size": 256,
+  "bytes": 128676,
+  "sha256": "14f6d67b9d628d24ed448301f7884a1176ef8aee9a06d2d7828cfa803631f90f"
+}

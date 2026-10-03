@@ -1,0 +1,5 @@
+wrote public/assets/tex_cloak.png — 256×256, 154.8 KB
+
+manifest line:
+
+  { id: "tex_cloak", kind: "texture", file: "tex_cloak.png", size: 256, bytes: 158484, sha256: "859f4b0068d6d7d91f8a655ef8ef06a0c89fb3a8b5d1813fd31cbe8cad3a4cb6", provenance: "…" },

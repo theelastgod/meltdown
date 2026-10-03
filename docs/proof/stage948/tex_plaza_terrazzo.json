@@ -1,0 +1,10 @@
+{
+  "id": "tex_plaza_terrazzo",
+  "prompt": "Use case: stylized-concept. Production asset for MELTDOWN, near-black low-poly cyberpunk game. One seamless square material albedo tile, perfectly orthographic top-down, filling every edge, 1024x1024. Even diffuse light, no perspective, horizon, scene, objects, lettering, logo, border or baked neon/reflections. Restrained detail readable at256px; dark but visible material values, game lights supply neon and wet reflections. Dark charcoal terrazzo pavement with sparse muted gray angular chips in broad square tiles and narrow black joints. Fine even grain, subdued chips, not glitter or colored confetti. Drowned night-city pavement, subtle damp tonal patches.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-e53c81a3-3905-4d88-a259-624a4de8c348.png",
+  "conditioned": true,
+  "file": "public/assets/tex_plaza_terrazzo.png",
+  "size": 256,
+  "bytes": 141773,
+  "sha256": "77bc941b0811e59223551d3bd6a8a4e867b0c2fa2e3e2a56fbbd268dedc9a930"
+}

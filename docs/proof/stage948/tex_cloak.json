@@ -1,0 +1,12 @@
+{
+  "id": "tex_cloak",
+  "kind": "texture",
+  "brief": "Flat fine woven technical cloak cloth, dark neutral gray source with subtle diagonal weave and tiny rain-darkened fiber variation. No body, hood, face, draped folds, seams suggesting a whole garment or baked colored reflections. Engine applies near-black tint.",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Flat fine woven technical cloak cloth, dark neutral gray source with subtle diagonal weave and tiny rain-darkened fiber variation. No body, hood, face, draped folds, seams suggesting a whole garment or baked colored reflections. Engine applies near-black tint.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-0fb20ce2-4e6c-4237-a497-1063c7d4bb3c.png",
+  "conditioned": true,
+  "file": "public/assets/tex_cloak.png",
+  "size": 256,
+  "bytes": 158484,
+  "sha256": "859f4b0068d6d7d91f8a655ef8ef06a0c89fb3a8b5d1813fd31cbe8cad3a4cb6"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "wern",
+  "kind": "portrait",
+  "brief": "AUGUST WERN, author of the Directive: formal near-black long coat, rigid squared shoulders, tall collar and deep hood, a tiny blood-red vertical trim on the chest. Cold austere posture. Head and face fully shadowed, no features. Sparse pale architectural background edge only.",
+  "prompt": "Use case: stylized-concept. One square1024 character portrait for MELTDOWN cyberpunk game, delivered at256x256. Low-poly angular kitbash 3D illustration, near-black technical cloth, precise thin strip light only on garment edges. Chest-up centered readable silhouette, dark uncluttered background, face always an absolute unlit black void. No eyes, nose, mouth or illuminated skin; no glowing eyes. Not photoreal actor, not generic armored soldier. No typography, symbols, logo, frame, UI or collage. Distinct character: AUGUST WERN, author of the Directive: formal near-black long coat, rigid squared shoulders, tall collar and deep hood, a tiny blood-red vertical trim on the chest. Cold austere posture. Head and face fully shadowed, no features. Sparse pale architectural background edge only.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-2a1982b8-e900-4405-82f8-28c7ba1f1750.png",
+  "conditioned": true,
+  "file": "public/portraits/wern.jpg",
+  "width": 256,
+  "height": 256,
+  "bytes": 15037,
+  "sha256": "26a9e9b1f0a2c90581069d4eb1f0f7771108a96e681d1a1b2af2e7ee78d0ab9f",
+  "conditioning": "sips centered aspect-ratio crop; resize; JPEG quality85"
+}

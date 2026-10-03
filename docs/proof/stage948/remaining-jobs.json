@@ -1,0 +1,150 @@
+[
+  {
+    "id": "tex_plaza_tread",
+    "brief": "Fine perforated industrial deck plate with rows of short recessed traction slots and restrained crosshatched wear, neutral medium-gray steel. Flat top-down material only; clean readable pattern, suitable for shop and warehouse floors.",
+    "kind": "texture"
+  },
+  {
+    "id": "tex_crate_slats",
+    "family": "crate",
+    "brief": "Flat reclaimed gray timber slats with a few thin steel reinforcing bands, small fasteners and restrained edge wear. A tile for stall counters and crates, not a whole crate. Neutral medium gray for a dark brown engine tint.",
+    "kind": "texture"
+  },
+  {
+    "id": "tex_car_weathered",
+    "family": "car",
+    "brief": "Flat brushed medium-gray car body paint, subtle fine metallic grain, sparse hairline scratches and understated vertical dried rain trails. No car illustration, glass, wheels, objects or reflections; dark body color supplied by engine.",
+    "kind": "texture"
+  },
+  {
+    "id": "tex_cone_scuffed",
+    "family": "cone",
+    "brief": "Flat utility polymer material for a traffic cone, neutral medium-gray plastic with repeating broad horizontal dull pale reflective bands and restrained road grime. Engine supplies orange. No whole cone, hazard text or object silhouette.",
+    "kind": "texture"
+  },
+  {
+    "id": "tex_barrel_seamed",
+    "family": "barrel",
+    "brief": "Flat gray painted industrial drum steel with broad horizontal rolled ribs, narrow seam and very restrained oxidation chips. No whole barrel or perspective. Medium neutral source for dark engine tint.",
+    "kind": "texture"
+  },
+  {
+    "id": "tex_chain_woven",
+    "family": "chain",
+    "brief": "Perfectly front-on flat repeating galvanized steel chain-link mesh, regular thin diamond wires, understated gray highlights, dark interwoven crossings. Truly TRANSPARENT BACKGROUND in all diamond openings, no background scene, no border/post. Seamless mesh.",
+    "kind": "texture"
+  },
+  {
+    "id": "tex_awning_patched",
+    "family": "awningAlt",
+    "brief": "Flat medium-gray waterproof canvas with fine weave, a few broad sewn repair patches and subtle rain staining. Neutral grayscale, engine supplies cyan tint. No awning object, folds with deep shadows, city or metal ribs.",
+    "kind": "texture"
+  },
+  {
+    "id": "tex_officewall_ribbed",
+    "family": "officewall",
+    "brief": "Pale cool ivory architectural acoustic panels in a restrained regular grid, tiny perforations, thin recessed gray seams, subtle vertical ribs. Clean austere office material, no grime or glowing edges. Flat diffuse illumination.",
+    "kind": "texture"
+  },
+  {
+    "id": "lease_row",
+    "kind": "district",
+    "brief": "LEASE ROW: imposing stacked dark rental blocks with magenta edge strips, cyan noodle and pawn storefront light, a rain-slick broad alley and small faceless hooded figures. Narrow open warehouse shop at street level and a distant black corporate tower. Night city at human scale."
+  },
+  {
+    "id": "deadletter_docks",
+    "kind": "district",
+    "brief": "DEADLETTER DOCKS: cyan container piers, boxy cold-store warehouse with an open metal hatch, angular cargo cranes fading in cyan haze, wet loading apron leading toward black water. Tiny faceless courier silhouette. Magenta secondary edge accents."
+  },
+  {
+    "id": "repo_depot",
+    "kind": "district",
+    "brief": "REPO DEPOT: dark impound yard, angular parked cars, chain-link security fence, open industrial warehouse counter. Cyan/magenta edge strips on structures; restricted amber searchlight on one compact patrol mech and two security fixtures. Ominous black skyline."
+  },
+  {
+    "id": "night_market",
+    "kind": "district",
+    "brief": "NIGHT MARKET: layered magenta fabric awnings and cyan strip-lit food counters, small dark hooded crowd under umbrellas, sparse pink hanging lantern boxes, wet ground with long colored light smears, tall black residential stacks around the market."
+  },
+  {
+    "id": "relay_heights",
+    "kind": "district",
+    "brief": "RELAY HEIGHTS: tall near-black communications towers, boxy rooftop relay dishes, cyan edges and magenta secondary strips, rain-slick service bridges, low cyan haze between towers. View from an elevated walkway, sparse warm windows. Black sky."
+  },
+  {
+    "id": "deadletter_office",
+    "kind": "district",
+    "brief": "THE DEADLETTER OFFICE: intimate underground fixer hub, dark concrete and service metal, long counter with receipt terminals and files, three small hooded faceless silhouettes separated under cyan, magenta and muted gold strip lights. No brightly lit faces. Rain visible at a distant open doorway."
+  },
+  {
+    "id": "drainage_yard",
+    "kind": "district",
+    "brief": "THE DRAINAGE YARD: empty low concrete training/service yard at night, shallow drainage channels and grates, boxy cover blocks, cyan and magenta narrow rail lighting, fenced edges and black city beyond. Wet stone foreground, practical sparse kitbash geometry."
+  },
+  {
+    "id": "white_office",
+    "kind": "district",
+    "brief": "THE WHITE OFFICE: an austere blown-out white corporate chamber, monolithic pale desk, sparse geometric ceiling ribs, broad clean white light, long black floor inset leading to a distant motionless faceless shadowed figure. Tiny blood-red corporate filament accent. This is the only bright clean location; no cyan/magenta clutter."
+  },
+  {
+    "id": "deacon",
+    "kind": "portrait",
+    "brief": "THE DEACON, keeper of the ledger: broad bell-sleeved dark hooded robe, modest rectangular ledger held on chest, narrow cyan trim, stoic square posture. Deep hood interior completely black, no eyes, skin or facial features visible."
+  },
+  {
+    "id": "marrow",
+    "kind": "portrait",
+    "brief": "MARROW, a Clockeater: layered asymmetric charcoal cloak, short shoulder mantle, angular deep hood, narrow magenta trim, slightly tilted vigilant pose. Hood interior absolute black with no visible face, eyes or skin."
+  },
+  {
+    "id": "vessel",
+    "kind": "portrait",
+    "brief": "IDA VESSEL, an Estate defector and former auditor: severe tailored dark long coat, structured shoulder yoke, tall dark collar and deep hood, restrained pale-gold seam trim (not orange/amber threat light), composed posture. Face fully unlit and unreadable."
+  },
+  {
+    "id": "wern",
+    "kind": "portrait",
+    "brief": "AUGUST WERN, author of the Directive: formal near-black long coat, rigid squared shoulders, tall collar and deep hood, a tiny blood-red vertical trim on the chest. Cold austere posture. Head and face fully shadowed, no features. Sparse pale architectural background edge only."
+  },
+  {
+    "id": "vantage",
+    "kind": "portrait",
+    "brief": "VANTAGE integrity system: no person or body. One stark amber mechanical camera iris in an angular black housing, recessed dark concentric lens, thin precise amber eye aperture. Minimal oppressive near-black background, no letters or symbols."
+  },
+  {
+    "id": "tex_cloak",
+    "kind": "texture",
+    "brief": "Flat fine woven technical cloak cloth, dark neutral gray source with subtle diagonal weave and tiny rain-darkened fiber variation. No body, hood, face, draped folds, seams suggesting a whole garment or baked colored reflections. Engine applies near-black tint."
+  },
+  {
+    "id": "tex_crowd_coat",
+    "kind": "texture",
+    "brief": "Flat coated raincoat fabric, medium-dark neutral gray, fine close ripstop weave, subtle weathered coating and very faint narrow stitch lines. No garment or body silhouette, no large folds, no scene or colored reflections. Engine supplies dark coat tint."
+  },
+  {
+    "id": "tex_weapon_body",
+    "kind": "texture",
+    "brief": "Neutral medium-gray machined steel receiver material with broad restrained mechanical panels, fine brushed grain, shallow clean recessed seams and sparse small flush fasteners. No gun illustration, no neon or color accent. Dark gunmetal supplied by engine."
+  },
+  {
+    "id": "tex_weapon_dark",
+    "kind": "texture",
+    "brief": "Neutral medium-gray molded technical grip polymer with fine shallow ribbing and restrained stippled sections, modest edge wear. No weapon or grenade depiction. Uniform flat material, dark engine tint supplies final black appearance."
+  },
+  {
+    "id": "tex_directive_core",
+    "kind": "texture",
+    "brief": "Small precision optical core material: a centered geometric concentric lens aperture, nearly black around a narrow muted pale gray inner ring, crisp technical radial detail. Monochrome only because game multiplies this by blood-red light. No weapon, lettering or external housing/background scene.",
+    "nonTiling": true
+  },
+  {
+    "id": "tex_wasp_hull",
+    "kind": "texture",
+    "brief": "Medium-gray lightweight composite armor, broad angular flush panels with subtle fine weave and a few countersunk screws. Restrained abrasion. No drone, green sign, neon, text or circuit illustration. Engine supplies near-black tint and amber threat lights."
+  },
+  {
+    "id": "tex_mech_hull",
+    "kind": "texture",
+    "brief": "Medium-gray heavy cast-steel armor, broad offset rectangular plate seams, subtle coarse casting grain, sparse industrial bolts and rubbed edges. No robot illustration or colored light. Engine supplies near-black warm gunmetal and amber trim."
+  }
+]

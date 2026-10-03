@@ -1,0 +1,12 @@
+{
+  "id": "tex_plaza_tread",
+  "brief": "Fine perforated industrial deck plate with rows of short recessed traction slots and restrained crosshatched wear, neutral medium-gray steel. Flat top-down material only; clean readable pattern, suitable for shop and warehouse floors.",
+  "kind": "texture",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Fine perforated industrial deck plate with rows of short recessed traction slots and restrained crosshatched wear, neutral medium-gray steel. Flat top-down material only; clean readable pattern, suitable for shop and warehouse floors.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-f0b7ee78-dccb-4f4e-9f6f-8f0a0f92eb45.png",
+  "conditioned": true,
+  "file": "public/assets/tex_plaza_tread.png",
+  "size": 256,
+  "bytes": 154776,
+  "sha256": "ed2e9347db4659e98a59110082330a9c27f43bfa963fa2b80df2d5d4baf9b465"
+}

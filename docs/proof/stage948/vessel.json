@@ -1,0 +1,14 @@
+{
+  "id": "vessel",
+  "kind": "portrait",
+  "brief": "IDA VESSEL, an Estate defector and former auditor: severe tailored dark long coat, structured shoulder yoke, tall dark collar and deep hood, restrained pale-gold seam trim (not orange/amber threat light), composed posture. Face fully unlit and unreadable.",
+  "prompt": "Use case: stylized-concept. One square1024 character portrait for MELTDOWN cyberpunk game, delivered at256x256. Low-poly angular kitbash 3D illustration, near-black technical cloth, precise thin strip light only on garment edges. Chest-up centered readable silhouette, dark uncluttered background, face always an absolute unlit black void. No eyes, nose, mouth or illuminated skin; no glowing eyes. Not photoreal actor, not generic armored soldier. No typography, symbols, logo, frame, UI or collage. Distinct character: IDA VESSEL, an Estate defector and former auditor: severe tailored dark long coat, structured shoulder yoke, tall dark collar and deep hood, restrained pale-gold seam trim (not orange/amber threat light), composed posture. Face fully unlit and unreadable.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-a7ed547a-363a-4598-9432-d4be1bcbd346.png",
+  "conditioned": true,
+  "file": "public/portraits/vessel.jpg",
+  "width": 256,
+  "height": 256,
+  "bytes": 15835,
+  "sha256": "18471e7f9c5967d06bed685899921276b2027fa4787657abeedc9b5fed4798a5",
+  "conditioning": "sips centered aspect-ratio crop; resize; JPEG quality85"
+}

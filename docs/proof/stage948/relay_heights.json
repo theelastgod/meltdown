@@ -1,0 +1,14 @@
+{
+  "id": "relay_heights",
+  "kind": "district",
+  "brief": "RELAY HEIGHTS: tall near-black communications towers, boxy rooftop relay dishes, cyan edges and magenta secondary strips, rain-slick service bridges, low cyan haze between towers. View from an elevated walkway, sparse warm windows. Black sky.",
+  "prompt": "Use case: stylized-concept. One finished wide 21:9 arrival illustration for MELTDOWN browser game, to crop to960x411. Cohesive low-poly kitbash 3D concept art with sharp slab geometry, dark wet materials, thin physically attached cyan #35F2FF and magenta #FF3EC9 edge strip lights, pure black sky, colored night haze, restrained bloom, long rain-reflection smears. Cinematic yet grounded in simple game geometry, not photoreal futuristic megacity. NO readable text, logos, HUD, watermark, border, collage, visible faces, daylight or generic saturated rainbow. Keep important silhouettes within central75percent to survive wide crop. Location: RELAY HEIGHTS: tall near-black communications towers, boxy rooftop relay dishes, cyan edges and magenta secondary strips, rain-slick service bridges, low cyan haze between towers. View from an elevated walkway, sparse warm windows. Black sky.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-53a84bfd-a911-4f3a-a2f4-f6f428752f66.png",
+  "conditioned": true,
+  "file": "public/districts/relay_heights.jpg",
+  "width": 960,
+  "height": 411,
+  "bytes": 118181,
+  "sha256": "4bfc7c1f0018efb1252df1a6d5c5eb842d8e569f3f9d074599cc67814c5bd380",
+  "conditioning": "sips centered aspect-ratio crop; resize; JPEG quality75"
+}

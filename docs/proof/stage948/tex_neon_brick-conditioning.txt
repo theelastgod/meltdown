@@ -1,0 +1,5 @@
+wrote public/assets/tex_neon_brick.png — 256×256, 141.3 KB
+
+manifest line:
+
+  { id: "tex_neon_brick", kind: "texture", file: "tex_neon_brick.png", size: 256, bytes: 144649, sha256: "9f6e215d0b053927b891dc4188c03b48a9098137ac46db7925476b0b97ef19ea", provenance: "…" },

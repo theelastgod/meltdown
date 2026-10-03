@@ -1,0 +1,5 @@
+wrote public/assets/tex_wet_cobble.png — 256×256, 146.9 KB
+
+manifest line:
+
+  { id: "tex_wet_cobble", kind: "texture", file: "tex_wet_cobble.png", size: 256, bytes: 150403, sha256: "5e55d45eef64e4fc1d2c5c8f2de97d7313e72bc5291f3734438481f2d5d14754", provenance: "…" },

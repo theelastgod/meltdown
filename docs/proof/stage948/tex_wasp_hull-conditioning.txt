@@ -1,0 +1,5 @@
+wrote public/assets/tex_wasp_hull.png — 256×256, 125.7 KB
+
+manifest line:
+
+  { id: "tex_wasp_hull", kind: "texture", file: "tex_wasp_hull.png", size: 256, bytes: 128676, sha256: "14f6d67b9d628d24ed448301f7884a1176ef8aee9a06d2d7828cfa803631f90f", provenance: "…" },

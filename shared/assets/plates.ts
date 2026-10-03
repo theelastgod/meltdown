@@ -55,25 +55,25 @@ export const PLATE_POOLS = {
   /** what the Deadletter Office and the hub are floored with */
   officefloor: ["tex_white_office", "tex_office_tile", "tex_office_carpet", "skin_switch_plate", "skin_fuse_plate", "skin_relay_plate", "skin_junction_plate", "skin_transformer_plate", "skin_busbar_plate"],
   /** and walled with */
-  officewall: ["tex_white_office", "tex_office_acoustic", "tex_office_steel", "skin_rib_plate"],
+  officewall: ["tex_white_office", "tex_office_acoustic", "tex_office_steel", "skin_rib_plate", "tex_officewall_ribbed"],
   /** THE KERNEL on the horizon, and the filament that runs through it */
   kernel: ["tex_kernel_hull", "tex_kernel_filament", "skin_antenna_plate", "skin_dish_plate", "skin_radome_plate", "skin_gantry2_plate", "skin_cranehook_plate", "skin_sheave_plate", "skin_counterweight_plate"],
   /** market canvas: the flat colour the awning wore, then the cloth plate. Length 4 keeps seed 4404 on skin_awning_plate. */
   awning: ["tex_awning_mg", "skin_awning_plate", "skin_tarp_plate", "skin_cloth_plate"],
   /** the other stall colour */
-  awningAlt: ["tex_awning_cy", "skin_lantern_plate", "skin_tube_plate"],
+  awningAlt: ["tex_awning_cy", "skin_lantern_plate", "skin_tube_plate", "tex_awning_patched"],
   /** chain-link yards */
-  chain: ["tex_chainlink", "skin_chain_plate", "skin_netting_plate", "skin_cage_plate", "skin_mesh_plate"],
+  chain: ["tex_chainlink", "skin_chain_plate", "skin_netting_plate", "skin_cage_plate", "skin_mesh_plate", "tex_chain_woven"],
   /** scaffold poles */
   scaffold: ["tex_scaffold", "skin_scaffold_plate", "skin_handrail_plate", "skin_baluster_plate", "skin_joist_plate", "skin_ladder_plate", "skin_outrigger_plate", "skin_davit_plate", "skin_catwalk_plate"],
   /** drums in the yards */
-  barrel: ["tex_barrel", "skin_drum_plate", "skin_winch_plate"],
+  barrel: ["tex_barrel", "skin_drum_plate", "skin_winch_plate", "tex_barrel_seamed"],
   /** traffic cones */
-  cone: ["tex_cone", "skin_cone_plate"],
+  cone: ["tex_cone", "skin_cone_plate", "tex_cone_scuffed"],
   /** parked cars */
-  car: ["tex_car", "skin_carpaint_plate"],
+  car: ["tex_car", "skin_carpaint_plate", "tex_car_weathered"],
   /** loose crates and stall fronts */
-  crate: ["tex_crate", "skin_crate_plate"],
+  crate: ["tex_crate", "skin_crate_plate", "tex_crate_slats"],
   /** cable looms on the rails */
   cable: ["tex_cable", "skin_cable_plate", "skin_spool_plate", "skin_catenary_plate", "skin_hose_plate", "skin_splice_plate", "skin_clamp_plate", "skin_tray_plate", "skin_conduit2_plate"],
   /** the plaza metro booth, which is also the ledger desk */

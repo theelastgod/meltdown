@@ -1,0 +1,10 @@
+{
+  "id": "tex_facade_cyan",
+  "prompt": "Use case: stylized-concept. Production seamless facade texture for MELTDOWN low-poly cyberpunk game. Square1024, perfectly front-on orthographic FLAT elevation tile, modular window grid fills every edge. No street, ground, roof, whole building, perspective, objects, text, logos or border. Texture also emits light, so at least90percent must be almost black #06090f. Sparse small rectangular windows, crisp flat luminous colors, NO bloom or glow halos baked in. Regular understated mechanical panel grid; a few thin trim segments, not a glowing outline around every window. Repeat on skyscraper walls, readable at256px. Cyan district cold industrial towers: narrow vertical black panels, sparse cyan rectangular windows and a few muted warm rooms. Most windows pitchblack. Tiny broken cyan vertical edge strips, no magenta dominant.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-350d6199-545f-4166-93ff-57e849f79843.png",
+  "conditioned": true,
+  "file": "public/assets/tex_facade_cyan.png",
+  "size": 256,
+  "bytes": 113944,
+  "sha256": "51aaf04467d8debb0092f8ffaa7041ea30aed46b1c3922121c6253a5e7c3412d"
+}

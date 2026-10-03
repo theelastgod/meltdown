@@ -1,0 +1,13 @@
+{
+  "id": "tex_barrel_seamed",
+  "family": "barrel",
+  "brief": "Flat gray painted industrial drum steel with broad horizontal rolled ribs, narrow seam and very restrained oxidation chips. No whole barrel or perspective. Medium neutral source for dark engine tint.",
+  "kind": "texture",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Flat gray painted industrial drum steel with broad horizontal rolled ribs, narrow seam and very restrained oxidation chips. No whole barrel or perspective. Medium neutral source for dark engine tint.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-807df635-858b-4026-8ec9-13d765ba0ced.png",
+  "conditioned": true,
+  "file": "public/assets/tex_barrel_seamed.png",
+  "size": 256,
+  "bytes": 123727,
+  "sha256": "d8ceb2a6498ff0f54b8662fcf382a84250a72d7dee2c3dbc29687534951b0ad4"
+}

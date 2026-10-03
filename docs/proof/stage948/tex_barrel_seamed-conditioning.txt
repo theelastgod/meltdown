@@ -1,0 +1,5 @@
+wrote public/assets/tex_barrel_seamed.png — 256×256, 120.8 KB
+
+manifest line:
+
+  { id: "tex_barrel_seamed", kind: "texture", file: "tex_barrel_seamed.png", size: 256, bytes: 123727, sha256: "d8ceb2a6498ff0f54b8662fcf382a84250a72d7dee2c3dbc29687534951b0ad4", provenance: "…" },

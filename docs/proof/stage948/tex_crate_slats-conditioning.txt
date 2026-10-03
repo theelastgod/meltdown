@@ -1,0 +1,5 @@
+wrote public/assets/tex_crate_slats.png — 256×256, 154.6 KB
+
+manifest line:
+
+  { id: "tex_crate_slats", kind: "texture", file: "tex_crate_slats.png", size: 256, bytes: 158315, sha256: "99ac85337aaf01b61ebb140816fbee988866ee2e57931976fe3ae9a4c35472db", provenance: "…" },

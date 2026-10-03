@@ -1,0 +1,13 @@
+{
+  "id": "tex_cone_scuffed",
+  "family": "cone",
+  "brief": "Flat utility polymer material for a traffic cone, neutral medium-gray plastic with repeating broad horizontal dull pale reflective bands and restrained road grime. Engine supplies orange. No whole cone, hazard text or object silhouette.",
+  "kind": "texture",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Flat utility polymer material for a traffic cone, neutral medium-gray plastic with repeating broad horizontal dull pale reflective bands and restrained road grime. Engine supplies orange. No whole cone, hazard text or object silhouette.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-6116f3a0-2039-4a75-9662-c9aa02830b7b.png",
+  "conditioned": true,
+  "file": "public/assets/tex_cone_scuffed.png",
+  "size": 256,
+  "bytes": 141445,
+  "sha256": "d859a46c4fb1bae598ecca91b56b62d89316d97eea27d4109dd1d85c5d6924f5"
+}

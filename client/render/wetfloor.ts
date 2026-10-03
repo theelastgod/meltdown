@@ -7,9 +7,9 @@ import { bindPlate } from "./city";
  * Linear luma of `tex_plaza_slab`, the tile the reflector samples (Stage 736).
  * Measured from the file: sRGB bytes to linear, then 0.2126 R + 0.7152 G + 0.0722 B.
  * The shader divides by this so the bed's average stays the Stage 657 tone.
- * `tex_pavement` is a photograph of a street, not a tile, so it is not the albedo.
+ * Re-measured for the replacement slab; see docs/proof/stage948/decoded-images.json.
  */
-export const SLAB_LUMA = 0.0885;
+export const SLAB_LUMA = 0.030568912041489617;
 /** Four slabs across the image, each the 2 m the grout already uses. */
 export const SLAB_TILE_M = 8;
 

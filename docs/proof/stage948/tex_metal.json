@@ -1,0 +1,10 @@
+{
+  "id": "tex_metal",
+  "prompt": "Use case: stylized-concept. Production seamless square1024 material albedo for MELTDOWN, near-black low-poly cyberpunk. Orthographic front-on plane, evenly diffusely lit, no perspective, scene, objects, text/logos/border, colored lighting, neon glow, reflections or bright highlights. Restrained industrial detail must read at256px. Flat medium-gray brushed industrial steel flooring with repeating small raised diamond tread chevrons and sparse wear. Broad readable anti-slip geometry in albedo, sparse dark seams. Neutral gray source, engine darkens it. No whole object or platform.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-774f3053-e35c-42e3-8c7c-d16b28e748e7.png",
+  "conditioned": true,
+  "file": "public/assets/tex_metal.png",
+  "size": 256,
+  "bytes": 140785,
+  "sha256": "35bc5db27f35eae35a9641f13f036c42a948e47e66f7d1d416ee8e748f7f4e30"
+}

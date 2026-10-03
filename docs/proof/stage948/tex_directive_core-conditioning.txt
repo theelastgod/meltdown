@@ -1,0 +1,5 @@
+wrote public/assets/tex_directive_core.png — 256×256, 89.1 KB
+
+manifest line:
+
+  { id: "tex_directive_core", kind: "texture", file: "tex_directive_core.png", size: 256, bytes: 91227, sha256: "0d7c1a707ff1bb8b070906c5bb418106e73a8650d0d505a2b09fdb925a61043f", provenance: "…" },

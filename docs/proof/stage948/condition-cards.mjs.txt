@@ -1,0 +1,29 @@
+import fs from "node:fs";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+const dir="docs/proof/stage948";
+const recs=fs.readdirSync(dir).filter(f=>f.endsWith(".json")).map(f=>({path:dir+"/"+f,r:JSON.parse(fs.readFileSync(dir+"/"+f))})).filter(({r})=>r.source&&["district","portrait"].includes(r.kind));
+for(const {path,r} of recs){
+ const size=execFileSync("sips",["-g","pixelWidth","-g","pixelHeight",r.source],{encoding:"utf8"});
+ const w=Number(size.match(/pixelWidth: (\d+)/)[1]),h=Number(size.match(/pixelHeight: (\d+)/)[1]);
+ const [ow,oh]=r.kind==="district"?[960,411]:[256,256];
+ const ch=Math.min(h,Math.floor(w*oh/ow)),cw=Math.min(w,Math.floor(h*ow/oh));
+ const dst="public/"+(r.kind==="district"?"districts":"portraits")+"/"+r.id+".jpg";
+ const quality=r.kind==="district"?"75":"85";
+ const cropped="probe/out/stage948-crop-"+r.id+".png";
+ execFileSync("sips",["--cropToHeightWidth",String(ch),String(cw),r.source,"--out",cropped]);
+ execFileSync("sips",["-s","format","jpeg","-s","formatOptions",quality,"--resampleHeightWidth",String(oh),String(ow),cropped,"--out",dst]);
+ const b=fs.readFileSync(dst);
+ Object.assign(r,{conditioned:true,file:dst,width:ow,height:oh,bytes:b.length,sha256:createHash("sha256").update(b).digest("hex"),conditioning:"sips centered aspect-ratio crop; resize; JPEG quality"+quality});
+ fs.writeFileSync(path,JSON.stringify(r,null,2)+"\n");
+ console.log(r.id,ow,oh,b.length);
+}
+let plates=fs.readFileSync("shared/assets/plates.ts","utf8");
+for(const f of fs.readdirSync(dir).filter(f=>f.startsWith("tex_")&&f.endsWith(".json"))){
+ const r=JSON.parse(fs.readFileSync(dir+"/"+f));
+ if(!r.family)continue;
+ const re=new RegExp('('+r.family+': \\[)([^\\]]+)(\\])');
+ if(!re.test(plates))throw Error("family missing "+r.family);
+ plates=plates.replace(re,(all,a,b,c)=>b.includes('"'+r.id+'"')?all:a+b+', "'+r.id+'"'+c);
+}
+fs.writeFileSync("shared/assets/plates.ts",plates);

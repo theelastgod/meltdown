@@ -1,0 +1,13 @@
+{
+  "id": "tex_chain_woven",
+  "family": "chain",
+  "brief": "Perfectly front-on flat repeating galvanized steel chain-link mesh, regular thin diamond wires, understated gray highlights, dark interwoven crossings. Truly TRANSPARENT BACKGROUND in all diamond openings, no background scene, no border/post. Seamless mesh.",
+  "kind": "texture",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Perfectly front-on flat repeating galvanized steel chain-link mesh, regular thin diamond wires, understated gray highlights, dark interwoven crossings. Truly TRANSPARENT BACKGROUND in all diamond openings, no background scene, no border/post. Seamless mesh.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-f7d71e18-e98b-4867-ac8b-e8047656f852.png",
+  "conditioned": true,
+  "file": "public/assets/tex_chain_woven.png",
+  "size": 256,
+  "bytes": 92111,
+  "sha256": "3f571332ab3ee5308edf81a9a8737fd289dfe4f5bc806757c27aa0a1cecbb3f2"
+}

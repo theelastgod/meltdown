@@ -1,0 +1,5 @@
+wrote public/assets/tex_weapon_body.png — 256×256, 130.6 KB
+
+manifest line:
+
+  { id: "tex_weapon_body", kind: "texture", file: "tex_weapon_body.png", size: 256, bytes: 133757, sha256: "fb40b3b37e9053764509785a05dbfcf968ce9604464b7e8999cbd467e58e128a", provenance: "…" },

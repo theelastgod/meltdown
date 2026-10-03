@@ -1,0 +1,14 @@
+{
+  "id": "white_office",
+  "kind": "district",
+  "brief": "THE WHITE OFFICE: an austere blown-out white corporate chamber, monolithic pale desk, sparse geometric ceiling ribs, broad clean white light, long black floor inset leading to a distant motionless faceless shadowed figure. Tiny blood-red corporate filament accent. This is the only bright clean location; no cyan/magenta clutter.",
+  "prompt": "Use case: stylized-concept. One finished wide 21:9 arrival illustration for MELTDOWN browser game, to crop to960x411. Cohesive low-poly kitbash 3D concept art with sharp slab geometry, dark wet materials, thin physically attached cyan #35F2FF and magenta #FF3EC9 edge strip lights, pure black sky, colored night haze, restrained bloom, long rain-reflection smears. Cinematic yet grounded in simple game geometry, not photoreal futuristic megacity. NO readable text, logos, HUD, watermark, border, collage, visible faces, daylight or generic saturated rainbow. Keep important silhouettes within central75percent to survive wide crop. Location: White-room exception overrides night/dark palette: THE WHITE OFFICE: an austere blown-out white corporate chamber, monolithic pale desk, sparse geometric ceiling ribs, broad clean white light, long black floor inset leading to a distant motionless faceless shadowed figure. Tiny blood-red corporate filament accent. This is the only bright clean location; no cyan/magenta clutter.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-5a312ec2-703c-49af-a27e-0471a731d7c6.png",
+  "conditioned": true,
+  "file": "public/districts/white_office.jpg",
+  "width": 960,
+  "height": 411,
+  "bytes": 75092,
+  "sha256": "a3f713f3bde0585188bb8653c626c1c074b0a236e9185f2ba457b6cba14a9eb8",
+  "conditioning": "sips centered aspect-ratio crop; resize; JPEG quality75"
+}

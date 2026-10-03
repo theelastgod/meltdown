@@ -1,0 +1,5 @@
+wrote public/assets/tex_brick_cyan.png — 256×256, 136.4 KB
+
+manifest line:
+
+  { id: "tex_brick_cyan", kind: "texture", file: "tex_brick_cyan.png", size: 256, bytes: 139677, sha256: "04af038a6f39174add6571effe640c71c8ec7ab7296a10f07bd954b2ff8e670c", provenance: "…" },

@@ -1,0 +1,5 @@
+wrote public/assets/tex_facade.png — 256×256, 86.7 KB
+
+manifest line:
+
+  { id: "tex_facade", kind: "texture", file: "tex_facade.png", size: 256, bytes: 88790, sha256: "1e08e3f83e9599ecf5a45cd4455c55acf86cf123d46164b41b93c0266db8fbdb", provenance: "…" },

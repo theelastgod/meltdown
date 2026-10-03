@@ -1,0 +1,5 @@
+wrote public/assets/tex_wet_asphalt.png — 256×256, 148.9 KB
+
+manifest line:
+
+  { id: "tex_wet_asphalt", kind: "texture", file: "tex_wet_asphalt.png", size: 256, bytes: 152449, sha256: "a594a3abadb47f540b27a757788b802f8a2bae93bf97b7878c8559e1b5a398c0", provenance: "…" },

@@ -1,0 +1,5 @@
+wrote public/assets/tex_chain_woven.png — 256×256, 90.0 KB
+
+manifest line:
+
+  { id: "tex_chain_woven", kind: "texture", file: "tex_chain_woven.png", size: 256, bytes: 92111, sha256: "3f571332ab3ee5308edf81a9a8737fd289dfe4f5bc806757c27aa0a1cecbb3f2", provenance: "…" },

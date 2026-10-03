@@ -1,0 +1,5 @@
+wrote public/assets/tex_metal.png — 256×256, 137.5 KB
+
+manifest line:
+
+  { id: "tex_metal", kind: "texture", file: "tex_metal.png", size: 256, bytes: 140785, sha256: "35bc5db27f35eae35a9641f13f036c42a948e47e66f7d1d416ee8e748f7f4e30", provenance: "…" },

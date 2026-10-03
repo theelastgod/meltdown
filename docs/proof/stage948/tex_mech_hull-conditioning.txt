@@ -1,0 +1,5 @@
+wrote public/assets/tex_mech_hull.png — 256×256, 148.9 KB
+
+manifest line:
+
+  { id: "tex_mech_hull", kind: "texture", file: "tex_mech_hull.png", size: 256, bytes: 152498, sha256: "b34e59b9a7f95dd3ae84ef3c6f9cb57f3486127fde9078fc726abbd71ac0aa4f", provenance: "…" },

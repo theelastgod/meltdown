@@ -1,0 +1,14 @@
+{
+  "id": "deacon",
+  "kind": "portrait",
+  "brief": "THE DEACON, keeper of the ledger: broad bell-sleeved dark hooded robe, modest rectangular ledger held on chest, narrow cyan trim, stoic square posture. Deep hood interior completely black, no eyes, skin or facial features visible.",
+  "prompt": "Use case: stylized-concept. One square1024 character portrait for MELTDOWN cyberpunk game, delivered at256x256. Low-poly angular kitbash 3D illustration, near-black technical cloth, precise thin strip light only on garment edges. Chest-up centered readable silhouette, dark uncluttered background, face always an absolute unlit black void. No eyes, nose, mouth or illuminated skin; no glowing eyes. Not photoreal actor, not generic armored soldier. No typography, symbols, logo, frame, UI or collage. Distinct character: THE DEACON, keeper of the ledger: broad bell-sleeved dark hooded robe, modest rectangular ledger held on chest, narrow cyan trim, stoic square posture. Deep hood interior completely black, no eyes, skin or facial features visible.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-55a55932-0516-41d4-b86e-42d243ba578e.png",
+  "conditioned": true,
+  "file": "public/portraits/deacon.jpg",
+  "width": 256,
+  "height": 256,
+  "bytes": 15787,
+  "sha256": "0071e93327194d109093b923c3e02588e191b54b9ed499edbc1fae2238947831",
+  "conditioning": "sips centered aspect-ratio crop; resize; JPEG quality85"
+}

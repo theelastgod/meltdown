@@ -1,0 +1,13 @@
+{
+  "id": "tex_awning_patched",
+  "family": "awningAlt",
+  "brief": "Flat medium-gray waterproof canvas with fine weave, a few broad sewn repair patches and subtle rain staining. Neutral grayscale, engine supplies cyan tint. No awning object, folds with deep shadows, city or metal ribs.",
+  "kind": "texture",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Flat medium-gray waterproof canvas with fine weave, a few broad sewn repair patches and subtle rain staining. Neutral grayscale, engine supplies cyan tint. No awning object, folds with deep shadows, city or metal ribs.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-fc297f50-815a-4faf-bbbd-927000517da5.png",
+  "conditioned": true,
+  "file": "public/assets/tex_awning_patched.png",
+  "size": 256,
+  "bytes": 143453,
+  "sha256": "24101ab0879b36c10c9f838a4067fce8dee08f17ecf11a0e4dab28a7212dec21"
+}

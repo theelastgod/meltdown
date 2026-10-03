@@ -1,0 +1,28 @@
+
+> meltdown@0.1.0 probe:look
+> tsx probe/stage3.ts
+
+PASS  artifact: stage3-lane.png  — stage3-lane.png, nothing over it
+shot lane: luma 0.104 dark 65% neon 4.8% cy 60% mg 7% ye 10% gr 14%
+FAIL  the street is measured on its own rather than averaged into the skyline, and has not drifted further from the clip  — street dark 35.7% luma 0.142 · skyline luma 0.076 · street is 1.86x the skyline · whole frame 65% against the clip's 62%
+PASS  artifact: stage3-arena.png  — stage3-arena.png, nothing over it
+shot arena: luma 0.077 dark 80% neon 5.0% cy 47% mg 9% ye 6% gr 19%
+PASS  artifact: stage3-skyline.png  — stage3-skyline.png, nothing over it
+shot skyline: luma 0.081 dark 80% neon 5.8% cy 45% mg 8% ye 7% gr 15%
+PASS  post chain active at reduced internal resolution  — post=true scale=0.6
+PASS  lane: near-black base like the clip (dark 62% ref)  — dark 65%
+PASS  lane: mean luma in the clip's band (ref 0.133)  — luma 0.104
+PASS  lane: neon coverage in the clip's band (ref 4.1%)  — neon 4.8%
+PASS  lane: cyan + magenta dominate the neon (ref 51%)  — cy+mg 68%
+PASS  arena: near-black base like the clip (dark 62% ref)  — dark 80%
+PASS  arena: mean luma in the clip's band (ref 0.133)  — luma 0.077
+PASS  arena: neon coverage in the clip's band (ref 4.1%)  — neon 5.0%
+PASS  arena: cyan + magenta dominate the neon (ref 51%)  — cy+mg 56%
+PASS  skyline: near-black base like the clip (dark 62% ref)  — dark 80%
+PASS  skyline: mean luma in the clip's band (ref 0.133)  — luma 0.081
+PASS  skyline: neon coverage in the clip's band (ref 4.1%)  — neon 5.8%
+PASS  skyline: cyan + magenta dominate the neon (ref 51%)  — cy+mg 53%
+FAIL  sim holds 60 Hz under the full post chain  — 13.0 ticks/s at 1.8 fps (SwiftShader, 480x270)
+PASS  no page errors  — clean console
+
+17/19 checks passed.

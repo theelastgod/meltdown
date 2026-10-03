@@ -1,0 +1,14 @@
+{
+  "id": "lease_row",
+  "kind": "district",
+  "brief": "LEASE ROW: imposing stacked dark rental blocks with magenta edge strips, cyan noodle and pawn storefront light, a rain-slick broad alley and small faceless hooded figures. Narrow open warehouse shop at street level and a distant black corporate tower. Night city at human scale.",
+  "prompt": "Use case: stylized-concept. One finished wide 21:9 arrival illustration for MELTDOWN browser game, to crop to960x411. Cohesive low-poly kitbash 3D concept art with sharp slab geometry, dark wet materials, thin physically attached cyan #35F2FF and magenta #FF3EC9 edge strip lights, pure black sky, colored night haze, restrained bloom, long rain-reflection smears. Cinematic yet grounded in simple game geometry, not photoreal futuristic megacity. NO readable text, logos, HUD, watermark, border, collage, visible faces, daylight or generic saturated rainbow. Keep important silhouettes within central75percent to survive wide crop. Location: LEASE ROW: imposing stacked dark rental blocks with magenta edge strips, cyan noodle and pawn storefront light, a rain-slick broad alley and small faceless hooded figures. Narrow open warehouse shop at street level and a distant black corporate tower. Night city at human scale.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-c18cb842-d951-46fc-9d21-77873d8de76c.png",
+  "conditioned": true,
+  "file": "public/districts/lease_row.jpg",
+  "width": 960,
+  "height": 411,
+  "bytes": 135879,
+  "sha256": "8ba653d8cdf8750440c4903e3b14cbcd009f4a2726842647921d16851e680624",
+  "conditioning": "sips centered aspect-ratio crop; resize; JPEG quality75"
+}

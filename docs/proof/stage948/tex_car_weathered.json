@@ -1,0 +1,13 @@
+{
+  "id": "tex_car_weathered",
+  "family": "car",
+  "brief": "Flat brushed medium-gray car body paint, subtle fine metallic grain, sparse hairline scratches and understated vertical dried rain trails. No car illustration, glass, wheels, objects or reflections; dark body color supplied by engine.",
+  "kind": "texture",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Flat brushed medium-gray car body paint, subtle fine metallic grain, sparse hairline scratches and understated vertical dried rain trails. No car illustration, glass, wheels, objects or reflections; dark body color supplied by engine.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-b4703144-4262-4753-9d15-183dffd5591e.png",
+  "conditioned": true,
+  "file": "public/assets/tex_car_weathered.png",
+  "size": 256,
+  "bytes": 125959,
+  "sha256": "9fe7a4a34cd300924945f160a6d4afec989c86803ce82a7b4d3f9b5cccb4bc80"
+}

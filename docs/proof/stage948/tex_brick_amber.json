@@ -1,0 +1,10 @@
+{
+  "id": "tex_brick_amber",
+  "prompt": "Use case: stylized-concept. Production seamless square1024 material albedo for MELTDOWN, near-black low-poly cyberpunk. Orthographic front-on plane, evenly diffusely lit, no perspective, scene, objects, text/logos/border, colored lighting, neon glow, reflections or bright highlights. Restrained industrial detail must read at256px. Dark smoked umber-charcoal industrial brick in slightly rough squat offset rows. Subtle aged iron staining, narrow black mortar, restrained wear. Muted material warmth only; no amber glow or yellow brick. Threat lighting supplied by game.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-daba0b23-736c-4856-96be-eee47e5e158f.png",
+  "conditioned": true,
+  "file": "public/assets/tex_brick_amber.png",
+  "size": 256,
+  "bytes": 142021,
+  "sha256": "ff1e149f9a7cce1936e1621b58124f25003ad57182ea56f6eb1e97bd01be91aa"
+}

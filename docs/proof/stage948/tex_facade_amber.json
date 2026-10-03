@@ -1,0 +1,10 @@
+{
+  "id": "tex_facade_amber",
+  "prompt": "Use case: stylized-concept. Production seamless facade texture for MELTDOWN low-poly cyberpunk game. Square1024, perfectly front-on orthographic FLAT elevation tile, modular window grid fills every edge. No street, ground, roof, whole building, perspective, objects, text, logos or border. Texture also emits light, so at least90percent must be almost black #06090f. Sparse small rectangular windows, crisp flat luminous colors, NO bloom or glow halos baked in. Regular understated mechanical panel grid; a few thin trim segments, not a glowing outline around every window. Repeat on skyscraper walls, readable at256px. VANTAGE industrial security block: heavy dark horizontal panel grid, very sparse small amber security windows, occasional muted cyan window. Predominantly nearblack; amber is a restricted threat accent, not wallpaper. No yellow floodlit wall.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-756853ba-60d6-4641-b989-57bcfd7055e2.png",
+  "conditioned": true,
+  "file": "public/assets/tex_facade_amber.png",
+  "size": 256,
+  "bytes": 88870,
+  "sha256": "8fdb0b6ec9d5cfef704b3a6c34e8f1666e30cde94f7e36c3368a6dc5661bfbe6"
+}

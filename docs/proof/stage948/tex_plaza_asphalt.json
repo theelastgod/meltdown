@@ -1,0 +1,10 @@
+{
+  "id": "tex_plaza_asphalt",
+  "prompt": "Use case: stylized-concept. Production asset for MELTDOWN, near-black low-poly cyberpunk game. One seamless square material albedo tile, perfectly orthographic top-down, filling every edge, 1024x1024. Even diffuse light, no perspective, horizon, scene, objects, lettering, logo, border or baked neon/reflections. Restrained detail readable at256px; dark but visible material values, game lights supply neon and wet reflections. Dark blue-charcoal asphalt with restrained fine aggregate and irregular subtle tar repairs, a few narrow hairline cracks. No road lines. Large unobtrusive texture pattern without a focal object; minimal contrast, damp matte substrate.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-6b28a2f8-d4b2-4a67-ae64-fc15642f00ec.png",
+  "conditioned": true,
+  "file": "public/assets/tex_plaza_asphalt.png",
+  "size": 256,
+  "bytes": 153132,
+  "sha256": "f497a014a473c5924e475426a082b456a1337bf29e0bc75cbc3819a44c5d0606"
+}

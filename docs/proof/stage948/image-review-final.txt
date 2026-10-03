@@ -1,0 +1,17 @@
+{
+  "decoded": 43,
+  "slab": {
+    "id": "tex_plaza_slab",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.030568912041489617,
+    "transparentFraction": 0
+  },
+  "chain": {
+    "id": "tex_chain_woven",
+    "width": 256,
+    "height": 256,
+    "linearLuma": 0.037963214034777974,
+    "transparentFraction": 0.81805419921875
+  }
+}

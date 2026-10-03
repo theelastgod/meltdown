@@ -1,0 +1,5 @@
+wrote public/assets/tex_plaza_tread.png — 256×256, 151.1 KB
+
+manifest line:
+
+  { id: "tex_plaza_tread", kind: "texture", file: "tex_plaza_tread.png", size: 256, bytes: 154776, sha256: "ed2e9347db4659e98a59110082330a9c27f43bfa963fa2b80df2d5d4baf9b465", provenance: "…" },

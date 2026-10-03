@@ -1,0 +1,10 @@
+{
+  "id": "tex_plaza_slab",
+  "prompt": "Use case: stylized-concept. Production asset for MELTDOWN, near-black low-poly cyberpunk game. One seamless square material albedo tile, perfectly orthographic top-down, filling every edge, 1024x1024. Even diffuse light, no perspective, horizon, scene, objects, lettering, logo, border or baked neon/reflections. Restrained detail readable at256px; dark but visible material values, game lights supply neon and wet reflections. Broad weathered dark blue-gray stone slabs, deep narrow grout in regular offset rectangular grid, sparse chipped corners and mild rain-darkened edges. Large clear stone forms, near-black joints. This goes underneath wet reflections; make the stone rhythm distinct without brightening the street.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-ad80b8e0-a6d9-4b38-9ffc-19d638b1e73e.png",
+  "conditioned": true,
+  "file": "public/assets/tex_plaza_slab.png",
+  "size": 256,
+  "bytes": 146915,
+  "sha256": "755965cffaf24d27c8d21acd53eb7d3a3a7fa4647714e0786f4d0a152cbc3720"
+}

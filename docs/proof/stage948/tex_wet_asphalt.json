@@ -1,0 +1,10 @@
+{
+  "id": "tex_wet_asphalt",
+  "prompt": "Use case: stylized-concept. MELTDOWN near-black low-poly cyberpunk game. Production seamless albedo texture: square1024x1024, fullbleed, strictly orthographic top-down, uniform diffuse illumination. No scene/horizon/perspective, objects, markings/text/logos, baked lighting, neon or reflected buildings. Subdued readable material after reduction to256px, repeat smoothly across every edge. Rain-dark charcoal asphalt, almost black tar binder and sparse tiny gray aggregate, faint repaired seams, broad subtle damp blotches; not shiny and no mirror puddles, engine supplies sheen.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-03743914-4123-49fc-aeee-32a39b9021d9.png",
+  "conditioned": true,
+  "file": "public/assets/tex_wet_asphalt.png",
+  "size": 256,
+  "bytes": 152449,
+  "sha256": "a594a3abadb47f540b27a757788b802f8a2bae93bf97b7878c8559e1b5a398c0"
+}

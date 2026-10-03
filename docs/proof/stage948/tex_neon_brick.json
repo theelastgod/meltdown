@@ -1,0 +1,11 @@
+{
+  "id": "tex_neon_brick",
+  "prompt": "Use case: stylized-concept. A production material tile for MELTDOWN low-poly cyberpunk city at night. Square1024 fullbleed seamless repeat, perfectly orthographic flat plane, no perspective or surrounding scene. Even diffuse lighting; no neon reflections, glow, cast shadows, object silhouettes, text, labels or border. Quiet restrained detail legible at256px. Very dark purple-charcoal industrial brick wall, offset long brick rows, narrow black mortar, restrained chipped rough corners and subtle salt stains. Front-on brick material, NOT illuminated brick: magenta strip lighting comes from geometry, no glowing mortar.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-6b0071e9-dd5b-4abe-a570-b220ab6c64e2.png",
+  "conditioned": true,
+  "file": "public/assets/tex_neon_brick.png",
+  "size": 256,
+  "bytes": 144649,
+  "sha256": "9f6e215d0b053927b891dc4188c03b48a9098137ac46db7925476b0b97ef19ea",
+  "targetSize": 256
+}

@@ -1,0 +1,5 @@
+wrote public/assets/tex_facade_amber.png — 256×256, 86.8 KB
+
+manifest line:
+
+  { id: "tex_facade_amber", kind: "texture", file: "tex_facade_amber.png", size: 256, bytes: 88870, sha256: "8fdb0b6ec9d5cfef704b3a6c34e8f1666e30cde94f7e36c3368a6dc5661bfbe6", provenance: "…" },

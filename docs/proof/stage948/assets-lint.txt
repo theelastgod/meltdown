@@ -1,0 +1,6 @@
+
+> meltdown@0.1.0 lint:assets
+> tsx shared/assets/cli.ts
+
+asset lint: 339 asset(s) · 47898.2 KB of 65536.0 KB · 273 plate(s) drawn, 66 recorded undrawn · 12 clip(s), 1519.7 KB not precached · 1 violations
+  ✗ tex_neon_brick [per-asset-budget] 575346 bytes over the 524288 ceiling

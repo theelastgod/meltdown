@@ -1,0 +1,14 @@
+{
+  "id": "vantage",
+  "kind": "portrait",
+  "brief": "VANTAGE integrity system: no person or body. One stark amber mechanical camera iris in an angular black housing, recessed dark concentric lens, thin precise amber eye aperture. Minimal oppressive near-black background, no letters or symbols.",
+  "prompt": "Use case: stylized-concept. Square1024 portrait icon for MELTDOWN low-poly cyberpunk, precise angular mechanical rendering, near-black background, no text, watermark or border. No person, hood or human eye. VANTAGE integrity system: no person or body. One stark amber mechanical camera iris in an angular black housing, recessed dark concentric lens, thin precise amber eye aperture. Minimal oppressive near-black background, no letters or symbols.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-a6b5b1d9-db97-4ce7-becc-a105913f8d93.png",
+  "conditioned": true,
+  "file": "public/portraits/vantage.jpg",
+  "width": 256,
+  "height": 256,
+  "bytes": 15516,
+  "sha256": "9b6af40c2c85cda9ed6e4f802aa9e48cd7b8097136c6e16ec666cb35c0937372",
+  "conditioning": "sips centered aspect-ratio crop; resize; JPEG quality85"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "tex_directive_core",
+  "kind": "texture",
+  "brief": "Small precision optical core material: a centered geometric concentric lens aperture, nearly black around a narrow muted pale gray inner ring, crisp technical radial detail. Monochrome only because game multiplies this by blood-red light. No weapon, lettering or external housing/background scene.",
+  "nonTiling": true,
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. For this optical insert use a centered design instead of seamless repeat. Small precision optical core material: a centered geometric concentric lens aperture, nearly black around a narrow muted pale gray inner ring, crisp technical radial detail. Monochrome only because game multiplies this by blood-red light. No weapon, lettering or external housing/background scene.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-6f1ff462-0a70-44a6-827c-7a362f5b475a.png",
+  "conditioned": true,
+  "file": "public/assets/tex_directive_core.png",
+  "size": 256,
+  "bytes": 91227,
+  "sha256": "0d7c1a707ff1bb8b070906c5bb418106e73a8650d0d505a2b09fdb925a61043f"
+}

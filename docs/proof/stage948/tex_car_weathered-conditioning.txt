@@ -1,0 +1,5 @@
+wrote public/assets/tex_car_weathered.png — 256×256, 123.0 KB
+
+manifest line:
+
+  { id: "tex_car_weathered", kind: "texture", file: "tex_car_weathered.png", size: 256, bytes: 125959, sha256: "9fe7a4a34cd300924945f160a6d4afec989c86803ce82a7b4d3f9b5cccb4bc80", provenance: "…" },

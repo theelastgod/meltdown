@@ -1,0 +1,5 @@
+wrote public/assets/tex_facade_cyan.png — 256×256, 111.3 KB
+
+manifest line:
+
+  { id: "tex_facade_cyan", kind: "texture", file: "tex_facade_cyan.png", size: 256, bytes: 113944, sha256: "51aaf04467d8debb0092f8ffaa7041ea30aed46b1c3922121c6253a5e7c3412d", provenance: "…" },

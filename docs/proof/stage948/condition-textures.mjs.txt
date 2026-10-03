@@ -1,0 +1,26 @@
+import fs from "node:fs";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+const dir="docs/proof/stage948";
+const records=fs.readdirSync(dir).filter(f=>f.endsWith(".json")&&f.startsWith("tex_")).map(f=>JSON.parse(fs.readFileSync(dir+"/"+f)));
+const wanted=process.argv.slice(2);
+const generatedPath="shared/assets/generated.json",corePath="shared/assets/manifest.ts";
+for(const r of records.filter(r=>!wanted.length||wanted.includes(r.id))) {
+  if(r.conditioned) continue;
+  const generated=JSON.parse(fs.readFileSync(generatedPath));
+  let core=fs.readFileSync(corePath,"utf8");
+  const existing=generated.find(a=>a.id===r.id);
+  const re=new RegExp('  \\{\\n    id: "'+r.id+'",[\\s\\S]*?\\n  \\},');
+  const block=core.match(re)?.[0];
+  if(!existing&&!block&&!r.family)throw Error("Not declared: "+r.id);
+  const size=r.targetSize??existing?.size??Number(block?.match(/size: (\d+)/)?.[1]??256);
+  const output=execFileSync(process.execPath,["node_modules/tsx/dist/cli.mjs","tools/asset-add.ts",r.source,r.id,String(size)],{encoding:"utf8",timeout:180000});
+  fs.writeFileSync(dir+"/"+r.id+"-conditioning.txt",output);
+  const file=r.id+".png",buf=fs.readFileSync("public/assets/"+file),bytes=buf.length,sha256=createHash("sha256").update(buf).digest("hex");
+  if(existing){Object.assign(existing,{file,size,bytes,sha256});fs.writeFileSync(generatedPath,JSON.stringify(generated,null,2)+"\n");}
+  else if(block){const changed=block.replace(/size: [0-9]+/,"size: "+size).replace(/file: "[^"]+"/,'file: "'+file+'"').replace(/bytes: \d+/,"bytes: "+bytes).replace(/sha256: "[^"]+"/,'sha256: "'+sha256+'"');core=core.replace(block,changed);fs.writeFileSync(corePath,core);}
+  else {generated.push({id:r.id,kind:"texture",file,size,bytes,sha256,provenance:"Generated artwork, 2026-10-02; conditioned by tools/asset-add.ts"});fs.writeFileSync(generatedPath,JSON.stringify(generated,null,2)+"\n");}
+  Object.assign(r,{conditioned:true,file:"public/assets/"+file,size,bytes,sha256});
+  fs.writeFileSync(dir+"/"+r.id+".json",JSON.stringify(r,null,2)+"\n");
+  console.log(r.id,size,bytes,sha256);
+}

@@ -1,0 +1,12 @@
+{
+  "id": "tex_crowd_coat",
+  "kind": "texture",
+  "brief": "Flat coated raincoat fabric, medium-dark neutral gray, fine close ripstop weave, subtle weathered coating and very faint narrow stitch lines. No garment or body silhouette, no large folds, no scene or colored reflections. Engine supplies dark coat tint.",
+  "prompt": "Use case: stylized-concept. Production albedo material for MELTDOWN low-poly cyberpunk game. Square1024 fullbleed, perfectly orthographic flat surface, even diffuse illumination, seamless all edges unless noted. No perspective, whole object, scene, text/logo/border, neon, colored light, cast shadows or baked reflections. Restrained texture detail readable at256px. Flat coated raincoat fabric, medium-dark neutral gray, fine close ripstop weave, subtle weathered coating and very faint narrow stitch lines. No garment or body silhouette, no large folds, no scene or colored reflections. Engine supplies dark coat tint.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-2237e200-df78-4931-a772-d38969b2210d.png",
+  "conditioned": true,
+  "file": "public/assets/tex_crowd_coat.png",
+  "size": 256,
+  "bytes": 139546,
+  "sha256": "579ed83ed15d5dcbd29436aab62272ab1f7db7b19086ca8921820507d6c4bce3"
+}

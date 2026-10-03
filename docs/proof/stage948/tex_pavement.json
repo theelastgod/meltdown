@@ -1,0 +1,10 @@
+{
+  "id": "tex_pavement",
+  "prompt": "Use case: stylized-concept. MELTDOWN near-black low-poly cyberpunk game. Production seamless albedo texture: square1024x1024, fullbleed, strictly orthographic top-down, uniform diffuse illumination. No scene/horizon/perspective, objects, markings/text/logos, baked lighting, neon or reflected buildings. Subdued readable material after reduction to256px, repeat smoothly across every edge. Square dark gray concrete sidewalk slabs in a four-by-four grid, narrow deep black joints, small corner chips, sparse damp staining and faint aggregate. Broad quiet surfaces, no bright daylight appearance.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-ddcf02f2-6c9e-4d75-af4d-b858abbf6ec0.png",
+  "conditioned": true,
+  "file": "public/assets/tex_pavement.png",
+  "size": 256,
+  "bytes": 140273,
+  "sha256": "d606996b33099524157964fcd4f255a97112540c1de5b2b43b5352038099ddaa"
+}

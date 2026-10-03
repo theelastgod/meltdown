@@ -1,0 +1,14 @@
+{
+  "id": "night_market",
+  "kind": "district",
+  "brief": "NIGHT MARKET: layered magenta fabric awnings and cyan strip-lit food counters, small dark hooded crowd under umbrellas, sparse pink hanging lantern boxes, wet ground with long colored light smears, tall black residential stacks around the market.",
+  "prompt": "Use case: stylized-concept. One finished wide 21:9 arrival illustration for MELTDOWN browser game, to crop to960x411. Cohesive low-poly kitbash 3D concept art with sharp slab geometry, dark wet materials, thin physically attached cyan #35F2FF and magenta #FF3EC9 edge strip lights, pure black sky, colored night haze, restrained bloom, long rain-reflection smears. Cinematic yet grounded in simple game geometry, not photoreal futuristic megacity. NO readable text, logos, HUD, watermark, border, collage, visible faces, daylight or generic saturated rainbow. Keep important silhouettes within central75percent to survive wide crop. Location: NIGHT MARKET: layered magenta fabric awnings and cyan strip-lit food counters, small dark hooded crowd under umbrellas, sparse pink hanging lantern boxes, wet ground with long colored light smears, tall black residential stacks around the market.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-333dc36c-08fb-42d1-85fe-94440592dd46.png",
+  "conditioned": true,
+  "file": "public/districts/night_market.jpg",
+  "width": 960,
+  "height": 411,
+  "bytes": 135433,
+  "sha256": "6fefb0bff96509df48e9ee7056a5962fbef6787487976be2906a796dc155a2c1",
+  "conditioning": "sips centered aspect-ratio crop; resize; JPEG quality75"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "drainage_yard",
+  "kind": "district",
+  "brief": "THE DRAINAGE YARD: empty low concrete training/service yard at night, shallow drainage channels and grates, boxy cover blocks, cyan and magenta narrow rail lighting, fenced edges and black city beyond. Wet stone foreground, practical sparse kitbash geometry.",
+  "prompt": "Use case: stylized-concept. One finished wide 21:9 arrival illustration for MELTDOWN browser game, to crop to960x411. Cohesive low-poly kitbash 3D concept art with sharp slab geometry, dark wet materials, thin physically attached cyan #35F2FF and magenta #FF3EC9 edge strip lights, pure black sky, colored night haze, restrained bloom, long rain-reflection smears. Cinematic yet grounded in simple game geometry, not photoreal futuristic megacity. NO readable text, logos, HUD, watermark, border, collage, visible faces, daylight or generic saturated rainbow. Keep important silhouettes within central75percent to survive wide crop. Location: THE DRAINAGE YARD: empty low concrete training/service yard at night, shallow drainage channels and grates, boxy cover blocks, cyan and magenta narrow rail lighting, fenced edges and black city beyond. Wet stone foreground, practical sparse kitbash geometry.",
+  "source": "/Users/wendellphillips/.codex/generated_images/01a0d40c-da7f-7771-be11-e5727d75f29c/exec-b9b4964b-8937-4b26-af00-29b3cdaec2eb.png",
+  "conditioned": true,
+  "file": "public/districts/drainage_yard.jpg",
+  "width": 960,
+  "height": 411,
+  "bytes": 126773,
+  "sha256": "777bf97df5424f4ffebf6b7388ee81ea4e0608b3b96551895100f5b5b5a9ee6f",
+  "conditioning": "sips centered aspect-ratio crop; resize; JPEG quality75"
+}

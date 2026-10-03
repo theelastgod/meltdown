@@ -1,0 +1,5 @@
+wrote public/assets/tex_plaza_terrazzo.png — 256×256, 138.5 KB
+
+manifest line:
+
+  { id: "tex_plaza_terrazzo", kind: "texture", file: "tex_plaza_terrazzo.png", size: 256, bytes: 141773, sha256: "77bc941b0811e59223551d3bd6a8a4e867b0c2fa2e3e2a56fbbd268dedc9a930", provenance: "…" },

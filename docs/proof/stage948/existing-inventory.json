@@ -1,0 +1,73 @@
+[
+  {
+    "directory": "missions",
+    "expected": 7,
+    "found": 7,
+    "files": [
+      "m1_wake_unlisted.jpg",
+      "m2_deadletter_run.jpg",
+      "m3_repo_volatility.jpg",
+      "m4_the_leak.jpg",
+      "m5_blind_the_model.jpg",
+      "m6_trial_by_data.jpg",
+      "m7_white_office.jpg"
+    ]
+  },
+  {
+    "directory": "gigs",
+    "expected": 12,
+    "found": 12,
+    "files": [
+      "g_convoy_depot.jpg",
+      "g_convoy_docks.jpg",
+      "g_convoy_row.jpg",
+      "g_escrow_depot.jpg",
+      "g_escrow_docks.jpg",
+      "g_escrow_row.jpg",
+      "g_lattice_depot.jpg",
+      "g_lattice_docks.jpg",
+      "g_lattice_row.jpg",
+      "g_rescue_depot.jpg",
+      "g_rescue_docks.jpg",
+      "g_rescue_row.jpg"
+    ]
+  },
+  {
+    "directory": "endings",
+    "expected": 6,
+    "found": 6,
+    "files": [
+      "chair.jpg",
+      "chair_clockeater.jpg",
+      "chair_estate.jpg",
+      "wipe.jpg",
+      "wipe_fire.jpg",
+      "wipe_quiet.jpg"
+    ]
+  },
+  {
+    "directory": "kit",
+    "expected": 7,
+    "found": 7,
+    "files": [
+      "p_blood_ledger.jpg",
+      "p_directive_optic.jpg",
+      "p_filament_core.jpg",
+      "p_red_lease.jpg",
+      "p_wern_pulse.jpg",
+      "w_clockeater.jpg",
+      "w_directive.jpg"
+    ]
+  },
+  {
+    "directory": "icons",
+    "expected": 4,
+    "found": 4,
+    "files": [
+      "capital-256.png",
+      "capital-64.png",
+      "icon-192.png",
+      "icon-512.png"
+    ]
+  }
+]
