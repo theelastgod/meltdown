@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 960 — The north wall of Repo Depot opens onto a crest
+
+**The ask.** REPO DEPOT has an impound, a west apron, an east ramp, and a south bay. Its north wall is still a solid facade, and the two north gates sit in the middle of it.
+
+**The change.** Three metres on the west run of that wall, clear of both north gates, are open onto the slab that was already there. A fence above mantle height holds the lot. A sign on the street side reads NORTH CREST. Standing out there, the line reads NORTH CREST. THE DEPOT WALL IS BEHIND YOU. The lot changes no gun. The impound, the apron, the ramp, and the bay stay open. The heights span, the market row, the docks slip, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/crest.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the depot hash back to `dd855c44f5502260163a68e3ccc81bbe74cff6a33105847febe7a8365a1a2117`. The open level hashes to `4cf5a6ba1d6b53d530500cdf2c5d17b3ef73f03bd5ba7c732f2edf08c3e47454`. `tests/citysize.test.ts` kept the docks hash and the old 3×3 hash. `tests/newdistricts.test.ts` kept the market hash and the heights hash. `tests/citycost.test.ts` stayed inside 190k: the depot's city frame measured 117,758 triangles and 33 batches. LEASE ROW's city frame stayed 189,998. The docks stayed 97,624. NIGHT MARKET stayed 117,122. RELAY HEIGHTS stayed 92,910. The non-city dressing fingerprint for the depot was re-recorded (`447d7b3ce2a36e90`); the other four districts stayed the bytes they were. `tests/crest.test.ts`, `tests/citygatedoors.test.ts`, `tests/citycost.test.ts`, and `tests/bay.test.ts` passed together. The lease-row path in `tests/citysize.test.ts` timed out once in that group and passed when the file ran alone. The timeout was not raised.
+
+**Open.** The west wall of LEASE ROW is still solid. The west wall of DEADLETTER DOCKS is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 959 — The south wall of Repo Depot opens onto a bay
 
 **The ask.** REPO DEPOT has an impound, a west apron, and an east ramp. Its south wall is still a solid facade, and the two south gates sit in the middle of it.

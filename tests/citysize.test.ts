@@ -12,7 +12,9 @@
  * that level. Stage 956 re-pinned it again: the north slip is in that level. Stage 947 re-pinned
  * REPO DEPOT only: the impound is
  * in that level. Stage 953 re-pinned it again: the west apron is in that level. Stage 954
- * re-pinned it again: the east ramp is in that level. LEASE ROW's old 3×3 stays on the pre-grid bytes.
+ * re-pinned it again: the east ramp is in that level. Stage 959 re-pinned it again: the south bay
+ * is in that level. Stage 960 re-pinned it again: the north crest is in that level. LEASE ROW's
+ * old 3×3 stays on the pre-grid bytes.
  *
  * The second is that the 5×5 district plays: every node reachable from every spawn, everything the
  * sim sends over the wire well inside what a position can carry, the claims and safe zones on
@@ -69,8 +71,11 @@ const DEPOT_APRON = "8649dcfc8056d19c1b39ef460cf1a9ac6d167a49c68570694b1b753369b
 /** Depot after Stage 954 opened the east wall. Sealing the south bay puts this hash back. */
 const DEPOT_RAMP = "179d0aaba7b73e0802d4b03833efb238893d9c90177e9d3207d57c22c209ad5b";
 
-/** Depot after Stage 959 opened the south wall. The ramp bytes stay in DEPOT_RAMP. */
+/** Depot after Stage 959 opened the south wall. Sealing the north crest puts this hash back. */
 const DEPOT_BAY = "dd855c44f5502260163a68e3ccc81bbe74cff6a33105847febe7a8365a1a2117";
+
+/** Depot after Stage 960 opened the north wall. The bay bytes stay in DEPOT_BAY. */
+const DEPOT_CREST = "4cf5a6ba1d6b53d530500cdf2c5d17b3ef73f03bd5ba7c732f2edf08c3e47454";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -78,18 +83,18 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, and the south bay (Stage 959)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, and the north crest (Stage 960)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_BAY);
+    expect(hash(spec)).toBe(DEPOT_CREST);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
     expect(generateDistrict(spec).bay?.line).toMatch(/SOUTH BAY/);
-    // the pin is not the sealed wall: closing the bay would put the ramp hash back
+    expect(generateDistrict(spec).crest?.line).toMatch(/NORTH CREST/);
+    // the pin is not the sealed wall: closing the crest would put the bay hash back
+    expect(DEPOT_CREST).not.toBe(DEPOT_BAY);
     expect(DEPOT_BAY).not.toBe(DEPOT_RAMP);
-    expect(DEPOT_RAMP).not.toBe(DEPOT_APRON);
-    expect(DEPOT_APRON).not.toBe(DEPOT_IMPOUND);
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 

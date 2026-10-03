@@ -1,0 +1,14 @@
+Stage 960 — REPO DEPOT north crest
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  repo_depot city: 117,758 triangles, 33 batches, 336 boxes
+  deadletter_docks city: 97,624 triangles, 36 batches (unchanged)
+  lease_row city: 189,998 triangles (unchanged; two under 190k)
+  night_market city: 117,122 triangles, 33 batches (unchanged)
+  relay_heights city: 92,910 triangles, 32 batches (unchanged)
+
+Depot hash with the crest: 4cf5a6ba1d6b53d530500cdf2c5d17b3ef73f03bd5ba7c732f2edf08c3e47454
+Depot hash with the wall sealed: dd855c44f5502260163a68e3ccc81bbe74cff6a33105847febe7a8365a1a2117
+Non-city dressing fingerprint: 447d7b3ce2a36e90
+
+Not calling openDepotCrest failed tests/crest.test.ts. The street, the passage, and the ground outside were gone.
