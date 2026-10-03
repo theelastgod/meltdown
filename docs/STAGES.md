@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 957 — The south wall of Night Market opens onto a row
+
+**The ask.** NIGHT MARKET already has an open-air lot on its north-west wall. Its south wall is still a solid facade, and the two south gates sit in the middle of it.
+
+**The change.** Three metres on the east run of that wall, clear of both south gates, are open onto the slab that was already there. A fence above mantle height holds the lot. A sign on the street side reads SOUTH ROW. Standing out there, the line reads SOUTH ROW. THE MARKET WALL IS BEHIND YOU. The lot changes no gun. The north lot stays open. The docks slip, the depot ramp, the cold rack, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/stall.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the market hash back to `b1a6ca161b94a4dbfe5c578015731fa57ce8fc8efa1bcd694801fec4af6f467c`. The open level hashes to `cbaf3f3133adcd0861d026f2b9f5bf27cbde26a6bd639b095a6bb4c32bd6083f`. `tests/newdistricts.test.ts` kept the heights hash. `tests/citysize.test.ts` kept the docks hash, the depot hash, and the old 3×3 hash. `tests/citycost.test.ts` stayed inside 190k: the market's city frame measured 117,122 triangles and 33 batches. LEASE ROW's city frame stayed 189,998. The docks stayed 97,624. The depot stayed 114,354. RELAY HEIGHTS stayed 90,166. The non-city dressing fingerprint for the market was re-recorded (`a2b85959d62b2745`); the other four districts stayed the bytes they were. The lease-row path test timed out at 5 s twice while the machine was hot, then passed alone in 1.4 s. The timeout was not raised. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean.
+
+**Open.** The west wall of LEASE ROW is still solid. The south wall of RELAY HEIGHTS is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 956 — The north wall of Deadletter Docks opens onto a slip
 
 **The ask.** DEADLETTER DOCKS has a cold store, a south pier, and an east quay. Its north wall is still a solid facade, and the two north gates sit in the middle of it.

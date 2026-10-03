@@ -1,0 +1,14 @@
+Stage 957 — NIGHT MARKET south row
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  night_market city: 117,122 triangles, 33 batches, 300 boxes
+  deadletter_docks city: 97,624 triangles, 36 batches (unchanged)
+  repo_depot city: 114,354 triangles, 33 batches (unchanged)
+  lease_row city: 189,998 triangles (unchanged; two under 190k)
+  relay_heights city: 90,166 triangles, 32 batches (unchanged)
+
+Market hash with the row: cbaf3f3133adcd0861d026f2b9f5bf27cbde26a6bd639b095a6bb4c32bd6083f
+Market hash with the wall sealed: b1a6ca161b94a4dbfe5c578015731fa57ce8fc8efa1bcd694801fec4af6f467c
+Non-city dressing fingerprint: a2b85959d62b2745
+
+Not calling openNightStall failed tests/stall.test.ts. The street, the passage, and the ground outside were gone.
