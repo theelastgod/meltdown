@@ -19,7 +19,7 @@ export interface WalletSource {
   /** the chain the wallet itself is on (null: not asked yet) */
   walletChain: number | null;
   /** the connected address's own holdings, read from the chain (null: not read yet) */
-  holdings: { capital: string; ghostfile: number } | null;
+  holdings: { capital: string; ghostfile: number | null } | null;
   last: string;
 }
 
@@ -44,6 +44,8 @@ export interface WalletState {
   chainName: string;
   walletChain: number | null;
   capital: string | null;
+  /** true once a holdings read has returned, including a token with no ghostfile contract */
+  tokenKnown: boolean;
   ghostfile: number | null;
   line: string;
   /** the host's own reason, when the ledger has no chain to read */
@@ -51,6 +53,8 @@ export interface WalletState {
 }
 
 export const WALLET_SAFETY = "THE GAME NEVER ASKS FOR YOUR SEED PHRASE, AND NEVER SENDS FROM YOUR WALLET WITHOUT A SIGNATURE PROMPT IN YOUR WALLET.";
+/** The token is whatever the launchpad deploys. This page does not mint it and does not hold it. */
+export const WALLET_TOKEN = "THE TOKEN COMES FROM A LAUNCHPAD. THIS GAME DOES NOT HOLD IT AND DOES NOT PAY IT OUT. THE BALANCE APPEARS HERE AFTER THE LAUNCHPAD PUBLISHES IT.";
 
 /** 0x1234…abcd: six in front (0x and four), four behind. Anything shorter is shown whole. */
 export function shortAddress(a: string | null | undefined): string {
@@ -64,11 +68,11 @@ export function chainName(info: WalletSource["info"]): string {
 
 /**
  * The chain the ledger can actually sign against.
- * Chain 0, or a host that answered with a reason, is not a network: comparing the wallet to it
- * marked every real wallet WRONG NETWORK and SWITCH NETWORK asked for chain 0.
+ * Chain 0 is not a network: comparing the wallet to it marked every real wallet WRONG NETWORK
+ * and SWITCH NETWORK asked for chain 0. A reason beside a real chain id is a note, not a missing chain.
  */
 export function ledgerChainId(info: WalletSource["info"]): number | null {
-  if (!info || info.reason || !info.chainId) return null;
+  if (!info || !info.chainId) return null;
   return info.chainId;
 }
 
@@ -88,9 +92,10 @@ export function walletState(c: WalletSource | null, reachable: boolean): WalletS
     chainName: chainName(info),
     walletChain,
     capital: address ? (c?.holdings?.capital ?? null) : null,
+    tokenKnown: !!c?.holdings,
     ghostfile: address ? (c?.holdings?.ghostfile ?? null) : null,
     line: c?.last ?? "",
-    note: chainId === null && info?.reason ? info.reason : "",
+    note: info?.reason ?? "",
   };
 }
 
@@ -112,9 +117,12 @@ export function walletHtml(s: WalletState): string {
   if (s.address && s.status !== "connecting") {
     rows.push(`<div class="ln">ADDRESS <b title="${s.address}">${shortAddress(s.address)}</b></div>`);
     rows.push(`<div class="ln">$CAPITAL <b>${s.capital === null ? "…" : capitalText(s.capital)}</b></div>`);
-    rows.push(`<div class="ln">GHOSTFILE ${s.ghostfile === null ? "<b>…</b>" : s.ghostfile > 0 ? `<b>#${s.ghostfile} BOUND</b> <span class="dim">SOULBOUND TO THIS WALLET</span>` : `<b>NOT BOUND</b> <span class="dim">SIGN THE LINK IN FILE → COUNTER-LEDGER</span>`}</div>`);
+    if (!s.tokenKnown) rows.push(`<div class="ln">GHOSTFILE <b>…</b></div>`);
+    else if (s.ghostfile === null) rows.push(`<div class="ln dim">GHOSTFILE NOT ON THIS LEDGER</div>`);
+    else rows.push(`<div class="ln">GHOSTFILE ${s.ghostfile > 0 ? `<b>#${s.ghostfile} BOUND</b> <span class="dim">SOULBOUND TO THIS WALLET</span>` : `<b>NOT BOUND</b> <span class="dim">SIGN THE LINK IN FILE → COUNTER-LEDGER</span>`}</div>`);
   }
   rows.push(`<div class="ln safe">${WALLET_SAFETY}</div>`);
+  rows.push(`<div class="ln dim">${WALLET_TOKEN}</div>`);
   if (s.note) rows.push(`<div class="ln dim">${s.note}</div>`);
   if (s.line) rows.push(`<div class="ln am">${s.line}</div>`);
   return rows.join("");

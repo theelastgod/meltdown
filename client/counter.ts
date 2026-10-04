@@ -22,7 +22,7 @@ const ABI = artifacts as Record<string, { abi: Abi }>;
 export interface CounterInfo {
   chainId: number;
   devnet: boolean;
-  contracts: { capital: Hex; ghostfile: Hex; stamps: Hex; names: Hex; cosmetics: Hex; market: Hex; buyout: Hex; rooms: Hex };
+  contracts: { capital?: Hex; ghostfile?: Hex; stamps?: Hex; names?: Hex; cosmetics?: Hex; market?: Hex; buyout?: Hex; rooms?: Hex };
   signer: Hex;
   statement: string;
   rpc?: string;
@@ -68,7 +68,7 @@ export class CounterClient {
   /** the chain the wallet itself is on; the WALLET page compares it with `info.chainId` */
   walletChain: number | null = null;
   /** the connected address's own $CAPITAL (whole-token string) and Ghostfile token id (0: none), read from the chain */
-  holdings: { capital: string; ghostfile: number } | null = null;
+  holdings: { capital: string; ghostfile: number | null } | null = null;
   onChange: (() => void) | null = null;
   private wallet: WalletClient | null = null;
   private pub: PublicClient | null = null;
@@ -267,15 +267,15 @@ export class CounterClient {
     const pub = this.pub;
     const address = this.address;
     if (!pub || !address || !this.info) return null;
-    // chain 0 has no contracts: a read would throw and the page would say the wallet failed
-    if (!this.info.chainId || this.info.reason || !this.info.contracts?.capital || !this.info.contracts?.ghostfile) return null;
+    // chain 0, or a token the launchpad has not printed yet: do not call the chain and do not call that a failed wallet
+    const capital = this.info.contracts?.capital;
+    if (!this.info.chainId || !capital) return null;
     try {
-      const [bal, token] = await Promise.all([
-        pub.readContract({ address: this.info.contracts.capital, abi: ABI["$CAPITAL"]!.abi as never, functionName: "balanceOf", args: [address] }) as Promise<bigint>,
-        pub.readContract({ address: this.info.contracts.ghostfile, abi: ABI.Ghostfile!.abi as never, functionName: "tokenOf", args: [address] }) as Promise<bigint>,
-      ]);
+      const bal = (await pub.readContract({ address: capital, abi: ABI["$CAPITAL"]!.abi as never, functionName: "balanceOf", args: [address] })) as bigint;
+      const ghost = this.info.contracts?.ghostfile;
+      const token = ghost ? ((await pub.readContract({ address: ghost, abi: ABI.Ghostfile!.abi as never, functionName: "tokenOf", args: [address] })) as bigint) : null;
       if (this.address !== address) return this.holdings; // the wallet moved on while this read was out
-      this.holdings = { capital: formatEther(bal), ghostfile: Number(token) };
+      this.holdings = { capital: formatEther(bal), ghostfile: token === null ? null : Number(token) };
       this.onChange?.();
     } catch (e) {
       this.say(`WALLET READ FAILED: ${crtPhrase(String((e as Error).message ?? e).split("\n")[0]!.slice(0, 80))}`);
@@ -334,6 +334,7 @@ export class CounterClient {
   async buy(listing: number): Promise<{ ok: boolean; reason?: string }> {
     if (!this.wallet && !(await this.connect())) return { ok: false, reason: "no wallet" };
     if (!this.wallet || !this.info) return { ok: false, reason: "no wallet" };
+    if (!this.info.contracts.capital || !this.info.contracts.market) return { ok: false, reason: "no market" };
     const L = this.info.listings.find((l) => l.listing === listing);
     if (!L) return { ok: false, reason: "no such listing" };
     this.busy = true;
@@ -361,9 +362,10 @@ export class CounterClient {
    * The price is passed to the contract as well as to `approve`, so a steward retuning the price
    * cannot land between the two and burn more than the player agreed to.
    */
-  private async burnSink(kind: "season" | "rooms", target: Hex, abi: Abi, fn: string, args: (p: bigint) => unknown[], fee: number, unit: number, label: string): Promise<{ ok: boolean; reason?: string }> {
+  private async burnSink(kind: "season" | "rooms", target: Hex | undefined, abi: Abi, fn: string, args: (p: bigint) => unknown[], fee: number, unit: number, label: string): Promise<{ ok: boolean; reason?: string }> {
     if (!this.wallet && !(await this.connect())) return { ok: false, reason: "no wallet" };
     if (!this.wallet || !this.info) return { ok: false, reason: "no wallet" };
+    if (!this.info.contracts.capital || !target) return { ok: false, reason: "no market" };
     this.busy = true;
     try {
       const price = parseEther(String(fee));
@@ -428,6 +430,7 @@ export class CounterClient {
   /** A market listing: the player's own two transactions (approve the market for the rig, list); the host's market view refreshes. */
   async sell(token: number, price: number): Promise<{ ok: boolean; reason?: string }> {
     if (!this.wallet || !this.info) return { ok: false, reason: "no wallet" };
+    if (!this.info.contracts.cosmetics || !this.info.contracts.market) return { ok: false, reason: "no market" };
     if (!(price > 0)) return { ok: false, reason: "price must be positive" };
     this.busy = true;
     try {
@@ -450,6 +453,7 @@ export class CounterClient {
   async registerName(name: string): Promise<{ ok: boolean; reason?: string }> {
     if (!this.wallet && !(await this.connect())) return { ok: false, reason: "no wallet" };
     if (!this.wallet || !this.info) return { ok: false, reason: "no wallet" };
+    if (!this.info.contracts.capital || !this.info.contracts.names) return { ok: false, reason: "no market" };
     this.busy = true;
     try {
       const v = await this.op("name", { name });

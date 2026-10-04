@@ -127,6 +127,22 @@ describe("the production edge asks for the secret too", () => {
   const counterEnv = (ns: DurableObjectNamespace, extra: Record<string, unknown> = {}) =>
     ({ PLAYER_FILE: ns, DB: {}, CHAIN_ID: "1", CHAIN_RPC: "https://rpc.invalid", CONTRACTS: "{}", SIGNER_KEY: "0x1", RELAYER_KEY: "0x1", ...extra }) as unknown as Parameters<typeof counterWorker.fetch>[1];
 
+  it("a launchpad token is readable without a signer, and link stays closed", async () => {
+    const ns = fakeNamespace();
+    const capital = "0x1111111111111111111111111111111111111111";
+    const env = counterEnv(ns, { CHAIN_ID: "4663", CHAIN_RPC: "https://rpc.example", CONTRACTS: JSON.stringify({ capital }), SIGNER_KEY: "", RELAYER_KEY: "" });
+    const res = await counterWorker.fetch(new Request("https://k/counter"), env);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { chainId: number; rpc?: string; contracts: { capital?: string; ghostfile?: string }; reason?: string };
+    expect(body.chainId).toBe(4663);
+    expect(body.rpc).toBe("https://rpc.example");
+    expect(body.contracts.capital).toBe(capital);
+    expect(body.contracts.ghostfile).toBeUndefined();
+    expect(body.reason).toMatch(/LINK, VOUCHERS AND THE MARKET STAY CLOSED/);
+    const link = await counterWorker.fetch(post("https://k/link/nonce", { account: "rich" }), env);
+    expect(link.status).toBe(503);
+  });
+
   it("the counter Worker — the money route — refuses a request that does not hold the file", async () => {
     const ns = fakeNamespace();
     await seed(ns, "rich");

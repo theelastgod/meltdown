@@ -91,6 +91,21 @@ function filesOf(env: Env) {
 const unconfigured = (env: Env): boolean => !env.CHAIN_RPC || !Number(env.CHAIN_ID) || !env.SIGNER_KEY || !env.RELAYER_KEY;
 const NOT_ADMIN = "NOT AN OPERATOR: /prizes/post runs the settlement for a day of the caller's choosing and needs the x-admin-key header";
 const NOT_CONFIGURED = "CHAIN NOT CONFIGURED: the counter-ledger waits for Robinhood Chain's testnet parameters (CHAIN_ID, CHAIN_RPC, CONTRACTS)";
+/** A launchpad publishes the token alone. Link, vouchers and the market stay closed without their own contracts and keys. */
+const TOKEN_ONLY = "THE TOKEN IS PUBLISHED. LINK, VOUCHERS AND THE MARKET STAY CLOSED UNTIL THEIR CONTRACTS ARE.";
+
+/** The ERC-20 address a launchpad printed. Absent until CHAIN_ID, CHAIN_RPC and contracts.capital are all set. */
+function publishedCapital(env: Env): Hex | null {
+  if (!env.CHAIN_RPC || !Number(env.CHAIN_ID)) return null;
+  let parsed: { capital?: unknown };
+  try {
+    parsed = JSON.parse(env.CONTRACTS || "{}") as { capital?: unknown };
+  } catch {
+    return null;
+  }
+  const cap = parsed.capital;
+  return typeof cap === "string" && /^0x[0-9a-fA-F]{40}$/.test(cap) ? (cap as Hex) : null;
+}
 /** A configured chain with a published dev key in it is refused the same way (Stage 53): the placeholder must not be the key. */
 const devKeyed = (env: Env): boolean => isDevKey(env.SIGNER_KEY) || isDevKey(env.RELAYER_KEY);
 
@@ -99,21 +114,26 @@ export default {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     if (url.pathname === "/health") return new Response("ok");
+    if (url.pathname === "/counter") {
+      if (!unconfigured(env) && !devKeyed(env)) {
+        const ledger = ledgerOf(env);
+        try {
+          return json({ ...ledger.info(), listings: await ledger.listings(), treasury: await ledger.treasury() });
+        } catch (e) {
+          return json({ ...ledger.info(), listings: [], treasury: null, reason: `CHAIN UNREACHABLE: ${String((e as Error).message).slice(0, 80)}` });
+        }
+      }
+      const capital = devKeyed(env) ? null : publishedCapital(env);
+      if (capital) return json({ chainId: Number(env.CHAIN_ID), devnet: false, rpc: env.CHAIN_RPC, contracts: { capital }, signer: null, statement: "", listings: [], treasury: null, reason: TOKEN_ONLY });
+      const reason = unconfigured(env) ? NOT_CONFIGURED : DEV_KEY_ON_CHAIN;
+      return json({ chainId: Number(env.CHAIN_ID) || 0, devnet: false, contracts: {}, signer: null, statement: "", listings: [], treasury: null, reason });
+    }
     if (unconfigured(env) || devKeyed(env)) {
       const reason = unconfigured(env) ? NOT_CONFIGURED : DEV_KEY_ON_CHAIN;
-      if (url.pathname === "/counter") return json({ chainId: Number(env.CHAIN_ID) || 0, devnet: false, contracts: {}, signer: null, statement: "", listings: [], treasury: null, reason });
       if (url.pathname === "/link/nonce") return json({ ok: false, reason }, 503);
       return json({ ok: false, reason, counter: null }, 503);
     }
     const { load, save } = filesOf(env);
-    if (url.pathname === "/counter") {
-      const ledger = ledgerOf(env);
-      try {
-        return json({ ...ledger.info(), listings: await ledger.listings(), treasury: await ledger.treasury() });
-      } catch (e) {
-        return json({ ...ledger.info(), listings: [], treasury: null, reason: `CHAIN UNREACHABLE: ${String((e as Error).message).slice(0, 80)}` });
-      }
-    }
     if (request.method === "POST" && url.pathname === "/link/nonce") {
       const { account, secret } = (await request.json()) as { account: string; secret?: string };
       // issuing a nonce replaces the file's in-flight one, so a bare id could keep a victim from ever

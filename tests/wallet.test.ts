@@ -263,6 +263,44 @@ describe("the WALLET page against the real Counter-Ledger client", () => {
     expect(await c.readHoldings()).toBeNull();
   });
 
+  it("a launchpad token with no ghostfile still shows a balance", async () => {
+    const CAP = "0x1111111111111111111111111111111111111111";
+    const one = `0x${(10n ** 18n).toString(16).padStart(64, "0")}`;
+    at("");
+    const ethereum = {
+      request: async ({ method }: { method: string }) => (method === "eth_requestAccounts" ? [player2.address] : method === "eth_chainId" ? "0x1237" : null),
+      on: () => undefined,
+    };
+    vi.stubGlobal("window", { ethereum });
+    const reply = (data: unknown) => new Response(JSON.stringify(data), { status: 200, headers: { "content-type": "application/json" } });
+    vi.stubGlobal("fetch", async (_url: string, init?: { body?: BodyInit | null }) => {
+      const url = String(_url);
+      if (url.endsWith("/counter")) {
+        return reply({ chainId: 4663, devnet: false, rpc: "https://rpc.example", contracts: { capital: CAP }, signer: null, statement: "", listings: [], treasury: null, reason: "THE TOKEN IS PUBLISHED. LINK, VOUCHERS AND THE MARKET STAY CLOSED UNTIL THEIR CONTRACTS ARE." });
+      }
+      const raw = typeof init?.body === "string" ? init.body : "{}";
+      const body = JSON.parse(raw) as { method?: string };
+      if (body.method === "eth_chainId") return reply({ jsonrpc: "2.0", id: 1, result: "0x1237" });
+      if (body.method === "eth_call") return reply({ jsonrpc: "2.0", id: 1, result: one });
+      return reply({ jsonrpc: "2.0", id: 1, result: "0x0" });
+    });
+    const c = new CounterClient("https://ledger.test", "sandbox-token", () => {});
+    expect(await walletAct(c, "injected")).toBe(true);
+    const held = await c.readHoldings();
+    expect(held?.capital).toBe("1");
+    expect(held?.ghostfile).toBeNull();
+    expect(c.last).not.toMatch(/WALLET READ FAILED/);
+    const s = walletState(c, true);
+    expect(s.status).toBe("connected");
+    expect(s.chainId).toBe(4663);
+    const t = text(walletHtml(s));
+    expect(t).toMatch(/\$CAPITAL/);
+    expect(t).toMatch(/GHOSTFILE NOT ON THIS LEDGER/);
+    expect(t).not.toMatch(/SIGN THE LINK/);
+    expect(walletEntries(s).map((e) => e.id)).not.toContain("switch");
+    expect(await c.buy(1)).toEqual({ ok: false, reason: "no market" });
+  });
+
   it("one connection: a wallet connected on the WALLET page is the FILE page's Counter-Ledger wallet, and the FILE page's connect is the WALLET page's", async () => {
     at(`?wallet=${DEV_KEYS.player}&account=sandbox-shared`);
     const file = new GhostFile(() => false);
