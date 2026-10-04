@@ -1,0 +1,14 @@
+Stage 1020 — NIGHT MARKET west pleat
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  night_market city: 144,678 triangles, 33 batches, 412 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 123,960 triangles, 36 batches (unchanged)
+  repo_depot city: 141,330 triangles, 33 batches (unchanged)
+  relay_heights city: 119,874 triangles, 32 batches (unchanged)
+
+Market hash with the pleat: 71da91d3999f3244fa9bfdb189dfc36f72024ea25b27b59f0b2cc0a13b7313ab
+Market hash with the wall sealed: 12602e8f1799dac1a39b7f307b46643f8b175a071307ff1ea625363d5735a5e6
+Non-city dressing fingerprint: 143fc87c89a1db05
+
+Not calling openNightPleat failed tests/pleat.test.ts. The street, the passage, and the ground outside were gone.
