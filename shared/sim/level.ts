@@ -436,6 +436,11 @@ export interface LevelDef {
    */
   topping?: WildEdge;
   /**
+   * The north end of REPO DEPOT's west wall, past the skid (Stage 1058). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  coak?: WildEdge;
+  /**
    * The east run of RELAY HEIGHTS' south wall (Stage 977). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
