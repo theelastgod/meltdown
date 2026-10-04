@@ -346,6 +346,11 @@ export interface LevelDef {
    */
   hook?: WildEdge;
   /**
+   * The west end of NIGHT MARKET's south wall, past the hook (Stage 1032). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  eyelet?: WildEdge;
+  /**
    * The west run of RELAY HEIGHTS' north wall (Stage 979). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
