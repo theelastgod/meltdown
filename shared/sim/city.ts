@@ -637,6 +637,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const rack = openRelayRack(c);
   const span = openRelaySpan(c);
   const outhaul = openRelayOuthaul(c);
+  const reef = openRelayReef(c);
   const leech = openRelayLeech(c);
   const tie = openRelayTie(c);
   const luff = openRelayLuff(c);
@@ -836,6 +837,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(tuck ? { tuck } : {}),
     ...(span ? { span } : {}),
     ...(outhaul ? { outhaul } : {}),
+    ...(reef ? { reef } : {}),
     ...(tie ? { tie } : {}),
     ...(ledge ? { ledge } : {}),
     ...(stay ? { stay } : {}),
@@ -1483,6 +1485,46 @@ function openRelayOuthaul(c: Ctx): WildEdge | null {
     passage: v3(midX, 0, (inner + zOut) / 2),
     outside: v3(midX, 0, zOut + 5),
     line: "SOUTH OUTHAUL. THE TOWER WALL IS BEHIND YOU.",
+  };
+}
+
+/**
+ * The west run of RELAY HEIGHTS' south wall, between the outhaul and the span, opens onto a fenced lot.
+ * The fence is above a mantle. The outhaul and the span are not this opening. The facade past the
+ * outhaul is not a street. Nothing out there pays a gun.
+ */
+function openRelayReef(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "relay_heights") return null;
+  const inner = c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.min.z === inner && b.min.y === 0 && b.max.y === 36 && b.min.x === -50.5 && b.max.x === -41.5);
+  if (i < 0) throw new Error("relay reef: the south wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  const midX = -46;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, dx0, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx1, 0, wall.min.z, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx0, doorH, wall.min.z, dx1, 36, wall.max.z, "facade"));
+  const zOut = wall.max.z;
+  const yF = 2.2;
+  const x0 = midX - 8;
+  const x1 = midX + 8;
+  const zFar = zOut + 10;
+  const t = 0.35;
+  c.boxes.push(box(x0, 0, zOut, dx0, yF, zOut + t, "fence"));
+  c.boxes.push(box(dx1, 0, zOut, x1, yF, zOut + t, "fence"));
+  c.boxes.push(box(x0, 0, zFar - t, x1, yF, zFar, "fence"));
+  c.boxes.push(box(x0, 0, zOut, x0 + t, yF, zFar, "fence"));
+  c.boxes.push(box(x1 - t, 0, zOut, x1, yF, zFar, "fence"));
+  addSign(c, "SOUTH REEF", midX, 2.7, inner - 0.06, Math.PI, 4, COLORS.cyan);
+  return {
+    street: v3(midX, 0, inner - 2.2),
+    passage: v3(midX, 0, (inner + zOut) / 2),
+    outside: v3(midX, 0, zOut + 5),
+    line: "SOUTH REEF. THE TOWER WALL IS BEHIND YOU.",
   };
 }
 

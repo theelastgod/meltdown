@@ -226,6 +226,11 @@ export interface LevelDef {
    */
   outhaul?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' south outhaul and the south span (Stage 1037). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  reef?: WildEdge;
+  /**
    * The south-west wall of REPO DEPOT (Stage 959). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
