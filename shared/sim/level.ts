@@ -256,6 +256,11 @@ export interface LevelDef {
    */
   pleat?: WildEdge;
   /**
+   * The north run of NIGHT MARKET's west wall, between the lantern and the gate (Stage 1024).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  tuck?: WildEdge;
+  /**
    * The north-east wall of RELAY HEIGHTS (Stage 965). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
