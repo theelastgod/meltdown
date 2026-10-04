@@ -400,6 +400,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   shroud?: WildEdge;
+  /**
+   * The east run of REPO DEPOT's north wall, between the dolly and the hoist (Stage 998).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  cradle?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
