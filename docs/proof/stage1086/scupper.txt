@@ -1,0 +1,17 @@
+Stage 1086 — DEADLETTER DOCKS south scupper
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  deadletter_docks city: 150,904 triangles, 36 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  repo_depot city: 169,910 triangles, 33 batches (unchanged)
+  night_market city: 173,254 triangles, 33 batches (unchanged)
+  relay_heights city: 149,894 triangles, 32 batches (unchanged)
+
+Docks hash with the scupper: 840147ead792eb48ace85072bf96afe084d3a4032e16687f0c7d43feececaee0
+Docks hash with the wall sealed: 6fcd758077189b05c0f5ce1fd6290b6497dcb3eed569ec3768c6f6eb50069e0b
+Non-city dressing fingerprint: 2a28d75a4f97ae1c
+
+Not calling openDocksScupper failed tests/scupper.test.ts. The street, the passage, and the ground outside were gone.
+Depot hash stayed a68d5c074f19a0ae82d5f23fdf5dd2ec2605e0934026cdc2becb987cc0c159d9.
+Heights hash stayed 534e35ad0f5333b6cf0452b407566213bdb2167addf859a754343348bd05772e.
+Market hash stayed 44954277ca88e3412c787cbb70dce402d15efd8306a668bbe5ff9e07aaed7845.

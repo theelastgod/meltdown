@@ -726,6 +726,11 @@ export interface LevelDef {
    */
   strake?: WildEdge;
   /**
+   * The slab between DEADLETTER DOCKS' south strake and the south pier (Stage 1086). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  scupper?: WildEdge;
+  /**
    * The west run of NIGHT MARKET's south wall, between the hook and the south-west gate (Stage 1004).
    * A fenced lot. Nothing out there pays a gun.
    */
