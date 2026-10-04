@@ -465,6 +465,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   capstan?: WildEdge;
+  /**
+   * The south run of DEADLETTER DOCKS' east wall, between the gate and the bollard (Stage 1011).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  fairlead?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
