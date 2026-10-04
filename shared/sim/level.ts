@@ -181,6 +181,11 @@ export interface LevelDef {
    */
   pintle?: WildEdge;
   /**
+   * The slab between DEADLETTER DOCKS' south pintle and the south pier (Stage 1035). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  lanyard?: WildEdge;
+  /**
    * The west wall of REPO DEPOT (Stage 953). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */

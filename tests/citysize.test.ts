@@ -27,7 +27,8 @@
  * re-pinned REPO DEPOT again: the north cradle is in that level. Stage 1030
  * re-pinned REPO DEPOT again: the north deadeye is in that level. Stage 1034
  * re-pinned REPO DEPOT again: the south gudgeon is in that level. Stage 1031
- * re-pinned DEADLETTER DOCKS again: the south pintle is in that level. Stage 999
+ * re-pinned DEADLETTER DOCKS again: the south pintle is in that level. Stage 1035
+ * re-pinned DEADLETTER DOCKS again: the south lanyard is in that level. Stage 999
  * re-pinned DEADLETTER DOCKS again: the south gunwale is in that level. LEASE ROW's
  * old 3×3 stays on the pre-grid bytes.
  *
@@ -128,8 +129,11 @@ const DOCKS_FLUKE = "bc87d52ca8ec9d96d59c612bd8d9f81e986a00f474a5d6a11a8c4ca5b35
 /** Docks after Stage 1027 opened the slab between the north stem and the north slip. Sealing the south pintle puts this hash back. */
 const DOCKS_THIMBLE = "15f3246e939565a629a11dd669dfc4a1c778244020e93f6af60b60b793fff751";
 
-/** Docks after Stage 1031 opened the west end of the south wall, past the pier. The thimble bytes stay in DOCKS_THIMBLE. */
+/** Docks after Stage 1031 opened the west end of the south wall, past the pier. Sealing the south lanyard puts this hash back. */
 const DOCKS_PINTLE = "b5edeb5067c3d7e605075e2b31efb8ec61bf711af42e167f75530c1c94cbb51a";
+
+/** Docks after Stage 1035 opened the slab between the south pintle and the south pier. The pintle bytes stay in DOCKS_PINTLE. */
+const DOCKS_LANYARD = "63e4f2fc1a5389e3687f09a9e1f8fb73d9388f10dec68d7b30e25855469a61ea";
 
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -252,10 +256,10 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, the west fluke, the north thimble, and the south pintle (Stage 1031)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, the west fluke, the north thimble, the south pintle, and the south lanyard (Stage 1035)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_PINTLE);
+    expect(hash(spec)).toBe(DOCKS_LANYARD);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
     expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
     expect(generateDistrict(spec).quay?.line).toMatch(/EAST QUAY/);
@@ -278,7 +282,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).fluke?.line).toMatch(/WEST FLUKE/);
     expect(generateDistrict(spec).thimble?.line).toMatch(/NORTH THIMBLE/);
     expect(generateDistrict(spec).pintle?.line).toMatch(/SOUTH PINTLE/);
-    // the pin is not the sealed wall: closing the pintle would put the thimble hash back
+    expect(generateDistrict(spec).lanyard?.line).toMatch(/SOUTH LANYARD/);
+    // the pin is not the sealed wall: closing the lanyard would put the pintle hash back
+    expect(DOCKS_LANYARD).not.toBe(DOCKS_PINTLE);
     expect(DOCKS_PINTLE).not.toBe(DOCKS_THIMBLE);
     expect(DOCKS_THIMBLE).not.toBe(DOCKS_FLUKE);
     expect(DOCKS_FLUKE).not.toBe(DOCKS_PAINTER);
