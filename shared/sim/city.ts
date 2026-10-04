@@ -647,6 +647,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const lane = openNightLane(c);
   const awning = openNightAwning(c);
   const tarp = openNightTarp(c);
+  const valance = openNightValance(c);
   const stall = openNightStall(c);
   const hook = openNightHook(c);
   const aisle = openNightAisle(c);
@@ -772,6 +773,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(rack ? { rack } : {}),
     ...(lane ? { lane } : {}),
     ...(tarp ? { tarp } : {}),
+    ...(valance ? { valance } : {}),
     ...(stall ? { stall } : {}),
     ...(hook ? { hook } : {}),
     ...(aisle ? { aisle } : {}),
@@ -1018,6 +1020,46 @@ function openNightTarp(c: Ctx): WildEdge | null {
     passage: v3(midX, 0, (inner + zOut) / 2),
     outside: v3(midX, 0, zOut - 5),
     line: "NORTH TARP. THE MARKET WALL IS BEHIND YOU.",
+  };
+}
+
+/**
+ * The east run of NIGHT MARKET's north wall, between the north-east gate and the tarp, is still
+ * a solid facade. Three metres there open onto a fenced lot. The tarp is not this opening.
+ * Nothing out there pays a gun.
+ */
+function openNightValance(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "night_market") return null;
+  const inner = -c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.max.z === inner && b.min.y === 0 && b.max.y === 36 && b.min.x === 21 && b.max.x === 50.5);
+  if (i < 0) throw new Error("night market valance: the north wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  const midX = 30;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, dx0, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx1, 0, wall.min.z, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx0, doorH, wall.min.z, dx1, 36, wall.max.z, "facade"));
+  const zOut = wall.min.z;
+  const yF = 2.2;
+  const x0 = midX - 8;
+  const x1 = midX + 8;
+  const zFar = zOut - 10;
+  const t = 0.35;
+  c.boxes.push(box(x0, 0, zOut - t, dx0, yF, zOut, "fence"));
+  c.boxes.push(box(dx1, 0, zOut - t, x1, yF, zOut, "fence"));
+  c.boxes.push(box(x0, 0, zFar, x1, yF, zFar + t, "fence"));
+  c.boxes.push(box(x0, 0, zFar, x0 + t, yF, zOut, "fence"));
+  c.boxes.push(box(x1 - t, 0, zFar, x1, yF, zOut, "fence"));
+  addSign(c, "NORTH VALANCE", midX, 2.7, inner + 0.06, 0, 4, COLORS.magenta);
+  return {
+    street: v3(midX, 0, inner + 2.2),
+    passage: v3(midX, 0, (inner + zOut) / 2),
+    outside: v3(midX, 0, zOut - 5),
+    line: "NORTH VALANCE. THE MARKET WALL IS BEHIND YOU.",
   };
 }
 
