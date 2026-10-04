@@ -113,8 +113,11 @@ const DOCKS_GARBOARD = "51639e55e4abc3a4889e3f8246b5b7adc8a0d5df5448e97cdd81e7db
 /** Docks after Stage 1011 opened the slab between the east bollard and the south-east gate. Sealing the east bulwark puts this hash back. */
 const DOCKS_FAIRLEAD = "67db383a82356e2edc6429057ab3063d01131ecddcb427f009ba3ae66db403d3";
 
-/** Docks after Stage 1015 opened the slab between the east quay and the north-east gate. The fairlead bytes stay in DOCKS_FAIRLEAD. */
+/** Docks after Stage 1015 opened the slab between the east quay and the north-east gate. Sealing the west painter puts this hash back. */
 const DOCKS_BULWARK = "992307078929f6e5a35db28824e23aa519f29e5f796ece0ff4e4cbf022443590";
+
+/** Docks after Stage 1019 opened the slab between the west wharf and the south-west gate. The bulwark bytes stay in DOCKS_BULWARK. */
+const DOCKS_PAINTER = "462cc4a6058863a115aa1463aa2ab24679e140a040bc03b0c1c65a7b5eea6ad4";
 
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -217,10 +220,10 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, and the east bulwark (Stage 1015)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, and the west painter (Stage 1019)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_BULWARK);
+    expect(hash(spec)).toBe(DOCKS_PAINTER);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
     expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
     expect(generateDistrict(spec).quay?.line).toMatch(/EAST QUAY/);
@@ -239,7 +242,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).garboard?.line).toMatch(/SOUTH GARBOARD/);
     expect(generateDistrict(spec).fairlead?.line).toMatch(/EAST FAIRLEAD/);
     expect(generateDistrict(spec).bulwark?.line).toMatch(/EAST BULWARK/);
-    // the pin is not the sealed wall: closing the bulwark would put the fairlead hash back
+    expect(generateDistrict(spec).painter?.line).toMatch(/WEST PAINTER/);
+    // the pin is not the sealed wall: closing the painter would put the bulwark hash back
+    expect(DOCKS_PAINTER).not.toBe(DOCKS_BULWARK);
     expect(DOCKS_BULWARK).not.toBe(DOCKS_FAIRLEAD);
     expect(DOCKS_FAIRLEAD).not.toBe(DOCKS_GARBOARD);
     expect(DOCKS_GARBOARD).not.toBe(DOCKS_STRAKE);

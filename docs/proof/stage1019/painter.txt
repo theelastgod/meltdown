@@ -1,0 +1,14 @@
+Stage 1019 — DEADLETTER DOCKS west painter
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  deadletter_docks city: 123,960 triangles, 36 batches, 417 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  night_market city: 143,810 triangles, 33 batches (unchanged)
+  repo_depot city: 141,330 triangles, 33 batches (unchanged)
+  relay_heights city: 119,874 triangles, 32 batches (unchanged)
+
+Docks hash with the painter: 462cc4a6058863a115aa1463aa2ab24679e140a040bc03b0c1c65a7b5eea6ad4
+Docks hash with the wall sealed: 992307078929f6e5a35db28824e23aa519f29e5f796ece0ff4e4cbf022443590
+Non-city dressing fingerprint: b6bd4380a9969a66
+
+Not calling openDocksPainter failed tests/painter.test.ts. The street, the passage, and the ground outside were gone.
