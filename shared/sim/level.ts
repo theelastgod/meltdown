@@ -366,6 +366,11 @@ export interface LevelDef {
    */
   eyelet?: WildEdge;
   /**
+   * The slab between NIGHT MARKET's south eyelet and the south hook (Stage 1036). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  downhaul?: WildEdge;
+  /**
    * The west run of RELAY HEIGHTS' north wall (Stage 979). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
