@@ -1,0 +1,17 @@
+Stage 1014 — REPO DEPOT east windlass
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  repo_depot city: 138,350 triangles, 33 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 119,728 triangles, 36 batches (unchanged)
+  night_market city: 141,310 triangles, 33 batches (unchanged)
+  relay_heights city: 118,910 triangles, 32 batches (unchanged)
+
+Depot hash with the windlass: 00c328fa73be77ea63b1b3b66c867dc789cf3cde851c66bd9a1dc3556258dfc7
+Depot hash with the wall sealed: 09245be1da68e8e55d47ed1134c4fb44c3d382d2f6ddcba25131b689ce63f4a0
+Non-city dressing fingerprint: 7a9141e48cf54170
+
+Not calling openDepotWindlass failed tests/windlass.test.ts. The street, the passage, and the ground outside were gone.
+Heights hash stayed c202e52c064141cc3c416be4b2b2f07b1fe05613a566e6a825f70493af73dd4a.
+Market hash stayed f97b1f43b1b301e476595c083c9a697e017154637549e5c289b4f70018b2b87e.
+Docks hash stayed 67db383a82356e2edc6429057ab3063d01131ecddcb427f009ba3ae66db403d3.
