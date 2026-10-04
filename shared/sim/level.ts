@@ -766,6 +766,11 @@ export interface LevelDef {
    */
   fairlead?: WildEdge;
   /**
+   * The slab between DEADLETTER DOCKS' east fairlead and the east bollard (Stage 1078). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  kedge?: WildEdge;
+  /**
    * The south run of NIGHT MARKET's east wall, between the gate and the crate (Stage 1012).
    * A fenced lot. Nothing out there pays a gun.
    */
