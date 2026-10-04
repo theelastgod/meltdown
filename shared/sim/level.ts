@@ -186,6 +186,11 @@ export interface LevelDef {
    */
   lanyard?: WildEdge;
   /**
+   * The north end of DEADLETTER DOCKS' east wall, past the quay (Stage 1039). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  bobstay?: WildEdge;
+  /**
    * The west wall of REPO DEPOT (Stage 953). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
