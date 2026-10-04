@@ -796,6 +796,11 @@ export interface LevelDef {
    */
   roach?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' east roach and the east mast (Stage 1084). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  lacing?: WildEdge;
+  /**
    * The south run of RELAY HEIGHTS' east wall, between the gate and the strut (Stage 1013).
    * A fenced lot. Nothing out there pays a gun.
    */
