@@ -1,0 +1,17 @@
+Stage 990 — REPO DEPOT north dolly
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  repo_depot city: 128,438 triangles, 33 batches, 378 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 109,624 triangles, 36 batches (unchanged)
+  night_market city: 130,918 triangles, 33 batches (unchanged)
+  relay_heights city: 108,230 triangles, 32 batches (unchanged)
+
+Depot hash with the dolly: 080fde14d8767f0dcf816a1e0fc819014de425eca18b8c9d52d604edecd6a6ad
+Depot hash with the wall sealed: bafbb0414aa32891a8cebd66a1f86a6ff93de7e1b831626b3bb4f297d89e1419
+Non-city dressing fingerprint: 3ae98bbd49c201ea
+
+Not calling openDepotDolly failed tests/dolly.test.ts. The street, the passage, and the ground outside were gone.
+Docks hash stayed 8cfc2e798a1d36fe7197c6e468d219d974a95fafda95ffb725f2e224c390bbf4.
+Market hash stayed 6b952b868a7c06b1f6ccd4170c1ebb2e8ed48a0d372e5e0978847f6e29461341.
+Heights hash stayed d31d7b35fb38439f8da27d8bd58cdc00a2aec221e6810568ec5b70ea3c1ea73e.

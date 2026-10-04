@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 990 — The north wall of Repo Depot opens onto a dolly
+
+**The ask.** REPO DEPOT has an impound, a west apron, an east ramp, a south bay, a north crest, a north hoist, an east jack, a south chock, a west skid, and a north winch. The hoist cut the east run of the north wall, and the slab between the north-east gate and the hoist is still solid.
+
+**The change.** Three metres on that slab, clear of the gate and of the hoist, are open onto the ground that was already there. A fence above mantle height holds the lot. A sign on the street side reads NORTH DOLLY. Standing out there, the line reads NORTH DOLLY. THE DEPOT WALL IS BEHIND YOU. The lot changes no gun. The impound, the apron, the ramp, the bay, the crest, the hoist, the jack, the chock, the skid, and the winch stay open. The heights stay, the market valance, the docks stem, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/dolly.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the depot hash back to `bafbb0414aa32891a8cebd66a1f86a6ff93de7e1b831626b3bb4f297d89e1419`. The open level hashes to `080fde14d8767f0dcf816a1e0fc819014de425eca18b8c9d52d604edecd6a6ad`. `tests/citysize.test.ts` kept the docks hash and the old 3×3 hash. `tests/newdistricts.test.ts` kept the market hash and the heights hash. `tests/citycost.test.ts` stayed inside 190k: the depot's city frame measured 128,438 triangles and 33 batches. LEASE ROW's city frame stayed 189,998. The docks stayed 109,624. NIGHT MARKET stayed 130,918. RELAY HEIGHTS stayed 108,230. The non-city dressing fingerprint for the depot was re-recorded (`3ae98bbd49c201ea`); the other four districts stayed the bytes they were. `tests/dolly.test.ts` and `tests/citygatedoors.test.ts` passed. The hash checks in `tests/newdistricts.test.ts` passed. The lease-row path in `tests/citysize.test.ts` timed out alone (about six to eight seconds) and the timeout was not raised. The other checks in that file passed.
+
+**Open.** The west wall of LEASE ROW is still solid. The east end of DEADLETTER DOCKS' north wall, past the keel, is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 989 — The north wall of Relay Heights opens onto a stay
 
 **The ask.** RELAY HEIGHTS has a cold rack, a south span, a north ledge, an east mast, a west spire, a west pylon, an east strut, a south tie, a north spar, and a north vane. The ledge cut the east run of the north wall, and the slab between the north-east gate and the ledge is still solid.
