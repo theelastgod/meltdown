@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 971 — The east wall of Night Market opens onto a crate
+
+**The ask.** NIGHT MARKET has an open-air lot, a south row, an east aisle, and a west booth. The south run of its east wall is still a solid facade, and the two east gates sit in the middle of it.
+
+**The change.** Three metres on that south run, clear of both east gates, are open onto the slab that was already there. A fence above mantle height holds the lot. A sign on the street side reads EAST CRATE. Standing out there, the line reads EAST CRATE. THE MARKET WALL IS BEHIND YOU. The lot changes no gun. The north lot, the south row, the east aisle, and the west booth stay open. The heights pylon, the docks bollard, the depot crest, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/crate.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the market hash back to `7e3e9c271d55509421a29e671f514ea0cb421b6a81174023293b57e20c0a5973`. The open level hashes to `205bb293e4981c6bf20812cc5400280f83f60358b6696c0fc5c84b2df189377c`. `tests/newdistricts.test.ts` kept the heights hash. `tests/citysize.test.ts` kept the docks hash, the depot hash, and the old 3×3 hash. `tests/citycost.test.ts` stayed inside 190k: the market's city frame measured 122,062 triangles and 33 batches. LEASE ROW's city frame stayed 189,998. The docks stayed 104,572. The depot stayed 117,758. RELAY HEIGHTS stayed 99,718. The non-city dressing fingerprint for the market was re-recorded (`6bd45e198f4b5917`); the other four districts stayed the bytes they were. `tests/crate.test.ts`, `tests/aisle.test.ts`, `tests/booth.test.ts`, `tests/newdistricts.test.ts`, `tests/citygatedoors.test.ts`, and `tests/citycost.test.ts` passed together. `tests/citysize.test.ts` passed on its own. Typecheck, `lint:economy`, `lint:progression`, and `lint:campaign` are clean.
+
+**Open.** The west wall of LEASE ROW is still solid. The east run of REPO DEPOT's north wall is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 970 — The west wall of Relay Heights opens onto a pylon
 
 **The ask.** RELAY HEIGHTS has a cold rack, a south span, a north ledge, an east mast, and a west spire. The north run of its west wall is still a solid facade, and the two west gates sit in the middle of it.
