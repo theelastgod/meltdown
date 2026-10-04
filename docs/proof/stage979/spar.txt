@@ -1,0 +1,14 @@
+Stage 979 — RELAY HEIGHTS north spar
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  relay_heights city: 104,574 triangles, 32 batches, 326 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  night_market city: 125,714 triangles, 33 batches (unchanged)
+  deadletter_docks city: 106,160 triangles, 36 batches (unchanged)
+  repo_depot city: 121,786 triangles, 33 batches (unchanged)
+
+Heights hash with the spar: 210b0c73d925b84b0fe5a58c0ea9ad410dd311e388140b4cf8817b1823ff2cec
+Heights hash with the wall sealed: 1dbba6beddb60db5f7246ed8da4ae82a82c32acf67341a6421e198817aca8e5f
+Non-city dressing fingerprint: b552e4887d46d549
+
+Not calling openRelaySpar failed tests/spar.test.ts. The street, the passage, and the ground outside were gone.
