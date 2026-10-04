@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 985 — The west end of Night Market's north wall opens onto an awning
+
+**The ask.** NIGHT MARKET has a north lot, a south row, an east aisle, a west booth, an east crate, a west lantern, a south hook, and a north tarp. The lane cut the west run of the north wall, and the west end of that run, past the lane, is still solid.
+
+**The change.** Three metres on that west end, on the street and clear of the gates, are open onto the ground that was already there. A fence above mantle height holds the lot. A sign on the street side reads NORTH AWNING. Standing out there, the line reads NORTH AWNING. THE MARKET WALL IS BEHIND YOU. The lot changes no gun. The lane, the row, the aisle, the booth, the crate, the lantern, the hook, and the tarp stay open. The docks stem, the depot skid, the heights spar, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/awning.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the market hash back to `da9971c48b2d2684c0718746158ea82d2a043c345a981fc5a3ff8f047ac2b4a0`. The open level hashes to `1c07b19d5e537cb8b684812dd3e511ad3265a05d7f64ee9de2e981b52fe7d4dc`. `tests/citysize.test.ts` kept the docks hash, the depot hash, and the old 3×3 hash. `tests/newdistricts.test.ts` kept the heights hash. `tests/citycost.test.ts` stayed inside 190k: NIGHT MARKET's city frame measured 128,898 triangles and 33 batches. LEASE ROW's city frame stayed 189,998. The docks stayed 109,624. The depot stayed 126,222. RELAY HEIGHTS stayed 104,574. The non-city dressing fingerprint for the market was re-recorded (`085d7e0b4e1fff7f`); the other four districts stayed the bytes they were. `tests/awning.test.ts` and `tests/citygatedoors.test.ts` passed. The hash checks in `tests/newdistricts.test.ts` passed.
+
+**Open.** The west wall of LEASE ROW is still solid. The west end of RELAY HEIGHTS' north wall, past the spar, is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 984 — The west end of Deadletter Docks' north wall opens onto a stem
 
 **The ask.** DEADLETTER DOCKS has a cold store, a south pier, an east quay, a north slip, a west wharf, a north keel, a south cleat, an east bollard, a west bitt, and a north fender. The slip cut the west run of the north wall, and the west end of that run, past the slip, is still solid.
