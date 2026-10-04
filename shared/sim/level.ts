@@ -236,6 +236,11 @@ export interface LevelDef {
    */
   reef?: WildEdge;
   /**
+   * The north end of RELAY HEIGHTS' east wall, past the mast (Stage 1041). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  peak?: WildEdge;
+  /**
    * The south-west wall of REPO DEPOT (Stage 959). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
