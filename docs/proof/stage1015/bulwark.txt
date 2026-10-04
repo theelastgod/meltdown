@@ -1,0 +1,17 @@
+Stage 1015 — DEADLETTER DOCKS east bulwark
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  deadletter_docks city: 121,556 triangles, 36 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  repo_depot city: 138,350 triangles, 33 batches (unchanged)
+  night_market city: 141,310 triangles, 33 batches (unchanged)
+  relay_heights city: 118,910 triangles, 32 batches (unchanged)
+
+Docks hash with the bulwark: 992307078929f6e5a35db28824e23aa519f29e5f796ece0ff4e4cbf022443590
+Docks hash with the wall sealed: 67db383a82356e2edc6429057ab3063d01131ecddcb427f009ba3ae66db403d3
+Non-city dressing fingerprint: bf19eb5d48f3363b
+
+Not calling openDocksBulwark failed tests/bulwark.test.ts. The street, the passage, and the ground outside were gone.
+Depot hash stayed 00c328fa73be77ea63b1b3b66c867dc789cf3cde851c66bd9a1dc3556258dfc7.
+Heights hash stayed c202e52c064141cc3c416be4b2b2f07b1fe05613a566e6a825f70493af73dd4a.
+Market hash stayed f97b1f43b1b301e476595c083c9a697e017154637549e5c289b4f70018b2b87e.
