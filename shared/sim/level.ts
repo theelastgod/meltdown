@@ -375,6 +375,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   fringe?: WildEdge;
+  /**
+   * The west run of RELAY HEIGHTS' north wall, between the gate and the spar (Stage 993).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  halyard?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */

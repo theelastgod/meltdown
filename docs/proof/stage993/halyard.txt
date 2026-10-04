@@ -1,0 +1,17 @@
+Stage 993 — RELAY HEIGHTS north halyard
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  relay_heights city: 109,674 triangles, 32 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 111,164 triangles, 36 batches (unchanged)
+  repo_depot city: 128,438 triangles, 33 batches (unchanged)
+  night_market city: 132,842 triangles, 33 batches (unchanged)
+
+Heights hash with the halyard: 8e27210bef375ea69308b5b7dd2f91f43d26b655d6869ad394362791f09ee5b2
+Heights hash with the wall sealed: d31d7b35fb38439f8da27d8bd58cdc00a2aec221e6810568ec5b70ea3c1ea73e
+Non-city dressing fingerprint: c62e9af985efc087
+
+Not calling openRelayHalyard failed tests/halyard.test.ts. The street, the passage, and the ground outside were gone.
+Market hash stayed 6bb7f22db75aa3ec7748e0a2bdd6c49dc3d6762d2073c99292794aa5882bb60a.
+Docks hash stayed 6d299c4181e77baaa34fb4ffd7426eb94379316f2356bbf9af686151266c647b.
+Depot hash stayed 080fde14d8767f0dcf816a1e0fc819014de425eca18b8c9d52d604edecd6a6ad.

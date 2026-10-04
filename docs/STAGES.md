@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 993 — The north wall of Relay Heights opens onto a halyard
+
+**The ask.** RELAY HEIGHTS has a cold rack, a south span, a north ledge, an east mast, a west spire, a west pylon, an east strut, a south tie, a north spar, a north vane, and a north stay. The spar cut the west run of the north wall, and the slab between the north-west gate and the spar is still solid.
+
+**The change.** Three metres on that slab, clear of the gate and of the spar, are open onto the ground that was already there. A fence above mantle height holds the lot. A sign on the street side reads NORTH HALYARD. Standing out there, the line reads NORTH HALYARD. THE TOWER WALL IS BEHIND YOU. The lot changes no gun. The rack, the span, the ledge, the mast, the spire, the pylon, the strut, the tie, the spar, the vane, and the stay stay open. The market fringe, the docks hawse, the depot dolly, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/halyard.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the heights hash back to `d31d7b35fb38439f8da27d8bd58cdc00a2aec221e6810568ec5b70ea3c1ea73e`. The open level hashes to `8e27210bef375ea69308b5b7dd2f91f43d26b655d6869ad394362791f09ee5b2`. `tests/citysize.test.ts` kept the docks hash, the depot hash, and the old 3×3 hash. `tests/newdistricts.test.ts` kept the market hash. `tests/citycost.test.ts` stayed inside 190k: RELAY HEIGHTS' city frame measured 109,674 triangles and 32 batches. LEASE ROW's city frame stayed 189,998. The docks stayed 111,164. The depot stayed 128,438. NIGHT MARKET stayed 132,842. The non-city dressing fingerprint for the heights was re-recorded (`c62e9af985efc087`); the other four districts stayed the bytes they were. `tests/halyard.test.ts` passed. `tests/citygatedoors.test.ts` timed out once under load and passed alone. The timeout was not raised. The hash checks in `tests/newdistricts.test.ts` passed.
+
+**Open.** The west wall of LEASE ROW is still solid. The slab between REPO DEPOT's north-west gate and the crest is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 992 — The north wall of Night Market opens onto a fringe
 
 **The ask.** NIGHT MARKET has a north lot, a south row, an east aisle, a west booth, an east crate, a west lantern, a south hook, a north tarp, a north awning, and a north valance. The lane cut the west run of the north wall, and the slab between the north-west gate and the lane is still solid.
