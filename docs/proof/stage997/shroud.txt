@@ -1,0 +1,17 @@
+Stage 997 — RELAY HEIGHTS north shroud
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  relay_heights city: 111,790 triangles, 32 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 113,568 triangles, 36 batches (unchanged)
+  repo_depot city: 131,322 triangles, 33 batches (unchanged)
+  night_market city: 133,902 triangles, 33 batches (unchanged)
+
+Heights hash with the shroud: ff002f0aa53448e8e5bd4bfc915dd2479c39ce05160bf28f8f7aec87df14f649
+Heights hash with the wall sealed: 8e27210bef375ea69308b5b7dd2f91f43d26b655d6869ad394362791f09ee5b2
+Non-city dressing fingerprint: b0f459884b77dc3e
+
+Not calling openRelayShroud failed tests/shroud.test.ts. The street, the passage, and the ground outside were gone.
+Market hash stayed c739abb50d17d07a1b6578fa831fe57ad01e7eee3feb898a245f6bf85a8fff32.
+Docks hash stayed ce653d224e6b7ec6a1f329393d406a6faa597a3208c4a43cc284d0faf0bfa071.
+Depot hash stayed ee0473ce9da39433b161bec6e9dad45a6212067715993e291574c9ecc7512788.
