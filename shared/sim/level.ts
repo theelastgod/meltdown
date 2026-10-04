@@ -481,6 +481,11 @@ export interface LevelDef {
    */
   whelp?: WildEdge;
   /**
+   * The slab between REPO DEPOT's west whelp and the west apron (Stage 1070). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  swifter?: WildEdge;
+  /**
    * The slab between DEADLETTER DOCKS' west cathead and the west bitt (Stage 1059). A fenced lot.
    * Nothing out there pays a gun.
    */

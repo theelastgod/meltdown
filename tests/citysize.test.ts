@@ -34,7 +34,8 @@
  * re-pinned REPO DEPOT again: the east kevel is in that level. Stage 1058
  * re-pinned REPO DEPOT again: the west coak is in that level. Stage 1062
  * re-pinned REPO DEPOT again: the west gammon is in that level. Stage 1066
- * re-pinned REPO DEPOT again: the west whelp is in that level. Stage 1031
+ * re-pinned REPO DEPOT again: the west whelp is in that level. Stage 1070
+ * re-pinned REPO DEPOT again: the west swifter is in that level. Stage 1031
  * re-pinned DEADLETTER DOCKS again: the south pintle is in that level. Stage 1035
  * re-pinned DEADLETTER DOCKS again: the south lanyard is in that level. Stage 1039
  * re-pinned DEADLETTER DOCKS again: the east bobstay is in that level. Stage 1043
@@ -262,8 +263,11 @@ const DEPOT_COAK = "1ad12ec1124e79823b08e76296d411ab84d6c0fd1f82b2efa929fff061ac
 /** Depot after Stage 1062 opened the slab between the west coak and the west skid. Sealing the west whelp puts this hash back. */
 const DEPOT_GAMMON = "592182e1bd9e7ee5a3fb9fa80cdc7fea68256f2fc1d5676a67ae07467d7b199c";
 
-/** Depot after Stage 1066 opened the south end of the west wall, past the apron. The gammon bytes stay in DEPOT_GAMMON. */
+/** Depot after Stage 1066 opened the south end of the west wall, past the apron. Sealing the west swifter puts this hash back. */
 const DEPOT_WHELP = "7362ae4af3b9decbaa6f641f705963c4a076043fdeee53c9b3aa84fec014b3fb";
+
+/** Depot after Stage 1070 opened the slab between the west whelp and the west apron. The whelp bytes stay in DEPOT_WHELP. */
+const DEPOT_SWIFTER = "dd36a94604b48110fe271b6ca522f0f99896c49ef8022b51538d887261c0862c";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -271,10 +275,10 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, the east shackle, the east swivel, the east fid, the east kevel, the west coak, the west gammon, and the west whelp (Stage 1066)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, the east shackle, the east swivel, the east fid, the east kevel, the west coak, the west gammon, the west whelp, and the west swifter (Stage 1070)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_WHELP);
+    expect(hash(spec)).toBe(DEPOT_SWIFTER);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
@@ -305,7 +309,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).coak?.line).toMatch(/WEST COAK/);
     expect(generateDistrict(spec).gammon?.line).toMatch(/WEST GAMMON/);
     expect(generateDistrict(spec).whelp?.line).toMatch(/WEST WHELP/);
-    // the pin is not the sealed wall: closing the whelp would put the gammon hash back
+    expect(generateDistrict(spec).swifter?.line).toMatch(/WEST SWIFTER/);
+    // the pin is not the sealed wall: closing the swifter would put the whelp hash back
+    expect(DEPOT_SWIFTER).not.toBe(DEPOT_WHELP);
     expect(DEPOT_WHELP).not.toBe(DEPOT_GAMMON);
     expect(DEPOT_GAMMON).not.toBe(DEPOT_COAK);
     expect(DEPOT_COAK).not.toBe(DEPOT_KEVEL);
