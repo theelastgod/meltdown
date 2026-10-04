@@ -776,6 +776,11 @@ export interface LevelDef {
    */
   gusset?: WildEdge;
   /**
+   * The slab between NIGHT MARKET's east gusset and the east crate (Stage 1079). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  facing?: WildEdge;
+  /**
    * The north run of NIGHT MARKET's east wall, between the aisle and the gate (Stage 1016).
    * A fenced lot. Nothing out there pays a gun.
    */

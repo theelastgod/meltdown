@@ -27,9 +27,9 @@ const NEW = ["night_market", "relay_heights"] as const;
 const spec = (id: string): DistrictSpec => districtById(id)!;
 const hash = (s: DistrictSpec): string => createHash("sha256").update(JSON.stringify(generateDistrict(s))).digest("hex");
 
-/** sha256 of JSON.stringify(generateDistrict(spec)). Night market was re-pinned at Stage 1075, when the slab between the west pleat and the west booth opened. Relay heights was re-pinned at Stage 1076, when the slab between the west tack and the west spire opened. */
+/** sha256 of JSON.stringify(generateDistrict(spec)). Night market was re-pinned at Stage 1079, when the slab between the east gusset and the east crate opened. Relay heights was re-pinned at Stage 1076, when the slab between the west tack and the west spire opened. */
 const PINNED: Record<(typeof NEW)[number], string> = {
-  night_market: "e850d922683deab9523bc232b978d7277ba68280eb400745f0cbf35afdd5860c",
+  night_market: "5172a9978c6e5d90a2600f9a773968076334517a8eef2195c0e6fee11234ace7",
   relay_heights: "65644d8a1ce8a12ce74d851e954d82dec5563370f9abeac0716bac311a1ef439",
 };
 /** Night market before Stage 950. Sealing the north lot puts this hash back. */
@@ -96,6 +96,8 @@ const NIGHT_WEFT = "3fdb7f599304ba9a8172bc19f282398275bd7c080173bee2a3f8dff4f212
 const NIGHT_WARP = "85da108a586a0243d50a083f3634fee11e7c42741de843c4991517fc26972f38";
 /** Night market after Stage 1072. Sealing the west yoke puts this hash back. */
 const NIGHT_BIAS = "8b7d411b7ac1b1c967b2d0705e4597ba7cb5e04d4ab3701c58a0e89f276efca7";
+/** Night market after Stage 1075. Sealing the east facing puts this hash back. */
+const NIGHT_YOKE = "e850d922683deab9523bc232b978d7277ba68280eb400745f0cbf35afdd5860c";
 /** Relay heights after Stage 949. Sealing the south span puts this hash back. */
 const RELAY_RACK = "0960af48b982c704f216cd0a42232cc5bf4b8f2e8cc5d53164d31cd440ee7cd7";
 /** Relay heights after Stage 958. Sealing the north ledge puts this hash back. */
@@ -253,6 +255,7 @@ describe("the city has five districts", () => {
     expect(PINNED.night_market).not.toBe(NIGHT_WEFT);
     expect(PINNED.night_market).not.toBe(NIGHT_WARP);
     expect(PINNED.night_market).not.toBe(NIGHT_BIAS);
+    expect(PINNED.night_market).not.toBe(NIGHT_YOKE);
     expect(PINNED.relay_heights).not.toBe(RELAY_RACK);
     expect(PINNED.relay_heights).not.toBe(RELAY_SPAN);
     expect(PINNED.relay_heights).not.toBe(RELAY_LEDGE);
