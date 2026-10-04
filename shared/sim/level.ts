@@ -461,6 +461,11 @@ export interface LevelDef {
    */
   brail?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' west brail and the west spire (Stage 1069). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  bunt?: WildEdge;
+  /**
    * The north end of REPO DEPOT's west wall, past the skid (Stage 1058). A fenced lot.
    * Nothing out there pays a gun.
    */
