@@ -231,6 +231,11 @@ export interface LevelDef {
    */
   painter?: WildEdge;
   /**
+   * The north run of DEADLETTER DOCKS' west wall, between the bitt and the gate (Stage 1023).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  fluke?: WildEdge;
+  /**
    * The north-east wall of RELAY HEIGHTS (Stage 962). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
