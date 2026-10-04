@@ -441,6 +441,11 @@ export interface LevelDef {
    */
   coak?: WildEdge;
   /**
+   * The slab between DEADLETTER DOCKS' west cathead and the west bitt (Stage 1059). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  futtock?: WildEdge;
+  /**
    * The east run of RELAY HEIGHTS' south wall (Stage 977). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
