@@ -826,6 +826,11 @@ export interface LevelDef {
    */
   pawl?: WildEdge;
   /**
+   * The slab between REPO DEPOT's east pawl and the east ramp (Stage 1085). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  seizing?: WildEdge;
+  /**
    * The north run of DEADLETTER DOCKS' east wall, between the gate and the quay (Stage 1015).
    * A fenced lot. Nothing out there pays a gun.
    */
