@@ -1,0 +1,17 @@
+Stage 1087 — NIGHT MARKET south smock
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  night_market city: 175,082 triangles, 33 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 150,904 triangles, 36 batches (unchanged)
+  repo_depot city: 169,910 triangles, 33 batches (unchanged)
+  relay_heights city: 149,894 triangles, 32 batches (unchanged)
+
+Market hash with the smock: 9dd3e621bdc562b4c66423be9623a5984a46e5bf0297499ea987af7d1eb1c54b
+Market hash with the wall sealed: 44954277ca88e3412c787cbb70dce402d15efd8306a668bbe5ff9e07aaed7845
+Non-city dressing fingerprint: 39d987a97abe9ba0
+
+Not calling openNightSmock failed tests/smock.test.ts. The street, the passage, and the ground outside were gone.
+Docks hash stayed 840147ead792eb48ace85072bf96afe084d3a4032e16687f0c7d43feececaee0.
+Heights hash stayed 534e35ad0f5333b6cf0452b407566213bdb2167addf859a754343348bd05772e.
+Depot hash stayed a68d5c074f19a0ae82d5f23fdf5dd2ec2605e0934026cdc2becb987cc0c159d9.

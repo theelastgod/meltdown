@@ -736,6 +736,11 @@ export interface LevelDef {
    */
   seam?: WildEdge;
   /**
+   * The slab between NIGHT MARKET's south seam and the south hook (Stage 1087). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  smock?: WildEdge;
+  /**
    * The west run of RELAY HEIGHTS' south wall, between the span and the south-west gate (Stage 1005).
    * A fenced lot. Nothing out there pays a gun.
    */
