@@ -496,6 +496,11 @@ export interface LevelDef {
    */
   windlass?: WildEdge;
   /**
+   * The north run of REPO DEPOT's east wall, between the ramp and the gate (Stage 1018).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  pawl?: WildEdge;
+  /**
    * The north run of DEADLETTER DOCKS' east wall, between the gate and the quay (Stage 1015).
    * A fenced lot. Nothing out there pays a gun.
    */

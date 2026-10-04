@@ -1,0 +1,14 @@
+Stage 1018 — REPO DEPOT east pawl
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  repo_depot city: 141,330 triangles, 33 batches, 427 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  night_market city: 143,810 triangles, 33 batches (unchanged)
+  deadletter_docks city: 121,556 triangles, 36 batches (unchanged)
+  relay_heights city: 119,874 triangles, 32 batches (unchanged)
+
+Depot hash with the pawl: e30bd455be6320c16be8b99f9ec338ab7074cce470732361d4da482764b10d7f
+Depot hash with the wall sealed: 00c328fa73be77ea63b1b3b66c867dc789cf3cde851c66bd9a1dc3556258dfc7
+Non-city dressing fingerprint: 7de13db92e0291b3
+
+Not calling openDepotPawl failed tests/pawl.test.ts. The street, the passage, and the ground outside were gone.
