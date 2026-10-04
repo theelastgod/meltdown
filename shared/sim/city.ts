@@ -648,6 +648,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const halyard = openRelayHalyard(c);
   const mast = openRelayMast(c);
   const strut = openRelayStrut(c);
+  const clew = openRelayClew(c);
   const spire = openRelaySpire(c);
   const pylon = openRelayPylon(c);
   const lane = openNightLane(c);
@@ -812,6 +813,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(spar ? { spar } : {}),
     ...(mast ? { mast } : {}),
     ...(strut ? { strut } : {}),
+    ...(clew ? { clew } : {}),
     ...(spire ? { spire } : {}),
     ...(pylon ? { pylon } : {}),
     ...(berth ? { berth } : {}),
@@ -2057,6 +2059,46 @@ function openRelayStrut(c: Ctx): WildEdge | null {
     passage: v3((inner + xOut) / 2, 0, midZ),
     outside: v3(xOut + 5, 0, midZ),
     line: "EAST STRUT. THE TOWER WALL IS BEHIND YOU.",
+  };
+}
+
+/**
+ * The south run of RELAY HEIGHTS' east wall, between the south-east gate and the strut, is still
+ * a solid facade. Three metres there open onto a fenced lot. The strut is not this opening.
+ * The facade past the strut is the south wall's return, not a street. Nothing out there pays a gun.
+ */
+function openRelayClew(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "relay_heights") return null;
+  const inner = c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.min.x === inner && b.min.y === 0 && b.max.y === 36 && b.min.z === 21 && b.max.z === 38.5);
+  if (i < 0) throw new Error("relay clew: the east wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  const midZ = 30;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dz0 = midZ - doorW / 2;
+  const dz1 = midZ + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, wall.max.x, 36, dz0, "facade"));
+  c.boxes.push(box(wall.min.x, 0, dz1, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(wall.min.x, doorH, dz0, wall.max.x, 36, dz1, "facade"));
+  const xOut = wall.max.x;
+  const yF = 2.2;
+  const z0 = midZ - 8;
+  const z1 = midZ + 8;
+  const xFar = xOut + 10;
+  const t = 0.35;
+  c.boxes.push(box(xOut, 0, z0, xOut + t, yF, dz0, "fence"));
+  c.boxes.push(box(xOut, 0, dz1, xOut + t, yF, z1, "fence"));
+  c.boxes.push(box(xFar - t, 0, z0, xFar, yF, z1, "fence"));
+  c.boxes.push(box(xOut, 0, z0, xFar, yF, z0 + t, "fence"));
+  c.boxes.push(box(xOut, 0, z1 - t, xFar, yF, z1, "fence"));
+  addSign(c, "EAST CLEW", inner - 0.06, 2.7, midZ, -Math.PI / 2, 4, COLORS.cyan);
+  return {
+    street: v3(inner - 2.2, 0, midZ),
+    passage: v3((inner + xOut) / 2, 0, midZ),
+    outside: v3(xOut + 5, 0, midZ),
+    line: "EAST CLEW. THE TOWER WALL IS BEHIND YOU.",
   };
 }
 
