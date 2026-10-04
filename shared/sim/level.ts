@@ -336,6 +336,11 @@ export interface LevelDef {
    */
   sheet?: WildEdge;
   /**
+   * The slab between REPO DEPOT's west clevis and the west apron (Stage 1077). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  norman?: WildEdge;
+  /**
    * The north-east wall of RELAY HEIGHTS (Stage 962). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */

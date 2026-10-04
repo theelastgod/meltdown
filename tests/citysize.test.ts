@@ -36,7 +36,8 @@
  * re-pinned REPO DEPOT again: the west gammon is in that level. Stage 1066
  * re-pinned REPO DEPOT again: the west whelp is in that level. Stage 1070
  * re-pinned REPO DEPOT again: the west swifter is in that level. Stage 1074
- * re-pinned REPO DEPOT again: the west lizard is in that level. Stage 1031
+ * re-pinned REPO DEPOT again: the west lizard is in that level. Stage 1077
+ * re-pinned REPO DEPOT again: the west norman is in that level. Stage 1031
  * re-pinned DEADLETTER DOCKS again: the south pintle is in that level. Stage 1035
  * re-pinned DEADLETTER DOCKS again: the south lanyard is in that level. Stage 1039
  * re-pinned DEADLETTER DOCKS again: the east bobstay is in that level. Stage 1043
@@ -274,8 +275,11 @@ const DEPOT_WHELP = "7362ae4af3b9decbaa6f641f705963c4a076043fdeee53c9b3aa84fec01
 /** Depot after Stage 1070 opened the slab between the west whelp and the west apron. Sealing the west lizard puts this hash back. */
 const DEPOT_SWIFTER = "dd36a94604b48110fe271b6ca522f0f99896c49ef8022b51538d887261c0862c";
 
-/** Depot after Stage 1074 opened the slab between the west becket and the west skid. The swifter bytes stay in DEPOT_SWIFTER. */
+/** Depot after Stage 1074 opened the slab between the west becket and the west skid. Sealing the west norman puts this hash back. */
 const DEPOT_LIZARD = "9956109530955da297ff66ac5f9fc3e8ea3263c721b0a605de8d795dd8762424";
+
+/** Depot after Stage 1077 opened the slab between the west clevis and the west apron. The lizard bytes stay in DEPOT_LIZARD. */
+const DEPOT_NORMAN = "d8d141c0bc15d85832da40d2b5914429946c45c3f0b628234f11e329febed812";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -283,10 +287,10 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, the east shackle, the east swivel, the east fid, the east kevel, the west coak, the west gammon, the west whelp, the west swifter, and the west lizard (Stage 1074)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, the east shackle, the east swivel, the east fid, the east kevel, the west coak, the west gammon, the west whelp, the west swifter, the west lizard, and the west norman (Stage 1077)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_LIZARD);
+    expect(hash(spec)).toBe(DEPOT_NORMAN);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
@@ -319,7 +323,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).whelp?.line).toMatch(/WEST WHELP/);
     expect(generateDistrict(spec).swifter?.line).toMatch(/WEST SWIFTER/);
     expect(generateDistrict(spec).lizard?.line).toMatch(/WEST LIZARD/);
-    // the pin is not the sealed wall: closing the lizard would put the swifter hash back
+    expect(generateDistrict(spec).norman?.line).toMatch(/WEST NORMAN/);
+    // the pin is not the sealed wall: closing the norman would put the lizard hash back
+    expect(DEPOT_NORMAN).not.toBe(DEPOT_LIZARD);
     expect(DEPOT_LIZARD).not.toBe(DEPOT_SWIFTER);
     expect(DEPOT_SWIFTER).not.toBe(DEPOT_WHELP);
     expect(DEPOT_WHELP).not.toBe(DEPOT_GAMMON);
