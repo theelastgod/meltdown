@@ -481,6 +481,11 @@ export interface LevelDef {
    */
   bumkin?: WildEdge;
   /**
+   * The slab between DEADLETTER DOCKS' west bumkin and the west wharf (Stage 1067). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  martingale?: WildEdge;
+  /**
    * The east run of RELAY HEIGHTS' south wall (Stage 977). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
