@@ -1,0 +1,14 @@
+Stage 1016 — NIGHT MARKET east dart
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  night_market city: 143,810 triangles, 33 batches, 405 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  relay_heights city: 118,910 triangles, 32 batches (unchanged)
+  deadletter_docks city: 121,556 triangles, 36 batches (unchanged)
+  repo_depot city: 138,350 triangles, 33 batches (unchanged)
+
+Market hash with the dart: 12602e8f1799dac1a39b7f307b46643f8b175a071307ff1ea625363d5735a5e6
+Market hash with the wall sealed: f97b1f43b1b301e476595c083c9a697e017154637549e5c289b4f70018b2b87e
+Non-city dressing fingerprint: 8fc252bd3bcf1c57
+
+Not calling openNightDart failed tests/dart.test.ts. The street, the passage, and the ground outside were gone.

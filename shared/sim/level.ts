@@ -476,6 +476,11 @@ export interface LevelDef {
    */
   gusset?: WildEdge;
   /**
+   * The north run of NIGHT MARKET's east wall, between the aisle and the gate (Stage 1016).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  dart?: WildEdge;
+  /**
    * The south run of RELAY HEIGHTS' east wall, between the gate and the strut (Stage 1013).
    * A fenced lot. Nothing out there pays a gun.
    */
