@@ -446,6 +446,11 @@ export interface LevelDef {
    */
   binding?: WildEdge;
   /**
+   * The slab between NIGHT MARKET's east binding and the east crate (Stage 1052). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  selvage?: WildEdge;
+  /**
    * The west run of RELAY HEIGHTS' north wall (Stage 979). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
