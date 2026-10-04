@@ -1,0 +1,14 @@
+Stage 980 — NIGHT MARKET north tarp
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  night_market city: 127,934 triangles, 33 batches, 342 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  relay_heights city: 104,574 triangles, 32 batches (unchanged)
+  deadletter_docks city: 106,160 triangles, 36 batches (unchanged)
+  repo_depot city: 121,786 triangles, 33 batches (unchanged)
+
+Market hash with the tarp: da9971c48b2d2684c0718746158ea82d2a043c345a981fc5a3ff8f047ac2b4a0
+Market hash with the wall sealed: 68328cc93e81d2cae5663930d38d6a2b818600ee6428ef2e4660c4d643f319a0
+Non-city dressing fingerprint: 0afff5e74b60eee0
+
+Not calling openNightTarp failed tests/tarp.test.ts. The street, the passage, and the ground outside were gone.

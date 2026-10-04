@@ -310,6 +310,11 @@ export interface LevelDef {
    * Nothing out there pays a gun.
    */
   spar?: WildEdge;
+  /**
+   * The east run of NIGHT MARKET's north wall (Stage 980). A fenced lot, clear of the gates.
+   * Nothing out there pays a gun.
+   */
+  tarp?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
