@@ -331,6 +331,11 @@ export interface LevelDef {
    */
   yoke?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' west tack and the west spire (Stage 1076). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  sheet?: WildEdge;
+  /**
    * The north-east wall of RELAY HEIGHTS (Stage 962). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
