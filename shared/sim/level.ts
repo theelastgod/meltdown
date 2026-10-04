@@ -466,6 +466,11 @@ export interface LevelDef {
    */
   gammon?: WildEdge;
   /**
+   * The south end of REPO DEPOT's west wall, past the apron (Stage 1066). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  whelp?: WildEdge;
+  /**
    * The slab between DEADLETTER DOCKS' west cathead and the west bitt (Stage 1059). A fenced lot.
    * Nothing out there pays a gun.
    */
