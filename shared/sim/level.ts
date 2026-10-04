@@ -406,6 +406,11 @@ export interface LevelDef {
    */
   placket?: WildEdge;
   /**
+   * The slab between NIGHT MARKET's east placket and the east aisle (Stage 1044). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  basting?: WildEdge;
+  /**
    * The west run of RELAY HEIGHTS' north wall (Stage 979). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
