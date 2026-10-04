@@ -316,6 +316,11 @@ export interface LevelDef {
    */
   bias?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' west vang and the west pylon (Stage 1073). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  jib?: WildEdge;
+  /**
    * The north-east wall of RELAY HEIGHTS (Stage 962). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
