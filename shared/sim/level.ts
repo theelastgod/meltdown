@@ -441,6 +441,11 @@ export interface LevelDef {
    */
   weft?: WildEdge;
   /**
+   * The slab between NIGHT MARKET's west weft and the west booth (Stage 1068). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  warp?: WildEdge;
+  /**
    * The north end of RELAY HEIGHTS' west wall, past the pylon (Stage 1057). A fenced lot.
    * Nothing out there pays a gun.
    */
