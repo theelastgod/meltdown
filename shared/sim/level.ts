@@ -390,6 +390,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   transom?: WildEdge;
+  /**
+   * The east run of NIGHT MARKET's north wall, between the valance and the tarp (Stage 996).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  hem?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
