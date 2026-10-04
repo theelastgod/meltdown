@@ -1,0 +1,17 @@
+Stage 1005 — RELAY HEIGHTS south leech
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  relay_heights city: 114,678 triangles, 32 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 116,552 triangles, 36 batches (unchanged)
+  repo_depot city: 133,346 triangles, 33 batches (unchanged)
+  night_market city: 138,038 triangles, 33 batches (unchanged)
+
+Heights hash with the leech: aa06295be744ca522289a0eb6bf1a041c0d4879c84717cdb94dbe7c0d2e0a5ed
+Heights hash with the wall sealed: 3c2a4fc913eb7d0e5c032724b086a9886fb964fee9424ff7083ef50218f373e4
+Non-city dressing fingerprint: 47e6d00ace98a41d
+
+Not calling openRelayLeech failed tests/leech.test.ts. The street, the passage, and the ground outside were gone.
+Market hash stayed 80b094182cc926d26a942b08a859d2b036b3e2e31d8d1562fcc97c99a76abd34.
+Docks hash stayed 53b952cfeac7913c8b0c0d749a30a2f5ab8cf78fc97656d3daeed263d302ff2a.
+Depot hash stayed 64a2f8fd5400adc2f0a8a4bfd26f3751df4383ae5854548a0cfdf68c6a47eabc.

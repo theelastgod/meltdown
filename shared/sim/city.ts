@@ -636,6 +636,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const impound = openDepotImpound(c);
   const rack = openRelayRack(c);
   const span = openRelaySpan(c);
+  const leech = openRelayLeech(c);
   const tie = openRelayTie(c);
   const luff = openRelayLuff(c);
   const ledge = openRelayLedge(c);
@@ -841,6 +842,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(welt ? { welt } : {}),
     ...(seam ? { seam } : {}),
     ...(luff ? { luff } : {}),
+    ...(leech ? { leech } : {}),
   };
 }
 
@@ -1297,6 +1299,46 @@ function openRelaySpan(c: Ctx): WildEdge | null {
  * The west run of RELAY HEIGHTS' north wall, clear of the two north gates, opens onto a fenced lot.
  * The fence is above a mantle. The north ledge is not this opening. Nothing out there pays a gun.
  */
+/**
+ * The west run of RELAY HEIGHTS' south wall, between the south span and the south-west gate,
+ * is still a solid facade. Three metres there open onto a fenced lot. The span is not this opening.
+ * The facade past the span is the west wall's return, not a street. Nothing out there pays a gun.
+ */
+function openRelayLeech(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "relay_heights") return null;
+  const inner = c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.min.z === inner && b.min.y === 0 && b.max.y === 36 && b.min.x === -38.5 && b.max.x === -21);
+  if (i < 0) throw new Error("relay leech: the south wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  const midX = -30;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, dx0, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx1, 0, wall.min.z, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx0, doorH, wall.min.z, dx1, 36, wall.max.z, "facade"));
+  const zOut = wall.max.z;
+  const yF = 2.2;
+  const x0 = midX - 8;
+  const x1 = midX + 8;
+  const zFar = zOut + 10;
+  const t = 0.35;
+  c.boxes.push(box(x0, 0, zOut, dx0, yF, zOut + t, "fence"));
+  c.boxes.push(box(dx1, 0, zOut, x1, yF, zOut + t, "fence"));
+  c.boxes.push(box(x0, 0, zFar - t, x1, yF, zFar, "fence"));
+  c.boxes.push(box(x0, 0, zOut, x0 + t, yF, zFar, "fence"));
+  c.boxes.push(box(x1 - t, 0, zOut, x1, yF, zFar, "fence"));
+  addSign(c, "SOUTH LEECH", midX, 2.7, inner - 0.06, Math.PI, 4, COLORS.cyan);
+  return {
+    street: v3(midX, 0, inner - 2.2),
+    passage: v3(midX, 0, (inner + zOut) / 2),
+    outside: v3(midX, 0, zOut + 5),
+    line: "SOUTH LEECH. THE TOWER WALL IS BEHIND YOU.",
+  };
+}
+
 function openRelaySpar(c: Ctx): WildEdge | null {
   if (c.spec.id !== "relay_heights") return null;
   const inner = -c.H;
