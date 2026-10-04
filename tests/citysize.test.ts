@@ -93,8 +93,11 @@ const DOCKS_FENDER = "1f2a06f9cb342c3ba89244b2b1830f2122a377b8c30b2be183b1183a88
 /** Docks after Stage 984 opened the west end of the north wall, past the slip. Sealing the north hawse puts this hash back. */
 const DOCKS_STEM = "8cfc2e798a1d36fe7197c6e468d219d974a95fafda95ffb725f2e224c390bbf4";
 
-/** Docks after Stage 991 opened the slab between the north-west gate and the slip. The stem bytes stay in DOCKS_STEM. */
+/** Docks after Stage 991 opened the slab between the north-west gate and the slip. Sealing the north transom puts this hash back. */
 const DOCKS_HAWSE = "6d299c4181e77baaa34fb4ffd7426eb94379316f2356bbf9af686151266c647b";
+
+/** Docks after Stage 995 opened the slab between the fender and the keel. The hawse bytes stay in DOCKS_HAWSE. */
+const DOCKS_TRANSOM = "ce653d224e6b7ec6a1f329393d406a6faa597a3208c4a43cc284d0faf0bfa071";
 
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -167,10 +170,10 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, and the north hawse (Stage 991)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, and the north transom (Stage 995)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_HAWSE);
+    expect(hash(spec)).toBe(DOCKS_TRANSOM);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
     expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
     expect(generateDistrict(spec).quay?.line).toMatch(/EAST QUAY/);
@@ -183,7 +186,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).fender?.line).toMatch(/NORTH FENDER/);
     expect(generateDistrict(spec).stem?.line).toMatch(/NORTH STEM/);
     expect(generateDistrict(spec).hawse?.line).toMatch(/NORTH HAWSE/);
-    // the pin is not the sealed wall: closing the hawse would put the stem hash back
+    expect(generateDistrict(spec).transom?.line).toMatch(/NORTH TRANSOM/);
+    // the pin is not the sealed wall: closing the transom would put the hawse hash back
+    expect(DOCKS_TRANSOM).not.toBe(DOCKS_HAWSE);
     expect(DOCKS_HAWSE).not.toBe(DOCKS_STEM);
     expect(DOCKS_STEM).not.toBe(DOCKS_FENDER);
     expect(DOCKS_FENDER).not.toBe(DOCKS_BITT);

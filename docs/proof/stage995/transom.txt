@@ -1,0 +1,19 @@
+Stage 995 — DEADLETTER DOCKS north transom
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  deadletter_docks city: 113,568 triangles, 36 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  repo_depot city: 131,322 triangles, 33 batches (unchanged)
+  night_market city: 132,842 triangles, 33 batches (unchanged)
+  relay_heights city: 109,674 triangles, 32 batches (unchanged)
+
+Docks hash with the transom: ce653d224e6b7ec6a1f329393d406a6faa597a3208c4a43cc284d0faf0bfa071
+Docks hash with the wall sealed: 6d299c4181e77baaa34fb4ffd7426eb94379316f2356bbf9af686151266c647b
+Non-city dressing fingerprint: fe00a75909311578
+
+Not calling openDocksTransom failed tests/transom.test.ts. The street, the passage, and the ground outside were gone.
+Depot hash stayed ee0473ce9da39433b161bec6e9dad45a6212067715993e291574c9ecc7512788.
+Heights hash stayed 8e27210bef375ea69308b5b7dd2f91f43d26b655d6869ad394362791f09ee5b2.
+Market hash stayed 6bb7f22db75aa3ec7748e0a2bdd6c49dc3d6762d2073c99292794aa5882bb60a.
+
+The centre gate strip on the north wall stayed a solid facade from x -12 to 12. The return past the keel, from x 53.5 to 84, stayed solid. It is not a street.
