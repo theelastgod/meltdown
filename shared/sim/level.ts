@@ -306,6 +306,11 @@ export interface LevelDef {
    */
   fluke?: WildEdge;
   /**
+   * The slab between DEADLETTER DOCKS' west fluke and the west bitt (Stage 1071). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  rode?: WildEdge;
+  /**
    * The north-east wall of RELAY HEIGHTS (Stage 962). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */

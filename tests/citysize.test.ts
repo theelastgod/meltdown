@@ -45,7 +45,8 @@
  * re-pinned DEADLETTER DOCKS again: the west cathead is in that level. Stage 1059
  * re-pinned DEADLETTER DOCKS again: the west futtock is in that level. Stage 1063
  * re-pinned DEADLETTER DOCKS again: the west bumkin is in that level. Stage 1067
- * re-pinned DEADLETTER DOCKS again: the west martingale is in that level. Stage 999
+ * re-pinned DEADLETTER DOCKS again: the west martingale is in that level. Stage 1071
+ * re-pinned DEADLETTER DOCKS again: the west rode is in that level. Stage 999
  * re-pinned DEADLETTER DOCKS again: the south gunwale is in that level. LEASE ROW's
  * old 3×3 stays on the pre-grid bytes.
  *
@@ -173,8 +174,11 @@ const DOCKS_FUTTOCK = "ab0a06b8ad255a77fc0bbf159723c48df7acd57f61babbc306b750abe
 /** Docks after Stage 1063 opened the south end of the west wall, past the wharf. Sealing the west martingale puts this hash back. */
 const DOCKS_BUMKIN = "65d300dbf398a2eb08067a45735a7d37910f0ec7d6425e3a4e386b788dd89196";
 
-/** Docks after Stage 1067 opened the slab between the west bumkin and the west wharf. The bumkin bytes stay in DOCKS_BUMKIN. */
+/** Docks after Stage 1067 opened the slab between the west bumkin and the west wharf. Sealing the west rode puts this hash back. */
 const DOCKS_MARTINGALE = "f2cd99511e64bd6f3b846d0cce3516932827cb8402eff9f4184bd9c9c3015816";
+
+/** Docks after Stage 1071 opened the slab between the west fluke and the west bitt. The martingale bytes stay in DOCKS_MARTINGALE. */
+const DOCKS_RODE = "48009129133f60f4bb17e60a8f2b41c714c9c06a7475380b8ece6c8b3727ae35";
 
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -342,10 +346,10 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, the west fluke, the north thimble, the south pintle, the south lanyard, the east bobstay, the east throat, the east knight, the east keelson, the west cathead, the west futtock, the west bumkin, and the west martingale (Stage 1067)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, the west fluke, the north thimble, the south pintle, the south lanyard, the east bobstay, the east throat, the east knight, the east keelson, the west cathead, the west futtock, the west bumkin, the west martingale, and the west rode (Stage 1071)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_MARTINGALE);
+    expect(hash(spec)).toBe(DOCKS_RODE);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
     expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
     expect(generateDistrict(spec).quay?.line).toMatch(/EAST QUAY/);
@@ -377,7 +381,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).futtock?.line).toMatch(/WEST FUTTOCK/);
     expect(generateDistrict(spec).bumkin?.line).toMatch(/WEST BUMKIN/);
     expect(generateDistrict(spec).martingale?.line).toMatch(/WEST MARTINGALE/);
-    // the pin is not the sealed wall: closing the martingale would put the bumkin hash back
+    expect(generateDistrict(spec).rode?.line).toMatch(/WEST RODE/);
+    // the pin is not the sealed wall: closing the rode would put the martingale hash back
+    expect(DOCKS_RODE).not.toBe(DOCKS_MARTINGALE);
     expect(DOCKS_MARTINGALE).not.toBe(DOCKS_BUMKIN);
     expect(DOCKS_BUMKIN).not.toBe(DOCKS_FUTTOCK);
     expect(DOCKS_FUTTOCK).not.toBe(DOCKS_CATHEAD);
