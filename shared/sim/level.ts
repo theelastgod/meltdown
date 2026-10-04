@@ -425,6 +425,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   derrick?: WildEdge;
+  /**
+   * The west run of DEADLETTER DOCKS' south wall, between the pier and the south-west gate (Stage 1003).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  strake?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */

@@ -1,0 +1,17 @@
+Stage 1003 — DEADLETTER DOCKS south strake
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  deadletter_docks city: 116,552 triangles, 36 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  repo_depot city: 133,346 triangles, 33 batches (unchanged)
+  night_market city: 136,114 triangles, 33 batches (unchanged)
+  relay_heights city: 113,522 triangles, 32 batches (unchanged)
+
+Docks hash with the strake: 53b952cfeac7913c8b0c0d749a30a2f5ab8cf78fc97656d3daeed263d302ff2a
+Docks hash with the wall sealed: 878e4ebfc5ae138c611b6fd92cd6c516d4cb5db2f0cfb846ae41aa0e02c6652d
+Non-city dressing fingerprint: 6bf85c25e48e2ac3
+
+Not calling openDocksStrake failed tests/strake.test.ts. The street, the passage, and the ground outside were gone.
+Depot hash stayed 64a2f8fd5400adc2f0a8a4bfd26f3751df4383ae5854548a0cfdf68c6a47eabc.
+Heights hash stayed 3c2a4fc913eb7d0e5c032724b086a9886fb964fee9424ff7083ef50218f373e4.
+Market hash stayed bbac26ea58fd0a0a2f2a67740b6f462e0c13e6afdc9792d0c54ab9941776a79f.
