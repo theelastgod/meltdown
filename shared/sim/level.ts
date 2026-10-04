@@ -386,6 +386,11 @@ export interface LevelDef {
    */
   downhaul?: WildEdge;
   /**
+   * The north end of NIGHT MARKET's east wall, past the aisle (Stage 1040). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  placket?: WildEdge;
+  /**
    * The west run of RELAY HEIGHTS' north wall (Stage 979). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
