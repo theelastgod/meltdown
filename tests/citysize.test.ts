@@ -176,8 +176,11 @@ const DEPOT_WINDLASS = "00c328fa73be77ea63b1b3b66c867dc789cf3cde851c66bd9a1dc355
 /** Depot after Stage 1018 opened the slab between the east ramp and the north-east gate. Sealing the west clevis puts this hash back. */
 const DEPOT_PAWL = "e30bd455be6320c16be8b99f9ec338ab7074cce470732361d4da482764b10d7f";
 
-/** Depot after Stage 1022 opened the slab between the west apron and the south-west gate. The pawl bytes stay in DEPOT_PAWL. */
+/** Depot after Stage 1022 opened the slab between the west apron and the south-west gate. Sealing the west becket puts this hash back. */
 const DEPOT_CLEVIS = "aa924fa5fad224a012e3568b8ac69007c39c6aea222b862867d0d0dfe21540d6";
+
+/** Depot after Stage 1026 opened the slab between the west skid and the north-west gate. The clevis bytes stay in DEPOT_CLEVIS. */
+const DEPOT_BECKET = "db905f7342b927115a8c261f3aae2d84e3b6b2f4e42255417f4374cfa9cc0c76";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -185,10 +188,10 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, and the west clevis (Stage 1022)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, and the west becket (Stage 1026)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_CLEVIS);
+    expect(hash(spec)).toBe(DEPOT_BECKET);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
@@ -208,7 +211,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).windlass?.line).toMatch(/EAST WINDLASS/);
     expect(generateDistrict(spec).pawl?.line).toMatch(/EAST PAWL/);
     expect(generateDistrict(spec).clevis?.line).toMatch(/WEST CLEVIS/);
-    // the pin is not the sealed wall: closing the clevis would put the pawl hash back
+    expect(generateDistrict(spec).becket?.line).toMatch(/WEST BECKET/);
+    // the pin is not the sealed wall: closing the becket would put the clevis hash back
+    expect(DEPOT_BECKET).not.toBe(DEPOT_CLEVIS);
     expect(DEPOT_CLEVIS).not.toBe(DEPOT_PAWL);
     expect(DEPOT_PAWL).not.toBe(DEPOT_WINDLASS);
     expect(DEPOT_WINDLASS).not.toBe(DEPOT_CAPSTAN);

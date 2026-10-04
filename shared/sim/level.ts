@@ -361,6 +361,11 @@ export interface LevelDef {
    */
   skid?: WildEdge;
   /**
+   * The north run of REPO DEPOT's west wall, between the skid and the gate (Stage 1026).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  becket?: WildEdge;
+  /**
    * The east run of DEADLETTER DOCKS' north wall, between the gate and the keel (Stage 983).
    * A fenced lot. Nothing out there pays a gun.
    */
