@@ -661,6 +661,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const lantern = openNightLantern(c);
   const berth = openDocksBerth(c);
   const cleat = openDocksCleat(c);
+  const gunwale = openDocksGunwale(c);
   const quay = openDocksQuay(c);
   const bollard = openDocksBollard(c);
   const slip = openDocksSlip(c);
@@ -801,6 +802,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(pylon ? { pylon } : {}),
     ...(berth ? { berth } : {}),
     ...(cleat ? { cleat } : {}),
+    ...(gunwale ? { gunwale } : {}),
     ...(quay ? { quay } : {}),
     ...(bollard ? { bollard } : {}),
     ...(slip ? { slip } : {}),
@@ -2180,6 +2182,46 @@ function openDocksCleat(c: Ctx): WildEdge | null {
     passage: v3(midX, 0, (inner + zOut) / 2),
     outside: v3(midX, 0, zOut + 5),
     line: "SOUTH CLEAT. THE DOCK WALL IS BEHIND YOU.",
+  };
+}
+
+/**
+ * The east run of DEADLETTER DOCKS' south wall, between the south-east gate and the cleat, is still
+ * a solid facade. Three metres there open onto a fenced lot. The cleat is not this opening.
+ * The facade past the cleat is the east wall's return, not a street. Nothing out there pays a gun.
+ */
+function openDocksGunwale(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "deadletter_docks") return null;
+  const inner = c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.min.z === inner && b.min.y === 0 && b.max.y === 36 && b.min.x === 21 && b.max.x === 50.5);
+  if (i < 0) throw new Error("docks gunwale: the south wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  const midX = 30;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, dx0, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx1, 0, wall.min.z, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx0, doorH, wall.min.z, dx1, 36, wall.max.z, "facade"));
+  const zOut = wall.max.z;
+  const yF = 2.2;
+  const x0 = midX - 8;
+  const x1 = midX + 8;
+  const zFar = zOut + 10;
+  const t = 0.35;
+  c.boxes.push(box(x0, 0, zOut, dx0, yF, zOut + t, "fence"));
+  c.boxes.push(box(dx1, 0, zOut, x1, yF, zOut + t, "fence"));
+  c.boxes.push(box(x0, 0, zFar - t, x1, yF, zFar, "fence"));
+  c.boxes.push(box(x0, 0, zOut, x0 + t, yF, zFar, "fence"));
+  c.boxes.push(box(x1 - t, 0, zOut, x1, yF, zFar, "fence"));
+  addSign(c, "SOUTH GUNWALE", midX, 2.7, inner - 0.06, Math.PI, 4, COLORS.cyan);
+  return {
+    street: v3(midX, 0, inner - 2.2),
+    passage: v3(midX, 0, (inner + zOut) / 2),
+    outside: v3(midX, 0, zOut + 5),
+    line: "SOUTH GUNWALE. THE DOCK WALL IS BEHIND YOU.",
   };
 }
 

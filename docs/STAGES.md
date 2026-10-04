@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 999 — The south wall of Deadletter Docks opens onto a gunwale
+
+**The ask.** DEADLETTER DOCKS has a cold store, a south pier, an east quay, a north slip, a west wharf, a north keel, a south cleat, an east bollard, a west bitt, a north fender, a north stem, a north hawse, and a north transom. The cleat cut the east run of the south wall, and the slab between the south-east gate and the cleat is still solid. The facade past the cleat, on the far side of the east wall, is not a street.
+
+**The change.** Three metres on that slab, clear of the gate and of the cleat, are open onto the ground that was already there. A fence above mantle height holds the lot. A sign on the street side reads SOUTH GUNWALE. Standing out there, the line reads SOUTH GUNWALE. THE DOCK WALL IS BEHIND YOU. The lot changes no gun. The cold store, the pier, the quay, the slip, the wharf, the keel, the cleat, the bollard, the bitt, the fender, the stem, the hawse, and the transom stay open. The depot cradle, the heights shroud, the market hem, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/gunwale.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the docks hash back to `ce653d224e6b7ec6a1f329393d406a6faa597a3208c4a43cc284d0faf0bfa071`. The open level hashes to `878e4ebfc5ae138c611b6fd92cd6c516d4cb5db2f0cfb846ae41aa0e02c6652d`. `tests/citysize.test.ts` kept the depot hash and the old 3×3 hash. `tests/newdistricts.test.ts` kept the market hash and the heights hash. `tests/citycost.test.ts` stayed inside 190k: the docks' city frame measured 114,724 triangles and 36 batches. LEASE ROW's city frame stayed 189,998. The depot stayed 132,094. NIGHT MARKET stayed 133,902. RELAY HEIGHTS stayed 111,790. The non-city dressing fingerprint for the docks was re-recorded (`72224d075623ba76`); the other four districts stayed the bytes they were. `tests/gunwale.test.ts`, `tests/citygatedoors.test.ts`, and `tests/citysize.test.ts` passed, including the lease-row path. The hash checks in `tests/newdistricts.test.ts` passed. The timeout was not raised.
+
+**Open.** The west wall of LEASE ROW is still solid. The slab between NIGHT MARKET's south row and the south-east gate is still solid. The facade past the cleat is still not a street. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 998 — The north wall of Repo Depot opens onto a cradle
 
 **The ask.** REPO DEPOT has an impound, a west apron, an east ramp, a south bay, a north crest, a north hoist, an east jack, a south chock, a west skid, a north winch, a north dolly, and a north bolster. The dolly and the hoist cut the east run of the north wall, and the slab between them is still solid. The facade past the hoist, on the far side of the east wall, is not a street.

@@ -24,7 +24,8 @@
  * re-pinned it again: the north stem is in that level. Stage 982
  * re-pinned REPO DEPOT again: the west skid is in that level. Stage 987
  * re-pinned REPO DEPOT again: the north winch is in that level. Stage 998
- * re-pinned REPO DEPOT again: the north cradle is in that level. LEASE ROW's
+ * re-pinned REPO DEPOT again: the north cradle is in that level. Stage 999
+ * re-pinned DEADLETTER DOCKS again: the south gunwale is in that level. LEASE ROW's
  * old 3×3 stays on the pre-grid bytes.
  *
  * The second is that the 5×5 district plays: every node reachable from every spawn, everything the
@@ -97,8 +98,11 @@ const DOCKS_STEM = "8cfc2e798a1d36fe7197c6e468d219d974a95fafda95ffb725f2e224c390
 /** Docks after Stage 991 opened the slab between the north-west gate and the slip. Sealing the north transom puts this hash back. */
 const DOCKS_HAWSE = "6d299c4181e77baaa34fb4ffd7426eb94379316f2356bbf9af686151266c647b";
 
-/** Docks after Stage 995 opened the slab between the fender and the keel. The hawse bytes stay in DOCKS_HAWSE. */
+/** Docks after Stage 995 opened the slab between the fender and the keel. Sealing the south gunwale puts this hash back. */
 const DOCKS_TRANSOM = "ce653d224e6b7ec6a1f329393d406a6faa597a3208c4a43cc284d0faf0bfa071";
+
+/** Docks after Stage 999 opened the slab between the south-east gate and the cleat. The transom bytes stay in DOCKS_TRANSOM. */
+const DOCKS_GUNWALE = "878e4ebfc5ae138c611b6fd92cd6c516d4cb5db2f0cfb846ae41aa0e02c6652d";
 
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -176,10 +180,10 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, and the north transom (Stage 995)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, and the south gunwale (Stage 999)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_TRANSOM);
+    expect(hash(spec)).toBe(DOCKS_GUNWALE);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
     expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
     expect(generateDistrict(spec).quay?.line).toMatch(/EAST QUAY/);
@@ -193,7 +197,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).stem?.line).toMatch(/NORTH STEM/);
     expect(generateDistrict(spec).hawse?.line).toMatch(/NORTH HAWSE/);
     expect(generateDistrict(spec).transom?.line).toMatch(/NORTH TRANSOM/);
-    // the pin is not the sealed wall: closing the transom would put the hawse hash back
+    expect(generateDistrict(spec).gunwale?.line).toMatch(/SOUTH GUNWALE/);
+    // the pin is not the sealed wall: closing the gunwale would put the transom hash back
+    expect(DOCKS_GUNWALE).not.toBe(DOCKS_TRANSOM);
     expect(DOCKS_TRANSOM).not.toBe(DOCKS_HAWSE);
     expect(DOCKS_HAWSE).not.toBe(DOCKS_STEM);
     expect(DOCKS_STEM).not.toBe(DOCKS_FENDER);
