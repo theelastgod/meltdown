@@ -396,6 +396,11 @@ export interface LevelDef {
    */
   vane?: WildEdge;
   /**
+   * The west run of RELAY HEIGHTS' north wall, between the vane and the spar (Stage 1029).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  cringle?: WildEdge;
+  /**
    * The west end of REPO DEPOT's north wall, past the crest (Stage 987). A fenced lot.
    * Nothing out there pays a gun.
    */
