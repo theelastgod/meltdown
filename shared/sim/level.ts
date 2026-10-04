@@ -441,6 +441,11 @@ export interface LevelDef {
    */
   topping?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' west topping and the west pylon (Stage 1061). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  parrel?: WildEdge;
+  /**
    * The north end of REPO DEPOT's west wall, past the skid (Stage 1058). A fenced lot.
    * Nothing out there pays a gun.
    */
