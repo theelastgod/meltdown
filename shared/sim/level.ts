@@ -266,6 +266,11 @@ export interface LevelDef {
    */
   boom?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' east boom and the east strut (Stage 1053). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  preventer?: WildEdge;
+  /**
    * The south-west wall of REPO DEPOT (Stage 959). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
