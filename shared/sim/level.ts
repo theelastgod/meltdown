@@ -251,6 +251,11 @@ export interface LevelDef {
    */
   peak?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' east peak and the east mast (Stage 1045). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  gaff?: WildEdge;
+  /**
    * The south-west wall of REPO DEPOT (Stage 959). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
