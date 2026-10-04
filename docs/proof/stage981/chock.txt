@@ -1,0 +1,14 @@
+Stage 981 — REPO DEPOT south chock
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  repo_depot city: 124,662 triangles, 33 batches, 357 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  night_market city: 127,934 triangles, 33 batches (unchanged)
+  relay_heights city: 104,574 triangles, 32 batches (unchanged)
+  deadletter_docks city: 106,160 triangles, 36 batches (unchanged)
+
+Depot hash with the chock: 8f31b361e7de69bb25cc15e6c040666f3067ea0da630f19b39deb245011d7981
+Depot hash with the wall sealed: 4b28867aafe6028e09ea01ed04de6c9fe234805f74e7720d7287f502575ab3e2
+Non-city dressing fingerprint: f9c310f4c5857756
+
+Not calling openDepotChock failed tests/chock.test.ts. The street, the passage, and the ground outside were gone.

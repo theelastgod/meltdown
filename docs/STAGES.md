@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 981 — The south wall of Repo Depot opens onto a chock
+
+**The ask.** REPO DEPOT has an impound, a west apron, an east ramp, a south bay, a north crest, a north hoist, and an east jack. The east run of its south wall is still a solid facade, and the two south gates sit in the middle of it.
+
+**The change.** Three metres on that east run, clear of both south gates, are open onto the slab that was already there. A fence above mantle height holds the lot. A sign on the street side reads SOUTH CHOCK. Standing out there, the line reads SOUTH CHOCK. THE DEPOT WALL IS BEHIND YOU. The lot changes no gun. The impound, the apron, the ramp, the bay, the crest, the hoist, and the jack stay open. The market tarp, the heights spar, the docks bitt, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/chock.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the depot hash back to `4b28867aafe6028e09ea01ed04de6c9fe234805f74e7720d7287f502575ab3e2`. The open level hashes to `8f31b361e7de69bb25cc15e6c040666f3067ea0da630f19b39deb245011d7981`. `tests/citysize.test.ts` kept the docks hash and the old 3×3 hash. `tests/newdistricts.test.ts` kept the market hash and the heights hash. `tests/citycost.test.ts` stayed inside 190k: the depot's city frame measured 124,662 triangles and 33 batches. LEASE ROW's city frame stayed 189,998. The docks stayed 106,160. NIGHT MARKET stayed 127,934. RELAY HEIGHTS stayed 104,574. The non-city dressing fingerprint for the depot was re-recorded (`f9c310f4c5857756`); the other four districts stayed the bytes they were. `tests/chock.test.ts` and `tests/citygatedoors.test.ts` passed. The 3×3 hash checks in `tests/citysize.test.ts` passed.
+
+**Open.** The west wall of LEASE ROW is still solid. The north run of REPO DEPOT's west wall is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 980 — The north wall of Night Market opens onto a tarp
 
 **The ask.** NIGHT MARKET has an open-air lot, a south row, an east aisle, a west booth, an east crate, a west lantern, and a south hook. The east run of its north wall is still a solid facade, and the two north gates sit in the middle of it.
