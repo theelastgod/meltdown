@@ -470,6 +470,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   fairlead?: WildEdge;
+  /**
+   * The south run of NIGHT MARKET's east wall, between the gate and the crate (Stage 1012).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  gusset?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
