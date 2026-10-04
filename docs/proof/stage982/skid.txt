@@ -1,0 +1,14 @@
+Stage 982 — REPO DEPOT west skid
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  repo_depot city: 126,222 triangles, 33 batches, 364 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  night_market city: 127,934 triangles, 33 batches (unchanged)
+  relay_heights city: 104,574 triangles, 32 batches (unchanged)
+  deadletter_docks city: 106,160 triangles, 36 batches (unchanged)
+
+Depot hash with the skid: 1c3dbd8c967746c6d7c9c87c32d89544322c069bf99192e000ab2e49b64b494e
+Depot hash with the wall sealed: 8f31b361e7de69bb25cc15e6c040666f3067ea0da630f19b39deb245011d7981
+Non-city dressing fingerprint: 86705d8da83ff950
+
+Not calling openDepotSkid failed tests/skid.test.ts. The street, the passage, and the ground outside were gone.
