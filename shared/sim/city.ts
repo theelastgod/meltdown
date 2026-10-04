@@ -657,6 +657,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const boom = openRelayBoom(c);
   const preventer = openRelayPreventer(c);
   const clew = openRelayClew(c);
+  const earring = openRelayEarring(c);
   const spire = openRelaySpire(c);
   const brail = openRelayBrail(c);
   const bunt = openRelayBunt(c);
@@ -903,6 +904,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(boom ? { boom } : {}),
     ...(preventer ? { preventer } : {}),
     ...(clew ? { clew } : {}),
+    ...(earring ? { earring } : {}),
     ...(spire ? { spire } : {}),
     ...(brail ? { brail } : {}),
     ...(bunt ? { bunt } : {}),
@@ -2870,6 +2872,47 @@ function openRelayClew(c: Ctx): WildEdge | null {
     passage: v3((inner + xOut) / 2, 0, midZ),
     outside: v3(xOut + 5, 0, midZ),
     line: "EAST CLEW. THE TOWER WALL IS BEHIND YOU.",
+  };
+}
+
+/**
+ * The south run of RELAY HEIGHTS' east wall, between the clew and the strut, opens onto a fenced lot.
+ * The fence is above a mantle. The clew and the strut are not this opening. The facade past the
+ * boom is not a street. Nothing out there pays a gun.
+ */
+function openRelayEarring(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "relay_heights") return null;
+  const inner = c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.min.x === inner && b.min.y === 0 && b.max.y === 36 && b.min.z === 31.5 && b.max.z === 38.5);
+  if (i < 0) throw new Error("relay earring: the east wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  // The strut's wall check stands at z = 36. The door stays north of that pier.
+  const midZ = 34.05;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dz0 = midZ - doorW / 2;
+  const dz1 = midZ + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, wall.max.x, 36, dz0, "facade"));
+  c.boxes.push(box(wall.min.x, 0, dz1, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(wall.min.x, doorH, dz0, wall.max.x, 36, dz1, "facade"));
+  const xOut = wall.max.x;
+  const yF = 2.2;
+  const z0 = midZ - 8;
+  const z1 = midZ + 8;
+  const xFar = xOut + 10;
+  const t = 0.35;
+  c.boxes.push(box(xOut, 0, z0, xOut + t, yF, dz0, "fence"));
+  c.boxes.push(box(xOut, 0, dz1, xOut + t, yF, z1, "fence"));
+  c.boxes.push(box(xFar - t, 0, z0, xFar, yF, z1, "fence"));
+  c.boxes.push(box(xOut, 0, z0, xFar, yF, z0 + t, "fence"));
+  c.boxes.push(box(xOut, 0, z1 - t, xFar, yF, z1, "fence"));
+  addSign(c, "EAST EARRING", inner - 0.06, 2.7, midZ, -Math.PI / 2, 4, COLORS.cyan);
+  return {
+    street: v3(inner - 2.2, 0, midZ),
+    passage: v3((inner + xOut) / 2, 0, midZ),
+    outside: v3(xOut + 5, 0, midZ),
+    line: "EAST EARRING. THE TOWER WALL IS BEHIND YOU.",
   };
 }
 

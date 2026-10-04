@@ -796,6 +796,11 @@ export interface LevelDef {
    */
   clew?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' east clew and the east strut (Stage 1080). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  earring?: WildEdge;
+  /**
    * The south run of REPO DEPOT's east wall, between the gate and the jack (Stage 1014).
    * A fenced lot. Nothing out there pays a gun.
    */
