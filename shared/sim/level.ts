@@ -746,6 +746,11 @@ export interface LevelDef {
    */
   leech?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' south leech and the south span (Stage 1088). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  foot?: WildEdge;
+  /**
    * The west run of REPO DEPOT's south wall, between the bay and the south-west gate (Stage 1006).
    * A fenced lot. Nothing out there pays a gun.
    */

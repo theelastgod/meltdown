@@ -27,10 +27,10 @@ const NEW = ["night_market", "relay_heights"] as const;
 const spec = (id: string): DistrictSpec => districtById(id)!;
 const hash = (s: DistrictSpec): string => createHash("sha256").update(JSON.stringify(generateDistrict(s))).digest("hex");
 
-/** sha256 of JSON.stringify(generateDistrict(spec)). Night market was re-pinned at Stage 1087, when the slab between the south seam and the south hook opened. Relay heights was re-pinned at Stage 1084, when the slab between the east roach and the east mast opened. */
+/** sha256 of JSON.stringify(generateDistrict(spec)). Night market was re-pinned at Stage 1087, when the slab between the south seam and the south hook opened. Relay heights was re-pinned at Stage 1088, when the slab between the south leech and the south span opened. */
 const PINNED: Record<(typeof NEW)[number], string> = {
   night_market: "9dd3e621bdc562b4c66423be9623a5984a46e5bf0297499ea987af7d1eb1c54b",
-  relay_heights: "534e35ad0f5333b6cf0452b407566213bdb2167addf859a754343348bd05772e",
+  relay_heights: "d6335394741708d4e7ce2279f97f21cee391b39a122141f66f9083048d00144e",
 };
 /** Night market before Stage 950. Sealing the north lot puts this hash back. */
 const NIGHT_SEALED = "49596a55f53b93a510a3e9ef2c20a0f7a3a98afe8521cc3761f9839c79bb2e56";
@@ -170,6 +170,8 @@ const RELAY_JIB = "438e738c681b3115cc672bf9813ade8beee32d6b2d4e39e934a547edfdbac
 const RELAY_SHEET = "65644d8a1ce8a12ce74d851e954d82dec5563370f9abeac0716bac311a1ef439";
 /** Relay heights after Stage 1080. Sealing the east lacing puts this hash back. */
 const RELAY_EARRING = "b8ec591c0e2e56680a3059ff26147eb94fbb8d0763744947b16eb5bf2f1746d8";
+/** Relay heights after Stage 1084. Sealing the south foot puts this hash back. */
+const RELAY_LACING = "534e35ad0f5333b6cf0452b407566213bdb2167addf859a754343348bd05772e";
 
 describe("the city has five districts", () => {
   it("the two new ones are in the generator, the level registry, the city's rooms and the season's graph, after the three it had", () => {
@@ -300,6 +302,7 @@ describe("the city has five districts", () => {
     expect(PINNED.relay_heights).not.toBe(RELAY_JIB);
     expect(PINNED.relay_heights).not.toBe(RELAY_SHEET);
     expect(PINNED.relay_heights).not.toBe(RELAY_EARRING);
+    expect(PINNED.relay_heights).not.toBe(RELAY_LACING);
     expect(generateDistrict(spec("night_market")).stall?.line).toMatch(/SOUTH ROW/);
     expect(generateDistrict(spec("relay_heights")).span?.line).toMatch(/SOUTH SPAN/);
     expect(generateDistrict(spec("relay_heights")).ledge?.line).toMatch(/NORTH LEDGE/);
@@ -335,6 +338,7 @@ describe("the city has five districts", () => {
     expect(generateDistrict(spec("relay_heights")).sheet?.line).toMatch(/WEST SHEET/);
     expect(generateDistrict(spec("relay_heights")).earring?.line).toMatch(/EAST EARRING/);
     expect(generateDistrict(spec("relay_heights")).lacing?.line).toMatch(/EAST LACING/);
+    expect(generateDistrict(spec("relay_heights")).foot?.line).toMatch(/SOUTH FOOT/);
     expect(generateDistrict(spec("night_market")).facing?.line).toMatch(/EAST FACING/);
     expect(generateDistrict(spec("night_market")).gather?.line).toMatch(/EAST GATHER/);
     expect(generateDistrict(spec("night_market")).smock?.line).toMatch(/SOUTH SMOCK/);
