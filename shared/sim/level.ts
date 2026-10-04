@@ -216,6 +216,11 @@ export interface LevelDef {
    */
   span?: WildEdge;
   /**
+   * The west end of RELAY HEIGHTS' south wall, past the span (Stage 1033). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  outhaul?: WildEdge;
+  /**
    * The south-west wall of REPO DEPOT (Stage 959). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
