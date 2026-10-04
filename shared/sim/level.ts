@@ -226,6 +226,11 @@ export interface LevelDef {
    */
   bay?: WildEdge;
   /**
+   * The west end of REPO DEPOT's south wall, past the bay (Stage 1034). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  gudgeon?: WildEdge;
+  /**
    * The north-west wall of REPO DEPOT (Stage 960). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
