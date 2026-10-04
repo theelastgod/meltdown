@@ -11,8 +11,8 @@ export const SHOP_TALK_RADIUS = 2.2;
 /** How close to the open ground the edge still announces itself, in metres. */
 export const WILD_TALK_RADIUS = 3.5;
 
-export function wildLine(pos: Vec3, level: Pick<LevelDef, "wild" | "yard" | "east" | "lane" | "berth" | "apron" | "ramp" | "quay" | "slip" | "stall" | "span" | "bay" | "crest" | "wharf" | "ledge" | "aisle" | "booth" | "mast" | "keel" | "spire" | "cleat" | "bollard" | "pylon" | "crate" | "hoist">): string | null {
-  const spots = [level.wild, level.yard, level.east, level.lane, level.berth, level.apron, level.ramp, level.quay, level.slip, level.stall, level.span, level.bay, level.crest, level.wharf, level.ledge, level.aisle, level.booth, level.mast, level.keel, level.spire, level.cleat, level.bollard, level.pylon, level.crate, level.hoist].filter((w): w is NonNullable<typeof w> => !!w);
+export function wildLine(pos: Vec3, level: Pick<LevelDef, "wild" | "yard" | "east" | "lane" | "berth" | "apron" | "ramp" | "quay" | "slip" | "stall" | "span" | "bay" | "crest" | "wharf" | "ledge" | "aisle" | "booth" | "mast" | "keel" | "spire" | "cleat" | "bollard" | "pylon" | "crate" | "hoist" | "bitt">): string | null {
+  const spots = [level.wild, level.yard, level.east, level.lane, level.berth, level.apron, level.ramp, level.quay, level.slip, level.stall, level.span, level.bay, level.crest, level.wharf, level.ledge, level.aisle, level.booth, level.mast, level.keel, level.spire, level.cleat, level.bollard, level.pylon, level.crate, level.hoist, level.bitt].filter((w): w is NonNullable<typeof w> => !!w);
   let best: (typeof spots)[number] | null = null;
   let bestD = WILD_TALK_RADIUS * WILD_TALK_RADIUS;
   for (const w of spots) {
