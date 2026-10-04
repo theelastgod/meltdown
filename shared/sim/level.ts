@@ -321,6 +321,11 @@ export interface LevelDef {
    */
   jib?: WildEdge;
   /**
+   * The slab between REPO DEPOT's west becket and the west skid (Stage 1074). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  lizard?: WildEdge;
+  /**
    * The north-east wall of RELAY HEIGHTS (Stage 962). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
