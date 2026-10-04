@@ -19,7 +19,8 @@
  * re-pinned it again: the north keel is in that level. Stage 968
  * re-pinned it again: the south cleat is in that level. Stage 969
  * re-pinned it again: the east bollard is in that level. Stage 973
- * re-pinned it again: the west bitt is in that level. Stage 982
+ * re-pinned it again: the west bitt is in that level. Stage 983
+ * re-pinned it again: the north fender is in that level. Stage 982
  * re-pinned REPO DEPOT again: the west skid is in that level. LEASE ROW's
  * old 3×3 stays on the pre-grid bytes.
  *
@@ -81,8 +82,11 @@ const DOCKS_CLEAT = "0df3a03e15dc633e3902fcbfe11a41b70d53c8c3e7edec6c2c13d202e63
 /** Docks after Stage 969 opened the south run of the east wall. Sealing the west bitt puts this hash back. */
 const DOCKS_BOLLARD = "89b26f1fa8722ed29d6786df4c1a071b0aa41b67128c59e10b10f033bcadb60a";
 
-/** Docks after Stage 973 opened the north run of the west wall. The bollard bytes stay in DOCKS_BOLLARD. */
+/** Docks after Stage 973 opened the north run of the west wall. Sealing the north fender puts this hash back. */
 const DOCKS_BITT = "b842eac686aa6db295c7460626a50487f9da8727d84df39dd5428a0bcca82f29";
+
+/** Docks after Stage 983 opened the slab between the north-east gate and the keel. The bitt bytes stay in DOCKS_BITT. */
+const DOCKS_FENDER = "1f2a06f9cb342c3ba89244b2b1830f2122a377b8c30b2be183b1183a88ceb32f";
 
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -140,10 +144,10 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, and the west bitt (Stage 973)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, and the north fender (Stage 983)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_BITT);
+    expect(hash(spec)).toBe(DOCKS_FENDER);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
     expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
     expect(generateDistrict(spec).quay?.line).toMatch(/EAST QUAY/);
@@ -153,7 +157,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).cleat?.line).toMatch(/SOUTH CLEAT/);
     expect(generateDistrict(spec).bollard?.line).toMatch(/EAST BOLLARD/);
     expect(generateDistrict(spec).bitt?.line).toMatch(/WEST BITT/);
-    // the pin is not the sealed wall: closing the bitt would put the bollard hash back
+    expect(generateDistrict(spec).fender?.line).toMatch(/NORTH FENDER/);
+    // the pin is not the sealed wall: closing the fender would put the bitt hash back
+    expect(DOCKS_FENDER).not.toBe(DOCKS_BITT);
     expect(DOCKS_BITT).not.toBe(DOCKS_BOLLARD);
     expect(DOCKS_BOLLARD).not.toBe(DOCKS_CLEAT);
     expect(DOCKS_CLEAT).not.toBe(DOCKS_KEEL);

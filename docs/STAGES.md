@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 983 — The north wall of Deadletter Docks opens onto a fender
+
+**The ask.** DEADLETTER DOCKS has a cold store, a south pier, an east quay, a north slip, a west wharf, a north keel, a south cleat, an east bollard, and a west bitt. The keel cut the east run of the north wall, and the slab between that cut and the north-east gate is still solid.
+
+**The change.** Three metres on that slab, clear of the gate and of the keel, are open onto the ground that was already there. A fence above mantle height holds the lot. A sign on the street side reads NORTH FENDER. Standing out there, the line reads NORTH FENDER. THE DOCK WALL IS BEHIND YOU. The lot changes no gun. The cold store, the pier, the quay, the slip, the wharf, the keel, the cleat, the bollard, and the bitt stay open. The depot skid, the market tarp, the heights spar, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/fender.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the docks hash back to `b842eac686aa6db295c7460626a50487f9da8727d84df39dd5428a0bcca82f29`. The open level hashes to `1f2a06f9cb342c3ba89244b2b1830f2122a377b8c30b2be183b1183a88ceb32f`. `tests/citysize.test.ts` kept the depot hash and the old 3×3 hash. `tests/newdistricts.test.ts` kept the market hash and the heights hash. `tests/citycost.test.ts` stayed inside 190k: the docks' city frame measured 108,084 triangles and 36 batches. LEASE ROW's city frame stayed 189,998. The depot stayed 126,222. NIGHT MARKET stayed 127,934. RELAY HEIGHTS stayed 104,574. The non-city dressing fingerprint for the docks was re-recorded (`82d0ba6caa14f2e1`); the other four districts stayed the bytes they were. `tests/fender.test.ts` and `tests/citygatedoors.test.ts` passed. The 3×3 hash checks in `tests/citysize.test.ts` passed.
+
+**Open.** The west wall of LEASE ROW is still solid. The west end of DEADLETTER DOCKS' north wall, past the slip, is still solid. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 982 — The west wall of Repo Depot opens onto a skid
 
 **The ask.** REPO DEPOT has an impound, a west apron, an east ramp, a south bay, a north crest, a north hoist, an east jack, and a south chock. The north run of its west wall is still a solid facade, and the two west gates sit in the middle of it.

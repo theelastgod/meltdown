@@ -1,0 +1,14 @@
+Stage 983 — DEADLETTER DOCKS north fender
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  deadletter_docks city: 108,084 triangles, 36 batches, 354 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  repo_depot city: 126,222 triangles, 33 batches (unchanged)
+  night_market city: 127,934 triangles, 33 batches (unchanged)
+  relay_heights city: 104,574 triangles, 32 batches (unchanged)
+
+Docks hash with the fender: 1f2a06f9cb342c3ba89244b2b1830f2122a377b8c30b2be183b1183a88ceb32f
+Docks hash with the wall sealed: b842eac686aa6db295c7460626a50487f9da8727d84df39dd5428a0bcca82f29
+Non-city dressing fingerprint: 82d0ba6caa14f2e1
+
+Not calling openDocksFender failed tests/fender.test.ts. The street, the passage, and the ground outside were gone.
