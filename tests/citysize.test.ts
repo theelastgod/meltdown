@@ -146,8 +146,11 @@ const DEPOT_BOLSTER = "ee0473ce9da39433b161bec6e9dad45a6212067715993e291574c9ecc
 /** Depot after Stage 998 opened the slab between the dolly and the hoist. Sealing the south derrick puts this hash back. */
 const DEPOT_CRADLE = "c8687ddd47cf3442c91e5e488e583ced20d3954286ba2d5024ce428e0fcb0e08";
 
-/** Depot after Stage 1002 opened the slab between the south-east gate and the chock. The cradle bytes stay in DEPOT_CRADLE. */
+/** Depot after Stage 1002 opened the slab between the south-east gate and the chock. Sealing the south davit puts this hash back. */
 const DEPOT_DERRICK = "64a2f8fd5400adc2f0a8a4bfd26f3751df4383ae5854548a0cfdf68c6a47eabc";
+
+/** Depot after Stage 1006 opened the slab between the south bay and the south-west gate. The derrick bytes stay in DEPOT_DERRICK. */
+const DEPOT_DAVIT = "489ee7d8686e2569afb74643881ecff7c447d88200247f0b11e2e271ec8e226a";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -155,10 +158,10 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, and the south derrick (Stage 1002)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, and the south davit (Stage 1006)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_DERRICK);
+    expect(hash(spec)).toBe(DEPOT_DAVIT);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
@@ -173,7 +176,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).bolster?.line).toMatch(/NORTH BOLSTER/);
     expect(generateDistrict(spec).cradle?.line).toMatch(/NORTH CRADLE/);
     expect(generateDistrict(spec).derrick?.line).toMatch(/SOUTH DERRICK/);
-    // the pin is not the sealed wall: closing the derrick would put the cradle hash back
+    expect(generateDistrict(spec).davit?.line).toMatch(/SOUTH DAVIT/);
+    // the pin is not the sealed wall: closing the davit would put the derrick hash back
+    expect(DEPOT_DAVIT).not.toBe(DEPOT_DERRICK);
     expect(DEPOT_DERRICK).not.toBe(DEPOT_CRADLE);
     expect(DEPOT_CRADLE).not.toBe(DEPOT_BOLSTER);
     expect(DEPOT_BOLSTER).not.toBe(DEPOT_DOLLY);

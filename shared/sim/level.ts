@@ -440,6 +440,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   leech?: WildEdge;
+  /**
+   * The west run of REPO DEPOT's south wall, between the bay and the south-west gate (Stage 1006).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  davit?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
