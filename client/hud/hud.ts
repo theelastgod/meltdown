@@ -196,8 +196,9 @@ export class Hud {
       <div class="bottom">
         <div class="slots"><div class="slot on">╪</div><div class="slot">▦</div><div class="slot">▦</div><div class="slot mg">◈</div></div>
         <div class="center"><b class="fileno">#—</b> · <span class="filenm">BLANK</span> · <span class="vel">0.0 m/s</span> · <span class="stance">STAND</span></div>
-        <div class="tabs"><div class="tab">FILE<span class="n">·</span></div><div class="tab">GRAPH<span class="n">·</span></div><div class="tab">MAP<span class="n">·</span></div><div class="tab">MARKET<span class="n">·</span></div><div class="tab">CONTRACTS<span class="n">·</span></div><div class="tab">NAME<span class="n">·</span></div></div>
+        <div class="tabs"><div class="tab desk">DESK</div><div class="tab">FILE<span class="n">·</span></div><div class="tab">GRAPH<span class="n">·</span></div><div class="tab">MAP<span class="n">·</span></div><div class="tab">MARKET<span class="n">·</span></div><div class="tab">CONTRACTS<span class="n">·</span></div><div class="tab">NAME<span class="n">·</span></div></div>
       </div>
+      <div class="phone-desk" hidden><div class="hd"><span>DESK</span><span class="x" data-desk="close">TAP TO CLOSE</span></div><div class="grid"><button type="button" data-desk="file">FILE</button><button type="button" data-desk="graph">GRAPH</button><button type="button" data-desk="map">MAP</button><button type="button" data-desk="market">MARKET</button><button type="button" data-desk="contracts">CONTRACTS</button><button type="button" data-desk="name">NAME</button></div></div>
       <div class="keys">WASD · HOLD CLICK FIRE · R RELOAD · SPACE JUMP · CTRL SLIDE · SHIFT SPRINT</div>
     `;
     this.q = (s) => root.querySelector(s) as HTMLElement;
@@ -240,9 +241,29 @@ export class Hud {
       else onTravel(t.dataset.travel!);
     };
     const tabs = this.q(".tabs");
+    const closeDesk = () => {
+      this.root.classList.remove("phone-open");
+      this.q(".phone-desk").hidden = true;
+    };
+    this.q(".phone-desk").onclick = (e) => {
+      const hit = (e.target as HTMLElement).closest("[data-desk]") as HTMLElement | null;
+      if (!hit) return;
+      const which = hit.dataset.desk ?? "close";
+      closeDesk();
+      if (which === "close") return;
+      const tab = [...tabs.querySelectorAll<HTMLElement>(".tab")].find((el) => !el.classList.contains("desk") && tabOpens(el.textContent ?? "") === which);
+      tab?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    };
     tabs.onclick = (e) => {
       const t = (e.target as HTMLElement).closest(".tab") as HTMLElement | null;
       if (!t) return;
+      if (t.classList.contains("desk")) {
+        const open = !this.root.classList.contains("phone-open");
+        this.root.classList.toggle("phone-open", open);
+        this.q(".phone-desk").hidden = !open;
+        return;
+      }
+      closeDesk();
       const op = tabOpens(t.textContent ?? "");
       if (op === "map") {
         if (this.mapToggle) this.mapToggle();

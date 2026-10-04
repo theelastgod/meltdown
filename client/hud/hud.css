@@ -680,6 +680,9 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
    width and the ones that are reference rather than moment-to-moment move out of the thumbs' way. */
 #hud.touch .status { left: calc(8px + env(safe-area-inset-left)); top: calc(8px + env(safe-area-inset-top)); width: min(46vw, 260px); }
 #hud.touch .status .line { font-size: 9px; }
+/* the second line is the ledger (level, XP, scrip, wake). It stays in the file. The bars are the combat readout. */
+#hud.touch .status .line:nth-child(2) { display: none; }
+#hud.touch .status .bars { margin-top: 4px; }
 #hud.touch .p { padding: 4px 6px; }
 #hud.touch .xh { width: 12px; height: 12px; }
 /* the file/ledger panels are full-screen readers on a phone rather than a corner overlay */
@@ -696,7 +699,8 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.touch .card [data-walk] { color: var(--cy); border-bottom: 1px solid var(--cy); cursor: pointer; }
 #hud .pranks { display: none; }
 #hud.touch .pranks { display: flex; flex-wrap: nowrap; overflow: hidden; max-height: 14px; gap: 4px; justify-content: flex-end; margin-top: 2px; font-size: 9px; color: rgba(53,242,255,0.7); }
-#hud.touch .pranks span.on { color: var(--cy); }
+#hud.touch .pranks span { display: none; }
+#hud.touch .pranks span.on { display: inline; color: var(--cy); }
 #hud.touch .pranks span.next { color: var(--ye); }
 #hud .pranks em { font-style: normal; }
 #hud .pranks em.empty { color: var(--mg); }
@@ -708,6 +712,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.touch .nades { display: none; }                     /* the NADE pad carries the selected one */
 
 #hud.touch .map { right: calc(10px + env(safe-area-inset-right)); top: calc(6px + env(safe-area-inset-top)); width: 84px; padding: 3px; }
+#hud.touch .map .t { display: none; }
 #hud.touch .map canvas { width: 78px; height: 58px; }
 #hud.touch .map .f { font-size: 8px; }
 /* the slot-and-tab row sits under the file header, one line, and stops short of the map */
@@ -717,12 +722,13 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 /* the ammo column sits under the map, clear of the pause pad above it and the grenade pads below */
 #hud.touch .ammo { position: absolute; right: calc(10px + env(safe-area-inset-right)); top: calc(104px + env(safe-area-inset-top)); bottom: auto; width: 96px; text-align: right; overflow: hidden; }
 #hud.touch .ammo .big { font-size: 18px; line-height: 1; }
+#hud.touch .ammo .wname, #hud.touch .ammo .wgate, #hud.touch .ammo .hint { display: none; }
 #hud.touch .ammo .wgate { max-width: 96px; }
 /* one prompt or the other, never both */
 #hud .prompt-touch { display: none; }
 #hud.touch .prompt { display: none; }
 #hud.touch .center { display: none; }  /* Stage 139: no stance line on the phone; the row is the slots and the tabs on one line */
-#hud.touch .log { bottom: 72px; width: 420px; }  /* Stage 139: under the stack, above the weapon pad; Stage 140: wide enough that three PA lines stay under the alert */
+#hud.touch .log { bottom: 72px; width: min(240px, 46vw); }  /* a short column at the left thumb, clear of the aim and the right-hand pads */
 #hud.touch .terminal { left: 12px; bottom: auto; width: auto; max-width: none; transform: none; overflow: auto; }  /* Stage 138: seated under the row, short of the pads, by the layout */
 #hud.touch .terminal .ch { padding: 7px 8px; }
 #hud.touch .prompt-touch { display: block; left: 50%; right: auto; transform: translateX(-50%); bottom: auto; top: calc(62px + env(safe-area-inset-top)); white-space: nowrap; font-size: 9px; }
@@ -732,7 +738,19 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud.touch .pads:not([hidden]) { display: block; position: absolute; left: 50%; right: auto; transform: translateX(-50%); bottom: auto; top: calc(62px + env(safe-area-inset-top)); white-space: nowrap; font-size: 9px; color: rgba(53,242,255,0.45); text-align: center; }
 #hud.touch.q-prompt .pads { display: none !important; }
 #hud.touch .bottom .tabs { flex: 0 1 auto; min-width: 0; font-size: 9px; }
-/* the room line sits above the weapon pad, left of the log, instead of across the aim */
+/* the six desktop tabs are one DESK chip. The sheet carries them, and the chip is the row. */
+#hud .tab.desk { display: none; }
+#hud.touch .tabs .tab { display: none; }
+#hud.touch .tabs .tab.desk { display: block; min-width: 44px; min-height: 44px; line-height: 32px; }
+#hud .phone-desk { display: none; }
+#hud.touch.phone-open .phone-desk { display: flex; flex-direction: column; position: absolute; inset: 0; z-index: 40; box-sizing: border-box; padding: calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); background: #030509; border: 0; color: var(--cy); pointer-events: auto; }
+#hud.touch.phone-open > :not(.phone-desk) { visibility: hidden; }
+#hud.touch .phone-desk .hd { display: flex; justify-content: space-between; align-items: center; font-size: 12px; letter-spacing: 0.14em; }
+#hud.touch .phone-desk .x { min-height: 44px; display: grid; place-items: center; }
+#hud.touch .phone-desk .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+#hud.touch .phone-desk button { min-height: 48px; font: inherit; letter-spacing: 0.12em; color: var(--cy); background: rgba(3,5,9,0.6); border: 1px solid var(--cy); }
+/* the room line repeats the header. The frame monitor stays. */
+#hud.touch .side > div:first-child { display: none; }
 #hud.touch .side { left: calc(8px + env(safe-area-inset-left)); right: auto; top: auto; bottom: calc(78px + env(safe-area-inset-bottom)); width: 56px; text-align: left; }
 
 /* the frame monitor (Stage 50): only with ?perf=1 */

@@ -3,7 +3,10 @@
  *
  * The slot-and-tab row reserved 270 px for the thumb arc and wrapped, so the row was two lines
  * tall. The ammo column used the desktop's right band and sat in that arc, and the rank chips
- * wrapped down into the grenade pads. The log stays wide enough for three lines.
+ * wrapped down into the grenade pads. The log is a short column at the left thumb.
+ *
+ * The six desktop tabs are one DESK chip. The sheet holds FILE, GRAPH, MAP, MARKET, CONTRACTS
+ * and NAME. The combat row keeps the slots and that chip.
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -24,8 +27,12 @@ describe("the phone's chrome", () => {
     expect(css).not.toMatch(/right: calc\(250px \+ env\(safe-area-inset-right\)\)/);
     expect(css).toMatch(/#hud\.touch \.ammo \{[^}]*top: calc\(104px \+ env\(safe-area-inset-top\)\)/);
     expect(css).toMatch(/#hud\.touch \.ammo \{[^}]*width: 96px/);
-    expect(css).toMatch(/#hud\.touch \.log \{[^}]*width: 420px/);
+    expect(css).toMatch(/#hud\.touch \.log \{[^}]*width: min\(240px, 46vw\)/);
     expect(css).toMatch(/#hud\.touch \.pranks \{ display: flex; flex-wrap: nowrap/);
+    expect(css).toMatch(/#hud\.touch \.tabs \.tab \{ display: none; \}/);
+    expect(css).toMatch(/#hud\.touch \.tabs \.tab\.desk \{ display: block/);
+    expect(hud).toMatch(/class="tab desk">DESK/);
+    expect(hud).toMatch(/class="phone-desk"/);
     expect(css).toMatch(/#hud\.touch\.cut\.file \.terminal \{ transform: none/);
     expect(css).not.toMatch(/#hud\.touch\.cut\.file \.terminal \{ transform: scale/);
   });
