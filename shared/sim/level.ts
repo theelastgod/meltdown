@@ -461,6 +461,11 @@ export interface LevelDef {
    */
   futtock?: WildEdge;
   /**
+   * The south end of DEADLETTER DOCKS' west wall, past the wharf (Stage 1063). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  bumkin?: WildEdge;
+  /**
    * The east run of RELAY HEIGHTS' south wall (Stage 977). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */

@@ -41,7 +41,8 @@
  * re-pinned DEADLETTER DOCKS again: the east knight is in that level. Stage 1051
  * re-pinned DEADLETTER DOCKS again: the east keelson is in that level. Stage 1055
  * re-pinned DEADLETTER DOCKS again: the west cathead is in that level. Stage 1059
- * re-pinned DEADLETTER DOCKS again: the west futtock is in that level. Stage 999
+ * re-pinned DEADLETTER DOCKS again: the west futtock is in that level. Stage 1063
+ * re-pinned DEADLETTER DOCKS again: the west bumkin is in that level. Stage 999
  * re-pinned DEADLETTER DOCKS again: the south gunwale is in that level. LEASE ROW's
  * old 3×3 stays on the pre-grid bytes.
  *
@@ -163,8 +164,11 @@ const DOCKS_KEELSON = "ee57567a9ee01abfc1d304562148044119eccf42f2195d14b16b00183
 /** Docks after Stage 1055 opened the north end of the west wall, past the bitt. Sealing the west futtock puts this hash back. */
 const DOCKS_CATHEAD = "5cd3ea7d1c19c1c85feadbe0336695ced96cc573568d60792f25495b8bdadd1c";
 
-/** Docks after Stage 1059 opened the slab between the west cathead and the west bitt. The cathead bytes stay in DOCKS_CATHEAD. */
+/** Docks after Stage 1059 opened the slab between the west cathead and the west bitt. Sealing the west bumkin puts this hash back. */
 const DOCKS_FUTTOCK = "ab0a06b8ad255a77fc0bbf159723c48df7acd57f61babbc306b750abe267a75b";
+
+/** Docks after Stage 1063 opened the south end of the west wall, past the wharf. The futtock bytes stay in DOCKS_FUTTOCK. */
+const DOCKS_BUMKIN = "65d300dbf398a2eb08067a45735a7d37910f0ec7d6425e3a4e386b788dd89196";
 
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -322,10 +326,10 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, the west fluke, the north thimble, the south pintle, the south lanyard, the east bobstay, the east throat, the east knight, the east keelson, the west cathead, and the west futtock (Stage 1059)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, the west fluke, the north thimble, the south pintle, the south lanyard, the east bobstay, the east throat, the east knight, the east keelson, the west cathead, the west futtock, and the west bumkin (Stage 1063)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_FUTTOCK);
+    expect(hash(spec)).toBe(DOCKS_BUMKIN);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
     expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
     expect(generateDistrict(spec).quay?.line).toMatch(/EAST QUAY/);
@@ -355,7 +359,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).keelson?.line).toMatch(/EAST KEELSON/);
     expect(generateDistrict(spec).cathead?.line).toMatch(/WEST CATHEAD/);
     expect(generateDistrict(spec).futtock?.line).toMatch(/WEST FUTTOCK/);
-    // the pin is not the sealed wall: closing the futtock would put the cathead hash back
+    expect(generateDistrict(spec).bumkin?.line).toMatch(/WEST BUMKIN/);
+    // the pin is not the sealed wall: closing the bumkin would put the futtock hash back
+    expect(DOCKS_BUMKIN).not.toBe(DOCKS_FUTTOCK);
     expect(DOCKS_FUTTOCK).not.toBe(DOCKS_CATHEAD);
     expect(DOCKS_CATHEAD).not.toBe(DOCKS_KEELSON);
     expect(DOCKS_KEELSON).not.toBe(DOCKS_KNIGHT);
