@@ -421,6 +421,11 @@ export interface LevelDef {
    */
   kevel?: WildEdge;
   /**
+   * The north end of DEADLETTER DOCKS' west wall, past the bitt (Stage 1055). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  cathead?: WildEdge;
+  /**
    * The east run of RELAY HEIGHTS' south wall (Stage 977). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
