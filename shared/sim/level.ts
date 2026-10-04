@@ -376,6 +376,11 @@ export interface LevelDef {
    */
   stem?: WildEdge;
   /**
+   * The west run of DEADLETTER DOCKS' north wall, between the stem and the slip (Stage 1027).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  thimble?: WildEdge;
+  /**
    * The west end of NIGHT MARKET's north wall, past the lane (Stage 985). A fenced lot.
    * Nothing out there pays a gun.
    */

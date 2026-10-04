@@ -119,8 +119,11 @@ const DOCKS_BULWARK = "992307078929f6e5a35db28824e23aa519f29e5f796ece0ff4e4cbf02
 /** Docks after Stage 1019 opened the slab between the west wharf and the south-west gate. Sealing the west fluke puts this hash back. */
 const DOCKS_PAINTER = "462cc4a6058863a115aa1463aa2ab24679e140a040bc03b0c1c65a7b5eea6ad4";
 
-/** Docks after Stage 1023 opened the slab between the west bitt and the north-west gate. The painter bytes stay in DOCKS_PAINTER. */
+/** Docks after Stage 1023 opened the slab between the west bitt and the north-west gate. Sealing the north thimble puts this hash back. */
 const DOCKS_FLUKE = "bc87d52ca8ec9d96d59c612bd8d9f81e986a00f474a5d6a11a8c4ca5b350ea96";
+
+/** Docks after Stage 1027 opened the slab between the north stem and the north slip. The fluke bytes stay in DOCKS_FLUKE. */
+const DOCKS_THIMBLE = "15f3246e939565a629a11dd669dfc4a1c778244020e93f6af60b60b793fff751";
 
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -233,10 +236,10 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, and the west fluke (Stage 1023)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, the west fluke, and the north thimble (Stage 1027)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_FLUKE);
+    expect(hash(spec)).toBe(DOCKS_THIMBLE);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
     expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
     expect(generateDistrict(spec).quay?.line).toMatch(/EAST QUAY/);
@@ -257,7 +260,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).bulwark?.line).toMatch(/EAST BULWARK/);
     expect(generateDistrict(spec).painter?.line).toMatch(/WEST PAINTER/);
     expect(generateDistrict(spec).fluke?.line).toMatch(/WEST FLUKE/);
-    // the pin is not the sealed wall: closing the fluke would put the painter hash back
+    expect(generateDistrict(spec).thimble?.line).toMatch(/NORTH THIMBLE/);
+    // the pin is not the sealed wall: closing the thimble would put the fluke hash back
+    expect(DOCKS_THIMBLE).not.toBe(DOCKS_FLUKE);
     expect(DOCKS_FLUKE).not.toBe(DOCKS_PAINTER);
     expect(DOCKS_PAINTER).not.toBe(DOCKS_BULWARK);
     expect(DOCKS_BULWARK).not.toBe(DOCKS_FAIRLEAD);
