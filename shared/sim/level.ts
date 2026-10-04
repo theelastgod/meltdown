@@ -806,6 +806,11 @@ export interface LevelDef {
    */
   windlass?: WildEdge;
   /**
+   * The slab between REPO DEPOT's east windlass and the east jack (Stage 1081). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  messenger?: WildEdge;
+  /**
    * The north run of REPO DEPOT's east wall, between the ramp and the gate (Stage 1018).
    * A fenced lot. Nothing out there pays a gun.
    */
