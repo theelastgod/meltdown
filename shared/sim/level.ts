@@ -206,6 +206,11 @@ export interface LevelDef {
    */
   ramp?: WildEdge;
   /**
+   * The north end of REPO DEPOT's east wall, past the ramp (Stage 1042). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  shackle?: WildEdge;
+  /**
    * The east wall of DEADLETTER DOCKS (Stage 955). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
