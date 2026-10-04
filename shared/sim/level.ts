@@ -280,6 +280,11 @@ export interface LevelDef {
    * Nothing out there pays a gun.
    */
   bitt?: WildEdge;
+  /**
+   * The south run of RELAY HEIGHTS' east wall (Stage 974). A fenced lot, clear of the gates.
+   * Nothing out there pays a gun.
+   */
+  strut?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
