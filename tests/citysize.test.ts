@@ -30,7 +30,8 @@
  * re-pinned REPO DEPOT again: the south tiller is in that level. Stage 1042
  * re-pinned REPO DEPOT again: the east shackle is in that level. Stage 1046
  * re-pinned REPO DEPOT again: the east swivel is in that level. Stage 1050
- * re-pinned REPO DEPOT again: the east fid is in that level. Stage 1031
+ * re-pinned REPO DEPOT again: the east fid is in that level. Stage 1054
+ * re-pinned REPO DEPOT again: the east kevel is in that level. Stage 1031
  * re-pinned DEADLETTER DOCKS again: the south pintle is in that level. Stage 1035
  * re-pinned DEADLETTER DOCKS again: the south lanyard is in that level. Stage 1039
  * re-pinned DEADLETTER DOCKS again: the east bobstay is in that level. Stage 1043
@@ -230,8 +231,11 @@ const DEPOT_SHACKLE = "b51b77ca539d8a0b52824215062979d833ba86a28df37b5f5a960008a
 /** Depot after Stage 1046 opened the slab between the east shackle and the east ramp. Sealing the east fid puts this hash back. */
 const DEPOT_SWIVEL = "b47a9e10689da8734bf09a8e2c8e23c3d1b83dce6458e4010a7c15a4a4200e0e";
 
-/** Depot after Stage 1050 opened the south end of the east wall, past the jack. The swivel bytes stay in DEPOT_SWIVEL. */
+/** Depot after Stage 1050 opened the south end of the east wall, past the jack. Sealing the east kevel puts this hash back. */
 const DEPOT_FID = "a16c0509f183959252787e595d5dc5b79bf035e848529f36ecb796fa5b2aa213";
+
+/** Depot after Stage 1054 opened the slab between the east fid and the east jack. The fid bytes stay in DEPOT_FID. */
+const DEPOT_KEVEL = "99f5d6ee03f262e7a4679a0095eff2c07f99dbaaab60d48e2faa9f6f5e3aaf80";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -239,10 +243,10 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, the east shackle, the east swivel, and the east fid (Stage 1050)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, the east shackle, the east swivel, the east fid, and the east kevel (Stage 1054)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_FID);
+    expect(hash(spec)).toBe(DEPOT_KEVEL);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
@@ -269,7 +273,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).shackle?.line).toMatch(/EAST SHACKLE/);
     expect(generateDistrict(spec).swivel?.line).toMatch(/EAST SWIVEL/);
     expect(generateDistrict(spec).fid?.line).toMatch(/EAST FID/);
-    // the pin is not the sealed wall: closing the fid would put the swivel hash back
+    expect(generateDistrict(spec).kevel?.line).toMatch(/EAST KEVEL/);
+    // the pin is not the sealed wall: closing the kevel would put the fid hash back
+    expect(DEPOT_KEVEL).not.toBe(DEPOT_FID);
     expect(DEPOT_FID).not.toBe(DEPOT_SWIVEL);
     expect(DEPOT_SWIVEL).not.toBe(DEPOT_SHACKLE);
     expect(DEPOT_SHACKLE).not.toBe(DEPOT_TILLER);

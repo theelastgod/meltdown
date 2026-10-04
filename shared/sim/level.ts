@@ -416,6 +416,11 @@ export interface LevelDef {
    */
   fid?: WildEdge;
   /**
+   * The slab between REPO DEPOT's east fid and the east jack (Stage 1054). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  kevel?: WildEdge;
+  /**
    * The east run of RELAY HEIGHTS' south wall (Stage 977). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
