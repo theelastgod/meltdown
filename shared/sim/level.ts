@@ -386,6 +386,11 @@ export interface LevelDef {
    */
   awning?: WildEdge;
   /**
+   * The west run of NIGHT MARKET's north wall, between the awning and the lane (Stage 1028).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  grommet?: WildEdge;
+  /**
    * The west end of RELAY HEIGHTS' north wall, past the spar (Stage 986). A fenced lot.
    * Nothing out there pays a gun.
    */
