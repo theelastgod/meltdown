@@ -326,6 +326,11 @@ export interface LevelDef {
    */
   lizard?: WildEdge;
   /**
+   * The slab between NIGHT MARKET's west pleat and the west booth (Stage 1075). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  yoke?: WildEdge;
+  /**
    * The north-east wall of RELAY HEIGHTS (Stage 962). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
