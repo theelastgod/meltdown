@@ -311,6 +311,11 @@ export interface LevelDef {
    */
   rode?: WildEdge;
   /**
+   * The slab between NIGHT MARKET's west tuck and the west lantern (Stage 1072). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  bias?: WildEdge;
+  /**
    * The north-east wall of RELAY HEIGHTS (Stage 962). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
