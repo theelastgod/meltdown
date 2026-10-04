@@ -1,0 +1,17 @@
+Stage 1000 — NIGHT MARKET south welt
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  night_market city: 136,114 triangles, 33 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 114,724 triangles, 36 batches (unchanged)
+  repo_depot city: 132,094 triangles, 33 batches (unchanged)
+  relay_heights city: 111,790 triangles, 32 batches (unchanged)
+
+Market hash with the welt: bbac26ea58fd0a0a2f2a67740b6f462e0c13e6afdc9792d0c54ab9941776a79f
+Market hash with the wall sealed: c739abb50d17d07a1b6578fa831fe57ad01e7eee3feb898a245f6bf85a8fff32
+Non-city dressing fingerprint: e0990c21f9164f2d
+
+Not calling openNightWelt failed tests/welt.test.ts. The street, the passage, and the ground outside were gone.
+Docks hash stayed 878e4ebfc5ae138c611b6fd92cd6c516d4cb5db2f0cfb846ae41aa0e02c6652d.
+Depot hash stayed c8687ddd47cf3442c91e5e488e583ced20d3954286ba2d5024ce428e0fcb0e08.
+Heights hash stayed ff002f0aa53448e8e5bd4bfc915dd2479c39ce05160bf28f8f7aec87df14f649.
