@@ -32,7 +32,8 @@
  * re-pinned REPO DEPOT again: the east swivel is in that level. Stage 1050
  * re-pinned REPO DEPOT again: the east fid is in that level. Stage 1054
  * re-pinned REPO DEPOT again: the east kevel is in that level. Stage 1058
- * re-pinned REPO DEPOT again: the west coak is in that level. Stage 1031
+ * re-pinned REPO DEPOT again: the west coak is in that level. Stage 1062
+ * re-pinned REPO DEPOT again: the west gammon is in that level. Stage 1031
  * re-pinned DEADLETTER DOCKS again: the south pintle is in that level. Stage 1035
  * re-pinned DEADLETTER DOCKS again: the south lanyard is in that level. Stage 1039
  * re-pinned DEADLETTER DOCKS again: the east bobstay is in that level. Stage 1043
@@ -246,8 +247,11 @@ const DEPOT_FID = "a16c0509f183959252787e595d5dc5b79bf035e848529f36ecb796fa5b2aa
 /** Depot after Stage 1054 opened the slab between the east fid and the east jack. Sealing the west coak puts this hash back. */
 const DEPOT_KEVEL = "99f5d6ee03f262e7a4679a0095eff2c07f99dbaaab60d48e2faa9f6f5e3aaf80";
 
-/** Depot after Stage 1058 opened the north end of the west wall, past the skid. The kevel bytes stay in DEPOT_KEVEL. */
+/** Depot after Stage 1058 opened the north end of the west wall, past the skid. Sealing the west gammon puts this hash back. */
 const DEPOT_COAK = "1ad12ec1124e79823b08e76296d411ab84d6c0fd1f82b2efa929fff061acf3f2";
+
+/** Depot after Stage 1062 opened the slab between the west coak and the west skid. The coak bytes stay in DEPOT_COAK. */
+const DEPOT_GAMMON = "592182e1bd9e7ee5a3fb9fa80cdc7fea68256f2fc1d5676a67ae07467d7b199c";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -255,10 +259,10 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, the east shackle, the east swivel, the east fid, the east kevel, and the west coak (Stage 1058)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, the east shackle, the east swivel, the east fid, the east kevel, the west coak, and the west gammon (Stage 1062)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_COAK);
+    expect(hash(spec)).toBe(DEPOT_GAMMON);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
@@ -287,7 +291,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).fid?.line).toMatch(/EAST FID/);
     expect(generateDistrict(spec).kevel?.line).toMatch(/EAST KEVEL/);
     expect(generateDistrict(spec).coak?.line).toMatch(/WEST COAK/);
-    // the pin is not the sealed wall: closing the coak would put the kevel hash back
+    expect(generateDistrict(spec).gammon?.line).toMatch(/WEST GAMMON/);
+    // the pin is not the sealed wall: closing the gammon would put the coak hash back
+    expect(DEPOT_GAMMON).not.toBe(DEPOT_COAK);
     expect(DEPOT_COAK).not.toBe(DEPOT_KEVEL);
     expect(DEPOT_KEVEL).not.toBe(DEPOT_FID);
     expect(DEPOT_FID).not.toBe(DEPOT_SWIVEL);

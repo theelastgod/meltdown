@@ -451,6 +451,11 @@ export interface LevelDef {
    */
   coak?: WildEdge;
   /**
+   * The slab between REPO DEPOT's west coak and the west skid (Stage 1062). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  gammon?: WildEdge;
+  /**
    * The slab between DEADLETTER DOCKS' west cathead and the west bitt (Stage 1059). A fenced lot.
    * Nothing out there pays a gun.
    */
