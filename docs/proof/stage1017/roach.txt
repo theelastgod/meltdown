@@ -1,0 +1,14 @@
+Stage 1017 — RELAY HEIGHTS east roach
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  relay_heights city: 119,874 triangles, 32 batches, 389 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  night_market city: 143,810 triangles, 33 batches (unchanged)
+  deadletter_docks city: 121,556 triangles, 36 batches (unchanged)
+  repo_depot city: 138,350 triangles, 33 batches (unchanged)
+
+Heights hash with the roach: 179d050c69050c1da8f701e1fe8ae430e8d0aebc93d555ef2dc2d3912e9b4c16
+Heights hash with the wall sealed: c202e52c064141cc3c416be4b2b2f07b1fe05613a566e6a825f70493af73dd4a
+Non-city dressing fingerprint: 8f7890ac34ad672d
+
+Not calling openRelayRoach failed tests/roach.test.ts. The street, the passage, and the ground outside were gone.
