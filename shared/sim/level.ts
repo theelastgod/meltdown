@@ -181,6 +181,11 @@ export interface LevelDef {
    */
   apron?: WildEdge;
   /**
+   * The south run of REPO DEPOT's west wall, between the apron and the gate (Stage 1022).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  clevis?: WildEdge;
+  /**
    * The east wall of REPO DEPOT (Stage 954). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
