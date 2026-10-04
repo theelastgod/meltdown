@@ -60,7 +60,7 @@ function fingerprint(scene: THREE.Object3D, log: readonly string[]): string {
   return h.digest("hex").slice(0, 16);
 }
 
-/** recorded from the dressing as it was before Stage 704. LEASE ROW was re-recorded at Stage 945. DEADLETTER DOCKS was re-recorded at Stage 984: the north stem is part of that district's own dressing. REPO DEPOT was re-recorded at Stage 987: the north winch is part of that district's own dressing. RELAY HEIGHTS was re-recorded at Stage 986: the north vane is part of that district's own dressing. NIGHT MARKET was re-recorded at Stage 988: the north valance is part of that district's own dressing. */
+/** recorded from the dressing as it was before Stage 704. LEASE ROW was re-recorded at Stage 945. DEADLETTER DOCKS was re-recorded at Stage 984: the north stem is part of that district's own dressing. REPO DEPOT was re-recorded at Stage 987: the north winch is part of that district's own dressing. RELAY HEIGHTS was re-recorded at Stage 989: the north stay is part of that district's own dressing. NIGHT MARKET was re-recorded at Stage 988: the north valance is part of that district's own dressing. */
 const BEFORE: Record<string, string> = {
   lease_row: "b8d19dc8b6676174",
   deadletter_docks: "c79111363fcf8560",
@@ -68,7 +68,7 @@ const BEFORE: Record<string, string> = {
   // Stage 701's districts, recorded on the Stage 703 commit, before the doors: the three above
   // reproduce there exactly, which is what makes these two a record of "before" and not of "now"
   night_market: "768648b201da7fbc",
-  relay_heights: "306889654be88a1a",
+  relay_heights: "dca701b391eb52b7",
 };
 
 async function dress(L: LevelDef, gates?: readonly GateSign[]): Promise<{ scene: THREE.Scene; log: string[] }> {
