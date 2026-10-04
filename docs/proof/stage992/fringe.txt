@@ -1,0 +1,17 @@
+Stage 992 — NIGHT MARKET north fringe
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  night_market city: 132,842 triangles, 33 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 111,164 triangles, 36 batches (unchanged)
+  repo_depot city: 128,438 triangles, 33 batches (unchanged)
+  relay_heights city: 108,230 triangles, 32 batches (unchanged)
+
+Market hash with the fringe: 6bb7f22db75aa3ec7748e0a2bdd6c49dc3d6762d2073c99292794aa5882bb60a
+Market hash with the wall sealed: 6b952b868a7c06b1f6ccd4170c1ebb2e8ed48a0d372e5e0978847f6e29461341
+Non-city dressing fingerprint: 4cc8daf30d3a524c
+
+Not calling openNightFringe failed tests/fringe.test.ts. The street, the passage, and the ground outside were gone.
+Docks hash stayed 6d299c4181e77baaa34fb4ffd7426eb94379316f2356bbf9af686151266c647b.
+Depot hash stayed 080fde14d8767f0dcf816a1e0fc819014de425eca18b8c9d52d604edecd6a6ad.
+Heights hash stayed d31d7b35fb38439f8da27d8bd58cdc00a2aec221e6810568ec5b70ea3c1ea73e.
