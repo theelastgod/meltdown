@@ -445,6 +445,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   davit?: WildEdge;
+  /**
+   * The east run of DEADLETTER DOCKS' south wall, between the gunwale and the cleat (Stage 1007).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  garboard?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
