@@ -431,6 +431,11 @@ export interface LevelDef {
    */
   piping?: WildEdge;
   /**
+   * The slab between NIGHT MARKET's west piping and the west lantern (Stage 1060). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  godet?: WildEdge;
+  /**
    * The north end of RELAY HEIGHTS' west wall, past the pylon (Stage 1057). A fenced lot.
    * Nothing out there pays a gun.
    */
