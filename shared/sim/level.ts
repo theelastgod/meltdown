@@ -366,6 +366,11 @@ export interface LevelDef {
    */
   knight?: WildEdge;
   /**
+   * The slab between DEADLETTER DOCKS' east knight and the east bollard (Stage 1051). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  keelson?: WildEdge;
+  /**
    * The north run of RELAY HEIGHTS' west wall (Stage 970). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
