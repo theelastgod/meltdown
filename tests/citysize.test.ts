@@ -98,8 +98,11 @@ const DEPOT_BAY = "dd855c44f5502260163a68e3ccc81bbe74cff6a33105847febe7a8365a1a2
 /** Depot after Stage 960 opened the north-west wall. Sealing the north hoist puts this hash back. */
 const DEPOT_CREST = "4cf5a6ba1d6b53d530500cdf2c5d17b3ef73f03bd5ba7c732f2edf08c3e47454";
 
-/** Depot after Stage 972 opened the north-east wall. The crest bytes stay in DEPOT_CREST. */
+/** Depot after Stage 972 opened the north-east wall. Sealing the east jack puts this hash back. */
 const DEPOT_HOIST = "a1576f39f98de6f0ef8e3e1cc2de24d94b3389a1195d186c3864bee609bad005";
+
+/** Depot after Stage 976 opened the south run of the east wall. The hoist bytes stay in DEPOT_HOIST. */
+const DEPOT_JACK = "4b28867aafe6028e09ea01ed04de6c9fe234805f74e7720d7287f502575ab3e2";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -107,17 +110,19 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, and the north hoist (Stage 972)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, and the east jack (Stage 976)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_HOIST);
+    expect(hash(spec)).toBe(DEPOT_JACK);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
     expect(generateDistrict(spec).bay?.line).toMatch(/SOUTH BAY/);
     expect(generateDistrict(spec).crest?.line).toMatch(/NORTH CREST/);
     expect(generateDistrict(spec).hoist?.line).toMatch(/NORTH HOIST/);
-    // the pin is not the sealed wall: closing the hoist would put the crest hash back
+    expect(generateDistrict(spec).jack?.line).toMatch(/EAST JACK/);
+    // the pin is not the sealed wall: closing the jack would put the hoist hash back
+    expect(DEPOT_JACK).not.toBe(DEPOT_HOIST);
     expect(DEPOT_HOIST).not.toBe(DEPOT_CREST);
     expect(DEPOT_CREST).not.toBe(DEPOT_BAY);
     expect(DEPOT_BAY).not.toBe(DEPOT_RAMP);
