@@ -216,6 +216,11 @@ export interface LevelDef {
    */
   shackle?: WildEdge;
   /**
+   * The slab between REPO DEPOT's east shackle and the east ramp (Stage 1046). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  swivel?: WildEdge;
+  /**
    * The east wall of DEADLETTER DOCKS (Stage 955). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */

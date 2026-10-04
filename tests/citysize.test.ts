@@ -28,7 +28,8 @@
  * re-pinned REPO DEPOT again: the north deadeye is in that level. Stage 1034
  * re-pinned REPO DEPOT again: the south gudgeon is in that level. Stage 1038
  * re-pinned REPO DEPOT again: the south tiller is in that level. Stage 1042
- * re-pinned REPO DEPOT again: the east shackle is in that level. Stage 1031
+ * re-pinned REPO DEPOT again: the east shackle is in that level. Stage 1046
+ * re-pinned REPO DEPOT again: the east swivel is in that level. Stage 1031
  * re-pinned DEADLETTER DOCKS again: the south pintle is in that level. Stage 1035
  * re-pinned DEADLETTER DOCKS again: the south lanyard is in that level. Stage 1039
  * re-pinned DEADLETTER DOCKS again: the east bobstay is in that level. Stage 1043
@@ -214,8 +215,11 @@ const DEPOT_GUDGEON = "31e844bae2a9f1512bb3bbfaa5c931ee28e4cb1962a31eff42148811c
 /** Depot after Stage 1038 opened the slab between the south gudgeon and the south bay. Sealing the east shackle puts this hash back. */
 const DEPOT_TILLER = "84ef82fdb8bc9216eaaa97311530f62c85e16610261e10b1b801562a7738523f";
 
-/** Depot after Stage 1042 opened the north end of the east wall, past the ramp. The tiller bytes stay in DEPOT_TILLER. */
+/** Depot after Stage 1042 opened the north end of the east wall, past the ramp. Sealing the east swivel puts this hash back. */
 const DEPOT_SHACKLE = "b51b77ca539d8a0b52824215062979d833ba86a28df37b5f5a960008a5f3d50d";
+
+/** Depot after Stage 1046 opened the slab between the east shackle and the east ramp. The shackle bytes stay in DEPOT_SHACKLE. */
+const DEPOT_SWIVEL = "b47a9e10689da8734bf09a8e2c8e23c3d1b83dce6458e4010a7c15a4a4200e0e";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -223,10 +227,10 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, and the east shackle (Stage 1042)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, the east shackle, and the east swivel (Stage 1046)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_SHACKLE);
+    expect(hash(spec)).toBe(DEPOT_SWIVEL);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
@@ -251,7 +255,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).gudgeon?.line).toMatch(/SOUTH GUDGEON/);
     expect(generateDistrict(spec).tiller?.line).toMatch(/SOUTH TILLER/);
     expect(generateDistrict(spec).shackle?.line).toMatch(/EAST SHACKLE/);
-    // the pin is not the sealed wall: closing the shackle would put the tiller hash back
+    expect(generateDistrict(spec).swivel?.line).toMatch(/EAST SWIVEL/);
+    // the pin is not the sealed wall: closing the swivel would put the shackle hash back
+    expect(DEPOT_SWIVEL).not.toBe(DEPOT_SHACKLE);
     expect(DEPOT_SHACKLE).not.toBe(DEPOT_TILLER);
     expect(DEPOT_TILLER).not.toBe(DEPOT_GUDGEON);
     expect(DEPOT_GUDGEON).not.toBe(DEPOT_DEADEYE);
