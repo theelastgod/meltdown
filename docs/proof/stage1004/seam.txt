@@ -1,0 +1,17 @@
+Stage 1004 — NIGHT MARKET south seam
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  night_market city: 138,038 triangles, 33 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 116,552 triangles, 36 batches (unchanged)
+  repo_depot city: 133,346 triangles, 33 batches (unchanged)
+  relay_heights city: 113,522 triangles, 32 batches (unchanged)
+
+Market hash with the seam: 80b094182cc926d26a942b08a859d2b036b3e2e31d8d1562fcc97c99a76abd34
+Market hash with the wall sealed: bbac26ea58fd0a0a2f2a67740b6f462e0c13e6afdc9792d0c54ab9941776a79f
+Non-city dressing fingerprint: 01957648afb9fb47
+
+Not calling openNightSeam failed tests/seam.test.ts. The street, the passage, and the ground outside were gone.
+Docks hash stayed 53b952cfeac7913c8b0c0d749a30a2f5ab8cf78fc97656d3daeed263d302ff2a.
+Depot hash stayed 64a2f8fd5400adc2f0a8a4bfd26f3751df4383ae5854548a0cfdf68c6a47eabc.
+Heights hash stayed 3c2a4fc913eb7d0e5c032724b086a9886fb964fee9424ff7083ef50218f373e4.

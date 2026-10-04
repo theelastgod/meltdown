@@ -27,9 +27,9 @@ const NEW = ["night_market", "relay_heights"] as const;
 const spec = (id: string): DistrictSpec => districtById(id)!;
 const hash = (s: DistrictSpec): string => createHash("sha256").update(JSON.stringify(generateDistrict(s))).digest("hex");
 
-/** sha256 of JSON.stringify(generateDistrict(spec)). Night market was re-pinned at Stage 1000, when the slab between the south-east gate and the row opened. Relay heights was re-pinned at Stage 1001, when the slab between the south-east gate and the tie opened. */
+/** sha256 of JSON.stringify(generateDistrict(spec)). Night market was re-pinned at Stage 1004, when the slab between the south hook and the south-west gate opened. Relay heights was re-pinned at Stage 1001, when the slab between the south-east gate and the tie opened. */
 const PINNED: Record<(typeof NEW)[number], string> = {
-  night_market: "bbac26ea58fd0a0a2f2a67740b6f462e0c13e6afdc9792d0c54ab9941776a79f",
+  night_market: "80b094182cc926d26a942b08a859d2b036b3e2e31d8d1562fcc97c99a76abd34",
   relay_heights: "3c2a4fc913eb7d0e5c032724b086a9886fb964fee9424ff7083ef50218f373e4",
 };
 /** Night market before Stage 950. Sealing the north lot puts this hash back. */
@@ -58,6 +58,8 @@ const NIGHT_VALANCE = "6b952b868a7c06b1f6ccd4170c1ebb2e8ed48a0d372e5e0978847f6e2
 const NIGHT_FRINGE = "6bb7f22db75aa3ec7748e0a2bdd6c49dc3d6762d2073c99292794aa5882bb60a";
 /** Night market after Stage 996. Sealing the south welt puts this hash back. */
 const NIGHT_HEM = "c739abb50d17d07a1b6578fa831fe57ad01e7eee3feb898a245f6bf85a8fff32";
+/** Night market after Stage 1000. Sealing the south seam puts this hash back. */
+const NIGHT_WELT = "bbac26ea58fd0a0a2f2a67740b6f462e0c13e6afdc9792d0c54ab9941776a79f";
 /** Relay heights after Stage 949. Sealing the south span puts this hash back. */
 const RELAY_RACK = "0960af48b982c704f216cd0a42232cc5bf4b8f2e8cc5d53164d31cd440ee7cd7";
 /** Relay heights after Stage 958. Sealing the north ledge puts this hash back. */
@@ -158,6 +160,7 @@ describe("the city has five districts", () => {
     expect(PINNED.night_market).not.toBe(NIGHT_VALANCE);
     expect(PINNED.night_market).not.toBe(NIGHT_FRINGE);
     expect(PINNED.night_market).not.toBe(NIGHT_HEM);
+    expect(PINNED.night_market).not.toBe(NIGHT_WELT);
     expect(PINNED.relay_heights).not.toBe(RELAY_RACK);
     expect(PINNED.relay_heights).not.toBe(RELAY_SPAN);
     expect(PINNED.relay_heights).not.toBe(RELAY_LEDGE);
@@ -197,6 +200,7 @@ describe("the city has five districts", () => {
     expect(generateDistrict(spec("night_market")).fringe?.line).toMatch(/NORTH FRINGE/);
     expect(generateDistrict(spec("night_market")).hem?.line).toMatch(/NORTH HEM/);
     expect(generateDistrict(spec("night_market")).welt?.line).toMatch(/SOUTH WELT/);
+    expect(generateDistrict(spec("night_market")).seam?.line).toMatch(/SOUTH SEAM/);
   });
 
   it("each is a place a crew can play: the patrols the spec asks for, claims for THE RUN, two safe zones, a picture on the loading card", () => {
