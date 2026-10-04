@@ -356,6 +356,11 @@ export interface LevelDef {
    */
   bollard?: WildEdge;
   /**
+   * The south end of DEADLETTER DOCKS' east wall, past the bollard (Stage 1047). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  knight?: WildEdge;
+  /**
    * The north run of RELAY HEIGHTS' west wall (Stage 970). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
