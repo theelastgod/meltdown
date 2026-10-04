@@ -431,6 +431,11 @@ export interface LevelDef {
    */
   piping?: WildEdge;
   /**
+   * The north end of RELAY HEIGHTS' west wall, past the pylon (Stage 1057). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  topping?: WildEdge;
+  /**
    * The east run of RELAY HEIGHTS' south wall (Stage 977). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */
