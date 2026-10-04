@@ -820,6 +820,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   bulwark?: WildEdge;
+  /**
+   * The slab between DEADLETTER DOCKS' east bulwark and the east quay (Stage 1082). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  breast?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
