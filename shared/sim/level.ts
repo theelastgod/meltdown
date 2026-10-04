@@ -406,6 +406,11 @@ export interface LevelDef {
    */
   winch?: WildEdge;
   /**
+   * The west run of REPO DEPOT's north wall, between the winch and the crest (Stage 1030).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  deadeye?: WildEdge;
+  /**
    * The east run of NIGHT MARKET's north wall, between the gate and the tarp (Stage 988).
    * A fenced lot. Nothing out there pays a gun.
    */

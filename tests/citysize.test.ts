@@ -24,7 +24,8 @@
  * re-pinned it again: the north stem is in that level. Stage 982
  * re-pinned REPO DEPOT again: the west skid is in that level. Stage 987
  * re-pinned REPO DEPOT again: the north winch is in that level. Stage 998
- * re-pinned REPO DEPOT again: the north cradle is in that level. Stage 999
+ * re-pinned REPO DEPOT again: the north cradle is in that level. Stage 1030
+ * re-pinned REPO DEPOT again: the north deadeye is in that level. Stage 999
  * re-pinned DEADLETTER DOCKS again: the south gunwale is in that level. LEASE ROW's
  * old 3×3 stays on the pre-grid bytes.
  *
@@ -182,8 +183,11 @@ const DEPOT_PAWL = "e30bd455be6320c16be8b99f9ec338ab7074cce470732361d4da482764b1
 /** Depot after Stage 1022 opened the slab between the west apron and the south-west gate. Sealing the west becket puts this hash back. */
 const DEPOT_CLEVIS = "aa924fa5fad224a012e3568b8ac69007c39c6aea222b862867d0d0dfe21540d6";
 
-/** Depot after Stage 1026 opened the slab between the west skid and the north-west gate. The clevis bytes stay in DEPOT_CLEVIS. */
+/** Depot after Stage 1026 opened the slab between the west skid and the north-west gate. Sealing the north deadeye puts this hash back. */
 const DEPOT_BECKET = "db905f7342b927115a8c261f3aae2d84e3b6b2f4e42255417f4374cfa9cc0c76";
+
+/** Depot after Stage 1030 opened the slab between the north winch and the north crest. The becket bytes stay in DEPOT_BECKET. */
+const DEPOT_DEADEYE = "de74f766420d41922f537f128814f8f393f6b0c40e0a8d779da42bfd52b4e66d";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -191,10 +195,10 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, and the west becket (Stage 1026)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, and the north deadeye (Stage 1030)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_BECKET);
+    expect(hash(spec)).toBe(DEPOT_DEADEYE);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
@@ -215,7 +219,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).pawl?.line).toMatch(/EAST PAWL/);
     expect(generateDistrict(spec).clevis?.line).toMatch(/WEST CLEVIS/);
     expect(generateDistrict(spec).becket?.line).toMatch(/WEST BECKET/);
-    // the pin is not the sealed wall: closing the becket would put the clevis hash back
+    expect(generateDistrict(spec).deadeye?.line).toMatch(/NORTH DEADEYE/);
+    // the pin is not the sealed wall: closing the deadeye would put the becket hash back
+    expect(DEPOT_DEADEYE).not.toBe(DEPOT_BECKET);
     expect(DEPOT_BECKET).not.toBe(DEPOT_CLEVIS);
     expect(DEPOT_CLEVIS).not.toBe(DEPOT_PAWL);
     expect(DEPOT_PAWL).not.toBe(DEPOT_WINDLASS);
