@@ -261,6 +261,11 @@ export interface LevelDef {
    */
   spire?: WildEdge;
   /**
+   * The south run of RELAY HEIGHTS' west wall, between the spire and the gate (Stage 1021).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  tack?: WildEdge;
+  /**
    * The south-east wall of DEADLETTER DOCKS (Stage 968). A fenced lot, clear of the gates.
    * Nothing out there pays a gun.
    */

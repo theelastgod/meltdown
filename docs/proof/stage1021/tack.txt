@@ -1,0 +1,16 @@
+Stage 1021 — RELAY HEIGHTS west tack
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  relay_heights city: 121,990 triangles, 32 batches, 396 boxes
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 123,960 triangles, 36 batches (unchanged)
+  repo_depot city: 141,330 triangles, 33 batches (unchanged)
+  night_market city: 144,678 triangles, 33 batches (unchanged)
+
+Heights hash with the tack: ba07fc9e24fc12df8a0302dcf68cd16ffbe5fc8483c4d58da4d770ad81a94720
+Heights hash with the wall sealed: 179d050c69050c1da8f701e1fe8ae430e8d0aebc93d555ef2dc2d3912e9b4c16
+Non-city dressing fingerprint: 06e4c2f60ee61616
+
+Not calling openRelayTack failed tests/tack.test.ts. The street, the passage, and the ground outside were gone.
+
+The lease-row path in tests/citysize.test.ts timed out at 5 s under load and again alone (about 7.7 s). The timeout was not raised. LEASE ROW's hash is unchanged.
