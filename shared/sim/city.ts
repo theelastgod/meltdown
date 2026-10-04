@@ -677,6 +677,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const winch = openDepotWinch(c);
   const hoist = openDepotHoist(c);
   const dolly = openDepotDolly(c);
+  const bolster = openDepotBolster(c);
   const skid = openDepotSkid(c);
 
   // district rig: two big casts on opposite corners. Cyan and magenta carry the city everywhere; an amber
@@ -819,6 +820,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(vane ? { vane } : {}),
     ...(halyard ? { halyard } : {}),
     ...(winch ? { winch } : {}),
+    ...(bolster ? { bolster } : {}),
   };
 }
 
@@ -2565,6 +2567,46 @@ function openDepotCrest(c: Ctx): WildEdge | null {
  * The west end of REPO DEPOT's north wall, past the crest, is still a solid facade.
  * Three metres there open onto a fenced lot. The crest is not this opening. Nothing out there pays a gun.
  */
+/**
+ * The west run of REPO DEPOT's north wall, between the north-west gate and the crest, is still
+ * a solid facade. Three metres there open onto a fenced lot. The crest is not this opening.
+ * Nothing out there pays a gun.
+ */
+function openDepotBolster(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "repo_depot") return null;
+  const inner = -c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.max.z === inner && b.min.y === 0 && b.max.y === 36 && b.min.x === -38.5 && b.max.x === -21);
+  if (i < 0) throw new Error("depot bolster: the north wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  const midX = -30;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, dx0, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx1, 0, wall.min.z, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx0, doorH, wall.min.z, dx1, 36, wall.max.z, "facade"));
+  const zOut = wall.min.z;
+  const yF = 2.2;
+  const x0 = midX - 8;
+  const x1 = midX + 8;
+  const zFar = zOut - 10;
+  const t = 0.35;
+  c.boxes.push(box(x0, 0, zOut - t, dx0, yF, zOut, "fence"));
+  c.boxes.push(box(dx1, 0, zOut - t, x1, yF, zOut, "fence"));
+  c.boxes.push(box(x0, 0, zFar, x1, yF, zFar + t, "fence"));
+  c.boxes.push(box(x0, 0, zFar, x0 + t, yF, zOut, "fence"));
+  c.boxes.push(box(x1 - t, 0, zFar, x1, yF, zOut, "fence"));
+  addSign(c, "NORTH BOLSTER", midX, 2.7, inner + 0.06, 0, 4, COLORS.amber);
+  return {
+    street: v3(midX, 0, inner + 2.2),
+    passage: v3(midX, 0, (inner + zOut) / 2),
+    outside: v3(midX, 0, zOut - 5),
+    line: "NORTH BOLSTER. THE DEPOT WALL IS BEHIND YOU.",
+  };
+}
+
 function openDepotWinch(c: Ctx): WildEdge | null {
   if (c.spec.id !== "repo_depot") return null;
   const inner = -c.H;

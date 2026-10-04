@@ -380,6 +380,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   halyard?: WildEdge;
+  /**
+   * The west run of REPO DEPOT's north wall, between the gate and the crest (Stage 994).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  bolster?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
