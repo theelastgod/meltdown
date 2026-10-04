@@ -756,6 +756,11 @@ export interface LevelDef {
    */
   davit?: WildEdge;
   /**
+   * The slab between REPO DEPOT's south davit and the south bay (Stage 1089). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  gripes?: WildEdge;
+  /**
    * The east run of DEADLETTER DOCKS' south wall, between the gunwale and the cleat (Stage 1007).
    * A fenced lot. Nothing out there pays a gun.
    */
