@@ -330,6 +330,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   fender?: WildEdge;
+  /**
+   * The west end of DEADLETTER DOCKS' north wall, past the slip (Stage 984). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  stem?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */

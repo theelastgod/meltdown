@@ -656,6 +656,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const quay = openDocksQuay(c);
   const bollard = openDocksBollard(c);
   const slip = openDocksSlip(c);
+  const stem = openDocksStem(c);
   const keel = openDocksKeel(c);
   const fender = openDocksFender(c);
   const wharf = openDocksWharf(c);
@@ -799,6 +800,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(hoist ? { hoist } : {}),
     ...(skid ? { skid } : {}),
     ...(fender ? { fender } : {}),
+    ...(stem ? { stem } : {}),
   };
 }
 
@@ -1595,6 +1597,45 @@ function openDocksSlip(c: Ctx): WildEdge | null {
     passage: v3(midX, 0, (inner + zOut) / 2),
     outside: v3(midX, 0, zOut - 5),
     line: "NORTH SLIP. THE DOCK WALL IS BEHIND YOU.",
+  };
+}
+
+/**
+ * The west end of DEADLETTER DOCKS' north wall, past the slip, is still a solid facade.
+ * Three metres there open onto a fenced lot. The slip is not this opening. Nothing out there pays a gun.
+ */
+function openDocksStem(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "deadletter_docks") return null;
+  const inner = -c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.max.z === inner && b.min.y === 0 && b.max.y === 36 && b.min.x === -84 && b.max.x === -41.5);
+  if (i < 0) throw new Error("docks stem: the north wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  const midX = -52;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, dx0, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx1, 0, wall.min.z, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx0, doorH, wall.min.z, dx1, 36, wall.max.z, "facade"));
+  const zOut = wall.min.z;
+  const yF = 2.2;
+  const x0 = midX - 8;
+  const x1 = midX + 8;
+  const zFar = zOut - 10;
+  const t = 0.35;
+  c.boxes.push(box(x0, 0, zOut - t, dx0, yF, zOut, "fence"));
+  c.boxes.push(box(dx1, 0, zOut - t, x1, yF, zOut, "fence"));
+  c.boxes.push(box(x0, 0, zFar, x1, yF, zFar + t, "fence"));
+  c.boxes.push(box(x0, 0, zFar, x0 + t, yF, zOut, "fence"));
+  c.boxes.push(box(x1 - t, 0, zFar, x1, yF, zOut, "fence"));
+  addSign(c, "NORTH STEM", midX, 2.7, inner + 0.06, 0, 4, COLORS.cyan);
+  return {
+    street: v3(midX, 0, inner + 2.2),
+    passage: v3(midX, 0, (inner + zOut) / 2),
+    outside: v3(midX, 0, zOut - 5),
+    line: "NORTH STEM. THE DOCK WALL IS BEHIND YOU.",
   };
 }
 
