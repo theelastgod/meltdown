@@ -420,6 +420,11 @@ export interface LevelDef {
    * A fenced lot. Nothing out there pays a gun.
    */
   luff?: WildEdge;
+  /**
+   * The east run of REPO DEPOT's south wall, between the gate and the chock (Stage 1002).
+   * A fenced lot. Nothing out there pays a gun.
+   */
+  derrick?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */

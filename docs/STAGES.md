@@ -1641,6 +1641,16 @@ engineering ones, and both want an owner:
 2. **Whether a phone and a desktop belong in the same PvP room.** Same question, sharper, because
    the answer changes matchmaking rather than the sim.
 
+## Stage 1002 — The south wall of Repo Depot opens onto a derrick
+
+**The ask.** REPO DEPOT has an impound, a west apron, an east ramp, a south bay, a north crest, a north hoist, an east jack, a south chock, a west skid, a north winch, a north dolly, a north bolster, and a north cradle. The chock cut the east run of the south wall, and the slab between the south-east gate and the chock is still solid. The facade past the chock, on the far side of the east wall, is not a street.
+
+**The change.** Three metres on that slab, clear of the gate and of the chock, are open onto the ground that was already there. A fence above mantle height holds the lot. A sign on the street side reads SOUTH DERRICK. Standing out there, the line reads SOUTH DERRICK. THE DEPOT WALL IS BEHIND YOU. The lot changes no gun. The impound, the apron, the ramp, the bay, the crest, the hoist, the jack, the chock, the skid, the winch, the dolly, the bolster, and the cradle stay open. The heights luff, the market welt, the docks gunwale, LEASE ROW's rooms and lots, and LEASE ROW's old 3×3 stay the bytes they were.
+
+**Verified.** `tests/derrick.test.ts`: the street, the passage, and the ground outside are open; the wall beside the slot and the far fence are solid; the line is the lot's, and every gate is more than 20 m from the passage. Not calling the opener failed that check and would put the depot hash back to `c8687ddd47cf3442c91e5e488e583ced20d3954286ba2d5024ce428e0fcb0e08`. The open level hashes to `64a2f8fd5400adc2f0a8a4bfd26f3751df4383ae5854548a0cfdf68c6a47eabc`. `tests/citysize.test.ts` kept the docks hash and the old 3×3 hash. `tests/newdistricts.test.ts` kept the market hash and the heights hash. `tests/citycost.test.ts` stayed inside 190k: the depot's city frame measured 133,346 triangles and 33 batches. LEASE ROW's city frame stayed 189,998. The docks stayed 114,724. NIGHT MARKET stayed 136,114. RELAY HEIGHTS stayed 113,522. The non-city dressing fingerprint for the depot was re-recorded (`2d9bbab33c7077c9`); the other four districts stayed the bytes they were. `tests/derrick.test.ts`, `tests/citygatedoors.test.ts`, and `tests/citysize.test.ts` passed, including the lease-row path. The hash checks in `tests/newdistricts.test.ts` passed. The timeout was not raised.
+
+**Open.** The west wall of LEASE ROW is still solid. The slab between DEADLETTER DOCKS' south pier and the south-west gate is still solid. The facade past the chock is still not a street. An empty magazine turns the grenade pad magenta. Holding that pad still fills it cyan.
+
 ## Stage 1001 — The south wall of Relay Heights opens onto a luff
 
 **The ask.** RELAY HEIGHTS has a cold rack, a south span, a north ledge, an east mast, a west spire, a west pylon, an east strut, a south tie, a north spar, a north vane, a north stay, a north halyard, and a north shroud. The tie cut the east run of the south wall, and the slab between the south-east gate and the tie is still solid. The facade past the tie, on the far side of the east wall, is not a street.

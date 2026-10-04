@@ -1,0 +1,17 @@
+Stage 1002 — REPO DEPOT south derrick
+
+City frame (2 × dressing + crowd + skyline), measured with dressLevel, Crowd, and buildSkyline:
+  repo_depot city: 133,346 triangles, 33 batches
+  lease_row city: 189,998 triangles, 33 batches (unchanged)
+  deadletter_docks city: 114,724 triangles, 36 batches (unchanged)
+  night_market city: 136,114 triangles, 33 batches (unchanged)
+  relay_heights city: 113,522 triangles, 32 batches (unchanged)
+
+Depot hash with the derrick: 64a2f8fd5400adc2f0a8a4bfd26f3751df4383ae5854548a0cfdf68c6a47eabc
+Depot hash with the wall sealed: c8687ddd47cf3442c91e5e488e583ced20d3954286ba2d5024ce428e0fcb0e08
+Non-city dressing fingerprint: 2d9bbab33c7077c9
+
+Not calling openDepotDerrick failed tests/derrick.test.ts. The street, the passage, and the ground outside were gone.
+Heights hash stayed 3c2a4fc913eb7d0e5c032724b086a9886fb964fee9424ff7083ef50218f373e4.
+Market hash stayed bbac26ea58fd0a0a2f2a67740b6f462e0c13e6afdc9792d0c54ab9941776a79f.
+Docks hash stayed 878e4ebfc5ae138c611b6fd92cd6c516d4cb5db2f0cfb846ae41aa0e02c6652d.
