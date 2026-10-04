@@ -340,6 +340,11 @@ export interface LevelDef {
    * Nothing out there pays a gun.
    */
   awning?: WildEdge;
+  /**
+   * The west end of RELAY HEIGHTS' north wall, past the spar (Stage 986). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  vane?: WildEdge;
 }
 
 /** Feet positions for the one opening in the city wall. */
