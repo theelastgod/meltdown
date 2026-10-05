@@ -783,8 +783,20 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
   return { calls, signMat };
 }
 
+/**
+ * How tall the horizon reads. The docks and the heights share a cast.
+ * Deadletter is a low harbor wall. Every other room keeps the towers the skyline already had.
+ * Same slab count either way: the read is the height, not a new mesh.
+ */
+export type SkylineRead = { base: number; rise: number; far: number };
+
+export function skylineRead(name: string | undefined): SkylineRead {
+  if (name === "deadletter_docks") return { base: 12, rise: 22, far: 10 };
+  return { base: 18, rise: 70, far: 50 };
+}
+
 /** Skyline of dark slabs with neon edges and sparse lit windows beyond the playable area, and THE KERNEL on the horizon. */
-export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "magenta" | "cyan" | "amber" = "magenta"): THREE.Group {
+export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "magenta" | "cyan" | "amber" = "magenta", place?: string): THREE.Group {
   const group = new THREE.Group();
   scene.add(group);
   const neon = new NeonBatch(group);
@@ -806,6 +818,7 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
   const slabs: { x: number; z: number; top: number }[] = [];
   group.userData.slabs = slabs;
   const words = ["LEASE", "VANTAGE", "保安", "NIGHT CO", "RE-LEASE", "ヴァンテージ", "SEC-9", "INTEGRITY", "COMPLY", "RENEW"];
+  const read = skylineRead(place);
   for (let i = 0; i < 110; i++) {
     const ang = rnd() * Math.PI * 2;
     const dist = inner + rnd() * 190;
@@ -813,7 +826,7 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
     const z = Math.sin(ang) * dist;
     const w = 8 + rnd() * 18;
     const d = 8 + rnd() * 18;
-    const h = 18 + rnd() * 70 + (dist > inner + 80 ? 50 : 0);
+    const h = read.base + rnd() * read.rise + (dist > inner + 80 ? read.far : 0);
     const box: Box = { min: { x: x - w / 2, y: -1, z: z - d / 2 }, max: { x: x + w / 2, y: h - 1, z: z + d / 2 } };
     slabs.push({ x, z, top: h - 1 });
     batch.box(box, facades[Math.floor(rnd() * facades.length)]!, 14, 28);

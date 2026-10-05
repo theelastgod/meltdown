@@ -362,7 +362,7 @@ export class Renderer {
     const dressed = dressLevel(this.scene, level, this.screens, doors);
     this.levelCalls = dressed.calls;
     if (dressed.signMat) this.signFlicker = flickerMaterial(dressed.signMat, level.name);
-    const skyline = buildSkyline(this.scene, level.skylineSeed ?? 42, (level.bounds ?? 32) + 44, district);
+    const skyline = buildSkyline(this.scene, level.skylineSeed ?? 42, (level.bounds ?? 32) + 44, district, level.name);
     skyline.name ||= "skyline";
     skyline.traverse((o) => o.layers.set(FAR_LAYER));
     this.life = new CityLife(level, skyline);
