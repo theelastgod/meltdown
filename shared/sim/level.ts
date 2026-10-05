@@ -846,6 +846,11 @@ export interface LevelDef {
    */
   rudder?: WildEdge;
   /**
+   * The slab between DEADLETTER DOCKS' south gunwale and the south garboard (Stage 1106). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  limber?: WildEdge;
+  /**
    * The east run of NIGHT MARKET's south wall, between the welt and the row (Stage 1008).
    * A fenced lot. Nothing out there pays a gun.
    */

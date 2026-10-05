@@ -722,6 +722,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const gunwale = openDocksGunwale(c);
   const garboard = openDocksGarboard(c);
   const rudder = openDocksRudder(c);
+  const limber = openDocksLimber(c);
   const quay = openDocksQuay(c);
   const bobstay = openDocksBobstay(c);
   const throat = openDocksThroat(c);
@@ -1039,6 +1040,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(gripes ? { gripes } : {}),
     ...(garboard ? { garboard } : {}),
     ...(rudder ? { rudder } : {}),
+    ...(limber ? { limber } : {}),
     ...(gore ? { gore } : {}),
     ...(pinking ? { pinking } : {}),
     ...(batten ? { batten } : {}),
@@ -5005,6 +5007,46 @@ function openDocksRudder(c: Ctx): WildEdge | null {
     passage: v3(midX, 0, (inner + zOut) / 2),
     outside: v3(midX, 0, zOut + 5),
     line: "SOUTH RUDDER. THE DOCK WALL IS BEHIND YOU.",
+  };
+}
+
+/**
+ * The slab between DEADLETTER DOCKS' south gunwale and the south garboard opens onto a fenced lot.
+ * The fence is above a mantle. The gunwale and the garboard are not this opening. Nothing out there pays a gun.
+ */
+function openDocksLimber(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "deadletter_docks") return null;
+  const inner = c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.min.z === inner && b.min.y === 0 && b.max.y === 36 && b.min.x === 31.5 && b.max.x === 39.5);
+  if (i < 0) throw new Error("docks limber: the south wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  // The gunwale's wall check stands at x = 32.2. The garboard's door starts at x = 39.5. The door sits between them.
+  const midX = 35.5;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, dx0, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx1, 0, wall.min.z, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx0, doorH, wall.min.z, dx1, 36, wall.max.z, "facade"));
+  const zOut = wall.max.z;
+  const yF = 2.2;
+  const x0 = midX - 8;
+  const x1 = midX + 8;
+  const zFar = zOut + 10;
+  const t = 0.35;
+  c.boxes.push(box(x0, 0, zOut, dx0, yF, zOut + t, "fence"));
+  c.boxes.push(box(dx1, 0, zOut, x1, yF, zOut + t, "fence"));
+  c.boxes.push(box(x0, 0, zFar - t, x1, yF, zFar, "fence"));
+  c.boxes.push(box(x0, 0, zOut, x0 + t, yF, zFar, "fence"));
+  c.boxes.push(box(x1 - t, 0, zOut, x1, yF, zFar, "fence"));
+  addSign(c, "SOUTH LIMBER", midX, 2.7, inner - 0.06, Math.PI, 4, COLORS.cyan);
+  return {
+    street: v3(midX, 0, inner - 2.2),
+    passage: v3(midX, 0, (inner + zOut) / 2),
+    outside: v3(midX, 0, zOut + 5),
+    line: "SOUTH LIMBER. THE DOCK WALL IS BEHIND YOU.",
   };
 }
 
