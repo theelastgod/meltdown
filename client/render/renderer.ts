@@ -361,7 +361,7 @@ export class Renderer {
     this.gateDoors = doors.map((g) => ({ gate: g.gate, to: g.to.district, text: gateSignText(g) }));
     const dressed = dressLevel(this.scene, level, this.screens, doors);
     this.levelCalls = dressed.calls;
-    if (dressed.signMat) this.signFlicker = flickerMaterial(dressed.signMat);
+    if (dressed.signMat) this.signFlicker = flickerMaterial(dressed.signMat, level.name);
     const skyline = buildSkyline(this.scene, level.skylineSeed ?? 42, (level.bounds ?? 32) + 44, district);
     skyline.name ||= "skyline";
     skyline.traverse((o) => o.layers.set(FAR_LAYER));

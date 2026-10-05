@@ -655,8 +655,20 @@ export class Sky {
   }
 }
 
+/**
+ * Sign flicker for one named place. The docks and the heights share a cast.
+ * Relay Heights shivers thin and drops often. Every other room keeps the breathe the signs already had.
+ */
+export const SIGN_FLICKER = "{ float b = 0.86 + 0.14 * sin(uTime * 2.3 + vFlick * 9.0); float drop = step(0.985, fract(sin(floor(uTime * 6.0) + vFlick * 31.7) * 43758.5)); gl_FragColor.rgb *= b * (1.0 - 0.7 * drop); }";
+export const HEIGHTS_FLICKER = "{ float b = 0.96 + 0.04 * sin(uTime * 11.0 + vFlick * 9.0); float drop = step(0.72, fract(sin(floor(uTime * 18.0) + vFlick * 31.7) * 43758.5)); gl_FragColor.rgb *= b * (1.0 - 0.95 * drop); }";
+
+export function signFlickerGlsl(name: string | undefined): string {
+  return name === "relay_heights" ? HEIGHTS_FLICKER : SIGN_FLICKER;
+}
+
 /** Sign flicker: the atlas material takes a time uniform; each sign quad carries a phase attribute. */
-export function flickerMaterial(mat: THREE.MeshBasicMaterial): { setTime: (t: number) => void } {
+export function flickerMaterial(mat: THREE.MeshBasicMaterial, name?: string): { setTime: (t: number) => void } {
+  const body = signFlickerGlsl(name);
   let uniforms: { uTime: { value: number } } | null = null;
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = { value: 0 };
@@ -664,7 +676,7 @@ export function flickerMaterial(mat: THREE.MeshBasicMaterial): { setTime: (t: nu
     shader.vertexShader = shader.vertexShader.replace("#include <common>", "#include <common>\nattribute float flick; varying float vFlick;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvFlick = flick;");
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", "#include <common>\nuniform float uTime; varying float vFlick;")
-      .replace("#include <dithering_fragment>", "#include <dithering_fragment>\n{ float b = 0.86 + 0.14 * sin(uTime * 2.3 + vFlick * 9.0); float drop = step(0.985, fract(sin(floor(uTime * 6.0) + vFlick * 31.7) * 43758.5)); gl_FragColor.rgb *= b * (1.0 - 0.7 * drop); }");
+      .replace("#include <dithering_fragment>", `#include <dithering_fragment>\n${body}`);
   };
   mat.needsUpdate = true;
   return { setTime: (t) => { if (uniforms) uniforms.uTime.value = t; } };
