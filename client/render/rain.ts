@@ -39,16 +39,17 @@ export class Rain {
         camPos: { value: new THREE.Vector3() },
         size: { value: size },
         color: { value: new THREE.Color(0.55, 0.8, 0.95) },
+        fall: { value: 1 },
         fogColor: { value: new THREE.Color(0x05070c) },
         fogDensity: { value: 0.02 },
       },
       vertexShader: /* glsl */ `
-        uniform float time; uniform vec3 camPos; uniform vec3 size;
+        uniform float time; uniform float fall; uniform vec3 camPos; uniform vec3 size;
         attribute float seed;
         varying float vFade;
         void main() {
           vec3 p = position;
-          float speed = 9.0 + seed * 6.0;
+          float speed = (9.0 + seed * 6.0) * fall;
           p.y = mod(p.y - time * speed, size.y);
           p.x = mod(p.x + time * 1.2 + seed * 3.0, size.x);
           // wrap the cloud around the camera
@@ -68,6 +69,12 @@ export class Rain {
     this.object = new THREE.LineSegments(geo, this.mat);
     this.object.frustumCulled = false;
     this.object.renderOrder = 10;
+  }
+
+  /** Tint and pace. The streak count stays put, so the frame does not grow. */
+  setWeather(rgb: readonly [number, number, number], fall: number): void {
+    (this.mat.uniforms.color!.value as THREE.Color).setRGB(rgb[0], rgb[1], rgb[2]);
+    this.mat.uniforms.fall!.value = fall;
   }
 
   update(time: number, camera: THREE.Camera): void {

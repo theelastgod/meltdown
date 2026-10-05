@@ -135,6 +135,42 @@ export const DISTRICTS = {
   cyan: { fog: 0x05090f, ambient: 0x1e2a38, sky: 0x224055, keyA: PALETTE.cyan, keyB: PALETTE.magenta },
   amber: { fog: 0x0e0904, ambient: 0x362a1a, sky: 0x554020, keyA: PALETTE.amber, keyB: PALETTE.cyan },
 } as const;
+
+/**
+ * The air of one named district. Two districts can share a cast and still not share a night.
+ * Densities stay inside the sweep that kept the skyline (0.0045 to 0.009). The rig lights are
+ * untouched. Levels that are not these five keep the cast fog at 0.0065.
+ */
+export type PlaceAir = {
+  fog: number;
+  density: number;
+  exposure: number;
+  sky: number;
+  rain: readonly [number, number, number];
+  fall: number;
+};
+
+export function placeAir(name: string | undefined): PlaceAir | null {
+  switch (name) {
+    case "lease_row":
+      // pawn night: the row closes in, rain takes the magenta
+      return { fog: 0x0b0610, density: 0.0074, exposure: 1.12, sky: 0x14081c, rain: [0.72, 0.38, 0.7], fall: 1 };
+    case "deadletter_docks":
+      // harbor: you can see the piers, and the rain is a cold sheet
+      return { fog: 0x06141c, density: 0.0052, exposure: 1.02, sky: 0x0a2430, rain: [0.42, 0.68, 0.82], fall: 1.45 };
+    case "repo_depot":
+      // the impound: sodium haze, the yard stops early, rain is thin and warm
+      return { fog: 0x1a1006, density: 0.0082, exposure: 1.38, sky: 0x2a1808, rain: [0.85, 0.55, 0.22], fall: 0.7 };
+    case "night_market":
+      // steam under the awnings: closer than Lease Row, and pink where that one is violet
+      return { fog: 0x1a0a16, density: 0.009, exposure: 1.3, sky: 0x2a1028, rain: [0.9, 0.45, 0.55], fall: 0.55 };
+    case "relay_heights":
+      // the racks: the air is thin, the towers stay, the rain falls hard and white
+      return { fog: 0x040814, density: 0.0046, exposure: 1.48, sky: 0x081828, rain: [0.72, 0.86, 1], fall: 1.8 };
+    default:
+      return null;
+  }
+}
 export type DistrictId = keyof typeof DISTRICTS;
 
 /**
@@ -305,18 +341,16 @@ export class Renderer {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.info.autoReset = false; // counts cover the whole frame (mirror + scene + post), reset in render()
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.25;
-    this.scene.background = new THREE.Color(PALETTE.bg);
-    const fogColor = new THREE.Color(cast.fog);
+    this.renderer.toneMappingExposure = 1.25; // a named district replaces this a few lines below
+    const air = placeAir(level.name);
+    this.scene.background = new THREE.Color(air?.sky ?? PALETTE.bg);
+    const fogColor = new THREE.Color(air?.fog ?? cast.fog);
     // "Haze softens everything past ~200 m" (docs/ART_BIBLE.md). At 0.013 the exp2 fog was half at
-    // 64 m and total by ~150 m, so the skyline was not softened but erased: the centre of every
-    // distant view was a black wall with the city behind it. Swept 0.013 / 0.009 / 0.0065 / 0.0045
-    // through probe:look with nothing else changed; 0.0065 puts the whole frame at 62% dark, the
-    // reference clip's own figure, with half-fog at 128 m and the street itself untouched (it is
-    // near the camera). The fog colour is unchanged and the background is separate, so the sky is
-    // still pure black (Stage 664).
-    const fogDensity = 0.0065;
-    this.scene.fog = new THREE.FogExp2(cast.fog, fogDensity);
+    // 64 m and total by ~150 m, so the skyline was not softened but erased. 0.0065 is the fallback
+    // for a level that is not one of the five districts. Those five stay inside 0.0046–0.009.
+    const fogDensity = air?.density ?? 0.0065;
+    if (air) this.renderer.toneMappingExposure = air.exposure;
+    this.scene.fog = new THREE.FogExp2(air?.fog ?? cast.fog, fogDensity);
 
     this.camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.05, 900);
     this.camera.rotation.order = "YXZ";
@@ -353,6 +387,7 @@ export class Renderer {
     }
     this.buildLights(cast, level);
     this.rain = new Rain();
+    if (air) this.rain.setWeather(air.rain, air.fall);
     this.rain.object.layers.set(FAR_LAYER);
     this.rain.object.name = "rain";
     this.scene.add(this.rain.object);
