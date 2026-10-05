@@ -124,6 +124,8 @@ export interface CityEventMsg {
   you: boolean;
   /** on the message that closes an event this client's file was credited for: what it was paid */
   reward?: string[];
+  /** the street's one hold: where to stand, when no public event is using the beam */
+  street?: { line: string; x: number; z: number };
 }
 
 /**
@@ -216,6 +218,8 @@ export interface FileMsg {
   challenges?: string[];
   /** the file's own identity (Stage 8): glyph seed, Chapter, moniker worn + earned, display name, the Debt owed */
   identity?: { glyph: number; chapter: number; moniker: string | null; display: string; unlocked: string[]; debt: { display: string; glyph: number; kills: number } | null; chapters: number[] };
+  /** chits on the file. Absent on a message from a host that has not heard of them. */
+  chits?: number;
 }
 
 export interface NetInput extends InputFrame {

@@ -13,6 +13,7 @@ import type { counterView } from "@shared/economy/counter";
 import artifacts from "../contracts/out/artifacts.json";
 
 import { crtPhrase } from "./crt";
+import { CHAIN_DARK_LINE, chitsFromBurn } from "@shared/city/chit";
 
 export { crtPhrase };
 
@@ -260,6 +261,25 @@ export class CounterClient {
       this.say(`THE BROWSER BLOCKED THE COPY · ${this.address}`);
       return false;
     }
+  }
+
+  /**
+   * $CAPITAL named by the buyer, burned in full, for chits. With the chain dark the desk says so.
+   * A configured chain still does not burn: a receipt this host cannot turn into chits would destroy the tokens.
+   */
+  async burnForChits(namedPrice: number): Promise<{ ok: boolean; reason: string; chits: number }> {
+    const quote = chitsFromBurn(namedPrice);
+    if (quote.chits <= 0) {
+      this.say("NAME A PRICE");
+      return { ok: false, reason: "NAME A PRICE", chits: 0 };
+    }
+    const capital = this.info?.contracts?.capital;
+    if (!this.info?.chainId || !this.info.rpc || !capital) {
+      this.say(CHAIN_DARK_LINE);
+      return { ok: false, reason: CHAIN_DARK_LINE, chits: 0 };
+    }
+    this.say("THE EXCHANGE WILL NOT BURN WHAT IT CANNOT CREDIT");
+    return { ok: false, reason: "THE EXCHANGE WILL NOT BURN WHAT IT CANNOT CREDIT", chits: 0 };
   }
 
   /** The connected address's $CAPITAL balance and Ghostfile token, read from the chain the ledger runs on. */

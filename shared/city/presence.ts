@@ -67,6 +67,8 @@ export interface DistrictPresence {
   event: PresenceEvent | null;
   /** each course's record, where one has been set */
   records: PresenceRecord[];
+  /** the district's contest block is up. Omitted when it is not, so an older report still reads. */
+  contest?: boolean;
 }
 
 export interface CityPresence {
@@ -87,6 +89,8 @@ export interface PresenceSource {
   seats: readonly { display: string; connected: boolean; account: string | null; secret: string | null }[];
   event: { kind: string; title: string; status: string; left: number } | null;
   records: readonly { course: string; time: number; holder: string; key: string | null }[];
+  /** set only when the district's contest block is up */
+  contest?: boolean;
 }
 
 /** an account id: a scheme and a body (`blank:x7k2m9qa`, `g:…`), which the client makes and the host keys on */
@@ -155,7 +159,7 @@ export function districtPresence(src: PresenceSource, max = PRESENCE_NAMES): Dis
   }
   const ev = src.event && src.event.status === "running" && isKind(src.event.kind) ? { kind: src.event.kind, title: cleanTitle(src.event.title), left: Math.round(finite(src.event.left, 0, 3600)) } : null;
   const records = src.records.map((r) => ({ course: cleanTitle(r.course), time: finite(r.time, 0, 36_000), holder: presentName(r.holder, forbidden) ?? "BLANK" }));
-  const d: DistrictPresence = { district: src.district, name: levelDisplayName(src.district), players: online.length, names, event: ev, records };
+  const d: DistrictPresence = { district: src.district, name: levelDisplayName(src.district), players: online.length, names, event: ev, records, ...(src.contest ? { contest: true } : {}) };
   if (!leaks(d, forbidden)) return d;
   const bare: DistrictPresence = { ...d, names: [], event: ev ? { ...ev, title: "" } : null, records: records.map((r) => ({ ...r, holder: "BLANK" })) };
   return leaks(bare, forbidden) ? { ...emptyPresence(src.district), players: online.length } : bare;
@@ -178,7 +182,7 @@ export function readDistrict(raw: unknown, max = PRESENCE_NAMES): DistrictPresen
         return course ? [{ course, time: finite(o.time, 0, 36_000), holder: presentName(o.holder) ?? "BLANK" }] : [];
       })
     : [];
-  return { district, name: levelDisplayName(district), players: Math.round(finite(r.players, 0, 10_000)), names, event, records };
+  return { district, name: levelDisplayName(district), players: Math.round(finite(r.players, 0, 10_000)), names, event, records, ...(r.contest === true ? { contest: true } : {}) };
 }
 
 /**

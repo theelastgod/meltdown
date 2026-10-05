@@ -148,6 +148,15 @@ export class World {
   readonly dummyRespawn: boolean;
   readonly pvp: boolean;
   /**
+   * The city's contest block (set by the city room, never by a match). Both the shooter and the
+   * file they hit have to be inside it. Absent, a PvE room still ignores player damage. A campaign
+   * co-op room leaves this unset, so Kernel Protocols there never meet a contest.
+   */
+  contestAt: ((x: number, z: number) => boolean) | null = null;
+  /** Where a file that died inside the block stands up. Absent, the room's own spawn. */
+  contestGate: ((x: number, z: number) => { pos: Vec3; yaw: number } | null) | null = null;
+  private contestDeath = new Map<number, { x: number; z: number }>();
+  /**
    * Files in the room that are not on the street yet (Stage 699): admitted and placed, still behind
    * their loading card, and the room has not had one input from them. The AI does not see them and
    * nothing hurts them; they cannot move or shoot either, so the grace buys nothing but the load. The
@@ -298,7 +307,10 @@ export class World {
       if (!p.alive && !opts.predictOnly) {
         p.respawnTimer -= SIM_DT;
         if (p.respawnTimer <= 0) {
-          respawnPlayer(p, this.level.spawns[(p.id + this.tick) % this.level.spawns.length]!);
+          const died = this.contestDeath.get(p.id);
+          this.contestDeath.delete(p.id);
+          const gate = died ? this.contestGate?.(died.x, died.z) : null;
+          respawnPlayer(p, gate ?? this.level.spawns[(p.id + this.tick) % this.level.spawns.length]!);
           if (!this.pvp) p.streetShield = STREET_SHIELD_SECONDS;
           this.emit({ tick: this.tick, playerId: p.id, type: "respawn" }, opts);
         }
@@ -583,8 +595,12 @@ export class World {
     if (kind === "player") {
       const v = this.players.get(id);
       if (!v || !v.alive) return;
-      // the city is PvE (Stage 692): another player's damage is not applied; the patrols' and your own are
-      if (!this.pvp && attacker !== id && this.players.has(attacker)) return;
+      // the city is PvE (Stage 692): another player's damage is not applied; the patrols' and your own are.
+      // A contest block opts in. Both files have to be standing in it, and only a room that set contestAt.
+      if (!this.pvp && attacker !== id && this.players.has(attacker)) {
+        const other = this.players.get(attacker)!;
+        if (!this.contestAt || !this.contestAt(other.pos.x, other.pos.z) || !this.contestAt(v.pos.x, v.pos.z)) return;
+      }
       if (v.firstDamageTick < 0) v.firstDamageTick = this.tick;
       v.lastAttacker = attacker;
       v.sinceDamage = 0;
@@ -639,6 +655,7 @@ export class World {
     v.alive = false;
     v.health = 0;
     v.respawnTimer = 3;
+    if (this.contestAt?.(v.pos.x, v.pos.z)) this.contestDeath.set(v.id, { x: v.pos.x, z: v.pos.z });
     v.stats.deaths++;
     this.emit({ tick: this.tick, playerId: v.id, type: "death", killerId }, opts);
     if (this.run) {

@@ -868,6 +868,7 @@ export class Room {
       scrip: a?.wallet.scrip ?? 0,
       wakelight: a?.wallet.wakelight ?? 0,
       salvage: a?.wallet.salvage ?? 0,
+      chits: a?.chits ?? 0,
       owned: a?.owned ?? [],
       ledger,
       loadout: rec.loadout,

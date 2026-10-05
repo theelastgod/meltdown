@@ -38,7 +38,7 @@ export function cityEventsPaidToday(a: Account, now: number): number {
  * Credit one completed event to one file. The room calls it once per participant per event; that it
  * is once is the room's guard (`CityEvents.close`), not this function's.
  */
-export function creditCityEvent(a: Account, ev: { kind: string; title: string }, now: number): { xp: number; capped: boolean; lines: string[] } {
+export function creditCityEvent(a: Account, ev: { kind: string; title: string }, now: number): { xp: number; capped: boolean; lines: string[]; chits: number } {
   const day = dayIndex(now);
   const paid = a.social[dayKey(day)] ?? 0;
   const capped = paid >= CITY_EVENT_XP_PER_DAY;
@@ -54,7 +54,7 @@ export function creditCityEvent(a: Account, ev: { kind: string; title: string },
   const line = `PUBLIC EVENT · ${ev.title} · ${capped ? `NO XP · ${CITY_EVENT_XP_PER_DAY} A DAY PAID` : `+${xp} XP`}`;
   a.ledger.push(line);
   if (a.ledger.length > LEDGER_CAP) a.ledger.splice(0, a.ledger.length - LEDGER_CAP);
-  return { xp, capped, lines: [line] };
+  return { xp, capped, lines: [line], chits: 0 };
 }
 
 /**
@@ -70,7 +70,7 @@ export const STREET_RUN_XP = 120;
  * once per finish is the room's guard (a run is finished once, `StreetRuns.step`), and that it pays
  * once per course is this function's: the course's own counter is the cap.
  */
-export function creditStreetRun(a: Account, course: { id: string; name: string }, seconds: number): { xp: number; first: boolean; lines: string[] } {
+export function creditStreetRun(a: Account, course: { id: string; name: string }, seconds: number): { xp: number; first: boolean; lines: string[]; chits: number } {
   const key = `streetRun:${course.id}`;
   const before = a.counters[key] ?? 0;
   const first = before === 0;
@@ -85,5 +85,5 @@ export function creditStreetRun(a: Account, course: { id: string; name: string }
   const lines = first ? [`STREET RUN · ${course.name} · ${time} · FIRST FINISH · +${xp} XP`] : [];
   for (const l of lines) a.ledger.push(l);
   if (a.ledger.length > LEDGER_CAP) a.ledger.splice(0, a.ledger.length - LEDGER_CAP);
-  return { xp, first, lines };
+  return { xp, first, lines, chits: 0 };
 }

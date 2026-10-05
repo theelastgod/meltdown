@@ -34,6 +34,7 @@ import { inCity } from "@shared/net/city";
 import { weaponName } from "./hud/kill";
 import { unitsLabel } from "./runcue";
 import { capitalMark } from "./brand";
+import { chitDeskLine } from "@shared/city/chit";
 
 const KEY = "meltdown.file";
 
@@ -72,6 +73,8 @@ export class GhostFile {
   depth = 1;
   xp = 0;
   scrip = 0;
+  /** chits banked onto the file. The desk names them. They are not Scrip. */
+  chits = 0;
   wakelight = 0;
   salvage = 0;
   owned: string[] = [];
@@ -296,6 +299,7 @@ export class GhostFile {
     this.depth = a.depth;
     this.xp = a.xp;
     this.scrip = a.wallet.scrip;
+    this.chits = a.chits ?? 0;
     this.wakelight = a.wallet.wakelight;
     this.salvage = a.wallet.salvage;
     this.owned = a.owned.slice();
@@ -394,6 +398,7 @@ export class GhostFile {
     this.depth = f.depth;
     this.xp = f.xp;
     this.scrip = f.scrip;
+    this.chits = f.chits ?? this.chits;
     this.wakelight = f.wakelight;
     this.salvage = f.salvage;
     this.owned = f.owned.slice();
@@ -582,6 +587,9 @@ export class GhostFile {
       else if (act === "registerName") {
         const input = el.querySelector<HTMLInputElement>("input[data-name]");
         this.withCounter((c) => c.registerName(input?.value ?? ""));
+      } else if (act === "burnchits") {
+        const price = Number(window.prompt("BURN HOW MUCH $CAPITAL?", "1") ?? 0);
+        this.withCounter((c) => c.burnForChits(price));
       }
     });
     el.addEventListener("change", (e) => {
@@ -667,6 +675,8 @@ export class GhostFile {
       ? `<div class="ln">DEEP WAKE SEASON ${season} · ${held ? "<b>BOUGHT OUT</b>" : `<span class="btn" data-act="buyseason">${crewButton(`BUY OUT · ${prices.seasonPass} $CAPITAL`, this.touchHud)}</span>`} · ROOM-HOURS <b>${hours}</b> <span class="btn" data-act="buyroom">${crewButton(`+1 · ${prices.roomHour} $CAPITAL`, this.touchHud)}</span>${hours > 0 ? ` <span class="btn" data-act="openroom">${crewButton("OPEN A PRIVATE ROOM", this.touchHud)}</span>` : ""}<span class="dim"> · BOTH BURNED IN FULL; A PASS IS COSMETICS, AN HOUR IS A SERVER OF YOUR OWN — A PRIVATE ROOM BANKS SCRIP, NEVER $CAPITAL</span>${this.privateCode ? `<br><span class="ye">INVITE CODE <b>${this.privateCode}</b></span> <span class="dim">GIVE IT TO WHOEVER YOU WANT IN; IT IS THE ONLY WAY IN</span>` : ""}</div>`
       : "";
     const runBlock = v?.linked ? `<div class="ln">THE RUN · TODAY <b>${run.banked}</b>/${RUN_DAILY_CAP} · OWED <b>${run.owed}</b> ${unitsLabel(run.owed)} · PAID ${Number(run.paid).toFixed(2)} $CAPITAL ${run.owed > 0 ? `<span class="btn" data-act="payout">${crewButton("WITHDRAW TO WALLET", this.touchHud)}</span>` : ""}${v.runGate ? "" : ` <span class="dim">· BELOW DEPTH ${RUN_DEPTH} THE RUN PAYS SCRIP</span>`}<span class="dim"> · UNITS SETTLE NIGHTLY AT UP TO ${MAX_CAPITAL_PER_UNIT} $CAPITAL EACH, OUT OF THE DAY'S EMISSION; ONCE A DAY HAS SETTLED ITS UNITS ARE A PRIZE BELOW, NOT A WITHDRAWAL</span></div>` : `<div class="ln dim">THE RUN PAYS THE WALLET: LINK ONE AND THE UNITS YOU BANK AT A GATE SETTLE INTO $CAPITAL.</div>`;
+    const chainLive = !!(info?.chainId && info.rpc && info.contracts?.capital);
+    const chitBlock = `<div class="ln"><img class="cap-mark" src="/icons/chit-64.png" alt="" width="64" height="64"> ${chitDeskLine(this.chits, this.depth, chainLive)} <span class="btn" data-act="burnchits">${crewButton("BURN $CAPITAL FOR CHITS", this.touchHud)}</span></div>`;
     const prizes = c.prizes;
     const prizeBlock = v?.linked ? `<div class="ln">PRIZES ${prizes.length ? prizes.map((p) => `<span class="${p.claimed ? "dim" : ""}">${p.reason} · ${Number(p.amount).toFixed(0)} $CAPITAL ${p.claimed ? "· CLAIMED" : `<span class="btn" data-act="claimPrize" data-id="${p.epoch}">${crewButton("CLAIM", this.touchHud)}</span>`}</span>`).join(" · ") : `<span class="dim">NONE POSTED FOR THIS WALLET</span>`} <span class="btn" data-act="prizes">${crewButton("REFRESH", this.touchHud)}</span> <span class="dim">THE RUN SETTLES NIGHTLY, AUDIT PLACEMENTS WEEKLY, DEEP WAKE CONTRIBUTIONS AT SEASON END; CLAIMS ARE SPONSORED</span></div>` : "";
     const t = info?.treasury;
@@ -676,6 +686,7 @@ export class GhostFile {
       <div class="ln">${wallet}${linked ? " · " + linked : ""}</div>
       ${name ? `<div class="ln">${name}</div>` : ""}${rig ? `<div class="ln">${rig}</div>` : ""}
       ${runBlock}
+      ${chitBlock}
       ${sinkBlock}
       ${prizeBlock}
       <div class="sh">LEDGER MARKET · SETTLES ONLY IN $CAPITAL · 5% FEE: 2% BURNED, 2% TREASURY, 1% CREATOR</div>${market || "<div class='dim'>NO LISTINGS</div>"}

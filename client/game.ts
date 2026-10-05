@@ -11,6 +11,7 @@ import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS, levelDisplayName } from "@share
 import { itemName } from "@shared/manifest/items";
 import { eyeHeight, eyePos, reviveMotion, type PlayerState } from "@shared/sim/player";
 import { arrivalFromQuery } from "@shared/net/citygates";
+import { contestRespawn, inContest } from "@shared/city/contest";
 import type { SpawnPoint } from "@shared/sim/level";
 import { canSee, MECH, WASP } from "@shared/sim/ai";
 import { aimAssistScale } from "./aimassist";
@@ -186,6 +187,10 @@ export class Game {
     // the city (Stage 692) is the campaign's shared open world: no match, the patrols live, no player can hurt another
     const city = inCity(q);
     this.world = new World(levelById(this.levelId), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" || campaignMode ? "off" : "wake", dummyRespawn: !campaignMode || city, run: this.runMode, pvp: !city });
+    if (city) {
+      this.world.contestAt = (x, z) => inContest(this.world.level, x, z);
+      this.world.contestGate = (x, z) => contestRespawn(this.world.level, x, z);
+    }
     this.file = new GhostFile(() => this.online);
     this.player = this.world.addPlayer(1, "BLANK", 1, this.file.localLoadout());
     // a walk in through a city gate (Stage 697) stands at that gate, facing in: here until the room

@@ -56,6 +56,11 @@ export interface Account {
   aliases?: string[];
   /** the counter-ledger (Stage 11b): wallet link, Ghostfile token, on-chain stamps, name, rig cache, worn skin — plain data, identity and ownership only */
   counter?: CounterRecord | null;
+  /**
+   * Chits carried onto the file from a contest. Not Scrip, not a room-hour. They settle as units
+   * of the nightly pot, or as Scrip below Depth 10. They buy nothing the sim reads.
+   */
+  chits?: number;
 }
 
 export interface CounterRecord {
@@ -219,7 +224,7 @@ export function publicFile<T extends Account | null | undefined>(a: T): T extend
 }
 
 export function createAccount(id: string, name = "BLANK"): Account {
-  return { id, name, xp: 0, depth: 1, wallet: emptyWallet(), owned: [], loadout: { ...DEFAULT_LOADOUT, attested: [], chips: {}, firmware: {} }, wears: [], crafts: 0, matches: 0, ledger: [], mastery: emptyMasteries(), stamps: [], counters: {}, moniker: null, chapters: [], debt: null, social: {}, ghosts: {} };
+  return { id, name, xp: 0, depth: 1, wallet: emptyWallet(), owned: [], loadout: { ...DEFAULT_LOADOUT, attested: [], chips: {}, firmware: {} }, wears: [], crafts: 0, matches: 0, ledger: [], mastery: emptyMasteries(), stamps: [], counters: {}, moniker: null, chapters: [], debt: null, social: {}, ghosts: {}, chits: 0 };
 }
 
 /** Rows written before mastery/stamps existed come back without them. */
@@ -241,6 +246,7 @@ export function upgradeAccount(a: Partial<Account> & { id: string }): Account {
   if (!out.presets) out.presets = [];
   if (!out.aliases) out.aliases = [];
   if (out.counter === undefined) out.counter = null;
+  if (out.chits === undefined || !Number.isFinite(out.chits)) out.chits = 0;
   if (!out.loadout.chips) out.loadout.chips = {};
   if (!out.loadout.firmware) out.loadout.firmware = {};
   return out;

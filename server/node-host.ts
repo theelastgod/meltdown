@@ -230,7 +230,7 @@ const cities = new Map<string, CityRoomHandle>();
 function getCityRoom(district: string): CityRoomHandle {
   let h = cities.get(district);
   if (!h) {
-    h = createCityRoom({ lagComp: true, seed: 7, accounts, district, onLog: (l) => log(`[city ${district}] ${l}`) });
+    h = createCityRoom({ lagComp: true, seed: 7, accounts, district, onRunBank: (day, file, units) => void runs.add(day, file, units), onLog: (l) => log(`[city ${district}] ${l}`) });
     cities.set(district, h);
     startLoop(h.room);
   }

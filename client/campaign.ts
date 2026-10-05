@@ -646,7 +646,12 @@ export class Campaign {
       }
       this.eventSpots = [];
       if (!onStreet) this.cityRadar();
-      if (!running && !onStreet) this.cityObjective();
+      if (!running && !onStreet) {
+        if (m.street) {
+          hud.setObjective("◈ THE STREET", m.street.line, null);
+          fx.setMarker({ x: m.street.x, y: 1.2, z: m.street.z });
+        } else this.cityObjective();
+      }
       const card = eventCard(m);
       if (ev && card && ev.id !== this.cityEventClosed) {
         this.cityEventClosed = ev.id;

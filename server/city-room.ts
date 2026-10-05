@@ -25,7 +25,8 @@
  * arrives at the spawn nearest somebody already in the street, so the city it enters is not empty.
  */
 import { Room, type InterestPolicy, type RoomHooks, type RoomOptions } from "./room";
-import { campaignOf } from "../shared/campaign/save";
+import { campaignOf, canLaunch, completeContract, nextMission } from "../shared/campaign/save";
+import { dayIndex } from "../shared/endgame/clock";
 import { protocolMods } from "../shared/campaign/protocols";
 import { cityDistrict } from "../shared/net/city";
 import { arrivalFromQuery } from "../shared/net/citygates";
@@ -38,6 +39,10 @@ import { creditCityEvent, creditStreetRun } from "../shared/city/reward";
 import { STREET_RUN, type StreetRunCourse } from "../shared/city/courses";
 import { RunBoard, runSeconds, streetRunsFor, StreetRuns, type ActiveRun, type BoardData } from "../shared/city/runs";
 import { districtPresence, type DistrictPresence } from "../shared/city/presence";
+import { fileChits } from "../shared/city/chit";
+import { contestRespawn, inContest } from "../shared/city/contest";
+import { StreetLife, type StreetNotice } from "../shared/city/street";
+import type { SimEvent } from "../shared/sim/world";
 
 /** Where a host keeps a district's street-run board between the room's lives (Stage 703). */
 export interface RunBoardStore {
@@ -72,6 +77,8 @@ export interface CityRoomHandle {
   boardLoaded: Promise<void>;
   /** this district's report for the city's presence feed (Stage 705): display names only */
   presence: () => DistrictPresence;
+  /** the street: the contest block, the fixer, the carry */
+  street: StreetLife;
 }
 
 /** a city holds more than a match does: it is somewhere to be, not a round to win */
@@ -118,10 +125,52 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
   const eventsOf = (room: Room): CityEvents => (events ??= new CityEvents(room.world.seed, room.world.level, room.world.tick));
   /** the key a player takes part under: the file it plays (a guest has none, and is never credited) */
   const keyOf = (room: Room) => (playerId: number): string | null => room.accountOf(playerId)?.id ?? null;
+  let street: StreetLife | null = null;
+  const streetOf = (room: Room): StreetLife => (street ??= new StreetLife(room.world.level));
   const msgFor = (room: Room, playerId: number, reward?: string[]): CityEventMsg => {
     const ev = eventsOf(room);
     const key = keyOf(room)(playerId);
-    return { event: ev.view(room.world), next: ev.nextIn(room.world.tick), you: key !== null && ev.took(key), ...(reward ? { reward } : {}) };
+    const mark = streetOf(room).marker(playerId);
+    return { event: ev.view(room.world), next: ev.nextIn(room.world.tick), you: key !== null && ev.took(key), ...(reward ? { reward } : {}), ...(mark ? { street: mark } : {}) };
+  };
+  const applyStreet = (room: Room, n: StreetNotice): void => {
+    const a = room.accountOf(n.playerId);
+    if (n.type === "lines") {
+      if (a) room.pushFile(n.playerId, n.lines);
+      return;
+    }
+    if (n.type === "exchange") {
+      if (a && n.units > 0) room.opts.onRunBank(dayIndex(room.opts.now()), a.id, n.units);
+      if (a) room.pushFile(n.playerId, [n.line]);
+      return;
+    }
+    if (n.type === "event") {
+      const ev = eventsOf(room);
+      if (ev.current?.status !== "running") ev.startNow(room.world.tick + 1, null);
+      return;
+    }
+    if (!a) return;
+    const before = fileChits(a);
+    const done = completeContract(a, n.id, {});
+    if (fileChits(a) !== before) a.chits = before;
+    room.pushFile(n.playerId, [done.ok ? `CONTRACT CLOSED · ${n.id} · 0 CHITS` : `CONTRACT · ${done.reason ?? "REFUSED"}`]);
+  };
+  const stepStreet = (room: Room, simEvents: readonly SimEvent[]): void => {
+    const life = streetOf(room);
+    const notices = life.step({
+      tick: room.world.tick,
+      day: dayIndex(room.opts.now()),
+      players: [...room.world.players.values()].map((p) => ({ id: p.id, x: p.pos.x, z: p.pos.z, alive: p.alive })),
+      account: (id) => room.accountOf(id),
+      deaths: simEvents.flatMap((e) => (e.type === "death" ? [{ playerId: e.playerId, killerId: e.killerId, x: room.world.players.get(e.playerId)?.pos.x ?? 0, z: room.world.players.get(e.playerId)?.pos.z ?? 0 }] : [])),
+      offer: (a) => {
+        const save = campaignOf(a);
+        const next = nextMission(save);
+        return next && canLaunch(a, save, next.id).ok ? { id: next.id, title: next.title } : null;
+      },
+      eventRunning: eventsOf(room).current?.status === "running",
+    });
+    for (const n of notices) applyStreet(room, n);
   };
   const pushAll = (room: Room, rewards: Map<number, string[]> = new Map()): void => {
     for (const id of room.playerIds()) room.send(encodeCityEvent(msgFor(room, id, rewards.get(id))), id);
@@ -250,6 +299,7 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
       // the roster: on every change of who is in the room, and every ten seconds anyway
       sendRoster(room, room.world.tick % ROSTER_EVERY_TICKS === 0);
       stepRuns(room);
+      stepStreet(room, simEvents);
       const ev = eventsOf(room);
       const notice = ev.step(room.world, simEvents, keyOf(room));
       if (notice?.type === "start") {
@@ -277,6 +327,9 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
     },
   };
   const room = new Room({ maxPlayers: CITY_MAX_PLAYERS, ...opts, hooks, level: district, ai: true, wakePhase: "off", dummyRespawn: true, pvp: false, run: false, arrivalGrace: true, interest });
+  const life = streetOf(room);
+  room.world.contestAt = (x, z) => inContest(room.world.level, x, z, life.vol);
+  room.world.contestGate = (x, z) => contestRespawn(room.world.level, x, z);
   // the courses are built (and proved) now, before anyone is in the street, not on the first join
   const rs = runsOf(room);
   const b = boardOf(room);
@@ -301,6 +354,7 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
     },
     runs: rs,
     board: b,
+    street: life,
     finishes: () => finishes.slice(),
     boardLoaded,
     state: () => {
@@ -332,6 +386,7 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
           const e = b.top(c.id, 1)[0];
           return e ? [{ course: c.name, time: runSeconds(e.ticks), holder: e.name, key: e.key }] : [];
         }),
+        contest: life.contestUp,
       }),
   };
 }

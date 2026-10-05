@@ -23,6 +23,7 @@ export type StampCounter =
   | "wins" | "fullWakeWins" | "noDeathRounds" | "matchKillsAny" | "topScores" | "matches"
   | "rejoins" | "districts" | "kills"
   | "cityEvents"
+  | "streetCarry"
   | `streetRun:${string}`;
 
 export interface StampDef {
@@ -141,6 +142,7 @@ export const STAMPS: StampDef[] = [
   st("city_event_1", "city", "cityEvents", 1, "A PUBLIC EVENT, WITH STRANGERS"),
   st("city_events_10", "city", "cityEvents", 10, "TEN PUBLIC EVENTS"),
   st("city_events_50", "city", "cityEvents", 50, "FIFTY PUBLIC EVENTS"),
+  st("street_carry_1", "city", "streetCarry", 1, "A CARRY BETWEEN THE GATES"),
   // street runs (Stage 703): the first finish of each course
   ...STREET_RUN_COURSES.map((c) => st(`street_run:${c.id}`, "city", `streetRun:${c.id}`, 1, `STREET RUN · ${c.districtName} · ${c.name}`)),
 ];

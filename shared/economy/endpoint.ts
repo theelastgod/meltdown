@@ -4,6 +4,7 @@
  * chain down. Never a stat: the answer is the counter record and nothing else of the file.
  */
 import type { Account, CounterRecord } from "../progression/account";
+import { CHAIN_DARK_LINE } from "../city/chit";
 import { counterView, wearSkin } from "./counter";
 
 export interface CounterOps {
@@ -43,6 +44,10 @@ export async function counterRequest(a: Account, body: unknown, ops: CounterOps)
       break;
     case "view":
       r = { ok: true };
+      break;
+    case "burnchits":
+      // a POST is not a receipt. Crediting here would be a faucet, and a burn we cannot see is refused.
+      r = { ok: false, reason: CHAIN_DARK_LINE };
       break;
     default:
       r = { ok: false, reason: "UNKNOWN OP" };

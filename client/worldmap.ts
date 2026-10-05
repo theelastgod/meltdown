@@ -87,12 +87,13 @@ export function worldMapDetails(v: WorldMapState): string {
   const live = v.status === "live" && !!p;
   const who = !live ? "—" : p!.names.length ? `${p!.names.map(esc).join(" · ")}${p!.players > p!.names.length ? ` · +${p!.players - p!.names.length}` : ""}` : p!.players ? `${p!.players} FILE${p!.players === 1 ? "" : "S"}` : "NOBODY ON THE STREET";
   const ev = !live ? "" : p!.event ? `<div class="de">◉ ${esc(p!.event.title)} · ${p!.event.kind.toUpperCase()} · ${p!.event.left}S LEFT</div>` : '<div class="de dim">NO PUBLIC EVENT RUNNING</div>';
+  const contest = live && p!.contest ? `<div class="de">▣ CONTEST BLOCK IS UP</div>` : "";
   const recs = !live ? "" : p!.records.length ? p!.records.map((r) => `<div class="dr">⏱ ${esc(r.course)} · ${r.time.toFixed(1)}S · ${esc(r.holder)}</div>`).join("") : '<div class="dr dim">NO STREET-RUN RECORDS YET</div>';
   const gates = gateSummary(id).map((g) => `${g.sides.map((s) => SIDE_WORD[s]).join(" · ")} → ${levelDisplayName(g.to)}`).join(" &nbsp; ");
   const go = id === v.here ? '<div class="go here">YOU ARE HERE</div>' : `<div class="go" data-wm-go="${id}">${crewButton(`TRAVEL TO ${esc(levelDisplayName(id))}`, v.touch)}</div>`;
   // The metro booth is on every plaza. The market spends $CAPITAL. THE RUN is where it is paid.
   const run = `<div class="dg">LEDGER DESK AT THE METRO · MARKET SPENDS · THE NAME DESK BURNS · THE RUN PAYS</div><div class="go" data-wm-run="${id}">${runButton(v.touch)}</div>`;
-  return `<div class="wd"><div class="dh"><b>${esc(levelDisplayName(id))}</b> · ${live ? `${p!.players} ONLINE` : "—"}</div><div class="dn">${who}</div>${ev}${recs}<div class="dg">GATES ${gates}</div>${go}${run}</div>`;
+  return `<div class="wd"><div class="dh"><b>${esc(levelDisplayName(id))}</b> · ${live ? `${p!.players} ONLINE` : "—"}</div><div class="dn">${who}</div>${ev}${contest}${recs}<div class="dg">GATES ${gates}</div>${go}${run}</div>`;
 }
 
 /** The panel in the HUD: opened and shut by the MAP tab, reading the feed while open. */
