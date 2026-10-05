@@ -195,8 +195,11 @@ const DOCKS_SCUPPER = "840147ead792eb48ace85072bf96afe084d3a4032e16687f0c7d43fee
 /** Docks after Stage 1090 opened the slab between the north hawse and the north slip. Sealing the north mouse puts this hash back. */
 const DOCKS_NIPPER = "e5110432e1dfafaee7211d9622ab6cc24a5cba32d5f60d7ef7a972fd76803118";
 
-/** Docks after Stage 1094 opened the slab between the north fender and the north transom. */
+/** Docks after Stage 1094 opened the slab between the north fender and the north transom. Sealing the north skeg puts this hash back. */
 const DOCKS_MOUSE = "f6853bd4f9c6633ee10e55ca7f623875543134a911c562d85c8ff0b45564be11";
+
+/** Docks after Stage 1098 opened the slab between the north transom and the north keel. */
+const DOCKS_SKEG = "1c56d2ec8dba7b721ce0c37fa573dea9b9b3a17bd08dd4e6ca8d7fe2d9f1b67e";
 
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -399,10 +402,10 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, the west fluke, the north thimble, the south pintle, the south lanyard, the east bobstay, the east throat, the east knight, the east keelson, the west cathead, the west futtock, the west bumkin, the west martingale, the west rode, the east kedge, the east breast, the south scupper, the north nipper, and the north mouse (Stage 1094)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, the west fluke, the north thimble, the south pintle, the south lanyard, the east bobstay, the east throat, the east knight, the east keelson, the west cathead, the west futtock, the west bumkin, the west martingale, the west rode, the east kedge, the east breast, the south scupper, the north nipper, the north mouse, and the north skeg (Stage 1098)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_MOUSE);
+    expect(hash(spec)).toBe(DOCKS_SKEG);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
     expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
     expect(generateDistrict(spec).quay?.line).toMatch(/EAST QUAY/);
@@ -440,7 +443,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).scupper?.line).toMatch(/SOUTH SCUPPER/);
     expect(generateDistrict(spec).nipper?.line).toMatch(/NORTH NIPPER/);
     expect(generateDistrict(spec).mouse?.line).toMatch(/NORTH MOUSE/);
-    // the pin is not the sealed wall: closing the mouse would put the nipper hash back
+    expect(generateDistrict(spec).skeg?.line).toMatch(/NORTH SKEG/);
+    // the pin is not the sealed wall: closing the skeg would put the mouse hash back
+    expect(DOCKS_SKEG).not.toBe(DOCKS_MOUSE);
     expect(DOCKS_MOUSE).not.toBe(DOCKS_NIPPER);
     expect(DOCKS_NIPPER).not.toBe(DOCKS_SCUPPER);
     expect(DOCKS_SCUPPER).not.toBe(DOCKS_BREAST);

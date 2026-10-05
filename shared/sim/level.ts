@@ -711,6 +711,11 @@ export interface LevelDef {
    */
   mouse?: WildEdge;
   /**
+   * The slab between DEADLETTER DOCKS' north transom and the north keel (Stage 1098). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  skeg?: WildEdge;
+  /**
    * The east run of NIGHT MARKET's north wall, between the valance and the tarp (Stage 996).
    * A fenced lot. Nothing out there pays a gun.
    */
