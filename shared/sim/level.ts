@@ -816,6 +816,11 @@ export interface LevelDef {
    */
   deadwood?: WildEdge;
   /**
+   * The slab between REPO DEPOT's two north gates (Stage 1117). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  sternpost?: WildEdge;
+  /**
    * The east run of DEADLETTER DOCKS' south wall, between the gate and the cleat (Stage 999).
    * A fenced lot. Nothing out there pays a gun.
    */
