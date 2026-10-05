@@ -906,6 +906,11 @@ export interface LevelDef {
    */
   kingpost?: WildEdge;
   /**
+   * The slab between DEADLETTER DOCKS' two west gates (Stage 1118). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  rabbet?: WildEdge;
+  /**
    * The east run of NIGHT MARKET's south wall, between the welt and the row (Stage 1008).
    * A fenced lot. Nothing out there pays a gun.
    */
