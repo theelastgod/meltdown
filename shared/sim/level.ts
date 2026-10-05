@@ -666,6 +666,11 @@ export interface LevelDef {
    */
   hawse?: WildEdge;
   /**
+   * The slab between DEADLETTER DOCKS' north hawse and the north slip (Stage 1090). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  nipper?: WildEdge;
+  /**
    * The west run of NIGHT MARKET's north wall, between the gate and the lane (Stage 992).
    * A fenced lot. Nothing out there pays a gun.
    */
