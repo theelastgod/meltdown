@@ -778,6 +778,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const dolly = openDepotDolly(c);
   const cradle = openDepotCradle(c);
   const strop = openDepotStrop(c);
+  const burton = openDepotBurton(c);
   const bolster = openDepotBolster(c);
   const stopper = openDepotStopper(c);
   const skid = openDepotSkid(c);
@@ -990,6 +991,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(dolly ? { dolly } : {}),
     ...(cradle ? { cradle } : {}),
     ...(strop ? { strop } : {}),
+    ...(burton ? { burton } : {}),
     ...(skid ? { skid } : {}),
     ...(coak ? { coak } : {}),
     ...(gammon ? { gammon } : {}),
@@ -6863,6 +6865,47 @@ function openDepotStrop(c: Ctx): WildEdge | null {
     passage: v3(midX, 0, (inner + zOut) / 2),
     outside: v3(midX, 0, zOut - 5),
     line: "NORTH STROP. THE DEPOT WALL IS BEHIND YOU.",
+  };
+}
+
+/**
+ * The east run of REPO DEPOT's north wall, between the cradle and the hoist, opens onto a fenced lot.
+ * The fence is above a mantle. The cradle and the hoist are not this opening. The facade past the
+ * hoist is not a street. Nothing out there pays a gun.
+ */
+function openDepotBurton(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "repo_depot") return null;
+  const inner = -c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.max.z === inner && b.min.y === 0 && b.max.y === 36 && b.min.x === 42.5 && b.max.x === 50.5);
+  if (i < 0) throw new Error("depot burton: the north wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  // The cradle's wall check stands at x = 43.2. The hoist's stands at x = 54.2. The door sits between them.
+  const midX = 46.5;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, dx0, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx1, 0, wall.min.z, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx0, doorH, wall.min.z, dx1, 36, wall.max.z, "facade"));
+  const zOut = wall.min.z;
+  const yF = 2.2;
+  const x0 = midX - 8;
+  const x1 = midX + 8;
+  const zFar = zOut - 10;
+  const t = 0.35;
+  c.boxes.push(box(x0, 0, zOut - t, dx0, yF, zOut, "fence"));
+  c.boxes.push(box(dx1, 0, zOut - t, x1, yF, zOut, "fence"));
+  c.boxes.push(box(x0, 0, zFar, x1, yF, zFar + t, "fence"));
+  c.boxes.push(box(x0, 0, zFar, x0 + t, yF, zOut, "fence"));
+  c.boxes.push(box(x1 - t, 0, zFar, x1, yF, zOut, "fence"));
+  addSign(c, "NORTH BURTON", midX, 2.7, inner + 0.06, 0, 4, COLORS.amber);
+  return {
+    street: v3(midX, 0, inner + 2.2),
+    passage: v3(midX, 0, (inner + zOut) / 2),
+    outside: v3(midX, 0, zOut - 5),
+    line: "NORTH BURTON. THE DEPOT WALL IS BEHIND YOU.",
   };
 }
 

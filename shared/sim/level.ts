@@ -756,6 +756,11 @@ export interface LevelDef {
    */
   strop?: WildEdge;
   /**
+   * The slab between REPO DEPOT's north cradle and the north hoist (Stage 1101). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  burton?: WildEdge;
+  /**
    * The east run of DEADLETTER DOCKS' south wall, between the gate and the cleat (Stage 999).
    * A fenced lot. Nothing out there pays a gun.
    */
