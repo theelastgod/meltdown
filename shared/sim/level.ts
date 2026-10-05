@@ -696,6 +696,11 @@ export interface LevelDef {
    */
   bolster?: WildEdge;
   /**
+   * The slab between REPO DEPOT's north bolster and the north crest (Stage 1093). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  stopper?: WildEdge;
+  /**
    * The east run of DEADLETTER DOCKS' north wall, between the fender and the keel (Stage 995).
    * A fenced lot. Nothing out there pays a gun.
    */
