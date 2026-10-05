@@ -741,6 +741,11 @@ export interface LevelDef {
    */
   hank?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' north shroud and the north ledge (Stage 1100). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  inhaul?: WildEdge;
+  /**
    * The east run of REPO DEPOT's north wall, between the dolly and the hoist (Stage 998).
    * A fenced lot. Nothing out there pays a gun.
    */
