@@ -761,6 +761,11 @@ export interface LevelDef {
    */
   ratline?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' south luff and the south batten (Stage 1108). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  cunningham?: WildEdge;
+  /**
    * The east run of REPO DEPOT's north wall, between the dolly and the hoist (Stage 998).
    * A fenced lot. Nothing out there pays a gun.
    */
