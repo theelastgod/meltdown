@@ -204,8 +204,11 @@ const DOCKS_SKEG = "1c56d2ec8dba7b721ce0c37fa573dea9b9b3a17bd08dd4e6ca8d7fe2d9f1
 /** Docks after Stage 1102 opened the slab between the south garboard and the south cleat. Sealing the south limber puts this hash back. */
 const DOCKS_RUDDER = "fb2620a1e188961ab7c4a508b060524ff5bf0efe52faf67b415931c3595dbf15";
 
-/** Docks after Stage 1106 opened the slab between the south gunwale and the south garboard. */
+/** Docks after Stage 1106 opened the slab between the south gunwale and the south garboard. Sealing the south samson puts this hash back. */
 const DOCKS_LIMBER = "a22640c23c019ee8961d86bbe67d4b4126e80afa37daf169e82e99026ce8d272";
+
+/** Docks after Stage 1110 opened the slab between the two south gates. */
+const DOCKS_SAMSON = "a58f270a547ad59cf532e2100ef9e9a0ab348064318dc291ca3d9012e6c093d7";
 
 /** Depot after Stage 947 opened the south-east warehouse. Sealing the west apron puts this hash back. */
 const DEPOT_IMPOUND = "ebd06ce8d2adab07319dd6c770657c56626cd3e14d745f6391e9e830acded6da";
@@ -423,10 +426,10 @@ describe("a 3×3 district is the level it always was", () => {
     expect(DEPOT_IMPOUND).not.toBe(BEFORE["repo_depot"]);
   });
 
-  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, the west fluke, the north thimble, the south pintle, the south lanyard, the east bobstay, the east throat, the east knight, the east keelson, the west cathead, the west futtock, the west bumkin, the west martingale, the west rode, the east kedge, the east breast, the south scupper, the north nipper, the north mouse, the north skeg, the south rudder, and the south limber (Stage 1106)", () => {
+  it("DEADLETTER DOCKS is still that 3×3 level, plus the cold store, the south pier, the east quay, the north slip, the west wharf, the north keel, the south cleat, the east bollard, the west bitt, the north fender, the north stem, the north hawse, the north transom, the south gunwale, the south strake, the south garboard, the east fairlead, the east bulwark, the west painter, the west fluke, the north thimble, the south pintle, the south lanyard, the east bobstay, the east throat, the east knight, the east keelson, the west cathead, the west futtock, the west bumkin, the west martingale, the west rode, the east kedge, the east breast, the south scupper, the north nipper, the north mouse, the north skeg, the south rudder, the south limber, and the south samson (Stage 1110)", () => {
     const spec = districtById("deadletter_docks")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DOCKS_LIMBER);
+    expect(hash(spec)).toBe(DOCKS_SAMSON);
     expect(generateDistrict(spec).cold?.line).toMatch(/COLD STORE/);
     expect(generateDistrict(spec).berth?.line).toMatch(/SOUTH PIER/);
     expect(generateDistrict(spec).quay?.line).toMatch(/EAST QUAY/);
@@ -467,7 +470,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).skeg?.line).toMatch(/NORTH SKEG/);
     expect(generateDistrict(spec).rudder?.line).toMatch(/SOUTH RUDDER/);
     expect(generateDistrict(spec).limber?.line).toMatch(/SOUTH LIMBER/);
-    // the pin is not the sealed wall: closing the limber would put the rudder hash back
+    expect(generateDistrict(spec).samson?.line).toMatch(/SOUTH SAMSON/);
+    // the pin is not the sealed wall: closing the samson would put the limber hash back
+    expect(DOCKS_SAMSON).not.toBe(DOCKS_LIMBER);
     expect(DOCKS_LIMBER).not.toBe(DOCKS_RUDDER);
     expect(DOCKS_RUDDER).not.toBe(DOCKS_SKEG);
     expect(DOCKS_SKEG).not.toBe(DOCKS_MOUSE);

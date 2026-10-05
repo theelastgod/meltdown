@@ -725,6 +725,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const garboard = openDocksGarboard(c);
   const rudder = openDocksRudder(c);
   const limber = openDocksLimber(c);
+  const samson = openDocksSamson(c);
   const quay = openDocksQuay(c);
   const bobstay = openDocksBobstay(c);
   const throat = openDocksThroat(c);
@@ -1045,6 +1046,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(garboard ? { garboard } : {}),
     ...(rudder ? { rudder } : {}),
     ...(limber ? { limber } : {}),
+    ...(samson ? { samson } : {}),
     ...(gore ? { gore } : {}),
     ...(pinking ? { pinking } : {}),
     ...(fell ? { fell } : {}),
@@ -5133,6 +5135,48 @@ function openDocksLimber(c: Ctx): WildEdge | null {
     passage: v3(midX, 0, (inner + zOut) / 2),
     outside: v3(midX, 0, zOut + 5),
     line: "SOUTH LIMBER. THE DOCK WALL IS BEHIND YOU.",
+  };
+}
+
+/**
+ * The slab between DEADLETTER DOCKS' two south gates opens onto a fenced lot.
+ * The fence is above a mantle. The gates are not this opening. The slab between the south-east
+ * gate and the gunwale stays solid: a door there would stand inside 20 m of that gate.
+ * Nothing out there pays a gun.
+ */
+function openDocksSamson(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "deadletter_docks") return null;
+  const inner = c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.min.z === inner && b.min.y === 0 && b.max.y === 36 && b.min.x === -12 && b.max.x === 12);
+  if (i < 0) throw new Error("docks samson: the south wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  // The south gates stand at x = ±16.5. The door sits on the pier between them.
+  const midX = 0;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dx0 = midX - doorW / 2;
+  const dx1 = midX + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, dx0, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx1, 0, wall.min.z, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(dx0, doorH, wall.min.z, dx1, 36, wall.max.z, "facade"));
+  const zOut = wall.max.z;
+  const yF = 2.2;
+  const x0 = midX - 8;
+  const x1 = midX + 8;
+  const zFar = zOut + 10;
+  const t = 0.35;
+  c.boxes.push(box(x0, 0, zOut, dx0, yF, zOut + t, "fence"));
+  c.boxes.push(box(dx1, 0, zOut, x1, yF, zOut + t, "fence"));
+  c.boxes.push(box(x0, 0, zFar - t, x1, yF, zFar, "fence"));
+  c.boxes.push(box(x0, 0, zOut, x0 + t, yF, zFar, "fence"));
+  c.boxes.push(box(x1 - t, 0, zOut, x1, yF, zFar, "fence"));
+  addSign(c, "SOUTH SAMSON", midX, 2.7, inner - 0.06, Math.PI, 4, COLORS.cyan);
+  return {
+    street: v3(midX, 0, inner - 2.2),
+    passage: v3(midX, 0, (inner + zOut) / 2),
+    outside: v3(midX, 0, zOut + 5),
+    line: "SOUTH SAMSON. THE DOCK WALL IS BEHIND YOU.",
   };
 }
 
