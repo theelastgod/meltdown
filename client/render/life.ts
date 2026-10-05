@@ -34,9 +34,42 @@ interface Ped {
   umbrella: boolean;
   /** body scale: the crowd is not one height (Stage 665) */
   h: number;
+  /** shoulder width against that height. Lease Row is 1. */
+  bulk: number;
   x: number;
   z: number;
   yaw: number;
+}
+
+/**
+ * Who walks a named place. Lease Row is the crowd the street already had: mixed height, some
+ * umbrellas, an amber lease-lamp. The other four are other people. No new mesh.
+ */
+export type CrowdCast = {
+  h0: number;
+  hSpan: number;
+  bulk: number;
+  umbrella: number;
+  idle: number;
+  speed0: number;
+  speedSpan: number;
+  coat: number;
+  lamp: number;
+};
+
+export function crowdCast(name: string | undefined): CrowdCast {
+  switch (name) {
+    case "deadletter_docks":
+      return { h0: 0.98, hSpan: 0.1, bulk: 1.18, umbrella: 0.78, idle: 0.05, speed0: 0.62, speedSpan: 0.35, coat: 0x8eb4c4, lamp: 0x7ee7ff };
+    case "night_market":
+      return { h0: 0.82, hSpan: 0.14, bulk: 1.04, umbrella: 0.1, idle: 0.34, speed0: 0.48, speedSpan: 0.9, coat: 0xe090b0, lamp: 0xff6ec8 };
+    case "relay_heights":
+      return { h0: 1.14, hSpan: 0.08, bulk: 0.76, umbrella: 0.02, idle: 0.03, speed0: 1.12, speedSpan: 0.3, coat: 0xc5d0dc, lamp: 0xd5f2ff };
+    case "repo_depot":
+      return { h0: 1.02, hSpan: 0.06, bulk: 1.16, umbrella: 0.05, idle: 0.16, speed0: 0.68, speedSpan: 0.22, coat: 0xd2a15a, lamp: 0xffc14a };
+    default:
+      return { h0: 0.92, hSpan: 0.16, bulk: 1, umbrella: 0.3, idle: 0.12, speed0: 0.8, speedSpan: 0.7, coat: 0xffffff, lamp: PALETTE.amber };
+  }
 }
 
 const perimeter = (l: WalkLoop) => 2 * (l.x1 - l.x0 + (l.z1 - l.z0));
@@ -171,11 +204,13 @@ export class Crowd {
   private sc = new THREE.Vector3();
   private time = 0;
 
-  constructor(loops: readonly WalkLoop[], count: number, seed = 11) {
+  constructor(loops: readonly WalkLoop[], count: number, seed = 11, place?: string) {
     const rnd = lcg(seed);
+    const cast = crowdCast(place);
     const dark = new THREE.MeshStandardMaterial({ color: 0x0b0d13, roughness: 0.9, metalness: 0.05 });
     const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1, vertexColors: true });
-    const lampMat = new THREE.MeshBasicMaterial({ color: PALETTE.amber });
+    // white, so a district's lamp is the instance colour and Lease Row stays amber
+    const lampMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const brollyMat = new THREE.MeshStandardMaterial({ color: 0x0e1218, roughness: 0.8, side: THREE.DoubleSide });
     bindPlate(dark, "tex_crowd_coat");
     bindPlate(hoodMat, "tex_cloak");
@@ -193,10 +228,32 @@ export class Crowd {
     }
     // heights from their own stream, so the crowd's loops, speeds and umbrellas are the ones they were
     const rh = lcg(seed + 101);
+    const lamp = new THREE.Color(cast.lamp);
     for (let i = 0; i < count; i++) {
       const loop = loops[Math.floor(rnd() * loops.length)]!;
-      this.peds.push({ loop, t: rnd() * perimeter(loop), dir: rnd() < 0.5 ? 1 : -1, speed: 0.8 + rnd() * 0.7, bob: rnd() * 6.28, idle: rnd() < 0.12, umbrella: rnd() < 0.3, h: 0.92 + rh() * 0.16, x: 0, z: 0, yaw: 0 });
+      const ped: Ped = {
+        loop,
+        t: rnd() * perimeter(loop),
+        dir: rnd() < 0.5 ? 1 : -1,
+        speed: cast.speed0 + rnd() * cast.speedSpan,
+        bob: rnd() * 6.28,
+        idle: rnd() < cast.idle,
+        umbrella: rnd() < cast.umbrella,
+        h: cast.h0 + rh() * cast.hSpan,
+        bulk: cast.bulk,
+        x: 0,
+        z: 0,
+        yaw: 0,
+      };
+      this.peds.push(ped);
+      const coat = new THREE.Color(cast.coat).multiplyScalar(0.78 + rnd() * 0.22);
+      this.body.setColorAt(i, coat);
+      this.hood.setColorAt(i, coat);
+      this.lamp.setColorAt(i, lamp);
     }
+    if (this.body.instanceColor) this.body.instanceColor.needsUpdate = true;
+    if (this.hood.instanceColor) this.hood.instanceColor.needsUpdate = true;
+    if (this.lamp.instanceColor) this.lamp.instanceColor.needsUpdate = true;
     this.update(0);
   }
 
@@ -227,7 +284,7 @@ export class Crowd {
       const bob = ped.idle ? 0 : Math.abs(Math.sin(this.time * 6 * ped.speed + ped.bob)) * 0.04;
       this.q.setFromAxisAngle(UP, ped.yaw);
       // body and hood share one feet-at-the-origin frame and the citizen's own height
-      this.sc.set(ped.h, ped.h, ped.h);
+      this.sc.set(ped.h * ped.bulk, ped.h, ped.h * ped.bulk);
       this.p.set(o.x, bob, o.z);
       this.m.compose(this.p, this.q, this.sc);
       this.body.setMatrixAt(i, this.m);
@@ -703,7 +760,7 @@ export class CityLife {
   }
   private time = 0;
   constructor(level: LevelDef, skyline: THREE.Group) {
-    this.crowd = level.walks?.length && level.pedestrians ? new Crowd(level.walks, level.pedestrians, (level.skylineSeed ?? 1) + 7) : null;
+    this.crowd = level.walks?.length && level.pedestrians ? new Crowd(level.walks, level.pedestrians, (level.skylineSeed ?? 1) + 7, level.name) : null;
     if (this.crowd) {
       // Drawn once (Stage 696). The wet floor's mirror renders layer 0 a second time, and a citizen
       // is ~350 triangles and five instanced draws: in the mirror the crowd cost as much again as it

@@ -72,7 +72,7 @@ async function costOf(L: LevelDef, city = false): Promise<Cost> {
   const { calls } = dressLevel(scene, L, undefined, cityDoors(L, city));
   const dressing = trianglesOf(scene);
   const skyline = trianglesOf(buildSkyline(new THREE.Scene(), L.skylineSeed ?? 42, (L.bounds ?? 32) + 44, L.district ?? "magenta"));
-  const crowd = trianglesOf(new Crowd(L.walks!, L.pedestrians!, (L.skylineSeed ?? 1) + 7).group);
+  const crowd = trianglesOf(new Crowd(L.walks!, L.pedestrians!, (L.skylineSeed ?? 1) + 7, L.name).group);
   return { boxes: L.boxes.length, dressing, batches: calls, meshes: meshesOf(scene), crowd, skyline, frame: 2 * dressing + crowd + skyline };
 }
 

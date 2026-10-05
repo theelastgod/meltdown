@@ -742,9 +742,12 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
         neon.box(dx > dz ? dx : 0.12, 0.02, dz > dx ? dz : 0.12, dcx, d.max.y + 0.01, dcz, 0x2a3a48);
         break;
       case "vista_bldg": {
-        batch.box(d, facades[Math.floor(rnd() * facades.length)]!, 14, 28);
-        neonPerimeter(neon, d, rnd() < 0.5 ? castColor : altColor, d.max.y + 0.05, 0.2);
-        if (rnd() < 0.6) neonPerimeter(neon, d, altColor, d.min.y + dy * 0.45, 0.12);
+        const rise = vistaRead(level.name).rise;
+        const built = rise === 1 ? d : { ...d, max: { ...d.max, y: d.min.y + dy * rise } };
+        const bh = built.max.y - built.min.y;
+        batch.box(built, facades[Math.floor(rnd() * facades.length)]!, 14, 28);
+        neonPerimeter(neon, built, rnd() < 0.5 ? castColor : altColor, built.max.y + 0.05, 0.2);
+        if (rnd() < 0.6) neonPerimeter(neon, built, altColor, built.min.y + bh * 0.45, 0.12);
         break;
       }
       case "vista_lamp":
@@ -781,6 +784,28 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
   screens?.attach(M.shopB, "shop_b", seed + 1);
   screens?.attach(M.shopC, "shop_c", seed + 2);
   return { calls, signMat };
+}
+
+/**
+ * How the city past the gates stands. The boxes are the ones the generator already laid.
+ * The rise is their height. Lease Row keeps the blocks it had. A 3×3 lease built the same way
+ * still dresses to the same bytes, because a rise of 1 leaves the box alone.
+ */
+export type VistaRead = { rise: number };
+
+export function vistaRead(name: string | undefined): VistaRead {
+  switch (name) {
+    case "deadletter_docks":
+      return { rise: 0.32 };
+    case "night_market":
+      return { rise: 0.5 };
+    case "repo_depot":
+      return { rise: 0.66 };
+    case "relay_heights":
+      return { rise: 1.7 };
+    default:
+      return { rise: 1 };
+  }
 }
 
 /**
