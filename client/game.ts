@@ -1212,7 +1212,7 @@ export class Game {
       if (this.stepDist >= stride) {
         this.stepDist = 0;
         this.stepSide = -this.stepSide;
-        this.audio.footstep(sp, this.stepSide * 0.25);
+        this.audio.footstep(sp, this.stepSide * 0.25, this.world.level.name);
       }
     } else this.stepDist = Math.min(this.stepDist, 0.5);
     this.otherSteps();

@@ -21,6 +21,23 @@ export type BedTune = {
   buzz: number;
 };
 
+/**
+ * What the file's own boot hits. Lease Row is the wet street the city already had.
+ * Night Market is stall tile, so the two magenta districts do not share a step.
+ * Every other room keeps the street.
+ */
+export type StepSurface = {
+  hz: number;
+  dur: number;
+  q: number;
+  type: BiquadFilterType;
+};
+
+export function stepSurface(name: string | undefined): StepSurface {
+  if (name === "night_market") return { hz: 920, dur: 0.028, q: 1.8, type: "highpass" };
+  return { hz: 260, dur: 0.06, q: 0.7, type: "lowpass" };
+}
+
 export function bedTune(name: string | undefined): BedTune {
   switch (name) {
     case "deadletter_docks":
@@ -820,11 +837,12 @@ export class GameAudio {
     for (let i = 0; i < 6; i++) this.tone({ dur: 0.05, from: 2200 + i * 180, gain: 0.05, type: "square", delay: i * 0.15 });
   }
 
-  footstep(speed: number, pan: number): void {
+  footstep(speed: number, pan: number, place?: string): void {
     this.count("step");
     if (!this.ctx) return;
+    const face = stepSurface(place);
     const g = 0.05 + Math.min(0.12, speed * 0.012);
-    this.burst({ dur: 0.06, freq: 260 + speed * 10, q: 0.7, gain: g, type: "lowpass", pan });
+    this.burst({ dur: face.dur, freq: face.hz + speed * 10, q: face.q, gain: g, type: face.type, pan });
   }
 
   /**
