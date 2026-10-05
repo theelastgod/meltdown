@@ -206,7 +206,7 @@ const RELAY_BOLTROPE = "5d5d319ac318476ea7bc9885925419a60a9e504d4188f9e0f2dbc3ee
 describe("the city has five districts", () => {
   it("the two new ones are in the generator, the level registry, the city's rooms and the season's graph, after the three it had", () => {
     const ids = DISTRICT_SPECS.map((d) => d.id);
-    expect(ids).toEqual(["lease_row", "deadletter_docks", "repo_depot", "night_market", "relay_heights"]);
+    expect(ids).toEqual(["lease_row", "deadletter_docks", "repo_depot", "night_market", "relay_heights", "ash_canal", "glass_mile", "bone_market", "cold_vault", "neon_chapel", "slag_pit", "wire_garden", "red_kiln", "paper_wharf", "velvet_court", "rust_crown", "salt_stairs", "lamp_bazaar", "debt_orchard", "black_relay"]);
     // the frame budget, the gates and the Deep Wake all read this one list
     expect(CITY_DISTRICTS).toEqual(ids);
     expect(SEASON_DISTRICTS).toEqual(ids);
@@ -536,9 +536,9 @@ describe("the gates join five districts", () => {
     const go = (d: string, side: "n" | "s" | "w" | "e") => neighbourAt(d, ["n", "s", "w", "e"].indexOf(side))!.district;
     expect(go("repo_depot", "e")).toBe("night_market");
     expect(go("night_market", "e")).toBe("relay_heights");
-    expect(go("relay_heights", "e")).toBe("lease_row");
-    expect(go("lease_row", "w")).toBe("relay_heights");
-    expect(go("lease_row", "n")).toBe("relay_heights");
+    expect(go("relay_heights", "e")).toBe("ash_canal");
+    expect(go("lease_row", "w")).toBe("black_relay");
+    expect(go("lease_row", "n")).toBe("black_relay");
     expect(go("night_market", "w")).toBe("repo_depot");
     // walking east visits every district once before it comes home
     const loop = [CITY_DISTRICTS[0]!];

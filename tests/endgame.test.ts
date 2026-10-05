@@ -158,7 +158,7 @@ describe("the Deep Wake", () => {
     const t3 = applyRound(st, { level: "lease_row", flips: [{ label: "B", house: "estate", count: 3 }], winners: ["estate"] }, now);
     expect(t3).toEqual([{ label: "B", from: "cells", to: "estate" }]);
     const v = seasonView(st);
-    expect(v.held.cells + v.held.estate + v.held.unaligned + v.held.clockeaters).toBe(25); // five districts of five nodes (Stage 701)
+    expect(v.held.cells + v.held.estate + v.held.unaligned + v.held.clockeaters).toBe(100); // twenty districts of five nodes
     expect(v.last).toMatch(/LEASE ROW/);
     expect(applyRound(st, { level: "nowhere", flips: [], winners: [] }, now)).toEqual([]);
     // roll: 28 days later the log is written and pressures reset, holdings carry

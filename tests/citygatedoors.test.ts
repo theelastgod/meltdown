@@ -68,6 +68,21 @@ const BEFORE: Record<string, string> = {
   // Re-measured after the vista heads took a district colour. Lease Row was not.
   night_market: "8d2b05fac4792c8f",
   relay_heights: "149a39aba1ad8774",
+  ash_canal: "294c1a3c74fced7a",
+  glass_mile: "206b1bae105177b3",
+  bone_market: "09807d52c223f6c5",
+  cold_vault: "c6c185e639b63935",
+  neon_chapel: "bc345c174a8d9cd5",
+  slag_pit: "1a0086982076d58c",
+  wire_garden: "0fd099640e450c60",
+  red_kiln: "b69770ac284478a0",
+  paper_wharf: "2d639a3aa09edcbb",
+  velvet_court: "4bca6de6015a6804",
+  rust_crown: "fef2d360103a43d1",
+  salt_stairs: "20edae95110c0f48",
+  lamp_bazaar: "aa45e186c3c0eaea",
+  debt_orchard: "58ba1e70545a67eb",
+  black_relay: "eb58591a69141f0a",
 };
 
 async function dress(L: LevelDef, gates?: readonly GateSign[]): Promise<{ scene: THREE.Scene; log: string[] }> {

@@ -10,6 +10,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { LevelDef, TramLine, WalkLoop } from "@shared/sim/level";
 import { bindPlate, PALETTE } from "./city";
+import { placeFeel } from "./places";
 import { markShared } from "./dispose";
 import { tickerStep } from "./ticker";
 import { FAR_LAYER } from "./renderer";
@@ -58,6 +59,8 @@ export type CrowdCast = {
 };
 
 export function crowdCast(name: string | undefined): CrowdCast {
+  const felt = placeFeel(name);
+  if (felt) return felt.crowd;
   switch (name) {
     case "deadletter_docks":
       return { h0: 0.98, hSpan: 0.1, bulk: 1.18, umbrella: 0.78, idle: 0.05, speed0: 0.62, speedSpan: 0.35, coat: 0x8eb4c4, lamp: 0x7ee7ff };

@@ -12,7 +12,7 @@
  *
  * A street run (Stage 703) pays the same way, on its own capped counter: the FIRST finish of each
  * course pays XP and un-redacts that course's stamp, once in a file's life; every finish after it
- * counts and pays nothing. Fifteen courses at 120 XP is 1,800 XP for a whole file — under half of one
+ * counts and pays nothing. Sixty courses at 30 XP is 1,800 XP for a whole file — under half of one
  * good match — so a time trial is something to do, never somewhere to farm. A faster time pays nothing
  * either: the leaderboard is the prize.
  */
@@ -60,9 +60,9 @@ export function creditCityEvent(a: Account, ev: { kind: string; title: string },
 /**
  * file XP for the first finish of a street run course (Stage 703); later finishes pay nothing. Every
  * course's first finish together stays under half of one good match (tests/streetruns.test.ts): with
- * five districts' fifteen courses that is 1,800, where 150 a course came to 2,250.
+ * twenty districts' sixty courses that is 1,800, where 120 a course came to 7,200.
  */
-export const STREET_RUN_XP = 120;
+export const STREET_RUN_XP = 30;
 
 /**
  * Credit one finished street run to one file. The first finish of a course pays `STREET_RUN_XP` and

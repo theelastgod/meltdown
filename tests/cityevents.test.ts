@@ -122,7 +122,7 @@ describe("the schedule is the room's seed and nothing else", () => {
   });
 
   it("the posts are the district's lattice posts, and the ring runs round the outer four", () => {
-    expect(CITY_DISTRICTS.length).toBe(5);
+    expect(CITY_DISTRICTS.length).toBe(20);
     for (const d of CITY_DISTRICTS) {
       const level = levelById(d);
       expect(citySites(level).map((s) => s.label)).toEqual(level.nodes.map((n) => n.label));

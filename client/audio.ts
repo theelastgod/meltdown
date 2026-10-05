@@ -5,6 +5,7 @@
  */
 import type { HitZone } from "@shared/sim/world";
 import { shotVoice, toggleCue } from "./voice";
+import { placeFeel } from "./render/places";
 
 /**
  * Rain, hum, and buzz for one named place. Two districts can share a cast and still not share a bed.
@@ -34,6 +35,8 @@ export type StepSurface = {
 };
 
 export function stepSurface(name: string | undefined): StepSurface {
+  const step = placeFeel(name)?.step;
+  if (step) return step;
   if (name === "night_market") return { hz: 920, dur: 0.028, q: 1.8, type: "highpass" };
   return { hz: 260, dur: 0.06, q: 0.7, type: "lowpass" };
 }
@@ -56,6 +59,8 @@ export function shotSlap(name: string | undefined): ShotSlap {
 }
 
 export function bedTune(name: string | undefined): BedTune {
+  const felt = placeFeel(name);
+  if (felt) return felt.bed;
   switch (name) {
     case "deadletter_docks":
       // heavier water, and the hum sits under the piers

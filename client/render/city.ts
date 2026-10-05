@@ -6,6 +6,7 @@ import { brickTexture, facadeTextures, hazardTexture, shutterTexture } from "./t
 import { texture as assetTexture } from "./assets";
 import { platePick } from "../../shared/assets/plates";
 import type { ScreenPool } from "./screens";
+import { placeFeel } from "./places";
 
 export const PALETTE = {
   bg: 0x04050a,
@@ -794,6 +795,8 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
 export type LampRead = { color: number };
 
 export function lampRead(name: string | undefined): LampRead {
+  const felt = placeFeel(name);
+  if (felt) return { color: felt.lamp };
   switch (name) {
     case "deadletter_docks":
       return { color: 0x67d7ea };
@@ -816,6 +819,8 @@ export function lampRead(name: string | undefined): LampRead {
 export type VistaRead = { rise: number };
 
 export function vistaRead(name: string | undefined): VistaRead {
+  const felt = placeFeel(name);
+  if (felt) return { rise: felt.vista };
   switch (name) {
     case "deadletter_docks":
       return { rise: 0.32 };
@@ -838,6 +843,8 @@ export function vistaRead(name: string | undefined): VistaRead {
 export type SkylineRead = { base: number; rise: number; far: number };
 
 export function skylineRead(name: string | undefined): SkylineRead {
+  const felt = placeFeel(name);
+  if (felt) return felt.skyline;
   if (name === "deadletter_docks") return { base: 12, rise: 22, far: 10 };
   return { base: 18, rise: 70, far: 50 };
 }

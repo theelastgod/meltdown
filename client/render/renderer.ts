@@ -18,6 +18,7 @@ import { CampaignFx } from "./campaign";
 import { drawGlyph, glyphFor } from "@shared/identity/glyph";
 import { parseTag } from "@shared/identity/identity";
 import { skinByToken } from "@shared/economy/catalog";
+import { placeFeel } from "./places";
 import { ArsenalFx, buildViewmodel } from "./weapons";
 import { RunFx } from "./run";
 import { WakeFx } from "./wake";
@@ -168,7 +169,7 @@ export function placeAir(name: string | undefined): PlaceAir | null {
       // the racks: the air is thin, the towers stay, the rain falls hard and white
       return { fog: 0x040814, density: 0.0046, exposure: 1.48, sky: 0x081828, rain: [0.72, 0.86, 1], fall: 1.8 };
     default:
-      return null;
+      return placeFeel(name)?.air ?? null;
   }
 }
 export type DistrictId = keyof typeof DISTRICTS;
