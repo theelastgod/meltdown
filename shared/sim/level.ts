@@ -686,6 +686,11 @@ export interface LevelDef {
    */
   halyard?: WildEdge;
   /**
+   * The slab between RELAY HEIGHTS' north halyard and the north spar (Stage 1092). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  gasket?: WildEdge;
+  /**
    * The west run of REPO DEPOT's north wall, between the gate and the crest (Stage 994).
    * A fenced lot. Nothing out there pays a gun.
    */
