@@ -694,6 +694,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
   const fell = openNightFell(c);
   const serge = openNightSerge(c);
   const twill = openNightTwill(c);
+  const bobbin = openNightBobbin(c);
   const hook = openNightHook(c);
   const eyelet = openNightEyelet(c);
   const downhaul = openNightDownhaul(c);
@@ -1064,6 +1065,7 @@ export function generateDistrict(spec: DistrictSpec): LevelDef {
     ...(fell ? { fell } : {}),
     ...(serge ? { serge } : {}),
     ...(twill ? { twill } : {}),
+    ...(bobbin ? { bobbin } : {}),
     ...(batten ? { batten } : {}),
     ...(ratline ? { ratline } : {}),
     ...(cunningham ? { cunningham } : {}),
@@ -2735,6 +2737,48 @@ function openNightTwill(c: Ctx): WildEdge | null {
     passage: v3(midX, 0, (inner + zOut) / 2),
     outside: v3(midX, 0, zOut - 5),
     line: "NORTH TWILL. THE MARKET WALL IS BEHIND YOU.",
+  };
+}
+
+/**
+ * The slab between NIGHT MARKET's two west gates opens onto a fenced lot.
+ * The fence is above a mantle. The gates are not this opening. The slab between the south-east
+ * gate and the welt stays solid: a door there would stand inside 20 m of that gate.
+ * Nothing out there pays a gun.
+ */
+function openNightBobbin(c: Ctx): WildEdge | null {
+  if (c.spec.id !== "night_market") return null;
+  const inner = -c.H;
+  const i = c.boxes.findIndex((b) => b.tag === "facade" && b.max.x === inner && b.min.y === 0 && b.max.y === 36 && b.min.z === -12 && b.max.z === 12);
+  if (i < 0) throw new Error("night market bobbin: the west wall is not where the facade put it");
+  const wall = c.boxes[i]!;
+  c.boxes.splice(i, 1);
+  // The west gates stand at z = ±16.5. The door sits on the pier between them.
+  const midZ = 0;
+  const doorW = 3;
+  const doorH = 3.2;
+  const dz0 = midZ - doorW / 2;
+  const dz1 = midZ + doorW / 2;
+  c.boxes.push(box(wall.min.x, 0, wall.min.z, wall.max.x, 36, dz0, "facade"));
+  c.boxes.push(box(wall.min.x, 0, dz1, wall.max.x, 36, wall.max.z, "facade"));
+  c.boxes.push(box(wall.min.x, doorH, dz0, wall.max.x, 36, dz1, "facade"));
+  const xOut = wall.min.x;
+  const yF = 2.2;
+  const z0 = midZ - 8;
+  const z1 = midZ + 8;
+  const xFar = xOut - 10;
+  const t = 0.35;
+  c.boxes.push(box(xOut - t, 0, z0, xOut, yF, dz0, "fence"));
+  c.boxes.push(box(xOut - t, 0, dz1, xOut, yF, z1, "fence"));
+  c.boxes.push(box(xFar, 0, z0, xFar + t, yF, z1, "fence"));
+  c.boxes.push(box(xFar, 0, z0, xOut, yF, z0 + t, "fence"));
+  c.boxes.push(box(xFar, 0, z1 - t, xOut, yF, z1, "fence"));
+  addSign(c, "WEST BOBBIN", inner + 0.06, 2.7, midZ, Math.PI / 2, 4, COLORS.magenta);
+  return {
+    street: v3(inner + 2.2, 0, midZ),
+    passage: v3((inner + xOut) / 2, 0, midZ),
+    outside: v3(xOut - 5, 0, midZ),
+    line: "WEST BOBBIN. THE MARKET WALL IS BEHIND YOU.",
   };
 }
 

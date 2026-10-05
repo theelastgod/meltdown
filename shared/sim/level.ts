@@ -751,6 +751,11 @@ export interface LevelDef {
    */
   twill?: WildEdge;
   /**
+   * The slab between NIGHT MARKET's two west gates (Stage 1119). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  bobbin?: WildEdge;
+  /**
    * The east run of RELAY HEIGHTS' north wall, between the stay and the ledge (Stage 997).
    * A fenced lot. Nothing out there pays a gun.
    */
