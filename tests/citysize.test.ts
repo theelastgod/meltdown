@@ -306,8 +306,11 @@ const DEPOT_SEIZING = "a68d5c074f19a0ae82d5f23fdf5dd2ec2605e0934026cdc2becb987cc
 /** Depot after Stage 1089 opened the slab between the south davit and the south bay. Sealing the north stopper puts this hash back. */
 const DEPOT_GRIPES = "2735b98c01f7da6277628e51f27986f910ea8421341a381fa461209f48aeff7a";
 
-/** Depot after Stage 1093 opened the slab between the north bolster and the north crest. */
+/** Depot after Stage 1093 opened the slab between the north bolster and the north crest. Sealing the north strop puts this hash back. */
 const DEPOT_STOPPER = "97d8fe34f18fbc2928e290df3f7696a676caa055246b21360166efae623b5f34";
+
+/** Depot after Stage 1097 opened the slab between the north dolly and the north cradle. */
+const DEPOT_STROP = "30b51c4202fe1e7993f11e5dc8063a6f57f27f61365e445ec4c8026dc3503e98";
 
 /** What a position can be sent at: i16 at 1 cm is ±327.67 m (shared/net/protocol.ts); everything networked stays inside this. */
 const NET_LIMIT = 300;
@@ -315,10 +318,10 @@ const NET_LIMIT = 300;
 const lease = () => generateDistrict(districtById("lease_row")!);
 
 describe("a 3×3 district is the level it always was", () => {
-  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, the east shackle, the east swivel, the east fid, the east kevel, the west coak, the west gammon, the west whelp, the west swifter, the west lizard, the west norman, the east messenger, the east seizing, the south gripes, and the north stopper (Stage 1093)", () => {
+  it("REPO DEPOT is still that 3×3 level, plus the impound, the west apron, the east ramp, the south bay, the north crest, the north hoist, the east jack, the south chock, the west skid, the north winch, the north dolly, the north bolster, the north cradle, the south derrick, the south davit, the south capstan, the east windlass, the east pawl, the west clevis, the west becket, the north deadeye, the south gudgeon, the south tiller, the east shackle, the east swivel, the east fid, the east kevel, the west coak, the west gammon, the west whelp, the west swifter, the west lizard, the west norman, the east messenger, the east seizing, the south gripes, the north stopper, and the north strop (Stage 1097)", () => {
     const spec = districtById("repo_depot")!;
     expect(districtGrid(spec)).toBe(3);
-    expect(hash(spec)).toBe(DEPOT_STOPPER);
+    expect(hash(spec)).toBe(DEPOT_STROP);
     expect(generateDistrict(spec).impound?.line).toMatch(/IMPOUND/);
     expect(generateDistrict(spec).apron?.line).toMatch(/WEST APRON/);
     expect(generateDistrict(spec).ramp?.line).toMatch(/EAST RAMP/);
@@ -356,7 +359,9 @@ describe("a 3×3 district is the level it always was", () => {
     expect(generateDistrict(spec).seizing?.line).toMatch(/EAST SEIZING/);
     expect(generateDistrict(spec).gripes?.line).toMatch(/SOUTH GRIPES/);
     expect(generateDistrict(spec).stopper?.line).toMatch(/NORTH STOPPER/);
-    // the pin is not the sealed wall: closing the stopper would put the gripes hash back
+    expect(generateDistrict(spec).strop?.line).toMatch(/NORTH STROP/);
+    // the pin is not the sealed wall: closing the strop would put the stopper hash back
+    expect(DEPOT_STROP).not.toBe(DEPOT_STOPPER);
     expect(DEPOT_STOPPER).not.toBe(DEPOT_GRIPES);
     expect(DEPOT_GRIPES).not.toBe(DEPOT_SEIZING);
     expect(DEPOT_SEIZING).not.toBe(DEPOT_MESSENGER);

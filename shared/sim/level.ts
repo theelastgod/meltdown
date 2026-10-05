@@ -736,6 +736,11 @@ export interface LevelDef {
    */
   cradle?: WildEdge;
   /**
+   * The slab between REPO DEPOT's north dolly and the north cradle (Stage 1097). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  strop?: WildEdge;
+  /**
    * The east run of DEADLETTER DOCKS' south wall, between the gate and the cleat (Stage 999).
    * A fenced lot. Nothing out there pays a gun.
    */
