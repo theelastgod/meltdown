@@ -187,6 +187,7 @@ export class Game {
     // the city (Stage 692) is the campaign's shared open world: no match, the patrols live, no player can hurt another
     const city = inCity(q);
     this.world = new World(levelById(this.levelId), { ai: q.get("ai") !== "0", seed: Number(q.get("seed") ?? 1) || 1, wakePhase: q.get("wake") === "0" || campaignMode ? "off" : "wake", dummyRespawn: !campaignMode || city, run: this.runMode, pvp: !city });
+    this.audio.tune(this.world.level.name);
     if (city) {
       this.world.contestAt = (x, z) => inContest(this.world.level, x, z);
       this.world.contestGate = (x, z) => contestRespawn(this.world.level, x, z);

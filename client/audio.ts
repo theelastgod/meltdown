@@ -6,10 +6,57 @@
 import type { HitZone } from "@shared/sim/world";
 import { shotVoice, toggleCue } from "./voice";
 
+/**
+ * Rain, hum, and buzz for one named place. Two districts can share a cast and still not share a bed.
+ * Lease Row is the bed the city already had. The yard, the office, and the white room keep it.
+ */
+export type BedTune = {
+  rainHz: number;
+  rainQ: number;
+  rain: number;
+  humHz: number;
+  hum: number;
+  buzzHz: number;
+  buzzCut: number;
+  buzz: number;
+};
+
+export function bedTune(name: string | undefined): BedTune {
+  switch (name) {
+    case "deadletter_docks":
+      // heavier water, and the hum sits under the piers
+      return { rainHz: 900, rainQ: 0.35, rain: 0.28, humHz: 28, hum: 0.2, buzzHz: 96, buzzCut: 640, buzz: 0.01 };
+    case "repo_depot":
+      // a sodium lamp, and the rain is thin over the yard
+      return { rainHz: 2800, rainQ: 0.45, rain: 0.045, humHz: 118, hum: 0.16, buzzHz: 130, buzzCut: 1100, buzz: 0.014 };
+    case "night_market":
+      // the hiss is at the awning, and the buzz is bright
+      return { rainHz: 6800, rainQ: 1.3, rain: 0.22, humHz: 52, hum: 0.1, buzzHz: 240, buzzCut: 2800, buzz: 0.034 };
+    case "relay_heights":
+      // thin air over the racks, and almost no rain
+      return { rainHz: 4800, rainQ: 0.7, rain: 0.012, humHz: 180, hum: 0.04, buzzHz: 420, buzzCut: 4200, buzz: 0.005 };
+    default:
+      // lease row, and every room that is not one of the five
+      return { rainHz: 3200, rainQ: 0.5, rain: 0.16, humHz: 48, hum: 0.12, buzzHz: 120, buzzCut: 900, buzz: 0.012 };
+  }
+}
+
 export class GameAudio {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private bed: { gain: GainNode } | null = null;
+  /** Rain, hum, and buzz, kept so a district can retune the bed after it has started. */
+  private bedNodes: {
+    rainFilter: BiquadFilterNode;
+    rainGain: GainNode;
+    hum: OscillatorNode;
+    humGain: GainNode;
+    buzz: OscillatorNode;
+    buzzFilter: BiquadFilterNode;
+    buzzGain: GainNode;
+  } | null = null;
+  /** The level asked for, remembered until there is a bed to put it on. */
+  private bedName: string | undefined;
   /** the buses the settings drive: everything but the bed goes through sfx */
   private sfx: GainNode | null = null;
   private volumes = { master: 0.7, sfx: 1, bed: 1 };
@@ -152,6 +199,43 @@ export class GameAudio {
     this.bedLevel = 1;
     g.gain.linearRampToValueAtTime(this.bedLevel * this.volumes.bed, ctx.currentTime + 2.5);
     this.bed = { gain: g };
+    this.bedNodes = { rainFilter: rf, rainGain: rg, hum, humGain: hg, buzz, buzzFilter: bf, buzzGain: bg };
+    this.tune(this.bedName);
+  }
+
+  /**
+   * Put the bed in the place the file is standing. Safe before the context exists: the name is
+   * kept and applied when the bed starts, and applied at once when the bed is already running.
+   */
+  tune(levelName: string | undefined): void {
+    this.bedName = levelName;
+    const n = this.bedNodes;
+    if (!n) return;
+    const t = bedTune(levelName);
+    n.rainFilter.frequency.value = t.rainHz;
+    n.rainFilter.Q.value = t.rainQ;
+    n.rainGain.gain.value = t.rain;
+    n.hum.frequency.value = t.humHz;
+    n.humGain.gain.value = t.hum;
+    n.buzz.frequency.value = t.buzzHz;
+    n.buzzFilter.frequency.value = t.buzzCut;
+    n.buzzGain.gain.value = t.buzz;
+  }
+
+  /** What the bed nodes are holding, or null before the bed exists. */
+  bedNow(): BedTune | null {
+    const n = this.bedNodes;
+    if (!n) return null;
+    return {
+      rainHz: n.rainFilter.frequency.value,
+      rainQ: n.rainFilter.Q.value,
+      rain: n.rainGain.gain.value,
+      humHz: n.hum.frequency.value,
+      hum: n.humGain.gain.value,
+      buzzHz: n.buzz.frequency.value,
+      buzzCut: n.buzzFilter.frequency.value,
+      buzz: n.buzzGain.gain.value,
+    };
   }
 
   /** A VANTAGE siren somewhere across the district: a two-tone wail, panned, dull with distance, fading as it passes. */
