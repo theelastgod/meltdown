@@ -726,6 +726,11 @@ export interface LevelDef {
    */
   nap?: WildEdge;
   /**
+   * The slab between NIGHT MARKET's north hem and the north tarp (Stage 1099). A fenced lot.
+   * Nothing out there pays a gun.
+   */
+  ruche?: WildEdge;
+  /**
    * The east run of RELAY HEIGHTS' north wall, between the stay and the ledge (Stage 997).
    * A fenced lot. Nothing out there pays a gun.
    */
