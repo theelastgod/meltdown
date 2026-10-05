@@ -928,6 +928,39 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
 }
 
 /**
+ * Head colour of the traffic streaks past the gates. Lease Row keeps the warm white it had.
+ * Tails stay the same red in every district. One LineSegments, no extra mesh.
+ */
+export const TRAFFIC_TAIL: readonly [number, number, number] = [1, 0.1, 0.18];
+
+const TRAFFIC_HEAD: Record<string, readonly [number, number, number]> = {
+  lease_row: [1, 0.93, 0.75],
+  deadletter_docks: [0.62, 0.82, 1],
+  repo_depot: [1, 0.78, 0.35],
+  night_market: [1, 0.55, 0.82],
+  relay_heights: [0.82, 0.9, 1],
+  ash_canal: [0.45, 1, 0.72],
+  glass_mile: [0.92, 0.82, 1],
+  bone_market: [1, 0.86, 0.62],
+  cold_vault: [0.7, 1, 0.95],
+  neon_chapel: [0.78, 0.45, 1],
+  slag_pit: [1, 0.42, 0.18],
+  wire_garden: [0.45, 1, 0.55],
+  red_kiln: [1, 0.35, 0.32],
+  paper_wharf: [0.75, 0.84, 0.95],
+  velvet_court: [1, 0.28, 0.48],
+  rust_crown: [1, 0.62, 0.28],
+  salt_stairs: [0.9, 0.94, 1],
+  lamp_bazaar: [1, 0.4, 0.7],
+  debt_orchard: [0.8, 1, 0.35],
+  black_relay: [0.45, 0.52, 0.68],
+};
+
+export function trafficHead(name: string | undefined): readonly [number, number, number] {
+  return TRAFFIC_HEAD[name ?? ""] ?? TRAFFIC_HEAD.lease_row!;
+}
+
+/**
  * Traffic beyond the facades: head- and tail-light streaks sliding along
  * elevated lanes. One LineSegments, positions updated on the CPU each frame.
  */
@@ -935,16 +968,17 @@ export class Traffic {
   readonly object: THREE.LineSegments;
   private cars: { lane: TrafficLane; t: number; len: number }[] = [];
   private pos: Float32Array;
-  constructor(lanes: readonly TrafficLane[], seed = 5) {
+  constructor(lanes: readonly TrafficLane[], seed = 5, name?: string) {
     const rnd = lcg(seed);
     for (const lane of lanes) for (let i = 0; i < lane.count; i++) this.cars.push({ lane, t: rnd(), len: 3 + rnd() * 3 });
-    const n = this.cars.length * 2; // two segments per car: head (warm) and tail (red)
+    const n = this.cars.length * 2; // two segments per car: head and tail
     this.pos = new Float32Array(n * 2 * 3);
     const col = new Float32Array(n * 2 * 3);
+    const head = trafficHead(name);
+    const tail = TRAFFIC_TAIL;
     for (let i = 0; i < this.cars.length; i++) {
       const o = i * 12;
-      // head segment: warm white; tail segment: red
-      col.set([1, 0.93, 0.75, 1, 0.93, 0.75, 1, 0.1, 0.18, 1, 0.1, 0.18], o);
+      col.set([...head, ...head, ...tail, ...tail], o);
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(this.pos, 3));

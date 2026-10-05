@@ -381,7 +381,7 @@ export class Renderer {
     }
     this.campaignFx = new CampaignFx(this.scene, this.camera);
     if (level.traffic?.length) {
-      this.traffic = new Traffic(level.traffic, level.skylineSeed ?? 5);
+      this.traffic = new Traffic(level.traffic, level.skylineSeed ?? 5, level.name);
       this.traffic.object.layers.set(FAR_LAYER);
       this.traffic.object.name = "traffic";
       this.scene.add(this.traffic.object);
