@@ -310,7 +310,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
     awningMg: basic(0x5a1448),
     awningCy: basic(0x0e3f48),
     railMg: basic(0x8a1f6a),
-    lampHead: basic(0xfff1c8),
+    lampHead: basic(lampRead(level.name).color),
     glow: basic(0x9ce8ff, 0.18),
     padStart: basic(0x0f3a22),
     padEnd: basic(0x3a0f2c),
@@ -784,6 +784,28 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
   screens?.attach(M.shopB, "shop_b", seed + 1);
   screens?.attach(M.shopC, "shop_c", seed + 2);
   return { calls, signMat };
+}
+
+/**
+ * The metal head on the lamps past the gates. Lease Row keeps the warm head it had.
+ * Deadletter is cold cyan, the market hot magenta, the depot sodium amber, the heights a thin pale.
+ * Same box, and the material the street lamps already batch, so a district gains no mesh.
+ */
+export type LampRead = { color: number };
+
+export function lampRead(name: string | undefined): LampRead {
+  switch (name) {
+    case "deadletter_docks":
+      return { color: 0x67d7ea };
+    case "night_market":
+      return { color: 0xff3ec9 };
+    case "repo_depot":
+      return { color: 0xffb02e };
+    case "relay_heights":
+      return { color: 0xd5dde6 };
+    default:
+      return { color: 0xfff1c8 };
+  }
 }
 
 /**

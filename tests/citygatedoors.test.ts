@@ -60,15 +60,14 @@ function fingerprint(scene: THREE.Object3D, log: readonly string[]): string {
   return h.digest("hex").slice(0, 16);
 }
 
-/** recorded from the dressing as it was before Stage 704. LEASE ROW was re-recorded at Stage 945 and left alone when the outsides diverged: a rise of 1 does not move a vertex. DEADLETTER DOCKS, REPO DEPOT, NIGHT MARKET and RELAY HEIGHTS were re-recorded when their vista blocks took their own height. */
+/** recorded from the dressing as it was before Stage 704. LEASE ROW was re-recorded at Stage 945 and left alone when the outsides diverged: a rise of 1 does not move a vertex, and its lamp head stays the warm metal it had. DEADLETTER DOCKS, REPO DEPOT, NIGHT MARKET and RELAY HEIGHTS were re-recorded when their vista blocks took their own height, and again when their vista lamp heads took a district colour (same boxes, the shared head material). */
 const BEFORE: Record<string, string> = {
   lease_row: "b8d19dc8b6676174",
-  deadletter_docks: "e0ced4a81a444024",
-  repo_depot: "feb60fd2e8d4b84a",
-  // Stage 701's districts, recorded on the Stage 703 commit, before the doors: the three above
-  // reproduce there exactly, which is what makes these two a record of "before" and not of "now"
-  night_market: "6d0db20b0cee2394",
-  relay_heights: "4fcd923a66c76826",
+  deadletter_docks: "bd26c2a42447a684",
+  repo_depot: "176c24c94e618447",
+  // Re-measured after the vista heads took a district colour. Lease Row was not.
+  night_market: "8d2b05fac4792c8f",
+  relay_heights: "149a39aba1ad8774",
 };
 
 async function dress(L: LevelDef, gates?: readonly GateSign[]): Promise<{ scene: THREE.Scene; log: string[] }> {
