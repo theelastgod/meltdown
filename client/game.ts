@@ -11,7 +11,7 @@ import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS, levelDisplayName } from "@share
 import { itemName } from "@shared/manifest/items";
 import { eyeHeight, eyePos, reviveMotion, type PlayerState } from "@shared/sim/player";
 import { arrivalFromQuery } from "@shared/net/citygates";
-import { contestRespawn, inContest } from "@shared/city/contest";
+import { contestOf, contestRespawn, inContest } from "@shared/city/contest";
 import type { SpawnPoint } from "@shared/sim/level";
 import { canSee, MECH, WASP } from "@shared/sim/ai";
 import { aimAssistScale } from "./aimassist";
@@ -205,6 +205,7 @@ export class Game {
     // The HUD markup reads this class. It has to be on before the receipt's sign line is built.
     if (this.mobile) hudRoot.classList.add("touch");
     this.renderer = new Renderer(canvas, this.world.level, undefined, this.mobile, city);
+    if (city) this.renderer.campaignFx.setContest(contestOf(this.world.level));
     this.hud = new Hud(hudRoot);
     this.hud.receiptTap = () => this.sign();
     if (this.mobile) {
@@ -912,11 +913,24 @@ export class Game {
     const drained = this.world.drainEvents();
     for (const ev of drained) this.onEvent(ev);
     this.campaign?.tick(drained);
+    this.contestTick();
     this.footsteps();
     this.renderer.syncDummies(this.world.dummies);
   }
 
   private chargeTick = 0;
+  /** True while the local file is standing inside the district's contest block. */
+  private contestInside = false;
+
+  /** One line when the file steps into the block, and one when it steps out. The guns do not change. */
+  private contestTick(): void {
+    if (!this.world.contestAt) return;
+    const inside = this.world.contestAt(this.player.pos.x, this.player.pos.z);
+    if (inside === this.contestInside) return;
+    this.contestInside = inside;
+    this.renderer.campaignFx.setContestHot(inside);
+    this.hud.alert(inside ? "CONTEST · FALL AND THE CHITS HIT THE GROUND" : "OUT OF THE BLOCK · THE POCKET STAYS", inside);
+  }
 
   /** Latest wake state for the HUD (offline: the world's; online: the snapshot's). */
   /**

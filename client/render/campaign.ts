@@ -31,6 +31,10 @@ export class CampaignFx {
   private filamentMat: THREE.MeshBasicMaterial;
   private filamentOn = false;
   private time = 0;
+  /** The district's contest block, drawn on the street that is already there. Not a sim box. */
+  private contest: THREE.Group;
+  private contestEdges: THREE.Mesh[] = [];
+  private contestHot = false;
 
   constructor(private scene: THREE.Scene, camera: THREE.Camera) {
     scene.add(this.group);
@@ -80,6 +84,58 @@ export class CampaignFx {
     this.filament.add(glow);
     this.filament.visible = false;
     camera.add(this.filament);
+    this.contest = new THREE.Group();
+    this.contest.visible = false;
+    const lay = (w: number, d: number, x: number, z: number) => {
+      const mat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+      bindPlate(mat, "tex_lamp");
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
+      m.rotation.x = -Math.PI / 2;
+      m.position.set(x, 0.02, z);
+      this.contestEdges.push(m);
+      this.contest.add(m);
+    };
+    lay(1, 0.045, 0, 0.5);
+    lay(1, 0.045, 0, -0.5);
+    lay(0.045, 1, 0.5, 0);
+    lay(0.045, 1, -0.5, 0);
+    const fill = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.92, 0.92),
+      new THREE.MeshBasicMaterial({ color: PALETTE.magenta, transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide }),
+    );
+    fill.rotation.x = -Math.PI / 2;
+    fill.position.y = 0.01;
+    fill.name = "contest-fill";
+    this.contest.add(fill);
+    this.group.add(this.contest);
+    if (typeof document !== "undefined" && typeof document.createElementNS === "function") {
+      const tex = new THREE.TextureLoader().load("/icons/contest-ground.png");
+      tex.colorSpace = THREE.SRGBColorSpace;
+      (fill.material as THREE.MeshBasicMaterial).map = tex;
+      (fill.material as THREE.MeshBasicMaterial).color.setHex(0xffffff);
+    }
+  }
+
+  /** Paint the district's contest block on the ground. `half` is metres. Null hides it. */
+  setContest(vol: { x: number; z: number; half: number } | null): void {
+    this.contest.visible = vol !== null;
+    if (!vol) return;
+    const span = vol.half * 2;
+    this.contest.position.set(vol.x, 0.08, vol.z);
+    this.contest.scale.set(span, 1, span);
+  }
+
+  /** The painted square's width in metres, or 0 when the block is hidden. */
+  contestSpan(): number {
+    if (!this.contest.visible) return 0;
+    return this.contest.scale.x;
+  }
+
+  /** Inside the block the paint runs hot. Outside it stays the street colour. */
+  setContestHot(on: boolean): void {
+    this.contestHot = on;
+    const color = on ? PALETTE.magenta : PALETTE.cyan;
+    for (const e of this.contestEdges) (e.material as THREE.MeshBasicMaterial).color.setHex(color);
   }
 
   /**
@@ -157,6 +213,10 @@ export class CampaignFx {
       const s = 1 + Math.sin(this.time * 3) * 0.15;
       this.ring.scale.set(s, s, 1);
       this.marker.rotation.y += dt * 0.6;
+    }
+    if (this.contest.visible) {
+      const k = this.contestHot ? 0.55 + Math.sin(this.time * 5) * 0.35 : 0.45;
+      for (const e of this.contestEdges) (e.material as THREE.MeshBasicMaterial).opacity = k;
     }
     if (this.filamentOn) {
       const k = 0.7 + Math.sin(this.time * 6) * 0.3;
