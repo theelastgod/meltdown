@@ -631,7 +631,7 @@ export class Game {
           // where the danger is.
           const cue = gunCue(ev.fx, ev.fz, this.listenPoint());
           if (cue) {
-            this.audio.otherShot(ev.weapon === 0 ? "wasp" : (def?.id ?? "lease_breaker"), cue);
+            this.audio.otherShot(ev.weapon === 0 ? "wasp" : (def?.id ?? "lease_breaker"), cue, this.world.level.name);
             this.heardShot.n++;
             this.heardShot.pan = cue.pan;
             this.heardShot.gain = cue.gain;
@@ -1301,7 +1301,7 @@ export class Game {
           // shooter's body a tick later
           const cue = gunCue(ev.from.x, ev.from.z, this.listenPoint());
           if (cue) {
-            this.audio.otherShot(ev.weapon, cue);
+            this.audio.otherShot(ev.weapon, cue, this.world.level.name);
             this.heardShot.n++;
             this.heardShot.pan = cue.pan;
             this.heardShot.gain = cue.gain;

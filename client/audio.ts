@@ -38,6 +38,23 @@ export function stepSurface(name: string | undefined): StepSurface {
   return { hz: 260, dur: 0.06, q: 0.7, type: "lowpass" };
 }
 
+/**
+ * The slap a shot throws back. The docks and the heights share a cast.
+ * Deadletter answers late and low, off the water. Every other room keeps the street.
+ */
+export type ShotSlap = {
+  hz: number;
+  dur: number;
+  q: number;
+  lag: number;
+  gain: number;
+};
+
+export function shotSlap(name: string | undefined): ShotSlap {
+  if (name === "deadletter_docks") return { hz: 160, dur: 0.48, q: 0.35, lag: 0.16, gain: 0.13 };
+  return { hz: 480, dur: 0.26, q: 0.5, lag: 0.055, gain: 0.09 };
+}
+
 export function bedTune(name: string | undefined): BedTune {
   switch (name) {
     case "deadletter_docks":
@@ -851,7 +868,7 @@ export class GameAudio {
    * or thirty metres — a slap off the buildings a moment behind it. The whole thing is delayed by
    * the time the sound takes to arrive, so the flash comes first.
    */
-  otherShot(weapon: string, cue: { gain: number; pan: number; delay: number; muffle: number; distance: number }): void {
+  otherShot(weapon: string, cue: { gain: number; pan: number; delay: number; muffle: number; distance: number }, place?: string): void {
     this.count("shot_other");
     if (!this.ctx) return;
     const g = Math.max(0, Math.min(1, cue.gain));
@@ -862,8 +879,9 @@ export class GameAudio {
     this.burst({ dur: 0.04 + cue.muffle * 0.05, freq: (wasp ? 2400 : 3000) - cue.muffle * 2200, q: 0.7, gain: (wasp ? 0.1 : 0.3) * g, pan: cue.pan, delay: cue.delay });
     // the body of it, which distance barely touches
     this.tone({ dur: 0.12 + cue.muffle * 0.25, from: wasp ? 700 : heavy ? 120 : 165, to: wasp ? 400 : 38, gain: (wasp ? 0.06 : heavy ? 0.3 : 0.22) * g, type: "sine", delay: cue.delay, pan: cue.pan * 0.5 });
-    // and off the street, from the other side, once there is street enough for it
-    if (cue.distance > 22 && !wasp) this.burst({ dur: 0.26, freq: 480, q: 0.5, gain: 0.09 * g, type: "lowpass", pan: -cue.pan * 0.6, delay: cue.delay + 0.055 });
+    // and off the room, from the other side, once there is street enough for it
+    const slap = shotSlap(place);
+    if (cue.distance > 22 && !wasp) this.burst({ dur: slap.dur, freq: slap.hz, q: slap.q, gain: slap.gain * g, type: "lowpass", pan: -cue.pan * 0.6, delay: cue.delay + slap.lag });
   }
 
   /**
