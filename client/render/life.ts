@@ -812,6 +812,35 @@ export function skyMark(name: string | undefined): SkyMark {
   return (name && DISTRICT_SKY[name]) || LEASE_SKY;
 }
 
+/** How fast the slab blinkers cycle, in hertz. Lease Row keeps the rate the skyline shipped with. */
+export const STREET_BLINK = 0.5;
+
+const DISTRICT_BLINK: Record<string, number> = {
+  deadletter_docks: 0.18,
+  repo_depot: 0.72,
+  night_market: 1.35,
+  relay_heights: 0.96,
+  ash_canal: 0.22,
+  glass_mile: 1.55,
+  bone_market: 0.41,
+  cold_vault: 0.27,
+  neon_chapel: 0.33,
+  slag_pit: 0.84,
+  wire_garden: 0.63,
+  red_kiln: 0.58,
+  paper_wharf: 0.24,
+  velvet_court: 0.37,
+  rust_crown: 0.69,
+  salt_stairs: 1.12,
+  lamp_bazaar: 1.48,
+  debt_orchard: 0.46,
+  black_relay: 0.15,
+};
+
+export function skyBlink(name: string | undefined): number {
+  return (name && DISTRICT_BLINK[name]) || STREET_BLINK;
+}
+
 /** Aircraft-warning blinkers on the tallest slabs and an airship drifting over the district. */
 export class Sky {
   readonly group = new THREE.Group();
@@ -838,11 +867,11 @@ export class Sky {
     const mark = skyMark(name);
     const blink = new THREE.Color(mark.blink[0], mark.blink[1], mark.blink[2]);
     this.mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 }, uBlink: { value: blink } },
+      uniforms: { uTime: { value: 0 }, uBlink: { value: blink }, uRate: { value: skyBlink(name) } },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
-      vertexShader: `uniform float uTime; attribute float phase; varying float vOn; void main(){ vOn = step(0.92, fract(uTime * 0.5 + phase)); vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = 9.0 * (120.0 / max(1.0, -mv.z)) + 2.0; gl_Position = projectionMatrix * mv; }`,
+      vertexShader: `uniform float uTime; uniform float uRate; attribute float phase; varying float vOn; void main(){ vOn = step(0.92, fract(uTime * uRate + phase)); vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = 9.0 * (120.0 / max(1.0, -mv.z)) + 2.0; gl_Position = projectionMatrix * mv; }`,
       fragmentShader: `uniform vec3 uBlink; varying float vOn; void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; gl_FragColor = vec4(uBlink, vOn * smoothstep(0.5, 0.15, d)); }`,
     });
     const pts = new THREE.Points(geo, this.mat);
