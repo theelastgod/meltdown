@@ -159,6 +159,37 @@ export function paChime(name: string | undefined): PaChime {
   return (name && DISTRICT_PA[name]) || STREET_PA;
 }
 
+/** The speaker voice after the chime. Lease Row keeps the street formants. */
+export const STREET_VOICE: readonly number[] = [640, 820, 1100, 720, 980, 560, 1250, 880, 700];
+
+const VOICE_SCALE: Record<string, number> = {
+  deadletter_docks: 0.55,
+  repo_depot: 1.15,
+  night_market: 1.45,
+  relay_heights: 1.7,
+  ash_canal: 0.42,
+  glass_mile: 1.85,
+  bone_market: 0.72,
+  cold_vault: 1.55,
+  neon_chapel: 0.88,
+  slag_pit: 0.62,
+  wire_garden: 1.32,
+  red_kiln: 0.48,
+  paper_wharf: 0.95,
+  velvet_court: 0.78,
+  rust_crown: 1.08,
+  salt_stairs: 1.22,
+  lamp_bazaar: 1.38,
+  debt_orchard: 0.68,
+  black_relay: 1.92,
+};
+
+export function paVoice(name: string | undefined): readonly number[] {
+  const scale = name ? VOICE_SCALE[name] : undefined;
+  if (!scale) return STREET_VOICE;
+  return STREET_VOICE.map((hz) => Math.round(hz * scale));
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -413,7 +444,7 @@ export class GameAudio {
     for (const [i, hz] of paChime(place).entries()) this.tone({ dur: 0.35, from: hz, gain: 0.07, type: "triangle", delay: i * 0.22 });
     // "voice": syllables of narrow-band noise across a few formants, slap-echoed like a speaker on a wall
     let d = 0.9;
-    const formants = [640, 820, 1100, 720, 980, 560, 1250, 880, 700];
+    const formants = paVoice(place);
     for (let i = 0; i < formants.length; i++) {
       const f = formants[i] ?? 700;
       this.burst({ dur: 0.11, freq: f, q: 5, gain: 0.07, delay: d, pan: 0.35 });
