@@ -783,6 +783,35 @@ export function adInk(name: string | undefined): readonly [string, string, strin
   return (name && DISTRICT_INK[name]) || STREET_INK;
 }
 
+/** How fast a hologram line crawls, in pixels per second of ticker time. Lease Row keeps the pace the street shipped with. Ink and copy stay put. */
+export const STREET_CRAWL = 70;
+
+const DISTRICT_CRAWL: Record<string, number> = {
+  deadletter_docks: 22,
+  repo_depot: 48,
+  night_market: 128,
+  relay_heights: 96,
+  ash_canal: 18,
+  glass_mile: 110,
+  bone_market: 36,
+  cold_vault: 14,
+  neon_chapel: 44,
+  slag_pit: 84,
+  wire_garden: 62,
+  red_kiln: 150,
+  paper_wharf: 28,
+  velvet_court: 40,
+  rust_crown: 76,
+  salt_stairs: 104,
+  lamp_bazaar: 160,
+  debt_orchard: 54,
+  black_relay: 12,
+};
+
+export function adCrawl(name: string | undefined): number {
+  return (name && DISTRICT_CRAWL[name]) || STREET_CRAWL;
+}
+
 /** Holographic ad tickers: VANTAGE copy scrolling on translucent panels that cycle colour. */
 export class HoloAds {
   readonly group = new THREE.Group();
@@ -832,7 +861,8 @@ export class HoloAds {
       const copy = adCopy(this.district);
       const text = copy[p.line % copy.length]! + "   ▸   ";
       const w = g.measureText(text).width;
-      const x = 512 - ((time * 70 + p.offset) % (w + 512));
+      const crawl = adCrawl(this.district);
+      const x = 512 - ((time * crawl + p.offset) % (w + 512));
       g.fillText(text, x, 64);
       g.fillText(text, x + w, 64);
       // scanlines
