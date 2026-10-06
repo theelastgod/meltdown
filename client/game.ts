@@ -48,7 +48,7 @@ import { coneNow, coneRadiusPx } from "./hud/spread";
 import { kernelIn, nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
-import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
+import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, WEAPON_WIRE, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
 import { glyphFor, glyphSvg } from "@shared/identity/glyph";
 import { RangeGhost } from "./ghost";
 import { Campaign } from "./campaign";
@@ -601,7 +601,7 @@ export class Game {
     switch (ev.type) {
       case "shot": {
         const hit = ev.hitKind >= 2;
-        const def = WEAPON_LIST[ev.weapon - 1];
+        const def = WEAPON_LIST.find((w) => WEAPON_WIRE[w.id] === ev.weapon) ?? WEAPON_LIST[ev.weapon - 1];
         const color = def?.tracer ?? 0xffb02e;
         // every shot in the room, not only mine (Stage 89): a round into a body used to end in
         // mid-air for everyone watching. The wire does not carry the damage, so it is worked out

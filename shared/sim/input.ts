@@ -23,7 +23,7 @@ export const withSlot = (buttons: number, slot: number): number => (buttons & ~S
 /** Every action bit the sim defines: Forward (1 << 0) through GrenadeNext (1 << 11). */
 export const ACTION_MASK = (1 << Btn.SlotShift) - 1;
 /** Highest weapon slot the game ships. The slot nibble could hold 15; only 1..8 exist. */
-export const MAX_SLOT = 8;
+export const MAX_SLOT = 9;
 
 /**
  * Is this a bitfield the game could have produced? (Stage 172)

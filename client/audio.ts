@@ -704,6 +704,10 @@ export class GameAudio {
         this.burst({ dur: 0.12, freq: 2600, q: 3, gain: 0.25 });
         this.tone({ dur: 0.12, from: 180, to: 120, gain: 0.2, type: "square" });
         break;
+      case "neon_edge":
+        this.burst({ dur: 0.08, freq: 4200, q: 4, gain: 0.18 });
+        this.tone({ dur: 0.1, from: 880, to: 220, gain: 0.16, type: "sawtooth" });
+        break;
       case "directive":
         this.tone({ dur: 0.3, from: 130, to: 32, gain: 0.85, type: "sine" });
         this.burst({ dur: 0.12, freq: 1800, q: 0.5, gain: 0.4 });

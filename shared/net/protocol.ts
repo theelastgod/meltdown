@@ -329,10 +329,10 @@ export type NetEvent =
   | { type: "fx"; kind: number; playerId: number; x: number; y: number; z: number; a: number; b: number };
 
 export const FX = { explode: 1, cloud: 2, emp: 3, flagged: 4, stun: 5, swap: 6, melee: 7, mechBeam: 8, hurt: 9, waspDeath: 10, mechDeath: 11, throw: 12, chargeFull: 13, lunge: 14, nodeFlip: 15, nodeContest: 16, kernelPulse: 17, phase: 18, fullWake: 19 } as const;
-/** weapon numbering on the wire: 0 wasp/none, 1..6 slots, 7 grenade, 8 mech */
-export const WEAPON_WIRE: Record<string, number> = { wasp: 0, lease_breaker: 1, repo_hammer: 2, stack_smg: 3, longwave: 4, phage: 5, shock_baton: 6, frag: 7, smoke: 7, emp: 7, grenade: 7, mech: 8, directive: 9, clockeater: 10 };
-/** ammo slots carried on the wire: index 0 unused, 1–8 the weapon slots */
-export const AMMO_SLOTS = 9;
+/** weapon numbering on the wire: 0 wasp/none, 1..6 the open slots, 7 grenade, 8 mech, then the campaign guns */
+export const WEAPON_WIRE: Record<string, number> = { wasp: 0, lease_breaker: 1, repo_hammer: 2, stack_smg: 3, longwave: 4, phage: 5, shock_baton: 6, frag: 7, smoke: 7, emp: 7, grenade: 7, mech: 8, directive: 9, clockeater: 10, neon_edge: 11 };
+/** ammo slots carried on the wire: index 0 unused, then one byte per weapon slot */
+export const AMMO_SLOTS = 10;
 
 export interface Snapshot {
   tick: number;

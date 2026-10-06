@@ -17,6 +17,7 @@ export const PROTOCOL_ART: Readonly<Record<string, string>> = {
 export const WEAPON_ART: Readonly<Partial<Record<WeaponId, string>>> = {
   directive: "/kit/w_directive.jpg",
   clockeater: "/kit/w_clockeater.jpg",
+  neon_edge: "/kit/w_neon_edge.jpg",
 };
 
 /** a protocol's emblem at the head of its row, or nothing for an id without one */

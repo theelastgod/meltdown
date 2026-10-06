@@ -5,6 +5,7 @@
  * memory-backed room joins players in the same tick (tests rely on that).
  */
 import { ALL_ITEMS } from "../shared/manifest/items";
+import { CAMPAIGN_WEAPONS } from "../shared/weapons/manifest";
 import { createAccount, sandboxAccount, upgradeAccount, type Account } from "../shared/progression/account";
 import { totalXpToReach } from "../shared/progression/depth";
 
@@ -27,7 +28,7 @@ export function devSeed(id: string, name: string): Account {
   if (id.startsWith("sandbox")) {
     const a = sandboxAccount(id);
     a.name = name;
-    a.owned = [...ALL_ITEMS.map((i) => i.id), "weapon:directive", "weapon:clockeater"];
+    a.owned = [...ALL_ITEMS.map((i) => i.id), ...CAMPAIGN_WEAPONS.map((w) => `weapon:${w}`)];
     return a;
   }
   const a = createAccount(id, name);

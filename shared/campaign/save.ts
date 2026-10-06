@@ -17,7 +17,7 @@ export interface CampaignSave extends CampaignRecord {
   faction: FactionId | null;
   testimony: Testimony;
   /** campaign weapon unlocks */
-  weapons: ("directive" | "clockeater")[];
+  weapons: ("directive" | "clockeater" | "neon_edge")[];
 }
 
 export const emptyCampaign = (): CampaignSave => ({ faction: null, testimony: {}, missionsDone: [], gigsDone: [], protocols: [], worn: [], weapons: [], ending: null });

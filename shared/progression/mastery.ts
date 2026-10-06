@@ -79,6 +79,13 @@ export const CURRICULA: Record<WeaponId, Challenge[]> = {
     cur("shock_baton", 20, "doubleKills", 2, "2 double kills"),
     cur("shock_baton", 25, "airKills", 3, "3 kills mid-air"),
   ],
+  neon_edge: [
+    cur("neon_edge", 5, "chainStuns", 5, "5 chain stuns"),
+    cur("neon_edge", 10, "lungeKills", 5, "5 lunge kills"),
+    cur("neon_edge", 15, "slideKills", 5, "5 kills mid-slide"),
+    cur("neon_edge", 20, "doubleKills", 2, "2 double kills"),
+    cur("neon_edge", 25, "airKills", 3, "3 kills mid-air"),
+  ],
   directive: [
     cur("directive", 5, "headshotKills", 8, "8 headshot kills"),
     cur("directive", 10, "longKills", 6, "6 kills beyond 30 m"),

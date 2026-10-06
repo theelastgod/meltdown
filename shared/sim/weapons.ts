@@ -11,6 +11,7 @@ import {
   RECOIL_PATTERN_SHARE,
   RECOIL_VIEW_SHARE,
   WEAPONS,
+  WEAPON_LIST,
   magJitter,
   weaponBySlot,
   type GrenadeId,
@@ -57,7 +58,7 @@ export interface WeaponState {
 export function createWeaponState(): WeaponState {
   return {
     slot: 1,
-    ammo: [0, WEAPONS.lease_breaker.magSize, WEAPONS.repo_hammer.magSize, WEAPONS.stack_smg.magSize, WEAPONS.longwave.magSize, WEAPONS.phage.magSize, 0, WEAPONS.directive.magSize, WEAPONS.clockeater.magSize],
+    ammo: WEAPON_LIST.reduce((ammo, w) => { ammo[w.slot] = w.magSize; return ammo; }, [0] as number[]),
     reloadTimer: 0,
     reloadTotal: 0,
     reloadSeated: false,

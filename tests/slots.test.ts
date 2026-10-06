@@ -132,7 +132,7 @@ describe("weapon slots — the bitfield is still held to what the sim defines", 
 
   it("a slot the game does not ship is refused at the room, not silently ignored", () => {
     const s = seated();
-    s.press(withSlot(Btn.Forward, 9));
+    s.press(withSlot(Btn.Forward, MAX_SLOT + 1));
     expect(s.strikes()).toHaveLength(1);
   });
 });

@@ -30,6 +30,8 @@ export const FIRMWARES: FirmwareDef[] = [
   { id: "phage:long_fuse", weapon: "phage", rank: 28, name: "LONG FUSE", line: "FASTER, FLATTER ROUNDS, +8% DAMAGE, LONGER FUSE", patch: (d) => ({ ...d, projectile: { ...d.projectile!, speed: d.projectile!.speed * 1.2, gravity: d.projectile!.gravity * 0.8, fuse: d.projectile!.fuse * 1.3, damage: Math.round(d.projectile!.damage * 1.08) } }) },
   { id: "shock_baton:arc_relay", weapon: "shock_baton", rank: 20, name: "ARC RELAY", line: "CHAIN REACHES 50% FURTHER, −5% DAMAGE", patch: (d) => ({ ...d, damage: Math.round(d.damage * 0.95), melee: { ...d.melee!, chainRange: d.melee!.chainRange * 1.5 } }) },
   { id: "shock_baton:heavy_haft", weapon: "shock_baton", rank: 28, name: "HEAVY HAFT", line: "+25% DAMAGE, −7% SWING RATE, STUNS LONGER", patch: (d) => ({ ...d, damage: Math.round(d.damage * 1.25), rpm: Math.round(d.rpm * 0.93), melee: { ...d.melee!, stun: d.melee!.stun * 1.3 } }) },
+  { id: "neon_edge:long_arc", weapon: "neon_edge", rank: 20, name: "LONG ARC", line: "THE CUT REACHES FURTHER, −8% DAMAGE", patch: (d) => ({ ...d, damage: Math.round(d.damage * 0.92), melee: { ...d.melee!, reach: d.melee!.reach * 1.25, arc: d.melee!.arc * 1.15 } }) },
+  { id: "neon_edge:heavy_edge", weapon: "neon_edge", rank: 28, name: "HEAVY EDGE", line: "+20% DAMAGE, −8% SWING RATE, STUNS LONGER", patch: (d) => ({ ...d, damage: Math.round(d.damage * 1.2), rpm: Math.round(d.rpm * 0.92), melee: { ...d.melee!, stun: d.melee!.stun * 1.25 } }) },
   // The two campaign weapons had no firmwares at all, so the rifles the story hands you as a
   // reward were the only ones whose mastery ladder paid nothing at rank 20 or 28 (Stage 658).
   // THE DIRECTIVE is at full damage across every duel bracket, so a damage sidegrade on it would

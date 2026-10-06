@@ -77,6 +77,12 @@ export function buildViewmodel(id: WeaponId, mastered = false): THREE.Group {
       add(new THREE.BoxGeometry(0.012, 0.012, 0.36), strip, -0.02, -0.005, -0.3);
       add(new THREE.SphereGeometry(0.03, 8, 8), strip, 0, -0.02, -0.51);
       break;
+    case "neon_edge":
+      add(new THREE.BoxGeometry(0.012, 0.04, 0.72), strip, 0, -0.01, -0.42);
+      add(new THREE.BoxGeometry(0.02, 0.012, 0.7), dark, 0, -0.01, -0.4);
+      add(new THREE.BoxGeometry(0.08, 0.02, 0.04), body, 0, -0.01, -0.02);
+      add(new THREE.CylinderGeometry(0.016, 0.018, 0.16, 6).rotateX(Math.PI / 2), body, 0, -0.04, 0.08);
+      break;
     case "directive":
       // a long marksman rifle: slab receiver, long barrel, a boxy optic, an amber strip down the rail
       add(new THREE.BoxGeometry(0.09, 0.12, 0.5), body, 0, 0, 0);

@@ -990,7 +990,7 @@ export class Campaign {
       <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => testimonyLine(k, v)).join(" · ") || "— NOTHING ON THE RECORD —"} · ENDINGS OPEN: ${endings}</div>
       <div class="cols"><div><div class="sh">THE ARC · ${c.missionsDone.length}/${MAIN_ARC.length}</div>${arc}<div class="sh">FIXERS · GIGS ${c.gigsDone.length}/${GIGS.length}</div>${fixers}</div>
       <div><div class="sh">KERNEL PROTOCOLS · ${c.worn.length}/${MAX_PROTOCOLS} WORN <span class="red">· CAMPAIGN ONLY · STRIPPED AT PVP JOIN</span></div>${protos}
-      <div class="sh">CAMPAIGN WEAPONS</div><div class="ln cws">${CAMPAIGN_WEAPONS.map((w) => weaponCard(w, weaponName(w), c.weapons.includes(w as "directive" | "clockeater"))).join("")}</div>
+      <div class="sh">CAMPAIGN WEAPONS</div><div class="ln cws">${CAMPAIGN_WEAPONS.map((w) => weaponCard(w, weaponName(w), (c.weapons as readonly string[]).includes(w))).join("")}</div>
       <div class="sh">CREW</div><div class="ln">${this.crew ? `IN CREW <b class="ye">${this.crew}</b> · ${this.host ? "YOU HOLD THE TERMINALS" : "THE HOST HOLDS THE TERMINALS"} · TELL A FRIEND THE CODE` : `<input data-crewcode="1" maxlength="8" placeholder="INVITE CODE" style="text-transform:uppercase"> <span class="cy" data-act="joinCrew">${crewButton("JOIN A CREW", this.game.hud.touch)}</span> <span class="dim">OR RUN WITH A CREW ON A CONTRACT ABOVE AND READ THE CODE OUT</span>`}</div>
       <div class="sh">EXPLORE</div><div class="ln dim">TRAVEL TO A DISTRICT FROM THE MAP WITH THE THREAT LIVE: <span class="cy" data-explore="1">${crewButton("EXPLORE THIS DISTRICT", this.game.hud.touch)}</span></div></div></div>`;
   }

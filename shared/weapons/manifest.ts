@@ -4,9 +4,9 @@
  * resolution, and by the TTK harness in CI. Stage 6 folds this into the
  * shared stat manifest with the Fairness Lint.
  */
-export type WeaponId = "lease_breaker" | "repo_hammer" | "stack_smg" | "longwave" | "phage" | "shock_baton" | "directive" | "clockeater";
-/** Weapons 7–8 unlock in the campaign (the arc and a Clockeater gig); a file must own `weapon:<id>` to spawn with one. */
-export const CAMPAIGN_WEAPONS: readonly WeaponId[] = ["directive", "clockeater"];
+export type WeaponId = "lease_breaker" | "repo_hammer" | "stack_smg" | "longwave" | "phage" | "shock_baton" | "directive" | "clockeater" | "neon_edge";
+/** Weapons 7–9 unlock in the campaign; a file must own `weapon:<id>` to spawn with one. */
+export const CAMPAIGN_WEAPONS: readonly WeaponId[] = ["directive", "clockeater", "neon_edge"];
 export type WeaponClass = "hitscan" | "pellet" | "charge" | "launcher" | "melee";
 export type AltKind = "ads" | "slug" | "brace" | "quickshot" | "sticky" | "lunge";
 
@@ -245,6 +245,27 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     tracer: 0xff3ec9,
     burst: { count: 3, rpm: 1200 },
     alt: { kind: "ads", spreadMult: 0.5, recoilMult: 0.8, moveMult: 0.8, zoom: 1.5 },
+    ttkBand: TTK_BAND,
+  },
+  neon_edge: {
+    id: "neon_edge",
+    slot: 9,
+    name: "NEON EDGE",
+    cls: "melee",
+    rpm: 120,
+    damage: 34,
+    headMult: 1,
+    legMult: 1,
+    magSize: 0,
+    reloadTime: 0,
+    seatFrac: 1,
+    pellets: 1,
+    spread: 0,
+    range: R(1.5, 1.6, 1.6, 1, 1.6),
+    recoil: { vertical: 0.0, horizontal: 0.0, pattern: [[0, 0]], jitter: 0.0, recover: 10 },
+    tracer: 0xff3ec9,
+    melee: { reach: 1.6, arc: 0.7, chainRange: 2.2, chainDamage: 12, stun: 0.4 },
+    alt: { kind: "lunge", damage: 52, cooldown: 4.5, lungeSpeed: 18, lungeTime: 0.2 },
     ttkBand: TTK_BAND,
   },
 };

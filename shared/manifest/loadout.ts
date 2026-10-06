@@ -32,7 +32,7 @@ export type Ranks = Partial<Record<WeaponId, number>>;
 export const SANDBOX_RANKS: Ranks = Object.fromEntries(WEAPON_LIST.map((w) => [w.id, 30])) as Ranks;
 
 /** Depth at which each weapon becomes available. Everything baseline is in by Depth 5. */
-export const WEAPON_DEPTH: Record<WeaponId, number> = { lease_breaker: 1, stack_smg: 1, shock_baton: 1, repo_hammer: 2, longwave: 3, phage: 5, directive: 1, clockeater: 1 };
+export const WEAPON_DEPTH: Record<WeaponId, number> = { lease_breaker: 1, stack_smg: 1, shock_baton: 1, repo_hammer: 2, longwave: 3, phage: 5, directive: 1, clockeater: 1, neon_edge: 1 };
 
 /** Fields a campaign client may carry that a PvP loadout must not: stripped at room join, then re-validated. */
 export const CAMPAIGN_ONLY_FIELDS: readonly string[] = ["protocols", "campaign"];
