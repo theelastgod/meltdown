@@ -759,6 +759,35 @@ export function steamLift(name: string | undefined): number {
   return (name && DISTRICT_LIFT[name]) || STREET_LIFT;
 }
 
+/** How wide a grate puff draws, against the size the street shipped with. Lease Row stays 1. Tint, rise, and point count stay put. */
+export const STREET_BULK = 1;
+
+const DISTRICT_BULK: Record<string, number> = {
+  deadletter_docks: 0.42,
+  repo_depot: 1.35,
+  night_market: 2.4,
+  relay_heights: 0.72,
+  ash_canal: 1.85,
+  glass_mile: 0.55,
+  bone_market: 1.15,
+  cold_vault: 0.28,
+  neon_chapel: 0.88,
+  slag_pit: 2.1,
+  wire_garden: 1.55,
+  red_kiln: 1.95,
+  paper_wharf: 0.62,
+  velvet_court: 0.48,
+  rust_crown: 1.68,
+  salt_stairs: 0.35,
+  lamp_bazaar: 2.65,
+  debt_orchard: 1.22,
+  black_relay: 0.18,
+};
+
+export function steamBulk(name: string | undefined): number {
+  return (name && DISTRICT_BULK[name]) || STREET_BULK;
+}
+
 /** Steam from the grates: additive points rising and fading, one cloud per vent. */
 export class Steam {
   readonly object: THREE.Points;
@@ -784,18 +813,18 @@ export class Steam {
     geo.setAttribute("info", new THREE.BufferAttribute(info, 3));
     const tint = steamTint(name);
     this.mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 }, uTint: { value: new THREE.Color(tint[0], tint[1], tint[2]) }, uLift: { value: steamLift(name) } },
+      uniforms: { uTime: { value: 0 }, uTint: { value: new THREE.Color(tint[0], tint[1], tint[2]) }, uLift: { value: steamLift(name) }, uBulk: { value: steamBulk(name) } },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       vertexShader: `
-        uniform float uTime; uniform float uLift; attribute vec3 info; varying float vA;
+        uniform float uTime; uniform float uLift; uniform float uBulk; attribute vec3 info; varying float vA;
         void main() {
           float life = fract(uTime * uLift + info.x);
           vec3 p = position + vec3(info.y * life * 2.5, life * 3.2, info.z * life * 2.5);
           vA = (1.0 - life) * smoothstep(0.0, 0.15, life);
           vec4 mv = modelViewMatrix * vec4(p, 1.0);
-          gl_PointSize = (18.0 + life * 60.0) * (30.0 / max(1.0, -mv.z));
+          gl_PointSize = (18.0 + life * 60.0) * uBulk * (30.0 / max(1.0, -mv.z));
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
