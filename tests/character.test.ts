@@ -292,7 +292,7 @@ describe("a leased citizen", () => {
     expect(arm.r, "the sleeve went dark with the shoe").toBeGreaterThan(0.9);
     const life = readFileSync(new URL("../client/render/life.ts", import.meta.url), "utf8");
     const escort = readFileSync(new URL("../client/render/escort.ts", import.meta.url), "utf8");
-    expect(life).toMatch(/paintCitizenLimbs\(this\.limbs, count\)/);
+    expect(life).toMatch(/paintCitizenLimbs\(this\.limbs, count, place\)/);
     expect(escort).toMatch(/paintCitizenLimbs\(this\.cellLimbs, n\)/);
   });
 

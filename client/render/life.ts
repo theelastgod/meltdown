@@ -149,16 +149,46 @@ export function citizenSwing(time: number, speed: number, phase: number, idle: b
   return idle ? 0 : CITIZEN_STRIDE * Math.cos(time * 6 * speed + phase);
 }
 
-/** Shoes are not the coat, and the shin below the hem is not the coat either. One instance colour on the limb mesh the crowd already draws. */
-const LIMB_SHOE = new THREE.Color(0x14110e);
-const LIMB_SHIN = new THREE.Color(0x4a433c);
-const LIMB_CLOTH = new THREE.Color(1, 1, 1);
-export function paintCitizenLimbs(mesh: THREE.InstancedMesh, citizens: number): void {
+/** Shoes, shins, and sleeves. Lease Row keeps the colours the crowd shipped with. */
+export const STREET_LIMB = { shoe: 0x14110e, shin: 0x4a433c, cloth: 0xffffff } as const;
+
+const DISTRICT_LIMB: Record<string, { shoe: number; shin: number; cloth: number }> = {
+  deadletter_docks: { shoe: 0x101820, shin: 0x3a5560, cloth: 0xc5d8e0 },
+  repo_depot: { shoe: 0x1c140c, shin: 0x5a4030, cloth: 0xe0c090 },
+  night_market: { shoe: 0x180810, shin: 0x603040, cloth: 0xf0b0c8 },
+  relay_heights: { shoe: 0x12161c, shin: 0x4a5560, cloth: 0xd8e4ee },
+  ash_canal: { shoe: 0x0c1612, shin: 0x2e5040, cloth: 0xa8d0b8 },
+  glass_mile: { shoe: 0x160c18, shin: 0x503060, cloth: 0xf0d8f4 },
+  bone_market: { shoe: 0x1a120c, shin: 0x584030, cloth: 0xe0c8a8 },
+  cold_vault: { shoe: 0x101418, shin: 0x3a4848, cloth: 0xc8e8e4 },
+  neon_chapel: { shoe: 0x140818, shin: 0x482868, cloth: 0xe0b0f0 },
+  slag_pit: { shoe: 0x1a0c08, shin: 0x583020, cloth: 0xf0a080 },
+  wire_garden: { shoe: 0x0c140e, shin: 0x2a4830, cloth: 0xb8e8c0 },
+  red_kiln: { shoe: 0x180a08, shin: 0x582820, cloth: 0xf0a098 },
+  paper_wharf: { shoe: 0x121416, shin: 0x40484c, cloth: 0xd0d8dc },
+  velvet_court: { shoe: 0x160810, shin: 0x502030, cloth: 0xf0a0b8 },
+  rust_crown: { shoe: 0x18100a, shin: 0x584028, cloth: 0xe8c090 },
+  salt_stairs: { shoe: 0x121418, shin: 0x404850, cloth: 0xe4e8ee },
+  lamp_bazaar: { shoe: 0x180810, shin: 0x582838, cloth: 0xf8b0d0 },
+  debt_orchard: { shoe: 0x12140c, shin: 0x3a4820, cloth: 0xd0e090 },
+  black_relay: { shoe: 0x0c0e12, shin: 0x303840, cloth: 0xa8b0b8 },
+};
+
+export function limbRead(name: string | undefined): { shoe: number; shin: number; cloth: number } {
+  return (name && DISTRICT_LIMB[name]) || STREET_LIMB;
+}
+
+/** One instance colour on the limb mesh the crowd already draws. A room with no name keeps Lease Row. */
+export function paintCitizenLimbs(mesh: THREE.InstancedMesh, citizens: number, place?: string): void {
+  const limb = limbRead(place);
+  const shoe = new THREE.Color(limb.shoe);
+  const shin = new THREE.Color(limb.shin);
+  const cloth = new THREE.Color(limb.cloth);
   const n = CITIZEN_LIMBS.length;
   for (let i = 0; i < citizens; i++) {
     for (let k = 0; k < n; k++) {
       const kind = CITIZEN_LIMBS[k]!.kind;
-      mesh.setColorAt(i * n + k, kind === "shoe" ? LIMB_SHOE : kind === "shin" ? LIMB_SHIN : LIMB_CLOTH);
+      mesh.setColorAt(i * n + k, kind === "shoe" ? shoe : kind === "shin" ? shin : cloth);
     }
   }
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
@@ -222,7 +252,7 @@ export class Crowd {
     bindPlate(lampMat, "tex_lamp");
     this.body = new THREE.InstancedMesh(citizenBodyGeometry(), dark, count);
     this.limbs = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), dark, count * CITIZEN_LIMBS.length);
-    paintCitizenLimbs(this.limbs, count);
+    paintCitizenLimbs(this.limbs, count, place);
     this.hood = new THREE.InstancedMesh(citizenHoodGeometry(), hoodMat, count);
     this.lamp = new THREE.InstancedMesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), lampMat, count);
     this.brolly = new THREE.InstancedMesh(new THREE.ConeGeometry(0.75, 0.25, 8, 1, true), brollyMat, count);
