@@ -594,10 +594,40 @@ export class Steam {
   }
 }
 
+/** Cyan, magenta, gold. Lease Row and the indoor rooms keep them. */
+export const STREET_INK: readonly [string, string, string] = ["#35f2ff", "#ff3ec9", "#ffe34a"];
+
+const DISTRICT_INK: Record<string, readonly [string, string, string]> = {
+  deadletter_docks: ["#1a9ec4", "#d24aa8", "#e8d06a"],
+  repo_depot: ["#3ad4b8", "#ff6a55", "#ffb02e"],
+  night_market: ["#3affc8", "#ff2aa0", "#ffee66"],
+  relay_heights: ["#9ad4ff", "#c090e8", "#f4f0c8"],
+  ash_canal: ["#2ad49a", "#c850b8", "#c8e070"],
+  glass_mile: ["#b8f6ff", "#ff9ae0", "#fff0d0"],
+  bone_market: ["#7ad8c4", "#e08870", "#ffd090"],
+  cold_vault: ["#a8fff4", "#8890ff", "#e4f0c0"],
+  neon_chapel: ["#48d8ff", "#c040ff", "#ffe070"],
+  slag_pit: ["#20c8b0", "#ff4060", "#ff8020"],
+  wire_garden: ["#48f090", "#ff48c8", "#c8ff48"],
+  red_kiln: ["#40d8d0", "#ff3040", "#ffb040"],
+  paper_wharf: ["#8ec0d8", "#c890b0", "#e0d4a8"],
+  velvet_court: ["#30c8e0", "#ff2068", "#ffc860"],
+  rust_crown: ["#48b8a0", "#e05830", "#f0a040"],
+  salt_stairs: ["#c8e8f4", "#e0b0d0", "#f2efe0"],
+  lamp_bazaar: ["#58e0ff", "#ff68c0", "#ffe058"],
+  debt_orchard: ["#68e070", "#d86898", "#b8d848"],
+  black_relay: ["#1a7088", "#802050", "#908028"],
+};
+
+export function adInk(name: string | undefined): readonly [string, string, string] {
+  return (name && DISTRICT_INK[name]) || STREET_INK;
+}
+
 /** Holographic ad tickers: VANTAGE copy scrolling on translucent panels that cycle colour. */
 export class HoloAds {
   readonly group = new THREE.Group();
   private panels: { mesh: THREE.Mesh; canvas: HTMLCanvasElement; tex: THREE.CanvasTexture; mat: THREE.MeshBasicMaterial; offset: number; line: number }[] = [];
+  private readonly district?: string;
   private acc = 0;
   private lastRedraw = 0;
   /** ticker redraws so far (probes) */
@@ -607,7 +637,8 @@ export class HoloAds {
   static readonly RING = 600;
   private readonly ring = new Float64Array(HoloAds.RING);
   static readonly COPY = ["LEASE RENEWAL IS AUTOMATIC", "COMPLY · COMPLY · COMPLY", "VANTAGE INTEGRITY SYSTEMS", "YOUR FUTURE HAS BEEN PRICED", "STABILITY IS A SERVICE", "REPORT UNLISTED FILES", "SLEEP IS COLLATERAL", "THE KERNEL SEES THE CITY WHOLE"];
-  constructor(ads: readonly { x: number; y: number; z: number; rotY: number; w: number; h: number }[]) {
+  constructor(ads: readonly { x: number; y: number; z: number; rotY: number; w: number; h: number }[], district?: string) {
+    this.district = district;
     ads.forEach((a, i) => {
       const canvas = document.createElement("canvas");
       canvas.width = 512;
@@ -624,10 +655,11 @@ export class HoloAds {
     this.redraw(0);
   }
   private redraw(time: number): void {
+    const ink = adInk(this.district);
     for (const p of this.panels) {
       const g = p.canvas.getContext("2d")!;
       const hue = (time * 12 + p.offset) % 360;
-      const fg = hue < 120 ? "#35f2ff" : hue < 240 ? "#ff3ec9" : "#ffe34a";
+      const fg = hue < 120 ? ink[0] : hue < 240 ? ink[1] : ink[2];
       g.clearRect(0, 0, 512, 128);
       g.fillStyle = "rgba(6,10,18,0.55)";
       g.fillRect(0, 0, 512, 128);
@@ -866,7 +898,7 @@ export class CityLife {
     if (this.tram) this.group.add(this.tram.group);
     this.steam = level.vents?.length ? new Steam(level.vents, 28, 3, level.name) : null;
     if (this.steam) this.group.add(this.steam.object);
-    this.ads = level.ads?.length ? new HoloAds(level.ads) : null;
+    this.ads = level.ads?.length ? new HoloAds(level.ads, level.name) : null;
     if (this.ads) this.group.add(this.ads.group);
     this.sky = new Sky(skyline, (level.skylineSeed ?? 1) + 3, level.name);
     this.group.add(this.sky.group);
