@@ -841,12 +841,42 @@ export function skyBlink(name: string | undefined): number {
   return (name && DISTRICT_BLINK[name]) || STREET_BLINK;
 }
 
+/** How the airship circles and bobs. Lease Row keeps the drift the skyline shipped with. */
+export const STREET_SHIP = { orbit: 0.012, bob: 0.2 } as const;
+
+const DISTRICT_SHIP: Record<string, { orbit: number; bob: number }> = {
+  deadletter_docks: { orbit: 0.006, bob: 0.08 },
+  repo_depot: { orbit: 0.015, bob: 0.28 },
+  night_market: { orbit: 0.022, bob: 0.46 },
+  relay_heights: { orbit: 0.018, bob: 0.11 },
+  ash_canal: { orbit: 0.007, bob: 0.09 },
+  glass_mile: { orbit: 0.026, bob: 0.16 },
+  bone_market: { orbit: 0.01, bob: 0.24 },
+  cold_vault: { orbit: 0.008, bob: 0.06 },
+  neon_chapel: { orbit: 0.011, bob: 0.14 },
+  slag_pit: { orbit: 0.014, bob: 0.32 },
+  wire_garden: { orbit: 0.016, bob: 0.21 },
+  red_kiln: { orbit: 0.013, bob: 0.36 },
+  paper_wharf: { orbit: 0.009, bob: 0.1 },
+  velvet_court: { orbit: 0.01, bob: 0.18 },
+  rust_crown: { orbit: 0.017, bob: 0.26 },
+  salt_stairs: { orbit: 0.02, bob: 0.13 },
+  lamp_bazaar: { orbit: 0.019, bob: 0.42 },
+  debt_orchard: { orbit: 0.011, bob: 0.19 },
+  black_relay: { orbit: 0.024, bob: 0.07 },
+};
+
+export function shipPace(name: string | undefined): { orbit: number; bob: number } {
+  return (name && DISTRICT_SHIP[name]) || STREET_SHIP;
+}
+
 /** Aircraft-warning blinkers on the tallest slabs and an airship drifting over the district. */
 export class Sky {
   readonly group = new THREE.Group();
   private mat: THREE.ShaderMaterial;
   private ship: THREE.Group;
   private shipAngle = 0;
+  private readonly pace: { orbit: number; bob: number };
   /** blinkers on the skyline */
   readonly blinkers: number;
   constructor(skyline: THREE.Group, seed = 9, name?: string) {
@@ -865,6 +895,7 @@ export class Sky {
     geo.setAttribute("position", new THREE.Float32BufferAttribute(tops, 3));
     geo.setAttribute("phase", new THREE.Float32BufferAttribute(phase, 1));
     const mark = skyMark(name);
+    this.pace = shipPace(name);
     const blink = new THREE.Color(mark.blink[0], mark.blink[1], mark.blink[2]);
     this.mat = new THREE.ShaderMaterial({
       uniforms: { uTime: { value: 0 }, uBlink: { value: blink }, uRate: { value: skyBlink(name) } },
@@ -908,9 +939,9 @@ export class Sky {
   }
   update(dt: number, time: number): void {
     this.mat.uniforms.uTime!.value = time;
-    this.shipAngle += dt * 0.012;
+    this.shipAngle += dt * this.pace.orbit;
     const r = 210;
-    this.ship.position.set(Math.cos(this.shipAngle) * r, 150 + Math.sin(time * 0.2) * 3, Math.sin(this.shipAngle) * r - 60);
+    this.ship.position.set(Math.cos(this.shipAngle) * r, 150 + Math.sin(time * this.pace.bob) * 3, Math.sin(this.shipAngle) * r - 60);
     this.ship.rotation.y = -this.shipAngle;
   }
 }
