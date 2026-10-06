@@ -190,6 +190,37 @@ export function paVoice(name: string | undefined): readonly number[] {
   return STREET_VOICE.map((hz) => Math.round(hz * scale));
 }
 
+/** The monorail whoosh. Lease Row opens at 200, peaks at 1800, and the motor falls 210 to 140. */
+export type TramPass = { open: number; peak: number; close: number; motorFrom: number; motorTo: number };
+
+export const STREET_TRAM: TramPass = { open: 200, peak: 1800, close: 160, motorFrom: 210, motorTo: 140 };
+
+const DISTRICT_TRAM: Record<string, TramPass> = {
+  deadletter_docks: { open: 90, peak: 700, close: 70, motorFrom: 110, motorTo: 70 },
+  repo_depot: { open: 240, peak: 1400, close: 180, motorFrom: 260, motorTo: 160 },
+  night_market: { open: 320, peak: 2400, close: 220, motorFrom: 340, motorTo: 200 },
+  relay_heights: { open: 400, peak: 3200, close: 280, motorFrom: 480, motorTo: 300 },
+  ash_canal: { open: 70, peak: 520, close: 55, motorFrom: 90, motorTo: 50 },
+  glass_mile: { open: 480, peak: 4000, close: 360, motorFrom: 620, motorTo: 400 },
+  bone_market: { open: 140, peak: 900, close: 110, motorFrom: 150, motorTo: 90 },
+  cold_vault: { open: 360, peak: 2800, close: 240, motorFrom: 420, motorTo: 260 },
+  neon_chapel: { open: 180, peak: 1100, close: 130, motorFrom: 190, motorTo: 120 },
+  slag_pit: { open: 110, peak: 640, close: 80, motorFrom: 130, motorTo: 75 },
+  wire_garden: { open: 280, peak: 2100, close: 200, motorFrom: 300, motorTo: 180 },
+  red_kiln: { open: 60, peak: 420, close: 48, motorFrom: 80, motorTo: 42 },
+  paper_wharf: { open: 160, peak: 1200, close: 140, motorFrom: 170, motorTo: 100 },
+  velvet_court: { open: 130, peak: 800, close: 95, motorFrom: 140, motorTo: 85 },
+  rust_crown: { open: 210, peak: 1600, close: 150, motorFrom: 230, motorTo: 145 },
+  salt_stairs: { open: 300, peak: 2200, close: 190, motorFrom: 360, motorTo: 220 },
+  lamp_bazaar: { open: 260, peak: 1900, close: 170, motorFrom: 280, motorTo: 175 },
+  debt_orchard: { open: 100, peak: 760, close: 85, motorFrom: 120, motorTo: 65 },
+  black_relay: { open: 520, peak: 4600, close: 400, motorFrom: 700, motorTo: 440 },
+};
+
+export function tramPass(name: string | undefined): TramPass {
+  return (name && DISTRICT_TRAM[name]) || STREET_TRAM;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -455,19 +486,20 @@ export class GameAudio {
   }
 
   /** The monorail passing overhead: a rising then falling whoosh with a doppler-shifted motor note. */
-  tram(): void {
+  tram(place?: string): void {
     this.count("tram");
     if (!this.ctx) return;
     const ctx = this.ctx;
     const t = ctx.currentTime;
+    const pass = tramPass(place);
     const src = ctx.createBufferSource();
     src.buffer = this.noiseBuf;
     src.loop = true;
     const f = ctx.createBiquadFilter();
     f.type = "lowpass";
-    f.frequency.setValueAtTime(200, t);
-    f.frequency.exponentialRampToValueAtTime(1800, t + 1.1);
-    f.frequency.exponentialRampToValueAtTime(160, t + 2.6);
+    f.frequency.setValueAtTime(pass.open, t);
+    f.frequency.exponentialRampToValueAtTime(pass.peak, t + 1.1);
+    f.frequency.exponentialRampToValueAtTime(pass.close, t + 2.6);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.001, t);
     g.gain.exponentialRampToValueAtTime(0.3, t + 1.1);
@@ -478,7 +510,7 @@ export class GameAudio {
     src.connect(f).connect(g).connect(p).connect(this.sfx!);
     src.start(t);
     src.stop(t + 2.8);
-    this.tone({ dur: 2.4, from: 210, to: 140, gain: 0.08, type: "sawtooth" });
+    this.tone({ dur: 2.4, from: pass.motorFrom, to: pass.motorTo, gain: 0.08, type: "sawtooth" });
     this.tone({ dur: 0.5, from: 60, to: 45, gain: 0.25 });
   }
 

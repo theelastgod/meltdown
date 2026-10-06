@@ -1635,7 +1635,7 @@ export class Game {
     // a live charge near the file (Stage 93): until now a frag landing behind you was drawn in the
     // world and nowhere else, and four and a half metres of blast arrived out of silence
     this.hud.setThreats(threatMarks(this.liveProjectiles(), { x: p.pos.x, y: p.pos.y, z: p.pos.z, yaw: view.yaw }));
-    if (this.renderer.life.tram?.passing) this.audio.tram();
+    if (this.renderer.life.tram?.passing) this.audio.tram(this.world.level.name);
     this.stats.frames++;
     // the shots the map heard (Stage 104), pruned on the map's own clock
     this.pings = prunePings(this.pings, this.hud.mapClock);
