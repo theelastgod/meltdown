@@ -145,8 +145,37 @@ export const CITIZEN_STRIDE = 0.42;
  * The stride angle for a citizen's right leg at a time: on the same clock as the bob, so the body is
  * highest when the feet pass each other (the swing crosses zero where |sin| peaks). Idle: none.
  */
-export function citizenSwing(time: number, speed: number, phase: number, idle: boolean): number {
-  return idle ? 0 : CITIZEN_STRIDE * Math.cos(time * 6 * speed + phase);
+/** Stride clock in radians per second at speed 1. Lease Row keeps the step the crowd shipped with. */
+export const STREET_STRIDE = 6;
+
+const DISTRICT_STRIDE: Record<string, number> = {
+  deadletter_docks: 3.4,
+  repo_depot: 5.2,
+  night_market: 9.1,
+  relay_heights: 7.6,
+  ash_canal: 3.1,
+  glass_mile: 8.4,
+  bone_market: 4.2,
+  cold_vault: 2.8,
+  neon_chapel: 4.8,
+  slag_pit: 6.8,
+  wire_garden: 5.6,
+  red_kiln: 7.2,
+  paper_wharf: 3.8,
+  velvet_court: 4.5,
+  rust_crown: 6.4,
+  salt_stairs: 8.8,
+  lamp_bazaar: 9.6,
+  debt_orchard: 5.0,
+  black_relay: 2.4,
+};
+
+export function strideClock(name: string | undefined): number {
+  return (name && DISTRICT_STRIDE[name]) || STREET_STRIDE;
+}
+
+export function citizenSwing(time: number, speed: number, phase: number, idle: boolean, clock = STREET_STRIDE): number {
+  return idle ? 0 : CITIZEN_STRIDE * Math.cos(time * clock * speed + phase);
 }
 
 /** Shoes, shins, and sleeves. Lease Row keeps the colours the crowd shipped with. */
@@ -266,10 +295,12 @@ export class Crowd {
   private p = new THREE.Vector3();
   private sc = new THREE.Vector3();
   private time = 0;
+  private readonly stride: number;
 
   constructor(loops: readonly WalkLoop[], count: number, seed = 11, place?: string) {
     const rnd = lcg(seed);
     const cast = crowdCast(place);
+    this.stride = strideClock(place);
     const dark = new THREE.MeshStandardMaterial({ color: 0x0b0d13, roughness: 0.9, metalness: 0.05 });
     const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1, vertexColors: true });
     // white, so a district's lamp is the instance colour and Lease Row stays amber
@@ -344,7 +375,7 @@ export class Crowd {
       ped.x = o.x;
       ped.z = o.z;
       ped.yaw = ped.dir > 0 ? o.yaw : o.yaw + Math.PI;
-      const bob = ped.idle ? 0 : Math.abs(Math.sin(this.time * 6 * ped.speed + ped.bob)) * 0.04;
+      const bob = ped.idle ? 0 : Math.abs(Math.sin(this.time * this.stride * ped.speed + ped.bob)) * 0.04;
       this.q.setFromAxisAngle(UP, ped.yaw);
       // body and hood share one feet-at-the-origin frame and the citizen's own height
       this.sc.set(ped.h * ped.bulk, ped.h, ped.h * ped.bulk);
@@ -353,7 +384,7 @@ export class Crowd {
       this.body.setMatrixAt(i, this.m);
       this.hood.setMatrixAt(i, this.m);
       // the limbs: each about its hip or shoulder, in the citizen's own frame, then placed with it
-      const swing = citizenSwing(this.time, ped.speed, ped.bob, ped.idle);
+      const swing = citizenSwing(this.time, ped.speed, ped.bob, ped.idle, this.stride);
       for (let k = 0; k < CITIZEN_LIMBS.length; k++) {
         const L = CITIZEN_LIMBS[k]!;
         const a = swing * L.swing * L.side;
