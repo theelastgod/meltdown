@@ -28,6 +28,7 @@ import { pitPurse, SCRIP_PIT_ID } from "@shared/sim/pit";
 import { CITY_LIMIT_ID } from "@shared/sim/limit";
 import { GREEN_HOLD_ID } from "@shared/sim/preserve";
 import { streetClinic } from "@shared/sim/clinic";
+import { buyNeonEdge } from "@shared/sim/edgeshop";
 import { DEFAULT_LEVEL_ID, levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
 import { HOSTS } from "./config";
@@ -376,6 +377,23 @@ export class Campaign {
     this.game.file.scrip += a.wallet.scrip - before;
     this.game.hud.setFile(this.game.file.view());
     this.game.hud.alert("◆ CLINIC", false, 3);
+  }
+
+  /** Six hundred scrip unlocks the sword that is already in the game. */
+  private buyEdge(): void {
+    const a = this.account();
+    const before = a.wallet.scrip;
+    const bought = buyNeonEdge(a);
+    if (!bought.ok) {
+      this.game.hud.alert(`◆ ${bought.reason ?? "NO SALE"}`, true, 3);
+      return;
+    }
+    this.save = campaignOf(a);
+    this.persistLocal();
+    this.game.file.scrip += a.wallet.scrip - before;
+    this.game.hud.setFile(this.game.file.view());
+    this.game.hud.alert("◆ NEON EDGE", false, 3);
+    this.renderContracts();
   }
 
   /** The pit's dummy, dead, pays wallet scrip once. The HUD scrip line is that same purse. */
@@ -1103,6 +1121,7 @@ export class Campaign {
       ? `<div class="sh">THE PRESERVE</div><div class="ln"><span class="cy" data-act="lease_row">${crewButton("LEASE ROW", this.game.hud.touch)}</span></div>`
       : `<div class="sh">THE PRESERVE</div><div class="ln dim">TREES INSIDE THE CITY: <span class="cy" data-act="green_hold">${crewButton("THE PRESERVE", this.game.hud.touch)}</span></div>`;
     const clinic = `<div class="sh">THE CLINIC</div><div class="ln dim">THIRTY SCRIP, FORTY HEALTH, NEVER PAST YOUR MAXIMUM: <span class="cy" data-act="clinic">${crewButton("CLINIC", this.game.hud.touch)}</span></div>`;
+    const edge = `<div class="sh">THE COUNTER</div><div class="ln dim">NEON EDGE · 600 SCRIP: <span class="cy" data-act="buy_edge">${crewButton("BUY NEON EDGE", this.game.hud.touch)}</span></div>`;
     return `<div class="hd">▲ CONTRACTS · ${faction ? `${faction.name}` : "NO HOUSE"} <span class="x" data-act="close">${closeHint("J", this.game.hud.touch)}</span></div>
       <div class="ln">THREAT <b>${threat.rating}</b> · ${threat.line}${threat.named ? " · THE PA CALLS YOUR NAME" : ""}</div>
       <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => testimonyLine(k, v)).join(" · ") || "— NOTHING ON THE RECORD —"} · ENDINGS OPEN: ${endings}</div>
@@ -1115,6 +1134,7 @@ export class Campaign {
       ${limit}
       ${preserve}
       ${clinic}
+      ${edge}
       <div class="sh">EXPLORE</div><div class="ln dim">TRAVEL TO A DISTRICT FROM THE MAP WITH THE THREAT LIVE: <span class="cy" data-explore="1">${crewButton("EXPLORE THIS DISTRICT", this.game.hud.touch)}</span></div></div></div>`;
   }
 
@@ -1126,6 +1146,7 @@ export class Campaign {
     else if (el.dataset.act === "city_limit") this.game.travel(CITY_LIMIT_ID);
     else if (el.dataset.act === "green_hold") this.game.travel(GREEN_HOLD_ID);
     else if (el.dataset.act === "clinic") this.healAtClinic();
+    else if (el.dataset.act === "buy_edge") this.buyEdge();
     else if (el.dataset.act === "lease_row") this.game.travel(DEFAULT_LEVEL_ID);
     else if (el.dataset.act === "buy_decor" && el.dataset.decor) void this.buyDecor(el.dataset.decor);
     else if (el.dataset.launch) {
