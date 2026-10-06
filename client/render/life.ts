@@ -716,14 +716,37 @@ export class Sky {
 }
 
 /**
- * Sign flicker for one named place. The docks and the heights share a cast.
- * Relay Heights shivers thin and drops often. Every other room keeps the breathe the signs already had.
+ * Sign flicker for one named place. Relay Heights keeps its thin shiver.
+ * Eighteen districts each keep their own. Lease Row and the indoor rooms keep the breathe the signs already had.
  */
 export const SIGN_FLICKER = "{ float b = 0.86 + 0.14 * sin(uTime * 2.3 + vFlick * 9.0); float drop = step(0.985, fract(sin(floor(uTime * 6.0) + vFlick * 31.7) * 43758.5)); gl_FragColor.rgb *= b * (1.0 - 0.7 * drop); }";
 export const HEIGHTS_FLICKER = "{ float b = 0.96 + 0.04 * sin(uTime * 11.0 + vFlick * 9.0); float drop = step(0.72, fract(sin(floor(uTime * 18.0) + vFlick * 31.7) * 43758.5)); gl_FragColor.rgb *= b * (1.0 - 0.95 * drop); }";
 
+/** One cast each. Not a new mesh: the same sign shader, a different breathe. */
+const DISTRICT_FLICKER: Record<string, string> = {
+  deadletter_docks: "{ float b = 0.74 + 0.26 * sin(uTime * 0.37 + vFlick * 2.1); float drop = step(0.996, fract(sin(floor(uTime * 0.8) + vFlick * 17.3) * 24631.9)); gl_FragColor.rgb *= b * (1.0 - 0.85 * drop); }",
+  repo_depot: "{ float blink = step(0.48, fract(uTime * 2.6 + vFlick * 0.17)); gl_FragColor.rgb *= mix(0.22, 1.0, blink); gl_FragColor.r *= 1.0 + 0.18 * blink; gl_FragColor.b *= 1.0 - 0.12 * blink; }",
+  night_market: "{ float b = 0.9 + 0.1 * sin(uTime * 21.0 + vFlick * 47.0); gl_FragColor.rgb *= b; }",
+  ash_canal: "{ float tide = 0.5 + 0.5 * sin(uTime * 0.16 + vFlick * 1.1); gl_FragColor.rgb *= 0.58 + 0.34 * tide; }",
+  glass_mile: "{ float glint = step(0.965, fract(sin(floor(uTime * 9.0) + vFlick * 53.0) * 173.4)); gl_FragColor.rgb *= 0.97 + 0.28 * glint; }",
+  bone_market: "{ float st = step(0.82, fract(sin(floor(uTime * 5.5) + vFlick * 12.4) * 91.7)); float b = 0.66 + 0.08 * sin(uTime * 1.9 + vFlick * 4.0); gl_FragColor.rgb *= b * (1.0 - 0.45 * st); }",
+  cold_vault: "{ float snap = step(0.88, fract(uTime * 0.33 + vFlick * 0.05)); gl_FragColor.rgb *= mix(1.0, 0.15, snap); gl_FragColor.b *= 1.0 + 0.1 * (1.0 - snap); }",
+  neon_chapel: "{ float breath = 0.5 + 0.5 * sin(uTime * 0.28 + vFlick * 1.7); gl_FragColor.r *= 0.75 + 0.3 * breath; gl_FragColor.g *= 0.62 + 0.12 * breath; gl_FragColor.b *= 0.8 + 0.4 * breath; }",
+  slag_pit: "{ float drop = step(0.58, fract(sin(floor(uTime * 8.4) + vFlick * 27.9) * 6151.3)); gl_FragColor.rgb *= 1.0 - 0.72 * drop; gl_FragColor.r *= 1.14; gl_FragColor.b *= 0.86; }",
+  wire_garden: "{ float p = 0.5 + 0.5 * sin(uTime * 1.45 + vFlick * 6.2); gl_FragColor.g *= 0.7 + 0.55 * p; gl_FragColor.r *= 0.9 - 0.08 * p; gl_FragColor.b *= 0.88; }",
+  red_kiln: "{ float throb = 0.5 + 0.5 * sin(uTime * 0.9 + vFlick * 3.3); gl_FragColor.rgb *= 0.72 + 0.28 * throb; gl_FragColor.r *= 1.0 + 0.22 * throb; gl_FragColor.b *= 0.8 - 0.1 * throb; }",
+  paper_wharf: "{ float g = dot(gl_FragColor.rgb, vec3(0.3, 0.59, 0.11)); float k = 0.25 + 0.35 * (0.5 + 0.5 * sin(uTime * 0.19 + vFlick * 0.8)); gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(g * 0.85), k); }",
+  velvet_court: "{ float b = 0.54 + 0.07 * sin(uTime * 0.64 + vFlick * 2.4); gl_FragColor.rgb *= b; }",
+  rust_crown: "{ float flake = step(0.9, fract(sin(floor(uTime * 3.7) + vFlick * 22.2) * 318.6)); float flake2 = step(0.93, fract(sin(floor(uTime * 1.3) + vFlick * 8.8) * 720.2)); gl_FragColor.rgb *= 0.84 * (1.0 - 0.78 * flake) * (1.0 - 0.62 * flake2); }",
+  salt_stairs: "{ float tick = step(0.975, fract(uTime * 7.5 + vFlick * 4.4)); gl_FragColor.rgb = mix(gl_FragColor.rgb * 0.93, vec3(1.0), tick); }",
+  lamp_bazaar: "{ float pop = step(0.955, fract(sin(floor(uTime * 2.1) + vFlick * 15.6) * 440.8)); gl_FragColor.rgb *= 0.9 + 0.7 * pop; }",
+  debt_orchard: "{ float sway = sin(uTime * 0.41 + vFlick * 1.2); gl_FragColor.r *= 0.9 + 0.16 * sway; gl_FragColor.g *= 0.82 + 0.1 * sway; gl_FragColor.b *= 0.7 + 0.04 * sway; }",
+  black_relay: "{ float alive = step(0.992, fract(sin(floor(uTime * 0.55) + vFlick * 6.6) * 1289.4)); gl_FragColor.rgb *= 0.05 + 0.95 * alive; }",
+};
+
 export function signFlickerGlsl(name: string | undefined): string {
-  return name === "relay_heights" ? HEIGHTS_FLICKER : SIGN_FLICKER;
+  if (name === "relay_heights") return HEIGHTS_FLICKER;
+  return (name && DISTRICT_FLICKER[name]) || SIGN_FLICKER;
 }
 
 /** Sign flicker: the atlas material takes a time uniform; each sign quad carries a phase attribute. */
