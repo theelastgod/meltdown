@@ -1154,17 +1154,19 @@ import { DISTRICT_SPECS, generateDistrict } from "./city";
 import { deadletterOffice, HUB_LEVEL_ID } from "./hub";
 import { whiteOffice, WHITE_LEVEL_ID } from "./white";
 import { fileApartment, FILE_APARTMENT_ID } from "./apartment";
+import { scripPit, SCRIP_PIT_ID } from "./pit";
 
 export const DEFAULT_LEVEL_ID = "lease_row";
 
-export const LEVEL_IDS: readonly string[] = ["drainage_yard", ...DISTRICT_SPECS.map((d) => d.id), HUB_LEVEL_ID, WHITE_LEVEL_ID, FILE_APARTMENT_ID];
+export const LEVEL_IDS: readonly string[] = ["drainage_yard", ...DISTRICT_SPECS.map((d) => d.id), HUB_LEVEL_ID, WHITE_LEVEL_ID, FILE_APARTMENT_ID, SCRIP_PIT_ID];
 
-/** What the district select lists, without building the levels. The apartment is a room, not a district row. */
+/** What the district select lists, without building the levels. The apartment and the pit are rooms, not district rows. */
 export const LEVEL_INFO: readonly { id: string; displayName: string; cast: DistrictCast; kind: "range" | "district" | "hub" | "room" }[] = [
   { id: "drainage_yard", displayName: "DRAINAGE YARD (RANGE)", cast: "magenta", kind: "range" },
   ...DISTRICT_SPECS.map((d) => ({ id: d.id, displayName: d.displayName, cast: d.cast, kind: "district" as const })),
   { id: HUB_LEVEL_ID, displayName: "DEADLETTER OFFICE (HUB)", cast: "cyan", kind: "hub" },
   { id: FILE_APARTMENT_ID, displayName: "FILE APARTMENT", cast: "cyan", kind: "room" },
+  { id: SCRIP_PIT_ID, displayName: "SCRIP PIT", cast: "amber", kind: "room" },
 ];
 /** Levels the district select does not list (reached by the campaign only). */
 export const HIDDEN_LEVELS: readonly string[] = [WHITE_LEVEL_ID];
@@ -1181,6 +1183,7 @@ export function levelById(id: string | null | undefined): LevelDef {
   if (id === HUB_LEVEL_ID) return deadletterOffice();
   if (id === WHITE_LEVEL_ID) return whiteOffice();
   if (id === FILE_APARTMENT_ID) return fileApartment();
+  if (id === SCRIP_PIT_ID) return scripPit();
   const spec = DISTRICT_SPECS.find((d) => d.id === id) ?? DISTRICT_SPECS.find((d) => d.id === DEFAULT_LEVEL_ID)!;
   return generateDistrict(spec);
 }

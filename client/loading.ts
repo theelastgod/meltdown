@@ -17,6 +17,7 @@ import { DEFAULT_LEVEL_ID, LEVEL_INFO } from "@shared/sim/level";
 import { HUB_LEVEL_ID } from "@shared/sim/hub";
 import { WHITE_LEVEL_ID } from "@shared/sim/white";
 import { FILE_APARTMENT_ID } from "@shared/sim/apartment";
+import { SCRIP_PIT_ID } from "@shared/sim/pit";
 import { missionById } from "@shared/campaign/missions";
 import { crewCodeFromSocket } from "@shared/net/crew";
 import { MISSION_ART } from "./missionart";
@@ -95,6 +96,8 @@ export function loadingFor(href: string, over: Partial<LoadingDescriptor> = {}):
     d = { kind: "district", title: placeName(level), line: "WAKE · THE PUBLIC ROOM" };
   } else if (level === FILE_APARTMENT_ID) {
     d = { kind: "mode", title: placeName(level), line: "THE APARTMENT · OFF THE STREET" };
+  } else if (level === SCRIP_PIT_ID) {
+    d = { kind: "mode", title: placeName(level), line: "THE PIT · ONE DUMMY" };
   } else if (level === "drainage_yard") {
     d = { kind: "mode", title: placeName(level), line: "THE RANGE · OFFLINE, WITH DUMMIES" };
   } else if (level === HUB_LEVEL_ID) {

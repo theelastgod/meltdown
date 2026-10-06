@@ -24,6 +24,7 @@ import { eventBanner, eventCard, eventMarker, eventObjective } from "./cityevent
 import { nearestStart, runCard, runClock, runObjective, splitBanner, startPrompt, type RunCourse, type RunView } from "./cityrun";
 import type { RadarSpot } from "./hud/radar";
 import { apartmentDoorSpot, APARTMENT_DECOR, APARTMENT_DOOR_M, buyApartmentDecor, FILE_APARTMENT_ID, placeApartmentDecor } from "@shared/sim/apartment";
+import { pitPurse, SCRIP_PIT_ID } from "@shared/sim/pit";
 import { DEFAULT_LEVEL_ID, levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
 import { HOSTS } from "./config";
@@ -355,7 +356,24 @@ export class Campaign {
   }
 
   /** One sim tick (offline modes): step the mission and present what happened. */
+  /** The pit's dummy, dead, pays wallet scrip once. The HUD scrip line is that same purse. */
+  private payPit(): void {
+    if (this.game.levelId !== SCRIP_PIT_ID) return;
+    const dummy = this.game.world.dummies[0];
+    if (!dummy) return;
+    const a = this.account();
+    const before = a.wallet.scrip;
+    if (!pitPurse(a, dummy.alive)) return;
+    this.game.file.scrip += a.wallet.scrip - before;
+    this.game.hud.setFile(this.game.file.view());
+    this.game.hud.alert("◆ +25 SCRIP", false, 3);
+  }
+
   tick(events: readonly SimEvent[]): void {
+    if (this.game.levelId === SCRIP_PIT_ID) {
+      this.payPit();
+      return;
+    }
     if (this.game.levelId === FILE_APARTMENT_ID) {
       this.apartmentDoor();
       return;
@@ -1051,6 +1069,9 @@ export class Campaign {
     const apartment = this.game.levelId === FILE_APARTMENT_ID
       ? `<div class="sh">THE APARTMENT</div><div class="ln"><span class="cy" data-act="lease_row">${crewButton("LEASE ROW", this.game.hud.touch)}</span></div><div class="sh">THE ROOM</div>${decor}`
       : `<div class="sh">THE APARTMENT</div><div class="ln dim">ONE ROOM, OFF THE STREET: <span class="cy" data-act="file_apartment">${crewButton("THE APARTMENT", this.game.hud.touch)}</span></div>`;
+    const pit = this.game.levelId === SCRIP_PIT_ID
+      ? `<div class="sh">THE PIT</div><div class="ln"><span class="cy" data-act="lease_row">${crewButton("LEASE ROW", this.game.hud.touch)}</span></div>`
+      : `<div class="sh">THE PIT</div><div class="ln dim">ONE DUMMY, OFF THE STREET: <span class="cy" data-act="scrip_pit">${crewButton("THE PIT", this.game.hud.touch)}</span></div>`;
     return `<div class="hd">▲ CONTRACTS · ${faction ? `${faction.name}` : "NO HOUSE"} <span class="x" data-act="close">${closeHint("J", this.game.hud.touch)}</span></div>
       <div class="ln">THREAT <b>${threat.rating}</b> · ${threat.line}${threat.named ? " · THE PA CALLS YOUR NAME" : ""}</div>
       <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => testimonyLine(k, v)).join(" · ") || "— NOTHING ON THE RECORD —"} · ENDINGS OPEN: ${endings}</div>
@@ -1059,6 +1080,7 @@ export class Campaign {
       <div class="sh">CAMPAIGN WEAPONS</div><div class="ln cws">${CAMPAIGN_WEAPONS.map((w) => weaponCard(w, weaponName(w), (c.weapons as readonly string[]).includes(w))).join("")}</div>
       <div class="sh">CREW</div><div class="ln">${this.crew ? `IN CREW <b class="ye">${this.crew}</b> · ${this.host ? "YOU HOLD THE TERMINALS" : "THE HOST HOLDS THE TERMINALS"} · TELL A FRIEND THE CODE` : `<input data-crewcode="1" maxlength="8" placeholder="INVITE CODE" style="text-transform:uppercase"> <span class="cy" data-act="joinCrew">${crewButton("JOIN A CREW", this.game.hud.touch)}</span> <span class="dim">OR RUN WITH A CREW ON A CONTRACT ABOVE AND READ THE CODE OUT</span>`}</div>
       ${apartment}
+      ${pit}
       <div class="sh">EXPLORE</div><div class="ln dim">TRAVEL TO A DISTRICT FROM THE MAP WITH THE THREAT LIVE: <span class="cy" data-explore="1">${crewButton("EXPLORE THIS DISTRICT", this.game.hud.touch)}</span></div></div></div>`;
   }
 
@@ -1066,6 +1088,7 @@ export class Campaign {
   onPanelAction(el: HTMLElement): void {
     if (el.dataset.act === "close") this.toggleContracts(false);
     else if (el.dataset.act === "file_apartment") this.game.travel(FILE_APARTMENT_ID);
+    else if (el.dataset.act === "scrip_pit") this.game.travel(SCRIP_PIT_ID);
     else if (el.dataset.act === "lease_row") this.game.travel(DEFAULT_LEVEL_ID);
     else if (el.dataset.act === "buy_decor" && el.dataset.decor) void this.buyDecor(el.dataset.decor);
     else if (el.dataset.launch) {

@@ -9,6 +9,7 @@ import { TRAM_CABIN, tramAboard, tramHail } from "@shared/sim/tram";
 import { WAKE } from "@shared/sim/wake";
 import type { InputFrame } from "@shared/sim/input";
 import { FILE_APARTMENT_ID } from "@shared/sim/apartment";
+import { SCRIP_PIT_ID } from "@shared/sim/pit";
 import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS, levelDisplayName } from "@shared/sim/level";
 import { itemName } from "@shared/manifest/items";
 import { eyeHeight, eyePos, reviveMotion, type PlayerState } from "@shared/sim/player";
@@ -517,8 +518,8 @@ export class Game {
     if (!LEVEL_IDS.includes(levelId) || levelId === this.levelId) return;
     const u = new URL(location.href);
     u.searchParams.set("level", levelId);
-    // the apartment is not a city room: a street socket would pull the page back to the district
-    if (levelId === FILE_APARTMENT_ID || this.levelId === FILE_APARTMENT_ID) {
+    // the apartment and the pit are not city rooms: a street socket would pull the page back to the district
+    if (levelId === FILE_APARTMENT_ID || this.levelId === FILE_APARTMENT_ID || levelId === SCRIP_PIT_ID || this.levelId === SCRIP_PIT_ID) {
       for (const k of ["net", "city", "token", "mission", "mode", "explore", "from", "gate", "job", "back"]) u.searchParams.delete(k);
     } else if (this.net?.token) u.searchParams.set("token", this.net.token);
     this.renderer.post.kick(1);
