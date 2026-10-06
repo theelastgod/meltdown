@@ -670,6 +670,35 @@ export function steamTint(name: string | undefined): readonly [number, number, n
   return (name && DISTRICT_STEAM[name]) || STREET_STEAM;
 }
 
+/** How fast grate steam cycles. Lease Row keeps the rise the street shipped with. Colour stays steamTint. */
+export const STREET_LIFT = 0.28;
+
+const DISTRICT_LIFT: Record<string, number> = {
+  deadletter_docks: 0.08,
+  repo_depot: 0.41,
+  night_market: 0.66,
+  relay_heights: 0.19,
+  ash_canal: 0.11,
+  glass_mile: 0.52,
+  bone_market: 0.15,
+  cold_vault: 0.06,
+  neon_chapel: 0.33,
+  slag_pit: 0.48,
+  wire_garden: 0.37,
+  red_kiln: 0.58,
+  paper_wharf: 0.13,
+  velvet_court: 0.24,
+  rust_crown: 0.31,
+  salt_stairs: 0.72,
+  lamp_bazaar: 0.44,
+  debt_orchard: 0.22,
+  black_relay: 0.17,
+};
+
+export function steamLift(name: string | undefined): number {
+  return (name && DISTRICT_LIFT[name]) || STREET_LIFT;
+}
+
 /** Steam from the grates: additive points rising and fading, one cloud per vent. */
 export class Steam {
   readonly object: THREE.Points;
@@ -695,14 +724,14 @@ export class Steam {
     geo.setAttribute("info", new THREE.BufferAttribute(info, 3));
     const tint = steamTint(name);
     this.mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 }, uTint: { value: new THREE.Color(tint[0], tint[1], tint[2]) } },
+      uniforms: { uTime: { value: 0 }, uTint: { value: new THREE.Color(tint[0], tint[1], tint[2]) }, uLift: { value: steamLift(name) } },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       vertexShader: `
-        uniform float uTime; attribute vec3 info; varying float vA;
+        uniform float uTime; uniform float uLift; attribute vec3 info; varying float vA;
         void main() {
-          float life = fract(uTime * 0.28 + info.x);
+          float life = fract(uTime * uLift + info.x);
           vec3 p = position + vec3(info.y * life * 2.5, life * 3.2, info.z * life * 2.5);
           vA = (1.0 - life) * smoothstep(0.0, 0.15, life);
           vec4 mv = modelViewMatrix * vec4(p, 1.0);
