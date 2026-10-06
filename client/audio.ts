@@ -252,6 +252,37 @@ export function farTraffic(name: string | undefined): FarTraffic {
   return (name && DISTRICT_TRAFFIC[name]) || STREET_TRAFFIC;
 }
 
+/** Crowd murmur in the bed: two vowel bands, each on its own slow breath. Lease Row keeps the pair the city already had. */
+export type CrowdMurmur = { aHz: number; aRate: number; aGain: number; bHz: number; bRate: number; bGain: number };
+
+export const STREET_MURMUR: CrowdMurmur = { aHz: 420, aRate: 0.23, aGain: 0.05, bHz: 760, bRate: 0.31, bGain: 0.035 };
+
+const DISTRICT_MURMUR: Record<string, CrowdMurmur> = {
+  deadletter_docks: { aHz: 280, aRate: 0.12, aGain: 0.07, bHz: 540, bRate: 0.18, bGain: 0.04 },
+  repo_depot: { aHz: 360, aRate: 0.28, aGain: 0.04, bHz: 640, bRate: 0.4, bGain: 0.03 },
+  night_market: { aHz: 510, aRate: 0.45, aGain: 0.08, bHz: 980, bRate: 0.55, bGain: 0.06 },
+  relay_heights: { aHz: 680, aRate: 0.15, aGain: 0.02, bHz: 1400, bRate: 0.22, bGain: 0.015 },
+  ash_canal: { aHz: 240, aRate: 0.1, aGain: 0.06, bHz: 480, bRate: 0.16, bGain: 0.045 },
+  glass_mile: { aHz: 880, aRate: 0.2, aGain: 0.025, bHz: 1600, bRate: 0.27, bGain: 0.018 },
+  bone_market: { aHz: 330, aRate: 0.19, aGain: 0.055, bHz: 610, bRate: 0.26, bGain: 0.038 },
+  cold_vault: { aHz: 460, aRate: 0.14, aGain: 0.03, bHz: 920, bRate: 0.21, bGain: 0.022 },
+  neon_chapel: { aHz: 390, aRate: 0.08, aGain: 0.065, bHz: 720, bRate: 0.13, bGain: 0.05 },
+  slag_pit: { aHz: 300, aRate: 0.33, aGain: 0.07, bHz: 580, bRate: 0.42, bGain: 0.048 },
+  wire_garden: { aHz: 740, aRate: 0.36, aGain: 0.035, bHz: 1280, bRate: 0.48, bGain: 0.028 },
+  red_kiln: { aHz: 350, aRate: 0.25, aGain: 0.06, bHz: 670, bRate: 0.34, bGain: 0.042 },
+  paper_wharf: { aHz: 260, aRate: 0.11, aGain: 0.045, bHz: 500, bRate: 0.17, bGain: 0.032 },
+  velvet_court: { aHz: 400, aRate: 0.09, aGain: 0.075, bHz: 800, bRate: 0.14, bGain: 0.055 },
+  rust_crown: { aHz: 440, aRate: 0.3, aGain: 0.048, bHz: 860, bRate: 0.38, bGain: 0.036 },
+  salt_stairs: { aHz: 560, aRate: 0.17, aGain: 0.028, bHz: 1100, bRate: 0.24, bGain: 0.02 },
+  lamp_bazaar: { aHz: 620, aRate: 0.41, aGain: 0.058, bHz: 1180, bRate: 0.5, bGain: 0.04 },
+  debt_orchard: { aHz: 310, aRate: 0.13, aGain: 0.052, bHz: 590, bRate: 0.2, bGain: 0.034 },
+  black_relay: { aHz: 900, aRate: 0.06, aGain: 0.018, bHz: 1800, bRate: 0.11, bGain: 0.012 },
+};
+
+export function crowdMurmur(name: string | undefined): CrowdMurmur {
+  return (name && DISTRICT_MURMUR[name]) || STREET_MURMUR;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -290,6 +321,14 @@ export class GameAudio {
     traffic: AudioBufferSourceNode;
     trafficFilter: BiquadFilterNode;
     swell: OscillatorNode;
+    murmurA: BiquadFilterNode;
+    murmurAGain: GainNode;
+    murmurALfo: OscillatorNode;
+    murmurADepth: GainNode;
+    murmurB: BiquadFilterNode;
+    murmurBGain: GainNode;
+    murmurBLfo: OscillatorNode;
+    murmurBDepth: GainNode;
   } | null = null;
   /** The level asked for, remembered until there is a bed to put it on. */
   private bedName: string | undefined;
@@ -412,7 +451,7 @@ export class GameAudio {
     traffic.start();
     swell.start();
     // crowd murmur: two narrow bands of noise around the vowel range, each breathing on its own slow LFO
-    for (const [freq, rate, gain] of [[420, 0.23, 0.05], [760, 0.31, 0.035]] as const) {
+    const murmurBand = (freq: number, rate: number, gain: number) => {
       const src = ctx.createBufferSource();
       src.buffer = this.noiseBuf;
       src.loop = true;
@@ -425,17 +464,25 @@ export class GameAudio {
       cg.gain.value = gain;
       const lfo = ctx.createOscillator();
       lfo.frequency.value = rate;
-      const lg = ctx.createGain();
-      lg.gain.value = gain * 0.7;
-      lfo.connect(lg).connect(cg.gain);
+      const depth = ctx.createGain();
+      depth.gain.value = gain * 0.7;
+      lfo.connect(depth).connect(cg.gain);
       src.connect(bp).connect(cg).connect(g);
       src.start();
       lfo.start();
-    }
+      return { bp, cg, lfo, depth };
+    };
+    const streetMurmur = crowdMurmur(undefined);
+    const murmurA = murmurBand(streetMurmur.aHz, streetMurmur.aRate, streetMurmur.aGain);
+    const murmurB = murmurBand(streetMurmur.bHz, streetMurmur.bRate, streetMurmur.bGain);
     this.bedLevel = 1;
     g.gain.linearRampToValueAtTime(this.bedLevel * this.volumes.bed, ctx.currentTime + 2.5);
     this.bed = { gain: g };
-    this.bedNodes = { rainFilter: rf, rainGain: rg, hum, humGain: hg, buzz, buzzFilter: bf, buzzGain: bg, traffic, trafficFilter: tf, swell };
+    this.bedNodes = {
+      rainFilter: rf, rainGain: rg, hum, humGain: hg, buzz, buzzFilter: bf, buzzGain: bg, traffic, trafficFilter: tf, swell,
+      murmurA: murmurA.bp, murmurAGain: murmurA.cg, murmurALfo: murmurA.lfo, murmurADepth: murmurA.depth,
+      murmurB: murmurB.bp, murmurBGain: murmurB.cg, murmurBLfo: murmurB.lfo, murmurBDepth: murmurB.depth,
+    };
     this.tune(this.bedName);
   }
 
@@ -460,6 +507,15 @@ export class GameAudio {
     n.traffic.playbackRate.value = far.rate;
     n.trafficFilter.frequency.value = far.cut;
     n.swell.frequency.value = far.swell;
+    const murmur = crowdMurmur(levelName);
+    n.murmurA.frequency.value = murmur.aHz;
+    n.murmurAGain.gain.value = murmur.aGain;
+    n.murmurALfo.frequency.value = murmur.aRate;
+    n.murmurADepth.gain.value = murmur.aGain * 0.7;
+    n.murmurB.frequency.value = murmur.bHz;
+    n.murmurBGain.gain.value = murmur.bGain;
+    n.murmurBLfo.frequency.value = murmur.bRate;
+    n.murmurBDepth.gain.value = murmur.bGain * 0.7;
   }
 
   /** What the bed nodes are holding, or null before the bed exists. */
