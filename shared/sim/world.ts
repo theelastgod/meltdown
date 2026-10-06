@@ -348,7 +348,11 @@ export class World {
   /** Movement + weapon for one player: the shots it asks for, not yet fired at anybody. */
   private stepOne(p: PlayerState, input: TickInput, opts: StepOpts): FireRequest[] {
     const events: PlayerEvent[] = [];
-    const reqs = stepPlayer(p, input, this.level.boxes, events, this.seed, this.gravityMult);
+    const line = this.level.tram;
+    // The seat follows this input's tick. A server burst runs several inputs inside one `step`, and a
+    // snapshot replays them while `this.tick` is still the acked tick; `this.tick` would park every
+    // one of those inputs on the same car.
+    const reqs = stepPlayer(p, input, this.level.boxes, events, this.seed, this.gravityMult, line ? { line, time: input.tick * SIM_DT } : null);
     for (const ev of events) this.emit({ tick: this.tick, playerId: p.id, ...ev }, opts);
     // already dead when the tick began; dying *during* it is settled by the order of `step`
     return p.alive ? reqs : [];

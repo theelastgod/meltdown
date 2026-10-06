@@ -5,6 +5,7 @@ import type { RunMsg } from "@shared/net/protocol";
 import { loadSettings, type Settings } from "./settings";
 import { skinByToken } from "@shared/economy/catalog";
 import { MAX_CATCHUP_TICKS, MOVE, SIM_DT, SIM_HZ } from "@shared/sim/constants";
+import { TRAM_CABIN, tramAboard, tramHail } from "@shared/sim/tram";
 import { WAKE } from "@shared/sim/wake";
 import type { InputFrame } from "@shared/sim/input";
 import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS, levelDisplayName } from "@shared/sim/level";
@@ -166,6 +167,9 @@ export class Game {
   private stepSide = 1;
   /** City soundscape schedule (sim ticks, so headless probes hear the same city): next siren, next PA line, PA index. */
   private city = { nextSiren: 0, nextPa: 0, paIndex: 0, sirenSide: 1 };
+  /** One alert when a car comes into hail, and one when the file is in it. */
+  private rideHint = false;
+  private rideOffHint = false;
   /** Every PA line the city has spoken this session (probe-readable). */
   readonly cityLog: string[] = [];
   /** Identity & rituals: social messages received, and the room id of the file I owe a Debt to (−1 none). */
@@ -856,6 +860,55 @@ export class Game {
     "REPORT UNLISTED NEIGHBOURS. GRATITUDE IS CREDITED.",
     "{D} INTEGRITY: NOMINAL. WAKE ACTIVITY: BEING PRICED.",
   ];
+
+  /**
+   * Draw the car the file is sitting in on the sim seat. The mesh otherwise runs on render time, which
+   * is what the city probe measures while the tick stands still. Hold is applied at the end of that
+   * update, so a frame with no rider still sees the city clock.
+   */
+  private syncTram(): void {
+    const tram = this.renderer.life.tram;
+    if (tram) tram.hold = null;
+    const line = this.world.level.tram;
+    if (!tram || !line || !this.player.alive) {
+      this.rideHint = false;
+      this.rideOffHint = false;
+      return;
+    }
+    const feet = this.player.pos;
+    const ticks = [this.world.tick, Math.max(0, this.world.tick - 1)];
+    const pending = this.net?.pendingInputs;
+    const last = pending && pending.length > 0 ? pending[pending.length - 1] : undefined;
+    if (last) ticks.push(last.tick);
+    let car: ReturnType<typeof tramAboard> = null;
+    let best = Infinity;
+    for (const tick of ticks) {
+      const hit = tramAboard(line, tick * SIM_DT, feet);
+      if (!hit) continue;
+      const d = Math.hypot(hit.x - feet.x, hit.z - feet.z);
+      if (d < best) {
+        car = hit;
+        best = d;
+      }
+    }
+    if (car) {
+      // The feet were snapped to this car. Pin the hull to them, not to a tick the render clock guessed.
+      tram.hold = { dir: car.dir, x: feet.x, y: feet.y - TRAM_CABIN, z: feet.z };
+      if (!this.rideOffHint) {
+        this.hud.alert("LOOK AHEAD AND JUMP — STEP OFF", false, 2);
+        this.rideOffHint = true;
+      }
+      this.rideHint = false;
+      return;
+    }
+    this.rideOffHint = false;
+    const hail = tramHail(line, this.world.tick * SIM_DT, feet) ?? tramHail(line, Math.max(0, this.world.tick - 1) * SIM_DT, feet);
+    if (hail && !this.rideHint) {
+      this.hud.alert("LOOK UP AND JUMP — RIDE THE CAR", false, 2);
+      this.rideHint = true;
+    }
+    if (!hail) this.rideHint = false;
+  }
 
   /** The city keeps talking whether or not you fight: sirens across the district and PA lines on a sim-tick schedule. */
   private cityTick(): void {
@@ -1617,6 +1670,7 @@ export class Game {
       this.ghostPose = this.ghost.pose();
       this.renderer.hub.setGhost(this.ghostPose);
     }
+    this.syncTram();
     this.renderer.render(view, rdt);
     const shown = this.renderer.view();
     this.hud.setReticle({ ...shown.reticle, arc: shown.aim.arc });

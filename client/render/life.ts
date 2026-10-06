@@ -9,6 +9,7 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { LevelDef, TramLine, WalkLoop } from "@shared/sim/level";
+import { TRAM_SPEED } from "@shared/sim/tram";
 import { bindPlate, PALETTE } from "./city";
 import { placeFeel } from "./places";
 import { markShared } from "./dispose";
@@ -469,6 +470,8 @@ export class Tram {
   /** true on the frame a car is within `near` of the listener (audio cue) */
   passing = false;
   private lastPassing = false;
+  /** The car the file is sitting in, drawn on the sim seat. Null keeps the city clock. */
+  hold: { dir: 1 | -1; x: number; y: number; z: number } | null = null;
   constructor(private line: TramLine, name?: string) {
     const livery = tramLivery(name);
     for (const dir of [1, -1] as const) {
@@ -526,7 +529,7 @@ export class Tram {
   update(dt: number, listener: THREE.Vector3): void {
     this.time += dt;
     const L = this.line.to - this.line.from;
-    const speed = 17;
+    const speed = TRAM_SPEED;
     let near = false;
     for (const c of this.cars) {
       const t = ((this.time + c.phase) % this.line.period) * speed;
@@ -539,6 +542,14 @@ export class Tram {
     }
     this.passing = near && !this.lastPassing;
     this.lastPassing = near;
+    const held = this.hold;
+    if (held) {
+      const car = this.cars.find((c) => c.dir === held.dir);
+      if (car) {
+        car.mesh.visible = true;
+        car.mesh.position.set(held.x, held.y, held.z);
+      }
+    }
   }
 }
 

@@ -1,6 +1,6 @@
 import { MOVE, SIM_DT } from "./constants";
 import { Btn, has, type InputFrame } from "./input";
-import type { Box, SpawnPoint } from "./level";
+import type { Box, SpawnPoint, TramLine } from "./level";
 import { capsuleFree, groundContact, resolveCapsule } from "./collision";
 import { createWeaponState, currentWeapon, resetWeaponState, stepWeapon, stockDefOf, weaponMoveMult, type FireRequest, type WeaponEvent, type WeaponState } from "./weapons";
 import { ADDITIVE, baseSheet, STAT_KEYS, type StatSheet } from "../manifest/stats";
@@ -8,6 +8,7 @@ import type { WeaponDef } from "../weapons/manifest";
 import type { ChipMechanic } from "../manifest/chips";
 import { GRENADE_LIST } from "../weapons/manifest";
 import { type Vec3, v3, clone, copy, set, lenXZ, yawDir, yawRight, clamp, dot, wrapAngle, hyp2 } from "../math/vec3";
+import { TRAM_STEP_OFF, tramAboard, tramHail } from "./tram";
 
 export type Stance = "stand" | "crouch" | "slide" | "mantle";
 
@@ -334,7 +335,7 @@ function findMantle(p: PlayerState, boxes: readonly Box[]): Vec3 | null {
  * Advance one player one fixed tick. Pure: only mutates `p`. Emits events into
  * `events`. Returns the weapon's fire requests for the world to resolve.
  */
-export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Box[], events: PlayerEvent[], roomSeed = 1, gravityMult = 1): FireRequest[] {
+export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Box[], events: PlayerEvent[], roomSeed = 1, gravityMult = 1, ride: { line: TramLine; time: number } | null = null): FireRequest[] {
   const dt = SIM_DT;
   const r = MOVE.capsuleRadius;
 
@@ -346,6 +347,34 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
   const pressed = input.buttons & ~p.prevButtons;
   const prevButtons = p.prevButtons;
   p.prevButtons = input.buttons;
+  const jumpPressed = has(pressed, Btn.Jump);
+  // The monorail is a seat, not a box. Pitch above zero looks up (`viewDir`); looking up and jumping
+  // under a car puts the feet in the cabin. Jumping again steps off the side, past the cabin width,
+  // and the ordinary jump runs. A jump that only left the seat would fall back into it: the hop is
+  // about 1.2 m and the cabin is that tall. Both sides share the line and this input's tick.
+  let seated = false;
+  if (p.alive && ride) {
+    const aboard = tramAboard(ride.line, ride.time, p.pos);
+    if (aboard && jumpPressed) {
+      if (ride.line.axis === "x") p.pos.z += TRAM_STEP_OFF;
+      else p.pos.x += TRAM_STEP_OFF;
+    } else {
+      const hail = !aboard && jumpPressed && p.pitch > 0.55 ? tramHail(ride.line, ride.time, p.pos) : null;
+      const car = aboard ?? hail;
+      if (car) {
+        seated = true;
+        p.pos.x = car.x;
+        p.pos.y = car.y;
+        p.pos.z = car.z;
+        set(p.vel, car.vx, 0, car.vz);
+        p.grounded = true;
+        p.airTime = 0;
+        p.jumpBuffer = 0;
+        p.stance = "stand";
+        p.height = MOVE.standHeight;
+      }
+    }
+  }
   // weapon first: its requests use this tick's view; movement follows
   const wevents: WeaponEvent[] = [];
   const defOf = (slot: number) => weaponDefOf(p, slot);
@@ -358,8 +387,8 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
   // shield regen
   p.sinceDamage += dt;
   if (p.shield < p.maxShield && p.sinceDamage >= SHIELD_REGEN_DELAY * mods.shieldDelay) p.shield = Math.min(p.maxShield, p.shield + SHIELD_REGEN_RATE * mods.shieldRegen * dt);
+  if (seated) return reqs;
 
-  const jumpPressed = has(pressed, Btn.Jump);
   const crouchPressed = has(pressed, Btn.Crouch);
   const crouchHeld = has(input.buttons, Btn.Crouch);
   const sprintHeld = has(input.buttons, Btn.Sprint);
