@@ -872,6 +872,35 @@ export function adCrawl(name: string | undefined): number {
   return (name && DISTRICT_CRAWL[name]) || STREET_CRAWL;
 }
 
+/** How solid a hologram panel reads. Lease Row keeps the veil the ticker shipped with. Ink, copy, and crawl stay put. */
+export const STREET_VEIL = 0.85;
+
+const DISTRICT_VEIL: Record<string, number> = {
+  deadletter_docks: 0.32,
+  repo_depot: 0.46,
+  night_market: 0.98,
+  relay_heights: 0.74,
+  ash_canal: 0.28,
+  glass_mile: 0.92,
+  bone_market: 0.41,
+  cold_vault: 0.18,
+  neon_chapel: 0.55,
+  slag_pit: 0.8,
+  wire_garden: 0.62,
+  red_kiln: 0.88,
+  paper_wharf: 0.36,
+  velvet_court: 0.5,
+  rust_crown: 0.68,
+  salt_stairs: 0.84,
+  lamp_bazaar: 1,
+  debt_orchard: 0.58,
+  black_relay: 0.12,
+};
+
+export function adVeil(name: string | undefined): number {
+  return (name && DISTRICT_VEIL[name]) || STREET_VEIL;
+}
+
 /** Holographic ad tickers: VANTAGE copy scrolling on translucent panels that cycle colour. */
 export class HoloAds {
   readonly group = new THREE.Group();
@@ -894,7 +923,7 @@ export class HoloAds {
       canvas.height = 128;
       const tex = new THREE.CanvasTexture(canvas);
       tex.colorSpace = THREE.SRGBColorSpace;
-      const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+      const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: adVeil(district), side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(a.w, a.h), mat);
       mesh.position.set(a.x, a.y, a.z);
       mesh.rotation.y = a.rotY;
