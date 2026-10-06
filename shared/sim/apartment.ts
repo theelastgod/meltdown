@@ -10,12 +10,13 @@ import { campaignOf } from "../campaign/save";
 
 export const FILE_APARTMENT_ID = "file_apartment";
 
-/** Four pieces of cloth the room can hold. Scrip buys them. It does not buy a stat. */
+/** Five pieces of cloth the room can hold. Scrip buys them. It does not buy a stat. */
 export const APARTMENT_DECOR = [
   { id: "cot", name: "COT", scrip: 120, box: [-5.4, 0, -3.4, -3.2, 0.42, -1.9] },
   { id: "lamp", name: "LAMP", scrip: 80, box: [4.55, 0, -3.7, 4.85, 1.7, -3.35] },
   { id: "crate", name: "CRATE", scrip: 40, box: [-5.4, 0, 2.35, -4.45, 0.55, 3.25] },
   { id: "plant", name: "PLANT", scrip: 60, box: [4.35, 0, 2.15, 5.25, 0.75, 3.05] },
+  { id: "bench", name: "BENCH", scrip: 50, box: [5.15, 0, -2.2, 5.85, 0.42, 1.2] },
 ] as const;
 
 /** Spend scrip on one decoration. A second buy of the same id does not spend, and nothing is refunded. */

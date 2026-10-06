@@ -43,7 +43,8 @@ describe("the file apartment", () => {
     const apt = levelById(FILE_APARTMENT_ID);
     placeApartmentDecor(apt, APARTMENT_DECOR.map((d) => d.id));
     expect(apt.boxes.filter((b) => b.tag === "crate")).toHaveLength(1);
-    expect(apt.boxes.filter((b) => APARTMENT_DECOR.some((d) => d.id === b.tag))).toHaveLength(4);
+    expect(apt.boxes.filter((b) => b.tag === "bench")).toHaveLength(1);
+    expect(apt.boxes.filter((b) => APARTMENT_DECOR.some((d) => d.id === b.tag))).toHaveLength(5);
     const spot = apartmentDoorSpot(apt)!;
     const spawn = apt.spawns[0]!.pos;
     for (const b of apt.boxes.filter((x) => APARTMENT_DECOR.some((d) => d.id === x.tag))) {
@@ -57,7 +58,22 @@ describe("the file apartment", () => {
     }
     const lease = levelById("lease_row");
     const n = lease.boxes.length;
-    placeApartmentDecor(lease, ["cot", "lamp", "crate", "plant"]);
+    placeApartmentDecor(lease, ["cot", "lamp", "crate", "plant", "bench"]);
     expect(lease.boxes).toHaveLength(n);
+  });
+
+  it("sells a bench for scrip and does not raise a stat", () => {
+    const a = createAccount("bench");
+    a.wallet.scrip = 50;
+    const before = { scrip: a.wallet.scrip, protocols: [...campaignOf(a).protocols], weapons: [...campaignOf(a).weapons], worn: [...campaignOf(a).worn] };
+    expect(APARTMENT_DECOR.find((d) => d.id === "bench")?.scrip).toBe(50);
+    expect(buyApartmentDecor(a, "bench").ok).toBe(true);
+    expect(a.wallet.scrip).toBe(before.scrip - 50);
+    expect(campaignOf(a).decor).toEqual(["bench"]);
+    expect(campaignOf(a).protocols).toEqual(before.protocols);
+    expect(campaignOf(a).weapons).toEqual(before.weapons);
+    expect(campaignOf(a).worn).toEqual(before.worn);
+    expect(buyApartmentDecor(a, "bench")).toEqual({ ok: false, reason: "ALREADY OWNED" });
+    expect(a.wallet.scrip).toBe(0);
   });
 });
