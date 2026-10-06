@@ -13,10 +13,10 @@ import { TRAM_STEP_OFF, tramAboard, tramHail } from "./tram";
 export type Stance = "stand" | "crouch" | "slide" | "mantle";
 
 /** Baseline Blank: 70 integrity + 30 shield = 100 effective, the TTK harness's target. */
-export const BASE_HEALTH = 70;
-export const BASE_SHIELD = 30;
-export const SHIELD_REGEN_RATE = 15;
-export const SHIELD_REGEN_DELAY = 4;
+export const BASE_HEALTH = 110;
+export const BASE_SHIELD = 50;
+export const SHIELD_REGEN_RATE = 28;
+export const SHIELD_REGEN_DELAY = 1.8;
 
 /** Apply a build to a player: derived caps, flip rate, grenades. Called at spawn and on loadout change. */
 /** A player's per-weapon kit (firmware definitions, chip mods, mechanics), keyed by weapon slot. */

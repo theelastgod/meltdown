@@ -187,7 +187,8 @@ describe("VANTAGE AI", () => {
     expect(shots.length).toBeGreaterThan(2);
     expect(w.wasps[0]!.state).toBe("chase");
     const hp = p.health;
-    expect(hp).toBeLessThanOrEqual(100);
+    expect(hp).toBeLessThanOrEqual(110);
+    expect(hp).toBeGreaterThan(60);
     // shoot it down
     const wasp = w.wasps[0]!;
     let dead = false;
@@ -214,8 +215,8 @@ describe("VANTAGE AI", () => {
     const ev = run(w, 1, 300, 0);
     const beams = ev.filter((e) => e.type === "mechBeam");
     expect(beams.length).toBeGreaterThan(0);
-    expect(p.health).toBeLessThan(100);
-    expect(MECH.damage).toBe(25);
+    expect(p.health).toBeGreaterThan(80);
+    expect(MECH.damage).toBe(8);
   });
 });
 

@@ -105,7 +105,7 @@ export const DUMMY_RADIUS = MOVE.capsuleRadius;
  * How long a fresh life in a PvE world (the city) is unseen by wasps and mechs.
  * Long enough to see the street you just opened into. A shot you fire ends it early.
  */
-export const STREET_SHIELD_SECONDS = 8;
+export const STREET_SHIELD_SECONDS = 16;
 export const DUMMY_HEIGHT = MOVE.standHeight;
 export const WASP_RADIUS = 0.45;
 export const WASP_HEIGHT = 0.9;

@@ -10,8 +10,8 @@ import { segmentHitsSphere, type Cloud } from "./projectiles";
 import { magJitter } from "../weapons/manifest";
 import { type Vec3, v3, sub, len, normalize, clone, wrapAngle, clamp } from "../math/vec3";
 
-export const WASP = { health: 40, patrolSpeed: 6, chaseSpeed: 8, detect: 18, fireRange: 25, holdDistance: 8, fireInterval: 0.5, damage: 5, aimJitter: 0.035, respawn: 20, loseAfter: 3 } as const;
-export const MECH = { health: 400, speed: 1.2, lightRange: 30, lightHalfAngle: 0.21, sweep: 1.05, sweepRate: 0.6, lockTime: 0.6, fireInterval: 0.5, damage: 25, respawn: 60, lightHeight: 3.2 } as const;
+export const WASP = { health: 24, patrolSpeed: 6, chaseSpeed: 8, detect: 18, fireRange: 25, holdDistance: 8, fireInterval: 1.15, damage: 2, aimJitter: 0.08, respawn: 20, loseAfter: 3 } as const;
+export const MECH = { health: 220, speed: 1.2, lightRange: 30, lightHalfAngle: 0.21, sweep: 1.05, sweepRate: 0.6, lockTime: 1.15, fireInterval: 1.1, damage: 8, respawn: 60, lightHeight: 3.2 } as const;
 
 export interface Wasp {
   id: number;
