@@ -582,6 +582,35 @@ export function tramHull(name: string | undefined): number {
   return (name && DISTRICT_HULL[name]) || STREET_HULL;
 }
 
+/** How hard the car lights the street under the beam. Lease Row keeps the pool it shipped with. Reach stays 18. */
+export const STREET_GLOW = 6;
+
+const DISTRICT_GLOW: Record<string, number> = {
+  deadletter_docks: 2.2,
+  repo_depot: 4.4,
+  night_market: 11,
+  relay_heights: 8.2,
+  ash_canal: 1.6,
+  glass_mile: 9.4,
+  bone_market: 3.2,
+  cold_vault: 1.2,
+  neon_chapel: 3.8,
+  slag_pit: 7.4,
+  wire_garden: 5.2,
+  red_kiln: 8.8,
+  paper_wharf: 2.6,
+  velvet_court: 3.5,
+  rust_crown: 6.6,
+  salt_stairs: 9.8,
+  lamp_bazaar: 12,
+  debt_orchard: 4.8,
+  black_relay: 0.8,
+};
+
+export function tramGlow(name: string | undefined): number {
+  return (name && DISTRICT_GLOW[name]) || STREET_GLOW;
+}
+
 export class Tram {
   readonly group = new THREE.Group();
   private cars: { mesh: THREE.Group; dir: 1 | -1; phase: number }[] = [];
@@ -615,7 +644,7 @@ export class Tram {
       bindPlate(tailMat, "tex_lamp");
       g.add(new THREE.Mesh(dir > 0 ? geo.lampsBack : geo.lampsFront, tailMat));
       // the street under the beam is what this lights
-      const light = new THREE.PointLight(livery.glass, 6, 18, 1.8);
+      const light = new THREE.PointLight(livery.glass, tramGlow(name), 18, 1.8);
       light.position.y = -1.6;
       g.add(light);
       // a car is built along +x; on a z line turn +x to +z (a quarter turn the other way pointed a car
