@@ -431,6 +431,37 @@ export function tramGeometry() {
   return tramCache;
 }
 
+/** Skirt stripe and window glass. Heads stay warm and tails stay red. Lease Row keeps the old car. */
+export type TramLivery = { strip: number; glass: number };
+
+const LEASE_LIVERY: TramLivery = { strip: PALETTE.magenta, glass: 0xbfefff };
+
+const DISTRICT_LIVERY: Record<string, TramLivery> = {
+  deadletter_docks: { strip: 0x35f2ff, glass: 0x1a6a88 },
+  repo_depot: { strip: 0xffb02e, glass: 0xffe0a0 },
+  night_market: { strip: 0xff6ec8, glass: 0xffc0e0 },
+  relay_heights: { strip: 0xd5dde6, glass: 0x8aa0c0 },
+  ash_canal: { strip: 0x3dffa8, glass: 0x146048 },
+  glass_mile: { strip: 0xffe8ff, glass: 0xc8a0e0 },
+  bone_market: { strip: 0xffd090, glass: 0xc8a070 },
+  cold_vault: { strip: 0xa8fff0, glass: 0x4a8890 },
+  neon_chapel: { strip: 0xc070ff, glass: 0x6a30c0 },
+  slag_pit: { strip: 0xff6820, glass: 0xa03010 },
+  wire_garden: { strip: 0x70ffb0, glass: 0x1a8048 },
+  red_kiln: { strip: 0xff5040, glass: 0x801810 },
+  paper_wharf: { strip: 0xc8d8ea, glass: 0x607080 },
+  velvet_court: { strip: 0xff4078, glass: 0x801030 },
+  rust_crown: { strip: 0xffb050, glass: 0x8a5018 },
+  salt_stairs: { strip: 0xe8f0ff, glass: 0x90a0c0 },
+  lamp_bazaar: { strip: 0xff88cc, glass: 0xc04070 },
+  debt_orchard: { strip: 0xc8f060, glass: 0x508020 },
+  black_relay: { strip: 0x6880a0, glass: 0x202830 },
+};
+
+export function tramLivery(name: string | undefined): TramLivery {
+  return (name && DISTRICT_LIVERY[name]) || LEASE_LIVERY;
+}
+
 export class Tram {
   readonly group = new THREE.Group();
   private cars: { mesh: THREE.Group; dir: 1 | -1; phase: number }[] = [];
@@ -438,7 +469,8 @@ export class Tram {
   /** true on the frame a car is within `near` of the listener (audio cue) */
   passing = false;
   private lastPassing = false;
-  constructor(private line: TramLine) {
+  constructor(private line: TramLine, name?: string) {
+    const livery = tramLivery(name);
     for (const dir of [1, -1] as const) {
       const g = new THREE.Group();
       const hullMat = new THREE.MeshStandardMaterial({ color: 0x141a24, roughness: 0.4, metalness: 0.6 });
@@ -447,10 +479,10 @@ export class Tram {
       const body = new THREE.Mesh(geo.hull, hullMat);
       body.name = "tram:hull";
       g.add(body);
-      const windowMat = new THREE.MeshBasicMaterial({ color: 0xbfefff });
+      const windowMat = new THREE.MeshBasicMaterial({ color: livery.glass });
       bindPlate(windowMat, "tex_glass");
       g.add(new THREE.Mesh(geo.windows, windowMat));
-      const railStripMat = new THREE.MeshBasicMaterial({ color: PALETTE.magenta });
+      const railStripMat = new THREE.MeshBasicMaterial({ color: livery.strip });
       bindPlate(railStripMat, "tex_billboard_mg");
       g.add(new THREE.Mesh(geo.strip, railStripMat));
       const headMat = new THREE.MeshBasicMaterial({ color: 0xfff3d0 });
@@ -461,7 +493,7 @@ export class Tram {
       bindPlate(tailMat, "tex_lamp");
       g.add(new THREE.Mesh(dir > 0 ? geo.lampsBack : geo.lampsFront, tailMat));
       // the street under the beam is what this lights
-      const light = new THREE.PointLight(0xbfefff, 6, 18, 1.8);
+      const light = new THREE.PointLight(livery.glass, 6, 18, 1.8);
       light.position.y = -1.6;
       g.add(light);
       // a car is built along +x; on a z line turn +x to +z (a quarter turn the other way pointed a car
@@ -894,7 +926,7 @@ export class CityLife {
       this.crowd.group.traverse((o) => o.layers.set(FAR_LAYER));
       this.group.add(this.crowd.group);
     }
-    this.tram = level.tram ? new Tram(level.tram) : null;
+    this.tram = level.tram ? new Tram(level.tram, level.name) : null;
     if (this.tram) this.group.add(this.tram.group);
     this.steam = level.vents?.length ? new Steam(level.vents, 28, 3, level.name) : null;
     if (this.steam) this.group.add(this.steam.object);
