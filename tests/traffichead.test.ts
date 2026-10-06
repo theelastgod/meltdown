@@ -1,10 +1,11 @@
 /**
  * Traffic past the gates was one warm head in every district.
- * The streaks are still those streaks. The head colour is the district's. Tails stay red.
+ * The streaks are still those streaks. The head colour is the district's.
+ * Tail vertices take trafficTail. Lease Row and an unnamed level stay the street red.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { Traffic, TRAFFIC_TAIL, trafficHead } from "../client/render/city";
+import { Traffic, TRAFFIC_TAIL, trafficHead, trafficTail } from "../client/render/city";
 
 const HEADS: Record<string, readonly [number, number, number]> = {
   lease_row: [1, 0.93, 0.75],
@@ -32,19 +33,21 @@ const HEADS: Record<string, readonly [number, number, number]> = {
 const LANE = { from: { x: 0, y: 8, z: 0 }, to: { x: 40, y: 8, z: 0 }, speed: 12, count: 2 };
 
 describe("the traffic past the gates is not one head twenty times", () => {
-  it("twenty head colours, lease row stays warm white, tails stay red", () => {
+  it("twenty head colours, lease row stays warm white, tails follow the district", () => {
     const names = Object.keys(HEADS);
     expect(names).toHaveLength(20);
     expect(new Set(names.map((n) => HEADS[n]!.join(","))).size).toBe(20);
     expect(trafficHead("lease_row")).toEqual([1, 0.93, 0.75]);
     expect(trafficHead(undefined)).toEqual([1, 0.93, 0.75]);
     expect(TRAFFIC_TAIL).toEqual([1, 0.1, 0.18]);
+    expect(trafficTail("lease_row")).toEqual([1, 0.1, 0.18]);
+    expect(trafficTail(undefined)).toEqual([1, 0.1, 0.18]);
     for (const name of names) {
       expect(trafficHead(name), name).toEqual(HEADS[name]);
       const traffic = new Traffic([LANE], 5, name);
       const col = traffic.object.geometry.getAttribute("color").array;
       const head = [...new Float32Array(HEADS[name]!)];
-      const tail = [...new Float32Array(TRAFFIC_TAIL)];
+      const tail = [...new Float32Array(trafficTail(name))];
       expect([col[0], col[1], col[2]], name).toEqual(head);
       expect([col[3], col[4], col[5]], name).toEqual(head);
       expect([col[6], col[7], col[8]], name).toEqual(tail);

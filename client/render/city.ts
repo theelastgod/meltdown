@@ -929,7 +929,7 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
 
 /**
  * Head colour of the traffic streaks past the gates. Lease Row keeps the warm white it had.
- * Tails stay the same red in every district. One LineSegments, no extra mesh.
+ * Tails take trafficTail. One LineSegments, no extra mesh.
  */
 export const TRAFFIC_TAIL: readonly [number, number, number] = [1, 0.1, 0.18];
 
@@ -960,6 +960,33 @@ export function trafficHead(name: string | undefined): readonly [number, number,
   return TRAFFIC_HEAD[name ?? ""] ?? TRAFFIC_HEAD.lease_row!;
 }
 
+/** Tail colour of the same streaks. Lease Row, and any room that is not one of the nineteen, keeps the street red. */
+const TRAFFIC_TAILS: Record<string, readonly [number, number, number]> = {
+  deadletter_docks: [0.15, 0.35, 0.7],
+  repo_depot: [0.85, 0.25, 0.05],
+  night_market: [0.7, 0.05, 0.35],
+  relay_heights: [0.45, 0.6, 0.85],
+  ash_canal: [0.1, 0.55, 0.35],
+  glass_mile: [0.55, 0.4, 0.85],
+  bone_market: [0.7, 0.45, 0.2],
+  cold_vault: [0.25, 0.7, 0.65],
+  neon_chapel: [0.4, 0.1, 0.7],
+  slag_pit: [0.75, 0.15, 0.05],
+  wire_garden: [0.1, 0.65, 0.3],
+  red_kiln: [0.65, 0.12, 0.1],
+  paper_wharf: [0.4, 0.5, 0.65],
+  velvet_court: [0.7, 0.05, 0.25],
+  rust_crown: [0.75, 0.3, 0.08],
+  salt_stairs: [0.55, 0.65, 0.8],
+  lamp_bazaar: [0.75, 0.15, 0.45],
+  debt_orchard: [0.4, 0.65, 0.12],
+  black_relay: [0.2, 0.25, 0.35],
+};
+
+export function trafficTail(name: string | undefined): readonly [number, number, number] {
+  return (name && TRAFFIC_TAILS[name]) || TRAFFIC_TAIL;
+}
+
 /**
  * Traffic beyond the facades: head- and tail-light streaks sliding along
  * elevated lanes. One LineSegments, positions updated on the CPU each frame.
@@ -975,7 +1002,7 @@ export class Traffic {
     this.pos = new Float32Array(n * 2 * 3);
     const col = new Float32Array(n * 2 * 3);
     const head = trafficHead(name);
-    const tail = TRAFFIC_TAIL;
+    const tail = trafficTail(name);
     for (let i = 0; i < this.cars.length; i++) {
       const o = i * 12;
       col.set([...head, ...head, ...tail, ...tail], o);
