@@ -23,7 +23,8 @@ import type { CityEventMsg, CityRunMsg, MissionMsg } from "@shared/net/protocol"
 import { eventBanner, eventCard, eventMarker, eventObjective } from "./cityevent";
 import { nearestStart, runCard, runClock, runObjective, splitBanner, startPrompt, type RunCourse, type RunView } from "./cityrun";
 import type { RadarSpot } from "./hud/radar";
-import { levelDisplayName } from "@shared/sim/level";
+import { apartmentDoorSpot, APARTMENT_DOOR_M, FILE_APARTMENT_ID } from "@shared/sim/apartment";
+import { DEFAULT_LEVEL_ID, levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
 import { HOSTS } from "./config";
 import { weaponName } from "./hud/kill";
@@ -299,8 +300,37 @@ export class Campaign {
     return true;
   }
 
+  private doorHold = 0;
+  private leftApartment = false;
+
+  /** Standing at the apartment door loads Lease Row. One control, the door. */
+  private apartmentDoor(): void {
+    const g = this.game;
+    if (this.leftApartment) return;
+    const p = g.player;
+    const spot = apartmentDoorSpot(g.world.level);
+    const near = !!spot && p.alive && !this.uiOpen && Math.hypot(p.pos.x - spot.x, p.pos.z - spot.z) <= APARTMENT_DOOR_M;
+    if (!near) {
+      this.doorHold = 0;
+      g.hud.setGate(null);
+      return;
+    }
+    this.doorHold += SIM_DT;
+    const n = 6;
+    const done = Math.max(0, Math.min(n, Math.floor(Math.min(1, this.doorHold) * n)));
+    g.hud.setGate(`DOOR · LEASE ROW ${"▮".repeat(done)}${"▯".repeat(n - done)}`);
+    if (this.doorHold < 1) return;
+    this.leftApartment = true;
+    g.hud.setGate(null);
+    g.travel(DEFAULT_LEVEL_ID);
+  }
+
   /** One sim tick (offline modes): step the mission and present what happened. */
   tick(events: readonly SimEvent[]): void {
+    if (this.game.levelId === FILE_APARTMENT_ID) {
+      this.apartmentDoor();
+      return;
+    }
     if (this.mode === "city") {
       const onStreet = this.mission?.street && this.mission.status === "running";
       if (!onStreet) this.cityRunHud();
@@ -985,6 +1015,9 @@ export class Campaign {
       return `<label class="pr ${owned ? "" : "off"} ${worn ? "worn" : ""}">${protocolIcon(p.id)}<input type="checkbox" data-wear="${p.id}" ${worn ? "checked" : ""} ${owned ? "" : "disabled"}> <b>${p.name}</b> <span class="dim">${p.line}</span></label>`;
     }).join("");
     const endings = endingsFor(c.testimony, c.faction).map((e) => e.title).join(" · ");
+    const apartment = this.game.levelId === FILE_APARTMENT_ID
+      ? `<div class="sh">THE APARTMENT</div><div class="ln"><span class="cy" data-act="lease_row">${crewButton("LEASE ROW", this.game.hud.touch)}</span></div>`
+      : `<div class="sh">THE APARTMENT</div><div class="ln dim">ONE ROOM, OFF THE STREET: <span class="cy" data-act="file_apartment">${crewButton("THE APARTMENT", this.game.hud.touch)}</span></div>`;
     return `<div class="hd">▲ CONTRACTS · ${faction ? `${faction.name}` : "NO HOUSE"} <span class="x" data-act="close">${closeHint("J", this.game.hud.touch)}</span></div>
       <div class="ln">THREAT <b>${threat.rating}</b> · ${threat.line}${threat.named ? " · THE PA CALLS YOUR NAME" : ""}</div>
       <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => testimonyLine(k, v)).join(" · ") || "— NOTHING ON THE RECORD —"} · ENDINGS OPEN: ${endings}</div>
@@ -992,12 +1025,15 @@ export class Campaign {
       <div><div class="sh">KERNEL PROTOCOLS · ${c.worn.length}/${MAX_PROTOCOLS} WORN <span class="red">· CAMPAIGN ONLY · STRIPPED AT PVP JOIN</span></div>${protos}
       <div class="sh">CAMPAIGN WEAPONS</div><div class="ln cws">${CAMPAIGN_WEAPONS.map((w) => weaponCard(w, weaponName(w), (c.weapons as readonly string[]).includes(w))).join("")}</div>
       <div class="sh">CREW</div><div class="ln">${this.crew ? `IN CREW <b class="ye">${this.crew}</b> · ${this.host ? "YOU HOLD THE TERMINALS" : "THE HOST HOLDS THE TERMINALS"} · TELL A FRIEND THE CODE` : `<input data-crewcode="1" maxlength="8" placeholder="INVITE CODE" style="text-transform:uppercase"> <span class="cy" data-act="joinCrew">${crewButton("JOIN A CREW", this.game.hud.touch)}</span> <span class="dim">OR RUN WITH A CREW ON A CONTRACT ABOVE AND READ THE CODE OUT</span>`}</div>
+      ${apartment}
       <div class="sh">EXPLORE</div><div class="ln dim">TRAVEL TO A DISTRICT FROM THE MAP WITH THE THREAT LIVE: <span class="cy" data-explore="1">${crewButton("EXPLORE THIS DISTRICT", this.game.hud.touch)}</span></div></div></div>`;
   }
 
   /** Clicks inside the contracts panel (the HUD forwards them). */
   onPanelAction(el: HTMLElement): void {
     if (el.dataset.act === "close") this.toggleContracts(false);
+    else if (el.dataset.act === "file_apartment") this.game.travel(FILE_APARTMENT_ID);
+    else if (el.dataset.act === "lease_row") this.game.travel(DEFAULT_LEVEL_ID);
     else if (el.dataset.launch) {
       const r = this.launch(el.dataset.launch);
       if (!r.ok) this.game.hud.alert(`◆ ${r.reason?.toUpperCase()}`, true, 3);

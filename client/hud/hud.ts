@@ -228,7 +228,7 @@ export class Hud {
     const kills = this.q(".mline");
     if (kills) kills.style.display = level.dummies.length ? "" : "none";
     const list = this.q(".travel .list");
-    const rows = LEVEL_INFO;
+    const rows = LEVEL_INFO.filter((r) => r.kind !== "room");
     list.innerHTML = rows.map((r) => `<div class="row ${r.id === level.name ? "on" : ""} ${r.cast}" data-travel="${r.id}">${r.id === level.name ? "▣" : "▢"} ${r.displayName} <span class="cast">${r.cast.toUpperCase()}</span></div>`).join("");
     const panel = this.q(".travel");
     // Stage 145: the close marker names the key, or the gesture on a phone
