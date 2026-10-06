@@ -510,11 +510,40 @@ export class Tram {
   }
 }
 
+/** Pale street steam. Lease Row and the indoor rooms keep it. */
+export const STREET_STEAM: readonly [number, number, number] = [0.62, 0.72, 0.8];
+
+const DISTRICT_STEAM: Record<string, readonly [number, number, number]> = {
+  deadletter_docks: [0.45, 0.7, 0.85],
+  repo_depot: [0.85, 0.7, 0.4],
+  night_market: [0.9, 0.5, 0.7],
+  relay_heights: [0.8, 0.88, 0.95],
+  ash_canal: [0.35, 0.75, 0.55],
+  glass_mile: [0.9, 0.8, 0.95],
+  bone_market: [0.8, 0.65, 0.45],
+  cold_vault: [0.7, 0.9, 0.92],
+  neon_chapel: [0.7, 0.45, 0.9],
+  slag_pit: [0.9, 0.4, 0.25],
+  wire_garden: [0.45, 0.85, 0.55],
+  red_kiln: [0.9, 0.4, 0.35],
+  paper_wharf: [0.7, 0.75, 0.78],
+  velvet_court: [0.85, 0.35, 0.5],
+  rust_crown: [0.85, 0.55, 0.3],
+  salt_stairs: [0.82, 0.86, 0.92],
+  lamp_bazaar: [0.95, 0.55, 0.75],
+  debt_orchard: [0.7, 0.85, 0.4],
+  black_relay: [0.4, 0.45, 0.55],
+};
+
+export function steamTint(name: string | undefined): readonly [number, number, number] {
+  return (name && DISTRICT_STEAM[name]) || STREET_STEAM;
+}
+
 /** Steam from the grates: additive points rising and fading, one cloud per vent. */
 export class Steam {
   readonly object: THREE.Points;
   private mat: THREE.ShaderMaterial;
-  constructor(vents: readonly { x: number; y: number; z: number }[], per = 28, seed = 3) {
+  constructor(vents: readonly { x: number; y: number; z: number }[], per = 28, seed = 3, name?: string) {
     const rnd = lcg(seed);
     const n = vents.length * per;
     const pos = new Float32Array(n * 3);
@@ -533,8 +562,9 @@ export class Steam {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     geo.setAttribute("info", new THREE.BufferAttribute(info, 3));
+    const tint = steamTint(name);
     this.mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
+      uniforms: { uTime: { value: 0 }, uTint: { value: new THREE.Color(tint[0], tint[1], tint[2]) } },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
@@ -549,11 +579,11 @@ export class Steam {
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
-        varying float vA;
+        uniform vec3 uTint; varying float vA;
         void main() {
           float d = length(gl_PointCoord - 0.5);
           float a = smoothstep(0.5, 0.1, d) * vA * 0.16;
-          gl_FragColor = vec4(0.62, 0.72, 0.8, a);
+          gl_FragColor = vec4(uTint, a);
         }`,
     });
     this.object = new THREE.Points(geo, this.mat);
@@ -834,7 +864,7 @@ export class CityLife {
     }
     this.tram = level.tram ? new Tram(level.tram) : null;
     if (this.tram) this.group.add(this.tram.group);
-    this.steam = level.vents?.length ? new Steam(level.vents) : null;
+    this.steam = level.vents?.length ? new Steam(level.vents, 28, 3, level.name) : null;
     if (this.steam) this.group.add(this.steam.object);
     this.ads = level.ads?.length ? new HoloAds(level.ads) : null;
     if (this.ads) this.group.add(this.ads.group);
