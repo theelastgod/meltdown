@@ -27,6 +27,7 @@ import { apartmentDoorSpot, APARTMENT_DECOR, APARTMENT_DOOR_M, buyApartmentDecor
 import { pitPurse, SCRIP_PIT_ID } from "@shared/sim/pit";
 import { CITY_LIMIT_ID } from "@shared/sim/limit";
 import { GREEN_HOLD_ID } from "@shared/sim/preserve";
+import { streetClinic } from "@shared/sim/clinic";
 import { DEFAULT_LEVEL_ID, levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
 import { HOSTS } from "./config";
@@ -357,7 +358,26 @@ export class Campaign {
     this.renderContracts();
   }
 
-  /** One sim tick (offline modes): step the mission and present what happened. */
+  /** Thirty scrip restores forty health, and the maximum stays where it was. */
+  private healAtClinic(): void {
+    const p = this.game.player;
+    if (!p.alive) {
+      this.game.hud.alert("◆ THE CLINIC WANTS A PULSE", true, 3);
+      return;
+    }
+    const a = this.account();
+    const before = a.wallet.scrip;
+    const healed = streetClinic(a, p.health, p.maxHealth);
+    if (healed.spent === 0) {
+      this.game.hud.alert(p.health >= p.maxHealth ? "◆ ALREADY WHOLE" : "◆ NEED SCRIP", true, 3);
+      return;
+    }
+    p.health = healed.health;
+    this.game.file.scrip += a.wallet.scrip - before;
+    this.game.hud.setFile(this.game.file.view());
+    this.game.hud.alert("◆ CLINIC", false, 3);
+  }
+
   /** The pit's dummy, dead, pays wallet scrip once. The HUD scrip line is that same purse. */
   private payPit(): void {
     if (this.game.levelId !== SCRIP_PIT_ID) return;
@@ -371,6 +391,7 @@ export class Campaign {
     this.game.hud.alert("◆ +25 SCRIP", false, 3);
   }
 
+  /** One sim tick (offline modes): step the mission and present what happened. */
   tick(events: readonly SimEvent[]): void {
     if (this.game.levelId === SCRIP_PIT_ID) {
       this.payPit();
@@ -1081,6 +1102,7 @@ export class Campaign {
     const preserve = this.game.levelId === GREEN_HOLD_ID
       ? `<div class="sh">THE PRESERVE</div><div class="ln"><span class="cy" data-act="lease_row">${crewButton("LEASE ROW", this.game.hud.touch)}</span></div>`
       : `<div class="sh">THE PRESERVE</div><div class="ln dim">TREES INSIDE THE CITY: <span class="cy" data-act="green_hold">${crewButton("THE PRESERVE", this.game.hud.touch)}</span></div>`;
+    const clinic = `<div class="sh">THE CLINIC</div><div class="ln dim">THIRTY SCRIP, FORTY HEALTH, NEVER PAST YOUR MAXIMUM: <span class="cy" data-act="clinic">${crewButton("CLINIC", this.game.hud.touch)}</span></div>`;
     return `<div class="hd">▲ CONTRACTS · ${faction ? `${faction.name}` : "NO HOUSE"} <span class="x" data-act="close">${closeHint("J", this.game.hud.touch)}</span></div>
       <div class="ln">THREAT <b>${threat.rating}</b> · ${threat.line}${threat.named ? " · THE PA CALLS YOUR NAME" : ""}</div>
       <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => testimonyLine(k, v)).join(" · ") || "— NOTHING ON THE RECORD —"} · ENDINGS OPEN: ${endings}</div>
@@ -1092,6 +1114,7 @@ export class Campaign {
       ${pit}
       ${limit}
       ${preserve}
+      ${clinic}
       <div class="sh">EXPLORE</div><div class="ln dim">TRAVEL TO A DISTRICT FROM THE MAP WITH THE THREAT LIVE: <span class="cy" data-explore="1">${crewButton("EXPLORE THIS DISTRICT", this.game.hud.touch)}</span></div></div></div>`;
   }
 
@@ -1102,6 +1125,7 @@ export class Campaign {
     else if (el.dataset.act === "scrip_pit") this.game.travel(SCRIP_PIT_ID);
     else if (el.dataset.act === "city_limit") this.game.travel(CITY_LIMIT_ID);
     else if (el.dataset.act === "green_hold") this.game.travel(GREEN_HOLD_ID);
+    else if (el.dataset.act === "clinic") this.healAtClinic();
     else if (el.dataset.act === "lease_row") this.game.travel(DEFAULT_LEVEL_ID);
     else if (el.dataset.act === "buy_decor" && el.dataset.decor) void this.buyDecor(el.dataset.decor);
     else if (el.dataset.launch) {
