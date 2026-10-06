@@ -14,6 +14,7 @@ import { CityLife, flickerMaterial } from "./life";
 import { HubDressing } from "./hub";
 import { attend, buildFixer, holdFace } from "./figures";
 import { WHITE_LEVEL_ID } from "@shared/sim/white";
+import { FILE_APARTMENT_ID } from "@shared/sim/apartment";
 import { CampaignFx } from "./campaign";
 import { drawGlyph, glyphFor } from "@shared/identity/glyph";
 import { parseTag } from "@shared/identity/identity";
@@ -334,6 +335,16 @@ export class Renderer {
    * `city`: the page is walking the city (`inCity`, Stage 692), so the district's gates are doors
    * and are dressed as doors (Stage 704). Everywhere else they stay the chain-link they were.
    */
+  /** Dress the apartment again after a decoration is bought. Other levels are left as they were. */
+  refreshDressing(level: LevelDef, city: boolean): void {
+    if (level.name !== FILE_APARTMENT_ID) return;
+    const prev = this.scene.getObjectByName("dressing");
+    if (prev) this.scene.remove(prev);
+    const doors = cityDoors(level, city);
+    const dressed = dressLevel(this.scene, level, this.screens, doors);
+    if (dressed.signMat) this.signFlicker = flickerMaterial(dressed.signMat, level.name);
+  }
+
   constructor(canvas: HTMLCanvasElement, level: LevelDef, district: DistrictId = level.district ?? "magenta", mobile = false, city = false) {
     this.mobile = mobile;
     this.district = district;

@@ -23,7 +23,7 @@ import type { CityEventMsg, CityRunMsg, MissionMsg } from "@shared/net/protocol"
 import { eventBanner, eventCard, eventMarker, eventObjective } from "./cityevent";
 import { nearestStart, runCard, runClock, runObjective, splitBanner, startPrompt, type RunCourse, type RunView } from "./cityrun";
 import type { RadarSpot } from "./hud/radar";
-import { apartmentDoorSpot, APARTMENT_DOOR_M, FILE_APARTMENT_ID } from "@shared/sim/apartment";
+import { apartmentDoorSpot, APARTMENT_DECOR, APARTMENT_DOOR_M, buyApartmentDecor, FILE_APARTMENT_ID, placeApartmentDecor } from "@shared/sim/apartment";
 import { DEFAULT_LEVEL_ID, levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
 import { HOSTS } from "./config";
@@ -179,6 +179,7 @@ export class Campaign {
     if (this.started) return;
     this.started = true;
     const a = this.account();
+    this.furnishApartment();
     this.threat = threatProfile(threatRating({ depth: a.depth, counters: a.counters, campaign: this.save }));
     // the city (Stage 692): the district's shared open world, known from the page itself — the link to
     // its room may not be up yet when this runs; the desk opens anywhere, and a contract comes back here
@@ -323,6 +324,34 @@ export class Campaign {
     this.leftApartment = true;
     g.hud.setGate(null);
     g.travel(DEFAULT_LEVEL_ID);
+  }
+
+  /** Owned decorations are boxes in this room. The renderer already walks those boxes. A district is not dressed. */
+  private furnishApartment(): void {
+    if (this.game.levelId !== FILE_APARTMENT_ID) return;
+    const level = this.game.world.level;
+    const before = level.boxes.length;
+    placeApartmentDecor(level, this.save.decor);
+    if (level.boxes.length !== before) this.game.renderer.refreshDressing(level, false);
+  }
+
+  /** The desk's buy control. Scrip leaves the wallet. A repeat does not. */
+  private async buyDecor(id: string): Promise<void> {
+    if (this.game.levelId !== FILE_APARTMENT_ID) return;
+    let reason: string | undefined;
+    if (this.game.file.shop) {
+      const r = await this.game.file.postCampaign({ op: "decor", id });
+      if (r.account) this.game.file.applyAccount(r.account);
+      this.save = campaignOf(this.account());
+      if (!r.ok) reason = r.reason;
+    } else {
+      const r = buyApartmentDecor(this.account(), id);
+      if (!r.ok) reason = r.reason;
+      this.persistLocal();
+    }
+    if (reason) this.game.hud.alert(`◆ ${reason.toUpperCase()}`, true, 3);
+    this.furnishApartment();
+    this.renderContracts();
   }
 
   /** One sim tick (offline modes): step the mission and present what happened. */
@@ -1015,8 +1044,12 @@ export class Campaign {
       return `<label class="pr ${owned ? "" : "off"} ${worn ? "worn" : ""}">${protocolIcon(p.id)}<input type="checkbox" data-wear="${p.id}" ${worn ? "checked" : ""} ${owned ? "" : "disabled"}> <b>${p.name}</b> <span class="dim">${p.line}</span></label>`;
     }).join("");
     const endings = endingsFor(c.testimony, c.faction).map((e) => e.title).join(" · ");
+    const decor = APARTMENT_DECOR.map((d) => {
+      const owned = c.decor.includes(d.id);
+      return `<div class="ln">${d.name} · ${d.scrip} SCRIP · <span class="cy" data-act="buy_decor" data-decor="${d.id}">${crewButton(owned ? "IN THE ROOM" : "BUY", this.game.hud.touch)}</span></div>`;
+    }).join("");
     const apartment = this.game.levelId === FILE_APARTMENT_ID
-      ? `<div class="sh">THE APARTMENT</div><div class="ln"><span class="cy" data-act="lease_row">${crewButton("LEASE ROW", this.game.hud.touch)}</span></div>`
+      ? `<div class="sh">THE APARTMENT</div><div class="ln"><span class="cy" data-act="lease_row">${crewButton("LEASE ROW", this.game.hud.touch)}</span></div><div class="sh">THE ROOM</div>${decor}`
       : `<div class="sh">THE APARTMENT</div><div class="ln dim">ONE ROOM, OFF THE STREET: <span class="cy" data-act="file_apartment">${crewButton("THE APARTMENT", this.game.hud.touch)}</span></div>`;
     return `<div class="hd">▲ CONTRACTS · ${faction ? `${faction.name}` : "NO HOUSE"} <span class="x" data-act="close">${closeHint("J", this.game.hud.touch)}</span></div>
       <div class="ln">THREAT <b>${threat.rating}</b> · ${threat.line}${threat.named ? " · THE PA CALLS YOUR NAME" : ""}</div>
@@ -1034,6 +1067,7 @@ export class Campaign {
     if (el.dataset.act === "close") this.toggleContracts(false);
     else if (el.dataset.act === "file_apartment") this.game.travel(FILE_APARTMENT_ID);
     else if (el.dataset.act === "lease_row") this.game.travel(DEFAULT_LEVEL_ID);
+    else if (el.dataset.act === "buy_decor" && el.dataset.decor) void this.buyDecor(el.dataset.decor);
     else if (el.dataset.launch) {
       const r = this.launch(el.dataset.launch);
       if (!r.ok) this.game.hud.alert(`◆ ${r.reason?.toUpperCase()}`, true, 3);

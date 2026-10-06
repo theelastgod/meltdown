@@ -5,8 +5,41 @@
 import { v3 } from "../math/vec3";
 import { box, type Box } from "./box";
 import type { LevelDef, LightDef, SignDef } from "./level";
+import type { Account } from "../progression/account";
+import { campaignOf } from "../campaign/save";
 
 export const FILE_APARTMENT_ID = "file_apartment";
+
+/** Four pieces of cloth the room can hold. Scrip buys them. It does not buy a stat. */
+export const APARTMENT_DECOR = [
+  { id: "cot", name: "COT", scrip: 120, box: [-5.4, 0, -3.4, -3.2, 0.42, -1.9] },
+  { id: "lamp", name: "LAMP", scrip: 80, box: [4.55, 0, -3.7, 4.85, 1.7, -3.35] },
+  { id: "crate", name: "CRATE", scrip: 40, box: [-5.4, 0, 2.35, -4.45, 0.55, 3.25] },
+  { id: "plant", name: "PLANT", scrip: 60, box: [4.35, 0, 2.15, 5.25, 0.75, 3.05] },
+] as const;
+
+/** Spend scrip on one decoration. A second buy of the same id does not spend, and nothing is refunded. */
+export function buyApartmentDecor(a: Account, id: string): { ok: boolean; reason?: string } {
+  const item = APARTMENT_DECOR.find((d) => d.id === id);
+  if (!item) return { ok: false, reason: "UNKNOWN DECOR" };
+  const c = campaignOf(a);
+  if (c.decor.includes(id)) return { ok: false, reason: "ALREADY OWNED" };
+  if (a.wallet.scrip < item.scrip) return { ok: false, reason: "NEEDS SCRIP" };
+  a.wallet.scrip -= item.scrip;
+  c.decor.push(id);
+  return { ok: true };
+}
+
+/** One box per owned id, inside this room only. A district level is left alone. */
+export function placeApartmentDecor(level: { name: string; boxes: Box[] }, ids: readonly string[]): void {
+  if (level.name !== FILE_APARTMENT_ID) return;
+  for (const id of ids) {
+    const item = APARTMENT_DECOR.find((d) => d.id === id);
+    if (!item || level.boxes.some((b) => b.tag === item.id)) continue;
+    const [x0, y0, z0, x1, y1, z1] = item.box;
+    level.boxes.push(box(x0, y0, z0, x1, y1, z1, item.id));
+  }
+}
 
 /** How close a file has to stand before the door starts loading Lease Row. */
 export const APARTMENT_DOOR_M = 1.35;
