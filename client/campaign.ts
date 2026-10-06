@@ -26,6 +26,7 @@ import type { RadarSpot } from "./hud/radar";
 import { apartmentDoorSpot, APARTMENT_DECOR, APARTMENT_DOOR_M, buyApartmentDecor, FILE_APARTMENT_ID, placeApartmentDecor } from "@shared/sim/apartment";
 import { pitPurse, SCRIP_PIT_ID } from "@shared/sim/pit";
 import { CITY_LIMIT_ID } from "@shared/sim/limit";
+import { GREEN_HOLD_ID } from "@shared/sim/preserve";
 import { DEFAULT_LEVEL_ID, levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
 import { HOSTS } from "./config";
@@ -379,7 +380,7 @@ export class Campaign {
       this.apartmentDoor();
       return;
     }
-    if (this.game.levelId === CITY_LIMIT_ID) return;
+    if (this.game.levelId === CITY_LIMIT_ID || this.game.levelId === GREEN_HOLD_ID) return;
     if (this.mode === "city") {
       const onStreet = this.mission?.street && this.mission.status === "running";
       if (!onStreet) this.cityRunHud();
@@ -1077,6 +1078,9 @@ export class Campaign {
     const limit = this.game.levelId === CITY_LIMIT_ID
       ? `<div class="sh">THE LIMIT</div><div class="ln"><span class="cy" data-act="lease_row">${crewButton("LEASE ROW", this.game.hud.touch)}</span></div>`
       : `<div class="sh">THE LIMIT</div><div class="ln dim">OPEN GROUND, OUTSIDE THE CITY: <span class="cy" data-act="city_limit">${crewButton("THE LIMIT", this.game.hud.touch)}</span></div>`;
+    const preserve = this.game.levelId === GREEN_HOLD_ID
+      ? `<div class="sh">THE PRESERVE</div><div class="ln"><span class="cy" data-act="lease_row">${crewButton("LEASE ROW", this.game.hud.touch)}</span></div>`
+      : `<div class="sh">THE PRESERVE</div><div class="ln dim">TREES INSIDE THE CITY: <span class="cy" data-act="green_hold">${crewButton("THE PRESERVE", this.game.hud.touch)}</span></div>`;
     return `<div class="hd">▲ CONTRACTS · ${faction ? `${faction.name}` : "NO HOUSE"} <span class="x" data-act="close">${closeHint("J", this.game.hud.touch)}</span></div>
       <div class="ln">THREAT <b>${threat.rating}</b> · ${threat.line}${threat.named ? " · THE PA CALLS YOUR NAME" : ""}</div>
       <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => testimonyLine(k, v)).join(" · ") || "— NOTHING ON THE RECORD —"} · ENDINGS OPEN: ${endings}</div>
@@ -1087,6 +1091,7 @@ export class Campaign {
       ${apartment}
       ${pit}
       ${limit}
+      ${preserve}
       <div class="sh">EXPLORE</div><div class="ln dim">TRAVEL TO A DISTRICT FROM THE MAP WITH THE THREAT LIVE: <span class="cy" data-explore="1">${crewButton("EXPLORE THIS DISTRICT", this.game.hud.touch)}</span></div></div></div>`;
   }
 
@@ -1096,6 +1101,7 @@ export class Campaign {
     else if (el.dataset.act === "file_apartment") this.game.travel(FILE_APARTMENT_ID);
     else if (el.dataset.act === "scrip_pit") this.game.travel(SCRIP_PIT_ID);
     else if (el.dataset.act === "city_limit") this.game.travel(CITY_LIMIT_ID);
+    else if (el.dataset.act === "green_hold") this.game.travel(GREEN_HOLD_ID);
     else if (el.dataset.act === "lease_row") this.game.travel(DEFAULT_LEVEL_ID);
     else if (el.dataset.act === "buy_decor" && el.dataset.decor) void this.buyDecor(el.dataset.decor);
     else if (el.dataset.launch) {

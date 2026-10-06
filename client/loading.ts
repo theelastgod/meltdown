@@ -19,6 +19,7 @@ import { WHITE_LEVEL_ID } from "@shared/sim/white";
 import { FILE_APARTMENT_ID } from "@shared/sim/apartment";
 import { SCRIP_PIT_ID } from "@shared/sim/pit";
 import { CITY_LIMIT_ID } from "@shared/sim/limit";
+import { GREEN_HOLD_ID } from "@shared/sim/preserve";
 import { missionById } from "@shared/campaign/missions";
 import { crewCodeFromSocket } from "@shared/net/crew";
 import { MISSION_ART } from "./missionart";
@@ -101,6 +102,8 @@ export function loadingFor(href: string, over: Partial<LoadingDescriptor> = {}):
     d = { kind: "mode", title: placeName(level), line: "THE PIT · ONE DUMMY" };
   } else if (level === CITY_LIMIT_ID) {
     d = { kind: "mode", title: placeName(level), line: "THE LIMIT · OUTSIDE THE CITY" };
+  } else if (level === GREEN_HOLD_ID) {
+    d = { kind: "mode", title: placeName(level), line: "THE PRESERVE · TREES INSIDE THE CITY" };
   } else if (level === "drainage_yard") {
     d = { kind: "mode", title: placeName(level), line: "THE RANGE · OFFLINE, WITH DUMMIES" };
   } else if (level === HUB_LEVEL_ID) {

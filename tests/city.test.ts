@@ -15,7 +15,7 @@ import { Btn } from "../shared/sim/input";
 
 describe("city districts", () => {
   it("the registry serves the range and five districts; the default is a district", () => {
-    expect(LEVEL_IDS).toEqual(["drainage_yard", "lease_row", "deadletter_docks", "repo_depot", "night_market", "relay_heights", "ash_canal", "glass_mile", "bone_market", "cold_vault", "neon_chapel", "slag_pit", "wire_garden", "red_kiln", "paper_wharf", "velvet_court", "rust_crown", "salt_stairs", "lamp_bazaar", "debt_orchard", "black_relay", "deadletter_office", "white_office", "file_apartment", "scrip_pit", "city_limit"]);
+    expect(LEVEL_IDS).toEqual(["drainage_yard", "lease_row", "deadletter_docks", "repo_depot", "night_market", "relay_heights", "ash_canal", "glass_mile", "bone_market", "cold_vault", "neon_chapel", "slag_pit", "wire_garden", "red_kiln", "paper_wharf", "velvet_court", "rust_crown", "salt_stairs", "lamp_bazaar", "debt_orchard", "black_relay", "deadletter_office", "white_office", "file_apartment", "scrip_pit", "city_limit", "green_hold"]);
     expect(levelById(DEFAULT_LEVEL_ID).district).toBe("magenta");
     expect(levelById("nonsense").name).toBe(DEFAULT_LEVEL_ID);
   });
