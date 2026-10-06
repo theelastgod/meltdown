@@ -817,6 +817,35 @@ export function steamHaze(name: string | undefined): number {
   return (name && DISTRICT_HAZE[name]) || STREET_HAZE;
 }
 
+/** How far a grate puff leans off the vent, in the units the street shipped with. Lease Row stays 2.5. Tint, rise, width, alpha, climb, and point count stay put. */
+export const STREET_DRIFT = 2.5;
+
+const DISTRICT_DRIFT: Record<string, number> = {
+  deadletter_docks: 0.6,
+  repo_depot: 1.8,
+  night_market: 6.4,
+  relay_heights: 3.1,
+  ash_canal: 4.2,
+  glass_mile: 1.1,
+  bone_market: 2.1,
+  cold_vault: 0.35,
+  neon_chapel: 1.45,
+  slag_pit: 5.2,
+  wire_garden: 3.6,
+  red_kiln: 4.8,
+  paper_wharf: 0.9,
+  velvet_court: 1.25,
+  rust_crown: 3.9,
+  salt_stairs: 0.5,
+  lamp_bazaar: 7.2,
+  debt_orchard: 2.8,
+  black_relay: 0.2,
+};
+
+export function steamDrift(name: string | undefined): number {
+  return (name && DISTRICT_DRIFT[name]) || STREET_DRIFT;
+}
+
 /** Steam from the grates: additive points rising and fading, one cloud per vent. */
 export class Steam {
   readonly object: THREE.Points;
@@ -842,15 +871,15 @@ export class Steam {
     geo.setAttribute("info", new THREE.BufferAttribute(info, 3));
     const tint = steamTint(name);
     this.mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 }, uTint: { value: new THREE.Color(tint[0], tint[1], tint[2]) }, uLift: { value: steamLift(name) }, uBulk: { value: steamBulk(name) }, uHaze: { value: steamHaze(name) } },
+      uniforms: { uTime: { value: 0 }, uTint: { value: new THREE.Color(tint[0], tint[1], tint[2]) }, uLift: { value: steamLift(name) }, uBulk: { value: steamBulk(name) }, uHaze: { value: steamHaze(name) }, uDrift: { value: steamDrift(name) } },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       vertexShader: `
-        uniform float uTime; uniform float uLift; uniform float uBulk; attribute vec3 info; varying float vA;
+        uniform float uTime; uniform float uLift; uniform float uBulk; uniform float uDrift; attribute vec3 info; varying float vA;
         void main() {
           float life = fract(uTime * uLift + info.x);
-          vec3 p = position + vec3(info.y * life * 2.5, life * 3.2, info.z * life * 2.5);
+          vec3 p = position + vec3(info.y * life * uDrift, life * 3.2, info.z * life * uDrift);
           vA = (1.0 - life) * smoothstep(0.0, 0.15, life);
           vec4 mv = modelViewMatrix * vec4(p, 1.0);
           gl_PointSize = (18.0 + life * 60.0) * uBulk * (30.0 / max(1.0, -mv.z));
