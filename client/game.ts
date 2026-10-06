@@ -867,7 +867,7 @@ export class Game {
     }
     if (t >= c.nextSiren) {
       c.sirenSide = -c.sirenSide;
-      this.audio.siren(0.6 * c.sirenSide);
+      this.audio.siren(0.6 * c.sirenSide, this.world.level.name);
       c.nextSiren = t + Math.round((38 + ((t * 7) % 23)) * SIM_HZ);
     }
     if (t >= c.nextPa) {

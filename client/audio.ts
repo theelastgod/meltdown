@@ -97,6 +97,37 @@ export function shotSlap(name: string | undefined): ShotSlap {
   return (name && DISTRICT_SLAP[name]) || { hz: 480, dur: 0.26, q: 0.5, lag: 0.055, gain: 0.09 };
 }
 
+/** The two-tone wail across a district. Lease Row keeps 494 and 660 through a 900 Hz lowpass. */
+export type SirenTone = { low: number; high: number; cut: number };
+
+export const STREET_SIREN: SirenTone = { low: 494, high: 660, cut: 900 };
+
+const DISTRICT_SIREN: Record<string, SirenTone> = {
+  deadletter_docks: { low: 220, high: 330, cut: 480 },
+  repo_depot: { low: 740, high: 980, cut: 1400 },
+  night_market: { low: 880, high: 1320, cut: 2400 },
+  relay_heights: { low: 1200, high: 1760, cut: 4200 },
+  ash_canal: { low: 180, high: 270, cut: 400 },
+  glass_mile: { low: 1568, high: 2093, cut: 5000 },
+  bone_market: { low: 310, high: 415, cut: 700 },
+  cold_vault: { low: 1400, high: 1860, cut: 3200 },
+  neon_chapel: { low: 392, high: 587, cut: 1100 },
+  slag_pit: { low: 260, high: 390, cut: 600 },
+  wire_garden: { low: 1046, high: 1568, cut: 3600 },
+  red_kiln: { low: 146, high: 220, cut: 350 },
+  paper_wharf: { low: 523, high: 784, cut: 1600 },
+  velvet_court: { low: 349, high: 440, cut: 800 },
+  rust_crown: { low: 587, high: 880, cut: 1500 },
+  salt_stairs: { low: 988, high: 1318, cut: 2800 },
+  lamp_bazaar: { low: 698, high: 1046, cut: 2200 },
+  debt_orchard: { low: 247, high: 370, cut: 650 },
+  black_relay: { low: 1661, high: 2217, cut: 4800 },
+};
+
+export function sirenTone(name: string | undefined): SirenTone {
+  return (name && DISTRICT_SIREN[name]) || STREET_SIREN;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -317,16 +348,17 @@ export class GameAudio {
   }
 
   /** A VANTAGE siren somewhere across the district: a two-tone wail, panned, dull with distance, fading as it passes. */
-  siren(pan = 0.6): void {
+  siren(pan = 0.6, place?: string): void {
     this.count("siren");
     if (!this.ctx) return;
     const ctx = this.ctx;
     const t = ctx.currentTime;
+    const tone = sirenTone(place);
     const o = ctx.createOscillator();
     o.type = "sawtooth";
     const f = ctx.createBiquadFilter();
     f.type = "lowpass";
-    f.frequency.value = 900;
+    f.frequency.value = tone.cut;
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.001, t);
     g.gain.exponentialRampToValueAtTime(0.09, t + 1.2);
@@ -336,7 +368,7 @@ export class GameAudio {
     p.pan.setValueAtTime(pan, t);
     p.pan.linearRampToValueAtTime(-pan, t + 6.5);
     for (let i = 0; i < 8; i++) {
-      o.frequency.setValueAtTime(i % 2 ? 660 : 494, t + i * 0.8);
+      o.frequency.setValueAtTime(i % 2 ? tone.high : tone.low, t + i * 0.8);
     }
     o.connect(f).connect(g).connect(p).connect(this.sfx!);
     o.start(t);
