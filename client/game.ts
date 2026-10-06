@@ -876,7 +876,7 @@ export class Game {
       const who = this.file.identityView().display;
       const line = named ? `VANTAGE ADVISES ${district}: ${who} IS UNLISTED. REPORT ON SIGHT. THREAT RATING ${this.campaign.threat.rating}.` : Game.PA_LINES[c.paIndex % Game.PA_LINES.length]!.replace(/\{D\}/g, district);
       c.paIndex++;
-      this.audio.pa();
+      this.audio.pa(this.world.level.name);
       this.cityLog.push(line);
       this.hud.push(`VANTAGE PA · ${line}`, "am pa"); // Stage 133: the one line of the log that wraps
       c.nextPa = t + Math.round((27 + ((c.paIndex * 11) % 17)) * SIM_HZ);

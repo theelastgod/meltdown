@@ -128,6 +128,37 @@ export function sirenTone(name: string | undefined): SirenTone {
   return (name && DISTRICT_SIREN[name]) || STREET_SIREN;
 }
 
+/** The three-note chime before a street announcement. Lease Row keeps 523, 659, 784. */
+export type PaChime = readonly [number, number, number];
+
+export const STREET_PA: PaChime = [523, 659, 784];
+
+const DISTRICT_PA: Record<string, PaChime> = {
+  deadletter_docks: [196, 247, 294],
+  repo_depot: [370, 440, 554],
+  night_market: [880, 1174, 1568],
+  relay_heights: [1318, 1568, 2093],
+  ash_canal: [174, 220, 261],
+  glass_mile: [1568, 1976, 2349],
+  bone_market: [277, 349, 415],
+  cold_vault: [1397, 1661, 1976],
+  neon_chapel: [330, 415, 494],
+  slag_pit: [233, 311, 392],
+  wire_garden: [988, 1318, 1760],
+  red_kiln: [155, 196, 247],
+  paper_wharf: [466, 587, 698],
+  velvet_court: [311, 392, 466],
+  rust_crown: [415, 523, 622],
+  salt_stairs: [1046, 1318, 1568],
+  lamp_bazaar: [740, 932, 1174],
+  debt_orchard: [220, 277, 330],
+  black_relay: [1760, 2217, 2637],
+};
+
+export function paChime(name: string | undefined): PaChime {
+  return (name && DISTRICT_PA[name]) || STREET_PA;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -376,10 +407,10 @@ export class GameAudio {
   }
 
   /** The PA: a three-note VANTAGE chime, then a formant-filtered burst that reads as a voice through street speakers. */
-  pa(): void {
+  pa(place?: string): void {
     this.count("pa");
     if (!this.ctx) return;
-    for (const [i, hz] of [523, 659, 784].entries()) this.tone({ dur: 0.35, from: hz, gain: 0.07, type: "triangle", delay: i * 0.22 });
+    for (const [i, hz] of paChime(place).entries()) this.tone({ dur: 0.35, from: hz, gain: 0.07, type: "triangle", delay: i * 0.22 });
     // "voice": syllables of narrow-band noise across a few formants, slap-echoed like a speaker on a wall
     let d = 0.9;
     const formants = [640, 820, 1100, 720, 980, 560, 1250, 880, 700];
