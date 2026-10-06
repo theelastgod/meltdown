@@ -34,10 +34,27 @@ export type StepSurface = {
   type: BiquadFilterType;
 };
 
+/** Twelve streets that had no step of their own. Lease Row keeps the wet street below. */
+const DISTRICT_STEP: Record<string, StepSurface> = {
+  deadletter_docks: { hz: 110, dur: 0.11, q: 0.35, type: "lowpass" },
+  repo_depot: { hz: 320, dur: 0.045, q: 0.6, type: "lowpass" },
+  relay_heights: { hz: 2100, dur: 0.018, q: 3.1, type: "highpass" },
+  bone_market: { hz: 220, dur: 0.05, q: 0.55, type: "lowpass" },
+  neon_chapel: { hz: 150, dur: 0.12, q: 0.8, type: "lowpass" },
+  wire_garden: { hz: 1600, dur: 0.022, q: 1.6, type: "highpass" },
+  red_kiln: { hz: 480, dur: 0.04, q: 1.1, type: "lowpass" },
+  paper_wharf: { hz: 90, dur: 0.1, q: 0.25, type: "lowpass" },
+  rust_crown: { hz: 700, dur: 0.03, q: 1.2, type: "highpass" },
+  lamp_bazaar: { hz: 1200, dur: 0.025, q: 2.0, type: "highpass" },
+  debt_orchard: { hz: 200, dur: 0.085, q: 0.45, type: "lowpass" },
+  black_relay: { hz: 2500, dur: 0.012, q: 4.0, type: "highpass" },
+};
+
 export function stepSurface(name: string | undefined): StepSurface {
   const step = placeFeel(name)?.step;
   if (step) return step;
   if (name === "night_market") return { hz: 920, dur: 0.028, q: 1.8, type: "highpass" };
+  if (name && DISTRICT_STEP[name]) return DISTRICT_STEP[name];
   return { hz: 260, dur: 0.06, q: 0.7, type: "lowpass" };
 }
 
