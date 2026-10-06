@@ -788,6 +788,35 @@ export function steamBulk(name: string | undefined): number {
   return (name && DISTRICT_BULK[name]) || STREET_BULK;
 }
 
+/** How thick a grate puff reads, against the alpha the street shipped with. Lease Row stays 0.16. Tint, rise, width, and point count stay put. */
+export const STREET_HAZE = 0.16;
+
+const DISTRICT_HAZE: Record<string, number> = {
+  deadletter_docks: 0.07,
+  repo_depot: 0.28,
+  night_market: 0.42,
+  relay_heights: 0.22,
+  ash_canal: 0.34,
+  glass_mile: 0.11,
+  bone_market: 0.19,
+  cold_vault: 0.05,
+  neon_chapel: 0.25,
+  slag_pit: 0.38,
+  wire_garden: 0.31,
+  red_kiln: 0.48,
+  paper_wharf: 0.13,
+  velvet_court: 0.09,
+  rust_crown: 0.36,
+  salt_stairs: 0.15,
+  lamp_bazaar: 0.52,
+  debt_orchard: 0.26,
+  black_relay: 0.04,
+};
+
+export function steamHaze(name: string | undefined): number {
+  return (name && DISTRICT_HAZE[name]) || STREET_HAZE;
+}
+
 /** Steam from the grates: additive points rising and fading, one cloud per vent. */
 export class Steam {
   readonly object: THREE.Points;
@@ -813,7 +842,7 @@ export class Steam {
     geo.setAttribute("info", new THREE.BufferAttribute(info, 3));
     const tint = steamTint(name);
     this.mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 }, uTint: { value: new THREE.Color(tint[0], tint[1], tint[2]) }, uLift: { value: steamLift(name) }, uBulk: { value: steamBulk(name) } },
+      uniforms: { uTime: { value: 0 }, uTint: { value: new THREE.Color(tint[0], tint[1], tint[2]) }, uLift: { value: steamLift(name) }, uBulk: { value: steamBulk(name) }, uHaze: { value: steamHaze(name) } },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
@@ -828,10 +857,10 @@ export class Steam {
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
-        uniform vec3 uTint; varying float vA;
+        uniform vec3 uTint; uniform float uHaze; varying float vA;
         void main() {
           float d = length(gl_PointCoord - 0.5);
-          float a = smoothstep(0.5, 0.1, d) * vA * 0.16;
+          float a = smoothstep(0.5, 0.1, d) * vA * uHaze;
           gl_FragColor = vec4(uTint, a);
         }`,
     });
