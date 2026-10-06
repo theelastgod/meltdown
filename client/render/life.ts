@@ -643,6 +643,41 @@ export class HoloAds {
   }
 }
 
+/** The airship's panel and keel, and the blinker on the tall slabs. Lease Row keeps the old marks. */
+export type SkyMark = {
+  panel: number;
+  keel: number;
+  blink: readonly [number, number, number];
+};
+
+const LEASE_SKY: SkyMark = { panel: PALETTE.magenta, keel: PALETTE.cyan, blink: [1, 0.1, 0.18] };
+
+const DISTRICT_SKY: Record<string, SkyMark> = {
+  deadletter_docks: { panel: 0x1a6a88, keel: 0x9fdfff, blink: [0.4, 0.75, 1] },
+  repo_depot: { panel: 0xffb02e, keel: 0xffe34a, blink: [1, 0.72, 0.2] },
+  night_market: { panel: 0xff6ec8, keel: 0xc02060, blink: [1, 0.35, 0.6] },
+  relay_heights: { panel: 0xd5dde6, keel: 0x8aa0b8, blink: [0.75, 0.88, 1] },
+  ash_canal: { panel: 0x1d8a62, keel: 0x3dffa8, blink: [0.25, 0.9, 0.55] },
+  glass_mile: { panel: 0xffe8ff, keel: 0xc8a0e0, blink: [0.95, 0.8, 1] },
+  bone_market: { panel: 0xffd090, keel: 0xc8a070, blink: [1, 0.78, 0.45] },
+  cold_vault: { panel: 0xa8fff0, keel: 0x4a8890, blink: [0.6, 1, 0.92] },
+  neon_chapel: { panel: 0xc070ff, keel: 0x6a30c0, blink: [0.7, 0.35, 1] },
+  slag_pit: { panel: 0xff6820, keel: 0xa03010, blink: [1, 0.32, 0.1] },
+  wire_garden: { panel: 0x70ffb0, keel: 0x1a8048, blink: [0.35, 1, 0.55] },
+  red_kiln: { panel: 0xff5040, keel: 0x801810, blink: [1, 0.22, 0.18] },
+  paper_wharf: { panel: 0xc8d8ea, keel: 0x607080, blink: [0.7, 0.78, 0.85] },
+  velvet_court: { panel: 0xff4078, keel: 0x801030, blink: [1, 0.15, 0.4] },
+  rust_crown: { panel: 0xffb050, keel: 0x8a5018, blink: [1, 0.55, 0.2] },
+  salt_stairs: { panel: 0xe8f0ff, keel: 0x90a0c0, blink: [0.85, 0.9, 1] },
+  lamp_bazaar: { panel: 0xff88cc, keel: 0xc04070, blink: [1, 0.45, 0.75] },
+  debt_orchard: { panel: 0xc8f060, keel: 0x508020, blink: [0.75, 1, 0.3] },
+  black_relay: { panel: 0x6880a0, keel: 0x202830, blink: [0.35, 0.42, 0.55] },
+};
+
+export function skyMark(name: string | undefined): SkyMark {
+  return (name && DISTRICT_SKY[name]) || LEASE_SKY;
+}
+
 /** Aircraft-warning blinkers on the tallest slabs and an airship drifting over the district. */
 export class Sky {
   readonly group = new THREE.Group();
@@ -651,7 +686,7 @@ export class Sky {
   private shipAngle = 0;
   /** blinkers on the skyline */
   readonly blinkers: number;
-  constructor(skyline: THREE.Group, seed = 9) {
+  constructor(skyline: THREE.Group, seed = 9, name?: string) {
     const rnd = lcg(seed);
     const tops: number[] = [];
     const phase: number[] = [];
@@ -666,30 +701,32 @@ export class Sky {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.Float32BufferAttribute(tops, 3));
     geo.setAttribute("phase", new THREE.Float32BufferAttribute(phase, 1));
+    const mark = skyMark(name);
+    const blink = new THREE.Color(mark.blink[0], mark.blink[1], mark.blink[2]);
     this.mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
+      uniforms: { uTime: { value: 0 }, uBlink: { value: blink } },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       vertexShader: `uniform float uTime; attribute float phase; varying float vOn; void main(){ vOn = step(0.92, fract(uTime * 0.5 + phase)); vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = 9.0 * (120.0 / max(1.0, -mv.z)) + 2.0; gl_Position = projectionMatrix * mv; }`,
-      fragmentShader: `varying float vOn; void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; gl_FragColor = vec4(1.0, 0.1, 0.18, vOn * smoothstep(0.5, 0.15, d)); }`,
+      fragmentShader: `uniform vec3 uBlink; varying float vOn; void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; gl_FragColor = vec4(uBlink, vOn * smoothstep(0.5, 0.15, d)); }`,
     });
     const pts = new THREE.Points(geo, this.mat);
     pts.frustumCulled = false;
     this.group.add(pts);
-    // airship: a dark hull with a magenta ad panel underneath, drifting in a slow circle
+    // airship: a dark hull, this district's panel and keel, drifting in a slow circle
     this.ship = new THREE.Group();
     const airMat = new THREE.MeshStandardMaterial({ color: 0x0a0c12, roughness: 0.8 });
     bindPlate(airMat, "tex_airship");
     const hull = new THREE.Mesh(new THREE.CapsuleGeometry(9, 40, 4, 10), airMat);
     hull.rotation.z = Math.PI / 2;
     this.ship.add(hull);
-    const panelMat = new THREE.MeshBasicMaterial({ color: PALETTE.magenta });
+    const panelMat = new THREE.MeshBasicMaterial({ color: mark.panel });
     bindPlate(panelMat, "tex_billboard_mg");
     const panel = new THREE.Mesh(new THREE.BoxGeometry(34, 8, 0.4), panelMat);
     panel.position.y = -10;
     this.ship.add(panel);
-    const keelMat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan });
+    const keelMat = new THREE.MeshBasicMaterial({ color: mark.keel });
     bindPlate(keelMat, "tex_billboard_cy");
     const strip = new THREE.Mesh(new THREE.BoxGeometry(34.4, 0.3, 0.6), keelMat);
     strip.position.y = -14.2;
@@ -801,7 +838,7 @@ export class CityLife {
     if (this.steam) this.group.add(this.steam.object);
     this.ads = level.ads?.length ? new HoloAds(level.ads) : null;
     if (this.ads) this.group.add(this.ads.group);
-    this.sky = new Sky(skyline, (level.skylineSeed ?? 1) + 3);
+    this.sky = new Sky(skyline, (level.skylineSeed ?? 1) + 3, level.name);
     this.group.add(this.sky.group);
   }
   update(dt: number, listener: THREE.Vector3): void {
