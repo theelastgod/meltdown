@@ -52,6 +52,7 @@ export const LEVEL_ART: Readonly<Record<string, string>> = {
   [HUB_LEVEL_ID]: "/districts/deadletter_office.jpg",
   drainage_yard: "/districts/drainage_yard.jpg",
   [WHITE_LEVEL_ID]: "/districts/white_office.jpg",
+  green_hold: "/districts/green_hold.jpg",
 };
 
 /** The name a place goes by on the card: the city's name, never the level id. */
