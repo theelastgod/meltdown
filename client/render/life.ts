@@ -522,6 +522,35 @@ export function tramLivery(name: string | undefined): TramLivery {
   return (name && DISTRICT_LIVERY[name]) || LEASE_LIVERY;
 }
 
+/** Monorail body colour. Lease Row keeps the hull the car shipped with. Heads stay warm and tails stay red. */
+export const STREET_HULL = 0x141a24;
+
+const DISTRICT_HULL: Record<string, number> = {
+  deadletter_docks: 0x1a3040,
+  repo_depot: 0x2a2418,
+  night_market: 0x301820,
+  relay_heights: 0x243038,
+  ash_canal: 0x142820,
+  glass_mile: 0x281828,
+  bone_market: 0x2a2018,
+  cold_vault: 0x182828,
+  neon_chapel: 0x241430,
+  slag_pit: 0x281410,
+  wire_garden: 0x142818,
+  red_kiln: 0x30140e,
+  paper_wharf: 0x202428,
+  velvet_court: 0x301018,
+  rust_crown: 0x281c10,
+  salt_stairs: 0x202830,
+  lamp_bazaar: 0x381428,
+  debt_orchard: 0x1c2410,
+  black_relay: 0x141820,
+};
+
+export function tramHull(name: string | undefined): number {
+  return (name && DISTRICT_HULL[name]) || STREET_HULL;
+}
+
 export class Tram {
   readonly group = new THREE.Group();
   private cars: { mesh: THREE.Group; dir: 1 | -1; phase: number }[] = [];
@@ -535,7 +564,7 @@ export class Tram {
     const livery = tramLivery(name);
     for (const dir of [1, -1] as const) {
       const g = new THREE.Group();
-      const hullMat = new THREE.MeshStandardMaterial({ color: 0x141a24, roughness: 0.4, metalness: 0.6 });
+      const hullMat = new THREE.MeshStandardMaterial({ color: tramHull(name), roughness: 0.4, metalness: 0.6 });
       bindPlate(hullMat, "tex_monorail");
       const geo = tramGeometry();
       const body = new THREE.Mesh(geo.hull, hullMat);
