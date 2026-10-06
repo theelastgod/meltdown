@@ -19,11 +19,11 @@ import { WEAPONS } from "../shared/weapons/manifest";
 import { SIM_HZ } from "../shared/sim/constants";
 
 describe("campaign data", () => {
-  it("three houses with a fixer each; seven missions in arc order; twenty-two gigs; every script referenced exists", () => {
+  it("three houses with a fixer each; seven missions in arc order; thirty-two gigs; every script referenced exists", () => {
     expect(FACTIONS.length).toBe(3);
     for (const f of FACTIONS) expect(HANDLERS[f.fixer].faction).toBe(f.id);
     expect(MAIN_ARC.map((m) => m.order)).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(GIGS.length).toBe(22);
+    expect(GIGS.length).toBe(32);
     for (const m of MISSIONS) for (const o of [...m.objectives, ...(m.variants ?? []).flatMap((v) => v.objectives ?? [])]) if (o.kind === "dialogue") expect(scriptById(o.script), o.script).toBeDefined();
     for (const s of SCRIPTS) for (const n of s.nodes) {
       if (n.next) expect(s.nodes.some((x) => x.id === n.next), `${s.id}:${n.id} → ${n.next}`).toBe(true);
