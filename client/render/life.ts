@@ -929,6 +929,35 @@ export function shipPace(name: string | undefined): { orbit: number; bob: number
   return (name && DISTRICT_SHIP[name]) || STREET_SHIP;
 }
 
+/** The lamp on the airship's nose. Lease Row keeps the red the skyline shipped with. */
+export const STREET_NOSE = PALETTE.red;
+
+const DISTRICT_NOSE: Record<string, number> = {
+  deadletter_docks: 0x35d0ff,
+  repo_depot: 0xffb020,
+  night_market: 0xff48b0,
+  relay_heights: 0xd8e8ff,
+  ash_canal: 0x30e090,
+  glass_mile: 0xf0d0ff,
+  bone_market: 0xffc070,
+  cold_vault: 0x90fff0,
+  neon_chapel: 0xc060ff,
+  slag_pit: 0xff6020,
+  wire_garden: 0x70ff90,
+  red_kiln: 0xff4040,
+  paper_wharf: 0xc0d0e0,
+  velvet_court: 0xff3060,
+  rust_crown: 0xffa040,
+  salt_stairs: 0xe8f4ff,
+  lamp_bazaar: 0xff70c0,
+  debt_orchard: 0xc8e040,
+  black_relay: 0x6080a0,
+};
+
+export function shipLamp(name: string | undefined): number {
+  return (name && DISTRICT_NOSE[name]) || STREET_NOSE;
+}
+
 /** Aircraft-warning blinkers on the tallest slabs and an airship drifting over the district. */
 export class Sky {
   readonly group = new THREE.Group();
@@ -984,7 +1013,7 @@ export class Sky {
     const strip = new THREE.Mesh(new THREE.BoxGeometry(34.4, 0.3, 0.6), keelMat);
     strip.position.y = -14.2;
     this.ship.add(strip);
-    const noseMat = new THREE.MeshBasicMaterial({ color: PALETTE.red });
+    const noseMat = new THREE.MeshBasicMaterial({ color: shipLamp(name) });
     bindPlate(noseMat, "tex_lamp");
     const nose = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), noseMat);
     nose.position.x = 29;
