@@ -178,6 +178,35 @@ export function limbRead(name: string | undefined): { shoe: number; shin: number
   return (name && DISTRICT_LIMB[name]) || STREET_LIMB;
 }
 
+/** Umbrella cloth. Lease Row keeps the dark canopy the crowd shipped with. */
+export const STREET_BROLLY = 0x0e1218;
+
+const DISTRICT_BROLLY: Record<string, number> = {
+  deadletter_docks: 0x1a3040,
+  repo_depot: 0x3a2810,
+  night_market: 0x4a1830,
+  relay_heights: 0x243040,
+  ash_canal: 0x143028,
+  glass_mile: 0x301838,
+  bone_market: 0x3a2818,
+  cold_vault: 0x1c3030,
+  neon_chapel: 0x301848,
+  slag_pit: 0x3a180c,
+  wire_garden: 0x143020,
+  red_kiln: 0x3a1410,
+  paper_wharf: 0x2a3034,
+  velvet_court: 0x401020,
+  rust_crown: 0x3a2410,
+  salt_stairs: 0x2a3038,
+  lamp_bazaar: 0x481830,
+  debt_orchard: 0x243018,
+  black_relay: 0x181c22,
+};
+
+export function brollyRead(name: string | undefined): number {
+  return (name && DISTRICT_BROLLY[name]) || STREET_BROLLY;
+}
+
 /** One instance colour on the limb mesh the crowd already draws. A room with no name keeps Lease Row. */
 export function paintCitizenLimbs(mesh: THREE.InstancedMesh, citizens: number, place?: string): void {
   const limb = limbRead(place);
@@ -245,7 +274,7 @@ export class Crowd {
     const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1, vertexColors: true });
     // white, so a district's lamp is the instance colour and Lease Row stays amber
     const lampMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const brollyMat = new THREE.MeshStandardMaterial({ color: 0x0e1218, roughness: 0.8, side: THREE.DoubleSide });
+    const brollyMat = new THREE.MeshStandardMaterial({ color: brollyRead(place), roughness: 0.8, side: THREE.DoubleSide });
     bindPlate(dark, "tex_crowd_coat");
     bindPlate(hoodMat, "tex_cloak");
     bindPlate(brollyMat, "tex_brolly");
