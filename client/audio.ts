@@ -42,8 +42,8 @@ export function stepSurface(name: string | undefined): StepSurface {
 }
 
 /**
- * The slap a shot throws back. The docks and the heights share a cast.
- * Deadletter answers late and low, off the water. Every other room keeps the street.
+ * The slap a shot throws back. Deadletter answers late and low, off the water.
+ * Eighteen districts each throw their own. Lease Row and the indoor rooms keep the street.
  */
 export type ShotSlap = {
   hz: number;
@@ -53,9 +53,31 @@ export type ShotSlap = {
   gain: number;
 };
 
+/** One slap each. Not a new mesh: the same shot, heard off a different room. */
+const DISTRICT_SLAP: Record<string, ShotSlap> = {
+  repo_depot: { hz: 860, dur: 0.045, q: 1.7, lag: 0.028, gain: 0.07 },
+  night_market: { hz: 2400, dur: 0.022, q: 3.4, lag: 0.012, gain: 0.06 },
+  relay_heights: { hz: 3600, dur: 0.16, q: 8, lag: 0.04, gain: 0.04 },
+  ash_canal: { hz: 92, dur: 0.74, q: 0.16, lag: 0.24, gain: 0.14 },
+  glass_mile: { hz: 1760, dur: 0.42, q: 12, lag: 0.07, gain: 0.055 },
+  bone_market: { hz: 78, dur: 0.14, q: 0.42, lag: 0.02, gain: 0.11 },
+  cold_vault: { hz: 1480, dur: 0.07, q: 5.2, lag: 0.016, gain: 0.065 },
+  neon_chapel: { hz: 310, dur: 1.05, q: 0.22, lag: 0.1, gain: 0.035 },
+  slag_pit: { hz: 240, dur: 0.055, q: 0.85, lag: 0.032, gain: 0.17 },
+  wire_garden: { hz: 5200, dur: 0.018, q: 6.5, lag: 0.009, gain: 0.03 },
+  red_kiln: { hz: 48, dur: 0.62, q: 0.28, lag: 0.13, gain: 0.19 },
+  paper_wharf: { hz: 640, dur: 0.09, q: 0.55, lag: 0.046, gain: 0.05 },
+  velvet_court: { hz: 190, dur: 0.05, q: 0.3, lag: 0.008, gain: 0.045 },
+  rust_crown: { hz: 520, dur: 0.11, q: 0.95, lag: 0.06, gain: 0.08 },
+  salt_stairs: { hz: 1100, dur: 0.032, q: 2.8, lag: 0.024, gain: 0.1 },
+  lamp_bazaar: { hz: 980, dur: 0.028, q: 1.9, lag: 0.018, gain: 0.025 },
+  debt_orchard: { hz: 64, dur: 0.28, q: 0.36, lag: 0.075, gain: 0.1 },
+  black_relay: { hz: 2800, dur: 0.22, q: 7.2, lag: 0.34, gain: 0.02 },
+};
+
 export function shotSlap(name: string | undefined): ShotSlap {
   if (name === "deadletter_docks") return { hz: 160, dur: 0.48, q: 0.35, lag: 0.16, gain: 0.13 };
-  return { hz: 480, dur: 0.26, q: 0.5, lag: 0.055, gain: 0.09 };
+  return (name && DISTRICT_SLAP[name]) || { hz: 480, dur: 0.26, q: 0.5, lag: 0.055, gain: 0.09 };
 }
 
 export function bedTune(name: string | undefined): BedTune {
