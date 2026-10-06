@@ -221,6 +221,37 @@ export function tramPass(name: string | undefined): TramPass {
   return (name && DISTRICT_TRAM[name]) || STREET_TRAM;
 }
 
+/** Distant traffic in the bed. Lease Row keeps the rumble the city already had. */
+export type FarTraffic = { rate: number; cut: number; swell: number };
+
+export const STREET_TRAFFIC: FarTraffic = { rate: 0.37, cut: 180, swell: 0.09 };
+
+const DISTRICT_TRAFFIC: Record<string, FarTraffic> = {
+  deadletter_docks: { rate: 0.22, cut: 90, swell: 0.05 },
+  repo_depot: { rate: 0.48, cut: 240, swell: 0.13 },
+  night_market: { rate: 0.55, cut: 320, swell: 0.16 },
+  relay_heights: { rate: 0.62, cut: 420, swell: 0.04 },
+  ash_canal: { rate: 0.18, cut: 70, swell: 0.06 },
+  glass_mile: { rate: 0.7, cut: 520, swell: 0.03 },
+  bone_market: { rate: 0.3, cut: 140, swell: 0.1 },
+  cold_vault: { rate: 0.44, cut: 260, swell: 0.07 },
+  neon_chapel: { rate: 0.28, cut: 110, swell: 0.08 },
+  slag_pit: { rate: 0.4, cut: 200, swell: 0.18 },
+  wire_garden: { rate: 0.5, cut: 300, swell: 0.11 },
+  red_kiln: { rate: 0.33, cut: 150, swell: 0.14 },
+  paper_wharf: { rate: 0.26, cut: 100, swell: 0.07 },
+  velvet_court: { rate: 0.24, cut: 85, swell: 0.045 },
+  rust_crown: { rate: 0.42, cut: 210, swell: 0.12 },
+  salt_stairs: { rate: 0.58, cut: 380, swell: 0.06 },
+  lamp_bazaar: { rate: 0.52, cut: 280, swell: 0.15 },
+  debt_orchard: { rate: 0.35, cut: 160, swell: 0.08 },
+  black_relay: { rate: 0.66, cut: 480, swell: 0.02 },
+};
+
+export function farTraffic(name: string | undefined): FarTraffic {
+  return (name && DISTRICT_TRAFFIC[name]) || STREET_TRAFFIC;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -247,7 +278,7 @@ export class GameAudio {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private bed: { gain: GainNode } | null = null;
-  /** Rain, hum, and buzz, kept so a district can retune the bed after it has started. */
+  /** Rain, hum, buzz, and the far-traffic rumble, kept so a district can retune the bed after it has started. */
   private bedNodes: {
     rainFilter: BiquadFilterNode;
     rainGain: GainNode;
@@ -256,6 +287,9 @@ export class GameAudio {
     buzz: OscillatorNode;
     buzzFilter: BiquadFilterNode;
     buzzGain: GainNode;
+    traffic: AudioBufferSourceNode;
+    trafficFilter: BiquadFilterNode;
+    swell: OscillatorNode;
   } | null = null;
   /** The level asked for, remembered until there is a bed to put it on. */
   private bedName: string | undefined;
@@ -401,7 +435,7 @@ export class GameAudio {
     this.bedLevel = 1;
     g.gain.linearRampToValueAtTime(this.bedLevel * this.volumes.bed, ctx.currentTime + 2.5);
     this.bed = { gain: g };
-    this.bedNodes = { rainFilter: rf, rainGain: rg, hum, humGain: hg, buzz, buzzFilter: bf, buzzGain: bg };
+    this.bedNodes = { rainFilter: rf, rainGain: rg, hum, humGain: hg, buzz, buzzFilter: bf, buzzGain: bg, traffic, trafficFilter: tf, swell };
     this.tune(this.bedName);
   }
 
@@ -422,6 +456,10 @@ export class GameAudio {
     n.buzz.frequency.value = t.buzzHz;
     n.buzzFilter.frequency.value = t.buzzCut;
     n.buzzGain.gain.value = t.buzz;
+    const far = farTraffic(levelName);
+    n.traffic.playbackRate.value = far.rate;
+    n.trafficFilter.frequency.value = far.cut;
+    n.swell.frequency.value = far.swell;
   }
 
   /** What the bed nodes are holding, or null before the bed exists. */
