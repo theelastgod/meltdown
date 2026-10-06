@@ -6,6 +6,7 @@
 import type { Account } from "../progression/account";
 import { FACTIONS, type FactionId } from "./factions";
 import { campaignOf, completeContract, pickFaction, wearProtocols } from "./save";
+import { noteSeen } from "./seen";
 import { buyApartmentDecor } from "../sim/apartment";
 
 export type CampaignRequest =
@@ -13,6 +14,7 @@ export type CampaignRequest =
   | { op: "complete"; id: string; testimony?: Record<string, string> }
   | { op: "wear"; protocols: string[] }
   | { op: "decor"; id: string }
+  | { op: "seen"; id: string }
   | { op: "state" };
 
 /**
@@ -62,6 +64,11 @@ export function campaignRequest(a: Account, body: unknown, opts: CampaignOptions
     case "decor": {
       const id = String((req as { id?: unknown }).id ?? "");
       const r = buyApartmentDecor(a, id);
+      return { ok: r.ok, reason: r.reason, campaign: campaignOf(a) };
+    }
+    case "seen": {
+      const id = String((req as { id?: unknown }).id ?? "");
+      const r = noteSeen(a, id);
       return { ok: r.ok, reason: r.reason, campaign: campaignOf(a) };
     }
     case "state":

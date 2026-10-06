@@ -311,7 +311,9 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .worldmap .wd .dim { opacity: 0.6; }
 #hud .worldmap .wd .go { margin-top: 6px; padding: 6px 8px; text-align: center; border: 1px solid var(--gr); color: var(--gr); cursor: pointer; letter-spacing: 0.1em; }
 #hud .worldmap .wd .go:hover { background: rgba(55,255,139,0.12); }
+#hud .worldmap .wt.locked { opacity: 0.55; }
 #hud .worldmap .wd .go.here { border-color: rgba(255,227,74,0.5); color: var(--ye); cursor: default; }
+#hud .worldmap .wd .go.locked { border-color: rgba(53,242,255,0.35); color: rgba(53,242,255,0.55); cursor: default; }
 #hud .worldmap .f { margin-top: 6px; font-size: 9px; color: rgba(53,242,255,0.5); }
 #hud.touch .worldmap .wt { min-height: 60px; }
 #hud.touch .worldmap .wd .go { padding: 10px 8px; }

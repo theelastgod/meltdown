@@ -68,7 +68,7 @@ describe("the world map's layout is the gates' own", () => {
   });
 
   it("the drawn markup joins exactly the layout's pairs, and each is a pair of neighbours", () => {
-    const html = worldMapHtml(layout, { here: "lease_row", selected: "lease_row", presence: null, status: "loading", touch: false });
+    const html = worldMapHtml(layout, { here: "lease_row", selected: "lease_row", seen: ["lease_row"], presence: null, status: "loading", touch: false });
     const drawn = [...html.matchAll(/data-link="([a-z_]+)\|([a-z_]+)"/g)].map((m) => [m[1]!, m[2]!] as const);
     expect(drawn.map(([a, b]) => `${a}|${b}`).sort()).toEqual(layout.links.map((l) => `${l.a}|${l.b}`).sort());
     for (const [a, b] of drawn) expect(Array.from({ length: GATES_PER_DISTRICT }, (_, g) => neighbourAt(a, g)?.district).includes(b)).toBe(true);
@@ -89,7 +89,7 @@ describe("the world map's layout is the gates' own", () => {
 
 describe("what the map shows", () => {
   const layout = worldMapLayout();
-  const state = (o: Partial<WorldMapState> = {}): WorldMapState => ({ here: "lease_row", selected: "lease_row", presence: feed({ night_market: 6, lease_row: 1 }, ["night_market"]), status: "live", touch: false, ...o });
+  const state = (o: Partial<WorldMapState> = {}): WorldMapState => ({ here: "lease_row", selected: "lease_row", seen: [...CITY_DISTRICTS], presence: feed({ night_market: 6, lease_row: 1 }, ["night_market"]), status: "live", touch: false, ...o });
 
   it("each tile's count, a pulse where an event runs, and the district you are in lit", () => {
     const html = worldMapHtml(layout, state());
@@ -134,6 +134,19 @@ describe("what the map shows", () => {
     expect(here).toMatch(/data-wm-run="lease_row"/);
     expect(here).toMatch(/>ENTER THE RUN</);
     expect(here).toMatch(/LEDGER DESK AT THE METRO/);
+  });
+
+  it("fast travel stays shut until the file has entered that district", () => {
+    const locked = worldMapDetails(state({ selected: "night_market", seen: ["lease_row"] }));
+    expect(locked).not.toMatch(/data-wm-go/);
+    expect(locked).toMatch(/WALK THERE ONCE/);
+    const html = worldMapHtml(layout, state({ seen: ["lease_row"] }));
+    const tile = (d: string) => html.match(new RegExp(`<div class="wt [^"]*" data-wm="${d}"[^>]*>`))![0];
+    expect(tile("night_market")).toMatch(/locked/);
+    expect(tile("lease_row")).not.toMatch(/locked/);
+    const open = worldMapDetails(state({ selected: "night_market", seen: ["lease_row", "night_market"] }));
+    expect(open).toMatch(/data-wm-go="night_market"/);
+    expect(open).toMatch(/\[TRAVEL TO NIGHT MARKET\]/);
     expect(worldMapHtml(layout, state({ touch: true }))).not.toMatch(/data-wm-run="[^"]*".*\[[A-Z]+\]/);
   });
 

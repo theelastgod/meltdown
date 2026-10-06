@@ -7,7 +7,7 @@
  * mark where a public event is running, and the district this page is in lit. Choosing a district
  * shows who is there, its event and its course records, where its gates lead, and TRAVEL — a trip to
  * that district's city room (`cityMapTravelUrl`: the same campaign host, behind the loading card),
- * never the old offline level travel.
+ * never the old offline level travel. TRAVEL stays shut until the file has entered that district.
  *
  * The counts come from the city's presence feed (GET /city, shared/city/presence.ts), read when the
  * map opens and every few seconds while it stays open, never while it is shut. The feed being down
@@ -32,9 +32,21 @@ export interface WorldMapState {
   here: string;
   /** the district whose details are showing */
   selected: string;
+  /** districts this file has entered. Fast travel opens for these, and for `here`. */
+  seen: readonly string[];
   presence: CityPresence | null;
   status: WorldMapStatus;
   touch: boolean;
+}
+
+/** The file has stood in this district, including the one underfoot. */
+export function districtSeen(v: Pick<WorldMapState, "here" | "seen">, id: string): boolean {
+  return id === v.here || v.seen.includes(id);
+}
+
+/** A district the file can jump to: it has been there, and it is not the street underfoot. */
+export function fastTravelOpen(v: Pick<WorldMapState, "here" | "seen">, id: string): boolean {
+  return id !== v.here && v.seen.includes(id);
 }
 
 const esc = (s: string): string => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -54,9 +66,10 @@ export function worldMapHtml(layout: WorldMapLayout, v: WorldMapState): string {
   for (const t of layout.tiles) {
     const p = line(t.district);
     const ev = !!p?.event;
+    const known = districtSeen(v, t.district);
     const stubs = layout.stubs.filter((s) => s.district === t.district).map((s) => `<i class="ws ${s.side}" title="${esc(`${SIDE_WORD[s.side]} → ${levelDisplayName(s.to)}`)}">${SIDE_MARK[s.side]}</i>`).join("");
     cells.push(
-      `<div class="wt ${t.cast}${t.district === v.here ? " here" : ""}${t.district === v.selected ? " sel" : ""}${ev ? " ev" : ""}" data-wm="${t.district}" style="grid-column:${t.x * 2 + 1};grid-row:${t.z * 2 + 1}">` +
+      `<div class="wt ${t.cast}${known ? "" : " locked"}${t.district === v.here ? " here" : ""}${t.district === v.selected ? " sel" : ""}${ev ? " ev" : ""}" data-wm="${t.district}" style="grid-column:${t.x * 2 + 1};grid-row:${t.z * 2 + 1}">` +
         `<b class="nm">${esc(t.name)}</b><span class="ct">${tileCount(p, v.status)}</span>${t.district === v.here ? '<span class="you">YOU ARE HERE</span>' : ""}${ev ? '<i class="pulse" title="PUBLIC EVENT"></i>' : ""}${stubs}</div>`,
     );
   }
@@ -77,7 +90,7 @@ function statusLine(v: WorldMapState): string {
   if (v.status === "unreachable") return "PRESENCE FEED UNREACHABLE · THE MAP AND TRAVEL STILL WORK";
   if (v.status === "loading" || !v.presence) return "READING THE CITY…";
   const total = v.presence.districts.reduce((n, d) => n + d.players, 0);
-  return `${total} ONLINE ACROSS THE CITY · EVERY TRIP IS A RELOAD`;
+  return `${total} ONLINE ACROSS THE CITY · FAST TRAVEL OPENS AFTER THE FIRST VISIT`;
 }
 
 /** The chosen district's details: who is there, its event, its records, its gates, and TRAVEL. */
@@ -90,7 +103,11 @@ export function worldMapDetails(v: WorldMapState): string {
   const contest = live && p!.contest ? `<div class="de">▣ CONTEST BLOCK IS UP</div>` : "";
   const recs = !live ? "" : p!.records.length ? p!.records.map((r) => `<div class="dr">⏱ ${esc(r.course)} · ${r.time.toFixed(1)}S · ${esc(r.holder)}</div>`).join("") : '<div class="dr dim">NO STREET-RUN RECORDS YET</div>';
   const gates = gateSummary(id).map((g) => `${g.sides.map((s) => SIDE_WORD[s]).join(" · ")} → ${levelDisplayName(g.to)}`).join(" &nbsp; ");
-  const go = id === v.here ? '<div class="go here">YOU ARE HERE</div>' : `<div class="go" data-wm-go="${id}">${crewButton(`TRAVEL TO ${esc(levelDisplayName(id))}`, v.touch)}</div>`;
+  const go = id === v.here
+    ? '<div class="go here">YOU ARE HERE</div>'
+    : fastTravelOpen(v, id)
+      ? `<div class="go" data-wm-go="${id}">${crewButton(`TRAVEL TO ${esc(levelDisplayName(id))}`, v.touch)}</div>`
+      : `<div class="go locked">WALK THERE ONCE · FAST TRAVEL OPENS AFTER THE FIRST VISIT</div>`;
   // The metro booth is on every plaza. The market spends $CAPITAL. THE RUN is where it is paid.
   const run = `<div class="dg">LEDGER DESK AT THE METRO · MARKET SPENDS · THE NAME DESK BURNS · THE RUN PAYS</div><div class="go" data-wm-run="${id}">${runButton(v.touch)}</div>`;
   return `<div class="wd"><div class="dh"><b>${esc(levelDisplayName(id))}</b> · ${live ? `${p!.players} ONLINE` : "—"}</div><div class="dn">${who}</div>${ev}${contest}${recs}<div class="dg">GATES ${gates}</div>${go}${run}</div>`;
@@ -109,7 +126,7 @@ export class WorldMap {
   reads = 0;
 
   constructor(root: HTMLElement, here: string, touch: boolean, private go: (url: string, district: string) => void, private feed: string | null = feedUrl(location.href), private onRun: ((url: string) => void) | null = null) {
-    this.state = { here, selected: here, presence: null, status: "loading", touch };
+    this.state = { here, selected: here, seen: [here], presence: null, status: "loading", touch };
     const el = document.createElement("div");
     el.className = "p cy worldmap";
     el.hidden = true;
@@ -163,8 +180,17 @@ export class WorldMap {
     return url;
   }
 
-  /** TRAVEL: the chosen district's city, behind the loading card. Null when there is nowhere to go. */
+  /** Districts the file has entered. The street underfoot stays open. */
+  setSeen(ids: readonly string[]): void {
+    const seen = [...ids];
+    if (!seen.includes(this.state.here)) seen.push(this.state.here);
+    this.state.seen = seen;
+    if (this.open) this.render();
+  }
+
+  /** TRAVEL: the chosen district's city, behind the loading card. Null until the file has been there. */
   travel(district: string): string | null {
+    if (!fastTravelOpen(this.state, district)) return null;
     const url = cityMapTravelUrl(location.href, district);
     if (!url) return null;
     this.target = url;

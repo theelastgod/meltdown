@@ -6,7 +6,7 @@
  * file goes through the ledger host's /file/:id/campaign endpoint when one
  * is linked, and a local save otherwise.
  */
-import { cityContractPlan, cityPageUrl, inCity, streetJobUrl } from "@shared/net/city";
+import { CITY_DISTRICTS, cityContractPlan, cityPageUrl, inCity, streetJobUrl } from "@shared/net/city";
 import type { Game } from "./game";
 import { cityArrivalLine, cityContractsLine, closeHint, closedCityLine, closedContractLine, crewButton, failedContractLine } from "./hud/keyhint";
 import { HANDLERS, FACTIONS, type FactionId, type HandlerId } from "@shared/campaign/factions";
@@ -16,6 +16,7 @@ import { PROTOCOLS, protocolMods, MAX_PROTOCOLS } from "@shared/campaign/protoco
 import { linesAt, recallIndex, scriptById, type ScriptNode } from "@shared/campaign/script";
 import { GIGS, MAIN_ARC, missionById, type MissionDef } from "@shared/campaign/missions";
 import { campaignOf, canLaunch, completeContract, gigsOnOffer, nextMission, pickFaction, wearProtocols, type CampaignSave } from "@shared/campaign/save";
+import { noteSeen } from "@shared/campaign/seen";
 import { createMission, drainMissionEvents, missionView, noteStreetKill, resolveDialogue, resolveSpot, spawnThreat, stepMission, type MissionState } from "@shared/campaign/runtime";
 import { sandboxAccount, type Account } from "@shared/progression/account";
 import type { SimEvent } from "@shared/sim/world";
@@ -171,6 +172,47 @@ export class Campaign {
     return this.local;
   }
 
+  /** The districts this browser has entered, so a visit survives a file that has not stored it yet. */
+  private readLocalSeen(): string[] {
+    try {
+      const raw = localStorage.getItem(`meltdown.seen.${this.game.file.account}`);
+      const ids = raw ? JSON.parse(raw) as unknown : [];
+      if (!Array.isArray(ids)) return [];
+      return ids.filter((id): id is string => typeof id === "string" && (CITY_DISTRICTS as readonly string[]).includes(id));
+    } catch {
+      return [];
+    }
+  }
+
+  private writeLocalSeen(ids: readonly string[]): void {
+    try {
+      localStorage.setItem(`meltdown.seen.${this.game.file.account}`, JSON.stringify(ids));
+    } catch {
+      /* private mode */
+    }
+  }
+
+  /** Standing in a district opens it on the city map. A second visit changes nothing. */
+  private rememberPlace(): void {
+    const id = this.game.levelId;
+    const a = this.account();
+    const fresh = noteSeen(a, id).fresh;
+    for (const s of this.readLocalSeen()) noteSeen(a, s);
+    const seen = campaignOf(a).seen;
+    this.writeLocalSeen(seen);
+    this.game.worldMap?.setSeen(seen);
+    if (!fresh) return;
+    if (this.game.file.shop) {
+      void this.game.file.postCampaign({ op: "seen", id }).then((r) => {
+        if (!r.ok || !r.account) return;
+        this.game.file.applyAccount(r.account);
+        this.save = campaignOf(this.account());
+        for (const s of this.readLocalSeen()) noteSeen(this.account(), s);
+        this.game.worldMap?.setSeen(campaignOf(this.account()).seen);
+      });
+    } else this.persistLocal();
+  }
+
   private persistLocal(): void {
     try {
       localStorage.setItem(`meltdown.campaign.${this.game.file.account}`, JSON.stringify(this.save));
@@ -183,6 +225,7 @@ export class Campaign {
   start(): void {
     if (this.started) return;
     this.started = true;
+    this.rememberPlace();
     const a = this.account();
     this.furnishApartment();
     this.threat = threatProfile(threatRating({ depth: a.depth, counters: a.counters, campaign: this.save }));
