@@ -1016,6 +1016,35 @@ export function trafficTail(name: string | undefined): readonly [number, number,
   return (name && TRAFFIC_TAILS[name]) || TRAFFIC_TAIL;
 }
 
+/** How fast the far streaks run, as a multiple of the lane. Lease Row keeps the pace the lanes shipped with. */
+export const STREET_PACE = 1;
+
+const DISTRICT_PACE: Record<string, number> = {
+  deadletter_docks: 0.42,
+  repo_depot: 0.55,
+  night_market: 1.72,
+  relay_heights: 1.35,
+  ash_canal: 0.38,
+  glass_mile: 2.15,
+  bone_market: 0.48,
+  cold_vault: 0.28,
+  neon_chapel: 0.66,
+  slag_pit: 0.82,
+  wire_garden: 1.12,
+  red_kiln: 1.48,
+  paper_wharf: 0.74,
+  velvet_court: 0.58,
+  rust_crown: 0.92,
+  salt_stairs: 1.88,
+  lamp_bazaar: 0.34,
+  debt_orchard: 0.86,
+  black_relay: 2.4,
+};
+
+export function trafficPace(name: string | undefined): number {
+  return (name && DISTRICT_PACE[name]) || STREET_PACE;
+}
+
 /**
  * Traffic beyond the facades: head- and tail-light streaks sliding along
  * elevated lanes. One LineSegments, positions updated on the CPU each frame.
@@ -1024,7 +1053,9 @@ export class Traffic {
   readonly object: THREE.LineSegments;
   private cars: { lane: TrafficLane; t: number; len: number }[] = [];
   private pos: Float32Array;
+  private readonly pace: number;
   constructor(lanes: readonly TrafficLane[], seed = 5, name?: string) {
+    this.pace = trafficPace(name);
     const rnd = lcg(seed);
     for (const lane of lanes) for (let i = 0; i < lane.count; i++) this.cars.push({ lane, t: rnd(), len: 3 + rnd() * 3 });
     const n = this.cars.length * 2; // two segments per car: head and tail
@@ -1049,7 +1080,7 @@ export class Traffic {
     for (let i = 0; i < this.cars.length; i++) {
       const c = this.cars[i]!;
       const L = Math.hypot(c.lane.to.x - c.lane.from.x, c.lane.to.z - c.lane.from.z);
-      c.t = (c.t + (dt * c.lane.speed) / L) % 1;
+      c.t = (c.t + (dt * c.lane.speed * this.pace) / L) % 1;
       const x = c.lane.from.x + (c.lane.to.x - c.lane.from.x) * c.t;
       const z = c.lane.from.z + (c.lane.to.z - c.lane.from.z) * c.t;
       const y = c.lane.from.y;
