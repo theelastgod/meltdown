@@ -126,6 +126,35 @@ export function shotSlap(name: string | undefined): ShotSlap {
   return (name && DISTRICT_SLAP[name]) || { hz: 480, dur: 0.26, q: 0.5, lag: 0.055, gain: 0.09 };
 }
 
+/** Metres a shot must travel before the buildings throw it back. Lease Row keeps 22. The slap stays shotSlap. */
+export const STREET_GATE = 22;
+
+const DISTRICT_GATE: Record<string, number> = {
+  deadletter_docks: 34,
+  repo_depot: 18,
+  night_market: 12,
+  relay_heights: 16,
+  ash_canal: 28,
+  glass_mile: 14,
+  bone_market: 26,
+  cold_vault: 40,
+  neon_chapel: 31,
+  slag_pit: 20,
+  wire_garden: 11,
+  red_kiln: 24,
+  paper_wharf: 36,
+  velvet_court: 19,
+  rust_crown: 23,
+  salt_stairs: 15,
+  lamp_bazaar: 9,
+  debt_orchard: 29,
+  black_relay: 46,
+};
+
+export function slapGate(name: string | undefined): number {
+  return (name && DISTRICT_GATE[name]) || STREET_GATE;
+}
+
 /** The two-tone wail across a district. Lease Row keeps 494 and 660 through a 900 Hz lowpass. */
 export type SirenTone = { low: number; high: number; cut: number };
 
@@ -1553,7 +1582,7 @@ export class GameAudio {
     this.tone({ dur: 0.12 + cue.muffle * 0.25, from: wasp ? 700 : heavy ? 120 : 165, to: wasp ? 400 : 38, gain: (wasp ? 0.06 : heavy ? 0.3 : 0.22) * g, type: "sine", delay: cue.delay, pan: cue.pan * 0.5 });
     // and off the room, from the other side, once there is street enough for it
     const slap = shotSlap(place);
-    if (cue.distance > 22 && !wasp) this.burst({ dur: slap.dur, freq: slap.hz, q: slap.q, gain: slap.gain * g, type: "lowpass", pan: -cue.pan * 0.6, delay: cue.delay + slap.lag });
+    if (cue.distance > slapGate(place) && !wasp) this.burst({ dur: slap.dur, freq: slap.hz, q: slap.q, gain: slap.gain * g, type: "lowpass", pan: -cue.pan * 0.6, delay: cue.delay + slap.lag });
   }
 
   /**
