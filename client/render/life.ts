@@ -174,6 +174,35 @@ export function strideClock(name: string | undefined): number {
   return (name && DISTRICT_STRIDE[name]) || STREET_STRIDE;
 }
 
+/** How high a walking body lifts, in metres. Lease Row keeps the bob the crowd shipped with. The clock stays strideClock. */
+export const STREET_BOB = 0.04;
+
+const DISTRICT_BOB: Record<string, number> = {
+  deadletter_docks: 0.012,
+  repo_depot: 0.055,
+  night_market: 0.16,
+  relay_heights: 0.028,
+  ash_canal: 0.02,
+  glass_mile: 0.07,
+  bone_market: 0.035,
+  cold_vault: 0.008,
+  neon_chapel: 0.045,
+  slag_pit: 0.11,
+  wire_garden: 0.062,
+  red_kiln: 0.09,
+  paper_wharf: 0.018,
+  velvet_court: 0.025,
+  rust_crown: 0.08,
+  salt_stairs: 0.13,
+  lamp_bazaar: 0.19,
+  debt_orchard: 0.05,
+  black_relay: 0.006,
+};
+
+export function strideBob(name: string | undefined): number {
+  return (name && DISTRICT_BOB[name]) || STREET_BOB;
+}
+
 export function citizenSwing(time: number, speed: number, phase: number, idle: boolean, clock = STREET_STRIDE): number {
   return idle ? 0 : CITIZEN_STRIDE * Math.cos(time * clock * speed + phase);
 }
@@ -296,11 +325,13 @@ export class Crowd {
   private sc = new THREE.Vector3();
   private time = 0;
   private readonly stride: number;
+  private readonly hop: number;
 
   constructor(loops: readonly WalkLoop[], count: number, seed = 11, place?: string) {
     const rnd = lcg(seed);
     const cast = crowdCast(place);
     this.stride = strideClock(place);
+    this.hop = strideBob(place);
     const dark = new THREE.MeshStandardMaterial({ color: 0x0b0d13, roughness: 0.9, metalness: 0.05 });
     const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1, vertexColors: true });
     // white, so a district's lamp is the instance colour and Lease Row stays amber
@@ -375,7 +406,7 @@ export class Crowd {
       ped.x = o.x;
       ped.z = o.z;
       ped.yaw = ped.dir > 0 ? o.yaw : o.yaw + Math.PI;
-      const bob = ped.idle ? 0 : Math.abs(Math.sin(this.time * this.stride * ped.speed + ped.bob)) * 0.04;
+      const bob = ped.idle ? 0 : Math.abs(Math.sin(this.time * this.stride * ped.speed + ped.bob)) * this.hop;
       this.q.setFromAxisAngle(UP, ped.yaw);
       // body and hood share one feet-at-the-origin frame and the citizen's own height
       this.sc.set(ped.h * ped.bulk, ped.h, ped.h * ped.bulk);
