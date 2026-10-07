@@ -286,7 +286,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
   const M = {
     concrete: std({ color: 0x1c2230, roughness: 0.7, metalness: 0.2 }),
     sidewalk: std({ color: 0x2a3140, roughness: curbSheen(level.name), metalness: 0.05 }),
-    base: std({ color: 0x10141c, roughness: 0.8, metalness: 0.1 }),
+    base: std({ color: 0x10141c, roughness: plinthSheen(level.name), metalness: 0.1 }),
     metal: std({ color: 0x151b26, roughness: 0.45, metalness: 0.55 }),
     crate: std({ color: 0x3a2a12, roughness: 0.8, metalness: 0.05 }),
     barrel: std({ color: PALETTE.orange, roughness: 0.55, metalness: 0.2 }),
@@ -872,6 +872,35 @@ const DISTRICT_ROAD: Record<string, number> = {
 
 export function roadSheen(name: string | undefined): number {
   return (name && DISTRICT_ROAD[name]) || STREET_ROAD;
+}
+
+/** How the shop plinth takes the street light. Lease Row keeps the gloss the blocks shipped with. Same boxes, no new mesh. Colour stays 0x10141c. */
+export const STREET_PLINTH = 0.8;
+
+const DISTRICT_PLINTH: Record<string, number> = {
+  deadletter_docks: 0.96,
+  repo_depot: 0.48,
+  night_market: 0.22,
+  relay_heights: 0.58,
+  ash_canal: 0.92,
+  glass_mile: 0.18,
+  bone_market: 0.72,
+  cold_vault: 0.99,
+  neon_chapel: 0.35,
+  slag_pit: 0.64,
+  wire_garden: 0.42,
+  red_kiln: 0.28,
+  paper_wharf: 0.88,
+  velvet_court: 0.12,
+  rust_crown: 0.68,
+  salt_stairs: 0.52,
+  lamp_bazaar: 0.15,
+  debt_orchard: 0.76,
+  black_relay: 0.84,
+};
+
+export function plinthSheen(name: string | undefined): number {
+  return (name && DISTRICT_PLINTH[name]) || STREET_PLINTH;
 }
 
 /** How hard the street windows burn. Lease Row keeps the facade glow the blocks shipped with. Same panes, no new mesh. */
