@@ -275,6 +275,35 @@ export function paTalk(name: string | undefined): number {
   return (name && DISTRICT_TALK[name]) || STREET_TALK;
 }
 
+/** Seconds each announcement syllable holds. Lease Row keeps the 0.11 the speaker shipped with. */
+export const STREET_HOLD = 0.11;
+
+const DISTRICT_HOLD: Record<string, number> = {
+  deadletter_docks: 0.22,
+  repo_depot: 0.15,
+  night_market: 0.05,
+  relay_heights: 0.08,
+  ash_canal: 0.28,
+  glass_mile: 0.04,
+  bone_market: 0.18,
+  cold_vault: 0.09,
+  neon_chapel: 0.2,
+  slag_pit: 0.13,
+  wire_garden: 0.06,
+  red_kiln: 0.24,
+  paper_wharf: 0.16,
+  velvet_court: 0.19,
+  rust_crown: 0.12,
+  salt_stairs: 0.07,
+  lamp_bazaar: 0.045,
+  debt_orchard: 0.21,
+  black_relay: 0.03,
+};
+
+export function paHold(name: string | undefined): number {
+  return (name && DISTRICT_HOLD[name]) || STREET_HOLD;
+}
+
 /** The speaker voice after the chime. Lease Row keeps the street formants. */
 export const STREET_VOICE: readonly number[] = [640, 820, 1100, 720, 980, 560, 1250, 880, 700];
 
@@ -724,10 +753,11 @@ export class GameAudio {
     // "voice": syllables of narrow-band noise across a few formants, slap-echoed like a speaker on a wall
     let d = 0.9;
     const formants = paVoice(place);
+    const hold = paHold(place);
     for (let i = 0; i < formants.length; i++) {
       const f = formants[i] ?? 700;
-      this.burst({ dur: 0.11, freq: f, q: 5, gain: 0.07, delay: d, pan: 0.35 });
-      this.burst({ dur: 0.11, freq: f * 0.5, q: 4, gain: 0.05, delay: d, pan: 0.35 });
+      this.burst({ dur: hold, freq: f, q: 5, gain: 0.07, delay: d, pan: 0.35 });
+      this.burst({ dur: hold, freq: f * 0.5, q: 4, gain: 0.05, delay: d, pan: 0.35 });
       this.burst({ dur: 0.09, freq: f, q: 5, gain: 0.025, delay: d + 0.17, pan: -0.5 }); // echo off the far facade
       d += paTalk(place) + (i % 3) * 0.05;
     }
