@@ -1283,6 +1283,35 @@ export function skyBlink(name: string | undefined): number {
   return (name && DISTRICT_BLINK[name]) || STREET_BLINK;
 }
 
+/** How large the slab blinkers read. Lease Row keeps the bead the skyline shipped with. Same points, same flash. */
+export const STREET_BEAD = 9;
+
+const DISTRICT_BEAD: Record<string, number> = {
+  deadletter_docks: 4.2,
+  repo_depot: 7.4,
+  night_market: 16.5,
+  relay_heights: 11.2,
+  ash_canal: 5.1,
+  glass_mile: 13.8,
+  bone_market: 6.4,
+  cold_vault: 3.2,
+  neon_chapel: 14.6,
+  slag_pit: 12.4,
+  wire_garden: 8.2,
+  red_kiln: 15.4,
+  paper_wharf: 5.8,
+  velvet_court: 7.8,
+  rust_crown: 10.6,
+  salt_stairs: 12,
+  lamp_bazaar: 18,
+  debt_orchard: 6.8,
+  black_relay: 2.4,
+};
+
+export function skyBead(name: string | undefined): number {
+  return (name && DISTRICT_BEAD[name]) || STREET_BEAD;
+}
+
 /** How the airship circles and bobs. Lease Row keeps the drift the skyline shipped with. */
 export const STREET_SHIP = { orbit: 0.012, bob: 0.2 } as const;
 
@@ -1427,11 +1456,11 @@ export class Sky {
     this.pace = shipPace(name);
     const blink = new THREE.Color(mark.blink[0], mark.blink[1], mark.blink[2]);
     this.mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 }, uBlink: { value: blink }, uRate: { value: skyBlink(name) } },
+      uniforms: { uTime: { value: 0 }, uBlink: { value: blink }, uRate: { value: skyBlink(name) }, uBead: { value: skyBead(name) } },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
-      vertexShader: `uniform float uTime; uniform float uRate; attribute float phase; varying float vOn; void main(){ vOn = step(0.92, fract(uTime * uRate + phase)); vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = 9.0 * (120.0 / max(1.0, -mv.z)) + 2.0; gl_Position = projectionMatrix * mv; }`,
+      vertexShader: `uniform float uTime; uniform float uRate; uniform float uBead; attribute float phase; varying float vOn; void main(){ vOn = step(0.92, fract(uTime * uRate + phase)); vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = uBead * (120.0 / max(1.0, -mv.z)) + 2.0; gl_Position = projectionMatrix * mv; }`,
       fragmentShader: `uniform vec3 uBlink; varying float vOn; void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; gl_FragColor = vec4(uBlink, vOn * smoothstep(0.5, 0.15, d)); }`,
     });
     const pts = new THREE.Points(geo, this.mat);
