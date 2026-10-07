@@ -128,6 +128,35 @@ export function sirenTone(name: string | undefined): SirenTone {
   return (name && DISTRICT_SIREN[name]) || STREET_SIREN;
 }
 
+/** Seconds between the two tones inside one wail. Lease Row keeps 0.8. The pitches stay sirenTone. */
+export const STREET_FLIP = 0.8;
+
+const DISTRICT_FLIP: Record<string, number> = {
+  deadletter_docks: 1.15,
+  repo_depot: 0.62,
+  night_market: 0.34,
+  relay_heights: 0.48,
+  ash_canal: 1.35,
+  glass_mile: 0.28,
+  bone_market: 0.95,
+  cold_vault: 0.55,
+  neon_chapel: 1.05,
+  slag_pit: 0.72,
+  wire_garden: 0.41,
+  red_kiln: 1.25,
+  paper_wharf: 0.88,
+  velvet_court: 1.0,
+  rust_crown: 0.66,
+  salt_stairs: 0.38,
+  lamp_bazaar: 0.31,
+  debt_orchard: 1.08,
+  black_relay: 0.22,
+};
+
+export function sirenFlip(name: string | undefined): number {
+  return (name && DISTRICT_FLIP[name]) || STREET_FLIP;
+}
+
 /** Seconds before the next street siren, before the shared jitter. Lease Row keeps 38. */
 export const STREET_WAIT = 38;
 
@@ -665,6 +694,7 @@ export class GameAudio {
     const ctx = this.ctx;
     const t = ctx.currentTime;
     const tone = sirenTone(place);
+    const flip = sirenFlip(place);
     const o = ctx.createOscillator();
     o.type = "sawtooth";
     const f = ctx.createBiquadFilter();
@@ -679,7 +709,7 @@ export class GameAudio {
     p.pan.setValueAtTime(pan, t);
     p.pan.linearRampToValueAtTime(-pan, t + 6.5);
     for (let i = 0; i < 8; i++) {
-      o.frequency.setValueAtTime(i % 2 ? tone.high : tone.low, t + i * 0.8);
+      o.frequency.setValueAtTime(i % 2 ? tone.high : tone.low, t + i * flip);
     }
     o.connect(f).connect(g).connect(p).connect(this.sfx!);
     o.start(t);
