@@ -265,6 +265,35 @@ export function brollyRead(name: string | undefined): number {
   return (name && DISTRICT_BROLLY[name]) || STREET_BROLLY;
 }
 
+/** The little lamp a walker carries. Lease Row keeps the white the crowd shipped with. The plate stays tex_lamp. */
+export const STREET_LAMP = 0xffffff;
+
+const DISTRICT_LAMP: Record<string, number> = {
+  deadletter_docks: 0xb8f4ff,
+  repo_depot: 0xffe0a0,
+  night_market: 0xffb0d8,
+  relay_heights: 0xd8ecff,
+  ash_canal: 0xb8ffd0,
+  glass_mile: 0xf0d8ff,
+  bone_market: 0xffd8b0,
+  cold_vault: 0xc8fff4,
+  neon_chapel: 0xe0b8ff,
+  slag_pit: 0xffc090,
+  wire_garden: 0xc8ffb8,
+  red_kiln: 0xffb0a0,
+  paper_wharf: 0xd8e4ee,
+  velvet_court: 0xffb8c8,
+  rust_crown: 0xffd0a0,
+  salt_stairs: 0xe8f0ff,
+  lamp_bazaar: 0xffc0e0,
+  debt_orchard: 0xe4f0a0,
+  black_relay: 0xc0c8d0,
+};
+
+export function crowdLamp(name: string | undefined): number {
+  return (name && DISTRICT_LAMP[name]) || STREET_LAMP;
+}
+
 /** One instance colour on the limb mesh the crowd already draws. A room with no name keeps Lease Row. */
 export function paintCitizenLimbs(mesh: THREE.InstancedMesh, citizens: number, place?: string): void {
   const limb = limbRead(place);
@@ -335,7 +364,7 @@ export class Crowd {
     const dark = new THREE.MeshStandardMaterial({ color: 0x0b0d13, roughness: 0.9, metalness: 0.05 });
     const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1, vertexColors: true });
     // white, so a district's lamp is the instance colour and Lease Row stays amber
-    const lampMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const lampMat = new THREE.MeshBasicMaterial({ color: crowdLamp(place) });
     const brollyMat = new THREE.MeshStandardMaterial({ color: brollyRead(place), roughness: 0.8, side: THREE.DoubleSide });
     bindPlate(dark, "tex_crowd_coat");
     bindPlate(hoodMat, "tex_cloak");
