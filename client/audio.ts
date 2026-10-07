@@ -304,6 +304,35 @@ export function paHold(name: string | undefined): number {
   return (name && DISTRICT_HOLD[name]) || STREET_HOLD;
 }
 
+/** Seconds after the chime before the first syllable. Lease Row keeps the 0.9 the speaker shipped with. */
+export const STREET_LEAD = 0.9;
+
+const DISTRICT_LEAD: Record<string, number> = {
+  deadletter_docks: 1.55,
+  repo_depot: 1.05,
+  night_market: 0.42,
+  relay_heights: 0.62,
+  ash_canal: 1.7,
+  glass_mile: 0.28,
+  bone_market: 1.15,
+  cold_vault: 0.74,
+  neon_chapel: 1.35,
+  slag_pit: 1.0,
+  wire_garden: 0.5,
+  red_kiln: 1.45,
+  paper_wharf: 1.1,
+  velvet_court: 1.25,
+  rust_crown: 0.82,
+  salt_stairs: 0.55,
+  lamp_bazaar: 0.36,
+  debt_orchard: 1.2,
+  black_relay: 0.22,
+};
+
+export function paLead(name: string | undefined): number {
+  return (name && DISTRICT_LEAD[name]) || STREET_LEAD;
+}
+
 /** The speaker voice after the chime. Lease Row keeps the street formants. */
 export const STREET_VOICE: readonly number[] = [640, 820, 1100, 720, 980, 560, 1250, 880, 700];
 
@@ -751,7 +780,7 @@ export class GameAudio {
     if (!this.ctx) return;
     for (const [i, hz] of paChime(place).entries()) this.tone({ dur: 0.35, from: hz, gain: 0.07, type: "triangle", delay: i * paBeat(place) });
     // "voice": syllables of narrow-band noise across a few formants, slap-echoed like a speaker on a wall
-    let d = 0.9;
+    let d = paLead(place);
     const formants = paVoice(place);
     const hold = paHold(place);
     for (let i = 0; i < formants.length; i++) {
