@@ -217,6 +217,35 @@ export function paBeat(name: string | undefined): number {
   return (name && DISTRICT_BEAT[name]) || STREET_BEAT;
 }
 
+/** Seconds added between PA syllables. Lease Row keeps the 0.14 the speaker shipped with. */
+export const STREET_TALK = 0.14;
+
+const DISTRICT_TALK: Record<string, number> = {
+  deadletter_docks: 0.26,
+  repo_depot: 0.18,
+  night_market: 0.07,
+  relay_heights: 0.11,
+  ash_canal: 0.31,
+  glass_mile: 0.06,
+  bone_market: 0.21,
+  cold_vault: 0.13,
+  neon_chapel: 0.23,
+  slag_pit: 0.16,
+  wire_garden: 0.09,
+  red_kiln: 0.28,
+  paper_wharf: 0.19,
+  velvet_court: 0.24,
+  rust_crown: 0.15,
+  salt_stairs: 0.08,
+  lamp_bazaar: 0.1,
+  debt_orchard: 0.22,
+  black_relay: 0.05,
+};
+
+export function paTalk(name: string | undefined): number {
+  return (name && DISTRICT_TALK[name]) || STREET_TALK;
+}
+
 /** The speaker voice after the chime. Lease Row keeps the street formants. */
 export const STREET_VOICE: readonly number[] = [640, 820, 1100, 720, 980, 560, 1250, 880, 700];
 
@@ -670,7 +699,7 @@ export class GameAudio {
       this.burst({ dur: 0.11, freq: f, q: 5, gain: 0.07, delay: d, pan: 0.35 });
       this.burst({ dur: 0.11, freq: f * 0.5, q: 4, gain: 0.05, delay: d, pan: 0.35 });
       this.burst({ dur: 0.09, freq: f, q: 5, gain: 0.025, delay: d + 0.17, pan: -0.5 }); // echo off the far facade
-      d += 0.14 + (i % 3) * 0.05;
+      d += paTalk(place) + (i % 3) * 0.05;
     }
   }
 
