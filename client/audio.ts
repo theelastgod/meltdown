@@ -892,6 +892,35 @@ export function reloadPitch(name: string | undefined): number {
   return (name && DISTRICT_RELOAD[name]) || STREET_RELOAD;
 }
 
+/** How high a mantle's scrape sits, in hertz. Lease Row keeps 700. Duration, Q, gain, and the drop stay put. */
+export const STREET_MANTLE = 700;
+
+const DISTRICT_MANTLE: Record<string, number> = {
+  deadletter_docks: 280,
+  repo_depot: 420,
+  night_market: 1480,
+  relay_heights: 1100,
+  ash_canal: 240,
+  glass_mile: 1800,
+  bone_market: 360,
+  cold_vault: 820,
+  neon_chapel: 520,
+  slag_pit: 190,
+  wire_garden: 2100,
+  red_kiln: 640,
+  paper_wharf: 310,
+  velvet_court: 960,
+  rust_crown: 760,
+  salt_stairs: 1280,
+  lamp_bazaar: 1600,
+  debt_orchard: 160,
+  black_relay: 2400,
+};
+
+export function mantlePitch(name: string | undefined): number {
+  return (name && DISTRICT_MANTLE[name]) || STREET_MANTLE;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1844,10 +1873,10 @@ export class GameAudio {
     this.burst({ dur: 0.08, freq: landPitch(place), q: 0.6, gain: 0.12, type: "lowpass" });
   }
 
-  mantle(): void {
+  mantle(place?: string): void {
     this.count("mantle");
     if (!this.ctx) return;
-    this.burst({ dur: 0.2, freq: 700, q: 0.5, gain: 0.14, type: "lowpass" });
+    this.burst({ dur: 0.2, freq: mantlePitch(place), q: 0.5, gain: 0.14, type: "lowpass" });
     this.tone({ dur: 0.18, from: 80, to: 55, gain: 0.2, delay: 0.25 });
   }
 

@@ -1536,7 +1536,7 @@ export class Game {
       case "mantle":
         // the cue says it; the log is for what happened on the ledger, not every ledge climbed or
         // slide-jump landed (Stage 122: MANTLE and SLIDE-JUMP lines had pushed the kills off it)
-        this.audio.mantle();
+        this.audio.mantle(this.world.level.name);
         break;
       case "reloadStart":
         this.audio.reload("start", this.world.level.name);
