@@ -294,6 +294,35 @@ export function crowdLamp(name: string | undefined): number {
   return (name && DISTRICT_LAMP[name]) || STREET_LAMP;
 }
 
+/** How matte a leased coat reads. Lease Row keeps the cloth the crowd shipped with. Hood colour stays put. The stride stays strideClock. */
+export const STREET_COAT = 0.9;
+
+const DISTRICT_COAT: Record<string, number> = {
+  deadletter_docks: 0.98,
+  repo_depot: 0.72,
+  night_market: 0.28,
+  relay_heights: 0.55,
+  ash_canal: 0.96,
+  glass_mile: 0.22,
+  bone_market: 0.84,
+  cold_vault: 0.99,
+  neon_chapel: 0.4,
+  slag_pit: 0.62,
+  wire_garden: 0.48,
+  red_kiln: 0.35,
+  paper_wharf: 0.88,
+  velvet_court: 0.18,
+  rust_crown: 0.7,
+  salt_stairs: 0.58,
+  lamp_bazaar: 0.12,
+  debt_orchard: 0.76,
+  black_relay: 0.94,
+};
+
+export function coatSheen(name: string | undefined): number {
+  return (name && DISTRICT_COAT[name]) || STREET_COAT;
+}
+
 /** One instance colour on the limb mesh the crowd already draws. A room with no name keeps Lease Row. */
 export function paintCitizenLimbs(mesh: THREE.InstancedMesh, citizens: number, place?: string): void {
   const limb = limbRead(place);
@@ -361,7 +390,7 @@ export class Crowd {
     const cast = crowdCast(place);
     this.stride = strideClock(place);
     this.hop = strideBob(place);
-    const dark = new THREE.MeshStandardMaterial({ color: 0x0b0d13, roughness: 0.9, metalness: 0.05 });
+    const dark = new THREE.MeshStandardMaterial({ color: 0x0b0d13, roughness: coatSheen(place), metalness: 0.05 });
     const hoodMat = new THREE.MeshStandardMaterial({ color: 0x090a0f, roughness: 1, vertexColors: true });
     // white, so a district's lamp is the instance colour and Lease Row stays amber
     const lampMat = new THREE.MeshBasicMaterial({ color: crowdLamp(place) });
