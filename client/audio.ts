@@ -128,6 +128,35 @@ export function sirenTone(name: string | undefined): SirenTone {
   return (name && DISTRICT_SIREN[name]) || STREET_SIREN;
 }
 
+/** Seconds before the next street siren, before the shared jitter. Lease Row keeps 38. */
+export const STREET_WAIT = 38;
+
+const DISTRICT_WAIT: Record<string, number> = {
+  deadletter_docks: 62,
+  repo_depot: 44,
+  night_market: 22,
+  relay_heights: 28,
+  ash_canal: 71,
+  glass_mile: 18,
+  bone_market: 51,
+  cold_vault: 33,
+  neon_chapel: 56,
+  slag_pit: 47,
+  wire_garden: 26,
+  red_kiln: 68,
+  paper_wharf: 41,
+  velvet_court: 53,
+  rust_crown: 36,
+  salt_stairs: 24,
+  lamp_bazaar: 19,
+  debt_orchard: 59,
+  black_relay: 16,
+};
+
+export function sirenWait(name: string | undefined): number {
+  return (name && DISTRICT_WAIT[name]) || STREET_WAIT;
+}
+
 /** The three-note chime before a street announcement. Lease Row keeps 523, 659, 784. */
 export type PaChime = readonly [number, number, number];
 

@@ -22,7 +22,7 @@ import { canSee, MECH, WASP } from "@shared/sim/ai";
 import { aimAssistScale } from "./aimassist";
 import { DUMMY_HEIGHT, DUMMY_RADIUS, hashWorld, MECH_HEIGHT, MECH_RADIUS, WASP_HEIGHT, WASP_RADIUS, World, type SimEvent } from "@shared/sim/world";
 import { lenXZ, wrapAngle } from "@shared/math/vec3";
-import { GameAudio } from "./audio";
+import { GameAudio, sirenWait } from "./audio";
 import { Bot, type BotStep, type BotTarget } from "./bot";
 import { Hud } from "./hud/hud";
 import { GhostFile } from "./file";
@@ -928,7 +928,7 @@ export class Game {
     if (t >= c.nextSiren) {
       c.sirenSide = -c.sirenSide;
       this.audio.siren(0.6 * c.sirenSide, this.world.level.name);
-      c.nextSiren = t + Math.round((38 + ((t * 7) % 23)) * SIM_HZ);
+      c.nextSiren = t + Math.round((sirenWait(this.world.level.name) + ((t * 7) % 23)) * SIM_HZ);
     }
     if (t >= c.nextPa) {
       const district = districtName(this.world.level);
