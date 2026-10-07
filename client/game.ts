@@ -1545,7 +1545,7 @@ export class Game {
         this.audio.reload("end", this.world.level.name);
         break;
       case "dryFire":
-        this.audio.dryFire();
+        this.audio.dryFire(this.world.level.name);
         break;
       case "dummyRespawn":
         this.hud.push(`DUMMY-${String(ev.dummyId).padStart(2, "0")} RE-LEASED`, "am");

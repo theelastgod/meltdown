@@ -921,6 +921,35 @@ export function mantlePitch(name: string | undefined): number {
   return (name && DISTRICT_MANTLE[name]) || STREET_MANTLE;
 }
 
+/** How high an empty click starts, in hertz. Lease Row keeps 900. It still falls to 500. */
+export const STREET_DRY = 900;
+
+const DISTRICT_DRY: Record<string, number> = {
+  deadletter_docks: 540,
+  repo_depot: 720,
+  night_market: 1680,
+  relay_heights: 1240,
+  ash_canal: 620,
+  glass_mile: 2100,
+  bone_market: 780,
+  cold_vault: 980,
+  neon_chapel: 860,
+  slag_pit: 660,
+  wire_garden: 2400,
+  red_kiln: 1100,
+  paper_wharf: 580,
+  velvet_court: 1400,
+  rust_crown: 1040,
+  salt_stairs: 1860,
+  lamp_bazaar: 1980,
+  debt_orchard: 520,
+  black_relay: 2800,
+};
+
+export function dryPitch(name: string | undefined): number {
+  return (name && DISTRICT_DRY[name]) || STREET_DRY;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1565,10 +1594,10 @@ export class GameAudio {
     this.burst({ dur: 0.03, freq: 2100, q: 1.4, gain: 0.09, delay: 0.09 });
   }
 
-  dryFire(): void {
+  dryFire(place?: string): void {
     this.count("dry");
     if (!this.ctx) return;
-    this.tone({ dur: 0.05, from: 900, to: 500, gain: 0.08, type: "square" });
+    this.tone({ dur: 0.05, from: dryPitch(place), to: 500, gain: 0.08, type: "square" });
   }
 
   /** Zone-pitched hit: head high and glassy, body mid, legs dull. */
