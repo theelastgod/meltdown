@@ -950,6 +950,35 @@ export function dryPitch(name: string | undefined): number {
   return (name && DISTRICT_DRY[name]) || STREET_DRY;
 }
 
+/** How high a thrown charge's whoosh sits, in hertz. Lease Row keeps 1200. Duration, Q, and gain stay put. */
+export const STREET_THROW = 1200;
+
+const DISTRICT_THROW: Record<string, number> = {
+  deadletter_docks: 640,
+  repo_depot: 880,
+  night_market: 2100,
+  relay_heights: 1560,
+  ash_canal: 720,
+  glass_mile: 2600,
+  bone_market: 980,
+  cold_vault: 1320,
+  neon_chapel: 1100,
+  slag_pit: 540,
+  wire_garden: 3200,
+  red_kiln: 1480,
+  paper_wharf: 760,
+  velvet_court: 1840,
+  rust_crown: 1400,
+  salt_stairs: 2300,
+  lamp_bazaar: 2800,
+  debt_orchard: 480,
+  black_relay: 3600,
+};
+
+export function throwPitch(name: string | undefined): number {
+  return (name && DISTRICT_THROW[name]) || STREET_THROW;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1457,10 +1486,10 @@ export class GameAudio {
     this.burst({ dur: 0.3, freq: 3500, q: 1.5, gain: 0.25 });
   }
 
-  throw(): void {
+  throw(place?: string): void {
     this.count("throw");
     if (!this.ctx) return;
-    this.burst({ dur: 0.06, freq: 1200, q: 1.5, gain: 0.12 });
+    this.burst({ dur: 0.06, freq: throwPitch(place), q: 1.5, gain: 0.12 });
   }
 
   swap(): void {

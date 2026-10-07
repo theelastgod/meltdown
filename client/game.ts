@@ -709,7 +709,7 @@ export class Game {
             if (ev.a > 0) this.audio.hit("body");
             break;
           case FX.throw:
-            if (ev.playerId !== me) this.audio.throw();
+            if (ev.playerId !== me) this.audio.throw(this.world.level.name);
             break;
           case FX.chargeFull:
             if (ev.playerId !== me) this.audio.charge(1);
@@ -1466,7 +1466,7 @@ export class Game {
         if (ev.playerId === this.player.id) this.audio.jump(this.world.level.name);
         break;
       case "throw":
-        if (ev.playerId === this.player.id) this.audio.throw();
+        if (ev.playerId === this.player.id) this.audio.throw(this.world.level.name);
         break;
       case "nodeFlip": {
         const n = this.world.wake?.nodes.find((x) => x.id === ev.node);
