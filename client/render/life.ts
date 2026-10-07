@@ -1282,6 +1282,35 @@ export function shipCloth(name: string | undefined): number {
   return (name && DISTRICT_CLOTH[name]) || STREET_CLOTH;
 }
 
+/** How matte the airship hull reads. Lease Row keeps the roughness the skyline shipped with. Colour stays shipCloth. */
+export const STREET_SHEEN = 0.8;
+
+const DISTRICT_SHEEN: Record<string, number> = {
+  deadletter_docks: 0.96,
+  repo_depot: 0.62,
+  night_market: 0.22,
+  relay_heights: 0.48,
+  ash_canal: 0.91,
+  glass_mile: 0.18,
+  bone_market: 0.7,
+  cold_vault: 0.34,
+  neon_chapel: 0.41,
+  slag_pit: 0.55,
+  wire_garden: 0.74,
+  red_kiln: 0.28,
+  paper_wharf: 0.88,
+  velvet_court: 0.15,
+  rust_crown: 0.66,
+  salt_stairs: 0.52,
+  lamp_bazaar: 0.31,
+  debt_orchard: 0.78,
+  black_relay: 0.12,
+};
+
+export function shipSheen(name: string | undefined): number {
+  return (name && DISTRICT_SHEEN[name]) || STREET_SHEEN;
+}
+
 /** Aircraft-warning blinkers on the tallest slabs and an airship drifting over the district. */
 export class Sky {
   readonly group = new THREE.Group();
@@ -1322,7 +1351,7 @@ export class Sky {
     this.group.add(pts);
     // airship: a dark hull, this district's panel and keel, drifting in a slow circle
     this.ship = new THREE.Group();
-    const airMat = new THREE.MeshStandardMaterial({ color: shipCloth(name), roughness: 0.8 });
+    const airMat = new THREE.MeshStandardMaterial({ color: shipCloth(name), roughness: shipSheen(name) });
     bindPlate(airMat, "tex_airship");
     const hull = new THREE.Mesh(new THREE.CapsuleGeometry(9, 40, 4, 10), airMat);
     hull.rotation.z = Math.PI / 2;
