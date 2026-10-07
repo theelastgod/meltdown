@@ -24,7 +24,7 @@ describe("each district lights its own monorail", () => {
 
   it("the car uses the glow for the level it was built in", () => {
     const life = readFileSync(new URL("../client/render/life.ts", import.meta.url), "utf8");
-    expect(life).toContain("new THREE.PointLight(livery.glass, tramGlow(name), 18, 1.8)");
+    expect(life).toContain("new THREE.PointLight(livery.glass, tramGlow(name), 18, tramFall(name))");
     expect(life).toContain("color: 0xfff3d0");
     expect(life).toContain("color: PALETTE.red");
   });
