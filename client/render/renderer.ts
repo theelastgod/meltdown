@@ -173,6 +173,36 @@ export function placeAir(name: string | undefined): PlaceAir | null {
       return placeFeel(name)?.air ?? null;
   }
 }
+
+/** How fast the street rig's point lights fall off. Lease Row keeps the decay the lamps shipped with. Same lights, no new mesh. */
+export const STREET_RIG = 1.5;
+
+const DISTRICT_RIG: Record<string, number> = {
+  deadletter_docks: 0.7,
+  repo_depot: 2.1,
+  night_market: 2.6,
+  relay_heights: 1.15,
+  ash_canal: 0.85,
+  glass_mile: 1.85,
+  bone_market: 2.35,
+  cold_vault: 0.45,
+  neon_chapel: 1.35,
+  slag_pit: 2.85,
+  wire_garden: 1.05,
+  red_kiln: 2.2,
+  paper_wharf: 0.95,
+  velvet_court: 1.65,
+  rust_crown: 1.25,
+  salt_stairs: 0.55,
+  lamp_bazaar: 3.1,
+  debt_orchard: 1.75,
+  black_relay: 0.35,
+};
+
+export function rigFall(name: string | undefined): number {
+  return (name && DISTRICT_RIG[name]) || STREET_RIG;
+}
+
 export type DistrictId = keyof typeof DISTRICTS;
 
 /**
@@ -504,7 +534,7 @@ export class Renderer {
     const colors = { cyan: PALETTE.cyan, magenta: PALETTE.magenta, amber: PALETTE.amber, violet: PALETTE.violet, yellow: PALETTE.yellow, green: PALETTE.green } as const;
     const defs = [...(level.lights ?? [])].sort((a, b) => b.intensity * b.range - a.intensity * a.range).slice(0, 8);
     for (const l of defs) {
-      const pl = new THREE.PointLight(colors[l.color], l.intensity, l.range, 1.5);
+      const pl = new THREE.PointLight(colors[l.color], l.intensity, l.range, rigFall(level.name));
       pl.position.set(l.x, l.y, l.z);
       this.scene.add(pl);
     }
