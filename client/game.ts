@@ -640,7 +640,7 @@ export class Game {
           // arrive at the same volume from nowhere in particular: a rail two districts wide of you
           // sounded exactly like one at your shoulder, which is worse than silence for working out
           // where the danger is.
-          const cue = gunCue(ev.fx, ev.fz, this.listenPoint());
+          const cue = gunCue(ev.fx, ev.fz, this.listenPoint(), this.world.level.name);
           if (cue) {
             this.audio.otherShot(ev.weapon === 0 ? "wasp" : (def?.id ?? "lease_breaker"), cue, this.world.level.name);
             this.heardShot.n++;
@@ -1359,7 +1359,7 @@ export class Game {
           // across the street in silence, and the first you knew of it was the integrity bar. The
           // muzzle is where the shot came from, so this is the flash's own position, not the
           // shooter's body a tick later
-          const cue = gunCue(ev.from.x, ev.from.z, this.listenPoint());
+          const cue = gunCue(ev.from.x, ev.from.z, this.listenPoint(), this.world.level.name);
           if (cue) {
             this.audio.otherShot(ev.weapon, cue, this.world.level.name);
             this.heardShot.n++;

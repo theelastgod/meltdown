@@ -15,8 +15,36 @@ import { bearing } from "./hud/damage";
 
 /** past this a shot is somebody else's business */
 export const GUN_RANGE = 120;
-/** metres a second, near enough: the crack lags the muzzle flash by this much */
+/** metres a second, near enough: the crack lags the muzzle flash by this much. Lease Row keeps 340. */
 export const SOUND_SPEED = 340;
+
+const DISTRICT_SPEED: Record<string, number> = {
+  deadletter_docks: 214,
+  repo_depot: 255,
+  night_market: 188,
+  relay_heights: 455,
+  ash_canal: 236,
+  glass_mile: 510,
+  bone_market: 196,
+  cold_vault: 142,
+  neon_chapel: 305,
+  slag_pit: 278,
+  wire_garden: 388,
+  red_kiln: 228,
+  paper_wharf: 246,
+  velvet_court: 164,
+  rust_crown: 322,
+  salt_stairs: 418,
+  lamp_bazaar: 362,
+  debt_orchard: 206,
+  black_relay: 575,
+};
+
+/** How fast a distant crack crosses the street, in metres a second. Lease Row keeps 340. Gain, pan, muffle, and range stay put. The slap stays shotSlap. */
+export function soundSpeed(name: string | undefined): number {
+  return (name && DISTRICT_SPEED[name]) || SOUND_SPEED;
+}
+
 /** closer than this a shot is all around you rather than to one side */
 export const PAN_NEAR = 4;
 
@@ -36,7 +64,7 @@ export interface GunCue {
  * What a shot fired at a point sounds like from where the listener is standing, or null if it is
  * too far away to be heard at all.
  */
-export function gunCue(fromX: number, fromZ: number, listener: { x: number; z: number; yaw: number }): GunCue | null {
+export function gunCue(fromX: number, fromZ: number, listener: { x: number; z: number; yaw: number }, name?: string): GunCue | null {
   const distance = Math.hypot(fromX - listener.x, fromZ - listener.z);
   if (distance >= GUN_RANGE) return null;
   const fall = 1 - distance / GUN_RANGE;
@@ -45,7 +73,7 @@ export function gunCue(fromX: number, fromZ: number, listener: { x: number; z: n
     // the far end of a district
     gain: Math.pow(fall, 1.7),
     pan: Math.sin(bearing(fromX, fromZ, listener.x, listener.z, listener.yaw)) * clamp(distance / PAN_NEAR, 0, 1),
-    delay: distance / SOUND_SPEED,
+    delay: distance / soundSpeed(name),
     muffle: clamp(distance / GUN_RANGE, 0, 1),
     distance,
   };
