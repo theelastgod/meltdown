@@ -58,6 +58,35 @@ export function stepSurface(name: string | undefined): StepSurface {
   return { hz: 260, dur: 0.06, q: 0.7, type: "lowpass" };
 }
 
+/** Base gain of a footstep before speed adds. Lease Row keeps 0.05. The surface stays stepSurface. */
+export const STREET_HEFT = 0.05;
+
+const DISTRICT_HEFT: Record<string, number> = {
+  deadletter_docks: 0.02,
+  repo_depot: 0.08,
+  night_market: 0.11,
+  relay_heights: 0.06,
+  ash_canal: 0.03,
+  glass_mile: 0.09,
+  bone_market: 0.07,
+  cold_vault: 0.04,
+  neon_chapel: 0.035,
+  slag_pit: 0.13,
+  wire_garden: 0.045,
+  red_kiln: 0.1,
+  paper_wharf: 0.025,
+  velvet_court: 0.055,
+  rust_crown: 0.075,
+  salt_stairs: 0.065,
+  lamp_bazaar: 0.12,
+  debt_orchard: 0.085,
+  black_relay: 0.015,
+};
+
+export function stepHeft(name: string | undefined): number {
+  return (name && DISTRICT_HEFT[name]) || STREET_HEFT;
+}
+
 /**
  * The slap a shot throws back. Deadletter answers late and low, off the water.
  * Eighteen districts each throw their own. Lease Row and the indoor rooms keep the street.
@@ -1501,7 +1530,7 @@ export class GameAudio {
     this.count("step");
     if (!this.ctx) return;
     const face = stepSurface(place);
-    const g = 0.05 + Math.min(0.12, speed * 0.012);
+    const g = stepHeft(place) + Math.min(0.12, speed * 0.012);
     this.burst({ dur: face.dur, freq: face.hz + speed * 10, q: face.q, gain: g, type: face.type, pan });
   }
 
