@@ -391,7 +391,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
   const facades = [facadeTextures(seed + 1, 0.22), facadeTextures(seed + 2, 0.32), facadeTextures(seed + 3, 0.45)].map((f, i) => {
     f.map.wrapS = f.map.wrapT = f.emissive.wrapS = f.emissive.wrapT = THREE.RepeatWrapping;
     f.map.needsUpdate = f.emissive.needsUpdate = true;
-    const mat = std({ map: f.map, emissiveMap: f.emissive, emissive: 0xffffff, emissiveIntensity: 1.5, roughness: 0.8, metalness: 0.1 });
+    const mat = std({ map: f.map, emissiveMap: f.emissive, emissive: 0xffffff, emissiveIntensity: paneBurn(level.name), roughness: 0.8, metalness: 0.1 });
     bindPlate(mat, facadeIds[i]!, true);
     return mat;
   });
@@ -785,6 +785,35 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
   screens?.attach(M.shopB, "shop_b", seed + 1);
   screens?.attach(M.shopC, "shop_c", seed + 2);
   return { calls, signMat };
+}
+
+/** How hard the street windows burn. Lease Row keeps the facade glow the blocks shipped with. Same panes, no new mesh. */
+export const STREET_PANE = 1.5;
+
+const DISTRICT_PANE: Record<string, number> = {
+  deadletter_docks: 0.42,
+  repo_depot: 2.15,
+  night_market: 2.65,
+  relay_heights: 1.2,
+  ash_canal: 0.68,
+  glass_mile: 2.35,
+  bone_market: 0.88,
+  cold_vault: 0.32,
+  neon_chapel: 1.9,
+  slag_pit: 2.25,
+  wire_garden: 1.08,
+  red_kiln: 2.85,
+  paper_wharf: 0.55,
+  velvet_court: 0.95,
+  rust_crown: 1.7,
+  salt_stairs: 1.32,
+  lamp_bazaar: 3.05,
+  debt_orchard: 0.6,
+  black_relay: 0.18,
+};
+
+export function paneBurn(name: string | undefined): number {
+  return (name && DISTRICT_PANE[name]) || STREET_PANE;
 }
 
 /**
