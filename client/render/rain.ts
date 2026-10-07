@@ -1,5 +1,34 @@
 import * as THREE from "three";
 
+/** How fast rain slides sideways. Lease Row keeps 1.2. Fall stays placeAir. */
+export const STREET_DRIFT = 1.2;
+
+const DISTRICT_DRIFT: Record<string, number> = {
+  deadletter_docks: 0.45,
+  repo_depot: 0.72,
+  night_market: 2.4,
+  relay_heights: 1.65,
+  ash_canal: 0.32,
+  glass_mile: 2.85,
+  bone_market: 0.58,
+  cold_vault: 0.22,
+  neon_chapel: 0.9,
+  slag_pit: 1.9,
+  wire_garden: 1.35,
+  red_kiln: 0.8,
+  paper_wharf: 2.15,
+  velvet_court: 0.64,
+  rust_crown: 1.48,
+  salt_stairs: 3.05,
+  lamp_bazaar: 1.05,
+  debt_orchard: 1.12,
+  black_relay: 2.6,
+};
+
+export function rainDrift(name: string | undefined): number {
+  return (name && DISTRICT_DRIFT[name]) || STREET_DRIFT;
+}
+
 /**
  * GPU rain: a fixed cloud of line streaks wrapped around the camera in the
  * vertex shader, falling with a slight wind. Lit additively so the nearest
@@ -40,18 +69,19 @@ export class Rain {
         size: { value: size },
         color: { value: new THREE.Color(0.55, 0.8, 0.95) },
         fall: { value: 1 },
+        drift: { value: STREET_DRIFT },
         fogColor: { value: new THREE.Color(0x05070c) },
         fogDensity: { value: 0.02 },
       },
       vertexShader: /* glsl */ `
-        uniform float time; uniform float fall; uniform vec3 camPos; uniform vec3 size;
+        uniform float time; uniform float fall; uniform float drift; uniform vec3 camPos; uniform vec3 size;
         attribute float seed;
         varying float vFade;
         void main() {
           vec3 p = position;
           float speed = (9.0 + seed * 6.0) * fall;
           p.y = mod(p.y - time * speed, size.y);
-          p.x = mod(p.x + time * 1.2 + seed * 3.0, size.x);
+          p.x = mod(p.x + time * drift + seed * 3.0, size.x);
           // wrap the cloud around the camera
           vec3 rel = mod(p - camPos + size * 0.5, size) - size * 0.5;
           vec3 world = camPos + rel;
@@ -75,6 +105,16 @@ export class Rain {
   setWeather(rgb: readonly [number, number, number], fall: number): void {
     (this.mat.uniforms.color!.value as THREE.Color).setRGB(rgb[0], rgb[1], rgb[2]);
     this.mat.uniforms.fall!.value = fall;
+  }
+
+  /** Sideways slide. Fall stays setWeather. The streak count stays put. */
+  setDrift(drift: number): void {
+    this.mat.uniforms.drift!.value = drift;
+  }
+
+  /** The sideways slide the streaks are holding. */
+  driftNow(): number {
+    return this.mat.uniforms.drift!.value as number;
   }
 
   update(time: number, camera: THREE.Camera): void {

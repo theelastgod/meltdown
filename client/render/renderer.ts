@@ -5,7 +5,7 @@ import type { Dummy } from "@shared/sim/world";
 import { MOVE } from "@shared/sim/constants";
 import type { Vec3 } from "@shared/math/vec3";
 import { PostChain } from "./post";
-import { Rain } from "./rain";
+import { Rain, rainDrift } from "./rain";
 import { makeFlatWetFloor, makeWetFloor } from "./wetfloor";
 import { bindPlate, buildSkyline, cityDoors, dressLevel, gateSignText, PALETTE, Traffic } from "./city";
 import { VfxPool } from "./vfx";
@@ -430,6 +430,7 @@ export class Renderer {
     this.buildLights(cast, level);
     this.rain = new Rain();
     if (air) this.rain.setWeather(air.rain, air.fall);
+    this.rain.setDrift(rainDrift(level.name));
     this.rain.object.layers.set(FAR_LAYER);
     this.rain.object.name = "rain";
     this.scene.add(this.rain.object);
