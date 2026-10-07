@@ -718,6 +718,35 @@ export function trafficBody(name: string | undefined): number {
   return (name && DISTRICT_BODY[name]) || STREET_BODY;
 }
 
+/** How high a near-miss snap sits, in hertz. Lease Row keeps 4200. The air closing behind it stays 1900. */
+export const STREET_SNAP = 4200;
+
+const DISTRICT_SNAP: Record<string, number> = {
+  deadletter_docks: 2400,
+  repo_depot: 3100,
+  night_market: 6100,
+  relay_heights: 5200,
+  ash_canal: 1800,
+  glass_mile: 6800,
+  bone_market: 2700,
+  cold_vault: 1500,
+  neon_chapel: 3600,
+  slag_pit: 2200,
+  wire_garden: 4900,
+  red_kiln: 3300,
+  paper_wharf: 2600,
+  velvet_court: 3900,
+  rust_crown: 2900,
+  salt_stairs: 5600,
+  lamp_bazaar: 6400,
+  debt_orchard: 2100,
+  black_relay: 7400,
+};
+
+export function snapPitch(name: string | undefined): number {
+  return (name && DISTRICT_SNAP[name]) || STREET_SNAP;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1629,12 +1658,12 @@ export class GameAudio {
    * but the thing the gun sent, heard where it was nearest. Short and bright: a crack with no body,
    * because a passing round has none.
    */
-  snap(cue: { gain: number; pan: number; distance: number }): void {
+  snap(cue: { gain: number; pan: number; distance: number }, place?: string): void {
     this.count("snap");
     if (!this.ctx) return;
     const g = Math.max(0, Math.min(1, cue.gain));
     if (g < 0.01) return;
-    this.burst({ dur: 0.025, freq: 4200, q: 0.9, gain: 0.22 * g, pan: cue.pan });
+    this.burst({ dur: 0.025, freq: snapPitch(place), q: 0.9, gain: 0.22 * g, pan: cue.pan });
     // the air closing behind it
     this.burst({ dur: 0.06, freq: 1900, q: 0.5, gain: 0.08 * g, type: "bandpass", pan: cue.pan, delay: 0.012 });
   }

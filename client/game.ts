@@ -1329,7 +1329,7 @@ export class Game {
     const at = this.listenPoint();
     const cue = shotPass(from, to, { x: at.x, y: this.player.pos.y + 1.6, z: at.z, yaw: at.yaw });
     if (!cue) return;
-    this.audio.snap(cue);
+    this.audio.snap(cue, this.world.level.name);
     this.heardSnap.n++;
     this.heardSnap.pan = cue.pan;
     this.heardSnap.distance = cue.distance;
