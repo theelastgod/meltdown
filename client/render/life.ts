@@ -1048,6 +1048,35 @@ export function adGlyph(name: string | undefined): number {
   return (name && DISTRICT_GLYPH[name]) || STREET_GLYPH;
 }
 
+/** How far apart the ticker scanlines sit, in pixels. Lease Row keeps the pitch the street shipped with. Ink, copy, crawl, veil, and letter size stay put. */
+export const STREET_SCAN = 4;
+
+const DISTRICT_SCAN: Record<string, number> = {
+  deadletter_docks: 11,
+  repo_depot: 6,
+  night_market: 2,
+  relay_heights: 5,
+  ash_canal: 8,
+  glass_mile: 3,
+  bone_market: 7,
+  cold_vault: 14,
+  neon_chapel: 9,
+  slag_pit: 10,
+  wire_garden: 12,
+  red_kiln: 24,
+  paper_wharf: 16,
+  velvet_court: 13,
+  rust_crown: 15,
+  salt_stairs: 18,
+  lamp_bazaar: 20,
+  debt_orchard: 22,
+  black_relay: 28,
+};
+
+export function adScan(name: string | undefined): number {
+  return (name && DISTRICT_SCAN[name]) || STREET_SCAN;
+}
+
 /** Holographic ad tickers: VANTAGE copy scrolling on translucent panels that cycle colour. */
 export class HoloAds {
   readonly group = new THREE.Group();
@@ -1102,8 +1131,9 @@ export class HoloAds {
       g.fillText(text, x, 64);
       g.fillText(text, x + w, 64);
       // scanlines
+      const scan = adScan(this.district);
       g.fillStyle = "rgba(0,0,0,0.25)";
-      for (let y = 0; y < 128; y += 4) g.fillRect(0, y, 512, 1);
+      for (let y = 0; y < 128; y += scan) g.fillRect(0, y, 512, 1);
       if (((time + p.offset) % 9) < 0.15) g.fillRect(0, 0, 512, 128); // a dropout frame
       p.tex.needsUpdate = true;
     }
