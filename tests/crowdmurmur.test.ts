@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
-import { STREET_MURMUR, bedTune, crowdMurmur, GameAudio } from "../client/audio";
+import { STREET_MURMUR, bedTune, crowdMurmur, murmurQ, GameAudio } from "../client/audio";
 
 const IDS = [
   "lease_row",
@@ -98,13 +98,15 @@ describe("each district hears its own crowd murmur", () => {
     expect(n.murmurBGain.gain.value).toBe(murmur.bGain);
     expect(n.murmurADepth.gain.value).toBe(murmur.aGain * 0.7);
     expect(n.murmurBDepth.gain.value).toBe(murmur.bGain * 0.7);
-    expect(n.murmurA.Q.value).toBe(2.2);
-    expect(n.murmurB.Q.value).toBe(2.2);
+    expect(n.murmurA.Q.value).toBe(murmurQ("glass_mile"));
+    expect(n.murmurB.Q.value).toBe(murmurQ("glass_mile"));
     const held = live.bedNow();
     expect(held).toEqual(bedTune("glass_mile"));
     expect(Object.keys(held ?? {}).sort()).toEqual(["buzz", "buzzCut", "buzzHz", "hum", "humHz", "rain", "rainHz", "rainQ"]);
     live.tune(undefined);
     expect(n.murmurA.frequency.value).toBe(crowdMurmur(undefined).aHz);
     expect(n.murmurB.frequency.value).toBe(crowdMurmur(undefined).bHz);
+    expect(n.murmurA.Q.value).toBe(2.2);
+    expect(n.murmurB.Q.value).toBe(2.2);
   });
 });

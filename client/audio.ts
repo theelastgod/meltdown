@@ -602,6 +602,35 @@ export function crowdMurmur(name: string | undefined): CrowdMurmur {
   return (name && DISTRICT_MURMUR[name]) || STREET_MURMUR;
 }
 
+/** How narrow the crowd-murmur bands sit, as bandpass Q. Lease Row keeps 2.2. The pair stays crowdMurmur. */
+export const STREET_Q = 2.2;
+
+const DISTRICT_Q: Record<string, number> = {
+  deadletter_docks: 1.1,
+  repo_depot: 2.8,
+  night_market: 4.6,
+  relay_heights: 3.4,
+  ash_canal: 0.9,
+  glass_mile: 6.2,
+  bone_market: 1.6,
+  cold_vault: 5.1,
+  neon_chapel: 3.8,
+  slag_pit: 1.4,
+  wire_garden: 5.6,
+  red_kiln: 2.4,
+  paper_wharf: 1.2,
+  velvet_court: 7.4,
+  rust_crown: 2.6,
+  salt_stairs: 4.1,
+  lamp_bazaar: 3.1,
+  debt_orchard: 1.8,
+  black_relay: 8.2,
+};
+
+export function murmurQ(name: string | undefined): number {
+  return (name && DISTRICT_Q[name]) || STREET_Q;
+}
+
 /** How fast the neon buzz breathes, in hertz. Lease Row keeps the rate the bed shipped with. */
 export const STREET_FLICKER = 7.3;
 
@@ -920,11 +949,14 @@ export class GameAudio {
     n.swell.frequency.value = far.swell;
     n.trafficGain.gain.value = trafficBody(levelName);
     const murmur = crowdMurmur(levelName);
+    const narrow = murmurQ(levelName);
     n.murmurA.frequency.value = murmur.aHz;
+    n.murmurA.Q.value = narrow;
     n.murmurAGain.gain.value = murmur.aGain;
     n.murmurALfo.frequency.value = murmur.aRate;
     n.murmurADepth.gain.value = murmur.aGain * 0.7;
     n.murmurB.frequency.value = murmur.bHz;
+    n.murmurB.Q.value = narrow;
     n.murmurBGain.gain.value = murmur.bGain;
     n.murmurBLfo.frequency.value = murmur.bRate;
     n.murmurBDepth.gain.value = murmur.bGain * 0.7;
@@ -962,6 +994,12 @@ export class GameAudio {
   bodyNow(): number | null {
     const n = this.bedNodes;
     return n ? n.trafficGain.gain.value : null;
+  }
+
+  /** How narrow the crowd-murmur bands sit, or null before the bed exists. The pair stays crowdMurmur. */
+  narrowNow(): { a: number; b: number } | null {
+    const n = this.bedNodes;
+    return n ? { a: n.murmurA.Q.value, b: n.murmurB.Q.value } : null;
   }
 
   /** A VANTAGE siren somewhere across the district: a two-tone wail, panned, dull with distance, fading as it passes. */
