@@ -333,6 +333,35 @@ export function paLead(name: string | undefined): number {
   return (name && DISTRICT_LEAD[name]) || STREET_LEAD;
 }
 
+/** Peak gain of the three announcement notes. Lease Row keeps the 0.07 the chime shipped with. */
+export const STREET_LOUD = 0.07;
+
+const DISTRICT_LOUD: Record<string, number> = {
+  deadletter_docks: 0.03,
+  repo_depot: 0.09,
+  night_market: 0.16,
+  relay_heights: 0.11,
+  ash_canal: 0.04,
+  glass_mile: 0.18,
+  bone_market: 0.06,
+  cold_vault: 0.08,
+  neon_chapel: 0.05,
+  slag_pit: 0.13,
+  wire_garden: 0.1,
+  red_kiln: 0.14,
+  paper_wharf: 0.045,
+  velvet_court: 0.035,
+  rust_crown: 0.12,
+  salt_stairs: 0.15,
+  lamp_bazaar: 0.17,
+  debt_orchard: 0.055,
+  black_relay: 0.2,
+};
+
+export function paLoud(name: string | undefined): number {
+  return (name && DISTRICT_LOUD[name]) || STREET_LOUD;
+}
+
 /** The speaker voice after the chime. Lease Row keeps the street formants. */
 export const STREET_VOICE: readonly number[] = [640, 820, 1100, 720, 980, 560, 1250, 880, 700];
 
@@ -778,7 +807,7 @@ export class GameAudio {
   pa(place?: string): void {
     this.count("pa");
     if (!this.ctx) return;
-    for (const [i, hz] of paChime(place).entries()) this.tone({ dur: 0.35, from: hz, gain: 0.07, type: "triangle", delay: i * paBeat(place) });
+    for (const [i, hz] of paChime(place).entries()) this.tone({ dur: 0.35, from: hz, gain: paLoud(place), type: "triangle", delay: i * paBeat(place) });
     // "voice": syllables of narrow-band noise across a few formants, slap-echoed like a speaker on a wall
     let d = paLead(place);
     const formants = paVoice(place);
