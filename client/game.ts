@@ -1522,7 +1522,7 @@ export class Game {
         this.hud.push(`BLANK ⟶ ${victimLabel(ev.victimKind)}-${String(ev.victimId).padStart(2, "0")} · ${weaponName(ev.weapon)}${ev.ttkTicks ? ttkNote(ev.ttkSeconds) : ""}`, "mg");
         break;
       case "slide":
-        this.audio.slide();
+        this.audio.slide(this.world.level.name);
         break;
       case "slideJump":
         this.audio.jump(this.world.level.name);

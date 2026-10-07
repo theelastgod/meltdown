@@ -805,6 +805,35 @@ export function landPitch(name: string | undefined): number {
   return (name && DISTRICT_LAND[name]) || STREET_LAND;
 }
 
+/** How high a slide's scrape sits, in hertz. Lease Row keeps 500. Duration, Q, and gain stay put. */
+export const STREET_SLIDE = 500;
+
+const DISTRICT_SLIDE: Record<string, number> = {
+  deadletter_docks: 220,
+  repo_depot: 380,
+  night_market: 920,
+  relay_heights: 640,
+  ash_canal: 160,
+  glass_mile: 1100,
+  bone_market: 280,
+  cold_vault: 740,
+  neon_chapel: 480,
+  slag_pit: 190,
+  wire_garden: 1400,
+  red_kiln: 310,
+  paper_wharf: 260,
+  velvet_court: 560,
+  rust_crown: 420,
+  salt_stairs: 860,
+  lamp_bazaar: 780,
+  debt_orchard: 150,
+  black_relay: 1600,
+};
+
+export function slidePitch(name: string | undefined): number {
+  return (name && DISTRICT_SLIDE[name]) || STREET_SLIDE;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1738,10 +1767,10 @@ export class GameAudio {
     this.burst({ dur: 0.07, freq: 190 + speed * 8, q: 0.8, gain: g, type: "lowpass", pan });
   }
 
-  slide(): void {
+  slide(place?: string): void {
     this.count("slide");
     if (!this.ctx) return;
-    this.burst({ dur: 0.45, freq: 500, q: 0.4, gain: 0.2, type: "lowpass" });
+    this.burst({ dur: 0.45, freq: slidePitch(place), q: 0.4, gain: 0.2, type: "lowpass" });
   }
 
   jump(place?: string): void {
