@@ -715,7 +715,7 @@ export class Game {
             if (ev.playerId !== me) this.audio.charge(1);
             break;
           case FX.lunge:
-            if (ev.playerId !== me) this.audio.jump();
+            if (ev.playerId !== me) this.audio.jump(this.world.level.name);
             break;
           case FX.waspDeath:
             this.hud.push(`WASP-${String(ev.a).padStart(2, "0")} DOWNED`, "am");
@@ -1463,7 +1463,7 @@ export class Game {
         if (ev.playerId === this.player.id) this.audio.charge(1);
         break;
       case "lunge":
-        if (ev.playerId === this.player.id) this.audio.jump();
+        if (ev.playerId === this.player.id) this.audio.jump(this.world.level.name);
         break;
       case "throw":
         if (ev.playerId === this.player.id) this.audio.throw();
@@ -1525,10 +1525,10 @@ export class Game {
         this.audio.slide();
         break;
       case "slideJump":
-        this.audio.jump();
+        this.audio.jump(this.world.level.name);
         break;
       case "jump":
-        this.audio.jump();
+        this.audio.jump(this.world.level.name);
         break;
       case "land":
         this.audio.land(ev.speed);

@@ -747,6 +747,35 @@ export function snapPitch(name: string | undefined): number {
   return (name && DISTRICT_SNAP[name]) || STREET_SNAP;
 }
 
+/** How high a jump's thud sits, in hertz. Lease Row keeps 350. Duration, Q, and gain stay put. */
+export const STREET_JUMP = 350;
+
+const DISTRICT_JUMP: Record<string, number> = {
+  deadletter_docks: 180,
+  repo_depot: 420,
+  night_market: 780,
+  relay_heights: 510,
+  ash_canal: 140,
+  glass_mile: 920,
+  bone_market: 260,
+  cold_vault: 110,
+  neon_chapel: 640,
+  slag_pit: 210,
+  wire_garden: 860,
+  red_kiln: 470,
+  paper_wharf: 160,
+  velvet_court: 580,
+  rust_crown: 390,
+  salt_stairs: 720,
+  lamp_bazaar: 840,
+  debt_orchard: 240,
+  black_relay: 990,
+};
+
+export function jumpPitch(name: string | undefined): number {
+  return (name && DISTRICT_JUMP[name]) || STREET_JUMP;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1686,10 +1715,10 @@ export class GameAudio {
     this.burst({ dur: 0.45, freq: 500, q: 0.4, gain: 0.2, type: "lowpass" });
   }
 
-  jump(): void {
+  jump(place?: string): void {
     this.count("jump");
     if (!this.ctx) return;
-    this.burst({ dur: 0.08, freq: 350, q: 0.7, gain: 0.1, type: "lowpass" });
+    this.burst({ dur: 0.08, freq: jumpPitch(place), q: 0.7, gain: 0.1, type: "lowpass" });
   }
 
   land(speed: number): void {
