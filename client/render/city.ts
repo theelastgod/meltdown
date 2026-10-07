@@ -296,8 +296,8 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
     hazard: std({ map: hazard, roughness: 0.8 }),
     fenceMat: std({ map: shutterTexture("#101418"), roughness: 0.6, metalness: 0.5, transparent: true, opacity: 0.85 }),
     shutter: std({ map: shutter, roughness: 0.6, metalness: 0.4 }),
-    car: std({ color: 0x0c1018, roughness: 0.35, metalness: 0.6 }),
-    carAlt: std({ color: 0x1a1220, roughness: 0.35, metalness: 0.6 }),
+    car: std({ color: 0x0c1018, roughness: carSheen(level.name), metalness: 0.6 }),
+    carAlt: std({ color: 0x1a1220, roughness: carSheen(level.name), metalness: 0.6 }),
     planter: std({ color: 0x20262e, roughness: 0.9 }),
     bush: std({ color: 0x0a2418, roughness: 1 }),
     dumpster: std({ color: 0x14241c, roughness: 0.8, metalness: 0.3 }),
@@ -814,6 +814,35 @@ const DISTRICT_CURB: Record<string, number> = {
 
 export function curbSheen(name: string | undefined): number {
   return (name && DISTRICT_CURB[name]) || STREET_CURB;
+}
+
+/** How the parked paint takes the street light. Lease Row keeps the gloss the blocks shipped with. Same boxes, no new mesh. Colours stay 0x0c1018 and 0x1a1220. */
+export const STREET_CAR = 0.35;
+
+const DISTRICT_CAR: Record<string, number> = {
+  deadletter_docks: 0.92,
+  repo_depot: 0.48,
+  night_market: 0.12,
+  relay_heights: 0.22,
+  ash_canal: 0.78,
+  glass_mile: 0.08,
+  bone_market: 0.62,
+  cold_vault: 0.96,
+  neon_chapel: 0.28,
+  slag_pit: 0.55,
+  wire_garden: 0.18,
+  red_kiln: 0.42,
+  paper_wharf: 0.84,
+  velvet_court: 0.05,
+  rust_crown: 0.68,
+  salt_stairs: 0.32,
+  lamp_bazaar: 0.15,
+  debt_orchard: 0.72,
+  black_relay: 0.88,
+};
+
+export function carSheen(name: string | undefined): number {
+  return (name && DISTRICT_CAR[name]) || STREET_CAR;
 }
 
 /** How hard the street windows burn. Lease Row keeps the facade glow the blocks shipped with. Same panes, no new mesh. */
