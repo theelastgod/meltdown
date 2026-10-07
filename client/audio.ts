@@ -602,6 +602,35 @@ export function buzzDepth(name: string | undefined): number {
   return (name && DISTRICT_DEPTH[name]) || STREET_DEPTH;
 }
 
+/** Base gain of the distant-traffic rumble. Lease Row keeps 0.16. Rate, cut, and swell stay farTraffic. */
+export const STREET_BODY = 0.16;
+
+const DISTRICT_BODY: Record<string, number> = {
+  deadletter_docks: 0.08,
+  repo_depot: 0.22,
+  night_market: 0.28,
+  relay_heights: 0.12,
+  ash_canal: 0.1,
+  glass_mile: 0.05,
+  bone_market: 0.19,
+  cold_vault: 0.07,
+  neon_chapel: 0.14,
+  slag_pit: 0.26,
+  wire_garden: 0.18,
+  red_kiln: 0.24,
+  paper_wharf: 0.09,
+  velvet_court: 0.11,
+  rust_crown: 0.2,
+  salt_stairs: 0.13,
+  lamp_bazaar: 0.3,
+  debt_orchard: 0.15,
+  black_relay: 0.04,
+};
+
+export function trafficBody(name: string | undefined): number {
+  return (name && DISTRICT_BODY[name]) || STREET_BODY;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -639,6 +668,7 @@ export class GameAudio {
     buzzGain: GainNode;
     traffic: AudioBufferSourceNode;
     trafficFilter: BiquadFilterNode;
+    trafficGain: GainNode;
     swell: OscillatorNode;
     buzzLfo: OscillatorNode;
     buzzLfoGain: GainNode;
@@ -761,7 +791,7 @@ export class GameAudio {
     tf.frequency.value = 180;
     tf.Q.value = 0.8;
     const tg = ctx.createGain();
-    tg.gain.value = 0.16;
+    tg.gain.value = trafficBody(this.bedName);
     const swell = ctx.createOscillator();
     swell.type = "sine";
     swell.frequency.value = 0.09;
@@ -800,7 +830,7 @@ export class GameAudio {
     g.gain.linearRampToValueAtTime(this.bedLevel * this.volumes.bed, ctx.currentTime + 2.5);
     this.bed = { gain: g };
     this.bedNodes = {
-      rainFilter: rf, rainGain: rg, hum, humGain: hg, buzz, buzzFilter: bf, buzzGain: bg, traffic, trafficFilter: tf, swell, buzzLfo: lfo, buzzLfoGain: lg,
+      rainFilter: rf, rainGain: rg, hum, humGain: hg, buzz, buzzFilter: bf, buzzGain: bg, traffic, trafficFilter: tf, trafficGain: tg, swell, buzzLfo: lfo, buzzLfoGain: lg,
       murmurA: murmurA.bp, murmurAGain: murmurA.cg, murmurALfo: murmurA.lfo, murmurADepth: murmurA.depth,
       murmurB: murmurB.bp, murmurBGain: murmurB.cg, murmurBLfo: murmurB.lfo, murmurBDepth: murmurB.depth,
     };
@@ -830,6 +860,7 @@ export class GameAudio {
     n.traffic.playbackRate.value = far.rate;
     n.trafficFilter.frequency.value = far.cut;
     n.swell.frequency.value = far.swell;
+    n.trafficGain.gain.value = trafficBody(levelName);
     const murmur = crowdMurmur(levelName);
     n.murmurA.frequency.value = murmur.aHz;
     n.murmurAGain.gain.value = murmur.aGain;
@@ -867,6 +898,12 @@ export class GameAudio {
   depthNow(): number | null {
     const n = this.bedNodes;
     return n ? n.buzzLfoGain.gain.value : null;
+  }
+
+  /** How loud the distant-traffic floor sits, or null before the bed exists. Rate and swell stay farTraffic. */
+  bodyNow(): number | null {
+    const n = this.bedNodes;
+    return n ? n.trafficGain.gain.value : null;
   }
 
   /** A VANTAGE siren somewhere across the district: a two-tone wail, panned, dull with distance, fading as it passes. */
