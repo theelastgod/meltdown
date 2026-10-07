@@ -424,6 +424,35 @@ export function tramPass(name: string | undefined): TramPass {
   return (name && DISTRICT_TRAM[name]) || STREET_TRAM;
 }
 
+/** Peak gain of the monorail whoosh. Lease Row keeps the 0.3 the pass shipped with. The band stays tramPass. */
+export const STREET_RUSH = 0.3;
+
+const DISTRICT_RUSH: Record<string, number> = {
+  deadletter_docks: 0.12,
+  repo_depot: 0.38,
+  night_market: 0.55,
+  relay_heights: 0.42,
+  ash_canal: 0.16,
+  glass_mile: 0.62,
+  bone_market: 0.22,
+  cold_vault: 0.34,
+  neon_chapel: 0.18,
+  slag_pit: 0.48,
+  wire_garden: 0.36,
+  red_kiln: 0.58,
+  paper_wharf: 0.2,
+  velvet_court: 0.14,
+  rust_crown: 0.4,
+  salt_stairs: 0.46,
+  lamp_bazaar: 0.52,
+  debt_orchard: 0.26,
+  black_relay: 0.7,
+};
+
+export function tramRush(name: string | undefined): number {
+  return (name && DISTRICT_RUSH[name]) || STREET_RUSH;
+}
+
 /** Distant traffic in the bed. Lease Row keeps the rumble the city already had. */
 export type FarTraffic = { rate: number; cut: number; swell: number };
 
@@ -837,8 +866,9 @@ export class GameAudio {
     f.frequency.exponentialRampToValueAtTime(pass.peak, t + 1.1);
     f.frequency.exponentialRampToValueAtTime(pass.close, t + 2.6);
     const g = ctx.createGain();
+    const rush = tramRush(place);
     g.gain.setValueAtTime(0.001, t);
-    g.gain.exponentialRampToValueAtTime(0.3, t + 1.1);
+    g.gain.exponentialRampToValueAtTime(rush, t + 1.1);
     g.gain.exponentialRampToValueAtTime(0.001, t + 2.7);
     const p = ctx.createStereoPanner();
     p.pan.setValueAtTime(-0.8, t);
