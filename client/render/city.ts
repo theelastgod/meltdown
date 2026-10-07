@@ -878,6 +878,35 @@ export function skylineRead(name: string | undefined): SkylineRead {
   return { base: 18, rise: 70, far: 50 };
 }
 
+/** How hard the far slabs burn. Lease Row keeps the horizon glow the skyline shipped with. Same meshes, no new slab. */
+export const STREET_HORIZON = 0.7;
+
+const DISTRICT_HORIZON: Record<string, number> = {
+  deadletter_docks: 0.28,
+  repo_depot: 1.35,
+  night_market: 1.85,
+  relay_heights: 1.15,
+  ash_canal: 0.42,
+  glass_mile: 2.1,
+  bone_market: 0.55,
+  cold_vault: 0.22,
+  neon_chapel: 1.55,
+  slag_pit: 1.95,
+  wire_garden: 0.88,
+  red_kiln: 2.35,
+  paper_wharf: 0.48,
+  velvet_court: 0.62,
+  rust_crown: 1.05,
+  salt_stairs: 1.25,
+  lamp_bazaar: 2.55,
+  debt_orchard: 0.78,
+  black_relay: 0.12,
+};
+
+export function horizonBurn(name: string | undefined): number {
+  return (name && DISTRICT_HORIZON[name]) || STREET_HORIZON;
+}
+
 /** Skyline of dark slabs with neon edges and sparse lit windows beyond the playable area, and THE KERNEL on the horizon. */
 export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "magenta" | "cyan" | "amber" = "magenta", place?: string): THREE.Group {
   const group = new THREE.Group();
@@ -891,7 +920,7 @@ export function buildSkyline(scene: THREE.Scene, seed = 42, inner = 48, cast: "m
     : (["tex_facade", "tex_var_010", "tex_var_011"] as const);
   const facades = [facadeTextures(1), facadeTextures(2, 0.1), facadeTextures(3, 0.25)].map((f, i) => {
     f.map.wrapS = f.map.wrapT = f.emissive.wrapS = f.emissive.wrapT = THREE.RepeatWrapping;
-    const mat = new THREE.MeshStandardMaterial({ map: f.map, emissiveMap: f.emissive, emissive: 0xffffff, emissiveIntensity: 0.7, roughness: 0.8, metalness: 0.1 });
+    const mat = new THREE.MeshStandardMaterial({ map: f.map, emissiveMap: f.emissive, emissive: 0xffffff, emissiveIntensity: horizonBurn(place), roughness: 0.8, metalness: 0.1 });
     bindPlate(mat, skyIds[i]!, true);
     return mat;
   });
