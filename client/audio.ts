@@ -834,6 +834,35 @@ export function slidePitch(name: string | undefined): number {
   return (name && DISTRICT_SLIDE[name]) || STREET_SLIDE;
 }
 
+/** How high a hit's thud sits, in hertz. Lease Row keeps 500. Duration, Q, and gain stay put. */
+export const STREET_HURT = 500;
+
+const DISTRICT_HURT: Record<string, number> = {
+  deadletter_docks: 180,
+  repo_depot: 420,
+  night_market: 1400,
+  relay_heights: 760,
+  ash_canal: 120,
+  glass_mile: 1800,
+  bone_market: 260,
+  cold_vault: 980,
+  neon_chapel: 640,
+  slag_pit: 210,
+  wire_garden: 2200,
+  red_kiln: 340,
+  paper_wharf: 300,
+  velvet_court: 560,
+  rust_crown: 480,
+  salt_stairs: 860,
+  lamp_bazaar: 1100,
+  debt_orchard: 150,
+  black_relay: 2600,
+};
+
+export function hurtPitch(name: string | undefined): number {
+  return (name && DISTRICT_HURT[name]) || STREET_HURT;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1421,10 +1450,10 @@ export class GameAudio {
     this.burst({ dur: 0.6, freq: 260, q: 0.5, gain: 0.3, type: "lowpass" });
   }
 
-  hurt(): void {
+  hurt(place?: string): void {
     this.count("hurt");
     if (!this.ctx) return;
-    this.burst({ dur: 0.08, freq: 500, q: 0.6, gain: 0.25, type: "lowpass" });
+    this.burst({ dur: 0.08, freq: hurtPitch(place), q: 0.6, gain: 0.25, type: "lowpass" });
   }
 
   /** the choke racking on or off (Stage 94): a two-part mechanical click, pitched by which way it went */

@@ -655,7 +655,7 @@ export class Game {
           this.passedBy({ x: ev.fx, y: ev.fy, z: ev.fz }, { x: ev.tx, y: ev.ty, z: ev.tz }, ev.hitKind === 3 && ev.victimId === me);
           if (ev.hitKind === 3 && ev.victimId === me) {
             this.netStats.serverHitsOnMe++;
-            this.audio.hurt();
+            this.audio.hurt(this.world.level.name);
             this.hud.alert("▲ INTEGRITY BREACH", true, 1);
           }
         }
@@ -692,7 +692,7 @@ export class Game {
             break;
           case FX.hurt:
             if (ev.playerId === me) {
-              this.audio.hurt();
+              this.audio.hurt(this.world.level.name);
               this.hud.alert(`▲ INTEGRITY −${ev.a}`, true, 0.8);
               // the hurt effect carries the attacker's position (Stage 74); all zeros means the room
               // could not name one — a fall, a hazard — and there is no direction to point at
@@ -1431,7 +1431,7 @@ export class Game {
         break;
       case "hurt":
         if (ev.playerId === this.player.id) {
-          this.audio.hurt();
+          this.audio.hurt(this.world.level.name);
           this.hud.alert(`▲ INTEGRITY −${ev.damage}`, true, 0.8);
           const from = this.attackerAt(ev.by);
           if (from) this.tookHit(from.x, from.z, ev.damage);
