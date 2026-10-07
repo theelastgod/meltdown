@@ -1019,6 +1019,35 @@ export function adVeil(name: string | undefined): number {
   return (name && DISTRICT_VEIL[name]) || STREET_VEIL;
 }
 
+/** How large the ticker letters read, in pixels. Lease Row keeps the face the street shipped with. Ink, copy, crawl, and veil stay put. */
+export const STREET_GLYPH = 44;
+
+const DISTRICT_GLYPH: Record<string, number> = {
+  deadletter_docks: 18,
+  repo_depot: 32,
+  night_market: 72,
+  relay_heights: 56,
+  ash_canal: 22,
+  glass_mile: 64,
+  bone_market: 28,
+  cold_vault: 16,
+  neon_chapel: 36,
+  slag_pit: 48,
+  wire_garden: 40,
+  red_kiln: 80,
+  paper_wharf: 26,
+  velvet_court: 30,
+  rust_crown: 52,
+  salt_stairs: 60,
+  lamp_bazaar: 88,
+  debt_orchard: 34,
+  black_relay: 12,
+};
+
+export function adGlyph(name: string | undefined): number {
+  return (name && DISTRICT_GLYPH[name]) || STREET_GLYPH;
+}
+
 /** Holographic ad tickers: VANTAGE copy scrolling on translucent panels that cycle colour. */
 export class HoloAds {
   readonly group = new THREE.Group();
@@ -1063,7 +1092,7 @@ export class HoloAds {
       g.lineWidth = 3;
       g.strokeRect(3, 3, 506, 122);
       g.fillStyle = fg;
-      g.font = "bold 44px 'Courier New', monospace";
+      g.font = `bold ${adGlyph(this.district)}px 'Courier New', monospace`;
       g.textBaseline = "middle";
       const copy = adCopy(this.district);
       const text = copy[p.line % copy.length]! + "   ▸   ";
