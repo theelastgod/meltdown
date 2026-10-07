@@ -1531,7 +1531,7 @@ export class Game {
         this.audio.jump(this.world.level.name);
         break;
       case "land":
-        this.audio.land(ev.speed);
+        this.audio.land(ev.speed, this.world.level.name);
         break;
       case "mantle":
         // the cue says it; the log is for what happened on the ledger, not every ledge climbed or
