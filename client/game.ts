@@ -1441,7 +1441,7 @@ export class Game {
         if (ev.playerId === this.player.id) this.audio.swap();
         break;
       case "reloadSeat":
-        if (ev.playerId === this.player.id) this.audio.reload("seat");
+        if (ev.playerId === this.player.id) this.audio.reload("seat", this.world.level.name);
         break;
       case "reloadCancel":
         break;
@@ -1539,10 +1539,10 @@ export class Game {
         this.audio.mantle();
         break;
       case "reloadStart":
-        this.audio.reload("start");
+        this.audio.reload("start", this.world.level.name);
         break;
       case "reloadEnd":
-        this.audio.reload("end");
+        this.audio.reload("end", this.world.level.name);
         break;
       case "dryFire":
         this.audio.dryFire();

@@ -863,6 +863,35 @@ export function hurtPitch(name: string | undefined): number {
   return (name && DISTRICT_HURT[name]) || STREET_HURT;
 }
 
+/** How high a reload's first click sits, in hertz. Lease Row keeps 1800. Duration, Q, and gain stay put. */
+export const STREET_RELOAD = 1800;
+
+const DISTRICT_RELOAD: Record<string, number> = {
+  deadletter_docks: 620,
+  repo_depot: 980,
+  night_market: 2600,
+  relay_heights: 2100,
+  ash_canal: 440,
+  glass_mile: 3200,
+  bone_market: 760,
+  cold_vault: 1540,
+  neon_chapel: 880,
+  slag_pit: 540,
+  wire_garden: 3600,
+  red_kiln: 1120,
+  paper_wharf: 680,
+  velvet_court: 1320,
+  rust_crown: 1680,
+  salt_stairs: 1960,
+  lamp_bazaar: 2280,
+  debt_orchard: 360,
+  black_relay: 4100,
+};
+
+export function reloadPitch(name: string | undefined): number {
+  return (name && DISTRICT_RELOAD[name]) || STREET_RELOAD;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1822,14 +1851,14 @@ export class GameAudio {
     this.tone({ dur: 0.18, from: 80, to: 55, gain: 0.2, delay: 0.25 });
   }
 
-  reload(phase: "start" | "end" | "seat"): void {
+  reload(phase: "start" | "end" | "seat", place?: string): void {
     this.count("reload_" + phase);
     if (!this.ctx) return;
     if (phase === "seat") {
       this.tone({ dur: 0.1, from: 150, to: 70, gain: 0.35 }); // the clunk that says "you can cancel now"
       this.burst({ dur: 0.05, freq: 1400, q: 1.2, gain: 0.2 });
     } else if (phase === "start") {
-      this.burst({ dur: 0.06, freq: 1800, q: 1.5, gain: 0.12 });
+      this.burst({ dur: 0.06, freq: reloadPitch(place), q: 1.5, gain: 0.12 });
       this.burst({ dur: 0.1, freq: 500, q: 0.6, gain: 0.1, type: "lowpass", pan: -0.3 });
     } else {
       this.burst({ dur: 0.05, freq: 2600, q: 2, gain: 0.16 });
