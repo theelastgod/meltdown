@@ -573,6 +573,35 @@ export function buzzFlicker(name: string | undefined): number {
   return (name && DISTRICT_FLICKER[name]) || STREET_FLICKER;
 }
 
+/** How deep the neon buzz breathes, as LFO gain. Lease Row keeps the depth the bed shipped with. The rate stays buzzFlicker. */
+export const STREET_DEPTH = 0.006;
+
+const DISTRICT_DEPTH: Record<string, number> = {
+  deadletter_docks: 0.003,
+  repo_depot: 0.008,
+  night_market: 0.014,
+  relay_heights: 0.009,
+  ash_canal: 0.004,
+  glass_mile: 0.016,
+  bone_market: 0.005,
+  cold_vault: 0.0025,
+  neon_chapel: 0.011,
+  slag_pit: 0.013,
+  wire_garden: 0.007,
+  red_kiln: 0.015,
+  paper_wharf: 0.0035,
+  velvet_court: 0.0045,
+  rust_crown: 0.01,
+  salt_stairs: 0.012,
+  lamp_bazaar: 0.017,
+  debt_orchard: 0.0065,
+  black_relay: 0.002,
+};
+
+export function buzzDepth(name: string | undefined): number {
+  return (name && DISTRICT_DEPTH[name]) || STREET_DEPTH;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -612,6 +641,7 @@ export class GameAudio {
     trafficFilter: BiquadFilterNode;
     swell: OscillatorNode;
     buzzLfo: OscillatorNode;
+    buzzLfoGain: GainNode;
     murmurA: BiquadFilterNode;
     murmurAGain: GainNode;
     murmurALfo: OscillatorNode;
@@ -716,7 +746,7 @@ export class GameAudio {
     const lfo = ctx.createOscillator();
     lfo.frequency.value = buzzFlicker(this.bedName);
     const lg = ctx.createGain();
-    lg.gain.value = 0.006;
+    lg.gain.value = buzzDepth(this.bedName);
     lfo.connect(lg).connect(bg.gain);
     buzz.connect(bf).connect(bg).connect(g);
     buzz.start();
@@ -770,7 +800,7 @@ export class GameAudio {
     g.gain.linearRampToValueAtTime(this.bedLevel * this.volumes.bed, ctx.currentTime + 2.5);
     this.bed = { gain: g };
     this.bedNodes = {
-      rainFilter: rf, rainGain: rg, hum, humGain: hg, buzz, buzzFilter: bf, buzzGain: bg, traffic, trafficFilter: tf, swell, buzzLfo: lfo,
+      rainFilter: rf, rainGain: rg, hum, humGain: hg, buzz, buzzFilter: bf, buzzGain: bg, traffic, trafficFilter: tf, swell, buzzLfo: lfo, buzzLfoGain: lg,
       murmurA: murmurA.bp, murmurAGain: murmurA.cg, murmurALfo: murmurA.lfo, murmurADepth: murmurA.depth,
       murmurB: murmurB.bp, murmurBGain: murmurB.cg, murmurBLfo: murmurB.lfo, murmurBDepth: murmurB.depth,
     };
@@ -795,6 +825,7 @@ export class GameAudio {
     n.buzzFilter.frequency.value = t.buzzCut;
     n.buzzGain.gain.value = t.buzz;
     n.buzzLfo.frequency.value = buzzFlicker(levelName);
+    n.buzzLfoGain.gain.value = buzzDepth(levelName);
     const far = farTraffic(levelName);
     n.traffic.playbackRate.value = far.rate;
     n.trafficFilter.frequency.value = far.cut;
@@ -830,6 +861,12 @@ export class GameAudio {
   flickerNow(): number | null {
     const n = this.bedNodes;
     return n ? n.buzzLfo.frequency.value : null;
+  }
+
+  /** How deep that breath swings, or null before the bed exists. The rate stays flickerNow. */
+  depthNow(): number | null {
+    const n = this.bedNodes;
+    return n ? n.buzzLfoGain.gain.value : null;
   }
 
   /** A VANTAGE siren somewhere across the district: a two-tone wail, panned, dull with distance, fading as it passes. */
