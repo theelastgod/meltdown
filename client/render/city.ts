@@ -318,7 +318,7 @@ export function dressLevel(scene: THREE.Scene, level: LevelDef, screens?: Screen
     white: std({ color: 0xd9dde3, roughness: 0.92, metalness: 0.0 }),
     whiteDesk: std({ color: 0xe9e5dc, roughness: 0.6, metalness: 0.05 }),
     whiteRug: std({ color: 0xb9b3a6, roughness: 1 }),
-    road: std({ color: 0x12161c, roughness: 0.9, metalness: 0.05 }),
+    road: std({ color: 0x12161c, roughness: roadSheen(level.name), metalness: 0.05 }),
     desk: std({ color: 0x2a2418, roughness: 0.7, metalness: 0.1 }),
     scaffold: std({ color: 0x151b26, roughness: 0.5, metalness: 0.55 }),
     pipe: std({ color: 0x3a4038, roughness: 0.45, metalness: 0.6 }),
@@ -843,6 +843,35 @@ const DISTRICT_CAR: Record<string, number> = {
 
 export function carSheen(name: string | undefined): number {
   return (name && DISTRICT_CAR[name]) || STREET_CAR;
+}
+
+/** How the asphalt takes the street light. Lease Row keeps the tar the blocks shipped with. Same road mesh, no new geometry. Colour stays 0x12161c. */
+export const STREET_ROAD = 0.9;
+
+const DISTRICT_ROAD: Record<string, number> = {
+  deadletter_docks: 0.98,
+  repo_depot: 0.72,
+  night_market: 0.28,
+  relay_heights: 0.55,
+  ash_canal: 0.94,
+  glass_mile: 0.18,
+  bone_market: 0.82,
+  cold_vault: 0.96,
+  neon_chapel: 0.42,
+  slag_pit: 0.64,
+  wire_garden: 0.48,
+  red_kiln: 0.34,
+  paper_wharf: 0.88,
+  velvet_court: 0.22,
+  rust_crown: 0.68,
+  salt_stairs: 0.52,
+  lamp_bazaar: 0.15,
+  debt_orchard: 0.76,
+  black_relay: 0.91,
+};
+
+export function roadSheen(name: string | undefined): number {
+  return (name && DISTRICT_ROAD[name]) || STREET_ROAD;
 }
 
 /** How hard the street windows burn. Lease Row keeps the facade glow the blocks shipped with. Same panes, no new mesh. */
