@@ -453,6 +453,35 @@ export function tramRush(name: string | undefined): number {
   return (name && DISTRICT_RUSH[name]) || STREET_RUSH;
 }
 
+/** Seconds the monorail motor note holds. Lease Row keeps the 2.4 the pass shipped with. Gain stays 0.08. */
+export const STREET_SPAN = 2.4;
+
+const DISTRICT_SPAN: Record<string, number> = {
+  deadletter_docks: 3.6,
+  repo_depot: 2.1,
+  night_market: 1.4,
+  relay_heights: 1.9,
+  ash_canal: 3.2,
+  glass_mile: 1.2,
+  bone_market: 2.8,
+  cold_vault: 2.2,
+  neon_chapel: 3.0,
+  slag_pit: 2.55,
+  wire_garden: 1.7,
+  red_kiln: 3.4,
+  paper_wharf: 2.65,
+  velvet_court: 3.15,
+  rust_crown: 2.05,
+  salt_stairs: 1.55,
+  lamp_bazaar: 1.35,
+  debt_orchard: 2.9,
+  black_relay: 1.05,
+};
+
+export function tramSpan(name: string | undefined): number {
+  return (name && DISTRICT_SPAN[name]) || STREET_SPAN;
+}
+
 /** Distant traffic in the bed. Lease Row keeps the rumble the city already had. */
 export type FarTraffic = { rate: number; cut: number; swell: number };
 
@@ -876,7 +905,7 @@ export class GameAudio {
     src.connect(f).connect(g).connect(p).connect(this.sfx!);
     src.start(t);
     src.stop(t + 2.8);
-    this.tone({ dur: 2.4, from: pass.motorFrom, to: pass.motorTo, gain: 0.08, type: "sawtooth" });
+    this.tone({ dur: tramSpan(place), from: pass.motorFrom, to: pass.motorTo, gain: 0.08, type: "sawtooth" });
     this.tone({ dur: 0.5, from: 60, to: 45, gain: 0.25 });
   }
 
