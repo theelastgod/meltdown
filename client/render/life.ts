@@ -1486,6 +1486,35 @@ export function shipSheen(name: string | undefined): number {
   return (name && DISTRICT_SHEEN[name]) || STREET_SHEEN;
 }
 
+/** How solid the airship's hanging panel reads. Lease Row keeps the opaque plate the skyline shipped with. Colour stays skyMark. The hull stays shipCloth. */
+export const STREET_FADE = 1;
+
+const DISTRICT_FADE: Record<string, number> = {
+  deadletter_docks: 0.38,
+  repo_depot: 0.72,
+  night_market: 0.28,
+  relay_heights: 0.82,
+  ash_canal: 0.46,
+  glass_mile: 0.55,
+  bone_market: 0.64,
+  cold_vault: 0.22,
+  neon_chapel: 0.48,
+  slag_pit: 0.76,
+  wire_garden: 0.58,
+  red_kiln: 0.34,
+  paper_wharf: 0.68,
+  velvet_court: 0.18,
+  rust_crown: 0.86,
+  salt_stairs: 0.52,
+  lamp_bazaar: 0.24,
+  debt_orchard: 0.62,
+  black_relay: 0.14,
+};
+
+export function panelFade(name: string | undefined): number {
+  return (name && DISTRICT_FADE[name]) || STREET_FADE;
+}
+
 /** Aircraft-warning blinkers on the tallest slabs and an airship drifting over the district. */
 export class Sky {
   readonly group = new THREE.Group();
@@ -1531,7 +1560,8 @@ export class Sky {
     const hull = new THREE.Mesh(new THREE.CapsuleGeometry(9, 40, 4, 10), airMat);
     hull.rotation.z = Math.PI / 2;
     this.ship.add(hull);
-    const panelMat = new THREE.MeshBasicMaterial({ color: mark.panel });
+    const fade = panelFade(name);
+    const panelMat = new THREE.MeshBasicMaterial({ color: mark.panel, opacity: fade, transparent: fade < 1, depthWrite: fade === 1 });
     bindPlate(panelMat, "tex_billboard_mg");
     const panel = new THREE.Mesh(new THREE.BoxGeometry(34, 8, 0.4), panelMat);
     panel.position.y = -10;
