@@ -1443,6 +1443,35 @@ export function stunPitch(name: string | undefined): number {
   return (name && DISTRICT_STUN[name]) || STREET_STUN;
 }
 
+/** How high a mech flag opens, in hertz. Lease Row keeps 880. The second note stays 880. */
+export const STREET_FLAG = 880;
+
+const DISTRICT_FLAG: Record<string, number> = {
+  deadletter_docks: 420,
+  repo_depot: 640,
+  night_market: 1320,
+  relay_heights: 1760,
+  ash_canal: 520,
+  glass_mile: 1100,
+  bone_market: 360,
+  cold_vault: 980,
+  neon_chapel: 760,
+  slag_pit: 280,
+  wire_garden: 1480,
+  red_kiln: 590,
+  paper_wharf: 470,
+  velvet_court: 1240,
+  rust_crown: 820,
+  salt_stairs: 1560,
+  lamp_bazaar: 1880,
+  debt_orchard: 330,
+  black_relay: 2100,
+};
+
+export function flagPitch(name: string | undefined): number {
+  return (name && DISTRICT_FLAG[name]) || STREET_FLAG;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1970,10 +1999,10 @@ export class GameAudio {
     this.burst({ dur: 0.3, freq: 4000, q: 2, gain: 0.15 });
   }
 
-  flagged(): void {
+  flagged(place?: string): void {
     this.count("flagged");
     if (!this.ctx) return;
-    this.tone({ dur: 0.12, from: 880, gain: 0.12, type: "square" });
+    this.tone({ dur: 0.12, from: flagPitch(place), gain: 0.12, type: "square" });
     this.tone({ dur: 0.12, from: 880, gain: 0.12, type: "square", delay: 0.18 });
   }
 

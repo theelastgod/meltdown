@@ -1075,7 +1075,7 @@ export class Game {
   /** HUD flag plus the two-tone, once a second, online and off (Stage 194). */
   private mechHasYou(): void {
     this.hud.flagged();
-    if (this.world.tick % 30 === 0) this.audio.flagged();
+    if (this.world.tick % 30 === 0) this.audio.flagged(this.world.level.name);
   }
 
   /** Offline this is a sim event; online it is the snapshot's dead→alive edge (Stage 191). */
