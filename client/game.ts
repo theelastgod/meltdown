@@ -742,7 +742,7 @@ export class Game {
           case FX.kernelPulse:
             this.kernelMark = this.netMatch?.timeLeft ?? null;
             this.hud.alert(`◆ KERNEL PULSE — NODE ${["", "A", "B", "C", "D", "E"][ev.a] ?? ev.a} ${ev.b ? "RE-LEASED" : "DRAINED"}`, true, 2.5);
-            this.audio.kernelPulse();
+            this.audio.kernelPulse(this.world.level.name);
             this.renderer.post.kick(0.8);
             break;
           case FX.phase:
@@ -751,7 +751,7 @@ export class Game {
             // online the phase had been silent (Stage 124): the same voices as offline
             if (ev.a === 1) this.audio.wakeBegins();
             else if (ev.a === 2) this.audio.roundOver(ev.b === 0 ? "none" : ev.b === this.player.team ? "won" : "lost");
-            else this.audio.kernelPulse();
+            else this.audio.kernelPulse(this.world.level.name);
             this.renderer.post.kick(1);
             break;
           case FX.fullWake:
@@ -1488,7 +1488,7 @@ export class Game {
         this.kernelMark = this.world.wake?.timeLeft ?? null;
         const n = this.world.wake?.nodes.find((x) => x.id === ev.node);
         this.hud.alert(`◆ KERNEL PULSE — NODE ${n?.label ?? ev.node} ${ev.released ? "RE-LEASED" : "DRAINED"}`, true, 2.5);
-        this.audio.kernelPulse();
+        this.audio.kernelPulse(this.world.level.name);
         this.renderer.post.kick(0.8);
         break;
       }
@@ -1500,7 +1500,7 @@ export class Game {
         // the warm-up's, the model taking the district back
         if (ev.phase === "wake") this.audio.wakeBegins();
         else if (ev.phase === "results") this.audio.roundOver(ev.winner === 0 ? "none" : ev.winner === this.player.team ? "won" : "lost");
-        else this.audio.kernelPulse();
+        else this.audio.kernelPulse(this.world.level.name);
         this.renderer.post.kick(1);
         break;
       case "fullWake":

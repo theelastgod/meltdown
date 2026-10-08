@@ -1733,6 +1733,35 @@ export function contestPitch(name: string | undefined): number {
   return (name && DISTRICT_CONTEST[name]) || STREET_CONTEST;
 }
 
+/** How low the kernel pulse opens, in hertz. Lease Row keeps 42. It still lands at 30. Duration stays 1.2. Gain stays 0.7. The body stays 260. */
+export const STREET_KERNEL = 42;
+
+const DISTRICT_KERNEL: Record<string, number> = {
+  deadletter_docks: 36,
+  repo_depot: 48,
+  night_market: 78,
+  relay_heights: 64,
+  ash_canal: 34,
+  glass_mile: 92,
+  bone_market: 40,
+  cold_vault: 58,
+  neon_chapel: 52,
+  slag_pit: 33,
+  wire_garden: 110,
+  red_kiln: 46,
+  paper_wharf: 44,
+  velvet_court: 70,
+  rust_crown: 56,
+  salt_stairs: 86,
+  lamp_bazaar: 74,
+  debt_orchard: 38,
+  black_relay: 128,
+};
+
+export function kernelPitch(name: string | undefined): number {
+  return (name && DISTRICT_KERNEL[name]) || STREET_KERNEL;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2314,10 +2343,10 @@ export class GameAudio {
     this.tone({ dur: 1.4, from: 55, to: 40, gain: 0.35 });
   }
 
-  kernelPulse(): void {
+  kernelPulse(place?: string): void {
     this.count("kernelPulse");
     if (!this.ctx) return;
-    this.tone({ dur: 1.2, from: 42, to: 30, gain: 0.7 });
+    this.tone({ dur: 1.2, from: kernelPitch(place), to: 30, gain: 0.7 });
     this.burst({ dur: 0.6, freq: 260, q: 0.5, gain: 0.3, type: "lowpass" });
   }
 
