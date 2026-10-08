@@ -737,7 +737,7 @@ export class Game {
           }
           case FX.nodeContest:
             this.hud.alert(`◆ NODE ${["", "A", "B", "C", "D", "E"][ev.a] ?? ev.a} CONTESTED`, true, 1.5);
-            this.audio.contest();
+            this.audio.contest(this.world.level.name);
             break;
           case FX.kernelPulse:
             this.kernelMark = this.netMatch?.timeLeft ?? null;
@@ -1481,7 +1481,7 @@ export class Game {
       case "nodeContest": {
         const n = this.world.wake?.nodes.find((x) => x.id === ev.node);
         this.hud.alert(`◆ NODE ${n?.label ?? ev.node} CONTESTED`, true, 1.5);
-        this.audio.contest();
+        this.audio.contest(this.world.level.name);
         break;
       }
       case "kernelPulse": {

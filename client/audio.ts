@@ -1704,6 +1704,35 @@ export function nodePitch(name: string | undefined): number {
   return (name && DISTRICT_NODE[name]) || STREET_NODE;
 }
 
+/** How high a contested node beeps, in hertz. Lease Row keeps 700. Both notes stay that pitch. Duration stays 0.1. Gain stays 0.08. The gap stays 0.15. */
+export const STREET_CONTEST = 700;
+
+const DISTRICT_CONTEST: Record<string, number> = {
+  deadletter_docks: 420,
+  repo_depot: 540,
+  night_market: 980,
+  relay_heights: 860,
+  ash_canal: 360,
+  glass_mile: 1140,
+  bone_market: 470,
+  cold_vault: 760,
+  neon_chapel: 630,
+  slag_pit: 290,
+  wire_garden: 1280,
+  red_kiln: 590,
+  paper_wharf: 510,
+  velvet_court: 880,
+  rust_crown: 730,
+  salt_stairs: 1060,
+  lamp_bazaar: 910,
+  debt_orchard: 450,
+  black_relay: 1420,
+};
+
+export function contestPitch(name: string | undefined): number {
+  return (name && DISTRICT_CONTEST[name]) || STREET_CONTEST;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2255,11 +2284,11 @@ export class GameAudio {
     for (const [i, m] of [1, 1.25, 1.5, 2].entries()) this.tone({ dur: 0.7, from: base * m, gain: 0.08, type: "triangle", delay: 0.05 * i });
   }
 
-  contest(): void {
+  contest(place?: string): void {
     this.count("contest");
     if (!this.ctx) return;
-    this.tone({ dur: 0.1, from: 700, gain: 0.08, type: "square" });
-    this.tone({ dur: 0.1, from: 700, gain: 0.08, type: "square", delay: 0.15 });
+    this.tone({ dur: 0.1, from: contestPitch(place), gain: 0.08, type: "square" });
+    this.tone({ dur: 0.1, from: contestPitch(place), gain: 0.08, type: "square", delay: 0.15 });
   }
 
   /** an objective ticking over (Stage 115): a rising three-note figure in the campaign's register, not the wake's contest */
