@@ -1211,6 +1211,35 @@ export function mendPitch(name: string | undefined): number {
   return (name && DISTRICT_MEND[name]) || STREET_MEND;
 }
 
+/** How high the ledger chime opens, in hertz. Lease Row keeps 330. It still arrives at 440. */
+export const STREET_LEDGER = 330;
+
+const DISTRICT_LEDGER: Record<string, number> = {
+  deadletter_docks: 180,
+  repo_depot: 260,
+  night_market: 520,
+  relay_heights: 390,
+  ash_canal: 210,
+  glass_mile: 610,
+  bone_market: 240,
+  cold_vault: 360,
+  neon_chapel: 290,
+  slag_pit: 140,
+  wire_garden: 720,
+  red_kiln: 310,
+  paper_wharf: 200,
+  velvet_court: 560,
+  rust_crown: 280,
+  salt_stairs: 640,
+  lamp_bazaar: 480,
+  debt_orchard: 160,
+  black_relay: 780,
+};
+
+export function ledgerPitch(name: string | undefined): number {
+  return (name && DISTRICT_LEDGER[name]) || STREET_LEDGER;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1813,10 +1842,10 @@ export class GameAudio {
   }
 
   /** back on the ledger (Stage 96): a rising two-note with the CRT's own hiss under it */
-  respawn(): void {
+  respawn(place?: string): void {
     this.count("respawn");
     if (!this.ctx) return;
-    this.tone({ dur: 0.12, from: 330, to: 440, gain: 0.12, type: "triangle" });
+    this.tone({ dur: 0.12, from: ledgerPitch(place), to: 440, gain: 0.12, type: "triangle" });
     this.tone({ dur: 0.18, from: 440, to: 660, gain: 0.1, type: "triangle", delay: 0.1 });
     this.burst({ dur: 0.35, freq: 1800, q: 0.4, gain: 0.08, type: "highpass" });
   }

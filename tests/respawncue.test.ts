@@ -14,7 +14,7 @@ describe("back on the ledger online", () => {
   it("the snapshot path fires on the dead-to-alive edge, not only on a sim event", () => {
     expect(src).toMatch(/if \(!wasAlive && p\.alive\) this\.backOnTheLedger\(\)/);
     expect(src).toMatch(/private backOnTheLedger\(\): void/);
-    expect(src).toMatch(/this\.audio\.respawn\(\)/);
+    expect(src).toMatch(/this\.audio\.respawn\(this\.world\.level\.name\)/);
     expect(src).toMatch(/BACK ON THE LEDGER/);
   });
 

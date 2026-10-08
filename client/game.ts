@@ -1080,7 +1080,7 @@ export class Game {
 
   /** Offline this is a sim event; online it is the snapshot's dead→alive edge (Stage 191). */
   private backOnTheLedger(): void {
-    this.audio.respawn();
+    this.audio.respawn(this.world.level.name);
     this.hud.push(`◆ BACK ON THE LEDGER · ${districtName(this.world.level)}`, "cy");
   }
 
