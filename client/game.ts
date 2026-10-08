@@ -674,7 +674,7 @@ export class Game {
             this.audio.smoke(this.world.level.name);
             break;
           case FX.emp:
-            this.audio.emp();
+            this.audio.emp(this.world.level.name);
             this.renderer.fx.explosion(pos, ev.a / 10, 0x35f2ff, false);
             if (Math.hypot(ev.x - this.player.pos.x, ev.z - this.player.pos.z) < ev.a / 10) this.renderer.post.kick(1);
             break;
@@ -1411,7 +1411,7 @@ export class Game {
         this.audio.smoke(this.world.level.name);
         break;
       case "emp":
-        this.audio.emp();
+        this.audio.emp(this.world.level.name);
         this.renderer.fx.explosion(ev.pos, ev.radius, 0x35f2ff, false);
         if (Math.hypot(ev.pos.x - this.player.pos.x, ev.pos.z - this.player.pos.z) < ev.radius) this.renderer.post.kick(1);
         break;

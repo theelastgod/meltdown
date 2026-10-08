@@ -1385,6 +1385,35 @@ export function lockPitch(name: string | undefined): number {
   return (name && DISTRICT_LOCK[name]) || STREET_LOCK;
 }
 
+/** How high an EMP opens, in hertz. Lease Row keeps 1400. It still lands at 40. */
+export const STREET_EMP = 1400;
+
+const DISTRICT_EMP: Record<string, number> = {
+  deadletter_docks: 420,
+  repo_depot: 680,
+  night_market: 2100,
+  relay_heights: 2800,
+  ash_canal: 510,
+  glass_mile: 1760,
+  bone_market: 240,
+  cold_vault: 980,
+  neon_chapel: 760,
+  slag_pit: 180,
+  wire_garden: 1640,
+  red_kiln: 360,
+  paper_wharf: 540,
+  velvet_court: 1180,
+  rust_crown: 860,
+  salt_stairs: 1920,
+  lamp_bazaar: 2340,
+  debt_orchard: 300,
+  black_relay: 3200,
+};
+
+export function empPitch(name: string | undefined): number {
+  return (name && DISTRICT_EMP[name]) || STREET_EMP;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1885,10 +1914,10 @@ export class GameAudio {
     this.burst({ dur: 1.4, freq: smokePitch(place), q: 0.3, gain: 0.18 });
   }
 
-  emp(): void {
+  emp(place?: string): void {
     this.count("emp");
     if (!this.ctx) return;
-    this.tone({ dur: 0.4, from: 1400, to: 40, gain: 0.3, type: "square" });
+    this.tone({ dur: 0.4, from: empPitch(place), to: 40, gain: 0.3, type: "square" });
     this.burst({ dur: 0.3, freq: 3500, q: 1.5, gain: 0.25 });
   }
 
