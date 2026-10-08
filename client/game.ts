@@ -1453,7 +1453,7 @@ export class Game {
       case "altToggle":
         // the choke racking on or off (Stage 94): the simulation has said so since Stage 4 and the
         // client dropped it on the floor
-        if (ev.playerId === this.player.id) this.audio.altToggle(ev.on);
+        if (ev.playerId === this.player.id) this.audio.altToggle(ev.on, this.world.level.name);
         break;
       case "fire":
         // the trigger pull that names the round: it arrives in the same tick as the shot events it

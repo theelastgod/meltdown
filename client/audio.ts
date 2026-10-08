@@ -1501,6 +1501,35 @@ export function spoolPitch(name: string | undefined): number {
   return (name && DISTRICT_SPOOL[name]) || STREET_SPOOL;
 }
 
+/** How high a choke racks on, in hertz. Lease Row keeps 1800. The off click stays 1300. The follow stays 900 and 650. */
+export const STREET_CHOKE = 1800;
+
+const DISTRICT_CHOKE: Record<string, number> = {
+  deadletter_docks: 1240,
+  repo_depot: 1560,
+  night_market: 2140,
+  relay_heights: 1680,
+  ash_canal: 980,
+  glass_mile: 2420,
+  bone_market: 1360,
+  cold_vault: 1120,
+  neon_chapel: 1960,
+  slag_pit: 860,
+  wire_garden: 2280,
+  red_kiln: 1480,
+  paper_wharf: 1720,
+  velvet_court: 2040,
+  rust_crown: 1600,
+  salt_stairs: 2520,
+  lamp_bazaar: 1880,
+  debt_orchard: 1040,
+  black_relay: 2680,
+};
+
+export function chokePitch(name: string | undefined): number {
+  return (name && DISTRICT_CHOKE[name]) || STREET_CHOKE;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2096,10 +2125,10 @@ export class GameAudio {
   }
 
   /** the choke racking on or off (Stage 94): a two-part mechanical click, pitched by which way it went */
-  altToggle(on: boolean): void {
+  altToggle(on: boolean, place?: string): void {
     this.count(toggleCue(on));
     if (!this.ctx) return;
-    this.burst({ dur: 0.03, freq: on ? 1800 : 1300, q: 2.5, gain: 0.12 });
+    this.burst({ dur: 0.03, freq: on ? chokePitch(place) : 1300, q: 2.5, gain: 0.12 });
     this.burst({ dur: 0.05, freq: on ? 900 : 650, q: 1.2, gain: 0.1, type: "lowpass", delay: 0.05 });
   }
 
