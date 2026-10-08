@@ -316,7 +316,7 @@ export class Game {
       };
       this.refreshHub();
     }
-    this.hud.onPrint = () => this.audio.printTick();
+    this.hud.onPrint = () => this.audio.printTick(this.world.level.name);
     this.hud.onStamp = () => this.audio.sign(this.world.level.name);
     document.addEventListener("keydown", (e) => {
       if (e.code === "Enter" || e.code === "NumpadEnter") this.sign();

@@ -578,7 +578,7 @@ export class Campaign {
     const node = s.nodes.find((n) => n.id === s.start)!;
     this.playing = { script: scriptId, node, testimony: {}, onDone };
     this.showNode();
-    this.game.audio.printTick();
+    this.game.audio.printTick(this.game.world.level.name);
   }
 
   private showNode(): void {
@@ -671,7 +671,7 @@ export class Campaign {
       this.game.audio.sign(this.game.world.level.name);
     } else {
       nextId = p.node.next ?? null;
-      this.game.audio.printTick();
+      this.game.audio.printTick(this.game.world.level.name);
     }
     if (nextId) {
       p.node = s.nodes.find((n) => n.id === nextId) ?? p.node;

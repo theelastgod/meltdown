@@ -1646,6 +1646,35 @@ export function signPitch(name: string | undefined): number {
   return (name && DISTRICT_SIGN[name]) || STREET_SIGN;
 }
 
+/** How high a receipt line opens, in hertz. Lease Row keeps 2600. The step stays 300. Duration stays 0.02. Q stays 3. Gain stays 0.08. */
+export const STREET_PRINT = 2600;
+
+const DISTRICT_PRINT: Record<string, number> = {
+  deadletter_docks: 1800,
+  repo_depot: 2100,
+  night_market: 3400,
+  relay_heights: 2900,
+  ash_canal: 1600,
+  glass_mile: 3800,
+  bone_market: 1450,
+  cold_vault: 2300,
+  neon_chapel: 2700,
+  slag_pit: 1200,
+  wire_garden: 4100,
+  red_kiln: 2500,
+  paper_wharf: 1950,
+  velvet_court: 3200,
+  rust_crown: 2200,
+  salt_stairs: 3600,
+  lamp_bazaar: 3000,
+  debt_orchard: 1700,
+  black_relay: 4300,
+};
+
+export function printPitch(name: string | undefined): number {
+  return (name && DISTRICT_PRINT[name]) || STREET_PRINT;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2458,10 +2487,10 @@ export class GameAudio {
   }
 
   /** The receipt printing a line: a dot-matrix chatter. */
-  printTick(): void {
+  printTick(place?: string): void {
     this.count("print");
     if (!this.ctx) return;
-    for (let i = 0; i < 4; i++) this.burst({ dur: 0.02, freq: 2600 + i * 300, q: 3, gain: 0.08, delay: i * 0.03 });
+    for (let i = 0; i < 4; i++) this.burst({ dur: 0.02, freq: printPitch(place) + i * 300, q: 3, gain: 0.08, delay: i * 0.03 });
   }
 
   /** The stamp at the bottom of the receipt, and the player's signature. */
