@@ -1675,6 +1675,35 @@ export function printPitch(name: string | undefined): number {
   return (name && DISTRICT_PRINT[name]) || STREET_PRINT;
 }
 
+/** How high a node thud opens, in hertz. Lease Row keeps 110. It still lands at 50. Duration stays 0.25. Gain stays 0.5. The chord stays 440 or 330. */
+export const STREET_NODE = 110;
+
+const DISTRICT_NODE: Record<string, number> = {
+  deadletter_docks: 68,
+  repo_depot: 128,
+  night_market: 186,
+  relay_heights: 154,
+  ash_canal: 74,
+  glass_mile: 210,
+  bone_market: 62,
+  cold_vault: 136,
+  neon_chapel: 168,
+  slag_pit: 56,
+  wire_garden: 232,
+  red_kiln: 148,
+  paper_wharf: 92,
+  velvet_court: 176,
+  rust_crown: 122,
+  salt_stairs: 248,
+  lamp_bazaar: 196,
+  debt_orchard: 84,
+  black_relay: 264,
+};
+
+export function nodePitch(name: string | undefined): number {
+  return (name && DISTRICT_NODE[name]) || STREET_NODE;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2218,10 +2247,10 @@ export class GameAudio {
   }
 
   /** A node coming off the model: rising cyan-green chord, chunk-thud underneath. */
-  nodeFlip(mine: boolean): void {
+  nodeFlip(mine: boolean, place?: string): void {
     this.count("nodeFlip");
     if (!this.ctx) return;
-    this.tone({ dur: 0.25, from: 110, to: 50, gain: 0.5 });
+    this.tone({ dur: 0.25, from: nodePitch(place), to: 50, gain: 0.5 });
     const base = mine ? 440 : 330;
     for (const [i, m] of [1, 1.25, 1.5, 2].entries()) this.tone({ dur: 0.7, from: base * m, gain: 0.08, type: "triangle", delay: 0.05 * i });
   }

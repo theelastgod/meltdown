@@ -730,7 +730,7 @@ export class Game {
           case FX.nodeFlip: {
             const n = this.netEntities.find((e) => e.kind === ENT_NODE && e.id === ev.a);
             if (n) this.renderer.wake.flip({ x: n.x, y: n.y, z: n.z }, ev.b);
-            this.audio.nodeFlip(ev.b === this.player.team);
+            this.audio.nodeFlip(ev.b === this.player.team, this.world.level.name);
             this.renderer.post.kick(0.5);
             this.hud.push(`NODE ${["", "A", "B", "C", "D", "E"][ev.a] ?? ev.a} — CELL ${ev.b === 1 ? "ONE" : "TWO"}`, ev.b === 1 ? "gr" : "cy");
             break;
@@ -756,7 +756,7 @@ export class Game {
             break;
           case FX.fullWake:
             this.hud.alert(fullWakeLine(districtName(this.world.level)), false, 5);
-            this.audio.nodeFlip(true);
+            this.audio.nodeFlip(true, this.world.level.name);
             this.renderer.post.kick(1);
             break;
           default:
@@ -1473,7 +1473,7 @@ export class Game {
       case "nodeFlip": {
         const n = this.world.wake?.nodes.find((x) => x.id === ev.node);
         if (n) this.renderer.wake.flip(n.pos, ev.team);
-        this.audio.nodeFlip(ev.team === this.player.team);
+        this.audio.nodeFlip(ev.team === this.player.team, this.world.level.name);
         this.renderer.post.kick(0.5);
         this.hud.push(`NODE ${n?.label ?? ev.node} ${ev.from === 0 ? "PULLED OFF THE MODEL" : "TAKEN"} — CELL ${ev.team === 1 ? "ONE" : "TWO"}`, ev.team === 1 ? "gr" : "cy");
         break;
@@ -1505,7 +1505,7 @@ export class Game {
         break;
       case "fullWake":
         this.hud.alert(fullWakeLine(districtName(this.world.level)), false, 5);
-        this.audio.nodeFlip(true);
+        this.audio.nodeFlip(true, this.world.level.name);
         this.renderer.post.kick(1);
         break;
       case "waspDeath":
