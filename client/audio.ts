@@ -1559,6 +1559,35 @@ export function reportPitch(name: string | undefined): number {
   return (name && DISTRICT_REPORT[name]) || STREET_REPORT;
 }
 
+/** How a mech beam opens, in hertz. Lease Row keeps 55. It still lands at 45. The crack stays 1600. */
+export const STREET_BEAM = 55;
+
+const DISTRICT_BEAM: Record<string, number> = {
+  deadletter_docks: 48,
+  repo_depot: 62,
+  night_market: 92,
+  relay_heights: 78,
+  ash_canal: 51,
+  glass_mile: 110,
+  bone_market: 46,
+  cold_vault: 70,
+  neon_chapel: 84,
+  slag_pit: 47,
+  wire_garden: 120,
+  red_kiln: 66,
+  paper_wharf: 54,
+  velvet_court: 100,
+  rust_crown: 74,
+  salt_stairs: 130,
+  lamp_bazaar: 140,
+  debt_orchard: 49,
+  black_relay: 160,
+};
+
+export function beamPitch(name: string | undefined): number {
+  return (name && DISTRICT_BEAM[name]) || STREET_BEAM;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2094,10 +2123,10 @@ export class GameAudio {
     this.tone({ dur: 0.12, from: 880, gain: 0.12, type: "square", delay: 0.18 });
   }
 
-  mechBeam(): void {
+  mechBeam(place?: string): void {
     this.count("mechBeam");
     if (!this.ctx) return;
-    this.tone({ dur: 0.3, from: 55, to: 45, gain: 0.5, type: "sawtooth" });
+    this.tone({ dur: 0.3, from: beamPitch(place), to: 45, gain: 0.5, type: "sawtooth" });
     this.burst({ dur: 0.25, freq: 1600, q: 0.5, gain: 0.3 });
   }
 

@@ -689,7 +689,7 @@ export class Game {
             break;
           case FX.mechBeam:
             this.renderer.fx.beam({ x: ev.x, y: ev.y + 2.5, z: ev.z }, pos, 0xffb02e, 0.08, 0.35);
-            if (ev.playerId === me) this.audio.mechBeam();
+            if (ev.playerId === me) this.audio.mechBeam(this.world.level.name);
             break;
           case FX.hurt:
             if (ev.playerId === me) {
@@ -1427,7 +1427,7 @@ export class Game {
       case "mechBeam":
         this.renderer.fx.beam(ev.from, ev.to, 0xffb02e, 0.08, 0.35);
         if (ev.playerId === this.player.id) {
-          this.audio.mechBeam();
+          this.audio.mechBeam(this.world.level.name);
           this.renderer.post.kick(0.5);
         }
         break;
