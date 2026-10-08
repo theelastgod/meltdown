@@ -1301,7 +1301,7 @@ export class Game {
     if (w.length === 0) return;
     const p = this.player;
     for (const cue of stepCues(w, this.listenPoint(), this.stepBook, SIM_DT)) {
-      this.audio.otherStep(cue.speed, cue.pan, cue.gain);
+      this.audio.otherStep(cue.speed, cue.pan, cue.gain, this.world.level.name);
       this.heard.n++;
       this.heard.pan = cue.pan;
       this.heard.gain = cue.gain;

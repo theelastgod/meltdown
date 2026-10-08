@@ -1588,6 +1588,35 @@ export function beamPitch(name: string | undefined): number {
   return (name && DISTRICT_BEAM[name]) || STREET_BEAM;
 }
 
+/** How high somebody else's boot opens, in hertz, before speed adds. Lease Row keeps 190. Speed still adds 8. Duration stays 0.07. Q stays 0.8. */
+export const STREET_BOOT = 190;
+
+const DISTRICT_BOOT: Record<string, number> = {
+  deadletter_docks: 110,
+  repo_depot: 240,
+  night_market: 420,
+  relay_heights: 310,
+  ash_canal: 140,
+  glass_mile: 480,
+  bone_market: 160,
+  cold_vault: 260,
+  neon_chapel: 220,
+  slag_pit: 95,
+  wire_garden: 540,
+  red_kiln: 280,
+  paper_wharf: 125,
+  velvet_court: 360,
+  rust_crown: 200,
+  salt_stairs: 510,
+  lamp_bazaar: 390,
+  debt_orchard: 150,
+  black_relay: 620,
+};
+
+export function bootPitch(name: string | undefined): number {
+  return (name && DISTRICT_BOOT[name]) || STREET_BOOT;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2515,11 +2544,11 @@ export class GameAudio {
    * the side they are on. Quieter than your own by design — your own steps are under you, theirs
    * are information.
    */
-  otherStep(speed: number, pan: number, gain: number): void {
+  otherStep(speed: number, pan: number, gain: number, place?: string): void {
     this.count("step_other");
     if (!this.ctx || gain <= 0.001) return;
     const g = (0.035 + Math.min(0.09, speed * 0.008)) * Math.max(0, Math.min(1, gain));
-    this.burst({ dur: 0.07, freq: 190 + speed * 8, q: 0.8, gain: g, type: "lowpass", pan });
+    this.burst({ dur: 0.07, freq: bootPitch(place) + speed * 8, q: 0.8, gain: g, type: "lowpass", pan });
   }
 
   slide(place?: string): void {
