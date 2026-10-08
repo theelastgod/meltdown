@@ -1472,6 +1472,35 @@ export function flagPitch(name: string | undefined): number {
   return (name && DISTRICT_FLAG[name]) || STREET_FLAG;
 }
 
+/** How high a charge spool opens, in hertz. Lease Row keeps 300. The step stays 900 and the rise stays 20. */
+export const STREET_SPOOL = 300;
+
+const DISTRICT_SPOOL: Record<string, number> = {
+  deadletter_docks: 180,
+  repo_depot: 240,
+  night_market: 480,
+  relay_heights: 720,
+  ash_canal: 160,
+  glass_mile: 540,
+  bone_market: 210,
+  cold_vault: 390,
+  neon_chapel: 450,
+  slag_pit: 120,
+  wire_garden: 610,
+  red_kiln: 260,
+  paper_wharf: 190,
+  velvet_court: 510,
+  rust_crown: 340,
+  salt_stairs: 660,
+  lamp_bazaar: 780,
+  debt_orchard: 140,
+  black_relay: 860,
+};
+
+export function spoolPitch(name: string | undefined): number {
+  return (name && DISTRICT_SPOOL[name]) || STREET_SPOOL;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1953,9 +1982,10 @@ export class GameAudio {
     }
   }
 
-  charge(level: number): void {
+  charge(level: number, place?: string): void {
     if (!this.ctx) return;
-    this.tone({ dur: 0.08, from: 300 + level * 900, to: 320 + level * 900, gain: 0.06, type: "sawtooth" });
+    const open = spoolPitch(place) + level * 900;
+    this.tone({ dur: 0.08, from: open, to: open + 20, gain: 0.06, type: "sawtooth" });
   }
 
   explosion(big = true, place?: string): void {

@@ -713,7 +713,7 @@ export class Game {
             if (ev.playerId !== me) this.audio.throw(this.world.level.name);
             break;
           case FX.chargeFull:
-            if (ev.playerId !== me) this.audio.charge(1);
+            if (ev.playerId !== me) this.audio.charge(1, this.world.level.name);
             break;
           case FX.lunge:
             if (ev.playerId !== me) this.audio.jump(this.world.level.name);
@@ -1264,7 +1264,7 @@ export class Game {
   private footsteps(): void {
     if (this.player.weapon.charging) {
       this.chargeTick++;
-      if (this.chargeTick % 6 === 0) this.audio.charge(this.player.weapon.charge);
+      if (this.chargeTick % 6 === 0) this.audio.charge(this.player.weapon.charge, this.world.level.name);
     }
     const p = this.player;
     const sp = lenXZ(p.vel);
@@ -1462,7 +1462,7 @@ export class Game {
         if (ev.playerId === this.player.id) this.altFire = { tick: ev.tick, alt: ev.alt };
         break;
       case "chargeFull":
-        if (ev.playerId === this.player.id) this.audio.charge(1);
+        if (ev.playerId === this.player.id) this.audio.charge(1, this.world.level.name);
         break;
       case "lunge":
         if (ev.playerId === this.player.id) this.audio.jump(this.world.level.name);
