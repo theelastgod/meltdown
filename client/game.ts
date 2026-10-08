@@ -667,7 +667,7 @@ export class Game {
         switch (ev.kind) {
           case FX.explode:
             this.renderer.fx.explosion(pos, ev.a / 10, ev.b === 3 ? 0xffb02e : 0x8f4dff, ev.b === 3);
-            this.audio.explosion(ev.b === 3);
+            this.audio.explosion(ev.b === 3, this.world.level.name);
             if (Math.hypot(ev.x - this.player.pos.x, ev.z - this.player.pos.z) < (ev.a / 10) * 2) this.renderer.post.kick(0.6);
             break;
           case FX.cloud:
@@ -720,11 +720,11 @@ export class Game {
             break;
           case FX.waspDeath:
             this.hud.push(`WASP-${String(ev.a).padStart(2, "0")} DOWNED`, "am");
-            this.audio.explosion(false);
+            this.audio.explosion(false, this.world.level.name);
             break;
           case FX.mechDeath:
             this.hud.push(`REPO MECH ${ev.a} DISABLED — VANTAGE RE-LEASING`, "am");
-            this.audio.explosion(true);
+            this.audio.explosion(true, this.world.level.name);
             this.renderer.post.kick(1);
             break;
           case FX.nodeFlip: {
@@ -1404,7 +1404,7 @@ export class Game {
         break;
       case "explode":
         this.renderer.fx.explosion(ev.pos, ev.radius, ev.projKind === "frag" ? 0xffb02e : 0x8f4dff, ev.projKind === "frag");
-        this.audio.explosion(ev.projKind === "frag");
+        this.audio.explosion(ev.projKind === "frag", this.world.level.name);
         if (Math.hypot(ev.pos.x - this.player.pos.x, ev.pos.z - this.player.pos.z) < ev.radius * 2) this.renderer.post.kick(0.6);
         break;
       case "cloud":
@@ -1510,11 +1510,11 @@ export class Game {
         break;
       case "waspDeath":
         this.hud.push(`WASP-${String(ev.waspId).padStart(2, "0")} DOWNED`, "am");
-        this.audio.explosion(false);
+        this.audio.explosion(false, this.world.level.name);
         break;
       case "mechDeath":
         this.hud.push(`REPO MECH ${ev.mechId} DISABLED — VANTAGE RE-LEASING`, "am");
-        this.audio.explosion(true);
+        this.audio.explosion(true, this.world.level.name);
         this.renderer.post.kick(1);
         break;
       case "kill":

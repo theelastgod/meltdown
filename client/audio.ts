@@ -1298,6 +1298,35 @@ export function pulsePitch(name: string | undefined): number {
   return (name && DISTRICT_PULSE[name]) || STREET_PULSE;
 }
 
+/** How high a blast opens, in hertz. Lease Row keeps 80. It still lands at 22. */
+export const STREET_BLAST = 80;
+
+const DISTRICT_BLAST: Record<string, number> = {
+  deadletter_docks: 36,
+  repo_depot: 64,
+  night_market: 140,
+  relay_heights: 110,
+  ash_canal: 44,
+  glass_mile: 180,
+  bone_market: 52,
+  cold_vault: 96,
+  neon_chapel: 72,
+  slag_pit: 28,
+  wire_garden: 160,
+  red_kiln: 88,
+  paper_wharf: 48,
+  velvet_court: 124,
+  rust_crown: 68,
+  salt_stairs: 200,
+  lamp_bazaar: 104,
+  debt_orchard: 32,
+  black_relay: 240,
+};
+
+export function blastPitch(name: string | undefined): number {
+  return (name && DISTRICT_BLAST[name]) || STREET_BLAST;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1784,10 +1813,10 @@ export class GameAudio {
     this.tone({ dur: 0.08, from: 300 + level * 900, to: 320 + level * 900, gain: 0.06, type: "sawtooth" });
   }
 
-  explosion(big = true): void {
+  explosion(big = true, place?: string): void {
     this.count("explosion");
     if (!this.ctx) return;
-    this.tone({ dur: 0.6, from: 80, to: 22, gain: big ? 1.0 : 0.6, type: "sine" });
+    this.tone({ dur: 0.6, from: blastPitch(place), to: 22, gain: big ? 1.0 : 0.6, type: "sine" });
     this.burst({ dur: 0.5, freq: 400, q: 0.3, gain: big ? 0.7 : 0.4, type: "lowpass" });
     this.burst({ dur: 0.25, freq: 2500, q: 0.4, gain: 0.3 });
   }
