@@ -1744,7 +1744,7 @@ export class Game {
     {
       const slot = p.weapon.slot;
       const ammoNow = p.weapon.ammo[slot] ?? 0;
-      if (slot === this.ammoWatch.slot && lastRoundsEdge(this.ammoWatch.ammo, ammoNow, weaponDefOf(p).magSize)) this.audio.lowAmmo();
+      if (slot === this.ammoWatch.slot && lastRoundsEdge(this.ammoWatch.ammo, ammoNow, weaponDefOf(p).magSize)) this.audio.lowAmmo(this.world.level.name);
       this.ammoWatch = { slot, ammo: ammoNow };
     }
     // the shield breaking and coming back (Stage 102): a cue and a line for each, and the bar says

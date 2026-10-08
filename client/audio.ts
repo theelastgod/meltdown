@@ -1037,6 +1037,35 @@ export function markPitch(name: string | undefined): number {
   return (name && DISTRICT_MARK[name]) || STREET_MARK;
 }
 
+/** How high the last-quarter magazine tick starts, in hertz. Lease Row keeps 2600. The second tick stays 2100. */
+export const STREET_CLIP = 2600;
+
+const DISTRICT_CLIP: Record<string, number> = {
+  deadletter_docks: 980,
+  repo_depot: 1400,
+  night_market: 3400,
+  relay_heights: 2200,
+  ash_canal: 760,
+  glass_mile: 3900,
+  bone_market: 1180,
+  cold_vault: 1760,
+  neon_chapel: 1560,
+  slag_pit: 620,
+  wire_garden: 4300,
+  red_kiln: 1900,
+  paper_wharf: 1080,
+  velvet_court: 2800,
+  rust_crown: 1680,
+  salt_stairs: 3100,
+  lamp_bazaar: 3600,
+  debt_orchard: 540,
+  black_relay: 4800,
+};
+
+export function clipPitch(name: string | undefined): number {
+  return (name && DISTRICT_CLIP[name]) || STREET_CLIP;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1674,10 +1703,10 @@ export class GameAudio {
   }
 
   /** the last quarter of the magazine (Stage 100): two small ticks, once, on the round that crosses into it */
-  lowAmmo(): void {
+  lowAmmo(place?: string): void {
     this.count("lowAmmo");
     if (!this.ctx) return;
-    this.burst({ dur: 0.03, freq: 2600, q: 1.4, gain: 0.1 });
+    this.burst({ dur: 0.03, freq: clipPitch(place), q: 1.4, gain: 0.1 });
     this.burst({ dur: 0.03, freq: 2100, q: 1.4, gain: 0.09, delay: 0.09 });
   }
 
