@@ -1414,6 +1414,35 @@ export function empPitch(name: string | undefined): number {
   return (name && DISTRICT_EMP[name]) || STREET_EMP;
 }
 
+/** How high a stun opens, in hertz. Lease Row keeps 60. It still lands at 55. */
+export const STREET_STUN = 60;
+
+const DISTRICT_STUN: Record<string, number> = {
+  deadletter_docks: 42,
+  repo_depot: 78,
+  night_market: 140,
+  relay_heights: 210,
+  ash_canal: 48,
+  glass_mile: 96,
+  bone_market: 36,
+  cold_vault: 88,
+  neon_chapel: 72,
+  slag_pit: 32,
+  wire_garden: 160,
+  red_kiln: 52,
+  paper_wharf: 44,
+  velvet_court: 110,
+  rust_crown: 84,
+  salt_stairs: 180,
+  lamp_bazaar: 240,
+  debt_orchard: 38,
+  black_relay: 280,
+};
+
+export function stunPitch(name: string | undefined): number {
+  return (name && DISTRICT_STUN[name]) || STREET_STUN;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1934,10 +1963,10 @@ export class GameAudio {
     this.burst({ dur: 0.04, freq: 2200, q: 2, gain: 0.1, delay: 0.09 });
   }
 
-  stun(): void {
+  stun(place?: string): void {
     this.count("stun");
     if (!this.ctx) return;
-    this.tone({ dur: 0.35, from: 60, to: 55, gain: 0.3, type: "square" });
+    this.tone({ dur: 0.35, from: stunPitch(place), to: 55, gain: 0.3, type: "square" });
     this.burst({ dur: 0.3, freq: 4000, q: 2, gain: 0.15 });
   }
 

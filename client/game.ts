@@ -683,7 +683,7 @@ export class Game {
             break;
           case FX.stun:
             if (ev.playerId === me) {
-              this.audio.stun();
+              this.audio.stun(this.world.level.name);
               this.renderer.post.kick(0.8);
             }
             break;
@@ -1417,7 +1417,7 @@ export class Game {
         break;
       case "stun":
         if (ev.playerId === this.player.id) {
-          this.audio.stun();
+          this.audio.stun(this.world.level.name);
           this.renderer.post.kick(0.8);
         }
         break;
