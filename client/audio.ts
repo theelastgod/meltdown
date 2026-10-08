@@ -1327,6 +1327,35 @@ export function blastPitch(name: string | undefined): number {
   return (name && DISTRICT_BLAST[name]) || STREET_BLAST;
 }
 
+/** How high a smoke cloud hisses, in hertz. Lease Row keeps 1800. Duration, Q, and gain stay. */
+export const STREET_SMOKE = 1800;
+
+const DISTRICT_SMOKE: Record<string, number> = {
+  deadletter_docks: 420,
+  repo_depot: 960,
+  night_market: 3200,
+  relay_heights: 2400,
+  ash_canal: 540,
+  glass_mile: 2800,
+  bone_market: 380,
+  cold_vault: 2100,
+  neon_chapel: 720,
+  slag_pit: 260,
+  wire_garden: 3600,
+  red_kiln: 640,
+  paper_wharf: 480,
+  velvet_court: 1500,
+  rust_crown: 1100,
+  salt_stairs: 2600,
+  lamp_bazaar: 2000,
+  debt_orchard: 340,
+  black_relay: 4000,
+};
+
+export function smokePitch(name: string | undefined): number {
+  return (name && DISTRICT_SMOKE[name]) || STREET_SMOKE;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1821,10 +1850,10 @@ export class GameAudio {
     this.burst({ dur: 0.25, freq: 2500, q: 0.4, gain: 0.3 });
   }
 
-  smoke(): void {
+  smoke(place?: string): void {
     this.count("smoke");
     if (!this.ctx) return;
-    this.burst({ dur: 1.4, freq: 1800, q: 0.3, gain: 0.18 });
+    this.burst({ dur: 1.4, freq: smokePitch(place), q: 0.3, gain: 0.18 });
   }
 
   emp(): void {

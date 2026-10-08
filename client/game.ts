@@ -671,7 +671,7 @@ export class Game {
             if (Math.hypot(ev.x - this.player.pos.x, ev.z - this.player.pos.z) < (ev.a / 10) * 2) this.renderer.post.kick(0.6);
             break;
           case FX.cloud:
-            this.audio.smoke();
+            this.audio.smoke(this.world.level.name);
             break;
           case FX.emp:
             this.audio.emp();
@@ -1408,7 +1408,7 @@ export class Game {
         if (Math.hypot(ev.pos.x - this.player.pos.x, ev.pos.z - this.player.pos.z) < ev.radius * 2) this.renderer.post.kick(0.6);
         break;
       case "cloud":
-        this.audio.smoke();
+        this.audio.smoke(this.world.level.name);
         break;
       case "emp":
         this.audio.emp();
