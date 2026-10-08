@@ -1095,6 +1095,35 @@ export function boltPitch(name: string | undefined): number {
   return (name && DISTRICT_BOLT[name]) || STREET_BOLT;
 }
 
+/** How high the kill-confirm thunk starts, in hertz. Lease Row keeps 90. It still falls to 40. */
+export const STREET_STAMP = 90;
+
+const DISTRICT_STAMP: Record<string, number> = {
+  deadletter_docks: 52,
+  repo_depot: 74,
+  night_market: 148,
+  relay_heights: 118,
+  ash_canal: 61,
+  glass_mile: 196,
+  bone_market: 68,
+  cold_vault: 132,
+  neon_chapel: 84,
+  slag_pit: 46,
+  wire_garden: 220,
+  red_kiln: 104,
+  paper_wharf: 64,
+  velvet_court: 172,
+  rust_crown: 88,
+  salt_stairs: 204,
+  lamp_bazaar: 156,
+  debt_orchard: 58,
+  black_relay: 248,
+};
+
+export function stampPitch(name: string | undefined): number {
+  return (name && DISTRICT_STAMP[name]) || STREET_STAMP;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1759,11 +1788,11 @@ export class GameAudio {
    * gains layers with the shooter's mastery tier (rank 1–9: 0, 10–19: 1,
    * 20–29: 2, 30: 3) — growth you can hear, shooter-side only, zero info leak.
    */
-  kill(tier = 0): void {
+  kill(tier = 0, place?: string): void {
     this.count("kill");
     this.count("kill_t" + Math.max(0, Math.min(3, tier)));
     if (!this.ctx) return;
-    this.tone({ dur: 0.16, from: 90, to: 40, gain: 0.6, type: "sine" }); // thunk
+    this.tone({ dur: 0.16, from: stampPitch(place), to: 40, gain: 0.6, type: "sine" }); // thunk
     this.burst({ dur: 0.05, freq: 800, q: 0.4, gain: 0.3, type: "lowpass" });
     this.tone({ dur: 0.09, from: 1760, gain: 0.12, type: "square", delay: 0.09 }); // tick
     this.tone({ dur: 0.12, from: 2349, gain: 0.1, type: "square", delay: 0.16 });

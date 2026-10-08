@@ -769,7 +769,7 @@ export class Game {
         if (downed) this.campaign?.noteStreetKill(downed);
         if (ev.playerId === me) {
           // shooter-side: the tier follows the weapon in hand at the confirm (the file's own mastery; nothing leaves the client)
-          this.audio.kill(this.killTier(weaponDefOf(this.player).id));
+          this.audio.kill(this.killTier(weaponDefOf(this.player).id), this.world.level.name);
           const kind = ["dummy", "player", "wasp", "mech"][ev.victimKind] ?? "player";
           this.hud.killStamp(kind, closeLine(closeRead(this.closeBook, bodyKey(kind, ev.victimId), this.renderer.clockNow)));
           this.renderer.post.kick(1);
@@ -1518,7 +1518,7 @@ export class Game {
         this.renderer.post.kick(1);
         break;
       case "kill":
-        this.audio.kill(this.killTier(ev.weapon));
+        this.audio.kill(this.killTier(ev.weapon), this.world.level.name);
         this.hud.killStamp(ev.victimKind, closeLine(closeRead(this.closeBook, bodyKey(ev.victimKind, ev.victimId), this.renderer.clockNow)));
         this.renderer.post.kick(1);
         this.hud.push(`BLANK ⟶ ${victimLabel(ev.victimKind)}-${String(ev.victimId).padStart(2, "0")} · ${weaponName(ev.weapon)}${ev.ttkTicks ? ttkNote(ev.ttkSeconds) : ""}`, "mg");
