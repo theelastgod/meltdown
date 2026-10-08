@@ -1762,6 +1762,35 @@ export function kernelPitch(name: string | undefined): number {
   return (name && DISTRICT_KERNEL[name]) || STREET_KERNEL;
 }
 
+/** How high the wake fanfare opens, in hertz. Lease Row keeps 330. The rest stays 415, 494, 660. Duration stays 0.22. Gain stays 0.08. The gap stays 0.09. */
+export const STREET_WAKE = 330;
+
+const DISTRICT_WAKE: Record<string, number> = {
+  deadletter_docks: 220,
+  repo_depot: 294,
+  night_market: 392,
+  relay_heights: 370,
+  ash_canal: 196,
+  glass_mile: 440,
+  bone_market: 247,
+  cold_vault: 311,
+  neon_chapel: 277,
+  slag_pit: 174,
+  wire_garden: 523,
+  red_kiln: 262,
+  paper_wharf: 233,
+  velvet_court: 349,
+  rust_crown: 415,
+  salt_stairs: 466,
+  lamp_bazaar: 554,
+  debt_orchard: 208,
+  black_relay: 587,
+};
+
+export function wakePitch(name: string | undefined): number {
+  return (name && DISTRICT_WAKE[name]) || STREET_WAKE;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2328,10 +2357,10 @@ export class GameAudio {
   }
 
   /** the wake begins (Stage 124): a rising four-note figure, the round's own start, not the KERNEL's pulse */
-  wakeBegins(): void {
+  wakeBegins(place?: string): void {
     this.count("wakeBegins");
     if (!this.ctx) return;
-    for (const [i, f] of [330, 415, 494, 660].entries()) this.tone({ dur: 0.22, from: f, gain: 0.08, type: "triangle", delay: 0.09 * i });
+    for (const [i, f] of [wakePitch(place), 415, 494, 660].entries()) this.tone({ dur: 0.22, from: f, gain: 0.08, type: "triangle", delay: 0.09 * i });
   }
 
   /** the round is over (Stage 124): a resolving figure when your cell woke the district, a falling one when the other did, a level one when no one did */

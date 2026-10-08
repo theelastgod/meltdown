@@ -749,7 +749,7 @@ export class Game {
             this.kernelMark = ev.a === 1 ? (this.netMatch?.timeLeft ?? null) : null;
             this.hud.alert(ev.a === 1 ? wakeBeginsLine() : ev.a === 2 ? roundOverLine(ev.b, districtName(this.world.level)) : "◆ WARM-UP", false, 4);
             // online the phase had been silent (Stage 124): the same voices as offline
-            if (ev.a === 1) this.audio.wakeBegins();
+            if (ev.a === 1) this.audio.wakeBegins(this.world.level.name);
             else if (ev.a === 2) this.audio.roundOver(ev.b === 0 ? "none" : ev.b === this.player.team ? "won" : "lost");
             else this.audio.kernelPulse(this.world.level.name);
             this.renderer.post.kick(1);
@@ -1498,7 +1498,7 @@ export class Game {
         this.hud.alert(ev.phase === "wake" ? wakeBeginsLine() : ev.phase === "results" ? roundOverLine(ev.winner, districtName(this.world.level)) : "◆ WARM-UP", false, 4);
         // the round's start and its end have their own voices (Stage 124); the KERNEL's pulse is
         // the warm-up's, the model taking the district back
-        if (ev.phase === "wake") this.audio.wakeBegins();
+        if (ev.phase === "wake") this.audio.wakeBegins(this.world.level.name);
         else if (ev.phase === "results") this.audio.roundOver(ev.winner === 0 ? "none" : ev.winner === this.player.team ? "won" : "lost");
         else this.audio.kernelPulse(this.world.level.name);
         this.renderer.post.kick(1);
