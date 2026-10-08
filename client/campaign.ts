@@ -30,6 +30,7 @@ import { CITY_LIMIT_ID } from "@shared/sim/limit";
 import { GREEN_HOLD_ID } from "@shared/sim/preserve";
 import { streetClinic } from "@shared/sim/clinic";
 import { buyNeonEdge } from "@shared/sim/edgeshop";
+import { ARMORY, buyArmory } from "@shared/city/armory";
 import { DEFAULT_LEVEL_ID, levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
 import { HOSTS } from "./config";
@@ -420,6 +421,24 @@ export class Campaign {
     this.game.file.scrip += a.wallet.scrip - before;
     this.game.hud.setFile(this.game.file.view());
     this.game.hud.alert("◆ CLINIC", false, 3);
+  }
+
+  /** Scrip buys a bag piece. The phone's weapon row does not grow. */
+  private async buyBag(id: string): Promise<void> {
+    let reason: string | undefined;
+    if (this.game.file.shop) {
+      const r = await this.game.file.postCampaign({ op: "armory", id });
+      if (r.account) this.game.file.applyAccount(r.account);
+      this.save = campaignOf(this.account());
+      if (!r.ok) reason = r.reason;
+    } else {
+      const r = buyArmory(this.account(), id);
+      if (!r.ok) reason = r.reason;
+      this.persistLocal();
+    }
+    if (reason) this.game.hud.alert(`◆ ${reason.toUpperCase()}`, true, 3);
+    else this.game.hud.alert("◆ IN THE BAG", false, 2);
+    this.renderContracts();
   }
 
   /** Six hundred scrip unlocks the sword that is already in the game. */
@@ -1165,6 +1184,10 @@ export class Campaign {
       : `<div class="sh">THE PRESERVE</div><div class="ln dim">TREES INSIDE THE CITY: <span class="cy" data-act="green_hold">${crewButton("THE PRESERVE", this.game.hud.touch)}</span></div>`;
     const clinic = `<div class="sh">THE CLINIC</div><div class="ln dim">THIRTY SCRIP, FORTY HEALTH, NEVER PAST YOUR MAXIMUM: <span class="cy" data-act="clinic">${crewButton("CLINIC", this.game.hud.touch)}</span></div>`;
     const edge = `<div class="sh">THE COUNTER</div><div class="ln dim">NEON EDGE · 600 SCRIP: <span class="cy" data-act="buy_edge">${crewButton("BUY NEON EDGE", this.game.hud.touch)}</span></div>`;
+    const bag = ARMORY.map((p) => {
+      const owned = c.armory.includes(p.id);
+      return `<div class="ln">${p.name} · ${p.district.replace(/_/g, " ").toUpperCase()} · ${p.scrip} SCRIP · <span class="cy" data-act="buy_armory" data-armory="${p.id}">${crewButton(owned ? "IN THE BAG" : "BUY", this.game.hud.touch)}</span> <span class="dim">${p.line}</span></div>`;
+    }).join("");
     return `<div class="hd">▲ CONTRACTS · ${faction ? `${faction.name}` : "NO HOUSE"} <span class="x" data-act="close">${closeHint("J", this.game.hud.touch)}</span></div>
       <div class="ln">THREAT <b>${threat.rating}</b> · ${threat.line}${threat.named ? " · THE PA CALLS YOUR NAME" : ""}</div>
       <div class="ln dim">TESTIMONY ${Object.entries(c.testimony).filter(([k]) => k !== "faction").map(([k, v]) => testimonyLine(k, v)).join(" · ") || "— NOTHING ON THE RECORD —"} · ENDINGS OPEN: ${endings}</div>
@@ -1178,6 +1201,7 @@ export class Campaign {
       ${preserve}
       ${clinic}
       ${edge}
+      <div class="sh">THE BAG · ${c.armory.length}/${ARMORY.length} · SCRIP · NO STAT</div>${bag}
       <div class="sh">EXPLORE</div><div class="ln dim">TRAVEL TO A DISTRICT FROM THE MAP WITH THE THREAT LIVE: <span class="cy" data-explore="1">${crewButton("EXPLORE THIS DISTRICT", this.game.hud.touch)}</span></div></div></div>`;
   }
 
@@ -1192,6 +1216,7 @@ export class Campaign {
     else if (el.dataset.act === "buy_edge") this.buyEdge();
     else if (el.dataset.act === "lease_row") this.game.travel(DEFAULT_LEVEL_ID);
     else if (el.dataset.act === "buy_decor" && el.dataset.decor) void this.buyDecor(el.dataset.decor);
+    else if (el.dataset.act === "buy_armory" && el.dataset.armory) void this.buyBag(el.dataset.armory);
     else if (el.dataset.launch) {
       const r = this.launch(el.dataset.launch);
       if (!r.ok) this.game.hud.alert(`◆ ${r.reason?.toUpperCase()}`, true, 3);

@@ -19,10 +19,10 @@ import { WEAPONS } from "../shared/weapons/manifest";
 import { SIM_HZ } from "../shared/sim/constants";
 
 describe("campaign data", () => {
-  it("three houses with a fixer each; seven missions in arc order; one hundred gigs; every script referenced exists", () => {
+  it("three houses with a fixer each; ten missions in arc order; one hundred gigs; every script referenced exists", () => {
     expect(FACTIONS.length).toBe(3);
     for (const f of FACTIONS) expect(HANDLERS[f.fixer].faction).toBe(f.id);
-    expect(MAIN_ARC.map((m) => m.order)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(MAIN_ARC.map((m) => m.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     expect(GIGS.length).toBe(100);
     for (const m of MISSIONS) for (const o of [...m.objectives, ...(m.variants ?? []).flatMap((v) => v.objectives ?? [])]) if (o.kind === "dialogue") expect(scriptById(o.script), o.script).toBeDefined();
     for (const s of SCRIPTS) for (const n of s.nodes) {
@@ -972,8 +972,10 @@ describe("campaign save", () => {
     for (const id of ["m5_blind_the_model", "m6_trial_by_data"]) completeContract(a, id, {});
     completeContract(a, "m7_white_office", { "m7:ending": "chair" });
     expect(c.ending).toBe("chair");
-    expect(nextMission(c)).toBeNull();
+    expect(nextMission(c)?.id).toBe("m8_night_ledger");
     expect(a.ledger.some((l) => l.startsWith("MISSION CLOSED · THE WHITE OFFICE"))).toBe(true);
+    for (const id of ["m8_night_ledger", "m9_high_wire", "m10_glass_mile"]) expect(completeContract(a, id, {}).ok).toBe(true);
+    expect(nextMission(c)).toBeNull();
   });
 
   it("turning the informant in does not re-lease Marrow or lock CLOCKEATER", () => {

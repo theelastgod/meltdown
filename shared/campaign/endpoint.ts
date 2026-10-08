@@ -8,12 +8,14 @@ import { FACTIONS, type FactionId } from "./factions";
 import { campaignOf, completeContract, pickFaction, wearProtocols } from "./save";
 import { noteSeen } from "./seen";
 import { buyApartmentDecor } from "../sim/apartment";
+import { buyArmory } from "../city/armory";
 
 export type CampaignRequest =
   | { op: "faction"; faction: string }
   | { op: "complete"; id: string; testimony?: Record<string, string> }
   | { op: "wear"; protocols: string[] }
   | { op: "decor"; id: string }
+  | { op: "armory"; id: string }
   | { op: "seen"; id: string }
   | { op: "state" };
 
@@ -64,6 +66,11 @@ export function campaignRequest(a: Account, body: unknown, opts: CampaignOptions
     case "decor": {
       const id = String((req as { id?: unknown }).id ?? "");
       const r = buyApartmentDecor(a, id);
+      return { ok: r.ok, reason: r.reason, campaign: campaignOf(a) };
+    }
+    case "armory": {
+      const id = String((req as { id?: unknown }).id ?? "");
+      const r = buyArmory(a, id);
       return { ok: r.ok, reason: r.reason, campaign: campaignOf(a) };
     }
     case "seen": {

@@ -21,6 +21,7 @@ import { cityMapTravelUrl, cityWsBase } from "@shared/net/citygates";
 import { levelDisplayName } from "@shared/sim/level";
 import { closeHint, crewButton, runButton } from "./hud/keyhint";
 import { runPageUrl } from "./runpage";
+import { streetCast } from "@shared/city/continents";
 
 /** how often an open map reads the feed again (ms): a little over the feed's own cache */
 export const WORLD_MAP_POLL_MS = 3000;
@@ -100,6 +101,8 @@ export function worldMapDetails(v: WorldMapState): string {
   const live = v.status === "live" && !!p;
   const who = !live ? "—" : p!.names.length ? `${p!.names.map(esc).join(" · ")}${p!.players > p!.names.length ? ` · +${p!.players - p!.names.length}` : ""}` : p!.players ? `${p!.players} FILE${p!.players === 1 ? "" : "S"}` : "NOBODY ON THE STREET";
   const ev = !live ? "" : p!.event ? `<div class="de">◉ ${esc(p!.event.title)} · ${p!.event.kind.toUpperCase()} · ${p!.event.left}S LEFT</div>` : '<div class="de dim">NO PUBLIC EVENT RUNNING</div>';
+  const cast = streetCast(id);
+  const people = cast ? `<div class="de">${esc(cast.continent)} · ${esc(cast.role)} · STADIUM ${esc(cast.stadium)} · SHOOTING CONTEST WHEN BOTH FILES ARE INSIDE</div>` : "";
   const contest = live && p!.contest ? `<div class="de">▣ CONTEST BLOCK IS UP</div>` : "";
   const recs = !live ? "" : p!.records.length ? p!.records.map((r) => `<div class="dr">⏱ ${esc(r.course)} · ${r.time.toFixed(1)}S · ${esc(r.holder)}</div>`).join("") : '<div class="dr dim">NO STREET-RUN RECORDS YET</div>';
   const gates = gateSummary(id).map((g) => `${g.sides.map((s) => SIDE_WORD[s]).join(" · ")} → ${levelDisplayName(g.to)}`).join(" &nbsp; ");
@@ -110,7 +113,7 @@ export function worldMapDetails(v: WorldMapState): string {
       : `<div class="go locked">WALK THERE ONCE · FAST TRAVEL OPENS AFTER THE FIRST VISIT</div>`;
   // The metro booth is on every plaza. The market spends $CAPITAL. THE RUN is where it is paid.
   const run = `<div class="dg">LEDGER DESK AT THE METRO · MARKET SPENDS · THE NAME DESK BURNS · THE RUN PAYS</div><div class="go" data-wm-run="${id}">${runButton(v.touch)}</div>`;
-  return `<div class="wd"><div class="dh"><b>${esc(levelDisplayName(id))}</b> · ${live ? `${p!.players} ONLINE` : "—"}</div><div class="dn">${who}</div>${ev}${contest}${recs}<div class="dg">GATES ${gates}</div>${go}${run}</div>`;
+  return `<div class="wd"><div class="dh"><b>${esc(levelDisplayName(id))}</b> · ${live ? `${p!.players} ONLINE` : "—"}</div><div class="dn">${who}</div>${people}${ev}${contest}${recs}<div class="dg">GATES ${gates}</div>${go}${run}</div>`;
 }
 
 /** The panel in the HUD: opened and shut by the MAP tab, reading the feed while open. */

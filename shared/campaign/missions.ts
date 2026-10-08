@@ -1,5 +1,5 @@
 /**
- * The main arc (seven missions) and the side gigs (ninety-two), as data the
+ * The main arc (ten missions) and the side gigs (one hundred), as data the
  * mission runtime steps. Objectives are typed; positions are explicit or a
  * wake node's label resolved against the level. Variants keyed on testimony
  * change layouts: extra sensor nodes, extra patrols, a spared district.
@@ -255,6 +255,57 @@ export const MISSIONS: readonly MissionDef[] = [
     wasps: 0,
     mechs: 0,
     noThreat: true,
+  },
+  {
+    id: "m8_night_ledger",
+    kind: "mission",
+    order: 8,
+    title: "THE NIGHT LEDGER",
+    level: "night_market",
+    fixer: "deacon",
+    brief: "THE WHITE OFFICE IS BEHIND YOU. THE MARKET STILL SELLS THE NAMES. WALK THE STALLS AND CLEAR THE SWEEP.",
+    objectives: [D("m8_market", "THE STALLS"), reach({ node: "B" }, "REACH THE NAME STALL AT B"), { kind: "kill", target: "wasp", count: 3, text: "CLEAR THE MARKET SWEEP" }],
+    variants: [
+      {
+        gate: { all: { "m7:ending": "wipe" } },
+        extraWasps: 2,
+        objectives: [D("m8_market", "THE STALLS"), reach({ node: "B" }, "REACH THE NAME STALL AT B"), { kind: "kill", target: "wasp", count: 5, text: "CLEAR THE SWEEP — THE WIPE LEFT THE MARKET HUNGRY" }],
+      },
+      { gate: { all: { "m7:ending": "chair" } }, prepend: [reach({ node: "C" }, "THE STALL THAT KEPT THE PAPER IS AT C")] },
+    ],
+    reward: { scrip: 500, xp: 1200 },
+    wasps: 3,
+    mechs: 0,
+  },
+  {
+    id: "m9_high_wire",
+    kind: "mission",
+    order: 9,
+    title: "THE HIGH WIRE",
+    level: "relay_heights",
+    fixer: "marrow",
+    brief: "THE RELAY STILL CARRIES THE CHAIR'S SIGNAL. HOLD THE PLAZA WHILE MARROW CUTS THE WIRE.",
+    objectives: [reach({ node: "C" }, "REACH THE RELAY POST AT C"), { kind: "hold", at: { node: "A" }, radius: 7, seconds: 20, text: "HOLD THE PLAZA WHILE THE WIRE IS CUT", waves: 1 }, D("m9_wire", "THE WIRE")],
+    variants: [
+      { gate: { all: { "m1:lease": "keep" } }, prepend: [{ kind: "destroy", spots: [{ node: "E" }], label: "LEASE RELAY", text: "THE KEPT LEASE FILE IS STILL ON THE WIRE. CUT THE RELAY AT E" }] },
+    ],
+    reward: { scrip: 600, xp: 1400 },
+    wasps: 3,
+    mechs: 0,
+  },
+  {
+    id: "m10_glass_mile",
+    kind: "mission",
+    order: 10,
+    title: "THE GLASS MILE",
+    level: "glass_mile",
+    fixer: "wern",
+    brief: "WERN DOES NOT COME TO THE OFFICE. THE LAST CALL IS ON THE MILE: WALK THE GLASS AND PUT THE SWEEP DOWN.",
+    objectives: [D("m10_glass", "THE MILE"), reach({ node: "D" }, "WALK THE GLASS TO D"), { kind: "kill", target: "wasp", count: 2, text: "PUT THE MILE SWEEP DOWN" }],
+    variants: [{ gate: { all: { "m4:directive": "kept" } }, extraMechs: 1, prepend: [{ kind: "kill", target: "mech", count: 1, text: "THE ESTATE SENT A MECH FOR THE DIRECTIVE YOU KEPT" }] }],
+    reward: { scrip: 700, xp: 1600 },
+    wasps: 2,
+    mechs: 0,
   },
   // ---- gigs ----
   { id: "g_escrow_row", kind: "gig", order: 0, title: "ESCROW HEIST · LEASE ROW", level: "lease_row", fixer: "marrow", brief: "CRACK THE ESCROW TERMINAL AT D AND GET THE SLEEP CREDIT OUT BEFORE THE PATROL TURNS.", objectives: [reach({ node: "D" }, "CRACK THE ESCROW AT D"), { kind: "survive", seconds: 15, at: { node: "D" }, radius: 6, text: "HOLD WHILE IT DUMPS", waves: 1 }, reach({ node: "A" }, "OUT THROUGH THE PLAZA")], reward: { scrip: 250, xp: 500, stamp: "gig:first" }, wasps: 2, mechs: 0 },

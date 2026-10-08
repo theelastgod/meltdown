@@ -48,13 +48,38 @@ interface Eip1193 {
   providers?: Eip1193[];
 }
 
-/** The browser wallet, including a wallet app's own browser. Several wallets share one `ethereum`. */
+/**
+ * Which provider to ask. EIP-6963 announcements win over a multiplexer.
+ * `providers[0]` is left alone: that slot is often the wrong wallet.
+ * The page's own `ethereum` is used when it is one of the announced providers,
+ * and when nothing has announced.
+ */
+export function chooseProvider(page: Eip1193 | null | undefined, announced: readonly Eip1193[]): Eip1193 | null {
+  if (announced.length > 0) {
+    if (page && announced.includes(page)) return page;
+    return announced[0] ?? null;
+  }
+  return page ?? null;
+}
+
+/** Wallets that answered `eip6963:requestProvider` during this call. Synchronous announces only. */
+function discoverProviders(win: Window): Eip1193[] {
+  if (typeof win.addEventListener !== "function" || typeof win.removeEventListener !== "function" || typeof win.dispatchEvent !== "function") return [];
+  const found: Eip1193[] = [];
+  const on = (event: Event) => {
+    const detail = (event as CustomEvent<{ provider?: Eip1193 }>).detail;
+    if (detail?.provider && !found.includes(detail.provider)) found.push(detail.provider);
+  };
+  win.addEventListener("eip6963:announceProvider", on);
+  win.dispatchEvent(new Event("eip6963:requestProvider"));
+  win.removeEventListener("eip6963:announceProvider", on);
+  return found;
+}
+
+/** The browser wallet, including a wallet app's own browser. */
 function injectedProvider(): Eip1193 | null {
-  const eth = (window as unknown as { ethereum?: Eip1193 }).ethereum;
-  if (!eth) return null;
-  const list = eth.providers;
-  if (Array.isArray(list) && list.length > 0) return list[0] ?? eth;
-  return eth;
+  const eth = (window as unknown as { ethereum?: Eip1193 }).ethereum ?? null;
+  return chooseProvider(eth, discoverProviders(window));
 }
 
 export class CounterClient {
@@ -158,7 +183,12 @@ export class CounterClient {
     try {
       const accounts = (await eth.request({ method: "eth_requestAccounts" })) as Hex[];
       this.address = accounts[0] ?? null;
-      this.wallet = createWalletClient({ chain, transport: custom(eth), account: this.address ?? undefined });
+      try {
+        this.wallet = createWalletClient({ chain, transport: custom(eth), account: this.address ?? undefined });
+      } catch {
+        // A dark ledger (chain id 0, no RPC) must still keep the address the wallet already returned.
+        this.wallet = null;
+      }
       this.eth = eth;
       this.walletChain = await this.askChain(eth);
       this.listen(eth);

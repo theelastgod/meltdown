@@ -17,6 +17,7 @@ import { itemName } from "@shared/manifest/items";
 import { eyeHeight, eyePos, reviveMotion, type PlayerState } from "@shared/sim/player";
 import { arrivalFromQuery } from "@shared/net/citygates";
 import { contestOf, contestRespawn, inContest } from "@shared/city/contest";
+import { streetCast } from "@shared/city/continents";
 import type { SpawnPoint } from "@shared/sim/level";
 import { canSee, MECH, WASP } from "@shared/sim/ai";
 import { aimAssistScale } from "./aimassist";
@@ -990,7 +991,8 @@ export class Game {
     if (inside === this.contestInside) return;
     this.contestInside = inside;
     this.renderer.campaignFx.setContestHot(inside);
-    this.hud.alert(inside ? "CONTEST · FALL AND THE CHITS HIT THE GROUND" : "OUT OF THE BLOCK · THE POCKET STAYS", inside);
+    const stadium = streetCast(this.world.level.name)?.stadium ?? "THE BLOCK";
+    this.hud.alert(inside ? `STADIUM ${stadium} · SHOOTING CONTEST · FALL AND THE CHITS HIT THE GROUND` : "OUT OF THE BLOCK · THE POCKET STAYS", inside);
   }
 
   /** Latest wake state for the HUD (offline: the world's; online: the snapshot's). */

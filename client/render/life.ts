@@ -15,6 +15,7 @@ import { placeFeel } from "./places";
 import { markShared } from "./dispose";
 import { tickerStep } from "./ticker";
 import { FAR_LAYER } from "./renderer";
+import { groveSpots } from "@shared/city/nature";
 
 function lcg(seed: number): () => number {
   let s = seed >>> 0;
@@ -1642,6 +1643,24 @@ export function flickerMaterial(mat: THREE.MeshBasicMaterial, name?: string): { 
   return { setTime: (t) => { if (uniforms) uniforms.uTime.value = t; } };
 }
 
+/** Two-plane crosses on the kerb. A handful of triangles, off the wet-floor mirror. */
+function streetGrove(spots: readonly { x: number; z: number }[]): THREE.Group | null {
+  if (!spots.length) return null;
+  const group = new THREE.Group();
+  group.name = "street-grove";
+  const mat = new THREE.MeshBasicMaterial({ color: 0x1c6b3a, side: THREE.DoubleSide });
+  for (const s of spots) {
+    const h = 1.6;
+    const a = new THREE.Mesh(new THREE.PlaneGeometry(0.35, h), mat);
+    a.position.set(s.x, h / 2, s.z);
+    const b = new THREE.Mesh(new THREE.PlaneGeometry(0.35, h), mat);
+    b.position.set(s.x, h / 2, s.z);
+    b.rotation.y = Math.PI / 2;
+    group.add(a, b);
+  }
+  return group;
+}
+
 /** Everything above, owned together. */
 export class CityLife {
   readonly group = new THREE.Group();
@@ -1680,6 +1699,11 @@ export class CityLife {
     if (this.ads) this.group.add(this.ads.group);
     this.sky = new Sky(skyline, (level.skylineSeed ?? 1) + 3, level.name);
     this.group.add(this.sky.group);
+    const grove = streetGrove(groveSpots(level.name, level.walks ?? []));
+    if (grove) {
+      grove.traverse((o) => o.layers.set(FAR_LAYER));
+      this.group.add(grove);
+    }
   }
   update(dt: number, listener: THREE.Vector3): void {
     this.time += dt;

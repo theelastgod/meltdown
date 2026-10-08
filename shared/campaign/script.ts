@@ -259,6 +259,21 @@ export const SCRIPTS: readonly ScriptDef[] = [
     ],
   },
   {
+    id: "m8_market",
+    start: "a",
+    nodes: [n("a", "deacon", ["THE OFFICE LET YOU OUT. THE MARKET DID NOT GET THE MEMO.", "NAMES ARE STILL FOR SALE AT B. BUY NOTHING. WALK THE STALL AND CLEAR WHAT FOLLOWS."])],
+  },
+  {
+    id: "m9_wire",
+    start: "a",
+    nodes: [n("a", "marrow", ["THE WIRE STILL HUMS WITH WHATEVER YOU DID IN THAT WHITE ROOM.", "HOLD THE PLAZA. I CUT. YOU KEEP THE HEIGHTS FROM CALLING IT IN."])],
+  },
+  {
+    id: "m10_glass",
+    start: "a",
+    nodes: [n("a", "wern", ["I AM NOT IN THE OFFICE. I AM IN THE GLASS.", "WALK TO D. THE SWEEP ON THE MILE IS THE LAST THING THE MODEL STILL ROUTES AT YOU."])],
+  },
+  {
     id: "gig_generic",
     start: "a",
     nodes: [n("a", "terminal", ["CONTRACT ACCEPTED. THE FIXER'S TERMS ARE ON YOUR FILE.", "VANTAGE HAS NOT BEEN TOLD. IT WILL FIND OUT."])],

@@ -22,9 +22,11 @@ export interface CampaignSave extends CampaignRecord {
   decor: string[];
   /** districts this file has entered. Fast travel opens after the first visit. */
   seen: string[];
+  /** street-bag piece ids bought with scrip. Cloth and tools, not a stat. */
+  armory: string[];
 }
 
-export const emptyCampaign = (): CampaignSave => ({ faction: null, testimony: {}, missionsDone: [], gigsDone: [], protocols: [], worn: [], weapons: [], ending: null, decor: [], seen: [] });
+export const emptyCampaign = (): CampaignSave => ({ faction: null, testimony: {}, missionsDone: [], gigsDone: [], protocols: [], worn: [], weapons: [], ending: null, decor: [], seen: [], armory: [] });
 
 /** The live campaign record on the file (created or completed in place, never copied — callers keep one reference). */
 export function campaignOf(a: Account): CampaignSave {

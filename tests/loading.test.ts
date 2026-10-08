@@ -14,6 +14,7 @@ import { CAMPAIGN_DESK, cardsWanted, choiceUrl, MAIN, Menu, MODES, playInfo, pla
 import { bootStage, bootWanted, explorePageUrl, hideLoading, LEVEL_ART, LOADING_HTML, LOADING_KEY, LOADING_STAGES, loadingContinueLine, loadingFor, loadingView, readLoading, showLoading, stageProgress, travelTo, watchBoot, writeLoading, type BootSignals } from "../client/loading";
 import { DEFAULT_SETTINGS } from "../client/settings";
 import { campaignOf } from "../shared/campaign/save";
+import { MAIN_ARC } from "../shared/campaign/missions";
 import { sandboxAccount } from "../shared/progression/account";
 import { MISSION_ART } from "../client/missionart";
 
@@ -153,7 +154,7 @@ describe("the main menu", () => {
     const two = { ...fresh, missionsDone: ["m1_wake_unlisted"] };
     expect(playLine(playInfo(two))).toBe("THE CITY · DEADLETTER DOCKS · NEXT: 02 DEADLETTER RUN · EVERYONE ONLINE IS HERE");
     expect(playLine(null)).toBe(MAIN[0]!.line);
-    const all = { ...fresh, missionsDone: ["m1_wake_unlisted", "m2_deadletter_run", "m3_repo_volatility", "m4_the_leak", "m5_blind_the_model", "m6_trial_by_data", "m7_white_office"] };
+    const all = { ...fresh, missionsDone: MAIN_ARC.map((m) => m.id) };
     expect(playLine(playInfo(all))).toMatch(/^THE CITY · THE ARC IS CLOSED/);
     // and its loading card continues where the file stands, over the next mission's art
     const card = playLoading(playUrl(BASE), playInfo(two));
