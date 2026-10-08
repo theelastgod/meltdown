@@ -1269,6 +1269,35 @@ export function dropPitch(name: string | undefined): number {
   return (name && DISTRICT_DROP[name]) || STREET_DROP;
 }
 
+/** How high the low-health pulse opens, in hertz. Lease Row keeps 55. It still lands at 40. */
+export const STREET_PULSE = 55;
+
+const DISTRICT_PULSE: Record<string, number> = {
+  deadletter_docks: 32,
+  repo_depot: 48,
+  night_market: 92,
+  relay_heights: 78,
+  ash_canal: 36,
+  glass_mile: 120,
+  bone_market: 42,
+  cold_vault: 70,
+  neon_chapel: 62,
+  slag_pit: 28,
+  wire_garden: 140,
+  red_kiln: 84,
+  paper_wharf: 38,
+  velvet_court: 110,
+  rust_crown: 66,
+  salt_stairs: 150,
+  lamp_bazaar: 96,
+  debt_orchard: 34,
+  black_relay: 180,
+};
+
+export function pulsePitch(name: string | undefined): number {
+  return (name && DISTRICT_PULSE[name]) || STREET_PULSE;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2014,7 +2043,7 @@ export class GameAudio {
   // ---- low health: a pulse that follows the heartbeat until the shield is back ----
   private pulseAt = 0;
   private pulsing = false;
-  lowHealth(on: boolean, now = performance.now()): void {
+  lowHealth(on: boolean, now = performance.now(), place?: string): void {
     if (on !== this.pulsing) {
       this.pulsing = on;
       this.count(on ? "lowHealthOn" : "lowHealthOff");
@@ -2023,7 +2052,7 @@ export class GameAudio {
     if (now - this.pulseAt < 620) return;
     this.pulseAt = now;
     this.count("pulse");
-    this.tone({ dur: 0.12, from: 55, to: 40, gain: 0.35 });
+    this.tone({ dur: 0.12, from: pulsePitch(place), to: 40, gain: 0.35 });
     this.tone({ dur: 0.1, from: 50, to: 38, gain: 0.25, delay: 0.16 });
   }
 

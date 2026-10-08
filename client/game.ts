@@ -1761,7 +1761,7 @@ export class Game {
     }
     // low health: the pulse until the shield is back (a real cue, not a HUD colour)
     const low = p.alive && p.health > 0 && p.health < 30;
-    if (low || this.lowHealthOn) this.audio.lowHealth(low);
+    if (low || this.lowHealthOn) this.audio.lowHealth(low, performance.now(), this.world.level.name);
     this.lowHealthOn = low;
     if (this.wakeHud) {
       this.hud.setRadarNodes(this.wakeHud.nodes);
