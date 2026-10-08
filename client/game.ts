@@ -1029,7 +1029,7 @@ export class Game {
    */
   private runMoments(prev: { carried: number; banked: number } | null, next: { carried: number; banked: number; zone: string | null }): void {
     for (const m of runMoments(prev, next)) {
-      if (m.kind === "pickup") this.audio.claim();
+      if (m.kind === "pickup") this.audio.claim(this.world.level.name);
       else if (m.kind === "bank") this.audio.sign();
       else this.audio.dropClaims();
       this.hud.push(momentLine(m, next.zone), m.kind === "drop" ? "mg" : "am");

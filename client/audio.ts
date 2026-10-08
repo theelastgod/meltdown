@@ -1153,6 +1153,35 @@ export function breakPitch(name: string | undefined): number {
   return (name && DISTRICT_BREAK[name]) || STREET_BREAK;
 }
 
+/** How high a taken claim opens, in hertz. Lease Row keeps 1320. The second note stays 1980. */
+export const STREET_CLAIM = 1320;
+
+const DISTRICT_CLAIM: Record<string, number> = {
+  deadletter_docks: 480,
+  repo_depot: 740,
+  night_market: 2100,
+  relay_heights: 1680,
+  ash_canal: 560,
+  glass_mile: 2800,
+  bone_market: 620,
+  cold_vault: 1540,
+  neon_chapel: 980,
+  slag_pit: 390,
+  wire_garden: 3200,
+  red_kiln: 1180,
+  paper_wharf: 860,
+  velvet_court: 2400,
+  rust_crown: 1040,
+  salt_stairs: 2600,
+  lamp_bazaar: 1880,
+  debt_orchard: 440,
+  black_relay: 3600,
+};
+
+export function claimPitch(name: string | undefined): number {
+  return (name && DISTRICT_CLAIM[name]) || STREET_CLAIM;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1972,10 +2001,10 @@ export class GameAudio {
 
   /** The stamp at the bottom of the receipt, and the player's signature. */
   /** a claim taken (Stage 101): its own voice — a bright double tick going up — not the wake's node flip */
-  claim(): void {
+  claim(place?: string): void {
     this.count("claim");
     if (!this.ctx) return;
-    this.tone({ dur: 0.07, from: 1320, gain: 0.12, type: "triangle" });
+    this.tone({ dur: 0.07, from: claimPitch(place), gain: 0.12, type: "triangle" });
     this.tone({ dur: 0.12, from: 1980, gain: 0.1, type: "triangle", delay: 0.07 });
   }
 
