@@ -1753,7 +1753,7 @@ export class Game {
       const now = { shield: p.shield, maxShield: p.maxShield, alive: p.alive };
       for (const m of shieldMoments(this.shieldWatch, now)) {
         if (m === "broke") this.audio.shieldBreak(this.world.level.name);
-        else this.audio.shieldBack();
+        else this.audio.shieldBack(this.world.level.name);
         this.hud.push(shieldLine(m), m === "broke" ? "mg" : "cy");
       }
       this.shieldWatch = now;

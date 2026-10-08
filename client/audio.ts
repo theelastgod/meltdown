@@ -1182,6 +1182,35 @@ export function claimPitch(name: string | undefined): number {
   return (name && DISTRICT_CLAIM[name]) || STREET_CLAIM;
 }
 
+/** How high the shield-return hum starts, in hertz. Lease Row keeps 220. It still rises to 660. */
+export const STREET_MEND = 220;
+
+const DISTRICT_MEND: Record<string, number> = {
+  deadletter_docks: 90,
+  repo_depot: 160,
+  night_market: 480,
+  relay_heights: 340,
+  ash_canal: 120,
+  glass_mile: 560,
+  bone_market: 140,
+  cold_vault: 400,
+  neon_chapel: 260,
+  slag_pit: 70,
+  wire_garden: 620,
+  red_kiln: 300,
+  paper_wharf: 180,
+  velvet_court: 520,
+  rust_crown: 200,
+  salt_stairs: 440,
+  lamp_bazaar: 380,
+  debt_orchard: 100,
+  black_relay: 640,
+};
+
+export function mendPitch(name: string | undefined): number {
+  return (name && DISTRICT_MEND[name]) || STREET_MEND;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1811,10 +1840,10 @@ export class GameAudio {
   }
 
   /** the shield back to full (Stage 102): a rising hum settling into a tick */
-  shieldBack(): void {
+  shieldBack(place?: string): void {
     this.count("shieldBack");
     if (!this.ctx) return;
-    this.tone({ dur: 0.35, from: 220, to: 660, gain: 0.12, type: "triangle" });
+    this.tone({ dur: 0.35, from: mendPitch(place), to: 660, gain: 0.12, type: "triangle" });
     this.burst({ dur: 0.03, freq: 2400, q: 1.4, gain: 0.08, delay: 0.32 });
   }
 
