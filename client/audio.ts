@@ -1124,6 +1124,35 @@ export function stampPitch(name: string | undefined): number {
   return (name && DISTRICT_STAMP[name]) || STREET_STAMP;
 }
 
+/** How high the shield-break hum starts, in hertz. Lease Row keeps 520. It still falls to 90. */
+export const STREET_BREAK = 520;
+
+const DISTRICT_BREAK: Record<string, number> = {
+  deadletter_docks: 180,
+  repo_depot: 260,
+  night_market: 880,
+  relay_heights: 640,
+  ash_canal: 210,
+  glass_mile: 1400,
+  bone_market: 240,
+  cold_vault: 760,
+  neon_chapel: 330,
+  slag_pit: 140,
+  wire_garden: 1680,
+  red_kiln: 420,
+  paper_wharf: 200,
+  velvet_court: 980,
+  rust_crown: 360,
+  salt_stairs: 1240,
+  lamp_bazaar: 1100,
+  debt_orchard: 160,
+  black_relay: 1960,
+};
+
+export function breakPitch(name: string | undefined): number {
+  return (name && DISTRICT_BREAK[name]) || STREET_BREAK;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1744,12 +1773,12 @@ export class GameAudio {
   }
 
   /** the shield breaking (Stage 102): an electrical crack and the hum dropping out from under it */
-  shieldBreak(): void {
+  shieldBreak(place?: string): void {
     this.count("shieldBreak");
     if (!this.ctx) return;
     this.burst({ dur: 0.05, freq: 3200, q: 1.1, gain: 0.3 });
     this.burst({ dur: 0.12, freq: 900, q: 0.6, gain: 0.18, type: "bandpass", delay: 0.02 });
-    this.tone({ dur: 0.3, from: 520, to: 90, gain: 0.22, type: "sawtooth" });
+    this.tone({ dur: 0.3, from: breakPitch(place), to: 90, gain: 0.22, type: "sawtooth" });
   }
 
   /** the shield back to full (Stage 102): a rising hum settling into a tick */
