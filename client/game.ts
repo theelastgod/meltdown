@@ -310,14 +310,14 @@ export class Game {
         this.hud.push(`RANGE · ${run.seconds.toFixed(2)}S${improved ? " · NEW BEST" : ` · BEST ${this.ghost!.best!.seconds.toFixed(2)}S`}`, improved ? "am" : "k");
         this.hud.alert(improved ? `◆ RANGE RECORD — ${run.seconds.toFixed(2)}S` : `◆ RANGE — ${run.seconds.toFixed(2)}S`, !improved, 3);
         if (improved) {
-          this.audio.sign();
+          this.audio.sign(this.world.level.name);
           void this.file.postGhost(run);
         }
       };
       this.refreshHub();
     }
     this.hud.onPrint = () => this.audio.printTick();
-    this.hud.onStamp = () => this.audio.sign();
+    this.hud.onStamp = () => this.audio.sign(this.world.level.name);
     document.addEventListener("keydown", (e) => {
       if (e.code === "Enter" || e.code === "NumpadEnter") this.sign();
     });
@@ -384,7 +384,7 @@ export class Game {
   sign(): boolean {
     const ok = this.hud.sign();
     if (ok) {
-      this.audio.sign();
+      this.audio.sign(this.world.level.name);
       this.hud.push("LEDGER ENTRY SIGNED", "am");
     }
     return ok;
@@ -1030,7 +1030,7 @@ export class Game {
   private runMoments(prev: { carried: number; banked: number } | null, next: { carried: number; banked: number; zone: string | null }): void {
     for (const m of runMoments(prev, next)) {
       if (m.kind === "pickup") this.audio.claim(this.world.level.name);
-      else if (m.kind === "bank") this.audio.sign();
+      else if (m.kind === "bank") this.audio.sign(this.world.level.name);
       else this.audio.dropClaims(this.world.level.name);
       this.hud.push(momentLine(m, next.zone), m.kind === "drop" ? "mg" : "am");
     }

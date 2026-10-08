@@ -668,7 +668,7 @@ export class Campaign {
       for (const [k, v] of Object.entries(c.set ?? {})) p.testimony[k] = v;
       nextId = c.next;
       this.lastPick = c.text;
-      this.game.audio.sign();
+      this.game.audio.sign(this.game.world.level.name);
     } else {
       nextId = p.node.next ?? null;
       this.game.audio.printTick();
@@ -754,7 +754,7 @@ export class Campaign {
     const foot = home ? closedCityLine(this.game.hud.touch) : closedContractLine(this.game.hud.touch);
     const lines = [ok ? "SETTLED ON YOUR FILE" : `NOT SETTLED · ${reason ?? ""}`, rw.scrip ? `+${rw.scrip} SCRIP` : "", rw.xp ? `+${rw.xp} XP` : "", rw.protocol ? `KERNEL PROTOCOL · ${PROTOCOLS.find((p) => p.id === rw.protocol)?.name ?? rw.protocol}` : "", rw.weapon ? `WEAPON UNLOCKED · ${weaponName(rw.weapon)}` : "", foot].filter(Boolean);
     this.note(`CONTRACT CLOSED · ${def.title}${ok ? "" : " · " + (reason ?? "")}`);
-    this.game.audio.sign();
+    this.game.audio.sign(this.game.world.level.name);
     const walk = home ? () => this.travel(home) : null;
     if (id === "m7_white_office") {
       const e = resolveEnding(t, this.save.faction);
@@ -794,7 +794,7 @@ export class Campaign {
         const foot = home ? closedCityLine(this.game.hud.touch) : closedContractLine(this.game.hud.touch);
         const walk = home ? () => this.travel(home) : null;
         this.game.hud.card(`CONTRACT CLOSED · ${def?.title ?? ev.id}`, [s?.ok ? "SETTLED ON EVERY FILE" : `NOT SETTLED · ${s?.reason ?? ""}`, foot], "am", 0, null, () => this.toggleContracts(), walk);
-        this.game.audio.sign();
+        this.game.audio.sign(this.game.world.level.name);
       } else this.onMissionEvent(ev);
     }
   }
@@ -838,7 +838,7 @@ export class Campaign {
         this.cityEventClosed = ev.id;
         hud.card(card.title, card.lines, card.color, 7);
         this.note(`${card.title} · ${card.lines.slice(1).join(" · ")}`);
-        if (ev.status === "complete") this.game.audio.sign();
+        if (ev.status === "complete") this.game.audio.sign(this.game.world.level.name);
         else this.game.audio.debtOwed();
       }
       return;
@@ -936,7 +936,7 @@ export class Campaign {
           hud.card(card.title, card.lines, card.color, 7);
           this.note(`${card.title} · ${card.lines.join(" · ")}`);
         }
-        if (r.state === "finished" && r.pb) this.game.audio.sign();
+        if (r.state === "finished" && r.pb) this.game.audio.sign(this.game.world.level.name);
         else if (r.state === "void") this.game.audio.debtOwed();
         this.runLine = "";
         // the event (if one runs) takes the objective line and the beam back

@@ -1617,6 +1617,35 @@ export function bootPitch(name: string | undefined): number {
   return (name && DISTRICT_BOOT[name]) || STREET_BOOT;
 }
 
+/** How high a ledger stamp opens, in hertz. Lease Row keeps 110. It still lands at 45. The body stays 600. The tick stays 1760. */
+export const STREET_SIGN = 110;
+
+const DISTRICT_SIGN: Record<string, number> = {
+  deadletter_docks: 72,
+  repo_depot: 140,
+  night_market: 280,
+  relay_heights: 190,
+  ash_canal: 86,
+  glass_mile: 320,
+  bone_market: 64,
+  cold_vault: 150,
+  neon_chapel: 210,
+  slag_pit: 58,
+  wire_garden: 360,
+  red_kiln: 170,
+  paper_wharf: 96,
+  velvet_court: 240,
+  rust_crown: 130,
+  salt_stairs: 400,
+  lamp_bazaar: 260,
+  debt_orchard: 78,
+  black_relay: 440,
+};
+
+export function signPitch(name: string | undefined): number {
+  return (name && DISTRICT_SIGN[name]) || STREET_SIGN;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2452,10 +2481,10 @@ export class GameAudio {
     for (let i = 0; i < 4; i++) this.burst({ dur: 0.03, freq: 1800 - i * 250, q: 1.6, gain: 0.08, delay: 0.18 + i * 0.06, pan: (i % 2 ? 1 : -1) * 0.4 });
   }
 
-  sign(): void {
+  sign(place?: string): void {
     this.count("sign");
     if (!this.ctx) return;
-    this.tone({ dur: 0.2, from: 110, to: 45, gain: 0.7 }); // stamp thunk
+    this.tone({ dur: 0.2, from: signPitch(place), to: 45, gain: 0.7 }); // stamp thunk
     this.burst({ dur: 0.08, freq: 600, q: 0.5, gain: 0.35, type: "lowpass" });
     this.tone({ dur: 0.25, from: 1760, gain: 0.08, type: "square", delay: 0.22 });
   }
