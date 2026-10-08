@@ -1791,6 +1791,35 @@ export function wakePitch(name: string | undefined): number {
   return (name && DISTRICT_WAKE[name]) || STREET_WAKE;
 }
 
+/** How low the round-over drone opens, in hertz. Lease Row keeps 55. It still lands at 40. Duration stays 1.4. Gain stays 0.35. The figure stays the outcome's notes. */
+export const STREET_OVER = 55;
+
+const DISTRICT_OVER: Record<string, number> = {
+  deadletter_docks: 48,
+  repo_depot: 62,
+  night_market: 88,
+  relay_heights: 76,
+  ash_canal: 44,
+  glass_mile: 96,
+  bone_market: 52,
+  cold_vault: 68,
+  neon_chapel: 60,
+  slag_pit: 42,
+  wire_garden: 110,
+  red_kiln: 64,
+  paper_wharf: 50,
+  velvet_court: 80,
+  rust_crown: 72,
+  salt_stairs: 92,
+  lamp_bazaar: 84,
+  debt_orchard: 46,
+  black_relay: 120,
+};
+
+export function overPitch(name: string | undefined): number {
+  return (name && DISTRICT_OVER[name]) || STREET_OVER;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2364,12 +2393,12 @@ export class GameAudio {
   }
 
   /** the round is over (Stage 124): a resolving figure when your cell woke the district, a falling one when the other did, a level one when no one did */
-  roundOver(outcome: "won" | "lost" | "none"): void {
+  roundOver(outcome: "won" | "lost" | "none", place?: string): void {
     this.count("roundOver");
     if (!this.ctx) return;
     const notes = outcome === "won" ? [392, 494, 587, 784] : outcome === "lost" ? [523, 440, 349, 262] : [440, 440, 440];
     for (const [i, f] of notes.entries()) this.tone({ dur: 0.34, from: f, gain: 0.09, type: "triangle", delay: 0.16 * i });
-    this.tone({ dur: 1.4, from: 55, to: 40, gain: 0.35 });
+    this.tone({ dur: 1.4, from: overPitch(place), to: 40, gain: 0.35 });
   }
 
   kernelPulse(place?: string): void {
