@@ -1171,7 +1171,7 @@ export class Game {
     // the simulation by hand renders a few frames per section, and on the render clock a cue from
     // a whole section ago is still "five seconds ago"
     for (const cue of waspLocks(this.waspPrev, this.waspCued, seen, { x: at.x, y: this.player.pos.y + 1.6, z: at.z, yaw: at.yaw }, this.stats.ticks * SIM_DT)) {
-      this.audio.waspLock(cue);
+      this.audio.waspLock(cue, this.world.level.name);
       this.hud.push(`◆ WASP LIVE · ${Math.round(cue.distance)} M ${cue.pan > 0.3 ? "RIGHT" : cue.pan < -0.3 ? "LEFT" : Math.abs(cue.bearing) > Math.PI / 2 ? "BEHIND" : "AHEAD"}`, "am");
     }
   }

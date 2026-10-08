@@ -1356,6 +1356,35 @@ export function smokePitch(name: string | undefined): number {
   return (name && DISTRICT_SMOKE[name]) || STREET_SMOKE;
 }
 
+/** How high a wasp lock opens, in hertz. Lease Row keeps 900. It still arrives at 1300. */
+export const STREET_LOCK = 900;
+
+const DISTRICT_LOCK: Record<string, number> = {
+  deadletter_docks: 240,
+  repo_depot: 620,
+  night_market: 1480,
+  relay_heights: 2100,
+  ash_canal: 310,
+  glass_mile: 1760,
+  bone_market: 180,
+  cold_vault: 1240,
+  neon_chapel: 480,
+  slag_pit: 140,
+  wire_garden: 1680,
+  red_kiln: 360,
+  paper_wharf: 280,
+  velvet_court: 760,
+  rust_crown: 1040,
+  salt_stairs: 1560,
+  lamp_bazaar: 1920,
+  debt_orchard: 220,
+  black_relay: 2800,
+};
+
+export function lockPitch(name: string | undefined): number {
+  return (name && DISTRICT_LOCK[name]) || STREET_LOCK;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1967,10 +1996,10 @@ export class GameAudio {
   }
 
   /** a wasp gone live near the file (Stage 98): a rising blip in the wasp's own register, from its side */
-  waspLock(cue: { pan: number; gain: number }): void {
+  waspLock(cue: { pan: number; gain: number }, place?: string): void {
     this.count("waspLock");
     if (!this.ctx) return;
-    this.tone({ dur: 0.07, from: 900, to: 1300, gain: 0.14 * cue.gain, type: "square", pan: cue.pan });
+    this.tone({ dur: 0.07, from: lockPitch(place), to: 1300, gain: 0.14 * cue.gain, type: "square", pan: cue.pan });
     this.tone({ dur: 0.09, from: 1300, to: 1700, gain: 0.12 * cue.gain, type: "square", pan: cue.pan, delay: 0.08 });
     this.burst({ dur: 0.06, freq: 2600, q: 1.2, gain: 0.06 * cue.gain, pan: cue.pan, delay: 0.16 });
   }
