@@ -1849,6 +1849,35 @@ export function objectivePitch(name: string | undefined): number {
   return (name && DISTRICT_OBJECTIVE[name]) || STREET_OBJECTIVE;
 }
 
+/** How high the debt sting opens, in hertz. Lease Row keeps 1047. The rest stays 1319, 1568. Duration stays 0.3. Gain stays 0.07. The gap stays 0.12. */
+export const STREET_OWE = 1047;
+
+const DISTRICT_OWE: Record<string, number> = {
+  deadletter_docks: 784,
+  repo_depot: 880,
+  night_market: 1244,
+  relay_heights: 1108,
+  ash_canal: 698,
+  glass_mile: 1396,
+  bone_market: 830,
+  cold_vault: 988,
+  neon_chapel: 932,
+  slag_pit: 622,
+  wire_garden: 1480,
+  red_kiln: 870,
+  paper_wharf: 740,
+  velvet_court: 1200,
+  rust_crown: 1010,
+  salt_stairs: 1420,
+  lamp_bazaar: 1280,
+  debt_orchard: 660,
+  black_relay: 1520,
+};
+
+export function owePitch(name: string | undefined): number {
+  return (name && DISTRICT_OWE[name]) || STREET_OWE;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2711,10 +2740,10 @@ export class GameAudio {
   }
 
   /** A Debt owed: the same three notes, rising — someone has your number. */
-  debtOwed(): void {
+  debtOwed(place?: string): void {
     this.count("debtOwed");
     if (!this.ctx) return;
-    for (const [i, f] of [1047, 1319, 1568].entries()) this.tone({ dur: 0.3, from: f, gain: 0.07, type: "square", delay: i * 0.12 });
+    for (const [i, f] of [owePitch(place), 1319, 1568].entries()) this.tone({ dur: 0.3, from: f, gain: 0.07, type: "square", delay: i * 0.12 });
   }
 
   /** The dossier flash: a data sweep as the files print across the screen. */

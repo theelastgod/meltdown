@@ -527,7 +527,7 @@ export class Campaign {
         hud.setRadarSpots([]);
         hud.card("CONTRACT FAILED", [ev.reason, "THE FILE RE-LEASES. THE CONTRACT STAYS OPEN.", failedContractLine(this.game.hud.touch)], "mg", 0, null, () => this.toggleContracts());
         this.note(`CONTRACT FAILED · ${ev.reason}`);
-        this.game.audio.debtOwed();
+        this.game.audio.debtOwed(this.game.world.level.name);
         break;
     }
   }
@@ -839,7 +839,7 @@ export class Campaign {
         hud.card(card.title, card.lines, card.color, 7);
         this.note(`${card.title} · ${card.lines.slice(1).join(" · ")}`);
         if (ev.status === "complete") this.game.audio.sign(this.game.world.level.name);
-        else this.game.audio.debtOwed();
+        else this.game.audio.debtOwed(this.game.world.level.name);
       }
       return;
     }
@@ -937,7 +937,7 @@ export class Campaign {
           this.note(`${card.title} · ${card.lines.join(" · ")}`);
         }
         if (r.state === "finished" && r.pb) this.game.audio.sign(this.game.world.level.name);
-        else if (r.state === "void") this.game.audio.debtOwed();
+        else if (r.state === "void") this.game.audio.debtOwed(this.game.world.level.name);
         this.runLine = "";
         // the event (if one runs) takes the objective line and the beam back
         if (this.cityEvent) this.onCityEventMsg(this.cityEvent);

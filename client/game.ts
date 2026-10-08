@@ -417,7 +417,7 @@ export class Game {
         if (m.event === "owed") {
           this.debtTargetId = m.id;
           this.hud.debt("owed", m.display, filesWord(m.kills));
-          this.audio.debtOwed();
+          this.audio.debtOwed(this.world.level.name);
           this.hud.push(`DEBT · ${m.display} · ${filesWord(m.kills)} ON YOU`, "mg");
         } else {
           this.debtTargetId = -1;
