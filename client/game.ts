@@ -1031,7 +1031,7 @@ export class Game {
     for (const m of runMoments(prev, next)) {
       if (m.kind === "pickup") this.audio.claim(this.world.level.name);
       else if (m.kind === "bank") this.audio.sign();
-      else this.audio.dropClaims();
+      else this.audio.dropClaims(this.world.level.name);
       this.hud.push(momentLine(m, next.zone), m.kind === "drop" ? "mg" : "am");
     }
   }

@@ -1240,6 +1240,35 @@ export function ledgerPitch(name: string | undefined): number {
   return (name && DISTRICT_LEDGER[name]) || STREET_LEDGER;
 }
 
+/** How high a dropped claim starts its fall, in hertz. Lease Row keeps 660. It still lands at 110. */
+export const STREET_DROP = 660;
+
+const DISTRICT_DROP: Record<string, number> = {
+  deadletter_docks: 240,
+  repo_depot: 380,
+  night_market: 980,
+  relay_heights: 720,
+  ash_canal: 280,
+  glass_mile: 1240,
+  bone_market: 320,
+  cold_vault: 840,
+  neon_chapel: 460,
+  slag_pit: 180,
+  wire_garden: 1480,
+  red_kiln: 560,
+  paper_wharf: 300,
+  velvet_court: 1100,
+  rust_crown: 420,
+  salt_stairs: 1360,
+  lamp_bazaar: 900,
+  debt_orchard: 200,
+  black_relay: 1680,
+};
+
+export function dropPitch(name: string | undefined): number {
+  return (name && DISTRICT_DROP[name]) || STREET_DROP;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2067,10 +2096,10 @@ export class GameAudio {
   }
 
   /** the carried claims falling to the street (Stage 101): a drop, then the units scattering */
-  dropClaims(): void {
+  dropClaims(place?: string): void {
     this.count("dropClaims");
     if (!this.ctx) return;
-    this.tone({ dur: 0.35, from: 660, to: 110, gain: 0.3, type: "triangle" });
+    this.tone({ dur: 0.35, from: dropPitch(place), to: 110, gain: 0.3, type: "triangle" });
     for (let i = 0; i < 4; i++) this.burst({ dur: 0.03, freq: 1800 - i * 250, q: 1.6, gain: 0.08, delay: 0.18 + i * 0.06, pan: (i % 2 ? 1 : -1) * 0.4 });
   }
 
