@@ -1066,6 +1066,35 @@ export function clipPitch(name: string | undefined): number {
   return (name && DISTRICT_CLIP[name]) || STREET_CLIP;
 }
 
+/** How high the bolt locks at the end of a reload, in hertz. Lease Row keeps 2600. The follow tone stays 200 falling to 90. */
+export const STREET_BOLT = 2600;
+
+const DISTRICT_BOLT: Record<string, number> = {
+  deadletter_docks: 1180,
+  repo_depot: 1900,
+  night_market: 3400,
+  relay_heights: 2200,
+  ash_canal: 860,
+  glass_mile: 4100,
+  bone_market: 1460,
+  cold_vault: 1740,
+  neon_chapel: 1560,
+  slag_pit: 720,
+  wire_garden: 4600,
+  red_kiln: 2100,
+  paper_wharf: 1320,
+  velvet_court: 3000,
+  rust_crown: 1680,
+  salt_stairs: 3800,
+  lamp_bazaar: 3200,
+  debt_orchard: 640,
+  black_relay: 5200,
+};
+
+export function boltPitch(name: string | undefined): number {
+  return (name && DISTRICT_BOLT[name]) || STREET_BOLT;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2035,7 +2064,7 @@ export class GameAudio {
       this.burst({ dur: 0.06, freq: reloadPitch(place), q: 1.5, gain: 0.12 });
       this.burst({ dur: 0.1, freq: 500, q: 0.6, gain: 0.1, type: "lowpass", pan: -0.3 });
     } else {
-      this.burst({ dur: 0.05, freq: 2600, q: 2, gain: 0.16 });
+      this.burst({ dur: 0.05, freq: boltPitch(place), q: 2, gain: 0.16 });
       this.tone({ dur: 0.08, from: 200, to: 90, gain: 0.25 });
     }
   }
