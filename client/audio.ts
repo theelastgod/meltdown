@@ -979,6 +979,35 @@ export function throwPitch(name: string | undefined): number {
   return (name && DISTRICT_THROW[name]) || STREET_THROW;
 }
 
+/** How high a weapon swap's first click sits, in hertz. Lease Row keeps 700. The second click stays 2200. */
+export const STREET_SWAP = 700;
+
+const DISTRICT_SWAP: Record<string, number> = {
+  deadletter_docks: 380,
+  repo_depot: 520,
+  night_market: 1480,
+  relay_heights: 980,
+  ash_canal: 440,
+  glass_mile: 1800,
+  bone_market: 560,
+  cold_vault: 820,
+  neon_chapel: 640,
+  slag_pit: 320,
+  wire_garden: 2100,
+  red_kiln: 760,
+  paper_wharf: 480,
+  velvet_court: 1100,
+  rust_crown: 880,
+  salt_stairs: 1280,
+  lamp_bazaar: 1600,
+  debt_orchard: 280,
+  black_relay: 2400,
+};
+
+export function swapPitch(name: string | undefined): number {
+  return (name && DISTRICT_SWAP[name]) || STREET_SWAP;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1492,10 +1521,10 @@ export class GameAudio {
     this.burst({ dur: 0.06, freq: throwPitch(place), q: 1.5, gain: 0.12 });
   }
 
-  swap(): void {
+  swap(place?: string): void {
     this.count("swap");
     if (!this.ctx) return;
-    this.burst({ dur: 0.08, freq: 700, q: 0.8, gain: 0.14, type: "lowpass" });
+    this.burst({ dur: 0.08, freq: swapPitch(place), q: 0.8, gain: 0.14, type: "lowpass" });
     this.burst({ dur: 0.04, freq: 2200, q: 2, gain: 0.1, delay: 0.09 });
   }
 

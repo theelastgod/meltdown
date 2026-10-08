@@ -701,7 +701,7 @@ export class Game {
             break;
           case FX.swap:
             // prediction already played this for us (Stage 198)
-            if (ev.playerId !== me) this.audio.swap();
+            if (ev.playerId !== me) this.audio.swap(this.world.level.name);
             break;
           case FX.melee:
             if (ev.playerId === me) break;
@@ -1438,7 +1438,7 @@ export class Game {
         }
         break;
       case "swap":
-        if (ev.playerId === this.player.id) this.audio.swap();
+        if (ev.playerId === this.player.id) this.audio.swap(this.world.level.name);
         break;
       case "reloadSeat":
         if (ev.playerId === this.player.id) this.audio.reload("seat", this.world.level.name);
