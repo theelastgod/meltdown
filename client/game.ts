@@ -627,7 +627,7 @@ export class Game {
           this.netStats.myShotsConfirmed++;
           if (hit) {
             this.netStats.myHits++;
-            this.audio.hit(ev.zone ?? "body");
+            this.audio.hit(ev.zone ?? "body", this.world.level.name);
             if (this.hitmarkers) this.hud.flashHit();
           }
         } else {
@@ -706,7 +706,7 @@ export class Game {
           case FX.melee:
             if (ev.playerId === me) break;
             this.audio.shot("shock_baton");
-            if (ev.a > 0) this.audio.hit("body");
+            if (ev.a > 0) this.audio.hit("body", this.world.level.name);
             break;
           case FX.throw:
             if (ev.playerId !== me) this.audio.throw(this.world.level.name);
@@ -1383,7 +1383,7 @@ export class Game {
           for (const h of ev.hits) if (h.kind !== "world" && h.kind !== "none") this.renderer.hitBody(h.kind, h.id, ev.to, impactRead(h.damage), fromYaw, color);
           if (mine) {
             const h = ev.hits[0]!;
-            this.audio.hit(h.zone ?? "body");
+            this.audio.hit(h.zone ?? "body", this.world.level.name);
             if (this.hitmarkers) this.hud.flashHit();
             for (const x of ev.hits) if (x.kind !== "world" && x.kind !== "none") this.landed(bodyKey(x.kind, x.id), { at: this.renderer.clockNow, zone: x.zone ?? "body", distance: Math.hypot(ev.to.x - ev.from.x, ev.to.y - ev.from.y, ev.to.z - ev.from.z), weapon: ev.weapon });
           }
@@ -1394,7 +1394,7 @@ export class Game {
         if (ev.playerId === this.player.id) {
           this.audio.shot("shock_baton");
           if (ev.hits.length) {
-            this.audio.hit("body");
+            this.audio.hit("body", this.world.level.name);
             for (const h of ev.hits) if (h.kind === "dummy") this.renderer.flashDummy(h.id);
           }
           if (ev.lunge) this.renderer.post.kick(0.4);

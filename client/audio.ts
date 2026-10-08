@@ -1008,6 +1008,35 @@ export function swapPitch(name: string | undefined): number {
   return (name && DISTRICT_SWAP[name]) || STREET_SWAP;
 }
 
+/** How high a landed body's marker starts, in hertz. Lease Row keeps 1100. Head stays 2200 and legs stay 600. */
+export const STREET_MARK = 1100;
+
+const DISTRICT_MARK: Record<string, number> = {
+  deadletter_docks: 420,
+  repo_depot: 780,
+  night_market: 1860,
+  relay_heights: 980,
+  ash_canal: 360,
+  glass_mile: 2400,
+  bone_market: 540,
+  cold_vault: 1320,
+  neon_chapel: 860,
+  slag_pit: 280,
+  wire_garden: 2800,
+  red_kiln: 640,
+  paper_wharf: 480,
+  velvet_court: 1540,
+  rust_crown: 720,
+  salt_stairs: 1680,
+  lamp_bazaar: 2100,
+  debt_orchard: 240,
+  black_relay: 3200,
+};
+
+export function markPitch(name: string | undefined): number {
+  return (name && DISTRICT_MARK[name]) || STREET_MARK;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1659,10 +1688,10 @@ export class GameAudio {
   }
 
   /** Zone-pitched hit: head high and glassy, body mid, legs dull. */
-  hit(zone: HitZone): void {
+  hit(zone: HitZone, place?: string): void {
     this.count("hit_" + zone);
     if (!this.ctx) return;
-    const f = zone === "head" ? 2200 : zone === "body" ? 1100 : 600;
+    const f = zone === "head" ? 2200 : zone === "body" ? markPitch(place) : 600;
     this.tone({ dur: 0.07, from: f, to: f * 0.6, gain: 0.22, type: "triangle" });
     this.burst({ dur: 0.05, freq: f * 1.5, q: 2, gain: 0.12 });
   }
