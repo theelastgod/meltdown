@@ -505,7 +505,7 @@ export class Campaign {
       case "objective":
         hud.alert(`◆ ${ev.text}`, false, 4);
         this.note(`OBJECTIVE ${ev.index + 1} · ${ev.text}`);
-        this.game.audio.objective();
+        this.game.audio.objective(this.game.world.level.name);
         break;
       case "wave":
         hud.alert(`◆ VANTAGE RESPONDS — ${waspsWord(ev.count)}`, true, 3);
@@ -924,12 +924,12 @@ export class Campaign {
     if (r && c) {
       if (r.state === "armed") {
         hud.alert(`◆ STREET RUN · ${c.name} · ARMED`, false, 3);
-        this.game.audio.objective();
+        this.game.audio.objective(this.game.world.level.name);
       } else if (r.state === "running" && r.splits.length === 0 && prev?.state === "armed") {
         hud.alert(`◆ GO · ${c.name}`, false, 1.5);
       } else if (r.state === "running" && r.splits.length > (prev?.splits.length ?? 0)) {
         hud.alert(splitBanner(c, r), false, 2);
-        this.game.audio.objective();
+        this.game.audio.objective(this.game.world.level.name);
       } else if (r.state === "finished" || r.state === "void") {
         const card = runCard(c, r, this.bestTime(c.id));
         if (card) {

@@ -1820,6 +1820,35 @@ export function overPitch(name: string | undefined): number {
   return (name && DISTRICT_OVER[name]) || STREET_OVER;
 }
 
+/** How high the objective figure opens, in hertz. Lease Row keeps 523. The rest stays 659, 784. Duration stays 0.16. Gain stays 0.07. The gap stays 0.11. */
+export const STREET_OBJECTIVE = 523;
+
+const DISTRICT_OBJECTIVE: Record<string, number> = {
+  deadletter_docks: 392,
+  repo_depot: 440,
+  night_market: 698,
+  relay_heights: 587,
+  ash_canal: 349,
+  glass_mile: 740,
+  bone_market: 415,
+  cold_vault: 554,
+  neon_chapel: 494,
+  slag_pit: 311,
+  wire_garden: 830,
+  red_kiln: 466,
+  paper_wharf: 370,
+  velvet_court: 622,
+  rust_crown: 510,
+  salt_stairs: 760,
+  lamp_bazaar: 640,
+  debt_orchard: 330,
+  black_relay: 880,
+};
+
+export function objectivePitch(name: string | undefined): number {
+  return (name && DISTRICT_OBJECTIVE[name]) || STREET_OBJECTIVE;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -2379,10 +2408,10 @@ export class GameAudio {
   }
 
   /** an objective ticking over (Stage 115): a rising three-note figure in the campaign's register, not the wake's contest */
-  objective(): void {
+  objective(place?: string): void {
     this.count("objective");
     if (!this.ctx) return;
-    for (const [i, f] of [523, 659, 784].entries()) this.tone({ dur: 0.16, from: f, gain: 0.07, type: "triangle", delay: 0.11 * i });
+    for (const [i, f] of [objectivePitch(place), 659, 784].entries()) this.tone({ dur: 0.16, from: f, gain: 0.07, type: "triangle", delay: 0.11 * i });
   }
 
   /** the wake begins (Stage 124): a rising four-note figure, the round's own start, not the KERNEL's pulse */
