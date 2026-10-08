@@ -1530,6 +1530,35 @@ export function chokePitch(name: string | undefined): number {
   return (name && DISTRICT_CHOKE[name]) || STREET_CHOKE;
 }
 
+/** How the lease breaker's report opens, in hertz. Lease Row keeps 160. It still lands at 38. The crack stays 2400. The body stays 420. */
+export const STREET_REPORT = 160;
+
+const DISTRICT_REPORT: Record<string, number> = {
+  deadletter_docks: 118,
+  repo_depot: 142,
+  night_market: 210,
+  relay_heights: 176,
+  ash_canal: 96,
+  glass_mile: 240,
+  bone_market: 128,
+  cold_vault: 84,
+  neon_chapel: 196,
+  slag_pit: 72,
+  wire_garden: 228,
+  red_kiln: 154,
+  paper_wharf: 108,
+  velvet_court: 188,
+  rust_crown: 136,
+  salt_stairs: 260,
+  lamp_bazaar: 204,
+  debt_orchard: 90,
+  black_relay: 280,
+};
+
+export function reportPitch(name: string | undefined): number {
+  return (name && DISTRICT_REPORT[name]) || STREET_REPORT;
+}
+
 export function bedTune(name: string | undefined): BedTune {
   const felt = placeFeel(name);
   if (felt) return felt.bed;
@@ -1937,7 +1966,7 @@ export class GameAudio {
    * change what the gun is, so its shots keep the primary's bark. Counted under the voice as well as
    * the weapon, so a probe can hear the difference.
    */
-  shot(weapon = "lease_breaker", alt = false): void {
+  shot(weapon = "lease_breaker", alt = false, place?: string): void {
     this.count("shot");
     this.count("shot_" + weapon);
     const voice = shotVoice(weapon, alt);
@@ -2005,7 +2034,7 @@ export class GameAudio {
         this.burst({ dur: 0.05, freq: 2400, q: 1, gain: 0.1 });
         break;
       default:
-        this.tone({ dur: 0.12, from: 160, to: 38, gain: 0.55, type: "sine" });
+        this.tone({ dur: 0.12, from: reportPitch(place), to: 38, gain: 0.55, type: "sine" });
         this.burst({ dur: 0.07, freq: 2400, q: 0.6, gain: 0.35 });
         this.burst({ dur: 0.18, freq: 420, q: 0.8, gain: 0.2, type: "lowpass" });
     }

@@ -1355,7 +1355,7 @@ export class Game {
         const mine = ev.playerId === this.player.id;
         const def = ev.weapon === "wasp" ? null : WEAPONS[ev.weapon];
         const color = def?.tracer ?? 0xffb02e;
-        if (mine) this.audio.shot(ev.weapon, this.altFire.tick === ev.tick && this.altFire.alt);
+        if (mine) this.audio.shot(ev.weapon, this.altFire.tick === ev.tick && this.altFire.alt, this.world.level.name);
         else {
           // somebody else's gun (Stage 81): until now a file could empty a magazine at you from
           // across the street in silence, and the first you knew of it was the integrity bar. The
