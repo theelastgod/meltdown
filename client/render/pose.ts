@@ -142,6 +142,41 @@ const DISTRICT_CORPSE: Record<string, number> = {
 export function corpseSpan(name: string | undefined): number {
   return (name && DISTRICT_CORPSE[name]) || CORPSE_SECONDS;
 }
+
+/** walk-phase radians per second before speed adds. Lease Row keeps 6. Speed still adds 0.9. The 0.012 lift and the 0.008 sway stay. */
+export const WALK_CLOCK = 6;
+
+const DISTRICT_WALK: Record<string, number> = {
+  deadletter_docks: 3.2,
+  repo_depot: 4.4,
+  night_market: 9.5,
+  relay_heights: 7.2,
+  ash_canal: 3.8,
+  glass_mile: 8.4,
+  bone_market: 5.1,
+  cold_vault: 2.6,
+  neon_chapel: 7.8,
+  slag_pit: 5.6,
+  wire_garden: 6.8,
+  red_kiln: 8.8,
+  paper_wharf: 4.1,
+  velvet_court: 10.2,
+  rust_crown: 6.4,
+  salt_stairs: 2.2,
+  lamp_bazaar: 11.4,
+  debt_orchard: 7.5,
+  black_relay: 1.6,
+};
+
+/** How fast a walk's phase turns, before speed adds. Indoor rooms and Lease Row keep WALK_CLOCK. */
+export function walkClock(name: string | undefined): number {
+  return (name && DISTRICT_WALK[name]) || WALK_CLOCK;
+}
+
+/** Radians of walk phase per second at this speed. The 0.9 per metre stays. */
+export function walkRate(speed: number, name?: string): number {
+  return walkClock(name) + speed * 0.9;
+}
 /** the leg bone hangs this far under the hips and the boot this far under it (rig.ts's rest table) */
 const LEG_UNDER_HIPS = 0.37;
 const LEG_LEN = 0.58;

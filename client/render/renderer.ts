@@ -26,7 +26,7 @@ import { WakeFx } from "./wake";
 import { WEAPON_LIST, type WeaponId } from "@shared/weapons/manifest";
 import { mergeByMaterial } from "./body";
 import { applyPose, buildRig, disposeRig, holdRemoteWeapon, rigReport, setRigLook, WEAPON_IN_SOCKET, weaponStripGeometry, type Rig, type RigReport, RIG_EMISSIVE } from "./rig";
-import { poseBody, type PoseInput, type Stance } from "./pose";
+import { poseBody, walkRate, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { decay, flashLife, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
 import { spawnCurve, spawnEdge, spawnSpan, SPAWN_TIME } from "./spawn";
@@ -923,7 +923,7 @@ export class Renderer {
       const wire = v.vx !== undefined && v.vz !== undefined ? Math.hypot(v.vx, v.vz) : e.speedEst;
       const speed = Math.min(wire, e.speedEst);
       const grounded = v.grounded ?? true;
-      if (grounded && speed >= 0.5 && v.stance !== "slide") e.phase += dt * (6 + speed * 0.9);
+      if (grounded && speed >= 0.5 && v.stance !== "slide") e.phase += dt * walkRate(speed, this.placeName);
       e.kick = Math.max(0, e.kick - dt * 14);
       e.prev = { x: v.x, y: v.y, z: v.z, yaw: v.yaw };
       // Far from the camera the pose holds: at that range the read is the silhouette, not the stride.
@@ -1159,7 +1159,7 @@ export class Renderer {
     this.clock += dt;
     this.frames++;
     this.eyeSmooth += (v.eye - this.eyeSmooth) * Math.min(1, dt * 18);
-    if (v.grounded && v.speed > 0.5 && v.stance !== "slide") this.bobPhase += dt * (6 + v.speed * 0.9);
+    if (v.grounded && v.speed > 0.5 && v.stance !== "slide") this.bobPhase += dt * walkRate(v.speed, this.placeName);
     const bobY = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase * 2) * 0.012 * Math.min(1, v.speed / 5) : 0;
     const bobX = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase) * 0.008 * Math.min(1, v.speed / 5) : 0;
     this.vmKick = Math.max(0, this.vmKick - dt * 14);
