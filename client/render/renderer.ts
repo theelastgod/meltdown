@@ -29,7 +29,7 @@ import { applyPose, buildRig, disposeRig, holdRemoteWeapon, rigReport, setRigLoo
 import { poseBody, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
-import { spawnCurve, spawnEdge, SPAWN_TIME } from "./spawn";
+import { spawnCurve, spawnEdge, spawnSpan, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import { bodyOnLine, faceCuts, gunOnLine, ownStand, type FaceShot } from "./faceshot";
 import { arcPoint, type ArcSpec } from "./ballistic";
@@ -381,6 +381,7 @@ export class Renderer {
     this.mobile = mobile;
     this.district = district;
     this.placeName = level.name;
+    this.spawnT = spawnSpan(level.name);
     const cast = DISTRICTS[district];
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1192,12 +1193,13 @@ export class Renderer {
     // the spawn-in (Stage 96): on the frame a closed file is back on the ledger the camera used to
     // cut — a new place, the old heading, nothing in between. Now the CRT comes up heavy and
     // settles and the lens opens out, over a second, and the cut itself is a tear
+    const born = spawnSpan(this.placeName);
     if (spawnEdge(this.lastAlive, v.alive)) {
       this.spawnT = 0;
       this.post.kick(0.6);
-    } else this.spawnT = Math.min(SPAWN_TIME, this.spawnT + dt);
+    } else this.spawnT = Math.min(born, this.spawnT + dt);
     this.lastAlive = v.alive;
-    const spawn = spawnCurve(this.spawnT);
+    const spawn = spawnCurve(this.spawnT, born);
     this.post.spawnBoost(spawn.crt);
     const targetFov = this.baseFov / v.zoom + this.fovPush + spawn.fov;
     this.fovNow += (targetFov - this.fovNow) * Math.min(1, dt * 14);

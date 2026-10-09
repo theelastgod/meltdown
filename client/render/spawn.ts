@@ -14,12 +14,38 @@
  */
 import { clamp } from "../../shared/math/vec3";
 
-/** how long the picture takes to come into focus (seconds) */
+/** how long the picture takes to come into focus (seconds). Lease Row keeps 1.0. The CRT weight and the lens pull stay. */
 export const SPAWN_TIME = 1.0;
 /** how much heavier the CRT is on the first frame, as a multiplier on the settings' own level */
 export const SPAWN_CRT = 1.2;
 /** how far in the lens starts, in degrees below the frame's own field of view */
 export const SPAWN_FOV = 9;
+
+const DISTRICT_BORN: Record<string, number> = {
+  deadletter_docks: 0.42,
+  repo_depot: 0.55,
+  night_market: 1.55,
+  relay_heights: 0.72,
+  ash_canal: 0.48,
+  glass_mile: 1.35,
+  bone_market: 0.62,
+  cold_vault: 0.36,
+  neon_chapel: 1.18,
+  slag_pit: 0.84,
+  wire_garden: 1.08,
+  red_kiln: 1.28,
+  paper_wharf: 0.66,
+  velvet_court: 1.42,
+  rust_crown: 0.9,
+  salt_stairs: 0.3,
+  lamp_bazaar: 1.72,
+  debt_orchard: 1.12,
+  black_relay: 0.24,
+};
+
+export function spawnSpan(name: string | undefined): number {
+  return (name && DISTRICT_BORN[name]) || SPAWN_TIME;
+}
 
 export interface SpawnIn {
   /** 0..SPAWN_CRT: added to the CRT level's multiplier, so a clean-image setting stays clean */
