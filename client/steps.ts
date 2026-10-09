@@ -42,9 +42,39 @@ export const CROUCH_GAIN = 0.3;
 /** below this a body is not walking, it is standing still and shuffling */
 export const STEP_MIN_SPEED = 0.8;
 
+/** metres between steps before speed adds. Lease Row keeps 1.9. A crouch stays 1.2. Speed still adds 0.06. */
+export const STREET_GAP = 1.9;
+
+const DISTRICT_GAP: Record<string, number> = {
+  deadletter_docks: 1.15,
+  repo_depot: 1.45,
+  night_market: 2.6,
+  relay_heights: 2.15,
+  ash_canal: 1.25,
+  glass_mile: 2.35,
+  bone_market: 1.55,
+  cold_vault: 1.05,
+  neon_chapel: 2.45,
+  slag_pit: 1.7,
+  wire_garden: 2.05,
+  red_kiln: 1.35,
+  paper_wharf: 1.62,
+  velvet_court: 2.75,
+  rust_crown: 1.82,
+  salt_stairs: 0.95,
+  lamp_bazaar: 2.9,
+  debt_orchard: 2.25,
+  black_relay: 0.82,
+};
+
+/** How far a street's walk goes between boots, before speed adds. Indoor rooms and Lease Row keep STREET_GAP. */
+export function bootGap(name: string | undefined): number {
+  return (name && DISTRICT_GAP[name]) || STREET_GAP;
+}
+
 /** how far a body covers between steps: a crouch is short and quiet, a sprint is long and loud */
-export function strideOf(speed: number, stance: string): number {
-  return stance === "crouch" ? 1.2 : 1.9 + speed * 0.06;
+export function strideOf(speed: number, stance: string, name?: string): number {
+  return stance === "crouch" ? 1.2 : bootGap(name) + speed * 0.06;
 }
 
 /**
@@ -52,7 +82,7 @@ export function strideOf(speed: number, stance: string): number {
  * each body's last step — and is updated in place, so a body that stops mid-stride does not bank a
  * step and fire it the moment it moves again.
  */
-export function stepCues(walkers: readonly Walker[], listener: { x: number; z: number; yaw: number }, covered: Map<number, number>, dt: number): StepCue[] {
+export function stepCues(walkers: readonly Walker[], listener: { x: number; z: number; yaw: number }, covered: Map<number, number>, dt: number, name?: string): StepCue[] {
   const out: StepCue[] = [];
   const seen = new Set<number>();
   for (const w of walkers) {
@@ -64,7 +94,7 @@ export function stepCues(walkers: readonly Walker[], listener: { x: number; z: n
       continue;
     }
     const d = (covered.get(w.id) ?? 0) + w.speed * dt;
-    const stride = strideOf(w.speed, w.stance);
+    const stride = strideOf(w.speed, w.stance, name);
     if (d < stride) {
       covered.set(w.id, d);
       continue;

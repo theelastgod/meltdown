@@ -41,7 +41,7 @@ import { challengeClearedLine, gateFor, MAX_RANK, masteryRankLine } from "@share
 import { threatMarks, type LiveProjectile } from "./hud/threat";
 import { waspLocks, type WaspSeen } from "./vantage";
 import { lookYawPitch } from "./render/feel";
-import { stepCues, type Walker } from "./steps";
+import { stepCues, strideOf, type Walker } from "./steps";
 import { gunCue } from "./gunfire";
 import { shotPass } from "./nearmiss";
 import { altPadHot, altPadLow, ammoRead, firePadHot, firePadLow, grenadePadHot, grenadePadLow, jumpPadHot, jumpPadLow, lastRoundsEdge, nextGrenadePadHot, nextGrenadePadLow, pausePadHot, pausePadLow, reloadPadHot, reloadPadLow, slidePadHot, slidePadLow, stickKnobHot, stickKnobLow, stickRingHot, stickRingLow, weaponPadHot, weaponPadLow } from "./hud/ammo";
@@ -1270,7 +1270,7 @@ export class Game {
     const sp = lenXZ(p.vel);
     if (p.grounded && sp > 0.8 && p.stance !== "slide") {
       this.stepDist += sp * SIM_DT;
-      const stride = p.stance === "crouch" ? 1.2 : 1.9 + sp * 0.06;
+      const stride = strideOf(sp, p.stance, this.world.level.name);
       if (this.stepDist >= stride) {
         this.stepDist = 0;
         this.stepSide = -this.stepSide;
@@ -1300,7 +1300,7 @@ export class Game {
     }
     if (w.length === 0) return;
     const p = this.player;
-    for (const cue of stepCues(w, this.listenPoint(), this.stepBook, SIM_DT)) {
+    for (const cue of stepCues(w, this.listenPoint(), this.stepBook, SIM_DT, this.world.level.name)) {
       this.audio.otherStep(cue.speed, cue.pan, cue.gain, this.world.level.name);
       this.heard.n++;
       this.heard.pan = cue.pan;
