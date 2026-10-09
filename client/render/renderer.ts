@@ -30,7 +30,7 @@ import { poseBody, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
 import { decay, flashLife, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
 import { spawnCurve, spawnEdge, spawnSpan, SPAWN_TIME } from "./spawn";
-import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
+import { aimPoint, speedPush, sprintFov, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import { bodyOnLine, faceCuts, gunOnLine, ownStand, type FaceShot } from "./faceshot";
 import { arcPoint, type ArcSpec } from "./ballistic";
 import { deathTurn, landDip, landHardness, landSpan, lookYawPitch, stanceRoll } from "./feel";
@@ -1091,7 +1091,8 @@ export class Renderer {
     const base = v.zoom > 1 ? TPS_ADS : TPS_DEFAULT;
     // the camera drifts back as the file runs, the other half of the speed cue: the distance is
     // eased below anyway, so this arrives over a few frames rather than on one (Stage 77)
-    const opts = this.fovPush > 0.01 ? { ...base, distance: base.distance + SPRINT_PULL * (this.fovPush / SPRINT_FOV) } : base;
+    const widen = sprintFov(this.placeName);
+    const opts = this.fovPush > 0.01 ? { ...base, distance: base.distance + SPRINT_PULL * (this.fovPush / widen) } : base;
     const cam = thirdPersonCamera(pivot, look.yaw, look.pitch, this.boxes, opts);
     // ease the distance only: pulling in against a wall is immediate (the wall is there now), letting back out is eased
     const k = Math.min(1, dt * 10);
@@ -1189,7 +1190,7 @@ export class Renderer {
     // and speed reads as field of view: the street widens as the file runs and closes back in as it
     // stops. It eases in over about a fifth of a second and back out more slowly, because a lens
     // that snapped with the speed would read as a stutter rather than as acceleration (Stage 77).
-    const push = speedPush(v.speed, v.zoom) * SPRINT_FOV;
+    const push = speedPush(v.speed, v.zoom) * sprintFov(this.placeName);
     this.fovPush += (push - this.fovPush) * Math.min(1, dt * (push > this.fovPush ? 5 : 3));
     // the spawn-in (Stage 96): on the frame a closed file is back on the ledger the camera used to
     // cut — a new place, the old heading, nothing in between. Now the CRT comes up heavy and

@@ -31,8 +31,35 @@ export const TPS_DEFAULT: TpsOpts = { distance: 3.0, shoulder: 0.78, lift: 0.36,
 /** aiming down sights pulls in and tightens over the shoulder */
 export const TPS_ADS: TpsOpts = { distance: 1.4, shoulder: 0.5, lift: 0.2, minDistance: 0.45, wallPad: 0.22 };
 
-/** degrees of field of view a full sprint is worth */
+/** degrees of field of view a full sprint is worth. Lease Row keeps 7. The pull and the slide cap stay. */
 export const SPRINT_FOV = 7;
+
+const DISTRICT_SPRINT: Record<string, number> = {
+  deadletter_docks: 3.4,
+  repo_depot: 5.2,
+  night_market: 11.5,
+  relay_heights: 8.1,
+  ash_canal: 4.6,
+  glass_mile: 10.2,
+  bone_market: 6.4,
+  cold_vault: 2.8,
+  neon_chapel: 9.4,
+  slag_pit: 6.8,
+  wire_garden: 8.8,
+  red_kiln: 9.8,
+  paper_wharf: 5.6,
+  velvet_court: 12.2,
+  rust_crown: 7.6,
+  salt_stairs: 3.8,
+  lamp_bazaar: 11.8,
+  debt_orchard: 9.1,
+  black_relay: 2.2,
+};
+
+/** How far a full sprint opens the lens, in degrees. Indoor rooms and Lease Row keep SPRINT_FOV. */
+export function sprintFov(name: string | undefined): number {
+  return (name && DISTRICT_SPRINT[name]) || SPRINT_FOV;
+}
 /** and how far past a sprint the lens keeps widening: a slide leaves a sprint well behind */
 export const SPRINT_FOV_MAX = 1.5;
 /** how much further back the camera drifts at a full sprint (metres) */
