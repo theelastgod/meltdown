@@ -203,6 +203,36 @@ export function rigFall(name: string | undefined): number {
   return (name && DISTRICT_RIG[name]) || STREET_RIG;
 }
 
+/** How fast a shot's shove falls off, per second. Lease Row keeps 14. The 0.06 metre shove and the 0.08 radian tip stay. The lens ease stays 14. */
+export const KICK_FALL = 14;
+
+const DISTRICT_KICK: Record<string, number> = {
+  deadletter_docks: 6.5,
+  repo_depot: 11,
+  night_market: 26,
+  relay_heights: 16.5,
+  ash_canal: 8,
+  glass_mile: 22,
+  bone_market: 12.5,
+  cold_vault: 5,
+  neon_chapel: 19,
+  slag_pit: 13.5,
+  wire_garden: 17.5,
+  red_kiln: 24,
+  paper_wharf: 9.5,
+  velvet_court: 28,
+  rust_crown: 15,
+  salt_stairs: 7,
+  lamp_bazaar: 31,
+  debt_orchard: 20.5,
+  black_relay: 4,
+};
+
+/** How fast the held gun and a remote's shove settle. Indoor rooms and Lease Row keep KICK_FALL. */
+export function kickFall(name: string | undefined): number {
+  return (name && DISTRICT_KICK[name]) || KICK_FALL;
+}
+
 export type DistrictId = keyof typeof DISTRICTS;
 
 /**
@@ -924,7 +954,7 @@ export class Renderer {
       const speed = Math.min(wire, e.speedEst);
       const grounded = v.grounded ?? true;
       if (grounded && speed >= 0.5 && v.stance !== "slide") e.phase += dt * walkRate(speed, this.placeName);
-      e.kick = Math.max(0, e.kick - dt * 14);
+      e.kick = Math.max(0, e.kick - dt * kickFall(this.placeName));
       e.prev = { x: v.x, y: v.y, z: v.z, yaw: v.yaw };
       // Far from the camera the pose holds: at that range the read is the silhouette, not the stride.
       // The hold covers the stride only — a file that dies or respawns out there still has to fall
@@ -1162,7 +1192,7 @@ export class Renderer {
     if (v.grounded && v.speed > 0.5 && v.stance !== "slide") this.bobPhase += dt * walkRate(v.speed, this.placeName);
     const bobY = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase * 2) * 0.012 * Math.min(1, v.speed / 5) : 0;
     const bobX = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase) * 0.008 * Math.min(1, v.speed / 5) : 0;
-    this.vmKick = Math.max(0, this.vmKick - dt * 14);
+    this.vmKick = Math.max(0, this.vmKick - dt * kickFall(this.placeName));
     this.hurtT = Math.max(0, this.hurtT - dt * 3.5);
     // The camera takes the landing the legs have been taking since Stage 63, at the speed the sim
     // says it landed at. Stage 636 moved this off the render clock and onto `vy`, which was right
