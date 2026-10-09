@@ -81,8 +81,35 @@ export function stanceRoll(stance: string): number {
   return stance === "slide" ? SLIDE_ROLL : 0;
 }
 
-/** how fast the death camera swings onto whatever closed the file (per second, as an ease rate) */
+/** how fast the death camera swings onto whatever closed the file (per second). Lease Row keeps 2.6. The dip and the slide roll stay. */
 export const DEATH_TURN = 2.6;
+
+const DISTRICT_TURN: Record<string, number> = {
+  deadletter_docks: 4.2,
+  repo_depot: 3.4,
+  night_market: 1.1,
+  relay_heights: 2.1,
+  ash_canal: 3.8,
+  glass_mile: 1.6,
+  bone_market: 3.1,
+  cold_vault: 5.2,
+  neon_chapel: 1.35,
+  slag_pit: 2.9,
+  wire_garden: 1.8,
+  red_kiln: 1.5,
+  paper_wharf: 3.6,
+  velvet_court: 0.9,
+  rust_crown: 2.4,
+  salt_stairs: 4.6,
+  lamp_bazaar: 1.25,
+  debt_orchard: 1.7,
+  black_relay: 4.9,
+};
+
+/** How fast a closed file's camera turns onto what closed it. Indoor rooms and Lease Row keep DEATH_TURN. */
+export function deathTurn(name: string | undefined): number {
+  return (name && DISTRICT_TURN[name]) || DEATH_TURN;
+}
 
 /**
  * The yaw and pitch that look from one point at another, in the simulation's own convention: yaw 0

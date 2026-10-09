@@ -33,7 +33,7 @@ import { spawnCurve, spawnEdge, spawnSpan, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import { bodyOnLine, faceCuts, gunOnLine, ownStand, type FaceShot } from "./faceshot";
 import { arcPoint, type ArcSpec } from "./ballistic";
-import { DEATH_TURN, landDip, landHardness, landSpan, lookYawPitch, stanceRoll } from "./feel";
+import { deathTurn, landDip, landHardness, landSpan, lookYawPitch, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
 import { screens as screenPool } from "./screens";
 
@@ -1139,14 +1139,14 @@ export class Renderer {
 
   /**
    * Where the camera is looking this frame: the player's own aim, or — once the file is closed and
-   * there is something to name — an eased turn onto it. The blend is on the render clock, so it
-   * takes the same second wherever it runs.
+   * there is something to name — an eased turn onto it. The blend is on the render clock. Lease Row
+   * keeps the rate the swing shipped with; other streets turn at their own rate.
    */
   private deathLook(v: ViewState, pivot: { x: number; y: number; z: number }, dt: number): { yaw: number; pitch: number } {
     // a file back on the ledger has its camera back, and the next death arms the swing again from
     // wherever it is looking then: `die` is the only place that sets this up
     if (v.alive || !this.deathAt) return { yaw: v.yaw, pitch: v.pitch };
-    this.deathBlend = Math.min(1, this.deathBlend + dt * DEATH_TURN);
+    this.deathBlend = Math.min(1, this.deathBlend + dt * deathTurn(this.placeName));
     const want = lookYawPitch(pivot, this.deathAt, v.yaw, v.pitch);
     const k = this.deathBlend * this.deathBlend * (3 - 2 * this.deathBlend); // smoothstep, so it starts and ends still
     return { yaw: v.yaw + wrapAngle(want.yaw - v.yaw) * k, pitch: v.pitch + (want.pitch - v.pitch) * k };
