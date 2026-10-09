@@ -892,6 +892,35 @@ export function reloadPitch(name: string | undefined): number {
   return (name && DISTRICT_RELOAD[name]) || STREET_RELOAD;
 }
 
+/** How high the reload's off-hand body sits, in hertz. Lease Row keeps 500. Duration stays 0.1. Q stays 0.6. Gain stays 0.1. The first click stays reloadPitch. */
+export const STREET_WELL = 500;
+
+const DISTRICT_WELL: Record<string, number> = {
+  deadletter_docks: 220,
+  repo_depot: 340,
+  night_market: 820,
+  relay_heights: 640,
+  ash_canal: 180,
+  glass_mile: 980,
+  bone_market: 280,
+  cold_vault: 560,
+  neon_chapel: 460,
+  slag_pit: 160,
+  wire_garden: 1100,
+  red_kiln: 380,
+  paper_wharf: 260,
+  velvet_court: 720,
+  rust_crown: 420,
+  salt_stairs: 760,
+  lamp_bazaar: 880,
+  debt_orchard: 140,
+  black_relay: 1240,
+};
+
+export function wellPitch(name: string | undefined): number {
+  return (name && DISTRICT_WELL[name]) || STREET_WELL;
+}
+
 /** How high a magazine seat clunk opens, in hertz. Lease Row keeps 150. It still lands at 70. Duration stays 0.1. Gain stays 0.35. The crack stays 1400. */
 export const STREET_SEAT = 150;
 
@@ -2875,7 +2904,7 @@ export class GameAudio {
       this.burst({ dur: 0.05, freq: 1400, q: 1.2, gain: 0.2 });
     } else if (phase === "start") {
       this.burst({ dur: 0.06, freq: reloadPitch(place), q: 1.5, gain: 0.12 });
-      this.burst({ dur: 0.1, freq: 500, q: 0.6, gain: 0.1, type: "lowpass", pan: -0.3 });
+      this.burst({ dur: 0.1, freq: wellPitch(place), q: 0.6, gain: 0.1, type: "lowpass", pan: -0.3 });
     } else {
       this.burst({ dur: 0.05, freq: boltPitch(place), q: 2, gain: 0.16 });
       this.tone({ dur: 0.08, from: 200, to: 90, gain: 0.25 });
