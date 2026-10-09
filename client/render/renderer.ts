@@ -233,6 +233,36 @@ export function kickFall(name: string | undefined): number {
   return (name && DISTRICT_KICK[name]) || KICK_FALL;
 }
 
+/** How fast a muzzle flash falls off, per second. Lease Row keeps 18. The peak stays 1. The lamp stays intensity times 8. The light's decay stays 2. */
+export const MUZZLE_FALL = 18;
+
+const DISTRICT_MUZZLE: Record<string, number> = {
+  deadletter_docks: 8,
+  repo_depot: 14,
+  night_market: 32,
+  relay_heights: 22,
+  ash_canal: 11,
+  glass_mile: 28,
+  bone_market: 16,
+  cold_vault: 6,
+  neon_chapel: 24,
+  slag_pit: 17,
+  wire_garden: 21,
+  red_kiln: 30,
+  paper_wharf: 12.5,
+  velvet_court: 36,
+  rust_crown: 19,
+  salt_stairs: 9,
+  lamp_bazaar: 40,
+  debt_orchard: 26,
+  black_relay: 5,
+};
+
+/** How fast the shot's flash dies. Indoor rooms and Lease Row keep MUZZLE_FALL. */
+export function muzzleFall(name: string | undefined): number {
+  return (name && DISTRICT_MUZZLE[name]) || MUZZLE_FALL;
+}
+
 export type DistrictId = keyof typeof DISTRICTS;
 
 /**
@@ -1265,7 +1295,7 @@ export class Renderer {
     const reloadDip = v.reloading > 0 ? Math.sin(v.reloading * Math.PI) * 0.18 : 0;
     this.viewmodel.position.set(0.28 + bobX * 0.5, -0.26 - reloadDip + bobY * 0.5, -0.55 + this.vmKick * 0.06);
     this.viewmodel.rotation.x = this.vmKick * 0.08 - reloadDip * 0.8;
-    this.muzzleT = Math.max(0, this.muzzleT - dt * 18);
+    this.muzzleT = Math.max(0, this.muzzleT - dt * muzzleFall(this.placeName));
     // the hand's light is a child of the body, and three skips a hidden subtree entirely: with the
     // camera pulled in against the body there was no muzzle flash at all, which is exactly when the
     // player is in a doorway and needs to see they are firing. Fall back to the camera's (Stage 69).
