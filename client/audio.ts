@@ -892,6 +892,35 @@ export function reloadPitch(name: string | undefined): number {
   return (name && DISTRICT_RELOAD[name]) || STREET_RELOAD;
 }
 
+/** How high a magazine seat clunk opens, in hertz. Lease Row keeps 150. It still lands at 70. Duration stays 0.1. Gain stays 0.35. The crack stays 1400. */
+export const STREET_SEAT = 150;
+
+const DISTRICT_SEAT: Record<string, number> = {
+  deadletter_docks: 96,
+  repo_depot: 118,
+  night_market: 210,
+  relay_heights: 168,
+  ash_canal: 88,
+  glass_mile: 240,
+  bone_market: 132,
+  cold_vault: 176,
+  neon_chapel: 142,
+  slag_pit: 80,
+  wire_garden: 260,
+  red_kiln: 124,
+  paper_wharf: 104,
+  velvet_court: 188,
+  rust_crown: 156,
+  salt_stairs: 198,
+  lamp_bazaar: 224,
+  debt_orchard: 92,
+  black_relay: 280,
+};
+
+export function seatPitch(name: string | undefined): number {
+  return (name && DISTRICT_SEAT[name]) || STREET_SEAT;
+}
+
 /** How high a mantle's scrape sits, in hertz. Lease Row keeps 700. Duration, Q, gain, and the drop stay put. */
 export const STREET_MANTLE = 700;
 
@@ -2842,7 +2871,7 @@ export class GameAudio {
     this.count("reload_" + phase);
     if (!this.ctx) return;
     if (phase === "seat") {
-      this.tone({ dur: 0.1, from: 150, to: 70, gain: 0.35 }); // the clunk that says "you can cancel now"
+      this.tone({ dur: 0.1, from: seatPitch(place), to: 70, gain: 0.35 }); // the clunk that says "you can cancel now"
       this.burst({ dur: 0.05, freq: 1400, q: 1.2, gain: 0.2 });
     } else if (phase === "start") {
       this.burst({ dur: 0.06, freq: reloadPitch(place), q: 1.5, gain: 0.12 });
