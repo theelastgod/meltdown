@@ -26,8 +26,35 @@ import { drawPool, warmStep, WARM_FRAMES } from "./warmup";
 /** Enough for a full lobby firing at once for the tracer's whole life: 12 shooters × 600 RPM × 0.12 s ≈ 15. */
 export const MAX_TRACERS = 64;
 export const MAX_SPARKS = 64;
-const TRACER_LIFE = 0.12;
+/** How long a shot streak hangs, in seconds. Lease Row keeps 0.12. The pool size stays. */
+export const STREET_HANG = 0.12;
 const SPARK_LIFE = 0.12;
+
+const DISTRICT_HANG: Record<string, number> = {
+  deadletter_docks: 0.05,
+  repo_depot: 0.08,
+  night_market: 0.21,
+  relay_heights: 0.15,
+  ash_canal: 0.06,
+  glass_mile: 0.26,
+  bone_market: 0.09,
+  cold_vault: 0.04,
+  neon_chapel: 0.11,
+  slag_pit: 0.14,
+  wire_garden: 0.17,
+  red_kiln: 0.19,
+  paper_wharf: 0.07,
+  velvet_court: 0.1,
+  rust_crown: 0.13,
+  salt_stairs: 0.24,
+  lamp_bazaar: 0.18,
+  debt_orchard: 0.16,
+  black_relay: 0.28,
+};
+
+export function tracerHang(name: string | undefined): number {
+  return (name && DISTRICT_HANG[name]) || STREET_HANG;
+}
 
 export class VfxPool {
   readonly tracers: THREE.LineSegments;
@@ -40,6 +67,7 @@ export class VfxPool {
   private sparkNext = 0;
   /** drawn frames left before the pools may hide (Stage 158): their shaders compile on a drawn frame */
   private warming = WARM_FRAMES;
+  private hang = STREET_HANG;
   private tracerVersion = 0;
   private sparkVersion = 0;
   private m = new THREE.Matrix4();
@@ -73,9 +101,18 @@ export class VfxPool {
     scene.add(this.sparks);
   }
 
+  /** Street hang for this room. Spark life stays 0.12. The pool does not grow. */
+  setHang(seconds: number): void {
+    this.hang = seconds;
+  }
+
+  hangNow(): number {
+    return this.hang;
+  }
+
   private liveTracers(clock: number): number {
     let n = 0;
-    for (let i = 0; i < MAX_TRACERS; i++) if (clock - this.tracerBorn[i]! < TRACER_LIFE) n++;
+    for (let i = 0; i < MAX_TRACERS; i++) if (clock - this.tracerBorn[i]! < this.hang) n++;
     return n;
   }
   private liveSparks(clock: number): number {
@@ -135,13 +172,13 @@ export class VfxPool {
     let anyTracer = false;
     for (let i = 0; i < MAX_TRACERS; i++) {
       const age = clock - this.tracerBorn[i]!;
-      if (age >= TRACER_LIFE && this.tracerBorn[i]! > -1e8) {
+      if (age >= this.hang && this.tracerBorn[i]! > -1e8) {
         // a dead tracer is a degenerate segment: still drawn, costs nothing, needs no removal
         const p = i * 6;
         for (let k = 0; k < 6; k++) this.tracerPos[p + k] = 0;
         this.tracerBorn[i] = -1e9;
         anyTracer = true;
-      } else if (age < TRACER_LIFE) anyTracer = true;
+      } else if (age < this.hang) anyTracer = true;
     }
     if (anyTracer) {
       this.tracers.geometry.attributes.position!.needsUpdate = true;

@@ -8,7 +8,7 @@ import { PostChain } from "./post";
 import { Rain, rainDrift } from "./rain";
 import { makeFlatWetFloor, makeWetFloor } from "./wetfloor";
 import { bindPlate, buildSkyline, cityDoors, dressLevel, gateSignText, PALETTE, Traffic } from "./city";
-import { VfxPool } from "./vfx";
+import { tracerHang, VfxPool } from "./vfx";
 import { markShared, release } from "./dispose";
 import { CityLife, flickerMaterial } from "./life";
 import { HubDressing } from "./hub";
@@ -436,6 +436,7 @@ export class Renderer {
     this.scene.add(this.rain.object);
     // tracers and sparks: two draw calls for the lot, allocated once (client/render/vfx.ts)
     this.vfxPool = new VfxPool(this.scene);
+    this.vfxPool.setHang(tracerHang(level.name));
     // Compile every shader now rather than on the frame that first needs it. The pools are hidden
     // when empty, so without this the first shot of a match compiles two programs mid-frame — one
     // 500 ms stutter, measured, at exactly the moment a duel starts. `compile` only walks visible
