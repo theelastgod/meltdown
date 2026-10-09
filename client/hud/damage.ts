@@ -32,10 +32,37 @@ export interface HitMark {
   damage: number;
 }
 
-/** how long a mark stays on screen */
+/** how long a mark stays on screen. Lease Row keeps 1.4. The mark count stays HIT_MAX. */
 export const HIT_LIFE = 1.4;
 /** the most marks drawn at once: past this the oldest go, because a wall of wedges says nothing */
 export const HIT_MAX = 4;
+
+const DISTRICT_WEDGE: Record<string, number> = {
+  deadletter_docks: 0.55,
+  repo_depot: 0.9,
+  night_market: 2.4,
+  relay_heights: 1.15,
+  ash_canal: 0.7,
+  glass_mile: 1.85,
+  bone_market: 1.0,
+  cold_vault: 0.4,
+  neon_chapel: 2.1,
+  slag_pit: 1.25,
+  wire_garden: 1.65,
+  red_kiln: 1.5,
+  paper_wharf: 0.8,
+  velvet_court: 2.6,
+  rust_crown: 1.35,
+  salt_stairs: 0.35,
+  lamp_bazaar: 2.2,
+  debt_orchard: 1.75,
+  black_relay: 0.25,
+};
+
+/** How long a hit's bearing stays on the screen. Indoor rooms and Lease Row keep HIT_LIFE. */
+export function wedgeLife(name: string | undefined): number {
+  return (name && DISTRICT_WEDGE[name]) || HIT_LIFE;
+}
 
 /**
  * The bearing from the player to a point, relative to a look yaw. Yaw is the sim's: 0 looks toward

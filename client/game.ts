@@ -34,7 +34,7 @@ import { Renderer, type ViewState } from "./render/renderer";
 import { perfStep, perfWindow, type PerfWindow } from "./hud/perf";
 import type { AimTarget } from "./render/tps";
 import type { ArcSpec } from "./render/ballistic";
-import { hitMarks, pruneHits, type HitSource } from "./hud/damage";
+import { hitMarks, pruneHits, wedgeLife, type HitSource } from "./hud/damage";
 import { impactRead, landedDamage, WASP_SHOT } from "./hit";
 import { bodyKey, closeLine, closeRead, forgetOldHits, rememberHit, type LandedHit, ttkNote, victimLabel, weaponName } from "./hud/kill";
 import { challengeClearedLine, gateFor, MAX_RANK, masteryRankLine } from "@shared/progression/mastery";
@@ -1188,7 +1188,7 @@ export class Game {
 
   private tookHit(x: number, z: number, damage: number): void {
     this.hits.push({ x, z, at: this.renderer.clockNow, damage });
-    this.hits = pruneHits(this.hits, this.renderer.clockNow);
+    this.hits = pruneHits(this.hits, this.renderer.clockNow, wedgeLife(this.world.level.name));
     this.renderer.takeHit(Math.atan2(-(x - this.player.pos.x), -(z - this.player.pos.z)), Math.min(1, 0.35 + damage / 60));
   }
 
@@ -1694,7 +1694,7 @@ export class Game {
       this.hud.setTarget(fresh && hp ? targetRead(fresh.kind, fresh.id, hp.health, hp.max, fresh.at, this.renderer.clockNow) : null);
     }
     // and where the last hits came from, relative to where the camera is looking now
-    this.hud.setDamage(hitMarks(this.hits, p.pos.x, p.pos.z, view.yaw, this.renderer.clockNow));
+    this.hud.setDamage(hitMarks(this.hits, p.pos.x, p.pos.z, view.yaw, this.renderer.clockNow, wedgeLife(this.world.level.name)));
     // a live charge near the file (Stage 93): until now a frag landing behind you was drawn in the
     // world and nowhere else, and four and a half metres of blast arrived out of silence
     this.hud.setThreats(threatMarks(this.liveProjectiles(), { x: p.pos.x, y: p.pos.y, z: p.pos.z, yaw: view.yaw }));
