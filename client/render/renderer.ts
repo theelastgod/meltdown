@@ -28,7 +28,7 @@ import { mergeByMaterial } from "./body";
 import { applyPose, buildRig, disposeRig, holdRemoteWeapon, rigReport, setRigLook, WEAPON_IN_SOCKET, weaponStripGeometry, type Rig, type RigReport, RIG_EMISSIVE } from "./rig";
 import { poseBody, type PoseInput, type Stance } from "./pose";
 import { clamp, wrapAngle } from "../../shared/math/vec3";
-import { decay, FLASH_LIFE, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
+import { decay, flashLife, FLINCH_LIFE, HIT_GLOW, type ImpactRead } from "../hit";
 import { spawnCurve, spawnEdge, spawnSpan, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import { bodyOnLine, faceCuts, gunOnLine, ownStand, type FaceShot } from "./faceshot";
@@ -617,12 +617,13 @@ export class Renderer {
    * desktop.
    */
   private decayHits(dt: number): void {
+    const lit = flashLife(this.placeName);
     for (const e of this.dummyMeshes.values()) {
-      e.flash = decay(e.flash, dt, FLASH_LIFE);
+      e.flash = decay(e.flash, dt, lit);
       e.mat.emissiveIntensity = 0.12 + e.flash * 0.9;
     }
     for (const e of this.remoteMeshes.values()) {
-      e.flash = decay(e.flash, dt, FLASH_LIFE);
+      e.flash = decay(e.flash, dt, lit);
       e.hurt = decay(e.hurt, dt, FLINCH_LIFE);
       // lit above its resting glow, whatever the range: a body too far away to pose still shows
       // that the round landed

@@ -51,9 +51,36 @@ export const FLASH_MIN = 0.35;
 export const FLINCH_MAX = 0.8;
 /** how far above its resting glow a full-strength hit lights a body */
 export const HIT_GLOW = 1.6;
-/** seconds the flash and the flinch take to die away */
+/** seconds a hit stays lit. Lease Row keeps 0.22. The flinch clock and the glow stay. */
 export const FLASH_LIFE = 0.22;
 export const FLINCH_LIFE = 0.42;
+
+const DISTRICT_FLASH: Record<string, number> = {
+  deadletter_docks: 0.1,
+  repo_depot: 0.14,
+  night_market: 0.48,
+  relay_heights: 0.26,
+  ash_canal: 0.12,
+  glass_mile: 0.4,
+  bone_market: 0.16,
+  cold_vault: 0.08,
+  neon_chapel: 0.34,
+  slag_pit: 0.2,
+  wire_garden: 0.3,
+  red_kiln: 0.36,
+  paper_wharf: 0.18,
+  velvet_court: 0.44,
+  rust_crown: 0.28,
+  salt_stairs: 0.06,
+  lamp_bazaar: 0.52,
+  debt_orchard: 0.32,
+  black_relay: 0.04,
+};
+
+/** How long a body stays lit after a round lands. Indoor rooms and Lease Row keep FLASH_LIFE. */
+export function flashLife(name: string | undefined): number {
+  return (name && DISTRICT_FLASH[name]) || FLASH_LIFE;
+}
 
 export interface ImpactRead {
   /** 0..1 of a full file, what the shot was worth */
