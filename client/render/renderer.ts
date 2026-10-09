@@ -33,7 +33,7 @@ import { spawnCurve, spawnEdge, SPAWN_TIME } from "./spawn";
 import { aimPoint, speedPush, SPRINT_FOV, SPRINT_PULL, thirdPersonCamera, TPS_ADS, TPS_DEFAULT, type AimTarget } from "./tps";
 import { bodyOnLine, faceCuts, gunOnLine, ownStand, type FaceShot } from "./faceshot";
 import { arcPoint, type ArcSpec } from "./ballistic";
-import { DEATH_TURN, landDip, landHardness, LAND_TIME, lookYawPitch, stanceRoll } from "./feel";
+import { DEATH_TURN, landDip, landHardness, landSpan, lookYawPitch, stanceRoll } from "./feel";
 import type { Box } from "../../shared/sim/box";
 import { screens as screenPool } from "./screens";
 
@@ -219,6 +219,8 @@ export class Renderer {
   readonly camera: THREE.PerspectiveCamera;
   readonly post: PostChain;
   readonly district: DistrictId;
+  /** level name the landing span is keyed by. Not the palette id. */
+  private readonly placeName: string;
   /** Draw calls the level dressing added (probes budget this). */
   readonly levelCalls: number;
   /** the city's gates dressed as doors, each with its destination's sign (Stage 704; probes read it): [] outside the city */
@@ -378,6 +380,7 @@ export class Renderer {
   constructor(canvas: HTMLCanvasElement, level: LevelDef, district: DistrictId = level.district ?? "magenta", mobile = false, city = false) {
     this.mobile = mobile;
     this.district = district;
+    this.placeName = level.name;
     const cast = DISTRICTS[district];
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1165,13 +1168,14 @@ export class Renderer {
     // 0.123 m of dip where the same drop gives 0.169 m at speed. The impact speed is not something a
     // renderer can recover after the fact: `vel.y` is zeroed on contact. So the tick that lands
     // latches it, and this reads that (Stage 646).
+    const span = landSpan(this.placeName);
     if (v.grounded && this.wasAir && v.alive) {
       this.landHard = landHardness(v.landVy);
-      this.landT = this.landHard > 0 ? LAND_TIME : 0;
+      this.landT = this.landHard > 0 ? span : 0;
     }
     this.wasAir = !v.grounded;
     this.landT = Math.max(0, this.landT - rawDt);
-    const dip = this.landT > 0 ? landDip(this.landHard, LAND_TIME - this.landT) : 0;
+    const dip = this.landT > 0 ? landDip(this.landHard, span - this.landT, span) : 0;
     this.dipNow = dip;
     // and it leans into a slide in both views: the first-person one always did, by a fixed amount
     // that snapped on and off; it eases now, and the camera behind the body does it too

@@ -18,8 +18,34 @@ export const LAND_FLOOR = 2.5;
 export const LAND_CEIL = 13;
 /** how far the camera drops at the hardest landing (metres) */
 export const LAND_DIP = 0.22;
-/** and how long the whole dip-and-recover takes (seconds) */
+/** and how long the whole dip-and-recover takes (seconds). Lease Row keeps 0.34. The depth stays LAND_DIP. */
 export const LAND_TIME = 0.34;
+
+const DISTRICT_SPAN: Record<string, number> = {
+  deadletter_docks: 0.18,
+  repo_depot: 0.22,
+  night_market: 0.52,
+  relay_heights: 0.28,
+  ash_canal: 0.2,
+  glass_mile: 0.46,
+  bone_market: 0.24,
+  cold_vault: 0.16,
+  neon_chapel: 0.4,
+  slag_pit: 0.3,
+  wire_garden: 0.36,
+  red_kiln: 0.42,
+  paper_wharf: 0.26,
+  velvet_court: 0.48,
+  rust_crown: 0.32,
+  salt_stairs: 0.14,
+  lamp_bazaar: 0.56,
+  debt_orchard: 0.38,
+  black_relay: 0.12,
+};
+
+export function landSpan(name: string | undefined): number {
+  return (name && DISTRICT_SPAN[name]) || LAND_TIME;
+}
 /** the roll a slide leans the view by (radians) */
 export const SLIDE_ROLL = 0.05;
 
