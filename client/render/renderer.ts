@@ -938,7 +938,7 @@ export class Renderer {
       // a held position is not a direction: atan2(-0, -0) is -pi, which would face the legs
       // backwards for as long as the interpolator repeats a sample (Stage 65)
       const moved = Math.hypot(dx, dz) > 1e-4;
-      const inp: PoseInput = { speed, moveYaw: moved && speed > 0.5 ? Math.atan2(-dx, -dz) : v.yaw, yaw: v.yaw, pitch: v.pitch ?? 0, vy: clamp((v.y - prev.y) / dt, -12, 12), turnRate: clamp(wrapAngle(v.yaw - prev.yaw) / dt, -20, 20), grounded, stance: v.stance as Stance, height: v.height, reloading: 0, ads: 0, kick: e.kick, swap: 0, charge: 0, hurt: e.hurt, hurtFrom: wrapAngle(e.hurtFrom - v.yaw), alive: v.alive, stunned: false, clock: this.clock, phase: e.phase };
+      const inp: PoseInput = { speed, moveYaw: moved && speed > 0.5 ? Math.atan2(-dx, -dz) : v.yaw, yaw: v.yaw, pitch: v.pitch ?? 0, vy: clamp((v.y - prev.y) / dt, -12, 12), turnRate: clamp(wrapAngle(v.yaw - prev.yaw) / dt, -20, 20), grounded, stance: v.stance as Stance, height: v.height, reloading: 0, ads: 0, kick: e.kick, swap: 0, charge: 0, hurt: e.hurt, hurtFrom: wrapAngle(e.hurtFrom - v.yaw), alive: v.alive, stunned: false, clock: this.clock, phase: e.phase, place: this.placeName };
       const out = poseBody(inp, e.rig.state, dt);
       applyPose(e.rig, out, v.yaw);
       e.group.visible = out.visible;
@@ -1121,7 +1121,7 @@ export class Renderer {
     const turnRate = Number.isNaN(this.lastViewYaw) ? 0 : clamp(wrapAngle(v.yaw - this.lastViewYaw) / Math.max(1e-4, rawDt), -20, 20);
     this.lastViewY = v.y;
     this.lastViewYaw = v.yaw;
-    const inp: PoseInput = { speed: v.speed, moveYaw: v.moveYaw, yaw: v.yaw, pitch: v.pitch, vy, turnRate, grounded: v.grounded, stance: v.stance as Stance, height: v.height, reloading: v.reloading, ads: v.zoom > 1 ? 1 : 0, kick: this.vmKick, swap: this.vmSwap, charge: clamp(v.charge, 0, 1), hurt: this.hurtT, hurtFrom: wrapAngle(this.hurtYaw - v.yaw), alive: v.alive, stunned: v.stunned, clock: this.clock, phase: this.bobPhase };
+    const inp: PoseInput = { speed: v.speed, moveYaw: v.moveYaw, yaw: v.yaw, pitch: v.pitch, vy, turnRate, grounded: v.grounded, stance: v.stance as Stance, height: v.height, reloading: v.reloading, ads: v.zoom > 1 ? 1 : 0, kick: this.vmKick, swap: this.vmSwap, charge: clamp(v.charge, 0, 1), hurt: this.hurtT, hurtFrom: wrapAngle(this.hurtYaw - v.yaw), alive: v.alive, stunned: v.stunned, clock: this.clock, phase: this.bobPhase, place: this.placeName };
     const out = poseBody(inp, this.local.state, dt);
     applyPose(this.local, out, v.yaw);
     g.visible = out.visible && !close && !this.bodyHidden;

@@ -46,6 +46,8 @@ export interface PoseInput {
   clock: number;
   /** the walk phase, advanced by the caller with speed */
   phase: number;
+  /** district the body fell on; indoor rooms omit it and keep the street linger */
+  place?: string;
 }
 
 /** the eased values between frames: one per body */
@@ -111,7 +113,35 @@ export const GRIP_R = v3(0, -0.12, -0.18);
 export const FORE_A = v3(0, -0.07, -0.3);
 export const FORE_B = v3(0, -0.07, -0.5);
 export const MAG_WELL = v3(0, -0.22, -0.14);
+/** seconds a body stays after the file closes. Lease Row keeps 1.2. The fall itself stays 0.45. */
 export const CORPSE_SECONDS = 1.2;
+
+const DISTRICT_CORPSE: Record<string, number> = {
+  deadletter_docks: 0.55,
+  repo_depot: 0.72,
+  night_market: 2.15,
+  relay_heights: 1.05,
+  ash_canal: 0.88,
+  glass_mile: 1.75,
+  bone_market: 0.96,
+  cold_vault: 0.5,
+  neon_chapel: 1.9,
+  slag_pit: 1.35,
+  wire_garden: 1.55,
+  red_kiln: 1.65,
+  paper_wharf: 1.12,
+  velvet_court: 2.35,
+  rust_crown: 1.28,
+  salt_stairs: 0.64,
+  lamp_bazaar: 2.05,
+  debt_orchard: 1.48,
+  black_relay: 0.58,
+};
+
+/** How long a closed file stays on the street. Indoor rooms and Lease Row keep CORPSE_SECONDS. */
+export function corpseSpan(name: string | undefined): number {
+  return (name && DISTRICT_CORPSE[name]) || CORPSE_SECONDS;
+}
 /** the leg bone hangs this far under the hips and the boot this far under it (rig.ts's rest table) */
 const LEG_UNDER_HIPS = 0.37;
 const LEG_LEN = 0.58;
@@ -144,7 +174,8 @@ export function poseBody(inp: PoseInput, st: PoseState, rawDt: number): PoseOut 
   st.wasAlive = inp.alive;
   if (!st.wasGrounded && inp.grounded && inp.alive) st.landT = 0.18;
   st.wasGrounded = inp.grounded;
-  if (st.corpseT > 0) st.corpseT = Math.min(CORPSE_SECONDS + 1, st.corpseT + dt);
+  const linger = corpseSpan(inp.place);
+  if (st.corpseT > 0) st.corpseT = Math.min(linger + 1, st.corpseT + dt);
   st.landT = Math.max(0, st.landT - dt);
 
   // ---- derived ----
@@ -293,7 +324,7 @@ export function poseBody(inp: PoseInput, st: PoseState, rawDt: number): PoseOut 
     swayX = swayY = swayZ = 0;
     flap = 0;
     trimScale = 1 - 0.8 * u;
-    visible = st.corpseT < CORPSE_SECONDS;
+    visible = st.corpseT < linger;
   }
 
   // ---- ease into the state ----
