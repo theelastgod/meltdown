@@ -16,7 +16,8 @@ import { DEFAULT_LEVEL_ID, levelById, LEVEL_IDS, levelDisplayName } from "@share
 import { itemName } from "@shared/manifest/items";
 import { eyeHeight, eyePos, reviveMotion, type PlayerState } from "@shared/sim/player";
 import { arrivalFromQuery } from "@shared/net/citygates";
-import { contestOf, contestRespawn, inContest } from "@shared/city/contest";
+import { contestOf, contestRespawn, fixerOf, inContest } from "@shared/city/contest";
+import { inStreetTalk, streetLine } from "@shared/city/talk";
 import { streetCast } from "@shared/city/continents";
 import type { SpawnPoint } from "@shared/sim/level";
 import { canSee, MECH, WASP } from "@shared/sim/ai";
@@ -977,6 +978,7 @@ export class Game {
     for (const ev of drained) this.onEvent(ev);
     this.campaign?.tick(drained);
     this.contestTick();
+    this.streetTalk();
     this.footsteps();
     this.renderer.syncDummies(this.world.dummies);
   }
@@ -984,6 +986,20 @@ export class Game {
   private chargeTick = 0;
   /** True while the local file is standing inside the district's contest block. */
   private contestInside = false;
+  /** The street has already said its one line this visit. */
+  private streetHeard = false;
+
+  /** One bark, once, when the file stands on the fixer's post. A quiet street says nothing. */
+  private streetTalk(): void {
+    if (!this.world.contestAt || this.streetHeard) return;
+    const line = streetLine(this.world.level.name);
+    if (!line) return;
+    const spot = fixerOf(this.world.level);
+    if (!spot || !inStreetTalk(this.player.pos.x, this.player.pos.z, spot)) return;
+    this.streetHeard = true;
+    this.cityLog.push(line);
+    this.hud.alert(line, false, 4);
+  }
 
   /** One line when the file steps into the block, and one when it steps out. The guns do not change. */
   private contestTick(): void {
