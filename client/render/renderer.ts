@@ -293,6 +293,36 @@ export function pullEase(name: string | undefined): number {
   return (name && DISTRICT_PULL[name]) || PULL_EASE;
 }
 
+/** How fast the camera catches a new eye height, per second. Lease Row keeps 18. A crouch stays 1.2 metres. */
+export const EYE_EASE = 18;
+
+const DISTRICT_EYE: Record<string, number> = {
+  deadletter_docks: 8,
+  repo_depot: 14,
+  night_market: 32,
+  relay_heights: 22,
+  ash_canal: 11,
+  glass_mile: 28,
+  bone_market: 15,
+  cold_vault: 6,
+  neon_chapel: 24,
+  slag_pit: 16,
+  wire_garden: 20,
+  red_kiln: 30,
+  paper_wharf: 12,
+  velvet_court: 36,
+  rust_crown: 19,
+  salt_stairs: 9,
+  lamp_bazaar: 40,
+  debt_orchard: 26,
+  black_relay: 5,
+};
+
+/** How fast a crouch or a stand arrives in the view. Indoor rooms and Lease Row keep EYE_EASE. */
+export function eyeEase(name: string | undefined): number {
+  return (name && DISTRICT_EYE[name]) || EYE_EASE;
+}
+
 export type DistrictId = keyof typeof DISTRICTS;
 
 /**
@@ -1248,7 +1278,7 @@ export class Renderer {
     const dt = Math.min(rawDt, 1 / 30);
     this.clock += dt;
     this.frames++;
-    this.eyeSmooth += (v.eye - this.eyeSmooth) * Math.min(1, dt * 18);
+    this.eyeSmooth += (v.eye - this.eyeSmooth) * Math.min(1, dt * eyeEase(this.placeName));
     if (v.grounded && v.speed > 0.5 && v.stance !== "slide") this.bobPhase += dt * walkRate(v.speed, this.placeName);
     const bobY = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase * 2) * 0.012 * Math.min(1, v.speed / 5) : 0;
     const bobX = v.grounded && v.stance !== "slide" ? Math.sin(this.bobPhase) * 0.008 * Math.min(1, v.speed / 5) : 0;

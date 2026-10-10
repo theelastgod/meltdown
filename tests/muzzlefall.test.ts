@@ -47,6 +47,6 @@ describe("each district lets a muzzle flash fall on its own clock", () => {
     expect(src).toContain("this.muzzle.intensity = onBody ? 0 : this.muzzleT * 8");
     expect(src).toContain("this.handMuzzle.intensity = onBody ? this.muzzleT * 8 : 0");
     expect(src).toContain("new THREE.PointLight(PALETTE.cyan, 0, 7, 2)");
-    expect(src).toContain("this.eyeSmooth += (v.eye - this.eyeSmooth) * Math.min(1, dt * 18)");
+    expect(src).toContain("this.eyeSmooth += (v.eye - this.eyeSmooth) * Math.min(1, dt * eyeEase(this.placeName))");
   });
 });
