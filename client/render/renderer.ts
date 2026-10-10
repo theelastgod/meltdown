@@ -263,6 +263,36 @@ export function muzzleFall(name: string | undefined): number {
   return (name && DISTRICT_MUZZLE[name]) || MUZZLE_FALL;
 }
 
+/** How fast the camera lets back out after a doorway, per second. Lease Row keeps 10. Pulling in stays immediate. */
+export const PULL_EASE = 10;
+
+const DISTRICT_PULL: Record<string, number> = {
+  deadletter_docks: 4,
+  repo_depot: 7.5,
+  night_market: 18,
+  relay_heights: 12,
+  ash_canal: 5.5,
+  glass_mile: 16,
+  bone_market: 8.5,
+  cold_vault: 3,
+  neon_chapel: 13.5,
+  slag_pit: 9,
+  wire_garden: 11.5,
+  red_kiln: 17,
+  paper_wharf: 6.5,
+  velvet_court: 20,
+  rust_crown: 14.5,
+  salt_stairs: 4.5,
+  lamp_bazaar: 22,
+  debt_orchard: 15,
+  black_relay: 2.5,
+};
+
+/** How fast the third-person camera slides back out. Indoor rooms and Lease Row keep PULL_EASE. */
+export function pullEase(name: string | undefined): number {
+  return (name && DISTRICT_PULL[name]) || PULL_EASE;
+}
+
 export type DistrictId = keyof typeof DISTRICTS;
 
 /**
@@ -1155,7 +1185,7 @@ export class Renderer {
     const opts = this.fovPush > 0.01 ? { ...base, distance: base.distance + SPRINT_PULL * (this.fovPush / widen) } : base;
     const cam = thirdPersonCamera(pivot, look.yaw, look.pitch, this.boxes, opts);
     // ease the distance only: pulling in against a wall is immediate (the wall is there now), letting back out is eased
-    const k = Math.min(1, dt * 10);
+    const k = Math.min(1, dt * pullEase(this.placeName));
     this.camSmooth.d = !this.camSmooth.set || cam.distance < this.camSmooth.d ? cam.distance : this.camSmooth.d + (cam.distance - this.camSmooth.d) * k;
     this.camSmooth.set = true;
     // the eased distance runs along the segment that was cast — from the shoulder, not from the eye.
