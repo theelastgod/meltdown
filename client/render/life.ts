@@ -16,6 +16,8 @@ import { markShared } from "./dispose";
 import { tickerStep } from "./ticker";
 import { FAR_LAYER } from "./renderer";
 import { groveSpots } from "@shared/city/nature";
+import { contestOf } from "@shared/city/contest";
+import { CITY_DISTRICTS } from "@shared/net/city";
 
 function lcg(seed: number): () => number {
   let s = seed >>> 0;
@@ -1643,6 +1645,38 @@ export function flickerMaterial(mat: THREE.MeshBasicMaterial, name?: string): { 
   return { setTime: (t) => { if (uniforms) uniforms.uTime.value = t; } };
 }
 
+/**
+ * The contest block, standing up so it can be seen down the street.
+ * Same centre and half as `contestOf`. Not a collision box. Off the wet-floor mirror.
+ */
+function contestRing(level: LevelDef): THREE.Group | null {
+  if (!CITY_DISTRICTS.includes(level.name)) return null;
+  const vol = contestOf(level);
+  if (!vol) return null;
+  const group = new THREE.Group();
+  group.name = "contest-ring";
+  group.position.set(vol.x, 0, vol.z);
+  const mat = new THREE.MeshBasicMaterial({ color: PALETTE.cyan });
+  const h = 4.5;
+  const half = vol.half;
+  const post = (x: number, z: number) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.22, h, 0.22), mat);
+    m.name = "contest-post";
+    m.position.set(x, h / 2, z);
+    return m;
+  };
+  group.add(post(-half, -half), post(half, -half), post(half, half), post(-half, half));
+  const span = half * 2;
+  const beam = (x: number, z: number, alongX: boolean) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(alongX ? span : 0.12, 0.12, alongX ? 0.12 : span), mat);
+    m.name = "contest-beam";
+    m.position.set(x, h, z);
+    return m;
+  };
+  group.add(beam(0, -half, true), beam(0, half, true), beam(-half, 0, false), beam(half, 0, false));
+  return group;
+}
+
 /** Two-plane crosses on the kerb. A handful of triangles, off the wet-floor mirror. */
 function streetGrove(spots: readonly { x: number; z: number }[]): THREE.Group | null {
   if (!spots.length) return null;
@@ -1703,6 +1737,11 @@ export class CityLife {
     if (grove) {
       grove.traverse((o) => o.layers.set(FAR_LAYER));
       this.group.add(grove);
+    }
+    const ring = contestRing(level);
+    if (ring) {
+      ring.traverse((o) => o.layers.set(FAR_LAYER));
+      this.group.add(ring);
     }
   }
   update(dt: number, listener: THREE.Vector3): void {
