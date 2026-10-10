@@ -1,9 +1,9 @@
 /**
  * The chit: one off-chain balance on the Ghostfile.
  *
- * A public event, a street run and a contract pay none (shared/city/reward.ts). A chit is earned
- * where another file can take it — inside a contest block — and it leaves a file only by being
- * dropped there. It never buys a stat. Depth below THE RUN's gate can hold chits and can lose
+ * A public event, a street run, a contract, and the contest pay none (shared/city/reward.ts,
+ * shared/city/street.ts). The contest purse is scrip. A chit never buys a stat. Depth below
+ * THE RUN's gate can hold chits the file already had and can lose
  * them; the exchange pays Scrip, and that Scrip is not $CAPITAL. At the gate, banked chits are
  * units in the same nightly pot THE RUN already settles. Burning $CAPITAL for chits is a sink:
  * the buyer names the price, the burn is the whole price, and nothing here sends the transaction.
@@ -14,7 +14,7 @@ import { RUN_DAILY_CAP, RUN_DEPTH, RUN_SCRIP_PER_UNIT } from "../sim/run";
 /** What a PvE credit pays in chits. The reward module keeps its own copy so it never imports this file. */
 export const PVE_CHITS = 0;
 
-/** The contest's session pot. One pot, split by placement. Not a mint per kill. */
+/** The contest's session pot, in scrip. One pot, split by placement. Not a mint per kill. Not chits. */
 export const CONTEST_POT = 10;
 
 /** The desk's sentence when chain id, RPC and a capital address are absent. */

@@ -453,6 +453,7 @@ export class Game {
     net.onRun = (m) => this.onRunMsg(m);
     net.onFile = (f) => {
       this.file.applyServer(f);
+      for (const line of f.ledger) if (line.startsWith("SCRIP · BANKED")) this.hud.alert(`◆ ${line}`, false, 3);
       if (f.reason === "join" && this.net === net) {
         // the server admitted this loadout: run the same sheet locally (arrives before the first snapshot),
         // with the room's own mutator on top — the File comes after the Welcome that named it, and
@@ -1009,7 +1010,7 @@ export class Game {
     this.contestInside = inside;
     this.renderer.campaignFx.setContestHot(inside);
     const stadium = streetCast(this.world.level.name)?.stadium ?? "THE BLOCK";
-    this.hud.alert(inside ? `STADIUM ${stadium} · SHOOTING CONTEST · FALL AND THE CHITS HIT THE GROUND` : "OUT OF THE BLOCK · THE POCKET STAYS", inside);
+    this.hud.alert(inside ? `STADIUM ${stadium} · SHOOTING CONTEST · FALL AND THE SCRIP HITS THE GROUND` : "OUT OF THE BLOCK · THE POCKET STAYS", inside);
   }
 
   /** Latest wake state for the HUD (offline: the world's; online: the snapshot's). */

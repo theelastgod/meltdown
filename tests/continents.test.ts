@@ -24,7 +24,7 @@ describe("continent districts", () => {
 
   it("stepping into the block names that street's stadium", () => {
     const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
-    expect(src).toMatch(/STADIUM \$\{stadium\} · SHOOTING CONTEST · FALL AND THE CHITS HIT THE GROUND/);
+    expect(src).toMatch(/STADIUM \$\{stadium\} · SHOOTING CONTEST · FALL AND THE SCRIP HITS THE GROUND/);
     expect(src).not.toMatch(/pvp:\s*true/);
   });
 });

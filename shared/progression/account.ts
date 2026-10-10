@@ -57,7 +57,7 @@ export interface Account {
   /** the counter-ledger (Stage 11b): wallet link, Ghostfile token, on-chain stamps, name, rig cache, worn skin — plain data, identity and ownership only */
   counter?: CounterRecord | null;
   /**
-   * Chits carried onto the file from a contest. Not Scrip, not a room-hour. They settle as units
+   * Chits already on the file. The contest does not pay these. Not Scrip, not a room-hour. They settle as units
    * of the nightly pot, or as Scrip below Depth 10. They buy nothing the sim reads.
    */
   chits?: number;

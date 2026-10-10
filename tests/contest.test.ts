@@ -1,6 +1,7 @@
 /**
  * The contest is a block in the city. The city stays pvp: false. Damage lands only when both
- * files are inside the block. A death inside drops carried chits. A walk out drops nothing.
+ * files are inside the block. A death inside drops the carried purse. A walk out drops nothing.
+ * Banking writes scrip and does not write chits.
  * An empty pocket pays nothing at the kill. One file in the block earns no pot.
  */
 import { describe, expect, it } from "vitest";
@@ -11,6 +12,8 @@ import { World } from "../shared/sim/world";
 import { readFileSync } from "node:fs";
 import { contestOf, contestRespawn, inContest } from "../shared/city/contest";
 import { CONTEST_POT } from "../shared/city/chit";
+import { ledgerSpot, LEDGER_HOLD_M, LEDGER_PROMPT_M } from "../shared/net/cityledger";
+import { RUN } from "../shared/sim/run";
 import { StreetLife } from "../shared/city/street";
 import { createAccount } from "../shared/progression/account";
 import { reachable } from "./helpers/imports";
@@ -106,6 +109,37 @@ describe("player damage only inside the block", () => {
     const minted = pair.carriedOf(1) + pair.carriedOf(2);
     expect(minted).toBeGreaterThan(0);
     expect(minted).toBeLessThanOrEqual(CONTEST_POT);
+  });
+
+  it("banking the pot writes scrip and leaves chits where they were", () => {
+    const life = new StreetLife(level, { heatSeconds: 1 });
+    const a = createAccount("purse");
+    a.chits = 2;
+    a.wallet.scrip = 10;
+    const accounts = new Map([[1, a]]);
+    const account = (id: number) => accounts.get(id) ?? null;
+    const inside = [
+      { id: 1, x: vol.x - 1, z: vol.z, alive: true },
+      { id: 2, x: vol.x + 1, z: vol.z, alive: true },
+    ];
+    const step = (tick: number, players: typeof inside) => life.step({ tick, day: 1, players, account, deaths: [], offer: () => null, eventRunning: false });
+    step(0, inside);
+    step(SIM_HZ, inside);
+    const purse = life.carriedOf(1);
+    expect(purse).toBeGreaterThan(0);
+    const spot = ledgerSpot(level);
+    expect(spot).toBeTruthy();
+    const d = (LEDGER_HOLD_M + LEDGER_PROMPT_M) / 2;
+    const atDesk = [{ id: 1, x: spot!.x + d, z: spot!.z, alive: true }];
+    let banked = false;
+    for (let t = 0; t < RUN.bankSeconds * SIM_HZ + 2; t++) {
+      const notes = step(SIM_HZ + 1 + t, atDesk);
+      if (notes.some((n) => n.type === "lines" && n.lines.some((l) => l === `SCRIP · BANKED ${purse}`))) banked = true;
+    }
+    expect(banked).toBe(true);
+    expect(a.wallet.scrip).toBe(10 + purse);
+    expect(a.chits).toBe(2);
+    expect(life.carriedOf(1)).toBe(0);
   });
 
   it("a file that dies in the block stands up at the nearest gate", () => {

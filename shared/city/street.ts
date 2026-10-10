@@ -3,8 +3,9 @@
  *
  * One hold, the same one a gate already uses. At the fixer it takes the contract the file has
  * reached, or a carry between two gates, or it starts the public event the district was going to
- * run. In the gate's prompt ring, and outside the booth's mouth, two seconds banks carried chits
- * onto the file. Two seconds more exchanges them. The mouth itself still travels, and still enters
+ * run. In the gate's prompt ring, and outside the booth's mouth, two seconds banks the carried
+ * purse as scrip. It does not write chits. Two seconds more still exchanges chits the file
+ * already held. The mouth itself still travels, and still enters
  * THE RUN: this hold never stands in it.
  *
  * Dying inside the contest drops what was carried. Walking out drops nothing. A session with one
@@ -158,7 +159,7 @@ export class StreetLife {
     return this.carried.get(id) ?? 0;
   }
 
-  /** Put chits in a file's hands. The contest is the only caller that should. */
+  /** Put the contest purse in a file's hands. Banking writes scrip, not chits. */
   give(id: number, n: number): void {
     const add = Math.max(0, Math.floor(n));
     if (add <= 0) return;
@@ -276,8 +277,8 @@ export class StreetLife {
       const n = this.carried.get(p.id) ?? 0;
       if (n > 0) {
         this.carried.set(p.id, 0);
-        a.chits = fileChits(a) + n;
-        const line = `CHITS · BANKED ${n}`;
+        a.wallet.scrip += n;
+        const line = `SCRIP · BANKED ${n}`;
         pushLedger(a, line);
         notices.push({ type: "lines", playerId: p.id, lines: [line] });
       }
