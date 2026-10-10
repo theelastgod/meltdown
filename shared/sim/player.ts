@@ -172,6 +172,12 @@ export interface PlayerState {
    * that corner used to open fire in the same second. Firing, or the timer, puts you on the street.
    */
   streetShield: number;
+  /**
+   * Neon Edge drill. Not on the wire. The city room and the campaign room copy it
+   * from the file on admit. The local file copies it before each tick. A match
+   * room leaves it false. It changes only that sword's hit.
+   */
+  edgeDrill: boolean;
 }
 
 export function createPlayer(id: number, name: string, spawn: SpawnPoint): PlayerState {
@@ -212,6 +218,7 @@ export function createPlayer(id: number, name: string, spawn: SpawnPoint): Playe
     firstDamageTick: -1,
     lastAttacker: -1,
     streetShield: 0,
+    edgeDrill: false,
   };
   reviveMotion(p, spawn); // one definition of a life's motion, for the first life and every later one
   return p;
@@ -379,7 +386,7 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
   const wevents: WeaponEvent[] = [];
   const defOf = (slot: number) => weaponDefOf(p, slot);
   const modsHeld = modsFor(p);
-  const reqs = stepWeapon(p.weapon, input, prevButtons, p.yaw, p.pitch, p.alive, roomSeed, p.id, wevents, modsHeld, defOf);
+  const reqs = stepWeapon(p.weapon, input, prevButtons, p.yaw, p.pitch, p.alive, roomSeed, p.id, wevents, modsHeld, defOf, p.edgeDrill);
   for (const e of wevents) events.push(e);
   if (!p.alive) return reqs;
   const mods = modsFor(p); // the slot may have changed this tick

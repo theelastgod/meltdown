@@ -24,9 +24,11 @@ export interface CampaignSave extends CampaignRecord {
   seen: string[];
   /** street-bag piece ids bought with scrip. Cloth and tools, not a stat. */
   armory: string[];
+  /** One scrip skill. The Neon Edge hits harder. It does not raise max health. */
+  edgeDrill: boolean;
 }
 
-export const emptyCampaign = (): CampaignSave => ({ faction: null, testimony: {}, missionsDone: [], gigsDone: [], protocols: [], worn: [], weapons: [], ending: null, decor: [], seen: [], armory: [] });
+export const emptyCampaign = (): CampaignSave => ({ faction: null, testimony: {}, missionsDone: [], gigsDone: [], protocols: [], worn: [], weapons: [], ending: null, decor: [], seen: [], armory: [], edgeDrill: false });
 
 /** The live campaign record on the file (created or completed in place, never copied — callers keep one reference). */
 export function campaignOf(a: Account): CampaignSave {

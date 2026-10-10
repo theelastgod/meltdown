@@ -9,6 +9,7 @@ import { campaignOf, completeContract, pickFaction, wearProtocols } from "./save
 import { noteSeen } from "./seen";
 import { buyApartmentDecor } from "../sim/apartment";
 import { buyArmory } from "../city/armory";
+import { buyEdgeDrill } from "../sim/edgedrill";
 
 export type CampaignRequest =
   | { op: "faction"; faction: string }
@@ -16,6 +17,7 @@ export type CampaignRequest =
   | { op: "wear"; protocols: string[] }
   | { op: "decor"; id: string }
   | { op: "armory"; id: string }
+  | { op: "drill" }
   | { op: "seen"; id: string }
   | { op: "state" };
 
@@ -71,6 +73,10 @@ export function campaignRequest(a: Account, body: unknown, opts: CampaignOptions
     case "armory": {
       const id = String((req as { id?: unknown }).id ?? "");
       const r = buyArmory(a, id);
+      return { ok: r.ok, reason: r.reason, campaign: campaignOf(a) };
+    }
+    case "drill": {
+      const r = buyEdgeDrill(a);
       return { ok: r.ok, reason: r.reason, campaign: campaignOf(a) };
     }
     case "seen": {

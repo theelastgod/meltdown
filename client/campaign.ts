@@ -30,6 +30,7 @@ import { CITY_LIMIT_ID } from "@shared/sim/limit";
 import { GREEN_HOLD_ID } from "@shared/sim/preserve";
 import { streetClinic } from "@shared/sim/clinic";
 import { buyNeonEdge } from "@shared/sim/edgeshop";
+import { buyEdgeDrill, DRILL_SCRIP } from "@shared/sim/edgedrill";
 import { ARMORY, buyArmory } from "@shared/city/armory";
 import { DEFAULT_LEVEL_ID, levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
@@ -455,6 +456,35 @@ export class Campaign {
     this.game.file.scrip += a.wallet.scrip - before;
     this.game.hud.setFile(this.game.file.view());
     this.game.hud.alert("◆ NEON EDGE", false, 3);
+    this.renderContracts();
+  }
+
+  /** Four hundred scrip. The Neon Edge hits harder. Nothing else does. */
+  private async buyDrill(): Promise<void> {
+    const a = this.account();
+    if (this.game.file.shop) {
+      const r = await this.game.file.postCampaign({ op: "drill" });
+      if (r.account) this.game.file.applyAccount(r.account);
+      this.save = campaignOf(this.account());
+      if (!r.ok) {
+        this.game.hud.alert(`◆ ${(r.reason ?? "NO SALE").toUpperCase()}`, true, 3);
+        this.renderContracts();
+        return;
+      }
+    } else {
+      const before = a.wallet.scrip;
+      const bought = buyEdgeDrill(a);
+      if (!bought.ok) {
+        this.game.hud.alert(`◆ ${bought.reason ?? "NO SALE"}`, true, 3);
+        return;
+      }
+      this.save = campaignOf(a);
+      this.persistLocal();
+      this.game.file.scrip += a.wallet.scrip - before;
+      this.game.hud.setFile(this.game.file.view());
+    }
+    this.game.player.edgeDrill = this.save.edgeDrill === true;
+    this.game.hud.alert("◆ EDGE DRILL", false, 3);
     this.renderContracts();
   }
 
@@ -1183,7 +1213,7 @@ export class Campaign {
       ? `<div class="sh">THE PRESERVE</div><div class="ln"><span class="cy" data-act="lease_row">${crewButton("LEASE ROW", this.game.hud.touch)}</span></div>`
       : `<div class="sh">THE PRESERVE</div><div class="ln dim">TREES INSIDE THE CITY: <span class="cy" data-act="green_hold">${crewButton("THE PRESERVE", this.game.hud.touch)}</span></div>`;
     const clinic = `<div class="sh">THE CLINIC</div><div class="ln dim">THIRTY SCRIP, FORTY HEALTH, NEVER PAST YOUR MAXIMUM: <span class="cy" data-act="clinic">${crewButton("CLINIC", this.game.hud.touch)}</span></div>`;
-    const edge = `<div class="sh">THE COUNTER</div><div class="ln dim">NEON EDGE · 600 SCRIP: <span class="cy" data-act="buy_edge">${crewButton("BUY NEON EDGE", this.game.hud.touch)}</span></div>`;
+    const edge = `<div class="sh">THE COUNTER</div><div class="ln dim">NEON EDGE · 600 SCRIP: <span class="cy" data-act="buy_edge">${crewButton("BUY NEON EDGE", this.game.hud.touch)}</span></div><div class="ln dim">EDGE DRILL · ${DRILL_SCRIP} SCRIP · THE SWORD HITS HARDER: <span class="cy" data-act="buy_drill">${crewButton(c.edgeDrill ? "DRILLED" : "BUY DRILL", this.game.hud.touch)}</span></div>`;
     const bag = ARMORY.map((p) => {
       const owned = c.armory.includes(p.id);
       return `<div class="ln">${p.name} · ${p.district.replace(/_/g, " ").toUpperCase()} · ${p.scrip} SCRIP · <span class="cy" data-act="buy_armory" data-armory="${p.id}">${crewButton(owned ? "IN THE BAG" : "BUY", this.game.hud.touch)}</span> <span class="dim">${p.line}</span></div>`;
@@ -1214,6 +1244,7 @@ export class Campaign {
     else if (el.dataset.act === "green_hold") this.game.travel(GREEN_HOLD_ID);
     else if (el.dataset.act === "clinic") this.healAtClinic();
     else if (el.dataset.act === "buy_edge") this.buyEdge();
+    else if (el.dataset.act === "buy_drill") void this.buyDrill();
     else if (el.dataset.act === "lease_row") this.game.travel(DEFAULT_LEVEL_ID);
     else if (el.dataset.act === "buy_decor" && el.dataset.decor) void this.buyDecor(el.dataset.decor);
     else if (el.dataset.act === "buy_armory" && el.dataset.armory) void this.buyBag(el.dataset.armory);

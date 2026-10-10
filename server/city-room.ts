@@ -279,7 +279,11 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
   const hooks: RoomHooks = {
     onAdmit(room, playerId, account, query) {
       const p = room.world.players.get(playerId);
-      if (p && account) room.world.setLoadout(p, account.loadout, protocolMods(campaignOf(account).worn));
+      if (p && account) {
+        const c = campaignOf(account);
+        room.world.setLoadout(p, account.loadout, protocolMods(c.worn));
+        p.edgeDrill = c.edgeDrill === true;
+      }
       // a file walking in through a gate (Stage 697) stands at that gate, facing in — when the gate
       // it names really leads back to where it says it came from; anything else takes the room's spawn,
       // the one nearest somebody already in the street when there is anybody (Stage 706)

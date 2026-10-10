@@ -94,6 +94,8 @@ export function resetWeaponState(w: WeaponState): void {
 }
 
 export const currentWeapon = (w: WeaponState): WeaponDef => weaponBySlot(w.slot) ?? WEAPONS.lease_breaker;
+/** Scrip drill on the Neon Edge only. 34 becomes 51. The lunge's 52 becomes 78. No other gun, and not max health. */
+export const EDGE_DRILL = 1.5;
 /** Definition lookup by slot; a player's kit overrides it with firmware-patched definitions. */
 export type DefOf = (slot: number) => WeaponDef;
 export const stockDefOf: DefOf = (slot) => weaponBySlot(slot) ?? WEAPONS.lease_breaker;
@@ -183,7 +185,7 @@ function shotDirs(w: WeaponState, def: WeaponDef, yaw: number, pitch: number, sp
  * Advance the weapon one tick with this input. Returns fire requests for the
  * world to resolve. `roomSeed`/`playerId` derive magazine seeds.
  */
-export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: number, yaw: number, pitch: number, alive: boolean, roomSeed: number, playerId: number, events: WeaponEvent[], mods: StatSheet = baseSheet(), defOf: DefOf = stockDefOf): FireRequest[] {
+export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: number, yaw: number, pitch: number, alive: boolean, roomSeed: number, playerId: number, events: WeaponEvent[], mods: StatSheet = baseSheet(), defOf: DefOf = stockDefOf, drilled = false): FireRequest[] {
   const dt = SIM_DT;
   const reqs: FireRequest[] = [];
   // accumulator cooldown: the remainder carries so the average rate is exact at any tick rate
@@ -408,9 +410,10 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
     }
     case "melee": {
       const m = d.melee!;
+      const edge = drilled && d.id === "neon_edge" ? EDGE_DRILL : 1;
       if (w.lungeT > 0) {
         w.lungeT = w.lungeHit ? 0 : Math.max(0, w.lungeT - dt);
-        if (!w.lungeHit) reqs.push({ kind: "melee", weapon: d.id, reach: 1.3, arc: 1.0, damage: d.alt.damage ?? 60, chainRange: 0, chainDamage: 0, stun: m.stun, lunge: true });
+        if (!w.lungeHit) reqs.push({ kind: "melee", weapon: d.id, reach: 1.3, arc: 1.0, damage: Math.round((d.alt.damage ?? 60) * edge), chainRange: 0, chainDamage: 0, stun: m.stun, lunge: true });
       } else if (altPressed && w.altCooldown <= 0) {
         w.lungeT = d.alt.lungeTime ?? 0.2;
         w.lungeHit = false;
@@ -420,7 +423,7 @@ export function stepWeapon(w: WeaponState, input: InputFrame, prevButtons: numbe
       } else if (fireHeld && w.fireCooldown <= 0) {
         fired(d.rpm);
         w.sinceShot = 0;
-        reqs.push({ kind: "melee", weapon: d.id, reach: m.reach, arc: m.arc, damage: d.damage, chainRange: m.chainRange, chainDamage: m.chainDamage, stun: m.stun, lunge: false });
+        reqs.push({ kind: "melee", weapon: d.id, reach: m.reach, arc: m.arc, damage: Math.round(d.damage * edge), chainRange: m.chainRange, chainDamage: m.chainDamage, stun: m.stun, lunge: false });
         events.push({ type: "fire", weapon: d.id, alt: false });
       }
       break;

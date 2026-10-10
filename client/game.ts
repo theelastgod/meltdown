@@ -947,6 +947,7 @@ export class Game {
   private tick(): void {
     const t = this.world.tick;
     this.cityTick();
+    this.player.edgeDrill = this.campaign.current().edgeDrill === true;
     if (this.net) {
       // Online: predict the local player only; the server owns everything else.
       if (this.net.status !== "joined" || !this.synced) return;
