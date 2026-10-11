@@ -30,6 +30,7 @@ import { CITY_LIMIT_ID } from "@shared/sim/limit";
 import { GREEN_HOLD_ID } from "@shared/sim/preserve";
 import { streetClinic } from "@shared/sim/clinic";
 import { buyNeonEdge } from "@shared/sim/edgeshop";
+import { holdNeonEdge } from "@shared/sim/player";
 import { buyEdgeDrill, DRILL_SCRIP } from "@shared/sim/edgedrill";
 import { ARMORY, buyArmory } from "@shared/city/armory";
 import { DEFAULT_LEVEL_ID, levelDisplayName } from "@shared/sim/level";
@@ -243,6 +244,7 @@ export class Campaign {
       if (this.cityEvent) this.onCityEventMsg(this.cityEvent);
       const job = new URLSearchParams(location.search).get("job");
       if (job) this.beginStreet(job);
+      this.keepEdge();
       return;
     }
     if (this.game.online) {
@@ -257,6 +259,14 @@ export class Campaign {
       this.game.hud.setObjective(`◈ ${this.game.world.level.displayName ?? this.game.levelId} · EXPLORING`, this.threat.line, null);
     }
     this.applyProtocols();
+    this.keepEdge();
+  }
+
+  /** Offline, a file that owns the sword keeps it after a loadout apply. A room does this on admit. */
+  keepEdge(): void {
+    if (this.game.online) return;
+    if (!this.current().weapons.includes("neon_edge")) return;
+    holdNeonEdge(this.game.player);
   }
 
   /** Worn Kernel Protocols corrupt the local player's sheet — campaign modes only. */
@@ -457,18 +467,29 @@ export class Campaign {
   }
 
   /** Six hundred scrip unlocks the sword that is already in the game. */
-  private buyEdge(): void {
+  private async buyEdge(): Promise<void> {
     const a = this.account();
-    const before = a.wallet.scrip;
-    const bought = buyNeonEdge(a);
-    if (!bought.ok) {
-      this.game.hud.alert(`◆ ${bought.reason ?? "NO SALE"}`, true, 3);
-      return;
+    if (this.game.file.shop) {
+      const r = await this.game.file.postCampaign({ op: "edge" });
+      if (r.account) this.game.file.applyAccount(r.account);
+      this.save = campaignOf(this.account());
+      if (!r.ok) {
+        this.game.hud.alert(`◆ ${(r.reason ?? "NO SALE").toUpperCase()}`, true, 3);
+        this.renderContracts();
+        return;
+      }
+    } else {
+      const before = a.wallet.scrip;
+      const bought = buyNeonEdge(a);
+      if (!bought.ok) {
+        this.game.hud.alert(`◆ ${bought.reason ?? "NO SALE"}`, true, 3);
+        return;
+      }
+      this.save = campaignOf(a);
+      this.persistLocal();
+      this.game.file.scrip += a.wallet.scrip - before;
+      this.game.hud.setFile(this.game.file.view());
     }
-    this.save = campaignOf(a);
-    this.persistLocal();
-    this.game.file.scrip += a.wallet.scrip - before;
-    this.game.hud.setFile(this.game.file.view());
     this.game.hud.alert("◆ NEON EDGE", false, 3);
     this.drawEdge();
     this.renderContracts();
@@ -1259,7 +1280,7 @@ export class Campaign {
     else if (el.dataset.act === "city_limit") this.game.travel(CITY_LIMIT_ID);
     else if (el.dataset.act === "green_hold") this.game.travel(GREEN_HOLD_ID);
     else if (el.dataset.act === "clinic") this.healAtClinic();
-    else if (el.dataset.act === "buy_edge") this.buyEdge();
+    else if (el.dataset.act === "buy_edge") void this.buyEdge();
     else if (el.dataset.act === "buy_drill") void this.buyDrill();
     else if (el.dataset.act === "lease_row") this.game.travel(DEFAULT_LEVEL_ID);
     else if (el.dataset.act === "buy_decor" && el.dataset.decor) void this.buyDecor(el.dataset.decor);

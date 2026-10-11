@@ -30,7 +30,7 @@ import { dayIndex } from "../shared/endgame/clock";
 import { protocolMods } from "../shared/campaign/protocols";
 import { cityDistrict } from "../shared/net/city";
 import { arrivalFromQuery } from "../shared/net/citygates";
-import { reviveMotion } from "../shared/sim/player";
+import { holdNeonEdge, reviveMotion } from "../shared/sim/player";
 import { encodeCityEvent, encodeCityRoster, encodeCityRun, ENT_WASP, type CityEventMsg, type CityRunMsg } from "../shared/net/protocol";
 import { bodyKey } from "../shared/net/interest";
 import type { LevelDef, SpawnPoint } from "../shared/sim/level";
@@ -285,6 +285,7 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
         const c = campaignOf(account);
         room.world.setLoadout(p, account.loadout, protocolMods(c.worn));
         p.edgeDrill = c.edgeDrill === true;
+        if (c.weapons.includes("neon_edge")) holdNeonEdge(p);
       }
       // a file walking in through a gate (Stage 697) stands at that gate, facing in — when the gate
       // it names really leads back to where it says it came from; anything else takes the room's spawn,

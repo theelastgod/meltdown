@@ -14,6 +14,7 @@ import { threatRating } from "../shared/campaign/threat";
 import { createMission, drainMissionEvents, missionView, resolveDialogue, stepMission, type MissionState } from "../shared/campaign/runtime";
 import type { FactionId } from "../shared/campaign/factions";
 import type { CrewInfo } from "../shared/net/crew";
+import { holdNeonEdge } from "../shared/sim/player";
 
 export interface CampaignRoomOptions extends RoomOptions {
   mission: string;
@@ -43,6 +44,7 @@ export function createCampaignRoom(opts: CampaignRoomOptions): CampaignRoomHandl
         // co-op is campaign: the file's worn protocols corrupt its sheet here
         room.world.setLoadout(p, account.loadout, protocolMods(c.worn));
         p.edgeDrill = c.edgeDrill === true;
+        if (c.weapons.includes("neon_edge")) holdNeonEdge(p);
         if (!st && def) st = createMission(def.id, room.world, c.testimony, c.faction as FactionId | null, threatRating({ depth: account.depth, counters: account.counters, campaign: c }));
       } else if (!st && def) st = createMission(def.id, room.world, {}, null, 0);
       // a late joiner gets the host's open terminal with its first mission message: the event was broadcast before it arrived

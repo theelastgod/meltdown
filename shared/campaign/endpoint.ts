@@ -10,6 +10,7 @@ import { noteSeen } from "./seen";
 import { buyApartmentDecor } from "../sim/apartment";
 import { buyArmory } from "../city/armory";
 import { buyEdgeDrill } from "../sim/edgedrill";
+import { buyNeonEdge } from "../sim/edgeshop";
 
 export type CampaignRequest =
   | { op: "faction"; faction: string }
@@ -18,6 +19,7 @@ export type CampaignRequest =
   | { op: "decor"; id: string }
   | { op: "armory"; id: string }
   | { op: "drill" }
+  | { op: "edge" }
   | { op: "seen"; id: string }
   | { op: "state" };
 
@@ -77,6 +79,10 @@ export function campaignRequest(a: Account, body: unknown, opts: CampaignOptions
     }
     case "drill": {
       const r = buyEdgeDrill(a);
+      return { ok: r.ok, reason: r.reason, campaign: campaignOf(a) };
+    }
+    case "edge": {
+      const r = buyNeonEdge(a);
       return { ok: r.ok, reason: r.reason, campaign: campaignOf(a) };
     }
     case "seen": {

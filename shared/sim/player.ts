@@ -47,6 +47,13 @@ export function armFromKit(p: PlayerState): void {
   for (const [slot, def] of Object.entries(p.kit.defs)) if (def) p.weapon.ammo[Number(slot)] = def.magSize;
 }
 
+/** The Neon Edge, in the hand, for this life and the death after it. Does not touch health. */
+export function holdNeonEdge(p: PlayerState): void {
+  const slot = WEAPONS.neon_edge.slot;
+  p.kit.primarySlot = slot;
+  p.weapon.slot = slot;
+}
+
 /** The definition the sim runs for a slot: the kit's firmware-patched one, else stock. */
 export const weaponDefOf = (p: PlayerState, slot = p.weapon.slot): WeaponDef => p.kit.defs[slot] ?? stockDefOf(slot);
 

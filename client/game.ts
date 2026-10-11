@@ -258,7 +258,10 @@ export class Game {
     this.hud.setFile(this.file.view());
     this.file.onChange = (f) => {
       // offline the loadout applies at once; online the server decides at the next link
-      if (!this.online) this.world.setLoadout(this.player, f.localLoadout());
+      if (!this.online) {
+        this.world.setLoadout(this.player, f.localLoadout());
+        this.campaign?.keepEdge();
+      }
       this.hud.setFile(f.view());
       this.applyMastery();
       this.refreshHub();
