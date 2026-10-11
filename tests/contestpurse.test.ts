@@ -3,6 +3,7 @@
  * ground when a death drops it. The city room tells the client when it changes.
  */
 import { describe, expect, it } from "vitest";
+import { CONTEST_POT } from "../shared/city/chit";
 import { contestOf } from "../shared/city/contest";
 import { StreetLife } from "../shared/city/street";
 import { levelById } from "../shared/sim/level";
@@ -47,6 +48,21 @@ describe("the contest purse is visible", () => {
     expect(ground?.line).toBe("PURSE 6 SCRIP · ON THE GROUND");
     expect(ground?.x).toBeCloseTo(vol.x, 5);
     expect(ground?.z).toBeCloseTo(vol.z, 5);
+  });
+
+  it("two files inside name the pot, and one file does not", () => {
+    const pair = new StreetLife(level, { heatSeconds: 30 });
+    const players = [
+      { id: 1, x: vol.x, z: vol.z, alive: true },
+      { id: 2, x: vol.x + 1, z: vol.z, alive: true },
+    ];
+    pair.step({ tick: 0, day: 1, players, account: () => null, deaths: [], offer: () => null, eventRunning: false });
+    expect(pair.marker(1)?.line).toBe(`CONTEST · 2 INSIDE · POT ${CONTEST_POT} SCRIP`);
+    pair.give(1, 4);
+    expect(pair.marker(1)?.line).toBe("CONTEST · 2 INSIDE · POT 10 SCRIP · PURSE 4 SCRIP");
+    const solo = new StreetLife(level, { heatSeconds: 30 });
+    solo.step({ tick: 0, day: 1, players: [players[0]!], account: () => null, deaths: [], offer: () => null, eventRunning: false });
+    expect(solo.marker(1)?.line ?? "").not.toMatch(/POT/);
   });
 
   it("the city room sends the new line when the purse changes, and not again while it holds", () => {

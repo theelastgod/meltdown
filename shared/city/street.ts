@@ -189,6 +189,9 @@ export class StreetLife {
       const d = this.drops[0]!;
       return { line: `PURSE ${d.value} SCRIP · ON THE GROUND`, x: d.x, z: d.z };
     }
+    if (this.heat && this.heat.entered.size >= 2 && this.vol) {
+      return { line: withPurse(`CONTEST · ${this.heat.entered.size} INSIDE · POT ${CONTEST_POT} SCRIP`), x: this.vol.x, z: this.vol.z };
+    }
     if (this.fixer) return { line: withPurse(`FIXER ${this.fixer.label} · HOLD STILL`), x: this.fixer.x, z: this.fixer.z };
     if (this.vol) return { line: withPurse(`CONTEST · ${this.vol.label}`), x: this.vol.x, z: this.vol.z };
     return null;

@@ -127,8 +127,8 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
   const keyOf = (room: Room) => (playerId: number): string | null => room.accountOf(playerId)?.id ?? null;
   let street: StreetLife | null = null;
   const streetOf = (room: Room): StreetLife => (street ??= new StreetLife(room.world.level));
-  let purseSent = "";
-  const purseNow = (room: Room): string => room.playerIds().map((id) => `${id}:${streetOf(room).carriedOf(id)}`).sort().join("|");
+  let streetSent = "";
+  const streetNow = (room: Room): string => room.playerIds().map((id) => `${id}:${streetOf(room).carriedOf(id)}:${streetOf(room).marker(id)?.line ?? ""}`).sort().join("|");
   const msgFor = (room: Room, playerId: number, reward?: string[]): CityEventMsg => {
     const ev = eventsOf(room);
     const key = keyOf(room)(playerId);
@@ -298,7 +298,7 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
       }
       // a late joiner sees the event already running (or the one just ended, or when the next is due)
       room.send(encodeCityEvent(msgFor(room, playerId)), playerId);
-      purseSent = purseNow(room);
+      streetSent = streetNow(room);
       // and the district's street runs: where they start, the board, and this file's bests (Stage 703)
       room.send(encodeCityRun({ courses: coursesMsg(runsOf(room).courses), board: boardMsg(room), best: bestMsg(room, account?.id ?? null), run: null }), playerId);
     },
@@ -307,9 +307,9 @@ export function createCityRoom(opts: CityRoomOptions): CityRoomHandle {
       sendRoster(room, room.world.tick % ROSTER_EVERY_TICKS === 0);
       stepRuns(room);
       stepStreet(room, simEvents);
-      const purse = purseNow(room);
-      if (purse !== purseSent) {
-        purseSent = purse;
+      const streetLine = streetNow(room);
+      if (streetLine !== streetSent) {
+        streetSent = streetLine;
         pushAll(room);
       }
       const ev = eventsOf(room);
