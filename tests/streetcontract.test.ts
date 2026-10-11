@@ -4,7 +4,7 @@
  * and a relay breaks when a file stands on it. The white office still leaves.
  */
 import { describe, expect, it } from "vitest";
-import { createMission, noteStreetKill, stepMission } from "../shared/campaign/runtime";
+import { createMission, killMark, noteStreetKill, stepMission } from "../shared/campaign/runtime";
 import { cityContractPlan, cityPageUrl, inCity, streetJobUrl } from "../shared/net/city";
 import { levelById } from "../shared/sim/level";
 import { SIM_HZ } from "../shared/sim/constants";
@@ -76,5 +76,14 @@ describe("a contract on the city street", () => {
     noteStreetKill(st, "wasp");
     noteStreetKill(st, "wasp");
     expect(st.progress).toBe(2);
+  });
+
+  it("marks the mech a kill objective is asking for, and skips a dead one", () => {
+    const w = new World(levelById("drainage_yard"), { ai: true, seed: 1, wakePhase: "off", pvp: false });
+    const m = w.mechs[0];
+    expect(m).toBeTruthy();
+    expect(killMark(w, "mech")).toEqual({ x: m!.pos.x, y: m!.pos.y, z: m!.pos.z });
+    m!.alive = false;
+    expect(killMark(w, "mech")).toBeNull();
   });
 });

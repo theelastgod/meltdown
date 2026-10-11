@@ -17,7 +17,7 @@ import { linesAt, recallIndex, scriptById, type ScriptNode } from "@shared/campa
 import { GIGS, MAIN_ARC, missionById, type MissionDef } from "@shared/campaign/missions";
 import { campaignOf, canLaunch, completeContract, gigsOnOffer, nextMission, pickFaction, wearProtocols, type CampaignSave } from "@shared/campaign/save";
 import { noteSeen } from "@shared/campaign/seen";
-import { createMission, drainMissionEvents, missionView, noteStreetKill, resolveDialogue, resolveSpot, spawnThreat, stepMission, type MissionState } from "@shared/campaign/runtime";
+import { createMission, drainMissionEvents, killMark, missionView, noteStreetKill, resolveDialogue, resolveSpot, spawnThreat, stepMission, type MissionState } from "@shared/campaign/runtime";
 import { sandboxAccount, type Account } from "@shared/progression/account";
 import type { SimEvent } from "@shared/sim/world";
 import type { CityEventMsg, CityRunMsg, MissionMsg } from "@shared/net/protocol";
@@ -617,6 +617,10 @@ export class Campaign {
         : st.targets.map((id) => this.game.world.dummies.find((d) => d.id === id)).filter((d) => d && d.alive).map((d) => ({ x: d!.pos.x, y: d!.pos.y, z: d!.pos.z }))
       : [];
     if (!marker && o?.kind === "destroy" && st.street && targets[0]) marker = targets[0];
+    if (!marker && o?.kind === "kill") {
+      const at = killMark(this.game.world, o.target);
+      if (at) marker = at;
+    }
     fx.setMarker(marker);
     fx.setTargets(targets);
     // and the map gets the same three things (Stage 92): the contract has been a marker in the world
