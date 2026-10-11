@@ -62,6 +62,9 @@ describe("the contest purse is visible", () => {
     expect(pair.marker(1)?.line).toBe("CONTEST · 2 INSIDE · POT 10 SCRIP · PURSE 4 SCRIP");
     const solo = new StreetLife(level, { heatSeconds: 30 });
     solo.step({ tick: 0, day: 1, players: [players[0]!], account: () => null, deaths: [], offer: () => null, eventRunning: false });
+    expect(solo.marker(1)?.line).toBe(`CONTEST · ${vol.label}`);
+    expect(solo.marker(1)?.x).toBeCloseTo(vol.x, 5);
+    expect(solo.marker(1)?.z).toBeCloseTo(vol.z, 5);
     expect(solo.marker(1)?.line ?? "").not.toMatch(/POT/);
   });
 
