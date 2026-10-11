@@ -173,18 +173,24 @@ export class StreetLife {
 
   /** What the street is asking this file to walk toward. Null when the district has no fixer and no block. */
   marker(id: number): { line: string; x: number; z: number } | null {
+    const purse = this.carriedOf(id);
+    const withPurse = (line: string) => (purse > 0 ? `${line} · PURSE ${purse} SCRIP` : line);
     const job = this.jobs.get(id);
     if (job?.kind === "contract") {
-      if (!job.saw && this.vol) return { line: `CONTRACT · ${job.title} · WALK THE CONTEST BLOCK`, x: this.vol.x, z: this.vol.z };
-      if (this.fixer) return { line: `CONTRACT · ${job.title} · HOLD AT THE FIXER`, x: this.fixer.x, z: this.fixer.z };
+      if (!job.saw && this.vol) return { line: withPurse(`CONTRACT · ${job.title} · WALK THE CONTEST BLOCK`), x: this.vol.x, z: this.vol.z };
+      if (this.fixer) return { line: withPurse(`CONTRACT · ${job.title} · HOLD AT THE FIXER`), x: this.fixer.x, z: this.fixer.z };
     }
     if (job?.kind === "carry") {
       const gate = job.touched ? job.to : job.from;
       const e = this.level.exits?.[gate];
-      if (e) return { line: `CARRY · ${job.touched ? "THE FAR GATE" : "THE NEAR GATE"}`, x: e.x, z: e.z };
+      if (e) return { line: withPurse(`CARRY · ${job.touched ? "THE FAR GATE" : "THE NEAR GATE"}`), x: e.x, z: e.z };
     }
-    if (this.fixer) return { line: `FIXER ${this.fixer.label} · HOLD STILL`, x: this.fixer.x, z: this.fixer.z };
-    if (this.vol) return { line: `CONTEST · ${this.vol.label}`, x: this.vol.x, z: this.vol.z };
+    if (purse === 0 && this.drops.length) {
+      const d = this.drops[0]!;
+      return { line: `PURSE ${d.value} SCRIP · ON THE GROUND`, x: d.x, z: d.z };
+    }
+    if (this.fixer) return { line: withPurse(`FIXER ${this.fixer.label} · HOLD STILL`), x: this.fixer.x, z: this.fixer.z };
+    if (this.vol) return { line: withPurse(`CONTEST · ${this.vol.label}`), x: this.vol.x, z: this.vol.z };
     return null;
   }
 
