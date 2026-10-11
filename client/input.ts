@@ -8,10 +8,10 @@ export class InputController {
   sensitivity = 0.0022;
   private keys = new Set<string>();
   private mouseDown = new Set<number>();
-  /** One-shot slot request, consumed by the next sample. The keyboard still only binds 1–8. */
+  /** One-shot slot request, consumed by the next sample. Digit keys are 1–9. */
   private slotRequest = 0;
 
-  /** Ask the next sample to select a slot. The Neon Edge lives past the digit keys. */
+  /** Ask the next sample to select a slot. 9 is the Neon Edge. */
   requestSlot(slot: number): void {
     if (slot >= 1 && slot <= MAX_SLOT) this.slotRequest = slot;
   }
@@ -63,7 +63,7 @@ export class InputController {
     document.addEventListener("keydown", (e) => {
       if (e.repeat) return;
       this.keys.add(e.code);
-      const m = e.code.match(/^Digit([1-8])$/);
+      const m = e.code.match(/^Digit([1-9])$/);
       if (m) this.slotRequest = Number(m[1]);
       if (e.code === "KeyG") this.grenadeTap = true;
       if (e.code === "KeyQ") this.grenadeNextTap = true;

@@ -106,6 +106,7 @@ describe("the neon edge in the hand", () => {
     const input = readFileSync(new URL("../client/input.ts", import.meta.url), "utf8");
     const player = readFileSync(new URL("../shared/sim/player.ts", import.meta.url), "utf8");
     expect(input).toMatch(/requestSlot\(slot: number\)/);
+    expect(input).toMatch(/Digit\(\[1-9\]\)/);
     expect(camp.match(/this\.drawEdge\(\)/g)?.length).toBe(2);
     expect(camp).toMatch(/p\.weapon\.slot = slot/);
     expect(camp).toMatch(/p\.kit\.primarySlot = slot/);
