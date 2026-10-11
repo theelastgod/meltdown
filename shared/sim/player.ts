@@ -6,7 +6,7 @@ import { createWeaponState, currentWeapon, resetWeaponState, stepWeapon, stockDe
 import { ADDITIVE, baseSheet, STAT_KEYS, type StatSheet } from "../manifest/stats";
 import type { WeaponDef } from "../weapons/manifest";
 import type { ChipMechanic } from "../manifest/chips";
-import { GRENADE_LIST } from "../weapons/manifest";
+import { GRENADE_LIST, WEAPONS } from "../weapons/manifest";
 import { type Vec3, v3, clone, copy, set, lenXZ, yawDir, yawRight, clamp, dot, wrapAngle, hyp2 } from "../math/vec3";
 import { TRAM_STEP_OFF, tramAboard, tramHail } from "./tram";
 
@@ -386,7 +386,11 @@ export function stepPlayer(p: PlayerState, input: InputFrame, boxes: readonly Bo
   const wevents: WeaponEvent[] = [];
   const defOf = (slot: number) => weaponDefOf(p, slot);
   const modsHeld = modsFor(p);
+  const held = p.weapon.slot;
   const reqs = stepWeapon(p.weapon, input, prevButtons, p.yaw, p.pitch, p.alive, roomSeed, p.id, wevents, modsHeld, defOf, p.edgeDrill);
+  // A swap onto the Neon Edge is the gun a later death hands back. Other swaps still
+  // respawn on the attested primary. The swap itself does not touch health.
+  if (p.weapon.slot === WEAPONS.neon_edge.slot && p.weapon.slot !== held) p.kit.primarySlot = p.weapon.slot;
   for (const e of wevents) events.push(e);
   if (!p.alive) return reqs;
   const mods = modsFor(p); // the slot may have changed this tick

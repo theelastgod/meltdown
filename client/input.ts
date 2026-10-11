@@ -1,4 +1,4 @@
-import { Btn, cycleSlot, withSlot, type InputFrame } from "@shared/sim/input";
+import { Btn, cycleSlot, MAX_SLOT, withSlot, type InputFrame } from "@shared/sim/input";
 import type { TouchControls } from "./touch";
 
 /** Pointer-lock mouse look + keyboard → InputFrame per simulation tick. */
@@ -8,8 +8,13 @@ export class InputController {
   sensitivity = 0.0022;
   private keys = new Set<string>();
   private mouseDown = new Set<number>();
-  /** One-shot slot request (1–6), consumed by the next sample. */
+  /** One-shot slot request, consumed by the next sample. The keyboard still only binds 1–8. */
   private slotRequest = 0;
+
+  /** Ask the next sample to select a slot. The Neon Edge lives past the digit keys. */
+  requestSlot(slot: number): void {
+    if (slot >= 1 && slot <= MAX_SLOT) this.slotRequest = slot;
+  }
   private grenadeTap = false;
   private grenadeNextTap = false;
   private locked = false;

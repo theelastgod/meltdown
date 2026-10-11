@@ -36,7 +36,7 @@ import { DEFAULT_LEVEL_ID, levelDisplayName } from "@shared/sim/level";
 import { crewCodeFromSocket, crewPageUrl, newCrewCode, normaliseCrewCode, type CrewInfo } from "@shared/net/crew";
 import { HOSTS } from "./config";
 import { weaponName } from "./hud/kill";
-import { CAMPAIGN_WEAPONS } from "@shared/weapons/manifest";
+import { CAMPAIGN_WEAPONS, WEAPONS } from "@shared/weapons/manifest";
 import { fixerHeader, portraitFor } from "./portraits";
 import { ENDING_ART } from "./endings";
 import { deskBanner } from "./missionart";
@@ -442,6 +442,20 @@ export class Campaign {
     this.renderContracts();
   }
 
+  /**
+   * The sword you just got, in the hand. Offline the desk throws away the next
+   * input, so the slot is set here. Online the next frame carries the slot, and
+   * that swap does not heal. A death in this room comes back holding it.
+   */
+  private drawEdge(): void {
+    const slot = WEAPONS.neon_edge.slot;
+    this.game.input.requestSlot(slot);
+    if (this.game.online) return;
+    const p = this.game.player;
+    p.weapon.slot = slot;
+    p.kit.primarySlot = slot;
+  }
+
   /** Six hundred scrip unlocks the sword that is already in the game. */
   private buyEdge(): void {
     const a = this.account();
@@ -456,6 +470,7 @@ export class Campaign {
     this.game.file.scrip += a.wallet.scrip - before;
     this.game.hud.setFile(this.game.file.view());
     this.game.hud.alert("◆ NEON EDGE", false, 3);
+    this.drawEdge();
     this.renderContracts();
   }
 
@@ -779,6 +794,7 @@ export class Campaign {
     }
     this.completion = { id, ok, reason };
     const def = missionById(id)!;
+    if (ok && def.reward.weapon === "neon_edge") this.drawEdge();
     const rw = def.reward;
     const home = this.backToCity();
     const foot = home ? closedCityLine(this.game.hud.touch) : closedContractLine(this.game.hud.touch);
