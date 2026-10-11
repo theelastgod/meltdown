@@ -933,6 +933,7 @@ describe("campaign save", () => {
   it("missions go in arc order, gigs open with Threat and testimony, rewards land on the file", () => {
     const a = createAccount("c:1", "C");
     const c = campaignOf(a);
+    expect(gigsOnOffer(a, c).map((g) => g.id)).toContain("g_rescue_row");
     expect(canLaunch(a, c, "m1_wake_unlisted").ok).toBe(false); // no house yet
     expect(pickFaction(a, "cells")).toBe(true);
     expect(a.ledger.some((l) => l === "HOUSE · THE WAKE CELLS")).toBe(true);
