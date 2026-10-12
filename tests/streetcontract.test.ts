@@ -3,6 +3,7 @@
  * It does not add a private patrol, a hold does not pour a wave into the shared room,
  * and a relay breaks when a file stands on it. The white office still leaves.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createMission, killMark, noteStreetKill, stepMission } from "../shared/campaign/runtime";
 import { v3 } from "../shared/math/vec3";
@@ -93,5 +94,20 @@ describe("a contract on the city street", () => {
     near.pos.x = 2;
     near.pos.z = 2;
     expect(killMark(w, "mech", { x: 0, z: 0 })).toEqual({ x: 2, y: near.pos.y, z: 2 });
+  });
+
+  it("stands the beam on the room's mech when the wire has one", () => {
+    const w = new World(levelById("drainage_yard"), { ai: true, seed: 1, wakePhase: "off", pvp: false });
+    const far = w.mechs[0]!;
+    far.pos.x = 80;
+    far.pos.z = 80;
+    expect(killMark(w, "mech", { x: 0, z: 0 }, [{ kind: "mech", alive: true, x: 3, y: 1, z: 4 }])).toEqual({ x: 3, y: 1, z: 4 });
+    expect(killMark(w, "mech", { x: 0, z: 0 }, [{ kind: "wasp", alive: true, x: 1, y: 0, z: 1 }])).toBeNull();
+    expect(killMark(w, "mech", { x: 0, z: 0 }, [{ kind: "mech", alive: false, x: 3, y: 1, z: 4 }])).toBeNull();
+    expect(killMark(w, "mech", { x: 0, z: 0 }, [])).toEqual({ x: 80, y: far.pos.y, z: 80 });
+    const camp = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(camp).toContain("killMark(this.game.world, o.target, { x: this.game.player.pos.x, z: this.game.player.pos.z }, this.game.liveMarks())");
+    const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
+    expect(game).toContain('if (e.kind === ENT_MECH) out.push({ kind: "mech", alive: e.a === 1, x: e.x, y: e.y, z: e.z });');
   });
 });

@@ -1176,6 +1176,20 @@ export class Game {
     return kind === "wasp" ? { health: e.a === 1 ? e.b : 0, max: WASP.health } : { health: e.a === 1 ? e.b * 2 : 0, max: MECH.health };
   }
 
+  /**
+   * Wasps and mechs the room is drawing. Empty offline, and empty online until the first snapshot.
+   * A kill beam uses this list so it stands on the body you can see, not the level's spawn.
+   */
+  liveMarks(): { kind: "wasp" | "mech"; alive: boolean; x: number; y: number; z: number }[] {
+    if (!this.net) return [];
+    const out: { kind: "wasp" | "mech"; alive: boolean; x: number; y: number; z: number }[] = [];
+    for (const e of this.netEntities) {
+      if (e.kind === ENT_MECH) out.push({ kind: "mech", alive: e.a === 1, x: e.x, y: e.y, z: e.z });
+      else if (e.kind === ENT_WASP) out.push({ kind: "wasp", alive: e.a === 1, x: e.x, y: e.y, z: e.z });
+    }
+    return out;
+  }
+
   /** last frame's state by wasp, and the clock at each wasp's last cue (Stage 98) */
   private waspPrev = new Map<number, number>();
   private waspCued = new Map<number, number>();

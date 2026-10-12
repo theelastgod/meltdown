@@ -172,16 +172,21 @@ export function current(st: MissionState): Objective | null {
   return st.objectives[st.index] ?? null;
 }
 
+/** A body the room is drawing. When the wire has any, they replace the level's own list. */
+export type KillBody = { kind: "wasp" | "mech" | "dummy"; alive: boolean; x: number; y: number; z: number };
+
 /** Where a kill objective is standing. The nearest living match, or null when the street has none. */
-export function killMark(world: World, target: "wasp" | "mech" | "dummy" | "any", from?: { x: number; z: number }): { x: number; y: number; z: number } | null {
-  const list = target === "wasp" ? world.wasps : target === "mech" ? world.mechs : target === "dummy" ? world.dummies : [...world.mechs, ...world.wasps];
+export function killMark(world: World, target: "wasp" | "mech" | "dummy" | "any", from?: { x: number; z: number }, live?: readonly KillBody[]): { x: number; y: number; z: number } | null {
+  const list = live && live.length
+    ? live.filter((b) => (target === "any" ? b.kind === "mech" || b.kind === "wasp" : b.kind === target)).map((b) => ({ alive: b.alive, x: b.x, y: b.y, z: b.z }))
+    : (target === "wasp" ? world.wasps : target === "mech" ? world.mechs : target === "dummy" ? world.dummies : [...world.mechs, ...world.wasps]).map((e) => ({ alive: e.alive, x: e.pos.x, y: e.pos.y, z: e.pos.z }));
   let best: { x: number; y: number; z: number } | null = null;
   let bestD = Infinity;
   for (const e of list) {
     if (!e.alive) continue;
-    const d = from ? Math.hypot(e.pos.x - from.x, e.pos.z - from.z) : 0;
+    const d = from ? Math.hypot(e.x - from.x, e.z - from.z) : 0;
     if (!best || d < bestD) {
-      best = { x: e.pos.x, y: e.pos.y, z: e.pos.z };
+      best = { x: e.x, y: e.y, z: e.z };
       bestD = d;
     }
   }
