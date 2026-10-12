@@ -9,7 +9,7 @@
  * THE RUN: this hold never stands in it.
  *
  * Dying inside the contest drops what was carried. Walking out drops nothing. A session with one
- * file pays no pot and is still pointed at the block. The pot is fixed and split by placement; a kill mints nothing.
+ * file pays no pot. Standing in the block says it is waiting for a second file. The pot is fixed and split by placement; a kill mints nothing.
  */
 import type { Account } from "../progression/account";
 import type { LevelDef } from "../sim/level";
@@ -143,6 +143,8 @@ export class StreetLife {
   private readonly banked = new Set<number>();
   private readonly exchanged = new Set<number>();
   private heat: Heat | null = null;
+  /** Files standing in the block this step. Leaving the block drops out. */
+  private readonly here = new Set<number>();
 
   constructor(readonly level: LevelDef, opts: { heatSeconds?: number } = {}) {
     this.vol = contestOf(level);
@@ -192,6 +194,7 @@ export class StreetLife {
     if (this.heat && this.heat.entered.size >= 2 && this.vol) {
       return { line: withPurse(`CONTEST · ${this.heat.entered.size} INSIDE · POT ${CONTEST_POT} SCRIP`), x: this.vol.x, z: this.vol.z };
     }
+    if (this.vol && this.here.has(id)) return { line: withPurse(`CONTEST · ${this.vol.label} · WAITING FOR A SECOND FILE`), x: this.vol.x, z: this.vol.z };
     if (this.vol) return { line: withPurse(`CONTEST · ${this.vol.label}`), x: this.vol.x, z: this.vol.z };
     if (this.fixer) return { line: withPurse(`FIXER ${this.fixer.label} · HOLD STILL`), x: this.fixer.x, z: this.fixer.z };
     return null;
@@ -241,6 +244,8 @@ export class StreetLife {
 
   private openHeat(input: StreetStepIn): void {
     const inside = input.players.filter((p) => p.alive && inContest(this.level, p.x, p.z, this.vol));
+    this.here.clear();
+    for (const p of inside) this.here.add(p.id);
     if (!inside.length) return;
     if (!this.heat) this.heat = { until: input.tick + Math.round(this.heatSeconds * SIM_HZ), entered: new Set(), kills: new Map() };
     for (const p of inside) this.heat.entered.add(p.id);

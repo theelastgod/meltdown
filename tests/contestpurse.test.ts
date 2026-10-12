@@ -62,10 +62,13 @@ describe("the contest purse is visible", () => {
     expect(pair.marker(1)?.line).toBe("CONTEST · 2 INSIDE · POT 10 SCRIP · PURSE 4 SCRIP");
     const solo = new StreetLife(level, { heatSeconds: 30 });
     solo.step({ tick: 0, day: 1, players: [players[0]!], account: () => null, deaths: [], offer: () => null, eventRunning: false });
-    expect(solo.marker(1)?.line).toBe(`CONTEST · ${vol.label}`);
+    expect(solo.marker(1)?.line).toBe(`CONTEST · ${vol.label} · WAITING FOR A SECOND FILE`);
     expect(solo.marker(1)?.x).toBeCloseTo(vol.x, 5);
     expect(solo.marker(1)?.z).toBeCloseTo(vol.z, 5);
     expect(solo.marker(1)?.line ?? "").not.toMatch(/POT/);
+    const away = new StreetLife(level, { heatSeconds: 30 });
+    away.step({ tick: 0, day: 1, players: [{ id: 1, x: 400, z: 400, alive: true }], account: () => null, deaths: [], offer: () => null, eventRunning: false });
+    expect(away.marker(1)?.line).toBe(`CONTEST · ${vol.label}`);
   });
 
   it("the city room sends the new line when the purse changes, and not again while it holds", () => {
