@@ -45,5 +45,7 @@ describe("the sword swing", () => {
     const room = readFileSync(new URL("../server/room.ts", import.meta.url), "utf8");
     expect(room).toContain("b: meleeWire(ev.weapon, ev.lunge)");
     expect(room).toContain("x: ev.at?.x ?? 0");
+    const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
+    expect(hud).toContain('def.alt.kind === "lunge" ? " · LUNGE"');
   });
 });

@@ -1014,7 +1014,7 @@ export class Hud {
       ring.style.setProperty("--p", ch.frac.toFixed(3));
       ring.classList.toggle("full", ch.full);
     }
-    const tail = (p.weapon.altActive ? (def.alt.kind === "slug" ? " · CHOKED" : def.alt.kind === "ads" ? " · OPTIC" : " · BRACED") : "") + (p.weapon.charging ? ` · CHARGE ${Math.round(p.weapon.charge * 100)}%` : "");
+    const tail = (p.weapon.altActive ? (def.alt.kind === "slug" ? " · CHOKED" : def.alt.kind === "ads" ? " · OPTIC" : def.alt.kind === "lunge" ? " · LUNGE" : " · BRACED") : "") + (p.weapon.charging ? ` · CHARGE ${Math.round(p.weapon.charge * 100)}%` : "");
     this.q(".wname").textContent = heldWeaponLine(def.name, rank, tail);
     const gateLine = heldGateLine(gate, have, need);
     const under = gateLine || heldRankPace(rank, xp);
