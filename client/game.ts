@@ -54,7 +54,7 @@ import { coneNow, coneRadiusPx } from "./hud/spread";
 import { kernelIn, nearestNode, nodeReadout, trackHolds, type TrackedNode } from "./hud/node";
 import { NetClient } from "./net/netclient";
 import { SimulatedLink, WsTransport, type LinkSim } from "./net/transport";
-import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, WEAPON_WIRE, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
+import { ENT_CLOUD, ENT_MECH, ENT_NODE, ENT_PROJECTILE, ENT_WASP, FX, meleeOfWire, WEAPON_WIRE, type NetInput, type Snapshot as NetSnapshot, type SocialMsg } from "@shared/net/protocol";
 import { glyphFor, glyphSvg } from "@shared/identity/glyph";
 import { RangeGhost } from "./ghost";
 import { Campaign } from "./campaign";
@@ -709,11 +709,16 @@ export class Game {
             // prediction already played this for us (Stage 198)
             if (ev.playerId !== me) this.audio.swap(this.world.level.name);
             break;
-          case FX.melee:
-            if (ev.playerId === me) break;
-            this.audio.shot("shock_baton");
-            if (ev.a > 0) this.audio.hit("body", this.world.level.name);
+          case FX.melee: {
+            const swing = meleeOfWire(ev.b);
+            if (ev.playerId !== me) this.audio.shot(swing.weapon, swing.lunge, this.world.level.name);
+            if (ev.a > 0) {
+              this.audio.hit("body", this.world.level.name);
+              const color = WEAPONS[swing.weapon as keyof typeof WEAPONS]?.tracer ?? 0xff3ec9;
+              this.renderer.hitBody("mech", 0, { x: ev.x, y: ev.y, z: ev.z }, impactRead(34), 0, color);
+            }
             break;
+          }
           case FX.throw:
             if (ev.playerId !== me) this.audio.throw(this.world.level.name);
             break;
@@ -1429,10 +1434,11 @@ export class Game {
       }
       case "melee":
         if (ev.playerId === this.player.id) {
-          this.audio.shot("shock_baton");
-          if (ev.hits.length) {
+          this.audio.shot(ev.weapon, ev.lunge, this.world.level.name);
+          const landed = ev.hits.find((h) => h.kind === "dummy" || h.kind === "player" || h.kind === "wasp" || h.kind === "mech");
+          if (landed && ev.at) {
             this.audio.hit("body", this.world.level.name);
-            for (const h of ev.hits) if (h.kind === "dummy") this.renderer.flashDummy(h.id);
+            this.renderer.hitBody(landed.kind, landed.id, ev.at, impactRead(landed.damage), this.player.yaw, WEAPONS[ev.weapon].tracer);
           }
           if (ev.lunge) this.renderer.post.kick(0.4);
         }

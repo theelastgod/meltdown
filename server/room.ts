@@ -40,6 +40,7 @@ import {
   ENT_NODE,
   FX,
   WEAPON_WIRE,
+  meleeWire,
   type NetEntity,
   type NetEvent,
   type NetInput,
@@ -1371,7 +1372,7 @@ export class Room {
       case "swap":
         return { type: "fx", kind: FX.swap, playerId: ev.playerId, x: 0, y: 0, z: 0, a: ev.slot, b: 0 };
       case "melee":
-        return { type: "fx", kind: FX.melee, playerId: ev.playerId, x: 0, y: 0, z: 0, a: ev.hits.length, b: ev.lunge ? 1 : 0 };
+        return { type: "fx", kind: FX.melee, playerId: ev.playerId, x: ev.at?.x ?? 0, y: ev.at?.y ?? 0, z: ev.at?.z ?? 0, a: ev.hits.length, b: meleeWire(ev.weapon, ev.lunge) };
       case "mechBeam":
         return { type: "fx", kind: FX.mechBeam, playerId: ev.playerId, x: ev.to.x, y: ev.to.y, z: ev.to.z, a: ev.mechId, b: ev.damage };
       case "hurt":

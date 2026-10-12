@@ -78,7 +78,7 @@ export interface KillCtx {
 export type SimEvent =
   | ({ tick: number; playerId: number } & PlayerEvent)
   | { tick: number; playerId: number; type: "shot"; weapon: WeaponId | "wasp"; from: Vec3; to: Vec3; hit: ShotHit; hits: ShotHit[]; nearMiss: number; rewindTicks: number; pierce: boolean }
-  | { tick: number; playerId: number; type: "melee"; weapon: WeaponId; hits: ShotHit[]; lunge: boolean }
+  | { tick: number; playerId: number; type: "melee"; weapon: WeaponId; hits: ShotHit[]; lunge: boolean; at?: Vec3 }
   | { tick: number; playerId: number; type: "kill"; victimKind: "dummy" | "player" | "wasp" | "mech"; victimId: number; ttkTicks: number; ttkSeconds: number; weapon: string; ctx: KillCtx }
   | { tick: number; playerId: number; type: "death"; killerId: number }
   | { tick: number; playerId: number; type: "respawn" }
@@ -428,7 +428,7 @@ export class World {
           }
         }
       }
-      this.emit({ tick: this.tick, playerId: p.id, type: "melee", weapon: r.weapon, hits, lunge: r.lunge }, opts);
+      this.emit({ tick: this.tick, playerId: p.id, type: "melee", weapon: r.weapon, hits, lunge: r.lunge, ...(first ? { at: { x: first.pos.x, y: first.pos.y, z: first.pos.z } } : {}) }, opts);
       return;
     }
     // projectile
