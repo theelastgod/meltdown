@@ -8,6 +8,17 @@
  */
 import { MAX_RANK, xpForRank } from "@shared/progression/mastery";
 
+/**
+ * What a lunge weapon is doing. Empty for every other alt.
+ * In the dash, the word. Cooling down, the seconds left. Ready, the button that starts it.
+ */
+export function lungeRead(kind: string, lungeT: number, cooldown: number): string {
+  if (kind !== "lunge") return "";
+  if (lungeT > 0) return "LUNGE";
+  if (cooldown > 0) return `LUNGE ${Math.ceil(cooldown)}`;
+  return "ALT LUNGES";
+}
+
 /** name, rank, then the alt or the charge already written as a tail */
 export function heldWeaponLine(name: string, rank: number, tail: string): string {
   const n = Number.isFinite(rank) ? Math.max(1, Math.min(MAX_RANK, Math.floor(rank))) : 1;

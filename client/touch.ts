@@ -198,6 +198,12 @@ export class TouchControls {
     this.root.querySelector(".tc-slot")?.classList.toggle("low", low);
   }
 
+  /** The alt pad's word. A sword says LUNGE. Every other gun says ALT. */
+  setAltLabel(text: string): void {
+    const b = this.root.querySelector(".tc-alt");
+    if (b && b.textContent !== text) b.textContent = text;
+  }
+
   /** An empty magazine (Stage 913). The weapon pad already says so. The alt pad has to say it too. */
   setAltEmpty(empty: boolean): void {
     this.root.querySelector(".tc-alt")?.classList.toggle("empty", empty);

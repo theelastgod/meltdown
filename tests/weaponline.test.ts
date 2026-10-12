@@ -1,9 +1,17 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { xpForRank } from "../shared/progression/mastery";
-import { heldGateLine, heldRankPace, heldWeaponLine } from "../client/hud/weaponline";
+import { heldGateLine, heldRankPace, heldWeaponLine, lungeRead } from "../client/hud/weaponline";
 
 describe("the gun in hand", () => {
+  it("says when the sword can lunge", () => {
+    expect(lungeRead("brace", 0.2, 4)).toBe("");
+    expect(lungeRead("lunge", 0.2, 4)).toBe("LUNGE");
+    expect(lungeRead("lunge", 0, 3.2)).toBe("LUNGE 4");
+    expect(lungeRead("lunge", 0, 0.1)).toBe("LUNGE 1");
+    expect(lungeRead("lunge", 0, 0)).toBe("ALT LUNGES");
+  });
+
   it("says the rank the file has with it", () => {
     expect(heldWeaponLine("LEASE-BREAKER", 1, "")).toBe("LEASE-BREAKER · R01");
     expect(heldWeaponLine("REPO HAMMER", 12, " · CHOKED")).toBe("REPO HAMMER · R12 · CHOKED");

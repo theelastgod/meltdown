@@ -1755,6 +1755,7 @@ export class Game {
     this.hud.update(p, view.speed, this.stats.fps, this.realtime ? this.stats.simHz : SIM_HZ, this.world.dummies, rdt, heldRank, gate, have, need, heldXp, rackRanks);
     // Stage 143: the phone's grenade pads say what they throw and what the next tap selects
     this.touch?.setGrenades(p.weapon.grenadeSel, p.weapon.grenades, GRENADE_LIST.map((g) => g.name));
+    this.touch?.setAltLabel(weaponDefOf(p).alt.kind === "lunge" ? "LUNGE" : "ALT");
     {
       const mag = ammoRead(p.weapon.ammo[p.weapon.slot] ?? 0, weaponDefOf(p).magSize, p.weapon.reloadTimer, p.weapon.reloadTotal, p.weapon.reloadSeated);
       this.touch?.setMagazineEmpty(reloadPadHot(mag.state));

@@ -42,10 +42,11 @@ describe("the sword swing", () => {
     const game = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
     expect(game).toContain("this.audio.shot(ev.weapon, ev.lunge, this.world.level.name)");
     expect(game).toContain("const swing = meleeOfWire(ev.b)");
+    expect(game).toContain('this.touch?.setAltLabel(weaponDefOf(p).alt.kind === "lunge" ? "LUNGE" : "ALT")');
     const room = readFileSync(new URL("../server/room.ts", import.meta.url), "utf8");
     expect(room).toContain("b: meleeWire(ev.weapon, ev.lunge)");
     expect(room).toContain("x: ev.at?.x ?? 0");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
-    expect(hud).toContain('def.alt.kind === "lunge" ? " · LUNGE"');
+    expect(hud).toContain("lungeRead(def.alt.kind, p.weapon.lungeT, p.weapon.altCooldown)");
   });
 });

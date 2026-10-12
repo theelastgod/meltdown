@@ -13,7 +13,7 @@ import { ammoRead, chargeRead, coneEmpty, coneLow, nameEmpty, nameLow, reticleEm
 import { CONE_MIN_PX } from "./spread";
 import { nadeSlot, nextGrenade } from "./grenadepad";
 import { phoneRankSlot, rackChipClass, rackLabel, rackNameHtml, rackRankAttr, rackRankMark, rackRoundHtml, rackRoundShown, rackRoundTone, rackSlotHtml } from "./rack";
-import { heldGateLine, heldRankPace, heldWeaponLine } from "./weaponline";
+import { heldGateLine, heldRankPace, heldWeaponLine, lungeRead } from "./weaponline";
 import { motionWord } from "./stance";
 import { keysLine, learn, NOTHING_SEEN, padsLine, type Seen } from "./keys";
 import { SPRINT_READ } from "./stance";
@@ -1014,7 +1014,8 @@ export class Hud {
       ring.style.setProperty("--p", ch.frac.toFixed(3));
       ring.classList.toggle("full", ch.full);
     }
-    const tail = (p.weapon.altActive ? (def.alt.kind === "slug" ? " · CHOKED" : def.alt.kind === "ads" ? " · OPTIC" : def.alt.kind === "lunge" ? " · LUNGE" : " · BRACED") : "") + (p.weapon.charging ? ` · CHARGE ${Math.round(p.weapon.charge * 100)}%` : "");
+    const lunging = lungeRead(def.alt.kind, p.weapon.lungeT, p.weapon.altCooldown);
+    const tail = (lunging ? ` · ${lunging}` : p.weapon.altActive ? (def.alt.kind === "slug" ? " · CHOKED" : def.alt.kind === "ads" ? " · OPTIC" : " · BRACED") : "") + (p.weapon.charging ? ` · CHARGE ${Math.round(p.weapon.charge * 100)}%` : "");
     this.q(".wname").textContent = heldWeaponLine(def.name, rank, tail);
     const gateLine = heldGateLine(gate, have, need);
     const under = gateLine || heldRankPace(rank, xp);
