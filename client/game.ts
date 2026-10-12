@@ -1436,7 +1436,7 @@ export class Game {
         if (ev.playerId === this.player.id) {
           this.audio.shot(ev.weapon, ev.lunge, this.world.level.name);
           const landed = ev.hits.find((h) => h.kind === "dummy" || h.kind === "player" || h.kind === "wasp" || h.kind === "mech");
-          if (landed && ev.at) {
+          if (landed && ev.at && (landed.kind === "dummy" || landed.kind === "player" || landed.kind === "wasp" || landed.kind === "mech")) {
             this.audio.hit("body", this.world.level.name);
             this.renderer.hitBody(landed.kind, landed.id, ev.at, impactRead(landed.damage), this.player.yaw, WEAPONS[ev.weapon].tracer);
           }
