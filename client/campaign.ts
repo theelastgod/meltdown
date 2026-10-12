@@ -618,7 +618,7 @@ export class Campaign {
       : [];
     if (!marker && o?.kind === "destroy" && st.street && targets[0]) marker = targets[0];
     if (!marker && o?.kind === "kill") {
-      const at = killMark(this.game.world, o.target);
+      const at = killMark(this.game.world, o.target, { x: this.game.player.pos.x, z: this.game.player.pos.z });
       if (at) marker = at;
     }
     fx.setMarker(marker);

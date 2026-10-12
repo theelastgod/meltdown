@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { createMission, killMark, noteStreetKill, stepMission } from "../shared/campaign/runtime";
+import { v3 } from "../shared/math/vec3";
 import { cityContractPlan, cityPageUrl, inCity, streetJobUrl } from "../shared/net/city";
 import { levelById } from "../shared/sim/level";
 import { SIM_HZ } from "../shared/sim/constants";
@@ -85,5 +86,12 @@ describe("a contract on the city street", () => {
     expect(killMark(w, "mech")).toEqual({ x: m!.pos.x, y: m!.pos.y, z: m!.pos.z });
     m!.alive = false;
     expect(killMark(w, "mech")).toBeNull();
+    m!.alive = true;
+    m!.pos.x = 80;
+    m!.pos.z = 80;
+    const near = w.spawnMech([v3(2, 0, 2), v3(3, 0, 2)]);
+    near.pos.x = 2;
+    near.pos.z = 2;
+    expect(killMark(w, "mech", { x: 0, z: 0 })).toEqual({ x: 2, y: near.pos.y, z: 2 });
   });
 });

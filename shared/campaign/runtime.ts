@@ -172,11 +172,20 @@ export function current(st: MissionState): Objective | null {
   return st.objectives[st.index] ?? null;
 }
 
-/** Where a kill objective is standing. The first living match, or null when the street has none. */
-export function killMark(world: World, target: "wasp" | "mech" | "dummy" | "any"): { x: number; y: number; z: number } | null {
+/** Where a kill objective is standing. The nearest living match, or null when the street has none. */
+export function killMark(world: World, target: "wasp" | "mech" | "dummy" | "any", from?: { x: number; z: number }): { x: number; y: number; z: number } | null {
   const list = target === "wasp" ? world.wasps : target === "mech" ? world.mechs : target === "dummy" ? world.dummies : [...world.mechs, ...world.wasps];
-  const live = list.find((e) => e.alive);
-  return live ? { x: live.pos.x, y: live.pos.y, z: live.pos.z } : null;
+  let best: { x: number; y: number; z: number } | null = null;
+  let bestD = Infinity;
+  for (const e of list) {
+    if (!e.alive) continue;
+    const d = from ? Math.hypot(e.pos.x - from.x, e.pos.z - from.z) : 0;
+    if (!best || d < bestD) {
+      best = { x: e.pos.x, y: e.pos.y, z: e.pos.z };
+      bestD = d;
+    }
+  }
+  return best;
 }
 
 /** A wasp or mech downed on the shared street counts for the contract being played there. */
