@@ -1,6 +1,7 @@
 /**
  * One scrip skill. The Neon Edge hits harder. Nothing else does, and max health stays.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { campaignOf, emptyCampaign } from "../shared/campaign/save";
 import { campaignRequest } from "../shared/campaign/endpoint";
@@ -34,6 +35,9 @@ describe("edge drill", () => {
   it("spends 400 scrip once and does not touch chits, depth, or max health", () => {
     const a = createAccount("drill");
     a.wallet.scrip = 400;
+    expect(buyEdgeDrill(a)).toEqual({ ok: false, reason: "NEEDS THE NEON EDGE" });
+    expect(a.wallet.scrip).toBe(400);
+    campaignOf(a).weapons.push("neon_edge");
     const health = createPlayer(1, "A", { pos: v3(), yaw: 0 }).maxHealth;
     expect(buyEdgeDrill(a)).toEqual({ ok: true });
     expect(campaignOf(a).edgeDrill).toBe(true);
@@ -56,6 +60,9 @@ describe("edge drill", () => {
   it("399 scrip does not drill, and the campaign op spends 400", () => {
     const a = createAccount("short");
     a.wallet.scrip = 399;
+    expect(buyEdgeDrill(a)).toEqual({ ok: false, reason: "NEEDS THE NEON EDGE" });
+    expect(a.wallet.scrip).toBe(399);
+    campaignOf(a).weapons.push("neon_edge");
     expect(buyEdgeDrill(a)).toEqual({ ok: false, reason: "NEEDS SCRIP" });
     expect(campaignOf(a).edgeDrill).toBe(false);
     expect(campaignRequest(a, { op: "drill" }).ok).toBe(false);
@@ -64,6 +71,9 @@ describe("edge drill", () => {
     expect(a.wallet.scrip).toBe(0);
     expect(campaignOf(a).edgeDrill).toBe(true);
     expect(campaignRequest(a, { op: "drill" }).reason).toBe("ALREADY DRILLED");
+    const desk = readFileSync(new URL("../client/campaign.ts", import.meta.url), "utf8");
+    expect(desk).toContain("NEON EDGE · IN HAND · 9");
+    expect(desk).toContain("EDGE DRILL · NEEDS THE SWORD");
   });
 
   it("the sword's swing and lunge hit harder, and the lease-breaker does not", () => {

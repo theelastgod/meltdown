@@ -1254,7 +1254,16 @@ export class Campaign {
       ? `<div class="sh">THE PRESERVE</div><div class="ln"><span class="cy" data-act="lease_row">${crewButton("LEASE ROW", this.game.hud.touch)}</span></div>`
       : `<div class="sh">THE PRESERVE</div><div class="ln dim">TREES INSIDE THE CITY: <span class="cy" data-act="green_hold">${crewButton("THE PRESERVE", this.game.hud.touch)}</span></div>`;
     const clinic = `<div class="sh">THE CLINIC</div><div class="ln dim">THIRTY SCRIP, FORTY HEALTH, NEVER PAST YOUR MAXIMUM: <span class="cy" data-act="clinic">${crewButton("CLINIC", this.game.hud.touch)}</span></div>`;
-    const edge = `<div class="sh">THE COUNTER</div><div class="ln dim">NEON EDGE · 600 SCRIP: <span class="cy" data-act="buy_edge">${crewButton("BUY NEON EDGE", this.game.hud.touch)}</span></div><div class="ln dim">EDGE DRILL · ${DRILL_SCRIP} SCRIP · THE SWORD HITS HARDER: <span class="cy" data-act="buy_drill">${crewButton(c.edgeDrill ? "DRILLED" : "BUY DRILL", this.game.hud.touch)}</span></div>`;
+    const ownsEdge = (c.weapons as readonly string[]).includes("neon_edge");
+    const edgeLine = ownsEdge
+      ? "NEON EDGE · IN HAND · 9"
+      : `NEON EDGE · 600 SCRIP: <span class="cy" data-act="buy_edge">${crewButton("BUY NEON EDGE", this.game.hud.touch)}</span>`;
+    const drillLine = c.edgeDrill
+      ? "EDGE DRILL · DRILLED"
+      : ownsEdge
+        ? `EDGE DRILL · ${DRILL_SCRIP} SCRIP · THE SWORD HITS HARDER: <span class="cy" data-act="buy_drill">${crewButton("BUY DRILL", this.game.hud.touch)}</span>`
+        : "EDGE DRILL · NEEDS THE SWORD";
+    const edge = `<div class="sh">THE COUNTER</div><div class="ln dim">${edgeLine}</div><div class="ln dim">${drillLine}</div>`;
     const bag = ARMORY.map((p) => {
       const owned = c.armory.includes(p.id);
       return `<div class="ln">${p.name} · ${p.district.replace(/_/g, " ").toUpperCase()} · ${p.scrip} SCRIP · <span class="cy" data-act="buy_armory" data-armory="${p.id}">${crewButton(owned ? "IN THE BAG" : "BUY", this.game.hud.touch)}</span> <span class="dim">${p.line}</span></div>`;

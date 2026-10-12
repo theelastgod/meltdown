@@ -7,10 +7,11 @@ import { campaignOf } from "../campaign/save";
 
 export const DRILL_SCRIP = 400;
 
-/** Spend 400 scrip once. Already drilled, or short, spends nothing. */
+/** Spend 400 scrip once, and only when the file already has the Neon Edge. Already drilled, unarmed, or short spends nothing. */
 export function buyEdgeDrill(a: Account): { ok: boolean; reason?: string } {
   const c = campaignOf(a);
   if (c.edgeDrill) return { ok: false, reason: "ALREADY DRILLED" };
+  if (!c.weapons.includes("neon_edge")) return { ok: false, reason: "NEEDS THE NEON EDGE" };
   if (a.wallet.scrip < DRILL_SCRIP) return { ok: false, reason: "NEEDS SCRIP" };
   a.wallet.scrip -= DRILL_SCRIP;
   c.edgeDrill = true;
