@@ -472,13 +472,16 @@ const menu = menuWanted(bootQ)
           const v = game.file.identityView();
           return `${v.display} · DEPTH ${String(game.file.depth).padStart(2, "0")} · ${game.file.account}`;
         },
+        books: () => ({ scrip: game.file.scrip, wakelight: game.file.wakelight, chits: game.file.chits, depth: game.file.depth, owed: game.file.counterState?.run.owed ?? 0 }),
         look: () => game.file.look,
         setLook: (code) => game.file.setLook(code),
         // one client for the WALLET page and the FILE page's Counter-Ledger: the file's (Stage 48's lazy chunk)
         wallet: {
           state: () => walletState(game.file.counter, !!(game.file.shop ?? walletFallback)),
           open: () => {
-            void game.file.ensureCounter(walletFallback).then((c) => c?.address && c.readHoldings());
+            void game.file.ensureCounter(walletFallback).then((c) => {
+              if (c?.address) void c.readHoldings();
+            });
           },
           act: (id) => {
             void game.file.ensureCounter(walletFallback).then((c) => c && walletAct(c, id));

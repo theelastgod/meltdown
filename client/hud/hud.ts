@@ -18,7 +18,8 @@ import { motionWord } from "./stance";
 import { keysLine, learn, NOTHING_SEEN, padsLine, type Seen } from "./keys";
 import { SPRINT_READ } from "./stance";
 import { roundCard, type RoundStats } from "./round";
-import { claimsWord, unitsLabel } from "../runcue";
+import { claimsWord } from "../runcue";
+import { claimRecord } from "@shared/economy/primer";
 import { stampsWord } from "@shared/identity/identity";
 import type { TargetRead } from "./target";
 import { pingMarks, type Ping } from "./ping";
@@ -427,14 +428,14 @@ export class Hud {
   // ---- campaign: objective, terminal, contracts, cards ----
 
   /** THE RUN (Stage 14): the strip replaces the wake's while a run is on — carried, banked, the zone, the banking bar. */
-  setRun(v: { carried: number; banked: number; banking: number; inSafe: boolean; zone: string | null; today: number; cap: number; owed: number; claims: number } | null): void {
+  setRun(v: { carried: number; banked: number; banking: number; inSafe: boolean; zone: string | null; today: number; cap: number; owed: number; claims: number; depth?: number } | null): void {
     const el = this.q(".runstrip") as HTMLElement | null;
     if (!el) return;
     el.hidden = !v;
     document.getElementById("hud")?.classList.toggle("safe", !!v?.inSafe);
     if (!v) return;
     const bar = v.inSafe && v.carried > 0 ? `<span class="bar"><i style="width:${Math.round(v.banking * 100)}%"></i></span> BANKING` : v.inSafe ? `<span class="zone">${safeZoneLine(this.touch)}</span>` : `<span class="pvp">PVP ZONE</span>`;
-    el.innerHTML = `${capitalMark()}CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · OWED <b>${v.owed}</b> ${unitsLabel(v.owed)} · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${claimsWord(v.claims)}`;
+    el.innerHTML = `${capitalMark()}CARRYING <b>${v.carried}</b> · BANKED <b>${v.banked}</b> · TODAY ${v.today}/${v.cap} · ${claimRecord(v.owed, v.depth ?? 0)} · ${v.zone ? `<span class="zone">${v.zone}</span> ` : ""}${bar} · ${claimsWord(v.claims)}`;
   }
 
   /**

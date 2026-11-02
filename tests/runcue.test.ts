@@ -46,7 +46,7 @@ describe("owed units", () => {
     expect(unitsLabel(0)).toBe("UNITS");
     expect(unitsLabel(1)).not.toBe("UNITS");
     const hud = readFileSync(new URL("../client/hud/hud.ts", import.meta.url), "utf8");
-    expect(hud).toMatch(/unitsLabel\(v\.owed\)/);
+    expect(hud).toMatch(/claimRecord\(v\.owed/);
     expect(hud).not.toMatch(/v\.owed\}<\/b> UNITS/);
     const file = readFileSync(new URL("../client/file.ts", import.meta.url), "utf8");
     expect(file).toMatch(/unitsLabel\(run\.owed\)/);
