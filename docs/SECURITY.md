@@ -6,9 +6,12 @@ regression test in `tests/security.test.ts` that fails on the pre-fix code.
 
 **Status.** This is an internal review, not an audit. It is written to be the document an external
 auditor starts from: it says what was found, what was changed, what is deliberately trusted, and
-what is still open. Nothing here has touched a public chain — the contracts run on the in-process
-devnet (`server/chain/devnet.ts`). Robinhood Chain's parameters are published (testnet 46630,
-mainnet 4663) and the live worker stays unconfigured until the contracts are deployed there.
+what is still open. Nothing here has touched BNB. The contracts run on the in-process devnet
+(`server/chain/devnet.ts`, chain id 31911, name "MELTDOWN devnet"). The launch chain is BNB
+Smart Chain, mainnet 56 and testnet 97, with parameters in `shared/economy/bnb.ts` and no
+contract address. The live counter Worker stays at `CHAIN_ID` `"0"`, an empty `CHAIN_RPC`, and
+`CONTRACTS` `"{}"` until a real capital address exists. The published Solana mint is a balance
+display, not this settlement. A Solana address is refused and nothing is transferred.
 
 ---
 

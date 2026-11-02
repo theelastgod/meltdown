@@ -34,31 +34,50 @@ npx wrangler deploy -c wrangler.counter.toml       # meltdown-counter: the count
 ```
 
 The counter Worker's `[vars]` carry `CHAIN_ID`, `CHAIN_RPC` and `CONTRACTS` (a JSON object of the
-six addresses). Until Robinhood Chain's testnet parameters are published these stay empty and the
-counter-ledger answers `CHAIN UNREACHABLE` — the game plays; the link, market and names wait.
-When they land:
+six addresses). They stay `"0"`, `""`, and `"{}"`. The launch chain is BNB Smart Chain. Wallet
+parameters are in `shared/economy/bnb.ts`: mainnet id 56, name "BNB Smart Chain", gas BNB, RPC
+`https://bsc-dataseed.bnbchain.org`, explorer `https://bscscan.com`; testnet id 97, name
+"BNB Smart Chain Testnet", gas tBNB, RPC `https://data-seed-prebsc-1-s1.bnbchain.org:8545`,
+explorer `https://testnet.bscscan.com`. A public dataseed is a wallet endpoint, not the worker
+RPC. Do not set `CHAIN_ID` to 56, and do not run the deploy below, until a real capital address
+exists. The Solana mint and treasury in the same file are a published balance display. They are
+not this contract.
+
+Testnet 97 is the rehearsal. Mainnet 56 is the same bytecode after a claim pays there. The
+command refuses a published dev key, a missing treasury, and a treasury that is the relayer:
 
 ```sh
 npm run contracts:build
-npm run contracts:deploy -- <rpcUrl> <chainId> <relayerKey> <signerAddress> [treasury]
+npm run contracts:deploy -- <rpcUrl> <chainId> <relayerKey> <signerAddress> <treasury>
 ```
 
-prints the `CONTRACTS` JSON. Before this on a real network, set `LAUNCH_DAY` in
-`shared/economy/model.ts` to the launch date (`docs/DECISIONS.md` §6): the vault is deployed with
-the schedule counted from it, and only the treasury can retune a channel afterwards.
+prints the `CONTRACTS` JSON. `LAUNCH_DAY` in `shared/economy/model.ts` stays 2026-09-17 (day
+index 20713) unless the owner changes it before this deploy. The PrizeVault bytecode is built
+with that date, and only the treasury can retune a channel afterwards. The relayer key needs
+tBNB on 97 and BNB on 56. The worker RPC is a private endpoint the owner supplies.
 
 ## 3. Pages
 
 ```sh
 cp .env.example .env.production   # fill in the three Workers' hosts
+# Paste a 32-hex Reown id into VITE_WALLETCONNECT_PROJECT_ID. Leave it empty if you do not have one.
 VITE_BUILD="$(git rev-parse HEAD)" npm run build # committed release → dist/
 npm run smoke                     # the built bundle boots, joins a room, renders (headless)
 npx wrangler pages deploy dist --project-name meltdown --branch main --commit-hash "$(git rev-parse HEAD)"
 ```
 
-The `VITE_*` values are read at build time (`client/config.ts`). Development needs none of them:
-`npm run dev` and `npx tsx server/node-host.ts` are the whole stack, including an in-process EVM
-devnet for the counter-ledger.
+The `VITE_*` values are read at build time as direct `import.meta.env.VITE_*` reads
+(`client/config.ts`). A cast through another object does not inline, and a Pages build then
+falls back to `127.0.0.1`. Development needs none of them: `npm run dev` and
+`npx tsx server/node-host.ts` are the whole stack, including an in-process EVM devnet for the
+counter-ledger.
+
+`VITE_WALLETCONNECT_PROJECT_ID` is the Pages slot for WalletConnect. It must match
+`/^[0-9a-f]{32}$/i`. No id is committed, and none is invented here. A build without one still
+ships. The WalletConnect button then says `WALLETCONNECT HAS NO PROJECT ID ON THIS BUILD` and
+does not fall through to `window.ethereum`. The GitHub variable of the same name is the CI
+slot (`deploy.yml`). Set it when the owner pastes an id, then rebuild Pages. Do not redeploy
+the workers for that.
 
 Set `VITE_BUILD` for a manual production build: its default is `dev`, which makes PLAY use the
 development host instead of the campaign Worker. Pages' production branch is `main`; this flag
@@ -100,9 +119,10 @@ boards, the season, the run's days, wallet bindings and posted epochs survive a 
 pointing at it.
 
 For a real chain, set the same variables the counter Worker takes — `CHAIN_RPC`, `CHAIN_ID`,
-`CONTRACTS`, `SIGNER_KEY`, `RELAYER_KEY`, optionally `TREASURY` and `SIWE_DOMAINS` — and the host
-runs the ledger against it; the devnet-only routes answer that they are devnet-only. It refuses to
-start with a chain and no database, or with a chain and any key missing.
+`CONTRACTS`, `SIGNER_KEY`, `RELAYER_KEY`, a `TREASURY` that is not the relayer, and
+`SIWE_DOMAINS` — and the host runs the ledger against it. On BNB, `CHAIN_ID` is `97` for the
+rehearsal and `56` after a claim pays. The devnet-only routes answer that they are devnet-only.
+The host refuses to start with a chain and no database, or with a chain and any key missing.
 
 What you give up by choosing this over the Workers: Durable Object scaling (one process, one box),
 and the process boundary between the match host and the money keys, which the three-Worker

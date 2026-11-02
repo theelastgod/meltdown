@@ -1,8 +1,14 @@
 # MELTDOWN — $CAPITAL: the counter-ledger
 
-**Status:** design spec, adopted. Implemented in Stage 11b (see `docs/STAGES.md`): the contracts in `contracts/`, the wallet link, vouchers, market and names run against an in-process EVM devnet. Robinhood Chain's parameters are published in `shared/economy/chain.ts` (testnet 46630, mainnet 4663). The live counter Worker stays on `CHAIN_ID` 0 until those contracts are deployed to the testnet.
-**Token:** $CAPITAL (ERC-20; the contract is named `$CAPITAL`, symbol CAPITAL). The play-to-earn extraction loop (THE RUN: PvP zones, safe zones, the markets) is Stage 14.
-**Chain:** Robinhood Chain (Arbitrum Orbit L2, EVM). **Wallets:** WalletConnect via Reown AppKit.
+**Launch chain.** BNB Smart Chain, chain id 56. The rehearsal is testnet 97. `$CAPITAL` is a fixed-cap BEP-20, 18 decimals, symbol CAPITAL, name `$CAPITAL`, no owner and no extra mint. Gas is BNB. No contract is posted, so the night has not sent any. Production `CHAIN_ID` stays `"0"`, `CHAIN_RPC` stays empty, and `CONTRACTS` stays `{}`. The player-facing books are in `shared/economy/primer.ts`.
+
+**Solana display.** The Token-2022 mint `kLtXrN1jJ5YcCmVaGbgD1f65Jfej72xaSWG9fDPpump` (name Meltdown, symbol CAPITAL, 6 decimals) and treasury `3K6kZkUNmQ1CKLAnHMTkrEhmJQcZem6KD71ry6hTtaww` are a published balance. They are not the launch contract. A Solana address is not the EVM claim. Settlement refuses it and transfers nothing.
+
+**Four books.** Scrip and Wakelight stay on the file and are not tokens. Chits are earned only where another player can take them; city jobs, street runs, and contracts pay zero chits. `$CAPITAL` is earned in The Run. From Depth 10 a banked claim is a unit in tonight's pot, at most 1 `$CAPITAL`. Below Depth 10 that bank pays Scrip. Chits follow the same gate. `$CAPITAL` never changes a stat. There is no wager and no stake.
+
+**Status:** design spec, adopted. The contracts, the wallet link, vouchers, the market, and names run on the in-process EVM devnet (chain id 31911, name "MELTDOWN devnet", an ETH-like native coin). That devnet is the probe engine. It is not BNB. The launch chain stays dark until a capital address is published.
+**Token:** `$CAPITAL`. The bytecode in `contracts/CAPITAL.sol` is the BEP-20. The play-to-earn loop is The Run: carry a claim to a gate. Die and it drops.
+**Wallets:** WalletConnect, then MetaMask, on chains 56 and 97. Phantom can still connect and is told it is not the claim.
 **Enforced today:** `shared/economy/` — no item that carries a token price or an on-chain binding may carry a stat.
 
 > Review with a web3 legal/technical specialist before deployment. Nothing in
@@ -31,7 +37,7 @@ file, a record that they were here. Power stays free and flat.
 | --- | --- | --- | --- | --- |
 | **Scrip** | off-chain (D1) | never | Ledger Graph nodes, chips — *progression breadth* | matches, campaign |
 | **Wakelight** | off-chain (D1) | never | CRT themes, alias slots, preset slots — *prestige cosmetics* | Rewrite (Depth-50 prestige) |
-| **$CAPITAL** | on-chain, Robinhood Chain | yes (ERC-20) | see §3 | competition, creation, prestige certificates (§4) |
+| **$CAPITAL** | on-chain, BNB Smart Chain (BEP-20), not posted | yes | see §3 | The Run at Depth 10; certificates in §4 |
 
 Scrip and Wakelight are deliberately not on-chain and not purchasable.
 Progression is the player writing their own file; selling that would make the
@@ -101,9 +107,10 @@ collected. A Blank who walks over one carries it. Carried claims drop where
 the file falls, for anyone, and expire back into the city if nobody takes
 them. Carrying them into a **safe zone** (the gates: no damage in, no damage
 out, the markets) and standing still for two seconds **banks** them: the
-room credits the file, the counter-ledger pays the wallet from the treasury's
-emission schedule (§4.3) — on the devnet the relayer is the treasury; in
-production the weekly PrizeVault Merkle root.
+room credits the file. On the devnet a direct payout can pay the ceiling
+before the day ends, and it refuses a settled day. In production the night
+posts one PrizeVault Merkle epoch (`kind: "run"`, 01:00 UTC) and the file
+presses CLAIM. The rate is `min(1, pot / units)`. Nothing arrives at the gate.
 
 Rules that keep it an emission and not a farm:
 
@@ -214,43 +221,47 @@ guard ring-fences it on chain too. The full arithmetic, the sensitivities and
 the open questions are in `docs/ECONOMY.md`; `npm run lint:economy` fails the
 build if a rate ever escapes the schedule again.
 
-## 5. Robinhood Chain
+## 5. BNB Smart Chain
 
-Robinhood Chain is Robinhood's Layer 2 built on the Arbitrum Orbit stack:
-EVM-compatible, Nitro execution, bridged from Ethereum. Every contract and
-client path in this spec is plain Orbit EVM, so nothing depends on a
-chain-specific feature. Chain ID, RPC and explorer are the published
-values in `shared/economy/chain.ts`: testnet 46630, mainnet 4663. Gas is
-ETH. The counter Worker does not use them until the contracts are deployed.
+The launch chain is BNB Smart Chain. Wallet parameters live in `shared/economy/bnb.ts`. That module publishes no contract address.
 
-Why this chain and not a generic L2:
+| | Mainnet | Testnet |
+| --- | --- | --- |
+| Chain id | 56 | 97 |
+| Name | BNB Smart Chain | BNB Smart Chain Testnet |
+| Gas | BNB | tBNB |
+| Wallet RPC | `https://bsc-dataseed.bnbchain.org` | `https://data-seed-prebsc-1-s1.bnbchain.org:8545` |
+| Explorer | `https://bscscan.com` | `https://testnet.bscscan.com` |
 
-- **The audience is already there.** Robinhood's users hold a wallet and a
-  fiat on-ramp in an app they already trust. The first wallet most MELTDOWN
-  players link will be a Robinhood Wallet, over WalletConnect.
-- **Low, predictable fees** make cosmetic trades, sponsored attestations,
-  and per-hour room credits viable at game scale.
-- **Regulated-adjacent posture.** A chain operated by a US broker-dealer
-  sets a compliance expectation. The design below is written to survive
-  that scrutiny: utility first, no yield, no wagers, no paid randomness.
+`$CAPITAL` on this chain is a BEP-20: the fixed-cap bytecode in `contracts/CAPITAL.sol`, 18 decimals, symbol CAPITAL, name `$CAPITAL`, no owner, no extra mint, EIP-2612 permit. The cap is 1e9. Testnet 97 is the rehearsal. Mainnet 56 is that same bytecode after a claim pays on testnet.
+
+Production stays dark until a real capital address exists. `CHAIN_ID` stays `"0"`, `CHAIN_RPC` stays `""`, and `CONTRACTS` stays `"{}"`. A public dataseed is a wallet endpoint. It is not the counter Worker's RPC. The worker needs a private RPC, and the relayer key needs tBNB before it needs BNB. The treasury address must not be the relayer. Do not invent either address.
+
+The in-process devnet stays chain id 31911, name "MELTDOWN devnet", with an ETH-like native coin. It is how probes move a claim through the night. It is not pointed at BSC.
+
+`LAUNCH_DAY` stays 2026-09-17 (day index 20713) unless the owner changes it before the first deploy. The PrizeVault bytecode carries that date. `shared/economy/chain.ts` names the Solana clusters only.
+
+WalletConnect optional chains are only 56 and 97. The project id is the build-time value `VITE_WALLETCONNECT_PROJECT_ID`, and it must be 32 hex. No id is stored in the repo. A build without one says `WALLETCONNECT HAS NO PROJECT ID ON THIS BUILD` and does not open another wallet instead.
+
+- Gas is BNB. The first button is WalletConnect, then MetaMask.
+- The contracts are plain EVM. Nothing in them depends on a BNB-only precompile.
+- The night pays at most 1 `$CAPITAL` a unit, out of that day's pot. A crowded day pays less. Nothing is sent at the gate.
 
 ## 6. Wallet link architecture (WalletConnect)
 
 ```
-browser                           Cloudflare                       Robinhood Chain
+browser                           Cloudflare                       BNB Smart Chain
 ─────────────────────             ──────────────────────           ──────────────────
-Reown AppKit (WalletConnect v2)   Worker: /link/nonce              $CAPITAL        (ERC-20, capped, permit)
-wagmi + viem, custom chain def    Worker: /link/verify  (SIWE)     Ghostfile   (soulbound ERC-721)
-"COUNTER-LEDGER LINK" CRT panel   D1: wallet ↔ account (1:1)       Stamps      (EAS-style attestations)
-claim UI: signs nothing but       Worker: EIP-712 voucher signer   Names       (soulbound ERC-721)
-  SIWE + on-chain txs             Player DO: cosmetic cache        Cosmetics   (ERC-1155)
-                                  PrizeVault: weekly Merkle roots  LedgerMarket, Forge, RoomCredits,
+WalletConnect, then MetaMask      Worker: /link/nonce              $CAPITAL        (BEP-20, capped, permit)
+viem, chain def in bnb.ts         Worker: /link/verify  (SIWE)     Ghostfile   (soulbound ERC-721)
+WALLET // PLAY TO EARN            D1: wallet ↔ account (1:1)       Stamps      (EAS-style attestations)
+claim UI: SIWE + on-chain txs     Worker: EIP-712 voucher signer   Names       (soulbound ERC-721)
+                                  Player DO: cosmetic cache        Cosmetics   (ERC-1155)
+                                  PrizeVault: the night's root     LedgerMarket, Forge, RoomCredits,
                                                                    SeasonBuyout, PrizeVault, Testimony
 ```
 
-1. **Connect.** Reown AppKit modal skinned as CRT chrome. Connectors:
-   WalletConnect (Robinhood Wallet, MetaMask, Rabby, Coinbase Wallet) and
-   injected. The chain definition is the Robinhood Chain config.
+1. **Connect.** WalletConnect first, then MetaMask. The session chains are 56 and 97. The project id is `VITE_WALLETCONNECT_PROJECT_ID` at build time. Phantom may connect and is not the claim. While `CHAIN_ID` is 0, an EVM signature binds the address and transfers nothing.
 2. **Link.** Sign-In With Ethereum (EIP-4361). The Worker issues a nonce
    from D1, the wallet signs, the Worker verifies with `viem`. One wallet
    per Ghostfile, one Ghostfile per wallet; relinking has a 30-day cooldown.
@@ -260,7 +271,7 @@ claim UI: signs nothing but       Worker: EIP-712 voucher signer   Names       (
 4. **Vouchers.** Anything the game grants (a stamp, a Rewrite certificate,
    an Audit prize, a cosmetic drop) is an EIP-712 message signed by the
    Worker's key: `{account, item, amount, nonce, deadline}`. Contracts verify
-   the signer; claims are pull-based. Prizes use a weekly Merkle root.
+   the signer; claims are pull-based. The Run posts a root each night. The Audit posts on Mondays.
 5. **Trades** are player-signed transactions against the market contract.
    The player pays gas; the market fee is taken on-chain.
 6. **PvP isolation.** The match Durable Object never imports the economy
@@ -324,8 +335,9 @@ it rejects a trade-less buff.
   payouts above reporting thresholds (US 1099 for Audit winners).
 - **Age gate:** wallet features are 18+. The game is fully playable without
   a wallet.
-- **Platform:** browser-only, so no app-store token policy applies. Robinhood
-  Chain's own developer terms apply and must be reviewed at integration.
+- **Platform:** browser-only, so no app-store token policy applies. BNB
+  Smart Chain's developer terms apply and must be reviewed before the
+  testnet rehearsal is pointed at a public RPC.
 
 ## 10. Player-facing copy (front-facing, in-fiction)
 
@@ -333,10 +345,12 @@ it rejects a trade-less buff.
 >
 > VANTAGE priced you. This is the other book.
 >
-> $CAPITAL is what the city pays a Blank who did something it can verify: a
-> placement in the weekly Audit, a district turned green at season's end, a
-> file burned and rewritten. You cannot farm it. Matches pay Scrip; Scrip
-> writes your file; the file is yours.
+> $CAPITAL is what The Run pays. Pick up a claim in the PvP streets, carry
+> it to a safe gate, and stand still until it banks. Die on the way and it
+> drops where you fell. From Depth 10 the bank is on your file at once. The
+> night pays the linked wallet, at most 1 $CAPITAL, and a crowded day pays
+> less. Nothing arrives at the gate. Matches still pay Scrip. The file is
+> yours.
 >
 > $CAPITAL buys the things VANTAGE would have stamped over: how your rig looks,
 > what your kill stamp reads, the furnishings of your safehouse, an hour of
@@ -348,11 +362,10 @@ it rejects a trade-less buff.
 
 ## 11. Internal notes (backend)
 
-- **Investor framing.** $CAPITAL is membership infrastructure for a competitive
-  community, not a play-to-earn token: the Ghostfile is the durable asset,
-  cosmetics and creator royalties are the recurring revenue, and the burn
-  schedule is the discipline. Lead with active players and Forge creator
-  count, never floor price.
+- **Investor framing.** $CAPITAL is the play-to-earn token of The Run. It is
+  not a wager, a stake, or a stat. The Ghostfile is the durable record,
+  cosmetics are sinks, and the night's pot is the discipline. Lead with
+  banked units and the day's rate, never a promise that a unit pays 1.
 - **What we will not do:** loot boxes, token-gated power, rented power,
   pay-to-skip progression, staking, wagers on match outcomes, token-weighted
   votes, admin mint.

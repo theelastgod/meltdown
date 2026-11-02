@@ -53,10 +53,11 @@ jobs:
           VITE_CAMPAIGN_URL: ${{ vars.VITE_CAMPAIGN_URL }}
           VITE_COUNTER_URL: ${{ vars.VITE_COUNTER_URL }}
           VITE_PUBLIC_ROOM: ${{ vars.VITE_PUBLIC_ROOM }}
+          VITE_WALLETCONNECT_PROJECT_ID: ${{ vars.VITE_WALLETCONNECT_PROJECT_ID }}
           VITE_BUILD: ${{ github.sha }}
       - run: npx playwright install --with-deps chromium
       - run: npm run smoke
-      - run: npx wrangler pages deploy dist --project-name meltdown --commit-dirty=true
+      - run: npx wrangler pages deploy dist --project-name meltdown --branch main --commit-dirty=true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
