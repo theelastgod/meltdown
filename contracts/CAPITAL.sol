@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 /// @title $CAPITAL — the counter-ledger token.
 /// @notice Fixed supply minted once at genesis to the treasury. No admin mint, no owner. Burnable,
 ///         with EIP-2612 permit so a market buy or a name registration is one transaction, not two.
+///         The same bytecode is the BEP-20 on BNB Smart Chain. No address is published in this file.
 ///         It touches identity, ownership, creation, hosting and competition — never a stat.
 contract $CAPITAL {
     string public constant name = "$CAPITAL";

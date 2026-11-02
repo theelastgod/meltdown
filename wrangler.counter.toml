@@ -9,14 +9,17 @@ main = "server/counter-worker.ts"
 compatibility_date = "2025-06-01"
 
 [vars]
-# Robinhood Chain testnet is published in shared/economy/chain.ts (chain 46630).
-# These stay empty until `npm run contracts:deploy` has printed CONTRACTS for that
-# testnet. Filling them here without those addresses would point a live worker at
-# a chain that has no Meltdown contracts.
+# Solana mainnet. $CAPITAL is the published Token-2022 mint. The treasury is a
+# separate key, not that mint and not a published dev key. CHAIN_ID stays 0:
+# EVM settlement is still closed. An empty SOLANA_RPC uses the public mainnet endpoint.
 CHAIN_ID = "0"
 CHAIN_RPC = ""
 CONTRACTS = "{}"
 SIWE_DOMAINS = ""
+SOLANA_CLUSTER = "mainnet-beta"
+SOLANA_RPC = ""
+SOLANA_MINT = "kLtXrN1jJ5YcCmVaGbgD1f65Jfej72xaSWG9fDPpump"
+SOLANA_TREASURY = "3K6kZkUNmQ1CKLAnHMTkrEhmJQcZem6KD71ry6hTtaww"
 
 [durable_objects]
 bindings = [

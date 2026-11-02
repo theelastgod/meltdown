@@ -18,6 +18,12 @@ import { daysToSettle, epochsToReclaim, seasonToPost } from "./chain/cron";
 import { EPOCH_BASE } from "./chain/prizes-store";
 import { D1RunStore } from "./run-d1";
 import { DEV_KEY_ON_CHAIN, isDevKey } from "./chain/dev-keys";
+import { readSolanaConfig } from "./chain/solana-keys";
+import { verifySolanaLink } from "./chain/solana-link";
+import { emptyCounter, SIWE_STATEMENT } from "../shared/economy/counter";
+import { EVM_DARK_LINE } from "../shared/economy/primer";
+import { SOLANA_LINK_HEADER, SOLANA_SETTLEMENT_LINE } from "../shared/economy/solana";
+import { verifyEvmLink } from "./chain/evm-link";
 import { dayIndex, seasonIndex, weekIndex } from "../shared/endgame/clock";
 import type { Contracts } from "./chain/deploy";
 import { counterRequest } from "../shared/economy/endpoint";
@@ -35,6 +41,11 @@ export interface Env {
   SIGNER_KEY: string;
   RELAYER_KEY: string;
   SIWE_DOMAINS?: string;
+  /** Published Solana mint and treasury. Empty until a real address is supplied. A dev pubkey is refused. */
+  SOLANA_CLUSTER?: string;
+  SOLANA_RPC?: string;
+  SOLANA_MINT?: string;
+  SOLANA_TREASURY?: string;
   /**
    * The shared secret for `/prizes/post` (`wrangler secret put ADMIN_KEY`).
    *
@@ -75,6 +86,7 @@ function ledgerOf(env: Env): CounterLedger {
     runs: new D1RunStore(env.DB),
     devnet: false,
     domains: env.SIWE_DOMAINS ? env.SIWE_DOMAINS.split(",") : [],
+    solana: readSolanaConfig(env),
   });
 }
 
@@ -87,10 +99,10 @@ function filesOf(env: Env) {
   };
 }
 
-/** Until Robinhood Chain's parameters land, the Worker answers every chain route with one reason instead of building a client on an empty RPC. */
+/** Until a Solana mint and treasury are published, and the settlement keys exist, the Worker answers chain routes with one reason instead of building a client on an empty RPC. */
 const unconfigured = (env: Env): boolean => !env.CHAIN_RPC || !Number(env.CHAIN_ID) || !env.SIGNER_KEY || !env.RELAYER_KEY;
 const NOT_ADMIN = "NOT AN OPERATOR: /prizes/post runs the settlement for a day of the caller's choosing and needs the x-admin-key header";
-const NOT_CONFIGURED = "CHAIN NOT CONFIGURED: the counter-ledger waits for Robinhood Chain's testnet parameters (CHAIN_ID, CHAIN_RPC, CONTRACTS)";
+const NOT_CONFIGURED = "CHAIN NOT CONFIGURED: the counter-ledger waits for a Solana mint and treasury (SOLANA_MINT, SOLANA_TREASURY, SOLANA_CLUSTER). No address is invented here.";
 /** A launchpad publishes the token alone. Link, vouchers and the market stay closed without their own contracts and keys. */
 const TOKEN_ONLY = "THE TOKEN IS PUBLISHED. LINK, VOUCHERS AND THE MARKET STAY CLOSED UNTIL THEIR CONTRACTS ARE.";
 
@@ -109,6 +121,65 @@ function publishedCapital(env: Env): Hex | null {
 /** A configured chain with a published dev key in it is refused the same way (Stage 53): the placeholder must not be the key. */
 const devKeyed = (env: Env): boolean => isDevKey(env.SIGNER_KEY) || isDevKey(env.RELAYER_KEY);
 
+/**
+ * Identity link while the EVM settlement is dark.
+ * A Solana signature binds and transfers nothing. An EVM SIWE signature binds the
+ * address that earns, and also transfers nothing: no mint, no grant, no token move.
+ * Any other message returns null so the caller keeps the closed route.
+ */
+async function solanaLinkWhileDark(request: Request, env: Env, pathname: string, published: NonNullable<ReturnType<typeof readSolanaConfig>>): Promise<Response | null> {
+  const { load, save } = filesOf(env);
+  if (pathname === "/link/nonce") {
+    const { account, secret } = (await request.json()) as { account: string; secret?: string };
+    const a = await load(account);
+    if (!fileAuth(a, secret).ok) return json({ ok: false, reason: NOT_YOURS }, 403);
+    return json({ nonce: await new D1WalletStore(env.DB).issueNonce(account), statement: SIWE_STATEMENT, chainId: 0, cluster: published.cluster });
+  }
+  const body = (await request.json()) as { account?: string; message?: string; signature?: string; secret?: string };
+  const message = String(body.message ?? "");
+  const solana = message.startsWith(SOLANA_LINK_HEADER);
+  const evm = !solana && message.includes(SIWE_STATEMENT);
+  if (!solana && !evm) return null;
+  const account = String(body.account ?? "");
+  return withLease(env.PLAYER_FILE, account, busy, async () => {
+    const a = await load(account);
+    const auth = fileAuth(a, body.secret);
+    if (!auth.ok) return json({ ok: false, reason: NOT_YOURS, counter: a.counter ?? null }, 403);
+    const wallets = new D1WalletStore(env.DB);
+    const checked = solana
+      ? await verifySolanaLink({
+          message,
+          signature: String(body.signature ?? ""),
+          accountId: a.id,
+          statement: SIWE_STATEMENT,
+          cluster: published.cluster,
+          takeNonce: (id, nonce) => wallets.takeNonce(id, nonce),
+        })
+      : await verifyEvmLink({
+          message,
+          signature: String(body.signature ?? ""),
+          accountId: a.id,
+          statement: SIWE_STATEMENT,
+          chainId: 0,
+          takeNonce: (id, nonce) => wallets.takeNonce(id, nonce),
+        });
+    if (!checked.ok) {
+      if (auth.adopted) await save(a);
+      return json({ ok: false, reason: checked.reason, counter: a.counter ?? null });
+    }
+    try {
+      await wallets.bind(a.id, checked.address, Date.now());
+    } catch (e) {
+      if (auth.adopted) await save(a);
+      return json({ ok: false, reason: String((e as Error).message), counter: a.counter ?? null });
+    }
+    a.counter = { ...(a.counter ?? emptyCounter()), address: checked.address, linkedAt: a.counter?.linkedAt || Date.now() };
+    await save(a);
+    // The address can earn. The balance on the file is not a transfer, and this route does not write one.
+    return json({ ok: true, reason: solana ? SOLANA_SETTLEMENT_LINE : `BOUND · ${EVM_DARK_LINE}`, counter: a.counter });
+  });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -123,12 +194,19 @@ export default {
           return json({ ...ledger.info(), listings: [], treasury: null, reason: `CHAIN UNREACHABLE: ${String((e as Error).message).slice(0, 80)}` });
         }
       }
+      const solana = readSolanaConfig(env);
       const capital = devKeyed(env) ? null : publishedCapital(env);
-      if (capital) return json({ chainId: Number(env.CHAIN_ID), devnet: false, rpc: env.CHAIN_RPC, contracts: { capital }, signer: null, statement: "", listings: [], treasury: null, reason: TOKEN_ONLY });
-      const reason = unconfigured(env) ? NOT_CONFIGURED : DEV_KEY_ON_CHAIN;
-      return json({ chainId: Number(env.CHAIN_ID) || 0, devnet: false, contracts: {}, signer: null, statement: "", listings: [], treasury: null, reason });
+      if (capital) return json({ chainId: Number(env.CHAIN_ID), devnet: false, rpc: env.CHAIN_RPC, contracts: { capital }, signer: null, statement: "", listings: [], treasury: null, solana, reason: TOKEN_ONLY });
+      // A published mint and treasury is the chain. Empty EVM keys stay closed, and that is not "waiting for a mint".
+      const reason = !unconfigured(env) ? DEV_KEY_ON_CHAIN : solana ? undefined : NOT_CONFIGURED;
+      return json({ chainId: Number(env.CHAIN_ID) || 0, devnet: false, contracts: {}, signer: null, statement: "", listings: [], treasury: null, solana, ...(reason ? { reason } : {}) });
     }
     if (unconfigured(env) || devKeyed(env)) {
+      const published = readSolanaConfig(env);
+      if (published && request.method === "POST" && (url.pathname === "/link/nonce" || url.pathname === "/link/verify")) {
+        const solanaReply = await solanaLinkWhileDark(request, env, url.pathname, published);
+        if (solanaReply) return solanaReply;
+      }
       const reason = unconfigured(env) ? NOT_CONFIGURED : DEV_KEY_ON_CHAIN;
       if (url.pathname === "/link/nonce") return json({ ok: false, reason }, 503);
       return json({ ok: false, reason, counter: null }, 503);
@@ -142,7 +220,8 @@ export default {
       const a = await load(account);
       if (!fileAuth(a, secret).ok) return json({ ok: false, reason: NOT_YOURS }, 403);
       const ledger = ledgerOf(env);
-      return json({ nonce: await ledger.nonce(account), statement: ledger.info().statement, chainId: ledger.info().chainId });
+      const info = ledger.info();
+      return json({ nonce: await ledger.nonce(account), statement: info.statement, chainId: info.chainId, cluster: info.solana?.cluster ?? "mainnet-beta" });
     }
     if (request.method === "POST" && url.pathname === "/link/verify") {
       const { account, message, signature, secret } = (await request.json()) as { account: string; message: string; signature: Hex; secret?: string };

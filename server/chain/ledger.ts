@@ -11,6 +11,12 @@ import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import { parseSiweMessage, validateSiweMessage } from "viem/siwe";
 import type { Account, CounterRecord } from "../../shared/progression/account";
 import { MAX_CAPITAL_PER_UNIT, emptyCounter, LAUNCH_GRANT, LAUNCH_GRANT_DEPTH, NAME_DEPTH, nameFee, SIWE_STATEMENT, validName } from "../../shared/economy/counter";
+import { evmNative } from "../../shared/economy/bnb";
+import { SOLANA_DEVNET } from "../../shared/economy/chain";
+import { isEvmAddress, SOLANA_SETTLEMENT_LINE } from "../../shared/economy/solana";
+import { DEV_SOLANA } from "./solana-keys";
+import { verifySolanaLink } from "./solana-link";
+import { walletKey } from "./wallets";
 import { grantSeasonPass, SKINS } from "../../shared/economy/catalog";
 import { ARTIFACTS, type Contracts } from "./deploy";
 import { GameSigner } from "./signer";
@@ -45,6 +51,8 @@ export interface LedgerOptions {
    * correct on a devnet where there is nothing to lose.
    */
   treasury?: Hex;
+  /** A published Solana mint and treasury. The devnet fills the treasury pubkey itself and leaves the mint empty. */
+  solana?: { cluster: "devnet" | "mainnet-beta"; treasury: string; mint: string | null; rpc: string } | null;
   now?: () => number;
   onLog?: (line: string) => void;
 }
@@ -79,7 +87,8 @@ export class CounterLedger {
   readonly chain;
   private granted = new Set<string>();
   constructor(readonly opts: LedgerOptions) {
-    this.chain = defineChain({ id: opts.chainId, name: opts.devnet ? "MELTDOWN devnet" : "Robinhood Chain", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [] } } });
+    const named = evmNative(opts.chainId, opts.devnet);
+    this.chain = defineChain({ id: opts.chainId, name: named.name, nativeCurrency: named.nativeCurrency, rpcUrls: { default: { http: [] } } });
     this.pub = createPublicClient({ chain: this.chain, transport: opts.transport });
     this.relayerAccount = privateKeyToAccount(opts.relayerKey);
     this.relayer = createWalletClient({ chain: this.chain, transport: opts.transport, account: this.relayerAccount });
@@ -121,7 +130,8 @@ export class CounterLedger {
 
   /** What the panel needs to talk to the chain itself: id, addresses, the signer it should expect. */
   info() {
-    return { chainId: this.opts.chainId, devnet: this.opts.devnet, contracts: this.opts.contracts, signer: this.signer.address, relayer: this.relayerAccount.address, statement: SIWE_STATEMENT, season: seasonIndex(this.now()), sinks: { seasonPass: SEASON_PASS_PRICE, roomHour: ROOM_HOUR_PRICE } };
+    const solana = this.opts.solana ?? (this.opts.devnet ? { cluster: "devnet" as const, treasury: DEV_SOLANA.treasury, mint: null, rpc: SOLANA_DEVNET.rpcUrl } : null);
+    return { chainId: this.opts.chainId, devnet: this.opts.devnet, contracts: this.opts.contracts, signer: this.signer.address, relayer: this.relayerAccount.address, statement: SIWE_STATEMENT, season: seasonIndex(this.now()), sinks: { seasonPass: SEASON_PASS_PRICE, roomHour: ROOM_HOUR_PRICE }, solana };
   }
 
   // ---- SIWE link ----
@@ -130,8 +140,9 @@ export class CounterLedger {
     return this.opts.wallets.issueNonce(account);
   }
 
-  /** Verify the SIWE message, bind 1:1, then mint the Ghostfile, grant (devnet), attest the stamps and reconcile. */
+  /** Verify the signed link, bind 1:1, then mint the Ghostfile, grant (devnet), attest the stamps and reconcile. A Solana signature binds the address and does not touch the EVM settlement. */
   async link(a: Account, message: string, signature: Hex): Promise<Result & { counter?: CounterRecord }> {
+    if (message.startsWith("MELTDOWN SOLANA LINK")) return this.linkSolana(a, message, signature);
     let parsed: ReturnType<typeof parseSiweMessage>;
     try {
       parsed = parseSiweMessage(message);
@@ -147,7 +158,7 @@ export class CounterLedger {
     if (!(await verifyMessage({ address: parsed.address, message, signature }))) return { ok: false, reason: "bad signature" };
     const address = parsed.address;
     const prev = a.counter?.address;
-    if (prev && prev.toLowerCase() !== address.toLowerCase()) return { ok: false, reason: "file already bound to another wallet" };
+    if (prev && walletKey(prev) !== walletKey(address)) return { ok: false, reason: "file already bound to another wallet" };
     try {
       await this.opts.wallets.bind(a.id, address, this.now());
     } catch (e) {
@@ -164,10 +175,36 @@ export class CounterLedger {
     return { ok: true, counter: a.counter };
   }
 
+  /** A Solana signature binds the file. The Ghostfile stays unminted until a program exists, and no token moves. */
+  private async linkSolana(a: Account, message: string, signature: string): Promise<Result & { counter?: CounterRecord }> {
+    const cluster = this.opts.solana?.cluster ?? (this.opts.devnet ? "devnet" : "mainnet-beta");
+    const checked = await verifySolanaLink({
+      message,
+      signature,
+      accountId: a.id,
+      statement: SIWE_STATEMENT,
+      cluster,
+      takeNonce: (account, nonce) => this.opts.wallets.takeNonce(account, nonce),
+    });
+    if (!checked.ok) return checked;
+    const address = checked.address;
+    const prev = a.counter?.address;
+    if (prev && walletKey(prev) !== walletKey(address)) return { ok: false, reason: "file already bound to another wallet" };
+    try {
+      await this.opts.wallets.bind(a.id, address, this.now());
+    } catch (e) {
+      return { ok: false, reason: String((e as Error).message) };
+    }
+    a.counter = { ...(a.counter ?? emptyCounter()), address, linkedAt: a.counter?.linkedAt || this.now() };
+    this.log(`link ${a.id} ↔ ${address}`);
+    return { ok: true, reason: SOLANA_SETTLEMENT_LINE, counter: a.counter };
+  }
+
   /** The soulbound Ghostfile, minted by the relayer against a game voucher (gas sponsored). */
   async mintGhostfile(a: Account): Promise<Result> {
     const c = a.counter;
     if (!c?.address) return { ok: false, reason: "no wallet linked" };
+    if (!isEvmAddress(c.address)) return { ok: false, reason: SOLANA_SETTLEMENT_LINE };
     if (c.ghostfile) return { ok: true };
     try {
       const wallet = c.address as Hex;
@@ -191,6 +228,7 @@ export class CounterLedger {
   async attestStamps(a: Account, max = 12): Promise<Result & { attested: string[] }> {
     const c = a.counter;
     if (!c?.address) return { ok: false, reason: "no wallet linked", attested: [] };
+    if (!isEvmAddress(c.address)) return { ok: false, reason: SOLANA_SETTLEMENT_LINE, attested: [] };
     const attested: string[] = [];
     try {
       const wallet = c.address as Hex;
@@ -215,6 +253,7 @@ export class CounterLedger {
   async grant(a: Account): Promise<Result> {
     const c = a.counter;
     if (!c?.address || !this.opts.devnet || a.depth < LAUNCH_GRANT_DEPTH || this.granted.has(a.id)) return { ok: false, reason: "no grant" };
+    if (!isEvmAddress(c.address)) return { ok: false, reason: SOLANA_SETTLEMENT_LINE };
     try {
       const bal = (await this.pub.readContract({ address: this.opts.contracts.capital, abi: ARTIFACTS["$CAPITAL"]!.abi, functionName: "balanceOf", args: [c.address as Hex] })) as bigint;
       if (bal > 0n) return { ok: false, reason: "already funded" };
@@ -232,6 +271,7 @@ export class CounterLedger {
   async nameVoucher(a: Account, name: string): Promise<Result & { voucher?: { name: string; nonce: string; deadline: string; signature: Hex; fee: number } }> {
     const c = a.counter;
     if (!c?.address) return { ok: false, reason: "no wallet linked" };
+    if (!isEvmAddress(c.address)) return { ok: false, reason: SOLANA_SETTLEMENT_LINE };
     if (a.depth < NAME_DEPTH) return { ok: false, reason: `the registry opens at Depth ${NAME_DEPTH}` };
     if (c.name) return { ok: false, reason: "this file already has a name" };
     const n = name.trim().toUpperCase();
@@ -287,7 +327,7 @@ export class CounterLedger {
     const leaves: { account: Hex; file: string; amount: bigint; reason: string }[] = [];
     for (const l of lines) {
       const address = await this.opts.wallets.addressOf(l.account);
-      if (!address || l.amount <= 0) {
+      if (!address || l.amount <= 0 || !isEvmAddress(address)) {
         skipped.push(l.account);
         continue;
       }
@@ -362,6 +402,7 @@ export class CounterLedger {
     const store = this.opts.prizes;
     const c = a.counter;
     if (!store || !c?.address) return { ok: false, reason: "no wallet linked" };
+    if (!isEvmAddress(c.address)) return { ok: false, reason: SOLANA_SETTLEMENT_LINE };
     const e = await store.get(epoch);
     const leaf = e?.leaves.find((l) => l.account.toLowerCase() === c.address!.toLowerCase());
     if (!e || !leaf) return { ok: false, reason: "no prize in that epoch" };
@@ -394,6 +435,7 @@ export class CounterLedger {
   async payout(a: Account): Promise<Result & { paid?: number }> {
     const c = a.counter;
     if (!c?.address) return { ok: false, reason: "no wallet linked" };
+    if (!isEvmAddress(c.address)) return { ok: false, reason: SOLANA_SETTLEMENT_LINE };
     const run = c.run ?? { day: 0, banked: 0, owed: 0, paid: 0 };
     if (run.owed <= 0) return { ok: false, reason: "nothing owed" };
     /**
@@ -438,6 +480,7 @@ export class CounterLedger {
   async spendRoomHours(a: Account, hours: number, room: string): Promise<Result & { left?: number }> {
     const c = a.counter;
     if (!c?.address) return { ok: false, reason: "no wallet linked" };
+    if (!isEvmAddress(c.address)) return { ok: false, reason: SOLANA_SETTLEMENT_LINE };
     if (!(hours > 0)) return { ok: false, reason: "no hours asked for" };
     try {
       const wallet = c.address as Hex;
@@ -461,6 +504,7 @@ export class CounterLedger {
   async reconcile(a: Account): Promise<Result & { counter?: CounterRecord }> {
     const c = a.counter;
     if (!c?.address) return { ok: false, reason: "no wallet linked" };
+    if (!isEvmAddress(c.address)) return { ok: false, reason: SOLANA_SETTLEMENT_LINE };
     try {
       const wallet = c.address as Hex;
       const k = this.opts.contracts;

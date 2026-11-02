@@ -1,39 +1,36 @@
 /**
- * Robinhood Chain network configuration. Robinhood Chain is an Arbitrum Orbit
- * Layer 2 (EVM, Nitro). Gas is ETH. $CAPITAL is the game token, not the gas token.
+ * Solana cluster configuration. $CAPITAL is an SPL mint when one is published.
+ * Gas is SOL. The mint is not the gas token, and it never changes a stat.
  *
- * Parameters are the ones published at https://docs.robinhood.com/chain/connecting
- * (mainnet chain 4663, testnet chain 46630). The public RPCs are rate-limited and
- * are the documented endpoints, not a production provider. The counter Worker
- * stays on CHAIN_ID 0 until the contracts are deployed to the testnet; these
- * values are what that deploy targets. A mainnet cutover is a later deploy,
- * with its own keys, and is not this file.
+ * The public RPCs are the documented cluster endpoints, not a production provider.
+ * The published mint and treasury live in wrangler.counter.toml and public/solana.json.
+ * CHAIN_ID stays 0: those Solana addresses do not turn on EVM settlement.
  */
 export interface ChainConfig {
   name: string;
-  chainId: number | null;
-  rpcUrl: string | null;
-  explorerUrl: string | null;
+  cluster: "devnet" | "mainnet-beta";
+  rpcUrl: string;
+  explorerUrl: string;
   nativeCurrency: { name: string; symbol: string; decimals: number };
   testnet: boolean;
 }
 
-export const ROBINHOOD_CHAIN_TESTNET: ChainConfig = {
-  name: "Robinhood Chain Testnet",
-  chainId: 46630,
-  rpcUrl: "https://rpc.testnet.chain.robinhood.com",
-  explorerUrl: "https://explorer.testnet.chain.robinhood.com",
-  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+export const SOLANA_DEVNET: ChainConfig = {
+  name: "Solana Devnet",
+  cluster: "devnet",
+  rpcUrl: "https://api.devnet.solana.com",
+  explorerUrl: "https://explorer.solana.com/?cluster=devnet",
+  nativeCurrency: { name: "Solana", symbol: "SOL", decimals: 9 },
   testnet: true,
 };
 
-export const ROBINHOOD_CHAIN: ChainConfig = {
-  name: "Robinhood Chain",
-  chainId: 4663,
-  rpcUrl: "https://rpc.mainnet.chain.robinhood.com",
-  explorerUrl: "https://robinhoodchain.blockscout.com",
-  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+export const SOLANA_MAINNET: ChainConfig = {
+  name: "Solana",
+  cluster: "mainnet-beta",
+  rpcUrl: "https://api.mainnet-beta.solana.com",
+  explorerUrl: "https://explorer.solana.com",
+  nativeCurrency: { name: "Solana", symbol: "SOL", decimals: 9 },
   testnet: false,
 };
 
-export const isConfigured = (c: ChainConfig): boolean => c.chainId !== null && c.rpcUrl !== null;
+export const isConfigured = (c: ChainConfig): boolean => (c.cluster === "devnet" || c.cluster === "mainnet-beta") && c.rpcUrl.length > 0;

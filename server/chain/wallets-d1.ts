@@ -1,5 +1,5 @@
 /** The wallet index on D1 (server/schema.sql `wallet`, `siwe_nonce`); the counter Worker's store. */
-import type { WalletStore } from "./wallets";
+import { walletKey, type WalletStore } from "./wallets";
 
 export class D1WalletStore implements WalletStore {
   constructor(private db: D1Database, private now: () => number = Date.now) {}
@@ -19,7 +19,7 @@ export class D1WalletStore implements WalletStore {
     return (rows.results ?? []).map((r) => r.account);
   }
   async accountOf(address: string): Promise<string | null> {
-    const row = await this.db.prepare("SELECT account FROM wallet WHERE address = ?1").bind(address.toLowerCase()).first<{ account: string }>();
+    const row = await this.db.prepare("SELECT account FROM wallet WHERE address = ?1").bind(walletKey(address)).first<{ account: string }>();
     return row?.account ?? null;
   }
   async addressOf(account: string): Promise<string | null> {
@@ -27,7 +27,7 @@ export class D1WalletStore implements WalletStore {
     return row?.address ?? null;
   }
   async bind(account: string, address: string, at: number): Promise<void> {
-    const a = address.toLowerCase();
+    const a = walletKey(address);
     const other = await this.accountOf(a);
     if (other && other !== account) throw new Error("wallet already bound to another file");
     const prev = await this.addressOf(account);

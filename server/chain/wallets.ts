@@ -1,7 +1,15 @@
 /**
- * The wallet ↔ Ghostfile index: one wallet per file, one file per wallet, and the SIWE nonces.
+ * The wallet ↔ Ghostfile index: one wallet per file, one file per wallet, and the sign-in nonces.
  * The Node host keeps it in memory; the counter Worker keeps it in D1 (server/schema.sql `wallet`).
+ *
+ * EVM addresses are folded to lower case. Solana addresses are case-sensitive and are stored whole.
  */
+import { isEvmAddress } from "../../shared/economy/solana";
+
+/** The index key. EVM addresses compare case-insensitively. A Solana address does not. */
+export function walletKey(address: string): string {
+  return isEvmAddress(address) ? address.toLowerCase() : address;
+}
 export interface WalletStore {
   /** a fresh SIWE nonce for this file (valid for ten minutes) */
   issueNonce(account: string): string | Promise<string>;
@@ -41,13 +49,13 @@ export class MemoryWalletStore implements WalletStore {
     return [...this.byAccount.keys()];
   }
   accountOf(address: string): string | null {
-    return this.byAddress.get(address.toLowerCase()) ?? null;
+    return this.byAddress.get(walletKey(address)) ?? null;
   }
   addressOf(account: string): string | null {
     return this.byAccount.get(account) ?? null;
   }
   bind(account: string, address: string, _at: number): void {
-    const a = address.toLowerCase();
+    const a = walletKey(address);
     const other = this.byAddress.get(a);
     if (other && other !== account) throw new Error("wallet already bound to another file");
     const prev = this.byAccount.get(account);

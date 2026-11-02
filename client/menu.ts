@@ -74,7 +74,7 @@ export const MAIN: readonly MenuEntry[] = [
   { id: "character", label: "CHARACTER", line: "BUILD YOUR BLANK: BODY, BUILD, COAT, SHOULDER · CLOTH ONLY, THE SAME HITBOX FOR EVERY BODY" },
   { id: "modes", label: "MODES", line: "WAKE · THE RUN · THE RANGE · THE OFFICE" },
   { id: "file", label: "FILE", line: "THE GHOSTFILE: NODES, MASTERY, STAMPS, THE COUNTER-LEDGER" },
-  { id: "wallet", label: "WALLET", line: "CONNECT A WALLET: YOUR ADDRESS, YOUR $CAPITAL, YOUR GHOSTFILE ON-CHAIN" },
+  { id: "wallet", label: "WALLET", line: "FOUR BOOKS: SCRIP, WAKELIGHT, CHITS, AND $CAPITAL ON BNB SMART CHAIN. THE TOKEN NEVER CHANGES A STAT." },
   { id: "settings", label: "SETTINGS", line: "SENSITIVITY, FIELD OF VIEW, VOLUMES, THE CRT" },
 ];
 
@@ -145,11 +145,13 @@ export interface MenuWallet {
   state: () => WalletState;
   /** the page opened: load the chain client if it is not in yet, re-read the holdings if connected */
   open: () => void;
-  /** a button on the page: walletconnect / injected / disconnect / copy / switch */
+  /** a button on the page: phantom / injected / disconnect / copy / switch */
   act: (id: string) => void;
 }
 
 export interface MenuHost {
+  /** the Ghostfile's off-chain books, so the wallet page can name what this file holds */
+  books?: () => { scrip: number; wakelight: number; chits: number; depth: number; owed?: number };
   audio: GameAudio | null;
   settings: Settings;
   applySettings: (s: Settings) => void;
@@ -488,7 +490,7 @@ export class Menu {
   private render(): void {
     if (this.screen === "cards" || this.screen === "hidden") return;
     // written only when it changed, so the page's $CAPITAL mark is not re-fetched on every key
-    const pageHtml = this.screen === "wallet" ? walletHtml(this.walletState()) : "";
+    const pageHtml = this.screen === "wallet" ? walletHtml(this.walletState(), this.host.books?.() ?? null) : "";
     if (pageHtml !== this.pageHtml) (this.root.querySelector(".page") as HTMLElement).innerHTML = this.pageHtml = pageHtml;
     const es = this.entries();
     if (this.cursor >= es.length) this.cursor = 0;
