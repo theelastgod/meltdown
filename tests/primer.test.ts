@@ -19,6 +19,7 @@ describe("the four books", () => {
     expect(CAPITAL_RULE).toMatch(/NO STAKE/);
     expect(CHIT_ZERO_LINE).toMatch(/ZERO CHITS/);
     expect(CHIT_ZERO_LINE).toMatch(/XP AND STAMPS/);
+    expect(EARN_PATH).toMatch(/PLAY TO EARN/);
     expect(EARN_PATH).toMatch(/ONE POT/);
     expect(EARN_PATH).not.toMatch(/ADDRESS/);
   });

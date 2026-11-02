@@ -142,7 +142,7 @@ async function main(): Promise<void> {
     check("the menu lists PLAY / CHARACTER / MODES / FILE / WALLET / SETTINGS with the file's identity line; ↓↑ move the cursor", m0.entries.join("|") === "PLAY|CHARACTER|MODES|FILE|WALLET|SETTINGS" && m0.cursor === 0 && m1.cursor === 2 && m2.cursor === 1 && /DEPTH 50/.test(who) && /sandbox-ship/.test(who), `[${m0.entries.join(", ")}] · cursor 0→2→1 · "${who}"`);
     check(
       "PLAY leads the main menu and is selected when it opens; its line names the shared city and the campaign",
-      m0.entries[0] === "PLAY" && m0.cursor === 0 && playRow.on === "PLAY" && playRow.first === "PLAY" && playRow.firstIsPlay && /^THE CITY · /.test(m0.line) && /EVERYONE ONLINE IS HERE$/.test(m0.line),
+      m0.entries[0] === "PLAY" && m0.cursor === 0 && playRow.on === "PLAY" && playRow.first === "PLAY" && playRow.firstIsPlay && /^PLAY TO EARN \$CAPITAL · THE CITY · /.test(m0.line) && /EVERYONE ONLINE IS HERE$/.test(m0.line),
       `first "${playRow.first}" · under the cursor "${playRow.on}" (cursor ${m0.cursor}) · line "${m0.line}"`,
     );
     // MODES: the four modes on a screen of their own, each with its line, and BACK

@@ -102,7 +102,7 @@ export function loadingFor(href: string, over: Partial<LoadingDescriptor> = {}):
   if (mission) {
     d = { kind: crew ? "crew" : "mission", title: placeName(mission.level), line: crew ? `CREW ${crew} · ${mission.title}` : `CONTRACT · ${mission.title}`, art: MISSION_ART[mission.id] ?? GIG_ART[mission.id] ?? LEVEL_ART[mission.level] };
   } else if (q.get("mode") === "run") {
-    d = { kind: "mode", title: placeName(level), line: "THE RUN · CARRY THE CLAIMS TO A GATE" };
+    d = { kind: "mode", title: placeName(level), line: "PLAY TO EARN · THE RUN · CARRY THE CLAIMS TO A GATE" };
   } else if (q.get("explore") === "1") {
     // ahead of the city: a page can still be carrying city=1 when the player asked for the street
     d = { kind: "district", title: placeName(level), line: "THE STREET · EXPLORE THE DISTRICT" };
@@ -270,7 +270,7 @@ export const LOADING_TIPS: readonly string[] = [
   "HOLD A NODE TO FLIP IT · THE KERNEL'S CLOCK DOES NOT WAIT",
   "THE CONTRACTS DESK IS IN THE DEADLETTER OFFICE",
   "A CREW CODE BRINGS A FRIEND INTO YOUR CONTRACT",
-  "THE RUN: BANK A CLAIM AT A GATE. DEPTH 10 SETTLES TONIGHT ON BNB SMART CHAIN, AT MOST 1 $CAPITAL. NOT SENT UNTIL THE NIGHT POSTS.",
+  "PLAY TO EARN. THE RUN: BANK A CLAIM AT A GATE. DEPTH 10 SETTLES TONIGHT ON BNB SMART CHAIN, AT MOST 1 $CAPITAL. NOT SENT UNTIL THE NIGHT POSTS.",
   "FOUR BOOKS: SCRIP AND WAKELIGHT STAY ON THE FILE. CHITS BECOME $CAPITAL AT DEPTH 10. THE TOKEN NEVER CHANGES A STAT.",
   "CLOTH ONLY: EVERY BODY HAS THE SAME HITBOX, EYE HEIGHT AND SPEED",
 ];

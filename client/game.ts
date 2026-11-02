@@ -489,7 +489,7 @@ export class Game {
         // an Audit room: the same symmetric rules the room runs, so prediction agrees
         if (mode === "run") {
           this.runMode = true;
-          this.hud.push("THE RUN · CARRY THE CLAIMS TO A GATE; DIE AND THEY DROP", "am");
+          this.hud.push("PLAY TO EARN · CARRY $CAPITAL CLAIMS TO A GATE; DIE AND THEY DROP", "am");
         }
         const am = mode.match(/^audit:([a-z_]+):(\d+)$/);
         const audit = am ? AUDITS.find((x) => x.id === am[1]) : undefined;
@@ -1058,7 +1058,7 @@ export class Game {
       if (m.kind === "pickup") this.audio.claim(this.world.level.name);
       else if (m.kind === "bank") this.audio.sign(this.world.level.name);
       else this.audio.dropClaims(this.world.level.name);
-      this.hud.push(momentLine(m, next.zone), m.kind === "drop" ? "mg" : "am");
+      this.hud.push(momentLine(m, next.zone, this.file.depth), m.kind === "drop" ? "mg" : "am");
     }
   }
 
@@ -1066,7 +1066,7 @@ export class Game {
     const v = this.runView;
     this.renderer.run.syncZones(v?.zones ?? []);
     this.renderer.run.syncClaims(v?.claims ?? []);
-    this.hud.setRun(v ? { carried: v.carried, banked: v.banked, banking: v.banking, inSafe: v.inSafe, zone: v.zone, today: v.today, cap: v.cap, owed: v.owed, claims: v.claims.length } : null);
+    this.hud.setRun(v ? { carried: v.carried, banked: v.banked, banking: v.banking, inSafe: v.inSafe, zone: v.zone, today: v.today, cap: v.cap, owed: v.owed, claims: v.claims.length, depth: this.file.depth } : null);
   }
 
   /**

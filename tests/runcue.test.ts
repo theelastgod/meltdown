@@ -28,8 +28,8 @@ describe("runMoments", () => {
 describe("momentLine", () => {
   it("says which moment and how much", () => {
     expect(momentLine({ kind: "pickup", value: 3, carried: 5 }, null)).toBe("◈ CLAIM +3 · CARRYING 5");
-    expect(momentLine({ kind: "bank", value: 5, banked: 6 }, "EAST GATE")).toBe("BANKED 5 ◈ AT EAST GATE");
-    expect(momentLine({ kind: "bank", value: 5, banked: 6 }, null)).toBe("BANKED 5 ◈ AT THE GATE");
+    expect(momentLine({ kind: "bank", value: 5, banked: 6 }, "EAST GATE", 10)).toBe("BANKED 5 ◈ AT EAST GATE · SETTLES TONIGHT · AT MOST 1 $CAPITAL · NOT SENT");
+    expect(momentLine({ kind: "bank", value: 5, banked: 6 }, null, 4)).toBe("BANKED 5 ◈ AT THE GATE · BELOW DEPTH 10 · THIS BANK PAYS SCRIP");
     expect(momentLine({ kind: "drop", value: 5 }, null)).toBe("◈ 5 UNITS DROPPED WHERE YOU FELL");
     expect(momentLine({ kind: "drop", value: 1 }, null)).toBe("◈ 1 UNIT DROPPED WHERE YOU FELL");
     expect(momentLine({ kind: "drop", value: 1 }, null)).not.toBe("◈ 1 UNITS DROPPED WHERE YOU FELL");

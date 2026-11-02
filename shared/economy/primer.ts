@@ -56,8 +56,14 @@ export const BOOKS: readonly LedgerBook[] = [
 /** The one sentence. The lint fails the build if a priced item grows a stat. */
 export const CAPITAL_RULE = "$CAPITAL NEVER CHANGES A STAT. NO WAGER. NO STAKE. NO PAID RANDOMNESS.";
 
+/** The words on the title, the menu, and the wallet. The rules under them do not change. */
+export const P2E_MARK = "PLAY TO EARN";
+
 /** How a unit becomes a token. A kill mints nothing. */
-export const EARN_PATH = "BANK A CLAIM AT A GATE, OR EXCHANGE CHITS ONCE DEPTH REACHES 10. THE NIGHT SPLITS ONE POT. AN EMPTY POCKET PAYS THE KILLER NOTHING.";
+export const EARN_PATH = "PLAY TO EARN. BANK A CLAIM AT A GATE, OR EXCHANGE CHITS ONCE DEPTH REACHES 10. THE NIGHT SPLITS ONE POT. AN EMPTY POCKET PAYS THE KILLER NOTHING.";
+
+/** The wallet page says this before a wallet is connected, and after. Below the gate the bank still pays Scrip. */
+export const P2E_DESK = `PLAY TO EARN. $CAPITAL OPENS AT DEPTH ${RUN_DEPTH}. BANK A CLAIM AT A GATE. THE NIGHT SENDS IT, AT MOST 1 EACH.`;
 
 /** PvE pays the file. It does not mint a cash-out. */
 export const CHIT_ZERO_LINE = "CITY JOBS, STREET RUNS, AND CONTRACTS PAY XP AND STAMPS, AND ZERO CHITS.";
@@ -77,8 +83,8 @@ export const EVM_DARK_LINE = "BNB · NO CONTRACT POSTED · THE NIGHT HAS NOT SEN
  */
 export function earnReadyLine(depth: number | null): string {
   const d = depth !== null && Number.isFinite(depth) ? Math.max(0, Math.floor(depth)) : null;
-  if (d !== null && d < RUN_DEPTH) return `DEPTH ${d}. $CAPITAL OPENS AT DEPTH ${RUN_DEPTH}. THIS BANK PAYS SCRIP.`;
-  return "THIS WALLET EARNS $CAPITAL. BANK A CLAIM AT A GATE. THE UNITS ARE ON THE FILE NOW. THE NIGHT SENDS THEM, AT MOST 1 EACH.";
+  if (d !== null && d < RUN_DEPTH) return `PLAY TO EARN OPENS AT DEPTH ${RUN_DEPTH}. DEPTH ${d}. THIS BANK PAYS SCRIP.`;
+  return "PLAY TO EARN. THIS WALLET EARNS $CAPITAL. BANK A CLAIM AT A GATE. THE UNITS ARE ON THE FILE NOW. THE NIGHT SENDS THEM, AT MOST 1 EACH.";
 }
 
 /**

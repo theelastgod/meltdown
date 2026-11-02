@@ -267,8 +267,8 @@ describe("PLAY drops you where the city is busiest", () => {
     // a district named outright still wins
     expect(new URL(playUrl("http://127.0.0.1:5173/", { presence: busy, level: "repo_depot" })).searchParams.get("level")).toBe("repo_depot");
     const p = playInfo(campaignOf(sandboxAccount("sandbox-t")));
-    expect(playLine(p, { district: "night_market", online: 6 })).toBe("THE CITY · NIGHT MARKET · 6 ONLINE · NEXT: 01 WAKE UNLISTED");
-    expect(playLine(null, { district: "night_market", online: 6 })).toBe("THE CITY · NIGHT MARKET · 6 ONLINE");
+    expect(playLine(p, { district: "night_market", online: 6 })).toBe("PLAY TO EARN $CAPITAL · THE CITY · NIGHT MARKET · 6 ONLINE · NEXT: 01 WAKE UNLISTED");
+    expect(playLine(null, { district: "night_market", online: 6 })).toBe("PLAY TO EARN $CAPITAL · THE CITY · NIGHT MARKET · 6 ONLINE");
     expect(playLine(p, { district: DEFAULT_CITY, online: 0 })).toBe(playLine(p));
     expect(playLine(null, null)).toBe(MAIN[0]!.line);
   });
@@ -288,7 +288,7 @@ describe("PLAY drops you where the city is busiest", () => {
     answer(new Response(JSON.stringify(aggregatePresence(feed({ night_market: 6, relay_heights: 2 }).districts, 1))));
     await m.presence;
     expect(m.view().play).toEqual({ district: "night_market", online: 6, feed: "live" });
-    expect(m.view().line).toBe("THE CITY · NIGHT MARKET · 6 ONLINE · NEXT: 01 WAKE UNLISTED");
+    expect(m.view().line).toBe("PLAY TO EARN $CAPITAL · THE CITY · NIGHT MARKET · 6 ONLINE · NEXT: 01 WAKE UNLISTED");
     const url = m.choose("play")!;
     expect(url).toBe(playUrl(location.href));
     expect(new URL(url).searchParams.get("level")).toBe("night_market");
@@ -300,7 +300,7 @@ describe("PLAY drops you where the city is busiest", () => {
     m.start({ cards: false });
     expect(await m.presence).toBeNull();
     expect(m.view().play).toEqual({ district: DEFAULT_CITY, online: 0, feed: "unreachable" });
-    expect(m.view().line).toBe("THE CITY · LEASE ROW · NEXT: 01 WAKE UNLISTED · EVERYONE ONLINE IS HERE");
+    expect(m.view().line).toBe("PLAY TO EARN $CAPITAL · THE CITY · LEASE ROW · NEXT: 01 WAKE UNLISTED · EVERYONE ONLINE IS HERE");
     expect(new URL(m.choose("play")!).searchParams.get("level")).toBe(DEFAULT_CITY);
   });
 

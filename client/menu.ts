@@ -23,6 +23,7 @@ import { wantsTouch } from "./touch";
 import { menuFooter, settingsLine } from "./hud/keyhint";
 import type { GameAudio } from "./audio";
 import { clipsFor, videoUrl } from "../shared/assets/video";
+import { P2E_MARK } from "@shared/economy/primer";
 import { CAPITAL_MARK } from "./brand";
 import { walletEntries, walletHtml, walletState, type WalletState } from "./wallet";
 import { hideLoading, loadingFor, placeName, showLoading, travelTo, writeLoading, type LoadingDescriptor } from "./loading";
@@ -70,11 +71,11 @@ export const CAMPAIGN_DESK: MenuEntry = { id: "campaign", label: "CAMPAIGN", lin
 
 /** The main menu: PLAY first and preselected; everything else is one step aside. PLAY's line is the file's own (`playLine`). */
 export const MAIN: readonly MenuEntry[] = [
-  { id: "play", label: "PLAY", line: "THE CITY · THE CAMPAIGN · EVERYONE ONLINE IS HERE" },
+  { id: "play", label: "PLAY", line: `${P2E_MARK} $CAPITAL · THE CITY · THE CAMPAIGN · EVERYONE ONLINE IS HERE` },
   { id: "character", label: "CHARACTER", line: "BUILD YOUR BLANK: BODY, BUILD, COAT, SHOULDER · CLOTH ONLY, THE SAME HITBOX FOR EVERY BODY" },
   { id: "modes", label: "MODES", line: "WAKE · THE RUN · THE RANGE · THE OFFICE" },
   { id: "file", label: "FILE", line: "THE GHOSTFILE: NODES, MASTERY, STAMPS, THE COUNTER-LEDGER" },
-  { id: "wallet", label: "WALLET", line: "FOUR BOOKS: SCRIP, WAKELIGHT, CHITS, AND $CAPITAL ON BNB SMART CHAIN. THE TOKEN NEVER CHANGES A STAT." },
+  { id: "wallet", label: "WALLET", line: `${P2E_MARK} $CAPITAL ON BNB SMART CHAIN. BANK A CLAIM AT A GATE. THE NIGHT SENDS IT, AT MOST 1 EACH. THE TOKEN NEVER CHANGES A STAT.` },
   { id: "settings", label: "SETTINGS", line: "SENSITIVITY, FIELD OF VIEW, VOLUMES, THE CRT" },
 ];
 
@@ -96,16 +97,18 @@ const nextWords = (n: NonNullable<PlayInfo["next"]>) => `NEXT: ${String(n.index)
  * city's presence feed says files are online (Stage 705), the line names the district PLAY will drop
  * you into — the busiest — and how many are there: `THE CITY · NIGHT MARKET · 6 ONLINE`.
  */
+const earnCity = (rest: string) => `${P2E_MARK} $CAPITAL · ${rest}`;
+
 export function playLine(p: PlayInfo | null, busy: { district: string; online: number } | null = null): string {
-  if (busy && busy.online > 0) return `THE CITY · ${placeName(busy.district)} · ${busy.online} ONLINE${p?.next ? ` · ${nextWords(p.next)}` : p ? " · THE ARC IS CLOSED" : ""}`;
+  if (busy && busy.online > 0) return earnCity(`THE CITY · ${placeName(busy.district)} · ${busy.online} ONLINE${p?.next ? ` · ${nextWords(p.next)}` : p ? " · THE ARC IS CLOSED" : ""}`);
   if (!p) return MAIN[0]!.line;
-  if (!p.next) return "THE CITY · THE ARC IS CLOSED: GIGS AND THE STREET · EVERYONE ONLINE IS HERE";
-  return `THE CITY · ${placeName(p.next.level)} · ${nextWords(p.next)} · EVERYONE ONLINE IS HERE`;
+  if (!p.next) return earnCity("THE CITY · THE ARC IS CLOSED: GIGS AND THE STREET · EVERYONE ONLINE IS HERE");
+  return earnCity(`THE CITY · ${placeName(p.next.level)} · ${nextWords(p.next)} · EVERYONE ONLINE IS HERE`);
 }
 
 /** PLAY's loading card: the destination the URL names, the campaign's next step, the next mission's art. */
 export function playLoading(url: string, p: PlayInfo | null): LoadingDescriptor {
-  const line = `THE CITY · ${p?.begun ? "CONTINUE" : "BEGIN"} THE CAMPAIGN${p?.next ? ` · ${nextWords(p.next)}` : ""}`;
+  const line = earnCity(`THE CITY · ${p?.begun ? "CONTINUE" : "BEGIN"} THE CAMPAIGN${p?.next ? ` · ${nextWords(p.next)}` : ""}`);
   return loadingFor(url, { kind: "play", line, art: p?.next ? MISSION_ART[p.next.id] : undefined });
 }
 
@@ -295,7 +298,7 @@ export class Menu {
     const root = document.createElement("div");
     root.id = "menu";
     root.hidden = true;
-    root.innerHTML = `<video class="bg" muted loop playsinline preload="auto"></video><div class="card"></div><div class="panel"><div class="hd"><span class="word">MELTDOWN</span><span class="who"></span></div><div class="page"></div><div class="list"></div><canvas class="pv" width="440" height="600" hidden></canvas><div class="line"></div><div class="ft"><span class="hint"></span> · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
+    root.innerHTML = `<video class="bg" muted loop playsinline preload="auto"></video><div class="card"></div><div class="panel"><div class="hd"><span><span class="word">MELTDOWN</span><span class="mint">${P2E_MARK}</span></span><span class="who"></span></div><div class="page"></div><div class="list"></div><canvas class="pv" width="440" height="600" hidden></canvas><div class="line"></div><div class="ft"><span class="hint"></span> · <span class="build">${HOSTS.build}</span></div></div><div class="scan"></div>`;
     // The title sits over the city rather than over black (Stage 633). A DOM video, not a pooled
     // one: the menu is not a scene and this costs no material. It fails soft in the strongest
     // sense — the element simply never plays and the menu is the flat panel it has always been.

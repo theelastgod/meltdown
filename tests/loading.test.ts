@@ -150,16 +150,16 @@ describe("the main menu", () => {
     const fresh = campaignOf(sandboxAccount("sandbox-t"));
     const m = new Menu(host(fresh));
     m.start({ cards: false });
-    expect(m.view().line).toBe("THE CITY · LEASE ROW · NEXT: 01 WAKE UNLISTED · EVERYONE ONLINE IS HERE");
+    expect(m.view().line).toBe("PLAY TO EARN $CAPITAL · THE CITY · LEASE ROW · NEXT: 01 WAKE UNLISTED · EVERYONE ONLINE IS HERE");
     const two = { ...fresh, missionsDone: ["m1_wake_unlisted"] };
-    expect(playLine(playInfo(two))).toBe("THE CITY · DEADLETTER DOCKS · NEXT: 02 DEADLETTER RUN · EVERYONE ONLINE IS HERE");
+    expect(playLine(playInfo(two))).toBe("PLAY TO EARN $CAPITAL · THE CITY · DEADLETTER DOCKS · NEXT: 02 DEADLETTER RUN · EVERYONE ONLINE IS HERE");
     expect(playLine(null)).toBe(MAIN[0]!.line);
     const all = { ...fresh, missionsDone: MAIN_ARC.map((m) => m.id) };
-    expect(playLine(playInfo(all))).toMatch(/^THE CITY · THE ARC IS CLOSED/);
+    expect(playLine(playInfo(all))).toMatch(/^PLAY TO EARN \$CAPITAL · THE CITY · THE ARC IS CLOSED/);
     // and its loading card continues where the file stands, over the next mission's art
     const card = playLoading(playUrl(BASE), playInfo(two));
-    expect(card).toMatchObject({ kind: "play", line: "THE CITY · CONTINUE THE CAMPAIGN · NEXT: 02 DEADLETTER RUN", art: MISSION_ART.m2_deadletter_run });
-    expect(playLoading(playUrl(BASE), playInfo(fresh)).line).toBe("THE CITY · BEGIN THE CAMPAIGN · NEXT: 01 WAKE UNLISTED");
+    expect(card).toMatchObject({ kind: "play", line: "PLAY TO EARN $CAPITAL · THE CITY · CONTINUE THE CAMPAIGN · NEXT: 02 DEADLETTER RUN", art: MISSION_ART.m2_deadletter_run });
+    expect(playLoading(playUrl(BASE), playInfo(fresh)).line).toBe("PLAY TO EARN $CAPITAL · THE CITY · BEGIN THE CAMPAIGN · NEXT: 01 WAKE UNLISTED");
   });
 
   it("MODES is a screen of its own: WAKE, THE RUN, THE RANGE, THE OFFICE and BACK, each with its old line; ESC is back on MODES", () => {
@@ -246,7 +246,7 @@ describe("the loading descriptor", () => {
     expect(navs).toHaveLength(1);
     expect(new URL(navs[0]!.url).searchParams.get("city")).toBe("1");
     expect(navs[0]!.cardShown).toBe(true);
-    expect(JSON.parse(navs[0]!.stored!)).toMatchObject({ kind: "play", line: "THE CITY · BEGIN THE CAMPAIGN · NEXT: 01 WAKE UNLISTED", art: MISSION_ART.m1_wake_unlisted });
+    expect(JSON.parse(navs[0]!.stored!)).toMatchObject({ kind: "play", line: "PLAY TO EARN $CAPITAL · THE CITY · BEGIN THE CAMPAIGN · NEXT: 01 WAKE UNLISTED", art: MISSION_ART.m1_wake_unlisted });
   });
 
   it("under nonav the card shows with the destination and nothing is written or loaded", () => {
@@ -294,7 +294,7 @@ describe("the loading descriptor", () => {
     expect(loadingFor("http://x/?level=lease_row&mission=m1_wake_unlisted")).toMatchObject({ kind: "mission", title: "LEASE ROW", line: "CONTRACT · WAKE UNLISTED", art: MISSION_ART.m1_wake_unlisted });
     expect(loadingFor("http://x/?city=1&mode=campaign&level=lease_row&mission=m1_wake_unlisted&net=ws://h/campaign/crew-ABCDEFGH?mission=m1_wake_unlisted&level=lease_row").line.startsWith("CREW ")).toBe(true);
     expect(loadingFor("http://x/?level=lease_row&net=ws://h/room/neochina-lease_row?level=lease_row")).toMatchObject({ kind: "district", title: "LEASE ROW", line: "WAKE · THE PUBLIC ROOM" });
-    expect(loadingFor("http://x/?level=repo_depot&mode=run&net=ws://h/room/r")).toMatchObject({ title: "REPO DEPOT", line: "THE RUN · CARRY THE CLAIMS TO A GATE", art: "/districts/repo_depot.jpg" });
+    expect(loadingFor("http://x/?level=repo_depot&mode=run&net=ws://h/room/r")).toMatchObject({ title: "REPO DEPOT", line: "PLAY TO EARN · THE RUN · CARRY THE CLAIMS TO A GATE", art: "/districts/repo_depot.jpg" });
     expect(loadingFor("http://x/?level=deadletter_docks&city=1")).toMatchObject({ title: "DEADLETTER DOCKS", art: "/districts/deadletter_docks.jpg" });
     expect(loadingFor("http://x/?level=repo_depot&city=1").art).toBe("/districts/repo_depot.jpg");
     expect(loadingFor("http://x/?level=deadletter_office")).toMatchObject({ title: "THE DEADLETTER OFFICE", art: "/districts/deadletter_office.jpg" });

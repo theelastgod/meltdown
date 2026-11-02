@@ -47,6 +47,7 @@ describe("the WALLET page, state by state", () => {
     expect(s.status).toBe("none");
     const t = text(walletHtml(s));
     expect(t).toMatch(/STATUS NOT CONNECTED/);
+    expect(t).toMatch(/PLAY TO EARN/);
     expect(t).not.toMatch(/ADDRESS|STATUS CONNECTED/);
     expect(t).toContain(WALLET_SAFETY);
     expect(WALLET_SAFETY).toMatch(/NEVER ASKS FOR YOUR SEED PHRASE/);
@@ -541,7 +542,7 @@ describe("the main menu's WALLET entry", () => {
     expect(ids.indexOf("settings")).toBe(ids.indexOf("wallet") + 1);
     const w = MAIN.find((e) => e.id === "wallet")!;
     expect(w.label).toBe("WALLET");
-    expect(w.line).toBe("FOUR BOOKS: SCRIP, WAKELIGHT, CHITS, AND $CAPITAL ON BNB SMART CHAIN. THE TOKEN NEVER CHANGES A STAT.");
+    expect(w.line).toBe("PLAY TO EARN $CAPITAL ON BNB SMART CHAIN. BANK A CLAIM AT A GATE. THE NIGHT SENDS IT, AT MOST 1 EACH. THE TOKEN NEVER CHANGES A STAT.");
   });
 
   it("opens the WALLET page in place, routes its buttons to the wallet, and ESC goes back to the main menu", () => {

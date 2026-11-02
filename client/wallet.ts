@@ -11,7 +11,7 @@
  */
 import { CHAIN_DARK_LINE } from "@shared/city/chit";
 import { bnbById } from "@shared/economy/bnb";
-import { earnReadyLine } from "@shared/economy/primer";
+import { earnReadyLine, P2E_DESK, P2E_MARK } from "@shared/economy/primer";
 import { isEvmAddress, isSolanaAddress } from "@shared/economy/solana";
 import { capitalMark } from "./brand";
 import { economyBoardHtml } from "./economy-board";
@@ -143,8 +143,9 @@ function capitalText(v: string): string {
 export function walletHtml(s: WalletState, file?: { scrip: number; wakelight: number; chits: number; depth: number; owed?: number } | null): string {
   const chain = s.chainId !== null ? `${s.chainName} · CHAIN ${s.chainId}` : s.chainName;
   const live = tokenLive(s);
-  const rows: string[] = [`<div class="sh">${capitalMark()}WALLET // $CAPITAL <span class="dim">${chain}</span></div>`];
+  const rows: string[] = [`<div class="sh">${capitalMark()}WALLET // ${P2E_MARK} $CAPITAL <span class="dim">${chain}</span></div>`];
   rows.push(`<div class="ln st ${s.status}">STATUS <b>${STATUS_WORD[s.status]}</b>${s.status === "connected" ? ` <span class="dim">ON ${s.chainName}</span>` : ""}</div>`);
+  rows.push(`<div class="ln">${P2E_DESK}</div>`);
   if (!s.reachable) rows.push(`<div class="ln dim">NO LEDGER HOST ON THIS PAGE: THE WALLET CONNECTS WHERE THE COUNTER-LEDGER RUNS (A ROOM, THE OFFICE, OR ?SHOP=)</div>`);
   else if (s.loading) rows.push(`<div class="ln dim">FETCHING THE CHAIN CLIENT…</div>`);
   if (s.status === "wrong-chain") rows.push(`<div class="ln bad">YOUR WALLET IS ON CHAIN ${s.walletChain}; THE LEDGER IS ${chain}. SWITCH NETWORK BEFORE YOU SIGN ANYTHING.</div>`);

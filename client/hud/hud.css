@@ -258,6 +258,20 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #hud .file .it .b { color: var(--gr); }
 #hud .file .it .c { color: var(--mg); }
 #hud .file .ledger { font-size: 9.5px; color: var(--am); max-height: 160px; overflow: auto; }
+/* the four books: scrip, wakelight, chits, $CAPITAL */
+#hud .file .books, #menu .page .books { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 10px; }
+#hud .file .books .rule, #menu .page .books .rule { grid-column: 1 / -1; color: var(--ye); letter-spacing: 0.06em; font-size: 10.5px; line-height: 1.45; padding: 6px 8px; border: 1px solid rgba(255,227,74,0.55); background: rgba(255,227,74,0.06); }
+#hud .file .books .path, #menu .page .books .path { grid-column: 1 / -1; margin: 0; font-size: 10px; line-height: 1.4; color: var(--gr); }
+#hud .file .books .book, #menu .page .books .book { padding: 6px 7px; border: 1px solid rgba(53,242,255,0.22); background: rgba(0,0,0,0.45); font-size: 9.5px; line-height: 1.4; letter-spacing: 0.03em; }
+#hud .file .books .book .nm, #menu .page .books .book .nm { display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px; font-size: 11px; letter-spacing: 0.14em; color: var(--cy); }
+#hud .file .books .book .nm b, #menu .page .books .book .nm b { margin-left: auto; color: var(--ye); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+#hud .file .books .book .k, #menu .page .books .book .k { color: rgba(53,242,255,0.55); margin-right: 4px; }
+#hud .file .books .book.scrip, #menu .page .books .book.scrip { border-left: 3px solid var(--gr); }
+#hud .file .books .book.wake, #menu .page .books .book.wake { border-left: 3px solid var(--mg); }
+#hud .file .books .book.chits, #menu .page .books .book.chits { border-left: 3px solid var(--am); }
+#hud .file .books .book.capital, #menu .page .books .book.capital { border-left: 3px solid var(--cy); }
+#hud .file .books .mintline, #menu .page .books .mintline { grid-column: 1 / -1; color: var(--cy); font-size: 10px; line-height: 1.35; letter-spacing: 0.03em; word-break: break-all; user-select: text; }
+@media (max-width: 720px) { #hud .file .books, #menu .page .books { grid-template-columns: 1fr; } }
 #hud .file .ft { margin-top: 8px; padding-top: 5px; border-top: 1px solid rgba(53,242,255,0.35); color: var(--gr); letter-spacing: 0.06em; }
 #hud .file .ft.bad { color: var(--mg); }
 
@@ -525,6 +539,7 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #crawl .title { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; }
 #crawl .title[hidden] { display: none; }
 #crawl .title .word { font-size: clamp(56px, 11vw, 132px); letter-spacing: 0.28em; padding-left: 0.28em; color: var(--cy); text-shadow: 0 0 18px rgba(53,242,255,0.7), 3px 0 0 rgba(255,62,201,0.55), -3px 0 0 rgba(53,242,255,0.35); animation: crawl-title 0.9s steps(3) both; }
+#crawl .title .mint, #menu .hd .mint { display: block; max-width: 92vw; color: var(--cy); font-size: 12px; letter-spacing: 0.14em; line-height: 1.35; word-break: normal; white-space: nowrap; user-select: text; }
 @keyframes crawl-title { 0% { opacity: 0; transform: scaleY(0.02); } 40% { opacity: 1; transform: scaleY(1.06); } 100% { opacity: 1; transform: none; } }
 #crawl .title .prompt { color: var(--mg); font-size: 12px; letter-spacing: 0.2em; text-shadow: 0 0 4px rgba(255,62,201,0.5); transition: opacity 0.3s; }
 #crawl .skip { position: absolute; right: 18px; bottom: 14px; font-size: 11px; color: rgba(53,242,255,0.55); letter-spacing: 0.15em; }
@@ -564,6 +579,10 @@ html, body { margin: 0; height: 100%; overscroll-behavior: none; touch-action: n
 #menu .ft { margin-top: 8px; font-size: 10px; color: rgba(53,242,255,0.55); letter-spacing: 0.12em; }
 #menu .ft .build { color: var(--mg); }
 /* the WALLET page (client/wallet.ts): drawn above the list, the FILE panel's terminal lines */
+#menu.wallet .panel { width: min(880px, 94vw); max-height: 90vh; overflow: auto; }
+@media (max-width: 720px) {
+  #menu.wallet .panel { top: 8px; left: 3vw; transform: none; width: 94vw; max-height: calc(100vh - 16px); }
+}
 #menu .page:empty { display: none; }
 #menu .page { margin: 0 0 10px; font-size: 12px; letter-spacing: 0.06em; color: var(--cy); overflow-wrap: anywhere; }
 #menu .page .sh { color: var(--mg); letter-spacing: 0.1em; margin: 0 0 6px; padding-bottom: 3px; border-bottom: 1px solid rgba(255,62,201,0.35); }

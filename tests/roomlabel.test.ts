@@ -123,7 +123,7 @@ describe("the room's name in the join line", () => {
 
   it("THE RUN admit line is CRT, not carry the claims", () => {
     const src = readFileSync(new URL("../client/game.ts", import.meta.url), "utf8");
-    expect(src).toMatch(/THE RUN · CARRY THE CLAIMS TO A GATE; DIE AND THEY DROP/);
+    expect(src).toMatch(/PLAY TO EARN · CARRY \$CAPITAL CLAIMS TO A GATE; DIE AND THEY DROP/);
     expect(src).not.toMatch(/THE RUN · carry the claims/);
   });
 

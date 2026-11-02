@@ -12,6 +12,8 @@
  * already read the pickup. Pure, so the rule is unit-tested and both paths share it.
  */
 
+import { MAX_CAPITAL_PER_UNIT, RUN_DEPTH } from "@shared/sim/run";
+
 export interface RunSnapshot {
   carried: number;
   banked: number;
@@ -34,13 +36,16 @@ export function runMoments(prev: RunSnapshot | null, next: RunSnapshot): RunMome
   return out;
 }
 
-/** The log line for a moment; the zone is the safe zone's label, when there is one. */
-export function momentLine(m: RunMoment, zone: string | null): string {
+/** The log line for a moment; the zone is the safe zone's label, when there is one. Depth names which book the bank pays. */
+export function momentLine(m: RunMoment, zone: string | null, depth = RUN_DEPTH): string {
   switch (m.kind) {
     case "pickup":
       return `◈ CLAIM +${m.value} · CARRYING ${m.carried}`;
-    case "bank":
-      return `BANKED ${m.value} ◈ AT ${zone ?? "THE GATE"}`;
+    case "bank": {
+      const where = zone ?? "THE GATE";
+      const gate = depth >= RUN_DEPTH ? `SETTLES TONIGHT · AT MOST ${MAX_CAPITAL_PER_UNIT} $CAPITAL · NOT SENT` : `BELOW DEPTH ${RUN_DEPTH} · THIS BANK PAYS SCRIP`;
+      return `BANKED ${m.value} ◈ AT ${where} · ${gate}`;
+    }
     case "drop":
       return `◈ ${m.value} UNIT${m.value === 1 ? "" : "S"} DROPPED WHERE YOU FELL`;
   }
